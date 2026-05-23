@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" class="h-dvh">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#00C245" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Payky" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Payky</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: oklch(0.181 0.005 248.1);
+      }
+
+      #app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        opacity: 1;
+        transition: opacity 420ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #app-loader.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .app-loader__icon {
+        width: min(36vw, 11rem);
+        height: min(36vw, 11rem);
+        filter: drop-shadow(0 1.6rem 2.4rem rgb(0 0 0 / 0.36));
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #app-loader {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-loader" aria-label="Loading Payky" role="status">
+      <img class="app-loader__icon" src="/icon-animated.svg" alt="" />
+    </div>
+    <div id="root" class="h-dvh"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

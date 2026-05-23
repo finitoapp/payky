@@ -1,0 +1,189 @@
+name: Tauri Android Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: Android build type
+        required: true
+        default: debug
+        type: choice
+        options:
+          - debug
+          - release
+
+concurrency:
+  group: tauri-android-build-${{ github.ref }}-${{ inputs.build_type }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Android ${{ inputs.build_type }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CARGO_TERM_COLOR: always
+      ANDROID_NDK_VERSION: 26.1.10909125
+      ANDROID_BUILD_TOOLS_VERSION: 36.0.0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;${ANDROID_BUILD_TOOLS_VERSION}" \
+            "ndk;${ANDROID_NDK_VERSION}"
+
+      - name: Configure Android NDK environment
+        run: |
+          echo "ANDROID_SDK_ROOT=${ANDROID_HOME}" >> "${GITHUB_ENV}"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "${GITHUB_ENV}"
+          echo "NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "${GITHUB_ENV}"
+          echo "${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}" >> "${GITHUB_PATH}"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ runner.os }}-cargo-android-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-android-
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('src-tauri/gen/android/**/*.gradle*', 'src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate release signing secrets
+        if: ${{ inputs.build_type == 'release' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "${ANDROID_KEYSTORE_BASE64}" || -z "${ANDROID_KEYSTORE_PASSWORD}" || -z "${ANDROID_KEY_ALIAS}" || -z "${ANDROID_KEY_PASSWORD}" ]]; then
+            echo "::error::Release builds require ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD secrets."
+            exit 1
+          fi
+
+      - name: Build debug Android app
+        if: ${{ inputs.build_type == 'debug' }}
+        run: bun run tauri:android:build
+
+      - name: Build release Android app
+        if: ${{ inputs.build_type == 'release' }}
+        run: bun run tauri android build --ci --apk --aab
+
+      - name: Decode release keystore
+        if: ${{ inputs.build_type == 'release' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/payky-release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=${RUNNER_TEMP}/payky-release.keystore" >> "${GITHUB_ENV}"
+
+      - name: Sign release artifacts
+        if: ${{ inputs.build_type == 'release' }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          signed_dir="src-tauri/gen/android/app/build/signed"
+          mkdir -p "${signed_dir}"
+
+          while IFS= read -r apk; do
+            apk_name="$(basename "${apk}" .apk)"
+            aligned_apk="${signed_dir}/${apk_name}-aligned.apk"
+            signed_apk="${signed_dir}/${apk_name}-signed.apk"
+            zipalign -p -f 4 "${apk}" "${aligned_apk}"
+            apksigner sign \
+              --ks "${ANDROID_KEYSTORE_PATH}" \
+              --ks-pass "pass:${ANDROID_KEYSTORE_PASSWORD}" \
+              --ks-key-alias "${ANDROID_KEY_ALIAS}" \
+              --key-pass "pass:${ANDROID_KEY_PASSWORD}" \
+              --out "${signed_apk}" \
+              "${aligned_apk}"
+            apksigner verify "${signed_apk}"
+            rm "${aligned_apk}"
+          done < <(find src-tauri/gen/android/app/build/outputs/apk -type f -name '*release*.apk')
+
+          while IFS= read -r aab; do
+            signed_aab="${signed_dir}/$(basename "${aab}" .aab)-signed.aab"
+            cp "${aab}" "${signed_aab}"
+            jarsigner \
+              -keystore "${ANDROID_KEYSTORE_PATH}" \
+              -storepass "${ANDROID_KEYSTORE_PASSWORD}" \
+              -keypass "${ANDROID_KEY_PASSWORD}" \
+              "${signed_aab}" \
+              "${ANDROID_KEY_ALIAS}"
+            jarsigner -verify "${signed_aab}"
+          done < <(find src-tauri/gen/android/app/build/outputs/bundle -type f -name '*release*.aab')
+
+          find "${signed_dir}" -type f -print
+
+      - name: Upload debug Android artifacts
+        if: ${{ inputs.build_type == 'debug' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: payky-android-debug
+          path: |
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+            src-tauri/target/**/debug/bundle/android/**/*.apk
+            src-tauri/target/**/debug/bundle/android/**/*.aab
+          if-no-files-found: error
+
+      - name: Upload release Android artifacts
+        if: ${{ inputs.build_type == 'release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: payky-android-release
+          path: src-tauri/gen/android/app/build/signed/*
+          if-no-files-found: error

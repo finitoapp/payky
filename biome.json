@@ -5,6 +5,7 @@
       "**",
       "!dist",
       "!.vite",
+      "!.ai",
       "!node_modules",
       "!coverage",
       "!src/routeTree.gen.ts"

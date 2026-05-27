@@ -9,6 +9,37 @@
 - Use Zod for form, domain, and Evolu schema validation.
 - Store persistent application data through Evolu. Avoid direct `localStorage` except for non-critical UI preferences such as language.
 - Use Biome for linting and formatting.
+- Do not create or use `index.ts` barrel files for re-exporting. Import directly from the owning module file.
+
+## Project Structure
+
+- `src/main.tsx` is the browser entry point. It creates the Evolu client and renders the React app.
+- `src/App.tsx` wires top-level providers and the TanStack Router provider.
+- `src/router.tsx` creates the TanStack Router from `src/routeTree.gen.ts`; route files live in `src/routes`.
+- `src/routes/__root.tsx` connects the generated root route to `RootLayout` from `src/pages.tsx`.
+- `src/routes/index.tsx` and `src/routes/activity.tsx` define file-based routes. Keep route files thin and move substantial page UI into page or feature modules.
+- `src/pages.tsx` currently contains the root layout and simple page components. When pages grow, prefer extracting feature-specific components instead of expanding this file indefinitely.
+- `src/components/ui` contains shadcn-style reusable UI primitives built on Base UI, such as `button.tsx` and `button-variants.ts`. Keep generic UI here; avoid feature or domain logic in this directory.
+- `src/components/theme-provider.tsx` contains theme-level UI infrastructure.
+- `src/providers/evolu.tsx` creates and exports the typed Evolu React binding hooks and composes app providers.
+- `src/core/evolu` contains Evolu client setup and the app schema composition. Register new Evolu tables and indexes in `src/core/evolu/schema.ts`.
+- `src/core/modules` contains domain modules. Each module owns its schema, branded ids/types, actions, queries, and tests for one domain concept.
+- `src/core/modules/shared` contains lower-level domain helpers, shared schemas, Evolu dependency helpers, and shared action error utilities.
+- `src/i18n` contains translation resources and the translation hook. All user-facing React text must use keys from `src/i18n/resources.ts`.
+- `src/lib` contains app-level generic utilities such as `cn`; keep domain code in `src/core/modules` instead.
+- `src/assets` contains static frontend assets.
+- `src/index.css` contains global Tailwind and theme styles.
+- `src/zod-utils.ts` contains app-level Zod helpers that are not specific to one domain module.
+
+## Domain Module Structure
+
+- Use `*-types.ts` for branded ids, domain enums/unions, and exported domain types.
+- Use the module root file, for example `payment.ts`, for Evolu table schemas, detail/extension table schemas, indexes, and `InferTable` row exports.
+- Use `*-actions.ts` for Evolu mutations and command-style domain operations. Expected domain failures should return `Result`.
+- Use `*-queries.ts` for reusable Evolu queries and read models.
+- Use `*-utils.ts` for pure domain helpers that are not tied to Evolu mutation execution.
+- Keep tests beside the module they cover as `*.test.ts`.
+- For aggregate detail tables sharing the root id, keep root and detail table ownership in the same module unless another module clearly owns a separate lifecycle.
 
 ## Translation Key Rules
 

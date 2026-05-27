@@ -17,11 +17,13 @@ export const DateStringSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/u)
   .brand<"DateString">()
+export type DateString = z.output<typeof DateStringSchema>
 export const NonEmptyStringSchema = z
   .string()
   .trim()
   .min(1)
   .brand<"NonEmptyString">()
+export type NonEmptyString = z.output<typeof NonEmptyStringSchema>
 export const NonEmptyString255Schema =
   NonEmptyStringSchema.max(255).brand<"NonEmptyString255">()
 export const IntegerSchema = z.number().int().brand<"Int">()

@@ -1,4 +1,4 @@
-import { type InsertValues, sqliteTrue } from "@evolu/common"
+import { type InsertValues, sqliteTrue, type UpdateValues } from "@evolu/common"
 
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -76,6 +76,80 @@ export const createAccountTransaction =
     })
 
     return id
+  }
+
+export const updateAccountTransaction =
+  (deps: EvoluDep) =>
+  async ({
+    iban,
+    spark,
+    ...input
+  }: Pick<
+    UpdateValues<typeof accountTransaction>,
+    | "id"
+    | "deviceId"
+    | "accountId"
+    | "amount"
+    | "currency"
+    | "occurredAt"
+    | "note"
+    | "internalTransferGroupId"
+  > &
+    (
+      | {
+          readonly iban: Omit<UpdateValues<typeof accountTransactionIban>, "id">
+          readonly spark?: never
+        }
+      | {
+          readonly iban?: never
+          readonly spark: Omit<
+            UpdateValues<typeof accountTransactionSpark>,
+            "id"
+          >
+        }
+      | {
+          readonly iban?: never
+          readonly spark?: never
+        }
+    )): Promise<AccountTransactionId> => {
+    await runMutationWithCompletion((options) => {
+      let kind: AccountTransactionRow["kind"] = "cashRegister"
+
+      if (iban) {
+        kind = "iban"
+        deps.evolu.update(
+          "accountTransactionIban",
+          removeUndefinedValues({
+            ...iban,
+            id: input.id,
+          }),
+          options
+        )
+      }
+
+      if (spark) {
+        kind = "spark"
+        deps.evolu.update(
+          "accountTransactionSpark",
+          removeUndefinedValues({
+            ...spark,
+            id: input.id,
+          }),
+          options
+        )
+      }
+
+      return deps.evolu.update(
+        "accountTransaction",
+        removeUndefinedValues({
+          ...input,
+          kind,
+        }),
+        options
+      )
+    })
+
+    return input.id
   }
 
 export const deleteAccountTransaction =

@@ -2,6 +2,7 @@ import { evoluJsonObjectFrom } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createQuery } from "@/core/evolu/schema.ts"
+import type { ExchangeRateDep } from "@/core/integrations/yadio/yadio-client.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
@@ -10,8 +11,10 @@ import { createEvoluCli } from "../../evolu/cli-client"
 import {
   cancelPayment,
   createPayment,
+  createPreparedPayment,
   loadPayment,
   markPaymentPaid,
+  type SparkWalletFactoryDep,
 } from "./payment-actions.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -195,6 +198,92 @@ describe("payment actions", () => {
         tipAmount: 1_000,
       },
     })
+  }, 15_000)
+
+  test("creates a prepared payment by generating spark payment details", async () => {
+    await using testEvolu = await createEvoluCli()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetchYadioBtcExchangeRate: async () => ({
+        exchangeRate: 1_500_000,
+        fetchedAt: 1_700_000_000_000,
+      }),
+      create: async () => ({
+        createLightningInvoice: async () => ({
+          id: "lightning-request-1",
+          invoice: {
+            encodedInvoice: "lnbc8600n1prepared",
+            paymentHash: "payment-hash-1",
+          },
+          paymentPreimage: "payment-preimage-1",
+          sparkInvoice: "spark-invoice-1",
+        }),
+      }),
+    } satisfies EvoluDep & ExchangeRateDep & SparkWalletFactoryDep
+    const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    const idResult = await createPreparedPayment(deps)({
+      deviceId: null,
+      billId: null,
+      tableId: null,
+      amount: 12_900,
+      currency: "CZK",
+      tipAmount: 1_000,
+      canceledAt: null,
+      cashRegister: {
+        accountId: cashRegisterAccountId,
+      },
+      spark: {
+        accountId: sparkAccountId,
+        memo: "Payment 129 CZK",
+      },
+      iban: {
+        accountId: ibanAccountId,
+        variableSymbol: "1234567890",
+        czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
+      },
+    })
+
+    expect(idResult.ok).toBe(true)
+    if (!idResult.ok) return
+
+    const id = idResult.value
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          amount: 12_900,
+          currency: "CZK",
+          tipAmount: 1_000,
+          cashRegister: {
+            id,
+            accountId: cashRegisterAccountId,
+          },
+          spark: {
+            id,
+            accountId: sparkAccountId,
+            amountSats: 8_600,
+            exchangeRate: 1_500_000,
+            exchangeRateSource: "yadio",
+            exchangeRateFetchedAt: 1_700_000_000_000,
+            lnInvoice: "lnbc8600n1prepared",
+            sparkTechnicalData: JSON.stringify({
+              lightningReceiveRequestId: "lightning-request-1",
+              paymentHash: "payment-hash-1",
+              paymentPreimage: "payment-preimage-1",
+              sparkInvoice: "spark-invoice-1",
+            }),
+          },
+          iban: {
+            id,
+            accountId: ibanAccountId,
+            variableSymbol: "1234567890",
+          },
+        },
+      ])
   }, 15_000)
 
   test("marks a payment paid with an account transaction", async () => {

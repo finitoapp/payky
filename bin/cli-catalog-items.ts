@@ -21,13 +21,16 @@ import {
   runMutationWithCompletion,
 } from "../src/core/modules/shared/utils"
 
-export const catalogItemsCommand = createCommand("catalog-items")
+export const catalogItemsCommand = createCommand("catalog-items").description(
+  "Manage reusable catalog items for bills."
+)
 
 catalogItemsCommand
 
   .addCommand(
     zodCommand({
       name: "list",
+      description: "List active catalog items.",
       args: {},
       opts: {},
       async action() {
@@ -44,13 +47,19 @@ catalogItemsCommand
   .addCommand(
     zodCommand({
       name: "create",
+      description: "Create a catalog item.",
       args: {},
       opts: {
-        name: NonEmptyString255Schema.describe("n;"),
-        currency: FiatCurrencySchema.describe("c;"),
-        unitAmount: NonNegativeIntegerFromStringSchema.describe("a;"),
-        sortOrder: NonNegativeIntegerFromStringSchema.describe("s;"),
-        description: NonEmptyString255Schema.optional(),
+        name: NonEmptyString255Schema.describe("n;Item name"),
+        currency: FiatCurrencySchema.describe("c;Item currency"),
+        unitAmount:
+          NonNegativeIntegerFromStringSchema.describe("a;Unit amount"),
+        sortOrder: NonNegativeIntegerFromStringSchema.describe(
+          "s;Sort order for menu display"
+        ),
+        description: NonEmptyString255Schema.optional().describe(
+          "Optional item description"
+        ),
       },
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
@@ -80,9 +89,10 @@ catalogItemsCommand
   .addCommand(
     zodCommand({
       name: "get",
+      description: "Show one catalog item by id.",
       args: {},
       opts: {
-        id: CatalogItemId,
+        id: CatalogItemId.describe("Catalog item id"),
       },
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
@@ -97,21 +107,28 @@ catalogItemsCommand
   .addCommand(
     zodCommand({
       name: "update",
+      description: "Update a catalog item.",
       args: {},
       opts: {
-        id: CatalogItemId,
-        name: NonEmptyString255Schema.optional().describe("n;"),
-        currency: FiatCurrencySchema.optional().describe("c;"),
+        id: CatalogItemId.describe("Catalog item id"),
+        name: NonEmptyString255Schema.optional().describe("n;Item name"),
+        currency: FiatCurrencySchema.optional().describe("c;Item currency"),
         unitAmount:
-          NonNegativeIntegerFromStringSchema.optional().describe("a;"),
-        sortOrder: NonNegativeIntegerFromStringSchema.optional().describe("s;"),
-        description: NonEmptyString255Schema.optional(),
+          NonNegativeIntegerFromStringSchema.optional().describe(
+            "a;Unit amount"
+          ),
+        sortOrder: NonNegativeIntegerFromStringSchema.optional().describe(
+          "s;Sort order for menu display"
+        ),
+        description: NonEmptyString255Schema.optional().describe(
+          "Optional item description"
+        ),
       },
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
 
-        console.log("Deleting catalogItem", options.id)
+        console.log("Updating catalogItem", options.id)
 
         await runMutationWithCompletion((mutationOptions) =>
           updateCatalogItem({ evolu })(
@@ -126,9 +143,10 @@ catalogItemsCommand
   .addCommand(
     zodCommand({
       name: "delete",
+      description: "Soft delete a catalog item.",
       args: {},
       opts: {
-        id: CatalogItemId,
+        id: CatalogItemId.describe("Catalog item id"),
       },
       async action(_, options) {
         await using evoluCli = await createEvoluCli()

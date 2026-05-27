@@ -87,7 +87,7 @@ Demo režim:
 
 ## Spark konfigurace
 
-Spark integrace musí být izolovaná v `src/domain/spark.ts`.
+Spark integrace musí být izolovaná mimo React UI, například v `src/spark.ts`.
 
 Při prvním spuštění aplikace automaticky vytvoří náhodný Spark mnemonic a uloží ho lokálně přes Evolu. Výchozí síť pro novou instalaci je `MAINNET`.
 

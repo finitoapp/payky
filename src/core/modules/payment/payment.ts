@@ -1,3 +1,4 @@
+import type { IndexesConfig } from "@evolu/common/local-first"
 import { z } from "zod"
 
 import { AccountId } from "@/core/modules/account/account-types.ts"
@@ -10,7 +11,6 @@ import {
   type InferTable,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
-  PaymentStatusSchema,
   PositiveNumberSchema,
   TimestampMsSchema,
   VariableSymbolSchema,
@@ -22,13 +22,10 @@ export const payment = {
   deviceId: DeviceId.nullable(),
   billId: BillId.nullable(),
   tableId: TableId.nullable(),
-  status: PaymentStatusSchema,
   amount: NonNegativeIntegerSchema,
   currency: FiatCurrencySchema,
   tipAmount: NonNegativeIntegerSchema,
   accountTransactionId: AccountTransactionId.nullable(),
-  paidAt: TimestampMsSchema.nullable(),
-  expiresAt: TimestampMsSchema.nullable(),
   canceledAt: TimestampMsSchema.nullable(),
 } as const
 
@@ -40,12 +37,12 @@ export const paymentCashRegister = {
 export const paymentSpark = {
   id: PaymentId,
   accountId: AccountId,
-  btcAmountSats: NonNegativeIntegerSchema,
+  amountSats: NonNegativeIntegerSchema,
   exchangeRate: PositiveNumberSchema,
   exchangeRateSource: z.enum(["yadio"]),
   exchangeRateFetchedAt: TimestampMsSchema,
-  sparkInvoice: NonEmptyStringSchema,
-  sparkTechnicalDataJson: z.string().nullable(),
+  lnInvoice: NonEmptyStringSchema,
+  sparkTechnicalData: z.string().nullable(),
 } as const
 
 export const paymentIban = {
@@ -54,6 +51,24 @@ export const paymentIban = {
   variableSymbol: VariableSymbolSchema.nullable(),
   czQrPayload: NonEmptyStringSchema,
 } as const
+
+export const paymentIndexes = ((create) => [
+  create("payment_billId").on("payment").column("billId"),
+  create("payment_tableId").on("payment").column("tableId"),
+  create("payment_createdAt").on("payment").column("createdAt"),
+  create("payment_accountTransactionId")
+    .on("payment")
+    .column("accountTransactionId"),
+  create("paymentCashRegister_accountId")
+    .on("paymentCashRegister")
+    .column("accountId"),
+  create("paymentSpark_accountId").on("paymentSpark").column("accountId"),
+  create("paymentSpark_lnInvoice").on("paymentSpark").column("lnInvoice"),
+  create("paymentIban_accountId").on("paymentIban").column("accountId"),
+  create("paymentIban_variableSymbol")
+    .on("paymentIban")
+    .column("variableSymbol"),
+]) satisfies IndexesConfig
 
 export type PaymentRow = InferTable<typeof payment>
 export type PaymentCashRegisterRow = InferTable<typeof paymentCashRegister>

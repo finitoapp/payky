@@ -1,3 +1,5 @@
+import type { IndexesConfig } from "@evolu/common/local-first"
+
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import { ItemId } from "@/core/modules/item/item-types.ts"
@@ -20,5 +22,9 @@ export const paymentItemLine = {
   quantity: PositiveNumberSchema,
   totalAmount: NonNegativeIntegerSchema,
 } as const
+
+export const paymentItemLineIndexes = ((create) => [
+  create("paymentItemLine_paymentId").on("paymentItemLine").column("paymentId"),
+]) satisfies IndexesConfig
 
 export type PaymentItemLineRow = InferTable<typeof paymentItemLine>

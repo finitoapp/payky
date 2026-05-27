@@ -1,3 +1,5 @@
+import type { IndexesConfig } from "@evolu/common/local-first"
+
 import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import { ItemId } from "@/core/modules/item/item-types.ts"
 import {
@@ -15,5 +17,9 @@ export const item = {
   currency: FiatCurrencySchema,
   unitAmount: NonNegativeIntegerSchema,
 } as const
+
+export const itemIndexes = ((create) => [
+  create("item_catalogItemId").on("item").column("catalogItemId"),
+]) satisfies IndexesConfig
 
 export type ItemRow = InferTable<typeof item>

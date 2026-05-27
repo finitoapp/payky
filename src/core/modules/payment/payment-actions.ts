@@ -100,9 +100,7 @@ export const markPaymentPaid =
         "payment",
         {
           id: paymentId,
-          status: "paid",
           accountTransactionId,
-          paidAt: Date.now(),
         },
         options
       )
@@ -119,7 +117,6 @@ export const cancelPayment =
         "payment",
         {
           id: paymentId,
-          status: "canceled",
           canceledAt: Date.now(),
         },
         options

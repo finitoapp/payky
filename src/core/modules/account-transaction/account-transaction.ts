@@ -1,3 +1,5 @@
+import type { IndexesConfig } from "@evolu/common/local-first"
+
 import { AccountId } from "@/core/modules/account/account-types.ts"
 import { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -41,6 +43,21 @@ export const accountTransactionSpark = {
   preImage: NonEmptyStringSchema,
   paymentHash: NonEmptyStringSchema,
 } as const
+
+export const accountTransactionIndexes = ((create) => [
+  create("accountTransaction_accountId")
+    .on("accountTransaction")
+    .column("accountId"),
+  create("accountTransaction_accountId_occurredAt")
+    .on("accountTransaction")
+    .columns(["accountId", "occurredAt"]),
+  create("accountTransaction_internalTransferGroupId")
+    .on("accountTransaction")
+    .column("internalTransferGroupId"),
+  create("accountTransactionSpark_sparkTransferId")
+    .on("accountTransactionSpark")
+    .column("sparkTransferId"),
+]) satisfies IndexesConfig
 
 export type AccountTransactionRow = InferTable<typeof accountTransaction>
 export type AccountTransactionIbanRow = InferTable<

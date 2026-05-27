@@ -25,13 +25,10 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
         "payment.deviceId",
         "payment.billId",
         "payment.tableId",
-        "payment.status",
         "payment.amount",
         "payment.currency",
         "payment.tipAmount",
         "payment.accountTransactionId",
-        "payment.paidAt",
-        "payment.expiresAt",
         "payment.canceledAt",
         "payment.isDeleted",
         evoluJsonObjectFrom(
@@ -50,12 +47,12 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
             .select([
               "paymentSpark.id",
               "paymentSpark.accountId",
-              "paymentSpark.btcAmountSats",
+              "paymentSpark.amountSats",
               "paymentSpark.exchangeRate",
               "paymentSpark.exchangeRateSource",
               "paymentSpark.exchangeRateFetchedAt",
-              "paymentSpark.sparkInvoice",
-              "paymentSpark.sparkTechnicalDataJson",
+              "paymentSpark.lnInvoice",
+              "paymentSpark.sparkTechnicalData",
               "paymentSpark.isDeleted",
             ])
             .whereRef("paymentSpark.id", "=", "payment.id")
@@ -126,24 +123,21 @@ describe("payment actions", () => {
       deviceId: null,
       billId: null,
       tableId: null,
-      status: "created",
       amount: 12_900,
       currency: "CZK",
       tipAmount: 1_000,
-      paidAt: null,
-      expiresAt: 1_750_000_000_000,
       canceledAt: null,
       cashRegister: {
         accountId: cashRegisterAccountId,
       },
       spark: {
         accountId: sparkAccountId,
-        btcAmountSats: 20_000,
+        amountSats: 20_000,
         exchangeRate: 1_500_000,
         exchangeRateSource: "yadio",
         exchangeRateFetchedAt: 1_700_000_000_000,
-        sparkInvoice: "lnbc200u1test",
-        sparkTechnicalDataJson: JSON.stringify({ paymentHash: "abc" }),
+        lnInvoice: "lnbc200u1test",
+        sparkTechnicalData: JSON.stringify({ paymentHash: "abc" }),
       },
       iban: {
         accountId: ibanAccountId,
@@ -160,13 +154,10 @@ describe("payment actions", () => {
           deviceId: null,
           billId: null,
           tableId: null,
-          status: "created",
           amount: 12_900,
           currency: "CZK",
           tipAmount: 1_000,
           accountTransactionId: null,
-          paidAt: null,
-          expiresAt: 1_750_000_000_000,
           canceledAt: null,
           cashRegister: {
             id,
@@ -175,12 +166,12 @@ describe("payment actions", () => {
           spark: {
             id,
             accountId: sparkAccountId,
-            btcAmountSats: 20_000,
+            amountSats: 20_000,
             exchangeRate: 1_500_000,
             exchangeRateSource: "yadio",
             exchangeRateFetchedAt: 1_700_000_000_000,
-            sparkInvoice: "lnbc200u1test",
-            sparkTechnicalDataJson: JSON.stringify({ paymentHash: "abc" }),
+            lnInvoice: "lnbc200u1test",
+            sparkTechnicalData: JSON.stringify({ paymentHash: "abc" }),
           },
           iban: {
             id,
@@ -196,7 +187,6 @@ describe("payment actions", () => {
       ok: true,
       value: {
         id,
-        status: "created",
         amount: 12_900,
         currency: "CZK",
         tipAmount: 1_000,
@@ -214,12 +204,9 @@ describe("payment actions", () => {
       deviceId: null,
       billId: null,
       tableId: null,
-      status: "pending",
       amount: 12_900,
       currency: "CZK",
       tipAmount: 0,
-      paidAt: null,
-      expiresAt: null,
       canceledAt: null,
       cashRegister: {
         accountId: cashRegisterAccountId,
@@ -244,13 +231,9 @@ describe("payment actions", () => {
       .toMatchObject([
         {
           id,
-          status: "paid",
           accountTransactionId,
         },
       ])
-    await expect
-      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
-      .toSatisfy((rows) => rows[0]?.paidAt !== null)
   }, 15_000)
 
   test("cancels a payment", async () => {
@@ -263,12 +246,9 @@ describe("payment actions", () => {
       deviceId: null,
       billId: null,
       tableId: null,
-      status: "created",
       amount: 12_900,
       currency: "CZK",
       tipAmount: 0,
-      paidAt: null,
-      expiresAt: null,
       canceledAt: null,
       iban: {
         accountId: ibanAccountId,
@@ -284,7 +264,6 @@ describe("payment actions", () => {
       .toMatchObject([
         {
           id,
-          status: "canceled",
         },
       ])
     await expect

@@ -40,6 +40,10 @@ import {
 } from "@/core/modules/payment-item-line/payment-item-line.ts"
 import { paymentLastNumber } from "@/core/modules/payment-last-number/payment-last-number.ts"
 import { paymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series.ts"
+import {
+  reconciliationClaim,
+  reconciliationClaimIndexes,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim.ts"
 import { table } from "@/core/modules/table/table.ts"
 
 export const AppSchema = {
@@ -62,6 +66,7 @@ export const AppSchema = {
   paymentSpark,
   paymentIban,
   paymentItemLine,
+  reconciliationClaim,
   appSettings,
   paymentNumberSeries,
   paymentLastNumber,
@@ -78,6 +83,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...billItemLineIndexes(create),
   ...paymentIndexes(create),
   ...paymentItemLineIndexes(create),
+  ...reconciliationClaimIndexes(create),
   ...deviceIndexes(create),
 ]
 

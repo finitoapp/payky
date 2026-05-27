@@ -28,7 +28,6 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
         "payment.amount",
         "payment.currency",
         "payment.tipAmount",
-        "payment.accountTransactionId",
         "payment.canceledAt",
         "payment.isDeleted",
         evoluJsonObjectFrom(
@@ -71,6 +70,11 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
         ).as("iban"),
       ])
       .where("payment.id", "=", id)
+  )
+
+const reconciliationClaimsByPaymentIdQuery = (id: PaymentId) =>
+  createQuery((db) =>
+    db.selectFrom("reconciliationClaim").selectAll().where("paymentId", "=", id)
   )
 
 const createPaymentAccounts = async (
@@ -157,7 +161,6 @@ describe("payment actions", () => {
           amount: 12_900,
           currency: "CZK",
           tipAmount: 1_000,
-          accountTransactionId: null,
           canceledAt: null,
           cashRegister: {
             id,
@@ -227,11 +230,12 @@ describe("payment actions", () => {
     )
 
     await expect
-      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
+      .poll(() => evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id)))
       .toMatchObject([
         {
-          id,
+          paymentId: id,
           accountTransactionId,
+          source: "manual",
         },
       ])
   }, 15_000)

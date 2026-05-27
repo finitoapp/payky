@@ -8,6 +8,7 @@ import type {
   paymentIban,
   paymentSpark,
 } from "@/core/modules/payment/payment.ts"
+import type { ReconciliationClaimSource } from "@/core/modules/reconciliation-claim/reconciliation-claim.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createTableId,
@@ -34,7 +35,7 @@ export const createPayment =
     spark,
     iban,
     ...input
-  }: Omit<InsertValues<typeof payment>, "accountTransactionId"> & {
+  }: InsertValues<typeof payment> & {
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: Omit<InsertValues<typeof paymentSpark>, "id">
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
@@ -80,7 +81,6 @@ export const createPayment =
         removeUndefinedValues({
           ...input,
           id,
-          accountTransactionId: undefined,
         }),
         options
       )
@@ -93,15 +93,22 @@ export const markPaymentPaid =
   (deps: EvoluDep) =>
   async (
     paymentId: PaymentId,
-    accountTransactionId: AccountTransactionId
+    accountTransactionId: AccountTransactionId,
+    source: ReconciliationClaimSource = "manual"
   ): Promise<PaymentId> => {
+    const id = createTableId<"ReconciliationClaim">()
+
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
-        "payment",
-        {
-          id: paymentId,
+      deps.evolu.upsert(
+        "reconciliationClaim",
+        removeUndefinedValues({
+          id,
+          deviceId: null,
+          paymentId,
           accountTransactionId,
-        },
+          source,
+          claimedAt: Date.now(),
+        }),
         options
       )
     )

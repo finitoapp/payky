@@ -1,4 +1,4 @@
-import type { IntegerString, TimestampMs } from "@/modules/shared/schema"
+import type { IntegerString, TimestampMs } from "@/core/modules/shared/schema"
 
 declare global {
   interface BigInt {

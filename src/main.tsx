@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client"
 import "./index.css"
 import { createRun } from "@evolu/common"
 import { createEvoluDeps } from "@evolu/react-web"
-import { createAppEvolu } from "@/evolu/client.ts"
+import { createAppEvolu } from "@/core/evolu/client.ts"
 import { AppProviders } from "@/providers/evolu.tsx"
 import App from "./App.tsx"
 

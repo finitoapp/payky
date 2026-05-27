@@ -2,7 +2,7 @@ import { createEvoluBinding } from "@evolu/react"
 import type { PropsWithChildren } from "react"
 
 import { ThemeProvider } from "@/components/theme-provider.tsx"
-import { AppSchema, type Evolu } from "@/evolu/schema.ts"
+import { AppSchema, type Evolu } from "@/core/evolu/schema.ts"
 
 export const {
   EvoluContext,

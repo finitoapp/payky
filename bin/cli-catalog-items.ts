@@ -1,25 +1,25 @@
 import { sqliteTrue } from "@evolu/common"
 import { createCommand } from "commander"
 import { zodCommand } from "zod-commander/zod4"
-import { CatalogItemId } from "@/modules/catalog-item/catalog-item-types.ts"
-import { createEvoluCli } from "../src/evolu/cli-client"
+import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { createEvoluCli } from "../src/core/evolu/cli-client"
 import {
   createCatalogItem,
   updateCatalogItem,
-} from "../src/modules/catalog-item/catalog-item-actions"
+} from "../src/core/modules/catalog-item/catalog-item-actions"
 import {
   catalogItemByIdQuery,
   catalogItemsQuery,
-} from "../src/modules/catalog-item/catalog-item-queries"
+} from "../src/core/modules/catalog-item/catalog-item-queries"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
-} from "../src/modules/shared/schema"
+} from "../src/core/modules/shared/schema"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
-} from "../src/modules/shared/utils"
+} from "../src/core/modules/shared/utils"
 
 export const catalogItemsCommand = createCommand("catalog-items")
 

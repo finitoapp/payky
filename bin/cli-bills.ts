@@ -1,7 +1,7 @@
 import { createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import { createEvoluCli } from "../src/evolu/cli-client"
+import { createEvoluCli } from "../src/core/evolu/cli-client"
 import {
   addCatalogItemToBill,
   addManualAmountToBill,
@@ -16,23 +16,23 @@ import {
   partiallyPayBill,
   removeTableFromBill,
   splitBill,
-} from "../src/modules/bill/bill-actions"
-import { BillId } from "../src/modules/bill/bill-types"
-import { loadCalculatedBillItems } from "../src/modules/bill/bill-utils"
-import type { BillItemRow } from "../src/modules/bill-item/bill-item"
-import { BillItemId } from "../src/modules/bill-item/bill-item-types"
-import { CatalogItemId } from "../src/modules/catalog-item/catalog-item-types"
-import { DeviceId } from "../src/modules/device/device-types"
-import { PaymentId } from "../src/modules/payment/payment-types"
-import type { ActionError } from "../src/modules/shared/action-error"
+} from "../src/core/modules/bill/bill-actions"
+import { BillId } from "../src/core/modules/bill/bill-types"
+import { loadCalculatedBillItems } from "../src/core/modules/bill/bill-utils"
+import type { BillItemRow } from "../src/core/modules/bill-item/bill-item"
+import { BillItemId } from "../src/core/modules/bill-item/bill-item-types"
+import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
+import { DeviceId } from "../src/core/modules/device/device-types"
+import { PaymentId } from "../src/core/modules/payment/payment-types"
+import type { ActionError } from "../src/core/modules/shared/action-error"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
   PositiveIntegerFromStringSchema,
   PositiveNumberFromStringSchema,
-} from "../src/modules/shared/schema"
-import { TableId } from "../src/modules/table/table-types"
+} from "../src/core/modules/shared/schema"
+import { TableId } from "../src/core/modules/table/table-types"
 
 declare const process: {
   exitCode?: number

@@ -1,18 +1,19 @@
 import { z } from "zod"
 
+import { AccountId } from "@/modules/account/account-types.ts"
+import { AccountTransactionId } from "@/modules/account-transaction/account-transaction-types.ts"
 import { BillId } from "@/modules/bill/bill-types.ts"
 import { DeviceId } from "@/modules/device/device-types.ts"
 import { PaymentId } from "@/modules/payment/payment-types.ts"
 import {
   FiatCurrencySchema,
   type InferTable,
-  NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
-  PaymentMethodSchema,
   PaymentStatusSchema,
   PositiveNumberSchema,
   TimestampMsSchema,
+  VariableSymbolSchema,
 } from "@/modules/shared/schema.ts"
 import { TableId } from "@/modules/table/table-types.ts"
 
@@ -21,22 +22,40 @@ export const payment = {
   deviceId: DeviceId.nullable(),
   billId: BillId.nullable(),
   tableId: TableId.nullable(),
-  method: PaymentMethodSchema,
   status: PaymentStatusSchema,
-  fiatAmount: NonNegativeIntegerSchema,
-  fiatCurrency: FiatCurrencySchema,
+  amount: NonNegativeIntegerSchema,
+  currency: FiatCurrencySchema,
   tipAmount: NonNegativeIntegerSchema,
-  btcAmountSats: NonNegativeIntegerSchema.nullable(),
-  exchangeRate: PositiveNumberSchema.nullable(),
-  exchangeRateSource: z.enum(["yadio"]).nullable(),
-  exchangeRateFetchedAt: TimestampMsSchema.nullable(),
-  variableSymbol: NonEmptyString255Schema.nullable(),
-  bankQrPayload: NonEmptyStringSchema.nullable(),
-  sparkInvoice: NonEmptyStringSchema.nullable(),
-  sparkTechnicalDataJson: z.string().nullable(),
+  accountTransactionId: AccountTransactionId.nullable(),
   paidAt: TimestampMsSchema.nullable(),
   expiresAt: TimestampMsSchema.nullable(),
   canceledAt: TimestampMsSchema.nullable(),
 } as const
 
+export const paymentCashRegister = {
+  id: PaymentId,
+  accountId: AccountId,
+} as const
+
+export const paymentSpark = {
+  id: PaymentId,
+  accountId: AccountId,
+  btcAmountSats: NonNegativeIntegerSchema,
+  exchangeRate: PositiveNumberSchema,
+  exchangeRateSource: z.enum(["yadio"]),
+  exchangeRateFetchedAt: TimestampMsSchema,
+  sparkInvoice: NonEmptyStringSchema,
+  sparkTechnicalDataJson: z.string().nullable(),
+} as const
+
+export const paymentIban = {
+  id: PaymentId,
+  accountId: AccountId,
+  variableSymbol: VariableSymbolSchema.nullable(),
+  czQrPayload: NonEmptyStringSchema,
+} as const
+
 export type PaymentRow = InferTable<typeof payment>
+export type PaymentCashRegisterRow = InferTable<typeof paymentCashRegister>
+export type PaymentSparkRow = InferTable<typeof paymentSpark>
+export type PaymentIbanRow = InferTable<typeof paymentIban>

@@ -19,7 +19,12 @@ import { billItemLine } from "@/modules/bill-item-line/bill-item-line.ts"
 import { catalogItem } from "@/modules/catalog-item/catalog-item.ts"
 import { device } from "@/modules/device/device.ts"
 import { item } from "@/modules/item/item.ts"
-import { payment } from "@/modules/payment/payment.ts"
+import {
+  payment,
+  paymentCashRegister,
+  paymentIban,
+  paymentSpark,
+} from "@/modules/payment/payment.ts"
 import { paymentItemLine } from "@/modules/payment-item-line/payment-item-line.ts"
 import { paymentLastNumber } from "@/modules/payment-last-number/payment-last-number.ts"
 import { paymentNumberSeries } from "@/modules/payment-number-series/payment-number-series.ts"
@@ -41,6 +46,9 @@ export const AppSchema = {
   billItemLine,
   billItem,
   payment,
+  paymentCashRegister,
+  paymentSpark,
+  paymentIban,
   paymentItemLine,
   appSettings,
   paymentNumberSeries,
@@ -76,9 +84,18 @@ export const createAppIndexes: IndexesConfig = (create) => [
   create("payment_tableId").on("payment").column("tableId"),
   create("payment_status").on("payment").column("status"),
   create("payment_createdAt").on("payment").column("createdAt"),
-  create("payment_method_createdAt")
+  create("payment_accountTransactionId")
     .on("payment")
-    .columns(["method", "createdAt"]),
+    .column("accountTransactionId"),
+  create("paymentCashRegister_accountId")
+    .on("paymentCashRegister")
+    .column("accountId"),
+  create("paymentSpark_accountId").on("paymentSpark").column("accountId"),
+  create("paymentSpark_sparkInvoice").on("paymentSpark").column("sparkInvoice"),
+  create("paymentIban_accountId").on("paymentIban").column("accountId"),
+  create("paymentIban_variableSymbol")
+    .on("paymentIban")
+    .column("variableSymbol"),
   create("paymentItemLine_paymentId").on("paymentItemLine").column("paymentId"),
   create("device_name").on("device").column("name"),
 ]

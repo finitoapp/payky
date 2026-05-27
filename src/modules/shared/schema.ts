@@ -87,7 +87,6 @@ export const PositiveIntegerFromStringSchema = z
 export const FiatCurrencySchema = z.enum(["CZK"])
 export const CurrencySchema = z.enum(["CZK", "BTC"])
 export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
-export const PaymentMethodSchema = z.enum(["cash", "spark", "bankQr"])
 export const PaymentStatusSchema = z.enum([
   "created",
   "pending",
@@ -128,7 +127,6 @@ export const SpecificSymbolSchema = z
 export type FiatCurrency = z.output<typeof FiatCurrencySchema>
 export type Currency = z.output<typeof CurrencySchema>
 export type AccountKind = z.output<typeof AccountKindSchema>
-export type PaymentMethod = z.output<typeof PaymentMethodSchema>
 export type PaymentStatus = z.output<typeof PaymentStatusSchema>
 export type BillStatus = z.output<typeof BillStatusSchema>
 export type BillItemType = z.output<typeof BillItemTypeSchema>

@@ -9,16 +9,14 @@ export const paymentByIdQuery = (idValue: PaymentId) =>
       .selectFrom("payment")
       .selectAll()
       .where("id", "=", idValue)
-      .where("method", "is not", null)
       .where("status", "is not", null)
-      .where("fiatAmount", "is not", null)
-      .where("fiatCurrency", "is not", null)
+      .where("amount", "is not", null)
+      .where("currency", "is not", null)
       .where("tipAmount", "is not", null)
       .$narrowType<{
-        method: KyselyNotNull
         status: KyselyNotNull
-        fiatAmount: KyselyNotNull
-        fiatCurrency: KyselyNotNull
+        amount: KyselyNotNull
+        currency: KyselyNotNull
         tipAmount: KyselyNotNull
       }>()
   )

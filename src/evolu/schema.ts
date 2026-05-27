@@ -1,6 +1,17 @@
 import { type Evolu as BaseEvolu, createQueryBuilder } from "@evolu/common"
 import type { IndexesConfig } from "@evolu/common/local-first"
 
+import {
+  account,
+  accountCashRegister,
+  accountIban,
+  accountSpark,
+} from "@/modules/account/account.ts"
+import {
+  accountTransaction,
+  accountTransactionIban,
+  accountTransactionSpark,
+} from "@/modules/account-transaction/account-transaction.ts"
 import { appSettings } from "@/modules/app-settings/app-settings.ts"
 import { bill } from "@/modules/bill/bill.ts"
 import { billItem } from "@/modules/bill-item/bill-item.ts"
@@ -16,6 +27,13 @@ import { table } from "@/modules/table/table.ts"
 
 export const AppSchema = {
   device,
+  account,
+  accountIban,
+  accountSpark,
+  accountCashRegister,
+  accountTransaction,
+  accountTransactionIban,
+  accountTransactionSpark,
   catalogItem,
   item,
   table,
@@ -32,6 +50,19 @@ export const AppSchema = {
 export const createQuery = createQueryBuilder(AppSchema)
 
 export const createAppIndexes: IndexesConfig = (create) => [
+  create("account_kind").on("account").column("kind"),
+  create("accountTransaction_accountId")
+    .on("accountTransaction")
+    .column("accountId"),
+  create("accountTransaction_accountId_occurredAt")
+    .on("accountTransaction")
+    .columns(["accountId", "occurredAt"]),
+  create("accountTransaction_internalTransferGroupId")
+    .on("accountTransaction")
+    .column("internalTransferGroupId"),
+  create("accountTransactionSpark_sparkTransferId")
+    .on("accountTransactionSpark")
+    .column("sparkTransferId"),
   create("item_catalogItemId").on("item").column("catalogItemId"),
   create("bill_status").on("bill").column("status"),
   create("bill_tableId_status").on("bill").columns(["tableId", "status"]),

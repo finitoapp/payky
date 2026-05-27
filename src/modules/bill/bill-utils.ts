@@ -45,7 +45,7 @@ export const calculateBillItems = (
       type: line.type,
     })
     const existing = projected.get(idValue)
-    const direction = line._tag === "add" ? 1 : -1
+    const direction = line.kind === "add" ? 1 : -1
     const nextQuantity = PositiveInteger(
       (existing?.quantity ?? 0) + direction * line.quantity
     )

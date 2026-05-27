@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "biome lint .",
     "format": "biome check --write .",
     "check": "biome check .",
+    "verify": "bun run check && bun run typecheck && bun run test",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b",

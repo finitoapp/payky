@@ -1,12 +1,19 @@
-import type { MutationOptions } from "@evolu/common"
+import {
+  type Brand,
+  createId,
+  createRandomBytes,
+  type Id,
+  type MutationOptions,
+  type TypeName,
+} from "@evolu/common"
 import type { ConditionalExcept } from "type-fest"
 
-export interface MutationCompletion {
+interface MutationCompletion {
   readonly options: MutationOptions
   readonly promise: Promise<void>
 }
 
-export const createMutationCompletion = (): MutationCompletion => {
+const createMutationCompletion = (): MutationCompletion => {
   const completed = Promise.withResolvers<void>()
 
   return {
@@ -39,3 +46,8 @@ export const removeUndefinedValues = <const TData extends object>(
   }
   return values as ConditionalExcept<TData, undefined>
 }
+
+const randomBytes = createRandomBytes()
+
+export const createTableId = <Table extends TypeName>(): Id & Brand<Table> =>
+  createId<Table>({ randomBytes }) as Id & Brand<Table>

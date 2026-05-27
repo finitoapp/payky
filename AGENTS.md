@@ -61,3 +61,9 @@
 - Prefer named exports.
     - Avoid new default exports unless the nearby module family already uses them or a framework requires them, such as Storybook stories or existing framework interop helpers.
 
+## Architecture Rules
+
+- Define action input object types inline in function parameters; avoid separate `CreateXInput` or `UpdateXInput` aliases.
+- For aggregate extension/detail tables sharing the root id, soft delete only the root row unless the detail has its own lifecycle.
+- For CRDT actions, write tombstones and updates directly without preloading rows, unless current data is required for a domain invariant.
+- Pass Evolu mutation payloads through `removeUndefinedValues` to avoid extra or undefined fields.

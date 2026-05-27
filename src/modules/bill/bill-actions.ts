@@ -129,7 +129,7 @@ export const addCatalogItemToBill =
       catalogItemId: catalogItemResult.value.id,
       itemId: item.id,
       type: "catalogItem",
-      _tag: "add",
+      kind: "add",
       quantity: input.quantity,
       totalAmount: NonNegativeInteger(
         catalogItemResult.value.unitAmount * input.quantity
@@ -164,7 +164,7 @@ export const addManualAmountToBill =
       catalogItemId: null,
       itemId: snapshot.id,
       type: "manualAmount",
-      _tag: "add",
+      kind: "add",
       quantity: PositiveNumber(1),
       totalAmount: input.totalAmount,
     })
@@ -197,7 +197,7 @@ export const addTipToBill =
       catalogItemId: null,
       itemId: snapshot.id,
       type: "tip",
-      _tag: "add",
+      kind: "add",
       quantity: PositiveNumber(1),
       totalAmount: input.totalAmount,
     })
@@ -223,7 +223,7 @@ export const appendRemoveBillItemLine =
       catalogItemId: input.billItem.catalogItemId,
       itemId: input.billItem.itemId,
       type: input.billItem.type,
-      _tag: "remove",
+      kind: "remove",
       quantity: input.quantity,
       totalAmount: input.totalAmount,
     })
@@ -260,7 +260,7 @@ export const splitBill =
         catalogItemId: item.catalogItemId,
         itemId: item.itemId,
         type: item.type,
-        _tag: "remove",
+        kind: "remove",
         quantity: item.quantity,
         totalAmount: item.totalAmount,
       })
@@ -270,7 +270,7 @@ export const splitBill =
         catalogItemId: item.catalogItemId,
         itemId: item.itemId,
         type: item.type,
-        _tag: "add",
+        kind: "add",
         quantity: item.quantity,
         totalAmount: item.totalAmount,
       })

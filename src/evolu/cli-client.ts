@@ -29,7 +29,10 @@ import { createAppEvolu } from "@/evolu/client.ts"
 
 const createSqliteDep: CreateSqliteDriverDep = {
   createSqliteDriver: (name) =>
-    createBetterSqliteDriver(name, { mode: "test.db" }),
+    createBetterSqliteDriver(name, {
+      // @ts-expect-error
+      mode: "test.db",
+    }),
 }
 
 export const setupRunWithEvoluDeps = async () => {

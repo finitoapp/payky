@@ -28,14 +28,14 @@ export const billLinesByBillIdQuery = (billId: BillId) =>
       .where("billId", "is not", null)
       .where("itemId", "is not", null)
       .where("type", "is not", null)
-      .where("_tag", "is not", null)
+      .where("kind", "is not", null)
       .where("quantity", "is not", null)
       .where("totalAmount", "is not", null)
       .$narrowType<{
         billId: KyselyNotNull
         itemId: KyselyNotNull
         type: KyselyNotNull
-        _tag: KyselyNotNull
+        kind: KyselyNotNull
         quantity: KyselyNotNull
         totalAmount: KyselyNotNull
       }>()

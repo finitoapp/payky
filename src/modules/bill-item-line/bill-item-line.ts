@@ -18,7 +18,7 @@ export const billItemLine = {
   catalogItemId: CatalogItemId.nullable(),
   itemId: ItemId,
   type: BillItemTypeSchema,
-  _tag: BillItemLineTagSchema,
+  kind: BillItemLineTagSchema,
   quantity: PositiveNumberSchema,
   totalAmount: NonNegativeIntegerSchema,
 } as const

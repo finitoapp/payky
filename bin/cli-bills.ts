@@ -1,3 +1,4 @@
+import { createRun } from "@evolu/nodejs"
 import { createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
@@ -8,9 +9,6 @@ import {
   addTipToBill,
   appendRemoveBillItemLine,
   assignBillToTable,
-  type BillItemProjectionMissingError,
-  type BillNotFoundError,
-  type CatalogItemNotFoundError,
   cancelBill,
   closeBillAsPaid,
   createBill,
@@ -62,24 +60,6 @@ const BillItemIdsFromStringSchema = z
     return ids
   })
 
-type BillCliActionError =
-  | BillItemProjectionMissingError
-  | BillNotFoundError
-  | CatalogItemNotFoundError
-
-const printActionError = (error: BillCliActionError): void => {
-  if (error.type === "BillNotFound") {
-    console.error(`bill not found: ${error.id}`)
-  } else if (error.type === "CatalogItemNotFound") {
-    console.error(`catalogItem not found: ${error.id}`)
-  } else {
-    console.error(
-      `bill item projection missing for ${error.lineType} item ${error.itemId} on bill ${error.billId}`
-    )
-  }
-  process.exitCode = 1
-}
-
 const findBillItem = (
   items: ReadonlyArray<BillItemRow>,
   id: z.output<typeof BillItemId>
@@ -100,8 +80,9 @@ billsCommand
       async action() {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const results = await listOpenBills({ evolu })()
+        const results = await run.orThrow(listOpenBills())
 
         console.table(
           results.map(({ bill, items }) => ({
@@ -125,14 +106,11 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const billResult = await loadBill({ evolu })(options.id)
-        if (!billResult.ok) {
-          printActionError(billResult.error)
-          return
-        }
+        const bill = await run.orThrow(loadBill(options.id))
 
-        console.table([billResult.value])
+        console.table([bill])
         console.table(await loadCalculatedBillItems({ evolu })(options.id))
       },
     })
@@ -157,6 +135,7 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const data = {
           deviceId: options.deviceId ?? null,
@@ -166,7 +145,7 @@ billsCommand
           currency: options.currency,
         }
 
-        const id = await createBill({ evolu })(data)
+        const id = await run.orThrow(createBill(data))
 
         console.log(`Inserted bill ${id}: ${JSON.stringify({ id, ...data })}`)
       },
@@ -185,8 +164,9 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await assignBillToTable({ evolu })(options)
+        await run.orThrow(assignBillToTable(options))
         console.log(`Assigned bill ${options.id} to table ${options.tableId}`)
       },
     })
@@ -203,8 +183,9 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await removeTableFromBill({ evolu })(options.id)
+        await run.orThrow(removeTableFromBill(options.id))
         console.log(`Removed table from bill ${options.id}`)
       },
     })
@@ -224,17 +205,16 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const result = await addCatalogItemToBill({ evolu })({
-          ...options,
-          deviceId: options.deviceId ?? null,
-        })
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
+        const billItem = await run.orThrow(
+          addCatalogItemToBill({
+            ...options,
+            deviceId: options.deviceId ?? null,
+          })
+        )
 
-        console.table([result.value])
+        console.table([billItem])
       },
     })
   )
@@ -256,17 +236,16 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const result = await addManualAmountToBill({ evolu })({
-          ...options,
-          deviceId: options.deviceId ?? null,
-        })
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
+        const billItem = await run.orThrow(
+          addManualAmountToBill({
+            ...options,
+            deviceId: options.deviceId ?? null,
+          })
+        )
 
-        console.table([result.value])
+        console.table([billItem])
       },
     })
   )
@@ -287,17 +266,16 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const result = await addTipToBill({ evolu })({
-          ...options,
-          deviceId: options.deviceId ?? null,
-        })
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
+        const billItem = await run.orThrow(
+          addTipToBill({
+            ...options,
+            deviceId: options.deviceId ?? null,
+          })
+        )
 
-        console.table([result.value])
+        console.table([billItem])
       },
     })
   )
@@ -322,6 +300,7 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const billItem = findBillItem(
           await loadCalculatedBillItems({ evolu })(options.billId),
@@ -333,19 +312,17 @@ billsCommand
           return
         }
 
-        const result = await appendRemoveBillItemLine({ evolu })({
-          billId: options.billId,
-          deviceId: options.deviceId ?? null,
-          billItem,
-          quantity: options.quantity,
-          totalAmount: options.totalAmount,
-        })
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
+        const appendedBillItem = await run.orThrow(
+          appendRemoveBillItemLine({
+            billId: options.billId,
+            deviceId: options.deviceId ?? null,
+            billItem,
+            quantity: options.quantity,
+            totalAmount: options.totalAmount,
+          })
+        )
 
-        console.table(result.value == null ? [] : [result.value])
+        console.table(appendedBillItem == null ? [] : [appendedBillItem])
       },
     })
   )
@@ -365,6 +342,7 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const sourceItems = await loadCalculatedBillItems({ evolu })(
           options.sourceBillId
@@ -381,18 +359,16 @@ billsCommand
           selectedItems.push(billItem)
         }
 
-        const result = await splitBill({ evolu })({
-          sourceBillId: options.sourceBillId,
-          targetBillId: options.targetBillId,
-          items: selectedItems,
-        })
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
+        const result = await run.orThrow(
+          splitBill({
+            sourceBillId: options.sourceBillId,
+            targetBillId: options.targetBillId,
+            items: selectedItems,
+          })
+        )
 
-        console.table([result.value.bill])
-        console.table(result.value.items)
+        console.table([result.bill])
+        console.table(result.items)
       },
     })
   )
@@ -409,8 +385,9 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await partiallyPayBill({ evolu })(options)
+        await run.orThrow(partiallyPayBill(options))
         console.log(`Marked bill ${options.id} as partially paid`)
       },
     })
@@ -427,8 +404,9 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await cancelBill({ evolu })(options.id)
+        await run.orThrow(cancelBill(options.id))
         console.log(`Canceled bill ${options.id}`)
       },
     })
@@ -445,8 +423,9 @@ billsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await closeBillAsPaid({ evolu })(options.id)
+        await run.orThrow(closeBillAsPaid(options.id))
         console.log(`Closed bill ${options.id} as paid`)
       },
     })

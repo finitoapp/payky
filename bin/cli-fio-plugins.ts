@@ -15,7 +15,6 @@ import { AccountId } from "../src/core/modules/account/account-types"
 import {
   createFioPlugin,
   deleteFioPlugin,
-  type FioPluginNotFoundError,
   loadFioPlugin,
   updateFioPlugin,
 } from "../src/core/modules/fio-plugin/fio-plugin-actions"
@@ -25,10 +24,6 @@ import {
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
-
-declare const process: {
-  exitCode?: number
-}
 
 const SqliteBooleanFromStringSchema = z
   .enum(["true", "false", "1", "0"])
@@ -89,15 +84,6 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
       ])
       .where("fioPlugin.id", "=", id)
   )
-
-const printActionError = (
-  error: { readonly type: "AbortError" } | FioPluginNotFoundError
-): void => {
-  if (error.type === "AbortError") return
-
-  console.error(`fioPlugin not found: ${error.id}`)
-  process.exitCode = 1
-}
 
 export const fioPluginsCommand = createCommand("fio-plugins").description(
   "Manage FIO API plugin settings."
@@ -170,7 +156,7 @@ fioPluginsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const result = await run(
+        const fioPluginId = await run.orThrow(
           createFioPlugin({
             accountId: options.accountId,
             apiUrl: options.apiUrl,
@@ -180,12 +166,7 @@ fioPluginsCommand
           })
         )
 
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
-
-        console.log(`Inserted FIO plugin ${result.value}`)
+        console.log(`Inserted FIO plugin ${fioPluginId}`)
       },
     })
   )
@@ -213,13 +194,9 @@ fioPluginsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const pluginResult = await run(loadFioPlugin(options.id))
-        if (!pluginResult.ok) {
-          printActionError(pluginResult.error)
-          return
-        }
+        await run.orThrow(loadFioPlugin(options.id))
 
-        const result = await run(
+        const fioPluginId = await run.orThrow(
           updateFioPlugin({
             id: options.id,
             accountId: options.accountId,
@@ -230,12 +207,7 @@ fioPluginsCommand
           })
         )
 
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
-
-        console.log(`Updated FIO plugin ${result.value}`)
+        console.log(`Updated FIO plugin ${fioPluginId}`)
       },
     })
   )
@@ -253,13 +225,9 @@ fioPluginsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const result = await run(deleteFioPlugin(options.id))
-        if (!result.ok) {
-          printActionError(result.error)
-          return
-        }
+        const fioPluginId = await run.orThrow(deleteFioPlugin(options.id))
 
-        console.log(`Deleted FIO plugin ${result.value}`)
+        console.log(`Deleted FIO plugin ${fioPluginId}`)
       },
     })
   )

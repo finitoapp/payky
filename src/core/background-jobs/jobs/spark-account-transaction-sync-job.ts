@@ -3,6 +3,7 @@ import {
   SparkWalletEvent,
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
+import { createRun } from "@evolu/common"
 import { validateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english"
 
@@ -404,8 +405,15 @@ class SparkAccountSync {
       )
       if (existing.length > 0) return
 
-      await createAccountTransaction(this.deps)(
-        createSparkTransactionInput(this.account.id, sparkTransferId, transfer)
+      const run = createRun(this.deps)
+      await run.orThrow(
+        createAccountTransaction(
+          createSparkTransactionInput(
+            this.account.id,
+            sparkTransferId,
+            transfer
+          )
+        )
       )
     })
   }

@@ -1,4 +1,10 @@
-import { type InsertValues, sqliteTrue, type UpdateValues } from "@evolu/common"
+import {
+  type InsertValues,
+  ok,
+  sqliteTrue,
+  type Task,
+  type UpdateValues,
+} from "@evolu/common"
 
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -15,8 +21,7 @@ import type {
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 
 export const createAccountTransaction =
-  (deps: EvoluDep) =>
-  async ({
+  ({
     iban,
     spark,
     ...input
@@ -34,7 +39,8 @@ export const createAccountTransaction =
           readonly iban?: never
           readonly spark?: never
         }
-    )): Promise<AccountTransactionId> => {
+    )): Task<AccountTransactionId, never, EvoluDep> =>
+  async (run) => {
     const id = createTableId<"AccountTransaction">()
 
     await runMutationWithCompletion((options) => {
@@ -42,7 +48,7 @@ export const createAccountTransaction =
 
       if (iban) {
         kind = "iban"
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "accountTransactionIban",
           removeUndefinedValues({
             ...iban,
@@ -54,7 +60,7 @@ export const createAccountTransaction =
 
       if (spark) {
         kind = "spark"
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "accountTransactionSpark",
           removeUndefinedValues({
             ...spark,
@@ -64,7 +70,7 @@ export const createAccountTransaction =
         )
       }
 
-      return deps.evolu.upsert(
+      return run.deps.evolu.upsert(
         "accountTransaction",
         removeUndefinedValues({
           ...input,
@@ -75,12 +81,11 @@ export const createAccountTransaction =
       )
     })
 
-    return id
+    return ok(id)
   }
 
 export const updateAccountTransaction =
-  (deps: EvoluDep) =>
-  async ({
+  ({
     iban,
     spark,
     ...input
@@ -111,13 +116,14 @@ export const updateAccountTransaction =
           readonly iban?: never
           readonly spark?: never
         }
-    )): Promise<AccountTransactionId> => {
+    )): Task<AccountTransactionId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) => {
       let kind: AccountTransactionRow["kind"] = "cashRegister"
 
       if (iban) {
         kind = "iban"
-        deps.evolu.update(
+        run.deps.evolu.update(
           "accountTransactionIban",
           removeUndefinedValues({
             ...iban,
@@ -129,7 +135,7 @@ export const updateAccountTransaction =
 
       if (spark) {
         kind = "spark"
-        deps.evolu.update(
+        run.deps.evolu.update(
           "accountTransactionSpark",
           removeUndefinedValues({
             ...spark,
@@ -139,7 +145,7 @@ export const updateAccountTransaction =
         )
       }
 
-      return deps.evolu.update(
+      return run.deps.evolu.update(
         "accountTransaction",
         removeUndefinedValues({
           ...input,
@@ -149,14 +155,16 @@ export const updateAccountTransaction =
       )
     })
 
-    return input.id
+    return ok(input.id)
   }
 
 export const deleteAccountTransaction =
-  (deps: EvoluDep) =>
-  async (idValue: AccountTransactionId): Promise<AccountTransactionId> => {
+  (
+    idValue: AccountTransactionId
+  ): Task<AccountTransactionId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "accountTransaction",
         {
           id: idValue,
@@ -166,5 +174,5 @@ export const deleteAccountTransaction =
       )
     )
 
-    return idValue
+    return ok(idValue)
   }

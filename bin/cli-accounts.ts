@@ -1,5 +1,6 @@
 import { SparkWallet } from "@buildonspark/spark-sdk"
 import { evoluJsonObjectFrom } from "@evolu/common"
+import { createRun } from "@evolu/nodejs"
 import { createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
@@ -89,11 +90,6 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
       .where("account.id", "=", id)
   )
 
-const printAccountNotFound = (id: AccountId): void => {
-  console.error(`account not found: ${id}`)
-  process.exitCode = 1
-}
-
 const printInvalidAccountInput = (message: string): void => {
   console.error(message)
   process.exitCode = 1
@@ -169,6 +165,7 @@ accountsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const root = {
           deviceId: options.deviceId ?? null,
@@ -183,13 +180,15 @@ accountsCommand
             return
           }
 
-          const id = await createAccount({ evolu })({
-            ...root,
-            iban: {
-              iban: options.iban,
-              currency: options.currency,
-            },
-          })
+          const id = await run.orThrow(
+            createAccount({
+              ...root,
+              iban: {
+                iban: options.iban,
+                currency: options.currency,
+              },
+            })
+          )
           console.log(`Inserted account ${id}`)
           return
         }
@@ -200,12 +199,14 @@ accountsCommand
             return
           }
 
-          const id = await createAccount({ evolu })({
-            ...root,
-            spark: {
-              mnemonic: options.mnemonic,
-            },
-          })
+          const id = await run.orThrow(
+            createAccount({
+              ...root,
+              spark: {
+                mnemonic: options.mnemonic,
+              },
+            })
+          )
           console.log(`Inserted account ${id}`)
           return
         }
@@ -215,12 +216,14 @@ accountsCommand
           return
         }
 
-        const id = await createAccount({ evolu })({
-          ...root,
-          cashRegister: {
-            currency: options.currency,
-          },
-        })
+        const id = await run.orThrow(
+          createAccount({
+            ...root,
+            cashRegister: {
+              currency: options.currency,
+            },
+          })
+        )
         console.log(`Inserted account ${id}`)
       },
     })
@@ -241,6 +244,7 @@ accountsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
         const network = options.network ?? "MAINNET"
 
         console.log({
@@ -262,13 +266,15 @@ accountsCommand
           }
 
           const accountMnemonic = NonEmptyString255Schema.parse(mnemonic)
-          const id = await createAccount({ evolu })({
-            deviceId: options.deviceId ?? null,
-            name: options.name,
-            spark: {
-              mnemonic: accountMnemonic,
-            },
-          })
+          const id = await run.orThrow(
+            createAccount({
+              deviceId: options.deviceId ?? null,
+              name: options.name,
+              spark: {
+                mnemonic: accountMnemonic,
+              },
+            })
+          )
 
           console.log(
             `Inserted Spark account ${id}: ${JSON.stringify({
@@ -307,48 +313,51 @@ accountsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const accountResult = await loadAccount({ evolu })(options.id)
-        if (!accountResult.ok) {
-          printAccountNotFound(options.id)
+        const account = await run.orThrow(loadAccount(options.id))
+        if (account.kind === "iban") {
+          await run.orThrow(
+            updateAccount({
+              id: options.id,
+              deviceId: options.deviceId,
+              name: options.name,
+              iban: {
+                iban: options.iban,
+                currency: options.currency,
+              },
+            })
+          )
+
+          console.log(`Updated account ${options.id}`)
           return
         }
 
-        if (accountResult.value.kind === "iban") {
-          await updateAccount({ evolu })({
+        if (account.kind === "spark") {
+          await run.orThrow(
+            updateAccount({
+              id: options.id,
+              deviceId: options.deviceId,
+              name: options.name,
+              spark: {
+                mnemonic: options.mnemonic,
+              },
+            })
+          )
+          console.log(`Updated account ${options.id}`)
+          return
+        }
+
+        await run.orThrow(
+          updateAccount({
             id: options.id,
             deviceId: options.deviceId,
             name: options.name,
-            iban: {
-              iban: options.iban,
+            cashRegister: {
               currency: options.currency,
             },
           })
-          console.log(`Updated account ${options.id}`)
-          return
-        }
-
-        if (accountResult.value.kind === "spark") {
-          await updateAccount({ evolu })({
-            id: options.id,
-            deviceId: options.deviceId,
-            name: options.name,
-            spark: {
-              mnemonic: options.mnemonic,
-            },
-          })
-          console.log(`Updated account ${options.id}`)
-          return
-        }
-
-        await updateAccount({ evolu })({
-          id: options.id,
-          deviceId: options.deviceId,
-          name: options.name,
-          cashRegister: {
-            currency: options.currency,
-          },
-        })
+        )
         console.log(`Updated account ${options.id}`)
       },
     })
@@ -365,8 +374,9 @@ accountsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await deleteAccount({ evolu })(options.id)
+        await run.orThrow(deleteAccount(options.id))
         console.log(`Deleted account ${options.id}`)
       },
     })

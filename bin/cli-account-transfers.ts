@@ -1,4 +1,5 @@
 import { evoluJsonObjectFrom } from "@evolu/common"
+import { createRun } from "@evolu/nodejs"
 import { createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
@@ -231,6 +232,7 @@ accountTransfersCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const root = {
           deviceId: options.deviceId ?? null,
@@ -243,15 +245,17 @@ accountTransfersCommand
         }
 
         if (options.kind === "iban") {
-          const id = await createAccountTransaction({ evolu })({
-            ...root,
-            iban: {
-              variableSymbol: options.variableSymbol ?? null,
-              constantSymbol: options.constantSymbol ?? null,
-              specificSymbol: options.specificSymbol ?? null,
-              bankReference: options.bankReference ?? null,
-            },
-          })
+          const id = await run.orThrow(
+            createAccountTransaction({
+              ...root,
+              iban: {
+                variableSymbol: options.variableSymbol ?? null,
+                constantSymbol: options.constantSymbol ?? null,
+                specificSymbol: options.specificSymbol ?? null,
+                bankReference: options.bankReference ?? null,
+              },
+            })
+          )
           console.log(`Inserted accountTransfer ${id}`)
           return
         }
@@ -269,20 +273,22 @@ accountTransfersCommand
             return
           }
 
-          const id = await createAccountTransaction({ evolu })({
-            ...root,
-            spark: {
-              sparkTransferId: options.sparkTransferId,
-              lnInvoice: options.lnInvoice,
-              preImage: options.preImage,
-              paymentHash: options.paymentHash,
-            },
-          })
+          const id = await run.orThrow(
+            createAccountTransaction({
+              ...root,
+              spark: {
+                sparkTransferId: options.sparkTransferId,
+                lnInvoice: options.lnInvoice,
+                preImage: options.preImage,
+                paymentHash: options.paymentHash,
+              },
+            })
+          )
           console.log(`Inserted accountTransfer ${id}`)
           return
         }
 
-        const id = await createAccountTransaction({ evolu })(root)
+        const id = await run.orThrow(createAccountTransaction(root))
         console.log(`Inserted accountTransfer ${id}`)
       },
     })
@@ -335,6 +341,7 @@ accountTransfersCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const [accountTransfer] = await evolu.loadQuery(
           accountTransferWithDetailsByIdQuery(options.id)
@@ -356,34 +363,38 @@ accountTransfersCommand
         }
 
         if (accountTransfer.kind === "iban") {
-          await updateAccountTransaction({ evolu })({
-            ...root,
-            iban: {
-              variableSymbol: options.variableSymbol,
-              constantSymbol: options.constantSymbol,
-              specificSymbol: options.specificSymbol,
-              bankReference: options.bankReference,
-            },
-          })
+          await run.orThrow(
+            updateAccountTransaction({
+              ...root,
+              iban: {
+                variableSymbol: options.variableSymbol,
+                constantSymbol: options.constantSymbol,
+                specificSymbol: options.specificSymbol,
+                bankReference: options.bankReference,
+              },
+            })
+          )
           console.log(`Updated accountTransfer ${options.id}`)
           return
         }
 
         if (accountTransfer.kind === "spark") {
-          await updateAccountTransaction({ evolu })({
-            ...root,
-            spark: {
-              sparkTransferId: options.sparkTransferId,
-              lnInvoice: options.lnInvoice,
-              preImage: options.preImage,
-              paymentHash: options.paymentHash,
-            },
-          })
+          await run.orThrow(
+            updateAccountTransaction({
+              ...root,
+              spark: {
+                sparkTransferId: options.sparkTransferId,
+                lnInvoice: options.lnInvoice,
+                preImage: options.preImage,
+                paymentHash: options.paymentHash,
+              },
+            })
+          )
           console.log(`Updated accountTransfer ${options.id}`)
           return
         }
 
-        await updateAccountTransaction({ evolu })(root)
+        await run.orThrow(updateAccountTransaction(root))
         console.log(`Updated accountTransfer ${options.id}`)
       },
     })
@@ -400,8 +411,9 @@ accountTransfersCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await deleteAccountTransaction({ evolu })(options.id)
+        await run.orThrow(deleteAccountTransaction(options.id))
         console.log(`Deleted accountTransfer ${options.id}`)
       },
     })

@@ -11,7 +11,6 @@ import { AccountId } from "../src/core/modules/account/account-types"
 import { BillId } from "../src/core/modules/bill/bill-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import {
-  type CreatePreparedPaymentError,
   createPreparedPayment,
   deletePayment,
   loadPayment,
@@ -148,24 +147,9 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
       .where("payment.id", "=", id)
   )
 
-const printPaymentNotFound = (id: PaymentId): void => {
-  console.error(`payment not found: ${id}`)
-  process.exitCode = 1
-}
-
 const printInvalidPaymentInput = (message: string): void => {
   console.error(message)
   process.exitCode = 1
-}
-
-const getCreatePreparedPaymentErrorMessage = (
-  error: CreatePreparedPaymentError
-): string => {
-  if (error.type === "AccountSparkNotFound") {
-    return `accountSpark not found: ${error.id}`
-  }
-
-  return error.message
 }
 
 export const paymentsCommand = createCommand("payments").description(
@@ -280,7 +264,7 @@ paymentsCommand
           evolu,
         })
 
-        const paymentResult = await run(
+        const paymentId = await run.orThrow(
           createPreparedPayment({
             deviceId: options.deviceId ?? null,
             billId: options.billId ?? null,
@@ -307,17 +291,7 @@ paymentsCommand
           })
         )
 
-        if (!paymentResult.ok) {
-          if (paymentResult.error.type === "AbortError") {
-            return
-          }
-          printInvalidPaymentInput(
-            getCreatePreparedPaymentErrorMessage(paymentResult.error)
-          )
-          return
-        }
-
-        console.log(`Inserted payment ${paymentResult.value}`)
+        console.log(`Inserted payment ${paymentId}`)
       },
     })
   )
@@ -376,12 +350,9 @@ paymentsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        const paymentResult = await loadPayment({ evolu })(options.id)
-        if (!paymentResult.ok) {
-          printPaymentNotFound(options.id)
-          return
-        }
+        await run.orThrow(loadPayment(options.id))
 
         const hasSparkInput =
           options.sparkAccountId != null ||
@@ -395,45 +366,47 @@ paymentsCommand
           options.variableSymbol != null ||
           options.czQrPayload != null
 
-        await updatePayment({ evolu })({
-          id: options.id,
-          deviceId: options.deviceId,
-          billId: options.billId,
-          tableId: options.tableId,
-          amount: options.amount,
-          currency: options.currency,
-          tipAmount: options.tipAmount,
-          canceledAt: options.canceledAt,
-          ...(options.cashRegisterAccountId == null
-            ? {}
-            : {
-                cashRegister: {
-                  accountId: options.cashRegisterAccountId,
-                },
-              }),
-          ...(hasSparkInput
-            ? {
-                spark: {
-                  accountId: options.sparkAccountId,
-                  amountSats: options.amountSats,
-                  exchangeRate: options.exchangeRate,
-                  exchangeRateSource: undefined,
-                  exchangeRateFetchedAt: options.exchangeRateFetchedAt,
-                  lnInvoice: options.lnInvoice,
-                  sparkTechnicalData: options.sparkTechnicalData,
-                },
-              }
-            : {}),
-          ...(hasIbanInput
-            ? {
-                iban: {
-                  accountId: options.ibanAccountId,
-                  variableSymbol: options.variableSymbol,
-                  czQrPayload: options.czQrPayload,
-                },
-              }
-            : {}),
-        })
+        await run.orThrow(
+          updatePayment({
+            id: options.id,
+            deviceId: options.deviceId,
+            billId: options.billId,
+            tableId: options.tableId,
+            amount: options.amount,
+            currency: options.currency,
+            tipAmount: options.tipAmount,
+            canceledAt: options.canceledAt,
+            ...(options.cashRegisterAccountId == null
+              ? {}
+              : {
+                  cashRegister: {
+                    accountId: options.cashRegisterAccountId,
+                  },
+                }),
+            ...(hasSparkInput
+              ? {
+                  spark: {
+                    accountId: options.sparkAccountId,
+                    amountSats: options.amountSats,
+                    exchangeRate: options.exchangeRate,
+                    exchangeRateSource: undefined,
+                    exchangeRateFetchedAt: options.exchangeRateFetchedAt,
+                    lnInvoice: options.lnInvoice,
+                    sparkTechnicalData: options.sparkTechnicalData,
+                  },
+                }
+              : {}),
+            ...(hasIbanInput
+              ? {
+                  iban: {
+                    accountId: options.ibanAccountId,
+                    variableSymbol: options.variableSymbol,
+                    czQrPayload: options.czQrPayload,
+                  },
+                }
+              : {}),
+          })
+        )
 
         console.log(`Updated payment ${options.id}`)
       },
@@ -451,8 +424,9 @@ paymentsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
-        await deletePayment({ evolu })(options.id)
+        await run.orThrow(deletePayment(options.id))
         console.log(`Deleted payment ${options.id}`)
       },
     })

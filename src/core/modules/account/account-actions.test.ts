@@ -1,4 +1,4 @@
-import { evoluJsonObjectFrom, sqliteTrue } from "@evolu/common"
+import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -62,30 +62,37 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
 
-    const ibanAccountId = await createAccount(deps)({
-      deviceId: null,
-      name: "Bank account",
-      iban: {
-        iban: "CZ6508000000192000145399",
-        currency: "CZK",
-      },
-    })
-    const sparkAccountId = await createAccount(deps)({
-      deviceId: null,
-      name: "Spark wallet",
-      spark: {
-        mnemonic:
-          "legal winner thank year wave sausage worth useful legal winner thank yellow",
-      },
-    })
-    const cashRegisterAccountId = await createAccount(deps)({
-      deviceId: null,
-      name: "Cash register",
-      cashRegister: {
-        currency: "CZK",
-      },
-    })
+    const ibanAccountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
+    const sparkAccountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Spark wallet",
+        spark: {
+          mnemonic:
+            "legal winner thank year wave sausage worth useful legal winner thank yellow",
+        },
+      })
+    )
+    const cashRegisterAccountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Cash register",
+        cashRegister: {
+          currency: "CZK",
+        },
+      })
+    )
 
     await expect
       .poll(() => evolu.loadQuery(accountWithDetailsByIdQuery(ibanAccountId)))
@@ -152,7 +159,7 @@ describe("account actions", () => {
         },
       ])
 
-    await expect(loadAccount(deps)(ibanAccountId)).resolves.toMatchObject({
+    await expect(run(loadAccount(ibanAccountId))).resolves.toMatchObject({
       ok: true,
       value: {
         id: ibanAccountId,
@@ -166,31 +173,36 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
 
-    const id = await createAccount(deps)({
-      deviceId: null,
-      name: "Bank account",
-      iban: {
-        iban: "CZ6508000000192000145399",
-        currency: "CZK",
-      },
-    })
+    const id = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
 
     await expect
       .poll(() => evolu.loadQuery(accountByIdQuery(id)))
       .toHaveLength(1)
 
     await expect(
-      updateAccount(deps)({
-        id,
-        deviceId: undefined,
-        name: "Updated bank account",
-        iban: {
-          iban: "CZ5508000000001234567899",
-          currency: undefined,
-        },
-      })
-    ).resolves.toBe(id)
+      run(
+        updateAccount({
+          id,
+          deviceId: undefined,
+          name: "Updated bank account",
+          iban: {
+            iban: "CZ5508000000001234567899",
+            currency: undefined,
+          },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
 
     await expect
       .poll(() => evolu.loadQuery(accountWithDetailsByIdQuery(id)))
@@ -213,20 +225,26 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
 
-    const id = await createAccount(deps)({
-      deviceId: null,
-      name: "Cash register",
-      cashRegister: {
-        currency: "CZK",
-      },
-    })
+    const id = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Cash register",
+        cashRegister: {
+          currency: "CZK",
+        },
+      })
+    )
 
     await expect
       .poll(() => evolu.loadQuery(accountByIdQuery(id)))
       .toHaveLength(1)
 
-    await expect(deleteAccount(deps)(id)).resolves.toBe(id)
+    await expect(run(deleteAccount(id))).resolves.toEqual({
+      ok: true,
+      value: id,
+    })
 
     await expect
       .poll(() => evolu.loadQuery(accountWithDetailsByIdQuery(id)))
@@ -240,7 +258,7 @@ describe("account actions", () => {
           },
         },
       ])
-    await expect(loadAccount(deps)(id)).resolves.toMatchObject({
+    await expect(run(loadAccount(id))).resolves.toMatchObject({
       ok: true,
       value: {
         id,

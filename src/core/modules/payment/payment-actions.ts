@@ -2,7 +2,6 @@ import {
   err,
   type InsertValues,
   ok,
-  type Result,
   sqliteTrue,
   type Task,
   type UpdateValues,
@@ -96,18 +95,15 @@ const convertFiatMinorUnitsToSats = (
 }
 
 export const loadPayment =
-  (deps: EvoluDep) =>
-  async (
-    idValue: PaymentId
-  ): Promise<Result<PaymentRow, PaymentNotFoundError>> =>
+  (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>
+  async (run) =>
     getFirstOr(
-      await deps.evolu.loadQuery(paymentByIdQuery(idValue)),
+      await run.deps.evolu.loadQuery(paymentByIdQuery(idValue)),
       paymentNotFound(idValue)
     )
 
 export const createPayment =
-  (deps: EvoluDep) =>
-  async ({
+  ({
     cashRegister,
     spark,
     iban,
@@ -116,12 +112,13 @@ export const createPayment =
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: Omit<InsertValues<typeof paymentSpark>, "id">
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
-  }): Promise<PaymentId> => {
+  }): Task<PaymentId, never, EvoluDep> =>
+  async (run) => {
     const id = createTableId<"Payment">()
 
     await runMutationWithCompletion((options) => {
       if (cashRegister) {
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "paymentCashRegister",
           removeUndefinedValues({
             ...cashRegister,
@@ -132,7 +129,7 @@ export const createPayment =
       }
 
       if (spark) {
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "paymentSpark",
           removeUndefinedValues({
             ...spark,
@@ -143,7 +140,7 @@ export const createPayment =
       }
 
       if (iban) {
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "paymentIban",
           removeUndefinedValues({
             ...iban,
@@ -153,7 +150,7 @@ export const createPayment =
         )
       }
 
-      return deps.evolu.upsert(
+      return run.deps.evolu.upsert(
         "payment",
         removeUndefinedValues({
           ...input,
@@ -163,7 +160,7 @@ export const createPayment =
       )
     })
 
-    return id
+    return ok(id)
   }
 
 export const createPreparedPayment =
@@ -194,7 +191,7 @@ export const createPreparedPayment =
   > =>
   async (run) => {
     if (!spark) {
-      return ok(await createPayment(run.deps)(input))
+      return run(createPayment(input))
     }
 
     const sparkAccounts = await run.deps.evolu.loadQuery(
@@ -227,31 +224,34 @@ export const createPreparedPayment =
         })
       )
 
-      const id = await createPayment(run.deps)({
-        ...input,
-        spark: {
-          accountId: spark.accountId,
-          amountSats,
-          exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
-          exchangeRateSource: "yadio",
-          exchangeRateFetchedAt: TimestampMsSchema.decode(
-            quote.value.fetchedAt
-          ),
-          lnInvoice: NonEmptyStringSchema.decode(
-            lightningInvoice.invoice.encodedInvoice
-          ),
-          sparkTechnicalData: JSON.stringify(
-            removeUndefinedValues({
-              lightningReceiveRequestId: lightningInvoice.id,
-              paymentHash: lightningInvoice.invoice.paymentHash,
-              paymentPreimage: lightningInvoice.paymentPreimage,
-              sparkInvoice: lightningInvoice.sparkInvoice,
-            })
-          ),
-        },
-      })
+      const paymentResult = await run(
+        createPayment({
+          ...input,
+          spark: {
+            accountId: spark.accountId,
+            amountSats,
+            exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
+            exchangeRateSource: "yadio",
+            exchangeRateFetchedAt: TimestampMsSchema.decode(
+              quote.value.fetchedAt
+            ),
+            lnInvoice: NonEmptyStringSchema.decode(
+              lightningInvoice.invoice.encodedInvoice
+            ),
+            sparkTechnicalData: JSON.stringify(
+              removeUndefinedValues({
+                lightningReceiveRequestId: lightningInvoice.id,
+                paymentHash: lightningInvoice.invoice.paymentHash,
+                paymentPreimage: lightningInvoice.paymentPreimage,
+                sparkInvoice: lightningInvoice.sparkInvoice,
+              })
+            ),
+          },
+        })
+      )
+      if (!paymentResult.ok) return paymentResult
 
-      return ok(id)
+      return ok(paymentResult.value)
     } catch (error) {
       return err(
         paymentPreparationFailed(
@@ -266,8 +266,7 @@ export const createPreparedPayment =
   }
 
 export const updatePayment =
-  (deps: EvoluDep) =>
-  async ({
+  ({
     cashRegister,
     spark,
     iban,
@@ -286,10 +285,11 @@ export const updatePayment =
     readonly cashRegister?: Omit<UpdateValues<typeof paymentCashRegister>, "id">
     readonly spark?: Omit<UpdateValues<typeof paymentSpark>, "id">
     readonly iban?: Omit<UpdateValues<typeof paymentIban>, "id">
-  }): Promise<PaymentId> => {
+  }): Task<PaymentId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) => {
       if (cashRegister) {
-        deps.evolu.update(
+        run.deps.evolu.update(
           "paymentCashRegister",
           removeUndefinedValues({
             ...cashRegister,
@@ -300,7 +300,7 @@ export const updatePayment =
       }
 
       if (spark) {
-        deps.evolu.update(
+        run.deps.evolu.update(
           "paymentSpark",
           removeUndefinedValues({
             ...spark,
@@ -311,7 +311,7 @@ export const updatePayment =
       }
 
       if (iban) {
-        deps.evolu.update(
+        run.deps.evolu.update(
           "paymentIban",
           removeUndefinedValues({
             ...iban,
@@ -321,17 +321,21 @@ export const updatePayment =
         )
       }
 
-      return deps.evolu.update("payment", removeUndefinedValues(input), options)
+      return run.deps.evolu.update(
+        "payment",
+        removeUndefinedValues(input),
+        options
+      )
     })
 
-    return input.id
+    return ok(input.id)
   }
 
 export const deletePayment =
-  (deps: EvoluDep) =>
-  async (paymentId: PaymentId): Promise<PaymentId> => {
+  (paymentId: PaymentId): Task<PaymentId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "payment",
         {
           id: paymentId,
@@ -341,20 +345,20 @@ export const deletePayment =
       )
     )
 
-    return paymentId
+    return ok(paymentId)
   }
 
 export const markPaymentPaid =
-  (deps: EvoluDep) =>
-  async (
+  (
     paymentId: PaymentId,
     accountTransactionId: AccountTransactionId,
     source: ReconciliationClaimSource = "manual"
-  ): Promise<PaymentId> => {
+  ): Task<PaymentId, never, EvoluDep> =>
+  async (run) => {
     const id = createTableId<"ReconciliationClaim">()
 
     await runMutationWithCompletion((options) =>
-      deps.evolu.upsert(
+      run.deps.evolu.upsert(
         "reconciliationClaim",
         removeUndefinedValues({
           id,
@@ -368,14 +372,14 @@ export const markPaymentPaid =
       )
     )
 
-    return paymentId
+    return ok(paymentId)
   }
 
 export const cancelPayment =
-  (deps: EvoluDep) =>
-  async (paymentId: PaymentId): Promise<PaymentId> => {
+  (paymentId: PaymentId): Task<PaymentId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "payment",
         {
           id: paymentId,
@@ -385,5 +389,5 @@ export const cancelPayment =
       )
     )
 
-    return paymentId
+    return ok(paymentId)
   }

@@ -1,7 +1,8 @@
 import {
   type InsertValues,
-  type Result,
+  ok,
   sqliteTrue,
+  type Task,
   type UpdateValues,
 } from "@evolu/common"
 
@@ -32,18 +33,15 @@ export const accountNotFound = (id: AccountId): AccountNotFoundError =>
   createAccountNotFoundError({ id })
 
 export const loadAccount =
-  (deps: EvoluDep) =>
-  async (
-    idValue: AccountId
-  ): Promise<Result<AccountRow, AccountNotFoundError>> =>
+  (idValue: AccountId): Task<AccountRow, AccountNotFoundError, EvoluDep> =>
+  async (run) =>
     getFirstOr(
-      await deps.evolu.loadQuery(accountByIdQuery(idValue)),
+      await run.deps.evolu.loadQuery(accountByIdQuery(idValue)),
       accountNotFound(idValue)
     )
 
 export const createAccount =
-  (deps: EvoluDep) =>
-  async ({
+  ({
     iban,
     spark,
     cashRegister,
@@ -65,7 +63,8 @@ export const createAccount =
           readonly spark?: never
           readonly cashRegister: InsertValues<typeof accountCashRegister>
         }
-    )): Promise<AccountId> => {
+    )): Task<AccountId, never, EvoluDep> =>
+  async (run) => {
     const id = createTableId<"Account">()
 
     await runMutationWithCompletion((options) => {
@@ -73,7 +72,7 @@ export const createAccount =
 
       if (iban) {
         kind = "iban"
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "accountIban",
           removeUndefinedValues({
             ...iban,
@@ -85,7 +84,7 @@ export const createAccount =
 
       if (spark) {
         kind = "spark"
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "accountSpark",
           removeUndefinedValues({
             ...spark,
@@ -97,7 +96,7 @@ export const createAccount =
 
       if (cashRegister) {
         kind = "cashRegister"
-        deps.evolu.upsert(
+        run.deps.evolu.upsert(
           "accountCashRegister",
           removeUndefinedValues({
             ...cashRegister,
@@ -107,7 +106,7 @@ export const createAccount =
         )
       }
 
-      return deps.evolu.upsert(
+      return run.deps.evolu.upsert(
         "account",
         removeUndefinedValues({
           ...input,
@@ -118,12 +117,11 @@ export const createAccount =
       )
     })
 
-    return id
+    return ok(id)
   }
 
 export const updateAccount =
-  (deps: EvoluDep) =>
-  async ({
+  ({
     iban,
     spark,
     cashRegister,
@@ -148,13 +146,14 @@ export const updateAccount =
             "id"
           >
         }
-    )): Promise<AccountId> => {
+    )): Task<AccountId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) => {
       let kind: AccountRow["kind"] = "cashRegister"
 
       if (iban) {
         kind = "iban"
-        deps.evolu.update(
+        run.deps.evolu.update(
           "accountIban",
           removeUndefinedValues({
             ...iban,
@@ -166,7 +165,7 @@ export const updateAccount =
 
       if (spark) {
         kind = "spark"
-        deps.evolu.update(
+        run.deps.evolu.update(
           "accountSpark",
           removeUndefinedValues({
             ...spark,
@@ -178,7 +177,7 @@ export const updateAccount =
 
       if (cashRegister) {
         kind = "cashRegister"
-        deps.evolu.update(
+        run.deps.evolu.update(
           "accountCashRegister",
           removeUndefinedValues({
             ...cashRegister,
@@ -188,7 +187,7 @@ export const updateAccount =
         )
       }
 
-      return deps.evolu.update(
+      return run.deps.evolu.update(
         "account",
         removeUndefinedValues({
           id: input.id,
@@ -200,14 +199,14 @@ export const updateAccount =
       )
     })
 
-    return input.id
+    return ok(input.id)
   }
 
 export const deleteAccount =
-  (deps: EvoluDep) =>
-  async (idValue: AccountId): Promise<AccountId> => {
+  (idValue: AccountId): Task<AccountId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "account",
         {
           id: idValue,
@@ -217,5 +216,5 @@ export const deleteAccount =
       )
     )
 
-    return idValue
+    return ok(idValue)
   }

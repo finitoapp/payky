@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import { createRun } from "@evolu/nodejs"
 import { createCommand } from "commander"
 import { zodCommand } from "zod-commander/zod4"
 import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
@@ -16,10 +17,7 @@ import {
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
-import {
-  removeUndefinedValues,
-  runMutationWithCompletion,
-} from "../src/core/modules/shared/utils"
+import { removeUndefinedValues } from "../src/core/modules/shared/utils"
 
 export const catalogItemsCommand = createCommand("catalog-items").description(
   "Manage reusable catalog items for bills."
@@ -64,6 +62,7 @@ catalogItemsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         const data = {
           name: options.name,
@@ -73,9 +72,7 @@ catalogItemsCommand
           sortOrder: options.sortOrder,
         }
 
-        const { id } = await runMutationWithCompletion((options) =>
-          createCatalogItem({ evolu })(data, options)
-        )
+        const id = await run.orThrow(createCatalogItem(data))
         console.log(
           `Inserted catalogItem ${id}: ${JSON.stringify({
             id: id,
@@ -127,15 +124,11 @@ catalogItemsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         console.log("Updating catalogItem", options.id)
 
-        await runMutationWithCompletion((mutationOptions) =>
-          updateCatalogItem({ evolu })(
-            removeUndefinedValues(options),
-            mutationOptions
-          )
-        )
+        await run.orThrow(updateCatalogItem(removeUndefinedValues(options)))
       },
     })
   )
@@ -151,17 +144,15 @@ catalogItemsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const run = createRun({ evolu })
 
         console.log("Deleting catalogItem", options.id)
 
-        await runMutationWithCompletion((mutationOptions) =>
-          updateCatalogItem({ evolu })(
-            {
-              id: options.id,
-              isDeleted: sqliteTrue,
-            },
-            mutationOptions
-          )
+        await run.orThrow(
+          updateCatalogItem({
+            id: options.id,
+            isDeleted: sqliteTrue,
+          })
         )
       },
     })

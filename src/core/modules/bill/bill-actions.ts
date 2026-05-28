@@ -2,7 +2,7 @@ import {
   err,
   type InsertValues,
   ok,
-  type Result,
+  type Task,
   type UpdateValues,
 } from "@evolu/common"
 
@@ -84,23 +84,23 @@ const billItemProjectionMissing = (input: {
   createBillItemProjectionMissingError(input)
 
 export const loadBill =
-  (deps: EvoluDep) =>
-  async (idValue: BillId): Promise<Result<BillRow, BillNotFoundError>> =>
+  (idValue: BillId): Task<BillRow, BillNotFoundError, EvoluDep> =>
+  async (run) =>
     getFirstOr(
-      await deps.evolu.loadQuery(billByIdQuery(idValue)),
+      await run.deps.evolu.loadQuery(billByIdQuery(idValue)),
       billNotFound(idValue)
     )
 
 export const createBill =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<
       InsertValues<typeof bill>,
       "deviceId" | "displayNumber" | "label" | "tableId" | "currency"
     >
-  ): Promise<BillId> => {
+  ): Task<BillId, never, EvoluDep> =>
+  async (run) => {
     const { id } = await runMutationWithCompletion((options) =>
-      deps.evolu.insert(
+      run.deps.evolu.insert(
         "bill",
         removeUndefinedValues({
           ...input,
@@ -110,16 +110,16 @@ export const createBill =
       )
     )
 
-    return id
+    return ok(id)
   }
 
 export const assignBillToTable =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<UpdateValues<typeof bill>, "id" | "tableId">
-  ): Promise<BillId> => {
+  ): Task<BillId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "bill",
         {
           id: input.id,
@@ -129,24 +129,23 @@ export const assignBillToTable =
       )
     )
 
-    return input.id
+    return ok(input.id)
   }
 
 export const moveBillToTable = assignBillToTable
 
 export const removeTableFromBill =
-  (deps: EvoluDep) =>
-  async (billId: BillId): Promise<BillId> => {
+  (billId: BillId): Task<BillId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update("bill", { id: billId, tableId: null }, options)
+      run.deps.evolu.update("bill", { id: billId, tableId: null }, options)
     )
 
-    return billId
+    return ok(billId)
   }
 
 export const addCatalogItemToBill =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<
       InsertValues<typeof billItemLine>,
       "billId" | "deviceId" | "quantity"
@@ -155,17 +154,18 @@ export const addCatalogItemToBill =
         InsertValues<typeof billItemLine>["catalogItemId"]
       >
     }
-  ): Promise<Result<BillItemRow, AddBillItemError>> => {
+  ): Task<BillItemRow, AddBillItemError, EvoluDep> =>
+  async (run) => {
     const catalogItemResult = getFirstOr(
-      await deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
+      await run.deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
       catalogItemNotFound(input.catalogItemId)
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
-    const item = await createOrReuseCatalogItemSnapshot(deps)(
+    const item = await createOrReuseCatalogItemSnapshot(run.deps)(
       catalogItemResult.value
     )
-    const projected = await appendBillItemLine(deps)({
+    const projected = await appendBillItemLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: catalogItemResult.value.id,
@@ -190,14 +190,14 @@ export const addCatalogItemToBill =
   }
 
 export const addManualAmountToBill =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<
       InsertValues<typeof billItemLine>,
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Promise<Result<BillItemRow, BillItemProjectionMissingError>> => {
+  ): Task<BillItemRow, BillItemProjectionMissingError, EvoluDep> =>
+  async (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -205,8 +205,8 @@ export const addManualAmountToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    createOrReuseItemSnapshot(deps)(snapshot)
-    const projected = await appendBillItemLine(deps)({
+    createOrReuseItemSnapshot(run.deps)(snapshot)
+    const projected = await appendBillItemLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: null,
@@ -229,14 +229,14 @@ export const addManualAmountToBill =
   }
 
 export const addTipToBill =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<
       InsertValues<typeof billItemLine>,
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Promise<Result<BillItemRow, BillItemProjectionMissingError>> => {
+  ): Task<BillItemRow, BillItemProjectionMissingError, EvoluDep> =>
+  async (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -244,8 +244,8 @@ export const addTipToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    createOrReuseItemSnapshot(deps)(snapshot)
-    const projected = await appendBillItemLine(deps)({
+    createOrReuseItemSnapshot(run.deps)(snapshot)
+    const projected = await appendBillItemLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: null,
@@ -268,16 +268,16 @@ export const addTipToBill =
   }
 
 export const appendRemoveBillItemLine =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<
       InsertValues<typeof billItemLine>,
       "billId" | "deviceId" | "quantity" | "totalAmount"
     > & {
       readonly billItem: BillItemRow
     }
-  ): Promise<Result<BillItemRow | null, never>> => {
-    const projected = await appendBillItemLine(deps)({
+  ): Task<BillItemRow | null, never, EvoluDep> =>
+  async (run) => {
+    const projected = await appendBillItemLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: input.billItem.catalogItemId,
@@ -291,30 +291,32 @@ export const appendRemoveBillItemLine =
   }
 
 export const listOpenBills =
-  (deps: EvoluDep) => async (): Promise<ReadonlyArray<BillWithItems>> => {
-    const bills = await deps.evolu.loadQuery(openBillsQuery)
-    return Promise.all(
-      bills.map(
-        async (bill): Promise<BillWithItems> => ({
-          bill,
-          items: await loadCalculatedBillItems(deps)(bill.id),
-        })
+  (): Task<ReadonlyArray<BillWithItems>, never, EvoluDep> => async (run) => {
+    const bills = await run.deps.evolu.loadQuery(openBillsQuery)
+    return ok(
+      await Promise.all(
+        bills.map(
+          async (bill): Promise<BillWithItems> => ({
+            bill,
+            items: await loadCalculatedBillItems(run.deps)(bill.id),
+          })
+        )
       )
     )
   }
 
 export const splitBill =
-  (deps: EvoluDep) =>
-  async (input: {
+  (input: {
     readonly sourceBillId: BillId
     readonly targetBillId: BillId
     readonly items: ReadonlyArray<BillItemRow>
-  }): Promise<Result<BillWithItems, SplitBillError>> => {
-    const targetBillResult = await loadBill(deps)(input.targetBillId)
+  }): Task<BillWithItems, SplitBillError, EvoluDep> =>
+  async (run) => {
+    const targetBillResult = await run(loadBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
     for (const item of input.items) {
-      await appendBillItemLine(deps)({
+      await appendBillItemLine(run.deps)({
         billId: input.sourceBillId,
         deviceId: null,
         catalogItemId: item.catalogItemId,
@@ -324,7 +326,7 @@ export const splitBill =
         quantity: item.quantity,
         totalAmount: item.totalAmount,
       })
-      await appendBillItemLine(deps)({
+      await appendBillItemLine(run.deps)({
         billId: input.targetBillId,
         deviceId: null,
         catalogItemId: item.catalogItemId,
@@ -338,21 +340,21 @@ export const splitBill =
 
     return ok({
       bill: targetBillResult.value,
-      items: await syncBillItemProjection(deps)(input.targetBillId),
+      items: await syncBillItemProjection(run.deps)(input.targetBillId),
     })
   }
 
 export const partiallyPayBill =
-  (deps: EvoluDep) =>
-  async (
+  (
     input: Pick<UpdateValues<typeof bill>, "id"> & {
       readonly paymentId: PaymentId
     }
-  ): Promise<BillId> => {
+  ): Task<BillId, never, EvoluDep> =>
+  async (run) => {
     void input.paymentId
 
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "bill",
         {
           id: input.id,
@@ -362,14 +364,14 @@ export const partiallyPayBill =
       )
     )
 
-    return input.id
+    return ok(input.id)
   }
 
 export const cancelBill =
-  (deps: EvoluDep) =>
-  async (billId: BillId): Promise<BillId> => {
+  (billId: BillId): Task<BillId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "bill",
         {
           id: billId,
@@ -380,14 +382,14 @@ export const cancelBill =
       )
     )
 
-    return billId
+    return ok(billId)
   }
 
 export const closeBillAsPaid =
-  (deps: EvoluDep) =>
-  async (billId: BillId): Promise<BillId> => {
+  (billId: BillId): Task<BillId, never, EvoluDep> =>
+  async (run) => {
     await runMutationWithCompletion((options) =>
-      deps.evolu.update(
+      run.deps.evolu.update(
         "bill",
         {
           id: billId,
@@ -398,5 +400,5 @@ export const closeBillAsPaid =
       )
     )
 
-    return billId
+    return ok(billId)
   }

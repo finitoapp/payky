@@ -1,4 +1,4 @@
-import type { UpdateValues } from "@evolu/common"
+import { ok, type Task, type UpdateValues } from "@evolu/common"
 import type {
   AppSettingsRow,
   appSettings,
@@ -12,24 +12,24 @@ import { createDefaultSettings, settingsId } from "./setting-utils.ts"
 type UpdateSettingsInput = Omit<UpdateValues<typeof appSettings>, "id">
 
 export const getSettings =
-  (deps: EvoluDep) => async (): Promise<AppSettingsRow> => {
-    const existing = (await deps.evolu.loadQuery(settingsQuery))[0]
-    if (existing != null) return existing
+  (): Task<AppSettingsRow, never, EvoluDep> => async (run) => {
+    const existing = (await run.deps.evolu.loadQuery(settingsQuery))[0]
+    if (existing != null) return ok(existing)
 
     const defaults = createDefaultSettings()
-    deps.evolu.upsert("appSettings", defaults)
-    return defaults
+    run.deps.evolu.upsert("appSettings", defaults)
+    return ok(defaults)
   }
 
 export const updateSettings =
-  (deps: EvoluDep) =>
-  async (input: UpdateSettingsInput): Promise<AppSettingsId> => {
-    deps.evolu.update(
+  (input: UpdateSettingsInput): Task<AppSettingsId, never, EvoluDep> =>
+  async (run) => {
+    run.deps.evolu.update(
       "appSettings",
       removeUndefinedValues({
         id: settingsId,
         ...input,
       })
     )
-    return settingsId
+    return ok(settingsId)
   }

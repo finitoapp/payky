@@ -46,15 +46,19 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
       .where("fioPlugin.id", "=", id)
   )
 
-const createIbanAccount = async (deps: EvoluDep): Promise<AccountId> =>
-  createAccount(deps)({
-    deviceId: null,
-    name: "Bank account",
-    iban: {
-      iban: "CZ6508000000192000145399",
-      currency: "CZK",
-    },
-  })
+const createIbanAccount = async (deps: EvoluDep): Promise<AccountId> => {
+  await using run = testCreateRun(deps)
+  return await run.orThrow(
+    createAccount({
+      deviceId: null,
+      name: "Bank account",
+      iban: {
+        iban: "CZ6508000000192000145399",
+        currency: "CZK",
+      },
+    })
+  )
+}
 
 describe("fio plugin actions", () => {
   test("creates and loads a FIO plugin with token through real Evolu", async () => {
@@ -169,13 +173,15 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
     await using run = testCreateRun(deps)
-    const cashRegisterAccountId = await createAccount(deps)({
-      deviceId: null,
-      name: "Cash register",
-      cashRegister: {
-        currency: "CZK",
-      },
-    })
+    const cashRegisterAccountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Cash register",
+        cashRegister: {
+          currency: "CZK",
+        },
+      })
+    )
 
     const idResult = await run(
       createFioPlugin({

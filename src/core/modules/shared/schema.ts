@@ -26,6 +26,12 @@ export const NonEmptyStringSchema = z
 export type NonEmptyString = z.output<typeof NonEmptyStringSchema>
 export const NonEmptyString255Schema =
   NonEmptyStringSchema.max(255).brand<"NonEmptyString255">()
+export const HttpsUrlSchema = z
+  .url()
+  .refine((value) => value.startsWith("https://"), {
+    message: "URL must use HTTPS.",
+  })
+  .brand<"HttpsUrl">()
 export const IntegerSchema = z.number().int().brand<"Int">()
 export const NonNegativeIntegerSchema =
   IntegerSchema.nonnegative().brand<"NonNegative">()

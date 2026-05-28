@@ -4,6 +4,7 @@ import { accountsCommand } from "./cli-accounts"
 import { backgroundJobsCommand } from "./cli-background-jobs"
 import { billsCommand } from "./cli-bills"
 import { catalogItemsCommand } from "./cli-catalog-items"
+import { fioPluginsCommand } from "./cli-fio-plugins"
 import { paymentsCommand } from "./cli-payments"
 
 declare const process: {
@@ -21,6 +22,7 @@ program.addCommand(billsCommand)
 program.addCommand(accountsCommand)
 program.addCommand(accountTransfersCommand)
 program.addCommand(paymentsCommand)
+program.addCommand(fioPluginsCommand)
 program.addCommand(backgroundJobsCommand)
 
 program.parse(process.argv)

@@ -26,6 +26,11 @@ import {
 } from "@/core/modules/bill-item-line/bill-item-line.ts"
 import { catalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
 import { device, deviceIndexes } from "@/core/modules/device/device.ts"
+import {
+  fioPlugin,
+  fioPluginIndexes,
+  fioPluginToken,
+} from "@/core/modules/fio-plugin/fio-plugin.ts"
 import { item, itemIndexes } from "@/core/modules/item/item.ts"
 import {
   payment,
@@ -70,6 +75,8 @@ export const AppSchema = {
   appSettings,
   paymentNumberSeries,
   paymentLastNumber,
+  fioPlugin,
+  fioPluginToken,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)
@@ -85,6 +92,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...paymentItemLineIndexes(create),
   ...reconciliationClaimIndexes(create),
   ...deviceIndexes(create),
+  ...fioPluginIndexes(create),
 ]
 
 export type EvoluSchema = typeof AppSchema

@@ -2,7 +2,7 @@ import { evoluJsonObjectFrom, sqliteTrue } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createEvoluCli } from "../../evolu/cli-client"
+import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createAccount,
   deleteAccount,
@@ -59,7 +59,7 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
 
 describe("account actions", () => {
   test("creates and loads account variants through real Evolu", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
 
@@ -163,7 +163,7 @@ describe("account actions", () => {
   }, 15_000)
 
   test("updates account details without writing undefined values", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
 
@@ -210,7 +210,7 @@ describe("account actions", () => {
   }, 15_000)
 
   test("soft deletes only the account root row", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
 

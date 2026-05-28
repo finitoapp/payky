@@ -1,7 +1,7 @@
 import { SparkWalletEvent } from "@buildonspark/spark-sdk"
 import { describe, expect, test } from "vitest"
 
-import { createEvoluCli } from "@/core/evolu/cli-client.ts"
+import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -120,7 +120,7 @@ const createUniqueHexSeed = (): string =>
 
 describe("spark account transaction sync job", () => {
   test("stores completed Spark transfers from the periodic history check without duplicates", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const errors: unknown[] = []
     const mnemonic = createUniqueHexSeed()
@@ -179,7 +179,7 @@ describe("spark account transaction sync job", () => {
   })
 
   test("records a claimed transfer live and removes listeners on dispose", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const errors: unknown[] = []
     const mnemonic = createUniqueHexSeed()
@@ -238,7 +238,7 @@ describe("spark account transaction sync job", () => {
   })
 
   test("skips invalid Spark account secrets without starting a wallet", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const errors: unknown[] = []
     const startedWallets: string[] = []

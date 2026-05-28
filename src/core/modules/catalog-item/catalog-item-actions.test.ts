@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createEvoluCli } from "../../evolu/cli-client"
+import { createEvoluTest } from "../../evolu/cli-client"
 import { createCatalogItem, updateCatalogItem } from "./catalog-item-actions.ts"
 
 describe("catalog item actions", () => {
   test("creates and updates a catalog item through real Evolu", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
 

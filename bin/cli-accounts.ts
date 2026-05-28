@@ -241,16 +241,17 @@ accountsCommand
       async action(_, options) {
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
+        const network = options.network ?? "MAINNET"
 
         console.log({
           options: {
-            network: options.network ?? "MAINNET",
+            network,
           },
         })
 
         const { wallet, mnemonic } = await SparkWallet.initialize({
           options: {
-            network: options.network ?? "MAINNET",
+            network,
           },
         })
 
@@ -273,7 +274,7 @@ accountsCommand
             `Inserted Spark account ${id}: ${JSON.stringify({
               id,
               name: options.name,
-              network: options.network ?? "MAINNET",
+              network,
               mnemonic,
             })}`
           )

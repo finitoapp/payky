@@ -8,7 +8,7 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
-import { createEvoluCli } from "../../evolu/cli-client"
+import { createEvoluTest } from "../../evolu/cli-client"
 import {
   cancelPayment,
   createPayment,
@@ -120,7 +120,7 @@ const createPaymentAccounts = async (
 
 describe("payment actions", () => {
   test("creates and loads a payment with payment option details through real Evolu", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
@@ -201,7 +201,7 @@ describe("payment actions", () => {
   }, 15_000)
 
   test("creates a prepared payment by generating spark payment details", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
       evolu,
@@ -295,7 +295,7 @@ describe("payment actions", () => {
   }, 15_000)
 
   test("marks a payment paid with an account transaction", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -338,7 +338,7 @@ describe("payment actions", () => {
   }, 15_000)
 
   test("cancels a payment", async () => {
-    await using testEvolu = await createEvoluCli()
+    await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
     const { ibanAccountId } = await createPaymentAccounts(deps)

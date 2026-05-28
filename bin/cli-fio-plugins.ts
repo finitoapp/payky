@@ -15,6 +15,7 @@ import { AccountId } from "../src/core/modules/account/account-types"
 import {
   createFioPlugin,
   deleteFioPlugin,
+  type FioPluginNotFoundError,
   loadFioPlugin,
   updateFioPlugin,
 } from "../src/core/modules/fio-plugin/fio-plugin-actions"
@@ -90,25 +91,11 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
   )
 
 const printActionError = (
-  error:
-    | { readonly type: "AbortError" }
-    | {
-        readonly type: "NotFound"
-        readonly entity: string
-        readonly id: string
-      }
-    | {
-        readonly type: "InvalidOperation"
-        readonly message: string
-      }
+  error: { readonly type: "AbortError" } | FioPluginNotFoundError
 ): void => {
   if (error.type === "AbortError") return
 
-  console.error(
-    error.type === "NotFound"
-      ? `${error.entity} not found: ${error.id}`
-      : error.message
-  )
+  console.error(`fioPlugin not found: ${error.id}`)
   process.exitCode = 1
 }
 

@@ -8,11 +8,13 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import type { FetchDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
 import {
   fetchYadioBtcExchangeRate,
   type YadioHttpError,
 } from "@/core/integrations/yadio/yadio-client.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type {
   PaymentRow,
@@ -23,6 +25,7 @@ import type {
 } from "@/core/modules/payment/payment.ts"
 import type { ReconciliationClaimSource } from "@/core/modules/reconciliation-claim/reconciliation-claim.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   createTableId,
   removeUndefinedValues,
@@ -32,12 +35,6 @@ import type {
   SparkPaymentWallet,
   SparkWalletDep,
 } from "@/core/spark/spark-wallet.ts"
-import {
-  type ActionError,
-  getFirst,
-  invalidOperation,
-  notFound,
-} from "../shared/action-error.ts"
 import {
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
@@ -49,6 +46,44 @@ import type { PaymentId } from "./payment-types.ts"
 
 const SATS_PER_BTC = 100_000_000
 const FIAT_MINOR_UNITS = 100
+
+const createPaymentNotFoundError = defineError("PaymentNotFound")<{
+  readonly id: PaymentId
+}>()
+export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>
+
+const createAccountSparkNotFoundError = defineError("AccountSparkNotFound")<{
+  readonly id: AccountId
+}>()
+export type AccountSparkNotFoundError = ReturnType<
+  typeof createAccountSparkNotFoundError
+>
+
+const createPaymentPreparationFailedError = defineError(
+  "PaymentPreparationFailed"
+)<{
+  readonly message: string
+}>()
+export type PaymentPreparationFailedError = ReturnType<
+  typeof createPaymentPreparationFailedError
+>
+
+export type CreatePreparedPaymentError =
+  | AccountSparkNotFoundError
+  | PaymentPreparationFailedError
+  | YadioHttpError
+
+export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
+  createPaymentNotFoundError({ id })
+
+export const accountSparkNotFound = (
+  id: AccountId
+): AccountSparkNotFoundError => createAccountSparkNotFoundError({ id })
+
+const paymentPreparationFailed = (
+  message: string
+): PaymentPreparationFailedError =>
+  createPaymentPreparationFailedError({ message })
 
 const convertFiatMinorUnitsToSats = (
   amount: number,
@@ -62,11 +97,12 @@ const convertFiatMinorUnitsToSats = (
 
 export const loadPayment =
   (deps: EvoluDep) =>
-  async (idValue: PaymentId): Promise<Result<PaymentRow, ActionError>> =>
-    getFirst(
+  async (
+    idValue: PaymentId
+  ): Promise<Result<PaymentRow, PaymentNotFoundError>> =>
+    getFirstOr(
       await deps.evolu.loadQuery(paymentByIdQuery(idValue)),
-      "payment",
-      idValue
+      paymentNotFound(idValue)
     )
 
 export const createPayment =
@@ -153,7 +189,7 @@ export const createPreparedPayment =
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
   }): Task<
     PaymentId,
-    ActionError | YadioHttpError,
+    CreatePreparedPaymentError,
     EvoluDep & SparkWalletDep & FetchDep
   > =>
   async (run) => {
@@ -168,7 +204,7 @@ export const createPreparedPayment =
       (account) => account.id === spark.accountId
     )
     if (!sparkAccount) {
-      return err(notFound("accountSpark", spark.accountId))
+      return err(accountSparkNotFound(spark.accountId))
     }
 
     let wallet: SparkPaymentWallet | undefined
@@ -218,7 +254,7 @@ export const createPreparedPayment =
       return ok(id)
     } catch (error) {
       return err(
-        invalidOperation(
+        paymentPreparationFailed(
           error instanceof Error
             ? error.message
             : "Failed to prepare payment details"

@@ -6,14 +6,17 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import { defineError } from "@/core/error.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
 import type { BillItemRow } from "@/core/modules/bill-item/bill-item.ts"
 import type { billItemLine } from "@/core/modules/bill-item-line/bill-item-line.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { item } from "@/core/modules/item/item.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   NonNegativeInteger,
   PositiveNumber,
@@ -22,11 +25,6 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import {
-  type ActionError,
-  getFirst,
-  invalidOperation,
-} from "../shared/action-error.ts"
 import { billByIdQuery, openBillsQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 import {
@@ -42,13 +40,55 @@ export interface BillWithItems {
   readonly items: ReadonlyArray<BillItemRow>
 }
 
+const createBillNotFoundError = defineError("BillNotFound")<{
+  readonly id: BillId
+}>()
+export type BillNotFoundError = ReturnType<typeof createBillNotFoundError>
+
+const createCatalogItemNotFoundError = defineError("CatalogItemNotFound")<{
+  readonly id: CatalogItemId
+}>()
+export type CatalogItemNotFoundError = ReturnType<
+  typeof createCatalogItemNotFoundError
+>
+
+const createBillItemProjectionMissingError = defineError(
+  "BillItemProjectionMissing"
+)<{
+  readonly billId: BillId
+  readonly itemId: BillItemRow["itemId"]
+  readonly lineType: BillItemRow["type"]
+}>()
+export type BillItemProjectionMissingError = ReturnType<
+  typeof createBillItemProjectionMissingError
+>
+
+export type AddBillItemError =
+  | CatalogItemNotFoundError
+  | BillItemProjectionMissingError
+
+export type SplitBillError = BillNotFoundError
+
+export const billNotFound = (id: BillId): BillNotFoundError =>
+  createBillNotFoundError({ id })
+
+export const catalogItemNotFound = (
+  id: CatalogItemId
+): CatalogItemNotFoundError => createCatalogItemNotFoundError({ id })
+
+const billItemProjectionMissing = (input: {
+  readonly billId: BillId
+  readonly itemId: BillItemRow["itemId"]
+  readonly lineType: BillItemRow["type"]
+}): BillItemProjectionMissingError =>
+  createBillItemProjectionMissingError(input)
+
 export const loadBill =
   (deps: EvoluDep) =>
-  async (idValue: BillId): Promise<Result<BillRow, ActionError>> =>
-    getFirst(
+  async (idValue: BillId): Promise<Result<BillRow, BillNotFoundError>> =>
+    getFirstOr(
       await deps.evolu.loadQuery(billByIdQuery(idValue)),
-      "bill",
-      idValue
+      billNotFound(idValue)
     )
 
 export const createBill =
@@ -115,11 +155,10 @@ export const addCatalogItemToBill =
         InsertValues<typeof billItemLine>["catalogItemId"]
       >
     }
-  ): Promise<Result<BillItemRow, ActionError>> => {
-    const catalogItemResult = getFirst(
+  ): Promise<Result<BillItemRow, AddBillItemError>> => {
+    const catalogItemResult = getFirstOr(
       await deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
-      "catalogItem",
-      input.catalogItemId
+      catalogItemNotFound(input.catalogItemId)
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
@@ -140,7 +179,13 @@ export const addCatalogItemToBill =
     })
     const billItem = projected.find((row) => row.itemId === item.id)
     return billItem == null
-      ? err(invalidOperation("Catalog item line projection was not created."))
+      ? err(
+          billItemProjectionMissing({
+            billId: input.billId,
+            itemId: item.id,
+            lineType: "catalogItem",
+          })
+        )
       : ok(billItem)
   }
 
@@ -152,7 +197,7 @@ export const addManualAmountToBill =
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Promise<Result<BillItemRow, ActionError>> => {
+  ): Promise<Result<BillItemRow, BillItemProjectionMissingError>> => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -173,7 +218,13 @@ export const addManualAmountToBill =
     })
     const billItem = projected.find((row) => row.itemId === snapshot.id)
     return billItem == null
-      ? err(invalidOperation("Manual amount projection was not created."))
+      ? err(
+          billItemProjectionMissing({
+            billId: input.billId,
+            itemId: snapshot.id,
+            lineType: "manualAmount",
+          })
+        )
       : ok(billItem)
   }
 
@@ -185,7 +236,7 @@ export const addTipToBill =
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Promise<Result<BillItemRow, ActionError>> => {
+  ): Promise<Result<BillItemRow, BillItemProjectionMissingError>> => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -206,7 +257,13 @@ export const addTipToBill =
     })
     const billItem = projected.find((row) => row.itemId === snapshot.id)
     return billItem == null
-      ? err(invalidOperation("Tip projection was not created."))
+      ? err(
+          billItemProjectionMissing({
+            billId: input.billId,
+            itemId: snapshot.id,
+            lineType: "tip",
+          })
+        )
       : ok(billItem)
   }
 
@@ -219,7 +276,7 @@ export const appendRemoveBillItemLine =
     > & {
       readonly billItem: BillItemRow
     }
-  ): Promise<Result<BillItemRow | null, ActionError>> => {
+  ): Promise<Result<BillItemRow | null, never>> => {
     const projected = await appendBillItemLine(deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
@@ -252,7 +309,7 @@ export const splitBill =
     readonly sourceBillId: BillId
     readonly targetBillId: BillId
     readonly items: ReadonlyArray<BillItemRow>
-  }): Promise<Result<BillWithItems, ActionError>> => {
+  }): Promise<Result<BillWithItems, SplitBillError>> => {
     const targetBillResult = await loadBill(deps)(input.targetBillId)
     if (!targetBillResult.ok) return targetBillResult
 

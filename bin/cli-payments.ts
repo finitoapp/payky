@@ -11,6 +11,7 @@ import { AccountId } from "../src/core/modules/account/account-types"
 import { BillId } from "../src/core/modules/bill/bill-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import {
+  type CreatePreparedPaymentError,
   createPreparedPayment,
   deletePayment,
   loadPayment,
@@ -157,6 +158,16 @@ const printInvalidPaymentInput = (message: string): void => {
   process.exitCode = 1
 }
 
+const getCreatePreparedPaymentErrorMessage = (
+  error: CreatePreparedPaymentError
+): string => {
+  if (error.type === "AccountSparkNotFound") {
+    return `accountSpark not found: ${error.id}`
+  }
+
+  return error.message
+}
+
 export const paymentsCommand = createCommand("payments").description(
   "Manage payment requests and receipts."
 )
@@ -301,9 +312,7 @@ paymentsCommand
             return
           }
           printInvalidPaymentInput(
-            paymentResult.error.type === "NotFound"
-              ? `${paymentResult.error.entity} not found: ${paymentResult.error.id}`
-              : paymentResult.error.message
+            getCreatePreparedPaymentErrorMessage(paymentResult.error)
           )
           return
         }

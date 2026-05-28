@@ -8,6 +8,9 @@ import {
   addTipToBill,
   appendRemoveBillItemLine,
   assignBillToTable,
+  type BillItemProjectionMissingError,
+  type BillNotFoundError,
+  type CatalogItemNotFoundError,
   cancelBill,
   closeBillAsPaid,
   createBill,
@@ -24,7 +27,6 @@ import { BillItemId } from "../src/core/modules/bill-item/bill-item-types"
 import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import { PaymentId } from "../src/core/modules/payment/payment-types"
-import type { ActionError } from "../src/core/modules/shared/action-error"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
@@ -60,14 +62,21 @@ const BillItemIdsFromStringSchema = z
     return ids
   })
 
-const printActionError = (error: ActionError): void => {
-  if (error.type === "NotFound") {
-    console.error(`${error.entity} not found: ${error.id}`)
-    process.exitCode = 1
-    return
-  }
+type BillCliActionError =
+  | BillItemProjectionMissingError
+  | BillNotFoundError
+  | CatalogItemNotFoundError
 
-  console.error(error.message)
+const printActionError = (error: BillCliActionError): void => {
+  if (error.type === "BillNotFound") {
+    console.error(`bill not found: ${error.id}`)
+  } else if (error.type === "CatalogItemNotFound") {
+    console.error(`catalogItem not found: ${error.id}`)
+  } else {
+    console.error(
+      `bill item projection missing for ${error.lineType} item ${error.itemId} on bill ${error.billId}`
+    )
+  }
   process.exitCode = 1
 }
 

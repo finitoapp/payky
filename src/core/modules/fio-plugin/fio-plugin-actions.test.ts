@@ -264,8 +264,7 @@ describe("fio plugin actions", () => {
     await expect(run(loadFioPlugin(id))).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "NotFound",
-        entity: "fioPlugin",
+        type: "FioPluginNotFound",
         id,
       },
     })

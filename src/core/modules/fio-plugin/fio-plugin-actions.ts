@@ -6,28 +6,40 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import { defineError } from "@/core/error.ts"
 import type {
   FioPluginRow,
   fioPlugin,
   fioPluginToken,
 } from "@/core/modules/fio-plugin/fio-plugin.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   createTableId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import { type ActionError, getFirst } from "../shared/action-error.ts"
 import { fioPluginByIdQuery } from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 
+const createFioPluginNotFoundError = defineError("FioPluginNotFound")<{
+  readonly id: FioPluginId
+}>()
+export type FioPluginNotFoundError = ReturnType<
+  typeof createFioPluginNotFoundError
+>
+
+export const fioPluginNotFound = (id: FioPluginId): FioPluginNotFoundError =>
+  createFioPluginNotFoundError({ id })
+
 export const loadFioPlugin =
-  (idValue: FioPluginId): Task<FioPluginRow, ActionError, EvoluDep> =>
+  (
+    idValue: FioPluginId
+  ): Task<FioPluginRow, FioPluginNotFoundError, EvoluDep> =>
   async (run) =>
-    getFirst(
+    getFirstOr(
       await run.deps.evolu.loadQuery(fioPluginByIdQuery(idValue)),
-      "fioPlugin",
-      idValue
+      fioPluginNotFound(idValue)
     )
 
 export const createFioPlugin =
@@ -36,7 +48,7 @@ export const createFioPlugin =
     ...input
   }: InsertValues<typeof fioPlugin> & {
     readonly token: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginId, ActionError, EvoluDep> =>
+  }): Task<FioPluginId, never, EvoluDep> =>
   async (run) => {
     const id = createTableId<"FioPlugin">()
     const tokenId = createTableId<"FioPluginToken">()
@@ -74,7 +86,7 @@ export const updateFioPlugin =
     "id" | "accountId" | "apiUrl" | "numberOfSecondsBetweenChecks" | "isActive"
   > & {
     readonly token?: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginId, ActionError, EvoluDep> =>
+  }): Task<FioPluginId, never, EvoluDep> =>
   async (run) => {
     const tokenId = createTableId<"FioPluginToken">()
 
@@ -102,7 +114,7 @@ export const updateFioPlugin =
   }
 
 export const deleteFioPlugin =
-  (idValue: FioPluginId): Task<FioPluginId, ActionError, EvoluDep> =>
+  (idValue: FioPluginId): Task<FioPluginId, never, EvoluDep> =>
   async (run) => {
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(

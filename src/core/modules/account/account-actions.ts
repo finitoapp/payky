@@ -5,13 +5,14 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   createTableId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import { type ActionError, getFirst } from "../shared/action-error.ts"
 import type {
   AccountRow,
   account,
@@ -22,13 +23,22 @@ import type {
 import { accountByIdQuery } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
 
+const createAccountNotFoundError = defineError("AccountNotFound")<{
+  readonly id: AccountId
+}>()
+export type AccountNotFoundError = ReturnType<typeof createAccountNotFoundError>
+
+export const accountNotFound = (id: AccountId): AccountNotFoundError =>
+  createAccountNotFoundError({ id })
+
 export const loadAccount =
   (deps: EvoluDep) =>
-  async (idValue: AccountId): Promise<Result<AccountRow, ActionError>> =>
-    getFirst(
+  async (
+    idValue: AccountId
+  ): Promise<Result<AccountRow, AccountNotFoundError>> =>
+    getFirstOr(
       await deps.evolu.loadQuery(accountByIdQuery(idValue)),
-      "account",
-      idValue
+      accountNotFound(idValue)
     )
 
 export const createAccount =

@@ -1,5 +1,8 @@
+import { err, ok, type Task } from "@evolu/common"
 import { z } from "zod"
 
+import type { FetchDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
 import {
   ConstantSymbolSchema,
   type DateString,
@@ -12,38 +15,51 @@ import {
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
 
-type FetchLike = (
-  input: RequestInfo | URL,
-  init?: RequestInit
-) => Promise<Response>
+const FIO_BASE_URL = "https://fioapi.fio.cz"
 
-export interface FioApiClientOptions {
+export interface FioApiOptions {
   readonly tokens: readonly [string, ...string[]]
   readonly baseUrl?: string
-  readonly fetch?: FetchLike
 }
 
-export class FioApiError extends Error {
-  public readonly cause?: unknown
-
-  public constructor(message: string, cause?: unknown) {
-    super(message)
-    this.name = "FioApiError"
-    this.cause = cause
+export interface FioApiDep {
+  readonly fioApi: {
+    readonly baseUrl: string
+    readonly getToken: () => string
   }
 }
 
-export class FioHttpError extends Error {
-  public readonly status: number
-  public readonly responseBody: string
+export const createFioApiDep = ({
+  tokens,
+  baseUrl = FIO_BASE_URL,
+}: FioApiOptions): FioApiDep => {
+  let tokenIndex = 0
 
-  public constructor(message: string, status: number, responseBody: string) {
-    super(message)
-    this.name = "FioHttpError"
-    this.status = status
-    this.responseBody = responseBody
+  return {
+    fioApi: {
+      baseUrl,
+      getToken: () => {
+        const token = tokens[tokenIndex] ?? tokens[0]
+        tokenIndex = tokenIndex + 1 >= tokens.length ? 0 : tokenIndex + 1
+
+        return token
+      },
+    },
   }
 }
+
+const createFioApiError = defineError("FioApiError")<{
+  readonly message: string
+  readonly cause?: unknown
+}>()
+export type FioApiError = ReturnType<typeof createFioApiError>
+
+const createFioHttpError = defineError("FioHttpError")<{
+  readonly message: string
+  readonly status: number
+  readonly responseBody: string
+}>()
+export type FioHttpError = ReturnType<typeof createFioHttpError>
 
 const FioValueSchema = z.union([z.string(), z.number()])
 
@@ -227,99 +243,106 @@ export interface FioAccountStatement {
   readonly transactions: ReadonlyArray<FioTransaction>
 }
 
-export class FioApiClient {
-  readonly #tokens: readonly [string, ...string[]]
-  readonly #baseUrl: string
-  readonly #fetch: FetchLike
-  #tokenIndex = 0
+type FioTask<TResult> = Task<
+  TResult,
+  FioApiError | FioHttpError,
+  FioApiDep & FetchDep
+>
 
-  public constructor(options: FioApiClientOptions) {
-    this.#tokens = options.tokens
-    this.#baseUrl = options.baseUrl ?? "https://fioapi.fio.cz"
-    this.#fetch = options.fetch ?? fetch
-  }
+export const fetchFioLastTransactions = (): FioTask<FioAccountStatement> =>
+  getFioStatement((token) => `/v1/rest/last/${token}/transactions.json`)
 
-  public async getLastTransactions(): Promise<FioAccountStatement> {
-    return await this.#getStatement(
-      `/v1/rest/last/${this.#getToken()}/transactions.json`
+export const fetchFioTransactionsByPeriod = ({
+  from,
+  to,
+}: {
+  readonly from: DateString
+  readonly to: DateString
+}): FioTask<FioAccountStatement> =>
+  getFioStatement(
+    (token) => `/v1/rest/periods/${token}/${from}/${to}/transactions.json`
+  )
+
+export const setFioLastDate =
+  ({ date }: { readonly date: DateString }): FioTask<string> =>
+  async (run) => {
+    const response = await run(
+      requestFioApi(
+        `/v1/rest/set-last-date/${getEncodedFioToken(run.deps)}/${date}/`
+      )
     )
-  }
+    if (!response.ok) return response
 
-  public async getTransactionsByPeriod({
-    from,
-    to,
-  }: {
-    readonly from: DateString
-    readonly to: DateString
-  }): Promise<FioAccountStatement> {
-    return await this.#getStatement(
-      `/v1/rest/periods/${this.#getToken()}/${from}/${to}/transactions.json`
-    )
-  }
+    const body = await response.value.text()
+    const parsed = SetLastDateResponseSchema.safeParse(body)
 
-  public async setLastDate({
-    date,
-  }: {
-    readonly date: DateString
-  }): Promise<string> {
-    const response = await this.#request(
-      `/v1/rest/set-last-date/${this.#getToken()}/${date}/`
-    )
-    const body = await response.text()
-    return SetLastDateResponseSchema.parse(body)
-  }
-
-  #getToken(): string {
-    const token = this.#tokens[this.#tokenIndex]
-
-    if (token == null) {
-      throw new FioApiError("FIO API client requires at least one token.")
+    if (!parsed.success) {
+      return err(
+        createFioApiError({
+          message: "Invalid FIO set-last-date response.",
+          cause: parsed.error,
+        })
+      )
     }
 
-    this.#tokenIndex =
-      this.#tokenIndex + 1 >= this.#tokens.length ? 0 : this.#tokenIndex + 1
-
-    return encodeURIComponent(token)
+    return ok(parsed.data)
   }
 
-  async #getStatement(path: string): Promise<FioAccountStatement> {
-    const response = await this.#request(path)
-    const unknownJson: unknown = await response.json()
+const getFioStatement =
+  (
+    createPath: (encodedToken: string) => string
+  ): FioTask<FioAccountStatement> =>
+  async (run) => {
+    const response = await run(
+      requestFioApi(createPath(getEncodedFioToken(run.deps)))
+    )
+    if (!response.ok) return response
+
+    const unknownJson: unknown = await response.value.json()
     const parsed = FioAccountStatementSchema.safeParse(unknownJson)
 
     if (!parsed.success) {
-      throw new FioApiError(
-        "Invalid FIO account statement response.",
-        parsed.error
+      return err(
+        createFioApiError({
+          message: "Invalid FIO account statement response.",
+          cause: parsed.error,
+        })
       )
     }
 
     const statement = parsed.data.accountStatement
 
-    return {
+    return ok({
       iban: statement.info.iban,
       currency: statement.info.currency ?? null,
       transactions: statement.transactionList.transaction,
-    }
+    })
   }
 
-  async #request(path: string): Promise<Response> {
-    const url = new URL(path, this.#baseUrl)
-    const response = await this.#fetch(url, {
+const requestFioApi =
+  (path: string): Task<Response, FioHttpError, FioApiDep & FetchDep> =>
+  async (run) => {
+    const url = new URL(path, run.deps.fioApi.baseUrl)
+    const response = await run.deps.fetch(url, {
       method: "GET",
       headers: {
         Accept: "application/json, text/plain",
       },
+      signal: run.signal,
     })
 
     if (!response.ok) {
-      throw new FioHttpError(
-        `FIO API request failed with HTTP ${response.status}.`,
-        response.status,
-        await response.text()
+      return err(
+        createFioHttpError({
+          message: `FIO API request failed with HTTP ${response.status}.`,
+          status: response.status,
+          responseBody: await response.text(),
+        })
       )
     }
 
-    return response
+    return ok(response)
   }
-}
+
+const getEncodedFioToken = (deps: FioApiDep): string =>
+  encodeURIComponent(deps.fioApi.getToken())

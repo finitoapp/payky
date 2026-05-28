@@ -1,7 +1,16 @@
+import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { FetchDep } from "@/core/deps.ts"
 import { DateStringSchema } from "@/core/modules/shared/schema.ts"
-import { FioApiClient, type FioHttpError } from "./fio-client.ts"
+import {
+  createFioApiDep,
+  type FioApiDep,
+  type FioHttpError,
+  fetchFioLastTransactions,
+  fetchFioTransactionsByPeriod,
+  setFioLastDate,
+} from "./fio-client.ts"
 
 const dateString = DateStringSchema.parse
 
@@ -47,40 +56,46 @@ const statementResponse = (transactions: unknown) =>
 const inputToString = (input: RequestInfo | URL): string =>
   input instanceof URL ? input.toString() : String(input)
 
-describe("FioApiClient", () => {
+describe("fio client", () => {
   test("downloads and normalizes last transactions", async () => {
     const requestedUrls: string[] = []
-    const client = new FioApiClient({
-      tokens: ["token-a"],
-      baseUrl: "https://example.test",
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a"],
+        baseUrl: "https://example.test",
+      }),
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
         return statementResponse([transaction])
       },
-    })
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
 
-    await expect(client.getLastTransactions()).resolves.toMatchObject({
-      iban: "CZ6508000000192000145399",
-      currency: "CZK",
-      transactions: [
-        {
-          id: "123456789",
-          bookedDate: "2026-05-26",
-          amountMinor: 19950,
-          currency: "CZK",
-          counterAccountNumber: "2600123456",
-          counterAccountName: "Customer Ltd.",
-          counterBankCode: "2010",
-          counterBankName: "Fio banka, a.s.",
-          constantSymbol: "0308",
-          variableSymbol: "123456",
-          specificSymbol: "789",
-          userIdentification: "Terminal 1",
-          recipientMessage: "Thanks",
-          type: "Bezhotovostní příjem",
-          instructionId: "ABC123",
-        },
-      ],
+    await expect(run(fetchFioLastTransactions())).resolves.toMatchObject({
+      ok: true,
+      value: {
+        iban: "CZ6508000000192000145399",
+        currency: "CZK",
+        transactions: [
+          {
+            id: "123456789",
+            bookedDate: "2026-05-26",
+            amountMinor: 19950,
+            currency: "CZK",
+            counterAccountNumber: "2600123456",
+            counterAccountName: "Customer Ltd.",
+            counterBankCode: "2010",
+            counterBankName: "Fio banka, a.s.",
+            constantSymbol: "0308",
+            variableSymbol: "123456",
+            specificSymbol: "789",
+            userIdentification: "Terminal 1",
+            recipientMessage: "Thanks",
+            type: "Bezhotovostní příjem",
+            instructionId: "ABC123",
+          },
+        ],
+      },
     })
     expect(requestedUrls).toEqual([
       "https://example.test/v1/rest/last/token-a/transactions.json",
@@ -88,32 +103,40 @@ describe("FioApiClient", () => {
   })
 
   test("supports a single transaction object in FIO response", async () => {
-    const client = new FioApiClient({
-      tokens: ["token-a"],
-      baseUrl: "https://example.test",
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a"],
+        baseUrl: "https://example.test",
+      }),
       fetch: async () => statementResponse(transaction),
-    })
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
 
-    const statement = await client.getLastTransactions()
+    const result = await run(fetchFioLastTransactions())
 
-    expect(statement.transactions).toHaveLength(1)
-    expect(statement.transactions[0]?.id).toBe("123456789")
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.transactions).toHaveLength(1)
+    expect(result.value.transactions[0]?.id).toBe("123456789")
   })
 
   test("rotates tokens across requests", async () => {
     const requestedUrls: string[] = []
-    const client = new FioApiClient({
-      tokens: ["token-a", "token-b"],
-      baseUrl: "https://example.test",
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a", "token-b"],
+        baseUrl: "https://example.test",
+      }),
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
         return statementResponse([])
       },
-    })
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
 
-    await client.getLastTransactions()
-    await client.getLastTransactions()
-    await client.getLastTransactions()
+    await run(fetchFioLastTransactions())
+    await run(fetchFioLastTransactions())
+    await run(fetchFioLastTransactions())
 
     expect(requestedUrls).toEqual([
       "https://example.test/v1/rest/last/token-a/transactions.json",
@@ -124,19 +147,24 @@ describe("FioApiClient", () => {
 
   test("downloads transactions by period", async () => {
     const requestedUrls: string[] = []
-    const client = new FioApiClient({
-      tokens: ["token-a"],
-      baseUrl: "https://example.test",
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a"],
+        baseUrl: "https://example.test",
+      }),
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
         return statementResponse([])
       },
-    })
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
 
-    await client.getTransactionsByPeriod({
-      from: dateString("2026-05-01"),
-      to: dateString("2026-05-27"),
-    })
+    await run(
+      fetchFioTransactionsByPeriod({
+        from: dateString("2026-05-01"),
+        to: dateString("2026-05-27"),
+      })
+    )
 
     expect(requestedUrls).toEqual([
       "https://example.test/v1/rest/periods/token-a/2026-05-01/2026-05-27/transactions.json",
@@ -145,34 +173,46 @@ describe("FioApiClient", () => {
 
   test("sets the last successful download date", async () => {
     const requestedUrls: string[] = []
-    const client = new FioApiClient({
-      tokens: ["token-a"],
-      baseUrl: "https://example.test",
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a"],
+        baseUrl: "https://example.test",
+      }),
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
         return new Response("OK", { status: 200 })
       },
-    })
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
 
     await expect(
-      client.setLastDate({ date: dateString("2026-05-27") })
-    ).resolves.toBe("OK")
+      run(setFioLastDate({ date: dateString("2026-05-27") }))
+    ).resolves.toMatchObject({
+      ok: true,
+      value: "OK",
+    })
     expect(requestedUrls).toEqual([
       "https://example.test/v1/rest/set-last-date/token-a/2026-05-27/",
     ])
   })
 
-  test("throws typed HTTP errors", async () => {
-    const client = new FioApiClient({
-      tokens: ["token-a"],
-      baseUrl: "https://example.test",
+  test("returns typed HTTP errors", async () => {
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a"],
+        baseUrl: "https://example.test",
+      }),
       fetch: async () => new Response("Too many requests", { status: 409 }),
-    })
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
 
-    await expect(client.getLastTransactions()).rejects.toMatchObject({
-      name: "FioHttpError",
-      status: 409,
-      responseBody: "Too many requests",
-    } satisfies Partial<FioHttpError>)
+    await expect(run(fetchFioLastTransactions())).resolves.toMatchObject({
+      ok: false,
+      error: {
+        type: "FioHttpError",
+        status: 409,
+        responseBody: "Too many requests",
+      } satisfies Partial<FioHttpError>,
+    })
   })
 })

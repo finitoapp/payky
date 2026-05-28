@@ -3,7 +3,7 @@ import { z } from "zod"
 
 export const cliEnv = createEnv({
   server: {
-    PAYKY_SQLITE_PATH: z.string().trim().min(1).default("payky.db"),
+    PAYKY_SQLITE_PATH: z.string().trim().min(1).default(".data/payky.db"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

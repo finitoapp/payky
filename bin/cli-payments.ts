@@ -1,15 +1,16 @@
 import { evoluJsonObjectFrom } from "@evolu/common"
+import { createRun } from "@evolu/nodejs"
 import { createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
+import { createFetchDep } from "@/core/deps.ts"
+import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { createQuery } from "../src/core/evolu/schema"
-import { fetchYadioBtcExchangeRate } from "../src/core/integrations/yadio/yadio-client"
 import { AccountId } from "../src/core/modules/account/account-types"
 import { BillId } from "../src/core/modules/bill/bill-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import {
-  createDefaultSparkPaymentWallet,
   createPreparedPayment,
   deletePayment,
   loadPayment,
@@ -262,36 +263,43 @@ paymentsCommand
         })()
         if (iban === null) return
 
-        const paymentResult = await createPreparedPayment({
+        const run = createRun({
+          ...createFetchDep(),
+          ...createSparkWalletDep(),
           evolu,
-          fetchYadioBtcExchangeRate,
-          create: createDefaultSparkPaymentWallet,
-        })({
-          deviceId: options.deviceId ?? null,
-          billId: options.billId ?? null,
-          tableId: options.tableId ?? null,
-          amount: options.amount,
-          currency: options.currency,
-          tipAmount: options.tipAmount,
-          canceledAt: options.canceledAt ?? null,
-          ...(options.cashRegisterAccountId == null
-            ? {}
-            : {
-                cashRegister: {
-                  accountId: options.cashRegisterAccountId,
-                },
-              }),
-          ...(options.sparkAccountId == null
-            ? {}
-            : {
-                spark: {
-                  accountId: options.sparkAccountId,
-                },
-              }),
-          ...(iban == null ? {} : { iban }),
         })
 
+        const paymentResult = await run(
+          createPreparedPayment({
+            deviceId: options.deviceId ?? null,
+            billId: options.billId ?? null,
+            tableId: options.tableId ?? null,
+            amount: options.amount,
+            currency: options.currency,
+            tipAmount: options.tipAmount,
+            canceledAt: options.canceledAt ?? null,
+            ...(options.cashRegisterAccountId == null
+              ? {}
+              : {
+                  cashRegister: {
+                    accountId: options.cashRegisterAccountId,
+                  },
+                }),
+            ...(options.sparkAccountId == null
+              ? {}
+              : {
+                  spark: {
+                    accountId: options.sparkAccountId,
+                  },
+                }),
+            ...(iban == null ? {} : { iban }),
+          })
+        )
+
         if (!paymentResult.ok) {
+          if (paymentResult.error.type === "AbortError") {
+            return
+          }
           printInvalidPaymentInput(
             paymentResult.error.type === "NotFound"
               ? `${paymentResult.error.entity} not found: ${paymentResult.error.id}`

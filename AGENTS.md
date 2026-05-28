@@ -41,6 +41,19 @@
 - Keep tests beside the module they cover as `*.test.ts`.
 - For aggregate detail tables sharing the root id, keep root and detail table ownership in the same module unless another module clearly owns a separate lifecycle.
 
+## Domain Action Patterns
+
+- For simple Evolu-only actions, use the curried dependency style shown in `payment-actions.ts`: `(deps: EvoluDep) => async (...) => Promise<...>`.
+- For actions that compose multiple effects or depend on cancellable/injectable services, return an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`.
+- Express Task dependencies as intersections of small dependency objects, for example `EvoluDep & SparkWalletDep & FetchDep`.
+- In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
+- When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.
+- Keep direct dependency calls for non-Task services, for example `run.deps.evolu.loadQuery(...)` or `run.deps.sparkWallet.create(...)`.
+- Clean up disposable resources acquired inside Task actions with `finally`, as with wallet cleanup in `createPreparedPayment`.
+- Use shared `ActionError` helpers from `src/core/modules/shared/action-error.ts` for domain failures: `notFound(...)`, `invalidOperation(...)`, `getFirst(...)`, `ok(...)`, and `err(...)`.
+- Return `err(notFound(...))` for missing domain rows or required related records instead of throwing.
+- Convert expected operational failures in action code to `err(invalidOperation(message))`; keep thrown exceptions for programmer errors, schema decode failures, framework boundaries, or established local patterns.
+
 ## Translation Key Rules
 
 - Never hardcode user-facing text in React components.

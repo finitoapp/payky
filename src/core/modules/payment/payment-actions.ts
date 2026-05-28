@@ -1,13 +1,17 @@
-import { SparkWallet } from "@buildonspark/spark-sdk"
 import {
   err,
   type InsertValues,
   ok,
   type Result,
   sqliteTrue,
+  type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { ExchangeRateDep } from "@/core/integrations/yadio/yadio-client.ts"
+import type { FetchDep } from "@/core/deps.ts"
+import {
+  fetchYadioBtcExchangeRate,
+  type YadioHttpError,
+} from "@/core/integrations/yadio/yadio-client.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type {
@@ -24,6 +28,10 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
+import type {
+  SparkPaymentWallet,
+  SparkWalletDep,
+} from "@/core/spark/spark-wallet.ts"
 import {
   type ActionError,
   getFirst,
@@ -41,46 +49,6 @@ import type { PaymentId } from "./payment-types.ts"
 
 const SATS_PER_BTC = 100_000_000
 const FIAT_MINOR_UNITS = 100
-
-interface SparkLightningInvoice {
-  readonly id?: string
-  readonly invoice: {
-    readonly encodedInvoice: string
-    readonly paymentHash?: string
-  }
-  readonly paymentPreimage?: string
-  readonly sparkInvoice?: string
-}
-
-export interface SparkPaymentWallet {
-  readonly createLightningInvoice: (params: {
-    readonly amountSats: number
-    readonly memo?: string
-    readonly expirySeconds?: number
-    readonly includeSparkInvoice?: boolean
-  }) => Promise<SparkLightningInvoice>
-  readonly cleanup?: () => void | Promise<void>
-}
-
-export type SparkWalletFactoryDep = {
-  readonly create: (mnemonic: string) => Promise<SparkPaymentWallet>
-}
-
-export const createDefaultSparkPaymentWallet = async (
-  mnemonic: string
-): Promise<SparkPaymentWallet> => {
-  const { wallet } = await SparkWallet.getOrCreateWallet({
-    mnemonicOrSeed: mnemonic,
-    options: {
-      network: "MAINNET",
-    },
-  })
-
-  return {
-    createLightningInvoice: (params) => wallet.createLightningInvoice(params),
-    cleanup: () => wallet.cleanup(),
-  }
-}
 
 const convertFiatMinorUnitsToSats = (
   amount: number,
@@ -163,8 +131,7 @@ export const createPayment =
   }
 
 export const createPreparedPayment =
-  (deps: EvoluDep & ExchangeRateDep & SparkWalletFactoryDep) =>
-  async ({
+  ({
     spark,
     ...input
   }: InsertValues<typeof payment> & {
@@ -184,12 +151,19 @@ export const createPreparedPayment =
       readonly includeSparkInvoice?: boolean
     }
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
-  }): Promise<Result<PaymentId, ActionError>> => {
+  }): Task<
+    PaymentId,
+    ActionError | YadioHttpError,
+    EvoluDep & SparkWalletDep & FetchDep
+  > =>
+  async (run) => {
     if (!spark) {
-      return ok(await createPayment(deps)(input))
+      return ok(await createPayment(run.deps)(input))
     }
 
-    const sparkAccounts = await deps.evolu.loadQuery(activeSparkAccountsQuery)
+    const sparkAccounts = await run.deps.evolu.loadQuery(
+      activeSparkAccountsQuery
+    )
     const sparkAccount = sparkAccounts.find(
       (account) => account.id === spark.accountId
     )
@@ -199,11 +173,15 @@ export const createPreparedPayment =
 
     let wallet: SparkPaymentWallet | undefined
     try {
-      const quote = await deps.fetchYadioBtcExchangeRate(input.currency)
+      const quote = await run(fetchYadioBtcExchangeRate(input.currency))
+      if (!quote.ok) {
+        return quote
+      }
+
       const amountSats = NonNegativeIntegerSchema.decode(
-        convertFiatMinorUnitsToSats(input.amount, quote.exchangeRate)
+        convertFiatMinorUnitsToSats(input.amount, quote.value.exchangeRate)
       )
-      wallet = await deps.create(sparkAccount.mnemonic)
+      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
       const lightningInvoice = await wallet.createLightningInvoice(
         removeUndefinedValues({
           amountSats,
@@ -213,14 +191,16 @@ export const createPreparedPayment =
         })
       )
 
-      const id = await createPayment(deps)({
+      const id = await createPayment(run.deps)({
         ...input,
         spark: {
           accountId: spark.accountId,
           amountSats,
-          exchangeRate: PositiveNumberSchema.decode(quote.exchangeRate),
+          exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
           exchangeRateSource: "yadio",
-          exchangeRateFetchedAt: TimestampMsSchema.decode(quote.fetchedAt),
+          exchangeRateFetchedAt: TimestampMsSchema.decode(
+            quote.value.fetchedAt
+          ),
           lnInvoice: NonEmptyStringSchema.decode(
             lightningInvoice.invoice.encodedInvoice
           ),

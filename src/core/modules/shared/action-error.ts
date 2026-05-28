@@ -1,26 +1,32 @@
 import { err, ok, type Result } from "@evolu/common"
 
-export type ActionError =
-  | {
-      readonly type: "NotFound"
-      readonly entity: string
-      readonly id: string
-    }
-  | {
-      readonly type: "InvalidOperation"
-      readonly message: string
-    }
+import { defineError } from "@/core/error.ts"
 
-export const notFound = (entity: string, idValue: string): ActionError => ({
-  type: "NotFound",
-  entity,
-  id: idValue,
-})
+const createNotFoundError = defineError("NotFound")<{
+  readonly entity: string
+  readonly id: string
+}>()
+export type NotFoundError = ReturnType<typeof createNotFoundError>
 
-export const invalidOperation = (message: string): ActionError => ({
-  type: "InvalidOperation",
-  message,
-})
+const createInvalidOperationError = defineError("InvalidOperation")<{
+  readonly message: string
+}>()
+export type InvalidOperationError = ReturnType<
+  typeof createInvalidOperationError
+>
+
+export type ActionError = NotFoundError | InvalidOperationError
+
+export const notFound = (entity: string, idValue: string): NotFoundError =>
+  createNotFoundError({
+    entity,
+    id: idValue,
+  })
+
+export const invalidOperation = (message: string): InvalidOperationError =>
+  createInvalidOperationError({
+    message,
+  })
 
 export const getFirst = <T>(
   rows: ReadonlyArray<T>,

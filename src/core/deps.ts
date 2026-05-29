@@ -15,9 +15,9 @@ export const appFetch =
     url: string | URL,
     init?: RequestInit
   ): Task<Response, FetchError, FetchDep> =>
-  ({ deps, signal }) =>
+  ({ deps }) =>
     tryAsync(
-      () => deps.fetch(url, { ...init, signal }),
+      () => deps.fetch(url, init),
       (error): FetchError | AbortError => {
         if (AbortError.is(error)) return error
         return createFetchError({ error })

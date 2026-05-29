@@ -6,6 +6,7 @@ import { billsCommand } from "./cli-bills"
 import { catalogItemsCommand } from "./cli-catalog-items"
 import { fioPluginsCommand } from "./cli-fio-plugins"
 import { paymentsCommand } from "./cli-payments"
+import { tablesCommand } from "./cli-tables"
 
 declare const process: {
   readonly argv: ReadonlyArray<string>
@@ -22,6 +23,7 @@ program.addCommand(billsCommand)
 program.addCommand(accountsCommand)
 program.addCommand(accountTransfersCommand)
 program.addCommand(paymentsCommand)
+program.addCommand(tablesCommand)
 program.addCommand(fioPluginsCommand)
 program.addCommand(backgroundJobsCommand)
 

@@ -13,4 +13,5 @@ export const table = {
   sortOrder: NonNegativeIntegerSchema,
 } as const
 
+export type Table = typeof table
 export type TableRow = InferTable<typeof table>

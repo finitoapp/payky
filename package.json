@@ -6,13 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "biome lint .",
+    "check:lint": "biome check .",
+    "check:ts": "tsc -b",
+    "check:tests": "vitest run",
+    "check": "bun run check:lint && bun run check:ts && bun run check:tests",
     "format": "biome check --write .",
-    "check": "biome check .",
-    "verify": "bun run check && bun run typecheck && bun run test",
-    "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b",
     "preview": "vite preview"
   },
   "dependencies": {

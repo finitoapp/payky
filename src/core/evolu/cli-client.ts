@@ -103,7 +103,7 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
 
   const run = disposer.use(
     createRun({
-      console: createConsole({ level: "debug" }),
+      console: createConsole({ level: "log" }),
       consoleStoreOutputEntry: consoleStoreOutput.entry,
       createBroadcastChannel,
       createMessageChannel,

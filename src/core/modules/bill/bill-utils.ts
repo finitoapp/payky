@@ -10,7 +10,7 @@ import { createCatalogItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonNegativeInteger,
-  PositiveInteger,
+  PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import {
   removeUndefinedValues,
@@ -54,9 +54,7 @@ export const calculateBillItems = (
     })
     const existing = projected.get(idValue)
     const direction = line.kind === "add" ? 1 : -1
-    const nextQuantity = PositiveInteger(
-      (existing?.quantity ?? 0) + direction * line.quantity
-    )
+    const nextQuantity = (existing?.quantity ?? 0) + direction * line.quantity
     const nextTotalAmount =
       (existing?.totalAmount ?? 0) + direction * line.totalAmount
 
@@ -74,7 +72,7 @@ export const calculateBillItems = (
       name: item.name,
       description: item.description,
       currency: item.currency,
-      quantity: nextQuantity,
+      quantity: PositiveNumber(nextQuantity),
       totalAmount: NonNegativeInteger(Math.max(0, nextTotalAmount)),
     })
   }

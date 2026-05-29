@@ -1,4 +1,4 @@
-import { sqliteTrue, testCreateRun } from "@evolu/common"
+import { sqliteTrue, testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
@@ -113,6 +113,7 @@ describe("fio account transaction sync job", () => {
         })
       },
     })({
+      console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)
@@ -172,6 +173,7 @@ describe("fio account transaction sync job", () => {
           transactions: [fioTransaction],
         }),
     })({
+      console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)

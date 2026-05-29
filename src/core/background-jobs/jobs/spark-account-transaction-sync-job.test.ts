@@ -1,5 +1,5 @@
 import { SparkWalletEvent } from "@buildonspark/spark-sdk"
-import { testCreateRun } from "@evolu/common"
+import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
@@ -146,6 +146,7 @@ describe("spark account transaction sync job", () => {
         receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
       recheckIntervalMs: 10,
     })({
+      console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)
@@ -206,6 +207,7 @@ describe("spark account transaction sync job", () => {
           receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
         recheckIntervalMs: 60_000,
       })({
+        console: testCreateConsole(),
         evolu,
         onError: (error) => {
           errors.push(error)
@@ -258,6 +260,7 @@ describe("spark account transaction sync job", () => {
       },
       recheckIntervalMs: 10,
     })({
+      console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)

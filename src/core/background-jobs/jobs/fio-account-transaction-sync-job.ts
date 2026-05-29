@@ -1,4 +1,4 @@
-import { createRun } from "@evolu/common"
+import { type ConsoleDep, createRun } from "@evolu/common"
 
 import type {
   BackgroundJob,
@@ -24,7 +24,10 @@ import {
 
 type BackgroundJobDeps = Parameters<BackgroundJob>[0]
 
-type FioAccountSyncDeps = EvoluDep & FetchDep & BackgroundJobOnErrorDep
+type FioAccountSyncDeps = EvoluDep &
+  FetchDep &
+  ConsoleDep &
+  BackgroundJobOnErrorDep
 
 interface FioAccountTransactionSyncJobOptions {
   readonly fetch?: typeof globalThis.fetch
@@ -49,6 +52,7 @@ export const createFioAccountTransactionSyncJob =
     const sync = new FioAccountTransactionSync(
       {
         ...context,
+        console: context.console.child("fio-account-transaction-sync-job"),
         fetch,
       },
       context
@@ -215,7 +219,16 @@ class FioPluginSync {
         })
         const result = await run(fetchFioLastTransactions())
         if (!result.ok) throw result.error
-        if (result.value.iban !== this.plugin.iban) return
+        if (result.value.iban !== this.plugin.iban) {
+          this.deps.console.warn(
+            "Skipped FIO statement for a different IBAN.",
+            {
+              accountId: this.plugin.accountId,
+              pluginId: this.plugin.id,
+            }
+          )
+          return
+        }
 
         for (const transaction of result.value.transactions) {
           if (this.disposed) return
@@ -260,6 +273,11 @@ class FioPluginSync {
           },
         })
       )
+      this.deps.console.info("Created FIO account transaction.", {
+        accountId: this.plugin.accountId,
+        bankReference,
+        pluginId: this.plugin.id,
+      })
     })
   }
 }

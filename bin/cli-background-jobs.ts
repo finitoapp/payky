@@ -1,3 +1,4 @@
+import { createConsole } from "@evolu/common"
 import { createCommand } from "commander"
 import { backgroundJobs } from "../src/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "../src/core/background-jobs/run-background-jobs"
@@ -23,8 +24,10 @@ backgroundJobsCommand.addCommand(
     .action(async () => {
       await using evoluCli = await createEvoluCli()
       const { evolu } = evoluCli
+      const appConsole = createConsole()
 
       using _backgroundJobsDisposable = runBackgroundJobs(backgroundJobs, {
+        console: appConsole,
         evolu,
         onError: (error) => {
           console.error("Background job failed.", error)

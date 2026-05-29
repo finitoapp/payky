@@ -2,7 +2,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import "./index.css"
-import { createRun } from "@evolu/common"
+import { createConsole, createRun } from "@evolu/common"
 import { createEvoluDeps } from "@evolu/react-web"
 import { backgroundJobs } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
@@ -16,9 +16,12 @@ if (rootElement == null) {
   throw new Error("Root element was not found.")
 }
 
-const run = createRun(createEvoluDeps())
+const appConsole = createConsole()
+const evoluDeps = createEvoluDeps({ console: appConsole })
+const run = createRun(evoluDeps)
 const evolu = await run.orThrow(createAppEvolu())
 const backgroundJobsDisposable = runBackgroundJobs(backgroundJobs, {
+  console: appConsole,
   evolu,
   onError: (error) => {
     console.error("Background job cleanup failed.", error)

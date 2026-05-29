@@ -1,3 +1,4 @@
+import { testCreateConsole } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type {
@@ -10,6 +11,7 @@ import { runBackgroundJobs } from "./run-background-jobs.ts"
 const createBackgroundJobContext = (
   errors: unknown[] = []
 ): BackgroundJobContext => ({
+  console: testCreateConsole(),
   evolu: {} as Evolu,
   onError: (error) => {
     errors.push(error)

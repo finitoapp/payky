@@ -3,11 +3,14 @@ import {
   SparkWalletEvent,
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
-import { createRun } from "@evolu/common"
+import { type ConsoleDep, createRun } from "@evolu/common"
 import { validateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english"
 
-import type { BackgroundJob } from "@/core/background-jobs/background-job-types.ts"
+import type {
+  BackgroundJob,
+  BackgroundJobOnErrorDep,
+} from "@/core/background-jobs/background-job-types.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
@@ -37,9 +40,7 @@ type SparkWalletEventName =
 
 type BackgroundJobDeps = Parameters<BackgroundJob>[0]
 
-type AccountSyncDeps = EvoluDep & {
-  readonly onError: (error: unknown) => void
-}
+type AccountSyncDeps = EvoluDep & ConsoleDep & BackgroundJobOnErrorDep
 
 interface SparkTransfer {
   readonly id: string
@@ -130,8 +131,12 @@ export const createSparkAccountTransactionSyncJob =
     recheckIntervalMs = DEFAULT_RECHECK_INTERVAL_MS,
   }: SparkAccountTransactionSyncJobOptions = {}): BackgroundJob =>
   (context) => {
+    const jobContext = {
+      ...context,
+      console: context.console.child("spark-account-transaction-sync-job"),
+    }
     const sync = new SparkAccountTransactionSync(
-      context,
+      jobContext,
       walletFactory,
       recheckIntervalMs
     )
@@ -313,7 +318,12 @@ class SparkAccountSync {
   }
 
   private async initialize(): Promise<void> {
-    if (!isValidSparkSecret(this.account.mnemonic)) return
+    if (!isValidSparkSecret(this.account.mnemonic)) {
+      this.deps.console.warn("Skipped Spark account with an invalid secret.", {
+        accountId: this.account.id,
+      })
+      return
+    }
 
     const wallet = await this.walletFactory(this.account.mnemonic)
 
@@ -415,6 +425,10 @@ class SparkAccountSync {
           )
         )
       )
+      this.deps.console.info("Created Spark account transaction.", {
+        accountId: this.account.id,
+        sparkTransferId,
+      })
     })
   }
 }

@@ -26,6 +26,7 @@ export const NonEmptyStringSchema = z
 export type NonEmptyString = z.output<typeof NonEmptyStringSchema>
 export const NonEmptyString255Schema =
   NonEmptyStringSchema.max(255).brand<"NonEmptyString255">()
+export type NonEmptyString255 = z.output<typeof NonEmptyString255Schema>
 export const HttpsUrlSchema = z
   .url()
   .refine((value) => value.startsWith("https://"), {

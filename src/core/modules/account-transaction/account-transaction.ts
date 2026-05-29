@@ -57,6 +57,9 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionSpark_sparkTransferId")
     .on("accountTransactionSpark")
     .column("sparkTransferId"),
+  create("accountTransactionIban_bankReference")
+    .on("accountTransactionIban")
+    .column("bankReference"),
 ]) satisfies IndexesConfig
 
 export type AccountTransactionRow = InferTable<typeof accountTransaction>

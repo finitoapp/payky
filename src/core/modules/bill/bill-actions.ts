@@ -8,11 +8,11 @@ import {
 
 import { defineError } from "@/core/error.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
-import type { BillItemRow } from "@/core/modules/bill-item/bill-item.ts"
+import type { BillLineSummary } from "@/core/modules/bill/bill-line-summary.ts"
 import type {
-  BillItemLineRow,
-  billItemLine,
-} from "@/core/modules/bill-item-line/bill-item-line.ts"
+  BillLineRow,
+  billLine,
+} from "@/core/modules/bill-line/bill-line.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { item } from "@/core/modules/item/item.ts"
@@ -31,16 +31,16 @@ import {
 import { billByIdQuery, openBillsQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 import {
-  appendBillItemLine,
-  appendBillItemLines,
+  appendBillLine,
+  appendBillLines,
   createOrReuseCatalogItemSnapshot,
   createOrReuseItemSnapshot,
-  loadCalculatedBillItems,
+  loadCalculatedBillLineSummaries,
 } from "./bill-utils.ts"
 
 export interface BillWithItems {
   readonly bill: BillRow
-  readonly items: ReadonlyArray<BillItemRow>
+  readonly items: ReadonlyArray<BillLineSummary>
 }
 
 const createBillNotFoundError = defineError("BillNotFound")<{
@@ -55,20 +55,20 @@ export type CatalogItemNotFoundError = ReturnType<
   typeof createCatalogItemNotFoundError
 >
 
-const createBillItemProjectionMissingError = defineError(
-  "BillItemProjectionMissing"
+const createBillLineSummaryMissingError = defineError(
+  "BillLineSummaryMissing"
 )<{
   readonly billId: BillId
-  readonly itemId: BillItemRow["itemId"]
-  readonly lineType: BillItemRow["type"]
+  readonly itemId: BillLineSummary["itemId"]
+  readonly lineType: BillLineSummary["type"]
 }>()
-export type BillItemProjectionMissingError = ReturnType<
-  typeof createBillItemProjectionMissingError
+export type BillLineSummaryMissingError = ReturnType<
+  typeof createBillLineSummaryMissingError
 >
 
-export type AddBillItemError =
+export type AddBillLineError =
   | CatalogItemNotFoundError
-  | BillItemProjectionMissingError
+  | BillLineSummaryMissingError
 
 export type SplitBillError = BillNotFoundError
 
@@ -79,12 +79,11 @@ export const catalogItemNotFound = (
   id: CatalogItemId
 ): CatalogItemNotFoundError => createCatalogItemNotFoundError({ id })
 
-const billItemProjectionMissing = (input: {
+const billLineSummaryMissing = (input: {
   readonly billId: BillId
-  readonly itemId: BillItemRow["itemId"]
-  readonly lineType: BillItemRow["type"]
-}): BillItemProjectionMissingError =>
-  createBillItemProjectionMissingError(input)
+  readonly itemId: BillLineSummary["itemId"]
+  readonly lineType: BillLineSummary["type"]
+}): BillLineSummaryMissingError => createBillLineSummaryMissingError(input)
 
 export const loadBill =
   (idValue: BillId): Task<BillRow, BillNotFoundError, EvoluDep> =>
@@ -150,14 +149,14 @@ export const removeTableFromBill =
 export const addCatalogItemToBill =
   (
     input: Pick<
-      InsertValues<typeof billItemLine>,
+      InsertValues<typeof billLine>,
       "billId" | "deviceId" | "quantity"
     > & {
       readonly catalogItemId: NonNullable<
-        InsertValues<typeof billItemLine>["catalogItemId"]
+        InsertValues<typeof billLine>["catalogItemId"]
       >
     }
-  ): Task<BillItemRow, AddBillItemError, EvoluDep> =>
+  ): Task<BillLineSummary, AddBillLineError, EvoluDep> =>
   async (run) => {
     const catalogItemResult = getFirstOr(
       await run.deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
@@ -168,7 +167,7 @@ export const addCatalogItemToBill =
     const item = await createOrReuseCatalogItemSnapshot(run.deps)(
       catalogItemResult.value
     )
-    const projected = await appendBillItemLine(run.deps)({
+    const projected = await appendBillLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: catalogItemResult.value.id,
@@ -180,26 +179,26 @@ export const addCatalogItemToBill =
         catalogItemResult.value.unitAmount * input.quantity
       ),
     })
-    const billItem = projected.find((row) => row.itemId === item.id)
-    return billItem == null
+    const lineSummary = projected.find((row) => row.itemId === item.id)
+    return lineSummary == null
       ? err(
-          billItemProjectionMissing({
+          billLineSummaryMissing({
             billId: input.billId,
             itemId: item.id,
             lineType: "catalogItem",
           })
         )
-      : ok(billItem)
+      : ok(lineSummary)
   }
 
 export const addManualAmountToBill =
   (
     input: Pick<
-      InsertValues<typeof billItemLine>,
+      InsertValues<typeof billLine>,
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Task<BillItemRow, BillItemProjectionMissingError, EvoluDep> =>
+  ): Task<BillLineSummary, BillLineSummaryMissingError, EvoluDep> =>
   async (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
@@ -209,7 +208,7 @@ export const addManualAmountToBill =
       unitAmount: input.totalAmount,
     })
     await createOrReuseItemSnapshot(run.deps)(snapshot)
-    const projected = await appendBillItemLine(run.deps)({
+    const projected = await appendBillLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: null,
@@ -219,26 +218,26 @@ export const addManualAmountToBill =
       quantity: PositiveNumber(1),
       totalAmount: input.totalAmount,
     })
-    const billItem = projected.find((row) => row.itemId === snapshot.id)
-    return billItem == null
+    const lineSummary = projected.find((row) => row.itemId === snapshot.id)
+    return lineSummary == null
       ? err(
-          billItemProjectionMissing({
+          billLineSummaryMissing({
             billId: input.billId,
             itemId: snapshot.id,
             lineType: "manualAmount",
           })
         )
-      : ok(billItem)
+      : ok(lineSummary)
   }
 
 export const addTipToBill =
   (
     input: Pick<
-      InsertValues<typeof billItemLine>,
+      InsertValues<typeof billLine>,
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Task<BillItemRow, BillItemProjectionMissingError, EvoluDep> =>
+  ): Task<BillLineSummary, BillLineSummaryMissingError, EvoluDep> =>
   async (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
@@ -248,7 +247,7 @@ export const addTipToBill =
       unitAmount: input.totalAmount,
     })
     await createOrReuseItemSnapshot(run.deps)(snapshot)
-    const projected = await appendBillItemLine(run.deps)({
+    const projected = await appendBillLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
       catalogItemId: null,
@@ -258,39 +257,39 @@ export const addTipToBill =
       quantity: PositiveNumber(1),
       totalAmount: input.totalAmount,
     })
-    const billItem = projected.find((row) => row.itemId === snapshot.id)
-    return billItem == null
+    const lineSummary = projected.find((row) => row.itemId === snapshot.id)
+    return lineSummary == null
       ? err(
-          billItemProjectionMissing({
+          billLineSummaryMissing({
             billId: input.billId,
             itemId: snapshot.id,
             lineType: "tip",
           })
         )
-      : ok(billItem)
+      : ok(lineSummary)
   }
 
-export const appendRemoveBillItemLine =
+export const appendRemoveBillLine =
   (
     input: Pick<
-      InsertValues<typeof billItemLine>,
+      InsertValues<typeof billLine>,
       "billId" | "deviceId" | "quantity" | "totalAmount"
     > & {
-      readonly billItem: BillItemRow
+      readonly lineSummary: BillLineSummary
     }
-  ): Task<BillItemRow | null, never, EvoluDep> =>
+  ): Task<BillLineSummary | null, never, EvoluDep> =>
   async (run) => {
-    const projected = await appendBillItemLine(run.deps)({
+    const projected = await appendBillLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
-      catalogItemId: input.billItem.catalogItemId,
-      itemId: input.billItem.itemId,
-      type: input.billItem.type,
+      catalogItemId: input.lineSummary.catalogItemId,
+      itemId: input.lineSummary.itemId,
+      type: input.lineSummary.type,
       kind: "remove",
       quantity: input.quantity,
       totalAmount: input.totalAmount,
     })
-    return ok(projected.find((row) => row.id === input.billItem.id) ?? null)
+    return ok(projected.find((row) => row.id === input.lineSummary.id) ?? null)
   }
 
 export const listOpenBills =
@@ -301,7 +300,7 @@ export const listOpenBills =
         bills.map(
           async (bill): Promise<BillWithItems> => ({
             bill,
-            items: await loadCalculatedBillItems(run.deps)(bill.id),
+            items: await loadCalculatedBillLineSummaries(run.deps)(bill.id),
           })
         )
       )
@@ -312,13 +311,13 @@ export const splitBill =
   (input: {
     readonly sourceBillId: BillId
     readonly targetBillId: BillId
-    readonly items: ReadonlyArray<BillItemRow>
+    readonly items: ReadonlyArray<BillLineSummary>
   }): Task<BillWithItems, SplitBillError, EvoluDep> =>
   async (run) => {
     const targetBillResult = await run(loadBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
-    const lines: Omit<BillItemLineRow, "id">[] = []
+    const lines: Omit<BillLineRow, "id">[] = []
     for (const item of input.items) {
       lines.push({
         billId: input.sourceBillId,
@@ -341,7 +340,7 @@ export const splitBill =
         totalAmount: item.totalAmount,
       })
     }
-    const targetItems = await appendBillItemLines(run.deps)(
+    const targetItems = await appendBillLines(run.deps)(
       lines,
       input.targetBillId
     )

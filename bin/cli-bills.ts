@@ -7,7 +7,7 @@ import {
   addCatalogItemToBill,
   addManualAmountToBill,
   addTipToBill,
-  appendRemoveBillItemLine,
+  appendRemoveBillLine,
   assignBillToTable,
   cancelBill,
   closeBillAsPaid,
@@ -18,10 +18,9 @@ import {
   removeTableFromBill,
   splitBill,
 } from "../src/core/modules/bill/bill-actions"
+import type { BillLineSummary } from "../src/core/modules/bill/bill-line-summary"
 import { BillId } from "../src/core/modules/bill/bill-types"
-import { loadCalculatedBillItems } from "../src/core/modules/bill/bill-utils"
-import type { BillItemRow } from "../src/core/modules/bill-item/bill-item"
-import { BillItemId } from "../src/core/modules/bill-item/bill-item-types"
+import { loadCalculatedBillLineSummaries } from "../src/core/modules/bill/bill-utils"
 import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import { PaymentId } from "../src/core/modules/payment/payment-types"
@@ -38,35 +37,36 @@ declare const process: {
   exitCode?: number
 }
 
-const BillItemIdsFromStringSchema = z
+const LineSummaryIdsFromStringSchema = z
   .string()
   .trim()
   .min(1)
-  .transform((value, ctx): ReadonlyArray<z.output<typeof BillItemId>> => {
-    const ids: Array<z.output<typeof BillItemId>> = []
+  .transform((value, ctx): ReadonlyArray<BillLineSummary["id"]> => {
+    const ids: Array<BillLineSummary["id"]> = []
 
     for (const rawId of value.split(",")) {
-      const parsed = BillItemId.safeParse(rawId.trim())
-      if (!parsed.success) {
+      const id = rawId.trim()
+      if (id.length === 0) {
         ctx.addIssue({
           code: "custom",
-          message: `Invalid bill item id: ${rawId}`,
+          message: "Line summary id cannot be empty",
         })
         return z.NEVER
       }
-      ids.push(parsed.data)
+      ids.push(id)
     }
 
     return ids
   })
 
-const findBillItem = (
-  items: ReadonlyArray<BillItemRow>,
-  id: z.output<typeof BillItemId>
-): BillItemRow | null => items.find((item) => item.id === id) ?? null
+const findLineSummary = (
+  summaries: ReadonlyArray<BillLineSummary>,
+  id: BillLineSummary["id"]
+): BillLineSummary | null =>
+  summaries.find((summary) => summary.id === id) ?? null
 
 export const billsCommand = createCommand("bills").description(
-  "Manage bills and bill items."
+  "Manage bills and bill lines."
 )
 
 billsCommand
@@ -111,7 +111,9 @@ billsCommand
         const bill = await run.orThrow(loadBill(options.id))
 
         console.table([bill])
-        console.table(await loadCalculatedBillItems({ evolu })(options.id))
+        console.table(
+          await loadCalculatedBillLineSummaries({ evolu })(options.id)
+        )
       },
     })
   )
@@ -207,14 +209,14 @@ billsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const billItem = await run.orThrow(
+        const lineSummary = await run.orThrow(
           addCatalogItemToBill({
             ...options,
             deviceId: options.deviceId ?? null,
           })
         )
 
-        console.table([billItem])
+        console.table([lineSummary])
       },
     })
   )
@@ -238,14 +240,14 @@ billsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const billItem = await run.orThrow(
+        const lineSummary = await run.orThrow(
           addManualAmountToBill({
             ...options,
             deviceId: options.deviceId ?? null,
           })
         )
 
-        console.table([billItem])
+        console.table([lineSummary])
       },
     })
   )
@@ -268,14 +270,14 @@ billsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const billItem = await run.orThrow(
+        const lineSummary = await run.orThrow(
           addTipToBill({
             ...options,
             deviceId: options.deviceId ?? null,
           })
         )
 
-        console.table([billItem])
+        console.table([lineSummary])
       },
     })
   )
@@ -283,11 +285,11 @@ billsCommand
   .addCommand(
     zodCommand({
       name: "remove-item",
-      description: "Append a removal line for a bill item.",
+      description: "Append a removal line for a bill line summary.",
       args: {},
       opts: {
         billId: BillId.describe("Bill id"),
-        billItemId: BillItemId.describe("Bill item id"),
+        lineSummaryId: z.string().trim().min(1).describe("Line summary id"),
         quantity: PositiveNumberFromStringSchema.describe(
           "q;Quantity to remove"
         ),
@@ -302,27 +304,27 @@ billsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const billItem = findBillItem(
-          await loadCalculatedBillItems({ evolu })(options.billId),
-          options.billItemId
+        const lineSummary = findLineSummary(
+          await loadCalculatedBillLineSummaries({ evolu })(options.billId),
+          options.lineSummaryId
         )
-        if (billItem == null) {
-          console.error(`billItem not found: ${options.billItemId}`)
+        if (lineSummary == null) {
+          console.error(`Line summary not found: ${options.lineSummaryId}`)
           process.exitCode = 1
           return
         }
 
-        const appendedBillItem = await run.orThrow(
-          appendRemoveBillItemLine({
+        const updatedLineSummary = await run.orThrow(
+          appendRemoveBillLine({
             billId: options.billId,
             deviceId: options.deviceId ?? null,
-            billItem,
+            lineSummary,
             quantity: options.quantity,
             totalAmount: options.totalAmount,
           })
         )
 
-        console.table(appendedBillItem == null ? [] : [appendedBillItem])
+        console.table(updatedLineSummary == null ? [] : [updatedLineSummary])
       },
     })
   )
@@ -330,13 +332,14 @@ billsCommand
   .addCommand(
     zodCommand({
       name: "split",
-      description: "Move selected bill items from one bill to another.",
+      description:
+        "Move selected bill line summaries from one bill to another.",
       args: {},
       opts: {
         sourceBillId: BillId.describe("Source bill id"),
         targetBillId: BillId.describe("Target bill id"),
-        billItemIds: BillItemIdsFromStringSchema.describe(
-          "Comma-separated bill item ids"
+        lineSummaryIds: LineSummaryIdsFromStringSchema.describe(
+          "Comma-separated line summary ids"
         ),
       },
       async action(_, options) {
@@ -344,19 +347,19 @@ billsCommand
         const { evolu } = evoluCli
         const run = createRun({ evolu })
 
-        const sourceItems = await loadCalculatedBillItems({ evolu })(
+        const sourceItems = await loadCalculatedBillLineSummaries({ evolu })(
           options.sourceBillId
         )
-        const selectedItems: BillItemRow[] = []
+        const selectedItems: BillLineSummary[] = []
 
-        for (const id of options.billItemIds) {
-          const billItem = findBillItem(sourceItems, id)
-          if (billItem == null) {
-            console.error(`billItem not found: ${id}`)
+        for (const id of options.lineSummaryIds) {
+          const lineSummary = findLineSummary(sourceItems, id)
+          if (lineSummary == null) {
+            console.error(`Line summary not found: ${id}`)
             process.exitCode = 1
             return
           }
-          selectedItems.push(billItem)
+          selectedItems.push(lineSummary)
         }
 
         const result = await run.orThrow(

@@ -11,7 +11,7 @@ import {
   addCatalogItemToBill,
   addManualAmountToBill,
   addTipToBill,
-  appendRemoveBillItemLine,
+  appendRemoveBillLine,
   assignBillToTable,
   cancelBill,
   closeBillAsPaid,
@@ -24,20 +24,12 @@ import {
 } from "./bill-actions.ts"
 import { billByIdQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
+import { loadCalculatedBillLineSummaries } from "./bill-utils.ts"
 
-const billItemsByBillIdQuery = (billId: BillId) =>
+const billLinesByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
     db
-      .selectFrom("billItem")
-      .selectAll()
-      .where("billId", "=", billId)
-      .orderBy("name", "asc")
-  )
-
-const billItemLinesByBillIdQuery = (billId: BillId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("billItemLine")
+      .selectFrom("billLine")
       .selectAll()
       .where("billId", "=", billId)
       .orderBy("createdAt", "asc")
@@ -213,7 +205,7 @@ describe("bill actions", () => {
       ])
   }, 15_000)
 
-  test("adds catalog, manual amount, and tip items to a bill projection", async () => {
+  test("adds catalog, manual amount, and tip lines to a bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
@@ -230,7 +222,7 @@ describe("bill actions", () => {
       })
     )
 
-    const catalogBillItem = await run.orThrow(
+    const catalogLineSummary = await run.orThrow(
       addCatalogItemToBill({
         billId,
         deviceId: null,
@@ -238,7 +230,7 @@ describe("bill actions", () => {
         quantity: 2,
       })
     )
-    const manualBillItem = await run.orThrow(
+    const manualLineSummary = await run.orThrow(
       addManualAmountToBill({
         billId,
         deviceId: null,
@@ -247,7 +239,7 @@ describe("bill actions", () => {
         totalAmount: 1_500,
       })
     )
-    const tipBillItem = await run.orThrow(
+    const tipLineSummary = await run.orThrow(
       addTipToBill({
         billId,
         deviceId: null,
@@ -257,7 +249,7 @@ describe("bill actions", () => {
       })
     )
 
-    expect(catalogBillItem).toMatchObject({
+    expect(catalogLineSummary).toMatchObject({
       billId,
       catalogItemId,
       type: "catalogItem",
@@ -266,7 +258,7 @@ describe("bill actions", () => {
       quantity: 2,
       totalAmount: 11_800,
     })
-    expect(manualBillItem).toMatchObject({
+    expect(manualLineSummary).toMatchObject({
       billId,
       catalogItemId: null,
       type: "manualAmount",
@@ -274,7 +266,7 @@ describe("bill actions", () => {
       quantity: 1,
       totalAmount: 1_500,
     })
-    expect(tipBillItem).toMatchObject({
+    expect(tipLineSummary).toMatchObject({
       billId,
       catalogItemId: null,
       type: "tip",
@@ -284,7 +276,7 @@ describe("bill actions", () => {
     })
 
     await expect
-      .poll(() => evolu.loadQuery(billItemsByBillIdQuery(billId)))
+      .poll(() => loadCalculatedBillLineSummaries(deps)(billId))
       .toMatchObject([
         {
           name: "Coffee",
@@ -331,13 +323,13 @@ describe("bill actions", () => {
     })
   }, 15_000)
 
-  test("appends a remove line and removes depleted bill item projections", async () => {
+  test("appends a remove line and removes depleted bill line summaries", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
-    const billItem = await run.orThrow(
+    const lineSummary = await run.orThrow(
       addManualAmountToBill({
         billId,
         deviceId: null,
@@ -348,17 +340,17 @@ describe("bill actions", () => {
     )
 
     const afterPartialRemove = await run.orThrow(
-      appendRemoveBillItemLine({
+      appendRemoveBillLine({
         billId,
         deviceId: null,
-        billItem,
+        lineSummary,
         quantity: 0.25,
         totalAmount: 1_250,
       })
     )
 
     expect(afterPartialRemove).toMatchObject({
-      id: billItem.id,
+      id: lineSummary.id,
       quantity: 0.75,
       totalAmount: 3_750,
     })
@@ -366,10 +358,10 @@ describe("bill actions", () => {
     if (afterPartialRemove == null) return
 
     const afterFullRemove = await run.orThrow(
-      appendRemoveBillItemLine({
+      appendRemoveBillLine({
         billId,
         deviceId: null,
-        billItem: afterPartialRemove,
+        lineSummary: afterPartialRemove,
         quantity: 0.75,
         totalAmount: 3_750,
       })
@@ -377,15 +369,10 @@ describe("bill actions", () => {
 
     expect(afterFullRemove).toBeNull()
     await expect
-      .poll(() => evolu.loadQuery(billItemsByBillIdQuery(billId)))
-      .toMatchObject([
-        {
-          id: billItem.id,
-          isDeleted: 1,
-        },
-      ])
+      .poll(() => loadCalculatedBillLineSummaries(deps)(billId))
+      .toMatchObject([])
     await expect
-      .poll(() => evolu.loadQuery(billItemLinesByBillIdQuery(billId)))
+      .poll(() => evolu.loadQuery(billLinesByBillIdQuery(billId)))
       .toHaveLength(3)
   }, 15_000)
 
@@ -402,7 +389,7 @@ describe("bill actions", () => {
       displayNumber: 2,
       label: "Target",
     })
-    const billItem = await run.orThrow(
+    const lineSummary = await run.orThrow(
       addManualAmountToBill({
         billId: sourceBillId,
         deviceId: null,
@@ -416,7 +403,7 @@ describe("bill actions", () => {
       splitBill({
         sourceBillId,
         targetBillId,
-        items: [billItem],
+        items: [lineSummary],
       })
     )
 
@@ -435,21 +422,14 @@ describe("bill actions", () => {
       ],
     })
     await expect
-      .poll(() => evolu.loadQuery(billItemsByBillIdQuery(sourceBillId)))
-      .toMatchObject([
-        {
-          billId: sourceBillId,
-          name: "Shared dish",
-          isDeleted: 1,
-        },
-      ])
+      .poll(() => loadCalculatedBillLineSummaries(deps)(sourceBillId))
+      .toMatchObject([])
     await expect
-      .poll(() => evolu.loadQuery(billItemsByBillIdQuery(targetBillId)))
+      .poll(() => loadCalculatedBillLineSummaries(deps)(targetBillId))
       .toMatchObject([
         {
           billId: targetBillId,
           name: "Shared dish",
-          isDeleted: null,
         },
       ])
   }, 15_000)

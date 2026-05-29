@@ -24,9 +24,9 @@ or routes in new persistence code.
 - Use `bill`, not `checkout`, for open POS accounts.
 - Use `catalogItem` for editable sale item templates.
 - Use `item` for immutable sale item snapshots.
-- Use `billItemLine` for append-only bill item change events.
-- Use `billItem` only as a persisted or queried bill projection row keyed by
-  `billId + itemId + catalogItemId + type`.
+- Use `billLine` for append-only bill line events.
+- Do not create a `billItem` table. Current bill line summaries are read models
+  calculated from `billLine` plus `item`.
 
 ## Evolu Schema
 
@@ -80,8 +80,8 @@ const PaymentStatusSchema = z.enum([
   "canceled",
 ])
 const BillStatusSchema = z.enum(["open", "partiallyPaid", "paid", "canceled"])
-const BillItemTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
-const BillItemLineTagSchema = z.enum(["add", "remove"])
+const ItemLineTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
+const BillLineTagSchema = z.enum(["add", "remove"])
 ```
 
 ### `device`
@@ -202,22 +202,22 @@ Rules:
 - A bill may have no table.
 - Multiple open bills may point to the same table.
 - Moving a bill between tables updates only `bill.tableId`.
-- Paying a bill does not mutate `billItemLine` rows.
+- Paying a bill does not mutate `billLine` rows.
 
-### `billItemLine`
+### `billLine`
 
-`billItemLine` is the append-only event table for bill item changes. It follows
-the Finito `posBillItemLine` pattern.
+`billLine` is the append-only event table for bill line changes. It follows
+the Finito `posBillLine` pattern.
 
 ```ts
-billItemLine: {
+billLine: {
   id: TableIdSchema,
   billId: TableIdSchema,
   deviceId: NullableTableIdSchema,
   catalogItemId: NullableTableIdSchema,
   itemId: TableIdSchema,
-  type: BillItemTypeSchema,
-  _tag: BillItemLineTagSchema,
+  type: ItemLineTypeSchema,
+  _tag: BillLineTagSchema,
   quantity: PositiveNumberSchema,
   totalAmount: NonNegativeIntegerSchema,
 }
@@ -225,7 +225,7 @@ billItemLine: {
 
 Rules:
 
-- Rows are append-only. Do not update an existing `billItemLine` to change
+- Rows are append-only. Do not update an existing `billLine` to change
   quantity, amount, or removal state.
 - `_tag: "add"` increases the projected bill quantity and amount.
 - `_tag: "remove"` decreases the projected bill quantity and amount.
@@ -235,19 +235,19 @@ Rules:
 - Keep `catalogItemId` for audit/debugging, but projections merge by
   `billId + itemId + catalogItemId + type`.
 
-### `billItem`
+### Bill Line Summary
 
-`billItem` is the current projected bill item state. It can be persisted for
-simple app queries or produced by repository queries, but the schema must be
-specified because app code should consume this shape.
+There is no `billItem` table. A bill line summary is a non-persisted read model
+calculated from `billLine` rows joined with immutable `item` snapshots.
+App code may consume this shape, but `billLine` remains the source of truth.
 
 ```ts
-billItem: {
+BillLineSummary: {
   id: TableIdSchema,
   billId: TableIdSchema,
   catalogItemId: NullableTableIdSchema,
   itemId: TableIdSchema,
-  type: BillItemTypeSchema,
+  type: ItemLineTypeSchema,
   name: NonEmptyString255Schema,
   description: NonEmptyString255Schema.nullable(),
   currency: FiatCurrencySchema,
@@ -271,11 +271,11 @@ createIdFromString(
 
 Projection rules:
 
-- Build from all `billItemLine` rows for the bill.
+- Build from all `billLine` rows for the bill.
 - Join `item` by `itemId` for `name`, `description`, and item snapshot values.
 - Remove or omit projected rows whose resulting quantity is `0`.
-- A persisted `billItem` row must be replaced by writing a new projected value,
-  never by mutating `billItemLine`.
+- Never persist the summary as a domain row. Recalculate it from
+  `billLine` when current bill state is needed.
 
 ### `payment`
 
@@ -306,19 +306,19 @@ payment: {
 }
 ```
 
-### `paymentItemLine`
+### `paymentLine`
 
-Snapshot the bill item composition used for the payment. This keeps payment
+Snapshot the bill line summary composition used for the payment. This keeps payment
 history stable even if the bill remains open for partial payments.
 
 ```ts
-paymentItemLine: {
+paymentLine: {
   id: TableIdSchema,
   paymentId: TableIdSchema,
   billId: NullableTableIdSchema,
   catalogItemId: NullableTableIdSchema,
   itemId: TableIdSchema,
-  type: BillItemTypeSchema,
+  type: ItemLineTypeSchema,
   quantity: PositiveNumberSchema,
   totalAmount: NonNegativeIntegerSchema,
 }
@@ -364,16 +364,14 @@ fields.
 - `item_catalogItemId`
 - `bill_status`
 - `bill_tableId_status`
-- `billItem_billId`
-- `billItem_itemId`
-- `billItemLine_billId_createdAt` using Evolu metadata
-- `billItemLine_itemId`
+- `billLine_billId_createdAt` using Evolu metadata
+- `billLine_itemId`
 - `payment_billId`
 - `payment_tableId`
 - `payment_status`
 - `payment_createdAt` using Evolu metadata
 - `payment_method_createdAt` using Evolu metadata
-- `paymentItemLine_paymentId`
+- `paymentLine_paymentId`
 - `device_name`
 
 If using a helper like Finito's FK index generator, keep explicit custom indexes
@@ -399,8 +397,8 @@ Required bill repository operations:
 - add catalog item to bill
 - add manual amount to bill
 - add tip to bill
-- append remove line for bill item
-- list open bills with projected bill items
+- append remove line for a bill line summary
+- list open bills with calculated line summaries
 - split bill
 - partially pay bill
 - cancel bill
@@ -417,9 +415,10 @@ Required item repository behavior:
 Replace persistence-facing `checkout` naming with `bill` naming:
 
 - `Checkout` -> `Bill`
-- `CheckoutItem` -> `BillItem`
+- `CheckoutItem` -> `BillLineSummary` for read models, or `BillLine` for
+  persisted events
 - `checkoutId` -> `billId`
-- `checkout items` -> `bill item lines` plus projected `bill items`
+- `checkout items` -> `bill lines` plus calculated line summaries
 
 Existing UI route names may stay temporarily if already present, but new domain,
 schema, repository, and persistence code must use `bill`.
@@ -429,7 +428,7 @@ schema, repository, and persistence code must use `bill`.
 1. Create the Evolu schema module with the structures above.
 2. Add deterministic item snapshot helpers:
    - `createItemIdFromSnapshot`
-   - `createBillItemId`
+   - `createBillLineSummaryId`
    - `createOrReuseCatalogItemSnapshot`
 3. Add repository ports and Evolu-backed adapters.
 4. Keep the existing in-memory app state as a fallback or development fixture
@@ -451,8 +450,8 @@ schema, repository, and persistence code must use `bill`.
 - No new persistence-facing `checkout` schema, repository, or type is added.
 - `catalogItem` and `item` are separate structures.
 - `item.id` is deterministic from snapshot values.
-- Bill item changes are append-only through `billItemLine`.
-- Bill current state can be queried as `bill` plus projected `billItem` rows.
+- Bill line changes are append-only through `billLine`.
+- Bill current state can be queried as `bill` plus calculated line summaries.
 
 ## Verification
 

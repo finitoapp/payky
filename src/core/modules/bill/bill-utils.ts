@@ -1,14 +1,13 @@
-import { SqliteBoolean } from "@evolu/common"
+import { createIdFromString } from "@evolu/common"
 
-import type { BillItemRow } from "@/core/modules/bill-item/bill-item.ts"
-import { createBillItemId } from "@/core/modules/bill-item/bill-item-utils.ts"
-import type { BillItemLineRow } from "@/core/modules/bill-item-line/bill-item-line.ts"
+import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
 import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import { createCatalogItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  type ItemLineType,
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
@@ -16,8 +15,28 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
+import type { BillLineSummary } from "./bill-line-summary.ts"
 import { billLinesByBillIdQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
+
+interface BillLineSummaryIdentityInput {
+  readonly billId: BillId
+  readonly catalogItemId: BillLineSummary["catalogItemId"]
+  readonly itemId: BillLineSummary["itemId"]
+  readonly type: ItemLineType
+}
+
+export const createBillLineSummaryId = (
+  input: BillLineSummaryIdentityInput
+): string =>
+  createIdFromString<"BillLineSummary">(
+    JSON.stringify({
+      billId: input.billId,
+      catalogItemId: input.catalogItemId,
+      itemId: input.itemId,
+      type: input.type,
+    })
+  )
 
 export const createOrReuseItemSnapshot =
   (deps: EvoluDep) =>
@@ -33,12 +52,12 @@ export const createOrReuseCatalogItemSnapshot =
   async (catalogItem: CatalogItemRow): Promise<ItemRow> =>
     createOrReuseItemSnapshot(deps)(createCatalogItemSnapshot(catalogItem))
 
-export const calculateBillItems = (
-  lineRows: ReadonlyArray<BillItemLineRow>,
+export const calculateBillLineSummaries = (
+  lineRows: ReadonlyArray<BillLineRow>,
   itemRows: ReadonlyArray<ItemRow>
-): ReadonlyArray<BillItemRow> => {
+): ReadonlyArray<BillLineSummary> => {
   const itemsById = new Map(itemRows.map((item) => [item.id, item]))
-  const projected = new Map<string, BillItemRow>()
+  const projected = new Map<string, BillLineSummary>()
 
   for (const line of lineRows) {
     const item = itemsById.get(line.itemId)
@@ -46,7 +65,7 @@ export const calculateBillItems = (
       continue
     }
 
-    const idValue = createBillItemId({
+    const idValue = createBillLineSummaryId({
       billId: line.billId,
       catalogItemId: line.catalogItemId,
       itemId: line.itemId,
@@ -80,75 +99,26 @@ export const calculateBillItems = (
   return [...projected.values()]
 }
 
-export const loadCalculatedBillItems =
+export const loadCalculatedBillLineSummaries =
   (deps: EvoluDep) =>
-  async (billId: BillId): Promise<ReadonlyArray<BillItemRow>> => {
+  async (billId: BillId): Promise<ReadonlyArray<BillLineSummary>> => {
     const [lineRows, itemRows] = await Promise.all([
       deps.evolu.loadQuery(billLinesByBillIdQuery(billId)),
       deps.evolu.loadQuery(itemsQuery),
     ])
 
-    return calculateBillItems(lineRows, itemRows)
+    return calculateBillLineSummaries(lineRows, itemRows)
   }
-
-export const syncBillItemProjection =
-  (deps: EvoluDep) =>
-  async (billId: BillId): Promise<ReadonlyArray<BillItemRow>> => {
-    const [lineRows, itemRows] = await Promise.all([
-      deps.evolu.loadQuery(billLinesByBillIdQuery(billId)),
-      deps.evolu.loadQuery(itemsQuery),
-    ])
-    const projected = calculateBillItems(lineRows, itemRows)
-    const projectedIds = new Set(projected.map((billItem) => billItem.id))
-    const billItemIdsToDelete = new Set<BillItemRow["id"]>()
-
-    for (const line of lineRows) {
-      const idValue = createBillItemId({
-        billId: line.billId,
-        catalogItemId: line.catalogItemId,
-        itemId: line.itemId,
-        type: line.type,
-      })
-      if (!projectedIds.has(idValue)) {
-        billItemIdsToDelete.add(idValue)
-      }
-    }
-
-    if (billItemIdsToDelete.size > 0 || projected.length > 0) {
-      await runMutationWithCompletion((options) => {
-        for (const id of billItemIdsToDelete) {
-          deps.evolu.update(
-            "billItem",
-            {
-              id,
-              isDeleted: SqliteBoolean.orThrow(1),
-            },
-            options
-          )
-        }
-        for (const billItem of projected) {
-          deps.evolu.upsert("billItem", billItem, options)
-        }
-      })
-    }
-
-    return projected
-  }
-
-export const appendBillItemLines =
+export const appendBillLines =
   (deps: EvoluDep) =>
   async (
-    lines: ReadonlyArray<Omit<BillItemLineRow, "id">>,
+    lines: ReadonlyArray<Omit<BillLineRow, "id">>,
     returnBillId?: BillId
-  ): Promise<ReadonlyArray<BillItemRow>> => {
+  ): Promise<ReadonlyArray<BillLineSummary>> => {
     if (lines.length > 0) {
       await runMutationWithCompletion((options) => {
         for (const line of lines) {
-          deps.evolu.insert(
-            "billItemLine",
-            removeUndefinedValues(line),
-            options
-          )
+          deps.evolu.insert("billLine", removeUndefinedValues(line), options)
         }
       })
     }
@@ -162,25 +132,25 @@ export const appendBillItemLines =
     for (const line of lines) {
       billIds.add(line.billId)
     }
-    const projectedByBill = new Map(
+    const summariesByBill = new Map(
       await Promise.all(
         [...billIds].map(
           async (lineBillId) =>
             [
               lineBillId,
-              await syncBillItemProjection(deps)(lineBillId),
+              await loadCalculatedBillLineSummaries(deps)(lineBillId),
             ] as const
         )
       )
     )
 
-    return projectedByBill.get(targetBillId) ?? []
+    return summariesByBill.get(targetBillId) ?? []
   }
 
-export const appendBillItemLine =
+export const appendBillLine =
   (deps: EvoluDep) =>
   async (
-    line: Omit<BillItemLineRow, "id">
-  ): Promise<ReadonlyArray<BillItemRow>> => {
-    return appendBillItemLines(deps)([line])
+    line: Omit<BillLineRow, "id">
+  ): Promise<ReadonlyArray<BillLineSummary>> => {
+    return appendBillLines(deps)([line])
   }

@@ -109,8 +109,8 @@ export const BillStatusSchema = z.enum([
   "paid",
   "canceled",
 ])
-export const BillItemTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
-export const BillItemLineTagSchema = z.enum(["add", "remove"])
+export const ItemLineTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
+export const BillLineTagSchema = z.enum(["add", "remove"])
 export const IbanSchema = z
   .string()
   .trim()
@@ -137,8 +137,8 @@ export type Currency = z.output<typeof CurrencySchema>
 export type AccountKind = z.output<typeof AccountKindSchema>
 export type PaymentStatus = z.output<typeof PaymentStatusSchema>
 export type BillStatus = z.output<typeof BillStatusSchema>
-export type BillItemType = z.output<typeof BillItemTypeSchema>
-export type BillItemLineTag = z.output<typeof BillItemLineTagSchema>
+export type ItemLineType = z.output<typeof ItemLineTypeSchema>
+export type BillLineTag = z.output<typeof BillLineTagSchema>
 export type Integer = z.output<typeof IntegerSchema>
 export type FloatString = z.output<typeof NumberStringSchema>
 export type Iban = z.output<typeof IbanSchema>

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest"
 
-import { createBillItemId } from "@/core/modules/bill-item/bill-item-utils.ts"
 import { createItemIdFromSnapshot } from "./item-utils.ts"
 
 describe("Evolu item identity helpers", () => {
@@ -19,19 +18,5 @@ describe("Evolu item identity helpers", () => {
     expect(
       createItemIdFromSnapshot({ ...snapshot, unitAmount: 6900 })
     ).not.toBe(createItemIdFromSnapshot(snapshot))
-  })
-
-  test("creates stable bill item ids from projection identity", () => {
-    const identity = {
-      billId: "bill-1",
-      catalogItemId: "catalog-1",
-      itemId: "item-1",
-      type: "catalogItem" as const,
-    }
-
-    expect(createBillItemId(identity)).toBe(createBillItemId({ ...identity }))
-    expect(createBillItemId({ ...identity, type: "tip" })).not.toBe(
-      createBillItemId(identity)
-    )
   })
 })

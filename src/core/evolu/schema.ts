@@ -17,13 +17,9 @@ import {
 import { appSettings } from "@/core/modules/app-settings/app-settings.ts"
 import { bill, billIndexes } from "@/core/modules/bill/bill.ts"
 import {
-  billItem,
-  billItemIndexes,
-} from "@/core/modules/bill-item/bill-item.ts"
-import {
-  billItemLine,
-  billItemLineIndexes,
-} from "@/core/modules/bill-item-line/bill-item-line.ts"
+  billLine,
+  billLineIndexes,
+} from "@/core/modules/bill-line/bill-line.ts"
 import { catalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
 import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
@@ -39,11 +35,11 @@ import {
   paymentIndexes,
   paymentSpark,
 } from "@/core/modules/payment/payment.ts"
-import {
-  paymentItemLine,
-  paymentItemLineIndexes,
-} from "@/core/modules/payment-item-line/payment-item-line.ts"
 import { paymentLastNumber } from "@/core/modules/payment-last-number/payment-last-number.ts"
+import {
+  paymentLine,
+  paymentLineIndexes,
+} from "@/core/modules/payment-line/payment-line.ts"
 import { paymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import {
   reconciliationClaim,
@@ -64,13 +60,12 @@ export const AppSchema = {
   item,
   table,
   bill,
-  billItemLine,
-  billItem,
+  billLine,
   payment,
   paymentCashRegister,
   paymentSpark,
   paymentIban,
-  paymentItemLine,
+  paymentLine,
   reconciliationClaim,
   appSettings,
   paymentNumberSeries,
@@ -86,10 +81,9 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...accountTransactionIndexes(create),
   ...itemIndexes(create),
   ...billIndexes(create),
-  ...billItemIndexes(create),
-  ...billItemLineIndexes(create),
+  ...billLineIndexes(create),
   ...paymentIndexes(create),
-  ...paymentItemLineIndexes(create),
+  ...paymentLineIndexes(create),
   ...reconciliationClaimIndexes(create),
   ...deviceIndexes(create),
   ...fioPluginIndexes(create),

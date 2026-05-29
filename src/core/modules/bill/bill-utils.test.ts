@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest"
 
-import type { BillItemLineRow } from "@/core/modules/bill-item-line/bill-item-line.ts"
+import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
-import { calculateBillItems } from "./bill-utils.ts"
+import {
+  calculateBillLineSummaries,
+  createBillLineSummaryId,
+} from "./bill-utils.ts"
 
-describe("bill item projection", () => {
-  test("calculates bill items from item lines without persistence", () => {
+describe("bill line summaries", () => {
+  test("calculates summaries from bill lines without persistence", () => {
     const item: ItemRow = {
       id: "item-1",
       catalogItemId: "catalog-1",
@@ -14,7 +17,7 @@ describe("bill item projection", () => {
       currency: "CZK",
       unitAmount: 5900,
     }
-    const lines: ReadonlyArray<BillItemLineRow> = [
+    const lines: ReadonlyArray<BillLineRow> = [
       {
         id: "line-1",
         billId: "bill-1",
@@ -39,7 +42,7 @@ describe("bill item projection", () => {
       },
     ]
 
-    expect(calculateBillItems(lines, [item])).toMatchObject([
+    expect(calculateBillLineSummaries(lines, [item])).toMatchObject([
       {
         billId: "bill-1",
         catalogItemId: "catalog-1",
@@ -50,5 +53,21 @@ describe("bill item projection", () => {
         totalAmount: 5900,
       },
     ])
+  })
+
+  test("creates stable summary ids from projection identity", () => {
+    const identity = {
+      billId: "bill-1",
+      catalogItemId: "catalog-1",
+      itemId: "item-1",
+      type: "catalogItem" as const,
+    }
+
+    expect(createBillLineSummaryId(identity)).toBe(
+      createBillLineSummaryId({ ...identity })
+    )
+    expect(createBillLineSummaryId({ ...identity, type: "tip" })).not.toBe(
+      createBillLineSummaryId(identity)
+    )
   })
 })

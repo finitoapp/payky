@@ -22,7 +22,7 @@ export const billByIdQuery = (idValue: BillId) =>
 export const billLinesByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
     db
-      .selectFrom("billItemLine")
+      .selectFrom("billLine")
       .selectAll()
       .where("billId", "=", billId)
       .where("billId", "is not", null)

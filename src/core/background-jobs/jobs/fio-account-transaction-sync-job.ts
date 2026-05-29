@@ -14,6 +14,7 @@ import { createAccountTransaction } from "@/core/modules/account-transaction/acc
 import { accountTransactionIbanByBankReferenceQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import { activeFioPluginsQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   IntegerSchema,
@@ -252,7 +253,7 @@ class FioPluginSync {
       if (existing.length > 0) return
 
       const run = createRun(this.deps)
-      await run.orThrow(
+      const accountTransactionId = await run.orThrow(
         createAccountTransaction({
           deviceId: null,
           accountId: this.plugin.accountId,
@@ -271,6 +272,7 @@ class FioPluginSync {
           },
         })
       )
+      await run.orThrow(reconcileAccountTransaction(accountTransactionId))
       this.deps.console.info("Created FIO account transaction.", {
         accountId: this.plugin.accountId,
         bankReference,

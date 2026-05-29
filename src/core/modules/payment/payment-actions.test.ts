@@ -5,8 +5,11 @@ import type { FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  NonEmptyStringSchema,
+  TimestampMsSchema,
+} from "@/core/modules/shared/schema.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
@@ -14,7 +17,7 @@ import {
   createPayment,
   createPreparedPayment,
   loadPayment,
-  markPaymentPaid,
+  markPaymentPaidCash,
 } from "./payment-actions.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -78,6 +81,29 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
 const reconciliationClaimsByPaymentIdQuery = (id: PaymentId) =>
   createQuery((db) =>
     db.selectFrom("reconciliationClaim").selectAll().where("paymentId", "=", id)
+  )
+
+const accountTransactionsByPaymentIdQuery = (id: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "reconciliationClaim.accountTransactionId"
+      )
+      .select([
+        "accountTransaction.id",
+        "accountTransaction.deviceId",
+        "accountTransaction.accountId",
+        "accountTransaction.kind",
+        "accountTransaction.amount",
+        "accountTransaction.currency",
+        "accountTransaction.occurredAt",
+        "accountTransaction.note",
+        "accountTransaction.internalTransferGroupId",
+      ])
+      .where("reconciliationClaim.paymentId", "=", id)
   )
 
 const createPaymentAccounts = async (
@@ -304,12 +330,14 @@ describe("payment actions", () => {
       ])
   }, 15_000)
 
-  test("marks a payment paid with an account transaction", async () => {
+  test("marks a payment paid in cash by creating a cash account transaction", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = { evolu } satisfies EvoluDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+    const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
+    const note = NonEmptyStringSchema.decode("Paid in cash")
 
     const id = await run.orThrow(
       createPayment({
@@ -325,31 +353,44 @@ describe("payment actions", () => {
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
-      createAccountTransaction({
-        deviceId: null,
-        accountId: cashRegisterAccountId,
-        amount: 12_900,
-        currency: "CZK",
-        occurredAt: Date.now(),
-        note: null,
-        internalTransferGroupId: null,
-      })
-    )
 
     await expect(
-      run(markPaymentPaid(id, accountTransactionId))
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+          occurredAt,
+          note,
+        })
+      )
     ).resolves.toEqual({
       ok: true,
       value: id,
     })
 
     await expect
+      .poll(() => evolu.loadQuery(accountTransactionsByPaymentIdQuery(id)))
+      .toMatchObject([
+        {
+          accountId: cashRegisterAccountId,
+          kind: "cashRegister",
+          amount: 12_900,
+          currency: "CZK",
+          occurredAt,
+          note,
+          internalTransferGroupId: null,
+        },
+      ])
+
+    const [accountTransaction] = await evolu.loadQuery(
+      accountTransactionsByPaymentIdQuery(id)
+    )
+    await expect
       .poll(() => evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id)))
       .toMatchObject([
         {
           paymentId: id,
-          accountTransactionId,
+          accountTransactionId: accountTransaction?.id,
           source: "manual",
         },
       ])

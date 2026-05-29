@@ -15,6 +15,7 @@ import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-q
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionSparkByTransferIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
+import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   IntegerSchema,
@@ -416,7 +417,7 @@ class SparkAccountSync {
       if (existing.length > 0) return
 
       const run = createRun(this.deps)
-      await run.orThrow(
+      const accountTransactionId = await run.orThrow(
         createAccountTransaction(
           createSparkTransactionInput(
             this.account.id,
@@ -425,6 +426,7 @@ class SparkAccountSync {
           )
         )
       )
+      await run.orThrow(reconcileAccountTransaction(accountTransactionId))
       this.deps.console.info("Created Spark account transaction.", {
         accountId: this.account.id,
         sparkTransferId,

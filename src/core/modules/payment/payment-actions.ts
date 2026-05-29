@@ -12,9 +12,11 @@ import {
   fetchYadioBtcExchangeRate,
   type YadioHttpError,
 } from "@/core/integrations/yadio/yadio-client.ts"
+import { cashRegisterAccountByIdQuery } from "@/core/modules/account/account-queries.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
   payment,
@@ -22,7 +24,6 @@ import type {
   paymentIban,
   paymentSpark,
 } from "@/core/modules/payment/payment.ts"
-import type { ReconciliationClaimSource } from "@/core/modules/reconciliation-claim/reconciliation-claim.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
@@ -35,9 +36,11 @@ import type {
   SparkWalletDep,
 } from "@/core/spark/spark-wallet.ts"
 import {
+  type NonEmptyString,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
+  type TimestampMs,
   TimestampMsSchema,
 } from "../shared/schema.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
@@ -67,10 +70,35 @@ export type PaymentPreparationFailedError = ReturnType<
   typeof createPaymentPreparationFailedError
 >
 
+const createCashRegisterAccountNotFoundError = defineError(
+  "CashRegisterAccountNotFound"
+)<{
+  readonly id: AccountId
+}>()
+export type CashRegisterAccountNotFoundError = ReturnType<
+  typeof createCashRegisterAccountNotFoundError
+>
+
+const createCashRegisterAccountCurrencyMismatchError = defineError(
+  "CashRegisterAccountCurrencyMismatch"
+)<{
+  readonly id: AccountId
+  readonly accountCurrency: string
+  readonly paymentCurrency: string
+}>()
+export type CashRegisterAccountCurrencyMismatchError = ReturnType<
+  typeof createCashRegisterAccountCurrencyMismatchError
+>
+
 export type CreatePreparedPaymentError =
   | AccountSparkNotFoundError
   | PaymentPreparationFailedError
   | YadioHttpError
+
+export type MarkPaymentPaidCashError =
+  | PaymentNotFoundError
+  | CashRegisterAccountNotFoundError
+  | CashRegisterAccountCurrencyMismatchError
 
 export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
   createPaymentNotFoundError({ id })
@@ -78,6 +106,26 @@ export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
 export const accountSparkNotFound = (
   id: AccountId
 ): AccountSparkNotFoundError => createAccountSparkNotFoundError({ id })
+
+export const cashRegisterAccountNotFound = (
+  id: AccountId
+): CashRegisterAccountNotFoundError =>
+  createCashRegisterAccountNotFoundError({ id })
+
+export const cashRegisterAccountCurrencyMismatch = ({
+  id,
+  accountCurrency,
+  paymentCurrency,
+}: {
+  readonly id: AccountId
+  readonly accountCurrency: string
+  readonly paymentCurrency: string
+}): CashRegisterAccountCurrencyMismatchError =>
+  createCashRegisterAccountCurrencyMismatchError({
+    id,
+    accountCurrency,
+    paymentCurrency,
+  })
 
 const paymentPreparationFailed = (
   message: string
@@ -348,13 +396,55 @@ export const deletePayment =
     return ok(paymentId)
   }
 
-export const markPaymentPaid =
-  (
-    paymentId: PaymentId,
-    accountTransactionId: AccountTransactionId,
-    source: ReconciliationClaimSource = "manual"
-  ): Task<PaymentId, never, EvoluDep> =>
+export const markPaymentPaidCash =
+  ({
+    paymentId,
+    accountId,
+    deviceId,
+    occurredAt,
+    note,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly deviceId?: DeviceId | null
+    readonly occurredAt?: TimestampMs
+    readonly note?: NonEmptyString | null
+  }): Task<PaymentId, MarkPaymentPaidCashError, EvoluDep> =>
   async (run) => {
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    const payment = paymentResult.value
+    const cashRegisterAccountResult = getFirstOr(
+      await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
+      cashRegisterAccountNotFound(accountId)
+    )
+    if (!cashRegisterAccountResult.ok) return cashRegisterAccountResult
+
+    const cashRegisterAccount = cashRegisterAccountResult.value
+    if (cashRegisterAccount.currency !== payment.currency) {
+      return err(
+        cashRegisterAccountCurrencyMismatch({
+          id: accountId,
+          accountCurrency: cashRegisterAccount.currency,
+          paymentCurrency: payment.currency,
+        })
+      )
+    }
+
+    const accountTransactionResult = await run(
+      createAccountTransaction({
+        deviceId: deviceId ?? null,
+        accountId,
+        amount: payment.amount,
+        currency: payment.currency,
+        occurredAt: occurredAt ?? TimestampMsSchema.decode(Date.now()),
+        note: note ?? null,
+        internalTransferGroupId: null,
+      })
+    )
+    if (!accountTransactionResult.ok) return accountTransactionResult
+
     const id = createTableId<"ReconciliationClaim">()
 
     await runMutationWithCompletion((options) =>
@@ -362,10 +452,10 @@ export const markPaymentPaid =
         "reconciliationClaim",
         removeUndefinedValues({
           id,
-          deviceId: null,
+          deviceId: deviceId ?? null,
           paymentId,
-          accountTransactionId,
-          source,
+          accountTransactionId: accountTransactionResult.value,
+          source: "manual" as const,
           claimedAt: Date.now(),
         }),
         options

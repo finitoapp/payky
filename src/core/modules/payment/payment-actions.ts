@@ -1,4 +1,5 @@
 import {
+  createIdFromString,
   err,
   type InsertValues,
   ok,
@@ -434,6 +435,9 @@ export const markPaymentPaidCash =
 
     const accountTransactionResult = await run(
       createAccountTransaction({
+        id: createIdFromString<"AccountTransaction">(
+          `accountTransaction:cashRegister:payment:${paymentId}:${accountId}`
+        ),
         deviceId: deviceId ?? null,
         accountId,
         amount: payment.amount,
@@ -445,7 +449,9 @@ export const markPaymentPaidCash =
     )
     if (!accountTransactionResult.ok) return accountTransactionResult
 
-    const id = createTableId<"ReconciliationClaim">()
+    const id = createIdFromString<"ReconciliationClaim">(
+      `reconciliationClaim:manual:${paymentId}:${accountTransactionResult.value}`
+    )
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(

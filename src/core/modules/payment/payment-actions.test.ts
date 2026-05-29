@@ -396,6 +396,132 @@ describe("payment actions", () => {
       ])
   }, 15_000)
 
+  test("marking a payment paid in cash twice to the same account does not duplicate the transaction or claim", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+    const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
+    const note = NonEmptyStringSchema.decode("Paid in cash")
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 12_900,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: null,
+        cashRegister: {
+          accountId: cashRegisterAccountId,
+        },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+          occurredAt,
+          note,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id)))
+      .toHaveLength(1)
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+          occurredAt,
+          note,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    const claims = await evolu.loadQuery(
+      reconciliationClaimsByPaymentIdQuery(id)
+    )
+    expect(claims).toHaveLength(1)
+
+    const transactions = await evolu.loadQuery(
+      accountTransactionsByPaymentIdQuery(id)
+    )
+    expect(transactions).toHaveLength(1)
+  }, 15_000)
+
+  test("marking a payment paid in cash to two different accounts creates two transactions and two claims", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+    const secondCashRegisterAccountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Second cash register",
+        cashRegister: {
+          currency: "CZK",
+        },
+      })
+    )
+    const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 12_900,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: null,
+        cashRegister: {
+          accountId: cashRegisterAccountId,
+        },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+          occurredAt,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: secondCashRegisterAccountId,
+          occurredAt,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id)))
+      .toHaveLength(2)
+
+    const transactions = await evolu.loadQuery(
+      accountTransactionsByPaymentIdQuery(id)
+    )
+    expect(transactions).toHaveLength(2)
+    expect(transactions.map((t) => t.accountId).toSorted()).toEqual(
+      [cashRegisterAccountId, secondCashRegisterAccountId].toSorted()
+    )
+  }, 15_000)
+
   test("cancels a payment", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

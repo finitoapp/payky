@@ -23,11 +23,13 @@ import type { AccountTransactionId } from "./account-transaction-types.ts"
 
 export const createAccountTransaction =
   ({
+    id: providedId,
     iban,
     spark,
     ...input
-  }: Omit<InsertValues<typeof accountTransaction>, "kind"> &
-    (
+  }: Omit<InsertValues<typeof accountTransaction>, "kind"> & {
+    readonly id?: AccountTransactionId
+  } & (
       | {
           readonly iban: InsertValues<typeof accountTransactionIban>
           readonly spark?: never
@@ -42,15 +44,17 @@ export const createAccountTransaction =
         }
     )): Task<AccountTransactionId, never, EvoluDep> =>
   async (run) => {
-    const id = iban
-      ? createIdFromString<"AccountTransaction">(
-          `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
-        )
-      : spark
+    const id =
+      providedId ??
+      (iban
         ? createIdFromString<"AccountTransaction">(
-            `accountTransaction:spark:${spark.sparkTransferId}`
+            `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
           )
-        : createTableId<"AccountTransaction">()
+        : spark
+          ? createIdFromString<"AccountTransaction">(
+              `accountTransaction:spark:${spark.sparkTransferId}`
+            )
+          : createTableId<"AccountTransaction">())
 
     await runMutationWithCompletion((options) => {
       let kind: AccountTransactionRow["kind"] = "cashRegister"

@@ -141,7 +141,7 @@ describe("spark account transaction sync job", () => {
         id: transferId,
       }),
     ])
-    const job = createSparkAccountTransactionSyncJob({
+    using _job = createSparkAccountTransactionSyncJob({
       walletFactory: async (receivedMnemonic) =>
         receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
       recheckIntervalMs: 10,
@@ -152,34 +152,28 @@ describe("spark account transaction sync job", () => {
       },
     })
 
-    try {
-      await expect
-        .poll(() =>
-          evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
-        )
-        .toEqual([
-          {
-            accountId,
-            amount: 1234,
-            currency: "BTC",
-            occurredAt: new Date("2026-05-27T10:00:00Z").getTime(),
-            note: "Table 1",
-            sparkTransferId: transferId,
-            lnInvoice: "lnbc1invoice",
-            preImage: "preimage-1",
-            paymentHash: "payment-hash-1",
-          },
-        ])
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toEqual([
+        {
+          accountId,
+          amount: 1234,
+          currency: "BTC",
+          occurredAt: new Date("2026-05-27T10:00:00Z").getTime(),
+          note: "Table 1",
+          sparkTransferId: transferId,
+          lnInvoice: "lnbc1invoice",
+          preImage: "preimage-1",
+          paymentHash: "payment-hash-1",
+        },
+      ])
 
-      await new Promise((resolve) => setTimeout(resolve, 30))
+    await new Promise((resolve) => setTimeout(resolve, 30))
 
-      expect(
-        await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
-      ).toHaveLength(1)
-      expect(errors).toEqual([])
-    } finally {
-      job[Symbol.dispose]()
-    }
+    expect(
+      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
+    ).toHaveLength(1)
+    expect(errors).toEqual([])
   })
 
   test("records a claimed transfer live and removes listeners on dispose", async () => {
@@ -206,18 +200,18 @@ describe("spark account transaction sync job", () => {
         userRequest: undefined,
       }),
     ])
-    const job = createSparkAccountTransactionSyncJob({
-      walletFactory: async (receivedMnemonic) =>
-        receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
-      recheckIntervalMs: 60_000,
-    })({
-      evolu,
-      onError: (error) => {
-        errors.push(error)
-      },
-    })
+    {
+      using _job = createSparkAccountTransactionSyncJob({
+        walletFactory: async (receivedMnemonic) =>
+          receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
+        recheckIntervalMs: 60_000,
+      })({
+        evolu,
+        onError: (error) => {
+          errors.push(error)
+        },
+      })
 
-    try {
       wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
 
       await expect
@@ -233,15 +227,12 @@ describe("spark account transaction sync job", () => {
             paymentHash: transferId,
           },
         ])
-
-      job[Symbol.dispose]()
-      wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
-
-      expect(wallet.cleanups).toHaveLength(1)
-      expect(errors).toEqual([])
-    } finally {
-      job[Symbol.dispose]()
     }
+
+    wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
+
+    expect(wallet.cleanups).toHaveLength(1)
+    expect(errors).toEqual([])
   })
 
   test("skips invalid Spark account secrets without starting a wallet", async () => {
@@ -260,7 +251,7 @@ describe("spark account transaction sync job", () => {
         },
       })
     )
-    const job = createSparkAccountTransactionSyncJob({
+    using _job = createSparkAccountTransactionSyncJob({
       walletFactory: async (mnemonic) => {
         startedWallets.push(mnemonic)
         return new FakeSparkWallet([])
@@ -273,13 +264,9 @@ describe("spark account transaction sync job", () => {
       },
     })
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 30))
+    await new Promise((resolve) => setTimeout(resolve, 30))
 
-      expect(startedWallets).not.toContain(invalidMnemonic)
-      expect(errors).toEqual([])
-    } finally {
-      job[Symbol.dispose]()
-    }
+    expect(startedWallets).not.toContain(invalidMnemonic)
+    expect(errors).toEqual([])
   })
 })

@@ -38,27 +38,25 @@ describe("runBackgroundJobs", () => {
       }) satisfies BackgroundJob,
     ]
 
-    const disposable = runBackgroundJobs(jobs, context)
+    using _disposable = runBackgroundJobs(jobs, context)
 
     expect(startedJobs).toEqual(["first", "second"])
-
-    disposable[Symbol.dispose]()
   })
 
   test("disposes started jobs in reverse order", () => {
     const context = createBackgroundJobContext()
     const disposedJobs: string[] = []
 
-    const disposable = runBackgroundJobs(
-      [
-        () => createDisposable(() => disposedJobs.push("first")),
-        () => createDisposable(() => disposedJobs.push("second")),
-        () => createDisposable(() => disposedJobs.push("third")),
-      ],
-      context
-    )
-
-    disposable[Symbol.dispose]()
+    {
+      using _disposable = runBackgroundJobs(
+        [
+          () => createDisposable(() => disposedJobs.push("first")),
+          () => createDisposable(() => disposedJobs.push("second")),
+          () => createDisposable(() => disposedJobs.push("third")),
+        ],
+        context
+      )
+    }
 
     expect(disposedJobs).toEqual(["third", "second", "first"])
   })
@@ -69,20 +67,20 @@ describe("runBackgroundJobs", () => {
     const context = createBackgroundJobContext(errors)
     const disposedJobs: string[] = []
 
-    const disposable = runBackgroundJobs(
-      [
-        () => createDisposable(() => disposedJobs.push("first")),
-        () =>
-          createDisposable(() => {
-            disposedJobs.push("second")
-            throw cleanupError
-          }),
-        () => createDisposable(() => disposedJobs.push("third")),
-      ],
-      context
-    )
-
-    disposable[Symbol.dispose]()
+    {
+      using _disposable = runBackgroundJobs(
+        [
+          () => createDisposable(() => disposedJobs.push("first")),
+          () =>
+            createDisposable(() => {
+              disposedJobs.push("second")
+              throw cleanupError
+            }),
+          () => createDisposable(() => disposedJobs.push("third")),
+        ],
+        context
+      )
+    }
 
     expect(disposedJobs).toEqual(["third", "second", "first"])
     expect(errors).toEqual([cleanupError])

@@ -1,7 +1,7 @@
 import { err, ok, type Task } from "@evolu/common"
 import { z } from "zod"
 
-import { appFetch, type FetchDep, type FetchError } from "@/core/deps.ts"
+import { appFetchAsText, type FetchDep, type FetchError } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import {
   ConstantSymbolSchema,
@@ -14,6 +14,7 @@ import {
   SpecificSymbolSchema,
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 
 const FIO_BASE_URL = "https://fioapi.fio.cz"
 
@@ -282,7 +283,7 @@ export const setFioLastDate =
     )
     if (!response.ok) return response
 
-    return ok("")
+    return ok(response.value)
   }
 
 const getFioStatement =
@@ -295,12 +296,9 @@ const getFioStatement =
     )
     if (!response.ok) return response
 
-    console.log("l1", response)
-    const unknownJson: unknown = await response.value.json()
-
-    console.log("l2")
-    const parsed = FioAccountStatementSchema.safeParse(unknownJson)
-
+    const parsed = jsonCodec(FioAccountStatementSchema).safeParse(
+      response.value
+    )
     if (!parsed.success) {
       return err(
         createFioApiError({
@@ -311,8 +309,6 @@ const getFioStatement =
     }
 
     const statement = parsed.data.accountStatement
-
-    console.log("statement", statement)
 
     return ok({
       iban: statement.info.iban,
@@ -325,14 +321,14 @@ const requestFioApi =
   (
     path: string
   ): Task<
-    Response,
+    string,
     FioHttpError | FioStrongAuthorizationRequiredError | FetchError,
     FioApiDep & FetchDep
   > =>
   async (run) => {
     const url = new URL(path, run.deps.fioApi.baseUrl)
     const responseResult = await run(
-      appFetch(url, {
+      appFetchAsText(url, {
         method: "GET",
         headers: {
           Accept: "application/json, text/plain",
@@ -344,9 +340,10 @@ const requestFioApi =
 
     const response = responseResult.value
     if (!response.ok) {
-      console.log("err")
-      const responseBody = await response.text()
-      if (isFioStrongAuthorizationRequiredResponse(response, responseBody)) {
+      const responseBody = response.text
+      if (
+        isFioStrongAuthorizationRequiredResponse(response.status, responseBody)
+      ) {
         return err(
           createFioStrongAuthorizationRequiredError({
             message:
@@ -366,14 +363,14 @@ const requestFioApi =
       )
     }
 
-    return ok(response)
+    return ok(response.text)
   }
 
 const isFioStrongAuthorizationRequiredResponse = (
-  response: Response,
+  responseStatus: number,
   responseBody: string
 ): boolean =>
-  response.status === 422 &&
+  responseStatus === 422 &&
   responseBody.includes("Data není možné poskytnout bez silné autorizace")
 
 const getEncodedFioToken = (deps: FioApiDep): string =>

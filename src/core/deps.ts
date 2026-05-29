@@ -10,14 +10,26 @@ const createFetchError = defineError("FetchError")<{
 }>()
 export type FetchError = ReturnType<typeof createFetchError>
 
-export const appFetch =
+export const appFetchAsText =
   (
     url: string | URL,
     init?: RequestInit
-  ): Task<Response, FetchError, FetchDep> =>
-  ({ deps }) =>
+  ): Task<
+    Pick<Response, "ok" | "status"> & { text: string },
+    FetchError,
+    FetchDep
+  > =>
+  ({ deps, signal }) =>
     tryAsync(
-      () => deps.fetch(url, init),
+      async () => {
+        const response = await deps.fetch(url, { ...init, signal })
+
+        return {
+          text: await response.text(),
+          ok: response.ok,
+          status: response.status,
+        }
+      },
       (error): FetchError | AbortError => {
         if (AbortError.is(error)) return error
         return createFetchError({ error })

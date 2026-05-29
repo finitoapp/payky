@@ -7,33 +7,23 @@ export function runBackgroundJobs(
   jobs: ReadonlyArray<BackgroundJob>,
   context: BackgroundJobContext
 ): Disposable {
-  const disposables: Disposable[] = []
+  const disposer = new DisposableStack()
 
   try {
     for (const job of jobs) {
-      disposables.push(job(context))
+      const disposable = job(context)
+      disposer.defer(() => {
+        try {
+          disposable[Symbol.dispose]()
+        } catch (error) {
+          context.onError(error)
+        }
+      })
     }
   } catch (error) {
-    disposeBackgroundJobs(disposables, context)
+    disposer.dispose()
     throw error
   }
 
-  return {
-    [Symbol.dispose]: () => {
-      disposeBackgroundJobs(disposables, context)
-    },
-  }
-}
-
-function disposeBackgroundJobs(
-  disposables: ReadonlyArray<Disposable>,
-  context: BackgroundJobContext
-): void {
-  for (const disposable of disposables.toReversed()) {
-    try {
-      disposable[Symbol.dispose]()
-    } catch (error) {
-      context.onError(error)
-    }
-  }
+  return disposer
 }

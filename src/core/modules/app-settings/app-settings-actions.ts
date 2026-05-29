@@ -5,11 +5,12 @@ import type {
 } from "@/core/modules/app-settings/app-settings.ts"
 import type { AppSettingsId } from "@/core/modules/app-settings/app-settings-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { removeUndefinedValues } from "@/core/modules/shared/utils.ts"
-import { settingsQuery } from "./setting-queries.ts"
-import { createDefaultSettings, settingsId } from "./setting-utils.ts"
-
-type UpdateSettingsInput = Omit<UpdateValues<typeof appSettings>, "id">
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/utils.ts"
+import { settingsQuery } from "./app-settings-queries.ts"
+import { createDefaultSettings, settingsId } from "./app-settings-utils.ts"
 
 export const getSettings =
   (): Task<AppSettingsRow, never, EvoluDep> => async (run) => {
@@ -17,19 +18,26 @@ export const getSettings =
     if (existing != null) return ok(existing)
 
     const defaults = createDefaultSettings()
-    run.deps.evolu.upsert("appSettings", defaults)
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.upsert("appSettings", defaults, options)
+    )
     return ok(defaults)
   }
 
 export const updateSettings =
-  (input: UpdateSettingsInput): Task<AppSettingsId, never, EvoluDep> =>
+  (
+    input: Omit<UpdateValues<typeof appSettings>, "id">
+  ): Task<AppSettingsId, never, EvoluDep> =>
   async (run) => {
-    run.deps.evolu.update(
-      "appSettings",
-      removeUndefinedValues({
-        id: settingsId,
-        ...input,
-      })
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "appSettings",
+        removeUndefinedValues({
+          id: settingsId,
+          ...input,
+        }),
+        options
+      )
     )
     return ok(settingsId)
   }

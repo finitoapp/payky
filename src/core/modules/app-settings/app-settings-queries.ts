@@ -1,7 +1,7 @@
 import type { KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
-import { settingsId } from "./setting-utils.ts"
+import { settingsId } from "./app-settings-utils.ts"
 
 export const settingsQuery = createQuery((db) =>
   db

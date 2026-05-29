@@ -12,20 +12,25 @@ import {
   NonNegativeInteger,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
-import { removeUndefinedValues } from "@/core/modules/shared/utils.ts"
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/utils.ts"
 import { billLinesByBillIdQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 
 export const createOrReuseItemSnapshot =
   (deps: EvoluDep) =>
-  (snapshot: ItemRow): ItemRow => {
-    deps.evolu.upsert("item", snapshot)
+  async (snapshot: ItemRow): Promise<ItemRow> => {
+    await runMutationWithCompletion((options) =>
+      deps.evolu.upsert("item", snapshot, options)
+    )
     return snapshot
   }
 
 export const createOrReuseCatalogItemSnapshot =
   (deps: EvoluDep) =>
-  (catalogItem: CatalogItemRow): ItemRow =>
+  async (catalogItem: CatalogItemRow): Promise<ItemRow> =>
     createOrReuseItemSnapshot(deps)(createCatalogItemSnapshot(catalogItem))
 
 export const calculateBillItems = (
@@ -97,6 +102,7 @@ export const syncBillItemProjection =
     ])
     const projected = calculateBillItems(lineRows, itemRows)
     const projectedIds = new Set(projected.map((billItem) => billItem.id))
+    const billItemIdsToDelete = new Set<BillItemRow["id"]>()
 
     for (const line of lineRows) {
       const idValue = createBillItemId({
@@ -106,18 +112,71 @@ export const syncBillItemProjection =
         type: line.type,
       })
       if (!projectedIds.has(idValue)) {
-        deps.evolu.update("billItem", {
-          id: idValue,
-          isDeleted: SqliteBoolean.orThrow(1),
-        })
+        billItemIdsToDelete.add(idValue)
       }
     }
 
-    for (const billItem of projected) {
-      deps.evolu.upsert("billItem", billItem)
+    if (billItemIdsToDelete.size > 0 || projected.length > 0) {
+      await runMutationWithCompletion((options) => {
+        for (const id of billItemIdsToDelete) {
+          deps.evolu.update(
+            "billItem",
+            {
+              id,
+              isDeleted: SqliteBoolean.orThrow(1),
+            },
+            options
+          )
+        }
+        for (const billItem of projected) {
+          deps.evolu.upsert("billItem", billItem, options)
+        }
+      })
     }
 
     return projected
+  }
+
+export const appendBillItemLines =
+  (deps: EvoluDep) =>
+  async (
+    lines: ReadonlyArray<Omit<BillItemLineRow, "id">>,
+    returnBillId?: BillId
+  ): Promise<ReadonlyArray<BillItemRow>> => {
+    if (lines.length > 0) {
+      await runMutationWithCompletion((options) => {
+        for (const line of lines) {
+          deps.evolu.insert(
+            "billItemLine",
+            removeUndefinedValues(line),
+            options
+          )
+        }
+      })
+    }
+
+    const targetBillId = returnBillId ?? lines.at(-1)?.billId
+    if (targetBillId == null) {
+      return []
+    }
+
+    const billIds = new Set<BillId>([targetBillId])
+    for (const line of lines) {
+      billIds.add(line.billId)
+    }
+    const projectedByBill = new Map(
+      await Promise.all(
+        [...billIds].map(
+          async (lineBillId) =>
+            [
+              lineBillId,
+              await syncBillItemProjection(deps)(lineBillId),
+            ] as const
+        )
+      )
+    )
+
+    return projectedByBill.get(targetBillId) ?? []
   }
 
 export const appendBillItemLine =
@@ -125,6 +184,5 @@ export const appendBillItemLine =
   async (
     line: Omit<BillItemLineRow, "id">
   ): Promise<ReadonlyArray<BillItemRow>> => {
-    deps.evolu.insert("billItemLine", removeUndefinedValues(line))
-    return syncBillItemProjection(deps)(line.billId)
+    return appendBillItemLines(deps)([line])
   }

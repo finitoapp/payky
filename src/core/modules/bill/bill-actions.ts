@@ -9,7 +9,10 @@ import {
 import { defineError } from "@/core/error.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
 import type { BillItemRow } from "@/core/modules/bill-item/bill-item.ts"
-import type { billItemLine } from "@/core/modules/bill-item-line/bill-item-line.ts"
+import type {
+  BillItemLineRow,
+  billItemLine,
+} from "@/core/modules/bill-item-line/bill-item-line.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { item } from "@/core/modules/item/item.ts"
@@ -29,10 +32,10 @@ import { billByIdQuery, openBillsQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 import {
   appendBillItemLine,
+  appendBillItemLines,
   createOrReuseCatalogItemSnapshot,
   createOrReuseItemSnapshot,
   loadCalculatedBillItems,
-  syncBillItemProjection,
 } from "./bill-utils.ts"
 
 export interface BillWithItems {
@@ -205,7 +208,7 @@ export const addManualAmountToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    createOrReuseItemSnapshot(run.deps)(snapshot)
+    await createOrReuseItemSnapshot(run.deps)(snapshot)
     const projected = await appendBillItemLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
@@ -244,7 +247,7 @@ export const addTipToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    createOrReuseItemSnapshot(run.deps)(snapshot)
+    await createOrReuseItemSnapshot(run.deps)(snapshot)
     const projected = await appendBillItemLine(run.deps)({
       billId: input.billId,
       deviceId: input.deviceId ?? null,
@@ -315,8 +318,9 @@ export const splitBill =
     const targetBillResult = await run(loadBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
+    const lines: Omit<BillItemLineRow, "id">[] = []
     for (const item of input.items) {
-      await appendBillItemLine(run.deps)({
+      lines.push({
         billId: input.sourceBillId,
         deviceId: null,
         catalogItemId: item.catalogItemId,
@@ -326,7 +330,7 @@ export const splitBill =
         quantity: item.quantity,
         totalAmount: item.totalAmount,
       })
-      await appendBillItemLine(run.deps)({
+      lines.push({
         billId: input.targetBillId,
         deviceId: null,
         catalogItemId: item.catalogItemId,
@@ -337,10 +341,14 @@ export const splitBill =
         totalAmount: item.totalAmount,
       })
     }
+    const targetItems = await appendBillItemLines(run.deps)(
+      lines,
+      input.targetBillId
+    )
 
     return ok({
       bill: targetBillResult.value,
-      items: await syncBillItemProjection(run.deps)(input.targetBillId),
+      items: targetItems,
     })
   }
 

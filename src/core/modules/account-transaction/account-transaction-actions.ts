@@ -1,4 +1,5 @@
 import {
+  createIdFromString,
   type InsertValues,
   ok,
   sqliteTrue,
@@ -41,7 +42,15 @@ export const createAccountTransaction =
         }
     )): Task<AccountTransactionId, never, EvoluDep> =>
   async (run) => {
-    const id = createTableId<"AccountTransaction">()
+    const id = iban
+      ? createIdFromString<"AccountTransaction">(
+          `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
+        )
+      : spark
+        ? createIdFromString<"AccountTransaction">(
+            `accountTransaction:spark:${spark.sparkTransferId}`
+          )
+        : createTableId<"AccountTransaction">()
 
     await runMutationWithCompletion((options) => {
       let kind: AccountTransactionRow["kind"] = "cashRegister"

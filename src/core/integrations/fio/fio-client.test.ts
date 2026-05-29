@@ -7,6 +7,7 @@ import {
   createFioApiDep,
   type FioApiDep,
   type FioHttpError,
+  type FioStrongAuthorizationRequiredError,
   fetchFioLastTransactions,
   fetchFioTransactionsByPeriod,
   setFioLastDate,
@@ -180,7 +181,7 @@ describe("fio client", () => {
       }),
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
-        return new Response("OK", { status: 200 })
+        return new Response(null, { status: 204 })
       },
     } satisfies FioApiDep & FetchDep
     await using run = testCreateRun(deps)
@@ -189,7 +190,7 @@ describe("fio client", () => {
       run(setFioLastDate({ date: dateString("2026-05-27") }))
     ).resolves.toMatchObject({
       ok: true,
-      value: "OK",
+      value: "",
     })
     expect(requestedUrls).toEqual([
       "https://example.test/v1/rest/set-last-date/token-a/2026-05-27/",
@@ -213,6 +214,30 @@ describe("fio client", () => {
         status: 409,
         responseBody: "Too many requests",
       } satisfies Partial<FioHttpError>,
+    })
+  })
+
+  test("returns a typed strong authorization error", async () => {
+    const responseBody =
+      "Data není možné poskytnout bez silné autorizace. Pokyn k zobrazení dat si autorizujte ve Vašem Internetovém bankovnictví a data si vyžádejte znovu. Platnost ověření je 10 minut od autorizace. Nebo požádejte o data, která nejsou starší jak 90 dní (od 28.02.2026), v takovém případě není autorizace třeba."
+    const deps = {
+      ...createFioApiDep({
+        tokens: ["token-a"],
+        baseUrl: "https://example.test",
+      }),
+      fetch: async () => new Response(responseBody, { status: 422 }),
+    } satisfies FioApiDep & FetchDep
+    await using run = testCreateRun(deps)
+
+    await expect(run(fetchFioLastTransactions())).resolves.toMatchObject({
+      ok: false,
+      error: {
+        type: "FioStrongAuthorizationRequiredError",
+        message:
+          "FIO API requires strong authorization to provide the requested data.",
+        status: 422,
+        responseBody,
+      } satisfies Partial<FioStrongAuthorizationRequiredError>,
     })
   })
 })

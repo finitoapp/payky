@@ -9,8 +9,13 @@ import { createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 
+import { createFetchDep } from "../src/core/deps"
 import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { createQuery } from "../src/core/evolu/schema"
+import {
+  createFioApiDep,
+  setFioLastDate,
+} from "../src/core/integrations/fio/fio-client"
 import { AccountId } from "../src/core/modules/account/account-types"
 import {
   createFioPlugin,
@@ -18,8 +23,10 @@ import {
   loadFioPlugin,
   updateFioPlugin,
 } from "../src/core/modules/fio-plugin/fio-plugin-actions"
+import { fioPluginTokensByPluginIdQuery } from "../src/core/modules/fio-plugin/fio-plugin-queries"
 import { FioPluginId } from "../src/core/modules/fio-plugin/fio-plugin-types"
 import {
+  DateStringSchema,
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
@@ -200,6 +207,49 @@ fioPluginsCommand
         )
 
         console.log(`Updated FIO plugin ${fioPluginId}`)
+      },
+    })
+  )
+
+  .addCommand(
+    zodCommand({
+      name: "set-cursor",
+      description: "Set the FIO API last transaction cursor date.",
+      args: {},
+      opts: {
+        id: FioPluginId.describe("FIO plugin id"),
+        date: DateStringSchema.describe("Cursor date in YYYY-MM-DD format"),
+      },
+      async action(_, options) {
+        await using evoluCli = await createEvoluCli()
+        const { evolu } = evoluCli
+        const evoluRun = createRun({ evolu })
+
+        await evoluRun.orThrow(loadFioPlugin(options.id))
+        const tokens = await evolu.loadQuery(
+          fioPluginTokensByPluginIdQuery(options.id)
+        )
+        const firstToken = tokens[0]
+        if (firstToken == null) {
+          throw new Error(`FIO plugin ${options.id} has no active token.`)
+        }
+
+        const fioRun = createRun({
+          ...createFetchDep(),
+          ...createFioApiDep({
+            tokens: [
+              firstToken.token,
+              ...tokens.slice(1).map((row) => row.token),
+            ],
+          }),
+        })
+        console.log("ok")
+        await fioRun.orThrow(setFioLastDate({ date: options.date }))
+        console.log("ok2")
+
+        console.log(
+          `Set FIO cursor for plugin ${options.id} to ${options.date}`
+        )
       },
     })
   )

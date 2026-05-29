@@ -147,6 +147,35 @@ const printInvalidAccountTransferInput = (message: string): void => {
   process.exitCode = 1
 }
 
+const formatAccountTransferListCell = (
+  value: unknown
+): string | number | boolean | null => {
+  if (value == null) return null
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value
+  }
+
+  return JSON.stringify(value, null, 2)
+}
+
+const formatAccountTransferListRows = <Row extends object>(
+  rows: ReadonlyArray<Row>
+): Array<Record<string, string | number | boolean | null>> =>
+  rows.map((row) => {
+    const formattedRow: Record<string, string | number | boolean | null> = {}
+
+    for (const [key, value] of Object.entries(row)) {
+      formattedRow[key] = formatAccountTransferListCell(value)
+    }
+
+    return formattedRow
+  })
+
 export const accountTransfersCommand = createCommand(
   "account-transfers"
 ).description("Manage account transfer records.")
@@ -163,7 +192,10 @@ accountTransfersCommand
         await using evoluCli = await createEvoluCli()
         const { evolu } = evoluCli
 
-        console.table(await evolu.loadQuery(accountTransfersWithDetailsQuery))
+        const accountTransfers = await evolu.loadQuery(
+          accountTransfersWithDetailsQuery
+        )
+        console.table(formatAccountTransferListRows(accountTransfers))
       },
     })
   )
@@ -245,6 +277,13 @@ accountTransfersCommand
         }
 
         if (options.kind === "iban") {
+          if (options.bankReference == null) {
+            printInvalidAccountTransferInput(
+              "IBAN account transfer requires --bankReference."
+            )
+            return
+          }
+
           const id = await run.orThrow(
             createAccountTransaction({
               ...root,
@@ -252,7 +291,7 @@ accountTransfersCommand
                 variableSymbol: options.variableSymbol ?? null,
                 constantSymbol: options.constantSymbol ?? null,
                 specificSymbol: options.specificSymbol ?? null,
-                bankReference: options.bankReference ?? null,
+                bankReference: options.bankReference,
               },
             })
           )

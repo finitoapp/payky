@@ -182,7 +182,6 @@ class FioPluginSync {
   matches(plugin: ActiveFioPlugin): boolean {
     return (
       this.plugin.accountId === plugin.accountId &&
-      this.plugin.apiUrl === plugin.apiUrl &&
       this.plugin.numberOfSecondsBetweenChecks ===
         plugin.numberOfSecondsBetweenChecks &&
       this.plugin.iban === plugin.iban &&
@@ -213,7 +212,6 @@ class FioPluginSync {
         const run = createRun({
           ...this.deps,
           ...createFioApiDep({
-            baseUrl: this.plugin.apiUrl,
             tokens: [firstToken.token, ...restTokens.map((row) => row.token)],
           }),
         })

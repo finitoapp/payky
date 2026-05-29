@@ -83,7 +83,7 @@ export const updateFioPlugin =
     ...input
   }: Pick<
     UpdateValues<typeof fioPlugin>,
-    "id" | "accountId" | "apiUrl" | "numberOfSecondsBetweenChecks" | "isActive"
+    "id" | "accountId" | "numberOfSecondsBetweenChecks" | "isActive"
   > & {
     readonly token?: InsertValues<typeof fioPluginToken>["token"]
   }): Task<FioPluginId, never, EvoluDep> =>

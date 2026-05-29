@@ -10,13 +10,11 @@ export const fioPluginByIdQuery = (idValue: FioPluginId) =>
       .selectAll()
       .where("id", "=", idValue)
       .where("accountId", "is not", null)
-      .where("apiUrl", "is not", null)
       .where("numberOfSecondsBetweenChecks", "is not", null)
       .where("isActive", "is not", null)
       .where("isDeleted", "is", null)
       .$narrowType<{
         accountId: KyselyNotNull
-        apiUrl: KyselyNotNull
         numberOfSecondsBetweenChecks: KyselyNotNull
         isActive: KyselyNotNull
       }>()
@@ -44,7 +42,6 @@ export const activeFioPluginsQuery = createQuery((db) =>
     .select((eb) => [
       "fioPlugin.id",
       "fioPlugin.accountId",
-      "fioPlugin.apiUrl",
       "fioPlugin.numberOfSecondsBetweenChecks",
       "accountIban.iban",
       evoluJsonArrayFrom(
@@ -67,13 +64,11 @@ export const activeFioPluginsQuery = createQuery((db) =>
     .where("accountIban.isDeleted", "is not", 1)
     .where("fioPlugin.id", "is not", null)
     .where("fioPlugin.accountId", "is not", null)
-    .where("fioPlugin.apiUrl", "is not", null)
     .where("fioPlugin.numberOfSecondsBetweenChecks", "is not", null)
     .where("accountIban.iban", "is not", null)
     .$narrowType<{
       id: KyselyNotNull
       accountId: KyselyNotNull
-      apiUrl: KyselyNotNull
       numberOfSecondsBetweenChecks: KyselyNotNull
       iban: KyselyNotNull
     }>()

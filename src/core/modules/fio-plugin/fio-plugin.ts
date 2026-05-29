@@ -7,7 +7,6 @@ import {
   FioPluginTokenId,
 } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import {
-  HttpsUrlSchema,
   type InferTable,
   NonEmptyString255Schema,
   PositiveIntegerSchema,
@@ -16,7 +15,6 @@ import {
 export const fioPlugin = {
   id: FioPluginId,
   accountId: AccountId,
-  apiUrl: HttpsUrlSchema,
   numberOfSecondsBetweenChecks: PositiveIntegerSchema,
   isActive: SqliteBoolean,
 } as const

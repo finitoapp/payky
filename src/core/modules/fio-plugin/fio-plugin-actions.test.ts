@@ -26,7 +26,6 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
       .select((eb) => [
         "fioPlugin.id",
         "fioPlugin.accountId",
-        "fioPlugin.apiUrl",
         "fioPlugin.numberOfSecondsBetweenChecks",
         "fioPlugin.isActive",
         "fioPlugin.isDeleted",
@@ -71,7 +70,6 @@ describe("fio plugin actions", () => {
     const idResult = await run(
       createFioPlugin({
         accountId,
-        apiUrl: "https://fioapi.fio.cz",
         numberOfSecondsBetweenChecks: 300,
         isActive: sqliteTrue,
         token: "fio-token-1",
@@ -88,7 +86,6 @@ describe("fio plugin actions", () => {
         {
           id,
           accountId,
-          apiUrl: "https://fioapi.fio.cz",
           numberOfSecondsBetweenChecks: 300,
           isActive: sqliteTrue,
           tokens: [
@@ -120,7 +117,6 @@ describe("fio plugin actions", () => {
     const idResult = await run(
       createFioPlugin({
         accountId,
-        apiUrl: "https://fioapi.fio.cz",
         numberOfSecondsBetweenChecks: 300,
         isActive: sqliteTrue,
         token: "fio-token-1",
@@ -133,7 +129,6 @@ describe("fio plugin actions", () => {
     const updateResult = await run(
       updateFioPlugin({
         id,
-        apiUrl: "https://fioapi.fio.cz/v1",
         numberOfSecondsBetweenChecks: 600,
         isActive: sqliteFalse,
         token: "fio-token-2",
@@ -149,7 +144,6 @@ describe("fio plugin actions", () => {
       .toMatchObject([
         {
           id,
-          apiUrl: "https://fioapi.fio.cz/v1",
           numberOfSecondsBetweenChecks: 600,
           isActive: sqliteFalse,
           tokens: [
@@ -186,7 +180,6 @@ describe("fio plugin actions", () => {
     const idResult = await run(
       createFioPlugin({
         accountId: cashRegisterAccountId,
-        apiUrl: "https://fioapi.fio.cz",
         numberOfSecondsBetweenChecks: 300,
         isActive: sqliteTrue,
         token: "fio-token-1",
@@ -233,7 +226,6 @@ describe("fio plugin actions", () => {
     const idResult = await run(
       createFioPlugin({
         accountId,
-        apiUrl: "https://fioapi.fio.cz",
         numberOfSecondsBetweenChecks: 300,
         isActive: sqliteTrue,
         token: "fio-token-1",

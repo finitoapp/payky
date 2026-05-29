@@ -99,7 +99,6 @@ describe("fio account transaction sync job", () => {
     await run.orThrow(
       createFioPlugin({
         accountId,
-        apiUrl: "https://example.test",
         numberOfSecondsBetweenChecks: 60,
         isActive: sqliteTrue,
         token: "fio-token-1",
@@ -137,7 +136,7 @@ describe("fio account transaction sync job", () => {
       ])
 
     expect(requestedUrls).toEqual([
-      "https://example.test/v1/rest/last/fio-token-1/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
     ])
     expect(errors).toEqual([])
   })
@@ -160,7 +159,6 @@ describe("fio account transaction sync job", () => {
     await run.orThrow(
       createFioPlugin({
         accountId,
-        apiUrl: "https://example.test",
         numberOfSecondsBetweenChecks: 60,
         isActive: sqliteTrue,
         token: "fio-token-1",

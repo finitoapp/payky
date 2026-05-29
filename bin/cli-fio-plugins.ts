@@ -20,7 +20,6 @@ import {
 } from "../src/core/modules/fio-plugin/fio-plugin-actions"
 import { FioPluginId } from "../src/core/modules/fio-plugin/fio-plugin-types"
 import {
-  HttpsUrlSchema,
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
@@ -38,7 +37,6 @@ const fioPluginsWithTokensQuery = createQuery((db) =>
     .select((eb) => [
       "fioPlugin.id",
       "fioPlugin.accountId",
-      "fioPlugin.apiUrl",
       "fioPlugin.numberOfSecondsBetweenChecks",
       "fioPlugin.isActive",
       evoluJsonArrayFrom(
@@ -52,7 +50,6 @@ const fioPluginsWithTokensQuery = createQuery((db) =>
       ).as("tokens"),
     ])
     .where("fioPlugin.accountId", "is not", null)
-    .where("fioPlugin.apiUrl", "is not", null)
     .where("fioPlugin.numberOfSecondsBetweenChecks", "is not", null)
     .where("fioPlugin.isActive", "is not", null)
     .where("fioPlugin.isDeleted", "is", null)
@@ -66,7 +63,6 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
       .select((eb) => [
         "fioPlugin.id",
         "fioPlugin.accountId",
-        "fioPlugin.apiUrl",
         "fioPlugin.numberOfSecondsBetweenChecks",
         "fioPlugin.isActive",
         "fioPlugin.isDeleted",
@@ -142,7 +138,6 @@ fioPluginsCommand
       args: {},
       opts: {
         accountId: AccountId.describe("a;IBAN account id"),
-        apiUrl: HttpsUrlSchema.describe("u;FIO API base URL"),
         numberOfSecondsBetweenChecks: PositiveIntegerFromStringSchema.describe(
           "i;Polling interval seconds"
         ),
@@ -159,7 +154,6 @@ fioPluginsCommand
         const fioPluginId = await run.orThrow(
           createFioPlugin({
             accountId: options.accountId,
-            apiUrl: options.apiUrl,
             numberOfSecondsBetweenChecks: options.numberOfSecondsBetweenChecks,
             isActive: options.isActive,
             token: options.token,
@@ -179,7 +173,6 @@ fioPluginsCommand
       opts: {
         id: FioPluginId.describe("FIO plugin id"),
         accountId: AccountId.optional().describe("a;IBAN account id"),
-        apiUrl: HttpsUrlSchema.optional().describe("u;FIO API base URL"),
         numberOfSecondsBetweenChecks:
           PositiveIntegerFromStringSchema.optional().describe(
             "i;Polling interval seconds"
@@ -200,7 +193,6 @@ fioPluginsCommand
           updateFioPlugin({
             id: options.id,
             accountId: options.accountId,
-            apiUrl: options.apiUrl,
             numberOfSecondsBetweenChecks: options.numberOfSecondsBetweenChecks,
             isActive: options.isActive,
             token: options.token,

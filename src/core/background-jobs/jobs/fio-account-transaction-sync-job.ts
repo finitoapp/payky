@@ -4,6 +4,7 @@ import type {
   BackgroundJob,
   BackgroundJobOnErrorDep,
 } from "@/core/background-jobs/background-job-types.ts"
+import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import type { FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
@@ -43,8 +44,6 @@ type ActiveFioPluginWithTokens = ActiveFioPlugin & {
   readonly tokens: readonly [FioPluginToken, ...FioPluginToken[]]
 }
 
-const fioTransactionWriteLocks = new Map<string, Promise<void>>()
-
 export const createFioAccountTransactionSyncJob =
   ({
     fetch = globalThis.fetch,
@@ -74,11 +73,11 @@ export const startFioAccountTransactionSyncJob =
 class FioAccountTransactionSync {
   private readonly pluginSyncs = new Map<FioPluginId, FioPluginSync>()
   private readonly unsubscribePlugins: () => void
-  private disposed = false
-  private refreshRunning = false
-  private refreshQueued = false
   private readonly deps: FioAccountSyncDeps
   private readonly context: BackgroundJobDeps
+  private readonly refreshQueue = createKeyedTaskQueue({
+    onError: (error) => this.context.onError(error),
+  })
 
   constructor(deps: FioAccountSyncDeps, context: BackgroundJobDeps) {
     this.deps = deps
@@ -95,9 +94,9 @@ class FioAccountTransactionSync {
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.refreshQueue.isDisposed) return
 
-    this.disposed = true
+    this.refreshQueue[Symbol.dispose]()
     this.unsubscribePlugins()
 
     for (const sync of this.pluginSyncs.values()) {
@@ -107,58 +106,40 @@ class FioAccountTransactionSync {
   }
 
   private queueRefresh(): void {
-    if (this.disposed) return
-
-    void this.refreshPlugins().catch((error: unknown) => {
-      this.context.onError(error)
-    })
+    this.refreshQueue.enqueue("refresh", () => this.refreshPlugins())
   }
 
   private async refreshPlugins(): Promise<void> {
-    if (this.refreshRunning) {
-      this.refreshQueued = true
-      return
+    const plugins = await loadActiveFioPlugins(this.context)
+    const activePlugins = plugins.filter(hasFioTokens)
+    const activeIds = new Set(activePlugins.map((plugin) => plugin.id))
+
+    for (const [pluginId, sync] of this.pluginSyncs) {
+      if (activeIds.has(pluginId)) continue
+
+      sync.dispose()
+      this.pluginSyncs.delete(pluginId)
     }
 
-    this.refreshRunning = true
+    for (const plugin of activePlugins) {
+      const current = this.pluginSyncs.get(plugin.id)
+      if (current?.matches(plugin) === true) continue
 
-    try {
-      do {
-        this.refreshQueued = false
-        const plugins = await loadActiveFioPlugins(this.context)
-        const activePlugins = plugins.filter(hasFioTokens)
-        const activeIds = new Set(activePlugins.map((plugin) => plugin.id))
-
-        for (const [pluginId, sync] of this.pluginSyncs) {
-          if (activeIds.has(pluginId)) continue
-
-          sync.dispose()
-          this.pluginSyncs.delete(pluginId)
-        }
-
-        for (const plugin of activePlugins) {
-          const current = this.pluginSyncs.get(plugin.id)
-          if (current?.matches(plugin) === true) continue
-
-          current?.dispose()
-          const sync = new FioPluginSync(this.deps, plugin)
-          this.pluginSyncs.set(plugin.id, sync)
-          sync.start()
-        }
-      } while (this.refreshQueued && !this.disposed)
-    } finally {
-      this.refreshRunning = false
+      current?.dispose()
+      const sync = new FioPluginSync(this.deps, plugin)
+      this.pluginSyncs.set(plugin.id, sync)
+      sync.start()
     }
   }
 }
 
 class FioPluginSync {
   private readonly timer: ReturnType<typeof setInterval>
-  private disposed = false
-  private syncRunning = false
-  private syncQueued = false
   private readonly deps: FioAccountSyncDeps
   private readonly plugin: ActiveFioPluginWithTokens
+  private readonly syncQueue = createKeyedTaskQueue({
+    onError: (error) => this.deps.onError(error),
+  })
 
   constructor(deps: FioAccountSyncDeps, plugin: ActiveFioPluginWithTokens) {
     this.deps = deps
@@ -174,9 +155,9 @@ class FioPluginSync {
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.syncQueue.isDisposed) return
 
-    this.disposed = true
+    this.syncQueue[Symbol.dispose]()
     clearInterval(this.timer)
   }
 
@@ -191,94 +172,78 @@ class FioPluginSync {
   }
 
   private queueSync(): void {
-    if (this.disposed) return
-
-    void this.syncTransactions().catch((error: unknown) => {
-      this.deps.onError(error)
-    })
+    this.syncQueue.enqueue("sync", () => this.syncTransactions())
   }
 
   private async syncTransactions(): Promise<void> {
-    if (this.syncRunning) {
-      this.syncQueued = true
+    const [firstToken, ...restTokens] = this.plugin.tokens
+    const run = createRun({
+      ...this.deps,
+      ...createFioApiDep({
+        tokens: [firstToken.token, ...restTokens.map((row) => row.token)],
+      }),
+    })
+    const result = await run(fetchFioLastTransactions())
+    if (!result.ok) throw result.error
+    if (result.value.iban !== this.plugin.iban) {
+      this.deps.console.warn("Skipped FIO statement for a different IBAN.", {
+        accountId: this.plugin.accountId,
+        pluginId: this.plugin.id,
+      })
       return
     }
 
-    this.syncRunning = true
-
-    try {
-      do {
-        this.syncQueued = false
-        const [firstToken, ...restTokens] = this.plugin.tokens
-        const run = createRun({
-          ...this.deps,
-          ...createFioApiDep({
-            tokens: [firstToken.token, ...restTokens.map((row) => row.token)],
-          }),
-        })
-        const result = await run(fetchFioLastTransactions())
-        if (!result.ok) throw result.error
-        if (result.value.iban !== this.plugin.iban) {
-          this.deps.console.warn(
-            "Skipped FIO statement for a different IBAN.",
-            {
-              accountId: this.plugin.accountId,
-              pluginId: this.plugin.id,
-            }
-          )
-          return
-        }
-
-        for (const transaction of result.value.transactions) {
-          if (this.disposed) return
-          await this.recordTransaction(transaction)
-        }
-      } while (this.syncQueued && !this.disposed)
-    } finally {
-      this.syncRunning = false
+    for (const transaction of result.value.transactions) {
+      if (this.syncQueue.isDisposed) return
+      await this.recordTransaction(transaction)
     }
   }
 
   private async recordTransaction(transaction: FioTransaction): Promise<void> {
-    const bankReference = NonEmptyString255Schema.decode(transaction.id)
-    const lockKey = `${this.plugin.accountId}:${bankReference}`
+    await navigator.locks.request(
+      `fio-transaction-${this.plugin.accountId}-${transaction.id}`,
+      { ifAvailable: true },
+      async (lock) => {
+        if (lock == null) return
 
-    await runWithFioTransactionWriteLock(lockKey, async () => {
-      const existing = await this.deps.evolu.loadQuery(
-        accountTransactionIbanByBankReferenceQuery(
-          this.plugin.accountId,
-          bankReference
+        const bankReference = NonEmptyString255Schema.decode(transaction.id)
+
+        const existing = await this.deps.evolu.loadQuery(
+          accountTransactionIbanByBankReferenceQuery(
+            this.plugin.accountId,
+            bankReference
+          )
         )
-      )
-      if (existing.length > 0) return
+        if (existing.length > 0) return
 
-      const run = createRun(this.deps)
-      const accountTransactionId = await run.orThrow(
-        createAccountTransaction({
-          deviceId: null,
+        const run = createRun(this.deps)
+        const accountTransactionId = await run.orThrow(
+          createAccountTransaction({
+            deviceId: null,
+            accountId: this.plugin.accountId,
+            amount: IntegerSchema.decode(transaction.amountMinor),
+            currency: transaction.currency,
+            occurredAt: TimestampMsSchema.decode(
+              Date.parse(`${transaction.bookedDate}T00:00:00.000Z`)
+            ),
+            note: createTransactionNote(transaction),
+            internalTransferGroupId: null,
+            iban: {
+              variableSymbol: transaction.variableSymbol,
+              constantSymbol: transaction.constantSymbol,
+              specificSymbol: transaction.specificSymbol,
+              bankReference,
+            },
+          })
+        )
+        await run.orThrow(reconcileAccountTransaction(accountTransactionId))
+        this.deps.console.info("Created FIO account transaction.", {
           accountId: this.plugin.accountId,
-          amount: IntegerSchema.decode(transaction.amountMinor),
-          currency: transaction.currency,
-          occurredAt: TimestampMsSchema.decode(
-            Date.parse(`${transaction.bookedDate}T00:00:00.000Z`)
-          ),
-          note: createTransactionNote(transaction),
-          internalTransferGroupId: null,
-          iban: {
-            variableSymbol: transaction.variableSymbol,
-            constantSymbol: transaction.constantSymbol,
-            specificSymbol: transaction.specificSymbol,
-            bankReference,
-          },
+          bankReference,
+          pluginId: this.plugin.id,
         })
-      )
-      await run.orThrow(reconcileAccountTransaction(accountTransactionId))
-      this.deps.console.info("Created FIO account transaction.", {
-        accountId: this.plugin.accountId,
-        bankReference,
-        pluginId: this.plugin.id,
-      })
-    })
+      }
+    )
   }
 }
 
@@ -292,23 +257,6 @@ const areTokensEqual = (
 ): boolean =>
   left.length === right.length &&
   left.every((token, index) => token.token === right[index]?.token)
-
-const runWithFioTransactionWriteLock = async (
-  key: string,
-  write: () => Promise<void>
-): Promise<void> => {
-  const previous = fioTransactionWriteLocks.get(key) ?? Promise.resolve()
-  const current = previous.then(write, write)
-  fioTransactionWriteLocks.set(key, current)
-
-  try {
-    await current
-  } finally {
-    if (fioTransactionWriteLocks.get(key) === current) {
-      fioTransactionWriteLocks.delete(key)
-    }
-  }
-}
 
 const createTransactionNote = (transaction: FioTransaction) => {
   const parts = [

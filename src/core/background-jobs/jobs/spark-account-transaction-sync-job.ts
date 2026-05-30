@@ -6,11 +6,13 @@ import {
 import { type ConsoleDep, createRun } from "@evolu/common"
 import { validateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english"
+import { z } from "zod"
 
 import type {
   BackgroundJob,
   BackgroundJobOnErrorDep,
 } from "@/core/background-jobs/background-job-types.ts"
+import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
@@ -28,7 +30,6 @@ const DEFAULT_RECHECK_INTERVAL_MS = 60_000
 const TRANSFER_PAGE_SIZE = 50
 const COMPLETED_TRANSFER_STATUS = "TRANSFER_STATUS_COMPLETED"
 const HEX_SEED_PATTERN = /^(?:[0-9a-fA-F]{2})+$/u
-const transferWriteLocks = new Map<string, Promise<void>>()
 const FULL_SYNC_TRIGGER_EVENTS = [
   SparkWalletEvent.BalanceUpdate,
   SparkWalletEvent.DepositConfirmed,
@@ -158,11 +159,11 @@ class SparkAccountTransactionSync {
   private readonly accountSyncs = new Map<AccountId, SparkAccountSync>()
   private readonly unsubscribeAccounts: () => void
   private readonly recheckTimer: ReturnType<typeof setInterval>
-  private disposed = false
-  private refreshRunning = false
-  private refreshQueued = false
   private readonly context: BackgroundJobDeps
   private readonly walletFactory: SparkWalletFactory
+  private readonly refreshQueue = createKeyedTaskQueue({
+    onError: (error) => this.context.onError(error),
+  })
 
   constructor(
     context: BackgroundJobDeps,
@@ -188,9 +189,9 @@ class SparkAccountTransactionSync {
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.refreshQueue.isDisposed) return
 
-    this.disposed = true
+    this.refreshQueue[Symbol.dispose]()
     clearInterval(this.recheckTimer)
     this.unsubscribeAccounts()
 
@@ -201,58 +202,38 @@ class SparkAccountTransactionSync {
   }
 
   private queueRefresh(): void {
-    if (this.disposed) return
-
-    void this.refreshAccounts().catch((error: unknown) => {
-      this.context.onError(error)
-    })
+    this.refreshQueue.enqueue("refresh", () => this.refreshAccounts())
   }
 
   private async refreshAccounts(): Promise<void> {
-    if (this.refreshRunning) {
-      this.refreshQueued = true
-      return
+    const rows = await this.context.evolu.loadQuery(activeSparkAccountsQuery)
+    const accounts = rows.map(
+      (row): SparkAccountRow => ({
+        id: row.id,
+        mnemonic: row.mnemonic,
+      })
+    )
+    const activeIds = new Set(accounts.map((account) => account.id))
+
+    for (const [accountId, sync] of this.accountSyncs) {
+      if (activeIds.has(accountId)) continue
+
+      sync.dispose()
+      this.accountSyncs.delete(accountId)
     }
 
-    this.refreshRunning = true
+    for (const account of accounts) {
+      const current = this.accountSyncs.get(account.id)
+      if (current?.mnemonic === account.mnemonic) continue
 
-    try {
-      do {
-        this.refreshQueued = false
-        const rows = await this.context.evolu.loadQuery(
-          activeSparkAccountsQuery
-        )
-        const accounts = rows.map(
-          (row): SparkAccountRow => ({
-            id: row.id,
-            mnemonic: row.mnemonic,
-          })
-        )
-        const activeIds = new Set(accounts.map((account) => account.id))
-
-        for (const [accountId, sync] of this.accountSyncs) {
-          if (activeIds.has(accountId)) continue
-
-          sync.dispose()
-          this.accountSyncs.delete(accountId)
-        }
-
-        for (const account of accounts) {
-          const current = this.accountSyncs.get(account.id)
-          if (current?.mnemonic === account.mnemonic) continue
-
-          current?.dispose()
-          const sync = new SparkAccountSync(
-            this.context,
-            this.walletFactory,
-            account
-          )
-          this.accountSyncs.set(account.id, sync)
-          sync.start()
-        }
-      } while (this.refreshQueued && !this.disposed)
-    } finally {
-      this.refreshRunning = false
+      current?.dispose()
+      const sync = new SparkAccountSync(
+        this.context,
+        this.walletFactory,
+        account
+      )
+      this.accountSyncs.set(account.id, sync)
+      sync.start()
     }
   }
 
@@ -265,12 +246,12 @@ class SparkAccountTransactionSync {
 
 class SparkAccountSync {
   private wallet: SparkWalletLike | undefined
-  private disposed = false
-  private syncRunning = false
-  private syncQueued = false
   private readonly deps: AccountSyncDeps
   private readonly walletFactory: SparkWalletFactory
   private readonly account: SparkAccountRow
+  private readonly syncQueue = createKeyedTaskQueue({
+    onError: (error) => this.deps.onError(error),
+  })
 
   constructor(
     deps: AccountSyncDeps,
@@ -293,9 +274,9 @@ class SparkAccountSync {
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.syncQueue.isDisposed) return
 
-    this.disposed = true
+    this.syncQueue[Symbol.dispose]()
 
     const wallet = this.wallet
     if (wallet == null) return
@@ -311,11 +292,8 @@ class SparkAccountSync {
   }
 
   queueFullSync(): void {
-    if (this.disposed || this.wallet == null) return
-
-    void this.syncTransfers().catch((error: unknown) => {
-      this.deps.onError(error)
-    })
+    if (this.wallet == null) return
+    this.syncQueue.enqueue("sync", () => this.syncTransfers())
   }
 
   private async initialize(): Promise<void> {
@@ -328,7 +306,7 @@ class SparkAccountSync {
 
     const wallet = await this.walletFactory(this.account.mnemonic)
 
-    if (this.disposed) {
+    if (this.syncQueue.isDisposed) {
       await wallet.cleanup()
       return
     }
@@ -371,67 +349,59 @@ class SparkAccountSync {
   }
 
   private async syncTransfers(): Promise<void> {
-    if (this.syncRunning) {
-      this.syncQueued = true
-      return
-    }
+    const wallet = this.wallet
+    if (wallet == null) return
 
-    this.syncRunning = true
+    let offset = 0
 
-    try {
-      do {
-        this.syncQueued = false
+    while (!this.syncQueue.isDisposed) {
+      const page = await wallet.getTransfers(TRANSFER_PAGE_SIZE, offset)
 
-        const wallet = this.wallet
-        if (wallet == null) return
+      for (const transfer of page.transfers) {
+        await this.recordTransfer(transfer)
+      }
 
-        let offset = 0
+      if (page.transfers.length === 0 || page.offset <= offset) {
+        break
+      }
 
-        while (!this.disposed) {
-          const page = await wallet.getTransfers(TRANSFER_PAGE_SIZE, offset)
-
-          for (const transfer of page.transfers) {
-            await this.recordTransfer(transfer)
-          }
-
-          if (page.transfers.length === 0 || page.offset <= offset) {
-            break
-          }
-
-          offset = page.offset
-        }
-      } while (this.syncQueued && !this.disposed)
-    } finally {
-      this.syncRunning = false
+      offset = page.offset
     }
   }
 
   private async recordTransfer(transfer: SparkTransfer): Promise<void> {
     if (!shouldRecordTransfer(transfer)) return
 
-    const sparkTransferId = NonEmptyStringSchema.decode(transfer.id)
-    await runWithTransferWriteLock(sparkTransferId, async () => {
-      const existing = await this.deps.evolu.loadQuery(
-        accountTransactionSparkByTransferIdQuery(sparkTransferId)
-      )
-      if (existing.length > 0) return
+    await navigator.locks.request(
+      `spark-transfer-${transfer.id}`,
+      { ifAvailable: true },
+      async (lock) => {
+        if (lock == null) return
 
-      const run = createRun(this.deps)
-      const accountTransactionId = await run.orThrow(
-        createAccountTransaction(
-          createSparkTransactionInput(
-            this.account.id,
-            sparkTransferId,
-            transfer
+        const sparkTransferId = NonEmptyStringSchema.decode(transfer.id)
+
+        const existing = await this.deps.evolu.loadQuery(
+          accountTransactionSparkByTransferIdQuery(sparkTransferId)
+        )
+        if (existing.length > 0) return
+
+        const run = createRun(this.deps)
+        const accountTransactionId = await run.orThrow(
+          createAccountTransaction(
+            createSparkTransactionInput(
+              this.account.id,
+              sparkTransferId,
+              transfer
+            )
           )
         )
-      )
-      await run.orThrow(reconcileAccountTransaction(accountTransactionId))
-      this.deps.console.info("Created Spark account transaction.", {
-        accountId: this.account.id,
-        sparkTransferId,
-      })
-    })
+        await run.orThrow(reconcileAccountTransaction(accountTransactionId))
+        this.deps.console.info("Created Spark account transaction.", {
+          accountId: this.account.id,
+          sparkTransferId,
+        })
+      }
+    )
   }
 }
 
@@ -456,23 +426,6 @@ const createSparkTransactionInput = (
       preImage: NonEmptyStringSchema.decode(details.preImage),
       paymentHash: NonEmptyStringSchema.decode(details.paymentHash),
     },
-  }
-}
-
-const runWithTransferWriteLock = async (
-  sparkTransferId: string,
-  write: () => Promise<void>
-): Promise<void> => {
-  const previous = transferWriteLocks.get(sparkTransferId) ?? Promise.resolve()
-  const current = previous.then(write, write)
-  transferWriteLocks.set(sparkTransferId, current)
-
-  try {
-    await current
-  } finally {
-    if (transferWriteLocks.get(sparkTransferId) === current) {
-      transferWriteLocks.delete(sparkTransferId)
-    }
   }
 }
 
@@ -505,50 +458,37 @@ const getSparkTransactionDetails = (
   }
 }
 
+const UserRequestSchema = z.looseObject({
+  encodedInvoice: z.string().min(1).optional(),
+  paymentPreimage: z.string().min(1).optional(),
+  invoice: z
+    .object({
+      encodedInvoice: z.string().min(1).optional(),
+      paymentHash: z.string().min(1).optional(),
+      memo: z.string().optional(),
+    })
+    .optional(),
+})
+
 const getLightningDetails = (
   userRequest: unknown
 ): Partial<SparkTransactionDetails> => {
-  if (!isRecord(userRequest)) return {}
+  const result = UserRequestSchema.safeParse(userRequest)
+  if (!result.success) return {}
 
-  const encodedInvoice = getStringProperty(userRequest, "encodedInvoice")
-  const paymentPreimage = getStringProperty(userRequest, "paymentPreimage")
-  const invoice = getRecordProperty(userRequest, "invoice")
-
+  const { encodedInvoice, paymentPreimage, invoice } = result.data
   return {
-    lnInvoice:
-      encodedInvoice ??
-      getStringProperty(invoice, "encodedInvoice") ??
-      undefined,
-    preImage: paymentPreimage ?? undefined,
-    paymentHash: getStringProperty(invoice, "paymentHash") ?? undefined,
+    lnInvoice: encodedInvoice ?? invoice?.encodedInvoice,
+    preImage: paymentPreimage,
+    paymentHash: invoice?.paymentHash,
   }
 }
 
 const getUserRequestMemo = (userRequest: unknown): string => {
-  const invoice = isRecord(userRequest)
-    ? getRecordProperty(userRequest, "invoice")
-    : undefined
-  return getStringProperty(invoice, "memo") ?? ""
+  const result = UserRequestSchema.safeParse(userRequest)
+  if (!result.success) return ""
+  return result.data.invoice?.memo ?? ""
 }
-
-const getRecordProperty = (
-  value: Readonly<Record<string, unknown>> | undefined,
-  key: string
-): Readonly<Record<string, unknown>> | undefined => {
-  const property = value?.[key]
-  return isRecord(property) ? property : undefined
-}
-
-const getStringProperty = (
-  value: Readonly<Record<string, unknown>> | undefined,
-  key: string
-): string | undefined => {
-  const property = value?.[key]
-  return typeof property === "string" && property !== "" ? property : undefined
-}
-
-const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
-  typeof value === "object" && value !== null
 
 const isValidSparkSecret = (secret: string): boolean =>
   validateMnemonic(secret, wordlist) || HEX_SEED_PATTERN.test(secret)

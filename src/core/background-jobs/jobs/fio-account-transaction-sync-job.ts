@@ -1,9 +1,8 @@
-import { type ConsoleDep, createRun, ok } from "@evolu/common"
+import { createRun, ok } from "@evolu/common"
 
 import type {
   BackgroundJob,
   BackgroundJobContext,
-  BackgroundJobOnErrorDep,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import type { FetchDep } from "@/core/deps.ts"
@@ -17,7 +16,6 @@ import { accountTransactionIbanByBankReferenceQuery } from "@/core/modules/accou
 import { activeFioPluginsQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   IntegerSchema,
   NonEmptyString255Schema,
@@ -25,17 +23,14 @@ import {
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
-type FioAccountSyncDeps = EvoluDep &
-  FetchDep &
-  ConsoleDep &
-  BackgroundJobOnErrorDep
+type Context = BackgroundJobContext & FetchDep
 
 interface FioAccountTransactionSyncJobOptions {
   readonly fetch?: typeof globalThis.fetch
 }
 
-const loadActiveFioPlugins = (deps: EvoluDep) =>
-  deps.evolu.loadQuery(activeFioPluginsQuery)
+const loadActiveFioPlugins = (context: Context) =>
+  context.evolu.loadQuery(activeFioPluginsQuery)
 
 type ActiveFioPlugin = Awaited<ReturnType<typeof loadActiveFioPlugins>>[number]
 type FioPluginToken = ActiveFioPlugin["tokens"][number]
@@ -48,17 +43,12 @@ export const createFioAccountTransactionSyncJob =
     fetch = globalThis.fetch,
   }: FioAccountTransactionSyncJobOptions = {}): BackgroundJob =>
   (run) => {
-    const context: BackgroundJobContext = {
+    const context: Context = {
       ...run.deps,
       console: run.deps.console.child("fio-account-transaction-sync-job"),
+      fetch,
     }
-    const sync = new FioAccountTransactionSync(
-      {
-        ...context,
-        fetch,
-      },
-      context
-    )
+    const sync = new FioAccountTransactionSync(context)
 
     sync.start()
 
@@ -75,14 +65,12 @@ export const startFioAccountTransactionSyncJob =
 class FioAccountTransactionSync {
   private readonly pluginSyncs = new Map<FioPluginId, FioPluginSync>()
   private readonly unsubscribePlugins: () => void
-  private readonly deps: FioAccountSyncDeps
-  private readonly context: BackgroundJobContext
+  private readonly context: Context
   private readonly refreshQueue = createKeyedTaskQueue({
     onError: (error) => this.context.onError(error),
   })
 
-  constructor(deps: FioAccountSyncDeps, context: BackgroundJobContext) {
-    this.deps = deps
+  constructor(context: Context) {
     this.context = context
     this.unsubscribePlugins = context.evolu.subscribeQuery(
       activeFioPluginsQuery
@@ -128,7 +116,7 @@ class FioAccountTransactionSync {
       if (current?.matches(plugin) === true) continue
 
       current?.dispose()
-      const sync = new FioPluginSync(this.deps, plugin)
+      const sync = new FioPluginSync(this.context, plugin)
       this.pluginSyncs.set(plugin.id, sync)
       sync.start()
     }
@@ -137,14 +125,14 @@ class FioAccountTransactionSync {
 
 class FioPluginSync {
   private readonly timer: ReturnType<typeof setInterval>
-  private readonly deps: FioAccountSyncDeps
+  private readonly context: Context
   private readonly plugin: ActiveFioPluginWithTokens
   private readonly syncQueue = createKeyedTaskQueue({
-    onError: (error) => this.deps.onError(error),
+    onError: (error) => this.context.onError(error),
   })
 
-  constructor(deps: FioAccountSyncDeps, plugin: ActiveFioPluginWithTokens) {
-    this.deps = deps
+  constructor(context: Context, plugin: ActiveFioPluginWithTokens) {
+    this.context = context
     this.plugin = plugin
     this.timer = setInterval(() => {
       this.queueSync()
@@ -180,7 +168,7 @@ class FioPluginSync {
   private async syncTransactions(): Promise<void> {
     const [firstToken, ...restTokens] = this.plugin.tokens
     const run = createRun({
-      ...this.deps,
+      ...this.context,
       ...createFioApiDep({
         tokens: [firstToken.token, ...restTokens.map((row) => row.token)],
       }),
@@ -188,7 +176,7 @@ class FioPluginSync {
     const result = await run(fetchFioLastTransactions())
     if (!result.ok) throw result.error
     if (result.value.iban !== this.plugin.iban) {
-      this.deps.console.warn("Skipped FIO statement for a different IBAN.", {
+      this.context.console.warn("Skipped FIO statement for a different IBAN.", {
         accountId: this.plugin.accountId,
         pluginId: this.plugin.id,
       })
@@ -210,7 +198,7 @@ class FioPluginSync {
 
         const bankReference = NonEmptyString255Schema.decode(transaction.id)
 
-        const existing = await this.deps.evolu.loadQuery(
+        const existing = await this.context.evolu.loadQuery(
           accountTransactionIbanByBankReferenceQuery(
             this.plugin.accountId,
             bankReference
@@ -218,7 +206,7 @@ class FioPluginSync {
         )
         if (existing.length > 0) return
 
-        const run = createRun(this.deps)
+        const run = createRun(this.context)
         const accountTransactionId = await run.orThrow(
           createAccountTransaction({
             deviceId: null,
@@ -239,7 +227,7 @@ class FioPluginSync {
           })
         )
         await run.orThrow(reconcileAccountTransaction(accountTransactionId))
-        this.deps.console.info("Created FIO account transaction.", {
+        this.context.console.info("Created FIO account transaction.", {
           accountId: this.plugin.accountId,
           bankReference,
           pluginId: this.plugin.id,

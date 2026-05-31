@@ -1,4 +1,10 @@
-import { AbortError, type Task, tryAsync } from "@evolu/common"
+import {
+  AbortError,
+  type Owner,
+  type OwnerId,
+  type Task,
+  tryAsync,
+} from "@evolu/common"
 import { defineError } from "@/core/error.ts"
 
 export interface FetchDep {
@@ -39,3 +45,5 @@ export const appFetchAsText =
 export const createFetchDep = () => ({
   fetch: globalThis.fetch.bind(globalThis),
 })
+
+export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }

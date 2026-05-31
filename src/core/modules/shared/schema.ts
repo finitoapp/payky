@@ -12,6 +12,7 @@ export const TimestampMsSchema = z
   .nonnegative()
   .brand<"TimestampMs">()
 export type TimestampMs = z.output<typeof TimestampMsSchema>
+export const TimestampMs = TimestampMsSchema.decode
 
 export const DateStringSchema = z
   .string()
@@ -27,12 +28,30 @@ export type NonEmptyString = z.output<typeof NonEmptyStringSchema>
 export const NonEmptyString255Schema =
   NonEmptyStringSchema.max(255).brand<"NonEmptyString255">()
 export type NonEmptyString255 = z.output<typeof NonEmptyString255Schema>
+export const NonEmptyString255 = NonEmptyString255Schema.decode
+
 export const HttpsUrlSchema = z
   .url()
   .refine((value) => value.startsWith("https://"), {
     message: "URL must use HTTPS.",
   })
   .brand<"HttpsUrl">()
+
+export const SqliteBoolSchema = z.union([z.literal(0), z.literal(1)])
+
+export const BoolToSqliteBoolSchema = z
+  .boolean()
+  .transform((value) => (value ? 1 : 0))
+  .pipe(SqliteBoolSchema)
+
+export const WssUrlSchema = z
+  .url({ protocol: /^wss$/ })
+  .brand<"NonEmpty", "inout">()
+  .brand<"WssUrl", "inout">()
+export type WssUrl = z.output<typeof WssUrlSchema>
+export const WssUrl = <T extends string>(value: T): WssUrl =>
+  WssUrlSchema.parse(value)
+
 export const IntegerSchema = z.number().int().brand<"Int">()
 export const NonNegativeIntegerSchema =
   IntegerSchema.nonnegative().brand<"NonNegative">()
@@ -93,8 +112,23 @@ export const PositiveIntegerFromStringSchema = z
   .regex(/^(?:[1-9]\d*)$/)
   .transform((value) => Number(value) as PositiveInteger)
 
-export const FiatCurrencySchema = z.enum(["CZK"])
-export const CurrencySchema = z.enum(["CZK", "BTC"])
+export type InferEnumType<T extends Record<string, string>> = T[keyof T]
+
+export const FiatCurrency = {
+  USD: "USD",
+  EUR: "EUR",
+  CZK: "CZK",
+} as const
+export type FiatCurrency = InferEnumType<typeof FiatCurrency>
+
+export const Currency = {
+  ...FiatCurrency,
+  BTC: "BTC",
+} as const
+export type Currency = InferEnumType<typeof Currency>
+
+export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
+export const CurrencySchema = z.enum(Object.values(Currency))
 export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
 export const PaymentStatusSchema = z.enum([
   "created",
@@ -133,8 +167,6 @@ export const SpecificSymbolSchema = z
   .regex(/^\d{1,10}$/u)
   .brand<"SpecificSymbol">()
 
-export type FiatCurrency = z.output<typeof FiatCurrencySchema>
-export type Currency = z.output<typeof CurrencySchema>
 export type AccountKind = z.output<typeof AccountKindSchema>
 export type PaymentStatus = z.output<typeof PaymentStatusSchema>
 export type BillStatus = z.output<typeof BillStatusSchema>

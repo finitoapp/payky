@@ -104,7 +104,7 @@ describe("reconciliation claim actions", () => {
         {
           paymentId,
           accountTransactionId,
-          source: "automaticScript",
+          source: "auto",
         },
       ])
   })
@@ -140,7 +140,7 @@ describe("reconciliation claim actions", () => {
         internalTransferGroupId: null,
         source: {
           deviceId: null,
-          source: "automaticScript",
+          source: "auto",
         },
         iban: {
           variableSymbol: "123456",
@@ -170,7 +170,7 @@ describe("reconciliation claim actions", () => {
         {
           paymentId,
           accountTransactionId,
-          source: "automaticScript",
+          source: "auto",
         },
       ])
   })
@@ -206,7 +206,7 @@ describe("reconciliation claim actions", () => {
         internalTransferGroupId: null,
         source: {
           deviceId: null,
-          source: "automaticScript",
+          source: "auto",
         },
         iban: {
           variableSymbol: null,
@@ -264,7 +264,7 @@ describe("reconciliation claim actions", () => {
         internalTransferGroupId: null,
         source: {
           deviceId: null,
-          source: "automaticScript",
+          source: "auto",
         },
         spark: {
           sparkTransferId: "spark-transfer-1",
@@ -288,7 +288,7 @@ describe("reconciliation claim actions", () => {
         {
           paymentId,
           accountTransactionId,
-          source: "automaticScript",
+          source: "auto",
         },
       ])
   })

@@ -64,7 +64,7 @@ export const reconcileAccountTransaction =
           deviceId: null,
           paymentId: candidate.paymentId,
           accountTransactionId,
-          source: "automaticScript" as const,
+          source: "auto" as const,
           claimedAt: Date.now(),
         }),
         { ...options, ownerId: evoluOwnerId }

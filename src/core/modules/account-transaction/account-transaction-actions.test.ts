@@ -193,7 +193,7 @@ describe("account transaction actions", () => {
         internalTransferGroupId: null,
         source: {
           deviceId: null,
-          source: "automaticScript",
+          source: "auto",
         },
         iban: {
           variableSymbol: null,
@@ -209,7 +209,7 @@ describe("account transaction actions", () => {
       .toEqual([
         {
           accountTransactionId: id,
-          source: "automaticScript",
+          source: "auto",
         },
       ])
   })

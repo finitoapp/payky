@@ -446,7 +446,7 @@ export const markPaymentPaidCash =
         accountId,
         amount: payment.amount,
         currency: payment.currency,
-        occurredAt: occurredAt ?? TimestampMsSchema.decode(Date.now()),
+        occurredAt: occurredAt ?? Date.now(),
         note: note ?? null,
         internalTransferGroupId: null,
         source: {

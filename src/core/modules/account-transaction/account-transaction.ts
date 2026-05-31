@@ -20,10 +20,7 @@ import {
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
 
-export const AccountTransactionSourceSchema = z.enum([
-  "manual",
-  "automaticScript",
-])
+export const AccountTransactionSourceSchema = z.enum(["manual", "auto"])
 
 export const accountTransaction = {
   id: AccountTransactionId,

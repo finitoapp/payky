@@ -9,10 +9,7 @@ import {
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import {
-  type NonEmptyString255,
-  TimestampMsSchema,
-} from "@/core/modules/shared/schema.ts"
+import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
   removeUndefinedValues,
@@ -117,7 +114,7 @@ export const createAccountTransaction =
           ...source,
           id: sourceId,
           accountTransactionId: id,
-          recordedAt: source.recordedAt ?? TimestampMsSchema.decode(Date.now()),
+          recordedAt: source.recordedAt ?? Date.now(),
         }),
         { ...options, ownerId: evoluOwnerId }
       )

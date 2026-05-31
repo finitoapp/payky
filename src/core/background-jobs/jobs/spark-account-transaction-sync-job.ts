@@ -419,7 +419,7 @@ const createSparkTransactionInput = (
     internalTransferGroupId: null,
     source: {
       deviceId: null,
-      source: "automaticScript" as const,
+      source: "auto" as const,
     },
     spark: {
       sparkTransferId,

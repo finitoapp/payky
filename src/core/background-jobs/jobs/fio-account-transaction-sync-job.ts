@@ -239,7 +239,7 @@ class FioPluginSync {
             internalTransferGroupId: null,
             source: {
               deviceId: null,
-              source: "automaticScript",
+              source: "auto",
             },
             iban: {
               variableSymbol: transaction.variableSymbol,

@@ -10,10 +10,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
 
-export const ReconciliationClaimSourceSchema = z.enum([
-  "manual",
-  "automaticScript",
-])
+export const ReconciliationClaimSourceSchema = z.enum(["manual", "auto"])
 
 export const reconciliationClaim = {
   id: ReconciliationClaimId,

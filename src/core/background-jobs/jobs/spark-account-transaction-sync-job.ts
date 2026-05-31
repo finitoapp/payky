@@ -411,13 +411,16 @@ const createSparkTransactionInput = (
   const details = getSparkTransactionDetails(transfer)
 
   return {
-    deviceId: null,
     accountId,
     amount: IntegerSchema.decode(getTransferAmount(transfer)),
     currency: "BTC" as const,
     occurredAt: TimestampMsSchema.decode(getTransferOccurredAt(transfer)),
     note: getTransferNote(transfer),
     internalTransferGroupId: null,
+    source: {
+      deviceId: null,
+      source: "automaticScript" as const,
+    },
     spark: {
       sparkTransferId,
       lnInvoice: NonEmptyStringSchema.decode(details.lnInvoice),

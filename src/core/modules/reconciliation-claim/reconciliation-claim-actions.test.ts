@@ -78,13 +78,16 @@ describe("reconciliation claim actions", () => {
     )
     const accountTransactionId = await run.orThrow(
       createAccountTransaction({
-        deviceId: null,
         accountId,
         amount: 12_900,
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T12:00:00.000Z"),
         note: null,
         internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "manual",
+        },
       })
     )
 
@@ -129,13 +132,16 @@ describe("reconciliation claim actions", () => {
     )
     const accountTransactionId = await run.orThrow(
       createAccountTransaction({
-        deviceId: null,
         accountId,
         amount: 19_950,
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
         internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "automaticScript",
+        },
         iban: {
           variableSymbol: "123456",
           constantSymbol: null,
@@ -192,13 +198,16 @@ describe("reconciliation claim actions", () => {
     )
     const accountTransactionId = await run.orThrow(
       createAccountTransaction({
-        deviceId: null,
         accountId,
         amount: 19_950,
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
         internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "automaticScript",
+        },
         iban: {
           variableSymbol: null,
           constantSymbol: null,
@@ -247,13 +256,16 @@ describe("reconciliation claim actions", () => {
     )
     const accountTransactionId = await run.orThrow(
       createAccountTransaction({
-        deviceId: null,
         accountId,
         amount: 8_600,
         currency: "BTC",
         occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
         note: null,
         internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "automaticScript",
+        },
         spark: {
           sparkTransferId: "spark-transfer-1",
           lnInvoice: "lnbc8600n1prepared",

@@ -10,6 +10,10 @@ import {
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  type NonEmptyString255,
+  TimestampMsSchema,
+} from "@/core/modules/shared/schema.ts"
+import {
   createTableId,
   removeUndefinedValues,
   runMutationWithCompletion,
@@ -18,6 +22,7 @@ import type {
   AccountTransactionRow,
   accountTransaction,
   accountTransactionIban,
+  accountTransactionSource,
   accountTransactionSpark,
 } from "./account-transaction.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
@@ -27,12 +32,26 @@ export const createAccountTransaction =
     id: providedId,
     iban,
     spark,
+    source: providedSource,
     ...input
   }: Omit<InsertValues<typeof accountTransaction>, "kind"> & {
     readonly id?: AccountTransactionId
+    readonly source: Omit<
+      InsertValues<typeof accountTransactionSource>,
+      "id" | "accountTransactionId" | "recordedAt"
+    > & {
+      readonly recordedAt?: InsertValues<
+        typeof accountTransactionSource
+      >["recordedAt"]
+    }
   } & (
       | {
-          readonly iban: InsertValues<typeof accountTransactionIban>
+          readonly iban: Omit<
+            InsertValues<typeof accountTransactionIban>,
+            "bankReference"
+          > & {
+            readonly bankReference?: NonEmptyString255 | null
+          }
           readonly spark?: never
         }
       | {
@@ -49,14 +68,20 @@ export const createAccountTransaction =
     const id =
       providedId ??
       (iban
-        ? createIdFromString<"AccountTransaction">(
-            `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
-          )
+        ? iban.bankReference == null
+          ? createTableId<"AccountTransaction">()
+          : createIdFromString<"AccountTransaction">(
+              `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
+            )
         : spark
           ? createIdFromString<"AccountTransaction">(
               `accountTransaction:spark:${spark.sparkTransferId}`
             )
           : createTableId<"AccountTransaction">())
+    const source = providedSource
+    const sourceId = createIdFromString<"AccountTransactionSource">(
+      `accountTransactionSource:${id}:${source.source}`
+    )
 
     await runMutationWithCompletion((options) => {
       let kind: AccountTransactionRow["kind"] = "cashRegister"
@@ -67,6 +92,7 @@ export const createAccountTransaction =
           "accountTransactionIban",
           removeUndefinedValues({
             ...iban,
+            bankReference: iban.bankReference ?? null,
             id,
           }),
           { ...options, ownerId: evoluOwnerId }
@@ -84,6 +110,17 @@ export const createAccountTransaction =
           { ...options, ownerId: evoluOwnerId }
         )
       }
+
+      run.deps.evolu.upsert(
+        "accountTransactionSource",
+        removeUndefinedValues({
+          ...source,
+          id: sourceId,
+          accountTransactionId: id,
+          recordedAt: source.recordedAt ?? TimestampMsSchema.decode(Date.now()),
+        }),
+        { ...options, ownerId: evoluOwnerId }
+      )
 
       return run.deps.evolu.upsert(
         "accountTransaction",
@@ -107,7 +144,6 @@ export const updateAccountTransaction =
   }: Pick<
     UpdateValues<typeof accountTransaction>,
     | "id"
-    | "deviceId"
     | "accountId"
     | "amount"
     | "currency"

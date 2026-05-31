@@ -94,7 +94,6 @@ const accountTransactionsByPaymentIdQuery = (id: PaymentId) =>
       )
       .select([
         "accountTransaction.id",
-        "accountTransaction.deviceId",
         "accountTransaction.accountId",
         "accountTransaction.kind",
         "accountTransaction.amount",

@@ -443,13 +443,16 @@ export const markPaymentPaidCash =
         id: createIdFromString<"AccountTransaction">(
           `accountTransaction:cashRegister:payment:${paymentId}:${accountId}`
         ),
-        deviceId: deviceId ?? null,
         accountId,
         amount: payment.amount,
         currency: payment.currency,
         occurredAt: occurredAt ?? TimestampMsSchema.decode(Date.now()),
         note: note ?? null,
         internalTransferGroupId: null,
+        source: {
+          deviceId: deviceId ?? null,
+          source: "manual",
+        },
       })
     )
     if (!accountTransactionResult.ok) return accountTransactionResult

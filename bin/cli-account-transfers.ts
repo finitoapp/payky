@@ -52,7 +52,6 @@ const accountTransfersWithDetailsQuery = createQuery((db) =>
     .selectFrom("accountTransaction")
     .select((eb) => [
       "accountTransaction.id",
-      "accountTransaction.deviceId",
       "accountTransaction.accountId",
       "accountTransaction.kind",
       "accountTransaction.amount",
@@ -98,7 +97,6 @@ const accountTransferWithDetailsByIdQuery = (id: AccountTransactionId) =>
       .selectFrom("accountTransaction")
       .select((eb) => [
         "accountTransaction.id",
-        "accountTransaction.deviceId",
         "accountTransaction.accountId",
         "accountTransaction.kind",
         "accountTransaction.amount",
@@ -270,13 +268,16 @@ export const registerAccountTransfersCommand =
           },
           async action(_, options) {
             const root = {
-              deviceId: options.deviceId ?? null,
               accountId: options.accountId,
               amount: options.amount,
               currency: options.currency,
               occurredAt: options.occurredAt,
               note: options.note ?? null,
               internalTransferGroupId: options.internalTransferGroupId ?? null,
+              source: {
+                deviceId: options.deviceId ?? null,
+                source: "manual" as const,
+              },
             }
 
             if (options.kind === "iban") {
@@ -352,9 +353,6 @@ export const registerAccountTransfersCommand =
             occurredAt: TimestampMsFromStringSchema.optional().describe(
               "o;When the transfer occurred, as milliseconds or a date string"
             ),
-            deviceId: DeviceId.optional().describe(
-              "Device id that updated the transfer"
-            ),
             note: NonEmptyStringSchema.optional().describe("n;Transfer note"),
             internalTransferGroupId:
               NonEmptyString255Schema.optional().describe(
@@ -393,7 +391,6 @@ export const registerAccountTransfersCommand =
 
             const root = {
               id: options.id,
-              deviceId: options.deviceId,
               accountId: options.accountId,
               amount: options.amount,
               currency: options.currency,

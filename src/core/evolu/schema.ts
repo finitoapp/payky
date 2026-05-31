@@ -12,6 +12,7 @@ import {
   accountTransaction,
   accountTransactionIban,
   accountTransactionIndexes,
+  accountTransactionSource,
   accountTransactionSpark,
 } from "@/core/modules/account-transaction/account-transaction.ts"
 import { appSettings } from "@/core/modules/app-settings/app-settings.ts"
@@ -56,6 +57,7 @@ export const AppSchema = {
   accountTransaction,
   accountTransactionIban,
   accountTransactionSpark,
+  accountTransactionSource,
   catalogItem,
   item,
   table,

@@ -1,7 +1,11 @@
 import type { IndexesConfig } from "@evolu/common/local-first"
+import { z } from "zod"
 
 import { AccountId } from "@/core/modules/account/account-types.ts"
-import { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import {
+  AccountTransactionId,
+  AccountTransactionSourceId,
+} from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   AccountKindSchema,
@@ -16,9 +20,13 @@ import {
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
 
+export const AccountTransactionSourceSchema = z.enum([
+  "manual",
+  "automaticScript",
+])
+
 export const accountTransaction = {
   id: AccountTransactionId,
-  deviceId: DeviceId.nullable(),
   accountId: AccountId,
   kind: AccountKindSchema,
   amount: IntegerSchema,
@@ -33,7 +41,7 @@ export const accountTransactionIban = {
   variableSymbol: VariableSymbolSchema.nullable(),
   constantSymbol: ConstantSymbolSchema.nullable(),
   specificSymbol: SpecificSymbolSchema.nullable(),
-  bankReference: NonEmptyString255Schema,
+  bankReference: NonEmptyString255Schema.nullable(),
 } as const
 
 export const accountTransactionSpark = {
@@ -42,6 +50,14 @@ export const accountTransactionSpark = {
   lnInvoice: NonEmptyStringSchema,
   preImage: NonEmptyStringSchema,
   paymentHash: NonEmptyStringSchema,
+} as const
+
+export const accountTransactionSource = {
+  id: AccountTransactionSourceId,
+  deviceId: DeviceId.nullable(),
+  accountTransactionId: AccountTransactionId,
+  source: AccountTransactionSourceSchema,
+  recordedAt: TimestampMsSchema,
 } as const
 
 export const accountTransactionIndexes = ((create) => [
@@ -60,12 +76,24 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionIban_bankReference")
     .on("accountTransactionIban")
     .column("bankReference"),
+  create("accountTransactionSource_accountTransactionId")
+    .on("accountTransactionSource")
+    .column("accountTransactionId"),
+  create("accountTransactionSource_source")
+    .on("accountTransactionSource")
+    .column("source"),
 ]) satisfies IndexesConfig
 
+export type AccountTransactionSource = z.output<
+  typeof AccountTransactionSourceSchema
+>
 export type AccountTransactionRow = InferTable<typeof accountTransaction>
 export type AccountTransactionIbanRow = InferTable<
   typeof accountTransactionIban
 >
 export type AccountTransactionSparkRow = InferTable<
   typeof accountTransactionSpark
+>
+export type AccountTransactionSourceRow = InferTable<
+  typeof accountTransactionSource
 >

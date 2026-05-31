@@ -229,7 +229,6 @@ class FioPluginSync {
         const run = createRun(this.context)
         const accountTransactionId = await run.orThrow(
           createAccountTransaction({
-            deviceId: null,
             accountId: this.plugin.accountId,
             amount: IntegerSchema.decode(transaction.amountMinor),
             currency: transaction.currency,
@@ -238,6 +237,10 @@ class FioPluginSync {
             ),
             note: createTransactionNote(transaction),
             internalTransferGroupId: null,
+            source: {
+              deviceId: null,
+              source: "automaticScript",
+            },
             iban: {
               variableSymbol: transaction.variableSymbol,
               constantSymbol: transaction.constantSymbol,

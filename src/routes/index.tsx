@@ -1,63 +1,88 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { CheckCircle2 } from "lucide-react"
-
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { Clock3, Grid2X2, Settings } from "lucide-react"
+import { PhoneViewport } from "@/components/numopay-skeleton.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { useTranslation } from "@/i18n/use-translation.ts"
-import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/")({
-  component: HomePage,
+  component: TerminalHomePage,
 })
 
-function HomePage() {
+export const keypad = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "C",
+  "0",
+  "<",
+]
+
+function TerminalHomePage() {
   const { t } = useTranslation()
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="flex min-h-80 flex-col justify-between rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-primary">{t("app.name")}</p>
-          <h1 className="max-w-xl text-3xl font-semibold tracking-normal">
-            {t("home.title")}
-          </h1>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            {t("home.description")}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button>{t("home.request")}</Button>
-          <Button variant="outline">{t("home.settle")}</Button>
-        </div>
-      </div>
-
-      <aside className="rounded-lg border bg-card p-5 text-card-foreground shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {t("home.balance.label")}
-            </p>
-            <p className="mt-2 text-3xl font-semibold">
-              {t("home.balance.value")}
-            </p>
+    <main
+      className="min-h-svh bg-green-500 text-foreground"
+      style={{
+        backgroundColor: "#00C245",
+      }}
+    >
+      <PhoneViewport className="justify-between px-8 py-6">
+        <header className="flex items-center justify-between">
+          <Button
+            variant={"ghost"}
+            render={<Link aria-label={t("nav.checkout")} to="/checkout" />}
+          >
+            <Grid2X2 />
+          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant={"ghost"}
+              render={<Link aria-label={t("nav.activity")} to="/activity" />}
+            >
+              <Clock3 />
+            </Button>
+            <Button
+              variant={"ghost"}
+              render={<Link aria-label={t("nav.settings")} to="/settings" />}
+            >
+              <Settings />
+            </Button>
           </div>
-          <span className="rounded-full bg-success/15 p-2 text-success">
-            <CheckCircle2 className="size-5" />
-          </span>
-        </div>
-        <div className="mt-8 grid gap-3">
-          <BalanceBar className="w-4/5" />
-          <BalanceBar className="w-3/5" />
-          <BalanceBar className="w-11/12" />
-        </div>
-      </aside>
-    </section>
-  )
-}
+        </header>
 
-function BalanceBar({ className }: { readonly className: string }) {
-  return (
-    <div className="h-2 overflow-hidden rounded-full bg-muted">
-      <div className={cn("h-full rounded-full bg-primary", className)} />
-    </div>
+        <section className="flex flex-col items-center gap-5 text-center">
+          <h1 className="text-6xl font-semibold tracking-normal">
+            {t("home.amount")}
+          </h1>
+          <p className="text-xl text-foreground/80">{t("home.sats")}</p>
+        </section>
+
+        <section className="grid grid-cols-3 gap-x-12 gap-y-6 px-8">
+          {keypad.map((key) => (
+            <Button
+              key={key}
+              variant="ghost"
+              className="h-16 rounded-full text-2xl text-foreground hover:bg-primary-foreground/10"
+            >
+              {key}
+            </Button>
+          ))}
+        </section>
+
+        <Button
+          className="h-14 rounded-full bg-primary-foreground/15 text-base text-foreground hover:bg-primary-foreground/20"
+          disabled
+        >
+          {t("home.charge")}
+        </Button>
+      </PhoneViewport>
+    </main>
   )
 }

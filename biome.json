@@ -6,6 +6,7 @@
       "!dist",
       "!.vite",
       "!.ai",
+      "!skills",
       "!node_modules",
       "!coverage",
       "!src/routeTree.gen.ts"

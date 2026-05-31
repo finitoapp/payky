@@ -9,9 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+import { Route as SettingsItemsRouteImport } from './routes/settings.items'
+import { Route as ItemsEditRouteImport } from './routes/items.edit'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
@@ -22,35 +37,102 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsItemsRoute = SettingsItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const ItemsEditRoute = ItemsEditRouteImport.update({
+  id: '/items/edit',
+  path: '/items/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/checkout': typeof CheckoutRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/items/edit': typeof ItemsEditRoute
+  '/settings/items': typeof SettingsItemsRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/checkout': typeof CheckoutRoute
+  '/items/edit': typeof ItemsEditRoute
+  '/settings/items': typeof SettingsItemsRoute
+  '/settings': typeof SettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
+  '/checkout': typeof CheckoutRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/items/edit': typeof ItemsEditRoute
+  '/settings/items': typeof SettingsItemsRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/activity'
+  fullPaths:
+    | '/'
+    | '/activity'
+    | '/checkout'
+    | '/settings'
+    | '/items/edit'
+    | '/settings/items'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/activity'
-  id: '__root__' | '/' | '/activity'
+  to:
+    | '/'
+    | '/activity'
+    | '/checkout'
+    | '/items/edit'
+    | '/settings/items'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/activity'
+    | '/checkout'
+    | '/settings'
+    | '/items/edit'
+    | '/settings/items'
+    | '/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
+  CheckoutRoute: typeof CheckoutRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
+  ItemsEditRoute: typeof ItemsEditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/activity': {
       id: '/activity'
       path: '/activity'
@@ -65,12 +147,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/items': {
+      id: '/settings/items'
+      path: '/items'
+      fullPath: '/settings/items'
+      preLoaderRoute: typeof SettingsItemsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/items/edit': {
+      id: '/items/edit'
+      path: '/items/edit'
+      fullPath: '/items/edit'
+      preLoaderRoute: typeof ItemsEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface SettingsRouteChildren {
+  SettingsItemsRoute: typeof SettingsItemsRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsItemsRoute: SettingsItemsRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
+  CheckoutRoute: CheckoutRoute,
+  SettingsRoute: SettingsRouteWithChildren,
+  ItemsEditRoute: ItemsEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

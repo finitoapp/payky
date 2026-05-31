@@ -1,15 +1,17 @@
 import { createRun, ok } from "@evolu/common"
+import { format, subMonths } from "date-fns"
 
 import type {
   BackgroundJob,
   BackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
-import type { FetchDep } from "@/core/deps.ts"
+import type { DateDep, FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
   type FioTransaction,
   fetchFioLastTransactions,
+  setFioLastDate,
 } from "@/core/integrations/fio/fio-client.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionIbanByBankReferenceQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
@@ -17,17 +19,17 @@ import { activeFioPluginsQuery } from "@/core/modules/fio-plugin/fio-plugin-quer
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
+  type DateString,
+  DateStringSchema,
   IntegerSchema,
   NonEmptyString255Schema,
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
-type Context = BackgroundJobContext & FetchDep
+type Context = BackgroundJobContext & FetchDep & DateDep
 
-interface FioAccountTransactionSyncJobOptions {
-  readonly fetch?: typeof globalThis.fetch
-}
+const FIO_LAST_DATE_REPAIR_LOOKBACK_MONTHS = 2
 
 const loadActiveFioPlugins = (context: Context) =>
   context.evolu.loadQuery(activeFioPluginsQuery)
@@ -39,14 +41,10 @@ type ActiveFioPluginWithTokens = ActiveFioPlugin & {
 }
 
 export const createFioAccountTransactionSyncJob =
-  ({
-    fetch = globalThis.fetch,
-  }: FioAccountTransactionSyncJobOptions = {}): BackgroundJob =>
-  (run) => {
+  (): BackgroundJob => (run) => {
     const context: Context = {
       ...run.deps,
       console: run.deps.console.child("fio-account-transaction-sync-job"),
-      fetch,
     }
     const sync = new FioAccountTransactionSync(context)
 
@@ -127,6 +125,7 @@ class FioPluginSync {
   private readonly timer: ReturnType<typeof setInterval>
   private readonly context: Context
   private readonly plugin: ActiveFioPluginWithTokens
+  private tokenIndex = 0
   private readonly syncQueue = createKeyedTaskQueue({
     onError: (error) => this.context.onError(error),
   })
@@ -166,14 +165,27 @@ class FioPluginSync {
   }
 
   private async syncTransactions(): Promise<void> {
-    const [firstToken, ...restTokens] = this.plugin.tokens
+    const token = this.getNextToken()
     const run = createRun({
       ...this.context,
       ...createFioApiDep({
-        tokens: [firstToken.token, ...restTokens.map((row) => row.token)],
+        tokens: [token.token],
       }),
     })
-    const result = await run(fetchFioLastTransactions())
+    let result = await run(fetchFioLastTransactions())
+    if (
+      !result.ok &&
+      result.error.type === "FioStrongAuthorizationRequiredError"
+    ) {
+      const repairResult = await run(
+        setFioLastDate({
+          date: getFioLastDateRepairDate(this.context.date.now()),
+        })
+      )
+      if (!repairResult.ok) throw repairResult.error
+
+      result = await run(fetchFioLastTransactions())
+    }
     if (!result.ok) throw result.error
     if (result.value.iban !== this.plugin.iban) {
       this.context.console.warn("Skipped FIO statement for a different IBAN.", {
@@ -187,6 +199,14 @@ class FioPluginSync {
       if (this.syncQueue.isDisposed) return
       await this.recordTransaction(transaction)
     }
+  }
+
+  private getNextToken(): FioPluginToken {
+    const token = this.plugin.tokens[this.tokenIndex] ?? this.plugin.tokens[0]
+    this.tokenIndex =
+      this.tokenIndex + 1 >= this.plugin.tokens.length ? 0 : this.tokenIndex + 1
+
+    return token
   }
 
   private async recordTransaction(transaction: FioTransaction): Promise<void> {
@@ -235,6 +255,12 @@ class FioPluginSync {
       }
     )
   }
+}
+
+const getFioLastDateRepairDate = (now: Date): DateString => {
+  return DateStringSchema.decode(
+    format(subMonths(now, FIO_LAST_DATE_REPAIR_LOOKBACK_MONTHS), "yyyy-MM-dd")
+  )
 }
 
 const hasFioTokens = (

@@ -41,3 +41,15 @@ export const createFetchDep = () => ({
 })
 
 export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }
+
+export type DateDep = {
+  readonly date: {
+    readonly now: () => Date
+  }
+}
+
+export const createDateDep = () => ({
+  date: {
+    now: () => new Date(),
+  },
+})

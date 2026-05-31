@@ -5,7 +5,10 @@ import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { createFioPlugin } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
+import {
+  createFioPlugin,
+  updateFioPlugin,
+} from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { createFioAccountTransactionSyncJob } from "./fio-account-transaction-sync-job.ts"
 
 const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
@@ -110,17 +113,14 @@ describe("fio account transaction sync job", () => {
       onError: (error) => {
         errors.push(error)
       },
+      fetch: async (input) => {
+        requestedUrls.push(inputToString(input))
+        return statementResponse({
+          transactions: [fioTransaction, fioTransaction],
+        })
+      },
     })
-    using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob({
-        fetch: async (input) => {
-          requestedUrls.push(inputToString(input))
-          return statementResponse({
-            transactions: [fioTransaction, fioTransaction],
-          })
-        },
-      })
-    )
+    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
 
     await expect
       .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
@@ -140,6 +140,124 @@ describe("fio account transaction sync job", () => {
 
     expect(requestedUrls).toEqual([
       "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
+    ])
+    expect(errors).toEqual([])
+  })
+
+  test("repairs an old FIO last-date cursor before retrying last transactions", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const requestedUrls: string[] = []
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
+    await run.orThrow(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: 60,
+        isActive: sqliteTrue,
+        token: "fio-token-1",
+      })
+    )
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      onError: (error) => {
+        errors.push(error)
+      },
+      fetch: async (input) => {
+        requestedUrls.push(inputToString(input))
+        if (requestedUrls.length === 1) {
+          return new Response(
+            "Data není možné poskytnout bez silné autorizace",
+            { status: 422 }
+          )
+        }
+        if (requestedUrls.length === 2) {
+          return new Response(null, { status: 204 })
+        }
+
+        return statementResponse({
+          transactions: [fioTransaction],
+        })
+      },
+      date: {
+        now: () => new Date("2026-05-31T10:00:00.000Z"),
+      },
+    })
+    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+
+    await expect
+      .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
+      .toHaveLength(1)
+
+    expect(requestedUrls).toEqual([
+      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/set-last-date/fio-token-1/2026-03-31/",
+      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
+    ])
+    expect(errors).toEqual([])
+  })
+
+  test("rotates FIO tokens between sync cycles", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const requestedUrls: string[] = []
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
+    const fioPluginId = await run.orThrow(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: 1,
+        isActive: sqliteTrue,
+        token: "fio-token-1",
+      })
+    )
+    await run.orThrow(
+      updateFioPlugin({
+        id: fioPluginId,
+        token: "fio-token-2",
+      })
+    )
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      onError: (error) => {
+        errors.push(error)
+      },
+      fetch: async (input) => {
+        requestedUrls.push(inputToString(input))
+        return statementResponse({
+          transactions: [],
+        })
+      },
+    })
+    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+
+    await expect.poll(() => requestedUrls.length).toBeGreaterThanOrEqual(2)
+
+    expect(requestedUrls.slice(0, 2)).toEqual([
+      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/last/fio-token-2/transactions.json",
     ])
     expect(errors).toEqual([])
   })
@@ -173,16 +291,13 @@ describe("fio account transaction sync job", () => {
       onError: (error) => {
         errors.push(error)
       },
+      fetch: async () =>
+        statementResponse({
+          iban: "CZ2408000000001234567899",
+          transactions: [fioTransaction],
+        }),
     })
-    using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob({
-        fetch: async () =>
-          statementResponse({
-            iban: "CZ2408000000001234567899",
-            transactions: [fioTransaction],
-          }),
-      })
-    )
+    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
 
     await new Promise((resolve) => setTimeout(resolve, 50))
 

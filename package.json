@@ -34,6 +34,7 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "commander": "14.0.3",
+    "date-fns": "4.4.0",
     "lucide-react": "1.16.0",
     "navigator.locks": "0.8.8",
     "qrcode.react": "4.2.0",

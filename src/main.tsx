@@ -6,6 +6,7 @@ import { createConsole, createRun } from "@evolu/common"
 import { createEvoluDeps } from "@evolu/react-web"
 import { backgroundJobs } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
+import { createDateDep, createFetchDep } from "@/core/deps.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { AppProviders } from "@/providers/evolu.tsx"
 import App from "./App.tsx"
@@ -24,6 +25,8 @@ const backgroundJobsRun = createRun({
   console: appConsole,
   evolu,
   evoluOwnerId: evolu.appOwner.id,
+  ...createDateDep(),
+  ...createFetchDep(),
   onError: (error: unknown) => {
     console.error("Background job cleanup failed.", error)
   },

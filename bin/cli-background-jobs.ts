@@ -1,7 +1,11 @@
 import { createConsole, ok, type Task } from "@evolu/common"
 import { createRun } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import {
+  createDateDep,
+  createFetchDep,
+  type EvoluOwnerIdDep,
+} from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { backgroundJobs } from "../src/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "../src/core/background-jobs/run-background-jobs"
@@ -34,6 +38,8 @@ export const registerBackgroundJobsCommand =
             console: appConsole,
             evolu,
             evoluOwnerId,
+            ...createDateDep(),
+            ...createFetchDep(),
             onError: (error: unknown) => {
               run.deps.console.error("Background job failed.", error)
             },

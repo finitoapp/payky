@@ -293,9 +293,12 @@ class SparkAccountSync {
 
   private async initialize(): Promise<void> {
     if (!isValidSparkSecret(this.account.mnemonic)) {
-      this.context.console.warn("Skipped Spark account with an invalid secret.", {
-        accountId: this.account.id,
-      })
+      this.context.console.warn(
+        "Skipped Spark account with an invalid secret.",
+        {
+          accountId: this.account.id,
+        }
+      )
       return
     }
 

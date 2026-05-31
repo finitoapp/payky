@@ -1,16 +1,17 @@
 import {
   evoluJsonArrayFrom,
+  ok,
   type SqliteBoolean,
   sqliteFalse,
   sqliteTrue,
+  type Task,
 } from "@evolu/common"
 import { createRun } from "@evolu/nodejs"
-import { createCommand } from "commander"
+import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-
-import { createFetchDep } from "../src/core/deps"
-import { createEvoluCli } from "../src/core/evolu/cli-client"
+import { createFetchDep, type EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import {
   createFioApiDep,
@@ -88,188 +89,179 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
       .where("fioPlugin.id", "=", id)
   )
 
-export const fioPluginsCommand = createCommand("fio-plugins").description(
-  "Manage FIO API plugin settings."
-)
+export const registerFioPluginsCommand =
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (run) => {
+    const { evolu } = run.deps
 
-fioPluginsCommand
+    const fioPluginsCommand = createCommand("fio-plugins").description(
+      "Manage FIO API plugin settings."
+    )
 
-  .addCommand(
-    zodCommand({
-      name: "list",
-      description: "List active FIO plugin configurations.",
-      args: {},
-      opts: {},
-      async action() {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
+    fioPluginsCommand
 
-        console.log(
-          JSON.stringify(
-            await evolu.loadQuery(fioPluginsWithTokensQuery),
-            null,
-            2
-          )
-        )
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "get",
-      description: "Show one FIO plugin configuration by id.",
-      args: {},
-      opts: {
-        id: FioPluginId.describe("FIO plugin id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-
-        console.log(
-          JSON.stringify(
-            await evolu.loadQuery(fioPluginWithTokensByIdQuery(options.id)),
-            null,
-            2
-          )
-        )
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "create",
-      description: "Create a FIO plugin configuration.",
-      args: {},
-      opts: {
-        accountId: AccountId.describe("a;IBAN account id"),
-        numberOfSecondsBetweenChecks: PositiveIntegerFromStringSchema.describe(
-          "i;Polling interval seconds"
-        ),
-        isActive: SqliteBooleanFromStringSchema.describe(
-          "x;Whether background sync is active"
-        ),
-        token: NonEmptyString255Schema.describe("t;FIO API token"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
-
-        const fioPluginId = await run.orThrow(
-          createFioPlugin({
-            accountId: options.accountId,
-            numberOfSecondsBetweenChecks: options.numberOfSecondsBetweenChecks,
-            isActive: options.isActive,
-            token: options.token,
-          })
-        )
-
-        console.log(`Inserted FIO plugin ${fioPluginId}`)
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "update",
-      description: "Update a FIO plugin configuration.",
-      args: {},
-      opts: {
-        id: FioPluginId.describe("FIO plugin id"),
-        accountId: AccountId.optional().describe("a;IBAN account id"),
-        numberOfSecondsBetweenChecks:
-          PositiveIntegerFromStringSchema.optional().describe(
-            "i;Polling interval seconds"
-          ),
-        isActive: SqliteBooleanFromStringSchema.optional().describe(
-          "x;Whether background sync is active"
-        ),
-        token: NonEmptyString255Schema.optional().describe("t;FIO API token"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
-
-        await run.orThrow(loadFioPlugin(options.id))
-
-        const fioPluginId = await run.orThrow(
-          updateFioPlugin({
-            id: options.id,
-            accountId: options.accountId,
-            numberOfSecondsBetweenChecks: options.numberOfSecondsBetweenChecks,
-            isActive: options.isActive,
-            token: options.token,
-          })
-        )
-
-        console.log(`Updated FIO plugin ${fioPluginId}`)
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "set-cursor",
-      description: "Set the FIO API last transaction cursor date.",
-      args: {},
-      opts: {
-        id: FioPluginId.describe("FIO plugin id"),
-        date: DateStringSchema.describe("Cursor date in YYYY-MM-DD format"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const evoluRun = createRun({ evolu })
-
-        await evoluRun.orThrow(loadFioPlugin(options.id))
-        const tokens = await evolu.loadQuery(
-          fioPluginTokensByPluginIdQuery(options.id)
-        )
-        const firstToken = tokens[0]
-        if (firstToken == null) {
-          throw new Error(`FIO plugin ${options.id} has no active token.`)
-        }
-
-        const fioRun = createRun({
-          ...createFetchDep(),
-          ...createFioApiDep({
-            tokens: [
-              firstToken.token,
-              ...tokens.slice(1).map((row) => row.token),
-            ],
-          }),
+      .addCommand(
+        zodCommand({
+          name: "list",
+          description: "List active FIO plugin configurations.",
+          args: {},
+          opts: {},
+          async action() {
+            run.deps.console.log(
+              JSON.stringify(
+                await evolu.loadQuery(fioPluginsWithTokensQuery),
+                null,
+                2
+              )
+            )
+          },
         })
-        console.log("ok")
-        await fioRun.orThrow(setFioLastDate({ date: options.date }))
-        console.log("ok2")
+      )
 
-        console.log(
-          `Set FIO cursor for plugin ${options.id} to ${options.date}`
-        )
-      },
-    })
-  )
+      .addCommand(
+        zodCommand({
+          name: "get",
+          description: "Show one FIO plugin configuration by id.",
+          args: {},
+          opts: {
+            id: FioPluginId.describe("FIO plugin id"),
+          },
+          async action(_, options) {
+            run.deps.console.log(
+              JSON.stringify(
+                await evolu.loadQuery(fioPluginWithTokensByIdQuery(options.id)),
+                null,
+                2
+              )
+            )
+          },
+        })
+      )
 
-  .addCommand(
-    zodCommand({
-      name: "delete",
-      description: "Soft delete a FIO plugin configuration.",
-      args: {},
-      opts: {
-        id: FioPluginId.describe("FIO plugin id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
+      .addCommand(
+        zodCommand({
+          name: "create",
+          description: "Create a FIO plugin configuration.",
+          args: {},
+          opts: {
+            accountId: AccountId.describe("a;IBAN account id"),
+            numberOfSecondsBetweenChecks:
+              PositiveIntegerFromStringSchema.describe(
+                "i;Polling interval seconds"
+              ),
+            isActive: SqliteBooleanFromStringSchema.describe(
+              "x;Whether background sync is active"
+            ),
+            token: NonEmptyString255Schema.describe("t;FIO API token"),
+          },
+          async action(_, options) {
+            const fioPluginId = await run.orThrow(
+              createFioPlugin({
+                accountId: options.accountId,
+                numberOfSecondsBetweenChecks:
+                  options.numberOfSecondsBetweenChecks,
+                isActive: options.isActive,
+                token: options.token,
+              })
+            )
 
-        const fioPluginId = await run.orThrow(deleteFioPlugin(options.id))
+            run.deps.console.log(`Inserted FIO plugin ${fioPluginId}`)
+          },
+        })
+      )
 
-        console.log(`Deleted FIO plugin ${fioPluginId}`)
-      },
-    })
-  )
+      .addCommand(
+        zodCommand({
+          name: "update",
+          description: "Update a FIO plugin configuration.",
+          args: {},
+          opts: {
+            id: FioPluginId.describe("FIO plugin id"),
+            accountId: AccountId.optional().describe("a;IBAN account id"),
+            numberOfSecondsBetweenChecks:
+              PositiveIntegerFromStringSchema.optional().describe(
+                "i;Polling interval seconds"
+              ),
+            isActive: SqliteBooleanFromStringSchema.optional().describe(
+              "x;Whether background sync is active"
+            ),
+            token:
+              NonEmptyString255Schema.optional().describe("t;FIO API token"),
+          },
+          async action(_, options) {
+            await run.orThrow(loadFioPlugin(options.id))
+
+            const fioPluginId = await run.orThrow(
+              updateFioPlugin({
+                id: options.id,
+                accountId: options.accountId,
+                numberOfSecondsBetweenChecks:
+                  options.numberOfSecondsBetweenChecks,
+                isActive: options.isActive,
+                token: options.token,
+              })
+            )
+
+            run.deps.console.log(`Updated FIO plugin ${fioPluginId}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "set-cursor",
+          description: "Set the FIO API last transaction cursor date.",
+          args: {},
+          opts: {
+            id: FioPluginId.describe("FIO plugin id"),
+            date: DateStringSchema.describe("Cursor date in YYYY-MM-DD format"),
+          },
+          async action(_, options) {
+            await run.orThrow(loadFioPlugin(options.id))
+            const tokens = await evolu.loadQuery(
+              fioPluginTokensByPluginIdQuery(options.id)
+            )
+            const firstToken = tokens[0]
+            if (firstToken == null) {
+              throw new Error(`FIO plugin ${options.id} has no active token.`)
+            }
+
+            const fioRun = createRun({
+              ...createFetchDep(),
+              ...createFioApiDep({
+                tokens: [
+                  firstToken.token,
+                  ...tokens.slice(1).map((row) => row.token),
+                ],
+              }),
+            })
+            run.deps.console.log("ok")
+            await fioRun.orThrow(setFioLastDate({ date: options.date }))
+            run.deps.console.log("ok2")
+
+            run.deps.console.log(
+              `Set FIO cursor for plugin ${options.id} to ${options.date}`
+            )
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "delete",
+          description: "Soft delete a FIO plugin configuration.",
+          args: {},
+          opts: {
+            id: FioPluginId.describe("FIO plugin id"),
+          },
+          async action(_, options) {
+            const fioPluginId = await run.orThrow(deleteFioPlugin(options.id))
+
+            run.deps.console.log(`Deleted FIO plugin ${fioPluginId}`)
+          },
+        })
+      )
+
+    program.addCommand(fioPluginsCommand)
+    return ok(undefined)
+  }

@@ -6,6 +6,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type {
   FioPluginRow,
@@ -48,8 +49,9 @@ export const createFioPlugin =
     ...input
   }: InsertValues<typeof fioPlugin> & {
     readonly token: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginId, never, EvoluDep> =>
+  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const id = createTableId<"FioPlugin">()
     const tokenId = createTableId<"FioPluginToken">()
 
@@ -61,7 +63,7 @@ export const createFioPlugin =
           fioPluginId: id,
           token,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
 
       return run.deps.evolu.upsert(
@@ -70,7 +72,7 @@ export const createFioPlugin =
           ...input,
           id,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     })
 
@@ -86,8 +88,9 @@ export const updateFioPlugin =
     "id" | "accountId" | "numberOfSecondsBetweenChecks" | "isActive"
   > & {
     readonly token?: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginId, never, EvoluDep> =>
+  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const tokenId = createTableId<"FioPluginToken">()
 
     await runMutationWithCompletion((options) => {
@@ -99,23 +102,26 @@ export const updateFioPlugin =
             fioPluginId: input.id,
             token,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
-      return run.deps.evolu.update(
-        "fioPlugin",
-        removeUndefinedValues(input),
-        options
-      )
+      return run.deps.evolu.update("fioPlugin", removeUndefinedValues(input), {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
     })
 
     return ok(input.id)
   }
 
 export const deleteFioPlugin =
-  (idValue: FioPluginId): Task<FioPluginId, never, EvoluDep> =>
+  (
+    idValue: FioPluginId
+  ): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "fioPlugin",
@@ -123,7 +129,7 @@ export const deleteFioPlugin =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 

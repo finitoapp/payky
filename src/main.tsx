@@ -23,6 +23,7 @@ const evolu = await evoluRun.orThrow(createAppEvolu())
 const backgroundJobsRun = createRun({
   console: appConsole,
   evolu,
+  evoluOwnerId: evolu.appOwner.id,
   onError: (error: unknown) => {
     console.error("Background job cleanup failed.", error)
   },

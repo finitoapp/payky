@@ -1,4 +1,6 @@
 import { ok, type Task, type UpdateValues } from "@evolu/common"
+
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type {
   AppSettingsRow,
   appSettings,
@@ -13,13 +15,18 @@ import { settingsQuery } from "./app-settings-queries.ts"
 import { createDefaultSettings, settingsId } from "./app-settings-utils.ts"
 
 export const getSettings =
-  (): Task<AppSettingsRow, never, EvoluDep> => async (run) => {
+  (): Task<AppSettingsRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
     const existing = (await run.deps.evolu.loadQuery(settingsQuery))[0]
     if (existing != null) return ok(existing)
 
     const defaults = createDefaultSettings()
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.upsert("appSettings", defaults, options)
+      run.deps.evolu.upsert("appSettings", defaults, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
     )
     return ok(defaults)
   }
@@ -27,8 +34,10 @@ export const getSettings =
 export const updateSettings =
   (
     input: Omit<UpdateValues<typeof appSettings>, "id">
-  ): Task<AppSettingsId, never, EvoluDep> =>
+  ): Task<AppSettingsId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "appSettings",
@@ -36,7 +45,7 @@ export const updateSettings =
           id: settingsId,
           ...input,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
     return ok(settingsId)

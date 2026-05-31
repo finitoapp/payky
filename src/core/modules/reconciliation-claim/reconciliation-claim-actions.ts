@@ -1,5 +1,6 @@
 import { createIdFromString, ok, type Task } from "@evolu/common"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -17,8 +18,9 @@ import {
 export const reconcileAccountTransaction =
   (
     accountTransactionId: AccountTransactionId
-  ): Task<PaymentId | null, never, EvoluDep> =>
+  ): Task<PaymentId | null, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const existingClaims = await run.deps.evolu.loadQuery(
       activeReconciliationClaimByAccountTransactionIdQuery(accountTransactionId)
     )
@@ -65,7 +67,7 @@ export const reconcileAccountTransaction =
           source: "automaticScript" as const,
           claimedAt: Date.now(),
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 

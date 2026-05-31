@@ -1,8 +1,10 @@
-import { createConsole, createRun } from "@evolu/common"
-import { createCommand } from "commander"
+import { createConsole, ok, type Task } from "@evolu/common"
+import { createRun } from "@evolu/nodejs"
+import { type Command, createCommand } from "commander"
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { backgroundJobs } from "../src/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "../src/core/background-jobs/run-background-jobs"
-import { createEvoluCli } from "../src/core/evolu/cli-client"
 
 declare const process: {
   readonly once: (event: "SIGINT" | "SIGTERM", listener: () => void) => void
@@ -14,31 +16,39 @@ const waitForShutdownSignal = (): Promise<void> =>
     process.once("SIGTERM", () => resolve())
   })
 
-export const backgroundJobsCommand = createCommand(
-  "background-jobs"
-).description("Run Payky background workers.")
+export const registerBackgroundJobsCommand =
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (run) => {
+    const { evolu, evoluOwnerId } = run.deps
 
-backgroundJobsCommand.addCommand(
-  createCommand("run")
-    .description("Run all registered background jobs until shutdown.")
-    .action(async () => {
-      await using evoluCli = await createEvoluCli()
-      const { evolu } = evoluCli
-      const appConsole = createConsole()
-      const run = createRun({
-        console: appConsole,
-        evolu,
-        onError: (error: unknown) => {
-          console.error("Background job failed.", error)
-        },
-      })
+    const backgroundJobsCommand = createCommand("background-jobs").description(
+      "Run Payky background workers."
+    )
 
-      using _backgroundJobsDisposable = await run.orThrow(
-        runBackgroundJobs(backgroundJobs)
-      )
+    backgroundJobsCommand.addCommand(
+      createCommand("run")
+        .description("Run all registered background jobs until shutdown.")
+        .action(async () => {
+          const appConsole = createConsole()
+          const run = createRun({
+            console: appConsole,
+            evolu,
+            evoluOwnerId,
+            onError: (error: unknown) => {
+              run.deps.console.error("Background job failed.", error)
+            },
+          })
 
-      console.log("Background jobs are running.")
-      await waitForShutdownSignal()
-      console.log("Stopping background jobs.")
-    })
-)
+          using _backgroundJobsDisposable = await run.orThrow(
+            runBackgroundJobs(backgroundJobs)
+          )
+
+          run.deps.console.log("Background jobs are running.")
+          await waitForShutdownSignal()
+          run.deps.console.log("Stopping background jobs.")
+        })
+    )
+
+    program.addCommand(backgroundJobsCommand)
+    return ok(undefined)
+  }

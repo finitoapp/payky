@@ -7,6 +7,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createTableId,
@@ -42,8 +43,9 @@ export const createAccountTransaction =
           readonly iban?: never
           readonly spark?: never
         }
-    )): Task<AccountTransactionId, never, EvoluDep> =>
+    )): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const id =
       providedId ??
       (iban
@@ -67,7 +69,7 @@ export const createAccountTransaction =
             ...iban,
             id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -79,7 +81,7 @@ export const createAccountTransaction =
             ...spark,
             id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -90,7 +92,7 @@ export const createAccountTransaction =
           id,
           kind,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     })
 
@@ -129,8 +131,10 @@ export const updateAccountTransaction =
           readonly iban?: never
           readonly spark?: never
         }
-    )): Task<AccountTransactionId, never, EvoluDep> =>
+    )): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) => {
       let kind: AccountTransactionRow["kind"] = "cashRegister"
 
@@ -142,7 +146,7 @@ export const updateAccountTransaction =
             ...iban,
             id: input.id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -154,7 +158,7 @@ export const updateAccountTransaction =
             ...spark,
             id: input.id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -164,7 +168,7 @@ export const updateAccountTransaction =
           ...input,
           kind,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     })
 
@@ -174,8 +178,10 @@ export const updateAccountTransaction =
 export const deleteAccountTransaction =
   (
     idValue: AccountTransactionId
-  ): Task<AccountTransactionId, never, EvoluDep> =>
+  ): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "accountTransaction",
@@ -183,7 +189,7 @@ export const deleteAccountTransaction =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 

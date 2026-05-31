@@ -6,6 +6,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
 import type { BillLineSummary } from "@/core/modules/bill/bill-line-summary.ts"
@@ -99,8 +100,9 @@ export const createBill =
       InsertValues<typeof bill>,
       "deviceId" | "displayNumber" | "label" | "tableId" | "currency"
     >
-  ): Task<BillId, never, EvoluDep> =>
+  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert(
         "bill",
@@ -108,7 +110,7 @@ export const createBill =
           ...input,
           status: "open",
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 
@@ -118,8 +120,10 @@ export const createBill =
 export const assignBillToTable =
   (
     input: Pick<UpdateValues<typeof bill>, "id" | "tableId">
-  ): Task<BillId, never, EvoluDep> =>
+  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "bill",
@@ -127,7 +131,7 @@ export const assignBillToTable =
           id: input.id,
           tableId: input.tableId,
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 
@@ -137,10 +141,16 @@ export const assignBillToTable =
 export const moveBillToTable = assignBillToTable
 
 export const removeTableFromBill =
-  (billId: BillId): Task<BillId, never, EvoluDep> =>
+  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.update("bill", { id: billId, tableId: null }, options)
+      run.deps.evolu.update(
+        "bill",
+        { id: billId, tableId: null },
+        { ...options, ownerId: evoluOwnerId }
+      )
     )
 
     return ok(billId)
@@ -156,7 +166,7 @@ export const addCatalogItemToBill =
         InsertValues<typeof billLine>["catalogItemId"]
       >
     }
-  ): Task<BillLineSummary, AddBillLineError, EvoluDep> =>
+  ): Task<BillLineSummary, AddBillLineError, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const catalogItemResult = getFirstOr(
       await run.deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
@@ -198,7 +208,11 @@ export const addManualAmountToBill =
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Task<BillLineSummary, BillLineSummaryMissingError, EvoluDep> =>
+  ): Task<
+    BillLineSummary,
+    BillLineSummaryMissingError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
@@ -237,7 +251,11 @@ export const addTipToBill =
       "billId" | "deviceId" | "totalAmount"
     > &
       Pick<InsertValues<typeof item>, "name" | "currency">
-  ): Task<BillLineSummary, BillLineSummaryMissingError, EvoluDep> =>
+  ): Task<
+    BillLineSummary,
+    BillLineSummaryMissingError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
@@ -277,7 +295,7 @@ export const appendRemoveBillLine =
     > & {
       readonly lineSummary: BillLineSummary
     }
-  ): Task<BillLineSummary | null, never, EvoluDep> =>
+  ): Task<BillLineSummary | null, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const projected = await appendBillLine(run.deps)({
       billId: input.billId,
@@ -312,7 +330,7 @@ export const splitBill =
     readonly sourceBillId: BillId
     readonly targetBillId: BillId
     readonly items: ReadonlyArray<BillLineSummary>
-  }): Task<BillWithItems, SplitBillError, EvoluDep> =>
+  }): Task<BillWithItems, SplitBillError, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const targetBillResult = await run(loadBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
@@ -356,8 +374,9 @@ export const partiallyPayBill =
     input: Pick<UpdateValues<typeof bill>, "id"> & {
       readonly paymentId: PaymentId
     }
-  ): Task<BillId, never, EvoluDep> =>
+  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     void input.paymentId
 
     await runMutationWithCompletion((options) =>
@@ -367,7 +386,7 @@ export const partiallyPayBill =
           id: input.id,
           status: "partiallyPaid",
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 
@@ -375,8 +394,10 @@ export const partiallyPayBill =
   }
 
 export const cancelBill =
-  (billId: BillId): Task<BillId, never, EvoluDep> =>
+  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "bill",
@@ -385,7 +406,7 @@ export const cancelBill =
           status: "canceled",
           canceledAt: Date.now(),
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 
@@ -393,8 +414,10 @@ export const cancelBill =
   }
 
 export const closeBillAsPaid =
-  (billId: BillId): Task<BillId, never, EvoluDep> =>
+  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "bill",
@@ -403,7 +426,7 @@ export const closeBillAsPaid =
           status: "paid",
           closedAt: Date.now(),
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 

@@ -1,5 +1,6 @@
 import { createIdFromString } from "@evolu/common"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
@@ -39,16 +40,18 @@ export const createBillLineSummaryId = (
   )
 
 export const createOrReuseItemSnapshot =
-  (deps: EvoluDep) =>
+  (deps: EvoluDep & EvoluOwnerIdDep) =>
   async (snapshot: ItemRow): Promise<ItemRow> => {
+    const { evoluOwnerId } = deps
+
     await runMutationWithCompletion((options) =>
-      deps.evolu.upsert("item", snapshot, options)
+      deps.evolu.upsert("item", snapshot, { ...options, ownerId: evoluOwnerId })
     )
     return snapshot
   }
 
 export const createOrReuseCatalogItemSnapshot =
-  (deps: EvoluDep) =>
+  (deps: EvoluDep & EvoluOwnerIdDep) =>
   async (catalogItem: CatalogItemRow): Promise<ItemRow> =>
     createOrReuseItemSnapshot(deps)(createCatalogItemSnapshot(catalogItem))
 
@@ -110,15 +113,20 @@ export const loadCalculatedBillLineSummaries =
     return calculateBillLineSummaries(lineRows, itemRows)
   }
 export const appendBillLines =
-  (deps: EvoluDep) =>
+  (deps: EvoluDep & EvoluOwnerIdDep) =>
   async (
     lines: ReadonlyArray<Omit<BillLineRow, "id">>,
     returnBillId?: BillId
   ): Promise<ReadonlyArray<BillLineSummary>> => {
+    const { evoluOwnerId } = deps
+
     if (lines.length > 0) {
       await runMutationWithCompletion((options) => {
         for (const line of lines) {
-          deps.evolu.insert("billLine", removeUndefinedValues(line), options)
+          deps.evolu.insert("billLine", removeUndefinedValues(line), {
+            ...options,
+            ownerId: evoluOwnerId,
+          })
         }
       })
     }
@@ -148,7 +156,7 @@ export const appendBillLines =
   }
 
 export const appendBillLine =
-  (deps: EvoluDep) =>
+  (deps: EvoluDep & EvoluOwnerIdDep) =>
   async (
     line: Omit<BillLineRow, "id">
   ): Promise<ReadonlyArray<BillLineSummary>> => {

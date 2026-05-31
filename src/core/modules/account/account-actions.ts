@@ -6,6 +6,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
@@ -63,8 +64,9 @@ export const createAccount =
           readonly spark?: never
           readonly cashRegister: InsertValues<typeof accountCashRegister>
         }
-    )): Task<AccountId, never, EvoluDep> =>
+    )): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const id = createTableId<"Account">()
 
     await runMutationWithCompletion((options) => {
@@ -78,7 +80,7 @@ export const createAccount =
             ...iban,
             id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -90,7 +92,7 @@ export const createAccount =
             ...spark,
             id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -102,7 +104,7 @@ export const createAccount =
             ...cashRegister,
             id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -113,7 +115,7 @@ export const createAccount =
           id,
           kind,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     })
 
@@ -146,8 +148,10 @@ export const updateAccount =
             "id"
           >
         }
-    )): Task<AccountId, never, EvoluDep> =>
+    )): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) => {
       let kind: AccountRow["kind"] = "cashRegister"
 
@@ -159,7 +163,7 @@ export const updateAccount =
             ...iban,
             id: input.id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -171,7 +175,7 @@ export const updateAccount =
             ...spark,
             id: input.id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -183,7 +187,7 @@ export const updateAccount =
             ...cashRegister,
             id: input.id,
           }),
-          options
+          { ...options, ownerId: evoluOwnerId }
         )
       }
 
@@ -195,7 +199,7 @@ export const updateAccount =
           name: input.name,
           kind,
         }),
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     })
 
@@ -203,8 +207,10 @@ export const updateAccount =
   }
 
 export const deleteAccount =
-  (idValue: AccountId): Task<AccountId, never, EvoluDep> =>
+  (idValue: AccountId): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "account",
@@ -212,7 +218,7 @@ export const deleteAccount =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        options
+        { ...options, ownerId: evoluOwnerId }
       )
     )
 

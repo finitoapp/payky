@@ -1,11 +1,11 @@
-import { evoluJsonObjectFrom } from "@evolu/common"
+import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { createRun } from "@evolu/nodejs"
-import { createCommand } from "commander"
+import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import { createFetchDep } from "@/core/deps.ts"
+import { createFetchDep, type EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
-import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { createQuery } from "../src/core/evolu/schema"
 import { AccountId } from "../src/core/modules/account/account-types"
 import { BillId } from "../src/core/modules/bill/bill-types"
@@ -147,287 +147,287 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
       .where("payment.id", "=", id)
   )
 
-const printInvalidPaymentInput = (message: string): void => {
-  console.error(message)
-  process.exitCode = 1
-}
+export const registerPaymentsCommand =
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (run) => {
+    const { evolu, evoluOwnerId } = run.deps
 
-export const paymentsCommand = createCommand("payments").description(
-  "Manage payment requests and receipts."
-)
+    const printInvalidPaymentInput = (message: string): void => {
+      run.deps.console.error(message)
+      process.exitCode = 1
+    }
 
-paymentsCommand
+    const paymentsCommand = createCommand("payments").description(
+      "Manage payment requests and receipts."
+    )
 
-  .addCommand(
-    zodCommand({
-      name: "list",
-      description: "List active payments with payment method details.",
-      args: {},
-      opts: {},
-      async action() {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
+    paymentsCommand
 
-        console.log(
-          JSON.stringify(
-            await evolu.loadQuery(paymentsWithDetailsQuery),
-            null,
-            2
-          )
-        )
-
-        console.table(await evolu.loadQuery(paymentsWithDetailsQuery))
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "get",
-      description: "Show one payment by id.",
-      args: {},
-      opts: {
-        id: PaymentId.describe("Payment id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-
-        console.table(
-          await evolu.loadQuery(paymentWithDetailsByIdQuery(options.id))
-        )
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "create",
-      description: "Create a payment with optional method-specific details.",
-      args: {},
-      opts: {
-        amount: NonNegativeIntegerFromStringSchema.describe("a;Payment amount"),
-        currency: FiatCurrencySchema.describe("c;Payment currency"),
-        tipAmount: NonNegativeIntegerFromStringSchema.describe("t;Tip amount"),
-        deviceId: DeviceId.optional().describe(
-          "Device id that created the payment"
-        ),
-        billId: BillId.optional().describe("Related bill id"),
-        tableId: TableId.optional().describe("Related table id"),
-        canceledAt: TimestampMsFromStringSchema.optional().describe(
-          "Cancellation timestamp, as milliseconds or a date string"
-        ),
-        cashRegisterAccountId: AccountId.optional().describe(
-          "Cash register account id"
-        ),
-        sparkAccountId: AccountId.optional().describe("Spark account id"),
-        ibanAccountId: AccountId.optional().describe("IBAN account id"),
-        variableSymbol: VariableSymbolSchema.optional().describe(
-          "IBAN variable symbol"
-        ),
-        czQrPayload: NonEmptyStringSchema.optional().describe(
-          "CZ QR payment payload"
-        ),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-
-        const hasIbanInput =
-          options.ibanAccountId != null ||
-          options.variableSymbol != null ||
-          options.czQrPayload != null
-
-        const iban = (() => {
-          if (!hasIbanInput) return undefined
-
-          const { ibanAccountId, variableSymbol, czQrPayload } = options
-
-          if (ibanAccountId == null || czQrPayload == null) {
-            printInvalidPaymentInput(
-              "IBAN payment requires --ibanAccountId and --czQrPayload."
+      .addCommand(
+        zodCommand({
+          name: "list",
+          description: "List active payments with payment method details.",
+          args: {},
+          opts: {},
+          async action() {
+            run.deps.console.log(
+              JSON.stringify(
+                await evolu.loadQuery(paymentsWithDetailsQuery),
+                null,
+                2
+              )
             )
-            return null
-          }
 
-          return {
-            accountId: ibanAccountId,
-            variableSymbol: variableSymbol ?? null,
-            czQrPayload,
-          }
-        })()
-        if (iban === null) return
-
-        const run = createRun({
-          ...createFetchDep(),
-          ...createSparkWalletDep(),
-          evolu,
+            run.deps.console.table(
+              await evolu.loadQuery(paymentsWithDetailsQuery)
+            )
+          },
         })
+      )
 
-        const paymentId = await run.orThrow(
-          createPreparedPayment({
-            deviceId: options.deviceId ?? null,
-            billId: options.billId ?? null,
-            tableId: options.tableId ?? null,
-            amount: options.amount,
-            currency: options.currency,
-            tipAmount: options.tipAmount,
-            canceledAt: options.canceledAt ?? null,
-            ...(options.cashRegisterAccountId == null
-              ? {}
-              : {
-                  cashRegister: {
-                    accountId: options.cashRegisterAccountId,
-                  },
-                }),
-            ...(options.sparkAccountId == null
-              ? {}
-              : {
-                  spark: {
-                    accountId: options.sparkAccountId,
-                  },
-                }),
-            ...(iban == null ? {} : { iban }),
-          })
-        )
+      .addCommand(
+        zodCommand({
+          name: "get",
+          description: "Show one payment by id.",
+          args: {},
+          opts: {
+            id: PaymentId.describe("Payment id"),
+          },
+          async action(_, options) {
+            run.deps.console.table(
+              await evolu.loadQuery(paymentWithDetailsByIdQuery(options.id))
+            )
+          },
+        })
+      )
 
-        console.log(`Inserted payment ${paymentId}`)
-      },
-    })
-  )
+      .addCommand(
+        zodCommand({
+          name: "create",
+          description:
+            "Create a payment with optional method-specific details.",
+          args: {},
+          opts: {
+            amount:
+              NonNegativeIntegerFromStringSchema.describe("a;Payment amount"),
+            currency: FiatCurrencySchema.describe("c;Payment currency"),
+            tipAmount:
+              NonNegativeIntegerFromStringSchema.describe("t;Tip amount"),
+            deviceId: DeviceId.optional().describe(
+              "Device id that created the payment"
+            ),
+            billId: BillId.optional().describe("Related bill id"),
+            tableId: TableId.optional().describe("Related table id"),
+            canceledAt: TimestampMsFromStringSchema.optional().describe(
+              "Cancellation timestamp, as milliseconds or a date string"
+            ),
+            cashRegisterAccountId: AccountId.optional().describe(
+              "Cash register account id"
+            ),
+            sparkAccountId: AccountId.optional().describe("Spark account id"),
+            ibanAccountId: AccountId.optional().describe("IBAN account id"),
+            variableSymbol: VariableSymbolSchema.optional().describe(
+              "IBAN variable symbol"
+            ),
+            czQrPayload: NonEmptyStringSchema.optional().describe(
+              "CZ QR payment payload"
+            ),
+          },
+          async action(_, options) {
+            const hasIbanInput =
+              options.ibanAccountId != null ||
+              options.variableSymbol != null ||
+              options.czQrPayload != null
 
-  .addCommand(
-    zodCommand({
-      name: "update",
-      description: "Update a payment and optional method-specific details.",
-      args: {},
-      opts: {
-        id: PaymentId.describe("Payment id"),
-        amount:
-          NonNegativeIntegerFromStringSchema.optional().describe(
-            "a;Payment amount"
-          ),
-        currency: FiatCurrencySchema.optional().describe("c;Payment currency"),
-        tipAmount:
-          NonNegativeIntegerFromStringSchema.optional().describe(
-            "t;Tip amount"
-          ),
-        deviceId: DeviceId.optional().describe(
-          "Device id that updated the payment"
-        ),
-        billId: BillId.optional().describe("Related bill id"),
-        tableId: TableId.optional().describe("Related table id"),
-        canceledAt: TimestampMsFromStringSchema.optional().describe(
-          "Cancellation timestamp, as milliseconds or a date string"
-        ),
-        cashRegisterAccountId: AccountId.optional().describe(
-          "Cash register account id"
-        ),
-        sparkAccountId: AccountId.optional().describe("Spark account id"),
-        amountSats: NonNegativeIntegerFromStringSchema.optional().describe(
-          "Spark amount in satoshis"
-        ),
-        exchangeRate: PositiveNumberFromStringSchema.optional().describe(
-          "Spark exchange rate"
-        ),
-        exchangeRateFetchedAt: TimestampMsFromStringSchema.optional().describe(
-          "Exchange rate fetch time, as milliseconds or a date string"
-        ),
-        lnInvoice:
-          NonEmptyStringSchema.optional().describe("Lightning invoice"),
-        sparkTechnicalData: z
-          .string()
-          .optional()
-          .describe("Spark technical metadata"),
-        ibanAccountId: AccountId.optional().describe("IBAN account id"),
-        variableSymbol: VariableSymbolSchema.optional().describe(
-          "IBAN variable symbol"
-        ),
-        czQrPayload: NonEmptyStringSchema.optional().describe(
-          "CZ QR payment payload"
-        ),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
+            const iban = (() => {
+              if (!hasIbanInput) return undefined
 
-        await run.orThrow(loadPayment(options.id))
+              const { ibanAccountId, variableSymbol, czQrPayload } = options
 
-        const hasSparkInput =
-          options.sparkAccountId != null ||
-          options.amountSats != null ||
-          options.exchangeRate != null ||
-          options.exchangeRateFetchedAt != null ||
-          options.lnInvoice != null ||
-          options.sparkTechnicalData != null
-        const hasIbanInput =
-          options.ibanAccountId != null ||
-          options.variableSymbol != null ||
-          options.czQrPayload != null
+              if (ibanAccountId == null || czQrPayload == null) {
+                printInvalidPaymentInput(
+                  "IBAN payment requires --ibanAccountId and --czQrPayload."
+                )
+                return null
+              }
 
-        await run.orThrow(
-          updatePayment({
-            id: options.id,
-            deviceId: options.deviceId,
-            billId: options.billId,
-            tableId: options.tableId,
-            amount: options.amount,
-            currency: options.currency,
-            tipAmount: options.tipAmount,
-            canceledAt: options.canceledAt,
-            ...(options.cashRegisterAccountId == null
-              ? {}
-              : {
-                  cashRegister: {
-                    accountId: options.cashRegisterAccountId,
-                  },
-                }),
-            ...(hasSparkInput
-              ? {
-                  spark: {
-                    accountId: options.sparkAccountId,
-                    amountSats: options.amountSats,
-                    exchangeRate: options.exchangeRate,
-                    exchangeRateSource: undefined,
-                    exchangeRateFetchedAt: options.exchangeRateFetchedAt,
-                    lnInvoice: options.lnInvoice,
-                    sparkTechnicalData: options.sparkTechnicalData,
-                  },
-                }
-              : {}),
-            ...(hasIbanInput
-              ? {
-                  iban: {
-                    accountId: options.ibanAccountId,
-                    variableSymbol: options.variableSymbol,
-                    czQrPayload: options.czQrPayload,
-                  },
-                }
-              : {}),
-          })
-        )
+              return {
+                accountId: ibanAccountId,
+                variableSymbol: variableSymbol ?? null,
+                czQrPayload,
+              }
+            })()
+            if (iban === null) return
 
-        console.log(`Updated payment ${options.id}`)
-      },
-    })
-  )
+            const sparkRun = createRun({
+              ...createFetchDep(),
+              ...createSparkWalletDep(),
+              evolu,
+              evoluOwnerId,
+            })
 
-  .addCommand(
-    zodCommand({
-      name: "delete",
-      description: "Soft delete a payment.",
-      args: {},
-      opts: {
-        id: PaymentId.describe("Payment id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
+            const paymentId = await sparkRun.orThrow(
+              createPreparedPayment({
+                deviceId: options.deviceId ?? null,
+                billId: options.billId ?? null,
+                tableId: options.tableId ?? null,
+                amount: options.amount,
+                currency: options.currency,
+                tipAmount: options.tipAmount,
+                canceledAt: options.canceledAt ?? null,
+                ...(options.cashRegisterAccountId == null
+                  ? {}
+                  : {
+                      cashRegister: {
+                        accountId: options.cashRegisterAccountId,
+                      },
+                    }),
+                ...(options.sparkAccountId == null
+                  ? {}
+                  : {
+                      spark: {
+                        accountId: options.sparkAccountId,
+                      },
+                    }),
+                ...(iban == null ? {} : { iban }),
+              })
+            )
 
-        await run.orThrow(deletePayment(options.id))
-        console.log(`Deleted payment ${options.id}`)
-      },
-    })
-  )
+            run.deps.console.log(`Inserted payment ${paymentId}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "update",
+          description: "Update a payment and optional method-specific details.",
+          args: {},
+          opts: {
+            id: PaymentId.describe("Payment id"),
+            amount:
+              NonNegativeIntegerFromStringSchema.optional().describe(
+                "a;Payment amount"
+              ),
+            currency:
+              FiatCurrencySchema.optional().describe("c;Payment currency"),
+            tipAmount:
+              NonNegativeIntegerFromStringSchema.optional().describe(
+                "t;Tip amount"
+              ),
+            deviceId: DeviceId.optional().describe(
+              "Device id that updated the payment"
+            ),
+            billId: BillId.optional().describe("Related bill id"),
+            tableId: TableId.optional().describe("Related table id"),
+            canceledAt: TimestampMsFromStringSchema.optional().describe(
+              "Cancellation timestamp, as milliseconds or a date string"
+            ),
+            cashRegisterAccountId: AccountId.optional().describe(
+              "Cash register account id"
+            ),
+            sparkAccountId: AccountId.optional().describe("Spark account id"),
+            amountSats: NonNegativeIntegerFromStringSchema.optional().describe(
+              "Spark amount in satoshis"
+            ),
+            exchangeRate: PositiveNumberFromStringSchema.optional().describe(
+              "Spark exchange rate"
+            ),
+            exchangeRateFetchedAt:
+              TimestampMsFromStringSchema.optional().describe(
+                "Exchange rate fetch time, as milliseconds or a date string"
+              ),
+            lnInvoice:
+              NonEmptyStringSchema.optional().describe("Lightning invoice"),
+            sparkTechnicalData: z
+              .string()
+              .optional()
+              .describe("Spark technical metadata"),
+            ibanAccountId: AccountId.optional().describe("IBAN account id"),
+            variableSymbol: VariableSymbolSchema.optional().describe(
+              "IBAN variable symbol"
+            ),
+            czQrPayload: NonEmptyStringSchema.optional().describe(
+              "CZ QR payment payload"
+            ),
+          },
+          async action(_, options) {
+            await run.orThrow(loadPayment(options.id))
+
+            const hasSparkInput =
+              options.sparkAccountId != null ||
+              options.amountSats != null ||
+              options.exchangeRate != null ||
+              options.exchangeRateFetchedAt != null ||
+              options.lnInvoice != null ||
+              options.sparkTechnicalData != null
+            const hasIbanInput =
+              options.ibanAccountId != null ||
+              options.variableSymbol != null ||
+              options.czQrPayload != null
+
+            await run.orThrow(
+              updatePayment({
+                id: options.id,
+                deviceId: options.deviceId,
+                billId: options.billId,
+                tableId: options.tableId,
+                amount: options.amount,
+                currency: options.currency,
+                tipAmount: options.tipAmount,
+                canceledAt: options.canceledAt,
+                ...(options.cashRegisterAccountId == null
+                  ? {}
+                  : {
+                      cashRegister: {
+                        accountId: options.cashRegisterAccountId,
+                      },
+                    }),
+                ...(hasSparkInput
+                  ? {
+                      spark: {
+                        accountId: options.sparkAccountId,
+                        amountSats: options.amountSats,
+                        exchangeRate: options.exchangeRate,
+                        exchangeRateSource: undefined,
+                        exchangeRateFetchedAt: options.exchangeRateFetchedAt,
+                        lnInvoice: options.lnInvoice,
+                        sparkTechnicalData: options.sparkTechnicalData,
+                      },
+                    }
+                  : {}),
+                ...(hasIbanInput
+                  ? {
+                      iban: {
+                        accountId: options.ibanAccountId,
+                        variableSymbol: options.variableSymbol,
+                        czQrPayload: options.czQrPayload,
+                      },
+                    }
+                  : {}),
+              })
+            )
+
+            run.deps.console.log(`Updated payment ${options.id}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "delete",
+          description: "Soft delete a payment.",
+          args: {},
+          opts: {
+            id: PaymentId.describe("Payment id"),
+          },
+          async action(_, options) {
+            await run.orThrow(deletePayment(options.id))
+            run.deps.console.log(`Deleted payment ${options.id}`)
+          },
+        })
+      )
+
+    program.addCommand(paymentsCommand)
+    return ok(undefined)
+  }

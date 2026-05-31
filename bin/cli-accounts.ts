@@ -1,10 +1,10 @@
 import { SparkWallet } from "@buildonspark/spark-sdk"
-import { evoluJsonObjectFrom } from "@evolu/common"
-import { createRun } from "@evolu/nodejs"
-import { createCommand } from "commander"
+import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
+import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import { createEvoluCli } from "../src/core/evolu/cli-client"
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import {
   createAccount,
@@ -90,11 +90,6 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
       .where("account.id", "=", id)
   )
 
-const printInvalidAccountInput = (message: string): void => {
-  console.error(message)
-  process.exitCode = 1
-}
-
 const SparkNetworkSchema = z.enum([
   "MAINNET",
   "TESTNET",
@@ -103,281 +98,282 @@ const SparkNetworkSchema = z.enum([
   "LOCAL",
 ])
 
-export const accountsCommand = createCommand("accounts").description(
-  "Manage payment accounts."
-)
+export const registerAccountsCommand =
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (run) => {
+    const { evolu } = run.deps
 
-accountsCommand
+    const printInvalidAccountInput = (message: string): void => {
+      run.deps.console.error(message)
+      process.exitCode = 1
+    }
 
-  .addCommand(
-    zodCommand({
-      name: "list",
-      description: "List active accounts with account-specific details.",
-      args: {},
-      opts: {},
-      async action() {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
+    const accountsCommand = createCommand("accounts").description(
+      "Manage payment accounts."
+    )
 
-        console.table(await evolu.loadQuery(accountsWithDetailsQuery))
-      },
-    })
-  )
+    accountsCommand
 
-  .addCommand(
-    zodCommand({
-      name: "get",
-      description: "Show one account by id.",
-      args: {},
-      opts: {
-        id: AccountId.describe("Account id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-
-        console.table(
-          await evolu.loadQuery(accountWithDetailsByIdQuery(options.id))
-        )
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "create",
-      description: "Create an account of the selected kind.",
-      args: {},
-      opts: {
-        name: NonEmptyString255Schema.describe("n;Account name"),
-        kind: AccountKindSchema.describe("k;Account kind"),
-        deviceId: DeviceId.optional().describe(
-          "Device id that created the account"
-        ),
-        iban: IbanSchema.optional().describe("IBAN for bank accounts"),
-        currency: FiatCurrencySchema.optional().describe(
-          "c;Currency for IBAN or cash register accounts"
-        ),
-        mnemonic: NonEmptyString255Schema.optional().describe(
-          "m;Spark wallet mnemonic"
-        ),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
-
-        const root = {
-          deviceId: options.deviceId ?? null,
-          name: options.name,
-        }
-
-        if (options.kind === "iban") {
-          if (options.iban == null || options.currency == null) {
-            printInvalidAccountInput(
-              "IBAN account requires --iban and --currency."
+      .addCommand(
+        zodCommand({
+          name: "list",
+          description: "List active accounts with account-specific details.",
+          args: {},
+          opts: {},
+          async action() {
+            run.deps.console.table(
+              await evolu.loadQuery(accountsWithDetailsQuery)
             )
-            return
-          }
-
-          const id = await run.orThrow(
-            createAccount({
-              ...root,
-              iban: {
-                iban: options.iban,
-                currency: options.currency,
-              },
-            })
-          )
-          console.log(`Inserted account ${id}`)
-          return
-        }
-
-        if (options.kind === "spark") {
-          if (options.mnemonic == null) {
-            printInvalidAccountInput("Spark account requires --mnemonic.")
-            return
-          }
-
-          const id = await run.orThrow(
-            createAccount({
-              ...root,
-              spark: {
-                mnemonic: options.mnemonic,
-              },
-            })
-          )
-          console.log(`Inserted account ${id}`)
-          return
-        }
-
-        if (options.currency == null) {
-          printInvalidAccountInput("Cash register account requires --currency.")
-          return
-        }
-
-        const id = await run.orThrow(
-          createAccount({
-            ...root,
-            cashRegister: {
-              currency: options.currency,
-            },
-          })
-        )
-        console.log(`Inserted account ${id}`)
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "generate-spark",
-      description: "Generate a Spark wallet and store it as a Spark account.",
-      args: {},
-      opts: {
-        name: NonEmptyString255Schema.describe("n;Account name"),
-        deviceId: DeviceId.optional().describe(
-          "Device id that created the account"
-        ),
-        network: SparkNetworkSchema.optional().describe("w;Spark network"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
-        const network = options.network ?? "MAINNET"
-
-        console.log({
-          options: {
-            network,
           },
         })
+      )
 
-        const { wallet, mnemonic } = await SparkWallet.initialize({
-          options: {
-            network,
+      .addCommand(
+        zodCommand({
+          name: "get",
+          description: "Show one account by id.",
+          args: {},
+          opts: {
+            id: AccountId.describe("Account id"),
+          },
+          async action(_, options) {
+            run.deps.console.table(
+              await evolu.loadQuery(accountWithDetailsByIdQuery(options.id))
+            )
           },
         })
+      )
 
-        try {
-          if (mnemonic == null) {
-            printInvalidAccountInput("Spark wallet did not return a mnemonic.")
-            return
-          }
-
-          const accountMnemonic = NonEmptyString255Schema.parse(mnemonic)
-          const id = await run.orThrow(
-            createAccount({
+      .addCommand(
+        zodCommand({
+          name: "create",
+          description: "Create an account of the selected kind.",
+          args: {},
+          opts: {
+            name: NonEmptyString255Schema.describe("n;Account name"),
+            kind: AccountKindSchema.describe("k;Account kind"),
+            deviceId: DeviceId.optional().describe(
+              "Device id that created the account"
+            ),
+            iban: IbanSchema.optional().describe("IBAN for bank accounts"),
+            currency: FiatCurrencySchema.optional().describe(
+              "c;Currency for IBAN or cash register accounts"
+            ),
+            mnemonic: NonEmptyString255Schema.optional().describe(
+              "m;Spark wallet mnemonic"
+            ),
+          },
+          async action(_, options) {
+            const root = {
               deviceId: options.deviceId ?? null,
               name: options.name,
-              spark: {
-                mnemonic: accountMnemonic,
+            }
+
+            if (options.kind === "iban") {
+              if (options.iban == null || options.currency == null) {
+                printInvalidAccountInput(
+                  "IBAN account requires --iban and --currency."
+                )
+                return
+              }
+
+              const id = await run.orThrow(
+                createAccount({
+                  ...root,
+                  iban: {
+                    iban: options.iban,
+                    currency: options.currency,
+                  },
+                })
+              )
+              run.deps.console.log(`Inserted account ${id}`)
+              return
+            }
+
+            if (options.kind === "spark") {
+              if (options.mnemonic == null) {
+                printInvalidAccountInput("Spark account requires --mnemonic.")
+                return
+              }
+
+              const id = await run.orThrow(
+                createAccount({
+                  ...root,
+                  spark: {
+                    mnemonic: options.mnemonic,
+                  },
+                })
+              )
+              run.deps.console.log(`Inserted account ${id}`)
+              return
+            }
+
+            if (options.currency == null) {
+              printInvalidAccountInput(
+                "Cash register account requires --currency."
+              )
+              return
+            }
+
+            const id = await run.orThrow(
+              createAccount({
+                ...root,
+                cashRegister: {
+                  currency: options.currency,
+                },
+              })
+            )
+            run.deps.console.log(`Inserted account ${id}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "generate-spark",
+          description:
+            "Generate a Spark wallet and store it as a Spark account.",
+          args: {},
+          opts: {
+            name: NonEmptyString255Schema.describe("n;Account name"),
+            deviceId: DeviceId.optional().describe(
+              "Device id that created the account"
+            ),
+            network: SparkNetworkSchema.optional().describe("w;Spark network"),
+          },
+          async action(_, options) {
+            const network = options.network ?? "MAINNET"
+
+            run.deps.console.log({
+              options: {
+                network,
               },
             })
-          )
 
-          console.log(
-            `Inserted Spark account ${id}: ${JSON.stringify({
-              id,
-              name: options.name,
-              network,
-              mnemonic,
-            })}`
-          )
-        } finally {
-          await wallet.cleanup()
-        }
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "update",
-      description: "Update an account and its current kind-specific details.",
-      args: {},
-      opts: {
-        id: AccountId.describe("Account id"),
-        name: NonEmptyString255Schema.optional().describe("n;Account name"),
-        deviceId: DeviceId.optional().describe(
-          "Device id that updated the account"
-        ),
-        iban: IbanSchema.optional().describe("IBAN for bank accounts"),
-        currency: FiatCurrencySchema.optional().describe(
-          "c;Currency for IBAN or cash register accounts"
-        ),
-        mnemonic: NonEmptyString255Schema.optional().describe(
-          "m;Spark wallet mnemonic"
-        ),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
-
-        const account = await run.orThrow(loadAccount(options.id))
-        if (account.kind === "iban") {
-          await run.orThrow(
-            updateAccount({
-              id: options.id,
-              deviceId: options.deviceId,
-              name: options.name,
-              iban: {
-                iban: options.iban,
-                currency: options.currency,
+            const { wallet, mnemonic } = await SparkWallet.initialize({
+              options: {
+                network,
               },
             })
-          )
 
-          console.log(`Updated account ${options.id}`)
-          return
-        }
+            try {
+              if (mnemonic == null) {
+                printInvalidAccountInput(
+                  "Spark wallet did not return a mnemonic."
+                )
+                return
+              }
 
-        if (account.kind === "spark") {
-          await run.orThrow(
-            updateAccount({
-              id: options.id,
-              deviceId: options.deviceId,
-              name: options.name,
-              spark: {
-                mnemonic: options.mnemonic,
-              },
-            })
-          )
-          console.log(`Updated account ${options.id}`)
-          return
-        }
+              const accountMnemonic = NonEmptyString255Schema.parse(mnemonic)
+              const id = await run.orThrow(
+                createAccount({
+                  deviceId: options.deviceId ?? null,
+                  name: options.name,
+                  spark: {
+                    mnemonic: accountMnemonic,
+                  },
+                })
+              )
 
-        await run.orThrow(
-          updateAccount({
-            id: options.id,
-            deviceId: options.deviceId,
-            name: options.name,
-            cashRegister: {
-              currency: options.currency,
-            },
-          })
-        )
-        console.log(`Updated account ${options.id}`)
-      },
-    })
-  )
+              run.deps.console.log(
+                `Inserted Spark account ${id}: ${JSON.stringify({
+                  id,
+                  name: options.name,
+                  network,
+                  mnemonic,
+                })}`
+              )
+            } finally {
+              await wallet.cleanup()
+            }
+          },
+        })
+      )
 
-  .addCommand(
-    zodCommand({
-      name: "delete",
-      description: "Soft delete an account.",
-      args: {},
-      opts: {
-        id: AccountId.describe("Account id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
+      .addCommand(
+        zodCommand({
+          name: "update",
+          description:
+            "Update an account and its current kind-specific details.",
+          args: {},
+          opts: {
+            id: AccountId.describe("Account id"),
+            name: NonEmptyString255Schema.optional().describe("n;Account name"),
+            deviceId: DeviceId.optional().describe(
+              "Device id that updated the account"
+            ),
+            iban: IbanSchema.optional().describe("IBAN for bank accounts"),
+            currency: FiatCurrencySchema.optional().describe(
+              "c;Currency for IBAN or cash register accounts"
+            ),
+            mnemonic: NonEmptyString255Schema.optional().describe(
+              "m;Spark wallet mnemonic"
+            ),
+          },
+          async action(_, options) {
+            const account = await run.orThrow(loadAccount(options.id))
+            if (account.kind === "iban") {
+              await run.orThrow(
+                updateAccount({
+                  id: options.id,
+                  deviceId: options.deviceId,
+                  name: options.name,
+                  iban: {
+                    iban: options.iban,
+                    currency: options.currency,
+                  },
+                })
+              )
 
-        await run.orThrow(deleteAccount(options.id))
-        console.log(`Deleted account ${options.id}`)
-      },
-    })
-  )
+              run.deps.console.log(`Updated account ${options.id}`)
+              return
+            }
+
+            if (account.kind === "spark") {
+              await run.orThrow(
+                updateAccount({
+                  id: options.id,
+                  deviceId: options.deviceId,
+                  name: options.name,
+                  spark: {
+                    mnemonic: options.mnemonic,
+                  },
+                })
+              )
+              run.deps.console.log(`Updated account ${options.id}`)
+              return
+            }
+
+            await run.orThrow(
+              updateAccount({
+                id: options.id,
+                deviceId: options.deviceId,
+                name: options.name,
+                cashRegister: {
+                  currency: options.currency,
+                },
+              })
+            )
+            run.deps.console.log(`Updated account ${options.id}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "delete",
+          description: "Soft delete an account.",
+          args: {},
+          opts: {
+            id: AccountId.describe("Account id"),
+          },
+          async action(_, options) {
+            await run.orThrow(deleteAccount(options.id))
+            run.deps.console.log(`Deleted account ${options.id}`)
+          },
+        })
+      )
+
+    program.addCommand(accountsCommand)
+    return ok(undefined)
+  }

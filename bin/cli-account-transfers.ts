@@ -1,9 +1,9 @@
-import { evoluJsonObjectFrom } from "@evolu/common"
-import { createRun } from "@evolu/nodejs"
-import { createCommand } from "commander"
+import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
+import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import { createEvoluCli } from "../src/core/evolu/cli-client"
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import { AccountId } from "../src/core/modules/account/account-types"
 import {
@@ -137,16 +137,6 @@ const accountTransferWithDetailsByIdQuery = (id: AccountTransactionId) =>
       .where("accountTransaction.id", "=", id)
   )
 
-const printAccountTransferNotFound = (id: AccountTransactionId): void => {
-  console.error(`accountTransfer not found: ${id}`)
-  process.exitCode = 1
-}
-
-const printInvalidAccountTransferInput = (message: string): void => {
-  console.error(message)
-  process.exitCode = 1
-}
-
 const formatAccountTransferListCell = (
   value: unknown
 ): string | number | boolean | null => {
@@ -176,284 +166,295 @@ const formatAccountTransferListRows = <Row extends object>(
     return formattedRow
   })
 
-export const accountTransfersCommand = createCommand(
-  "account-transfers"
-).description("Manage account transfer records.")
+export const registerAccountTransfersCommand =
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (run) => {
+    const { evolu } = run.deps
 
-accountTransfersCommand
+    const printAccountTransferNotFound = (id: AccountTransactionId): void => {
+      run.deps.console.error(`accountTransfer not found: ${id}`)
+      process.exitCode = 1
+    }
 
-  .addCommand(
-    zodCommand({
-      name: "list",
-      description: "List active account transfers with payment rail details.",
-      args: {},
-      opts: {},
-      async action() {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
+    const printInvalidAccountTransferInput = (message: string): void => {
+      run.deps.console.error(message)
+      process.exitCode = 1
+    }
 
-        const accountTransfers = await evolu.loadQuery(
-          accountTransfersWithDetailsQuery
-        )
-        console.table(formatAccountTransferListRows(accountTransfers))
-      },
-    })
-  )
+    const accountTransfersCommand = createCommand(
+      "account-transfers"
+    ).description("Manage account transfer records.")
 
-  .addCommand(
-    zodCommand({
-      name: "get",
-      description: "Show one account transfer by id.",
-      args: {},
-      opts: {
-        id: AccountTransactionId.describe("Account transfer id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
+    accountTransfersCommand
 
-        console.table(
-          await evolu.loadQuery(accountTransferWithDetailsByIdQuery(options.id))
-        )
-      },
-    })
-  )
-
-  .addCommand(
-    zodCommand({
-      name: "create",
-      description: "Create an account transfer.",
-      args: {},
-      opts: {
-        accountId: AccountId.describe("Account id"),
-        kind: AccountKindSchema.describe("k;Transfer kind"),
-        amount: IntegerFromStringSchema.describe("a;Signed transfer amount"),
-        currency: CurrencySchema.describe("c;Transfer currency"),
-        occurredAt: TimestampMsFromStringSchema.describe(
-          "o;When the transfer occurred, as milliseconds or a date string"
-        ),
-        deviceId: DeviceId.optional().describe(
-          "Device id that created the transfer"
-        ),
-        note: NonEmptyStringSchema.optional().describe("n;Transfer note"),
-        internalTransferGroupId: NonEmptyString255Schema.optional().describe(
-          "Internal transfer group id"
-        ),
-        variableSymbol: VariableSymbolSchema.optional().describe(
-          "IBAN variable symbol"
-        ),
-        constantSymbol: ConstantSymbolSchema.optional().describe(
-          "IBAN constant symbol"
-        ),
-        specificSymbol: SpecificSymbolSchema.optional().describe(
-          "IBAN specific symbol"
-        ),
-        bankReference: NonEmptyString255Schema.optional().describe(
-          "Bank transaction reference"
-        ),
-        sparkTransferId:
-          NonEmptyStringSchema.optional().describe("Spark transfer id"),
-        lnInvoice:
-          NonEmptyStringSchema.optional().describe("Lightning invoice"),
-        preImage:
-          NonEmptyStringSchema.optional().describe("Lightning preimage"),
-        paymentHash: NonEmptyStringSchema.optional().describe(
-          "Lightning payment hash"
-        ),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
-
-        const root = {
-          deviceId: options.deviceId ?? null,
-          accountId: options.accountId,
-          amount: options.amount,
-          currency: options.currency,
-          occurredAt: options.occurredAt,
-          note: options.note ?? null,
-          internalTransferGroupId: options.internalTransferGroupId ?? null,
-        }
-
-        if (options.kind === "iban") {
-          if (options.bankReference == null) {
-            printInvalidAccountTransferInput(
-              "IBAN account transfer requires --bankReference."
+      .addCommand(
+        zodCommand({
+          name: "list",
+          description:
+            "List active account transfers with payment rail details.",
+          args: {},
+          opts: {},
+          async action() {
+            const accountTransfers = await evolu.loadQuery(
+              accountTransfersWithDetailsQuery
             )
-            return
-          }
-
-          const id = await run.orThrow(
-            createAccountTransaction({
-              ...root,
-              iban: {
-                variableSymbol: options.variableSymbol ?? null,
-                constantSymbol: options.constantSymbol ?? null,
-                specificSymbol: options.specificSymbol ?? null,
-                bankReference: options.bankReference,
-              },
-            })
-          )
-          console.log(`Inserted accountTransfer ${id}`)
-          return
-        }
-
-        if (options.kind === "spark") {
-          if (
-            options.sparkTransferId == null ||
-            options.lnInvoice == null ||
-            options.preImage == null ||
-            options.paymentHash == null
-          ) {
-            printInvalidAccountTransferInput(
-              "Spark account transfer requires --sparkTransferId, --lnInvoice, --preImage and --paymentHash."
+            run.deps.console.table(
+              formatAccountTransferListRows(accountTransfers)
             )
-            return
-          }
+          },
+        })
+      )
 
-          const id = await run.orThrow(
-            createAccountTransaction({
-              ...root,
-              spark: {
-                sparkTransferId: options.sparkTransferId,
-                lnInvoice: options.lnInvoice,
-                preImage: options.preImage,
-                paymentHash: options.paymentHash,
-              },
-            })
-          )
-          console.log(`Inserted accountTransfer ${id}`)
-          return
-        }
+      .addCommand(
+        zodCommand({
+          name: "get",
+          description: "Show one account transfer by id.",
+          args: {},
+          opts: {
+            id: AccountTransactionId.describe("Account transfer id"),
+          },
+          async action(_, options) {
+            run.deps.console.table(
+              await evolu.loadQuery(
+                accountTransferWithDetailsByIdQuery(options.id)
+              )
+            )
+          },
+        })
+      )
 
-        const id = await run.orThrow(createAccountTransaction(root))
-        console.log(`Inserted accountTransfer ${id}`)
-      },
-    })
-  )
+      .addCommand(
+        zodCommand({
+          name: "create",
+          description: "Create an account transfer.",
+          args: {},
+          opts: {
+            accountId: AccountId.describe("Account id"),
+            kind: AccountKindSchema.describe("k;Transfer kind"),
+            amount: IntegerFromStringSchema.describe(
+              "a;Signed transfer amount"
+            ),
+            currency: CurrencySchema.describe("c;Transfer currency"),
+            occurredAt: TimestampMsFromStringSchema.describe(
+              "o;When the transfer occurred, as milliseconds or a date string"
+            ),
+            deviceId: DeviceId.optional().describe(
+              "Device id that created the transfer"
+            ),
+            note: NonEmptyStringSchema.optional().describe("n;Transfer note"),
+            internalTransferGroupId:
+              NonEmptyString255Schema.optional().describe(
+                "Internal transfer group id"
+              ),
+            variableSymbol: VariableSymbolSchema.optional().describe(
+              "IBAN variable symbol"
+            ),
+            constantSymbol: ConstantSymbolSchema.optional().describe(
+              "IBAN constant symbol"
+            ),
+            specificSymbol: SpecificSymbolSchema.optional().describe(
+              "IBAN specific symbol"
+            ),
+            bankReference: NonEmptyString255Schema.optional().describe(
+              "Bank transaction reference"
+            ),
+            sparkTransferId:
+              NonEmptyStringSchema.optional().describe("Spark transfer id"),
+            lnInvoice:
+              NonEmptyStringSchema.optional().describe("Lightning invoice"),
+            preImage:
+              NonEmptyStringSchema.optional().describe("Lightning preimage"),
+            paymentHash: NonEmptyStringSchema.optional().describe(
+              "Lightning payment hash"
+            ),
+          },
+          async action(_, options) {
+            const root = {
+              deviceId: options.deviceId ?? null,
+              accountId: options.accountId,
+              amount: options.amount,
+              currency: options.currency,
+              occurredAt: options.occurredAt,
+              note: options.note ?? null,
+              internalTransferGroupId: options.internalTransferGroupId ?? null,
+            }
 
-  .addCommand(
-    zodCommand({
-      name: "update",
-      description: "Update an account transfer and its current kind details.",
-      args: {},
-      opts: {
-        id: AccountTransactionId.describe("Account transfer id"),
-        accountId: AccountId.optional().describe("Account id"),
-        amount: IntegerFromStringSchema.optional().describe(
-          "a;Signed transfer amount"
-        ),
-        currency: CurrencySchema.optional().describe("c;Transfer currency"),
-        occurredAt: TimestampMsFromStringSchema.optional().describe(
-          "o;When the transfer occurred, as milliseconds or a date string"
-        ),
-        deviceId: DeviceId.optional().describe(
-          "Device id that updated the transfer"
-        ),
-        note: NonEmptyStringSchema.optional().describe("n;Transfer note"),
-        internalTransferGroupId: NonEmptyString255Schema.optional().describe(
-          "Internal transfer group id"
-        ),
-        variableSymbol: VariableSymbolSchema.optional().describe(
-          "IBAN variable symbol"
-        ),
-        constantSymbol: ConstantSymbolSchema.optional().describe(
-          "IBAN constant symbol"
-        ),
-        specificSymbol: SpecificSymbolSchema.optional().describe(
-          "IBAN specific symbol"
-        ),
-        bankReference: NonEmptyString255Schema.optional().describe(
-          "Bank transaction reference"
-        ),
-        sparkTransferId:
-          NonEmptyStringSchema.optional().describe("Spark transfer id"),
-        lnInvoice:
-          NonEmptyStringSchema.optional().describe("Lightning invoice"),
-        preImage:
-          NonEmptyStringSchema.optional().describe("Lightning preimage"),
-        paymentHash: NonEmptyStringSchema.optional().describe(
-          "Lightning payment hash"
-        ),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
+            if (options.kind === "iban") {
+              if (options.bankReference == null) {
+                printInvalidAccountTransferInput(
+                  "IBAN account transfer requires --bankReference."
+                )
+                return
+              }
 
-        const [accountTransfer] = await evolu.loadQuery(
-          accountTransferWithDetailsByIdQuery(options.id)
-        )
-        if (accountTransfer == null || accountTransfer.kind == null) {
-          printAccountTransferNotFound(options.id)
-          return
-        }
+              const id = await run.orThrow(
+                createAccountTransaction({
+                  ...root,
+                  iban: {
+                    variableSymbol: options.variableSymbol ?? null,
+                    constantSymbol: options.constantSymbol ?? null,
+                    specificSymbol: options.specificSymbol ?? null,
+                    bankReference: options.bankReference,
+                  },
+                })
+              )
+              run.deps.console.log(`Inserted accountTransfer ${id}`)
+              return
+            }
 
-        const root = {
-          id: options.id,
-          deviceId: options.deviceId,
-          accountId: options.accountId,
-          amount: options.amount,
-          currency: options.currency,
-          occurredAt: options.occurredAt,
-          note: options.note,
-          internalTransferGroupId: options.internalTransferGroupId,
-        }
+            if (options.kind === "spark") {
+              if (
+                options.sparkTransferId == null ||
+                options.lnInvoice == null ||
+                options.preImage == null ||
+                options.paymentHash == null
+              ) {
+                printInvalidAccountTransferInput(
+                  "Spark account transfer requires --sparkTransferId, --lnInvoice, --preImage and --paymentHash."
+                )
+                return
+              }
 
-        if (accountTransfer.kind === "iban") {
-          await run.orThrow(
-            updateAccountTransaction({
-              ...root,
-              iban: {
-                variableSymbol: options.variableSymbol,
-                constantSymbol: options.constantSymbol,
-                specificSymbol: options.specificSymbol,
-                bankReference: options.bankReference,
-              },
-            })
-          )
-          console.log(`Updated accountTransfer ${options.id}`)
-          return
-        }
+              const id = await run.orThrow(
+                createAccountTransaction({
+                  ...root,
+                  spark: {
+                    sparkTransferId: options.sparkTransferId,
+                    lnInvoice: options.lnInvoice,
+                    preImage: options.preImage,
+                    paymentHash: options.paymentHash,
+                  },
+                })
+              )
+              run.deps.console.log(`Inserted accountTransfer ${id}`)
+              return
+            }
 
-        if (accountTransfer.kind === "spark") {
-          await run.orThrow(
-            updateAccountTransaction({
-              ...root,
-              spark: {
-                sparkTransferId: options.sparkTransferId,
-                lnInvoice: options.lnInvoice,
-                preImage: options.preImage,
-                paymentHash: options.paymentHash,
-              },
-            })
-          )
-          console.log(`Updated accountTransfer ${options.id}`)
-          return
-        }
+            const id = await run.orThrow(createAccountTransaction(root))
+            run.deps.console.log(`Inserted accountTransfer ${id}`)
+          },
+        })
+      )
 
-        await run.orThrow(updateAccountTransaction(root))
-        console.log(`Updated accountTransfer ${options.id}`)
-      },
-    })
-  )
+      .addCommand(
+        zodCommand({
+          name: "update",
+          description:
+            "Update an account transfer and its current kind details.",
+          args: {},
+          opts: {
+            id: AccountTransactionId.describe("Account transfer id"),
+            accountId: AccountId.optional().describe("Account id"),
+            amount: IntegerFromStringSchema.optional().describe(
+              "a;Signed transfer amount"
+            ),
+            currency: CurrencySchema.optional().describe("c;Transfer currency"),
+            occurredAt: TimestampMsFromStringSchema.optional().describe(
+              "o;When the transfer occurred, as milliseconds or a date string"
+            ),
+            deviceId: DeviceId.optional().describe(
+              "Device id that updated the transfer"
+            ),
+            note: NonEmptyStringSchema.optional().describe("n;Transfer note"),
+            internalTransferGroupId:
+              NonEmptyString255Schema.optional().describe(
+                "Internal transfer group id"
+              ),
+            variableSymbol: VariableSymbolSchema.optional().describe(
+              "IBAN variable symbol"
+            ),
+            constantSymbol: ConstantSymbolSchema.optional().describe(
+              "IBAN constant symbol"
+            ),
+            specificSymbol: SpecificSymbolSchema.optional().describe(
+              "IBAN specific symbol"
+            ),
+            bankReference: NonEmptyString255Schema.optional().describe(
+              "Bank transaction reference"
+            ),
+            sparkTransferId:
+              NonEmptyStringSchema.optional().describe("Spark transfer id"),
+            lnInvoice:
+              NonEmptyStringSchema.optional().describe("Lightning invoice"),
+            preImage:
+              NonEmptyStringSchema.optional().describe("Lightning preimage"),
+            paymentHash: NonEmptyStringSchema.optional().describe(
+              "Lightning payment hash"
+            ),
+          },
+          async action(_, options) {
+            const [accountTransfer] = await evolu.loadQuery(
+              accountTransferWithDetailsByIdQuery(options.id)
+            )
+            if (accountTransfer == null || accountTransfer.kind == null) {
+              printAccountTransferNotFound(options.id)
+              return
+            }
 
-  .addCommand(
-    zodCommand({
-      name: "delete",
-      description: "Soft delete an account transfer.",
-      args: {},
-      opts: {
-        id: AccountTransactionId.describe("Account transfer id"),
-      },
-      async action(_, options) {
-        await using evoluCli = await createEvoluCli()
-        const { evolu } = evoluCli
-        const run = createRun({ evolu })
+            const root = {
+              id: options.id,
+              deviceId: options.deviceId,
+              accountId: options.accountId,
+              amount: options.amount,
+              currency: options.currency,
+              occurredAt: options.occurredAt,
+              note: options.note,
+              internalTransferGroupId: options.internalTransferGroupId,
+            }
 
-        await run.orThrow(deleteAccountTransaction(options.id))
-        console.log(`Deleted accountTransfer ${options.id}`)
-      },
-    })
-  )
+            if (accountTransfer.kind === "iban") {
+              await run.orThrow(
+                updateAccountTransaction({
+                  ...root,
+                  iban: {
+                    variableSymbol: options.variableSymbol,
+                    constantSymbol: options.constantSymbol,
+                    specificSymbol: options.specificSymbol,
+                    bankReference: options.bankReference,
+                  },
+                })
+              )
+              run.deps.console.log(`Updated accountTransfer ${options.id}`)
+              return
+            }
+
+            if (accountTransfer.kind === "spark") {
+              await run.orThrow(
+                updateAccountTransaction({
+                  ...root,
+                  spark: {
+                    sparkTransferId: options.sparkTransferId,
+                    lnInvoice: options.lnInvoice,
+                    preImage: options.preImage,
+                    paymentHash: options.paymentHash,
+                  },
+                })
+              )
+              run.deps.console.log(`Updated accountTransfer ${options.id}`)
+              return
+            }
+
+            await run.orThrow(updateAccountTransaction(root))
+            run.deps.console.log(`Updated accountTransfer ${options.id}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "delete",
+          description: "Soft delete an account transfer.",
+          args: {},
+          opts: {
+            id: AccountTransactionId.describe("Account transfer id"),
+          },
+          async action(_, options) {
+            await run.orThrow(deleteAccountTransaction(options.id))
+            run.deps.console.log(`Deleted accountTransfer ${options.id}`)
+          },
+        })
+      )
+
+    program.addCommand(accountTransfersCommand)
+    return ok(undefined)
+  }

@@ -6,7 +6,9 @@ import type {
 } from "@/core/background-jobs/background-job-types.ts"
 
 export const runBackgroundJobs =
-  (jobs: ReadonlyArray<BackgroundJob>): Task<Disposable, never, BackgroundJobContext> =>
+  (
+    jobs: ReadonlyArray<BackgroundJob>
+  ): Task<Disposable, never, BackgroundJobContext> =>
   async (run) => {
     const disposer = new DisposableStack()
 

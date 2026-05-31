@@ -5,6 +5,8 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
+
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
@@ -15,28 +17,50 @@ import { tablesQuery } from "./table-queries.ts"
 import type { TableId } from "./table-types.ts"
 
 export const createTable =
-  (input: InsertValues<Table>): Task<TableId, never, EvoluDep> =>
+  (
+    input: InsertValues<Table>
+  ): Task<TableId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
-      run.deps.evolu.insert("table", removeUndefinedValues(input), options)
+      run.deps.evolu.insert("table", removeUndefinedValues(input), {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
     )
     return ok(id)
   }
 
 export const updateTable =
-  (input: UpdateValues<Table>): Task<TableId, never, EvoluDep> =>
+  (
+    input: UpdateValues<Table>
+  ): Task<TableId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.update("table", removeUndefinedValues(input), options)
+      run.deps.evolu.update("table", removeUndefinedValues(input), {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
     )
     return ok(input.id)
   }
 
 export const deleteTable =
-  (id: TableId): Task<TableId, never, EvoluDep> =>
+  (id: TableId): Task<TableId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
+
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.update("table", { id, isDeleted: sqliteTrue }, options)
+      run.deps.evolu.update(
+        "table",
+        { id, isDeleted: sqliteTrue },
+        {
+          ...options,
+          ownerId: evoluOwnerId,
+        }
+      )
     )
     return ok(id)
   }

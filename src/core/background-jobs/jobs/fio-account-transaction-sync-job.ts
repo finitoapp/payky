@@ -1,7 +1,8 @@
-import { type ConsoleDep, createRun } from "@evolu/common"
+import { type ConsoleDep, createRun, ok } from "@evolu/common"
 
 import type {
   BackgroundJob,
+  BackgroundJobContext,
   BackgroundJobOnErrorDep,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
@@ -23,8 +24,6 @@ import {
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-
-type BackgroundJobDeps = Parameters<BackgroundJob>[0]
 
 type FioAccountSyncDeps = EvoluDep &
   FetchDep &
@@ -48,11 +47,14 @@ export const createFioAccountTransactionSyncJob =
   ({
     fetch = globalThis.fetch,
   }: FioAccountTransactionSyncJobOptions = {}): BackgroundJob =>
-  (context) => {
+  (run) => {
+    const context: BackgroundJobContext = {
+      ...run.deps,
+      console: run.deps.console.child("fio-account-transaction-sync-job"),
+    }
     const sync = new FioAccountTransactionSync(
       {
         ...context,
-        console: context.console.child("fio-account-transaction-sync-job"),
         fetch,
       },
       context
@@ -60,11 +62,11 @@ export const createFioAccountTransactionSyncJob =
 
     sync.start()
 
-    return {
+    return ok({
       [Symbol.dispose]: () => {
         sync.dispose()
       },
-    }
+    })
   }
 
 export const startFioAccountTransactionSyncJob =
@@ -74,12 +76,12 @@ class FioAccountTransactionSync {
   private readonly pluginSyncs = new Map<FioPluginId, FioPluginSync>()
   private readonly unsubscribePlugins: () => void
   private readonly deps: FioAccountSyncDeps
-  private readonly context: BackgroundJobDeps
+  private readonly context: BackgroundJobContext
   private readonly refreshQueue = createKeyedTaskQueue({
     onError: (error) => this.context.onError(error),
   })
 
-  constructor(deps: FioAccountSyncDeps, context: BackgroundJobDeps) {
+  constructor(deps: FioAccountSyncDeps, context: BackgroundJobContext) {
     this.deps = deps
     this.context = context
     this.unsubscribePlugins = context.evolu.subscribeQuery(

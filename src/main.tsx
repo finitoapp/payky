@@ -18,15 +18,18 @@ if (rootElement == null) {
 
 const appConsole = createConsole()
 const evoluDeps = createEvoluDeps({ console: appConsole })
-const run = createRun(evoluDeps)
-const evolu = await run.orThrow(createAppEvolu())
-const backgroundJobsDisposable = runBackgroundJobs(backgroundJobs, {
+const evoluRun = createRun(evoluDeps)
+const evolu = await evoluRun.orThrow(createAppEvolu())
+const backgroundJobsRun = createRun({
   console: appConsole,
   evolu,
-  onError: (error) => {
+  onError: (error: unknown) => {
     console.error("Background job cleanup failed.", error)
   },
 })
+const backgroundJobsDisposable = await backgroundJobsRun.orThrow(
+  runBackgroundJobs(backgroundJobs)
+)
 
 if (import.meta.hot != null) {
   import.meta.hot.dispose(() => {

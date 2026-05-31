@@ -1,29 +1,32 @@
+import { ok, type Task } from "@evolu/common"
+
 import type {
   BackgroundJob,
   BackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
 
-export function runBackgroundJobs(
-  jobs: ReadonlyArray<BackgroundJob>,
-  context: BackgroundJobContext
-): Disposable {
-  const disposer = new DisposableStack()
+export const runBackgroundJobs =
+  (jobs: ReadonlyArray<BackgroundJob>): Task<Disposable, never, BackgroundJobContext> =>
+  async (run) => {
+    const disposer = new DisposableStack()
 
-  try {
-    for (const job of jobs) {
-      const disposable = job(context)
-      disposer.defer(() => {
-        try {
-          disposable[Symbol.dispose]()
-        } catch (error) {
-          context.onError(error)
-        }
-      })
+    try {
+      for (const job of jobs) {
+        const result = await run(job)
+        if (!result.ok) throw result.error
+        const disposable = result.value
+        disposer.defer(() => {
+          try {
+            disposable[Symbol.dispose]()
+          } catch (error) {
+            run.deps.onError(error)
+          }
+        })
+      }
+    } catch (error) {
+      disposer.dispose()
+      throw error
     }
-  } catch (error) {
-    disposer.dispose()
-    throw error
-  }
 
-  return disposer
-}
+    return ok(disposer)
+  }

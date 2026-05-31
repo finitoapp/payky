@@ -104,20 +104,23 @@ describe("fio account transaction sync job", () => {
         token: "fio-token-1",
       })
     )
-    using _job = createFioAccountTransactionSyncJob({
-      fetch: async (input) => {
-        requestedUrls.push(inputToString(input))
-        return statementResponse({
-          transactions: [fioTransaction, fioTransaction],
-        })
-      },
-    })({
+    await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)
       },
     })
+    using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob({
+        fetch: async (input) => {
+          requestedUrls.push(inputToString(input))
+          return statementResponse({
+            transactions: [fioTransaction, fioTransaction],
+          })
+        },
+      })
+    )
 
     await expect
       .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
@@ -164,19 +167,22 @@ describe("fio account transaction sync job", () => {
         token: "fio-token-1",
       })
     )
-    using _job = createFioAccountTransactionSyncJob({
-      fetch: async () =>
-        statementResponse({
-          iban: "CZ2408000000001234567899",
-          transactions: [fioTransaction],
-        }),
-    })({
+    await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)
       },
     })
+    using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob({
+        fetch: async () =>
+          statementResponse({
+            iban: "CZ2408000000001234567899",
+            transactions: [fioTransaction],
+          }),
+      })
+    )
 
     await new Promise((resolve) => setTimeout(resolve, 50))
 

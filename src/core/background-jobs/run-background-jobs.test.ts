@@ -1,4 +1,4 @@
-import { testCreateConsole } from "@evolu/common"
+import { ok, testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type {
@@ -23,64 +23,67 @@ const createDisposable = (dispose: () => void): Disposable => ({
 })
 
 describe("runBackgroundJobs", () => {
-  test("starts every job with the shared context", () => {
+  test("starts every job with the shared context", async () => {
     const context = createBackgroundJobContext()
     const startedJobs: string[] = []
 
-    const jobs = [
-      ((receivedContext) => {
-        expect(receivedContext).toBe(context)
+    const jobs: BackgroundJob[] = [
+      (run) => {
+        expect(run.deps.evolu).toBe(context.evolu)
         startedJobs.push("first")
-        return createDisposable(() => {})
-      }) satisfies BackgroundJob,
-      ((receivedContext) => {
-        expect(receivedContext).toBe(context)
+        return ok(createDisposable(() => {}))
+      },
+      (run) => {
+        expect(run.deps.evolu).toBe(context.evolu)
         startedJobs.push("second")
-        return createDisposable(() => {})
-      }) satisfies BackgroundJob,
+        return ok(createDisposable(() => {}))
+      },
     ]
 
-    using _disposable = runBackgroundJobs(jobs, context)
+    await using run = testCreateRun(context)
+    using _disposable = await run.orThrow(runBackgroundJobs(jobs))
 
     expect(startedJobs).toEqual(["first", "second"])
   })
 
-  test("disposes started jobs in reverse order", () => {
+  test("disposes started jobs in reverse order", async () => {
     const context = createBackgroundJobContext()
     const disposedJobs: string[] = []
 
     {
-      using _disposable = runBackgroundJobs(
-        [
-          () => createDisposable(() => disposedJobs.push("first")),
-          () => createDisposable(() => disposedJobs.push("second")),
-          () => createDisposable(() => disposedJobs.push("third")),
-        ],
-        context
+      await using run = testCreateRun(context)
+      using _disposable = await run.orThrow(
+        runBackgroundJobs([
+          () => ok(createDisposable(() => disposedJobs.push("first"))),
+          () => ok(createDisposable(() => disposedJobs.push("second"))),
+          () => ok(createDisposable(() => disposedJobs.push("third"))),
+        ])
       )
     }
 
     expect(disposedJobs).toEqual(["third", "second", "first"])
   })
 
-  test("continues disposing remaining jobs when one cleanup fails", () => {
+  test("continues disposing remaining jobs when one cleanup fails", async () => {
     const cleanupError = new Error("Cleanup failed.")
     const errors: unknown[] = []
     const context = createBackgroundJobContext(errors)
     const disposedJobs: string[] = []
 
     {
-      using _disposable = runBackgroundJobs(
-        [
-          () => createDisposable(() => disposedJobs.push("first")),
+      await using run = testCreateRun(context)
+      using _disposable = await run.orThrow(
+        runBackgroundJobs([
+          () => ok(createDisposable(() => disposedJobs.push("first"))),
           () =>
-            createDisposable(() => {
-              disposedJobs.push("second")
-              throw cleanupError
-            }),
-          () => createDisposable(() => disposedJobs.push("third")),
-        ],
-        context
+            ok(
+              createDisposable(() => {
+                disposedJobs.push("second")
+                throw cleanupError
+              })
+            ),
+          () => ok(createDisposable(() => disposedJobs.push("third"))),
+        ])
       )
     }
 
@@ -88,21 +91,24 @@ describe("runBackgroundJobs", () => {
     expect(errors).toEqual([cleanupError])
   })
 
-  test("disposes already started jobs when a later job fails to start", () => {
+  test("disposes already started jobs when a later job fails to start", async () => {
     const startError = new Error("Start failed.")
     const errors: unknown[] = []
     const context = createBackgroundJobContext(errors)
     const disposedJobs: string[] = []
 
     const jobs: ReadonlyArray<BackgroundJob> = [
-      () => createDisposable(() => disposedJobs.push("first")),
+      () => ok(createDisposable(() => disposedJobs.push("first"))),
       () => {
         throw startError
       },
-      () => createDisposable(() => disposedJobs.push("third")),
+      () => ok(createDisposable(() => disposedJobs.push("third"))),
     ]
 
-    expect(() => runBackgroundJobs(jobs, context)).toThrow(startError)
+    await using run = testCreateRun(context)
+    await expect(run.orThrow(runBackgroundJobs(jobs))).rejects.toThrow(
+      startError
+    )
     expect(disposedJobs).toEqual(["first"])
     expect(errors).toEqual([])
   })

@@ -1,4 +1,4 @@
-import type { ConsoleDep } from "@evolu/common"
+import type { ConsoleDep, Task } from "@evolu/common"
 
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 
@@ -10,4 +10,4 @@ export type BackgroundJobContext = EvoluDep &
   ConsoleDep &
   BackgroundJobOnErrorDep
 
-export type BackgroundJob = (context: BackgroundJobContext) => Disposable
+export type BackgroundJob = Task<Disposable, never, BackgroundJobContext>

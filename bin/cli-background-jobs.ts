@@ -1,4 +1,4 @@
-import { createConsole } from "@evolu/common"
+import { createConsole, createRun } from "@evolu/common"
 import { createCommand } from "commander"
 import { backgroundJobs } from "../src/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "../src/core/background-jobs/run-background-jobs"
@@ -25,14 +25,17 @@ backgroundJobsCommand.addCommand(
       await using evoluCli = await createEvoluCli()
       const { evolu } = evoluCli
       const appConsole = createConsole()
-
-      using _backgroundJobsDisposable = runBackgroundJobs(backgroundJobs, {
+      const run = createRun({
         console: appConsole,
         evolu,
-        onError: (error) => {
+        onError: (error: unknown) => {
           console.error("Background job failed.", error)
         },
       })
+
+      using _backgroundJobsDisposable = await run.orThrow(
+        runBackgroundJobs(backgroundJobs)
+      )
 
       console.log("Background jobs are running.")
       await waitForShutdownSignal()

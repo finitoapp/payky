@@ -3,13 +3,14 @@ import {
   SparkWalletEvent,
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
-import { type ConsoleDep, createRun } from "@evolu/common"
+import { type ConsoleDep, createRun, ok } from "@evolu/common"
 import { validateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english"
 import { z } from "zod"
 
 import type {
   BackgroundJob,
+  BackgroundJobContext,
   BackgroundJobOnErrorDep,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
@@ -39,8 +40,6 @@ type SparkWalletEventName =
   | typeof SparkWalletEvent.TransferClaimed
   | typeof SparkWalletEvent.BalanceUpdate
   | typeof SparkWalletEvent.DepositConfirmed
-
-type BackgroundJobDeps = Parameters<BackgroundJob>[0]
 
 type AccountSyncDeps = EvoluDep & ConsoleDep & BackgroundJobOnErrorDep
 
@@ -132,24 +131,24 @@ export const createSparkAccountTransactionSyncJob =
     walletFactory = createDefaultSparkWallet,
     recheckIntervalMs = DEFAULT_RECHECK_INTERVAL_MS,
   }: SparkAccountTransactionSyncJobOptions = {}): BackgroundJob =>
-  (context) => {
-    const jobContext = {
-      ...context,
-      console: context.console.child("spark-account-transaction-sync-job"),
+  (run) => {
+    const context: BackgroundJobContext = {
+      ...run.deps,
+      console: run.deps.console.child("spark-account-transaction-sync-job"),
     }
     const sync = new SparkAccountTransactionSync(
-      jobContext,
+      context,
       walletFactory,
       recheckIntervalMs
     )
 
     sync.start()
 
-    return {
+    return ok({
       [Symbol.dispose]: () => {
         sync.dispose()
       },
-    }
+    })
   }
 
 export const startSparkAccountTransactionSyncJob =
@@ -159,14 +158,14 @@ class SparkAccountTransactionSync {
   private readonly accountSyncs = new Map<AccountId, SparkAccountSync>()
   private readonly unsubscribeAccounts: () => void
   private readonly recheckTimer: ReturnType<typeof setInterval>
-  private readonly context: BackgroundJobDeps
+  private readonly context: BackgroundJobContext
   private readonly walletFactory: SparkWalletFactory
   private readonly refreshQueue = createKeyedTaskQueue({
     onError: (error) => this.context.onError(error),
   })
 
   constructor(
-    context: BackgroundJobDeps,
+    context: BackgroundJobContext,
     walletFactory: SparkWalletFactory,
     recheckIntervalMs: number
   ) {

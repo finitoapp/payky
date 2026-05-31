@@ -141,17 +141,20 @@ describe("spark account transaction sync job", () => {
         id: transferId,
       }),
     ])
-    using _job = createSparkAccountTransactionSyncJob({
-      walletFactory: async (receivedMnemonic) =>
-        receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
-      recheckIntervalMs: 10,
-    })({
+    await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)
       },
     })
+    using _job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: async (receivedMnemonic) =>
+          receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
+        recheckIntervalMs: 10,
+      })
+    )
 
     await expect
       .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
@@ -202,17 +205,20 @@ describe("spark account transaction sync job", () => {
       }),
     ])
     {
-      using _job = createSparkAccountTransactionSyncJob({
-        walletFactory: async (receivedMnemonic) =>
-          receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
-        recheckIntervalMs: 60_000,
-      })({
+      await using jobRun = testCreateRun({
         console: testCreateConsole(),
         evolu,
         onError: (error) => {
           errors.push(error)
         },
       })
+      using _job = await jobRun.orThrow(
+        createSparkAccountTransactionSyncJob({
+          walletFactory: async (receivedMnemonic) =>
+            receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
+          recheckIntervalMs: 60_000,
+        })
+      )
 
       wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
 
@@ -253,19 +259,22 @@ describe("spark account transaction sync job", () => {
         },
       })
     )
-    using _job = createSparkAccountTransactionSyncJob({
-      walletFactory: async (mnemonic) => {
-        startedWallets.push(mnemonic)
-        return new FakeSparkWallet([])
-      },
-      recheckIntervalMs: 10,
-    })({
+    await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
       onError: (error) => {
         errors.push(error)
       },
     })
+    using _job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: async (mnemonic) => {
+          startedWallets.push(mnemonic)
+          return new FakeSparkWallet([])
+        },
+        recheckIntervalMs: 10,
+      })
+    )
 
     await new Promise((resolve) => setTimeout(resolve, 30))
 

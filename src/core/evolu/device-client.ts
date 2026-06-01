@@ -1,14 +1,13 @@
-import type { Evolu as BaseEvolu } from "@evolu/common"
 import {
   AppName,
+  type Evolu as BaseEvolu,
   createEvolu,
   createQueryBuilder,
   id,
   Mnemonic,
   testAppOwner,
 } from "@evolu/common"
-import { createEvoluDeps } from "@evolu/react-web"
-import { createRun } from "@evolu/web"
+import { createEvoluDeps, createRun } from "@evolu/web"
 import { z } from "zod"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
@@ -62,9 +61,8 @@ export const createDeviceEvolu = async () => {
   const run = createRun(createEvoluDeps())
   const evolu = await run.orThrow(
     createEvolu(DeviceSchema, {
-      appName: AppName.orThrow("FinitoDevice"),
+      appName: AppName.orThrow("PaykyDevice"),
       appOwner: testAppOwner,
-      // enableLogging: true,
       transports: [], // Disable syncing for now
       indexes: () => [],
     })

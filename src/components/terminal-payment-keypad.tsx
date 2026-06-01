@@ -1,7 +1,28 @@
-import { atom, type PrimitiveAtom, useAtomValue, useSetAtom } from "jotai"
-import { useMemo } from "react"
+import { createRun } from "@evolu/web"
+import {
+  atom,
+  type PrimitiveAtom,
+  useAtomValue,
+  useSetAtom,
+  useStore,
+} from "jotai"
+import { Suspense, useEffect, useEffectEvent, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
+import { createFetchDep } from "@/core/deps.ts"
+import {
+  type ExchangeRateQuote,
+  fetchYadioBtcExchangeRate,
+} from "@/core/integrations/yadio/yadio-client.ts"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import type { Money } from "@/core/modules/shared/money.ts"
+import {
+  Currency,
+  FiatCurrency,
+  Integer,
+} from "@/core/modules/shared/schema.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/i18n/use-translation.ts"
+import { formatMoney } from "@/lib/format-utils.ts"
 
 const keypad = [
   "1",
@@ -19,75 +40,256 @@ const keypad = [
 ] as const
 
 const maxAmountDigits = 9
+const rateRefreshIntervalMs = 30_000
+const satsPerBtc = 100_000_000
+const fiatMinorUnits = 100
 
 type KeypadKey = (typeof keypad)[number]
 type AmountDigitsAtom = PrimitiveAtom<string>
+type SetAmountDigits = (value: string | ((current: string) => string)) => void
 
-function formatUsdAmount(amountMinor: number) {
-  const dollars = Math.floor(amountMinor / 100).toLocaleString("en-US")
-  const cents = String(amountMinor % 100).padStart(2, "0")
+const numericKeyboardKeys = new Set<string>([
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+])
 
-  return `$${dollars}.${cents}`
+function createMoney(amountDigits: string, currency: Currency): Money {
+  return {
+    value: Integer(amountDigits === "" ? 0 : Number(amountDigits)),
+    currency,
+  }
 }
 
-export function TerminalPaymentKeypad() {
+function convertFiatMinorUnitsToSats(
+  amount: Integer,
+  exchangeRate: number
+): Integer {
+  if (amount === 0) return Integer(0)
+
+  const fiatAmount = amount / fiatMinorUnits
+  return Integer(
+    Math.max(1, Math.round((fiatAmount / exchangeRate) * satsPerBtc))
+  )
+}
+
+function applyKeypadPress(setAmountDigits: SetAmountDigits, key: KeypadKey) {
+  if (key === "C") {
+    setAmountDigits("")
+    return
+  }
+
+  if (key === "<") {
+    setAmountDigits((current) => current.slice(0, -1))
+    return
+  }
+
+  setAmountDigits((current) => {
+    if (current.length >= maxAmountDigits) return current
+    if (current === "" && key === "0") return ""
+
+    return `${current}${key}`
+  })
+}
+
+export function TerminalPaymentKeypad({
+  currency,
+  onCharge,
+}: {
+  readonly currency: FiatCurrency
+  readonly onCharge: (money: Money) => void
+}) {
   const amountDigitsAtom = useMemo(() => atom(""), [])
 
   return (
     <>
-      <AmountDisplay amountDigitsAtom={amountDigitsAtom} />
-      <Keypad amountDigitsAtom={amountDigitsAtom} />
-      <ChargeButton amountDigitsAtom={amountDigitsAtom} />
+      <AmountDisplay amountDigitsAtom={amountDigitsAtom} currency={currency} />
+      <Keypad
+        amountDigitsAtom={amountDigitsAtom}
+        currency={currency}
+        onCharge={onCharge}
+      />
+      <ChargeButton
+        amountDigitsAtom={amountDigitsAtom}
+        currency={currency}
+        onCharge={onCharge}
+      />
     </>
+  )
+}
+
+export function TerminalPaymentKeypadWithSettings({
+  onCharge,
+}: {
+  readonly onCharge: (money: Money) => void
+}) {
+  return (
+    <Suspense fallback={null}>
+      <TerminalPaymentKeypadSettingsLoader onCharge={onCharge} />
+    </Suspense>
+  )
+}
+
+function TerminalPaymentKeypadSettingsLoader({
+  onCharge,
+}: {
+  readonly onCharge: (money: Money) => void
+}) {
+  const { data } = useEvoluQuery(settingsQuery)
+  const [settings] = data
+
+  return (
+    <TerminalPaymentKeypad
+      currency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+      onCharge={onCharge}
+    />
   )
 }
 
 function AmountDisplay({
   amountDigitsAtom,
+  currency,
 }: {
   readonly amountDigitsAtom: AmountDigitsAtom
+  readonly currency: FiatCurrency
 }) {
-  const { t } = useTranslation()
   const amountDigits = useAtomValue(amountDigitsAtom)
+  const exchangeRateQuote = useYadioBtcExchangeRate(currency)
 
-  const amountMinor = amountDigits === "" ? 0 : Number(amountDigits)
+  const money = createMoney(amountDigits, currency)
+  const btcMoney =
+    exchangeRateQuote === null && money.value !== 0
+      ? null
+      : {
+          currency: Currency.BTC,
+          value: convertFiatMinorUnitsToSats(
+            money.value,
+            exchangeRateQuote?.exchangeRate ?? 1
+          ),
+        }
 
   return (
     <section className="flex flex-col items-center gap-5 text-center">
       <h1 className="text-6xl font-semibold tracking-normal tabular-nums">
-        {formatUsdAmount(amountMinor)}
+        {formatMoney(money)}
       </h1>
-      <p className="text-xl text-foreground/80">{t("home.sats")}</p>
+      <p className="text-xl text-foreground/80">
+        {btcMoney === null ? "\u00A0" : formatMoney(btcMoney)}
+      </p>
     </section>
   )
 }
 
+function useYadioBtcExchangeRate(currency: FiatCurrency) {
+  const [exchangeRateQuote, setExchangeRateQuote] =
+    useState<ExchangeRateQuote | null>(null)
+
+  useEffect(() => {
+    const run = createRun(createFetchDep())
+    let isDisposed = false
+
+    async function refreshExchangeRate() {
+      try {
+        const result = await run(fetchYadioBtcExchangeRate(currency))
+        if (isDisposed) return
+
+        if (result.ok) {
+          setExchangeRateQuote(result.value)
+          return
+        }
+
+        console.error("Failed to fetch Yadio BTC exchange rate", result.error)
+      } catch (error) {
+        if (!isDisposed) {
+          console.error("Failed to fetch Yadio BTC exchange rate", error)
+        }
+      }
+    }
+
+    void refreshExchangeRate()
+    const intervalId = window.setInterval(() => {
+      void refreshExchangeRate()
+    }, rateRefreshIntervalMs)
+
+    return () => {
+      isDisposed = true
+      window.clearInterval(intervalId)
+      void run[Symbol.asyncDispose]()
+    }
+  }, [currency])
+
+  return exchangeRateQuote
+}
+
 function Keypad({
   amountDigitsAtom,
+  currency,
+  onCharge,
 }: {
   readonly amountDigitsAtom: AmountDigitsAtom
+  readonly currency: FiatCurrency
+  readonly onCharge: (money: Money) => void
 }) {
   const { t } = useTranslation()
+  const store = useStore()
   const setAmountDigits = useSetAtom(amountDigitsAtom)
 
   function handleKeypadPress(key: KeypadKey) {
-    if (key === "C") {
-      setAmountDigits("")
-      return
-    }
-
-    if (key === "<") {
-      setAmountDigits((current) => current.slice(0, -1))
-      return
-    }
-
-    setAmountDigits((current) => {
-      if (current.length >= maxAmountDigits) return current
-      if (current === "" && key === "0") return ""
-
-      return `${current}${key}`
-    })
+    applyKeypadPress(setAmountDigits, key)
   }
+
+  const handleKeydown = useEffectEvent((event: KeyboardEvent) => {
+    const target = event.target
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement)
+    ) {
+      return
+    }
+
+    if (numericKeyboardKeys.has(event.key)) {
+      applyKeypadPress(setAmountDigits, event.key as KeypadKey)
+      event.preventDefault()
+      return
+    }
+
+    if (event.key === "Backspace") {
+      applyKeypadPress(setAmountDigits, "<")
+      event.preventDefault()
+      return
+    }
+
+    if (event.key === "Delete" || event.key === "Escape") {
+      applyKeypadPress(setAmountDigits, "C")
+      event.preventDefault()
+      return
+    }
+
+    if (event.key === "Enter") {
+      const amountDigits = store.get(amountDigitsAtom)
+      if (amountDigits !== "") {
+        onCharge(createMoney(amountDigits, currency))
+        event.preventDefault()
+      }
+    }
+  })
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeydown)
+    return () => {
+      window.removeEventListener("keydown", handleKeydown)
+    }
+  }, [])
 
   function getKeypadAriaLabel(key: KeypadKey) {
     if (key === "C") return t("home.keypad.clear")
@@ -103,7 +305,7 @@ function Keypad({
           key={key}
           variant="ghost"
           aria-label={getKeypadAriaLabel(key)}
-          className="h-16 rounded-full text-2xl text-foreground hover:bg-primary-foreground/10"
+          className="h-16 rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
           onClick={() => handleKeypadPress(key)}
         >
           {key}
@@ -115,16 +317,22 @@ function Keypad({
 
 function ChargeButton({
   amountDigitsAtom,
+  currency,
+  onCharge,
 }: {
   readonly amountDigitsAtom: AmountDigitsAtom
+  readonly currency: FiatCurrency
+  readonly onCharge: (money: Money) => void
 }) {
   const { t } = useTranslation()
   const amountDigits = useAtomValue(amountDigitsAtom)
+  const money = createMoney(amountDigits, currency)
 
   return (
     <Button
       className="h-14 rounded-full bg-primary-foreground/15 text-base font-bold text-foreground hover:bg-primary-foreground/20"
       disabled={amountDigits === ""}
+      onClick={() => onCharge(money)}
     >
       {t("home.charge")}
     </Button>

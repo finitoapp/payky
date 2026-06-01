@@ -7,7 +7,6 @@ import {
   type KyselyNotNull,
   type Mnemonic,
   ownerSecretToMnemonic,
-  sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
 import { faker } from "@faker-js/faker"
@@ -120,31 +119,40 @@ const createRandomAccountName = () =>
 const insertAccount = (
   deviceEvolu: DeviceEvolu,
   mnemonic: Mnemonic,
-  accountName: string | undefined,
-  onComplete: () => void
+  accountName: string | undefined
 ) => {
-  const { id: accountId } = deviceEvolu.insert(
-    "account",
-    {
-      name: accountName
-        ? NonEmptyString255(accountName)
-        : createRandomAccountName(),
-      mnemonic,
-      lastUseAt: Date.now(),
-    },
-    {
-      onComplete,
-    }
-  )
+  const name = accountName
+    ? NonEmptyString255(accountName)
+    : createRandomAccountName()
+  const transportUrl = WssUrl("wss://free.evoluhq.com")
+
+  const { id: accountId } = deviceEvolu.insert("account", {
+    name,
+    mnemonic,
+    lastUseAt: Date.now(),
+  })
   const { id } = deviceEvolu.insert("accountEvoluTransport", {
     accountId,
     type: "WebSocket",
-    isActive: sqliteFalse,
+    isActive: sqliteTrue,
   })
   deviceEvolu.upsert("accountEvoluTransportWebsocket", {
     id,
-    url: WssUrl("wss://free.evoluhq.com"),
+    url: transportUrl,
   })
+
+  return {
+    id: accountId,
+    mnemonic,
+    name,
+    device: null,
+    transports: [
+      {
+        type: "WebSocket" as const,
+        url: transportUrl,
+      },
+    ],
+  }
 }
 
 export const createDefaultAccountName = () => createRandomAccountName()
@@ -167,33 +175,38 @@ export const activateOrCreateAccountWithMnemonic = async (
     )
   )
 
-  await new Promise<void>((resolve) => {
-    const account = existingAccount[0]
-    if (account !== undefined) {
-      deviceEvolu.update(
-        "account",
-        {
-          id: account.id,
-          lastUseAt: Date.now(),
-        },
-        {
-          onComplete: resolve,
-        }
-      )
-      return
-    }
+  const account = existingAccount[0]
+  if (account !== undefined) {
+    deviceEvolu.update("account", {
+      id: account.id,
+      lastUseAt: Date.now(),
+    })
 
-    insertAccount(deviceEvolu, mnemonic, options?.accountName, resolve)
-  })
+    return loadActiveAccountRow(deviceEvolu)
+  }
+
+  return insertAccount(deviceEvolu, mnemonic, options?.accountName)
 }
 
 const activeAccountRowAtom = atom(async (get) => {
   get(evoluCounterAtom) // We want to reload evolu when counter is increased
   const deviceEvolu = await get(deviceEvoluAtom)
-  const data = await deviceEvolu.loadQuery(activeAccountQuery)
+  const activeAccountRow = await loadActiveAccountRow(deviceEvolu)
 
-  return data[0] ?? null
+  if (activeAccountRow !== null) {
+    return activeAccountRow
+  }
+
+  return activateOrCreateAccountWithMnemonic(
+    deviceEvolu,
+    createAccountMnemonic()
+  )
 })
+
+async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {
+  const data = await deviceEvolu.loadQuery(activeAccountQuery)
+  return data[0] ?? null
+}
 
 export const hasDeviceAccountAtom = atom(async (get) => {
   const activeAccount = await get(activeAccountRowAtom)

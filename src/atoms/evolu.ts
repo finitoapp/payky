@@ -1,17 +1,21 @@
 import { createIdFromString, sqliteTrue } from "@evolu/common"
-import { createEvoluDeps } from "@evolu/react-web"
-import { createRun } from "@evolu/web"
+import { createEvoluDeps, createRun } from "@evolu/web"
 import { sha256 } from "@noble/hashes/sha2.js"
 import { atom } from "jotai"
 import { accountAtom } from "@/atoms/account.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
+  createDefaultSettings,
+  settingsId,
+} from "@/core/modules/app-settings/app-settings-utils.ts"
+import {
   FiatCurrency,
   NonEmptyString255,
 } from "@/core/modules/shared/schema.ts"
 
 export const evoluAtom = atom(async (get) => {
+  console.log("ok1")
   const account = await get(accountAtom)
   const run = createRun(createEvoluDeps())
   const evolu = await run.orThrow(
@@ -22,6 +26,7 @@ export const evoluAtom = atom(async (get) => {
   )
   const deviceId = account.device.id
 
+  console.log("deviceId", deviceId)
   // Seed initial data
   ;(async () => {
     // Copy device identification to the shared evolu instance. Skip waiting
@@ -48,6 +53,18 @@ export const evoluAtom = atom(async (get) => {
 
     // Create default accounts and payment methods
     {
+      const appSettings = await evolu.loadQuery(
+        createQuery((db) =>
+          db.selectFrom("appSettings").select("id").where("id", "=", settingsId)
+        )
+      )
+
+      if (appSettings.length === 0) {
+        console.log("Creating default settings", createDefaultSettings())
+        evolu.upsert("appSettings", createDefaultSettings())
+        console.log("Creating default settings2", createDefaultSettings())
+      }
+
       const msgBuffer = new TextEncoder().encode(appOwner.mnemonic)
       const hashBuffer = sha256(msgBuffer)
       const hashArray = Array.from(new Uint8Array(hashBuffer))

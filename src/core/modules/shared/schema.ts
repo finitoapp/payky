@@ -53,6 +53,7 @@ export const WssUrl = <T extends string>(value: T): WssUrl =>
   WssUrlSchema.parse(value)
 
 export const IntegerSchema = z.number().int().brand<"Int">()
+export const Integer = IntegerSchema.decode
 export const NonNegativeIntegerSchema =
   IntegerSchema.nonnegative().brand<"NonNegative">()
 export type NonNegativeInteger = z.output<typeof NonNegativeIntegerSchema>
@@ -84,6 +85,9 @@ export const NumberStringSchema = z
   .string()
   .regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/)
   .brand<"Float">()
+export type NumberString = z.output<typeof NumberStringSchema>
+export const NumberString = NumberStringSchema.decode
+
 export const NumberFromStringSchema = z
   .string()
   .regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/)

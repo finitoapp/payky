@@ -12,13 +12,17 @@ import {
 import { type ComponentProps, useMemo } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PhoneViewport } from "@/components/numopay-skeleton.tsx"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { useTranslation } from "@/i18n/use-translation.ts"
 
-export const Route = createFileRoute("/settings/")({
+export const Route = createFileRoute("/_terminal/settings/")({
   component: SettingsPage,
+  staticData: {
+    terminalLayout: {
+      viewportClassName: "px-6 py-6",
+    },
+  },
 })
 
 type VerticalNavItem = ComponentProps<typeof VerticalNav>["items"][number]
@@ -125,15 +129,13 @@ function SettingsPage() {
   )
 
   return (
-    <main className="min-h-svh bg-background text-foreground">
-      <PhoneViewport className="px-6 py-6">
-        <div className="h-6" />
-        <FadeHeader title={t("settings.title")} />
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.title")} />
 
-        <VerticalNav title={t("settings.terminal")} items={terminalItems} />
-        <VerticalNav title={t("settings.payments")} items={paymentItems} />
-        <VerticalNav title={t("settings.security")} items={securityItems} />
-      </PhoneViewport>
-    </main>
+      <VerticalNav title={t("settings.terminal")} items={terminalItems} />
+      <VerticalNav title={t("settings.payments")} items={paymentItems} />
+      <VerticalNav title={t("settings.security")} items={securityItems} />
+    </>
   )
 }

@@ -8,4 +8,11 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router
   }
+
+  interface StaticDataRouteOption {
+    readonly terminalLayout?: {
+      readonly mainClassName?: string
+      readonly viewportClassName?: string
+    }
+  }
 }

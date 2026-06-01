@@ -9,76 +9,82 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as ActivityRouteImport } from './routes/activity'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsIndexRouteImport } from './routes/settings.index'
-import { Route as SettingsItemsRouteImport } from './routes/settings.items'
-import { Route as ItemsEditRouteImport } from './routes/items.edit'
+import { Route as TerminalRouteImport } from './routes/_terminal'
+import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
+import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
+import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
+import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
+import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
+import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
+import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
 
-const SettingsRoute = SettingsRouteImport.update({
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/_terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminalIndexRoute = TerminalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TerminalRoute,
+} as any)
+const TerminalSettingsRoute = TerminalSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => TerminalRoute,
 } as any)
-const CheckoutRoute = CheckoutRouteImport.update({
+const TerminalCheckoutRoute = TerminalCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => TerminalRoute,
 } as any)
-const ActivityRoute = ActivityRouteImport.update({
+const TerminalActivityRoute = TerminalActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => TerminalRoute,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const TerminalSettingsIndexRoute = TerminalSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => TerminalSettingsRoute,
 } as any)
-const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsItemsRoute = SettingsItemsRouteImport.update({
+const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
   id: '/items',
   path: '/items',
-  getParentRoute: () => SettingsRoute,
+  getParentRoute: () => TerminalSettingsRoute,
 } as any)
-const ItemsEditRoute = ItemsEditRouteImport.update({
+const TerminalItemsEditRoute = TerminalItemsEditRouteImport.update({
   id: '/items/edit',
   path: '/items/edit',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => TerminalRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/activity': typeof ActivityRoute
-  '/checkout': typeof CheckoutRoute
-  '/settings': typeof SettingsRouteWithChildren
-  '/items/edit': typeof ItemsEditRoute
-  '/settings/items': typeof SettingsItemsRoute
-  '/settings/': typeof SettingsIndexRoute
+  '/': typeof TerminalIndexRoute
+  '/activity': typeof TerminalActivityRoute
+  '/checkout': typeof TerminalCheckoutRoute
+  '/settings': typeof TerminalSettingsRouteWithChildren
+  '/items/edit': typeof TerminalItemsEditRoute
+  '/settings/items': typeof TerminalSettingsItemsRoute
+  '/settings/': typeof TerminalSettingsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/activity': typeof ActivityRoute
-  '/checkout': typeof CheckoutRoute
-  '/items/edit': typeof ItemsEditRoute
-  '/settings/items': typeof SettingsItemsRoute
-  '/settings': typeof SettingsIndexRoute
+  '/activity': typeof TerminalActivityRoute
+  '/checkout': typeof TerminalCheckoutRoute
+  '/': typeof TerminalIndexRoute
+  '/items/edit': typeof TerminalItemsEditRoute
+  '/settings/items': typeof TerminalSettingsItemsRoute
+  '/settings': typeof TerminalSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/activity': typeof ActivityRoute
-  '/checkout': typeof CheckoutRoute
-  '/settings': typeof SettingsRouteWithChildren
-  '/items/edit': typeof ItemsEditRoute
-  '/settings/items': typeof SettingsItemsRoute
-  '/settings/': typeof SettingsIndexRoute
+  '/_terminal': typeof TerminalRouteWithChildren
+  '/_terminal/activity': typeof TerminalActivityRoute
+  '/_terminal/checkout': typeof TerminalCheckoutRoute
+  '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
+  '/_terminal/': typeof TerminalIndexRoute
+  '/_terminal/items/edit': typeof TerminalItemsEditRoute
+  '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
+  '/_terminal/settings/': typeof TerminalSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -92,105 +98,124 @@ export interface FileRouteTypes {
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/activity'
     | '/checkout'
+    | '/'
     | '/items/edit'
     | '/settings/items'
     | '/settings'
   id:
     | '__root__'
-    | '/'
-    | '/activity'
-    | '/checkout'
-    | '/settings'
-    | '/items/edit'
-    | '/settings/items'
-    | '/settings/'
+    | '/_terminal'
+    | '/_terminal/activity'
+    | '/_terminal/checkout'
+    | '/_terminal/settings'
+    | '/_terminal/'
+    | '/_terminal/items/edit'
+    | '/_terminal/settings/items'
+    | '/_terminal/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ActivityRoute: typeof ActivityRoute
-  CheckoutRoute: typeof CheckoutRoute
-  SettingsRoute: typeof SettingsRouteWithChildren
-  ItemsEditRoute: typeof ItemsEditRoute
+  TerminalRoute: typeof TerminalRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/_terminal': {
+      id: '/_terminal'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof TerminalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/activity': {
-      id: '/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof ActivityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_terminal/': {
+      id: '/_terminal/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof TerminalIndexRouteImport
+      parentRoute: typeof TerminalRoute
     }
-    '/settings/': {
-      id: '/settings/'
+    '/_terminal/settings': {
+      id: '/_terminal/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof TerminalSettingsRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/checkout': {
+      id: '/_terminal/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof TerminalCheckoutRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/activity': {
+      id: '/_terminal/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof TerminalActivityRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/settings/': {
+      id: '/_terminal/settings/'
       path: '/'
       fullPath: '/settings/'
-      preLoaderRoute: typeof SettingsIndexRouteImport
-      parentRoute: typeof SettingsRoute
+      preLoaderRoute: typeof TerminalSettingsIndexRouteImport
+      parentRoute: typeof TerminalSettingsRoute
     }
-    '/settings/items': {
-      id: '/settings/items'
+    '/_terminal/settings/items': {
+      id: '/_terminal/settings/items'
       path: '/items'
       fullPath: '/settings/items'
-      preLoaderRoute: typeof SettingsItemsRouteImport
-      parentRoute: typeof SettingsRoute
+      preLoaderRoute: typeof TerminalSettingsItemsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
     }
-    '/items/edit': {
-      id: '/items/edit'
+    '/_terminal/items/edit': {
+      id: '/_terminal/items/edit'
       path: '/items/edit'
       fullPath: '/items/edit'
-      preLoaderRoute: typeof ItemsEditRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof TerminalItemsEditRouteImport
+      parentRoute: typeof TerminalRoute
     }
   }
 }
 
-interface SettingsRouteChildren {
-  SettingsItemsRoute: typeof SettingsItemsRoute
-  SettingsIndexRoute: typeof SettingsIndexRoute
+interface TerminalSettingsRouteChildren {
+  TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
+  TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
 }
 
-const SettingsRouteChildren: SettingsRouteChildren = {
-  SettingsItemsRoute: SettingsItemsRoute,
-  SettingsIndexRoute: SettingsIndexRoute,
+const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
+  TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,
+  TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
 }
 
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
+const TerminalSettingsRouteWithChildren =
+  TerminalSettingsRoute._addFileChildren(TerminalSettingsRouteChildren)
+
+interface TerminalRouteChildren {
+  TerminalActivityRoute: typeof TerminalActivityRoute
+  TerminalCheckoutRoute: typeof TerminalCheckoutRoute
+  TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
+  TerminalIndexRoute: typeof TerminalIndexRoute
+  TerminalItemsEditRoute: typeof TerminalItemsEditRoute
+}
+
+const TerminalRouteChildren: TerminalRouteChildren = {
+  TerminalActivityRoute: TerminalActivityRoute,
+  TerminalCheckoutRoute: TerminalCheckoutRoute,
+  TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
+  TerminalIndexRoute: TerminalIndexRoute,
+  TerminalItemsEditRoute: TerminalItemsEditRoute,
+}
+
+const TerminalRouteWithChildren = TerminalRoute._addFileChildren(
+  TerminalRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ActivityRoute: ActivityRoute,
-  CheckoutRoute: CheckoutRoute,
-  SettingsRoute: SettingsRouteWithChildren,
-  ItemsEditRoute: ItemsEditRoute,
+  TerminalRoute: TerminalRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

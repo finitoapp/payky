@@ -18,8 +18,13 @@ import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.se
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
+import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
+import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
 import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
+import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
+import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
+import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 
 const TerminalRoute = TerminalRouteImport.update({
   id: '/_terminal',
@@ -66,6 +71,16 @@ const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
   path: '/items',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
+  id: '/fiat',
+  path: '/fiat',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsAboutRoute = TerminalSettingsAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
 const TerminalItemsEditRoute = TerminalItemsEditRouteImport.update({
   id: '/items/edit',
   path: '/items/edit',
@@ -77,6 +92,24 @@ const TerminalActivityPaymentIdRoute =
     path: '/activity/$paymentId',
     getParentRoute: () => TerminalRoute,
   } as any)
+const TerminalSettingsAboutIndexRoute =
+  TerminalSettingsAboutIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsAboutRoute,
+  } as any)
+const TerminalSettingsAboutTermsRoute =
+  TerminalSettingsAboutTermsRouteImport.update({
+    id: '/terms',
+    path: '/terms',
+    getParentRoute: () => TerminalSettingsAboutRoute,
+  } as any)
+const TerminalSettingsAboutPrivacyRoute =
+  TerminalSettingsAboutPrivacyRouteImport.update({
+    id: '/privacy',
+    path: '/privacy',
+    getParentRoute: () => TerminalSettingsAboutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
@@ -85,10 +118,15 @@ export interface FileRoutesByFullPath {
   '/settings': typeof TerminalSettingsRouteWithChildren
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
+  '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
+  '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/': typeof TerminalSettingsIndexRoute
+  '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
+  '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
+  '/settings/about/': typeof TerminalSettingsAboutIndexRoute
 }
 export interface FileRoutesByTo {
   '/activity': typeof TerminalActivityRoute
@@ -96,10 +134,14 @@ export interface FileRoutesByTo {
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
+  '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings': typeof TerminalSettingsIndexRoute
+  '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
+  '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
+  '/settings/about': typeof TerminalSettingsAboutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -110,10 +152,15 @@ export interface FileRoutesById {
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/items/edit': typeof TerminalItemsEditRoute
+  '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
+  '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
+  '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
+  '/_terminal/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
+  '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -124,10 +171,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/activity/$paymentId'
     | '/items/edit'
+    | '/settings/about'
+    | '/settings/fiat'
     | '/settings/items'
     | '/settings/language'
     | '/settings/theme'
     | '/settings/'
+    | '/settings/about/privacy'
+    | '/settings/about/terms'
+    | '/settings/about/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/activity'
@@ -135,10 +187,14 @@ export interface FileRouteTypes {
     | '/'
     | '/activity/$paymentId'
     | '/items/edit'
+    | '/settings/fiat'
     | '/settings/items'
     | '/settings/language'
     | '/settings/theme'
     | '/settings'
+    | '/settings/about/privacy'
+    | '/settings/about/terms'
+    | '/settings/about'
   id:
     | '__root__'
     | '/_terminal'
@@ -148,10 +204,15 @@ export interface FileRouteTypes {
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
     | '/_terminal/items/edit'
+    | '/_terminal/settings/about'
+    | '/_terminal/settings/fiat'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/'
+    | '/_terminal/settings/about/privacy'
+    | '/_terminal/settings/about/terms'
+    | '/_terminal/settings/about/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +284,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsItemsRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/fiat': {
+      id: '/_terminal/settings/fiat'
+      path: '/fiat'
+      fullPath: '/settings/fiat'
+      preLoaderRoute: typeof TerminalSettingsFiatRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/about': {
+      id: '/_terminal/settings/about'
+      path: '/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof TerminalSettingsAboutRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/items/edit': {
       id: '/_terminal/items/edit'
       path: '/items/edit'
@@ -237,10 +312,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalActivityPaymentIdRouteImport
       parentRoute: typeof TerminalRoute
     }
+    '/_terminal/settings/about/': {
+      id: '/_terminal/settings/about/'
+      path: '/'
+      fullPath: '/settings/about/'
+      preLoaderRoute: typeof TerminalSettingsAboutIndexRouteImport
+      parentRoute: typeof TerminalSettingsAboutRoute
+    }
+    '/_terminal/settings/about/terms': {
+      id: '/_terminal/settings/about/terms'
+      path: '/terms'
+      fullPath: '/settings/about/terms'
+      preLoaderRoute: typeof TerminalSettingsAboutTermsRouteImport
+      parentRoute: typeof TerminalSettingsAboutRoute
+    }
+    '/_terminal/settings/about/privacy': {
+      id: '/_terminal/settings/about/privacy'
+      path: '/privacy'
+      fullPath: '/settings/about/privacy'
+      preLoaderRoute: typeof TerminalSettingsAboutPrivacyRouteImport
+      parentRoute: typeof TerminalSettingsAboutRoute
+    }
   }
 }
 
+interface TerminalSettingsAboutRouteChildren {
+  TerminalSettingsAboutPrivacyRoute: typeof TerminalSettingsAboutPrivacyRoute
+  TerminalSettingsAboutTermsRoute: typeof TerminalSettingsAboutTermsRoute
+  TerminalSettingsAboutIndexRoute: typeof TerminalSettingsAboutIndexRoute
+}
+
+const TerminalSettingsAboutRouteChildren: TerminalSettingsAboutRouteChildren = {
+  TerminalSettingsAboutPrivacyRoute: TerminalSettingsAboutPrivacyRoute,
+  TerminalSettingsAboutTermsRoute: TerminalSettingsAboutTermsRoute,
+  TerminalSettingsAboutIndexRoute: TerminalSettingsAboutIndexRoute,
+}
+
+const TerminalSettingsAboutRouteWithChildren =
+  TerminalSettingsAboutRoute._addFileChildren(
+    TerminalSettingsAboutRouteChildren,
+  )
+
 interface TerminalSettingsRouteChildren {
+  TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
+  TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
@@ -248,6 +363,8 @@ interface TerminalSettingsRouteChildren {
 }
 
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
+  TerminalSettingsAboutRoute: TerminalSettingsAboutRouteWithChildren,
+  TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,

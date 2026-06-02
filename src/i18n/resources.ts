@@ -82,15 +82,48 @@ export const resources = {
     "paymentDetail.tipAmount": "Tip",
     "paymentDetail.title": "Payment detail",
     "paymentDetail.updatedAt": "Updated at",
+    "settings.about.app.description":
+      "A local-first payment terminal for Bitcoin-native sales.",
+    "settings.about.app.title": "Payky",
+    "settings.about.contact.description":
+      "Support and contact details will be available in the next release.",
+    "settings.about.contact.title": "Contact",
     "settings.about.description": "Version, terms and contact",
+    "settings.about.privacy.body":
+      "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, mint information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and mint or wallet access data secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Cashu mints to issue, redeem, or manage ecash tokens\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS\nPayky does not use analytics or tracking services unless they are explicitly added and disclosed in the app.\n\n5. THIRD-PARTY MINTS\nWhen using ecash mints, the mint operator may see transaction amounts, timing, token redemption activity, and related metadata. Choose trusted mints and avoid keeping unnecessary balances with any single mint.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: June 2026",
+    "settings.about.privacy.description":
+      "Application data is stored locally and synchronized through Evolu.",
+    "settings.about.privacy.heading": "Payky Privacy Policy",
+    "settings.about.privacy.summary":
+      "Adapted for a local-first Bitcoin payment terminal.",
+    "settings.about.privacy.title": "Data and privacy",
+    "settings.about.terms.body":
+      'PAYKY - TERMS OF SERVICE\n\n1. ACCEPTANCE\nBy using this payment terminal application, you agree to these terms.\n\n2. NATURE OF SERVICE\nPayky is a local-first Bitcoin payment terminal using Cashu ecash technology and related payment infrastructure. You are responsible for how you configure the app, which mints and services you use, and how you handle received funds.\n\n3. ACCESS AND RECOVERY\nKeep your device, credentials, backups, and any wallet or mint access data secure. Payky cannot recover lost credentials, unavailable mint balances, or funds sent to incorrect destinations.\n\n4. NO WARRANTY\nThis software is provided "as is" without warranty of any kind. Use it at your own risk.\n\n5. LIMITATION OF LIABILITY\nWe are not liable for any loss of funds, business interruption, payment failure, bugs, user error, or third-party mint or service failure.\n\n6. ECASH MINTS\nEcash tokens are issued and redeemed by third-party mints. These mints may fail, become unavailable, change terms, or refuse redemption. Consider spreading risk across multiple mints and only keep balances you are prepared to lose.\n\n7. PRIVACY\nPayky is designed to store application data locally and synchronize it through Evolu. Payments may still be processed through ecash mints, Lightning services, or other third-party infrastructure, which may have their own privacy policies and logs.\n\n8. UPDATES\nThese terms may be updated. Continued use of Payky constitutes acceptance of the updated terms.\n\nLast updated: June 2026',
+    "settings.about.terms.description":
+      "Read the terms that apply when using Payky.",
+    "settings.about.terms.heading": "Payky Terms of Service",
+    "settings.about.terms.summary":
+      "Adapted for a local-first Bitcoin payment terminal.",
+    "settings.about.terms.title": "Terms of Service",
     "settings.about.title": "About",
+    "settings.about.version.title": "Version",
+    "settings.appVersion": "App version:",
     "settings.baskets.description":
       "Create preset names for quick basket saving",
     "settings.baskets.title": "Basket Names",
     "settings.defaultPayment.description": "Unified",
     "settings.defaultPayment.title": "Default Payment",
+    "settings.fiat.czk.description": "Use Czech koruna for terminal amounts",
+    "settings.fiat.czk.title": "Czech koruna",
     "settings.fiat.description": "Choose your default fiat currency",
+    "settings.fiat.eur.description": "Use euro for terminal amounts",
+    "settings.fiat.eur.title": "Euro",
+    "settings.fiat.mode.description":
+      "Choose the fiat currency used by default when creating payments.",
+    "settings.fiat.mode.title": "Default fiat currency",
     "settings.fiat.title": "Fiat Currency",
+    "settings.fiat.usd.description": "Use US dollar for terminal amounts",
+    "settings.fiat.usd.title": "US dollar",
     "settings.general": "GENERAL",
     "settings.items.description": "Create and manage catalog items",
     "settings.items.title": "Items",
@@ -105,6 +138,7 @@ export const resources = {
     "settings.language.title": "Language",
     "settings.mints.description": "Manage Cashu mints and Lightning settings",
     "settings.mints.title": "Mints",
+    "settings.openSource": "We are open source",
     "settings.payments": "PAYMENTS",
     "settings.security": "SECURITY & PRIVACY",
     "settings.security.description": "Passcode and data controls",
@@ -213,15 +247,50 @@ export const resources = {
     "paymentDetail.tipAmount": "Dýško",
     "paymentDetail.title": "Detail platby",
     "paymentDetail.updatedAt": "Upraveno",
+    "settings.about.app.description":
+      "Lokální platební terminál pro prodeje nativní pro Bitcoin.",
+    "settings.about.app.title": "Payky",
+    "settings.about.contact.description":
+      "Podpora a kontaktní údaje budou dostupné v příští verzi.",
+    "settings.about.contact.title": "Kontakt",
     "settings.about.description": "Verze, podmínky a kontakt",
+    "settings.about.privacy.body":
+      "PAYKY - ZÁSADY OCHRANY SOUKROMÍ\n\n1. SBĚR DAT\nPayky neprodává osobní údaje a je navrženo tak, aby aplikační data zůstávala lokálně ve vašem zařízení. Aplikace ukládá nastavení terminálu, katalogová data, záznamy plateb a související provozní data lokálně a synchronizuje aplikační data přes Evolu.\n\n2. PLATEBNÍ DATA\nPlatební a terminálová data mohou obsahovat částky, časové údaje, názvy položek, stav platby, informace o mintech, identifikátory zařízení a další záznamy potřebné pro provoz bitcoinového platebního terminálu. Chraňte své zařízení, přihlašovací údaje, zálohy a přístupová data k mintům nebo peněženkám.\n\n3. SÍŤOVÁ KOMUNIKACE\nAplikace může komunikovat s:\n- infrastrukturou Evolu pro synchronizaci lokálních-first aplikačních dat\n- Cashu minty pro vydávání, proplácení nebo správu ecash tokenů\n- Lightning nebo peněženkovými službami používanými k vytvoření nebo vypořádání plateb\n- cenovými nebo kurzovými API, pokud je zapnutý fiat přepočet\n\nTyto služby mohou mít vlastní zásady ochrany soukromí, logy a pravidla uchovávání dat.\n\n4. ANALYTIKA\nPayky nepoužívá analytické ani sledovací služby, pokud nejsou výslovně přidány a zveřejněny v aplikaci.\n\n5. MINTY TŘETÍCH STRAN\nPři používání ecash mintů může provozovatel mintu vidět částky transakcí, časování, aktivitu proplácení tokenů a související metadata. Vybírejte důvěryhodné minty a nedržte zbytečné zůstatky u jednoho mintu.\n\n6. ZÁLOHY A SYNCHRONIZACE\nPokud jsou zapnuté synchronizační nebo zálohovací funkce, mohou být aplikační data přenášena do synchronizační infrastruktury. Se synchronizovanými daty zacházejte jako s provozními obchodními daty a chraňte každé zařízení, které k nim má přístup.\n\n7. KONTAKT\nKontaktní údaje pro otázky soukromí budou zveřejněny v dokumentaci projektu.\n\nPoslední aktualizace: červen 2026",
+    "settings.about.privacy.description":
+      "Data aplikace se ukládají lokálně a synchronizují přes Evolu.",
+    "settings.about.privacy.heading": "Zásady ochrany soukromí Payky",
+    "settings.about.privacy.summary":
+      "Přizpůsobeno pro lokální-first bitcoinový platební terminál.",
+    "settings.about.privacy.title": "Data a soukromí",
+    "settings.about.terms.body":
+      'PAYKY - PODMÍNKY POUŽÍVÁNÍ\n\n1. PŘIJETÍ\nPoužíváním této aplikace platebního terminálu souhlasíte s těmito podmínkami.\n\n2. POVAHA SLUŽBY\nPayky je lokální-first bitcoinový platební terminál využívající technologii Cashu ecash a související platební infrastrukturu. Odpovídáte za konfiguraci aplikace, výběr mintů a služeb i za nakládání s přijatými prostředky.\n\n3. PŘÍSTUP A OBNOVA\nChraňte své zařízení, přihlašovací údaje, zálohy a veškerá přístupová data k peněženkám nebo mintům. Payky nemůže obnovit ztracené přihlašovací údaje, nedostupné zůstatky u mintů ani prostředky odeslané na nesprávné cíle.\n\n4. BEZ ZÁRUKY\nSoftware je poskytován "tak, jak je", bez jakékoli záruky. Používáte jej na vlastní riziko.\n\n5. OMEZENÍ ODPOVĚDNOSTI\nNeodpovídáme za ztrátu prostředků, přerušení podnikání, selhání platby, chyby v softwaru, chybu uživatele ani selhání mintu nebo služby třetí strany.\n\n6. ECASH MINTY\nEcash tokeny vydávají a proplácejí minty třetích stran. Tyto minty mohou selhat, být nedostupné, změnit podmínky nebo odmítnout proplacení. Zvažte rozložení rizika mezi více mintů a držte jen zůstatky, o které jste připraveni přijít.\n\n7. SOUKROMÍ\nPayky je navrženo tak, aby ukládalo aplikační data lokálně a synchronizovalo je přes Evolu. Platby však mohou být zpracovávány přes ecash minty, Lightning služby nebo jinou infrastrukturu třetích stran, které mohou mít vlastní zásady ochrany soukromí a logy.\n\n8. AKTUALIZACE\nTyto podmínky mohou být aktualizovány. Další používání Payky znamená přijetí aktualizovaných podmínek.\n\nPoslední aktualizace: červen 2026',
+    "settings.about.terms.description":
+      "Přečtěte si podmínky platné pro používání Payky.",
+    "settings.about.terms.heading": "Podmínky používání Payky",
+    "settings.about.terms.summary":
+      "Přizpůsobeno pro lokální-first bitcoinový platební terminál.",
+    "settings.about.terms.title": "Podmínky používání",
     "settings.about.title": "O aplikaci",
+    "settings.about.version.title": "Verze",
+    "settings.appVersion": "Verze aplikace:",
     "settings.baskets.description":
       "Vytvořte předvolené názvy pro rychlé uložení košíků",
     "settings.baskets.title": "Názvy košíků",
     "settings.defaultPayment.description": "Sjednocené",
     "settings.defaultPayment.title": "Výchozí platba",
+    "settings.fiat.czk.description":
+      "Používat českou korunu pro částky v terminálu",
+    "settings.fiat.czk.title": "Česká koruna",
     "settings.fiat.description": "Vyberte výchozí fiat měnu",
+    "settings.fiat.eur.description": "Používat euro pro částky v terminálu",
+    "settings.fiat.eur.title": "Euro",
+    "settings.fiat.mode.description":
+      "Vyberte fiat měnu, která se použije jako výchozí při vytváření plateb.",
+    "settings.fiat.mode.title": "Výchozí fiat měna",
     "settings.fiat.title": "Fiat měna",
+    "settings.fiat.usd.description":
+      "Používat americký dolar pro částky v terminálu",
+    "settings.fiat.usd.title": "Americký dolar",
     "settings.general": "OBECNÉ",
     "settings.items.description": "Vytvářet a spravovat katalogové položky",
     "settings.items.title": "Položky",
@@ -236,6 +305,7 @@ export const resources = {
     "settings.language.title": "Jazyk",
     "settings.mints.description": "Správa Cashu mintů a Lightning nastavení",
     "settings.mints.title": "Minty",
+    "settings.openSource": "Jsme open source",
     "settings.payments": "PLATBY",
     "settings.security": "BEZPEČNOST A SOUKROMÍ",
     "settings.security.description": "Heslo a ovládání dat",

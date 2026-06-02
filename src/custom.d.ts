@@ -1,6 +1,8 @@
 import type { IntegerString, TimestampMs } from "@/core/modules/shared/schema"
 
 declare global {
+  const __APP_VERSION__: string
+
   interface BigInt {
     toString(radix?: number): IntegerString
   }

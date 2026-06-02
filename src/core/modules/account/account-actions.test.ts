@@ -1,4 +1,9 @@
-import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
+import {
+  evoluJsonObjectFrom,
+  sqliteFalse,
+  sqliteTrue,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -7,10 +12,12 @@ import {
   createAccount,
   deleteAccount,
   loadAccount,
+  saveFiatBankAccount,
   updateAccount,
 } from "./account-actions.ts"
-import { accountByIdQuery } from "./account-queries.ts"
+import { accountByIdQuery, fiatBankAccountQuery } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
+import { fiatBankAccountId } from "./account-utils.ts"
 
 const accountWithDetailsByIdQuery = (id: AccountId) =>
   createQuery((db) =>
@@ -265,5 +272,76 @@ describe("account actions", () => {
         isDeleted: sqliteTrue,
       },
     })
+  }, 15_000)
+
+  test("saves the deterministic fiat bank account and toggles soft delete", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(
+        saveFiatBankAccount({
+          enabled: true,
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: fiatBankAccountId })
+
+    await expect
+      .poll(() => evolu.loadQuery(fiatBankAccountQuery))
+      .toMatchObject([
+        {
+          id: fiatBankAccountId,
+          name: "Fiat bank account",
+          kind: "iban",
+          isDeleted: sqliteFalse,
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      ])
+
+    await expect(
+      run(
+        saveFiatBankAccount({
+          enabled: false,
+          iban: "CZ5508000000001234567899",
+          currency: "EUR",
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: fiatBankAccountId })
+
+    await expect
+      .poll(() => evolu.loadQuery(fiatBankAccountQuery))
+      .toMatchObject([
+        {
+          id: fiatBankAccountId,
+          isDeleted: sqliteTrue,
+          iban: "CZ5508000000001234567899",
+          currency: "EUR",
+        },
+      ])
+
+    await expect(
+      run(
+        saveFiatBankAccount({
+          enabled: true,
+          currency: "CZK",
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: fiatBankAccountId })
+
+    await expect
+      .poll(() => evolu.loadQuery(fiatBankAccountQuery))
+      .toMatchObject([
+        {
+          id: fiatBankAccountId,
+          isDeleted: sqliteFalse,
+          iban: "CZ5508000000001234567899",
+          currency: "EUR",
+        },
+      ])
   }, 15_000)
 })

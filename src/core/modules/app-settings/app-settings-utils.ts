@@ -13,7 +13,6 @@ export const createDefaultSettings = (): AppSettingsRow => ({
   presetTipPercentagesJson: JSON.stringify([5, 10, 15]),
   presetTipFixedAmountsJson: JSON.stringify([2000, 5000]),
   paymentMethodOrderJson: JSON.stringify(["cashRegister", "spark", "iban"]),
-  bankIban: null,
   language: "en",
   theme: "system",
 })

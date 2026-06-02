@@ -1,10 +1,15 @@
-import { createIdFromString, sqliteTrue } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 import { createEvoluDeps, createRun } from "@evolu/web"
-import { sha256 } from "@noble/hashes/sha2.js"
+import { generateMnemonic } from "@scure/bip39"
+import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { atom } from "jotai"
 import { accountAtom } from "@/atoms/account.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  cashRegisterAccountId,
+  sparkAccountId,
+} from "@/core/modules/account/account-utils.ts"
 import {
   createDefaultSettings,
   settingsId,
@@ -15,7 +20,6 @@ import {
 } from "@/core/modules/shared/schema.ts"
 
 export const evoluAtom = atom(async (get) => {
-  console.log("ok1")
   const account = await get(accountAtom)
   const run = createRun(createEvoluDeps())
   const evolu = await run.orThrow(
@@ -26,7 +30,6 @@ export const evoluAtom = atom(async (get) => {
   )
   const deviceId = account.device.id
 
-  console.log("deviceId", deviceId)
   // Seed initial data
   ;(async () => {
     // Copy device identification to the shared evolu instance. Skip waiting
@@ -60,20 +63,8 @@ export const evoluAtom = atom(async (get) => {
       )
 
       if (appSettings.length === 0) {
-        console.log("Creating default settings", createDefaultSettings())
         evolu.upsert("appSettings", createDefaultSettings())
-        console.log("Creating default settings2", createDefaultSettings())
       }
-
-      const msgBuffer = new TextEncoder().encode(appOwner.mnemonic)
-      const hashBuffer = sha256(msgBuffer)
-      const hashArray = Array.from(new Uint8Array(hashBuffer))
-      const sparkAccountId = createIdFromString<"Account">(
-        hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
-      )
-      const cashRegisterAccountId = createIdFromString<"Account">(
-        `${sparkAccountId}:cashRegister`
-      )
 
       const sparkAccount = await evolu.loadQuery(
         createQuery((db) =>
@@ -86,6 +77,7 @@ export const evoluAtom = atom(async (get) => {
       )
 
       if (sparkAccount.length === 0) {
+        const mnemonic = generateMnemonic(wordlist, 128)
         evolu.upsert("account", {
           id: sparkAccountId,
           deviceId,
@@ -94,7 +86,7 @@ export const evoluAtom = atom(async (get) => {
         })
         evolu.upsert("accountSpark", {
           id: sparkAccountId,
-          mnemonic: NonEmptyString255(appOwner.mnemonic),
+          mnemonic: NonEmptyString255(mnemonic),
         })
       }
 

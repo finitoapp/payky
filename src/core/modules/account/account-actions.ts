@@ -1,6 +1,7 @@
 import {
   type InsertValues,
   ok,
+  sqliteFalse,
   sqliteTrue,
   type Task,
   type UpdateValues,
@@ -10,6 +11,8 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
+import type { FiatCurrency, Iban } from "@/core/modules/shared/schema.ts"
+import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
   removeUndefinedValues,
@@ -24,6 +27,11 @@ import type {
 } from "./account.ts"
 import { accountByIdQuery } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
+import {
+  cashRegisterAccountId,
+  fiatBankAccountId,
+  sparkAccountId,
+} from "./account-utils.ts"
 
 const createAccountNotFoundError = defineError("AccountNotFound")<{
   readonly id: AccountId
@@ -223,4 +231,133 @@ export const deleteAccount =
     )
 
     return ok(idValue)
+  }
+
+export const saveFiatBankAccount =
+  ({
+    enabled,
+    iban,
+    currency,
+  }: {
+    readonly enabled: boolean
+    readonly iban?: Iban
+    readonly currency: FiatCurrency
+  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      if (iban !== undefined) {
+        run.deps.evolu.upsert(
+          "accountIban",
+          removeUndefinedValues({
+            id: fiatBankAccountId,
+            iban,
+            currency,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
+      return run.deps.evolu.upsert(
+        "account",
+        {
+          id: fiatBankAccountId,
+          deviceId: null,
+          name: NonEmptyString255("Fiat bank account"),
+          kind: "iban",
+          isDeleted: enabled ? sqliteFalse : sqliteTrue,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(fiatBankAccountId)
+  }
+
+export const saveSparkAccount =
+  ({
+    enabled,
+    mnemonic,
+  }: {
+    readonly enabled: boolean
+    readonly mnemonic?: NonEmptyString255
+  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      if (mnemonic !== undefined) {
+        run.deps.evolu.upsert(
+          "accountSpark",
+          removeUndefinedValues({
+            id: sparkAccountId,
+            mnemonic,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
+      return run.deps.evolu.upsert(
+        "account",
+        {
+          id: sparkAccountId,
+          deviceId: null,
+          name: NonEmptyString255("Spark account"),
+          kind: "spark",
+          isDeleted: enabled ? sqliteFalse : sqliteTrue,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(sparkAccountId)
+  }
+
+export const saveCashRegisterAccount =
+  ({
+    enabled,
+    currency,
+  }: {
+    readonly enabled: boolean
+    readonly currency: FiatCurrency
+  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      if (enabled) {
+        run.deps.evolu.upsert(
+          "accountCashRegister",
+          removeUndefinedValues({
+            id: cashRegisterAccountId,
+            currency,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+
+        run.deps.evolu.upsert(
+          "account",
+          {
+            id: cashRegisterAccountId,
+            deviceId: null,
+            name: NonEmptyString255("Cash register"),
+            kind: "cashRegister",
+            isDeleted: sqliteFalse,
+          },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      } else {
+        run.deps.evolu.update(
+          "account",
+          {
+            id: cashRegisterAccountId,
+            isDeleted: sqliteTrue,
+          },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+    })
+
+    return ok(cashRegisterAccountId)
   }

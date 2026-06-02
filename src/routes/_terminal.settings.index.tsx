@@ -87,6 +87,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     description: "settings.fiat.description",
     to: "/settings/fiat",
   },
+  {
+    icon: Landmark,
+    title: "settings.paymentAccounts.title",
+    description: "settings.paymentAccounts.description",
+    to: "/settings/payment-accounts",
+  },
 ]
 
 function createSettingsNavItems(

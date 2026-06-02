@@ -16,6 +16,7 @@ import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkou
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
+import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
@@ -60,6 +61,12 @@ const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsPaymentAccountsRoute =
+  TerminalSettingsPaymentAccountsRouteImport.update({
+    id: '/payment-accounts',
+    path: '/payment-accounts',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsLanguageRoute =
   TerminalSettingsLanguageRouteImport.update({
     id: '/language',
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
+  '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -137,6 +145,7 @@ export interface FileRoutesByTo {
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
+  '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -156,6 +165,7 @@ export interface FileRoutesById {
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
+  '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/settings/fiat'
     | '/settings/items'
     | '/settings/language'
+    | '/settings/payment-accounts'
     | '/settings/theme'
     | '/settings/'
     | '/settings/about/privacy'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/settings/fiat'
     | '/settings/items'
     | '/settings/language'
+    | '/settings/payment-accounts'
     | '/settings/theme'
     | '/settings'
     | '/settings/about/privacy'
@@ -208,6 +220,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/fiat'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
+    | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/'
     | '/_terminal/settings/about/privacy'
@@ -268,6 +281,13 @@ declare module '@tanstack/react-router' {
       path: '/theme'
       fullPath: '/settings/theme'
       preLoaderRoute: typeof TerminalSettingsThemeRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/payment-accounts': {
+      id: '/_terminal/settings/payment-accounts'
+      path: '/payment-accounts'
+      fullPath: '/settings/payment-accounts'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/language': {
@@ -358,6 +378,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
+  TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
 }
@@ -367,6 +388,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
+  TerminalSettingsPaymentAccountsRoute: TerminalSettingsPaymentAccountsRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
 }

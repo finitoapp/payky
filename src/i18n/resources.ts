@@ -113,11 +113,36 @@ export const resources = {
     "settings.baskets.title": "Basket Names",
     "settings.defaultPayment.description": "Unified",
     "settings.defaultPayment.title": "Default Payment",
+    "settings.cashRegisterAccount.enabled.description":
+      "Cash payments can be attached to prepared payments when enabled.",
+    "settings.cashRegisterAccount.enabled.label": "Enable cash register",
+    "settings.cashRegisterAccount.form.description":
+      "Cash register payments use the currently selected fiat currency.",
+    "settings.cashRegisterAccount.form.title": "Cash register",
+    "settings.cashRegisterAccount.save": "Save cash register",
+    "settings.cashRegisterAccount.saved": "Cash register saved.",
     "settings.fiat.czk.description": "Use Czech koruna for terminal amounts",
     "settings.fiat.czk.title": "Czech koruna",
     "settings.fiat.description": "Choose your default fiat currency",
     "settings.fiat.eur.description": "Use euro for terminal amounts",
     "settings.fiat.eur.title": "Euro",
+    "settings.fiatBankAccount.description":
+      "Configure the bank account used for fiat payments",
+    "settings.fiatBankAccount.enabled.description":
+      "Disabled accounts stay stored but are ignored by payment flows.",
+    "settings.fiatBankAccount.enabled.label": "Enable fiat bank account",
+    "settings.fiatBankAccount.form.description":
+      "This app currently uses one deterministic fiat bank account.",
+    "settings.fiatBankAccount.form.title": "Bank account details",
+    "settings.fiatBankAccount.iban.description":
+      "Spaces are removed before saving.",
+    "settings.fiatBankAccount.iban.invalid": "Enter a valid IBAN.",
+    "settings.fiatBankAccount.iban.label": "IBAN",
+    "settings.fiatBankAccount.iban.required":
+      "IBAN is required when the bank account is enabled.",
+    "settings.fiatBankAccount.save": "Save bank account",
+    "settings.fiatBankAccount.saved": "Bank account saved.",
+    "settings.fiatBankAccount.title": "Fiat Bank Account",
     "settings.fiat.mode.description":
       "Choose the fiat currency used by default when creating payments.",
     "settings.fiat.mode.title": "Default fiat currency",
@@ -139,10 +164,29 @@ export const resources = {
     "settings.mints.description": "Manage Cashu mints and Lightning settings",
     "settings.mints.title": "Mints",
     "settings.openSource": "We are open source",
+    "settings.paymentAccounts.description":
+      "Configure bank, Spark, and cash register accounts",
+    "settings.paymentAccounts.title": "Payment Accounts",
     "settings.payments": "PAYMENTS",
     "settings.security": "SECURITY & PRIVACY",
     "settings.security.description": "Passcode and data controls",
     "settings.security.title": "Security & Privacy",
+    "settings.sparkAccount.enabled.description":
+      "Disabled Spark accounts stay stored but are ignored by payment flows.",
+    "settings.sparkAccount.enabled.label": "Enable Spark account",
+    "settings.sparkAccount.form.description":
+      "Store the Spark wallet mnemonic used to receive Lightning payments.",
+    "settings.sparkAccount.form.title": "Spark account",
+    "settings.sparkAccount.mnemonic.description":
+      "Whitespace is normalized before saving.",
+    "settings.sparkAccount.mnemonic.invalid":
+      "Enter a mnemonic up to 255 characters.",
+    "settings.sparkAccount.mnemonic.label": "Mnemonic",
+    "settings.sparkAccount.mnemonic.placeholder": "abandon abandon abandon ...",
+    "settings.sparkAccount.mnemonic.required":
+      "Mnemonic is required when the Spark account is enabled.",
+    "settings.sparkAccount.save": "Save Spark account",
+    "settings.sparkAccount.saved": "Spark account saved.",
     "settings.terminal": "TERMINAL",
     "settings.theme.description": "Switch between light and dark mode",
     "settings.theme.dark.description": "Always use the dark interface",
@@ -278,12 +322,37 @@ export const resources = {
     "settings.baskets.title": "Názvy košíků",
     "settings.defaultPayment.description": "Sjednocené",
     "settings.defaultPayment.title": "Výchozí platba",
+    "settings.cashRegisterAccount.enabled.description":
+      "Když je pokladna povolená, hotovostní platby se mohou přidat k připraveným platbám.",
+    "settings.cashRegisterAccount.enabled.label": "Povolit pokladnu",
+    "settings.cashRegisterAccount.form.description":
+      "Hotovostní platby používají aktuálně vybranou fiat měnu.",
+    "settings.cashRegisterAccount.form.title": "Pokladna",
+    "settings.cashRegisterAccount.save": "Uložit pokladnu",
+    "settings.cashRegisterAccount.saved": "Pokladna uložena.",
     "settings.fiat.czk.description":
       "Používat českou korunu pro částky v terminálu",
     "settings.fiat.czk.title": "Česká koruna",
     "settings.fiat.description": "Vyberte výchozí fiat měnu",
     "settings.fiat.eur.description": "Používat euro pro částky v terminálu",
     "settings.fiat.eur.title": "Euro",
+    "settings.fiatBankAccount.description":
+      "Nastavení bankovního účtu pro fiat platby",
+    "settings.fiatBankAccount.enabled.description":
+      "Vypnutý účet zůstane uložený, ale platební toky ho budou ignorovat.",
+    "settings.fiatBankAccount.enabled.label": "Povolit fiat bankovní účet",
+    "settings.fiatBankAccount.form.description":
+      "Aplikace teď používá jeden deterministický fiat bankovní účet.",
+    "settings.fiatBankAccount.form.title": "Údaje bankovního účtu",
+    "settings.fiatBankAccount.iban.description":
+      "Mezery se před uložením odstraní.",
+    "settings.fiatBankAccount.iban.invalid": "Zadejte platný IBAN.",
+    "settings.fiatBankAccount.iban.label": "IBAN",
+    "settings.fiatBankAccount.iban.required":
+      "IBAN je povinný, když je bankovní účet povolený.",
+    "settings.fiatBankAccount.save": "Uložit bankovní účet",
+    "settings.fiatBankAccount.saved": "Bankovní účet uložen.",
+    "settings.fiatBankAccount.title": "Fiat bankovní účet",
     "settings.fiat.mode.description":
       "Vyberte fiat měnu, která se použije jako výchozí při vytváření plateb.",
     "settings.fiat.mode.title": "Výchozí fiat měna",
@@ -306,10 +375,29 @@ export const resources = {
     "settings.mints.description": "Správa Cashu mintů a Lightning nastavení",
     "settings.mints.title": "Minty",
     "settings.openSource": "Jsme open source",
+    "settings.paymentAccounts.description":
+      "Nastavení bankovního, Spark a pokladního účtu",
+    "settings.paymentAccounts.title": "Platební účty",
     "settings.payments": "PLATBY",
     "settings.security": "BEZPEČNOST A SOUKROMÍ",
     "settings.security.description": "Heslo a ovládání dat",
     "settings.security.title": "Bezpečnost a soukromí",
+    "settings.sparkAccount.enabled.description":
+      "Vypnutý Spark účet zůstane uložený, ale platební toky ho budou ignorovat.",
+    "settings.sparkAccount.enabled.label": "Povolit Spark účet",
+    "settings.sparkAccount.form.description":
+      "Uložte mnemonic Spark peněženky používané pro příjem Lightning plateb.",
+    "settings.sparkAccount.form.title": "Spark účet",
+    "settings.sparkAccount.mnemonic.description":
+      "Mezery se před uložením sjednotí.",
+    "settings.sparkAccount.mnemonic.invalid":
+      "Zadejte mnemonic dlouhý maximálně 255 znaků.",
+    "settings.sparkAccount.mnemonic.label": "Mnemonic",
+    "settings.sparkAccount.mnemonic.placeholder": "abandon abandon abandon ...",
+    "settings.sparkAccount.mnemonic.required":
+      "Mnemonic je povinný, když je Spark účet povolený.",
+    "settings.sparkAccount.save": "Uložit Spark účet",
+    "settings.sparkAccount.saved": "Spark účet uložen.",
     "settings.terminal": "TERMINÁL",
     "settings.theme.description": "Přepínání mezi světlým a tmavým režimem",
     "settings.theme.dark.description": "Vždy použít tmavé rozhraní",

@@ -17,6 +17,7 @@ import { Route as TerminalActivityRouteImport } from './routes/_terminal.activit
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
+import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
 
 const TerminalRoute = TerminalRouteImport.update({
   id: '/_terminal',
@@ -57,12 +58,19 @@ const TerminalItemsEditRoute = TerminalItemsEditRouteImport.update({
   path: '/items/edit',
   getParentRoute: () => TerminalRoute,
 } as any)
+const TerminalActivityPaymentIdRoute =
+  TerminalActivityPaymentIdRouteImport.update({
+    id: '/activity_/$paymentId',
+    path: '/activity/$paymentId',
+    getParentRoute: () => TerminalRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
+  '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/': typeof TerminalSettingsIndexRoute
@@ -71,6 +79,7 @@ export interface FileRoutesByTo {
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/': typeof TerminalIndexRoute
+  '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings': typeof TerminalSettingsIndexRoute
@@ -82,6 +91,7 @@ export interface FileRoutesById {
   '/_terminal/checkout': typeof TerminalCheckoutRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
   '/_terminal/': typeof TerminalIndexRoute
+  '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/items/edit': typeof TerminalItemsEditRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
@@ -93,6 +103,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/checkout'
     | '/settings'
+    | '/activity/$paymentId'
     | '/items/edit'
     | '/settings/items'
     | '/settings/'
@@ -101,6 +112,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/checkout'
     | '/'
+    | '/activity/$paymentId'
     | '/items/edit'
     | '/settings/items'
     | '/settings'
@@ -111,6 +123,7 @@ export interface FileRouteTypes {
     | '/_terminal/checkout'
     | '/_terminal/settings'
     | '/_terminal/'
+    | '/_terminal/activity_/$paymentId'
     | '/_terminal/items/edit'
     | '/_terminal/settings/items'
     | '/_terminal/settings/'
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalItemsEditRouteImport
       parentRoute: typeof TerminalRoute
     }
+    '/_terminal/activity_/$paymentId': {
+      id: '/_terminal/activity_/$paymentId'
+      path: '/activity/$paymentId'
+      fullPath: '/activity/$paymentId'
+      preLoaderRoute: typeof TerminalActivityPaymentIdRouteImport
+      parentRoute: typeof TerminalRoute
+    }
   }
 }
 
@@ -199,6 +219,7 @@ interface TerminalRouteChildren {
   TerminalCheckoutRoute: typeof TerminalCheckoutRoute
   TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
   TerminalIndexRoute: typeof TerminalIndexRoute
+  TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
   TerminalItemsEditRoute: typeof TerminalItemsEditRoute
 }
 
@@ -207,6 +228,7 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalCheckoutRoute: TerminalCheckoutRoute,
   TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
   TerminalIndexRoute: TerminalIndexRoute,
+  TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
   TerminalItemsEditRoute: TerminalItemsEditRoute,
 }
 

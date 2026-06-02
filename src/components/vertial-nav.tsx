@@ -10,6 +10,7 @@ interface NavItem {
   label: React.ReactNode
   action?: React.ReactNode
   to?: LinkProps["to"]
+  params?: LinkProps["params"]
   icon?: React.ReactNode
   active?: boolean
   onClick?: () => void
@@ -52,6 +53,7 @@ function NavItemComponent({ item }: { item: NavItem }) {
   return (
     <Component
       to={item.to}
+      params={item.params}
       onClick={item.onClick}
       className={cn(
         "text-left",

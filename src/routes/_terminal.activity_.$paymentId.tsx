@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PaymentHistory } from "@/components/payment-history.tsx"
+import { PaymentDetail } from "@/components/payment-detail.tsx"
 import { useTranslation } from "@/i18n/use-translation.ts"
 
-export const Route = createFileRoute("/_terminal/activity")({
-  component: ActivityPage,
+export const Route = createFileRoute("/_terminal/activity_/$paymentId")({
+  component: PaymentDetailPage,
   staticData: {
     terminalLayout: {
       viewportClassName: "px-6 py-6",
@@ -13,17 +13,18 @@ export const Route = createFileRoute("/_terminal/activity")({
   },
 })
 
-function ActivityPage() {
+function PaymentDetailPage() {
   const { t } = useTranslation()
+  const { paymentId } = Route.useParams()
 
   return (
     <>
       <div className="h-6" />
-      <FadeHeader title={t("activity.title")} />
+      <FadeHeader title={t("paymentDetail.title")} />
 
-      <section className="flex flex-col gap-8">
+      <section className="pt-16">
         <Suspense fallback={null}>
-          <PaymentHistory />
+          <PaymentDetail paymentId={paymentId} />
         </Suspense>
       </section>
     </>

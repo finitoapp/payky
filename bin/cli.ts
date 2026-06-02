@@ -38,13 +38,14 @@ const main = async () => {
   await using evoluCli = await createEvoluCli()
   const { evolu } = evoluCli
   const evoluOwnerId = evolu.appOwner.id
+  const console = createConsole({
+    level: "debug",
+  })
 
-  const run = createRun({
+  await using run = createRun({
     evolu,
     evoluOwnerId,
-    console: createConsole({
-      level: "debug",
-    }),
+    console,
   })
 
   const program = createCommand()
@@ -58,6 +59,7 @@ const main = async () => {
   }
 
   await program.parseAsync(process.argv)
+  console.log("yes")
 }
 
 main()

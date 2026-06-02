@@ -3,7 +3,6 @@ import {
   type CreateSqliteDriverDep,
   createConsole,
   createConsoleStoreOutput,
-  createMessageChannel,
   createMessagePort,
   createPreparedStatementsCache,
   createSharedWorker,
@@ -13,7 +12,9 @@ import {
   Name,
   ok,
   type SqliteRow,
+  testCreateBroadcastChannel,
   testCreateLockManager,
+  testCreateMessageChannel,
   testCreateWebSocket,
 } from "@evolu/common"
 import {
@@ -23,7 +24,7 @@ import {
   type SharedWorkerOutput,
   startDbWorker,
 } from "@evolu/common/local-first"
-import { createBroadcastChannel, createRun } from "@evolu/nodejs"
+import { createRun } from "@evolu/nodejs"
 import BetterSQLite, { type Statement } from "better-sqlite3"
 import { cliEnv } from "@/core/cli/cli-env.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
@@ -105,8 +106,8 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
     createRun({
       console: createConsole({ level: "log" }),
       consoleStoreOutputEntry: consoleStoreOutput.entry,
-      createBroadcastChannel,
-      createMessageChannel,
+      createBroadcastChannel: testCreateBroadcastChannel,
+      createMessageChannel: testCreateMessageChannel,
       createMessagePort: createMessagePort,
       createWebSocket: testCreateWebSocket({ throwOnCreate: true }),
       lockManager: testCreateLockManager(),
@@ -120,7 +121,7 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
   const workerRun = disposer.use(
     createRun({
       consoleStoreOutputEntry: consoleStoreOutput.entry,
-      createBroadcastChannel,
+      createBroadcastChannel: testCreateBroadcastChannel,
       createMessagePort,
       lockManager: testCreateLockManager(),
       createSqliteDriver: () => () => ok(driver),

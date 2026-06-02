@@ -34,7 +34,7 @@ export const registerBackgroundJobsCommand =
         .description("Run all registered background jobs until shutdown.")
         .action(async () => {
           const appConsole = createConsole()
-          const run = createRun({
+          await using run = createRun({
             console: appConsole,
             evolu,
             evoluOwnerId,

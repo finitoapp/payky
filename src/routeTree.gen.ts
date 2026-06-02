@@ -15,6 +15,8 @@ import { Route as TerminalSettingsRouteImport } from './routes/_terminal.setting
 import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
+import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
+import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
@@ -48,6 +50,17 @@ const TerminalSettingsIndexRoute = TerminalSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsLanguageRoute =
+  TerminalSettingsLanguageRouteImport.update({
+    id: '/language',
+    path: '/language',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -73,6 +86,8 @@ export interface FileRoutesByFullPath {
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
+  '/settings/language': typeof TerminalSettingsLanguageRoute
+  '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/': typeof TerminalSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -82,6 +97,8 @@ export interface FileRoutesByTo {
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
+  '/settings/language': typeof TerminalSettingsLanguageRoute
+  '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings': typeof TerminalSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -94,6 +111,8 @@ export interface FileRoutesById {
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/items/edit': typeof TerminalItemsEditRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
+  '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
+  '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -106,6 +125,8 @@ export interface FileRouteTypes {
     | '/activity/$paymentId'
     | '/items/edit'
     | '/settings/items'
+    | '/settings/language'
+    | '/settings/theme'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,6 +136,8 @@ export interface FileRouteTypes {
     | '/activity/$paymentId'
     | '/items/edit'
     | '/settings/items'
+    | '/settings/language'
+    | '/settings/theme'
     | '/settings'
   id:
     | '__root__'
@@ -126,6 +149,8 @@ export interface FileRouteTypes {
     | '/_terminal/activity_/$paymentId'
     | '/_terminal/items/edit'
     | '/_terminal/settings/items'
+    | '/_terminal/settings/language'
+    | '/_terminal/settings/theme'
     | '/_terminal/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -177,6 +202,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsIndexRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/theme': {
+      id: '/_terminal/settings/theme'
+      path: '/theme'
+      fullPath: '/settings/theme'
+      preLoaderRoute: typeof TerminalSettingsThemeRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/language': {
+      id: '/_terminal/settings/language'
+      path: '/language'
+      fullPath: '/settings/language'
+      preLoaderRoute: typeof TerminalSettingsLanguageRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/items': {
       id: '/_terminal/settings/items'
       path: '/items'
@@ -203,11 +242,15 @@ declare module '@tanstack/react-router' {
 
 interface TerminalSettingsRouteChildren {
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
+  TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
+  TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
 }
 
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,
+  TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
+  TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
 }
 

@@ -3,11 +3,12 @@ import {
   ArrowDown,
   BadgeDollarSign,
   Grid2X2,
+  Info,
   Landmark,
-  Link2,
+  Languages,
   ShoppingBag,
+  SunMoon,
   WalletCards,
-  Zap,
 } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 
@@ -53,6 +54,26 @@ const terminalSettings: ReadonlyArray<SettingRow> = [
   },
 ]
 
+const generalSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: Languages,
+    title: "settings.language.title",
+    description: "settings.language.description",
+    to: "/settings/language",
+  },
+  {
+    icon: SunMoon,
+    title: "settings.theme.title",
+    description: "settings.theme.description",
+    to: "/settings/theme",
+  },
+  {
+    icon: Info,
+    title: "settings.about.title",
+    description: "settings.about.description",
+  },
+]
+
 const paymentSettings: ReadonlyArray<SettingRow> = [
   {
     icon: WalletCards,
@@ -63,21 +84,6 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     icon: ArrowDown,
     title: "settings.fiat.title",
     description: "settings.fiat.description",
-  },
-  {
-    icon: Landmark,
-    title: "settings.mints.title",
-    description: "settings.mints.description",
-  },
-  {
-    icon: Link2,
-    title: "settings.webhooks.title",
-    description: "settings.webhooks.description",
-  },
-  {
-    icon: Zap,
-    title: "settings.withdrawals.title",
-    description: "settings.withdrawals.description",
   },
 ]
 
@@ -105,6 +111,10 @@ function createSettingsNavItems(
 
 function SettingsPage() {
   const { t } = useTranslation()
+  const generalItems = useMemo(
+    () => createSettingsNavItems(generalSettings, t),
+    [t]
+  )
   const terminalItems = useMemo(
     () => createSettingsNavItems(terminalSettings, t),
     [t]
@@ -133,9 +143,14 @@ function SettingsPage() {
       <div className="h-6" />
       <FadeHeader title={t("settings.title")} />
 
-      <VerticalNav title={t("settings.terminal")} items={terminalItems} />
+      <VerticalNav
+        className={"hidden"}
+        title={t("settings.terminal")}
+        items={terminalItems}
+      />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav title={t("settings.security")} items={securityItems} />
+      <VerticalNav title={t("settings.general")} items={generalItems} />
     </>
   )
 }

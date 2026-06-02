@@ -37,6 +37,7 @@ const Header = () => {
     <header className="flex items-center justify-between">
       <Button
         variant={"ghost"}
+        className={"invisible"}
         render={<Link aria-label={t("nav.checkout")} to="/checkout" />}
       >
         <Grid2X2 className={"size-6"} strokeWidth={3} />

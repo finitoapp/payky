@@ -59,7 +59,6 @@ const main = async () => {
   }
 
   await program.parseAsync(process.argv)
-  console.log("yes")
 }
 
 main()

@@ -1,21 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
-  <title id="title">Payky honey badger coin logo — traced variant 6</title>
-  <desc id="desc">Payky app icon with a faithful traced honey badger coin mark.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 896" role="img" aria-labelledby="title desc">
+  <title id="title">Payky honey badger coin logo</title>
+  <desc id="desc">Payky app icon generated from the traced honey badger coin logo.</desc>
+  <svg x="7" y="0" width="882" height="896" viewBox="0 0 882 896">
 
   <defs>
-    <linearGradient id="appBg" x1="128" y1="72" x2="1112" y2="1182" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#20254D"/>
-      <stop offset="0.48" stop-color="#10152F"/>
-      <stop offset="1" stop-color="#060817"/>
-    </linearGradient>
-    <radialGradient id="appBgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(394 253) rotate(48) scale(848 712)">
-      <stop stop-color="#3B437D" stop-opacity="0.7"/>
-      <stop offset="0.46" stop-color="#171D41" stop-opacity="0.34"/>
-      <stop offset="1" stop-color="#050712" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="markShadow" x="0" y="0" width="1254" height="1254" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="26" stdDeviation="26" flood-color="#000000" flood-opacity="0.38"/>
-    </filter>
     <linearGradient id="paykyGold" x1="184" y1="165" x2="1066" y2="1061" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#F2C94C"/>
       <stop offset="0.52" stop-color="#D99A22"/>
@@ -31,13 +19,11 @@
     </clipPath>
   </defs>
 
-  <rect width="1254" height="1254" rx="262" fill="url(#appBg)"/>
-  <rect width="1254" height="1254" rx="262" fill="url(#appBgGlow)"/>
-  <path d="M154 169c96-77 238-114 426-108 195 6 354 66 476 180" fill="none" stroke="#6870AB" stroke-opacity="0.13" stroke-width="2"/>
+  <rect width="882" height="896" fill="transparent"/>
 
-  <!-- Coin base from traced variant -->
-  <g filter="url(#markShadow)">
-  <ellipse cx="625.0" cy="613.0" rx="441.0" ry="448.0" fill="url(#paykyGoldSoft)"/>
+  <!-- Coin base reconstructed from the generated variant -->
+  <g transform="translate(-184 -165)">
+    <ellipse cx="625.0" cy="613.0" rx="441.0" ry="448.0" fill="url(#paykyGoldSoft)"/>
 
   <!-- Faithful raster trace of the dark honey-badger symbol -->
   <g clip-path="url(#coinClip)">
@@ -48,4 +34,5 @@
     " fill="#171A1D" fill-rule="evenodd"/>
   </g>
   </g>
+  </svg>
 </svg>

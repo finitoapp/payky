@@ -52,6 +52,7 @@ const maxAmountDigits = 9
 const rateRefreshIntervalMs = 30_000
 const satsPerBtc = 100_000_000
 const fiatMinorUnits = 100
+const keypadVibrationMs = 10
 
 type KeypadKey = (typeof keypad)[number]
 type AmountDigitsAtom = PrimitiveAtom<string>
@@ -107,6 +108,10 @@ function applyKeypadPress(setAmountDigits: SetAmountDigits, key: KeypadKey) {
 
     return `${current}${key}`
   })
+}
+
+function vibrateOnKeypadPress() {
+  navigator.vibrate?.(keypadVibrationMs)
 }
 
 export function TerminalPaymentKeypad({
@@ -275,6 +280,7 @@ function Keypad({
   const setAmountDigits = useSetAtom(amountDigitsAtom)
 
   function handleKeypadPress(key: KeypadKey) {
+    vibrateOnKeypadPress()
     applyKeypadPress(setAmountDigits, key)
   }
 
@@ -339,7 +345,7 @@ function Keypad({
           variant="ghost"
           aria-label={getKeypadAriaLabel(key)}
           className="h-16 rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
-          onClick={() => handleKeypadPress(key)}
+          onPointerDown={() => handleKeypadPress(key)}
         >
           {key}
         </Button>

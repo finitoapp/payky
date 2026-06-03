@@ -6,7 +6,16 @@ import {
   useSetAtom,
   useStore,
 } from "jotai"
-import { Suspense, useEffect, useEffectEvent, useMemo, useState } from "react"
+import { LoaderCircle } from "lucide-react"
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { createFetchDep } from "@/core/deps.ts"
 import {
@@ -47,6 +56,7 @@ const fiatMinorUnits = 100
 type KeypadKey = (typeof keypad)[number]
 type AmountDigitsAtom = PrimitiveAtom<string>
 type SetAmountDigits = (value: string | ((current: string) => string)) => void
+type ChargeHandler = (money: Money) => Promise<void> | void
 
 const numericKeyboardKeys = new Set<string>([
   "0",
@@ -104,9 +114,28 @@ export function TerminalPaymentKeypad({
   onCharge,
 }: {
   readonly currency: FiatCurrency
-  readonly onCharge: (money: Money) => void
+  readonly onCharge: ChargeHandler
 }) {
   const amountDigitsAtom = useMemo(() => atom(""), [])
+  const isChargePendingRef = useRef(false)
+  const [isChargePending, setIsChargePending] = useState(false)
+
+  const handleCharge = useCallback(
+    async (money: Money) => {
+      if (isChargePendingRef.current) return
+
+      isChargePendingRef.current = true
+      setIsChargePending(true)
+
+      try {
+        await onCharge(money)
+      } finally {
+        isChargePendingRef.current = false
+        setIsChargePending(false)
+      }
+    },
+    [onCharge]
+  )
 
   return (
     <>
@@ -114,12 +143,14 @@ export function TerminalPaymentKeypad({
       <Keypad
         amountDigitsAtom={amountDigitsAtom}
         currency={currency}
-        onCharge={onCharge}
+        isChargePending={isChargePending}
+        onCharge={handleCharge}
       />
       <ChargeButton
         amountDigitsAtom={amountDigitsAtom}
         currency={currency}
-        onCharge={onCharge}
+        isChargePending={isChargePending}
+        onCharge={handleCharge}
       />
     </>
   )
@@ -128,7 +159,7 @@ export function TerminalPaymentKeypad({
 export function TerminalPaymentKeypadWithSettings({
   onCharge,
 }: {
-  readonly onCharge: (money: Money) => void
+  readonly onCharge: ChargeHandler
 }) {
   return (
     <Suspense fallback={null}>
@@ -140,7 +171,7 @@ export function TerminalPaymentKeypadWithSettings({
 function TerminalPaymentKeypadSettingsLoader({
   onCharge,
 }: {
-  readonly onCharge: (money: Money) => void
+  readonly onCharge: ChargeHandler
 }) {
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
@@ -231,11 +262,13 @@ function useYadioBtcExchangeRate(currency: FiatCurrency) {
 function Keypad({
   amountDigitsAtom,
   currency,
+  isChargePending,
   onCharge,
 }: {
   readonly amountDigitsAtom: AmountDigitsAtom
   readonly currency: FiatCurrency
-  readonly onCharge: (money: Money) => void
+  readonly isChargePending: boolean
+  readonly onCharge: ChargeHandler
 }) {
   const { t } = useTranslation()
   const store = useStore()
@@ -277,10 +310,10 @@ function Keypad({
 
     if (event.key === "Enter") {
       const amountDigits = store.get(amountDigitsAtom)
-      if (amountDigits !== "") {
-        onCharge(createMoney(amountDigits, currency))
-        event.preventDefault()
+      if (amountDigits !== "" && !isChargePending) {
+        void onCharge(createMoney(amountDigits, currency))
       }
+      event.preventDefault()
     }
   })
 
@@ -318,11 +351,13 @@ function Keypad({
 function ChargeButton({
   amountDigitsAtom,
   currency,
+  isChargePending,
   onCharge,
 }: {
   readonly amountDigitsAtom: AmountDigitsAtom
   readonly currency: FiatCurrency
-  readonly onCharge: (money: Money) => void
+  readonly isChargePending: boolean
+  readonly onCharge: ChargeHandler
 }) {
   const { t } = useTranslation()
   const amountDigits = useAtomValue(amountDigitsAtom)
@@ -330,10 +365,16 @@ function ChargeButton({
 
   return (
     <Button
+      aria-busy={isChargePending}
       className="h-14 rounded-full bg-primary-foreground/15 text-base font-bold text-foreground hover:bg-primary-foreground/20"
-      disabled={amountDigits === ""}
-      onClick={() => onCharge(money)}
+      disabled={amountDigits === "" || isChargePending}
+      onClick={() => {
+        void onCharge(money)
+      }}
     >
+      {isChargePending ? (
+        <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+      ) : null}
       {t("home.charge")}
     </Button>
   )

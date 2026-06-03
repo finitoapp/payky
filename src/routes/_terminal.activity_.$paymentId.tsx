@@ -19,7 +19,6 @@ function PaymentDetailPage() {
 
   return (
     <>
-      <div className="h-6" />
       <FadeHeader title={t("paymentDetail.title")} />
 
       <section className="pt-16">

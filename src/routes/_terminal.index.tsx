@@ -94,7 +94,7 @@ function TerminalPaymentKeypadLoader() {
     }
 
     await navigate({
-      to: "/activity/$paymentId",
+      to: "/payment/$paymentId",
       params: {
         paymentId: result.value,
       },

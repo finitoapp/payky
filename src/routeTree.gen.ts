@@ -22,6 +22,7 @@ import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.se
 import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
 import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
+import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
 import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
@@ -95,6 +96,12 @@ const TerminalSettingsAboutRoute = TerminalSettingsAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalPaymentPaymentIdRoute =
+  TerminalPaymentPaymentIdRouteImport.update({
+    id: '/payment_/$paymentId',
+    path: '/payment/$paymentId',
+    getParentRoute: () => TerminalRoute,
+  } as any)
 const TerminalItemsEditRoute = TerminalItemsEditRouteImport.update({
   id: '/items/edit',
   path: '/items/edit',
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof TerminalSettingsRouteWithChildren
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
+  '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
+  '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/items/edit': typeof TerminalItemsEditRoute
+  '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/activity/$paymentId'
     | '/items/edit'
+    | '/payment/$paymentId'
     | '/settings/about'
     | '/settings/fiat'
     | '/settings/fio-plugin'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activity/$paymentId'
     | '/items/edit'
+    | '/payment/$paymentId'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -228,6 +240,7 @@ export interface FileRouteTypes {
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
     | '/_terminal/items/edit'
+    | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
     | '/_terminal/settings/fiat'
     | '/_terminal/settings/fio-plugin'
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsAboutRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/payment_/$paymentId': {
+      id: '/_terminal/payment_/$paymentId'
+      path: '/payment/$paymentId'
+      fullPath: '/payment/$paymentId'
+      preLoaderRoute: typeof TerminalPaymentPaymentIdRouteImport
+      parentRoute: typeof TerminalRoute
+    }
     '/_terminal/items/edit': {
       id: '/_terminal/items/edit'
       path: '/items/edit'
@@ -425,6 +445,7 @@ interface TerminalRouteChildren {
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
   TerminalItemsEditRoute: typeof TerminalItemsEditRoute
+  TerminalPaymentPaymentIdRoute: typeof TerminalPaymentPaymentIdRoute
 }
 
 const TerminalRouteChildren: TerminalRouteChildren = {
@@ -434,6 +455,7 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
   TerminalItemsEditRoute: TerminalItemsEditRoute,
+  TerminalPaymentPaymentIdRoute: TerminalPaymentPaymentIdRoute,
 }
 
 const TerminalRouteWithChildren = TerminalRoute._addFileChildren(

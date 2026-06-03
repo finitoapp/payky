@@ -1,7 +1,9 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
+import { Link } from "@tanstack/react-router"
 import { ReceiptIcon } from "lucide-react"
 import { useMemo } from "react"
 import { Badge } from "@/components/ui/badge.tsx"
+import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
   CardContent,
@@ -46,6 +48,16 @@ const paymentDetailQuery = (paymentId: PaymentId) =>
       }>()
   )
 
+const paymentClaimsQuery = (paymentId: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .select(["id"])
+      .where("paymentId", "=", paymentId)
+      .where("isDeleted", "is not", sqliteTrue)
+      .limit(1)
+  )
+
 export function PaymentDetail({ paymentId }: { readonly paymentId: string }) {
   const parsedPaymentId = PaymentId.safeParse(paymentId)
 
@@ -63,7 +75,9 @@ function PaymentDetailContent({
 }) {
   const { t } = useTranslation()
   const query = useMemo(() => paymentDetailQuery(paymentId), [paymentId])
+  const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
   const { data: payments } = useEvoluQuery(query)
+  const { data: claims } = useEvoluQuery(claimsQuery)
   const payment = payments[0]
 
   if (!payment) {
@@ -74,83 +88,103 @@ function PaymentDetailContent({
     payment.canceledAt === null
       ? "paymentDetail.status.pending"
       : "paymentDetail.status.canceled"
+  const isPending = payment.canceledAt === null && claims.length === 0
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("paymentDetail.title")}</CardTitle>
-        <CardDescription>{payment.id}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-muted-foreground">
-              {t("paymentDetail.amount")}
-            </span>
-            <strong className="text-4xl font-semibold tracking-tight">
-              {formatMoney({
-                value: payment.amount,
+    <div className="flex flex-col gap-4">
+      {isPending ? (
+        <Button
+          variant="outline"
+          render={
+            <Link
+              to="/payment/$paymentId"
+              params={{ paymentId }}
+              aria-label={t("paymentDetail.backToPayment")}
+            />
+          }
+        >
+          {t("paymentDetail.backToPayment")}
+        </Button>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("paymentDetail.title")}</CardTitle>
+          <CardDescription>{payment.id}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("paymentDetail.amount")}
+              </span>
+              <strong className="text-4xl font-semibold tracking-tight">
+                {formatMoney({
+                  value: payment.amount,
+                  currency: payment.currency,
+                })}
+              </strong>
+            </div>
+            <Badge
+              variant={
+                payment.canceledAt === null ? "secondary" : "destructive"
+              }
+            >
+              {t(statusKey)}
+            </Badge>
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-col gap-3">
+            <PaymentDetailRow
+              label={t("paymentDetail.tipAmount")}
+              value={formatMoney({
+                value: payment.tipAmount,
                 currency: payment.currency,
               })}
-            </strong>
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.createdAt")}
+              value={formatDateTime(new Date(payment.createdAt))}
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.updatedAt")}
+              value={
+                payment.updatedAt === null
+                  ? t("paymentDetail.emptyValue")
+                  : formatDateTime(new Date(payment.updatedAt))
+              }
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.canceledAt")}
+              value={
+                payment.canceledAt === null
+                  ? t("paymentDetail.emptyValue")
+                  : formatDateTime(new Date(payment.canceledAt))
+              }
+            />
           </div>
-          <Badge
-            variant={payment.canceledAt === null ? "secondary" : "destructive"}
-          >
-            {t(statusKey)}
-          </Badge>
-        </div>
 
-        <Separator />
+          <Separator />
 
-        <div className="flex flex-col gap-3">
-          <PaymentDetailRow
-            label={t("paymentDetail.tipAmount")}
-            value={formatMoney({
-              value: payment.tipAmount,
-              currency: payment.currency,
-            })}
-          />
-          <PaymentDetailRow
-            label={t("paymentDetail.createdAt")}
-            value={formatDateTime(new Date(payment.createdAt))}
-          />
-          <PaymentDetailRow
-            label={t("paymentDetail.updatedAt")}
-            value={
-              payment.updatedAt === null
-                ? t("paymentDetail.emptyValue")
-                : formatDateTime(new Date(payment.updatedAt))
-            }
-          />
-          <PaymentDetailRow
-            label={t("paymentDetail.canceledAt")}
-            value={
-              payment.canceledAt === null
-                ? t("paymentDetail.emptyValue")
-                : formatDateTime(new Date(payment.canceledAt))
-            }
-          />
-        </div>
-
-        <Separator />
-
-        <div className="flex flex-col gap-3">
-          <PaymentDetailRow
-            label={t("paymentDetail.deviceId")}
-            value={payment.deviceId ?? t("paymentDetail.emptyValue")}
-          />
-          <PaymentDetailRow
-            label={t("paymentDetail.billId")}
-            value={payment.billId ?? t("paymentDetail.emptyValue")}
-          />
-          <PaymentDetailRow
-            label={t("paymentDetail.tableId")}
-            value={payment.tableId ?? t("paymentDetail.emptyValue")}
-          />
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex flex-col gap-3">
+            <PaymentDetailRow
+              label={t("paymentDetail.deviceId")}
+              value={payment.deviceId ?? t("paymentDetail.emptyValue")}
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.billId")}
+              value={payment.billId ?? t("paymentDetail.emptyValue")}
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.tableId")}
+              value={payment.tableId ?? t("paymentDetail.emptyValue")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 

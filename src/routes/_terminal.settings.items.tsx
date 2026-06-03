@@ -26,6 +26,7 @@ function ItemsPage() {
         endAddon={
           <Button
             variant={"ghost"}
+            nativeButton={false}
             render={<Link aria-label={t("items.add")} to="/items/edit" />}
           >
             <Plus className={"text-primary size-5"} strokeWidth={3} />

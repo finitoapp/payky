@@ -35,18 +35,21 @@ const Header = () => {
       <Button
         variant={"ghost"}
         className={"invisible"}
+        nativeButton={false}
         render={<Link aria-label={t("nav.checkout")} to="/checkout" />}
       >
         <Grid2X2 className={"size-6"} strokeWidth={3} />
       </Button>
       <div className="flex items-center gap-4">
         <Button
+          nativeButton={false}
           variant={"ghost"}
           render={<Link aria-label={t("nav.activity")} to="/activity" />}
         >
           <Clock3 className={"size-6"} strokeWidth={3} />
         </Button>
         <Button
+          nativeButton={false}
           variant={"ghost"}
           render={<Link aria-label={t("nav.settings")} to="/settings" />}
         >

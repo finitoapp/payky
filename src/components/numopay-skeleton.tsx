@@ -43,6 +43,7 @@ export function HeaderStartLink({
   return (
     <Button
       variant="ghost"
+      nativeButton={false}
       render={<Link aria-label={t("nav.back")} to={to} />}
     >
       <BackIcon />

@@ -1,33 +1,53 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
-import { ReceiptIcon, RotateCwIcon, XIcon } from "lucide-react"
+import { CheckIcon, ReceiptIcon, RotateCwIcon, XIcon } from "lucide-react"
 import type { FC, ReactNode } from "react"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
-import type { PaymentRow } from "@/core/modules/payment/payment.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useTranslation } from "@/i18n/use-translation.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-type PaymentHistoryStatus = "canceled" | "pending"
+type PaymentHistoryStatus = "canceled" | "paid" | "pending"
+
+interface PaymentHistoryStatusInput {
+  readonly canceledAt: number | null
+  readonly claimCount: number | string | bigint
+}
 
 const latestPaymentsQuery = createQuery((db) =>
   db
     .selectFrom("payment")
+    .leftJoin("reconciliationClaim", (join) =>
+      join
+        .onRef("reconciliationClaim.paymentId", "=", "payment.id")
+        .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+    )
     .select([
-      "id",
-      "amount",
-      "currency",
-      "tipAmount",
-      "canceledAt",
-      "createdAt",
+      "payment.id",
+      "payment.amount",
+      "payment.currency",
+      "payment.tipAmount",
+      "payment.canceledAt",
+      "payment.createdAt",
     ])
-    .where("isDeleted", "is not", sqliteTrue)
-    .where("amount", "is not", null)
-    .where("currency", "is not", null)
-    .where("tipAmount", "is not", null)
-    .where("createdAt", "is not", null)
-    .orderBy("createdAt", "desc")
+    .select((eb) =>
+      eb.fn.count<number>("reconciliationClaim.id").as("claimCount")
+    )
+    .where("payment.isDeleted", "is not", sqliteTrue)
+    .where("payment.amount", "is not", null)
+    .where("payment.currency", "is not", null)
+    .where("payment.tipAmount", "is not", null)
+    .where("payment.createdAt", "is not", null)
+    .groupBy([
+      "payment.id",
+      "payment.amount",
+      "payment.currency",
+      "payment.tipAmount",
+      "payment.canceledAt",
+      "payment.createdAt",
+    ])
+    .orderBy("payment.createdAt", "desc")
     .limit(50)
     .$narrowType<{
       amount: KyselyNotNull
@@ -39,6 +59,7 @@ const latestPaymentsQuery = createQuery((db) =>
 
 const paymentStatusData = {
   canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
+  paid: ["bg-success/10 text-success", <CheckIcon key="paid" />],
   pending: ["bg-warning/10 text-warning", <RotateCwIcon key="pending" />],
 } satisfies Record<PaymentHistoryStatus, readonly [string, ReactNode]>
 
@@ -59,8 +80,14 @@ const PaymentStatusIcon: FC<{
   )
 }
 
-const resolvePaymentStatus = (payment: Pick<PaymentRow, "canceledAt">) =>
-  payment.canceledAt === null ? "pending" : "canceled"
+const resolvePaymentStatus = (
+  payment: PaymentHistoryStatusInput
+): PaymentHistoryStatus =>
+  payment.canceledAt !== null
+    ? "canceled"
+    : Number(payment.claimCount) > 0
+      ? "paid"
+      : "pending"
 
 export const PaymentHistory = () => {
   const { t } = useTranslation()
@@ -93,6 +120,8 @@ export const PaymentHistory = () => {
           }
         }
 
+        const paymentStatus = resolvePaymentStatus(item)
+
         return {
           to: "/activity/$paymentId",
           params: {
@@ -119,16 +148,12 @@ export const PaymentHistory = () => {
           ),
           icon: (
             <div className={"p-2"}>
-              <PaymentStatusIcon paymentStatus={resolvePaymentStatus(item)} />
+              <PaymentStatusIcon paymentStatus={paymentStatus} />
             </div>
           ),
           action: (
             <span className="text-xs font-medium text-muted-foreground">
-              {t(
-                item.canceledAt === null
-                  ? "paymentHistory.status.pending"
-                  : "paymentHistory.status.canceled"
-              )}
+              {t(`paymentHistory.status.${paymentStatus}`)}
             </span>
           ),
         }

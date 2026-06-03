@@ -5,6 +5,7 @@ import type { FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { setDefaultPaymentAccount } from "@/core/modules/default-payment-account/default-payment-account-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyStringSchema,
@@ -15,6 +16,7 @@ import { createEvoluTest } from "../../evolu/cli-client"
 import {
   cancelPayment,
   createPayment,
+  createPaymentWithDefaultAccounts,
   createPreparedPayment,
   loadPayment,
   markPaymentPaidCash,
@@ -234,6 +236,78 @@ describe("payment actions", () => {
       },
     })
   }, 15_000)
+
+  test("creates a payment from default payment accounts", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        Response.json({
+          BTC: 1_500_000,
+          timestamp: 1_700_000_000,
+        }),
+      sparkWallet: {
+        create: async () => ({
+          createLightningInvoice: async () => ({
+            invoice: {
+              encodedInvoice: "lnbc200u1test",
+            },
+          }),
+        }),
+      },
+    } satisfies EvoluDep & FetchDep & SparkWalletDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    await run.orThrow(
+      setDefaultPaymentAccount({
+        accountId: cashRegisterAccountId,
+        enabled: true,
+      })
+    )
+    await run.orThrow(
+      setDefaultPaymentAccount({
+        accountId: ibanAccountId,
+        enabled: true,
+      })
+    )
+
+    const id = await run.orThrow(
+      createPaymentWithDefaultAccounts({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 12_900,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: null,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          amount: 12_900,
+          currency: "CZK",
+          cashRegister: {
+            id,
+            accountId: cashRegisterAccountId,
+          },
+          spark: null,
+          iban: {
+            id,
+            accountId: ibanAccountId,
+            variableSymbol: null,
+            czQrPayload:
+              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
+          },
+        },
+      ])
+  })
 
   test("creates a prepared payment by generating spark payment details", async () => {
     await using testEvolu = await createEvoluTest()

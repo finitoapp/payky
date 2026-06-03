@@ -13,6 +13,7 @@ import type {
   fioPlugin,
   fioPluginToken,
 } from "@/core/modules/fio-plugin/fio-plugin.ts"
+import type { FioPluginTokenId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
@@ -125,6 +126,27 @@ export const deleteFioPlugin =
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "fioPlugin",
+        {
+          id: idValue,
+          isDeleted: sqliteTrue,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(idValue)
+  }
+
+export const deleteFioPluginToken =
+  (
+    idValue: FioPluginTokenId
+  ): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "fioPluginToken",
         {
           id: idValue,
           isDeleted: sqliteTrue,

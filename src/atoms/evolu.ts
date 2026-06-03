@@ -1,4 +1,4 @@
-import { sqliteTrue } from "@evolu/common"
+import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createEvoluDeps, createRun } from "@evolu/web"
 import { generateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
@@ -88,6 +88,10 @@ export const evoluAtom = atom(async (get) => {
           id: sparkAccountId,
           mnemonic: NonEmptyString255(mnemonic),
         })
+        evolu.upsert("defaultPaymentAccount", {
+          id: sparkAccountId,
+          isDeleted: sqliteFalse,
+        })
       }
 
       const cashRegisterAccount = await evolu.loadQuery(
@@ -110,6 +114,10 @@ export const evoluAtom = atom(async (get) => {
         evolu.upsert("accountCashRegister", {
           id: cashRegisterAccountId,
           currency: FiatCurrency.CZK,
+        })
+        evolu.upsert("defaultPaymentAccount", {
+          id: cashRegisterAccountId,
+          isDeleted: sqliteFalse,
         })
       }
     }

@@ -1,6 +1,7 @@
 import { evoluJsonArrayFrom, type KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
+import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 
 export const fioPluginByIdQuery = (idValue: FioPluginId) =>
@@ -33,6 +34,24 @@ export const fioPluginTokensByPluginIdQuery = (fioPluginId: FioPluginId) =>
         token: KyselyNotNull
       }>()
   )
+
+export const fiatBankAccountFioPluginQuery = createQuery((db) =>
+  db
+    .selectFrom("fioPlugin")
+    .selectAll()
+    .where("accountId", "=", fiatBankAccountId)
+    .where("accountId", "is not", null)
+    .where("numberOfSecondsBetweenChecks", "is not", null)
+    .where("isActive", "is not", null)
+    .where("isDeleted", "is", null)
+    .orderBy("createdAt", "desc")
+    .limit(1)
+    .$narrowType<{
+      accountId: KyselyNotNull
+      numberOfSecondsBetweenChecks: KyselyNotNull
+      isActive: KyselyNotNull
+    }>()
+)
 
 export const activeFioPluginsQuery = createQuery((db) =>
   db

@@ -111,8 +111,6 @@ export const resources = {
     "settings.baskets.description":
       "Create preset names for quick basket saving",
     "settings.baskets.title": "Basket Names",
-    "settings.defaultPayment.description": "Unified",
-    "settings.defaultPayment.title": "Default Payment",
     "settings.cashRegisterAccount.enabled.description":
       "Cash payments can be attached to prepared payments when enabled.",
     "settings.cashRegisterAccount.enabled.label": "Enable cash register",
@@ -143,6 +141,40 @@ export const resources = {
     "settings.fiatBankAccount.save": "Save bank account",
     "settings.fiatBankAccount.saved": "Bank account saved.",
     "settings.fiatBankAccount.title": "Fiat Bank Account",
+    "settings.fioPlugin.active.description":
+      "When enabled, the plugin checks Fio Bank transactions for the fiat bank account.",
+    "settings.fioPlugin.active.label": "Enable Fio plugin",
+    "settings.fioPlugin.create": "Create Fio plugin",
+    "settings.fioPlugin.description":
+      "Configure Fio Bank transaction sync tokens",
+    "settings.fioPlugin.form.description":
+      "The plugin currently uses the deterministic fiat bank account.",
+    "settings.fioPlugin.form.title": "Basic settings",
+    "settings.fioPlugin.interval.description":
+      "How often the plugin should check for new transactions.",
+    "settings.fioPlugin.interval.invalid":
+      "Enter a whole number greater than zero.",
+    "settings.fioPlugin.interval.label": "Seconds between checks",
+    "settings.fioPlugin.save": "Save Fio plugin",
+    "settings.fioPlugin.saved": "Fio plugin settings saved.",
+    "settings.fioPlugin.title": "Fio Plugin",
+    "settings.fioPlugin.token.description":
+      "Leave empty to update only basic settings.",
+    "settings.fioPlugin.token.firstDescription":
+      "Add the first Fio API token to create the plugin.",
+    "settings.fioPlugin.token.invalid": "Enter a token up to 255 characters.",
+    "settings.fioPlugin.token.label": "Fio API token",
+    "settings.fioPlugin.token.required":
+      "The first token is required when creating the plugin.",
+    "settings.fioPlugin.tokens.active": "Active",
+    "settings.fioPlugin.tokens.createFirst":
+      "Create the plugin with the first API token before managing tokens.",
+    "settings.fioPlugin.tokens.description":
+      "Stored tokens are used when checking account transactions.",
+    "settings.fioPlugin.tokens.empty": "No tokens saved.",
+    "settings.fioPlugin.tokens.item": "Fio API token",
+    "settings.fioPlugin.tokens.remove": "Remove",
+    "settings.fioPlugin.tokens.title": "Tokens",
     "settings.fiat.mode.description":
       "Choose the fiat currency used by default when creating payments.",
     "settings.fiat.mode.title": "Default fiat currency",
@@ -166,6 +198,9 @@ export const resources = {
     "settings.openSource": "We are open source",
     "settings.paymentAccounts.description":
       "Configure bank, Spark, and cash register accounts",
+    "settings.paymentAccounts.default.description":
+      "New payments will automatically include this payment method.",
+    "settings.paymentAccounts.default.label": "Use by default",
     "settings.paymentAccounts.title": "Payment Accounts",
     "settings.payments": "PAYMENTS",
     "settings.security": "SECURITY & PRIVACY",
@@ -320,8 +355,6 @@ export const resources = {
     "settings.baskets.description":
       "Vytvořte předvolené názvy pro rychlé uložení košíků",
     "settings.baskets.title": "Názvy košíků",
-    "settings.defaultPayment.description": "Sjednocené",
-    "settings.defaultPayment.title": "Výchozí platba",
     "settings.cashRegisterAccount.enabled.description":
       "Když je pokladna povolená, hotovostní platby se mohou přidat k připraveným platbám.",
     "settings.cashRegisterAccount.enabled.label": "Povolit pokladnu",
@@ -353,6 +386,40 @@ export const resources = {
     "settings.fiatBankAccount.save": "Uložit bankovní účet",
     "settings.fiatBankAccount.saved": "Bankovní účet uložen.",
     "settings.fiatBankAccount.title": "Fiat bankovní účet",
+    "settings.fioPlugin.active.description":
+      "Když je plugin zapnutý, kontroluje transakce Fio banky pro fiat bankovní účet.",
+    "settings.fioPlugin.active.label": "Povolit Fio plugin",
+    "settings.fioPlugin.create": "Vytvořit Fio plugin",
+    "settings.fioPlugin.description":
+      "Nastavení tokenů pro synchronizaci transakcí z Fio banky",
+    "settings.fioPlugin.form.description":
+      "Plugin teď používá deterministický fiat bankovní účet.",
+    "settings.fioPlugin.form.title": "Základní nastavení",
+    "settings.fioPlugin.interval.description":
+      "Jak často má plugin kontrolovat nové transakce.",
+    "settings.fioPlugin.interval.invalid": "Zadejte celé číslo větší než nula.",
+    "settings.fioPlugin.interval.label": "Sekund mezi kontrolami",
+    "settings.fioPlugin.save": "Uložit Fio plugin",
+    "settings.fioPlugin.saved": "Nastavení Fio pluginu uloženo.",
+    "settings.fioPlugin.title": "Fio plugin",
+    "settings.fioPlugin.token.description":
+      "Nechte prázdné, pokud chcete uložit jen základní nastavení.",
+    "settings.fioPlugin.token.firstDescription":
+      "Přidejte první Fio API token pro vytvoření pluginu.",
+    "settings.fioPlugin.token.invalid":
+      "Zadejte token dlouhý maximálně 255 znaků.",
+    "settings.fioPlugin.token.label": "Fio API token",
+    "settings.fioPlugin.token.required":
+      "Při vytváření pluginu je první token povinný.",
+    "settings.fioPlugin.tokens.active": "Aktivní",
+    "settings.fioPlugin.tokens.createFirst":
+      "Nejdřív vytvořte plugin s prvním API tokenem, potom můžete spravovat tokeny.",
+    "settings.fioPlugin.tokens.description":
+      "Uložené tokeny se používají při kontrole transakcí účtu.",
+    "settings.fioPlugin.tokens.empty": "Nejsou uložené žádné tokeny.",
+    "settings.fioPlugin.tokens.item": "Fio API token",
+    "settings.fioPlugin.tokens.remove": "Odebrat",
+    "settings.fioPlugin.tokens.title": "Tokeny",
     "settings.fiat.mode.description":
       "Vyberte fiat měnu, která se použije jako výchozí při vytváření plateb.",
     "settings.fiat.mode.title": "Výchozí fiat měna",
@@ -377,6 +444,9 @@ export const resources = {
     "settings.openSource": "Jsme open source",
     "settings.paymentAccounts.description":
       "Nastavení bankovního, Spark a pokladního účtu",
+    "settings.paymentAccounts.default.description":
+      "Nové platby automaticky zahrnou tuto platební metodu.",
+    "settings.paymentAccounts.default.label": "Použít jako výchozí",
     "settings.paymentAccounts.title": "Platební účty",
     "settings.payments": "PLATBY",
     "settings.security": "BEZPEČNOST A SOUKROMÍ",

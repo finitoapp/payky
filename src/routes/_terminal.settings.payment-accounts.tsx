@@ -33,7 +33,14 @@ import {
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
+import {
+  cashRegisterAccountId,
+  fiatBankAccountId,
+  sparkAccountId,
+} from "@/core/modules/account/account-utils.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { setDefaultPaymentAccount } from "@/core/modules/default-payment-account/default-payment-account-actions.ts"
+import { defaultPaymentAccountByIdQuery } from "@/core/modules/default-payment-account/default-payment-account-queries.ts"
 import {
   FiatCurrency,
   IbanSchema,
@@ -80,11 +87,17 @@ function FiatBankAccountForm() {
   const evolu = useEvolu()
   const ibanInputId = useId()
   const enabledInputId = useId()
+  const defaultInputId = useId()
   const { data: accountData } = useEvoluQuery(fiatBankAccountQuery)
+  const { data: defaultAccountData } = useEvoluQuery(
+    defaultPaymentAccountByIdQuery(fiatBankAccountId)
+  )
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [account] = accountData
+  const [defaultAccount] = defaultAccountData
   const [settings] = settingsData
   const [enabled, setEnabled] = useState(false)
+  const [defaultEnabled, setDefaultEnabled] = useState(false)
   const [iban, setIban] = useState("")
   const [error, setError] = useState<TranslationKey | null>(null)
   const [saved, setSaved] = useState(false)
@@ -94,6 +107,10 @@ function FiatBankAccountForm() {
     setEnabled(account ? account.isDeleted !== 1 : false)
     setIban(account?.iban ?? "")
   }, [account])
+
+  useEffect(() => {
+    setDefaultEnabled(defaultAccount ? defaultAccount.isDeleted !== 1 : false)
+  }, [defaultAccount])
 
   return (
     <form
@@ -131,6 +148,12 @@ function FiatBankAccountForm() {
               currency: settings?.fiatCurrency ?? FiatCurrency.CZK,
             })
           )
+          await run(
+            setDefaultPaymentAccount({
+              accountId: fiatBankAccountId,
+              enabled: enabled && defaultEnabled,
+            })
+          )
 
           setIban(normalizedIban)
           setSaved(true)
@@ -161,6 +184,26 @@ function FiatBankAccountForm() {
                 </FieldLabel>
                 <FieldDescription>
                   {t("settings.fiatBankAccount.enabled.description")}
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+
+            <Field orientation="horizontal">
+              <Checkbox
+                id={defaultInputId}
+                checked={enabled && defaultEnabled}
+                disabled={pending || !enabled}
+                onCheckedChange={(checked) => {
+                  setDefaultEnabled(checked)
+                  setSaved(false)
+                }}
+              />
+              <FieldContent>
+                <FieldLabel htmlFor={defaultInputId}>
+                  {t("settings.paymentAccounts.default.label")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("settings.paymentAccounts.default.description")}
                 </FieldDescription>
               </FieldContent>
             </Field>
@@ -206,10 +249,16 @@ function SparkAccountForm() {
   const { t } = useTranslation()
   const evolu = useEvolu()
   const enabledInputId = useId()
+  const defaultInputId = useId()
   const mnemonicInputId = useId()
   const { data: accountData } = useEvoluQuery(sparkAccountQuery)
+  const { data: defaultAccountData } = useEvoluQuery(
+    defaultPaymentAccountByIdQuery(sparkAccountId)
+  )
   const [account] = accountData
+  const [defaultAccount] = defaultAccountData
   const [enabled, setEnabled] = useState(false)
+  const [defaultEnabled, setDefaultEnabled] = useState(false)
   const [mnemonic, setMnemonic] = useState("")
   const [error, setError] = useState<TranslationKey | null>(null)
   const [saved, setSaved] = useState(false)
@@ -219,6 +268,10 @@ function SparkAccountForm() {
     setEnabled(account ? account.isDeleted !== 1 : false)
     setMnemonic(account?.mnemonic ?? "")
   }, [account])
+
+  useEffect(() => {
+    setDefaultEnabled(defaultAccount ? defaultAccount.isDeleted !== 1 : false)
+  }, [defaultAccount])
 
   return (
     <form
@@ -255,6 +308,12 @@ function SparkAccountForm() {
               mnemonic: mnemonicResult?.data,
             })
           )
+          await run(
+            setDefaultPaymentAccount({
+              accountId: sparkAccountId,
+              enabled: enabled && defaultEnabled,
+            })
+          )
 
           setMnemonic(normalizedMnemonic)
           setSaved(true)
@@ -285,6 +344,26 @@ function SparkAccountForm() {
                 </FieldLabel>
                 <FieldDescription>
                   {t("settings.sparkAccount.enabled.description")}
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+
+            <Field orientation="horizontal">
+              <Checkbox
+                id={defaultInputId}
+                checked={enabled && defaultEnabled}
+                disabled={pending || !enabled}
+                onCheckedChange={(checked) => {
+                  setDefaultEnabled(checked)
+                  setSaved(false)
+                }}
+              />
+              <FieldContent>
+                <FieldLabel htmlFor={defaultInputId}>
+                  {t("settings.paymentAccounts.default.label")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("settings.paymentAccounts.default.description")}
                 </FieldDescription>
               </FieldContent>
             </Field>
@@ -330,17 +409,27 @@ function CashRegisterAccountForm() {
   const { t } = useTranslation()
   const evolu = useEvolu()
   const enabledInputId = useId()
+  const defaultInputId = useId()
   const { data: accountData } = useEvoluQuery(cashRegisterAccountQuery)
+  const { data: defaultAccountData } = useEvoluQuery(
+    defaultPaymentAccountByIdQuery(cashRegisterAccountId)
+  )
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [account] = accountData
+  const [defaultAccount] = defaultAccountData
   const [settings] = settingsData
   const [enabled, setEnabled] = useState(false)
+  const [defaultEnabled, setDefaultEnabled] = useState(false)
   const [saved, setSaved] = useState(false)
   const [pending, setPending] = useState(false)
 
   useEffect(() => {
     setEnabled(account ? account.isDeleted !== 1 : false)
   }, [account])
+
+  useEffect(() => {
+    setDefaultEnabled(defaultAccount ? defaultAccount.isDeleted !== 1 : false)
+  }, [defaultAccount])
 
   return (
     <form
@@ -358,6 +447,12 @@ function CashRegisterAccountForm() {
             saveCashRegisterAccount({
               enabled,
               currency: settings?.fiatCurrency ?? FiatCurrency.CZK,
+            })
+          )
+          await run(
+            setDefaultPaymentAccount({
+              accountId: cashRegisterAccountId,
+              enabled: enabled && defaultEnabled,
             })
           )
 
@@ -392,6 +487,25 @@ function CashRegisterAccountForm() {
                 </FieldLabel>
                 <FieldDescription>
                   {t("settings.cashRegisterAccount.enabled.description")}
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+            <Field orientation="horizontal">
+              <Checkbox
+                id={defaultInputId}
+                checked={enabled && defaultEnabled}
+                disabled={pending || !enabled}
+                onCheckedChange={(checked) => {
+                  setDefaultEnabled(checked)
+                  setSaved(false)
+                }}
+              />
+              <FieldContent>
+                <FieldLabel htmlFor={defaultInputId}>
+                  {t("settings.paymentAccounts.default.label")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("settings.paymentAccounts.default.description")}
                 </FieldDescription>
               </FieldContent>
             </Field>

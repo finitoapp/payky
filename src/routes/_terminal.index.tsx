@@ -1,4 +1,3 @@
-import { sqliteTrue } from "@evolu/common"
 import { createRun } from "@evolu/web"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useStore } from "jotai"
@@ -8,9 +7,7 @@ import { accountAtom } from "@/atoms/account.ts"
 import { TerminalPaymentKeypadWithSettings } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { createFetchDep } from "@/core/deps.ts"
-import { createQuery } from "@/core/evolu/schema.ts"
-import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
-import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
+import { createPaymentWithDefaultAccounts } from "@/core/modules/payment/payment-actions.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrencySchema,
@@ -60,27 +57,12 @@ const Header = () => {
   )
 }
 
-const activeCashRegisterAccountsQuery = createQuery((db) =>
-  db
-    .selectFrom("account")
-    .innerJoin("accountCashRegister", "accountCashRegister.id", "account.id")
-    .select(["account.id", "accountCashRegister.currency"])
-    .where("account.kind", "=", "cashRegister")
-    .where("account.isDeleted", "is not", sqliteTrue)
-    .where("accountCashRegister.isDeleted", "is not", sqliteTrue)
-    .where("accountCashRegister.currency", "is not", null)
-)
-
 function TerminalPaymentKeypadLoader() {
   const evolu = useEvolu()
   const navigate = useNavigate()
   const jotaiStore = useStore()
 
   const handleCharge = async (money: Money) => {
-    const [sparkAccount] = await evolu.loadQuery(activeSparkAccountsQuery)
-    const [cashRegisterAccount] = await evolu.loadQuery(
-      activeCashRegisterAccountsQuery
-    )
     const { device } = await jotaiStore.get(accountAtom)
 
     await using run = createRun({
@@ -94,7 +76,7 @@ function TerminalPaymentKeypadLoader() {
     const currency = FiatCurrencySchema.parse(money.currency)
 
     const result = await run(
-      createPreparedPayment({
+      createPaymentWithDefaultAccounts({
         deviceId: device.id,
         billId: null,
         tableId: null,
@@ -102,19 +84,7 @@ function TerminalPaymentKeypadLoader() {
         currency,
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
-        cashRegister:
-          cashRegisterAccount?.currency === currency
-            ? {
-                accountId: cashRegisterAccount.id,
-              }
-            : undefined,
-        spark:
-          sparkAccount === undefined
-            ? undefined
-            : {
-                accountId: sparkAccount.id,
-                memo: `Payment ${amount} ${currency}`,
-              },
+        sparkMemo: `Payment ${amount} ${currency}`,
       })
     )
 

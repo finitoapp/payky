@@ -14,6 +14,7 @@ import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createFioPlugin,
   deleteFioPlugin,
+  deleteFioPluginToken,
   loadFioPlugin,
   updateFioPlugin,
 } from "./fio-plugin-actions.ts"
@@ -277,5 +278,61 @@ describe("fio plugin actions", () => {
       ok: true,
       value: id,
     })
+  }, 15_000)
+
+  test("soft deletes one FIO plugin token", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(deps)
+
+    const idResult = await run(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: 300,
+        isActive: sqliteTrue,
+        token: "fio-token-1",
+      })
+    )
+    expect(idResult.ok).toBe(true)
+    if (!idResult.ok) return
+
+    const id = idResult.value
+    await run.orThrow(
+      updateFioPlugin({
+        id,
+        token: "fio-token-2",
+      })
+    )
+
+    const [plugin] = await evolu.loadQuery(fioPluginWithTokensByIdQuery(id))
+    const tokenToDelete = plugin?.tokens.at(0)
+    expect(tokenToDelete).toBeDefined()
+    if (!tokenToDelete) return
+
+    await expect(run(deleteFioPluginToken(tokenToDelete.id))).resolves.toEqual({
+      ok: true,
+      value: tokenToDelete.id,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginWithTokensByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          isDeleted: null,
+          tokens: [
+            {
+              token: "fio-token-1",
+              isDeleted: sqliteTrue,
+            },
+            {
+              token: "fio-token-2",
+              isDeleted: null,
+            },
+          ],
+        },
+      ])
   }, 15_000)
 })

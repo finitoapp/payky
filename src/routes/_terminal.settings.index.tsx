@@ -6,9 +6,9 @@ import {
   Info,
   Landmark,
   Languages,
+  Plug,
   ShoppingBag,
   SunMoon,
-  WalletCards,
 } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 
@@ -77,11 +77,6 @@ const generalSettings: ReadonlyArray<SettingRow> = [
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
   {
-    icon: WalletCards,
-    title: "settings.defaultPayment.title",
-    description: "settings.defaultPayment.description",
-  },
-  {
     icon: ArrowDown,
     title: "settings.fiat.title",
     description: "settings.fiat.description",
@@ -92,6 +87,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.paymentAccounts.title",
     description: "settings.paymentAccounts.description",
     to: "/settings/payment-accounts",
+  },
+  {
+    icon: Plug,
+    title: "settings.fioPlugin.title",
+    description: "settings.fioPlugin.description",
+    to: "/settings/fio-plugin",
   },
 ]
 

@@ -7,6 +7,7 @@ import {
   useStore,
 } from "jotai"
 import { LoaderCircle } from "lucide-react"
+import { motion, useAnimationControls, useReducedMotion } from "motion/react"
 import {
   Suspense,
   useCallback,
@@ -54,6 +55,16 @@ const rateRefreshIntervalMs = 30_000
 const satsPerBtc = 100_000_000
 const fiatMinorUnits = 100
 const keypadVibrationMs = 10
+const MotionButton = motion.create(Button)
+const keypadButtonPressAnimation = {
+  scale: [1, 0.92, 1.08, 1],
+  y: [0, 4, -12, 0],
+}
+const amountChangeAnimation = {
+  opacity: [0.92, 1],
+  scale: [1.004, 1],
+  y: [3, 0],
+}
 
 type KeypadKey = (typeof keypad)[number]
 type AmountDigitsAtom = PrimitiveAtom<string>
@@ -111,7 +122,7 @@ function applyKeypadPress(setAmountDigits: SetAmountDigits, key: KeypadKey) {
   })
 }
 
-function vibrateOnKeypadPress() {
+function vibrateOnTerminalButtonPress() {
   navigator.vibrate?.(keypadVibrationMs)
 }
 
@@ -200,8 +211,12 @@ function AmountDisplay({
   const amountDigits = useAtomValue(amountDigitsAtom)
   const exchangeRateQuote = useYadioBtcExchangeRate(currency)
   const locale = useLocale()
+  const amountAnimationControls = useAnimationControls()
+  const lastAnimatedAmountRef = useRef<string | null>(null)
+  const shouldReduceMotion = useReducedMotion()
 
   const money = createMoney(amountDigits, currency)
+  const formattedMoney = formatMoney(money, locale)
   const btcMoney =
     exchangeRateQuote === null && money.value !== 0
       ? null
@@ -213,11 +228,26 @@ function AmountDisplay({
           ),
         }
 
+  useEffect(() => {
+    if (shouldReduceMotion) return
+    if (lastAnimatedAmountRef.current === formattedMoney) return
+
+    lastAnimatedAmountRef.current = formattedMoney
+
+    void amountAnimationControls.start({
+      ...amountChangeAnimation,
+      transition: { type: "spring", stiffness: 220, damping: 24, mass: 0.6 },
+    })
+  }, [amountAnimationControls, formattedMoney, shouldReduceMotion])
+
   return (
     <section className="flex flex-col items-center gap-5 text-center">
-      <h1 className="text-6xl font-semibold tracking-normal tabular-nums">
-        {formatMoney(money, locale)}
-      </h1>
+      <motion.h1
+        className="text-6xl font-semibold tracking-normal tabular-nums"
+        animate={amountAnimationControls}
+      >
+        {formattedMoney}
+      </motion.h1>
       <p className="text-xl text-foreground/80">
         {btcMoney === null ? "\u00A0" : formatMoney(btcMoney, locale)}
       </p>
@@ -282,7 +312,7 @@ function Keypad({
   const setAmountDigits = useSetAtom(amountDigitsAtom)
 
   function handleKeypadPress(key: KeypadKey) {
-    vibrateOnKeypadPress()
+    vibrateOnTerminalButtonPress()
     applyKeypadPress(setAmountDigits, key)
   }
 
@@ -342,17 +372,52 @@ function Keypad({
   return (
     <section className="grid grid-cols-3 gap-x-12 gap-y-6 px-8">
       {keypad.map((key) => (
-        <Button
+        <KeypadButton
           key={key}
-          variant="ghost"
           aria-label={getKeypadAriaLabel(key)}
-          className="h-16 rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
-          onPointerDown={() => handleKeypadPress(key)}
+          keypadKey={key}
+          onPress={handleKeypadPress}
         >
           {key}
-        </Button>
+        </KeypadButton>
       ))}
     </section>
+  )
+}
+
+function KeypadButton({
+  "aria-label": ariaLabel,
+  children,
+  keypadKey,
+  onPress,
+}: {
+  readonly "aria-label": string
+  readonly children: KeypadKey
+  readonly keypadKey: KeypadKey
+  readonly onPress: (key: KeypadKey) => void
+}) {
+  const buttonAnimationControls = useAnimationControls()
+  const shouldReduceMotion = useReducedMotion()
+
+  return (
+    <MotionButton
+      variant="ghost"
+      aria-label={ariaLabel}
+      className="h-16 rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
+      animate={buttonAnimationControls}
+      onPointerDown={() => {
+        if (!shouldReduceMotion) {
+          void buttonAnimationControls.start({
+            ...keypadButtonPressAnimation,
+            transition: { duration: 0.28, ease: "easeOut" },
+          })
+        }
+
+        onPress(keypadKey)
+      }}
+    >
+      {children}
+    </MotionButton>
   )
 }
 
@@ -378,6 +443,7 @@ function ChargeButton({
       className="h-14 rounded-full text-base font-bold"
       disabled={amountDigits === "" || isChargePending}
       onClick={() => {
+        vibrateOnTerminalButtonPress()
         void onCharge(money)
       }}
     >

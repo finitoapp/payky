@@ -40,6 +40,7 @@
     "date-fns": "4.4.0",
     "jotai": "2.20.0",
     "lucide-react": "1.17.0",
+    "motion": "12.40.0",
     "navigator.locks": "0.8.8",
     "next-themes": "0.4.6",
     "qrcode.react": "4.2.0",

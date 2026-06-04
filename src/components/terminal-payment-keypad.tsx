@@ -312,11 +312,15 @@ function Keypad({
   const setAmountDigits = useSetAtom(amountDigitsAtom)
 
   function handleKeypadPress(key: KeypadKey) {
+    if (isChargePending) return
+
     vibrateOnTerminalButtonPress()
     applyKeypadPress(setAmountDigits, key)
   }
 
   const handleKeydown = useEffectEvent((event: KeyboardEvent) => {
+    if (isChargePending) return
+
     const target = event.target
     if (
       target instanceof HTMLElement &&
@@ -375,6 +379,7 @@ function Keypad({
         <KeypadButton
           key={key}
           aria-label={getKeypadAriaLabel(key)}
+          disabled={isChargePending}
           keypadKey={key}
           onPress={handleKeypadPress}
         >
@@ -388,11 +393,13 @@ function Keypad({
 function KeypadButton({
   "aria-label": ariaLabel,
   children,
+  disabled,
   keypadKey,
   onPress,
 }: {
   readonly "aria-label": string
   readonly children: KeypadKey
+  readonly disabled: boolean
   readonly keypadKey: KeypadKey
   readonly onPress: (key: KeypadKey) => void
 }) {
@@ -405,7 +412,10 @@ function KeypadButton({
       aria-label={ariaLabel}
       className="h-16 rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
       animate={buttonAnimationControls}
+      disabled={disabled}
       onPointerDown={() => {
+        if (disabled) return
+
         if (!shouldReduceMotion) {
           void buttonAnimationControls.start({
             ...keypadButtonPressAnimation,

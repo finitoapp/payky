@@ -4,7 +4,7 @@ import { ChevronRight, Image, Plus, Trash2 } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/items")({
   component: ItemsPage,

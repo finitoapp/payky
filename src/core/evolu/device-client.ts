@@ -2,6 +2,7 @@ import {
   AppName,
   type Evolu as BaseEvolu,
   createEvolu,
+  createIdFromString,
   createQueryBuilder,
   id,
   Mnemonic,
@@ -11,6 +12,7 @@ import { createEvoluDeps, createRun } from "@evolu/web"
 import { z } from "zod"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
+  type InferTable,
   NonEmptyString255Schema,
   SqliteBoolSchema,
   TimestampMsSchema,
@@ -28,7 +30,30 @@ export const AccountEvoluTransportId = standardSchemaToZod(
 )
 export type AccountEvoluTransportId = typeof AccountEvoluTransportIdRaw.Type
 
-const DeviceSchema = {
+export const DeviceSettingsIdRaw = id("DeviceSettings")
+export const DeviceSettingsId = standardSchemaToZod(DeviceSettingsIdRaw)
+export type DeviceSettingsId = typeof DeviceSettingsIdRaw.Type
+
+export const deviceSettingsId = createIdFromString<"DeviceSettings">(
+  "payky-device-settings"
+)
+
+const DeviceLanguageSchema = z.enum(["en", "cs"])
+const DeviceThemeSchema = z.enum(["system", "light", "dark"])
+const DeviceLocaleSchema = z.enum(["cs-CZ", "en-US"])
+
+export type DeviceLanguage = z.output<typeof DeviceLanguageSchema>
+export type DeviceTheme = z.output<typeof DeviceThemeSchema>
+export type DeviceLocale = z.output<typeof DeviceLocaleSchema>
+
+export interface DeviceSettings {
+  readonly id: DeviceSettingsId
+  readonly language: DeviceLanguage
+  readonly theme: DeviceTheme
+  readonly locale: DeviceLocale
+}
+
+const deviceEvoluSchema = {
   account: {
     id: AccountId,
     name: NonEmptyString255Schema,
@@ -53,14 +78,41 @@ const DeviceSchema = {
     browserName: z.string().nullable(),
     osName: z.string().nullable(),
   },
+  deviceSettings: {
+    id: DeviceSettingsId,
+    language: DeviceLanguageSchema.nullable(),
+    theme: DeviceThemeSchema.nullable(),
+    locale: DeviceLocaleSchema.nullable(),
+  },
 } as const
 
-export const createDeviceQuery = createQueryBuilder(DeviceSchema)
+export type DeviceSettingsRow = InferTable<
+  (typeof deviceEvoluSchema)["deviceSettings"]
+>
+
+export function getDeviceLocaleForLanguage(
+  language: DeviceLanguage
+): DeviceLocale {
+  return language === "cs" ? "cs-CZ" : "en-US"
+}
+
+export function createDefaultDeviceSettings(
+  language: DeviceLanguage = "en"
+): DeviceSettings {
+  return {
+    id: deviceSettingsId,
+    language,
+    theme: "system",
+    locale: getDeviceLocaleForLanguage(language),
+  }
+}
+
+export const createDeviceQuery = createQueryBuilder(deviceEvoluSchema)
 
 export const createDeviceEvolu = async () => {
   const run = createRun(createEvoluDeps())
   const evolu = await run.orThrow(
-    createEvolu(DeviceSchema, {
+    createEvolu(deviceEvoluSchema, {
       appName: AppName.orThrow("PaykyDevice"),
       appOwner: testAppOwner,
       transports: [], // Disable syncing for now
@@ -71,5 +123,5 @@ export const createDeviceEvolu = async () => {
   return evolu
 }
 
-export type DeviceEvoluSchema = typeof DeviceSchema
+export type DeviceEvoluSchema = typeof deviceEvoluSchema
 export type DeviceEvolu = BaseEvolu<DeviceEvoluSchema>

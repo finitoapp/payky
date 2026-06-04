@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card.tsx"
 import { Field } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/checkout")({
   component: CheckoutPage,

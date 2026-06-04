@@ -13,15 +13,11 @@ export const settingsQuery = createQuery((db) =>
     .where("presetTipPercentagesJson", "is not", null)
     .where("presetTipFixedAmountsJson", "is not", null)
     .where("paymentMethodOrderJson", "is not", null)
-    .where("language", "is not", null)
-    .where("theme", "is not", null)
     .$narrowType<{
       fiatCurrency: KyselyNotNull
       tipsEnabled: KyselyNotNull
       presetTipPercentagesJson: KyselyNotNull
       presetTipFixedAmountsJson: KyselyNotNull
       paymentMethodOrderJson: KyselyNotNull
-      language: KyselyNotNull
-      theme: KyselyNotNull
     }>()
 )

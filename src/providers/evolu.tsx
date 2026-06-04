@@ -1,7 +1,6 @@
 import { createEvoluBinding } from "@evolu/react"
 import type { PropsWithChildren } from "react"
 
-import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { AppSchema, type Evolu } from "@/core/evolu/schema.ts"
 
 export const {
@@ -18,9 +17,5 @@ interface AppProvidersProps extends PropsWithChildren {
 }
 
 export function AppProviders({ children, evolu }: AppProvidersProps) {
-  return (
-    <EvoluContext value={evolu}>
-      <ThemeProvider>{children}</ThemeProvider>
-    </EvoluContext>
-  )
+  return <EvoluContext value={evolu}>{children}</EvoluContext>
 }

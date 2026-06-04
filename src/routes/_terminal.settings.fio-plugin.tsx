@@ -43,8 +43,8 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { useTranslation } from "@/i18n/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/fio-plugin")({
   component: FioPluginSettingsPage,

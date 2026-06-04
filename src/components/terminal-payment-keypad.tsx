@@ -30,7 +30,7 @@ import {
   Integer,
 } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
 const keypad = [

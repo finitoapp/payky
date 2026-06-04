@@ -22,11 +22,11 @@ import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
 
 const getDeviceId = () => {
-  const id = (localStorage.getItem("finito.deviceId") ??
+  const id = (localStorage.getItem("payky.deviceId") ??
     createId({
       randomBytes: createRandomBytes(),
     })) as DeviceId
-  localStorage.setItem("finito.deviceId", id)
+  localStorage.setItem("payky.deviceId", id)
 
   return id
 }

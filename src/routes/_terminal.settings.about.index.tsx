@@ -4,8 +4,8 @@ import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { useTranslation } from "@/i18n/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/about/")({
   component: AboutPage,

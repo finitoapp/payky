@@ -4,7 +4,7 @@ import type * as React from "react"
 import type { ComponentProps } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import type { VerticalNav } from "@/components/vertial-nav.tsx"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 
 export type VerticalNavItem = ComponentProps<

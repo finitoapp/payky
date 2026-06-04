@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/items/edit")({
   component: EditItemPage,

@@ -14,8 +14,6 @@ export const appSettings = {
   presetTipPercentagesJson: z.string(),
   presetTipFixedAmountsJson: z.string(),
   paymentMethodOrderJson: z.string(),
-  language: z.enum(["en", "cs"]),
-  theme: z.enum(["system", "light", "dark"]),
 } as const
 
 export type AppSettingsRow = InferTable<typeof appSettings>

@@ -10,8 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { useTranslation } from "@/i18n/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/theme")({
   component: ThemePage,

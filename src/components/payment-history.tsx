@@ -4,7 +4,7 @@ import type { FC, ReactNode } from "react"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

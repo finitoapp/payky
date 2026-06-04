@@ -9,8 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import {
+  useTranslation,
+  useTranslationForLanguage,
+} from "@/hooks/use-translation.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
-import { useTranslation } from "@/i18n/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/language")({
   component: LanguagePage,
@@ -41,7 +44,8 @@ const languageOptions: ReadonlyArray<LanguageOption> = [
 ]
 
 function LanguagePage() {
-  const { language, setLanguage, t } = useTranslation()
+  const { language, t } = useTranslation()
+  const setLanguage = useTranslationForLanguage()
 
   return (
     <>

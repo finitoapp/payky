@@ -15,7 +15,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
-import { useTranslation } from "@/i18n/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/")({
   component: TerminalHomePage,

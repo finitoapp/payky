@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import basicSsl from "@vitejs/plugin-basic-ssl"
 import react from "@vitejs/plugin-react"
+import { VitePWA } from "vite-plugin-pwa"
 import { defineConfig } from "vitest/config"
 
 function getAppVersion(): string {
@@ -30,6 +31,17 @@ export default defineConfig({
     }),
     react(),
     tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      manifest: false,
+      workbox: {
+        cleanupOutdatedCaches: true,
+        globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        navigateFallback: "/index.html",
+      },
+    }),
   ],
   resolve: {
     alias: {

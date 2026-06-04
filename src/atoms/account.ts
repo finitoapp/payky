@@ -119,7 +119,7 @@ const createRandomAccountName = () =>
 const insertAccount = (
   deviceEvolu: DeviceEvolu,
   mnemonic: Mnemonic,
-  accountName: string | undefined
+  accountName?: string | undefined
 ) => {
   const name = accountName
     ? NonEmptyString255(accountName)
@@ -155,64 +155,18 @@ const insertAccount = (
   }
 }
 
-export const createDefaultAccountName = () => createRandomAccountName()
-
-export const activateOrCreateAccountWithMnemonic = async (
-  deviceEvolu: DeviceEvolu,
-  mnemonic: Mnemonic,
-  options?: {
-    accountName?: string
-  }
-) => {
-  const existingAccount = await deviceEvolu.loadQuery(
-    createDeviceQuery((db) =>
-      db
-        .selectFrom("account")
-        .select(["account.id as id"])
-        .where("account.isDeleted", "is not", sqliteTrue)
-        .where("account.mnemonic", "=", mnemonic)
-        .limit(1)
-    )
-  )
-
-  const account = existingAccount[0]
-  if (account !== undefined) {
-    deviceEvolu.update("account", {
-      id: account.id,
-      lastUseAt: Date.now(),
-    })
-
-    return loadActiveAccountRow(deviceEvolu)
-  }
-
-  return insertAccount(deviceEvolu, mnemonic, options?.accountName)
-}
-
 const activeAccountRowAtom = atom(async (get) => {
   get(evoluCounterAtom) // We want to reload evolu when counter is increased
   const deviceEvolu = await get(deviceEvoluAtom)
   const activeAccountRow = await loadActiveAccountRow(deviceEvolu)
 
-  if (activeAccountRow !== null) {
-    return activeAccountRow
-  }
-
-  return activateOrCreateAccountWithMnemonic(
-    deviceEvolu,
-    createAccountMnemonic()
-  )
+  return activeAccountRow ?? insertAccount(deviceEvolu, createAccountMnemonic())
 })
 
 async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {
   const data = await deviceEvolu.loadQuery(activeAccountQuery)
   return data[0] ?? null
 }
-
-export const hasDeviceAccountAtom = atom(async (get) => {
-  const activeAccount = await get(activeAccountRowAtom)
-
-  return activeAccount !== null
-})
 
 export const accountAtom = atom(async (get) => {
   const deviceEvolu = await get(deviceEvoluAtom)

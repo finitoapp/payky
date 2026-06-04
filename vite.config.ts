@@ -36,6 +36,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    exclude: [
+      "@evolu/web",
+      "@evolu/react-web",
+      "@evolu/react",
+      "@evolu/common",
+    ],
+  },
   test: {
     coverage: {
       provider: "v8",

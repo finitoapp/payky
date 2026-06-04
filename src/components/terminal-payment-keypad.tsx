@@ -373,8 +373,9 @@ function ChargeButton({
 
   return (
     <Button
+      variant="outline"
       aria-busy={isChargePending}
-      className="h-14 rounded-full bg-primary-foreground/15 text-base font-bold text-foreground hover:bg-primary-foreground/20"
+      className="h-14 rounded-full text-base font-bold"
       disabled={amountDigits === "" || isChargePending}
       onClick={() => {
         void onCharge(money)
@@ -383,7 +384,7 @@ function ChargeButton({
       {isChargePending ? (
         <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
       ) : null}
-      {t("home.charge")}
+      {t("home.pay")}
     </Button>
   )
 }

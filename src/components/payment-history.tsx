@@ -145,7 +145,7 @@ export const PaymentHistory = () => {
                   </span>
                   &nbsp;&nbsp;•&nbsp;&nbsp;
                   <span className={"text-muted-foreground"}>
-                    {formatDateTime(new Date(item.createdAt))}
+                    {formatDateTime(new Date(item.createdAt), locale)}
                   </span>
                 </div>
               </div>

@@ -46,18 +46,18 @@ export function formatPostalCode(postalCode: string) {
   return postalCode.replace(/(.{3})/g, "$1\u00A0")
 }
 
-export const formatDate = (value: Date) =>
-  value.toLocaleDateString(undefined, {
+export const formatDate = (value: Date, locale: string = "en-US") =>
+  value.toLocaleDateString(locale, {
     dateStyle: "medium",
   })
 
-export const formatTime = (value: Date) =>
-  value.toLocaleTimeString(undefined, {
+export const formatTime = (value: Date, locale: string = "en-US") =>
+  value.toLocaleTimeString(locale, {
     timeStyle: "short",
   })
 
-export const formatDateTime = (value: Date) =>
-  value.toLocaleString(undefined, {
+export const formatDateTime = (value: Date, locale: string = "en-US") =>
+  value.toLocaleString(locale, {
     timeStyle: "short",
     dateStyle: "medium",
   })

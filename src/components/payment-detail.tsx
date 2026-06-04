@@ -256,14 +256,14 @@ function PaymentDetailContent({
             />
             <PaymentDetailRow
               label={t("paymentDetail.createdAt")}
-              value={formatDateTime(new Date(payment.createdAt))}
+              value={formatDateTime(new Date(payment.createdAt), locale)}
             />
             <PaymentDetailRow
               label={t("paymentDetail.updatedAt")}
               value={
                 payment.updatedAt === null
                   ? t("paymentDetail.emptyValue")
-                  : formatDateTime(new Date(payment.updatedAt))
+                  : formatDateTime(new Date(payment.updatedAt), locale)
               }
             />
             <PaymentDetailRow
@@ -271,7 +271,7 @@ function PaymentDetailContent({
               value={
                 payment.canceledAt === null
                   ? t("paymentDetail.emptyValue")
-                  : formatDateTime(new Date(payment.canceledAt))
+                  : formatDateTime(new Date(payment.canceledAt), locale)
               }
             />
             <PaymentDetailRow
@@ -330,7 +330,10 @@ function PaymentDetailContent({
                 <div className="flex flex-col gap-2">
                   <PaymentDetailRow
                     label={t("paymentDetail.reconciliation.claimedAt")}
-                    value={formatDateTime(new Date(reconciliation.claimedAt))}
+                    value={formatDateTime(
+                      new Date(reconciliation.claimedAt),
+                      locale
+                    )}
                   />
                   <PaymentDetailRow
                     label={t("paymentDetail.transaction.id")}
@@ -360,7 +363,8 @@ function PaymentDetailContent({
                   <PaymentDetailRow
                     label={t("paymentDetail.transaction.occurredAt")}
                     value={formatDateTime(
-                      new Date(reconciliation.transactionOccurredAt)
+                      new Date(reconciliation.transactionOccurredAt),
+                      locale
                     )}
                   />
                   <PaymentDetailRow
@@ -369,7 +373,8 @@ function PaymentDetailContent({
                       reconciliation.transactionRecordedAt === null
                         ? t("paymentDetail.emptyValue")
                         : formatDateTime(
-                            new Date(reconciliation.transactionRecordedAt)
+                            new Date(reconciliation.transactionRecordedAt),
+                            locale
                           )
                     }
                   />

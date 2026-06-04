@@ -9,7 +9,14 @@ import {
   ZapIcon,
 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
-import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react"
+import {
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -20,9 +27,15 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
+import { createFetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
-import { markPaymentPaidCash } from "@/core/modules/payment/payment-actions.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
+import {
+  markPaymentPaidCash,
+  preparePaymentMethod,
+} from "@/core/modules/payment/payment-actions.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -32,9 +45,12 @@ import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 type PaymentMethodTab = "spark" | "iban" | "cash"
+type PaymentMethodKind = "spark" | "iban" | "cashRegister"
 
 interface PaymentMethodOption {
   readonly id: PaymentMethodTab
+  readonly kind: PaymentMethodKind
+  readonly accountId: AccountId
   readonly label: string
   readonly qrPayload: string | null
   readonly icon: ReactNode
@@ -102,6 +118,41 @@ const paymentClaimsQuery = (paymentId: PaymentId) =>
       .limit(1)
   )
 
+const enabledPaymentMethodAccountsQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .leftJoin("accountSpark", (join) =>
+      join
+        .onRef("accountSpark.id", "=", "account.id")
+        .on("accountSpark.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("accountIban", (join) =>
+      join
+        .onRef("accountIban.id", "=", "account.id")
+        .on("accountIban.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("accountCashRegister", (join) =>
+      join
+        .onRef("accountCashRegister.id", "=", "account.id")
+        .on("accountCashRegister.isDeleted", "is not", sqliteTrue)
+    )
+    .select([
+      "account.id",
+      "account.kind",
+      "accountSpark.mnemonic as sparkMnemonic",
+      "accountIban.iban",
+      "accountIban.currency as ibanCurrency",
+      "accountCashRegister.currency as cashRegisterCurrency",
+    ])
+    .where("account.isDeleted", "is not", sqliteTrue)
+    .where("account.id", "is not", null)
+    .where("account.kind", "is not", null)
+    .$narrowType<{
+      id: KyselyNotNull
+      kind: KyselyNotNull
+    }>()
+)
+
 function PaymentWaitingPage() {
   const { paymentId } = Route.useParams()
 
@@ -138,42 +189,76 @@ function PaymentWaitingRequest({
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
+  const [preparePaymentErrorKey, setPreparePaymentErrorKey] =
+    useState<TranslationKey | null>(null)
+  const [preparingPaymentMethod, setPreparingPaymentMethod] =
+    useState<PaymentMethodTab | null>(null)
   const [successVisible, setSuccessVisible] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodTab>("spark")
+  const preparePaymentMethodKeysRef = useRef(new Set<string>())
   const query = useMemo(() => paymentRequestQuery(paymentId), [paymentId])
   const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
   const { data: payments } = useEvoluQuery(query)
   const { data: claims } = useEvoluQuery(claimsQuery)
+  const { data: enabledPaymentMethodAccounts } = useEvoluQuery(
+    enabledPaymentMethodAccountsQuery
+  )
   const payment = payments[0]
   const isPaid = claims.length > 0
-  const cashPaymentMethod: PaymentMethodOption = {
-    id: "cash",
-    label: t("paymentWait.method.cash"),
-    qrPayload: null,
-    icon: <BanknoteIcon />,
-  }
   const paymentMethods: PaymentMethodOption[] = []
-  if (payment?.lnInvoice) {
+
+  const enabledSparkAccount = enabledPaymentMethodAccounts.find(
+    (account) => account.kind === "spark" && account.sparkMnemonic !== null
+  )
+  if (enabledSparkAccount) {
     paymentMethods.push({
       id: "spark",
+      kind: "spark",
+      accountId: enabledSparkAccount.id,
       label: t("paymentWait.method.lightning"),
-      qrPayload: payment.lnInvoice,
+      qrPayload: payment?.lnInvoice ?? null,
       icon: <ZapIcon />,
     })
   }
-  if (payment?.czQrPayload) {
+
+  const enabledIbanAccount = enabledPaymentMethodAccounts.find(
+    (account) =>
+      account.kind === "iban" &&
+      account.iban !== null &&
+      account.ibanCurrency === payment?.currency
+  )
+  if (enabledIbanAccount) {
     paymentMethods.push({
       id: "iban",
+      kind: "iban",
+      accountId: enabledIbanAccount.id,
       label: t("paymentWait.method.iban"),
-      qrPayload: payment.czQrPayload,
+      qrPayload: payment?.czQrPayload ?? null,
       icon: <LandmarkIcon />,
     })
   }
-  paymentMethods.push(cashPaymentMethod)
+
+  const enabledCashRegisterAccount = enabledPaymentMethodAccounts.find(
+    (account) =>
+      account.kind === "cashRegister" &&
+      account.cashRegisterCurrency === payment?.currency
+  )
+  if (enabledCashRegisterAccount) {
+    paymentMethods.push({
+      id: "cash",
+      kind: "cashRegister",
+      accountId: enabledCashRegisterAccount.id,
+      label: t("paymentWait.method.cash"),
+      qrPayload: null,
+      icon: <BanknoteIcon />,
+    })
+  }
+
   const activePaymentMethod =
     paymentMethods.find((method) => method.id === selectedPaymentMethod) ??
-    cashPaymentMethod
+    paymentMethods[0] ??
+    null
 
   useEffect(() => {
     if (!isPaid || successVisible) return
@@ -182,10 +267,75 @@ function PaymentWaitingRequest({
   }, [isPaid, successVisible])
 
   useEffect(() => {
-    if (activePaymentMethod.id === selectedPaymentMethod) return
+    if (
+      activePaymentMethod === null ||
+      activePaymentMethod.id === selectedPaymentMethod
+    ) {
+      return
+    }
 
     setSelectedPaymentMethod(activePaymentMethod.id)
-  }, [activePaymentMethod.id, selectedPaymentMethod])
+  }, [activePaymentMethod, selectedPaymentMethod])
+
+  useEffect(() => {
+    if (
+      payment === undefined ||
+      activePaymentMethod === null ||
+      preparingPaymentMethod !== null ||
+      isPaid
+    ) {
+      return
+    }
+
+    const isPrepared =
+      (activePaymentMethod.id === "spark" && payment.lnInvoice !== null) ||
+      (activePaymentMethod.id === "iban" && payment.czQrPayload !== null) ||
+      (activePaymentMethod.id === "cash" &&
+        payment.cashRegisterAccountId !== null &&
+        payment.cashRegisterAccountId !== undefined)
+    if (isPrepared) return
+
+    const prepareKey = `${paymentId}:${activePaymentMethod.id}:${activePaymentMethod.accountId}`
+    if (preparePaymentMethodKeysRef.current.has(prepareKey)) return
+    preparePaymentMethodKeysRef.current.add(prepareKey)
+
+    const prepare = async () => {
+      setPreparePaymentErrorKey(null)
+      setPreparingPaymentMethod(activePaymentMethod.id)
+      try {
+        await using run = createRun({
+          evolu,
+          evoluOwnerId: evolu.appOwner.id,
+          ...createFetchDep(),
+          ...createSparkWalletDep(),
+        })
+
+        const result = await run(
+          preparePaymentMethod({
+            paymentId,
+            method: activePaymentMethod.kind,
+            accountId: activePaymentMethod.accountId,
+          })
+        )
+
+        if (!result.ok) {
+          console.error("Failed to prepare payment method", result.error)
+          setPreparePaymentErrorKey("paymentWait.prepareError")
+        }
+      } finally {
+        setPreparingPaymentMethod(null)
+      }
+    }
+
+    void prepare()
+  }, [
+    activePaymentMethod,
+    evolu,
+    isPaid,
+    payment,
+    paymentId,
+    preparingPaymentMethod,
+  ])
 
   if (!payment) {
     return (
@@ -193,9 +343,9 @@ function PaymentWaitingRequest({
     )
   }
 
-  const qrPayload = activePaymentMethod.qrPayload
+  const qrPayload = activePaymentMethod?.qrPayload ?? null
   const cashRegisterAccountId = payment.cashRegisterAccountId
-  const isCashPaymentMethod = activePaymentMethod.id === "cash"
+  const isCashPaymentMethod = activePaymentMethod?.id === "cash"
   const canMarkCashPaid =
     isCashPaymentMethod &&
     cashRegisterAccountId !== null &&
@@ -257,40 +407,63 @@ function PaymentWaitingRequest({
           </div>
 
           <div className="flex justify-center">
-            <Tabs
-              value={activePaymentMethod.id}
-              onValueChange={(value) => {
-                if (value === "spark" || value === "iban" || value === "cash") {
-                  setSelectedPaymentMethod(value)
-                }
-              }}
-              className="w-fit items-center gap-4"
-            >
-              {paymentMethods.map((method) => (
-                <TabsContent
-                  key={method.id}
-                  value={method.id}
-                  className="sr-only"
-                >
-                  {method.qrPayload === null
-                    ? t("paymentWait.missingRequest")
-                    : t("paymentWait.scanOrTap")}
-                </TabsContent>
-              ))}
-              <TabsList className="mx-auto h-16 rounded-full border border-white/15 bg-background p-2 text-white/60">
+            {activePaymentMethod ? (
+              <Tabs
+                value={activePaymentMethod.id}
+                onValueChange={(value) => {
+                  if (
+                    value === "spark" ||
+                    value === "iban" ||
+                    value === "cash"
+                  ) {
+                    setSelectedPaymentMethod(value)
+                  }
+                }}
+                className="w-fit items-center gap-4"
+              >
                 {paymentMethods.map((method) => (
-                  <TabsTrigger
+                  <TabsContent
                     key={method.id}
                     value={method.id}
-                    className="h-full rounded-full px-6 text-white/60 data-active:bg-white data-active:text-black dark:data-active:bg-white dark:data-active:text-black [&_svg:not([class*='size-'])]:size-7"
+                    className="sr-only"
                   >
-                    {method.icon}
-                    <span>{method.label}</span>
-                  </TabsTrigger>
+                    {method.qrPayload === null
+                      ? t("paymentWait.missingRequest")
+                      : t("paymentWait.scanOrTap")}
+                  </TabsContent>
                 ))}
-              </TabsList>
-            </Tabs>
+                <TabsList className="mx-auto h-16 rounded-full border border-white/15 bg-background p-2 text-white/60">
+                  {paymentMethods.map((method) => (
+                    <TabsTrigger
+                      key={method.id}
+                      value={method.id}
+                      className="h-full rounded-full px-6 text-white/60 data-active:bg-white data-active:text-black dark:data-active:bg-white dark:data-active:text-black [&_svg:not([class*='size-'])]:size-7"
+                    >
+                      {method.icon}
+                      <span>{method.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            ) : (
+              <p className="max-w-72 text-balance text-sm text-white/55">
+                {t("paymentWait.missingRequest")}
+              </p>
+            )}
           </div>
+
+          {preparePaymentErrorKey ? (
+            <p className="max-w-72 text-balance text-sm font-medium text-destructive">
+              {t(preparePaymentErrorKey)}
+            </p>
+          ) : null}
+
+          {preparingPaymentMethod ? (
+            <div className="flex items-center gap-2 text-sm text-white/55">
+              <LoaderCircleIcon className="animate-spin" />
+              <span>{t("paymentWait.preparingRequest")}</span>
+            </div>
+          ) : null}
 
           {qrPayload && (
             <div className="w-full px-6">
@@ -303,7 +476,7 @@ function PaymentWaitingRequest({
           )}
 
           {isCashPaymentMethod && (
-            <div className="flex w-full flex-col items-center py-4">
+            <div className="flex w-full flex-col items-center py-24">
               <Button
                 type="button"
                 size="lg"
@@ -342,7 +515,10 @@ function PaymentWaitingRequest({
                   : t("paymentWait.scanOrTap")}
               </p>
             </div>
-            <p className="text-sm text-white/55">{t("paymentWait.waiting")}</p>
+            <p className="flex items-center gap-2 text-sm text-white/55">
+              <LoaderCircleIcon className="animate-spin" />
+              <span>{t("paymentWait.waiting")}</span>
+            </p>
           </div>
         </section>
 

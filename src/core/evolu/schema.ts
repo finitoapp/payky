@@ -22,7 +22,6 @@ import {
   billLineIndexes,
 } from "@/core/modules/bill-line/bill-line.ts"
 import { catalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
-import { defaultPaymentAccount } from "@/core/modules/default-payment-account/default-payment-account.ts"
 import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
   fioPlugin,
@@ -69,7 +68,6 @@ export const AppSchema = {
   paymentSpark,
   paymentIban,
   paymentLine,
-  defaultPaymentAccount,
   reconciliationClaim,
   appSettings,
   paymentNumberSeries,

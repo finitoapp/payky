@@ -7,7 +7,7 @@ import { accountAtom } from "@/atoms/account.ts"
 import { TerminalPaymentKeypadWithSettings } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { createFetchDep } from "@/core/deps.ts"
-import { createPaymentWithDefaultAccounts } from "@/core/modules/payment/payment-actions.ts"
+import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrencySchema,
@@ -78,7 +78,7 @@ function TerminalPaymentKeypadLoader() {
     const currency = FiatCurrencySchema.parse(money.currency)
 
     const result = await run(
-      createPaymentWithDefaultAccounts({
+      createPreparedPayment({
         deviceId: device.id,
         billId: null,
         tableId: null,
@@ -86,7 +86,6 @@ function TerminalPaymentKeypadLoader() {
         currency,
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
-        sparkMemo: `Payment ${amount} ${currency}`,
       })
     )
 

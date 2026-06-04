@@ -3,7 +3,6 @@ import {
   err,
   type InsertValues,
   ok,
-  type Result,
   sqliteTrue,
   type Task,
   type UpdateValues,
@@ -14,11 +13,13 @@ import {
   fetchYadioBtcExchangeRate,
   type YadioHttpError,
 } from "@/core/integrations/yadio/yadio-client.ts"
-import { cashRegisterAccountByIdQuery } from "@/core/modules/account/account-queries.ts"
+import {
+  cashRegisterAccountByIdQuery,
+  ibanAccountByIdQuery,
+} from "@/core/modules/account/account-queries.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
-import { activeDefaultPaymentAccountDetailsQuery } from "@/core/modules/default-payment-account/default-payment-account-queries.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
@@ -94,13 +95,22 @@ export type CashRegisterAccountCurrencyMismatchError = ReturnType<
   typeof createCashRegisterAccountCurrencyMismatchError
 >
 
-const createDefaultPaymentAccountConflictError = defineError(
-  "DefaultPaymentAccountConflict"
-)<{
-  readonly kind: PaymentDefaultAccountKind
+const createIbanAccountNotFoundError = defineError("IbanAccountNotFound")<{
+  readonly id: AccountId
 }>()
-export type DefaultPaymentAccountConflictError = ReturnType<
-  typeof createDefaultPaymentAccountConflictError
+export type IbanAccountNotFoundError = ReturnType<
+  typeof createIbanAccountNotFoundError
+>
+
+const createIbanAccountCurrencyMismatchError = defineError(
+  "IbanAccountCurrencyMismatch"
+)<{
+  readonly id: AccountId
+  readonly accountCurrency: string
+  readonly paymentCurrency: string
+}>()
+export type IbanAccountCurrencyMismatchError = ReturnType<
+  typeof createIbanAccountCurrencyMismatchError
 >
 
 export type CreatePreparedPaymentError =
@@ -108,14 +118,20 @@ export type CreatePreparedPaymentError =
   | PaymentPreparationFailedError
   | YadioHttpError
 
-export type CreatePaymentWithDefaultAccountsError =
-  | CreatePreparedPaymentError
-  | DefaultPaymentAccountConflictError
-
 export type MarkPaymentPaidCashError =
   | PaymentNotFoundError
   | CashRegisterAccountNotFoundError
   | CashRegisterAccountCurrencyMismatchError
+
+export type PreparePaymentMethodError =
+  | PaymentNotFoundError
+  | CashRegisterAccountNotFoundError
+  | CashRegisterAccountCurrencyMismatchError
+  | AccountSparkNotFoundError
+  | IbanAccountNotFoundError
+  | IbanAccountCurrencyMismatchError
+  | PaymentPreparationFailedError
+  | YadioHttpError
 
 export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
   createPaymentNotFoundError({ id })
@@ -144,17 +160,30 @@ export const cashRegisterAccountCurrencyMismatch = ({
     paymentCurrency,
   })
 
-export const defaultPaymentAccountConflict = (
-  kind: PaymentDefaultAccountKind
-): DefaultPaymentAccountConflictError =>
-  createDefaultPaymentAccountConflictError({ kind })
+export const ibanAccountNotFound = (id: AccountId): IbanAccountNotFoundError =>
+  createIbanAccountNotFoundError({ id })
+
+export const ibanAccountCurrencyMismatch = ({
+  id,
+  accountCurrency,
+  paymentCurrency,
+}: {
+  readonly id: AccountId
+  readonly accountCurrency: string
+  readonly paymentCurrency: string
+}): IbanAccountCurrencyMismatchError =>
+  createIbanAccountCurrencyMismatchError({
+    id,
+    accountCurrency,
+    paymentCurrency,
+  })
 
 const paymentPreparationFailed = (
   message: string
 ): PaymentPreparationFailedError =>
   createPaymentPreparationFailedError({ message })
 
-type PaymentDefaultAccountKind = "cashRegister" | "spark" | "iban"
+type PaymentAccountKind = "cashRegister" | "spark" | "iban"
 
 const convertFiatMinorUnitsToSats = (
   amount: number,
@@ -195,19 +224,6 @@ const createCzQrPayload = ({
       .filter((part) => part !== null)
       .join("*")
   )
-
-const getSingleDefaultAccount = <
-  T extends { readonly kind: PaymentDefaultAccountKind },
->(
-  accounts: ReadonlyArray<T>,
-  kind: PaymentDefaultAccountKind
-): Result<T | undefined, DefaultPaymentAccountConflictError> => {
-  const matching = accounts.filter((account) => account.kind === kind)
-  const first = matching[0]
-  if (matching.length > 1) return err(defaultPaymentAccountConflict(kind))
-
-  return ok(first)
-}
 
 export const loadPayment =
   (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>
@@ -381,78 +397,171 @@ export const createPreparedPayment =
     }
   }
 
-export const createPaymentWithDefaultAccounts =
+export const preparePaymentMethod =
   ({
+    paymentId,
+    method,
+    accountId,
     sparkMemo,
     sparkExpirySeconds,
     sparkIncludeSparkInvoice,
-    ...input
-  }: InsertValues<typeof payment> & {
+  }: {
+    readonly paymentId: PaymentId
+    readonly method: PaymentAccountKind
+    readonly accountId: AccountId
     readonly sparkMemo?: string
     readonly sparkExpirySeconds?: number
     readonly sparkIncludeSparkInvoice?: boolean
   }): Task<
     PaymentId,
-    CreatePaymentWithDefaultAccountsError,
+    PreparePaymentMethodError,
     EvoluDep & EvoluOwnerIdDep & SparkWalletDep & FetchDep
   > =>
   async (run) => {
-    const defaultAccounts = await run.deps.evolu.loadQuery(
-      activeDefaultPaymentAccountDetailsQuery
+    const { evoluOwnerId } = run.deps
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    const payment = paymentResult.value
+
+    if (method === "cashRegister") {
+      const accountResult = getFirstOr(
+        await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
+        cashRegisterAccountNotFound(accountId)
+      )
+      if (!accountResult.ok) return accountResult
+
+      const account = accountResult.value
+      if (account.currency !== payment.currency) {
+        return err(
+          cashRegisterAccountCurrencyMismatch({
+            id: accountId,
+            accountCurrency: account.currency,
+            paymentCurrency: payment.currency,
+          })
+        )
+      }
+
+      await runMutationWithCompletion((options) =>
+        run.deps.evolu.upsert(
+          "paymentCashRegister",
+          removeUndefinedValues({
+            id: paymentId,
+            accountId,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
+
+      return ok(paymentId)
+    }
+
+    if (method === "iban") {
+      const accountResult = getFirstOr(
+        await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
+        ibanAccountNotFound(accountId)
+      )
+      if (!accountResult.ok) return accountResult
+
+      const account = accountResult.value
+      if (account.currency !== payment.currency) {
+        return err(
+          ibanAccountCurrencyMismatch({
+            id: accountId,
+            accountCurrency: account.currency,
+            paymentCurrency: payment.currency,
+          })
+        )
+      }
+
+      const variableSymbol = null
+      await runMutationWithCompletion((options) =>
+        run.deps.evolu.upsert(
+          "paymentIban",
+          removeUndefinedValues({
+            id: paymentId,
+            accountId,
+            variableSymbol,
+            czQrPayload: createCzQrPayload({
+              iban: account.iban,
+              amount: payment.amount,
+              currency: payment.currency,
+              variableSymbol,
+            }),
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
+
+      return ok(paymentId)
+    }
+
+    const sparkAccounts = await run.deps.evolu.loadQuery(
+      activeSparkAccountsQuery
     )
-
-    const cashRegisterResult = getSingleDefaultAccount(
-      defaultAccounts,
-      "cashRegister"
+    const sparkAccount = sparkAccounts.find(
+      (account) => account.id === accountId
     )
-    if (!cashRegisterResult.ok) return cashRegisterResult
+    if (!sparkAccount) return err(accountSparkNotFound(accountId))
 
-    const sparkResult = getSingleDefaultAccount(defaultAccounts, "spark")
-    if (!sparkResult.ok) return sparkResult
+    let wallet: SparkPaymentWallet | undefined
+    try {
+      const quote = await run(fetchYadioBtcExchangeRate(payment.currency))
+      if (!quote.ok) return quote
 
-    const ibanResult = getSingleDefaultAccount(defaultAccounts, "iban")
-    if (!ibanResult.ok) return ibanResult
+      const amountSats = NonNegativeIntegerSchema.decode(
+        convertFiatMinorUnitsToSats(payment.amount, quote.value.exchangeRate)
+      )
+      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+      const lightningInvoice = await wallet.createLightningInvoice(
+        removeUndefinedValues({
+          amountSats,
+          memo: sparkMemo,
+          expirySeconds: sparkExpirySeconds,
+          includeSparkInvoice: sparkIncludeSparkInvoice ?? true,
+        })
+      )
 
-    const cashRegister = cashRegisterResult.value
-    const spark = sparkResult.value
-    const iban = ibanResult.value
-    const variableSymbol = null
+      await runMutationWithCompletion((options) =>
+        run.deps.evolu.upsert(
+          "paymentSpark",
+          removeUndefinedValues({
+            id: paymentId,
+            accountId,
+            amountSats,
+            exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
+            exchangeRateSource: "yadio" as const,
+            exchangeRateFetchedAt: TimestampMsSchema.decode(
+              quote.value.fetchedAt
+            ),
+            lnInvoice: NonEmptyStringSchema.decode(
+              lightningInvoice.invoice.encodedInvoice
+            ),
+            sparkTechnicalData: JSON.stringify(
+              removeUndefinedValues({
+                lightningReceiveRequestId: lightningInvoice.id,
+                paymentHash: lightningInvoice.invoice.paymentHash,
+                paymentPreimage: lightningInvoice.paymentPreimage,
+                sparkInvoice: lightningInvoice.sparkInvoice,
+              })
+            ),
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
 
-    return run(
-      createPreparedPayment({
-        ...input,
-        cashRegister:
-          cashRegister?.cashRegisterCurrency === input.currency
-            ? {
-                accountId: cashRegister.id,
-              }
-            : undefined,
-        spark:
-          spark === undefined || spark.sparkMnemonic === null
-            ? undefined
-            : {
-                accountId: spark.id,
-                memo: sparkMemo,
-                expirySeconds: sparkExpirySeconds,
-                includeSparkInvoice: sparkIncludeSparkInvoice,
-              },
-        iban:
-          iban !== undefined &&
-          iban.iban !== null &&
-          iban.ibanCurrency === input.currency
-            ? {
-                accountId: iban.id,
-                variableSymbol,
-                czQrPayload: createCzQrPayload({
-                  iban: iban.iban,
-                  amount: input.amount,
-                  currency: input.currency,
-                  variableSymbol,
-                }),
-              }
-            : undefined,
-      })
-    )
+      return ok(paymentId)
+    } catch (error) {
+      return err(
+        paymentPreparationFailed(
+          error instanceof Error
+            ? error.message
+            : "Failed to prepare payment details"
+        )
+      )
+    } finally {
+      await wallet?.cleanup?.()
+    }
   }
 
 export const updatePayment =

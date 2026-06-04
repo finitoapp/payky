@@ -45,6 +45,32 @@ export const cashRegisterAccountByIdQuery = (idValue: AccountId) =>
       }>()
   )
 
+export const ibanAccountByIdQuery = (idValue: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("account")
+      .innerJoin("accountIban", "accountIban.id", "account.id")
+      .select([
+        "account.id",
+        "account.name",
+        "account.kind",
+        "accountIban.iban",
+        "accountIban.currency",
+      ])
+      .where("account.id", "=", idValue)
+      .where("account.kind", "=", "iban")
+      .where("account.isDeleted", "is not", 1)
+      .where("accountIban.isDeleted", "is not", 1)
+      .where("accountIban.iban", "is not", null)
+      .where("accountIban.currency", "is not", null)
+      .$narrowType<{
+        name: KyselyNotNull
+        kind: KyselyNotNull
+        iban: KyselyNotNull
+        currency: KyselyNotNull
+      }>()
+  )
+
 export const fiatBankAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")

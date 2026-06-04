@@ -91,6 +91,8 @@ export const resources = {
     "paymentWait.notFound": "Payment was not found.",
     "paymentWait.paid": "Payment received",
     "paymentWait.pay": "Pay",
+    "paymentWait.prepareError": "Could not prepare this payment method.",
+    "paymentWait.preparingRequest": "Preparing payment request...",
     "paymentWait.scanOrTap": "Scan and pay",
     "paymentWait.share": "Share payment request",
     "paymentWait.waiting": "Waiting for payment...",
@@ -257,9 +259,6 @@ export const resources = {
     "settings.openSource": "We are open source",
     "settings.paymentAccounts.description":
       "Configure bank, Spark, and cash register accounts",
-    "settings.paymentAccounts.default.description":
-      "New payments will automatically include this payment method.",
-    "settings.paymentAccounts.default.label": "Use by default",
     "settings.paymentAccounts.title": "Payment Accounts",
     "settings.payments": "PAYMENTS",
     "settings.security": "SECURITY & PRIVACY",
@@ -394,6 +393,8 @@ export const resources = {
     "paymentWait.notFound": "Platba nebyla nalezena.",
     "paymentWait.paid": "Platba přijata",
     "paymentWait.pay": "Zaplatit",
+    "paymentWait.prepareError": "Tuto platební metodu se nepodařilo připravit.",
+    "paymentWait.preparingRequest": "Připravuji platební žádost...",
     "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
     "paymentWait.share": "Sdílet platební žádost",
     "paymentWait.waiting": "Čeká se na platbu...",
@@ -562,9 +563,6 @@ export const resources = {
     "settings.openSource": "Jsme open source",
     "settings.paymentAccounts.description":
       "Nastavení bankovního, Spark a pokladního účtu",
-    "settings.paymentAccounts.default.description":
-      "Nové platby automaticky zahrnou tuto platební metodu.",
-    "settings.paymentAccounts.default.label": "Použít jako výchozí",
     "settings.paymentAccounts.title": "Platební účty",
     "settings.payments": "PLATBY",
     "settings.security": "BEZPEČNOST A SOUKROMÍ",

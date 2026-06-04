@@ -5,7 +5,6 @@ import type { FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { setDefaultPaymentAccount } from "@/core/modules/default-payment-account/default-payment-account-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyStringSchema,
@@ -16,10 +15,10 @@ import { createEvoluTest } from "../../evolu/cli-client"
 import {
   cancelPayment,
   createPayment,
-  createPaymentWithDefaultAccounts,
   createPreparedPayment,
   loadPayment,
   markPaymentPaidCash,
+  preparePaymentMethod,
 } from "./payment-actions.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -237,78 +236,6 @@ describe("payment actions", () => {
     })
   }, 15_000)
 
-  test("creates a payment from default payment accounts", async () => {
-    await using testEvolu = await createEvoluTest()
-    const { evolu } = testEvolu
-    const deps = {
-      evolu,
-      fetch: async () =>
-        Response.json({
-          BTC: 1_500_000,
-          timestamp: 1_700_000_000,
-        }),
-      sparkWallet: {
-        create: async () => ({
-          createLightningInvoice: async () => ({
-            invoice: {
-              encodedInvoice: "lnbc200u1test",
-            },
-          }),
-        }),
-      },
-    } satisfies EvoluDep & FetchDep & SparkWalletDep
-    await using run = testCreateRun(deps)
-    const { cashRegisterAccountId, ibanAccountId } =
-      await createPaymentAccounts(deps)
-
-    await run.orThrow(
-      setDefaultPaymentAccount({
-        accountId: cashRegisterAccountId,
-        enabled: true,
-      })
-    )
-    await run.orThrow(
-      setDefaultPaymentAccount({
-        accountId: ibanAccountId,
-        enabled: true,
-      })
-    )
-
-    const id = await run.orThrow(
-      createPaymentWithDefaultAccounts({
-        deviceId: null,
-        billId: null,
-        tableId: null,
-        amount: 12_900,
-        currency: "CZK",
-        tipAmount: 0,
-        canceledAt: null,
-      })
-    )
-
-    await expect
-      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
-      .toMatchObject([
-        {
-          id,
-          amount: 12_900,
-          currency: "CZK",
-          cashRegister: {
-            id,
-            accountId: cashRegisterAccountId,
-          },
-          spark: null,
-          iban: {
-            id,
-            accountId: ibanAccountId,
-            variableSymbol: null,
-            czQrPayload:
-              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
-          },
-        },
-      ])
-  })
-
   test("creates a prepared payment by generating spark payment details", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -398,6 +325,107 @@ describe("payment actions", () => {
             id,
             accountId: ibanAccountId,
             variableSymbol: "1234567890",
+          },
+        },
+      ])
+  }, 15_000)
+
+  test("prepares payment method details lazily for an existing payment", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            BTC: 1_500_000,
+            timestamp: 1_700_000_000_000,
+          })
+        ),
+      sparkWallet: {
+        create: async () => ({
+          createLightningInvoice: async () => ({
+            id: "lightning-request-1",
+            invoice: {
+              encodedInvoice: "lnbc8600n1lazy",
+              paymentHash: "payment-hash-1",
+            },
+            paymentPreimage: "payment-preimage-1",
+            sparkInvoice: "spark-invoice-1",
+          }),
+        }),
+      },
+    } satisfies EvoluDep & FetchDep & SparkWalletDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 12_900,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          method: "cashRegister",
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          method: "iban",
+          accountId: ibanAccountId,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          method: "spark",
+          accountId: sparkAccountId,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          cashRegister: {
+            id,
+            accountId: cashRegisterAccountId,
+          },
+          iban: {
+            id,
+            accountId: ibanAccountId,
+            variableSymbol: null,
+            czQrPayload:
+              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
+          },
+          spark: {
+            id,
+            accountId: sparkAccountId,
+            amountSats: 8_600,
+            exchangeRate: 1_500_000,
+            exchangeRateSource: "yadio",
+            exchangeRateFetchedAt: 1_700_000_000_000,
+            lnInvoice: "lnbc8600n1lazy",
           },
         },
       ])

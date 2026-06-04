@@ -1,3 +1,5 @@
+/// <reference types="vite-plugin-pwa/react" />
+
 import type { IntegerString, TimestampMs } from "@/core/modules/shared/schema"
 
 declare global {

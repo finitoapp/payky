@@ -25,6 +25,7 @@ import { markPaymentPaidCash } from "@/core/modules/payment/payment-actions.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -132,6 +133,7 @@ function PaymentWaitingRequest({
   readonly paymentId: PaymentId
 }) {
   const { t } = useTranslation()
+  const locale = useLocale()
   const evolu = useEvolu()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
@@ -239,15 +241,18 @@ function PaymentWaitingRequest({
               {t("paymentWait.pay")}
             </p>
             <h1 className="text-4xl font-semibold tracking-tight text-white tabular-nums">
-              {formatMoney({
-                value: payment.amount,
-                currency: payment.currency,
-              })}
+              {formatMoney(
+                {
+                  value: payment.amount,
+                  currency: payment.currency,
+                },
+                locale
+              )}
             </h1>
             <p className="text-md font-medium text-white/55 tabular-nums">
               {payment.amountSats === null
                 ? "\u00A0"
-                : `₿${payment.amountSats.toLocaleString("en-US")}`}
+                : `₿${payment.amountSats.toLocaleString(locale)}`}
             </p>
           </div>
 

@@ -30,6 +30,7 @@ import {
   Integer,
 } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
@@ -198,6 +199,7 @@ function AmountDisplay({
 }) {
   const amountDigits = useAtomValue(amountDigitsAtom)
   const exchangeRateQuote = useYadioBtcExchangeRate(currency)
+  const locale = useLocale()
 
   const money = createMoney(amountDigits, currency)
   const btcMoney =
@@ -214,10 +216,10 @@ function AmountDisplay({
   return (
     <section className="flex flex-col items-center gap-5 text-center">
       <h1 className="text-6xl font-semibold tracking-normal tabular-nums">
-        {formatMoney(money)}
+        {formatMoney(money, locale)}
       </h1>
       <p className="text-xl text-foreground/80">
-        {btcMoney === null ? "\u00A0" : formatMoney(btcMoney)}
+        {btcMoney === null ? "\u00A0" : formatMoney(btcMoney, locale)}
       </p>
     </section>
   )

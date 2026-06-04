@@ -232,13 +232,22 @@ export const resources = {
     "settings.items.title": "Items",
     "settings.language.czech.description": "Use Czech translations",
     "settings.language.czech.title": "Czech",
-    "settings.language.description": "Choose app language",
+    "settings.language.description": "Choose app language and region",
     "settings.language.english.description": "Use English translations",
     "settings.language.english.title": "English",
+    "settings.language.locale.czech.description":
+      "Use Czech date, number, and currency formatting",
+    "settings.language.locale.czech.title": "Czechia",
+    "settings.language.locale.description":
+      "Choose the regional format used for dates, numbers, and currencies.",
+    "settings.language.locale.english.description":
+      "Use United States date, number, and currency formatting",
+    "settings.language.locale.english.title": "United States",
+    "settings.language.locale.title": "Regional format",
     "settings.language.mode.description":
       "Choose which language the app should use.",
     "settings.language.mode.title": "App language",
-    "settings.language.title": "Language",
+    "settings.language.title": "Language & Region",
     "settings.mints.description": "Manage Cashu mints and Lightning settings",
     "settings.mints.title": "Mints",
     "settings.openSource": "We are open source",
@@ -524,13 +533,22 @@ export const resources = {
     "settings.items.title": "Položky",
     "settings.language.czech.description": "Používat české překlady",
     "settings.language.czech.title": "Čeština",
-    "settings.language.description": "Vyberte jazyk aplikace",
+    "settings.language.description": "Vyberte jazyk aplikace a region",
     "settings.language.english.description": "Používat anglické překlady",
     "settings.language.english.title": "Angličtina",
+    "settings.language.locale.czech.description":
+      "Používat české formátování dat, čísel a měn",
+    "settings.language.locale.czech.title": "Česko",
+    "settings.language.locale.description":
+      "Vyberte regionální formát pro data, čísla a měny.",
+    "settings.language.locale.english.description":
+      "Používat americké formátování dat, čísel a měn",
+    "settings.language.locale.english.title": "Spojené státy",
+    "settings.language.locale.title": "Regionální formát",
     "settings.language.mode.description":
       "Vyberte jazyk, který má aplikace používat.",
     "settings.language.mode.title": "Jazyk aplikace",
-    "settings.language.title": "Jazyk",
+    "settings.language.title": "Jazyk a region",
     "settings.mints.description": "Správa Cashu mintů a Lightning nastavení",
     "settings.mints.title": "Minty",
     "settings.openSource": "Jsme open source",

@@ -4,6 +4,7 @@ import type { FC, ReactNode } from "react"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
@@ -91,6 +92,7 @@ const resolvePaymentStatus = (
 
 export const PaymentHistory = () => {
   const { t } = useTranslation()
+  const locale = useLocale()
   const { data: items } = useEvoluQuery(latestPaymentsQuery)
 
   const navItems = items.length === 0 ? ([false] as const) : items
@@ -133,10 +135,13 @@ export const PaymentHistory = () => {
                 <strong>{t("paymentHistory.payment")}</strong>
                 <div className={"flex justify-between w-full text-xs"}>
                   <span>
-                    {formatMoney({
-                      value: item.amount,
-                      currency: item.currency,
-                    })}
+                    {formatMoney(
+                      {
+                        value: item.amount,
+                        currency: item.currency,
+                      },
+                      locale
+                    )}
                   </span>
                   &nbsp;&nbsp;•&nbsp;&nbsp;
                   <span className={"text-muted-foreground"}>

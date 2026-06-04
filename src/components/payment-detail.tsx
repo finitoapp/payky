@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
@@ -159,6 +160,7 @@ function PaymentDetailContent({
   readonly paymentId: PaymentId
 }) {
   const { t } = useTranslation()
+  const locale = useLocale()
   const query = useMemo(() => paymentDetailQuery(paymentId), [paymentId])
   const reconciliationsQuery = useMemo(
     () => paymentReconciliationsQuery(paymentId),
@@ -220,10 +222,13 @@ function PaymentDetailContent({
                 {t("paymentDetail.amount")}
               </span>
               <strong className="text-4xl font-semibold tracking-tight">
-                {formatMoney({
-                  value: payment.amount,
-                  currency: payment.currency,
-                })}
+                {formatMoney(
+                  {
+                    value: payment.amount,
+                    currency: payment.currency,
+                  },
+                  locale
+                )}
               </strong>
             </div>
             <Badge
@@ -241,10 +246,13 @@ function PaymentDetailContent({
           <div className="flex flex-col gap-3">
             <PaymentDetailRow
               label={t("paymentDetail.tipAmount")}
-              value={formatMoney({
-                value: payment.tipAmount,
-                currency: payment.currency,
-              })}
+              value={formatMoney(
+                {
+                  value: payment.tipAmount,
+                  currency: payment.currency,
+                },
+                locale
+              )}
             />
             <PaymentDetailRow
               label={t("paymentDetail.createdAt")}
@@ -341,10 +349,13 @@ function PaymentDetailContent({
                   />
                   <PaymentDetailRow
                     label={t("paymentDetail.transaction.amount")}
-                    value={formatMoney({
-                      value: reconciliation.transactionAmount,
-                      currency: reconciliation.transactionCurrency,
-                    })}
+                    value={formatMoney(
+                      {
+                        value: reconciliation.transactionAmount,
+                        currency: reconciliation.transactionCurrency,
+                      },
+                      locale
+                    )}
                   />
                   <PaymentDetailRow
                     label={t("paymentDetail.transaction.occurredAt")}

@@ -21,7 +21,6 @@ export const Route = createFileRoute("/_terminal/")({
   component: TerminalHomePage,
   staticData: {
     terminalLayout: {
-      mainClassName: "bg-[#00C245]",
       viewportClassName: "justify-between px-8 py-6",
     },
   },

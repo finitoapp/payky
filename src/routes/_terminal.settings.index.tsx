@@ -8,6 +8,7 @@ import {
   Languages,
   Plug,
   ReceiptText,
+  ShieldCheck,
   ShoppingBag,
   SunMoon,
 } from "lucide-react"
@@ -146,9 +147,10 @@ function SettingsPage() {
       createSettingsNavItems(
         [
           {
-            icon: Landmark,
+            icon: ShieldCheck,
             title: "settings.security.title",
             description: "settings.security.description",
+            to: "/settings/security",
           },
         ],
         t

@@ -16,6 +16,7 @@ import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkou
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
+import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
@@ -64,6 +65,12 @@ const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
   path: '/theme',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsSecurityRoute =
+  TerminalSettingsSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsPaymentNumberSeriesRoute =
   TerminalSettingsPaymentNumberSeriesRouteImport.update({
     id: '/payment-number-series',
@@ -154,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -173,6 +181,7 @@ export interface FileRoutesByTo {
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -196,6 +205,7 @@ export interface FileRoutesById {
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
+    | '/settings/security'
     | '/settings/theme'
     | '/settings/'
     | '/settings/about/privacy'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
+    | '/settings/security'
     | '/settings/theme'
     | '/settings'
     | '/settings/about/privacy'
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/language'
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
+    | '/_terminal/settings/security'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/'
     | '/_terminal/settings/about/privacy'
@@ -320,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/theme'
       fullPath: '/settings/theme'
       preLoaderRoute: typeof TerminalSettingsThemeRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/security': {
+      id: '/_terminal/settings/security'
+      path: '/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/payment-number-series': {
@@ -441,6 +461,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
+  TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
 }
@@ -454,6 +475,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsPaymentAccountsRoute: TerminalSettingsPaymentAccountsRoute,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
+  TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
 }

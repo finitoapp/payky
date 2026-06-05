@@ -302,8 +302,32 @@ export const resources = {
     "settings.paymentNumberSeries.year.short.title": "Short year",
     "settings.payments": "PAYMENTS",
     "settings.security": "SECURITY & PRIVACY",
-    "settings.security.description": "Passcode and data controls",
-    "settings.security.title": "Security & Privacy",
+    "settings.security.description":
+      "Manage sync transports and recovery access",
+    "settings.security.title": "Security & Sync",
+    "settings.security.mnemonic.description":
+      "Read the recovery phrase for the active local account.",
+    "settings.security.mnemonic.help":
+      "Keep this phrase private. Anyone with it can restore the account.",
+    "settings.security.mnemonic.label": "Recovery phrase",
+    "settings.security.mnemonic.title": "Account recovery",
+    "settings.security.transports.active": "Active",
+    "settings.security.transports.activate": "Activate",
+    "settings.security.transports.add": "Add transport",
+    "settings.security.transports.deactivate": "Deactivate",
+    "settings.security.transports.description":
+      "Configure Evolu WebSocket sync endpoints for this device account.",
+    "settings.security.transports.empty": "No transports saved.",
+    "settings.security.transports.footer":
+      "Inactive transports stay stored but are ignored when opening the app data.",
+    "settings.security.transports.inactive": "Inactive",
+    "settings.security.transports.saved": "Transport added.",
+    "settings.security.transports.title": "Evolu transports",
+    "settings.security.transports.url.description":
+      "Only secure WebSocket URLs starting with wss: are accepted.",
+    "settings.security.transports.url.invalid": "Enter a valid wss URL.",
+    "settings.security.transports.url.label": "WebSocket URL",
+    "settings.security.transports.websocket": "WebSocket",
     "settings.sparkAccount.enabled.description":
       "Disabled Spark accounts stay stored but are ignored by payment flows.",
     "settings.sparkAccount.enabled.label": "Enable Spark account",
@@ -654,8 +678,31 @@ export const resources = {
     "settings.paymentNumberSeries.year.short.title": "Krátký rok",
     "settings.payments": "PLATBY",
     "settings.security": "BEZPEČNOST A SOUKROMÍ",
-    "settings.security.description": "Heslo a ovládání dat",
-    "settings.security.title": "Bezpečnost a soukromí",
+    "settings.security.description": "Správa synchronizace a obnovy účtu",
+    "settings.security.title": "Bezpečnost a synchronizace",
+    "settings.security.mnemonic.description":
+      "Zobrazení recovery phrase pro aktivní lokální účet.",
+    "settings.security.mnemonic.help":
+      "Udržujte tuto frázi v soukromí. Kdo ji zná, může účet obnovit.",
+    "settings.security.mnemonic.label": "Recovery phrase",
+    "settings.security.mnemonic.title": "Obnova účtu",
+    "settings.security.transports.active": "Aktivní",
+    "settings.security.transports.activate": "Aktivovat",
+    "settings.security.transports.add": "Přidat transport",
+    "settings.security.transports.deactivate": "Deaktivovat",
+    "settings.security.transports.description":
+      "Nastavení Evolu WebSocket endpointů pro tento device účet.",
+    "settings.security.transports.empty": "Nejsou uložené žádné transporty.",
+    "settings.security.transports.footer":
+      "Neaktivní transporty zůstanou uložené, ale při otevírání aplikačních dat se ignorují.",
+    "settings.security.transports.inactive": "Neaktivní",
+    "settings.security.transports.saved": "Transport přidán.",
+    "settings.security.transports.title": "Evolu transporty",
+    "settings.security.transports.url.description":
+      "Povolené jsou jen zabezpečené WebSocket URL začínající na wss:.",
+    "settings.security.transports.url.invalid": "Zadejte platnou wss URL.",
+    "settings.security.transports.url.label": "WebSocket URL",
+    "settings.security.transports.websocket": "WebSocket",
     "settings.sparkAccount.enabled.description":
       "Vypnutý Spark účet zůstane uložený, ale platební toky ho budou ignorovat.",
     "settings.sparkAccount.enabled.label": "Povolit Spark účet",

@@ -49,16 +49,15 @@ import type {
   SparkWalletDep,
 } from "@/core/spark/spark-wallet.ts"
 import {
+  type DateString,
   type NonEmptyString,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
-  type SpecificSymbol,
-  SpecificSymbolSchema,
+  SpecificSymbol,
   type TimestampMs,
   TimestampMsSchema,
-  type VariableSymbol,
-  VariableSymbolSchema,
+  VariableSymbol,
 } from "../shared/schema.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -253,12 +252,10 @@ const createCzQrPayload = ({
 
 const createVariableSymbolFromSerialNumber = (
   serialNumber: number
-): VariableSymbol => VariableSymbolSchema.decode(String(serialNumber))
+): VariableSymbol => VariableSymbol(String(serialNumber))
 
-const createSpecificSymbolFromDate = (date: string): SpecificSymbol =>
-  SpecificSymbolSchema.decode(
-    `${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`
-  )
+const createSpecificSymbolFromDate = (date: DateString): SpecificSymbol =>
+  SpecificSymbol(`${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`)
 
 export const loadPayment =
   (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>

@@ -160,6 +160,7 @@ export const VariableSymbolSchema = z
   .trim()
   .regex(/^\d{1,10}$/u)
   .brand<"VariableSymbol">()
+export const VariableSymbol = VariableSymbolSchema.decode
 export const ConstantSymbolSchema = z
   .string()
   .trim()
@@ -170,6 +171,8 @@ export const SpecificSymbolSchema = z
   .trim()
   .regex(/^\d{1,10}$/u)
   .brand<"SpecificSymbol">()
+export const SpecificSymbol = SpecificSymbolSchema.decode
+export type SpecificSymbol = z.output<typeof SpecificSymbolSchema>
 
 export type AccountKind = z.output<typeof AccountKindSchema>
 export type PaymentStatus = z.output<typeof PaymentStatusSchema>
@@ -181,4 +184,3 @@ export type FloatString = z.output<typeof NumberStringSchema>
 export type Iban = z.output<typeof IbanSchema>
 export type VariableSymbol = z.output<typeof VariableSymbolSchema>
 export type ConstantSymbol = z.output<typeof ConstantSymbolSchema>
-export type SpecificSymbol = z.output<typeof SpecificSymbolSchema>

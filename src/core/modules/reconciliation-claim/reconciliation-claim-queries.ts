@@ -33,6 +33,19 @@ export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
             "=",
             "accountTransactionIban.variableSymbol"
           )
+          .on((eb) =>
+            eb.or([
+              eb(
+                "paymentIban.specificSymbol",
+                "=",
+                eb.ref("accountTransactionIban.specificSymbol")
+              ),
+              eb.and([
+                eb("paymentIban.specificSymbol", "is", null),
+                eb("accountTransactionIban.specificSymbol", "is", null),
+              ]),
+            ])
+          )
       )
       .innerJoin("payment", "payment.id", "paymentIban.id")
       .leftJoin(

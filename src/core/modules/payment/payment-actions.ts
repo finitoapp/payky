@@ -32,7 +32,10 @@ import {
   createNextPaymentNumberValues,
   createPaymentNumberDate,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
-import { paymentNumbersByNewestQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import {
+  paymentNumberByPaymentIdQuery,
+  paymentNumbersByNewestQuery,
+} from "@/core/modules/payment-number/payment-number-queries.ts"
 import { getPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
@@ -51,9 +54,11 @@ import {
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
   type SpecificSymbol,
+  SpecificSymbolSchema,
   type TimestampMs,
   TimestampMsSchema,
   type VariableSymbol,
+  VariableSymbolSchema,
 } from "../shared/schema.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -80,6 +85,13 @@ const createPaymentPreparationFailedError = defineError(
 }>()
 export type PaymentPreparationFailedError = ReturnType<
   typeof createPaymentPreparationFailedError
+>
+
+const createPaymentNumberNotFoundError = defineError("PaymentNumberNotFound")<{
+  readonly paymentId: PaymentId
+}>()
+export type PaymentNumberNotFoundError = ReturnType<
+  typeof createPaymentNumberNotFoundError
 >
 
 const createCashRegisterAccountNotFoundError = defineError(
@@ -137,6 +149,7 @@ export type PreparePaymentMethodError =
   | AccountSparkNotFoundError
   | IbanAccountNotFoundError
   | IbanAccountCurrencyMismatchError
+  | PaymentNumberNotFoundError
   | PaymentPreparationFailedError
   | YadioHttpError
 
@@ -190,7 +203,9 @@ const paymentPreparationFailed = (
 ): PaymentPreparationFailedError =>
   createPaymentPreparationFailedError({ message })
 
-type PaymentAccountKind = "cashRegister" | "spark" | "iban"
+const paymentNumberNotFound = (
+  paymentId: PaymentId
+): PaymentNumberNotFoundError => createPaymentNumberNotFoundError({ paymentId })
 
 const convertFiatMinorUnitsToSats = (
   amount: number,
@@ -234,6 +249,15 @@ const createCzQrPayload = ({
     ]
       .filter((part) => part !== null)
       .join("*")
+  )
+
+const createVariableSymbolFromSerialNumber = (
+  serialNumber: number
+): VariableSymbol => VariableSymbolSchema.decode(String(serialNumber))
+
+const createSpecificSymbolFromDate = (date: string): SpecificSymbol =>
+  SpecificSymbolSchema.decode(
+    `${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`
   )
 
 export const loadPayment =
@@ -426,20 +450,23 @@ export const createPreparedPayment =
 export const preparePaymentMethod =
   ({
     paymentId,
-    method,
-    accountId,
-    specificSymbol,
-    sparkMemo,
-    sparkExpirySeconds,
-    sparkIncludeSparkInvoice,
+    bank,
+    cashRegister,
+    spark,
   }: {
     readonly paymentId: PaymentId
-    readonly method: PaymentAccountKind
-    readonly accountId: AccountId
-    readonly specificSymbol?: SpecificSymbol | null
-    readonly sparkMemo?: string
-    readonly sparkExpirySeconds?: number
-    readonly sparkIncludeSparkInvoice?: boolean
+    readonly bank?: {
+      readonly accountId: AccountId
+    }
+    readonly cashRegister?: {
+      readonly accountId: AccountId
+    }
+    readonly spark?: {
+      readonly accountId: AccountId
+      readonly memo?: string
+      readonly expirySeconds?: number
+      readonly includeSparkInvoice?: boolean
+    }
   }): Task<
     PaymentId,
     PreparePaymentMethodError,
@@ -452,146 +479,209 @@ export const preparePaymentMethod =
 
     const payment = paymentResult.value
 
-    if (method === "cashRegister") {
-      const accountResult = getFirstOr(
-        await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
-        cashRegisterAccountNotFound(accountId)
-      )
-      if (!accountResult.ok) return accountResult
+    const cashRegisterPayment =
+      cashRegister == null
+        ? null
+        : await (async () => {
+            const accountResult = getFirstOr(
+              await run.deps.evolu.loadQuery(
+                cashRegisterAccountByIdQuery(cashRegister.accountId)
+              ),
+              cashRegisterAccountNotFound(cashRegister.accountId)
+            )
+            if (!accountResult.ok) return accountResult
 
-      const account = accountResult.value
-      if (account.currency !== payment.currency) {
-        return err(
-          cashRegisterAccountCurrencyMismatch({
-            id: accountId,
-            accountCurrency: account.currency,
-            paymentCurrency: payment.currency,
-          })
-        )
-      }
+            const account = accountResult.value
+            if (account.currency !== payment.currency) {
+              return err(
+                cashRegisterAccountCurrencyMismatch({
+                  id: cashRegister.accountId,
+                  accountCurrency: account.currency,
+                  paymentCurrency: payment.currency,
+                })
+              )
+            }
 
-      await runMutationWithCompletion((options) =>
+            return ok({
+              id: paymentId,
+              accountId: cashRegister.accountId,
+            })
+          })()
+    if (cashRegisterPayment != null && !cashRegisterPayment.ok) {
+      return cashRegisterPayment
+    }
+
+    const bankPayment =
+      bank == null
+        ? null
+        : await (async () => {
+            const accountResult = getFirstOr(
+              await run.deps.evolu.loadQuery(
+                ibanAccountByIdQuery(bank.accountId)
+              ),
+              ibanAccountNotFound(bank.accountId)
+            )
+            if (!accountResult.ok) return accountResult
+
+            const account = accountResult.value
+            if (account.currency !== payment.currency) {
+              return err(
+                ibanAccountCurrencyMismatch({
+                  id: bank.accountId,
+                  accountCurrency: account.currency,
+                  paymentCurrency: payment.currency,
+                })
+              )
+            }
+
+            const paymentNumberResult = getFirstOr(
+              await run.deps.evolu.loadQuery(
+                paymentNumberByPaymentIdQuery(paymentId)
+              ),
+              paymentNumberNotFound(paymentId)
+            )
+            if (!paymentNumberResult.ok) return paymentNumberResult
+
+            const paymentNumber = paymentNumberResult.value
+            const variableSymbol = createVariableSymbolFromSerialNumber(
+              paymentNumber.serialNumber
+            )
+            const specificSymbol = createSpecificSymbolFromDate(
+              paymentNumber.date
+            )
+
+            return ok(
+              removeUndefinedValues({
+                id: paymentId,
+                accountId: bank.accountId,
+                variableSymbol,
+                specificSymbol,
+                czQrPayload: createCzQrPayload({
+                  iban: account.iban,
+                  amount: payment.amount,
+                  currency: payment.currency,
+                  specificSymbol,
+                  variableSymbol,
+                }),
+              })
+            )
+          })()
+    if (bankPayment != null && !bankPayment.ok) {
+      return bankPayment
+    }
+
+    const sparkPaymentResult =
+      spark == null
+        ? null
+        : await (async () => {
+            const sparkAccounts = await run.deps.evolu.loadQuery(
+              activeSparkAccountsQuery
+            )
+            const sparkAccount = sparkAccounts.find(
+              (account) => account.id === spark.accountId
+            )
+            if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
+
+            let wallet: SparkPaymentWallet | undefined
+            try {
+              const quote = await run(
+                fetchYadioBtcExchangeRate(payment.currency)
+              )
+              if (!quote.ok) return quote
+
+              const amountSats = NonNegativeIntegerSchema.decode(
+                convertFiatMinorUnitsToSats(
+                  payment.amount,
+                  quote.value.exchangeRate
+                )
+              )
+              wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+              const lightningInvoice = await wallet.createLightningInvoice(
+                removeUndefinedValues({
+                  amountSats,
+                  memo: spark.memo,
+                  expirySeconds: spark.expirySeconds,
+                  includeSparkInvoice: spark.includeSparkInvoice ?? true,
+                })
+              )
+
+              return ok(
+                removeUndefinedValues({
+                  id: paymentId,
+                  accountId: spark.accountId,
+                  amountSats,
+                  exchangeRate: PositiveNumberSchema.decode(
+                    quote.value.exchangeRate
+                  ),
+                  exchangeRateSource: "yadio" as const,
+                  exchangeRateFetchedAt: TimestampMsSchema.decode(
+                    quote.value.fetchedAt
+                  ),
+                  lnInvoice: NonEmptyStringSchema.decode(
+                    lightningInvoice.invoice.encodedInvoice
+                  ),
+                  sparkTechnicalData: JSON.stringify(
+                    removeUndefinedValues({
+                      lightningReceiveRequestId: lightningInvoice.id,
+                      paymentHash: lightningInvoice.invoice.paymentHash,
+                      paymentPreimage: lightningInvoice.paymentPreimage,
+                      sparkInvoice: lightningInvoice.sparkInvoice,
+                    })
+                  ),
+                })
+              )
+            } catch (error) {
+              return err(
+                paymentPreparationFailed(
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to prepare payment details"
+                )
+              )
+            } finally {
+              await wallet?.cleanup?.()
+            }
+          })()
+    if (sparkPaymentResult != null && !sparkPaymentResult.ok) {
+      return sparkPaymentResult
+    }
+
+    if (
+      cashRegisterPayment == null &&
+      bankPayment == null &&
+      sparkPaymentResult == null
+    ) {
+      return ok(paymentId)
+    }
+
+    await runMutationWithCompletion((options) => {
+      if (cashRegisterPayment?.ok) {
         run.deps.evolu.upsert(
           "paymentCashRegister",
-          removeUndefinedValues({
-            id: paymentId,
-            accountId,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-      )
-
-      return ok(paymentId)
-    }
-
-    if (method === "iban") {
-      const accountResult = getFirstOr(
-        await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
-        ibanAccountNotFound(accountId)
-      )
-      if (!accountResult.ok) return accountResult
-
-      const account = accountResult.value
-      if (account.currency !== payment.currency) {
-        return err(
-          ibanAccountCurrencyMismatch({
-            id: accountId,
-            accountCurrency: account.currency,
-            paymentCurrency: payment.currency,
-          })
+          cashRegisterPayment.value,
+          {
+            ...options,
+            ownerId: evoluOwnerId,
+          }
         )
       }
 
-      const variableSymbol = null
-      await runMutationWithCompletion((options) =>
-        run.deps.evolu.upsert(
-          "paymentIban",
-          removeUndefinedValues({
-            id: paymentId,
-            accountId,
-            variableSymbol,
-            specificSymbol: specificSymbol ?? null,
-            czQrPayload: createCzQrPayload({
-              iban: account.iban,
-              amount: payment.amount,
-              currency: payment.currency,
-              specificSymbol: specificSymbol ?? null,
-              variableSymbol,
-            }),
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-      )
-
-      return ok(paymentId)
-    }
-
-    const sparkAccounts = await run.deps.evolu.loadQuery(
-      activeSparkAccountsQuery
-    )
-    const sparkAccount = sparkAccounts.find(
-      (account) => account.id === accountId
-    )
-    if (!sparkAccount) return err(accountSparkNotFound(accountId))
-
-    let wallet: SparkPaymentWallet | undefined
-    try {
-      const quote = await run(fetchYadioBtcExchangeRate(payment.currency))
-      if (!quote.ok) return quote
-
-      const amountSats = NonNegativeIntegerSchema.decode(
-        convertFiatMinorUnitsToSats(payment.amount, quote.value.exchangeRate)
-      )
-      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
-      const lightningInvoice = await wallet.createLightningInvoice(
-        removeUndefinedValues({
-          amountSats,
-          memo: sparkMemo,
-          expirySeconds: sparkExpirySeconds,
-          includeSparkInvoice: sparkIncludeSparkInvoice ?? true,
+      if (bankPayment?.ok) {
+        run.deps.evolu.upsert("paymentIban", bankPayment.value, {
+          ...options,
+          ownerId: evoluOwnerId,
         })
-      )
+      }
 
-      await runMutationWithCompletion((options) =>
-        run.deps.evolu.upsert(
-          "paymentSpark",
-          removeUndefinedValues({
-            id: paymentId,
-            accountId,
-            amountSats,
-            exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
-            exchangeRateSource: "yadio" as const,
-            exchangeRateFetchedAt: TimestampMsSchema.decode(
-              quote.value.fetchedAt
-            ),
-            lnInvoice: NonEmptyStringSchema.decode(
-              lightningInvoice.invoice.encodedInvoice
-            ),
-            sparkTechnicalData: JSON.stringify(
-              removeUndefinedValues({
-                lightningReceiveRequestId: lightningInvoice.id,
-                paymentHash: lightningInvoice.invoice.paymentHash,
-                paymentPreimage: lightningInvoice.paymentPreimage,
-                sparkInvoice: lightningInvoice.sparkInvoice,
-              })
-            ),
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-      )
+      if (sparkPaymentResult?.ok) {
+        run.deps.evolu.upsert("paymentSpark", sparkPaymentResult.value, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
+      }
+    })
 
-      return ok(paymentId)
-    } catch (error) {
-      return err(
-        paymentPreparationFailed(
-          error instanceof Error
-            ? error.message
-            : "Failed to prepare payment details"
-        )
-      )
-    } finally {
-      await wallet?.cleanup?.()
-    }
+    return ok(paymentId)
   }
 
 export const updatePayment =

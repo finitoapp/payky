@@ -133,7 +133,7 @@ describe("reconciliation claim actions", () => {
         iban: {
           accountId,
           variableSymbol: "123456",
-          specificSymbol: null,
+          specificSymbol: "260605",
           czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
         },
       })
@@ -153,7 +153,7 @@ describe("reconciliation claim actions", () => {
         iban: {
           variableSymbol: "123456",
           constantSymbol: null,
-          specificSymbol: null,
+          specificSymbol: "260605",
           bankReference: "123456789",
         },
       })
@@ -181,6 +181,61 @@ describe("reconciliation claim actions", () => {
           source: "auto",
         },
       ])
+  })
+
+  test("does not reconcile an IBAN account transaction with a different specific symbol", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const accountId = await createIbanAccount(run)
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 19_950,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: Date.parse("2026-05-26T12:00:00.000Z"),
+        iban: {
+          accountId,
+          variableSymbol: "123456",
+          specificSymbol: "260605",
+          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
+        },
+      })
+    )
+    const accountTransactionId = await run.orThrow(
+      createAccountTransaction({
+        accountId,
+        amount: 19_950,
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        iban: {
+          variableSymbol: "123456",
+          constantSymbol: null,
+          specificSymbol: "260606",
+          bankReference: "123456790",
+        },
+      })
+    )
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: null,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([])
   })
 
   test("does not reconcile an IBAN account transaction without variable symbol", async () => {

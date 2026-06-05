@@ -8,7 +8,6 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyStringSchema,
-  SpecificSymbolSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
@@ -409,29 +408,15 @@ describe("payment actions", () => {
       run(
         preparePaymentMethod({
           paymentId: id,
-          method: "cashRegister",
-          accountId: cashRegisterAccountId,
-        })
-      )
-    ).resolves.toEqual({ ok: true, value: id })
-
-    await expect(
-      run(
-        preparePaymentMethod({
-          paymentId: id,
-          method: "iban",
-          accountId: ibanAccountId,
-          specificSymbol: SpecificSymbolSchema.decode("9876543210"),
-        })
-      )
-    ).resolves.toEqual({ ok: true, value: id })
-
-    await expect(
-      run(
-        preparePaymentMethod({
-          paymentId: id,
-          method: "spark",
-          accountId: sparkAccountId,
+          cashRegister: {
+            accountId: cashRegisterAccountId,
+          },
+          bank: {
+            accountId: ibanAccountId,
+          },
+          spark: {
+            accountId: sparkAccountId,
+          },
         })
       )
     ).resolves.toEqual({ ok: true, value: id })
@@ -448,10 +433,10 @@ describe("payment actions", () => {
           iban: {
             id,
             accountId: ibanAccountId,
-            variableSymbol: null,
-            specificSymbol: "9876543210",
+            variableSymbol: "1",
+            specificSymbol: "260605",
             czQrPayload:
-              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*PT:IP*X-SS:9876543210",
+              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*PT:IP*X-VS:1*X-SS:260605",
           },
           spark: {
             id,

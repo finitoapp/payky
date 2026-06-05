@@ -313,8 +313,27 @@ function PaymentWaitingRequest({
         const result = await run(
           preparePaymentMethod({
             paymentId,
-            method: activePaymentMethod.kind,
-            accountId: activePaymentMethod.accountId,
+            ...(activePaymentMethod.kind === "cashRegister"
+              ? {
+                  cashRegister: {
+                    accountId: activePaymentMethod.accountId,
+                  },
+                }
+              : {}),
+            ...(activePaymentMethod.kind === "iban"
+              ? {
+                  bank: {
+                    accountId: activePaymentMethod.accountId,
+                  },
+                }
+              : {}),
+            ...(activePaymentMethod.kind === "spark"
+              ? {
+                  spark: {
+                    accountId: activePaymentMethod.accountId,
+                  },
+                }
+              : {}),
           })
         )
 

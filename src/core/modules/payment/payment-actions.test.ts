@@ -1,13 +1,14 @@
 import { evoluJsonObjectFrom, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { FetchDep } from "@/core/deps.ts"
+import type { DateDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyStringSchema,
+  SpecificSymbolSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
@@ -22,6 +23,14 @@ import {
 } from "./payment-actions.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
+
+const fixedDate = new Date("2026-06-05T12:00:00.000Z")
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => fixedDate,
+  },
+})
 
 const paymentWithDetailsByIdQuery = (id: PaymentId) =>
   createQuery((db) =>
@@ -70,6 +79,7 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
               "paymentIban.id",
               "paymentIban.accountId",
               "paymentIban.variableSymbol",
+              "paymentIban.specificSymbol",
               "paymentIban.czQrPayload",
               "paymentIban.isDeleted",
             ])
@@ -155,7 +165,7 @@ describe("payment actions", () => {
   test("creates and loads a payment with payment option details through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
@@ -184,7 +194,9 @@ describe("payment actions", () => {
         iban: {
           accountId: ibanAccountId,
           variableSymbol: "1234567890",
-          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
+          specificSymbol: "9876543210",
+          czQrPayload:
+            "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*X-VS:1234567890*X-SS:9876543210",
         },
       })
     )
@@ -219,9 +231,26 @@ describe("payment actions", () => {
             id,
             accountId: ibanAccountId,
             variableSymbol: "1234567890",
+            specificSymbol: "9876543210",
             czQrPayload:
-              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
+              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*X-VS:1234567890*X-SS:9876543210",
           },
+        },
+      ])
+
+    await expect
+      .poll(() =>
+        evolu.loadQuery(
+          createQuery((db) =>
+            db.selectFrom("paymentNumber").selectAll().where("id", "=", id)
+          )
+        )
+      )
+      .toMatchObject([
+        {
+          id,
+          serialNumber: 1,
+          date: "2026-06-05",
         },
       ])
 
@@ -261,7 +290,8 @@ describe("payment actions", () => {
           }),
         }),
       },
-    } satisfies EvoluDep & FetchDep & SparkWalletDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
@@ -285,6 +315,7 @@ describe("payment actions", () => {
         iban: {
           accountId: ibanAccountId,
           variableSymbol: "1234567890",
+          specificSymbol: null,
           czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
         },
       })
@@ -325,6 +356,7 @@ describe("payment actions", () => {
             id,
             accountId: ibanAccountId,
             variableSymbol: "1234567890",
+            specificSymbol: null,
           },
         },
       ])
@@ -355,7 +387,8 @@ describe("payment actions", () => {
           }),
         }),
       },
-    } satisfies EvoluDep & FetchDep & SparkWalletDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
@@ -388,6 +421,7 @@ describe("payment actions", () => {
           paymentId: id,
           method: "iban",
           accountId: ibanAccountId,
+          specificSymbol: SpecificSymbolSchema.decode("9876543210"),
         })
       )
     ).resolves.toEqual({ ok: true, value: id })
@@ -415,8 +449,9 @@ describe("payment actions", () => {
             id,
             accountId: ibanAccountId,
             variableSymbol: null,
+            specificSymbol: "9876543210",
             czQrPayload:
-              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
+              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*PT:IP*X-SS:9876543210",
           },
           spark: {
             id,
@@ -434,7 +469,7 @@ describe("payment actions", () => {
   test("marks a payment paid in cash by creating a cash account transaction", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
@@ -500,7 +535,7 @@ describe("payment actions", () => {
   test("marking a payment paid in cash twice to the same account does not duplicate the transaction or claim", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
@@ -561,7 +596,7 @@ describe("payment actions", () => {
   test("marking a payment paid in cash to two different accounts creates two transactions and two claims", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
     const secondCashRegisterAccountId = await run.orThrow(
@@ -626,7 +661,7 @@ describe("payment actions", () => {
   test("cancels a payment", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
 
@@ -642,6 +677,7 @@ describe("payment actions", () => {
         iban: {
           accountId: ibanAccountId,
           variableSymbol: undefined,
+          specificSymbol: null,
           czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
         },
       })

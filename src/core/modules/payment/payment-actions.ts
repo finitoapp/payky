@@ -7,7 +7,7 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import {
   fetchYadioBtcExchangeRate,
@@ -28,6 +28,12 @@ import type {
   paymentIban,
   paymentSpark,
 } from "@/core/modules/payment/payment.ts"
+import {
+  createNextPaymentNumberValues,
+  createPaymentNumberDate,
+} from "@/core/modules/payment-number/payment-number-actions.ts"
+import { paymentNumbersByNewestQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import { getPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
@@ -44,6 +50,7 @@ import {
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
+  type SpecificSymbol,
   type TimestampMs,
   TimestampMsSchema,
   type VariableSymbol,
@@ -205,11 +212,13 @@ const createCzQrPayload = ({
   iban,
   amount,
   currency,
+  specificSymbol,
   variableSymbol,
 }: {
   readonly iban: string
   readonly amount: number
   readonly currency: string
+  readonly specificSymbol: SpecificSymbol | null
   readonly variableSymbol: VariableSymbol | null
 }): NonEmptyString =>
   NonEmptyStringSchema.decode(
@@ -219,7 +228,9 @@ const createCzQrPayload = ({
       `ACC:${iban}`,
       `AM:${formatFiatMinorUnits(amount)}`,
       `CC:${currency}`,
+      "PT:IP",
       variableSymbol ? `X-VS:${variableSymbol}` : null,
+      specificSymbol ? `X-SS:${specificSymbol}` : null,
     ]
       .filter((part) => part !== null)
       .join("*")
@@ -243,12 +254,27 @@ export const createPayment =
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: Omit<InsertValues<typeof paymentSpark>, "id">
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
-  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps
+    const series = await run.orThrow(getPaymentNumberSeries())
+    const [previousPaymentNumber] = await run.deps.evolu.loadQuery(
+      paymentNumbersByNewestQuery
+    )
+    const paymentNumber = createNextPaymentNumberValues({
+      id,
+      date: createPaymentNumberDate(run.deps.date.now()),
+      series,
+      previous: previousPaymentNumber,
+    })
 
     await runMutationWithCompletion((options) => {
+      run.deps.evolu.upsert("paymentNumber", paymentNumber, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+
       if (cashRegister) {
         run.deps.evolu.upsert(
           "paymentCashRegister",
@@ -319,7 +345,7 @@ export const createPreparedPayment =
   }): Task<
     PaymentId,
     CreatePreparedPaymentError,
-    EvoluDep & EvoluOwnerIdDep & SparkWalletDep & FetchDep
+    EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep & FetchDep
   > =>
   async (run) => {
     if (!spark) {
@@ -402,6 +428,7 @@ export const preparePaymentMethod =
     paymentId,
     method,
     accountId,
+    specificSymbol,
     sparkMemo,
     sparkExpirySeconds,
     sparkIncludeSparkInvoice,
@@ -409,6 +436,7 @@ export const preparePaymentMethod =
     readonly paymentId: PaymentId
     readonly method: PaymentAccountKind
     readonly accountId: AccountId
+    readonly specificSymbol?: SpecificSymbol | null
     readonly sparkMemo?: string
     readonly sparkExpirySeconds?: number
     readonly sparkIncludeSparkInvoice?: boolean
@@ -482,10 +510,12 @@ export const preparePaymentMethod =
             id: paymentId,
             accountId,
             variableSymbol,
+            specificSymbol: specificSymbol ?? null,
             czQrPayload: createCzQrPayload({
               iban: account.iban,
               amount: payment.amount,
               currency: payment.currency,
+              specificSymbol: specificSymbol ?? null,
               variableSymbol,
             }),
           }),

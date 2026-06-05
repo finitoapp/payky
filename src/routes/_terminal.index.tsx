@@ -6,7 +6,7 @@ import { Suspense } from "react"
 import { accountAtom } from "@/atoms/account.ts"
 import { TerminalPaymentKeypadWithSettings } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { createFetchDep } from "@/core/deps.ts"
+import { createDateDep, createFetchDep } from "@/core/deps.ts"
 import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
@@ -70,6 +70,7 @@ function TerminalPaymentKeypadLoader() {
     await using run = createRun({
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      ...createDateDep(),
       ...createFetchDep(),
       ...createSparkWalletDep(),
     })

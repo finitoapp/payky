@@ -3,7 +3,11 @@ import { createRun } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import { createFetchDep, type EvoluOwnerIdDep } from "@/core/deps.ts"
+import {
+  createDateDep,
+  createFetchDep,
+  type EvoluOwnerIdDep,
+} from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createQuery } from "../src/core/evolu/schema"
@@ -22,6 +26,7 @@ import {
   NonEmptyStringSchema,
   NonNegativeIntegerFromStringSchema,
   PositiveNumberFromStringSchema,
+  SpecificSymbolSchema,
   TimestampMsSchema,
   VariableSymbolSchema,
 } from "../src/core/modules/shared/schema"
@@ -87,6 +92,7 @@ const paymentsWithDetailsQuery = createQuery((db) =>
           .select([
             "paymentIban.accountId",
             "paymentIban.variableSymbol",
+            "paymentIban.specificSymbol",
             "paymentIban.czQrPayload",
           ])
           .whereRef("paymentIban.id", "=", "payment.id")
@@ -139,6 +145,7 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
             .select([
               "paymentIban.accountId",
               "paymentIban.variableSymbol",
+              "paymentIban.specificSymbol",
               "paymentIban.czQrPayload",
             ])
             .whereRef("paymentIban.id", "=", "payment.id")
@@ -229,6 +236,9 @@ export const registerPaymentsCommand =
             variableSymbol: VariableSymbolSchema.optional().describe(
               "IBAN variable symbol"
             ),
+            specificSymbol: SpecificSymbolSchema.optional().describe(
+              "IBAN specific symbol"
+            ),
             czQrPayload: NonEmptyStringSchema.optional().describe(
               "CZ QR payment payload"
             ),
@@ -237,12 +247,18 @@ export const registerPaymentsCommand =
             const hasIbanInput =
               options.ibanAccountId != null ||
               options.variableSymbol != null ||
+              options.specificSymbol != null ||
               options.czQrPayload != null
 
             const iban = (() => {
               if (!hasIbanInput) return undefined
 
-              const { ibanAccountId, variableSymbol, czQrPayload } = options
+              const {
+                ibanAccountId,
+                specificSymbol,
+                variableSymbol,
+                czQrPayload,
+              } = options
 
               if (ibanAccountId == null || czQrPayload == null) {
                 printInvalidPaymentInput(
@@ -254,12 +270,14 @@ export const registerPaymentsCommand =
               return {
                 accountId: ibanAccountId,
                 variableSymbol: variableSymbol ?? null,
+                specificSymbol: specificSymbol ?? null,
                 czQrPayload,
               }
             })()
             if (iban === null) return
 
             const sparkRun = createRun({
+              ...createDateDep(),
               ...createFetchDep(),
               ...createSparkWalletDep(),
               evolu,
@@ -347,6 +365,9 @@ export const registerPaymentsCommand =
             variableSymbol: VariableSymbolSchema.optional().describe(
               "IBAN variable symbol"
             ),
+            specificSymbol: SpecificSymbolSchema.optional().describe(
+              "IBAN specific symbol"
+            ),
             czQrPayload: NonEmptyStringSchema.optional().describe(
               "CZ QR payment payload"
             ),
@@ -364,6 +385,7 @@ export const registerPaymentsCommand =
             const hasIbanInput =
               options.ibanAccountId != null ||
               options.variableSymbol != null ||
+              options.specificSymbol != null ||
               options.czQrPayload != null
 
             await run.orThrow(
@@ -401,6 +423,7 @@ export const registerPaymentsCommand =
                       iban: {
                         accountId: options.ibanAccountId,
                         variableSymbol: options.variableSymbol,
+                        specificSymbol: options.specificSymbol,
                         czQrPayload: options.czQrPayload,
                       },
                     }

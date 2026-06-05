@@ -36,11 +36,14 @@ import {
   paymentIndexes,
   paymentSpark,
 } from "@/core/modules/payment/payment.ts"
-import { paymentLastNumber } from "@/core/modules/payment-last-number/payment-last-number.ts"
 import {
   paymentLine,
   paymentLineIndexes,
 } from "@/core/modules/payment-line/payment-line.ts"
+import {
+  paymentNumber,
+  paymentNumberIndexes,
+} from "@/core/modules/payment-number/payment-number.ts"
 import { paymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import {
   reconciliationClaim,
@@ -68,10 +71,10 @@ export const AppSchema = {
   paymentSpark,
   paymentIban,
   paymentLine,
+  paymentNumber,
   reconciliationClaim,
   appSettings,
   paymentNumberSeries,
-  paymentLastNumber,
   fioPlugin,
   fioPluginToken,
 } as const
@@ -86,6 +89,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...billLineIndexes(create),
   ...paymentIndexes(create),
   ...paymentLineIndexes(create),
+  ...paymentNumberIndexes(create),
   ...reconciliationClaimIndexes(create),
   ...deviceIndexes(create),
   ...fioPluginIndexes(create),

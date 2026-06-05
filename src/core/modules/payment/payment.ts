@@ -11,6 +11,7 @@ import {
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
+  SpecificSymbolSchema,
   TimestampMsSchema,
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -47,6 +48,7 @@ export const paymentIban = {
   id: PaymentId,
   accountId: AccountId,
   variableSymbol: VariableSymbolSchema.nullable(),
+  specificSymbol: SpecificSymbolSchema.nullable(),
   czQrPayload: NonEmptyStringSchema,
 } as const
 

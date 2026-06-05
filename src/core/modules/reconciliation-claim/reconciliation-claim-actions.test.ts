@@ -1,6 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { DateDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
@@ -8,6 +9,12 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import { reconcileAccountTransaction } from "./reconciliation-claim-actions.ts"
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => new Date("2026-06-05T12:00:00.000Z"),
+  },
+})
 
 const reconciliationClaimsQuery = createQuery((db) =>
   db
@@ -60,7 +67,7 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles a cash register account transaction by amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await createCashRegisterAccount(run)
     const paymentId = await run.orThrow(
       createPayment({
@@ -112,7 +119,7 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles an IBAN account transaction by variable symbol and amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await createIbanAccount(run)
     const paymentId = await run.orThrow(
       createPayment({
@@ -126,6 +133,7 @@ describe("reconciliation claim actions", () => {
         iban: {
           accountId,
           variableSymbol: "123456",
+          specificSymbol: null,
           czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
         },
       })
@@ -178,7 +186,7 @@ describe("reconciliation claim actions", () => {
   test("does not reconcile an IBAN account transaction without variable symbol", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await createIbanAccount(run)
     await run.orThrow(
       createPayment({
@@ -192,6 +200,7 @@ describe("reconciliation claim actions", () => {
         iban: {
           accountId,
           variableSymbol: null,
+          specificSymbol: null,
           czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
         },
       })
@@ -232,7 +241,7 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles a Spark account transaction by invoice and sats amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await createSparkAccount(run)
     const paymentId = await run.orThrow(
       createPayment({

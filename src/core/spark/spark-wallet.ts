@@ -1,5 +1,10 @@
 import { SparkWallet } from "@buildonspark/spark-sdk"
 
+export interface SparkWalletSettings {
+  readonly ownerIdentityPublicKey: string
+  readonly privateEnabled: boolean
+}
+
 interface SparkLightningInvoice {
   readonly id?: string
   readonly invoice: {
@@ -17,6 +22,10 @@ export interface SparkPaymentWallet {
     readonly expirySeconds?: number
     readonly includeSparkInvoice?: boolean
   }) => Promise<SparkLightningInvoice>
+  readonly getWalletSettings: () => Promise<SparkWalletSettings | undefined>
+  readonly setPrivacyEnabled: (
+    privacyEnabled: boolean
+  ) => Promise<SparkWalletSettings | undefined>
   readonly cleanup?: () => void | Promise<void>
 }
 
@@ -46,6 +55,9 @@ export const createDefaultSparkPaymentWallet = async (
 
   return {
     createLightningInvoice: (params) => wallet.createLightningInvoice(params),
+    getWalletSettings: () => wallet.getWalletSettings(),
+    setPrivacyEnabled: (privacyEnabled) =>
+      wallet.setPrivacyEnabled(privacyEnabled),
     cleanup: () => wallet.cleanup(),
   }
 }

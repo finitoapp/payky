@@ -39,6 +39,7 @@ import {
   IbanSchema,
   NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
+import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -207,24 +208,75 @@ function SparkAccountForm() {
   const evolu = useEvolu()
   const enabledInputId = useId()
   const mnemonicInputId = useId()
+  const privacyModeInputId = useId()
   const { data: accountData } = useEvoluQuery(sparkAccountQuery)
   const [account] = accountData
   const [enabled, setEnabled] = useState(false)
   const [mnemonic, setMnemonic] = useState("")
+  const [privacyMode, setPrivacyMode] = useState(false)
   const [error, setError] = useState<TranslationKey | null>(null)
+  const [privacyModeError, setPrivacyModeError] =
+    useState<TranslationKey | null>(null)
   const [saved, setSaved] = useState(false)
   const [pending, setPending] = useState(false)
+  const [privacyModePending, setPrivacyModePending] = useState(false)
 
   useEffect(() => {
     setEnabled(account ? account.isDeleted !== 1 : false)
     setMnemonic(account?.mnemonic ?? "")
   }, [account])
 
+  useEffect(() => {
+    const accountMnemonic = account?.mnemonic
+    let active = true
+
+    setPrivacyModeError(null)
+
+    if (!accountMnemonic) {
+      setPrivacyMode(false)
+      setPrivacyModePending(false)
+      return
+    }
+
+    const loadPrivacyMode = async () => {
+      setPrivacyModePending(true)
+      let wallet:
+        | Awaited<ReturnType<typeof createDefaultSparkPaymentWallet>>
+        | undefined
+
+      try {
+        wallet = await createDefaultSparkPaymentWallet(accountMnemonic)
+        const settings = await wallet.getWalletSettings()
+
+        if (active) {
+          setPrivacyMode(settings?.privateEnabled ?? false)
+        }
+      } catch {
+        if (active) {
+          setPrivacyModeError("settings.sparkAccount.privacyMode.loadError")
+        }
+      } finally {
+        await wallet?.cleanup?.()
+
+        if (active) {
+          setPrivacyModePending(false)
+        }
+      }
+    }
+
+    void loadPrivacyMode()
+
+    return () => {
+      active = false
+    }
+  }, [account?.mnemonic])
+
   return (
     <form
       onSubmit={async (event) => {
         event.preventDefault()
         setError(null)
+        setPrivacyModeError(null)
         setSaved(false)
 
         const normalizedMnemonic = normalizeMnemonic(mnemonic)
@@ -255,6 +307,33 @@ function SparkAccountForm() {
               mnemonic: mnemonicResult?.data,
             })
           )
+
+          if (mnemonicResult) {
+            let wallet:
+              | Awaited<ReturnType<typeof createDefaultSparkPaymentWallet>>
+              | undefined
+
+            try {
+              wallet = await createDefaultSparkPaymentWallet(
+                mnemonicResult.data
+              )
+              const settings = await wallet.setPrivacyEnabled(privacyMode)
+
+              if (!settings) {
+                setPrivacyModeError(
+                  "settings.sparkAccount.privacyMode.saveError"
+                )
+                return
+              }
+
+              setPrivacyMode(settings.privateEnabled)
+            } catch {
+              setPrivacyModeError("settings.sparkAccount.privacyMode.saveError")
+              return
+            } finally {
+              await wallet?.cleanup?.()
+            }
+          }
 
           setMnemonic(normalizedMnemonic)
           setSaved(true)
@@ -303,6 +382,7 @@ function SparkAccountForm() {
                 onChange={(event) => {
                   setMnemonic(event.currentTarget.value)
                   setError(null)
+                  setPrivacyModeError(null)
                   setSaved(false)
                 }}
               />
@@ -310,6 +390,36 @@ function SparkAccountForm() {
                 {t("settings.sparkAccount.mnemonic.description")}
               </FieldDescription>
               <FieldError>{error ? t(error) : null}</FieldError>
+            </Field>
+
+            <Field
+              orientation="horizontal"
+              data-invalid={privacyModeError !== null}
+            >
+              <Checkbox
+                id={privacyModeInputId}
+                checked={privacyMode}
+                disabled={pending || privacyModePending}
+                aria-invalid={privacyModeError !== null}
+                onCheckedChange={(checked) => {
+                  setPrivacyMode(checked)
+                  setPrivacyModeError(null)
+                  setSaved(false)
+                }}
+              />
+              <FieldContent>
+                <FieldLabel htmlFor={privacyModeInputId}>
+                  {t("settings.sparkAccount.privacyMode.label")}
+                </FieldLabel>
+                <FieldDescription>
+                  {privacyModePending
+                    ? t("settings.sparkAccount.privacyMode.loading")
+                    : t("settings.sparkAccount.privacyMode.description")}
+                </FieldDescription>
+                <FieldError>
+                  {privacyModeError ? t(privacyModeError) : null}
+                </FieldError>
+              </FieldContent>
             </Field>
           </FieldGroup>
         </CardContent>

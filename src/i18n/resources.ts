@@ -318,6 +318,14 @@ export const resources = {
     "settings.sparkAccount.mnemonic.placeholder": "abandon abandon abandon ...",
     "settings.sparkAccount.mnemonic.required":
       "Mnemonic is required when the Spark account is enabled.",
+    "settings.sparkAccount.privacyMode.description":
+      "Enables Spark wallet privacy mode for Lightning payments.",
+    "settings.sparkAccount.privacyMode.label": "Enable privacy mode",
+    "settings.sparkAccount.privacyMode.loading": "Loading privacy mode...",
+    "settings.sparkAccount.privacyMode.loadError":
+      "Could not load the Spark privacy mode setting.",
+    "settings.sparkAccount.privacyMode.saveError":
+      "Could not save the Spark privacy mode setting.",
     "settings.sparkAccount.save": "Save Spark account",
     "settings.sparkAccount.saved": "Spark account saved.",
     "settings.terminal": "TERMINAL",
@@ -662,6 +670,14 @@ export const resources = {
     "settings.sparkAccount.mnemonic.placeholder": "abandon abandon abandon ...",
     "settings.sparkAccount.mnemonic.required":
       "Mnemonic je povinný, když je Spark účet povolený.",
+    "settings.sparkAccount.privacyMode.description":
+      "Zapne režim soukromí Spark peněženky pro Lightning platby.",
+    "settings.sparkAccount.privacyMode.label": "Zapnout privacy mode",
+    "settings.sparkAccount.privacyMode.loading": "Načítám privacy mode...",
+    "settings.sparkAccount.privacyMode.loadError":
+      "Nastavení privacy mode ve Sparku se nepodařilo načíst.",
+    "settings.sparkAccount.privacyMode.saveError":
+      "Nastavení privacy mode ve Sparku se nepodařilo uložit.",
     "settings.sparkAccount.save": "Uložit Spark účet",
     "settings.sparkAccount.saved": "Spark účet uložen.",
     "settings.terminal": "TERMINÁL",

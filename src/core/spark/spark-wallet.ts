@@ -45,7 +45,7 @@ export const createSparkWalletDep = () => {
 
 export const createDefaultSparkPaymentWallet = async (
   mnemonic: string
-): Promise<SparkPaymentWallet> => {
+): Promise<SparkPaymentWallet & AsyncDisposable> => {
   const { wallet } = await SparkWallet.getOrCreateWallet({
     mnemonicOrSeed: mnemonic,
     options: {
@@ -59,5 +59,6 @@ export const createDefaultSparkPaymentWallet = async (
     setPrivacyEnabled: (privacyEnabled) =>
       wallet.setPrivacyEnabled(privacyEnabled),
     cleanup: () => wallet.cleanup(),
+    [Symbol.asyncDispose]: () => wallet.cleanup(),
   }
 }

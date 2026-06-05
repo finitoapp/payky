@@ -240,12 +240,10 @@ function SparkAccountForm() {
 
     const loadPrivacyMode = async () => {
       setPrivacyModePending(true)
-      let wallet:
-        | Awaited<ReturnType<typeof createDefaultSparkPaymentWallet>>
-        | undefined
 
       try {
-        wallet = await createDefaultSparkPaymentWallet(accountMnemonic)
+        await using wallet =
+          await createDefaultSparkPaymentWallet(accountMnemonic)
         const settings = await wallet.getWalletSettings()
 
         if (active) {
@@ -256,8 +254,6 @@ function SparkAccountForm() {
           setPrivacyModeError("settings.sparkAccount.privacyMode.loadError")
         }
       } finally {
-        await wallet?.cleanup?.()
-
         if (active) {
           setPrivacyModePending(false)
         }
@@ -309,12 +305,8 @@ function SparkAccountForm() {
           )
 
           if (mnemonicResult) {
-            let wallet:
-              | Awaited<ReturnType<typeof createDefaultSparkPaymentWallet>>
-              | undefined
-
             try {
-              wallet = await createDefaultSparkPaymentWallet(
+              await using wallet = await createDefaultSparkPaymentWallet(
                 mnemonicResult.data
               )
               const settings = await wallet.setPrivacyEnabled(privacyMode)
@@ -330,8 +322,6 @@ function SparkAccountForm() {
             } catch {
               setPrivacyModeError("settings.sparkAccount.privacyMode.saveError")
               return
-            } finally {
-              await wallet?.cleanup?.()
             }
           }
 

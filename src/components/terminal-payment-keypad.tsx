@@ -55,15 +55,14 @@ const rateRefreshIntervalMs = 30_000
 const satsPerBtc = 100_000_000
 const fiatMinorUnits = 100
 const keypadVibrationMs = 10
-const MotionButton = motion.create(Button)
-const keypadButtonPressAnimation = {
-  scale: [1, 0.92, 1.08, 1],
-  y: [0, 4, -12, 0],
+const keypadButtonBubbleAnimation = {
+  opacity: [0.28, 0.16, 0],
+  scale: [0.25, 1.15, 1.65],
 }
 const amountChangeAnimation = {
-  opacity: [0.92, 1],
-  scale: [1.004, 1],
-  y: [3, 0],
+  opacity: [0.6, 1, 1],
+  scale: [0.94, 1.03, 1],
+  y: [0, 0, 0],
 }
 
 type KeypadKey = (typeof keypad)[number]
@@ -234,9 +233,10 @@ function AmountDisplay({
 
     lastAnimatedAmountRef.current = formattedMoney
 
+    amountAnimationControls.stop()
     void amountAnimationControls.start({
       ...amountChangeAnimation,
-      transition: { type: "spring", stiffness: 220, damping: 24, mass: 0.6 },
+      transition: { duration: 0.32, ease: "easeOut", times: [0, 0.55, 1] },
     })
   }, [amountAnimationControls, formattedMoney, shouldReduceMotion])
 
@@ -374,7 +374,7 @@ function Keypad({
   }
 
   return (
-    <section className="grid grid-cols-3 gap-x-12 gap-y-6 px-8">
+    <section className="grid grid-cols-3 gap-x-0 gap-y-10">
       {keypad.map((key) => (
         <KeypadButton
           key={key}
@@ -403,31 +403,42 @@ function KeypadButton({
   readonly keypadKey: KeypadKey
   readonly onPress: (key: KeypadKey) => void
 }) {
-  const buttonAnimationControls = useAnimationControls()
+  const bubbleAnimationControls = useAnimationControls()
   const shouldReduceMotion = useReducedMotion()
 
   return (
-    <MotionButton
+    <Button
       variant="ghost"
       aria-label={ariaLabel}
-      className="h-16 rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
-      animate={buttonAnimationControls}
+      className="relative size-24 -m-6 w-auto overflow-hidden rounded-full text-3xl text-foreground hover:bg-primary-foreground/10"
       disabled={disabled}
       onPointerDown={() => {
         if (disabled) return
 
         if (!shouldReduceMotion) {
-          void buttonAnimationControls.start({
-            ...keypadButtonPressAnimation,
-            transition: { duration: 0.28, ease: "easeOut" },
+          bubbleAnimationControls.stop()
+          bubbleAnimationControls.set({ opacity: 0, scale: 0.25 })
+          void bubbleAnimationControls.start({
+            ...keypadButtonBubbleAnimation,
+            transition: {
+              duration: 0.34,
+              ease: "easeOut",
+              times: [0, 0.6, 1],
+            },
           })
         }
 
         onPress(keypadKey)
       }}
     >
-      {children}
-    </MotionButton>
+      <motion.span
+        aria-hidden="true"
+        className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute top-1/2 left-1/2 size-24 rounded-full bg-primary/20"
+        initial={{ opacity: 0, scale: 0.25 }}
+        animate={bubbleAnimationControls}
+      />
+      <span className="relative z-10">{children}</span>
+    </Button>
   )
 }
 

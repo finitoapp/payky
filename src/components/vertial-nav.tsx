@@ -10,6 +10,7 @@ interface NavItem {
   label: React.ReactNode
   action?: React.ReactNode
   to?: LinkProps["to"]
+  href?: string
   params?: LinkProps["params"]
   icon?: React.ReactNode
   active?: boolean
@@ -49,34 +50,55 @@ export function VerticalNav({ items, className, title }: VerticalNavProps) {
 
 function NavItemComponent({ item }: { item: NavItem }) {
   const Component = item.component ?? (item.to ? Link : "button")
+  const className = cn(
+    "text-left",
+    "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
+    "data-[variant=outline]:border-t-0 data-[variant=outline]:first:border-t",
+    "hover:bg-accent/50",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+    "data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
+    item.className
+  )
+
+  if (item.href) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noreferrer"
+        className={className}
+        data-state={item.active ? "on" : "off"}
+      >
+        <NavItemContent item={item} />
+      </a>
+    )
+  }
 
   return (
     <Component
       to={item.to}
       params={item.params}
       onClick={item.onClick}
-      className={cn(
-        "text-left",
-        "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
-        "data-[variant=outline]:border-t-0 data-[variant=outline]:first:border-t",
-        "hover:bg-accent/50",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-        "data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
-        item.className
-      )}
+      className={className}
       data-state={item.active ? "on" : "off"}
     >
-      <div className={"p-1 flex w-full items-center"}>
-        <div className="flex items-center gap-3 w-full p-0.5">
-          {item.icon}
-          <span className={"w-full"}>{item.label}</span>
-          {!item.disableAction && (
-            <div className={"pl-2"}>
-              {item.action ? item.action : <ChevronRight className="h-4 w-4" />}
-            </div>
-          )}
-        </div>
-      </div>
+      <NavItemContent item={item} />
     </Component>
+  )
+}
+
+function NavItemContent({ item }: { item: NavItem }) {
+  return (
+    <div className={"p-1 flex w-full items-center"}>
+      <div className="flex items-center gap-3 w-full p-0.5">
+        {item.icon}
+        <span className={"w-full"}>{item.label}</span>
+        {!item.disableAction && (
+          <div className={"pl-2"}>
+            {item.action ? item.action : <ChevronRight className="h-4 w-4" />}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

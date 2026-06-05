@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { type Info, Mail, ScrollText, ShieldCheck, Tag } from "lucide-react"
+import { GitFork, type Info, ScrollText, ShieldCheck } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { Badge } from "@/components/ui/badge.tsx"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -24,6 +23,7 @@ interface AboutRow {
   readonly title: TranslationKey
   readonly description: TranslationKey
   readonly to?: VerticalNavItem["to"]
+  readonly href?: string
 }
 
 const aboutRows: ReadonlyArray<AboutRow> = [
@@ -40,9 +40,10 @@ const aboutRows: ReadonlyArray<AboutRow> = [
     to: "/settings/about/terms",
   },
   {
-    icon: Mail,
-    title: "settings.about.contact.title",
-    description: "settings.about.contact.description",
+    icon: GitFork,
+    title: "settings.about.github.title",
+    description: "settings.about.github.description",
+    href: "https://github.com/finitoapp/payky",
   },
 ]
 
@@ -63,6 +64,7 @@ function createAboutNavItems(
         </span>
       ),
       to: row.to,
+      href: row.href,
       icon: <Icon className="text-muted-foreground" />,
     }
   })
@@ -77,17 +79,18 @@ function AboutPage() {
       <div className="h-6" />
       <FadeHeader title={t("settings.about.title")} />
 
-      <VerticalNav title={t("settings.about.app.title")} items={aboutItems} />
-
-      <div className="flex items-center justify-between gap-4 rounded-md bg-card px-4 py-3 shadow">
-        <span className="flex items-center gap-3">
-          <Tag className="text-muted-foreground" />
-          <span className="text-sm font-medium">
-            {t("settings.about.version.title")}
-          </span>
-        </span>
-        <Badge variant="secondary">{appVersion}</Badge>
+      <div className="flex flex-col items-center gap-8 pt-8 pb-4 text-center">
+        <img
+          src="/icon-animated.svg"
+          alt={t("settings.about.app.title")}
+          className="size-40 rounded-3xl shadow"
+        />
+        <p className="text-sm text-muted-foreground">
+          {t("settings.appVersion")} <strong>{appVersion}</strong>
+        </p>
       </div>
+
+      <VerticalNav title={t("settings.about.app.title")} items={aboutItems} />
     </>
   )
 }

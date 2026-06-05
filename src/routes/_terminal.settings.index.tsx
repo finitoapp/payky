@@ -126,8 +126,6 @@ function createSettingsNavItems(
   })
 }
 
-const appVersion = __APP_VERSION__
-
 function SettingsPage() {
   const { t } = useTranslation()
   const generalItems = useMemo(
@@ -171,12 +169,6 @@ function SettingsPage() {
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav title={t("settings.security")} items={securityItems} />
       <VerticalNav title={t("settings.general")} items={generalItems} />
-
-      <div className={"text-center text-sm"}>
-        {t("settings.appVersion")} <strong>{appVersion}</strong>
-      </div>
-
-      <div className={"text-center text-sm"}>{t("settings.openSource")}</div>
     </>
   )
 }

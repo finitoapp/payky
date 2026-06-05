@@ -137,9 +137,9 @@ export const resources = {
     "settings.about.app.description":
       "A local-first payment terminal for Bitcoin-native sales.",
     "settings.about.app.title": "Payky",
-    "settings.about.contact.description":
-      "Support and contact details will be available in the next release.",
-    "settings.about.contact.title": "Contact",
+    "settings.about.github.description":
+      "Join the development and follow the project",
+    "settings.about.github.title": "Source code on GitHub",
     "settings.about.description": "Version, terms and contact",
     "settings.about.privacy.body":
       "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, mint information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and mint or wallet access data secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Cashu mints to issue, redeem, or manage ecash tokens\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS\nPayky does not use analytics or tracking services unless they are explicitly added and disclosed in the app.\n\n5. THIRD-PARTY MINTS\nWhen using ecash mints, the mint operator may see transaction amounts, timing, token redemption activity, and related metadata. Choose trusted mints and avoid keeping unnecessary balances with any single mint.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: June 2026",
@@ -256,7 +256,6 @@ export const resources = {
     "settings.language.title": "Language & Region",
     "settings.mints.description": "Manage Cashu mints and Lightning settings",
     "settings.mints.title": "Mints",
-    "settings.openSource": "We are open source",
     "settings.paymentAccounts.description":
       "Configure bank, Spark, and cash register accounts",
     "settings.paymentAccounts.title": "Payment Accounts",
@@ -511,9 +510,8 @@ export const resources = {
     "settings.about.app.description":
       "Lokální platební terminál pro prodeje nativní pro Bitcoin.",
     "settings.about.app.title": "Payky",
-    "settings.about.contact.description":
-      "Podpora a kontaktní údaje budou dostupné v příští verzi.",
-    "settings.about.contact.title": "Kontakt",
+    "settings.about.github.description": "Zapojte se do vývoje aplikace",
+    "settings.about.github.title": "Zdrojový kód na GitHubu",
     "settings.about.description": "Verze, podmínky a kontakt",
     "settings.about.privacy.body":
       "PAYKY - ZÁSADY OCHRANY SOUKROMÍ\n\n1. SBĚR DAT\nPayky neprodává osobní údaje a je navrženo tak, aby aplikační data zůstávala lokálně ve vašem zařízení. Aplikace ukládá nastavení terminálu, katalogová data, záznamy plateb a související provozní data lokálně a synchronizuje aplikační data přes Evolu.\n\n2. PLATEBNÍ DATA\nPlatební a terminálová data mohou obsahovat částky, časové údaje, názvy položek, stav platby, informace o mintech, identifikátory zařízení a další záznamy potřebné pro provoz bitcoinového platebního terminálu. Chraňte své zařízení, přihlašovací údaje, zálohy a přístupová data k mintům nebo peněženkám.\n\n3. SÍŤOVÁ KOMUNIKACE\nAplikace může komunikovat s:\n- infrastrukturou Evolu pro synchronizaci lokálních-first aplikačních dat\n- Cashu minty pro vydávání, proplácení nebo správu ecash tokenů\n- Lightning nebo peněženkovými službami používanými k vytvoření nebo vypořádání plateb\n- cenovými nebo kurzovými API, pokud je zapnutý fiat přepočet\n\nTyto služby mohou mít vlastní zásady ochrany soukromí, logy a pravidla uchovávání dat.\n\n4. ANALYTIKA\nPayky nepoužívá analytické ani sledovací služby, pokud nejsou výslovně přidány a zveřejněny v aplikaci.\n\n5. MINTY TŘETÍCH STRAN\nPři používání ecash mintů může provozovatel mintu vidět částky transakcí, časování, aktivitu proplácení tokenů a související metadata. Vybírejte důvěryhodné minty a nedržte zbytečné zůstatky u jednoho mintu.\n\n6. ZÁLOHY A SYNCHRONIZACE\nPokud jsou zapnuté synchronizační nebo zálohovací funkce, mohou být aplikační data přenášena do synchronizační infrastruktury. Se synchronizovanými daty zacházejte jako s provozními obchodními daty a chraňte každé zařízení, které k nim má přístup.\n\n7. KONTAKT\nKontaktní údaje pro otázky soukromí budou zveřejněny v dokumentaci projektu.\n\nPoslední aktualizace: červen 2026",
@@ -632,7 +630,6 @@ export const resources = {
     "settings.language.title": "Jazyk a region",
     "settings.mints.description": "Správa Cashu mintů a Lightning nastavení",
     "settings.mints.title": "Minty",
-    "settings.openSource": "Jsme open source",
     "settings.paymentAccounts.description":
       "Nastavení bankovního, Spark a pokladního účtu",
     "settings.paymentAccounts.title": "Platební účty",

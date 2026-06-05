@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@base-ui/react": "1.5.0",
-    "@buildonspark/spark-sdk": "0.8.2",
+    "@buildonspark/spark-sdk": "0.8.5",
     "@evolu/common": "8.0.0-next.5",
     "@evolu/nodejs": "3.0.0-next.3",
     "@evolu/react": "11.0.0-next.0",
@@ -30,7 +30,7 @@
     "@t3-oss/env-core": "0.13.11",
     "@tailwindcss/vite": "4.3.0",
     "@tanstack/react-form": "1.33.0",
-    "@tanstack/react-router": "1.170.10",
+    "@tanstack/react-router": "1.170.11",
     "assert-never": "1.4.0",
     "better-sqlite3": "12.10.0",
     "class-variance-authority": "0.7.1",
@@ -60,7 +60,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
     "@standard-schema/spec": "1.1.0",
-    "@tanstack/router-plugin": "1.168.13",
+    "@tanstack/router-plugin": "1.168.14",
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "25.9.1",
     "@types/react": "19.2.16",

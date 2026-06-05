@@ -7,6 +7,7 @@ import {
   Landmark,
   Languages,
   Plug,
+  ReceiptText,
   ShoppingBag,
   SunMoon,
 } from "lucide-react"
@@ -87,6 +88,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.paymentAccounts.title",
     description: "settings.paymentAccounts.description",
     to: "/settings/payment-accounts",
+  },
+  {
+    icon: ReceiptText,
+    title: "settings.paymentNumberSeries.title",
+    description: "settings.paymentNumberSeries.description",
+    to: "/settings/payment-number-series",
   },
   {
     icon: Plug,

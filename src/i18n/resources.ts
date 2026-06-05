@@ -260,6 +260,46 @@ export const resources = {
     "settings.paymentAccounts.description":
       "Configure bank, Spark, and cash register accounts",
     "settings.paymentAccounts.title": "Payment Accounts",
+    "settings.paymentNumberSeries.day.default.description":
+      "Include the two-digit day in generated payment numbers",
+    "settings.paymentNumberSeries.day.default.title": "Show day",
+    "settings.paymentNumberSeries.day.hidden.description":
+      "Do not include the day in generated payment numbers",
+    "settings.paymentNumberSeries.day.hidden.title": "Hide day",
+    "settings.paymentNumberSeries.day.label": "Day format",
+    "settings.paymentNumberSeries.description":
+      "Configure how payment numbers are generated",
+    "settings.paymentNumberSeries.form.description":
+      "These values define the deterministic payment number series used by the terminal.",
+    "settings.paymentNumberSeries.form.title": "Number series format",
+    "settings.paymentNumberSeries.month.default.description":
+      "Include the two-digit month in generated payment numbers",
+    "settings.paymentNumberSeries.month.default.title": "Show month",
+    "settings.paymentNumberSeries.month.hidden.description":
+      "Do not include the month in generated payment numbers",
+    "settings.paymentNumberSeries.month.hidden.title": "Hide month",
+    "settings.paymentNumberSeries.month.label": "Month format",
+    "settings.paymentNumberSeries.prefix.description":
+      "Optional prefix added before generated payment numbers.",
+    "settings.paymentNumberSeries.prefix.invalid":
+      "Enter a prefix up to 255 characters.",
+    "settings.paymentNumberSeries.prefix.label": "Prefix",
+    "settings.paymentNumberSeries.save": "Save number series",
+    "settings.paymentNumberSeries.saved": "Number series saved.",
+    "settings.paymentNumberSeries.serialNumberDigits.description":
+      "Minimum number of digits for the increasing serial part.",
+    "settings.paymentNumberSeries.serialNumberDigits.invalid":
+      "Enter a whole number greater than zero.",
+    "settings.paymentNumberSeries.serialNumberDigits.label":
+      "Serial number digits",
+    "settings.paymentNumberSeries.title": "Payment Number Series",
+    "settings.paymentNumberSeries.year.default.description":
+      "Include the full four-digit year in generated payment numbers",
+    "settings.paymentNumberSeries.year.default.title": "Full year",
+    "settings.paymentNumberSeries.year.label": "Year format",
+    "settings.paymentNumberSeries.year.short.description":
+      "Include the short two-digit year in generated payment numbers",
+    "settings.paymentNumberSeries.year.short.title": "Short year",
     "settings.payments": "PAYMENTS",
     "settings.security": "SECURITY & PRIVACY",
     "settings.security.description": "Passcode and data controls",
@@ -564,6 +604,46 @@ export const resources = {
     "settings.paymentAccounts.description":
       "Nastavení bankovního, Spark a pokladního účtu",
     "settings.paymentAccounts.title": "Platební účty",
+    "settings.paymentNumberSeries.day.default.description":
+      "Přidat do generovaných čísel plateb dvouciferný den",
+    "settings.paymentNumberSeries.day.default.title": "Zobrazit den",
+    "settings.paymentNumberSeries.day.hidden.description":
+      "Nepřidávat den do generovaných čísel plateb",
+    "settings.paymentNumberSeries.day.hidden.title": "Skrýt den",
+    "settings.paymentNumberSeries.day.label": "Formát dne",
+    "settings.paymentNumberSeries.description":
+      "Nastavení generování čísel plateb",
+    "settings.paymentNumberSeries.form.description":
+      "Tyto hodnoty určují deterministickou číselnou řadu používanou terminálem.",
+    "settings.paymentNumberSeries.form.title": "Formát číselné řady",
+    "settings.paymentNumberSeries.month.default.description":
+      "Přidat do generovaných čísel plateb dvouciferný měsíc",
+    "settings.paymentNumberSeries.month.default.title": "Zobrazit měsíc",
+    "settings.paymentNumberSeries.month.hidden.description":
+      "Nepřidávat měsíc do generovaných čísel plateb",
+    "settings.paymentNumberSeries.month.hidden.title": "Skrýt měsíc",
+    "settings.paymentNumberSeries.month.label": "Formát měsíce",
+    "settings.paymentNumberSeries.prefix.description":
+      "Volitelná předpona přidaná před generovaná čísla plateb.",
+    "settings.paymentNumberSeries.prefix.invalid":
+      "Zadejte předponu dlouhou maximálně 255 znaků.",
+    "settings.paymentNumberSeries.prefix.label": "Předpona",
+    "settings.paymentNumberSeries.save": "Uložit číselnou řadu",
+    "settings.paymentNumberSeries.saved": "Číselná řada uložena.",
+    "settings.paymentNumberSeries.serialNumberDigits.description":
+      "Minimální počet číslic pro rostoucí pořadovou část.",
+    "settings.paymentNumberSeries.serialNumberDigits.invalid":
+      "Zadejte celé číslo větší než nula.",
+    "settings.paymentNumberSeries.serialNumberDigits.label":
+      "Počet číslic pořadí",
+    "settings.paymentNumberSeries.title": "Číselná řada plateb",
+    "settings.paymentNumberSeries.year.default.description":
+      "Přidat do generovaných čísel plateb celý čtyřciferný rok",
+    "settings.paymentNumberSeries.year.default.title": "Celý rok",
+    "settings.paymentNumberSeries.year.label": "Formát roku",
+    "settings.paymentNumberSeries.year.short.description":
+      "Přidat do generovaných čísel plateb krátký dvouciferný rok",
+    "settings.paymentNumberSeries.year.short.title": "Krátký rok",
     "settings.payments": "PLATBY",
     "settings.security": "BEZPEČNOST A SOUKROMÍ",
     "settings.security.description": "Heslo a ovládání dat",

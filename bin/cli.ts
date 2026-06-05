@@ -14,6 +14,7 @@ import { registerBackgroundJobsCommand } from "./cli-background-jobs"
 import { registerBillsCommand } from "./cli-bills"
 import { registerCatalogItemsCommand } from "./cli-catalog-items"
 import { registerFioPluginsCommand } from "./cli-fio-plugins"
+import { registerPaymentNumberSeriesCommand } from "./cli-payment-number-series"
 import { registerPaymentsCommand } from "./cli-payments"
 import { registerTablesCommand } from "./cli-tables"
 
@@ -29,6 +30,7 @@ const commands: ((
   registerAccountsCommand,
   registerAccountTransfersCommand,
   registerPaymentsCommand,
+  registerPaymentNumberSeriesCommand,
   registerTablesCommand,
   registerFioPluginsCommand,
   registerBackgroundJobsCommand,

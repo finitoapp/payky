@@ -56,12 +56,19 @@ interface PaymentMethodOption {
   readonly icon: ReactNode
 }
 
+interface CashPaymentTabProps {
+  readonly canMarkCashPaid: boolean
+  readonly cashPaymentErrorKey: TranslationKey | null
+  readonly cashPaymentPending: boolean
+  readonly cashRegisterAccountId: AccountId | null | undefined
+  readonly onMarkCashPaid: () => void
+}
+
 export const Route = createFileRoute("/_terminal/payment_/$paymentId")({
   component: PaymentWaitingPage,
   staticData: {
     terminalLayout: {
-      mainClassName: "bg-[#071012] text-white",
-      viewportClassName: "bg-[#071012] px-7 py-7 text-white",
+      viewportClassName: "px-7 py-7",
     },
   },
 })
@@ -362,7 +369,6 @@ function PaymentWaitingRequest({
     )
   }
 
-  const qrPayload = activePaymentMethod?.qrPayload ?? null
   const cashRegisterAccountId = payment.cashRegisterAccountId
   const isCashPaymentMethod = activePaymentMethod?.id === "cash"
   const canMarkCashPaid =
@@ -406,10 +412,10 @@ function PaymentWaitingRequest({
       <div className="flex min-h-full flex-col justify-between gap-8">
         <section className="flex flex-1 flex-col items-center justify-center gap-7 text-center">
           <div className="flex flex-col items-center gap-2">
-            <p className="text-sm font-medium text-white/60">
+            <p className="text-sm font-medium text-muted-foreground">
               {t("paymentWait.pay")}
             </p>
-            <h1 className="text-4xl font-semibold tracking-tight text-white tabular-nums">
+            <h1 className="text-4xl font-semibold tracking-tight tabular-nums text-foreground">
               {formatMoney(
                 {
                   value: payment.amount,
@@ -418,7 +424,7 @@ function PaymentWaitingRequest({
                 locale
               )}
             </h1>
-            <p className="text-md font-medium text-white/55 tabular-nums">
+            <p className="text-md font-medium text-muted-foreground tabular-nums">
               {payment.amountSats === null
                 ? "\u00A0"
                 : `₿${payment.amountSats.toLocaleString(locale)}`}
@@ -451,12 +457,12 @@ function PaymentWaitingRequest({
                       : t("paymentWait.scanOrTap")}
                   </TabsContent>
                 ))}
-                <TabsList className="mx-auto h-16 rounded-full border border-white/15 bg-background p-2 text-white/60">
+                <TabsList className="mx-auto h-16 rounded-full border border-black/15 dark:border-white/15  bg-background p-2 text-muted-foreground">
                   {paymentMethods.map((method) => (
                     <TabsTrigger
                       key={method.id}
                       value={method.id}
-                      className="h-full rounded-full px-6 text-white/60 data-active:bg-white data-active:text-black dark:data-active:bg-white dark:data-active:text-black [&_svg:not([class*='size-'])]:size-7"
+                      className="h-full rounded-full px-6 text-muted-foreground data-active:bg-foreground data-active:text-background dark:data-active:bg-white dark:data-active:text-black"
                     >
                       {method.icon}
                       <span>{method.label}</span>
@@ -465,7 +471,7 @@ function PaymentWaitingRequest({
                 </TabsList>
               </Tabs>
             ) : (
-              <p className="max-w-72 text-balance text-sm text-white/55">
+              <p className="max-w-72 text-balance text-sm text-muted-foreground">
                 {t("paymentWait.missingRequest")}
               </p>
             )}
@@ -478,63 +484,32 @@ function PaymentWaitingRequest({
           ) : null}
 
           {preparingPaymentMethod ? (
-            <div className="flex items-center gap-2 text-sm text-white/55">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoaderCircleIcon className="animate-spin" />
               <span>{t("paymentWait.preparingRequest")}</span>
             </div>
           ) : null}
 
-          {qrPayload && (
-            <div className="w-full px-6">
-              <Card className={"bg-white w-full aspect-square"}>
-                <CardContent className={"flex flex-col"}>
-                  <QRCodeSVG value={qrPayload} className="size-full" />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {isCashPaymentMethod && (
-            <div className="flex w-full flex-col items-center py-24">
-              <Button
-                type="button"
-                size="lg"
-                disabled={!canMarkCashPaid || cashPaymentPending}
-                onClick={() => void handleMarkCashPaid()}
-                className="h-14 px-8 text-base"
-              >
-                {cashPaymentPending ? (
-                  <LoaderCircleIcon className="animate-spin" />
-                ) : (
-                  <CheckIcon />
-                )}
-                {cashPaymentPending
-                  ? t("paymentWait.cashPaid.pending")
-                  : t("paymentWait.cashPaid.action")}
-              </Button>
-              {cashPaymentErrorKey ? (
-                <p className="text-sm font-medium text-destructive">
-                  {t(cashPaymentErrorKey)}
-                </p>
-              ) : null}
-              {cashRegisterAccountId === null ||
-              cashRegisterAccountId === undefined ? (
-                <p className="max-w-72 text-balance text-sm text-white/55">
-                  {t("paymentWait.cashPaid.unavailable")}
-                </p>
-              ) : null}
-            </div>
-          )}
+          {activePaymentMethod ? (
+            <PaymentMethodTabContent
+              method={activePaymentMethod}
+              canMarkCashPaid={canMarkCashPaid}
+              cashPaymentErrorKey={cashPaymentErrorKey}
+              cashPaymentPending={cashPaymentPending}
+              cashRegisterAccountId={cashRegisterAccountId}
+              onMarkCashPaid={() => void handleMarkCashPaid()}
+            />
+          ) : null}
 
           <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-5 text-white">
+            <div className="flex items-center gap-5 text-foreground">
               <p className="text-lg font-semibold tracking-tight">
                 {isCashPaymentMethod
                   ? t("paymentWait.cashPaid.prompt")
                   : t("paymentWait.scanOrTap")}
               </p>
             </div>
-            <p className="flex items-center gap-2 text-sm text-white/55">
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoaderCircleIcon className="animate-spin" />
               <span>{t("paymentWait.waiting")}</span>
             </p>
@@ -585,9 +560,104 @@ function PaymentWaitingRequest({
   )
 }
 
+function PaymentMethodTabContent({
+  method,
+  canMarkCashPaid,
+  cashPaymentErrorKey,
+  cashPaymentPending,
+  cashRegisterAccountId,
+  onMarkCashPaid,
+}: {
+  readonly method: PaymentMethodOption
+} & CashPaymentTabProps) {
+  switch (method.id) {
+    case "spark":
+      return <SparkPaymentTab qrPayload={method.qrPayload} />
+    case "iban":
+      return <IbanPaymentTab qrPayload={method.qrPayload} />
+    case "cash":
+      return (
+        <CashPaymentTab
+          canMarkCashPaid={canMarkCashPaid}
+          cashPaymentErrorKey={cashPaymentErrorKey}
+          cashPaymentPending={cashPaymentPending}
+          cashRegisterAccountId={cashRegisterAccountId}
+          onMarkCashPaid={onMarkCashPaid}
+        />
+      )
+  }
+}
+
+function SparkPaymentTab({ qrPayload }: { readonly qrPayload: string | null }) {
+  return <QrPaymentRequest qrPayload={qrPayload} />
+}
+
+function IbanPaymentTab({ qrPayload }: { readonly qrPayload: string | null }) {
+  return <QrPaymentRequest qrPayload={qrPayload} />
+}
+
+function CashPaymentTab({
+  canMarkCashPaid,
+  cashPaymentErrorKey,
+  cashPaymentPending,
+  cashRegisterAccountId,
+  onMarkCashPaid,
+}: CashPaymentTabProps) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex w-full flex-col items-center py-24">
+      <Button
+        type="button"
+        size="lg"
+        disabled={!canMarkCashPaid || cashPaymentPending}
+        onClick={onMarkCashPaid}
+        className="h-14 px-8 text-base"
+      >
+        {cashPaymentPending ? (
+          <LoaderCircleIcon className="animate-spin" />
+        ) : (
+          <CheckIcon />
+        )}
+        {cashPaymentPending
+          ? t("paymentWait.cashPaid.pending")
+          : t("paymentWait.cashPaid.action")}
+      </Button>
+      {cashPaymentErrorKey ? (
+        <p className="text-sm font-medium text-destructive">
+          {t(cashPaymentErrorKey)}
+        </p>
+      ) : null}
+      {cashRegisterAccountId === null || cashRegisterAccountId === undefined ? (
+        <p className="max-w-72 text-balance text-sm text-muted-foreground">
+          {t("paymentWait.cashPaid.unavailable")}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function QrPaymentRequest({
+  qrPayload,
+}: {
+  readonly qrPayload: string | null
+}) {
+  if (qrPayload === null) return null
+
+  return (
+    <div className="w-full px-6">
+      <Card className="aspect-square w-full bg-white">
+        <CardContent className="flex flex-col">
+          <QRCodeSVG value={qrPayload} className="size-full" />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 function PaymentWaitingMessage({ children }: { readonly children: string }) {
   return (
-    <div className="flex min-h-full items-center justify-center px-8 text-center text-lg text-white/70">
+    <div className="flex min-h-full items-center justify-center px-8 text-center text-lg text-muted-foreground">
       {children}
     </div>
   )

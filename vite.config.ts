@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import basicSsl from "@vitejs/plugin-basic-ssl"
 import react from "@vitejs/plugin-react"
+import type { PluginOption } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 import { defineConfig } from "vitest/config"
 
@@ -18,6 +19,57 @@ function getAppVersion(): string {
   }
 }
 
+const evoluAndroidWebViewWorkerLocksShim = `
+const __paykyIsAndroidWebView = /Android/i.test(globalThis.navigator.userAgent) && /; wv\\)|\\bwv\\b/i.test(globalThis.navigator.userAgent);
+if (__paykyIsAndroidWebView && globalThis.navigator.locks) {
+  const __paykyNativeLockManager = globalThis.navigator.locks;
+  const __paykyEvoluOneTabSharedWorkerPolyfillLock = "evolu-one-tab-sharedworker-polyfill";
+  Object.defineProperty(globalThis.navigator, "locks", {
+    configurable: true,
+    value: {
+      request(name, optionsOrCallback, maybeCallback) {
+        const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : maybeCallback;
+        if (
+          name === __paykyEvoluOneTabSharedWorkerPolyfillLock &&
+          typeof optionsOrCallback !== "function" &&
+          optionsOrCallback.ifAvailable === true &&
+          callback
+        ) {
+          return Promise.resolve(callback({ mode: optionsOrCallback.mode ?? "exclusive", name }));
+        }
+        if (typeof optionsOrCallback === "function") {
+          return __paykyNativeLockManager.request(name, optionsOrCallback);
+        }
+        if (!callback) return Promise.reject(new TypeError("LockManager.request requires a callback."));
+        return __paykyNativeLockManager.request(name, optionsOrCallback, callback);
+      },
+      query() {
+        return __paykyNativeLockManager.query();
+      },
+    },
+  });
+}
+`
+
+function evoluAndroidWebViewWorkerLocksPlugin(): PluginOption {
+  return {
+    name: "payky-evolu-android-webview-worker-locks",
+    generateBundle(_options, bundle) {
+      for (const item of Object.values(bundle)) {
+        if (item.type !== "chunk") continue
+        if (
+          !item.fileName.startsWith("assets/Shared.worker-") &&
+          !item.fileName.startsWith("assets/Db.worker-")
+        ) {
+          continue
+        }
+
+        item.code = `${evoluAndroidWebViewWorkerLocksShim}\n${item.code}`
+      }
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   define: {
@@ -25,6 +77,7 @@ export default defineConfig({
   },
   plugins: [
     basicSsl(),
+    evoluAndroidWebViewWorkerLocksPlugin(),
     tanstackRouter({
       target: "react",
       autoCodeSplitting: true,
@@ -43,6 +96,9 @@ export default defineConfig({
       },
     }),
   ],
+  worker: {
+    plugins: () => [evoluAndroidWebViewWorkerLocksPlugin()],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

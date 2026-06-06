@@ -20,12 +20,18 @@ export function PhoneViewport({
 }) {
   return (
     <div
-      className={cn(
-        "mx-auto flex min-h-svh w-full max-w-xl flex-col gap-6 overflow-hidden",
-        className
-      )}
+      className={
+        "min-h-svh flex pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
+      }
     >
-      {children}
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-xl flex-col gap-6 overflow-hidden",
+          className
+        )}
+      >
+        {children}
+      </div>
     </div>
   )
 }

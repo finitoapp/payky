@@ -34,6 +34,8 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
+import { isTauri } from "@tauri-apps/api/core"
+import { vibrate } from "@tauri-apps/plugin-haptics"
 
 const keypad = [
   "1",
@@ -122,7 +124,12 @@ function applyKeypadPress(setAmountDigits: SetAmountDigits, key: KeypadKey) {
 }
 
 function vibrateOnTerminalButtonPress() {
-  navigator.vibrate?.(keypadVibrationMs)
+  if (!isTauri()) {
+    navigator.vibrate?.(keypadVibrationMs)
+    return
+  }
+
+  void vibrate(keypadVibrationMs)
 }
 
 export function TerminalPaymentKeypad({

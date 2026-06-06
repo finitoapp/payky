@@ -8,8 +8,8 @@ import {
   Mnemonic,
   testAppOwner,
 } from "@evolu/common"
-import { createEvoluDeps, createRun } from "@evolu/web"
 import { z } from "zod"
+import { webEvoluRun } from "@/core/evolu/web-runtime.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   type InferTable,
@@ -110,8 +110,7 @@ export function createDefaultDeviceSettings(
 export const createDeviceQuery = createQueryBuilder(deviceEvoluSchema)
 
 export const createDeviceEvolu = async () => {
-  const run = createRun(createEvoluDeps())
-  const evolu = await run.orThrow(
+  const evolu = await webEvoluRun.orThrow(
     createEvolu(deviceEvoluSchema, {
       appName: AppName.orThrow("PaykyDevice"),
       appOwner: testAppOwner,

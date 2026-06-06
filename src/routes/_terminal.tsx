@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router"
 
-import { PhoneViewport } from "@/components/numopay-skeleton.tsx"
+import { PhoneViewport } from "@/components/skeleton.tsx"
 import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/_terminal")({

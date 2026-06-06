@@ -1,4 +1,5 @@
 import { AbortError, type OwnerId, type Task, tryAsync } from "@evolu/common"
+import { isTauri } from "@tauri-apps/api/core"
 import { defineError } from "@/core/error.ts"
 
 export interface FetchDep {
@@ -36,8 +37,27 @@ export const appFetchAsText =
       }
     )
 
-export const createFetchDep = () => ({
-  fetch: globalThis.fetch.bind(globalThis),
+let tauriHttpFetchPromise:
+  | Promise<typeof import("@tauri-apps/plugin-http").fetch>
+  | undefined
+
+const getTauriHttpFetch = async () => {
+  tauriHttpFetchPromise ??= import("@tauri-apps/plugin-http").then(
+    ({ fetch }) => fetch
+  )
+
+  return tauriHttpFetchPromise
+}
+
+export const createFetchDep = (): FetchDep => ({
+  fetch: async (...args) => {
+    if (!isTauri()) {
+      return globalThis.fetch(...args)
+    }
+
+    const tauriFetch = await getTauriHttpFetch()
+    return tauriFetch(...args)
+  },
 })
 
 export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }

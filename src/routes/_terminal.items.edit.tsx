@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Camera, Plus } from "lucide-react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { HeaderStartLink } from "@/components/numopay-skeleton.tsx"
+import { HeaderStartLink } from "@/components/skeleton.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx"

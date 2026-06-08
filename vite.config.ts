@@ -70,53 +70,71 @@ function evoluAndroidWebViewWorkerLocksPlugin(): PluginOption {
   }
 }
 
+function isTauriBuild(command: string): boolean {
+  return (
+    command === "build" &&
+    (process.env.TAURI_ENV_PLATFORM != null ||
+      process.env.TAURI_ENV_TARGET_TRIPLE != null ||
+      process.env.TAURI_ENV_ARCH != null)
+  )
+}
+
 // https://vite.dev/config/
-export default defineConfig({
-  define: {
-    __APP_VERSION__: JSON.stringify(getAppVersion()),
-  },
-  plugins: [
-    basicSsl(),
-    evoluAndroidWebViewWorkerLocksPlugin(),
-    tanstackRouter({
-      target: "react",
-      autoCodeSplitting: true,
-    }),
-    react(),
-    tailwindcss(),
-    VitePWA({
-      registerType: "prompt",
-      injectRegister: "auto",
-      manifest: false,
-      workbox: {
-        cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
-        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-        navigateFallback: "/index.html",
-      },
-    }),
-  ],
-  worker: {
-    plugins: () => [evoluAndroidWebViewWorkerLocksPlugin()],
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(({ command }) => {
+  const useTauriWorkerLocksPlugin = isTauriBuild(command)
+
+  return {
+    define: {
+      __APP_VERSION__: JSON.stringify(getAppVersion()),
     },
-  },
-  optimizeDeps: {
-    exclude: [
-      "@evolu/web",
-      "@evolu/react-web",
-      "@evolu/react",
-      "@evolu/common",
+    plugins: [
+      basicSsl(),
+      ...(useTauriWorkerLocksPlugin
+        ? [evoluAndroidWebViewWorkerLocksPlugin()]
+        : []),
+      tanstackRouter({
+        target: "react",
+        autoCodeSplitting: true,
+      }),
+      react(),
+      tailwindcss(),
+      VitePWA({
+        registerType: "prompt",
+        injectRegister: "auto",
+        manifest: false,
+        workbox: {
+          cleanupOutdatedCaches: true,
+          globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
+          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+          navigateFallback: "/index.html",
+        },
+      }),
     ],
-  },
-  test: {
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "html", "lcov"],
-      reportsDirectory: "coverage",
+    worker: {
+      plugins: () =>
+        useTauriWorkerLocksPlugin
+          ? [evoluAndroidWebViewWorkerLocksPlugin()]
+          : [],
     },
-  },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    optimizeDeps: {
+      exclude: [
+        "@evolu/web",
+        "@evolu/react-web",
+        "@evolu/react",
+        "@evolu/common",
+      ],
+    },
+    test: {
+      coverage: {
+        provider: "v8",
+        reporter: ["text", "html", "lcov"],
+        reportsDirectory: "coverage",
+      },
+    },
+  }
 })

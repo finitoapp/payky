@@ -1,19 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 896" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 896" role="img" aria-labelledby="title desc" style="background: transparent">
   <title id="title">Animated Payky honey badger coin logo</title>
-  <desc id="desc">Animated Payky app icon with a warm gold coin shimmer and honey badger mark.</desc>
+  <desc id="desc">Animated Payky app icon with a fixed coin position, warm gold shimmer, and honey badger mark.</desc>
   <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    .coin {
-      animation: coin-breathe 4.8s ease-in-out infinite;
-      filter: drop-shadow(0 26px 42px rgb(0 0 0 / 0.28));
-      transform-origin: 441px 448px;
-    }
-
-    .rim {
-      animation: rim-pulse 4.8s ease-in-out infinite;
+    .coin-base {
+      animation: gold-breathe 4.8s ease-in-out infinite;
     }
 
     .shine {
@@ -24,91 +14,44 @@
       transform-origin: center;
     }
 
-    .mark {
-      animation: mark-settle 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-      transform-box: fill-box;
-      transform-origin: center;
+    .badger-mark {
+      animation: mark-ink 4.8s ease-in-out infinite;
     }
 
     .eye-glint {
-      animation: eye-glint 3.8s ease-in-out 1.2s infinite;
+      animation: eye-glint 3.8s ease-in-out 1.1s infinite;
+      opacity: 0;
       transform-box: fill-box;
       transform-origin: center;
     }
 
-    @keyframes coin-breathe {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-6px);
-      }
-    }
-
-    @keyframes rim-pulse {
-      0%, 100% {
-        opacity: 0.26;
-        stroke-width: 12;
-      }
-      50% {
-        opacity: 0.48;
-        stroke-width: 18;
-      }
+    @keyframes gold-breathe {
+      0%, 100% { filter: saturate(1) brightness(1); }
+      50% { filter: saturate(1.14) brightness(1.05); }
     }
 
     @keyframes shine-sweep {
-      0% {
-        opacity: 0;
-        transform: translateX(-58%) rotate(-18deg);
-      }
-      18% {
-        opacity: 0.4;
-      }
-      42% {
-        opacity: 0;
-        transform: translateX(62%) rotate(-18deg);
-      }
-      100% {
-        opacity: 0;
-        transform: translateX(62%) rotate(-18deg);
-      }
+      0% { opacity: 0; transform: translateX(-62%) rotate(-18deg); }
+      18% { opacity: 0.42; }
+      42% { opacity: 0; transform: translateX(68%) rotate(-18deg); }
+      100% { opacity: 0; transform: translateX(68%) rotate(-18deg); }
     }
 
-    @keyframes mark-settle {
-      0% {
-        opacity: 0;
-        transform: translateY(14px);
-      }
-      68% {
-        opacity: 1;
-        transform: translateY(-2px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    @keyframes mark-ink {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.08); }
     }
 
     @keyframes eye-glint {
-      0%, 72%, 100% {
-        opacity: 0;
-        transform: scale(0.45);
-      }
-      78% {
-        opacity: 0.86;
-        transform: scale(1.05);
-      }
-      84% {
-        opacity: 0;
-        transform: scale(0.45);
-      }
+      0%, 72%, 100% { opacity: 0; transform: scale(0.45); }
+      78% { opacity: 0.9; transform: scale(1); }
+      84% { opacity: 0; transform: scale(0.45); }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .coin,
-      .rim,
+      .coin-base,
       .shine,
-      .mark,
+      .badger-mark,
       .eye-glint {
         animation: none;
       }
@@ -119,50 +62,50 @@
       }
     }
   </style>
+  <svg x="7" y="0" width="882" height="896" viewBox="0 0 882 896" style="background: transparent">
 
   <defs>
-    <radialGradient id="paykyGoldSoft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(351 258) rotate(63) scale(683.6 560)">
-      <stop offset="0" stop-color="#F8D96A" />
-      <stop offset="0.7" stop-color="#D49A24" />
-      <stop offset="1" stop-color="#B87918" />
-    </radialGradient>
-    <linearGradient id="rimGold" x1="128" y1="104" x2="742" y2="842" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFF0A3" />
-      <stop offset="0.48" stop-color="#D99A22" />
-      <stop offset="1" stop-color="#8F5811" />
-    </linearGradient>
     <linearGradient id="shineGradient" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0" />
-      <stop offset="0.48" stop-color="#FFFFFF" stop-opacity="0.72" />
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.48" stop-color="#FFFFFF" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
     </linearGradient>
-    <clipPath id="coinClip">
-      <ellipse cx="441" cy="448" rx="441" ry="448" />
-    </clipPath>
-    <clipPath id="artboardClip">
-      <rect width="896" height="896" />
+    <linearGradient id="paykyGold" x1="184" y1="165" x2="1066" y2="1061" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2C94C"/>
+      <stop offset="0.52" stop-color="#D99A22"/>
+      <stop offset="1" stop-color="#B87918"/>
+    </linearGradient>
+    <radialGradient id="paykyGoldSoft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(535.0 423.0) rotate(63) scale(683.6 560.0)">
+      <stop offset="0" stop-color="#F8D96A"/>
+      <stop offset="0.7" stop-color="#D49A24"/>
+      <stop offset="1" stop-color="#B87918"/>
+    </radialGradient>
+    <clipPath id="coinShapeClip">
+      <use href="#coinBaseShape"/>
     </clipPath>
   </defs>
 
-  <rect width="896" height="896" fill="transparent" />
+  <rect width="882" height="896" fill="transparent"/>
 
-  <g clip-path="url(#artboardClip)">
-    <g transform="translate(34 34) scale(0.924)">
-      <g transform="translate(7)">
-        <g class="coin">
-          <ellipse cx="441" cy="448" rx="441" ry="448" fill="url(#paykyGoldSoft)" />
-          <ellipse class="rim" cx="441" cy="448" rx="417" ry="424" fill="none" stroke="url(#rimGold)" />
-          <g clip-path="url(#coinClip)">
-            <rect class="shine" x="-128" y="-104" width="220" height="1104" fill="url(#shineGradient)" />
-            <path class="mark" d="
-          M 305.0 295.0 L 292.0 306.0 L 287.0 321.0 L 287.0 335.0 L 290.0 347.0 L 294.0 356.0 L 305.0 372.0 L 235.0 426.0 L 184.0 472.0 L 147.0 510.0 L 115.0 547.0 L 94.0 575.0 L 94.0 583.0 L 118.0 634.0 L 133.0 658.0 L 160.0 693.0 L 194.0 728.0 L 230.0 757.0 L 261.0 777.0 L 294.0 794.0 L 321.0 805.0 L 353.0 815.0 L 380.0 821.0 L 436.0 827.0 L 470.0 826.0 L 507.0 821.0 L 510.0 818.0 L 496.0 806.0 L 468.0 776.0 L 449.0 750.0 L 439.0 732.0 L 430.0 709.0 L 425.0 686.0 L 424.0 666.0 L 427.0 647.0 L 421.0 647.0 L 398.0 659.0 L 352.0 692.0 L 351.0 689.0 L 372.0 654.0 L 399.0 619.0 L 430.0 588.0 L 458.0 568.0 L 492.0 553.0 L 515.0 548.0 L 549.0 547.0 L 611.0 550.0 L 670.0 556.0 L 685.0 554.0 L 703.0 542.0 L 735.0 511.0 L 752.0 485.0 L 754.0 480.0 L 754.0 472.0 L 752.0 469.0 L 747.0 467.0 L 735.0 467.0 L 726.0 471.0 L 719.0 481.0 L 716.0 480.0 L 710.0 474.0 L 707.0 466.0 L 708.0 459.0 L 716.0 448.0 L 713.0 444.0 L 652.0 406.0 L 649.0 403.0 L 651.0 394.0 L 649.0 387.0 L 590.0 361.0 L 541.0 344.0 L 509.0 335.0 L 464.0 325.0 L 418.0 318.0 L 394.0 318.0 L 400.0 335.0 L 400.0 339.0 L 398.0 340.0 L 370.0 315.0 L 341.0 297.0 L 327.0 293.0 L 311.0 293.0 Z
-          M 532.0 392.0 L 535.0 389.0 L 559.0 392.0 L 566.0 396.0 L 570.0 405.0 L 576.0 401.0 L 592.0 409.0 L 594.0 413.0 L 575.0 420.0 L 556.0 419.0 L 542.0 409.0 Z
-          M 324.0 92.0 L 290.0 105.0 L 260.0 120.0 L 227.0 141.0 L 197.0 165.0 L 166.0 196.0 L 147.0 219.0 L 116.0 267.0 L 91.0 323.0 L 76.0 377.0 L 71.0 410.0 L 69.0 438.0 L 71.0 439.0 L 98.0 407.0 L 152.0 349.0 L 195.0 307.0 L 228.0 278.0 L 260.0 254.0 L 281.0 241.0 L 310.0 227.0 L 333.0 219.0 L 362.0 212.0 L 401.0 208.0 L 435.0 209.0 L 472.0 214.0 L 505.0 222.0 L 534.0 232.0 L 569.0 249.0 L 594.0 265.0 L 613.0 280.0 L 636.0 302.0 L 673.0 347.0 L 677.0 357.0 L 679.0 384.0 L 765.0 449.0 L 770.0 456.0 L 770.0 466.0 L 760.0 490.0 L 743.0 514.0 L 705.0 550.0 L 683.0 565.0 L 588.0 565.0 L 518.0 570.0 L 509.0 574.0 L 498.0 582.0 L 485.0 595.0 L 475.0 609.0 L 467.0 625.0 L 462.0 643.0 L 463.0 670.0 L 473.0 701.0 L 492.0 735.0 L 517.0 767.0 L 557.0 806.0 L 560.0 807.0 L 593.0 794.0 L 629.0 775.0 L 655.0 758.0 L 686.0 733.0 L 716.0 703.0 L 731.0 685.0 L 755.0 651.0 L 774.0 617.0 L 790.0 579.0 L 801.0 544.0 L 808.0 512.0 L 813.0 462.0 L 812.0 417.0 L 804.0 365.0 L 792.0 323.0 L 776.0 284.0 L 760.0 254.0 L 743.0 228.0 L 720.0 199.0 L 686.0 165.0 L 657.0 142.0 L 629.0 124.0 L 596.0 107.0 L 566.0 95.0 L 529.0 84.0 L 499.0 78.0 L 462.0 74.0 L 420.0 74.0 L 396.0 76.0 L 361.0 82.0 Z
-            " fill="#171A1D" fill-rule="evenodd" />
-            <circle class="eye-glint" cx="567" cy="404" r="9" fill="#FFF3B0" />
-          </g>
-        </g>
-      </g>
-    </g>
+  <!-- Coin base reconstructed from the generated variant -->
+  <g transform="translate(-184 -165)">
+    <path
+      id="coinBaseShape"
+      d="M 591.4 179.3 L 607 165.4 L 643 165.4 L 658.6 179.3 L 676.1 168 L 711.7 173.7 L 724.9 190 L 744 181.6 L 778.3 192.9 L 788.8 211.1 L 809 205.9 L 841.1 222.5 L 848.6 242.1 L 869.4 240.1 L 898.6 261.6 L 903 282.2 L 923.8 283.5 L 949.3 309.4 L 950.5 330.5 L 970.9 335.1 L 992.1 364.7 L 989.9 385.7 L 1009.4 393.5 L 1025.8 426.1 L 1020.4 446.5 L 1038.5 457.3 L 1049.6 492.1 L 1041.2 511.5 L 1057.4 524.9 L 1063 561 L 1051.7 578.9 L 1065.6 594.7 L 1065.6 631.3 L 1051.7 647.1 L 1063 665 L 1057.4 701.1 L 1041.2 714.5 L 1049.6 733.9 L 1038.5 768.7 L 1020.4 779.5 L 1025.8 799.9 L 1009.4 832.5 L 989.9 840.3 L 992.1 861.3 L 970.9 890.9 L 950.5 895.5 L 949.3 916.6 L 923.8 942.5 L 903 943.8 L 898.6 964.4 L 869.4 985.9 L 848.6 983.9 L 841.1 1003.5 L 809 1020.1 L 788.8 1014.9 L 778.3 1033.1 L 744 1044.4 L 724.9 1036 L 711.7 1052.3 L 676.1 1058 L 658.6 1046.7 L 643 1060.6 L 607 1060.6 L 591.4 1046.7 L 573.9 1058 L 538.3 1052.3 L 525.1 1036 L 506 1044.4 L 471.7 1033.1 L 461.2 1014.9 L 441 1020.1 L 408.9 1003.5 L 401.4 983.9 L 380.6 985.9 L 351.4 964.4 L 347 943.8 L 326.2 942.5 L 300.7 916.6 L 299.5 895.5 L 279.1 890.9 L 257.9 861.3 L 260.1 840.3 L 240.6 832.5 L 224.2 799.9 L 229.6 779.5 L 211.5 768.7 L 200.4 733.9 L 208.8 714.5 L 192.6 701.1 L 187 665 L 198.3 647.1 L 184.4 631.3 L 184.4 594.7 L 198.3 578.9 L 187 561 L 192.6 524.9 L 208.8 511.5 L 200.4 492.1 L 211.5 457.3 L 229.6 446.5 L 224.2 426.1 L 240.6 393.5 L 260.1 385.7 L 257.9 364.7 L 279.1 335.1 L 299.5 330.5 L 300.7 309.4 L 326.2 283.5 L 347 282.2 L 351.4 261.6 L 380.6 240.1 L 401.4 242.1 L 408.9 222.5 L 441 205.9 L 461.2 211.1 L 471.7 192.9 L 506 181.6 L 525.1 190 L 538.3 173.7 L 573.9 168 Z"
+      class="coin-base"
+      fill="url(#paykyGoldSoft)"
+    />
+
+  <!-- Faithful raster trace of the dark honey-badger symbol -->
+  <g clip-path="url(#coinShapeClip)">
+    <rect class="shine" x="100" y="-40" width="220" height="1280" fill="url(#shineGradient)" opacity="0"/>
+    <path class="badger-mark" d="
+      M 489.0 460.0 L 476.0 471.0 L 471.0 486.0 L 471.0 500.0 L 474.0 512.0 L 478.0 521.0 L 489.0 537.0 L 419.0 591.0 L 368.0 637.0 L 331.0 675.0 L 299.0 712.0 L 278.0 740.0 L 278.0 748.0 L 302.0 799.0 L 317.0 823.0 L 344.0 858.0 L 378.0 893.0 L 414.0 922.0 L 445.0 942.0 L 478.0 959.0 L 505.0 970.0 L 537.0 980.0 L 564.0 986.0 L 620.0 992.0 L 654.0 991.0 L 691.0 986.0 L 694.0 983.0 L 680.0 971.0 L 652.0 941.0 L 633.0 915.0 L 623.0 897.0 L 614.0 874.0 L 609.0 851.0 L 608.0 831.0 L 611.0 812.0 L 605.0 812.0 L 582.0 824.0 L 536.0 857.0 L 535.0 854.0 L 556.0 819.0 L 583.0 784.0 L 614.0 753.0 L 642.0 733.0 L 676.0 718.0 L 699.0 713.0 L 733.0 712.0 L 795.0 715.0 L 854.0 721.0 L 869.0 719.0 L 887.0 707.0 L 919.0 676.0 L 936.0 650.0 L 938.0 645.0 L 938.0 637.0 L 936.0 634.0 L 931.0 632.0 L 919.0 632.0 L 910.0 636.0 L 903.0 646.0 L 900.0 645.0 L 894.0 639.0 L 891.0 631.0 L 892.0 624.0 L 900.0 613.0 L 897.0 609.0 L 836.0 571.0 L 833.0 568.0 L 835.0 559.0 L 833.0 552.0 L 774.0 526.0 L 725.0 509.0 L 693.0 500.0 L 648.0 490.0 L 602.0 483.0 L 578.0 483.0 L 584.0 500.0 L 584.0 504.0 L 582.0 505.0 L 554.0 480.0 L 525.0 462.0 L 511.0 458.0 L 495.0 458.0 Z
+      M 716.0 557.0 L 719.0 554.0 L 743.0 557.0 L 750.0 561.0 L 754.0 570.0 L 760.0 566.0 L 776.0 574.0 L 778.0 578.0 L 759.0 585.0 L 740.0 584.0 L 726.0 574.0 Z
+      M 508.0 257.0 L 474.0 270.0 L 444.0 285.0 L 411.0 306.0 L 381.0 330.0 L 350.0 361.0 L 331.0 384.0 L 300.0 432.0 L 275.0 488.0 L 260.0 542.0 L 255.0 575.0 L 253.0 603.0 L 255.0 604.0 L 282.0 572.0 L 336.0 514.0 L 379.0 472.0 L 412.0 443.0 L 444.0 419.0 L 465.0 406.0 L 494.0 392.0 L 517.0 384.0 L 546.0 377.0 L 585.0 373.0 L 619.0 374.0 L 656.0 379.0 L 689.0 387.0 L 718.0 397.0 L 753.0 414.0 L 778.0 430.0 L 797.0 445.0 L 820.0 467.0 L 857.0 512.0 L 861.0 522.0 L 863.0 549.0 L 949.0 614.0 L 954.0 621.0 L 954.0 631.0 L 944.0 655.0 L 927.0 679.0 L 889.0 715.0 L 867.0 730.0 L 772.0 730.0 L 702.0 735.0 L 693.0 739.0 L 682.0 747.0 L 669.0 760.0 L 659.0 774.0 L 651.0 790.0 L 646.0 808.0 L 647.0 835.0 L 657.0 866.0 L 676.0 900.0 L 701.0 932.0 L 741.0 971.0 L 744.0 972.0 L 777.0 959.0 L 813.0 940.0 L 839.0 923.0 L 870.0 898.0 L 900.0 868.0 L 915.0 850.0 L 939.0 816.0 L 958.0 782.0 L 974.0 744.0 L 985.0 709.0 L 992.0 677.0 L 997.0 627.0 L 996.0 582.0 L 988.0 530.0 L 976.0 488.0 L 960.0 449.0 L 944.0 419.0 L 927.0 393.0 L 904.0 364.0 L 870.0 330.0 L 841.0 307.0 L 813.0 289.0 L 780.0 272.0 L 750.0 260.0 L 713.0 249.0 L 683.0 243.0 L 646.0 239.0 L 604.0 239.0 L 580.0 241.0 L 545.0 247.0 Z
+    " fill="#171A1D" fill-rule="evenodd"/>
+    <circle class="eye-glint" cx="751" cy="569" r="9" fill="#FFF3B0" opacity="0"/>
   </g>
+  </g>
+  </svg>
 </svg>

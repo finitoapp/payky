@@ -1,4 +1,6 @@
 import { createRun } from "@evolu/web"
+import { isTauri } from "@tauri-apps/api/core"
+import { vibrate } from "@tauri-apps/plugin-haptics"
 import {
   atom,
   type PrimitiveAtom,
@@ -34,8 +36,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
-import { isTauri } from "@tauri-apps/api/core"
-import { vibrate } from "@tauri-apps/plugin-haptics"
 
 const keypad = [
   "1",

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ErrorRouteImport } from './routes/error'
 import { Route as TerminalRouteImport } from './routes/_terminal'
 import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
@@ -31,6 +32,11 @@ import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_termin
 import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TerminalRoute = TerminalRouteImport.update({
   id: '/_terminal',
   getParentRoute: () => rootRouteImport,
@@ -148,6 +154,7 @@ const TerminalSettingsAboutPrivacyRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
+  '/error': typeof ErrorRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
 }
 export interface FileRoutesByTo {
+  '/error': typeof ErrorRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/': typeof TerminalIndexRoute
@@ -191,6 +199,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_terminal': typeof TerminalRouteWithChildren
+  '/error': typeof ErrorRoute
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/checkout': typeof TerminalCheckoutRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/error'
     | '/activity'
     | '/checkout'
     | '/settings'
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/settings/about/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/error'
     | '/activity'
     | '/checkout'
     | '/'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_terminal'
+    | '/error'
     | '/_terminal/activity'
     | '/_terminal/checkout'
     | '/_terminal/settings'
@@ -282,10 +294,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   TerminalRoute: typeof TerminalRouteWithChildren
+  ErrorRoute: typeof ErrorRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_terminal': {
       id: '/_terminal'
       path: ''
@@ -509,6 +529,7 @@ const TerminalRouteWithChildren = TerminalRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   TerminalRoute: TerminalRouteWithChildren,
+  ErrorRoute: ErrorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

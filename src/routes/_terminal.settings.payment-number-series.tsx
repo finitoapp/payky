@@ -36,6 +36,7 @@ import {
   NonNegativeIntegerFromStringSchema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -101,6 +102,7 @@ const dayFormatOptions: ReadonlyArray<ToggleOption<DatePartFormat>> = [
 ]
 
 function PaymentNumberSeriesPage() {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const prefixInputId = useId()
@@ -161,6 +163,7 @@ function PaymentNumberSeriesPage() {
 
     const ensurePaymentNumberSeries = async () => {
       await using run = createRun({
+        console,
         evolu,
         evoluOwnerId: evolu.appOwner.id,
       })
@@ -173,7 +176,7 @@ function PaymentNumberSeriesPage() {
     return () => {
       cancelled = true
     }
-  }, [evolu, storedSeries])
+  }, [console, evolu, storedSeries])
 
   return (
     <>
@@ -212,6 +215,7 @@ function PaymentNumberSeriesPage() {
             setLastNumberPending(true)
             try {
               await using run = createRun({
+                console,
                 evolu,
                 evoluOwnerId: evolu.appOwner.id,
               })
@@ -339,6 +343,7 @@ function PaymentNumberSeriesPage() {
             setPending(true)
             try {
               await using run = createRun({
+                console,
                 evolu,
                 evoluOwnerId: evolu.appOwner.id,
               })

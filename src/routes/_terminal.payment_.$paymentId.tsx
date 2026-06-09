@@ -36,6 +36,7 @@ import {
 } from "@/core/modules/payment/payment-actions.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -196,6 +197,7 @@ function PaymentWaitingRequest({
 }: {
   readonly paymentId: PaymentId
 }) {
+  const console = useConsole()
   const { t } = useTranslation()
   const locale = useLocale()
   const evolu = useEvolu()
@@ -335,6 +337,7 @@ function PaymentWaitingRequest({
       )
       try {
         await using run = createRun({
+          console,
           evolu,
           evoluOwnerId: evolu.appOwner.id,
           ...createFetchDep(),
@@ -391,6 +394,7 @@ function PaymentWaitingRequest({
     payment,
     paymentId,
     preparingPaymentMethods,
+    console,
   ])
 
   if (!payment) {
@@ -414,6 +418,7 @@ function PaymentWaitingRequest({
     setCashPaymentPending(true)
     try {
       await using run = createRun({
+        console,
         evolu,
         evoluOwnerId: evolu.appOwner.id,
       })

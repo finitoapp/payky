@@ -16,6 +16,7 @@ import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -55,6 +56,7 @@ const fiatCurrencyOptions: ReadonlyArray<FiatCurrencyOption> = [
 ]
 
 function FiatCurrencyPage() {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const { data } = useEvoluQuery(settingsQuery)
@@ -81,6 +83,7 @@ function FiatCurrencyPage() {
               if (!fiatCurrency) return
 
               await using run = createRun({
+                console,
                 evolu,
                 evoluOwnerId: evolu.appOwner.id,
               })

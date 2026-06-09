@@ -41,6 +41,7 @@ import {
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -98,6 +99,7 @@ interface FioPluginFormProps {
 }
 
 function FioPluginForm({ plugin }: FioPluginFormProps) {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const activeInputId = useId()
@@ -156,6 +158,7 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
         setPending(true)
         try {
           await using run = createRun({
+            console,
             evolu,
             evoluOwnerId: evolu.appOwner.id,
           })
@@ -287,6 +290,7 @@ interface FioPluginTokenListProps {
 }
 
 function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const { data: tokens } = useEvoluQuery(
@@ -335,6 +339,7 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
                       setPendingTokenId(token.id)
                       try {
                         await using run = createRun({
+                          console,
                           evolu,
                           evoluOwnerId: evolu.appOwner.id,
                         })

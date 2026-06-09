@@ -6,9 +6,11 @@ import { evoluAtom } from "@/atoms/evolu.ts"
 import { backgroundJobs } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
 import { createDateDep, createFetchDep } from "@/core/deps.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
+  const console = useConsole()
 
   useEffect(() => {
     let isDisposed = false
@@ -18,6 +20,7 @@ export function AppBackgroundJobs() {
       evoluOwnerId: evolu.appOwner.id,
       ...createDateDep(),
       ...createFetchDep(),
+      console,
       onError: (error: unknown) => {
         console.error("Background job failed.", error)
       },
@@ -44,7 +47,7 @@ export function AppBackgroundJobs() {
       jobsDisposable?.[Symbol.dispose]()
       void run[Symbol.asyncDispose]()
     }
-  }, [evolu])
+  }, [console, evolu])
 
   return null
 }

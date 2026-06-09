@@ -40,6 +40,7 @@ import {
   NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -77,6 +78,7 @@ function PaymentAccountsPage() {
 }
 
 function FiatBankAccountForm() {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const ibanInputId = useId()
@@ -121,6 +123,7 @@ function FiatBankAccountForm() {
         setPending(true)
         try {
           await using run = createRun({
+            console,
             evolu,
             evoluOwnerId: evolu.appOwner.id,
           })
@@ -204,6 +207,7 @@ function FiatBankAccountForm() {
 }
 
 function SparkAccountForm() {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const enabledInputId = useId()
@@ -293,6 +297,7 @@ function SparkAccountForm() {
         setPending(true)
         try {
           await using run = createRun({
+            console,
             evolu,
             evoluOwnerId: evolu.appOwner.id,
           })
@@ -427,6 +432,7 @@ function SparkAccountForm() {
 }
 
 function CashRegisterAccountForm() {
+  const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
   const enabledInputId = useId()
@@ -450,6 +456,7 @@ function CashRegisterAccountForm() {
         setPending(true)
         try {
           await using run = createRun({
+            console,
             evolu,
             evoluOwnerId: evolu.appOwner.id,
           })

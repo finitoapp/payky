@@ -14,6 +14,7 @@ import {
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -60,6 +61,7 @@ const Header = () => {
 }
 
 function TerminalPaymentKeypadLoader() {
+  const console = useConsole()
   const evolu = useEvolu()
   const navigate = useNavigate()
   const jotaiStore = useStore()
@@ -68,6 +70,7 @@ function TerminalPaymentKeypadLoader() {
     const { device } = await jotaiStore.get(accountAtom)
 
     await using run = createRun({
+      console,
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       ...createDateDep(),

@@ -32,6 +32,7 @@ import {
   FiatCurrency,
   Integer,
 } from "@/core/modules/shared/schema.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -263,11 +264,15 @@ function AmountDisplay({
 }
 
 function useYadioBtcExchangeRate(currency: FiatCurrency) {
+  const console = useConsole()
   const [exchangeRateQuote, setExchangeRateQuote] =
     useState<ExchangeRateQuote | null>(null)
 
   useEffect(() => {
-    const run = createRun(createFetchDep())
+    const run = createRun({
+      console,
+      ...createFetchDep(),
+    })
     let isDisposed = false
 
     async function refreshExchangeRate() {
@@ -298,7 +303,7 @@ function useYadioBtcExchangeRate(currency: FiatCurrency) {
       window.clearInterval(intervalId)
       void run[Symbol.asyncDispose]()
     }
-  }, [currency])
+  }, [console, currency])
 
   return exchangeRateQuote
 }

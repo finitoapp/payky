@@ -186,6 +186,14 @@ class FioPluginSync {
 
       result = await run(fetchFioLastTransactions())
     }
+    if (!result.ok && result.error.type === "FioRateLimitError") {
+      this.context.console.error("Skipped FIO sync because of rate limiting.", {
+        accountId: this.plugin.accountId,
+        pluginId: this.plugin.id,
+        responseBody: result.error.responseBody,
+      })
+      return
+    }
     if (!result.ok) throw result.error
     if (result.value.iban !== this.plugin.iban) {
       this.context.console.warn("Skipped FIO statement for a different IBAN.", {

@@ -62,6 +62,13 @@ const createFioHttpError = defineError("FioHttpError")<{
 }>()
 export type FioHttpError = ReturnType<typeof createFioHttpError>
 
+const createFioRateLimitError = defineError("FioRateLimitError")<{
+  readonly message: string
+  readonly status: 409
+  readonly responseBody: string
+}>()
+export type FioRateLimitError = ReturnType<typeof createFioRateLimitError>
+
 const createFioStrongAuthorizationRequiredError = defineError(
   "FioStrongAuthorizationRequiredError"
 )<{
@@ -255,7 +262,11 @@ export interface FioAccountStatement {
 
 type FioTask<TResult> = Task<
   TResult,
-  FioApiError | FioHttpError | FioStrongAuthorizationRequiredError | FetchError,
+  | FioApiError
+  | FioHttpError
+  | FioRateLimitError
+  | FioStrongAuthorizationRequiredError
+  | FetchError,
   FioApiDep & FetchDep
 >
 
@@ -322,7 +333,10 @@ const requestFioApi =
     path: string
   ): Task<
     string,
-    FioHttpError | FioStrongAuthorizationRequiredError | FetchError,
+    | FioHttpError
+    | FioRateLimitError
+    | FioStrongAuthorizationRequiredError
+    | FetchError,
     FioApiDep & FetchDep
   > =>
   async (run) => {
@@ -349,6 +363,16 @@ const requestFioApi =
             message:
               "FIO API requires strong authorization to provide the requested data.",
             status: 422,
+            responseBody,
+          })
+        )
+      }
+      if (response.status === 409) {
+        return err(
+          createFioRateLimitError({
+            message:
+              "FIO API request failed because the interval between requests was not respected.",
+            status: 409,
             responseBody,
           })
         )

@@ -6,7 +6,7 @@ import { DateStringSchema } from "@/core/modules/shared/schema.ts"
 import {
   createFioApiDep,
   type FioApiDep,
-  type FioHttpError,
+  type FioRateLimitError,
   type FioStrongAuthorizationRequiredError,
   fetchFioLastTransactions,
   fetchFioTransactionsByPeriod,
@@ -197,7 +197,7 @@ describe("fio client", () => {
     ])
   })
 
-  test("returns typed HTTP errors", async () => {
+  test("returns a typed rate limit error", async () => {
     const deps = {
       ...createFioApiDep({
         tokens: ["token-a"],
@@ -210,10 +210,12 @@ describe("fio client", () => {
     await expect(run(fetchFioLastTransactions())).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "FioHttpError",
+        type: "FioRateLimitError",
+        message:
+          "FIO API request failed because the interval between requests was not respected.",
         status: 409,
         responseBody: "Too many requests",
-      } satisfies Partial<FioHttpError>,
+      } satisfies Partial<FioRateLimitError>,
     })
   })
 

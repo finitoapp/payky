@@ -208,6 +208,62 @@ describe("fio account transaction sync job", () => {
     expect(errors).toEqual([])
   })
 
+  test("logs FIO rate limiting without reporting a job error", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const console = testCreateConsole()
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
+    const fioPluginId = await run.orThrow(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: 60,
+        isActive: sqliteTrue,
+        token: "fio-token-1",
+      })
+    )
+    await using jobRun = testCreateRun({
+      console,
+      evolu,
+      onError: (error) => {
+        errors.push(error)
+      },
+      fetch: async () =>
+        new Response("Interval between requests was not respected.", {
+          status: 409,
+        }),
+    })
+    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+
+    await expect
+      .poll(() => console.getEntriesSnapshot())
+      .toEqual([
+        {
+          method: "error",
+          path: ["fio-account-transaction-sync-job"],
+          args: [
+            "Skipped FIO sync because of rate limiting.",
+            {
+              accountId,
+              pluginId: fioPluginId,
+              responseBody: "Interval between requests was not respected.",
+            },
+          ],
+        },
+      ])
+    expect(errors).toEqual([])
+  })
+
   test("rotates FIO tokens between sync cycles", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

@@ -64,11 +64,17 @@ interface CashPaymentTabProps {
   readonly onMarkCashPaid: () => void
 }
 
+const preparingPaymentMethodKeys = {
+  spark: "paymentWait.preparing.spark",
+  iban: "paymentWait.preparing.iban",
+  cash: "paymentWait.preparing.cash",
+} satisfies Record<PaymentMethodTab, TranslationKey>
+
 export const Route = createFileRoute("/_terminal/payment_/$paymentId")({
   component: PaymentWaitingPage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-7 py-7",
+      viewportClassName: "px-7",
     },
   },
 })
@@ -196,10 +202,12 @@ function PaymentWaitingRequest({
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
-  const [preparePaymentErrorKey, setPreparePaymentErrorKey] =
-    useState<TranslationKey | null>(null)
-  const [preparingPaymentMethod, setPreparingPaymentMethod] =
-    useState<PaymentMethodTab | null>(null)
+  const [preparePaymentErrorMethods, setPreparePaymentErrorMethods] = useState<
+    ReadonlySet<PaymentMethodTab>
+  >(() => new Set())
+  const [preparingPaymentMethods, setPreparingPaymentMethods] = useState<
+    ReadonlySet<PaymentMethodTab>
+  >(() => new Set())
   const [successVisible, setSuccessVisible] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodTab>("spark")
@@ -266,6 +274,16 @@ function PaymentWaitingRequest({
     paymentMethods.find((method) => method.id === selectedPaymentMethod) ??
     paymentMethods[0] ??
     null
+  const activePreparingPaymentMethodKey =
+    activePaymentMethod !== null &&
+    preparingPaymentMethods.has(activePaymentMethod.id)
+      ? preparingPaymentMethodKeys[activePaymentMethod.id]
+      : null
+  const activePreparePaymentErrorKey =
+    activePaymentMethod !== null &&
+    preparePaymentErrorMethods.has(activePaymentMethod.id)
+      ? "paymentWait.prepareError"
+      : null
 
   useEffect(() => {
     if (!isPaid || successVisible) return
@@ -288,7 +306,7 @@ function PaymentWaitingRequest({
     if (
       payment === undefined ||
       activePaymentMethod === null ||
-      preparingPaymentMethod !== null ||
+      preparingPaymentMethods.has(activePaymentMethod.id) ||
       isPaid
     ) {
       return
@@ -307,8 +325,14 @@ function PaymentWaitingRequest({
     preparePaymentMethodKeysRef.current.add(prepareKey)
 
     const prepare = async () => {
-      setPreparePaymentErrorKey(null)
-      setPreparingPaymentMethod(activePaymentMethod.id)
+      setPreparePaymentErrorMethods((methods) => {
+        const nextMethods = new Set(methods)
+        nextMethods.delete(activePaymentMethod.id)
+        return nextMethods
+      })
+      setPreparingPaymentMethods((methods) =>
+        new Set(methods).add(activePaymentMethod.id)
+      )
       try {
         await using run = createRun({
           evolu,
@@ -346,10 +370,16 @@ function PaymentWaitingRequest({
 
         if (!result.ok) {
           console.error("Failed to prepare payment method", result.error)
-          setPreparePaymentErrorKey("paymentWait.prepareError")
+          setPreparePaymentErrorMethods((methods) =>
+            new Set(methods).add(activePaymentMethod.id)
+          )
         }
       } finally {
-        setPreparingPaymentMethod(null)
+        setPreparingPaymentMethods((methods) => {
+          const nextMethods = new Set(methods)
+          nextMethods.delete(activePaymentMethod.id)
+          return nextMethods
+        })
       }
     }
 
@@ -360,7 +390,7 @@ function PaymentWaitingRequest({
     isPaid,
     payment,
     paymentId,
-    preparingPaymentMethod,
+    preparingPaymentMethods,
   ])
 
   if (!payment) {
@@ -406,7 +436,6 @@ function PaymentWaitingRequest({
 
   return (
     <>
-      <div className="h-0" />
       <FadeHeader />
 
       <div className="flex min-h-full flex-col justify-between gap-8">
@@ -462,7 +491,7 @@ function PaymentWaitingRequest({
                     <TabsTrigger
                       key={method.id}
                       value={method.id}
-                      className="h-full rounded-full px-6 text-muted-foreground data-active:bg-foreground data-active:text-background dark:data-active:bg-white dark:data-active:text-black"
+                      className="h-full rounded-full px-6 -mx-1 text-muted-foreground data-active:bg-foreground data-active:text-background dark:data-active:bg-white dark:data-active:text-black"
                     >
                       {method.icon}
                       <span>{method.label}</span>
@@ -477,16 +506,16 @@ function PaymentWaitingRequest({
             )}
           </div>
 
-          {preparePaymentErrorKey ? (
+          {activePreparePaymentErrorKey ? (
             <p className="max-w-72 text-balance text-sm font-medium text-destructive">
-              {t(preparePaymentErrorKey)}
+              {t(activePreparePaymentErrorKey)}
             </p>
           ) : null}
 
-          {preparingPaymentMethod ? (
+          {activePreparingPaymentMethodKey ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoaderCircleIcon className="animate-spin" />
-              <span>{t("paymentWait.preparingRequest")}</span>
+              <span>{t(activePreparingPaymentMethodKey)}</span>
             </div>
           ) : null}
 

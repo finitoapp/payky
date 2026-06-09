@@ -7,10 +7,18 @@ import { updatePaymentNumberSeries } from "@/core/modules/payment-number-series/
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   DateStringSchema,
+  NonNegativeInteger,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
-import { createNextPaymentNumber } from "./payment-number-actions.ts"
-import { paymentNumbersByNewestQuery } from "./payment-number-queries.ts"
+import {
+  createNextPaymentNumber,
+  updatePaymentLastNumber,
+} from "./payment-number-actions.ts"
+import {
+  paymentLastNumberQuery,
+  paymentNumbersByNewestQuery,
+} from "./payment-number-queries.ts"
+import { paymentLastNumberId } from "./payment-number-utils.ts"
 
 const createDeps = (evolu: EvoluDep["evolu"]) =>
   ({
@@ -44,6 +52,16 @@ describe("payment number actions", () => {
     await expect
       .poll(() => evolu.loadQuery(paymentNumbersByNewestQuery))
       .toMatchObject([row])
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentLastNumberQuery))
+      .toMatchObject([
+        {
+          id: paymentLastNumberId,
+          serialNumber: 1,
+          date: "2026-06-05",
+        },
+      ])
   }, 15_000)
 
   test("increments serial number within the same day", async () => {
@@ -241,7 +259,7 @@ describe("payment number actions", () => {
     })
   }, 15_000)
 
-  test("uses newest date and serial number instead of newest created record", async () => {
+  test("uses last generated state instead of newest historical payment number", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = createDeps(evolu)
@@ -276,8 +294,43 @@ describe("payment number actions", () => {
     )
 
     expect(row).toMatchObject({
-      serialNumber: 2,
+      serialNumber: 1,
       date: "2026-07-02",
     })
+  }, 15_000)
+
+  test("uses manually adjusted last number as the next serial source", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+
+    await run.orThrow(
+      updatePaymentLastNumber({
+        serialNumber: NonNegativeInteger(41),
+        date: dateString("2026-06-05"),
+      })
+    )
+    const row = await run.orThrow(
+      createNextPaymentNumber({
+        id: paymentId("payment-1"),
+        date: dateString("2026-06-05"),
+      })
+    )
+
+    expect(row).toMatchObject({
+      serialNumber: 42,
+      date: "2026-06-05",
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentLastNumberQuery))
+      .toMatchObject([
+        {
+          id: paymentLastNumberId,
+          serialNumber: 42,
+          date: "2026-06-05",
+        },
+      ])
   }, 15_000)
 })

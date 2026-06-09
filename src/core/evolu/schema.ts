@@ -41,8 +41,8 @@ import {
   paymentLineIndexes,
 } from "@/core/modules/payment-line/payment-line.ts"
 import {
+  paymentLastNumber,
   paymentNumber,
-  paymentNumberIndexes,
 } from "@/core/modules/payment-number/payment-number.ts"
 import { paymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import {
@@ -72,6 +72,7 @@ export const AppSchema = {
   paymentIban,
   paymentLine,
   paymentNumber,
+  paymentLastNumber,
   reconciliationClaim,
   appSettings,
   paymentNumberSeries,
@@ -89,7 +90,6 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...billLineIndexes(create),
   ...paymentIndexes(create),
   ...paymentLineIndexes(create),
-  ...paymentNumberIndexes(create),
   ...reconciliationClaimIndexes(create),
   ...deviceIndexes(create),
   ...fioPluginIndexes(create),

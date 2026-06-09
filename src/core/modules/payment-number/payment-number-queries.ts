@@ -2,6 +2,7 @@ import type { KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { paymentLastNumberId } from "@/core/modules/payment-number/payment-number-utils.ts"
 
 export const paymentNumbersByNewestQuery = createQuery((db) =>
   db
@@ -30,3 +31,14 @@ export const paymentNumberByPaymentIdQuery = (paymentId: PaymentId) =>
         date: KyselyNotNull
       }>()
   )
+
+export const paymentLastNumberQuery = createQuery((db) =>
+  db
+    .selectFrom("paymentLastNumber")
+    .selectAll()
+    .where("id", "=", paymentLastNumberId)
+    .where("serialNumber", "is not", null)
+    .$narrowType<{
+      serialNumber: KyselyNotNull
+    }>()
+)

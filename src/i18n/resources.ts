@@ -123,6 +123,8 @@ export const resources = {
     "paymentDetail.paymentMethod.iban": "IBAN",
     "paymentDetail.paymentMethod.none": "Not reconciled yet",
     "paymentDetail.paymentMethod.spark": "Lightning",
+    "paymentDetail.paymentNumber.date": "Number date",
+    "paymentDetail.paymentNumber.serialNumber": "Serial number",
     "paymentDetail.reconciliation.claimedAt": "Reconciled at",
     "paymentDetail.reconciliation.source.auto": "Auto",
     "paymentDetail.reconciliation.source.manual": "Manual",
@@ -284,6 +286,22 @@ export const resources = {
     "settings.paymentNumberSeries.form.description":
       "These values define the deterministic payment number series used by the terminal.",
     "settings.paymentNumberSeries.form.title": "Number series format",
+    "settings.paymentNumberSeries.lastNumber.date.description":
+      "Anchor date used to decide whether the next payment continues or resets the series. Leave empty to reset on the next payment.",
+    "settings.paymentNumberSeries.lastNumber.date.invalid":
+      "Enter a valid date.",
+    "settings.paymentNumberSeries.lastNumber.date.label": "Anchor date",
+    "settings.paymentNumberSeries.lastNumber.description":
+      "Override the last used serial number. The next generated payment number will continue from this value.",
+    "settings.paymentNumberSeries.lastNumber.save": "Save last number",
+    "settings.paymentNumberSeries.lastNumber.saved": "Last number saved.",
+    "settings.paymentNumberSeries.lastNumber.serialNumber.description":
+      "Last used serial number. For example, enter 499 if the next payment should use 500.",
+    "settings.paymentNumberSeries.lastNumber.serialNumber.invalid":
+      "Enter zero or a positive whole number.",
+    "settings.paymentNumberSeries.lastNumber.serialNumber.label":
+      "Last serial number",
+    "settings.paymentNumberSeries.lastNumber.title": "Last used number",
     "settings.paymentNumberSeries.month.default.description":
       "Include the two-digit month in generated payment numbers",
     "settings.paymentNumberSeries.month.default.title": "Show month",
@@ -509,6 +527,8 @@ export const resources = {
     "paymentDetail.paymentMethod.iban": "IBAN",
     "paymentDetail.paymentMethod.none": "Zatím nespárováno",
     "paymentDetail.paymentMethod.spark": "Lightning",
+    "paymentDetail.paymentNumber.date": "Datum čísla",
+    "paymentDetail.paymentNumber.serialNumber": "Sériové číslo",
     "paymentDetail.reconciliation.claimedAt": "Spárováno",
     "paymentDetail.reconciliation.source.auto": "Automaticky",
     "paymentDetail.reconciliation.source.manual": "Ručně",
@@ -671,6 +691,22 @@ export const resources = {
     "settings.paymentNumberSeries.form.description":
       "Tyto hodnoty určují deterministickou číselnou řadu používanou terminálem.",
     "settings.paymentNumberSeries.form.title": "Formát číselné řady",
+    "settings.paymentNumberSeries.lastNumber.date.description":
+      "Kotevní datum pro rozhodnutí, jestli další platba pokračuje v řadě, nebo ji resetuje. Prázdná hodnota resetuje řadu při další platbě.",
+    "settings.paymentNumberSeries.lastNumber.date.invalid":
+      "Zadejte platné datum.",
+    "settings.paymentNumberSeries.lastNumber.date.label": "Kotevní datum",
+    "settings.paymentNumberSeries.lastNumber.description":
+      "Přenastavení posledního použitého pořadového čísla. Další vygenerované číslo platby bude pokračovat od této hodnoty.",
+    "settings.paymentNumberSeries.lastNumber.save": "Uložit poslední číslo",
+    "settings.paymentNumberSeries.lastNumber.saved": "Poslední číslo uloženo.",
+    "settings.paymentNumberSeries.lastNumber.serialNumber.description":
+      "Poslední použité pořadové číslo. Například zadejte 499, pokud další platba má použít 500.",
+    "settings.paymentNumberSeries.lastNumber.serialNumber.invalid":
+      "Zadejte nulu nebo kladné celé číslo.",
+    "settings.paymentNumberSeries.lastNumber.serialNumber.label":
+      "Poslední pořadové číslo",
+    "settings.paymentNumberSeries.lastNumber.title": "Poslední použité číslo",
     "settings.paymentNumberSeries.month.default.description":
       "Přidat do generovaných čísel plateb dvouciferný měsíc",
     "settings.paymentNumberSeries.month.default.title": "Zobrazit měsíc",

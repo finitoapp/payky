@@ -1,6 +1,5 @@
-import type { IndexesConfig } from "@evolu/common/local-first"
-
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { PaymentLastNumberId } from "@/core/modules/payment-number/payment-number-types.ts"
 import {
   DateStringSchema,
   type InferTable,
@@ -13,10 +12,11 @@ export const paymentNumber = {
   date: DateStringSchema.nullable(),
 } as const
 
-export const paymentNumberIndexes = ((create) => [
-  create("paymentNumber_date_serialNumber")
-    .on("paymentNumber")
-    .columns(["date", "serialNumber"]),
-]) satisfies IndexesConfig
+export const paymentLastNumber = {
+  id: PaymentLastNumberId,
+  serialNumber: NonNegativeIntegerSchema,
+  date: DateStringSchema.nullable(),
+} as const
 
 export type PaymentNumberRow = InferTable<typeof paymentNumber>
+export type PaymentLastNumberRow = InferTable<typeof paymentLastNumber>

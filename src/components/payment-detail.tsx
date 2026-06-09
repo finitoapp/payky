@@ -14,11 +14,12 @@ import {
 import { Separator } from "@/components/ui/separator.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
+import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 type PaymentDetailStatus = "canceled" | "paid" | "pending"
@@ -166,9 +167,15 @@ function PaymentDetailContent({
     () => paymentReconciliationsQuery(paymentId),
     [paymentId]
   )
+  const paymentNumberQuery = useMemo(
+    () => paymentNumberByPaymentIdQuery(paymentId),
+    [paymentId]
+  )
   const { data: payments } = useEvoluQuery(query)
   const { data: reconciliations } = useEvoluQuery(reconciliationsQuery)
+  const { data: paymentNumbers } = useEvoluQuery(paymentNumberQuery)
   const payment = payments[0]
+  const paymentNumber = paymentNumbers[0]
 
   if (!payment) {
     return <PaymentDetailEmptyState messageKey="paymentDetail.notFound" />
@@ -272,6 +279,25 @@ function PaymentDetailContent({
                 payment.canceledAt === null
                   ? t("paymentDetail.emptyValue")
                   : formatDateTime(new Date(payment.canceledAt), locale)
+              }
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.paymentNumber.serialNumber")}
+              value={
+                paymentNumber
+                  ? String(paymentNumber.serialNumber)
+                  : t("paymentDetail.emptyValue")
+              }
+            />
+            <PaymentDetailRow
+              label={t("paymentDetail.paymentNumber.date")}
+              value={
+                paymentNumber
+                  ? formatDate(
+                      new Date(`${paymentNumber.date}T00:00:00`),
+                      locale
+                    )
+                  : t("paymentDetail.emptyValue")
               }
             />
             <PaymentDetailRow

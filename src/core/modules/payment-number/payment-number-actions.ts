@@ -2,8 +2,12 @@ import { ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import type { PaymentNumberRow } from "@/core/modules/payment-number/payment-number.ts"
-import { paymentNumbersByNewestQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import type {
+  PaymentLastNumberRow,
+  PaymentNumberRow,
+} from "@/core/modules/payment-number/payment-number.ts"
+import { paymentLastNumberQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import { paymentLastNumberId } from "@/core/modules/payment-number/payment-number-utils.ts"
 import type { PaymentNumberSeriesRow } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import { getPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -16,7 +20,7 @@ import {
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 
 interface PreviousPaymentNumber {
-  readonly date: DateString
+  readonly date: DateString | null
   readonly serialNumber: NonNegativeIntegerType
 }
 
@@ -51,7 +55,7 @@ export const createNextPaymentNumberValues = ({
 }): PaymentNumberRow => {
   const currentPeriod = getNumberingPeriod(date, series)
   const previousPeriod =
-    previous == null ? null : getNumberingPeriod(previous.date, series)
+    previous?.date == null ? null : getNumberingPeriod(previous.date, series)
   const serialNumber = NonNegativeInteger(
     previous != null && previousPeriod === currentPeriod
       ? previous.serialNumber + 1
@@ -65,6 +69,18 @@ export const createNextPaymentNumberValues = ({
   }
 }
 
+export const createPaymentLastNumberValues = ({
+  serialNumber,
+  date,
+}: {
+  readonly serialNumber: NonNegativeIntegerType
+  readonly date: DateString | null
+}): PaymentLastNumberRow => ({
+  id: paymentLastNumberId,
+  serialNumber,
+  date,
+})
+
 export const createNextPaymentNumber =
   ({
     id,
@@ -75,22 +91,51 @@ export const createNextPaymentNumber =
   }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const series = await run.orThrow(getPaymentNumberSeries())
-    const [previous] = await run.deps.evolu.loadQuery(
-      paymentNumbersByNewestQuery
-    )
+    const [previous] = await run.deps.evolu.loadQuery(paymentLastNumberQuery)
     const paymentNumber = createNextPaymentNumberValues({
       id,
       date,
       series,
       previous,
     })
+    const paymentLastNumber = createPaymentLastNumberValues(paymentNumber)
     const { evoluOwnerId } = run.deps
-    await runMutationWithCompletion((options) =>
+    await runMutationWithCompletion((options) => {
       run.deps.evolu.upsert("paymentNumber", paymentNumber, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+      run.deps.evolu.upsert("paymentLastNumber", paymentLastNumber, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    })
+
+    return ok(paymentNumber)
+  }
+
+export const updatePaymentLastNumber =
+  ({
+    serialNumber,
+    date,
+  }: {
+    readonly serialNumber: NonNegativeIntegerType
+    readonly date: DateString | null
+  }): Task<PaymentLastNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const paymentLastNumber = {
+      id: paymentLastNumberId,
+      serialNumber,
+      date,
+    } satisfies PaymentLastNumberRow
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.upsert("paymentLastNumber", paymentLastNumber, {
         ...options,
         ownerId: evoluOwnerId,
       })
     )
 
-    return ok(paymentNumber)
+    return ok(paymentLastNumber)
   }

@@ -6,7 +6,8 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
     <application
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/splash_icon"
+        android:roundIcon="@drawable/splash_icon"
         android:label="@string/app_name"
         android:theme="@style/Theme.app"
         android:usesCleartextTraffic="${usesCleartextTraffic}">

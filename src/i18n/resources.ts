@@ -186,6 +186,12 @@ export const resources = {
     "settings.cashRegisterAccount.form.title": "Cash register",
     "settings.cashRegisterAccount.save": "Save cash register",
     "settings.cashRegisterAccount.saved": "Cash register saved.",
+    "settings.debugConsole.clear": "Clear",
+    "settings.debugConsole.description": "Inspect captured app console output",
+    "settings.debugConsole.empty": "No console entries captured yet.",
+    "settings.debugConsole.history.title": "Console output history",
+    "settings.debugConsole.title": "Debug Console",
+    "settings.developers": "DEVELOPERS",
     "settings.fiat.czk.description": "Use Czech koruna for terminal amounts",
     "settings.fiat.czk.title": "Czech koruna",
     "settings.fiat.description": "Choose your default fiat currency",
@@ -589,6 +595,14 @@ export const resources = {
     "settings.cashRegisterAccount.form.title": "Pokladna",
     "settings.cashRegisterAccount.save": "Uložit pokladnu",
     "settings.cashRegisterAccount.saved": "Pokladna uložena.",
+    "settings.debugConsole.clear": "Vymazat",
+    "settings.debugConsole.description":
+      "Zobrazit zachycený konzolový výstup aplikace",
+    "settings.debugConsole.empty":
+      "Zatím nejsou zachycené žádné záznamy konzole.",
+    "settings.debugConsole.history.title": "Historie výstupu konzole",
+    "settings.debugConsole.title": "Debug Console",
+    "settings.developers": "VÝVOJÁŘI",
     "settings.fiat.czk.description":
       "Používat českou korunu pro částky v terminálu",
     "settings.fiat.czk.title": "Česká koruna",

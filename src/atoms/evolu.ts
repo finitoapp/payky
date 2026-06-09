@@ -1,11 +1,12 @@
 import { sqliteTrue } from "@evolu/common"
+import { createEvoluDeps, createRun } from "@evolu/web"
 import { generateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { atom } from "jotai"
 import { accountAtom } from "@/atoms/account.ts"
+import { consoleAtom } from "@/atoms/console.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
-import { webEvoluRun } from "@/core/evolu/web-runtime.ts"
 import {
   cashRegisterAccountId,
   sparkAccountId,
@@ -20,8 +21,13 @@ import {
 } from "@/core/modules/shared/schema.ts"
 
 export const evoluAtom = atom(async (get) => {
+  const console = get(consoleAtom)
   const account = await get(accountAtom)
-  const evolu = await webEvoluRun.orThrow(
+  await using run = createRun({
+    console,
+    ...createEvoluDeps(),
+  })
+  const evolu = await run.orThrow(
     createAppEvolu({
       mnemonic: account.mnemonic,
       transports: account.transports,

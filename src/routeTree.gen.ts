@@ -24,6 +24,7 @@ import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
+import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
 import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
 import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
@@ -111,6 +112,12 @@ const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
   path: '/fiat',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsDebugConsoleRoute =
+  TerminalSettingsDebugConsoleRouteImport.update({
+    id: '/debug-console',
+    path: '/debug-console',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsAboutRoute = TerminalSettingsAboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/items/edit': typeof TerminalItemsEditRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
+  '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -183,6 +191,7 @@ export interface FileRoutesByTo {
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/items/edit': typeof TerminalItemsEditRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
+  '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -208,6 +217,7 @@ export interface FileRoutesById {
   '/_terminal/items/edit': typeof TerminalItemsEditRoute
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
+  '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/items/edit'
     | '/payment/$paymentId'
     | '/settings/about'
+    | '/settings/debug-console'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/activity/$paymentId'
     | '/items/edit'
     | '/payment/$paymentId'
+    | '/settings/debug-console'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -278,6 +290,7 @@ export interface FileRouteTypes {
     | '/_terminal/items/edit'
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
+    | '/_terminal/settings/debug-console'
     | '/_terminal/settings/fiat'
     | '/_terminal/settings/fio-plugin'
     | '/_terminal/settings/items'
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsFiatRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/debug-console': {
+      id: '/_terminal/settings/debug-console'
+      path: '/debug-console'
+      fullPath: '/settings/debug-console'
+      preLoaderRoute: typeof TerminalSettingsDebugConsoleRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/about': {
       id: '/_terminal/settings/about'
       path: '/about'
@@ -475,6 +495,7 @@ const TerminalSettingsAboutRouteWithChildren =
 
 interface TerminalSettingsRouteChildren {
   TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
+  TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
   TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsFioPluginRoute: typeof TerminalSettingsFioPluginRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
@@ -488,6 +509,7 @@ interface TerminalSettingsRouteChildren {
 
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAboutRoute: TerminalSettingsAboutRouteWithChildren,
+  TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
   TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsFioPluginRoute: TerminalSettingsFioPluginRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,

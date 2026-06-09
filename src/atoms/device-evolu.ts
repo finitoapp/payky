@@ -1,4 +1,6 @@
+import { createEvoluDeps, createRun } from "@evolu/web"
 import { atom } from "jotai"
+import { consoleAtom } from "@/atoms/console.ts"
 import {
   createDefaultDeviceSettings,
   createDeviceEvolu,
@@ -22,8 +24,13 @@ const deviceSettingsQuery = createDeviceQuery((db) =>
     .where("id", "=", deviceSettingsId)
 )
 
-export const deviceEvoluAtom = atom(async () => {
-  const deviceEvolu = await createDeviceEvolu()
+export const deviceEvoluAtom = atom(async (get) => {
+  const console = get(consoleAtom)
+  await using run = createRun({
+    console,
+    ...createEvoluDeps(),
+  })
+  const deviceEvolu = await run.orThrow(createDeviceEvolu)
   const deviceSettings = await deviceEvolu.loadQuery(deviceSettingsQuery)
 
   if (deviceSettings.length === 0) {

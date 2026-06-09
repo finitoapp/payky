@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import {
   ArrowDown,
   BadgeDollarSign,
+  Bug,
   Grid2X2,
   Info,
   Landmark,
@@ -104,6 +105,15 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
   },
 ]
 
+const developerSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: Bug,
+    title: "settings.debugConsole.title",
+    description: "settings.debugConsole.description",
+    to: "/settings/debug-console",
+  },
+]
+
 function createSettingsNavItems(
   settings: ReadonlyArray<SettingRow>,
   t: (key: TranslationKey) => string
@@ -140,6 +150,10 @@ function SettingsPage() {
     () => createSettingsNavItems(paymentSettings, t),
     [t]
   )
+  const developerItems = useMemo(
+    () => createSettingsNavItems(developerSettings, t),
+    [t]
+  )
   const securityItems = useMemo(
     () =>
       createSettingsNavItems(
@@ -169,6 +183,7 @@ function SettingsPage() {
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav title={t("settings.security")} items={securityItems} />
       <VerticalNav title={t("settings.general")} items={generalItems} />
+      <VerticalNav title={t("settings.developers")} items={developerItems} />
     </>
   )
 }

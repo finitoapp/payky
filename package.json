@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@base-ui/react": "1.5.0",
-    "@buildonspark/spark-sdk": "0.8.5",
+    "@buildonspark/spark-sdk": "0.8.6",
     "@evolu/common": "8.0.0-next.5",
     "@evolu/nodejs": "3.0.0-next.3",
     "@evolu/react": "11.0.0-next.0",
@@ -55,7 +55,7 @@
     "qrcode.react": "4.2.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "shadcn": "4.10.0",
+    "shadcn": "4.11.0",
     "sonner": "2.0.7",
     "tailwind-merge": "3.6.0",
     "tailwindcss": "4.3.0",

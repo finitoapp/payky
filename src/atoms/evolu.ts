@@ -1,10 +1,9 @@
 import { sqliteTrue } from "@evolu/common"
-import { createEvoluDeps, createRun } from "@evolu/web"
 import { generateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { atom } from "jotai"
 import { accountAtom } from "@/atoms/account.ts"
-import { consoleAtom } from "@/atoms/console.ts"
+import { runAtom } from "@/atoms/run.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
@@ -21,12 +20,8 @@ import {
 } from "@/core/modules/shared/schema.ts"
 
 export const evoluAtom = atom(async (get) => {
-  const console = get(consoleAtom)
   const account = await get(accountAtom)
-  await using run = createRun({
-    console,
-    ...createEvoluDeps(),
-  })
+  const run = get(runAtom)
   const evolu = await run.orThrow(
     createAppEvolu({
       mnemonic: account.mnemonic,
@@ -49,7 +44,7 @@ export const evoluAtom = atom(async (get) => {
     evolu.upsert("device", account.device)
   }
 
-  const appOwner = await evolu.appOwner
+  const appOwner = evolu.appOwner
   if (appOwner.mnemonic === null || appOwner.mnemonic === undefined)
     throw new Error(
       "App owner mnemonic is not set. Please create a new account."

@@ -444,7 +444,7 @@ function PaymentWaitingRequest({
       <FadeHeader />
 
       <div className="flex min-h-full flex-col justify-between gap-8">
-        <section className="flex flex-1 flex-col items-center justify-center gap-7 text-center">
+        <section className="flex flex-1 flex-col items-center justify-start gap-7 pt-10 text-center">
           <div className="flex flex-col items-center gap-2">
             <p className="text-sm font-medium text-muted-foreground">
               {t("paymentWait.pay")}

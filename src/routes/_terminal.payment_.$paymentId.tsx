@@ -17,10 +17,10 @@ import {
   useRef,
   useState,
 } from "react"
+import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { Card, CardContent } from "@/components/ui/card.tsx"
 import {
   Tabs,
   TabsContent,
@@ -676,15 +676,31 @@ function QrPaymentRequest({
 }: {
   readonly qrPayload: string | null
 }) {
+  const { t } = useTranslation()
+
   if (qrPayload === null) return null
+
+  const copyQrPayload = async () => {
+    try {
+      await navigator.clipboard.writeText(qrPayload)
+      toast.success(t("paymentWait.qrCopied"))
+    } catch {
+      toast.error(t("paymentWait.qrCopyFailed"))
+    }
+  }
 
   return (
     <div className="w-full px-6">
-      <Card className="aspect-square w-full bg-white">
-        <CardContent className="flex flex-col">
+      <button
+        type="button"
+        className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        onClick={() => void copyQrPayload()}
+        aria-label={t("paymentWait.copyQr")}
+      >
+        <span className="flex size-full flex-col">
           <QRCodeSVG value={qrPayload} className="size-full" />
-        </CardContent>
-      </Card>
+        </span>
+      </button>
     </div>
   )
 }

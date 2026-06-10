@@ -91,6 +91,7 @@ export const resources = {
     "paymentWait.cashPaid.prompt": "Accept cash payment",
     "paymentWait.cashPaid.unavailable":
       "Cash register is not attached to this payment.",
+    "paymentWait.copyQr": "Copy QR code content",
     "paymentWait.detail": "Payment detail",
     "paymentWait.invalidId": "Invalid payment id.",
     "paymentWait.method.cash": "Cash",
@@ -106,6 +107,8 @@ export const resources = {
     "paymentWait.preparing.iban": "Preparing bank QR payment...",
     "paymentWait.preparing.spark": "Preparing Lightning request...",
     "paymentWait.preparingRequest": "Preparing payment request...",
+    "paymentWait.qrCopied": "QR code content copied.",
+    "paymentWait.qrCopyFailed": "Could not copy QR code content.",
     "paymentWait.scanOrTap": "Scan and pay",
     "paymentWait.share": "Share payment request",
     "paymentWait.waiting": "Waiting for payment...",
@@ -511,6 +514,7 @@ export const resources = {
     "paymentWait.cashPaid.prompt": "Přijměte hotovostní platbu",
     "paymentWait.cashPaid.unavailable":
       "K této platbě není připojená pokladna.",
+    "paymentWait.copyQr": "Zkopírovat obsah QR kódu",
     "paymentWait.detail": "Detail platby",
     "paymentWait.invalidId": "Neplatné id platby.",
     "paymentWait.method.cash": "Hotově",
@@ -525,6 +529,8 @@ export const resources = {
     "paymentWait.preparing.iban": "Připravuji bankovní QR platbu...",
     "paymentWait.preparing.spark": "Připravuji Lightning žádost...",
     "paymentWait.preparingRequest": "Připravuji platební žádost...",
+    "paymentWait.qrCopied": "Obsah QR kódu zkopírován.",
+    "paymentWait.qrCopyFailed": "Obsah QR kódu se nepodařilo zkopírovat.",
     "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
     "paymentWait.share": "Sdílet platební žádost",
     "paymentWait.waiting": "Čeká se na platbu...",

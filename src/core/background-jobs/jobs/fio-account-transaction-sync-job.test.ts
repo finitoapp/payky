@@ -281,20 +281,18 @@ describe("fio account transaction sync job", () => {
 
     await expect
       .poll(() => console.getEntriesSnapshot())
-      .toEqual([
-        {
-          method: "error",
-          path: ["fio-account-transaction-sync-job"],
-          args: [
-            "Skipped FIO sync because of rate limiting.",
-            {
-              accountId,
-              pluginId: fioPluginId,
-              responseBody: "Interval between requests was not respected.",
-            },
-          ],
-        },
-      ])
+      .toContainEqual({
+        method: "error",
+        path: ["fio-account-transaction-sync-job"],
+        args: [
+          "Skipped FIO sync because of rate limiting.",
+          {
+            accountId,
+            pluginId: fioPluginId,
+            responseBody: "Interval between requests was not respected.",
+          },
+        ],
+      })
     expect(errors).toEqual([])
   })
 

@@ -1,7 +1,7 @@
 import type { ConsoleEntry } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
-import { Trash2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Pause, Play, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -28,17 +28,26 @@ export const Route = createFileRoute("/_terminal/settings/debug-console")({
 function DebugConsolePage() {
   const { t } = useTranslation()
   const consoleHistory = useConsoleHistory()
+  const [isPaused, setIsPaused] = useState(false)
   const [entries, setEntries] = useState<ReadonlyArray<ConsoleEntry>>(() =>
     consoleHistory.getEntries()
   )
+  const visibleEntries = useMemo(() => entries.toReversed(), [entries])
 
   useEffect(() => {
+    if (isPaused) return
+
     setEntries(consoleHistory.getEntries())
 
     return consoleHistory.subscribe(() => {
       setEntries(consoleHistory.getEntries())
     })
-  }, [consoleHistory])
+  }, [consoleHistory, isPaused])
+
+  const clearEntries = () => {
+    consoleHistory.clearEntries()
+    setEntries([])
+  }
 
   return (
     <>
@@ -49,16 +58,31 @@ function DebugConsolePage() {
         <CardHeader>
           <CardTitle>{t("settings.debugConsole.history.title")}</CardTitle>
           <CardAction>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={consoleHistory.clearEntries}
-              disabled={entries.length === 0}
-            >
-              <Trash2 />
-              {t("settings.debugConsole.clear")}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsPaused((value) => !value)
+                }}
+              >
+                {isPaused ? <Play /> : <Pause />}
+                {isPaused
+                  ? t("settings.debugConsole.resume")
+                  : t("settings.debugConsole.pause")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearEntries}
+                disabled={entries.length === 0}
+              >
+                <Trash2 />
+                {t("settings.debugConsole.clear")}
+              </Button>
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent>
@@ -68,7 +92,7 @@ function DebugConsolePage() {
             </p>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {entries.map((entry, index) => (
+              {visibleEntries.map((entry, index) => (
                 <ConsoleEntryCard
                   // biome-ignore lint/suspicious/noArrayIndexKey: console entries do not expose stable ids
                   key={index}

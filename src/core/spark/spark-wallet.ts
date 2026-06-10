@@ -46,7 +46,7 @@ export const createSparkWalletDep = () => {
 export const createDefaultSparkPaymentWallet = async (
   mnemonic: string
 ): Promise<SparkPaymentWallet & AsyncDisposable> => {
-  const { wallet } = await SparkWallet.getOrCreateWallet({
+  const { wallet } = await SparkWallet.initialize({
     mnemonicOrSeed: mnemonic,
     options: {
       network: "MAINNET",

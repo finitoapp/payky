@@ -193,6 +193,8 @@ export const resources = {
     "settings.debugConsole.description": "Inspect captured app console output",
     "settings.debugConsole.empty": "No console entries captured yet.",
     "settings.debugConsole.history.title": "Console output history",
+    "settings.debugConsole.pause": "Pause",
+    "settings.debugConsole.resume": "Resume",
     "settings.debugConsole.title": "Debug Console",
     "settings.developers": "DEVELOPERS",
     "settings.fiat.czk.description": "Use Czech koruna for terminal amounts",
@@ -616,6 +618,8 @@ export const resources = {
     "settings.debugConsole.empty":
       "Zatím nejsou zachycené žádné záznamy konzole.",
     "settings.debugConsole.history.title": "Historie výstupu konzole",
+    "settings.debugConsole.pause": "Pauza",
+    "settings.debugConsole.resume": "Pokračovat",
     "settings.debugConsole.title": "Debug Console",
     "settings.developers": "VÝVOJÁŘI",
     "settings.fiat.czk.description":

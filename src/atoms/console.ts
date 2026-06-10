@@ -67,6 +67,7 @@ export const consoleAtom = atom((get) => {
   const consoleOutputHistory = get(consoleOutputHistoryAtom)
 
   return createConsole({
+    level: "debug",
     output: createMultiOutput([
       createNativeConsoleOutput(),
       consoleOutputHistory,

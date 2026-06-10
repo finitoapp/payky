@@ -85,6 +85,7 @@ class FioAccountTransactionSync {
   }
 
   start(): void {
+    this.context.console.info("Started FIO account transaction sync job.")
     this.queueRefresh()
   }
 
@@ -98,6 +99,7 @@ class FioAccountTransactionSync {
       sync.dispose()
     }
     this.pluginSyncs.clear()
+    this.context.console.info("Stopped FIO account transaction sync job.")
   }
 
   private queueRefresh(): void {
@@ -109,11 +111,21 @@ class FioAccountTransactionSync {
     const activePlugins = plugins.filter(hasFioTokens)
     const activeIds = new Set(activePlugins.map((plugin) => plugin.id))
 
+    this.context.console.debug("Refreshing FIO plugin syncs.", {
+      activePluginCount: activePlugins.length,
+      pluginCount: plugins.length,
+      runningPluginCount: this.pluginSyncs.size,
+      skippedPluginWithoutTokenCount: plugins.length - activePlugins.length,
+    })
+
     for (const [pluginId, sync] of this.pluginSyncs) {
       if (activeIds.has(pluginId)) continue
 
       sync.dispose()
       this.pluginSyncs.delete(pluginId)
+      this.context.console.info("Stopped FIO plugin sync.", {
+        pluginId,
+      })
     }
 
     for (const plugin of activePlugins) {
@@ -123,6 +135,12 @@ class FioAccountTransactionSync {
       current?.dispose()
       const sync = new FioPluginSync(this.context, plugin)
       this.pluginSyncs.set(plugin.id, sync)
+      this.context.console.info("Started FIO plugin sync.", {
+        accountId: plugin.accountId,
+        pluginId: plugin.id,
+        replacedExistingSync: current != null,
+        tokenCount: plugin.tokens.length,
+      })
       sync.start()
     }
   }
@@ -181,6 +199,13 @@ class FioPluginSync {
       }),
     })
     const period = await this.getSyncPeriod()
+    this.context.console.info("Started FIO transaction sync.", {
+      accountId: this.plugin.accountId,
+      from: period.from,
+      pluginId: this.plugin.id,
+      to: period.to,
+      tokenCount: this.plugin.tokens.length,
+    })
     const result = await run(fetchFioTransactionsByPeriod(period))
     if (!result.ok && result.error.type === "FioRateLimitError") {
       this.context.console.error("Skipped FIO sync because of rate limiting.", {
@@ -194,6 +219,8 @@ class FioPluginSync {
     if (result.value.iban !== this.plugin.iban) {
       this.context.console.warn("Skipped FIO statement for a different IBAN.", {
         accountId: this.plugin.accountId,
+        expectedIban: this.plugin.iban,
+        receivedIban: result.value.iban,
         pluginId: this.plugin.id,
       })
       return
@@ -202,11 +229,26 @@ class FioPluginSync {
     const transactionsToRecord = await this.getTransactionsToRecord(
       result.value.transactions
     )
+    this.context.console.info("Selected FIO transactions to record.", {
+      accountId: this.plugin.accountId,
+      downloadedCount: result.value.transactions.length,
+      pluginId: this.plugin.id,
+      selectedCount: transactionsToRecord.length,
+      skippedCount:
+        result.value.transactions.length - transactionsToRecord.length,
+    })
     for (const transaction of transactionsToRecord) {
       if (this.syncQueue.isDisposed) return
       await this.recordTransaction(transaction)
     }
     await this.saveSyncPointer(period.to)
+    this.context.console.info("Finished FIO transaction sync.", {
+      accountId: this.plugin.accountId,
+      from: period.from,
+      pluginId: this.plugin.id,
+      recordedCount: transactionsToRecord.length,
+      to: period.to,
+    })
   }
 
   private getNextToken(): FioPluginToken {
@@ -222,7 +264,14 @@ class FioPluginSync {
       `fio-transaction-${this.plugin.accountId}-${transaction.id}`,
       { ifAvailable: true },
       async (lock) => {
-        if (lock == null) return
+        if (lock == null) {
+          this.context.console.debug("Skipped locked FIO transaction.", {
+            accountId: this.plugin.accountId,
+            bankReference: transaction.id,
+            pluginId: this.plugin.id,
+          })
+          return
+        }
 
         const bankReference = NonEmptyString255Schema.decode(transaction.id)
 
@@ -249,10 +298,21 @@ class FioPluginSync {
             },
           })
         )
-        await run.orThrow(reconcileAccountTransaction(accountTransactionId))
+        this.context.console.debug("Reconciling FIO account transaction.", {
+          accountId: this.plugin.accountId,
+          accountTransactionId,
+          bankReference,
+          pluginId: this.plugin.id,
+        })
+        const paymentId = await run.orThrow(
+          reconcileAccountTransaction(accountTransactionId)
+        )
         this.context.console.info("Created FIO account transaction.", {
           accountId: this.plugin.accountId,
+          accountTransactionId,
+          amount: transaction.amountMinor,
           bankReference,
+          paymentId,
           pluginId: this.plugin.id,
         })
       }
@@ -276,6 +336,14 @@ class FioPluginSync {
             subDays(dateStringToDate(pointer.lastSyncedDate), syncLookbackDays)
           )
 
+    this.context.console.debug("Resolved FIO sync period.", {
+      from,
+      lastSyncedDate: pointer?.lastSyncedDate ?? null,
+      pluginId: this.plugin.id,
+      syncLookbackDays,
+      to,
+    })
+
     return { from, to }
   }
 
@@ -283,7 +351,14 @@ class FioPluginSync {
     transactions: ReadonlyArray<FioTransaction>
   ): Promise<ReadonlyArray<FioTransaction>> {
     const bankReferences = getUniqueBankReferences(transactions)
-    if (bankReferences.length === 0) return []
+    if (bankReferences.length === 0) {
+      this.context.console.debug("No FIO transactions have bank references.", {
+        accountId: this.plugin.accountId,
+        pluginId: this.plugin.id,
+        transactionCount: transactions.length,
+      })
+      return []
+    }
 
     const existing = await this.context.evolu.loadQuery(
       existingFioTransactionBankReferencesQuery({
@@ -306,6 +381,15 @@ class FioPluginSync {
       selectedTransactions.push(transaction)
     }
 
+    this.context.console.debug("Filtered FIO transactions.", {
+      accountId: this.plugin.accountId,
+      downloadedCount: transactions.length,
+      existingCount: existingBankReferences.size,
+      pluginId: this.plugin.id,
+      selectedCount: selectedTransactions.length,
+      uniqueBankReferenceCount: bankReferences.length,
+    })
+
     return selectedTransactions
   }
 
@@ -320,6 +404,10 @@ class FioPluginSync {
         { ...options, ownerId: this.context.evoluOwnerId }
       )
     )
+    this.context.console.debug("Saved FIO sync pointer.", {
+      lastSyncedDate,
+      pluginId: this.plugin.id,
+    })
   }
 }
 

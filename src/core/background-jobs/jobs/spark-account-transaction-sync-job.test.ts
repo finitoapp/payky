@@ -1,4 +1,7 @@
-import { SparkWalletEvent } from "@buildonspark/spark-sdk"
+import {
+  SparkWalletEvent,
+  type SparkWalletEvents,
+} from "@buildonspark/spark-sdk"
 import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
@@ -45,6 +48,7 @@ interface FakeTransfer {
 
 class FakeSparkWallet {
   readonly cleanups: unknown[] = []
+  readonly getTransferIds: string[] = []
   private readonly listeners = new Map<
     string,
     Set<(...args: ReadonlyArray<unknown>) => void>
@@ -66,6 +70,7 @@ class FakeSparkWallet {
   }
 
   async getTransfer(id: string) {
+    this.getTransferIds.push(id)
     return this.transfers.find((transfer) => transfer.id === id)
   }
 
@@ -82,8 +87,21 @@ class FakeSparkWallet {
     this.listeners.get(event)?.delete(listener)
   }
 
+  configureEvents(events: Partial<SparkWalletEvents>): void {
+    for (const [event, listener] of Object.entries(events)) {
+      if (listener == null) continue
+
+      this.on(event, listener as (...args: ReadonlyArray<unknown>) => void)
+    }
+  }
+
+  listenerCount(event: string): number {
+    return this.listeners.get(event)?.size ?? 0
+  }
+
   async cleanup(): Promise<void> {
     this.cleanups.push(null)
+    this.listeners.clear()
   }
 
   emit(event: string, ...args: ReadonlyArray<unknown>): void {
@@ -119,6 +137,18 @@ const createUniqueHexSeed = (): string =>
     .padEnd(64, "0")
     .slice(0, 64)
 
+const createFakeWalletFactory =
+  (mnemonic: string, wallet: FakeSparkWallet) =>
+  async (
+    receivedMnemonic: string,
+    events: Partial<SparkWalletEvents>
+  ): Promise<FakeSparkWallet> => {
+    const selectedWallet =
+      receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
+    selectedWallet.configureEvents(events)
+    return selectedWallet
+  }
+
 describe("spark account transaction sync job", () => {
   test("stores completed Spark transfers from the periodic history check without duplicates", async () => {
     await using testEvolu = await createEvoluTest()
@@ -150,8 +180,7 @@ describe("spark account transaction sync job", () => {
     })
     using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
-        walletFactory: async (receivedMnemonic) =>
-          receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
+        walletFactory: createFakeWalletFactory(mnemonic, wallet),
         recheckIntervalMs: 10,
       })
     )
@@ -201,7 +230,6 @@ describe("spark account transaction sync job", () => {
         id: transferId,
         totalValue: 2100,
         transferDirection: "OUTGOING",
-        userRequest: undefined,
       }),
     ])
     {
@@ -214,11 +242,14 @@ describe("spark account transaction sync job", () => {
       })
       using _job = await jobRun.orThrow(
         createSparkAccountTransactionSyncJob({
-          walletFactory: async (receivedMnemonic) =>
-            receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([]),
+          walletFactory: createFakeWalletFactory(mnemonic, wallet),
           recheckIntervalMs: 60_000,
         })
       )
+
+      await expect
+        .poll(() => wallet.listenerCount(SparkWalletEvent.TransferClaimed))
+        .toBe(1)
 
       wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
 
@@ -230,9 +261,9 @@ describe("spark account transaction sync job", () => {
           {
             amount: -2100,
             sparkTransferId: transferId,
-            lnInvoice: "spark-invoice-1",
-            preImage: transferId,
-            paymentHash: transferId,
+            lnInvoice: "lnbc1invoice",
+            preImage: "preimage-1",
+            paymentHash: "payment-hash-1",
           },
         ])
     }
@@ -240,6 +271,103 @@ describe("spark account transaction sync job", () => {
     wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
 
     expect(wallet.cleanups).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+
+  test("records a transfer claimed while the Spark wallet is initializing", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const mnemonic = createUniqueHexSeed()
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Spark account",
+        spark: {
+          mnemonic,
+        },
+      })
+    )
+    const transferId = `spark-transfer-during-init-${accountId}`
+    const wallet = new FakeSparkWallet([
+      createCompletedTransfer({
+        id: transferId,
+      }),
+    ])
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      onError: (error) => {
+        errors.push(error)
+      },
+    })
+    using _job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: async (receivedMnemonic, events) => {
+          const selectedWallet =
+            receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
+          selectedWallet.configureEvents(events)
+          selectedWallet.emit(SparkWalletEvent.TransferClaimed, transferId)
+          return selectedWallet
+        },
+        recheckIntervalMs: 60_000,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([
+        {
+          amount: 1234,
+          sparkTransferId: transferId,
+        },
+      ])
+    expect(wallet.getTransferIds).toContain(transferId)
+    expect(errors).toEqual([])
+  })
+
+  test("ignores completed Spark transfers without a BOLT11 invoice", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const mnemonic = createUniqueHexSeed()
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Spark account",
+        spark: {
+          mnemonic,
+        },
+      })
+    )
+    const transferId = `spark-transfer-without-bolt11-${accountId}`
+    const wallet = new FakeSparkWallet([
+      createCompletedTransfer({
+        id: transferId,
+        userRequest: undefined,
+      }),
+    ])
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      onError: (error) => {
+        errors.push(error)
+      },
+    })
+    using _job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: createFakeWalletFactory(mnemonic, wallet),
+        recheckIntervalMs: 10,
+      })
+    )
+
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(
+      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
+    ).toEqual([])
     expect(errors).toEqual([])
   })
 

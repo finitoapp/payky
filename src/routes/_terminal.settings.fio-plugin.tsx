@@ -1,6 +1,7 @@
-import { sqliteFalse, sqliteTrue } from "@evolu/common"
+import { createIdFromString, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createRun } from "@evolu/web"
 import { createFileRoute } from "@tanstack/react-router"
+import { format, subDays } from "date-fns"
 import { Plus, Trash2 } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 
@@ -31,13 +32,17 @@ import {
   createFioPlugin,
   deleteFioPluginToken,
   updateFioPlugin,
+  updateFioPluginSyncPointer,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import {
   fiatBankAccountFioPluginQuery,
+  fioPluginSyncPointerByPluginIdQuery,
   fioPluginTokensByPluginIdQuery,
 } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import {
+  type DateString,
+  DateStringSchema,
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -57,6 +62,13 @@ export const Route = createFileRoute("/_terminal/settings/fio-plugin")({
 })
 
 const defaultNumberOfSecondsBetweenChecks = "30"
+const defaultSyncLookbackDays = "1"
+const fioPluginFormPointerPlaceholderId = createIdFromString<"FioPlugin">(
+  "payky-fio-plugin-form-pointer-placeholder"
+)
+
+const getDefaultLastSyncedDate = (): DateString =>
+  DateStringSchema.decode(format(subDays(new Date(), 1), "yyyy-MM-dd"))
 
 const normalizeToken = (value: string) => value.trim()
 
@@ -94,6 +106,7 @@ interface FioPluginFormProps {
         readonly id: FioPluginId
         readonly isActive: 0 | 1
         readonly numberOfSecondsBetweenChecks: number
+        readonly syncLookbackDays: number | null
       }
     | undefined
 }
@@ -102,16 +115,35 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
   const console = useConsole()
   const { t } = useTranslation()
   const evolu = useEvolu()
+  const { data: pointers } = useEvoluQuery(
+    fioPluginSyncPointerByPluginIdQuery(
+      plugin?.id ?? fioPluginFormPointerPlaceholderId
+    )
+  )
+  const [pointer] = pointers
+  const lastSyncedDate = pointer?.lastSyncedDate ?? getDefaultLastSyncedDate()
   const activeInputId = useId()
   const intervalInputId = useId()
+  const syncLookbackDaysInputId = useId()
+  const lastSyncedDateInputId = useId()
   const tokenInputId = useId()
   const [isActive, setIsActive] = useState(false)
   const [numberOfSecondsBetweenChecks, setNumberOfSecondsBetweenChecks] =
     useState(defaultNumberOfSecondsBetweenChecks)
+  const [syncLookbackDays, setSyncLookbackDays] = useState(
+    defaultSyncLookbackDays
+  )
+  const [editableLastSyncedDate, setEditableLastSyncedDate] = useState<string>(
+    getDefaultLastSyncedDate
+  )
   const [token, setToken] = useState("")
   const [intervalError, setIntervalError] = useState<TranslationKey | null>(
     null
   )
+  const [syncLookbackDaysError, setSyncLookbackDaysError] =
+    useState<TranslationKey | null>(null)
+  const [lastSyncedDateError, setLastSyncedDateError] =
+    useState<TranslationKey | null>(null)
   const [tokenError, setTokenError] = useState<TranslationKey | null>(null)
   const [saved, setSaved] = useState(false)
   const [pending, setPending] = useState(false)
@@ -122,26 +154,45 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
       plugin?.numberOfSecondsBetweenChecks.toString() ??
         defaultNumberOfSecondsBetweenChecks
     )
-  }, [plugin])
+    setSyncLookbackDays(
+      plugin?.syncLookbackDays?.toString() ?? defaultSyncLookbackDays
+    )
+    setEditableLastSyncedDate(lastSyncedDate)
+  }, [plugin, lastSyncedDate])
 
   return (
     <form
       onSubmit={async (event) => {
         event.preventDefault()
         setIntervalError(null)
+        setSyncLookbackDaysError(null)
+        setLastSyncedDateError(null)
         setTokenError(null)
         setSaved(false)
 
         const intervalResult = PositiveIntegerFromStringSchema.safeParse(
           numberOfSecondsBetweenChecks.trim()
         )
+        const syncLookbackDaysResult =
+          PositiveIntegerFromStringSchema.safeParse(syncLookbackDays.trim())
         const normalizedToken = normalizeToken(token)
         const tokenResult = normalizedToken
           ? NonEmptyString255Schema.safeParse(normalizedToken)
           : null
+        const normalizedLastSyncedDate = editableLastSyncedDate.trim()
+        const lastSyncedDateResult = DateStringSchema.safeParse(
+          normalizedLastSyncedDate
+        )
 
         if (!intervalResult.success) {
           setIntervalError("settings.fioPlugin.interval.invalid")
+          return
+        }
+
+        if (!syncLookbackDaysResult.success) {
+          setSyncLookbackDaysError(
+            "settings.fioPlugin.syncLookbackDays.invalid"
+          )
           return
         }
 
@@ -155,6 +206,11 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
           return
         }
 
+        if (!lastSyncedDateResult.success) {
+          setLastSyncedDateError("settings.fioPlugin.lastSyncedDate.invalid")
+          return
+        }
+
         setPending(true)
         try {
           await using run = createRun({
@@ -164,22 +220,36 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
           })
 
           if (plugin) {
-            await run(
+            await run.orThrow(
               updateFioPlugin({
                 id: plugin.id,
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
+                syncLookbackDays: syncLookbackDaysResult.data,
                 isActive: isActive ? sqliteTrue : sqliteFalse,
                 token: tokenResult?.data,
               })
             )
+            await run.orThrow(
+              updateFioPluginSyncPointer({
+                id: plugin.id,
+                lastSyncedDate: lastSyncedDateResult.data,
+              })
+            )
           } else if (tokenResult) {
-            await run(
+            const fioPluginId = await run.orThrow(
               createFioPlugin({
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
+                syncLookbackDays: syncLookbackDaysResult.data,
                 isActive: isActive ? sqliteTrue : sqliteFalse,
                 token: tokenResult.data,
+              })
+            )
+            await run.orThrow(
+              updateFioPluginSyncPointer({
+                id: fioPluginId,
+                lastSyncedDate: lastSyncedDateResult.data,
               })
             )
           }
@@ -242,6 +312,56 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
                 {t("settings.fioPlugin.interval.description")}
               </FieldDescription>
               <FieldError>{intervalError ? t(intervalError) : null}</FieldError>
+            </Field>
+
+            <Field data-invalid={syncLookbackDaysError !== null}>
+              <FieldLabel htmlFor={syncLookbackDaysInputId}>
+                {t("settings.fioPlugin.syncLookbackDays.label")}
+              </FieldLabel>
+              <Input
+                id={syncLookbackDaysInputId}
+                value={syncLookbackDays}
+                disabled={pending}
+                aria-invalid={syncLookbackDaysError !== null}
+                inputMode="numeric"
+                min={1}
+                type="number"
+                onChange={(event) => {
+                  setSyncLookbackDays(event.currentTarget.value)
+                  setSyncLookbackDaysError(null)
+                  setSaved(false)
+                }}
+              />
+              <FieldDescription>
+                {t("settings.fioPlugin.syncLookbackDays.description")}
+              </FieldDescription>
+              <FieldError>
+                {syncLookbackDaysError ? t(syncLookbackDaysError) : null}
+              </FieldError>
+            </Field>
+
+            <Field data-invalid={lastSyncedDateError !== null}>
+              <FieldLabel htmlFor={lastSyncedDateInputId}>
+                {t("settings.fioPlugin.lastSyncedDate.label")}
+              </FieldLabel>
+              <Input
+                id={lastSyncedDateInputId}
+                value={editableLastSyncedDate}
+                disabled={pending}
+                aria-invalid={lastSyncedDateError !== null}
+                type="date"
+                onChange={(event) => {
+                  setEditableLastSyncedDate(event.currentTarget.value)
+                  setLastSyncedDateError(null)
+                  setSaved(false)
+                }}
+              />
+              <FieldDescription>
+                {t("settings.fioPlugin.lastSyncedDate.description")}
+              </FieldDescription>
+              <FieldError>
+                {lastSyncedDateError ? t(lastSyncedDateError) : null}
+              </FieldError>
             </Field>
 
             <Field data-invalid={tokenError !== null}>
@@ -344,7 +464,7 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
                           evoluOwnerId: evolu.appOwner.id,
                         })
 
-                        await run(deleteFioPluginToken(token.id))
+                        await run.orThrow(deleteFioPluginToken(token.id))
                       } finally {
                         setPendingTokenId(null)
                       }

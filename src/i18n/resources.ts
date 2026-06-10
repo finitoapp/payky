@@ -228,8 +228,17 @@ export const resources = {
     "settings.fioPlugin.interval.invalid":
       "Enter a whole number greater than zero.",
     "settings.fioPlugin.interval.label": "Seconds between checks",
+    "settings.fioPlugin.lastSyncedDate.description":
+      "Local sync pointer. If no pointer exists yet, yesterday is used.",
+    "settings.fioPlugin.lastSyncedDate.invalid": "Enter a valid date.",
+    "settings.fioPlugin.lastSyncedDate.label": "Last synced date",
     "settings.fioPlugin.save": "Save Fio plugin",
     "settings.fioPlugin.saved": "Fio plugin settings saved.",
+    "settings.fioPlugin.syncLookbackDays.description":
+      "How many days before the last local sync pointer should be checked again.",
+    "settings.fioPlugin.syncLookbackDays.invalid":
+      "Enter a whole number greater than zero.",
+    "settings.fioPlugin.syncLookbackDays.label": "Sync lookback days",
     "settings.fioPlugin.title": "Fio Plugin",
     "settings.fioPlugin.token.description":
       "Leave empty to update only basic settings.",
@@ -639,8 +648,17 @@ export const resources = {
       "Jak často má plugin kontrolovat nové transakce.",
     "settings.fioPlugin.interval.invalid": "Zadejte celé číslo větší než nula.",
     "settings.fioPlugin.interval.label": "Sekund mezi kontrolami",
+    "settings.fioPlugin.lastSyncedDate.description":
+      "Lokální zarážka synchronizace. Pokud ještě neexistuje, použije se včerejší datum.",
+    "settings.fioPlugin.lastSyncedDate.invalid": "Zadejte platné datum.",
+    "settings.fioPlugin.lastSyncedDate.label": "Poslední synchronizované datum",
     "settings.fioPlugin.save": "Uložit Fio plugin",
     "settings.fioPlugin.saved": "Nastavení Fio pluginu uloženo.",
+    "settings.fioPlugin.syncLookbackDays.description":
+      "Kolik dní před poslední lokální zarážkou se má znovu kontrolovat.",
+    "settings.fioPlugin.syncLookbackDays.invalid":
+      "Zadejte celé číslo větší než nula.",
+    "settings.fioPlugin.syncLookbackDays.label": "Dny zpětné kontroly",
     "settings.fioPlugin.title": "Fio plugin",
     "settings.fioPlugin.token.description":
       "Nechte prázdné, pokud chcete uložit jen základní nastavení.",

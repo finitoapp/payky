@@ -1,6 +1,7 @@
 import {
   type InsertValues,
   ok,
+  sqliteFalse,
   sqliteTrue,
   type Task,
   type UpdateValues,
@@ -16,6 +17,10 @@ import type {
 import type { FioPluginTokenId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
+import {
+  type DateString,
+  PositiveInteger,
+} from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
   removeUndefinedValues,
@@ -34,6 +39,8 @@ export type FioPluginNotFoundError = ReturnType<
 export const fioPluginNotFound = (id: FioPluginId): FioPluginNotFoundError =>
   createFioPluginNotFoundError({ id })
 
+export const defaultFioPluginSyncLookbackDays = PositiveInteger(1)
+
 export const loadFioPlugin =
   (
     idValue: FioPluginId
@@ -47,10 +54,12 @@ export const loadFioPlugin =
 export const createFioPlugin =
   ({
     token,
+    syncLookbackDays = defaultFioPluginSyncLookbackDays,
     ...input
-  }: InsertValues<typeof fioPlugin> & {
-    readonly token: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }: Omit<InsertValues<typeof fioPlugin>, "syncLookbackDays"> &
+    Partial<Pick<InsertValues<typeof fioPlugin>, "syncLookbackDays">> & {
+      readonly token: InsertValues<typeof fioPluginToken>["token"]
+    }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const id = createTableId<"FioPlugin">()
@@ -72,6 +81,7 @@ export const createFioPlugin =
         removeUndefinedValues({
           ...input,
           id,
+          syncLookbackDays,
         }),
         { ...options, ownerId: evoluOwnerId }
       )
@@ -86,7 +96,11 @@ export const updateFioPlugin =
     ...input
   }: Pick<
     UpdateValues<typeof fioPlugin>,
-    "id" | "accountId" | "numberOfSecondsBetweenChecks" | "isActive"
+    | "id"
+    | "accountId"
+    | "numberOfSecondsBetweenChecks"
+    | "syncLookbackDays"
+    | "isActive"
   > & {
     readonly token?: InsertValues<typeof fioPluginToken>["token"]
   }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
@@ -114,6 +128,43 @@ export const updateFioPlugin =
     })
 
     return ok(input.id)
+  }
+
+export const updateFioPluginSyncPointer =
+  ({
+    id,
+    lastSyncedDate,
+  }: {
+    readonly id: FioPluginId
+    readonly lastSyncedDate: DateString | null
+  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      if (lastSyncedDate == null) {
+        return run.deps.evolu.update(
+          "fioPluginSyncPointer",
+          {
+            id,
+            isDeleted: sqliteTrue,
+          },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
+      return run.deps.evolu.upsert(
+        "fioPluginSyncPointer",
+        {
+          id,
+          lastSyncedDate,
+          isDeleted: sqliteFalse,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(id)
   }
 
 export const deleteFioPlugin =

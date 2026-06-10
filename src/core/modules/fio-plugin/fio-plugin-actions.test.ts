@@ -11,12 +11,14 @@ import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
+import { DateStringSchema } from "../shared/schema.ts"
 import {
   createFioPlugin,
   deleteFioPlugin,
   deleteFioPluginToken,
   loadFioPlugin,
   updateFioPlugin,
+  updateFioPluginSyncPointer,
 } from "./fio-plugin-actions.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 
@@ -28,6 +30,7 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
         "fioPlugin.id",
         "fioPlugin.accountId",
         "fioPlugin.numberOfSecondsBetweenChecks",
+        "fioPlugin.syncLookbackDays",
         "fioPlugin.isActive",
         "fioPlugin.isDeleted",
         evoluJsonArrayFrom(
@@ -44,6 +47,14 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
         ).as("tokens"),
       ])
       .where("fioPlugin.id", "=", id)
+  )
+
+const fioPluginSyncPointerByIdQuery = (id: FioPluginId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("fioPluginSyncPointer")
+      .select(["id", "lastSyncedDate", "isDeleted"])
+      .where("id", "=", id)
   )
 
 const createIbanAccount = async (deps: EvoluDep): Promise<AccountId> => {
@@ -88,6 +99,7 @@ describe("fio plugin actions", () => {
           id,
           accountId,
           numberOfSecondsBetweenChecks: 300,
+          syncLookbackDays: 1,
           isActive: sqliteTrue,
           tokens: [
             {
@@ -146,6 +158,7 @@ describe("fio plugin actions", () => {
         {
           id,
           numberOfSecondsBetweenChecks: 600,
+          syncLookbackDays: 1,
           isActive: sqliteFalse,
           tokens: [
             {
@@ -332,6 +345,71 @@ describe("fio plugin actions", () => {
               isDeleted: null,
             },
           ],
+        },
+      ])
+  }, 15_000)
+
+  test("updates, clears, and restores the deterministic sync pointer", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = { evolu } satisfies EvoluDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(deps)
+
+    const id = await run.orThrow(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: 300,
+        isActive: sqliteTrue,
+        token: "fio-token-1",
+      })
+    )
+
+    await run.orThrow(
+      updateFioPluginSyncPointer({
+        id,
+        lastSyncedDate: DateStringSchema.decode("2026-05-31"),
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerByIdQuery(id)))
+      .toEqual([
+        {
+          id,
+          lastSyncedDate: "2026-05-31",
+          isDeleted: sqliteFalse,
+        },
+      ])
+
+    await run.orThrow(
+      updateFioPluginSyncPointer({
+        id,
+        lastSyncedDate: null,
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerByIdQuery(id)))
+      .toEqual([
+        {
+          id,
+          lastSyncedDate: "2026-05-31",
+          isDeleted: sqliteTrue,
+        },
+      ])
+
+    await run.orThrow(
+      updateFioPluginSyncPointer({
+        id,
+        lastSyncedDate: DateStringSchema.decode("2026-06-01"),
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerByIdQuery(id)))
+      .toEqual([
+        {
+          id,
+          lastSyncedDate: "2026-06-01",
+          isDeleted: sqliteFalse,
         },
       ])
   }, 15_000)

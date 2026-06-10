@@ -26,6 +26,7 @@ import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
   fioPlugin,
   fioPluginIndexes,
+  fioPluginSyncPointer,
   fioPluginToken,
 } from "@/core/modules/fio-plugin/fio-plugin.ts"
 import { item, itemIndexes } from "@/core/modules/item/item.ts"
@@ -77,6 +78,7 @@ export const AppSchema = {
   appSettings,
   paymentNumberSeries,
   fioPlugin,
+  fioPluginSyncPointer,
   fioPluginToken,
 } as const
 

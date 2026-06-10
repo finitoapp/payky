@@ -7,6 +7,7 @@ import {
   FioPluginTokenId,
 } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import {
+  DateStringSchema,
   type InferTable,
   NonEmptyString255Schema,
   PositiveIntegerSchema,
@@ -16,7 +17,13 @@ export const fioPlugin = {
   id: FioPluginId,
   accountId: AccountId,
   numberOfSecondsBetweenChecks: PositiveIntegerSchema,
+  syncLookbackDays: PositiveIntegerSchema,
   isActive: SqliteBoolean,
+} as const
+
+export const fioPluginSyncPointer = {
+  id: FioPluginId,
+  lastSyncedDate: DateStringSchema,
 } as const
 
 export const fioPluginToken = {
@@ -33,4 +40,5 @@ export const fioPluginIndexes = ((create) => [
 ]) satisfies IndexesConfig
 
 export type FioPluginRow = InferTable<typeof fioPlugin>
+export type FioPluginSyncPointerRow = InferTable<typeof fioPluginSyncPointer>
 export type FioPluginTokenRow = InferTable<typeof fioPluginToken>

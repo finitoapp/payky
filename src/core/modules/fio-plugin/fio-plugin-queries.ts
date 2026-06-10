@@ -1,8 +1,10 @@
 import { evoluJsonArrayFrom, type KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 
 export const fioPluginByIdQuery = (idValue: FioPluginId) =>
   createQuery((db) =>
@@ -12,11 +14,13 @@ export const fioPluginByIdQuery = (idValue: FioPluginId) =>
       .where("id", "=", idValue)
       .where("accountId", "is not", null)
       .where("numberOfSecondsBetweenChecks", "is not", null)
+      .where("syncLookbackDays", "is not", null)
       .where("isActive", "is not", null)
       .where("isDeleted", "is", null)
       .$narrowType<{
         accountId: KyselyNotNull
         numberOfSecondsBetweenChecks: KyselyNotNull
+        syncLookbackDays: KyselyNotNull
         isActive: KyselyNotNull
       }>()
   )
@@ -53,6 +57,19 @@ export const fiatBankAccountFioPluginQuery = createQuery((db) =>
     }>()
 )
 
+export const fioPluginSyncPointerByPluginIdQuery = (fioPluginId: FioPluginId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("fioPluginSyncPointer")
+      .selectAll()
+      .where("id", "=", fioPluginId)
+      .where("lastSyncedDate", "is not", null)
+      .where("isDeleted", "is", null)
+      .$narrowType<{
+        lastSyncedDate: KyselyNotNull
+      }>()
+  )
+
 export const activeFioPluginsQuery = createQuery((db) =>
   db
     .selectFrom("fioPlugin")
@@ -62,6 +79,7 @@ export const activeFioPluginsQuery = createQuery((db) =>
       "fioPlugin.id",
       "fioPlugin.accountId",
       "fioPlugin.numberOfSecondsBetweenChecks",
+      "fioPlugin.syncLookbackDays",
       "accountIban.iban",
       evoluJsonArrayFrom(
         eb
@@ -92,3 +110,28 @@ export const activeFioPluginsQuery = createQuery((db) =>
       iban: KyselyNotNull
     }>()
 )
+
+export const existingFioTransactionBankReferencesQuery = ({
+  accountId,
+  bankReferences,
+}: {
+  readonly accountId: AccountId
+  readonly bankReferences: ReadonlyArray<NonEmptyString255>
+}) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransactionIban")
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "accountTransactionIban.id"
+      )
+      .select(["accountTransactionIban.bankReference"])
+      .where("accountTransaction.accountId", "=", accountId)
+      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransactionIban.bankReference", "in", bankReferences)
+      .where("accountTransactionIban.bankReference", "is not", null)
+      .$narrowType<{
+        bankReference: KyselyNotNull
+      }>()
+  )

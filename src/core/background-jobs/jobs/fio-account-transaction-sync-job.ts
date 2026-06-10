@@ -1,5 +1,5 @@
 import { createRun, ok } from "@evolu/common"
-import { format, subMonths } from "date-fns"
+import { format, subDays, subMonths } from "date-fns"
 
 import type {
   BackgroundJob,
@@ -10,12 +10,15 @@ import type { DateDep, FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
   type FioTransaction,
-  fetchFioLastTransactions,
-  setFioLastDate,
+  fetchFioTransactionsByPeriod,
 } from "@/core/integrations/fio/fio-client.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
-import { accountTransactionIbanByBankReferenceQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
-import { activeFioPluginsQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
+import { defaultFioPluginSyncLookbackDays } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
+import {
+  activeFioPluginsQuery,
+  existingFioTransactionBankReferencesQuery,
+  fioPluginSyncPointerByPluginIdQuery,
+} from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
@@ -26,10 +29,14 @@ import {
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/utils.ts"
 
 type Context = BackgroundJobContext & FetchDep & DateDep
 
-const FIO_LAST_DATE_REPAIR_LOOKBACK_MONTHS = 2
+const FIO_FIRST_SYNC_LOOKBACK_MONTHS = 2
 
 const loadActiveFioPlugins = (context: Context) =>
   context.evolu.loadQuery(activeFioPluginsQuery)
@@ -155,6 +162,7 @@ class FioPluginSync {
       this.plugin.accountId === plugin.accountId &&
       this.plugin.numberOfSecondsBetweenChecks ===
         plugin.numberOfSecondsBetweenChecks &&
+      this.plugin.syncLookbackDays === plugin.syncLookbackDays &&
       this.plugin.iban === plugin.iban &&
       areTokensEqual(this.plugin.tokens, plugin.tokens)
     )
@@ -172,20 +180,8 @@ class FioPluginSync {
         tokens: [token.token],
       }),
     })
-    let result = await run(fetchFioLastTransactions())
-    if (
-      !result.ok &&
-      result.error.type === "FioStrongAuthorizationRequiredError"
-    ) {
-      const repairResult = await run(
-        setFioLastDate({
-          date: getFioLastDateRepairDate(this.context.date.now()),
-        })
-      )
-      if (!repairResult.ok) throw repairResult.error
-
-      result = await run(fetchFioLastTransactions())
-    }
+    const period = await this.getSyncPeriod()
+    const result = await run(fetchFioTransactionsByPeriod(period))
     if (!result.ok && result.error.type === "FioRateLimitError") {
       this.context.console.error("Skipped FIO sync because of rate limiting.", {
         accountId: this.plugin.accountId,
@@ -203,10 +199,14 @@ class FioPluginSync {
       return
     }
 
-    for (const transaction of result.value.transactions) {
+    const transactionsToRecord = await this.getTransactionsToRecord(
+      result.value.transactions
+    )
+    for (const transaction of transactionsToRecord) {
       if (this.syncQueue.isDisposed) return
       await this.recordTransaction(transaction)
     }
+    await this.saveSyncPointer(period.to)
   }
 
   private getNextToken(): FioPluginToken {
@@ -225,14 +225,6 @@ class FioPluginSync {
         if (lock == null) return
 
         const bankReference = NonEmptyString255Schema.decode(transaction.id)
-
-        const existing = await this.context.evolu.loadQuery(
-          accountTransactionIbanByBankReferenceQuery(
-            this.plugin.accountId,
-            bankReference
-          )
-        )
-        if (existing.length > 0) return
 
         const run = createRun(this.context)
         const accountTransactionId = await run.orThrow(
@@ -266,13 +258,92 @@ class FioPluginSync {
       }
     )
   }
+
+  private async getSyncPeriod(): Promise<{
+    readonly from: DateString
+    readonly to: DateString
+  }> {
+    const to = dateToDateString(this.context.date.now())
+    const [pointer] = await this.context.evolu.loadQuery(
+      fioPluginSyncPointerByPluginIdQuery(this.plugin.id)
+    )
+    const syncLookbackDays =
+      this.plugin.syncLookbackDays ?? defaultFioPluginSyncLookbackDays
+    const from =
+      pointer?.lastSyncedDate == null
+        ? getFioFirstSyncDate(this.context.date.now())
+        : dateToDateString(
+            subDays(dateStringToDate(pointer.lastSyncedDate), syncLookbackDays)
+          )
+
+    return { from, to }
+  }
+
+  private async getTransactionsToRecord(
+    transactions: ReadonlyArray<FioTransaction>
+  ): Promise<ReadonlyArray<FioTransaction>> {
+    const bankReferences = getUniqueBankReferences(transactions)
+    if (bankReferences.length === 0) return []
+
+    const existing = await this.context.evolu.loadQuery(
+      existingFioTransactionBankReferencesQuery({
+        accountId: this.plugin.accountId,
+        bankReferences,
+      })
+    )
+    const existingBankReferences = new Set(
+      existing.map((transaction) => transaction.bankReference)
+    )
+    const selectedBankReferences = new Set<string>()
+    const selectedTransactions: FioTransaction[] = []
+
+    for (const transaction of transactions) {
+      const bankReference = NonEmptyString255Schema.decode(transaction.id)
+      if (existingBankReferences.has(bankReference)) continue
+      if (selectedBankReferences.has(bankReference)) continue
+
+      selectedBankReferences.add(bankReference)
+      selectedTransactions.push(transaction)
+    }
+
+    return selectedTransactions
+  }
+
+  private async saveSyncPointer(lastSyncedDate: DateString): Promise<void> {
+    await runMutationWithCompletion((options) =>
+      this.context.evolu.upsert(
+        "fioPluginSyncPointer",
+        removeUndefinedValues({
+          id: this.plugin.id,
+          lastSyncedDate,
+        }),
+        { ...options, ownerId: this.context.evoluOwnerId }
+      )
+    )
+  }
 }
 
-const getFioLastDateRepairDate = (now: Date): DateString => {
+const getFioFirstSyncDate = (now: Date): DateString => {
   return DateStringSchema.decode(
-    format(subMonths(now, FIO_LAST_DATE_REPAIR_LOOKBACK_MONTHS), "yyyy-MM-dd")
+    format(subMonths(now, FIO_FIRST_SYNC_LOOKBACK_MONTHS), "yyyy-MM-dd")
   )
 }
+
+const dateToDateString = (date: Date): DateString =>
+  DateStringSchema.decode(format(date, "yyyy-MM-dd"))
+
+const dateStringToDate = (date: DateString): Date =>
+  new Date(`${date}T00:00:00.000Z`)
+
+const getUniqueBankReferences = (
+  transactions: ReadonlyArray<FioTransaction>
+): ReadonlyArray<ReturnType<typeof NonEmptyString255Schema.decode>> => [
+  ...new Set(
+    transactions.map((transaction) =>
+      NonEmptyString255Schema.decode(transaction.id)
+    )
+  ),
+]
 
 const hasFioTokens = (
   plugin: ActiveFioPlugin

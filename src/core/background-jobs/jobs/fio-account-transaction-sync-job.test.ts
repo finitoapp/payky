@@ -9,6 +9,8 @@ import {
   createFioPlugin,
   updateFioPlugin,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
+import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import { DateStringSchema } from "@/core/modules/shared/schema.ts"
 import { createFioAccountTransactionSyncJob } from "./fio-account-transaction-sync-job.ts"
 
 const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
@@ -33,6 +35,15 @@ const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
       ])
       .where("accountTransaction.accountId", "=", accountId)
       .where("accountTransaction.isDeleted", "is not", 1)
+  )
+
+const fioPluginSyncPointerQuery = (fioPluginId: FioPluginId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("fioPluginSyncPointer")
+      .select(["id", "lastSyncedDate"])
+      .where("id", "=", fioPluginId)
+      .where("isDeleted", "is", null)
   )
 
 const fioTransaction = {
@@ -99,10 +110,11 @@ describe("fio account transaction sync job", () => {
         },
       })
     )
-    await run.orThrow(
+    const fioPluginId = await run.orThrow(
       createFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: 60,
+        syncLookbackDays: 1,
         isActive: sqliteTrue,
         token: "fio-token-1",
       })
@@ -110,6 +122,7 @@ describe("fio account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       onError: (error) => {
         errors.push(error)
       },
@@ -118,6 +131,9 @@ describe("fio account transaction sync job", () => {
         return statementResponse({
           transactions: [fioTransaction, fioTransaction],
         })
+      },
+      date: {
+        now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
     using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
@@ -139,12 +155,20 @@ describe("fio account transaction sync job", () => {
       ])
 
     expect(requestedUrls).toEqual([
-      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/periods/fio-token-1/2026-03-31/2026-05-31/transactions.json",
+    ])
+    expect(
+      await evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId))
+    ).toEqual([
+      {
+        id: fioPluginId,
+        lastSyncedDate: "2026-05-31",
+      },
     ])
     expect(errors).toEqual([])
   })
 
-  test("repairs an old FIO last-date cursor before retrying last transactions", async () => {
+  test("uses local sync pointer and configured lookback for the next period", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
@@ -160,32 +184,32 @@ describe("fio account transaction sync job", () => {
         },
       })
     )
-    await run.orThrow(
+    const fioPluginId = await run.orThrow(
       createFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: 60,
+        syncLookbackDays: 3,
         isActive: sqliteTrue,
         token: "fio-token-1",
       })
     )
+    evolu.upsert(
+      "fioPluginSyncPointer",
+      {
+        id: fioPluginId,
+        lastSyncedDate: DateStringSchema.decode("2026-05-20"),
+      },
+      { ownerId: evolu.appOwner.id }
+    )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       onError: (error) => {
         errors.push(error)
       },
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
-        if (requestedUrls.length === 1) {
-          return new Response(
-            "Data není možné poskytnout bez silné autorizace",
-            { status: 422 }
-          )
-        }
-        if (requestedUrls.length === 2) {
-          return new Response(null, { status: 204 })
-        }
-
         return statementResponse({
           transactions: [fioTransaction],
         })
@@ -201,9 +225,15 @@ describe("fio account transaction sync job", () => {
       .toHaveLength(1)
 
     expect(requestedUrls).toEqual([
-      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
-      "https://fioapi.fio.cz/v1/rest/set-last-date/fio-token-1/2026-03-31/",
-      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/periods/fio-token-1/2026-05-17/2026-05-31/transactions.json",
+    ])
+    expect(
+      await evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId))
+    ).toEqual([
+      {
+        id: fioPluginId,
+        lastSyncedDate: "2026-05-31",
+      },
     ])
     expect(errors).toEqual([])
   })
@@ -235,6 +265,7 @@ describe("fio account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console,
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       onError: (error) => {
         errors.push(error)
       },
@@ -242,6 +273,9 @@ describe("fio account transaction sync job", () => {
         new Response("Interval between requests was not respected.", {
           status: 409,
         }),
+      date: {
+        now: () => new Date("2026-05-31T10:00:00.000Z"),
+      },
     })
     using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
 
@@ -297,6 +331,7 @@ describe("fio account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       onError: (error) => {
         errors.push(error)
       },
@@ -306,14 +341,19 @@ describe("fio account transaction sync job", () => {
           transactions: [],
         })
       },
+      date: {
+        now: () => new Date("2026-05-31T10:00:00.000Z"),
+      },
     })
     using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
 
-    await expect.poll(() => requestedUrls.length).toBeGreaterThanOrEqual(2)
+    await expect
+      .poll(() => requestedUrls.length, { timeout: 3_000 })
+      .toBeGreaterThanOrEqual(2)
 
     expect(requestedUrls.slice(0, 2)).toEqual([
-      "https://fioapi.fio.cz/v1/rest/last/fio-token-1/transactions.json",
-      "https://fioapi.fio.cz/v1/rest/last/fio-token-2/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/periods/fio-token-1/2026-03-31/2026-05-31/transactions.json",
+      "https://fioapi.fio.cz/v1/rest/periods/fio-token-2/2026-05-30/2026-05-31/transactions.json",
     ])
     expect(errors).toEqual([])
   })
@@ -344,6 +384,7 @@ describe("fio account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       onError: (error) => {
         errors.push(error)
       },
@@ -352,6 +393,9 @@ describe("fio account transaction sync job", () => {
           iban: "CZ2408000000001234567899",
           transactions: [fioTransaction],
         }),
+      date: {
+        now: () => new Date("2026-05-31T10:00:00.000Z"),
+      },
     })
     using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
 

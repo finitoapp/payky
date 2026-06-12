@@ -1,4 +1,3 @@
-import { createRun } from "@evolu/web"
 import { isTauri } from "@tauri-apps/api/core"
 import { vibrate } from "@tauri-apps/plugin-haptics"
 import {
@@ -20,23 +19,19 @@ import {
   useState,
 } from "react"
 import { Button } from "@/components/ui/button.tsx"
-import { createFetchDep } from "@/core/deps.ts"
-import {
-  type ExchangeRateQuote,
-  fetchYadioBtcExchangeRate,
-} from "@/core/integrations/yadio/yadio-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
-import type { Money } from "@/core/modules/shared/money.ts"
 import {
-  Currency,
+  currencyFractionDigits,
+  type Money,
+} from "@/core/modules/shared/money.ts"
+import {
+  type Currency,
   FiatCurrency,
   Integer,
 } from "@/core/modules/shared/schema.ts"
-import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatMoney } from "@/lib/format-utils.ts"
 
 const keypad = [
   "1",
@@ -48,15 +43,12 @@ const keypad = [
   "7",
   "8",
   "9",
-  "C",
+  ".",
   "0",
   "<",
 ] as const
 
-const maxAmountDigits = 9
-const rateRefreshIntervalMs = 30_000
-const satsPerBtc = 100_000_000
-const fiatMinorUnits = 100
+const maxIntegerDigits = 9
 const keypadVibrationMs = 10
 const keypadButtonBubbleAnimation = {
   opacity: [0.28, 0.16, 0],
@@ -69,8 +61,8 @@ const amountChangeAnimation = {
 }
 
 type KeypadKey = (typeof keypad)[number]
-type AmountDigitsAtom = PrimitiveAtom<string>
-type SetAmountDigits = (value: string | ((current: string) => string)) => void
+type AmountInputAtom = PrimitiveAtom<string>
+type SetAmountInput = (value: string | ((current: string) => string)) => void
 type ChargeHandler = (money: Money) => Promise<void> | void
 
 const numericKeyboardKeys = new Set<string>([
@@ -86,38 +78,98 @@ const numericKeyboardKeys = new Set<string>([
   "9",
 ])
 
-function createMoney(amountDigits: string, currency: Currency): Money {
+const currencyNumberPartTypes = new Set<Intl.NumberFormatPartTypes>([
+  "integer",
+  "group",
+  "decimal",
+  "fraction",
+])
+
+function createMoney(amountInput: string, currency: Currency): Money {
+  const fractionDigits = currencyFractionDigits[currency]
+  const [integerPart = "", fractionPart = ""] = amountInput.split(".")
+  const minorUnitsMultiplier = 10 ** fractionDigits
+  const integerMinorUnits =
+    Number(integerPart === "" ? "0" : integerPart) * minorUnitsMultiplier
+  const fractionMinorUnits = Number(
+    fractionPart.padEnd(fractionDigits, "0").slice(0, fractionDigits)
+  )
+
   return {
-    value: Integer(amountDigits === "" ? 0 : Number(amountDigits)),
+    value: Integer(integerMinorUnits + fractionMinorUnits),
     currency,
   }
 }
 
-function convertFiatMinorUnitsToSats(
-  amount: Integer,
-  exchangeRate: number
-): Integer {
-  if (amount === 0) return Integer(0)
-
-  const fiatAmount = amount / fiatMinorUnits
-  return Integer(
-    Math.max(1, Math.round((fiatAmount / exchangeRate) * satsPerBtc))
+function getDecimalSeparator(locale: string) {
+  return (
+    new Intl.NumberFormat(locale)
+      .formatToParts(1.1)
+      .find((part) => part.type === "decimal")?.value ?? "."
   )
 }
 
-function applyKeypadPress(setAmountDigits: SetAmountDigits, key: KeypadKey) {
-  if (key === "C") {
-    setAmountDigits("")
-    return
-  }
+function formatAmountInput(
+  amountInput: string,
+  currency: Currency,
+  locale: string
+) {
+  const [integerPart = "0", fractionPart = ""] = amountInput.split(".")
+  const hasDecimalSeparator = amountInput.includes(".")
+  const formattedIntegerPart = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 0,
+    useGrouping: true,
+  }).format(Number(integerPart === "" ? "0" : integerPart))
+  const decimalSeparator = getDecimalSeparator(locale)
+  const amountText = hasDecimalSeparator
+    ? `${formattedIntegerPart}${decimalSeparator}${fractionPart}`
+    : formattedIntegerPart
+  let hasRenderedAmount = false
 
+  return new Intl.NumberFormat(locale, {
+    currency,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+    style: "currency",
+  })
+    .formatToParts(0)
+    .map((part) => {
+      if (!currencyNumberPartTypes.has(part.type)) return part.value
+      if (hasRenderedAmount) return ""
+
+      hasRenderedAmount = true
+      return amountText
+    })
+    .join("")
+}
+
+function applyKeypadPress(
+  setAmountInput: SetAmountInput,
+  key: KeypadKey,
+  currency: Currency
+) {
   if (key === "<") {
-    setAmountDigits((current) => current.slice(0, -1))
+    setAmountInput((current) => current.slice(0, -1))
     return
   }
 
-  setAmountDigits((current) => {
-    if (current.length >= maxAmountDigits) return current
+  setAmountInput((current) => {
+    if (key === ".") {
+      if (current.includes(".")) return current
+
+      return current === "" ? "0." : `${current}.`
+    }
+
+    const [integerPart = "", fractionPart] = current.split(".")
+
+    if (fractionPart !== undefined) {
+      if (fractionPart.length >= currencyFractionDigits[currency])
+        return current
+
+      return `${current}${key}`
+    }
+
+    if (integerPart.length >= maxIntegerDigits) return current
     if (current === "" && key === "0") return ""
 
     return `${current}${key}`
@@ -140,7 +192,7 @@ export function TerminalPaymentKeypad({
   readonly currency: FiatCurrency
   readonly onCharge: ChargeHandler
 }) {
-  const amountDigitsAtom = useMemo(() => atom(""), [])
+  const amountInputAtom = useMemo(() => atom(""), [])
   const isChargePendingRef = useRef(false)
   const [isChargePending, setIsChargePending] = useState(false)
 
@@ -163,15 +215,15 @@ export function TerminalPaymentKeypad({
 
   return (
     <>
-      <AmountDisplay amountDigitsAtom={amountDigitsAtom} currency={currency} />
+      <AmountDisplay amountInputAtom={amountInputAtom} currency={currency} />
       <Keypad
-        amountDigitsAtom={amountDigitsAtom}
+        amountInputAtom={amountInputAtom}
         currency={currency}
         isChargePending={isChargePending}
         onCharge={handleCharge}
       />
       <ChargeButton
-        amountDigitsAtom={amountDigitsAtom}
+        amountInputAtom={amountInputAtom}
         currency={currency}
         isChargePending={isChargePending}
         onCharge={handleCharge}
@@ -209,44 +261,32 @@ function TerminalPaymentKeypadSettingsLoader({
 }
 
 function AmountDisplay({
-  amountDigitsAtom,
+  amountInputAtom,
   currency,
 }: {
-  readonly amountDigitsAtom: AmountDigitsAtom
+  readonly amountInputAtom: AmountInputAtom
   readonly currency: FiatCurrency
 }) {
-  const amountDigits = useAtomValue(amountDigitsAtom)
-  const exchangeRateQuote = useYadioBtcExchangeRate(currency)
+  const amountInput = useAtomValue(amountInputAtom)
   const locale = useLocale()
   const amountAnimationControls = useAnimationControls()
   const lastAnimatedAmountRef = useRef<string | null>(null)
   const shouldReduceMotion = useReducedMotion()
 
-  const money = createMoney(amountDigits, currency)
-  const formattedMoney = formatMoney(money, locale)
-  const btcMoney =
-    exchangeRateQuote === null && money.value !== 0
-      ? null
-      : {
-          currency: Currency.BTC,
-          value: convertFiatMinorUnitsToSats(
-            money.value,
-            exchangeRateQuote?.exchangeRate ?? 1
-          ),
-        }
+  const formattedAmount = formatAmountInput(amountInput, currency, locale)
 
   useEffect(() => {
     if (shouldReduceMotion) return
-    if (lastAnimatedAmountRef.current === formattedMoney) return
+    if (lastAnimatedAmountRef.current === formattedAmount) return
 
-    lastAnimatedAmountRef.current = formattedMoney
+    lastAnimatedAmountRef.current = formattedAmount
 
     amountAnimationControls.stop()
     void amountAnimationControls.start({
       ...amountChangeAnimation,
       transition: { duration: 0.32, ease: "easeOut", times: [0, 0.55, 1] },
     })
-  }, [amountAnimationControls, formattedMoney, shouldReduceMotion])
+  }, [amountAnimationControls, formattedAmount, shouldReduceMotion])
 
   return (
     <section className="flex flex-col items-center gap-5 text-center">
@@ -254,80 +294,34 @@ function AmountDisplay({
         className="text-6xl font-semibold tracking-normal tabular-nums"
         animate={amountAnimationControls}
       >
-        {formattedMoney}
+        {formattedAmount}
       </motion.h1>
-      <p className="text-xl text-foreground/80">
-        {btcMoney === null ? "\u00A0" : formatMoney(btcMoney, locale)}
-      </p>
     </section>
   )
 }
 
-function useYadioBtcExchangeRate(currency: FiatCurrency) {
-  const console = useConsole()
-  const [exchangeRateQuote, setExchangeRateQuote] =
-    useState<ExchangeRateQuote | null>(null)
-
-  useEffect(() => {
-    const run = createRun({
-      console,
-      ...createFetchDep(),
-    })
-    let isDisposed = false
-
-    async function refreshExchangeRate() {
-      try {
-        const result = await run(fetchYadioBtcExchangeRate(currency))
-        if (isDisposed) return
-
-        if (result.ok) {
-          setExchangeRateQuote(result.value)
-          return
-        }
-
-        console.error("Failed to fetch Yadio BTC exchange rate", result.error)
-      } catch (error) {
-        if (!isDisposed) {
-          console.error("Failed to fetch Yadio BTC exchange rate", error)
-        }
-      }
-    }
-
-    void refreshExchangeRate()
-    const intervalId = window.setInterval(() => {
-      void refreshExchangeRate()
-    }, rateRefreshIntervalMs)
-
-    return () => {
-      isDisposed = true
-      window.clearInterval(intervalId)
-      void run[Symbol.asyncDispose]()
-    }
-  }, [console, currency])
-
-  return exchangeRateQuote
-}
-
 function Keypad({
-  amountDigitsAtom,
+  amountInputAtom,
   currency,
   isChargePending,
   onCharge,
 }: {
-  readonly amountDigitsAtom: AmountDigitsAtom
+  readonly amountInputAtom: AmountInputAtom
   readonly currency: FiatCurrency
   readonly isChargePending: boolean
   readonly onCharge: ChargeHandler
 }) {
   const { t } = useTranslation()
+  const locale = useLocale()
   const store = useStore()
-  const setAmountDigits = useSetAtom(amountDigitsAtom)
+  const setAmountInput = useSetAtom(amountInputAtom)
+  const decimalSeparator = getDecimalSeparator(locale)
 
   function handleKeypadPress(key: KeypadKey) {
     if (isChargePending) return
 
     vibrateOnTerminalButtonPress()
-    applyKeypadPress(setAmountDigits, key)
+    applyKeypadPress(setAmountInput, key, currency)
   }
 
   const handleKeydown = useEffectEvent((event: KeyboardEvent) => {
@@ -345,27 +339,34 @@ function Keypad({
     }
 
     if (numericKeyboardKeys.has(event.key)) {
-      applyKeypadPress(setAmountDigits, event.key as KeypadKey)
+      applyKeypadPress(setAmountInput, event.key as KeypadKey, currency)
+      event.preventDefault()
+      return
+    }
+
+    if (event.key === "." || event.key === ",") {
+      applyKeypadPress(setAmountInput, ".", currency)
       event.preventDefault()
       return
     }
 
     if (event.key === "Backspace") {
-      applyKeypadPress(setAmountDigits, "<")
+      applyKeypadPress(setAmountInput, "<", currency)
       event.preventDefault()
       return
     }
 
     if (event.key === "Delete" || event.key === "Escape") {
-      applyKeypadPress(setAmountDigits, "C")
+      setAmountInput("")
       event.preventDefault()
       return
     }
 
     if (event.key === "Enter") {
-      const amountDigits = store.get(amountDigitsAtom)
-      if (amountDigits !== "" && !isChargePending) {
-        void onCharge(createMoney(amountDigits, currency))
+      const amountInput = store.get(amountInputAtom)
+      const money = createMoney(amountInput, currency)
+      if (money.value > 0 && !isChargePending) {
+        void onCharge(money)
       }
       event.preventDefault()
     }
@@ -379,7 +380,7 @@ function Keypad({
   }, [])
 
   function getKeypadAriaLabel(key: KeypadKey) {
-    if (key === "C") return t("home.keypad.clear")
+    if (key === ".") return t("home.keypad.decimal")
     if (key === "<") return t("home.keypad.backspace")
 
     return key
@@ -395,7 +396,7 @@ function Keypad({
           keypadKey={key}
           onPress={handleKeypadPress}
         >
-          {key}
+          {key === "." ? decimalSeparator : key}
         </KeypadButton>
       ))}
     </section>
@@ -410,7 +411,7 @@ function KeypadButton({
   onPress,
 }: {
   readonly "aria-label": string
-  readonly children: KeypadKey
+  readonly children: string
   readonly disabled: boolean
   readonly keypadKey: KeypadKey
   readonly onPress: (key: KeypadKey) => void
@@ -455,26 +456,26 @@ function KeypadButton({
 }
 
 function ChargeButton({
-  amountDigitsAtom,
+  amountInputAtom,
   currency,
   isChargePending,
   onCharge,
 }: {
-  readonly amountDigitsAtom: AmountDigitsAtom
+  readonly amountInputAtom: AmountInputAtom
   readonly currency: FiatCurrency
   readonly isChargePending: boolean
   readonly onCharge: ChargeHandler
 }) {
   const { t } = useTranslation()
-  const amountDigits = useAtomValue(amountDigitsAtom)
-  const money = createMoney(amountDigits, currency)
+  const amountInput = useAtomValue(amountInputAtom)
+  const money = createMoney(amountInput, currency)
 
   return (
     <Button
       variant="outline"
       aria-busy={isChargePending}
       className="h-14 rounded-full text-base font-bold"
-      disabled={amountDigits === "" || isChargePending}
+      disabled={money.value <= 0 || isChargePending}
       onClick={() => {
         vibrateOnTerminalButtonPress()
         void onCharge(money)

@@ -62,7 +62,7 @@
       }
     }
   </style>
-  <svg x="7" y="0" width="882" height="896" viewBox="0 0 882 896" style="background: transparent">
+  <svg x="7" y="0" width="882" height="896" viewBox="0 0 882 896" style="background: transparent" aria-hidden="true" focusable="false">
 
   <defs>
     <linearGradient id="shineGradient" x1="0" y1="0" x2="1" y2="0">

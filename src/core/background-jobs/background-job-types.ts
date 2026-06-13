@@ -13,4 +13,4 @@ export type BackgroundJobContext = EvoluDep &
   FetchDep &
   BackgroundJobOnErrorDep
 
-export type BackgroundJob = Task<Disposable, never, BackgroundJobContext>
+export type BackgroundJob = Task<AsyncDisposable, never, BackgroundJobContext>

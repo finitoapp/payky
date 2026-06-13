@@ -13,8 +13,16 @@ export function AppBackgroundJobs() {
   const console = useConsole()
 
   useEffect(() => {
+    const disposeJobs = (disposable: AsyncDisposable): void => {
+      void Promise.resolve(disposable[Symbol.asyncDispose]()).catch(
+        (error: unknown) => {
+          console.error("Failed to stop background jobs.", error)
+        }
+      )
+    }
+
     let isDisposed = false
-    let jobsDisposable: Disposable | null = null
+    let jobsDisposable: AsyncDisposable | null = null
     const run = createRun({
       evolu,
       evoluOwnerId: evolu.appOwner.id,
@@ -30,7 +38,7 @@ export function AppBackgroundJobs() {
       .orThrow(runBackgroundJobs(backgroundJobs))
       .then((startedJobsDisposable) => {
         if (isDisposed) {
-          startedJobsDisposable[Symbol.dispose]()
+          disposeJobs(startedJobsDisposable)
           return
         }
 
@@ -44,7 +52,7 @@ export function AppBackgroundJobs() {
 
     return () => {
       isDisposed = true
-      jobsDisposable?.[Symbol.dispose]()
+      if (jobsDisposable != null) disposeJobs(jobsDisposable)
       void run[Symbol.asyncDispose]()
     }
   }, [console, evolu])

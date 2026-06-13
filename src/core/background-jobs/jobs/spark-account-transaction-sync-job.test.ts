@@ -178,7 +178,7 @@ describe("spark account transaction sync job", () => {
         errors.push(error)
       },
     })
-    using _job = await jobRun.orThrow(
+    await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
         walletFactory: createFakeWalletFactory(mnemonic, wallet),
         recheckIntervalMs: 10,
@@ -240,7 +240,7 @@ describe("spark account transaction sync job", () => {
           errors.push(error)
         },
       })
-      using _job = await jobRun.orThrow(
+      await using _job = await jobRun.orThrow(
         createSparkAccountTransactionSyncJob({
           walletFactory: createFakeWalletFactory(mnemonic, wallet),
           recheckIntervalMs: 60_000,
@@ -302,7 +302,7 @@ describe("spark account transaction sync job", () => {
         errors.push(error)
       },
     })
-    using _job = await jobRun.orThrow(
+    await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
         walletFactory: async (receivedMnemonic, events) => {
           const selectedWallet =
@@ -356,7 +356,7 @@ describe("spark account transaction sync job", () => {
         errors.push(error)
       },
     })
-    using _job = await jobRun.orThrow(
+    await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
         walletFactory: createFakeWalletFactory(mnemonic, wallet),
         recheckIntervalMs: 10,
@@ -394,7 +394,7 @@ describe("spark account transaction sync job", () => {
         errors.push(error)
       },
     })
-    using _job = await jobRun.orThrow(
+    await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
         walletFactory: async (mnemonic) => {
           startedWallets.push(mnemonic)

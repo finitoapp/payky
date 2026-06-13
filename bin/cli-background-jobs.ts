@@ -45,7 +45,7 @@ export const registerBackgroundJobsCommand =
             },
           })
 
-          using _backgroundJobsDisposable = await run.orThrow(
+          await using _backgroundJobsDisposable = await run.orThrow(
             runBackgroundJobs(backgroundJobs)
           )
 

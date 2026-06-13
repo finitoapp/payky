@@ -58,7 +58,7 @@ export const createFioAccountTransactionSyncJob =
     sync.start()
 
     return ok({
-      [Symbol.dispose]: () => {
+      [Symbol.asyncDispose]: async () => {
         sync.dispose()
       },
     })

@@ -18,8 +18,10 @@ const createBackgroundJobContext = (
   },
 })
 
-const createDisposable = (dispose: () => void): Disposable => ({
-  [Symbol.dispose]: dispose,
+const createDisposable = (
+  dispose: () => void | Promise<void>
+): AsyncDisposable => ({
+  [Symbol.asyncDispose]: dispose,
 })
 
 describe("runBackgroundJobs", () => {
@@ -41,7 +43,7 @@ describe("runBackgroundJobs", () => {
     ]
 
     await using run = testCreateRun(context)
-    using _disposable = await run.orThrow(runBackgroundJobs(jobs))
+    await using _disposable = await run.orThrow(runBackgroundJobs(jobs))
 
     expect(startedJobs).toEqual(["first", "second"])
   })
@@ -52,7 +54,7 @@ describe("runBackgroundJobs", () => {
 
     {
       await using run = testCreateRun(context)
-      using _disposable = await run.orThrow(
+      await using _disposable = await run.orThrow(
         runBackgroundJobs([
           () => ok(createDisposable(() => disposedJobs.push("first"))),
           () => ok(createDisposable(() => disposedJobs.push("second"))),
@@ -72,7 +74,7 @@ describe("runBackgroundJobs", () => {
 
     {
       await using run = testCreateRun(context)
-      using _disposable = await run.orThrow(
+      await using _disposable = await run.orThrow(
         runBackgroundJobs([
           () => ok(createDisposable(() => disposedJobs.push("first"))),
           () =>
@@ -89,6 +91,28 @@ describe("runBackgroundJobs", () => {
 
     expect(disposedJobs).toEqual(["third", "second", "first"])
     expect(errors).toEqual([cleanupError])
+  })
+
+  test("waits for async job cleanup", async () => {
+    const context = createBackgroundJobContext()
+    const disposedJobs: string[] = []
+
+    {
+      await using run = testCreateRun(context)
+      await using _disposable = await run.orThrow(
+        runBackgroundJobs([
+          () =>
+            ok(
+              createDisposable(async () => {
+                await Promise.resolve()
+                disposedJobs.push("first")
+              })
+            ),
+        ])
+      )
+    }
+
+    expect(disposedJobs).toEqual(["first"])
   })
 
   test("disposes already started jobs when a later job fails to start", async () => {

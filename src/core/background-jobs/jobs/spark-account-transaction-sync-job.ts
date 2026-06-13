@@ -152,10 +152,10 @@ const createSparkAccountSyncManager = ({
   readonly context: BackgroundJobContext
   readonly recheckIntervalMs: number
   readonly walletFactory: SparkWalletFactory
-}): Disposable => {
+}): AsyncDisposable => {
   const sessions = new Map<
     AccountId,
-    Disposable & { readonly mnemonic: string; syncHistorySoon: () => void }
+    AsyncDisposable & { readonly mnemonic: string; syncHistorySoon: () => void }
   >()
   const refreshQueue = createKeyedTaskQueue({
     onError: (error) => context.onError(error),
@@ -176,7 +176,7 @@ const createSparkAccountSyncManager = ({
     for (const [accountId, session] of sessions) {
       if (activeIds.has(accountId)) continue
 
-      session[Symbol.dispose]()
+      await session[Symbol.asyncDispose]()
       sessions.delete(accountId)
       context.console.info("Stopped Spark account sync.", { accountId })
     }
@@ -185,7 +185,7 @@ const createSparkAccountSyncManager = ({
       const current = sessions.get(account.id)
       if (current?.mnemonic === account.mnemonic) continue
 
-      current?.[Symbol.dispose]()
+      await current?.[Symbol.asyncDispose]()
       const session = createSparkAccountSyncSession({
         account,
         context,
@@ -221,7 +221,7 @@ const createSparkAccountSyncManager = ({
   refreshSoon()
 
   return {
-    [Symbol.dispose]() {
+    async [Symbol.asyncDispose]() {
       if (refreshQueue.isDisposed) return
 
       refreshQueue[Symbol.dispose]()
@@ -229,7 +229,7 @@ const createSparkAccountSyncManager = ({
       unsubscribeAccounts()
 
       for (const session of sessions.values()) {
-        session[Symbol.dispose]()
+        await session[Symbol.asyncDispose]()
       }
       sessions.clear()
       context.console.info("Stopped Spark account transaction sync job.")
@@ -245,7 +245,10 @@ const createSparkAccountSyncSession = ({
   readonly account: SparkAccountRow
   readonly context: BackgroundJobContext
   readonly walletFactory: SparkWalletFactory
-}): Disposable & { readonly mnemonic: string; syncHistorySoon: () => void } => {
+}): AsyncDisposable & {
+  readonly mnemonic: string
+  syncHistorySoon: () => void
+} => {
   let wallet: SparkWalletLike | undefined
   let disposed = false
   let pendingHistorySync = false
@@ -516,7 +519,7 @@ const createSparkAccountSyncSession = ({
       return account.mnemonic
     },
     syncHistorySoon,
-    [Symbol.dispose]() {
+    async [Symbol.asyncDispose]() {
       if (disposed) return
 
       disposed = true
@@ -534,7 +537,7 @@ const createSparkAccountSyncSession = ({
         return
       }
 
-      void walletToCleanup.cleanup().catch((error: unknown) => {
+      await walletToCleanup.cleanup().catch((error: unknown) => {
         context.onError(error)
       })
     },

@@ -136,7 +136,9 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+    await using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob()
+    )
 
     await expect
       .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
@@ -218,7 +220,9 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+    await using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob()
+    )
 
     await expect
       .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
@@ -277,7 +281,9 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+    await using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob()
+    )
 
     await expect
       .poll(() => console.getEntriesSnapshot())
@@ -343,7 +349,9 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+    await using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob()
+    )
 
     await expect
       .poll(() => requestedUrls.length, { timeout: 3_000 })
@@ -395,7 +403,9 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    using _job = await jobRun.orThrow(createFioAccountTransactionSyncJob())
+    await using _job = await jobRun.orThrow(
+      createFioAccountTransactionSyncJob()
+    )
 
     await new Promise((resolve) => setTimeout(resolve, 50))
 

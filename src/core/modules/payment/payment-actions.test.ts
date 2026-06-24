@@ -66,6 +66,7 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
               "paymentSpark.exchangeRateSource",
               "paymentSpark.exchangeRateFetchedAt",
               "paymentSpark.lnInvoice",
+              "paymentSpark.sparkInvoice",
               "paymentSpark.sparkTechnicalData",
               "paymentSpark.isDeleted",
             ])
@@ -188,6 +189,7 @@ describe("payment actions", () => {
           exchangeRateSource: "yadio",
           exchangeRateFetchedAt: 1_700_000_000_000,
           lnInvoice: "lnbc200u1test",
+          sparkInvoice: "spark-invoice-test",
           sparkTechnicalData: JSON.stringify({ paymentHash: "abc" }),
         },
         iban: {
@@ -224,6 +226,7 @@ describe("payment actions", () => {
             exchangeRateSource: "yadio",
             exchangeRateFetchedAt: 1_700_000_000_000,
             lnInvoice: "lnbc200u1test",
+            sparkInvoice: "spark-invoice-test",
             sparkTechnicalData: JSON.stringify({ paymentHash: "abc" }),
           },
           iban: {
@@ -344,6 +347,7 @@ describe("payment actions", () => {
             exchangeRateSource: "yadio",
             exchangeRateFetchedAt: 1_700_000_000_000,
             lnInvoice: "lnbc8600n1prepared",
+            sparkInvoice: "spark-invoice-1",
             sparkTechnicalData: JSON.stringify({
               lightningReceiveRequestId: "lightning-request-1",
               paymentHash: "payment-hash-1",
@@ -446,6 +450,7 @@ describe("payment actions", () => {
             exchangeRateSource: "yadio",
             exchangeRateFetchedAt: 1_700_000_000_000,
             lnInvoice: "lnbc8600n1lazy",
+            sparkInvoice: "spark-invoice-1",
           },
         },
       ])

@@ -293,7 +293,7 @@ describe("reconciliation claim actions", () => {
       .toEqual([])
   })
 
-  test("automatically reconciles a Spark account transaction by invoice and sats amount", async () => {
+  test("automatically reconciles a Spark account transaction by LN invoice and sats amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu, ...createDateDeps() })
@@ -314,6 +314,7 @@ describe("reconciliation claim actions", () => {
           exchangeRateSource: "yadio",
           exchangeRateFetchedAt: 1_700_000_000_000,
           lnInvoice: "lnbc8600n1prepared",
+          sparkInvoice: null,
           sparkTechnicalData: JSON.stringify({ paymentHash: "payment-hash-1" }),
         },
       })
@@ -333,8 +334,75 @@ describe("reconciliation claim actions", () => {
         spark: {
           sparkTransferId: "spark-transfer-1",
           lnInvoice: "lnbc8600n1prepared",
+          sparkInvoice: null,
           preImage: "preimage-1",
           paymentHash: "payment-hash-1",
+        },
+      })
+    )
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: paymentId,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([
+        {
+          paymentId,
+          accountTransactionId,
+          source: "auto",
+        },
+      ])
+  })
+
+  test("automatically reconciles a Spark account transaction by Spark invoice and sats amount", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const accountId = await createSparkAccount(run)
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 12_900,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: null,
+        spark: {
+          accountId,
+          amountSats: 8_600,
+          exchangeRate: 1_500_000,
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: 1_700_000_000_000,
+          lnInvoice: null,
+          sparkInvoice: "spark-invoice-prepared",
+          sparkTechnicalData: JSON.stringify({}),
+        },
+      })
+    )
+    const accountTransactionId = await run.orThrow(
+      createAccountTransaction({
+        accountId,
+        amount: 8_600,
+        currency: "BTC",
+        occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        spark: {
+          sparkTransferId: "spark-transfer-1",
+          lnInvoice: null,
+          sparkInvoice: "spark-invoice-prepared",
+          preImage: null,
+          paymentHash: null,
         },
       })
     )

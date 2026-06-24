@@ -24,6 +24,16 @@ import type {
 } from "./account-transaction.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 
+const hasSparkTransactionIdentifier = ({
+  lnInvoice,
+  sparkInvoice,
+}: {
+  readonly lnInvoice?: string | null
+  readonly sparkInvoice?: string | null
+}): boolean =>
+  (lnInvoice !== null && lnInvoice !== undefined) ||
+  (sparkInvoice !== null && sparkInvoice !== undefined)
+
 export const createAccountTransaction =
   ({
     id: providedId,
@@ -61,6 +71,12 @@ export const createAccountTransaction =
         }
     )): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    if (spark && !hasSparkTransactionIdentifier(spark)) {
+      throw new Error(
+        "Spark account transaction requires lnInvoice or sparkInvoice."
+      )
+    }
+
     const { evoluOwnerId } = run.deps
     const id =
       providedId ??

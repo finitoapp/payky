@@ -28,6 +28,7 @@ const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
         "accountTransaction.note",
         "accountTransactionSpark.sparkTransferId",
         "accountTransactionSpark.lnInvoice",
+        "accountTransactionSpark.sparkInvoice",
         "accountTransactionSpark.preImage",
         "accountTransactionSpark.paymentHash",
       ])
@@ -42,6 +43,7 @@ interface FakeTransfer {
   readonly transferDirection: string
   readonly updatedTime: Date | undefined
   readonly createdTime: Date | undefined
+  readonly lnInvoice?: string | undefined
   readonly sparkInvoice: string | undefined
   readonly userRequest: unknown
 }
@@ -196,6 +198,7 @@ describe("spark account transaction sync job", () => {
           note: "Table 1",
           sparkTransferId: transferId,
           lnInvoice: "lnbc1invoice",
+          sparkInvoice: "spark-invoice-1",
           preImage: "preimage-1",
           paymentHash: "payment-hash-1",
         },
@@ -262,6 +265,7 @@ describe("spark account transaction sync job", () => {
             amount: -2100,
             sparkTransferId: transferId,
             lnInvoice: "lnbc1invoice",
+            sparkInvoice: "spark-invoice-1",
             preImage: "preimage-1",
             paymentHash: "payment-hash-1",
           },
@@ -327,7 +331,7 @@ describe("spark account transaction sync job", () => {
     expect(errors).toEqual([])
   })
 
-  test("ignores completed Spark transfers without a BOLT11 invoice", async () => {
+  test("records completed Spark transfers without a BOLT11 invoice when Spark invoice exists", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
@@ -346,6 +350,63 @@ describe("spark account transaction sync job", () => {
     const wallet = new FakeSparkWallet([
       createCompletedTransfer({
         id: transferId,
+        userRequest: undefined,
+      }),
+    ])
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      onError: (error) => {
+        errors.push(error)
+      },
+    })
+    await using _job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: createFakeWalletFactory(mnemonic, wallet),
+        recheckIntervalMs: 10,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toEqual([
+        {
+          accountId,
+          amount: 1234,
+          currency: "BTC",
+          occurredAt: new Date("2026-05-27T10:00:00Z").getTime(),
+          note: null,
+          sparkTransferId: transferId,
+          lnInvoice: null,
+          sparkInvoice: "spark-invoice-1",
+          preImage: null,
+          paymentHash: null,
+        },
+      ])
+
+    expect(errors).toEqual([])
+  })
+
+  test("ignores completed Spark transfers without a Spark or BOLT11 invoice", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const mnemonic = createUniqueHexSeed()
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Spark account",
+        spark: {
+          mnemonic,
+        },
+      })
+    )
+    const transferId = `spark-transfer-without-identifier-${accountId}`
+    const wallet = new FakeSparkWallet([
+      createCompletedTransfer({
+        id: transferId,
+        sparkInvoice: undefined,
         userRequest: undefined,
       }),
     ])

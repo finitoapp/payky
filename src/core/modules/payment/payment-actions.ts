@@ -258,6 +258,21 @@ const createVariableSymbolFromSerialNumber = (
 const createSpecificSymbolFromDate = (date: DateString): SpecificSymbol =>
   SpecificSymbol(`${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`)
 
+const nullableNonEmptyString = (
+  value: string | undefined
+): NonEmptyString | null =>
+  value === undefined ? null : NonEmptyStringSchema.decode(value)
+
+const hasSparkPaymentIdentifier = ({
+  lnInvoice,
+  sparkInvoice,
+}: {
+  readonly lnInvoice?: NonEmptyString | null
+  readonly sparkInvoice?: NonEmptyString | null
+}): boolean =>
+  (lnInvoice !== null && lnInvoice !== undefined) ||
+  (sparkInvoice !== null && sparkInvoice !== undefined)
+
 export const loadPayment =
   (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>
   async (run) =>
@@ -278,6 +293,10 @@ export const createPayment =
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
   }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
+    if (spark && !hasSparkPaymentIdentifier(spark)) {
+      throw new Error("Spark payment requires lnInvoice or sparkInvoice.")
+    }
+
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps
     const series = await run.orThrow(getPaymentNumberSeries())
@@ -362,6 +381,7 @@ export const createPreparedPayment =
       | "exchangeRateSource"
       | "exchangeRateFetchedAt"
       | "lnInvoice"
+      | "sparkInvoice"
       | "sparkTechnicalData"
     > & {
       readonly memo?: string
@@ -423,6 +443,7 @@ export const createPreparedPayment =
             lnInvoice: NonEmptyStringSchema.decode(
               lightningInvoice.invoice.encodedInvoice
             ),
+            sparkInvoice: nullableNonEmptyString(lightningInvoice.sparkInvoice),
             sparkTechnicalData: JSON.stringify(
               removeUndefinedValues({
                 lightningReceiveRequestId: lightningInvoice.id,
@@ -622,6 +643,9 @@ export const preparePaymentMethod =
                   ),
                   lnInvoice: NonEmptyStringSchema.decode(
                     lightningInvoice.invoice.encodedInvoice
+                  ),
+                  sparkInvoice: nullableNonEmptyString(
+                    lightningInvoice.sparkInvoice
                   ),
                   sparkTechnicalData: JSON.stringify(
                     removeUndefinedValues({

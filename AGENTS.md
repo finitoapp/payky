@@ -49,6 +49,7 @@
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.
 - Keep direct dependency calls for non-Task services, for example `run.deps.evolu.loadQuery(...)` or `run.deps.sparkWallet.create(...)`.
+- In Task code, use `run.deps.console` for all logging. Do not call global `console.log`, `console.warn`, `console.error`, or related console methods directly.
 - Clean up disposable resources acquired inside Task actions with `finally`, as with wallet cleanup in `createPreparedPayment`.
 - Use shared `ActionError` helpers from `src/core/modules/shared/action-error.ts` for domain failures: `notFound(...)`, `invalidOperation(...)`, `getFirst(...)`, `ok(...)`, and `err(...)`.
 - Return `err(notFound(...))` for missing domain rows or required related records instead of throwing.
@@ -85,6 +86,9 @@
     - Prefer explicit guards, Result errors, zod validation, or control-flow narrowing.
     - Use `!` only when an established framework pattern makes a guard impossible or materially worse, and keep the scope narrow.
     - `noUncheckedIndexedAccess` is enabled, so guard indexed values (`array[index]`, record lookups) with explicit checks, schema parsing, or local assertion helpers rather than adding `!`.
+- Use strict equality checks only:
+    - Do not use loose equality or inequality (`==` or `!=`), including nullish checks such as `value == null`.
+    - Compare explicitly with `===` and `!==`, for example `value === undefined`, `value !== null`, or both checks when both nullish values are possible.
 - Avoid mutable parameters:
     - Do not mutate object or array parameters unless the function is explicitly a mutator and the name/signature makes that clear.
     - Prefer returning updated values or passing explicit mutable collaborators such as builders, entity managers, or transactions.

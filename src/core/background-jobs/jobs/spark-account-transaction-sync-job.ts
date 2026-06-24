@@ -47,6 +47,7 @@ interface SparkTransfer {
   readonly transferDirection: string
   readonly updatedTime: Date | undefined
   readonly createdTime: Date | undefined
+  readonly lnInvoice?: string | undefined
   readonly sparkInvoice: string | undefined
   readonly userRequest: unknown
 }
@@ -100,7 +101,7 @@ type RecordTransferResult =
   | "lock-unavailable"
 
 type SparkTransactionInput = Parameters<typeof createAccountTransaction>[0]
-type SparkTransactionInputError = "missing-bolt11-invoice"
+type SparkTransactionInputError = "missing-spark-identifier"
 
 const createDefaultSparkWallet: SparkWalletFactory = async (
   mnemonic,
@@ -550,14 +551,20 @@ const createSparkTransactionInput = (
   transfer: SparkTransfer
 ): Result<SparkTransactionInput, SparkTransactionInputError> => {
   const payload = getSparkTransactionPayload(transfer.userRequest)
-  if (payload == null) return err("missing-bolt11-invoice")
+  const lnInvoice = nullableNonEmptyString(
+    transfer.lnInvoice ?? payload?.details.lnInvoice
+  )
+  const sparkInvoice = nullableNonEmptyString(transfer.sparkInvoice)
+  if (lnInvoice === null && sparkInvoice === null) {
+    return err("missing-spark-identifier")
+  }
 
   return ok({
     accountId,
     amount: IntegerSchema.decode(getTransferAmount(transfer)),
     currency: "BTC" as const,
     occurredAt: TimestampMsSchema.decode(getTransferOccurredAt(transfer)),
-    note: getTransferNote(payload.memo),
+    note: getTransferNote(payload?.memo ?? ""),
     internalTransferGroupId: null,
     source: {
       deviceId: null,
@@ -565,9 +572,10 @@ const createSparkTransactionInput = (
     },
     spark: {
       sparkTransferId,
-      lnInvoice: NonEmptyStringSchema.decode(payload.details.lnInvoice),
-      preImage: NonEmptyStringSchema.decode(payload.details.preImage),
-      paymentHash: NonEmptyStringSchema.decode(payload.details.paymentHash),
+      lnInvoice,
+      sparkInvoice,
+      preImage: nullableNonEmptyString(payload?.details.preImage),
+      paymentHash: nullableNonEmptyString(payload?.details.paymentHash),
     },
   })
 }
@@ -585,6 +593,11 @@ const getTransferOccurredAt = (transfer: SparkTransfer): number =>
 
 const getTransferNote = (memo: string): NonEmptyString | null =>
   memo === "" ? null : NonEmptyStringSchema.decode(memo)
+
+const nullableNonEmptyString = (
+  value: string | undefined
+): NonEmptyString | null =>
+  value === undefined ? null : NonEmptyStringSchema.decode(value)
 
 const UserRequestSchema = z.looseObject({
   paymentPreimage: z.string().min(1),

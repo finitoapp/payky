@@ -40,7 +40,8 @@ export const paymentSpark = {
   exchangeRate: PositiveNumberSchema,
   exchangeRateSource: z.enum(["yadio"]),
   exchangeRateFetchedAt: TimestampMsSchema,
-  lnInvoice: NonEmptyStringSchema,
+  lnInvoice: NonEmptyStringSchema.nullable(),
+  sparkInvoice: NonEmptyStringSchema.nullable(),
   sparkTechnicalData: z.string().nullable(),
 } as const
 
@@ -61,6 +62,7 @@ export const paymentIndexes = ((create) => [
     .column("accountId"),
   create("paymentSpark_accountId").on("paymentSpark").column("accountId"),
   create("paymentSpark_lnInvoice").on("paymentSpark").column("lnInvoice"),
+  create("paymentSpark_sparkInvoice").on("paymentSpark").column("sparkInvoice"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
   create("paymentIban_variableSymbol")
     .on("paymentIban")

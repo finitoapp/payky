@@ -107,6 +107,7 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
         "payment.canceledAt",
         "paymentSpark.amountSats",
         "paymentSpark.lnInvoice",
+        "paymentSpark.sparkInvoice",
         "paymentIban.czQrPayload",
         "paymentCashRegister.accountId as cashRegisterAccountId",
       ])
@@ -234,7 +235,7 @@ function PaymentWaitingRequest({
       kind: "spark",
       accountId: enabledSparkAccount.id,
       label: t("paymentWait.method.lightning"),
-      qrPayload: payment?.lnInvoice ?? null,
+      qrPayload: payment?.lnInvoice ?? payment?.sparkInvoice ?? null,
       icon: <ZapIcon />,
     })
   }
@@ -315,7 +316,8 @@ function PaymentWaitingRequest({
     }
 
     const isPrepared =
-      (activePaymentMethod.id === "spark" && payment.lnInvoice !== null) ||
+      (activePaymentMethod.id === "spark" &&
+        (payment.lnInvoice !== null || payment.sparkInvoice !== null)) ||
       (activePaymentMethod.id === "iban" && payment.czQrPayload !== null) ||
       (activePaymentMethod.id === "cash" &&
         payment.cashRegisterAccountId !== null &&

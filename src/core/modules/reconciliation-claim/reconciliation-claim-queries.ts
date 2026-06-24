@@ -120,10 +120,27 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
       .innerJoin("paymentSpark", (join) =>
         join
           .onRef("paymentSpark.accountId", "=", "accountTransaction.accountId")
-          .onRef(
-            "paymentSpark.lnInvoice",
-            "=",
-            "accountTransactionSpark.lnInvoice"
+          .on((eb) =>
+            eb.or([
+              eb.and([
+                eb("paymentSpark.lnInvoice", "is not", null),
+                eb("accountTransactionSpark.lnInvoice", "is not", null),
+                eb(
+                  "paymentSpark.lnInvoice",
+                  "=",
+                  eb.ref("accountTransactionSpark.lnInvoice")
+                ),
+              ]),
+              eb.and([
+                eb("paymentSpark.sparkInvoice", "is not", null),
+                eb("accountTransactionSpark.sparkInvoice", "is not", null),
+                eb(
+                  "paymentSpark.sparkInvoice",
+                  "=",
+                  eb.ref("accountTransactionSpark.sparkInvoice")
+                ),
+              ]),
+            ])
           )
       )
       .innerJoin("payment", "payment.id", "paymentSpark.id")

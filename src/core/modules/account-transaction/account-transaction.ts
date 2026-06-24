@@ -44,9 +44,10 @@ export const accountTransactionIban = {
 export const accountTransactionSpark = {
   id: AccountTransactionId,
   sparkTransferId: NonEmptyStringSchema,
-  lnInvoice: NonEmptyStringSchema,
-  preImage: NonEmptyStringSchema,
-  paymentHash: NonEmptyStringSchema,
+  lnInvoice: NonEmptyStringSchema.nullable(),
+  sparkInvoice: NonEmptyStringSchema.nullable(),
+  preImage: NonEmptyStringSchema.nullable(),
+  paymentHash: NonEmptyStringSchema.nullable(),
 } as const
 
 export const accountTransactionSource = {
@@ -70,6 +71,12 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionSpark_sparkTransferId")
     .on("accountTransactionSpark")
     .column("sparkTransferId"),
+  create("accountTransactionSpark_lnInvoice")
+    .on("accountTransactionSpark")
+    .column("lnInvoice"),
+  create("accountTransactionSpark_sparkInvoice")
+    .on("accountTransactionSpark")
+    .column("sparkInvoice"),
   create("accountTransactionIban_bankReference")
     .on("accountTransactionIban")
     .column("bankReference"),

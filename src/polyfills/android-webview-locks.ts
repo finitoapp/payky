@@ -1,19 +1,10 @@
+import {
+  isAndroidWebView,
+  isNativeWebViewRuntime,
+} from "@/core/native/runtime.ts"
+
 const evoluOneTabSharedWorkerPolyfillLock =
   "evolu-one-tab-sharedworker-polyfill"
-
-const isAndroidWebView = () => {
-  const userAgent = globalThis.navigator.userAgent
-
-  return /Android/i.test(userAgent) && /; wv\)|\bwv\b/i.test(userAgent)
-}
-
-const isTauriRuntime = () => {
-  const tauriGlobal = globalThis as typeof globalThis & {
-    readonly isTauri?: boolean
-  }
-
-  return tauriGlobal.isTauri === true
-}
 
 const createOneTabLockManager = (nativeLockManager: LockManager) => ({
   request: <T>(
@@ -30,7 +21,7 @@ const createOneTabLockManager = (nativeLockManager: LockManager) => ({
       name === evoluOneTabSharedWorkerPolyfillLock &&
       typeof optionsOrCallback !== "function" &&
       optionsOrCallback.ifAvailable === true &&
-      callback != null
+      callback !== undefined
     ) {
       return Promise.resolve(
         callback({
@@ -44,7 +35,7 @@ const createOneTabLockManager = (nativeLockManager: LockManager) => ({
       return nativeLockManager.request(name, optionsOrCallback)
     }
 
-    if (callback == null) {
+    if (callback === undefined) {
       return Promise.reject(
         new TypeError("LockManager.request requires a callback.")
       )
@@ -56,11 +47,11 @@ const createOneTabLockManager = (nativeLockManager: LockManager) => ({
   query: () => nativeLockManager.query(),
 })
 
-export const installTauriAndroidWebViewLocksPolyfill = () => {
-  if (!isTauriRuntime() || !isAndroidWebView()) return
+export const installAndroidWebViewLocksPolyfill = () => {
+  if (!isNativeWebViewRuntime() || !isAndroidWebView()) return
 
   const nativeLockManager = globalThis.navigator.locks
-  if (nativeLockManager == null) return
+  if (nativeLockManager === undefined) return
 
   Object.defineProperty(globalThis.navigator, "locks", {
     configurable: true,

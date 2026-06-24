@@ -70,26 +70,29 @@ function evoluAndroidWebViewWorkerLocksPlugin(): PluginOption {
   }
 }
 
-function isTauriBuild(command: string): boolean {
+function isNativeAndroidWebViewBuild(command: string): boolean {
   return (
     command === "build" &&
     (process.env.TAURI_ENV_PLATFORM != null ||
       process.env.TAURI_ENV_TARGET_TRIPLE != null ||
-      process.env.TAURI_ENV_ARCH != null)
+      process.env.TAURI_ENV_ARCH != null ||
+      process.env.PAYKY_CAPACITOR_BUILD === "1")
   )
 }
 
 // https://vite.dev/config/
 export default (({ command }: ConfigEnv) => {
-  const useTauriWorkerLocksPlugin = isTauriBuild(command)
+  const useAndroidWebViewWorkerLocksPlugin =
+    isNativeAndroidWebViewBuild(command)
+  const useBasicSsl = process.env.PAYKY_DISABLE_BASIC_SSL !== "1"
 
   return {
     define: {
       __APP_VERSION__: JSON.stringify(getAppVersion()),
     },
     plugins: [
-      basicSsl(),
-      ...(useTauriWorkerLocksPlugin
+      ...(useBasicSsl ? [basicSsl()] : []),
+      ...(useAndroidWebViewWorkerLocksPlugin
         ? [evoluAndroidWebViewWorkerLocksPlugin()]
         : []),
       tanstackRouter({
@@ -112,7 +115,7 @@ export default (({ command }: ConfigEnv) => {
     ],
     worker: {
       plugins: () =>
-        useTauriWorkerLocksPlugin
+        useAndroidWebViewWorkerLocksPlugin
           ? [evoluAndroidWebViewWorkerLocksPlugin()]
           : [],
     },

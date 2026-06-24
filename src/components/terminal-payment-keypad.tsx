@@ -1,5 +1,3 @@
-import { isTauri } from "@tauri-apps/api/core"
-import { vibrate } from "@tauri-apps/plugin-haptics"
 import {
   atom,
   type PrimitiveAtom,
@@ -29,6 +27,7 @@ import {
   FiatCurrency,
   Integer,
 } from "@/core/modules/shared/schema.ts"
+import { vibrateDevice } from "@/core/native/haptics.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -49,7 +48,7 @@ const keypad = [
 ] as const
 
 const maxIntegerDigits = 9
-const keypadVibrationMs = 10
+const keypadVibrationMs = 30
 const keypadButtonBubbleAnimation = {
   opacity: [0.28, 0.16, 0],
   scale: [0.25, 1.15, 1.65],
@@ -177,12 +176,7 @@ function applyKeypadPress(
 }
 
 function vibrateOnTerminalButtonPress() {
-  if (!isTauri()) {
-    navigator.vibrate?.(keypadVibrationMs)
-    return
-  }
-
-  void vibrate(keypadVibrationMs)
+  void vibrateDevice(keypadVibrationMs)
 }
 
 export function TerminalPaymentKeypad({

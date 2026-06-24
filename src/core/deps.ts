@@ -1,6 +1,6 @@
 import { AbortError, type OwnerId, type Task, tryAsync } from "@evolu/common"
-import { isTauri } from "@tauri-apps/api/core"
 import { defineError } from "@/core/error.ts"
+import { getNativeRuntime } from "@/core/native/runtime.ts"
 
 export interface FetchDep {
   readonly fetch: typeof globalThis.fetch
@@ -51,12 +51,12 @@ const getTauriHttpFetch = async () => {
 
 export const createFetchDep = (): FetchDep => ({
   fetch: async (...args) => {
-    if (!isTauri()) {
-      return globalThis.fetch(...args)
+    if (getNativeRuntime() === "tauri") {
+      const tauriFetch = await getTauriHttpFetch()
+      return tauriFetch(...args)
     }
 
-    const tauriFetch = await getTauriHttpFetch()
-    return tauriFetch(...args)
+    return globalThis.fetch(...args)
   },
 })
 

@@ -41,6 +41,49 @@ Preview a production build:
 bun run preview
 ```
 
+## Native Targets
+
+Tauri remains available through the existing scripts:
+
+```bash
+bun run tauri:dev
+bun run tauri:build
+bun run tauri:android:dev
+bun run tauri:android:build
+```
+
+Capacitor is available as a parallel Android target:
+
+```bash
+bun run cap:android:sync
+bun run cap:android:dev
+bun run cap:android:build
+```
+
+Capacitor builds use the native HTTP bridge through `CapacitorHttp` so mobile
+requests are not limited by browser CORS behavior.
+
+For Capacitor Android live reload, run:
+
+```bash
+bun run cap:android:dev
+```
+
+The script starts the HTTP Vite dev server, waits for
+`http://localhost:5173`, forwards the port through `adb reverse`, and launches
+the native Android app with Capacitor live reload. The HTTP server is used only
+for this debug flow so Android WebView does not reject Vite's self-signed HTTPS
+certificate.
+
+The Android release build signs with `payky-release.keystore`. Set these
+environment variables before running `bun run cap:android:build`:
+
+```bash
+PAYKY_ANDROID_KEYSTORE_PASSWORD=...
+PAYKY_ANDROID_KEY_ALIAS=...
+PAYKY_ANDROID_KEY_PASSWORD=...
+```
+
 ## Checks
 
 Run the full validation suite:

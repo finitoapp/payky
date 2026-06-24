@@ -24,9 +24,11 @@ import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
   payment,
+  paymentBtc,
+  paymentBtcLightning,
+  paymentBtcSpark,
   paymentCashRegister,
   paymentIban,
-  paymentSpark,
 } from "@/core/modules/payment/payment.ts"
 import {
   createNextPaymentNumberValues,
@@ -258,20 +260,42 @@ const createVariableSymbolFromSerialNumber = (
 const createSpecificSymbolFromDate = (date: DateString): SpecificSymbol =>
   SpecificSymbol(`${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`)
 
-const nullableNonEmptyString = (
-  value: string | undefined
-): NonEmptyString | null =>
-  value === undefined ? null : NonEmptyStringSchema.decode(value)
+const optionalNonEmptyString = (
+  value: string | null | undefined
+): NonEmptyString | undefined =>
+  value === null || value === undefined || value === ""
+    ? undefined
+    : NonEmptyStringSchema.decode(value)
+
+const optionalNonEmptySparkInvoice = (
+  sparkInvoice: string | null | undefined
+): { readonly sparkInvoice: NonEmptyString } | undefined => {
+  const parsedSparkInvoice = optionalNonEmptyString(sparkInvoice)
+
+  return parsedSparkInvoice === undefined
+    ? undefined
+    : {
+        sparkInvoice: parsedSparkInvoice,
+      }
+}
 
 const hasSparkPaymentIdentifier = ({
-  lnInvoice,
   sparkInvoice,
+  lightning,
 }: {
-  readonly lnInvoice?: NonEmptyString | null
-  readonly sparkInvoice?: NonEmptyString | null
-}): boolean =>
-  (lnInvoice !== null && lnInvoice !== undefined) ||
-  (sparkInvoice !== null && sparkInvoice !== undefined)
+  readonly lightning?: object
+  readonly sparkInvoice?: object
+}): boolean => lightning !== undefined || sparkInvoice !== undefined
+
+type PaymentBtcInput = Omit<InsertValues<typeof paymentBtc>, "id"> & {
+  readonly lightning?: Omit<InsertValues<typeof paymentBtcLightning>, "id">
+  readonly sparkInvoice?: Omit<InsertValues<typeof paymentBtcSpark>, "id">
+}
+
+type PaymentBtcUpdateInput = Omit<UpdateValues<typeof paymentBtc>, "id"> & {
+  readonly lightning?: Omit<UpdateValues<typeof paymentBtcLightning>, "id">
+  readonly sparkInvoice?: Omit<UpdateValues<typeof paymentBtcSpark>, "id">
+}
 
 export const loadPayment =
   (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>
@@ -289,7 +313,7 @@ export const createPayment =
     ...input
   }: InsertValues<typeof payment> & {
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
-    readonly spark?: Omit<InsertValues<typeof paymentSpark>, "id">
+    readonly spark?: PaymentBtcInput
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
   }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
@@ -334,13 +358,37 @@ export const createPayment =
 
       if (spark) {
         run.deps.evolu.upsert(
-          "paymentSpark",
+          "paymentBtc",
           removeUndefinedValues({
-            ...spark,
+            accountId: spark.accountId,
+            amountSats: spark.amountSats,
+            exchangeRate: spark.exchangeRate,
+            exchangeRateSource: spark.exchangeRateSource,
+            exchangeRateFetchedAt: spark.exchangeRateFetchedAt,
             id,
           }),
           { ...options, ownerId: evoluOwnerId }
         )
+        if (spark.lightning) {
+          run.deps.evolu.upsert(
+            "paymentBtcLightning",
+            removeUndefinedValues({
+              ...spark.lightning,
+              id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
+        if (spark.sparkInvoice) {
+          run.deps.evolu.upsert(
+            "paymentBtcSpark",
+            removeUndefinedValues({
+              ...spark.sparkInvoice,
+              id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
       }
 
       if (iban) {
@@ -374,15 +422,12 @@ export const createPreparedPayment =
   }: InsertValues<typeof payment> & {
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: Omit<
-      InsertValues<typeof paymentSpark>,
+      InsertValues<typeof paymentBtc>,
       | "id"
       | "amountSats"
       | "exchangeRate"
       | "exchangeRateSource"
       | "exchangeRateFetchedAt"
-      | "lnInvoice"
-      | "sparkInvoice"
-      | "sparkTechnicalData"
     > & {
       readonly memo?: string
       readonly expirySeconds?: number
@@ -440,17 +485,24 @@ export const createPreparedPayment =
             exchangeRateFetchedAt: TimestampMsSchema.decode(
               quote.value.fetchedAt
             ),
-            lnInvoice: NonEmptyStringSchema.decode(
-              lightningInvoice.invoice.encodedInvoice
-            ),
-            sparkInvoice: nullableNonEmptyString(lightningInvoice.sparkInvoice),
-            sparkTechnicalData: JSON.stringify(
-              removeUndefinedValues({
-                lightningReceiveRequestId: lightningInvoice.id,
-                paymentHash: lightningInvoice.invoice.paymentHash,
-                paymentPreimage: lightningInvoice.paymentPreimage,
-                sparkInvoice: lightningInvoice.sparkInvoice,
-              })
+            lightning: {
+              lnInvoice: NonEmptyStringSchema.decode(
+                lightningInvoice.invoice.encodedInvoice
+              ),
+              ...removeUndefinedValues({
+                lightningReceiveRequestId: optionalNonEmptyString(
+                  lightningInvoice.id
+                ),
+                paymentHash: optionalNonEmptyString(
+                  lightningInvoice.invoice.paymentHash
+                ),
+                paymentPreimage: optionalNonEmptyString(
+                  lightningInvoice.paymentPreimage
+                ),
+              }),
+            },
+            sparkInvoice: optionalNonEmptySparkInvoice(
+              lightningInvoice.sparkInvoice
             ),
           },
         })
@@ -629,34 +681,37 @@ export const preparePaymentMethod =
                 })
               )
 
-              return ok(
-                removeUndefinedValues({
-                  id: paymentId,
-                  accountId: spark.accountId,
-                  amountSats,
-                  exchangeRate: PositiveNumberSchema.decode(
-                    quote.value.exchangeRate
-                  ),
-                  exchangeRateSource: "yadio" as const,
-                  exchangeRateFetchedAt: TimestampMsSchema.decode(
-                    quote.value.fetchedAt
-                  ),
+              return ok({
+                id: paymentId,
+                accountId: spark.accountId,
+                amountSats,
+                exchangeRate: PositiveNumberSchema.decode(
+                  quote.value.exchangeRate
+                ),
+                exchangeRateSource: "yadio" as const,
+                exchangeRateFetchedAt: TimestampMsSchema.decode(
+                  quote.value.fetchedAt
+                ),
+                lightning: {
                   lnInvoice: NonEmptyStringSchema.decode(
                     lightningInvoice.invoice.encodedInvoice
                   ),
-                  sparkInvoice: nullableNonEmptyString(
-                    lightningInvoice.sparkInvoice
-                  ),
-                  sparkTechnicalData: JSON.stringify(
-                    removeUndefinedValues({
-                      lightningReceiveRequestId: lightningInvoice.id,
-                      paymentHash: lightningInvoice.invoice.paymentHash,
-                      paymentPreimage: lightningInvoice.paymentPreimage,
-                      sparkInvoice: lightningInvoice.sparkInvoice,
-                    })
-                  ),
-                })
-              )
+                  ...removeUndefinedValues({
+                    lightningReceiveRequestId: optionalNonEmptyString(
+                      lightningInvoice.id
+                    ),
+                    paymentHash: optionalNonEmptyString(
+                      lightningInvoice.invoice.paymentHash
+                    ),
+                    paymentPreimage: optionalNonEmptyString(
+                      lightningInvoice.paymentPreimage
+                    ),
+                  }),
+                },
+                sparkInvoice: optionalNonEmptySparkInvoice(
+                  lightningInvoice.sparkInvoice
+                ),
+              })
             } catch (error) {
               return err(
                 paymentPreparationFailed(
@@ -701,10 +756,48 @@ export const preparePaymentMethod =
       }
 
       if (sparkPaymentResult?.ok) {
-        run.deps.evolu.upsert("paymentSpark", sparkPaymentResult.value, {
-          ...options,
-          ownerId: evoluOwnerId,
-        })
+        run.deps.evolu.upsert(
+          "paymentBtc",
+          removeUndefinedValues({
+            id: sparkPaymentResult.value.id,
+            accountId: sparkPaymentResult.value.accountId,
+            amountSats: sparkPaymentResult.value.amountSats,
+            exchangeRate: sparkPaymentResult.value.exchangeRate,
+            exchangeRateSource: sparkPaymentResult.value.exchangeRateSource,
+            exchangeRateFetchedAt:
+              sparkPaymentResult.value.exchangeRateFetchedAt,
+          }),
+          {
+            ...options,
+            ownerId: evoluOwnerId,
+          }
+        )
+        if (sparkPaymentResult.value.lightning) {
+          run.deps.evolu.upsert(
+            "paymentBtcLightning",
+            removeUndefinedValues({
+              ...sparkPaymentResult.value.lightning,
+              id: sparkPaymentResult.value.id,
+            }),
+            {
+              ...options,
+              ownerId: evoluOwnerId,
+            }
+          )
+        }
+        if (sparkPaymentResult.value.sparkInvoice) {
+          run.deps.evolu.upsert(
+            "paymentBtcSpark",
+            removeUndefinedValues({
+              ...sparkPaymentResult.value.sparkInvoice,
+              id: sparkPaymentResult.value.id,
+            }),
+            {
+              ...options,
+              ownerId: evoluOwnerId,
+            }
+          )
+        }
       }
     })
 
@@ -729,7 +822,7 @@ export const updatePayment =
     | "canceledAt"
   > & {
     readonly cashRegister?: Omit<UpdateValues<typeof paymentCashRegister>, "id">
-    readonly spark?: Omit<UpdateValues<typeof paymentSpark>, "id">
+    readonly spark?: PaymentBtcUpdateInput
     readonly iban?: Omit<UpdateValues<typeof paymentIban>, "id">
   }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
@@ -749,13 +842,37 @@ export const updatePayment =
 
       if (spark) {
         run.deps.evolu.update(
-          "paymentSpark",
+          "paymentBtc",
           removeUndefinedValues({
-            ...spark,
+            accountId: spark.accountId,
+            amountSats: spark.amountSats,
+            exchangeRate: spark.exchangeRate,
+            exchangeRateSource: spark.exchangeRateSource,
+            exchangeRateFetchedAt: spark.exchangeRateFetchedAt,
             id: input.id,
           }),
           { ...options, ownerId: evoluOwnerId }
         )
+        if (spark.lightning) {
+          run.deps.evolu.update(
+            "paymentBtcLightning",
+            removeUndefinedValues({
+              ...spark.lightning,
+              id: input.id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
+        if (spark.sparkInvoice) {
+          run.deps.evolu.update(
+            "paymentBtcSpark",
+            removeUndefinedValues({
+              ...spark.sparkInvoice,
+              id: input.id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
       }
 
       if (iban) {

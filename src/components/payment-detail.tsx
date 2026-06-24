@@ -106,6 +106,11 @@ const paymentReconciliationsQuery = (paymentId: PaymentId) =>
           .onRef("accountTransactionSpark.id", "=", "accountTransaction.id")
           .on("accountTransactionSpark.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("accountTransactionLightning", (join) =>
+        join
+          .onRef("accountTransactionLightning.id", "=", "accountTransaction.id")
+          .on("accountTransactionLightning.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "reconciliationClaim.id",
         "reconciliationClaim.source",
@@ -123,7 +128,7 @@ const paymentReconciliationsQuery = (paymentId: PaymentId) =>
         "accountTransactionIban.variableSymbol",
         "accountTransactionIban.bankReference",
         "accountTransactionSpark.sparkTransferId",
-        "accountTransactionSpark.paymentHash",
+        "accountTransactionLightning.paymentHash",
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)

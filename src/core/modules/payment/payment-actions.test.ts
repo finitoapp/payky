@@ -57,20 +57,32 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
         ).as("cashRegister"),
         evoluJsonObjectFrom(
           eb
-            .selectFrom("paymentSpark")
+            .selectFrom("paymentBtc")
+            .leftJoin("paymentBtcLightning", (join) =>
+              join
+                .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
+                .on("paymentBtcLightning.isDeleted", "is not", 1)
+            )
+            .leftJoin("paymentBtcSpark", (join) =>
+              join
+                .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
+                .on("paymentBtcSpark.isDeleted", "is not", 1)
+            )
             .select([
-              "paymentSpark.id",
-              "paymentSpark.accountId",
-              "paymentSpark.amountSats",
-              "paymentSpark.exchangeRate",
-              "paymentSpark.exchangeRateSource",
-              "paymentSpark.exchangeRateFetchedAt",
-              "paymentSpark.lnInvoice",
-              "paymentSpark.sparkInvoice",
-              "paymentSpark.sparkTechnicalData",
-              "paymentSpark.isDeleted",
+              "paymentBtc.id",
+              "paymentBtc.accountId",
+              "paymentBtc.amountSats",
+              "paymentBtc.exchangeRate",
+              "paymentBtc.exchangeRateSource",
+              "paymentBtc.exchangeRateFetchedAt",
+              "paymentBtcLightning.lnInvoice",
+              "paymentBtcLightning.lightningReceiveRequestId",
+              "paymentBtcLightning.paymentHash",
+              "paymentBtcLightning.paymentPreimage",
+              "paymentBtcSpark.sparkInvoice",
+              "paymentBtc.isDeleted",
             ])
-            .whereRef("paymentSpark.id", "=", "payment.id")
+            .whereRef("paymentBtc.id", "=", "payment.id")
         ).as("spark"),
         evoluJsonObjectFrom(
           eb
@@ -188,9 +200,15 @@ describe("payment actions", () => {
           exchangeRate: 1_500_000,
           exchangeRateSource: "yadio",
           exchangeRateFetchedAt: 1_700_000_000_000,
-          lnInvoice: "lnbc200u1test",
-          sparkInvoice: "spark-invoice-test",
-          sparkTechnicalData: JSON.stringify({ paymentHash: "abc" }),
+          lightning: {
+            lnInvoice: "lnbc200u1test",
+            lightningReceiveRequestId: null,
+            paymentHash: "abc",
+            paymentPreimage: null,
+          },
+          sparkInvoice: {
+            sparkInvoice: "spark-invoice-test",
+          },
         },
         iban: {
           accountId: ibanAccountId,
@@ -227,7 +245,7 @@ describe("payment actions", () => {
             exchangeRateFetchedAt: 1_700_000_000_000,
             lnInvoice: "lnbc200u1test",
             sparkInvoice: "spark-invoice-test",
-            sparkTechnicalData: JSON.stringify({ paymentHash: "abc" }),
+            paymentHash: "abc",
           },
           iban: {
             id,
@@ -348,12 +366,9 @@ describe("payment actions", () => {
             exchangeRateFetchedAt: 1_700_000_000_000,
             lnInvoice: "lnbc8600n1prepared",
             sparkInvoice: "spark-invoice-1",
-            sparkTechnicalData: JSON.stringify({
-              lightningReceiveRequestId: "lightning-request-1",
-              paymentHash: "payment-hash-1",
-              paymentPreimage: "payment-preimage-1",
-              sparkInvoice: "spark-invoice-1",
-            }),
+            lightningReceiveRequestId: "lightning-request-1",
+            paymentHash: "payment-hash-1",
+            paymentPreimage: "payment-preimage-1",
           },
           iban: {
             id,
@@ -451,6 +466,76 @@ describe("payment actions", () => {
             exchangeRateFetchedAt: 1_700_000_000_000,
             lnInvoice: "lnbc8600n1lazy",
             sparkInvoice: "spark-invoice-1",
+          },
+        },
+      ])
+  }, 15_000)
+
+  test("prepares Spark payment method when optional Spark SDK fields are null", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            BTC: 1_500_000,
+            timestamp: 1_700_000_000_000,
+          })
+        ),
+      sparkWallet: {
+        create: async () => ({
+          createLightningInvoice: async () => ({
+            id: null,
+            invoice: {
+              encodedInvoice: "lnbc8600n1nullable",
+              paymentHash: null,
+            },
+            paymentPreimage: null,
+            sparkInvoice: null,
+          }),
+        }),
+      },
+      ...createDateDeps(),
+    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep
+    await using run = testCreateRun(deps)
+    const { sparkAccountId } = await createPaymentAccounts(deps)
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: 12_900,
+        currency: "CZK",
+        tipAmount: 0,
+        canceledAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: {
+            accountId: sparkAccountId,
+          },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          spark: {
+            id,
+            accountId: sparkAccountId,
+            lnInvoice: "lnbc8600n1nullable",
+            sparkInvoice: null,
+            lightningReceiveRequestId: null,
+            paymentHash: null,
+            paymentPreimage: null,
           },
         },
       ])

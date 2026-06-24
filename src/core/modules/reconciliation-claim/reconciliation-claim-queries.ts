@@ -117,33 +117,30 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
         "accountTransactionSpark.id",
         "accountTransaction.id"
       )
-      .innerJoin("paymentSpark", (join) =>
-        join
-          .onRef("paymentSpark.accountId", "=", "accountTransaction.accountId")
-          .on((eb) =>
-            eb.or([
-              eb.and([
-                eb("paymentSpark.lnInvoice", "is not", null),
-                eb("accountTransactionSpark.lnInvoice", "is not", null),
-                eb(
-                  "paymentSpark.lnInvoice",
-                  "=",
-                  eb.ref("accountTransactionSpark.lnInvoice")
-                ),
-              ]),
-              eb.and([
-                eb("paymentSpark.sparkInvoice", "is not", null),
-                eb("accountTransactionSpark.sparkInvoice", "is not", null),
-                eb(
-                  "paymentSpark.sparkInvoice",
-                  "=",
-                  eb.ref("accountTransactionSpark.sparkInvoice")
-                ),
-              ]),
-            ])
-          )
+      .leftJoin(
+        "accountTransactionLightning",
+        "accountTransactionLightning.id",
+        "accountTransaction.id"
       )
-      .innerJoin("payment", "payment.id", "paymentSpark.id")
+      .leftJoin(
+        "accountTransactionSparkInvoice",
+        "accountTransactionSparkInvoice.id",
+        "accountTransaction.id"
+      )
+      .innerJoin("paymentBtc", (join) =>
+        join.onRef("paymentBtc.accountId", "=", "accountTransaction.accountId")
+      )
+      .leftJoin("paymentBtcLightning", (join) =>
+        join
+          .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
+          .on("paymentBtcLightning.isDeleted", "is not", 1)
+      )
+      .leftJoin("paymentBtcSpark", (join) =>
+        join
+          .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
+          .on("paymentBtcSpark.isDeleted", "is not", 1)
+      )
+      .innerJoin("payment", "payment.id", "paymentBtc.id")
       .leftJoin(
         "reconciliationClaim",
         "reconciliationClaim.paymentId",
@@ -155,9 +152,33 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
       .where("accountTransaction.currency", "=", "BTC")
       .where("accountTransaction.isDeleted", "is not", 1)
       .where("accountTransactionSpark.isDeleted", "is not", 1)
-      .where("paymentSpark.isDeleted", "is not", 1)
+      .where("paymentBtc.isDeleted", "is not", 1)
       .where("payment.isDeleted", "is not", 1)
-      .whereRef("paymentSpark.amountSats", "=", "accountTransaction.amount")
+      .whereRef("paymentBtc.amountSats", "=", "accountTransaction.amount")
+      .where((eb) =>
+        eb.or([
+          eb.and([
+            eb("accountTransactionLightning.isDeleted", "is not", 1),
+            eb("paymentBtcLightning.lnInvoice", "is not", null),
+            eb("accountTransactionLightning.lnInvoice", "is not", null),
+            eb(
+              "paymentBtcLightning.lnInvoice",
+              "=",
+              eb.ref("accountTransactionLightning.lnInvoice")
+            ),
+          ]),
+          eb.and([
+            eb("accountTransactionSparkInvoice.isDeleted", "is not", 1),
+            eb("paymentBtcSpark.sparkInvoice", "is not", null),
+            eb("accountTransactionSparkInvoice.sparkInvoice", "is not", null),
+            eb(
+              "paymentBtcSpark.sparkInvoice",
+              "=",
+              eb.ref("accountTransactionSparkInvoice.sparkInvoice")
+            ),
+          ]),
+        ])
+      )
       .where("reconciliationClaim.id", "is", null)
       .orderBy("payment.id")
       .limit(1)

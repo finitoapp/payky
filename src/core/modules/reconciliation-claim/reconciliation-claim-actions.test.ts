@@ -313,9 +313,12 @@ describe("reconciliation claim actions", () => {
           exchangeRate: 1_500_000,
           exchangeRateSource: "yadio",
           exchangeRateFetchedAt: 1_700_000_000_000,
-          lnInvoice: "lnbc8600n1prepared",
-          sparkInvoice: null,
-          sparkTechnicalData: JSON.stringify({ paymentHash: "payment-hash-1" }),
+          lightning: {
+            lnInvoice: "lnbc8600n1prepared",
+            lightningReceiveRequestId: null,
+            paymentHash: "payment-hash-1",
+            paymentPreimage: null,
+          },
         },
       })
     )
@@ -333,10 +336,11 @@ describe("reconciliation claim actions", () => {
         },
         spark: {
           sparkTransferId: "spark-transfer-1",
-          lnInvoice: "lnbc8600n1prepared",
-          sparkInvoice: null,
-          preImage: "preimage-1",
-          paymentHash: "payment-hash-1",
+          lightning: {
+            lnInvoice: "lnbc8600n1prepared",
+            preImage: "preimage-1",
+            paymentHash: "payment-hash-1",
+          },
         },
       })
     )
@@ -379,9 +383,9 @@ describe("reconciliation claim actions", () => {
           exchangeRate: 1_500_000,
           exchangeRateSource: "yadio",
           exchangeRateFetchedAt: 1_700_000_000_000,
-          lnInvoice: null,
-          sparkInvoice: "spark-invoice-prepared",
-          sparkTechnicalData: JSON.stringify({}),
+          sparkInvoice: {
+            sparkInvoice: "spark-invoice-prepared",
+          },
         },
       })
     )
@@ -399,10 +403,9 @@ describe("reconciliation claim actions", () => {
         },
         spark: {
           sparkTransferId: "spark-transfer-1",
-          lnInvoice: null,
-          sparkInvoice: "spark-invoice-prepared",
-          preImage: null,
-          paymentHash: null,
+          sparkInvoice: {
+            sparkInvoice: "spark-invoice-prepared",
+          },
         },
       })
     )

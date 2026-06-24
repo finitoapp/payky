@@ -84,10 +84,20 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
-      .leftJoin("paymentSpark", (join) =>
+      .leftJoin("paymentBtc", (join) =>
         join
-          .onRef("paymentSpark.id", "=", "payment.id")
-          .on("paymentSpark.isDeleted", "is not", sqliteTrue)
+          .onRef("paymentBtc.id", "=", "payment.id")
+          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentBtcLightning", (join) =>
+        join
+          .onRef("paymentBtcLightning.id", "=", "payment.id")
+          .on("paymentBtcLightning.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentBtcSpark", (join) =>
+        join
+          .onRef("paymentBtcSpark.id", "=", "payment.id")
+          .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
       )
       .leftJoin("paymentIban", (join) =>
         join
@@ -105,9 +115,9 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
         "payment.currency",
         "payment.tipAmount",
         "payment.canceledAt",
-        "paymentSpark.amountSats",
-        "paymentSpark.lnInvoice",
-        "paymentSpark.sparkInvoice",
+        "paymentBtc.amountSats",
+        "paymentBtcLightning.lnInvoice",
+        "paymentBtcSpark.sparkInvoice",
         "paymentIban.czQrPayload",
         "paymentCashRegister.accountId as cashRegisterAccountId",
       ])

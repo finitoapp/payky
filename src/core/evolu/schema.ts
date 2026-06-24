@@ -12,8 +12,10 @@ import {
   accountTransaction,
   accountTransactionIban,
   accountTransactionIndexes,
+  accountTransactionLightning,
   accountTransactionSource,
   accountTransactionSpark,
+  accountTransactionSparkInvoice,
 } from "@/core/modules/account-transaction/account-transaction.ts"
 import { appSettings } from "@/core/modules/app-settings/app-settings.ts"
 import { bill, billIndexes } from "@/core/modules/bill/bill.ts"
@@ -32,10 +34,12 @@ import {
 import { item, itemIndexes } from "@/core/modules/item/item.ts"
 import {
   payment,
+  paymentBtc,
+  paymentBtcLightning,
+  paymentBtcSpark,
   paymentCashRegister,
   paymentIban,
   paymentIndexes,
-  paymentSpark,
 } from "@/core/modules/payment/payment.ts"
 import {
   paymentLine,
@@ -61,6 +65,8 @@ export const AppSchema = {
   accountTransaction,
   accountTransactionIban,
   accountTransactionSpark,
+  accountTransactionSparkInvoice,
+  accountTransactionLightning,
   accountTransactionSource,
   catalogItem,
   item,
@@ -69,7 +75,9 @@ export const AppSchema = {
   billLine,
   payment,
   paymentCashRegister,
-  paymentSpark,
+  paymentBtc,
+  paymentBtcLightning,
+  paymentBtcSpark,
   paymentIban,
   paymentLine,
   paymentNumber,

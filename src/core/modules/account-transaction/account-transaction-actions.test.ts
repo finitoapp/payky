@@ -51,9 +51,11 @@ describe("account transaction actions", () => {
         },
         spark: {
           sparkTransferId: "spark-transfer-1",
-          lnInvoice: "lnbc1invoice",
-          preImage: "preimage-1",
-          paymentHash: "payment-hash-1",
+          lightning: {
+            lnInvoice: "lnbc1invoice",
+            preImage: "preimage-1",
+            paymentHash: "payment-hash-1",
+          },
         },
       })
     )
@@ -71,9 +73,11 @@ describe("account transaction actions", () => {
         },
         spark: {
           sparkTransferId: "spark-transfer-1",
-          lnInvoice: "lnbc1invoice",
-          preImage: "preimage-1",
-          paymentHash: "payment-hash-1",
+          lightning: {
+            lnInvoice: "lnbc1invoice",
+            preImage: "preimage-1",
+            paymentHash: "payment-hash-1",
+          },
         },
       })
     )

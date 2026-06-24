@@ -33,16 +33,26 @@ export const paymentCashRegister = {
   accountId: AccountId,
 } as const
 
-export const paymentSpark = {
+export const paymentBtc = {
   id: PaymentId,
   accountId: AccountId,
   amountSats: NonNegativeIntegerSchema,
   exchangeRate: PositiveNumberSchema,
   exchangeRateSource: z.enum(["yadio"]),
   exchangeRateFetchedAt: TimestampMsSchema,
-  lnInvoice: NonEmptyStringSchema.nullable(),
-  sparkInvoice: NonEmptyStringSchema.nullable(),
-  sparkTechnicalData: z.string().nullable(),
+} as const
+
+export const paymentBtcLightning = {
+  id: PaymentId,
+  lnInvoice: NonEmptyStringSchema,
+  lightningReceiveRequestId: NonEmptyStringSchema.nullable(),
+  paymentHash: NonEmptyStringSchema.nullable(),
+  paymentPreimage: NonEmptyStringSchema.nullable(),
+} as const
+
+export const paymentBtcSpark = {
+  id: PaymentId,
+  sparkInvoice: NonEmptyStringSchema,
 } as const
 
 export const paymentIban = {
@@ -60,9 +70,13 @@ export const paymentIndexes = ((create) => [
   create("paymentCashRegister_accountId")
     .on("paymentCashRegister")
     .column("accountId"),
-  create("paymentSpark_accountId").on("paymentSpark").column("accountId"),
-  create("paymentSpark_lnInvoice").on("paymentSpark").column("lnInvoice"),
-  create("paymentSpark_sparkInvoice").on("paymentSpark").column("sparkInvoice"),
+  create("paymentBtc_accountId").on("paymentBtc").column("accountId"),
+  create("paymentBtcLightning_lnInvoice")
+    .on("paymentBtcLightning")
+    .column("lnInvoice"),
+  create("paymentBtcSpark_sparkInvoice")
+    .on("paymentBtcSpark")
+    .column("sparkInvoice"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
   create("paymentIban_variableSymbol")
     .on("paymentIban")
@@ -71,5 +85,7 @@ export const paymentIndexes = ((create) => [
 
 export type PaymentRow = InferTable<typeof payment>
 export type PaymentCashRegisterRow = InferTable<typeof paymentCashRegister>
-export type PaymentSparkRow = InferTable<typeof paymentSpark>
+export type PaymentBtcRow = InferTable<typeof paymentBtc>
+export type PaymentBtcLightningRow = InferTable<typeof paymentBtcLightning>
+export type PaymentBtcSparkRow = InferTable<typeof paymentBtcSpark>
 export type PaymentIbanRow = InferTable<typeof paymentIban>

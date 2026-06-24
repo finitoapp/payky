@@ -19,20 +19,47 @@ import type {
   AccountTransactionRow,
   accountTransaction,
   accountTransactionIban,
+  accountTransactionLightning,
   accountTransactionSource,
   accountTransactionSpark,
+  accountTransactionSparkInvoice,
 } from "./account-transaction.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 
 const hasSparkTransactionIdentifier = ({
-  lnInvoice,
   sparkInvoice,
+  lightning,
 }: {
-  readonly lnInvoice?: string | null
-  readonly sparkInvoice?: string | null
-}): boolean =>
-  (lnInvoice !== null && lnInvoice !== undefined) ||
-  (sparkInvoice !== null && sparkInvoice !== undefined)
+  readonly lightning?: object
+  readonly sparkInvoice?: object
+}): boolean => lightning !== undefined || sparkInvoice !== undefined
+
+type AccountTransactionSparkInput = InsertValues<
+  typeof accountTransactionSpark
+> & {
+  readonly lightning?: Omit<
+    InsertValues<typeof accountTransactionLightning>,
+    "id"
+  >
+  readonly sparkInvoice?: Omit<
+    InsertValues<typeof accountTransactionSparkInvoice>,
+    "id"
+  >
+}
+
+type AccountTransactionSparkUpdateInput = Omit<
+  UpdateValues<typeof accountTransactionSpark>,
+  "id"
+> & {
+  readonly lightning?: Omit<
+    UpdateValues<typeof accountTransactionLightning>,
+    "id"
+  >
+  readonly sparkInvoice?: Omit<
+    UpdateValues<typeof accountTransactionSparkInvoice>,
+    "id"
+  >
+}
 
 export const createAccountTransaction =
   ({
@@ -63,7 +90,7 @@ export const createAccountTransaction =
         }
       | {
           readonly iban?: never
-          readonly spark: InsertValues<typeof accountTransactionSpark>
+          readonly spark: AccountTransactionSparkInput
         }
       | {
           readonly iban?: never
@@ -117,11 +144,31 @@ export const createAccountTransaction =
         run.deps.evolu.upsert(
           "accountTransactionSpark",
           removeUndefinedValues({
-            ...spark,
+            sparkTransferId: spark.sparkTransferId,
             id,
           }),
           { ...options, ownerId: evoluOwnerId }
         )
+        if (spark.lightning) {
+          run.deps.evolu.upsert(
+            "accountTransactionLightning",
+            removeUndefinedValues({
+              ...spark.lightning,
+              id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
+        if (spark.sparkInvoice) {
+          run.deps.evolu.upsert(
+            "accountTransactionSparkInvoice",
+            removeUndefinedValues({
+              ...spark.sparkInvoice,
+              id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
       }
 
       run.deps.evolu.upsert(
@@ -171,10 +218,7 @@ export const updateAccountTransaction =
         }
       | {
           readonly iban?: never
-          readonly spark: Omit<
-            UpdateValues<typeof accountTransactionSpark>,
-            "id"
-          >
+          readonly spark: AccountTransactionSparkUpdateInput
         }
       | {
           readonly iban?: never
@@ -204,11 +248,31 @@ export const updateAccountTransaction =
         run.deps.evolu.update(
           "accountTransactionSpark",
           removeUndefinedValues({
-            ...spark,
+            sparkTransferId: spark.sparkTransferId,
             id: input.id,
           }),
           { ...options, ownerId: evoluOwnerId }
         )
+        if (spark.lightning) {
+          run.deps.evolu.update(
+            "accountTransactionLightning",
+            removeUndefinedValues({
+              ...spark.lightning,
+              id: input.id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
+        if (spark.sparkInvoice) {
+          run.deps.evolu.update(
+            "accountTransactionSparkInvoice",
+            removeUndefinedValues({
+              ...spark.sparkInvoice,
+              id: input.id,
+            }),
+            { ...options, ownerId: evoluOwnerId }
+          )
+        }
       }
 
       return run.deps.evolu.update(

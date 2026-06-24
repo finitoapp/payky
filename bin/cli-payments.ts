@@ -74,17 +74,30 @@ const paymentsWithDetailsQuery = createQuery((db) =>
       ).as("cashRegister"),
       evoluJsonObjectFrom(
         eb
-          .selectFrom("paymentSpark")
+          .selectFrom("paymentBtc")
+          .leftJoin("paymentBtcLightning", (join) =>
+            join
+              .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
+              .on("paymentBtcLightning.isDeleted", "is not", 1)
+          )
+          .leftJoin("paymentBtcSpark", (join) =>
+            join
+              .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
+              .on("paymentBtcSpark.isDeleted", "is not", 1)
+          )
           .select([
-            "paymentSpark.accountId",
-            "paymentSpark.amountSats",
-            "paymentSpark.exchangeRate",
-            "paymentSpark.exchangeRateSource",
-            "paymentSpark.exchangeRateFetchedAt",
-            "paymentSpark.lnInvoice",
-            "paymentSpark.sparkTechnicalData",
+            "paymentBtc.accountId",
+            "paymentBtc.amountSats",
+            "paymentBtc.exchangeRate",
+            "paymentBtc.exchangeRateSource",
+            "paymentBtc.exchangeRateFetchedAt",
+            "paymentBtcLightning.lnInvoice",
+            "paymentBtcLightning.lightningReceiveRequestId",
+            "paymentBtcLightning.paymentHash",
+            "paymentBtcLightning.paymentPreimage",
+            "paymentBtcSpark.sparkInvoice",
           ])
-          .whereRef("paymentSpark.id", "=", "payment.id")
+          .whereRef("paymentBtc.id", "=", "payment.id")
       ).as("spark"),
       evoluJsonObjectFrom(
         eb
@@ -127,17 +140,30 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
         ).as("cashRegister"),
         evoluJsonObjectFrom(
           eb
-            .selectFrom("paymentSpark")
+            .selectFrom("paymentBtc")
+            .leftJoin("paymentBtcLightning", (join) =>
+              join
+                .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
+                .on("paymentBtcLightning.isDeleted", "is not", 1)
+            )
+            .leftJoin("paymentBtcSpark", (join) =>
+              join
+                .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
+                .on("paymentBtcSpark.isDeleted", "is not", 1)
+            )
             .select([
-              "paymentSpark.accountId",
-              "paymentSpark.amountSats",
-              "paymentSpark.exchangeRate",
-              "paymentSpark.exchangeRateSource",
-              "paymentSpark.exchangeRateFetchedAt",
-              "paymentSpark.lnInvoice",
-              "paymentSpark.sparkTechnicalData",
+              "paymentBtc.accountId",
+              "paymentBtc.amountSats",
+              "paymentBtc.exchangeRate",
+              "paymentBtc.exchangeRateSource",
+              "paymentBtc.exchangeRateFetchedAt",
+              "paymentBtcLightning.lnInvoice",
+              "paymentBtcLightning.lightningReceiveRequestId",
+              "paymentBtcLightning.paymentHash",
+              "paymentBtcLightning.paymentPreimage",
+              "paymentBtcSpark.sparkInvoice",
             ])
-            .whereRef("paymentSpark.id", "=", "payment.id")
+            .whereRef("paymentBtc.id", "=", "payment.id")
         ).as("spark"),
         evoluJsonObjectFrom(
           eb
@@ -245,10 +271,10 @@ export const registerPaymentsCommand =
           },
           async action(_, options) {
             const hasIbanInput =
-              options.ibanAccountId != null ||
-              options.variableSymbol != null ||
-              options.specificSymbol != null ||
-              options.czQrPayload != null
+              options.ibanAccountId !== undefined ||
+              options.variableSymbol !== undefined ||
+              options.specificSymbol !== undefined ||
+              options.czQrPayload !== undefined
 
             const iban = (() => {
               if (!hasIbanInput) return undefined
@@ -260,7 +286,7 @@ export const registerPaymentsCommand =
                 czQrPayload,
               } = options
 
-              if (ibanAccountId == null || czQrPayload == null) {
+              if (ibanAccountId === undefined || czQrPayload === undefined) {
                 printInvalidPaymentInput(
                   "IBAN payment requires --ibanAccountId and --czQrPayload."
                 )
@@ -293,21 +319,21 @@ export const registerPaymentsCommand =
                 currency: options.currency,
                 tipAmount: options.tipAmount,
                 canceledAt: options.canceledAt ?? null,
-                ...(options.cashRegisterAccountId == null
+                ...(options.cashRegisterAccountId === undefined
                   ? {}
                   : {
                       cashRegister: {
                         accountId: options.cashRegisterAccountId,
                       },
                     }),
-                ...(options.sparkAccountId == null
+                ...(options.sparkAccountId === undefined
                   ? {}
                   : {
                       spark: {
                         accountId: options.sparkAccountId,
                       },
                     }),
-                ...(iban == null ? {} : { iban }),
+                ...(iban === null ? {} : { iban }),
               })
             )
 
@@ -357,10 +383,17 @@ export const registerPaymentsCommand =
               ),
             lnInvoice:
               NonEmptyStringSchema.optional().describe("Lightning invoice"),
-            sparkTechnicalData: z
-              .string()
-              .optional()
-              .describe("Spark technical metadata"),
+            sparkInvoice:
+              NonEmptyStringSchema.optional().describe("Spark invoice"),
+            lightningReceiveRequestId: NonEmptyStringSchema.optional().describe(
+              "Lightning receive request id"
+            ),
+            paymentHash: NonEmptyStringSchema.optional().describe(
+              "Lightning payment hash"
+            ),
+            paymentPreimage: NonEmptyStringSchema.optional().describe(
+              "Lightning payment preimage"
+            ),
             ibanAccountId: AccountId.optional().describe("IBAN account id"),
             variableSymbol: VariableSymbolSchema.optional().describe(
               "IBAN variable symbol"
@@ -376,17 +409,20 @@ export const registerPaymentsCommand =
             await run.orThrow(loadPayment(options.id))
 
             const hasSparkInput =
-              options.sparkAccountId != null ||
-              options.amountSats != null ||
-              options.exchangeRate != null ||
-              options.exchangeRateFetchedAt != null ||
-              options.lnInvoice != null ||
-              options.sparkTechnicalData != null
+              options.sparkAccountId !== undefined ||
+              options.amountSats !== undefined ||
+              options.exchangeRate !== undefined ||
+              options.exchangeRateFetchedAt !== undefined ||
+              options.lnInvoice !== undefined ||
+              options.sparkInvoice !== undefined ||
+              options.lightningReceiveRequestId !== undefined ||
+              options.paymentHash !== undefined ||
+              options.paymentPreimage !== undefined
             const hasIbanInput =
-              options.ibanAccountId != null ||
-              options.variableSymbol != null ||
-              options.specificSymbol != null ||
-              options.czQrPayload != null
+              options.ibanAccountId !== undefined ||
+              options.variableSymbol !== undefined ||
+              options.specificSymbol !== undefined ||
+              options.czQrPayload !== undefined
 
             await run.orThrow(
               updatePayment({
@@ -398,7 +434,7 @@ export const registerPaymentsCommand =
                 currency: options.currency,
                 tipAmount: options.tipAmount,
                 canceledAt: options.canceledAt,
-                ...(options.cashRegisterAccountId == null
+                ...(options.cashRegisterAccountId === undefined
                   ? {}
                   : {
                       cashRegister: {
@@ -413,8 +449,22 @@ export const registerPaymentsCommand =
                         exchangeRate: options.exchangeRate,
                         exchangeRateSource: undefined,
                         exchangeRateFetchedAt: options.exchangeRateFetchedAt,
-                        lnInvoice: options.lnInvoice,
-                        sparkTechnicalData: options.sparkTechnicalData,
+                        lightning:
+                          options.lnInvoice === undefined
+                            ? undefined
+                            : {
+                                lnInvoice: options.lnInvoice,
+                                lightningReceiveRequestId:
+                                  options.lightningReceiveRequestId,
+                                paymentHash: options.paymentHash,
+                                paymentPreimage: options.paymentPreimage,
+                              },
+                        sparkInvoice:
+                          options.sparkInvoice === undefined
+                            ? undefined
+                            : {
+                                sparkInvoice: options.sparkInvoice,
+                              },
                       },
                     }
                   : {}),

@@ -4,9 +4,9 @@ import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import basicSsl from "@vitejs/plugin-basic-ssl"
 import react from "@vitejs/plugin-react"
-import type { PluginOption } from "vite"
+import type { ConfigEnv, PluginOption } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
-import { defineConfig } from "vitest/config"
+import type { ViteUserConfigFnObject } from "vitest/config"
 
 function getAppVersion(): string {
   try {
@@ -80,7 +80,7 @@ function isTauriBuild(command: string): boolean {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => {
+export default (({ command }: ConfigEnv) => {
   const useTauriWorkerLocksPlugin = isTauriBuild(command)
 
   return {
@@ -137,4 +137,4 @@ export default defineConfig(({ command }) => {
       },
     },
   }
-})
+}) as ViteUserConfigFnObject

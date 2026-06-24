@@ -44,8 +44,16 @@ export const accountTransactionIban = {
 export const accountTransactionSpark = {
   id: AccountTransactionId,
   sparkTransferId: NonEmptyStringSchema,
-  lnInvoice: NonEmptyStringSchema.nullable(),
-  sparkInvoice: NonEmptyStringSchema.nullable(),
+} as const
+
+export const accountTransactionSparkInvoice = {
+  id: AccountTransactionId,
+  sparkInvoice: NonEmptyStringSchema,
+} as const
+
+export const accountTransactionLightning = {
+  id: AccountTransactionId,
+  lnInvoice: NonEmptyStringSchema,
   preImage: NonEmptyStringSchema.nullable(),
   paymentHash: NonEmptyStringSchema.nullable(),
 } as const
@@ -71,11 +79,11 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionSpark_sparkTransferId")
     .on("accountTransactionSpark")
     .column("sparkTransferId"),
-  create("accountTransactionSpark_lnInvoice")
-    .on("accountTransactionSpark")
+  create("accountTransactionLightning_lnInvoice")
+    .on("accountTransactionLightning")
     .column("lnInvoice"),
-  create("accountTransactionSpark_sparkInvoice")
-    .on("accountTransactionSpark")
+  create("accountTransactionSparkInvoice_sparkInvoice")
+    .on("accountTransactionSparkInvoice")
     .column("sparkInvoice"),
   create("accountTransactionIban_bankReference")
     .on("accountTransactionIban")
@@ -97,6 +105,12 @@ export type AccountTransactionIbanRow = InferTable<
 >
 export type AccountTransactionSparkRow = InferTable<
   typeof accountTransactionSpark
+>
+export type AccountTransactionSparkInvoiceRow = InferTable<
+  typeof accountTransactionSparkInvoice
+>
+export type AccountTransactionLightningRow = InferTable<
+  typeof accountTransactionLightning
 >
 export type AccountTransactionSourceRow = InferTable<
   typeof accountTransactionSource

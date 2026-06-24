@@ -20,6 +20,16 @@ const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
         "accountTransactionSpark.id",
         "accountTransaction.id"
       )
+      .leftJoin(
+        "accountTransactionLightning",
+        "accountTransactionLightning.id",
+        "accountTransaction.id"
+      )
+      .leftJoin(
+        "accountTransactionSparkInvoice",
+        "accountTransactionSparkInvoice.id",
+        "accountTransaction.id"
+      )
       .select([
         "accountTransaction.accountId",
         "accountTransaction.amount",
@@ -27,10 +37,10 @@ const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
         "accountTransaction.occurredAt",
         "accountTransaction.note",
         "accountTransactionSpark.sparkTransferId",
-        "accountTransactionSpark.lnInvoice",
-        "accountTransactionSpark.sparkInvoice",
-        "accountTransactionSpark.preImage",
-        "accountTransactionSpark.paymentHash",
+        "accountTransactionLightning.lnInvoice",
+        "accountTransactionSparkInvoice.sparkInvoice",
+        "accountTransactionLightning.preImage",
+        "accountTransactionLightning.paymentHash",
       ])
       .where("accountTransaction.accountId", "=", accountId)
       .where("accountTransaction.isDeleted", "is not", 1)

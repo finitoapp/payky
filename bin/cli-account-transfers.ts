@@ -73,11 +73,22 @@ const accountTransfersWithDetailsQuery = createQuery((db) =>
       evoluJsonObjectFrom(
         eb
           .selectFrom("accountTransactionSpark")
+          .leftJoin(
+            "accountTransactionLightning",
+            "accountTransactionLightning.id",
+            "accountTransactionSpark.id"
+          )
+          .leftJoin(
+            "accountTransactionSparkInvoice",
+            "accountTransactionSparkInvoice.id",
+            "accountTransactionSpark.id"
+          )
           .select([
             "accountTransactionSpark.sparkTransferId",
-            "accountTransactionSpark.lnInvoice",
-            "accountTransactionSpark.preImage",
-            "accountTransactionSpark.paymentHash",
+            "accountTransactionLightning.lnInvoice",
+            "accountTransactionLightning.preImage",
+            "accountTransactionLightning.paymentHash",
+            "accountTransactionSparkInvoice.sparkInvoice",
           ])
           .whereRef("accountTransactionSpark.id", "=", "accountTransaction.id")
       ).as("spark"),
@@ -119,11 +130,22 @@ const accountTransferWithDetailsByIdQuery = (id: AccountTransactionId) =>
         evoluJsonObjectFrom(
           eb
             .selectFrom("accountTransactionSpark")
+            .leftJoin(
+              "accountTransactionLightning",
+              "accountTransactionLightning.id",
+              "accountTransactionSpark.id"
+            )
+            .leftJoin(
+              "accountTransactionSparkInvoice",
+              "accountTransactionSparkInvoice.id",
+              "accountTransactionSpark.id"
+            )
             .select([
               "accountTransactionSpark.sparkTransferId",
-              "accountTransactionSpark.lnInvoice",
-              "accountTransactionSpark.preImage",
-              "accountTransactionSpark.paymentHash",
+              "accountTransactionLightning.lnInvoice",
+              "accountTransactionLightning.preImage",
+              "accountTransactionLightning.paymentHash",
+              "accountTransactionSparkInvoice.sparkInvoice",
             ])
             .whereRef(
               "accountTransactionSpark.id",
@@ -138,7 +160,7 @@ const accountTransferWithDetailsByIdQuery = (id: AccountTransactionId) =>
 const formatAccountTransferListCell = (
   value: unknown
 ): string | number | boolean | null => {
-  if (value == null) return null
+  if (value === null || value === undefined) return null
 
   if (
     typeof value === "string" ||
@@ -260,6 +282,8 @@ export const registerAccountTransfersCommand =
               NonEmptyStringSchema.optional().describe("Spark transfer id"),
             lnInvoice:
               NonEmptyStringSchema.optional().describe("Lightning invoice"),
+            sparkInvoice:
+              NonEmptyStringSchema.optional().describe("Spark invoice"),
             preImage:
               NonEmptyStringSchema.optional().describe("Lightning preimage"),
             paymentHash: NonEmptyStringSchema.optional().describe(
@@ -281,7 +305,7 @@ export const registerAccountTransfersCommand =
             }
 
             if (options.kind === "iban") {
-              if (options.bankReference == null) {
+              if (options.bankReference === undefined) {
                 printInvalidAccountTransferInput(
                   "IBAN account transfer requires --bankReference."
                 )
@@ -305,13 +329,12 @@ export const registerAccountTransfersCommand =
 
             if (options.kind === "spark") {
               if (
-                options.sparkTransferId == null ||
-                options.lnInvoice == null ||
-                options.preImage == null ||
-                options.paymentHash == null
+                options.sparkTransferId === undefined ||
+                (options.lnInvoice === undefined &&
+                  options.sparkInvoice === undefined)
               ) {
                 printInvalidAccountTransferInput(
-                  "Spark account transfer requires --sparkTransferId, --lnInvoice, --preImage and --paymentHash."
+                  "Spark account transfer requires --sparkTransferId and --lnInvoice or --sparkInvoice."
                 )
                 return
               }
@@ -321,9 +344,20 @@ export const registerAccountTransfersCommand =
                   ...root,
                   spark: {
                     sparkTransferId: options.sparkTransferId,
-                    lnInvoice: options.lnInvoice,
-                    preImage: options.preImage,
-                    paymentHash: options.paymentHash,
+                    lightning:
+                      options.lnInvoice === undefined
+                        ? undefined
+                        : {
+                            lnInvoice: options.lnInvoice,
+                            preImage: options.preImage ?? null,
+                            paymentHash: options.paymentHash ?? null,
+                          },
+                    sparkInvoice:
+                      options.sparkInvoice === undefined
+                        ? undefined
+                        : {
+                            sparkInvoice: options.sparkInvoice,
+                          },
                   },
                 })
               )
@@ -374,6 +408,8 @@ export const registerAccountTransfersCommand =
               NonEmptyStringSchema.optional().describe("Spark transfer id"),
             lnInvoice:
               NonEmptyStringSchema.optional().describe("Lightning invoice"),
+            sparkInvoice:
+              NonEmptyStringSchema.optional().describe("Spark invoice"),
             preImage:
               NonEmptyStringSchema.optional().describe("Lightning preimage"),
             paymentHash: NonEmptyStringSchema.optional().describe(
@@ -384,7 +420,10 @@ export const registerAccountTransfersCommand =
             const [accountTransfer] = await evolu.loadQuery(
               accountTransferWithDetailsByIdQuery(options.id)
             )
-            if (accountTransfer == null || accountTransfer.kind == null) {
+            if (
+              accountTransfer === undefined ||
+              accountTransfer.kind === null
+            ) {
               printAccountTransferNotFound(options.id)
               return
             }
@@ -416,14 +455,40 @@ export const registerAccountTransfersCommand =
             }
 
             if (accountTransfer.kind === "spark") {
+              const sparkTransferId =
+                options.sparkTransferId ??
+                accountTransfer.spark?.sparkTransferId ??
+                undefined
+              if (
+                sparkTransferId === undefined ||
+                (options.lnInvoice === undefined &&
+                  options.sparkInvoice === undefined)
+              ) {
+                printInvalidAccountTransferInput(
+                  "Spark account transfer update requires --sparkTransferId or an existing Spark transfer id, and --lnInvoice or --sparkInvoice."
+                )
+                return
+              }
+
               await run.orThrow(
                 updateAccountTransaction({
                   ...root,
                   spark: {
-                    sparkTransferId: options.sparkTransferId,
-                    lnInvoice: options.lnInvoice,
-                    preImage: options.preImage,
-                    paymentHash: options.paymentHash,
+                    sparkTransferId,
+                    lightning:
+                      options.lnInvoice === undefined
+                        ? undefined
+                        : {
+                            lnInvoice: options.lnInvoice,
+                            preImage: options.preImage,
+                            paymentHash: options.paymentHash,
+                          },
+                    sparkInvoice:
+                      options.sparkInvoice === undefined
+                        ? undefined
+                        : {
+                            sparkInvoice: options.sparkInvoice,
+                          },
                   },
                 })
               )

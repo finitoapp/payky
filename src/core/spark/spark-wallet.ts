@@ -6,13 +6,13 @@ export interface SparkWalletSettings {
 }
 
 interface SparkLightningInvoice {
-  readonly id?: string
+  readonly id?: string | null
   readonly invoice: {
     readonly encodedInvoice: string
-    readonly paymentHash?: string
+    readonly paymentHash?: string | null
   }
-  readonly paymentPreimage?: string
-  readonly sparkInvoice?: string
+  readonly paymentPreimage?: string | null
+  readonly sparkInvoice?: string | null
 }
 
 export interface SparkPaymentWallet {

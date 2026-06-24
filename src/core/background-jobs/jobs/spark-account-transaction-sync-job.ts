@@ -572,10 +572,20 @@ const createSparkTransactionInput = (
     },
     spark: {
       sparkTransferId,
-      lnInvoice,
-      sparkInvoice,
-      preImage: nullableNonEmptyString(payload?.details.preImage),
-      paymentHash: nullableNonEmptyString(payload?.details.paymentHash),
+      lightning:
+        lnInvoice === null
+          ? undefined
+          : {
+              lnInvoice,
+              preImage: nullableNonEmptyString(payload?.details.preImage),
+              paymentHash: nullableNonEmptyString(payload?.details.paymentHash),
+            },
+      sparkInvoice:
+        sparkInvoice === null
+          ? undefined
+          : {
+              sparkInvoice,
+            },
     },
   })
 }

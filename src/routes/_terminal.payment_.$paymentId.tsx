@@ -503,12 +503,12 @@ function PaymentWaitingRequest({
                       : t("paymentWait.scanOrTap")}
                   </TabsContent>
                 ))}
-                <TabsList className="mx-auto h-16 rounded-full border border-black/15 dark:border-white/15  bg-background p-2 text-muted-foreground">
+                <TabsList className="mx-auto h-16 rounded-full border border-black/15 dark:border-white/15  bg-background p-2 px-3 text-muted-foreground">
                   {paymentMethods.map((method) => (
                     <TabsTrigger
                       key={method.id}
                       value={method.id}
-                      className="h-full rounded-full px-6 -mx-1 text-muted-foreground data-active:bg-foreground data-active:text-background dark:data-active:bg-white dark:data-active:text-black"
+                      className="h-full rounded-full px-5 -mx-1 text-muted-foreground data-active:bg-foreground data-active:text-background dark:data-active:bg-white dark:data-active:text-black"
                     >
                       {method.icon}
                       <span>{method.label}</span>

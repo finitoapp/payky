@@ -10,11 +10,6 @@ const config: CapacitorConfig = {
     androidScheme: "https",
     ...(liveReloadUrl !== undefined ? { url: liveReloadUrl } : {}),
   },
-  plugins: {
-    CapacitorHttp: {
-      enabled: true,
-    },
-  },
 }
 
 export default config

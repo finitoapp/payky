@@ -35,6 +35,7 @@ import {
   preparePaymentMethod,
 } from "@/core/modules/payment/payment-actions.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { Currency } from "@/core/modules/shared/schema.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -44,7 +45,6 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
-import { Currency } from "@/core/modules/shared/schema.ts"
 
 type PaymentMethodTab = "spark" | "iban" | "cash"
 type PaymentMethodKind = "spark" | "iban" | "cashRegister"

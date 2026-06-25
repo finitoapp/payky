@@ -44,6 +44,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
+import { Currency } from "@/core/modules/shared/schema.ts"
 
 type PaymentMethodTab = "spark" | "iban" | "cash"
 type PaymentMethodKind = "spark" | "iban" | "cashRegister"
@@ -473,7 +474,13 @@ function PaymentWaitingRequest({
             <p className="text-md font-medium text-muted-foreground tabular-nums">
               {payment.amountSats === null
                 ? "\u00A0"
-                : `₿${payment.amountSats.toLocaleString(locale)}`}
+                : `${formatMoney(
+                    {
+                      value: payment.amountSats,
+                      currency: Currency.BTC,
+                    },
+                    locale
+                  )}`}
             </p>
           </div>
 

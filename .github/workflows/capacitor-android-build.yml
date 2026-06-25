@@ -21,7 +21,7 @@ jobs:
     name: Build Android ${{ inputs.build_type }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     env:
       ANDROID_BUILD_TOOLS_VERSION: 36.0.0
 
@@ -137,3 +137,20 @@ jobs:
             android/app/build/outputs/apk/**/*.apk
             android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: error
+
+      - name: Create canary release
+        if: ${{ inputs.build_type == 'release' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: canary-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: Payky Canary ${{ github.run_number }}
+          body: |
+            Canary Android build from `${{ github.sha }}` on `${{ github.ref_name }}`.
+
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          prerelease: true
+          make_latest: false
+          files: |
+            android/app/build/outputs/apk/**/*.apk
+          fail_on_unmatched_files: true

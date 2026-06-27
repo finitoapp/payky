@@ -204,6 +204,41 @@ export const resources = {
     "settings.about.terms.title": "Terms of Service",
     "settings.about.title": "About",
     "settings.about.version.title": "Version",
+    "settings.accounts.create.action": "Create account",
+    "settings.accounts.create.description":
+      "Generate a new recovery phrase and switch to that account.",
+    "settings.accounts.create.title": "New account",
+    "settings.accounts.description":
+      "Switch between local app accounts on this device",
+    "settings.accounts.list.active": "Active",
+    "settings.accounts.list.createdAt": "Created",
+    "settings.accounts.list.current": "Current",
+    "settings.accounts.list.description":
+      "These accounts are stored only in this device profile.",
+    "settings.accounts.list.empty": "No accounts saved on this device.",
+    "settings.accounts.list.lastUsed": "Last used",
+    "settings.accounts.list.remove": "Remove",
+    "settings.accounts.list.switch": "Switch",
+    "settings.accounts.list.title": "Device accounts",
+    "settings.accounts.restore.action": "Use recovery phrase",
+    "settings.accounts.restore.created": "Account added.",
+    "settings.accounts.restore.description":
+      "Paste an existing recovery phrase to open its app data on this device.",
+    "settings.accounts.restore.existing": "Existing account selected.",
+    "settings.accounts.restore.mnemonic.description":
+      "Whitespace is normalized before validation.",
+    "settings.accounts.restore.mnemonic.invalid":
+      "Enter a valid BIP39 recovery phrase.",
+    "settings.accounts.restore.mnemonic.label": "Recovery phrase",
+    "settings.accounts.restore.mnemonic.placeholder":
+      "abandon abandon abandon ...",
+    "settings.accounts.restore.mnemonic.required":
+      "Recovery phrase is required.",
+    "settings.accounts.restore.title": "Existing account",
+    "settings.accounts.nav.description":
+      "Choose which user account is active on this device",
+    "settings.accounts.nav.title": "Switch User Account",
+    "settings.accounts.title": "App Account",
     "settings.appVersion": "App version:",
     "settings.baskets.description":
       "Create preset names for quick basket saving",
@@ -670,6 +705,41 @@ export const resources = {
     "settings.about.terms.title": "Podmínky používání",
     "settings.about.title": "O aplikaci",
     "settings.about.version.title": "Verze",
+    "settings.accounts.create.action": "Vytvořit účet",
+    "settings.accounts.create.description":
+      "Vygenerovat novou recovery phrase a přepnout se na tento účet.",
+    "settings.accounts.create.title": "Nový účet",
+    "settings.accounts.description":
+      "Přepínání lokálních aplikačních účtů na tomto zařízení",
+    "settings.accounts.list.active": "Aktivní",
+    "settings.accounts.list.createdAt": "Vytvořeno",
+    "settings.accounts.list.current": "Aktuální",
+    "settings.accounts.list.description":
+      "Tyto účty jsou uložené jen v profilu tohoto zařízení.",
+    "settings.accounts.list.empty": "Na tomto zařízení nejsou uložené účty.",
+    "settings.accounts.list.lastUsed": "Naposledy použito",
+    "settings.accounts.list.remove": "Odebrat",
+    "settings.accounts.list.switch": "Přepnout",
+    "settings.accounts.list.title": "Účty v zařízení",
+    "settings.accounts.restore.action": "Použít recovery phrase",
+    "settings.accounts.restore.created": "Účet přidán.",
+    "settings.accounts.restore.description":
+      "Vložte existující recovery phrase pro otevření jejích aplikačních dat na tomto zařízení.",
+    "settings.accounts.restore.existing": "Existující účet vybrán.",
+    "settings.accounts.restore.mnemonic.description":
+      "Mezery se před validací sjednotí.",
+    "settings.accounts.restore.mnemonic.invalid":
+      "Zadejte platnou BIP39 recovery phrase.",
+    "settings.accounts.restore.mnemonic.label": "Recovery phrase",
+    "settings.accounts.restore.mnemonic.placeholder":
+      "abandon abandon abandon ...",
+    "settings.accounts.restore.mnemonic.required":
+      "Recovery phrase je povinná.",
+    "settings.accounts.restore.title": "Existující účet",
+    "settings.accounts.nav.description":
+      "Vyberte, který uživatelský účet je na tomto zařízení aktivní",
+    "settings.accounts.nav.title": "Přepnutí uživatelského účtu",
+    "settings.accounts.title": "Účet aplikace",
     "settings.appVersion": "Verze aplikace:",
     "settings.baskets.description":
       "Vytvořte předvolené názvy pro rychlé uložení košíků",
@@ -1139,6 +1209,41 @@ export const resources = {
     "settings.about.terms.title": "Podmienky používania",
     "settings.about.title": "O aplikácii",
     "settings.about.version.title": "Verzia",
+    "settings.accounts.create.action": "Vytvoriť účet",
+    "settings.accounts.create.description":
+      "Vygenerovať novú recovery phrase a prepnúť sa na tento účet.",
+    "settings.accounts.create.title": "Nový účet",
+    "settings.accounts.description":
+      "Prepínanie lokálnych aplikačných účtov na tomto zariadení",
+    "settings.accounts.list.active": "Aktívny",
+    "settings.accounts.list.createdAt": "Vytvorené",
+    "settings.accounts.list.current": "Aktuálny",
+    "settings.accounts.list.description":
+      "Tieto účty sú uložené iba v profile tohto zariadenia.",
+    "settings.accounts.list.empty": "Na tomto zariadení nie sú uložené účty.",
+    "settings.accounts.list.lastUsed": "Naposledy použité",
+    "settings.accounts.list.remove": "Odobrať",
+    "settings.accounts.list.switch": "Prepnúť",
+    "settings.accounts.list.title": "Účty v zariadení",
+    "settings.accounts.restore.action": "Použiť recovery phrase",
+    "settings.accounts.restore.created": "Účet pridaný.",
+    "settings.accounts.restore.description":
+      "Vložte existujúcu recovery phrase na otvorenie jej aplikačných dát na tomto zariadení.",
+    "settings.accounts.restore.existing": "Existujúci účet vybraný.",
+    "settings.accounts.restore.mnemonic.description":
+      "Medzery sa pred validáciou zjednotia.",
+    "settings.accounts.restore.mnemonic.invalid":
+      "Zadajte platnú BIP39 recovery phrase.",
+    "settings.accounts.restore.mnemonic.label": "Recovery phrase",
+    "settings.accounts.restore.mnemonic.placeholder":
+      "abandon abandon abandon ...",
+    "settings.accounts.restore.mnemonic.required":
+      "Recovery phrase je povinná.",
+    "settings.accounts.restore.title": "Existujúci účet",
+    "settings.accounts.nav.description":
+      "Vyberte, ktorý používateľský účet je na tomto zariadení aktívny",
+    "settings.accounts.nav.title": "Prepnutie používateľského účtu",
+    "settings.accounts.title": "Účet aplikácie",
     "settings.appVersion": "Verzia aplikácie:",
     "settings.baskets.description":
       "Vytvorte predvolené názvy pre rýchle uloženie košíkov",

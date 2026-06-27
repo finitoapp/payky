@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   SunMoon,
+  UserRound,
 } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 
@@ -54,6 +55,15 @@ const terminalSettings: ReadonlyArray<SettingRow> = [
     icon: ShoppingBag,
     title: "settings.baskets.title",
     description: "settings.baskets.description",
+  },
+]
+
+const accountSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: UserRound,
+    title: "settings.accounts.nav.title",
+    description: "settings.accounts.nav.description",
+    to: "/settings/accounts",
   },
 ]
 
@@ -138,6 +148,10 @@ function createSettingsNavItems(
 
 function SettingsPage() {
   const { t } = useTranslation()
+  const accountItems = useMemo(
+    () => createSettingsNavItems(accountSettings, t),
+    [t]
+  )
   const generalItems = useMemo(
     () => createSettingsNavItems(generalSettings, t),
     [t]
@@ -182,6 +196,7 @@ function SettingsPage() {
       />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav title={t("settings.security")} items={securityItems} />
+      <VerticalNav items={accountItems} />
       <VerticalNav title={t("settings.general")} items={generalItems} />
       <VerticalNav title={t("settings.developers")} items={developerItems} />
     </>

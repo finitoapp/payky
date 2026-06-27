@@ -27,6 +27,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { createFetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -34,8 +35,13 @@ import {
   markPaymentPaidCash,
   preparePaymentMethod,
 } from "@/core/modules/payment/payment-actions.ts"
+import {
+  type BankQrPayload,
+  createBankQrPayloads,
+  isBankQrFormat,
+} from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import { Currency } from "@/core/modules/shared/schema.ts"
+import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -55,8 +61,12 @@ interface PaymentMethodOption {
   readonly accountId: AccountId
   readonly label: string
   readonly qrPayload: string | null
+  readonly qrPayloads?: ReadonlyArray<IbanQrPayloadOption>
+  readonly defaultQrFormat?: BankQrFormat
   readonly icon: ReactNode
 }
+
+type IbanQrPayloadOption = BankQrPayload
 
 interface CashPaymentTabProps {
   readonly canMarkCashPaid: boolean
@@ -71,6 +81,12 @@ const preparingPaymentMethodKeys = {
   iban: "paymentWait.preparing.iban",
   cash: "paymentWait.preparing.cash",
 } satisfies Record<PaymentMethodTab, TranslationKey>
+
+const paymentWaitQrFormatShortLabelKeys = {
+  payBySquare1_0_0: "paymentWait.qrFormatShort.payBySquare1_0_0",
+  payBySquare1_2_0: "paymentWait.qrFormatShort.payBySquare1_2_0",
+  spayd: "paymentWait.qrFormatShort.spayd",
+} satisfies Record<BankQrFormat, TranslationKey>
 
 export const Route = createFileRoute("/_terminal/payment_/$paymentId")({
   component: PaymentWaitingPage,
@@ -119,7 +135,9 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentBtc.amountSats",
         "paymentBtcLightning.lnInvoice",
         "paymentBtcSpark.sparkInvoice",
-        "paymentIban.czQrPayload",
+        "paymentIban.accountId as ibanAccountId",
+        "paymentIban.variableSymbol",
+        "paymentIban.specificSymbol",
         "paymentCashRegister.accountId as cashRegisterAccountId",
       ])
       .where("payment.id", "=", paymentId)
@@ -166,8 +184,10 @@ const enabledPaymentMethodAccountsQuery = createQuery((db) =>
       "account.id",
       "account.kind",
       "accountSpark.mnemonic as sparkMnemonic",
+      "account.name",
       "accountIban.iban",
       "accountIban.currency as ibanCurrency",
+      "accountIban.defaultQrFormat as ibanDefaultQrFormat",
       "accountCashRegister.currency as cashRegisterCurrency",
     ])
     .where("account.isDeleted", "is not", sqliteTrue)
@@ -225,6 +245,8 @@ function PaymentWaitingRequest({
   const [successVisible, setSuccessVisible] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodTab>("spark")
+  const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
+    useState<BankQrFormat | null>(null)
   const preparePaymentMethodKeysRef = useRef(new Set<string>())
   const query = useMemo(() => paymentRequestQuery(paymentId), [paymentId])
   const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
@@ -258,12 +280,42 @@ function PaymentWaitingRequest({
       account.ibanCurrency === payment?.currency
   )
   if (enabledIbanAccount) {
+    const defaultQrFormat = enabledIbanAccount.ibanDefaultQrFormat ?? "spayd"
+    const activeQrFormat = selectedIbanQrFormat ?? defaultQrFormat
+    const canCreateIbanQrPayloads =
+      payment !== undefined &&
+      payment.ibanAccountId !== null &&
+      enabledIbanAccount.iban !== null &&
+      enabledIbanAccount.name !== null
+    const availableIbanQrPayloads: ReadonlyArray<IbanQrPayloadOption> =
+      canCreateIbanQrPayloads
+        ? createBankQrPayloads({
+            beneficiaryName: enabledIbanAccount.name,
+            iban: enabledIbanAccount.iban,
+            amount: payment.amount,
+            currency: payment.currency,
+            specificSymbol: payment.specificSymbol,
+            variableSymbol: payment.variableSymbol,
+          })
+        : []
+    const activeQrPayload =
+      availableIbanQrPayloads.find(
+        (payload) => payload.format === activeQrFormat
+      )?.payload ??
+      availableIbanQrPayloads.find(
+        (payload) => payload.format === defaultQrFormat
+      )?.payload ??
+      availableIbanQrPayloads[0]?.payload ??
+      null
+
     paymentMethods.push({
       id: "iban",
       kind: "iban",
       accountId: enabledIbanAccount.id,
       label: t("paymentWait.method.iban"),
-      qrPayload: payment?.czQrPayload ?? null,
+      qrPayload: activeQrPayload,
+      qrPayloads: availableIbanQrPayloads,
+      defaultQrFormat,
       icon: <LandmarkIcon />,
     })
   }
@@ -329,7 +381,7 @@ function PaymentWaitingRequest({
     const isPrepared =
       (activePaymentMethod.id === "spark" &&
         (payment.lnInvoice !== null || payment.sparkInvoice !== null)) ||
-      (activePaymentMethod.id === "iban" && payment.czQrPayload !== null) ||
+      (activePaymentMethod.id === "iban" && payment.ibanAccountId !== null) ||
       (activePaymentMethod.id === "cash" &&
         payment.cashRegisterAccountId !== null &&
         payment.cashRegisterAccountId !== undefined)
@@ -550,6 +602,8 @@ function PaymentWaitingRequest({
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}
               cashRegisterAccountId={cashRegisterAccountId}
+              selectedIbanQrFormat={selectedIbanQrFormat}
+              onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}
             />
           ) : null}
@@ -619,15 +673,27 @@ function PaymentMethodTabContent({
   cashPaymentErrorKey,
   cashPaymentPending,
   cashRegisterAccountId,
+  selectedIbanQrFormat,
+  onSelectIbanQrFormat,
   onMarkCashPaid,
 }: {
   readonly method: PaymentMethodOption
+  readonly selectedIbanQrFormat: BankQrFormat | null
+  readonly onSelectIbanQrFormat: (format: BankQrFormat) => void
 } & CashPaymentTabProps) {
   switch (method.id) {
     case "spark":
       return <SparkPaymentTab qrPayload={method.qrPayload} />
     case "iban":
-      return <IbanPaymentTab qrPayload={method.qrPayload} />
+      return (
+        <IbanPaymentTab
+          defaultQrFormat={method.defaultQrFormat ?? "spayd"}
+          qrPayload={method.qrPayload}
+          qrPayloads={method.qrPayloads ?? []}
+          selectedQrFormat={selectedIbanQrFormat}
+          onSelectQrFormat={onSelectIbanQrFormat}
+        />
+      )
     case "cash":
       return (
         <CashPaymentTab
@@ -645,8 +711,51 @@ function SparkPaymentTab({ qrPayload }: { readonly qrPayload: string | null }) {
   return <QrPaymentRequest qrPayload={qrPayload} />
 }
 
-function IbanPaymentTab({ qrPayload }: { readonly qrPayload: string | null }) {
-  return <QrPaymentRequest qrPayload={qrPayload} />
+function IbanPaymentTab({
+  defaultQrFormat,
+  qrPayload,
+  qrPayloads,
+  selectedQrFormat,
+  onSelectQrFormat,
+}: {
+  readonly defaultQrFormat: BankQrFormat
+  readonly qrPayload: string | null
+  readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
+  readonly selectedQrFormat: BankQrFormat | null
+  readonly onSelectQrFormat: (format: BankQrFormat) => void
+}) {
+  const { t } = useTranslation()
+  const activeQrFormat = selectedQrFormat ?? defaultQrFormat
+
+  return (
+    <div className="flex w-full flex-col items-center gap-3">
+      <QrPaymentRequest qrPayload={qrPayload} />
+      {qrPayloads.length > 1 ? (
+        <ToggleGroup<BankQrFormat>
+          value={[activeQrFormat]}
+          onValueChange={(value) => {
+            const [nextFormat] = value
+            if (isBankQrFormat(nextFormat)) {
+              onSelectQrFormat(nextFormat)
+            }
+          }}
+          variant="default"
+          className="h-11 rounded-full border border-black/15 bg-background p-1 px-1.5 text-muted-foreground dark:border-white/15"
+        >
+          {qrPayloads.map((payload) => (
+            <ToggleGroupItem
+              key={payload.format}
+              value={payload.format}
+              aria-label={t(`paymentWait.qrFormat.${payload.format}`)}
+              className="h-full min-w-12 -mx-0.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:bg-foreground data-[state=on]:text-background aria-pressed:bg-foreground aria-pressed:text-background dark:data-[state=on]:bg-white dark:data-[state=on]:text-black dark:aria-pressed:bg-white dark:aria-pressed:text-black"
+            >
+              {t(paymentWaitQrFormatShortLabelKeys[payload.format])}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      ) : null}
+    </div>
+  )
 }
 
 function CashPaymentTab({

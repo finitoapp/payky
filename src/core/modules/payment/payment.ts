@@ -60,7 +60,6 @@ export const paymentIban = {
   accountId: AccountId,
   variableSymbol: VariableSymbolSchema.nullable(),
   specificSymbol: SpecificSymbolSchema.nullable(),
-  czQrPayload: NonEmptyStringSchema,
 } as const
 
 export const paymentIndexes = ((create) => [

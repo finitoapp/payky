@@ -54,6 +54,7 @@
     "@tauri-apps/plugin-http": "2.5.9",
     "assert-never": "1.4.0",
     "better-sqlite3": "12.11.1",
+    "bysquare": "4.0.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "commander": "15.0.0",

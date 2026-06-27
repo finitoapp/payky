@@ -11,7 +11,11 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
-import type { FiatCurrency, Iban } from "@/core/modules/shared/schema.ts"
+import type {
+  BankQrFormat,
+  FiatCurrency,
+  Iban,
+} from "@/core/modules/shared/schema.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
@@ -32,6 +36,20 @@ import {
   fiatBankAccountId,
   sparkAccountId,
 } from "./account-utils.ts"
+
+type AccountIbanCreateInput = Omit<
+  InsertValues<typeof accountIban>,
+  "defaultQrFormat"
+> & {
+  readonly defaultQrFormat?: BankQrFormat
+}
+
+type AccountIbanUpdateInput = Omit<
+  UpdateValues<typeof accountIban>,
+  "id" | "defaultQrFormat"
+> & {
+  readonly defaultQrFormat?: BankQrFormat
+}
 
 const createAccountNotFoundError = defineError("AccountNotFound")<{
   readonly id: AccountId
@@ -58,7 +76,7 @@ export const createAccount =
   }: Omit<InsertValues<typeof account>, "kind"> &
     (
       | {
-          readonly iban: InsertValues<typeof accountIban>
+          readonly iban: AccountIbanCreateInput
           readonly spark?: never
           readonly cashRegister?: never
         }
@@ -87,6 +105,7 @@ export const createAccount =
           removeUndefinedValues({
             ...iban,
             id,
+            defaultQrFormat: iban.defaultQrFormat ?? "spayd",
           }),
           { ...options, ownerId: evoluOwnerId }
         )
@@ -139,7 +158,7 @@ export const updateAccount =
   }: Pick<UpdateValues<typeof account>, "id" | "deviceId" | "name"> &
     (
       | {
-          readonly iban: Omit<UpdateValues<typeof accountIban>, "id">
+          readonly iban: AccountIbanUpdateInput
           readonly spark?: never
           readonly cashRegister?: never
         }
@@ -170,6 +189,7 @@ export const updateAccount =
           removeUndefinedValues({
             ...iban,
             id: input.id,
+            defaultQrFormat: iban.defaultQrFormat ?? "spayd",
           }),
           { ...options, ownerId: evoluOwnerId }
         )
@@ -238,10 +258,12 @@ export const saveFiatBankAccount =
     enabled,
     iban,
     currency,
+    defaultQrFormat,
   }: {
     readonly enabled: boolean
     readonly iban?: Iban
     readonly currency: FiatCurrency
+    readonly defaultQrFormat?: BankQrFormat
   }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
@@ -254,6 +276,7 @@ export const saveFiatBankAccount =
             id: fiatBankAccountId,
             iban,
             currency,
+            defaultQrFormat: defaultQrFormat ?? "spayd",
           }),
           { ...options, ownerId: evoluOwnerId }
         )

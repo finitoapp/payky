@@ -106,7 +106,6 @@ const paymentsWithDetailsQuery = createQuery((db) =>
             "paymentIban.accountId",
             "paymentIban.variableSymbol",
             "paymentIban.specificSymbol",
-            "paymentIban.czQrPayload",
           ])
           .whereRef("paymentIban.id", "=", "payment.id")
       ).as("iban"),
@@ -172,7 +171,6 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
               "paymentIban.accountId",
               "paymentIban.variableSymbol",
               "paymentIban.specificSymbol",
-              "paymentIban.czQrPayload",
             ])
             .whereRef("paymentIban.id", "=", "payment.id")
         ).as("iban"),
@@ -265,30 +263,21 @@ export const registerPaymentsCommand =
             specificSymbol: SpecificSymbolSchema.optional().describe(
               "IBAN specific symbol"
             ),
-            czQrPayload: NonEmptyStringSchema.optional().describe(
-              "CZ QR payment payload"
-            ),
           },
           async action(_, options) {
             const hasIbanInput =
               options.ibanAccountId !== undefined ||
               options.variableSymbol !== undefined ||
-              options.specificSymbol !== undefined ||
-              options.czQrPayload !== undefined
+              options.specificSymbol !== undefined
 
             const iban = (() => {
               if (!hasIbanInput) return undefined
 
-              const {
-                ibanAccountId,
-                specificSymbol,
-                variableSymbol,
-                czQrPayload,
-              } = options
+              const { ibanAccountId, specificSymbol, variableSymbol } = options
 
-              if (ibanAccountId === undefined || czQrPayload === undefined) {
+              if (ibanAccountId === undefined) {
                 printInvalidPaymentInput(
-                  "IBAN payment requires --ibanAccountId and --czQrPayload."
+                  "IBAN payment requires --ibanAccountId."
                 )
                 return null
               }
@@ -297,7 +286,6 @@ export const registerPaymentsCommand =
                 accountId: ibanAccountId,
                 variableSymbol: variableSymbol ?? null,
                 specificSymbol: specificSymbol ?? null,
-                czQrPayload,
               }
             })()
             if (iban === null) return
@@ -401,9 +389,6 @@ export const registerPaymentsCommand =
             specificSymbol: SpecificSymbolSchema.optional().describe(
               "IBAN specific symbol"
             ),
-            czQrPayload: NonEmptyStringSchema.optional().describe(
-              "CZ QR payment payload"
-            ),
           },
           async action(_, options) {
             await run.orThrow(loadPayment(options.id))
@@ -421,8 +406,7 @@ export const registerPaymentsCommand =
             const hasIbanInput =
               options.ibanAccountId !== undefined ||
               options.variableSymbol !== undefined ||
-              options.specificSymbol !== undefined ||
-              options.czQrPayload !== undefined
+              options.specificSymbol !== undefined
 
             await run.orThrow(
               updatePayment({
@@ -474,7 +458,6 @@ export const registerPaymentsCommand =
                         accountId: options.ibanAccountId,
                         variableSymbol: options.variableSymbol,
                         specificSymbol: options.specificSymbol,
-                        czQrPayload: options.czQrPayload,
                       },
                     }
                   : {}),

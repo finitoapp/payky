@@ -4,6 +4,7 @@ import { AccountId } from "@/core/modules/account/account-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   AccountKindSchema,
+  BankQrFormatSchema,
   FiatCurrencySchema,
   IbanSchema,
   type InferTable,
@@ -21,6 +22,7 @@ export const accountIban = {
   id: AccountId,
   iban: IbanSchema,
   currency: FiatCurrencySchema,
+  defaultQrFormat: BankQrFormatSchema,
 } as const
 
 export const accountSpark = {

@@ -110,6 +110,12 @@ export const resources = {
     "paymentWait.preparingRequest": "Preparing payment request...",
     "paymentWait.qrCopied": "QR code content copied.",
     "paymentWait.qrCopyFailed": "Could not copy QR code content.",
+    "paymentWait.qrFormat.payBySquare1_0_0": "Pay by square 1.0 (Slovakia)",
+    "paymentWait.qrFormat.payBySquare1_2_0": "Pay by square 1.2 (Slovakia)",
+    "paymentWait.qrFormat.spayd": "SPAYD (Czechia)",
+    "paymentWait.qrFormatShort.payBySquare1_0_0": "SK 1.0",
+    "paymentWait.qrFormatShort.payBySquare1_2_0": "SK 1.2",
+    "paymentWait.qrFormatShort.spayd": "CZ",
     "paymentWait.scanOrTap": "Scan and pay",
     "paymentWait.share": "Share payment request",
     "paymentWait.waiting": "Waiting for payment...",
@@ -205,6 +211,9 @@ export const resources = {
     "settings.fiat.eur.title": "Euro",
     "settings.fiatBankAccount.description":
       "Configure the bank account used for fiat payments",
+    "settings.fiatBankAccount.currency.description":
+      "Payments in this currency can use this bank account.",
+    "settings.fiatBankAccount.currency.label": "Bank account currency",
     "settings.fiatBankAccount.enabled.description":
       "Disabled accounts stay stored but are ignored by payment flows.",
     "settings.fiatBankAccount.enabled.label": "Enable fiat bank account",
@@ -217,6 +226,14 @@ export const resources = {
     "settings.fiatBankAccount.iban.label": "IBAN",
     "settings.fiatBankAccount.iban.required":
       "IBAN is required when the bank account is enabled.",
+    "settings.fiatBankAccount.qrFormat.description":
+      "This format is shown first for bank QR payments.",
+    "settings.fiatBankAccount.qrFormat.label": "Default QR format",
+    "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
+      "Pay by square 1.0 (Slovakia)",
+    "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
+      "Pay by square 1.2 (Slovakia)",
+    "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Czechia)",
     "settings.fiatBankAccount.save": "Save bank account",
     "settings.fiatBankAccount.saved": "Bank account saved.",
     "settings.fiatBankAccount.title": "Fiat Bank Account",
@@ -540,6 +557,12 @@ export const resources = {
     "paymentWait.preparingRequest": "Připravuji platební žádost...",
     "paymentWait.qrCopied": "Obsah QR kódu zkopírován.",
     "paymentWait.qrCopyFailed": "Obsah QR kódu se nepodařilo zkopírovat.",
+    "paymentWait.qrFormat.payBySquare1_0_0": "Pay by square 1.0 (Slovensko)",
+    "paymentWait.qrFormat.payBySquare1_2_0": "Pay by square 1.2 (Slovensko)",
+    "paymentWait.qrFormat.spayd": "SPAYD (Česko)",
+    "paymentWait.qrFormatShort.payBySquare1_0_0": "SK 1.0",
+    "paymentWait.qrFormatShort.payBySquare1_2_0": "SK 1.2",
+    "paymentWait.qrFormatShort.spayd": "CZ",
     "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
     "paymentWait.share": "Sdílet platební žádost",
     "paymentWait.waiting": "Čeká se na platbu...",
@@ -637,6 +660,9 @@ export const resources = {
     "settings.fiat.eur.title": "Euro",
     "settings.fiatBankAccount.description":
       "Nastavení bankovního účtu pro fiat platby",
+    "settings.fiatBankAccount.currency.description":
+      "Platby v této měně mohou použít tento bankovní účet.",
+    "settings.fiatBankAccount.currency.label": "Měna bankovního účtu",
     "settings.fiatBankAccount.enabled.description":
       "Vypnutý účet zůstane uložený, ale platební toky ho budou ignorovat.",
     "settings.fiatBankAccount.enabled.label": "Povolit fiat bankovní účet",
@@ -649,6 +675,14 @@ export const resources = {
     "settings.fiatBankAccount.iban.label": "IBAN",
     "settings.fiatBankAccount.iban.required":
       "IBAN je povinný, když je bankovní účet povolený.",
+    "settings.fiatBankAccount.qrFormat.description":
+      "Tento formát se u bankovních QR plateb zobrazí jako první.",
+    "settings.fiatBankAccount.qrFormat.label": "Výchozí formát QR",
+    "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
+      "Pay by square 1.0 (Slovensko)",
+    "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
+      "Pay by square 1.2 (Slovensko)",
+    "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
     "settings.fiatBankAccount.save": "Uložit bankovní účet",
     "settings.fiatBankAccount.saved": "Bankovní účet uložen.",
     "settings.fiatBankAccount.title": "Fiat bankovní účet",
@@ -972,6 +1006,12 @@ export const resources = {
     "paymentWait.preparingRequest": "Pripravujem platobnú žiadosť...",
     "paymentWait.qrCopied": "Obsah QR kódu skopírovaný.",
     "paymentWait.qrCopyFailed": "Obsah QR kódu sa nepodarilo skopírovať.",
+    "paymentWait.qrFormat.payBySquare1_0_0": "Pay by square 1.0 (Slovensko)",
+    "paymentWait.qrFormat.payBySquare1_2_0": "Pay by square 1.2 (Slovensko)",
+    "paymentWait.qrFormat.spayd": "SPAYD (Česko)",
+    "paymentWait.qrFormatShort.payBySquare1_0_0": "SK 1.0",
+    "paymentWait.qrFormatShort.payBySquare1_2_0": "SK 1.2",
+    "paymentWait.qrFormatShort.spayd": "CZ",
     "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
     "paymentWait.share": "Zdieľať platobnú žiadosť",
     "paymentWait.waiting": "Čaká sa na platbu...",
@@ -1069,6 +1109,9 @@ export const resources = {
     "settings.fiat.eur.title": "Euro",
     "settings.fiatBankAccount.description":
       "Nastavenie bankového účtu pre fiat platby",
+    "settings.fiatBankAccount.currency.description":
+      "Platby v tejto mene môžu použiť tento bankový účet.",
+    "settings.fiatBankAccount.currency.label": "Mena bankového účtu",
     "settings.fiatBankAccount.enabled.description":
       "Vypnutý účet zostane uložený, ale platobné toky ho budú ignorovať.",
     "settings.fiatBankAccount.enabled.label": "Povoliť fiat bankový účet",
@@ -1081,6 +1124,14 @@ export const resources = {
     "settings.fiatBankAccount.iban.label": "IBAN",
     "settings.fiatBankAccount.iban.required":
       "IBAN je povinný, keď je bankový účet povolený.",
+    "settings.fiatBankAccount.qrFormat.description":
+      "Tento formát sa pri bankových QR platbách zobrazí ako prvý.",
+    "settings.fiatBankAccount.qrFormat.label": "Predvolený formát QR",
+    "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
+      "Pay by square 1.0 (Slovensko)",
+    "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
+      "Pay by square 1.2 (Slovensko)",
+    "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
     "settings.fiatBankAccount.save": "Uložiť bankový účet",
     "settings.fiatBankAccount.saved": "Bankový účet uložený.",
     "settings.fiatBankAccount.title": "Fiat bankový účet",

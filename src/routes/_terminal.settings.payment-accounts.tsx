@@ -23,6 +23,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
@@ -35,7 +36,13 @@ import {
 } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
+  bankQrFormats,
+  isBankQrFormat,
+} from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import {
+  type BankQrFormat,
   FiatCurrency,
+  type FiatCurrency as FiatCurrencyType,
   IbanSchema,
   NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
@@ -61,6 +68,38 @@ const normalizeIban = (value: string) =>
 const normalizeMnemonic = (value: string) =>
   value.trim().replaceAll(/\s+/gu, " ")
 
+interface FiatBankAccountCurrencyOption {
+  readonly value: FiatCurrencyType
+  readonly label: TranslationKey
+}
+
+interface FiatBankAccountQrFormatOption {
+  readonly value: BankQrFormat
+  readonly label: TranslationKey
+}
+
+const fiatBankAccountCurrencyOptions: ReadonlyArray<FiatBankAccountCurrencyOption> =
+  [
+    {
+      value: FiatCurrency.EUR,
+      label: "settings.fiat.eur.title",
+    },
+    {
+      value: FiatCurrency.USD,
+      label: "settings.fiat.usd.title",
+    },
+    {
+      value: FiatCurrency.CZK,
+      label: "settings.fiat.czk.title",
+    },
+  ]
+
+const fiatBankAccountQrFormatOptions: ReadonlyArray<FiatBankAccountQrFormatOption> =
+  bankQrFormats.map((format) => ({
+    value: format,
+    label: `settings.fiatBankAccount.qrFormat.${format}` as TranslationKey,
+  }))
+
 function PaymentAccountsPage() {
   const { t } = useTranslation()
 
@@ -83,12 +122,16 @@ function FiatBankAccountForm() {
   const evolu = useEvolu()
   const ibanInputId = useId()
   const enabledInputId = useId()
+  const currencyInputId = useId()
+  const qrFormatInputId = useId()
   const { data: accountData } = useEvoluQuery(fiatBankAccountQuery)
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [account] = accountData
   const [settings] = settingsData
   const [enabled, setEnabled] = useState(false)
   const [iban, setIban] = useState("")
+  const [currency, setCurrency] = useState<FiatCurrencyType>(FiatCurrency.CZK)
+  const [defaultQrFormat, setDefaultQrFormat] = useState<BankQrFormat>("spayd")
   const [error, setError] = useState<TranslationKey | null>(null)
   const [saved, setSaved] = useState(false)
   const [pending, setPending] = useState(false)
@@ -96,7 +139,9 @@ function FiatBankAccountForm() {
   useEffect(() => {
     setEnabled(account ? account.isDeleted !== 1 : false)
     setIban(account?.iban ?? "")
-  }, [account])
+    setCurrency(account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK)
+    setDefaultQrFormat(account?.defaultQrFormat ?? "spayd")
+  }, [account, settings?.fiatCurrency])
 
   return (
     <form
@@ -132,7 +177,8 @@ function FiatBankAccountForm() {
             saveFiatBankAccount({
               enabled,
               iban: ibanResult?.data,
-              currency: settings?.fiatCurrency ?? FiatCurrency.CZK,
+              currency,
+              defaultQrFormat,
             })
           )
 
@@ -190,6 +236,78 @@ function FiatBankAccountForm() {
                 {t("settings.fiatBankAccount.iban.description")}
               </FieldDescription>
               <FieldError>{error ? t(error) : null}</FieldError>
+            </Field>
+
+            <Field>
+              <FieldLabel id={currencyInputId}>
+                {t("settings.fiatBankAccount.currency.label")}
+              </FieldLabel>
+              <ToggleGroup<FiatCurrencyType>
+                aria-labelledby={currencyInputId}
+                value={[currency]}
+                onValueChange={(value) => {
+                  const [nextCurrency] = value
+                  if (
+                    nextCurrency === FiatCurrency.EUR ||
+                    nextCurrency === FiatCurrency.USD ||
+                    nextCurrency === FiatCurrency.CZK
+                  ) {
+                    setCurrency(nextCurrency)
+                    setSaved(false)
+                  }
+                }}
+                variant="outline"
+                spacing={0}
+                className="grid w-full grid-cols-1"
+                orientation="vertical"
+              >
+                {fiatBankAccountCurrencyOptions.map((option) => (
+                  <ToggleGroupItem
+                    key={option.value}
+                    value={option.value}
+                    className="w-full justify-start px-4"
+                  >
+                    {t(option.label)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <FieldDescription>
+                {t("settings.fiatBankAccount.currency.description")}
+              </FieldDescription>
+            </Field>
+
+            <Field>
+              <FieldLabel id={qrFormatInputId}>
+                {t("settings.fiatBankAccount.qrFormat.label")}
+              </FieldLabel>
+              <ToggleGroup<BankQrFormat>
+                aria-labelledby={qrFormatInputId}
+                value={[defaultQrFormat]}
+                onValueChange={(value) => {
+                  const [nextFormat] = value
+                  if (isBankQrFormat(nextFormat)) {
+                    setDefaultQrFormat(nextFormat)
+                    setSaved(false)
+                  }
+                }}
+                variant="outline"
+                spacing={0}
+                className="grid"
+                orientation="vertical"
+              >
+                {fiatBankAccountQrFormatOptions.map((option) => (
+                  <ToggleGroupItem
+                    key={option.value}
+                    value={option.value}
+                    className="w-full justify-start px-4"
+                  >
+                    {t(option.label)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <FieldDescription>
+                {t("settings.fiatBankAccount.qrFormat.description")}
+              </FieldDescription>
             </Field>
           </FieldGroup>
         </CardContent>

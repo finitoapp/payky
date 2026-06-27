@@ -92,7 +92,6 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
               "paymentIban.accountId",
               "paymentIban.variableSymbol",
               "paymentIban.specificSymbol",
-              "paymentIban.czQrPayload",
               "paymentIban.isDeleted",
             ])
             .whereRef("paymentIban.id", "=", "payment.id")
@@ -214,8 +213,6 @@ describe("payment actions", () => {
           accountId: ibanAccountId,
           variableSymbol: "1234567890",
           specificSymbol: "9876543210",
-          czQrPayload:
-            "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*X-VS:1234567890*X-SS:9876543210",
         },
       })
     )
@@ -252,8 +249,6 @@ describe("payment actions", () => {
             accountId: ibanAccountId,
             variableSymbol: "1234567890",
             specificSymbol: "9876543210",
-            czQrPayload:
-              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*X-VS:1234567890*X-SS:9876543210",
           },
         },
       ])
@@ -336,7 +331,6 @@ describe("payment actions", () => {
           accountId: ibanAccountId,
           variableSymbol: "1234567890",
           specificSymbol: null,
-          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
         },
       })
     )
@@ -454,8 +448,6 @@ describe("payment actions", () => {
             accountId: ibanAccountId,
             variableSymbol: "1",
             specificSymbol: "260605",
-            czQrPayload:
-              "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK*PT:IP*X-VS:1*X-SS:260605",
           },
           spark: {
             id,
@@ -753,7 +745,6 @@ describe("payment actions", () => {
           accountId: ibanAccountId,
           variableSymbol: undefined,
           specificSymbol: null,
-          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:129.00*CC:CZK",
         },
       })
     )

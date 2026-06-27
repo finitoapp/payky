@@ -56,6 +56,7 @@ export const ibanAccountByIdQuery = (idValue: AccountId) =>
         "account.kind",
         "accountIban.iban",
         "accountIban.currency",
+        "accountIban.defaultQrFormat",
       ])
       .where("account.id", "=", idValue)
       .where("account.kind", "=", "iban")
@@ -82,6 +83,7 @@ export const fiatBankAccountQuery = createQuery((db) =>
       "account.isDeleted",
       "accountIban.iban",
       "accountIban.currency",
+      "accountIban.defaultQrFormat",
     ])
     .where("account.id", "=", fiatBankAccountId)
     .where("account.kind", "=", "iban")

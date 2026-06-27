@@ -134,7 +134,6 @@ describe("reconciliation claim actions", () => {
           accountId,
           variableSymbol: "123456",
           specificSymbol: "260605",
-          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
         },
       })
     )
@@ -201,7 +200,6 @@ describe("reconciliation claim actions", () => {
           accountId,
           variableSymbol: "123456",
           specificSymbol: "260605",
-          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
         },
       })
     )
@@ -256,7 +254,6 @@ describe("reconciliation claim actions", () => {
           accountId,
           variableSymbol: null,
           specificSymbol: null,
-          czQrPayload: "SPD*1.0*ACC:CZ6508000000192000145399*AM:199.50*CC:CZK",
         },
       })
     )

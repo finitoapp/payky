@@ -219,40 +219,6 @@ const convertFiatMinorUnitsToSats = (
   return Math.max(1, Math.round((fiatAmount / exchangeRate) * SATS_PER_BTC))
 }
 
-const formatFiatMinorUnits = (amount: number): string => {
-  const major = Math.trunc(amount / FIAT_MINOR_UNITS)
-  const minor = String(amount % FIAT_MINOR_UNITS).padStart(2, "0")
-  return `${major}.${minor}`
-}
-
-const createCzQrPayload = ({
-  iban,
-  amount,
-  currency,
-  specificSymbol,
-  variableSymbol,
-}: {
-  readonly iban: string
-  readonly amount: number
-  readonly currency: string
-  readonly specificSymbol: SpecificSymbol | null
-  readonly variableSymbol: VariableSymbol | null
-}): NonEmptyString =>
-  NonEmptyStringSchema.decode(
-    [
-      "SPD",
-      "1.0",
-      `ACC:${iban}`,
-      `AM:${formatFiatMinorUnits(amount)}`,
-      `CC:${currency}`,
-      "PT:IP",
-      variableSymbol ? `X-VS:${variableSymbol}` : null,
-      specificSymbol ? `X-SS:${specificSymbol}` : null,
-    ]
-      .filter((part) => part !== null)
-      .join("*")
-  )
-
 const createVariableSymbolFromSerialNumber = (
   serialNumber: number
 ): VariableSymbol => VariableSymbol(String(serialNumber))
@@ -626,21 +592,14 @@ export const preparePaymentMethod =
               paymentNumber.date
             )
 
-            return ok(
-              removeUndefinedValues({
-                id: paymentId,
-                accountId: bank.accountId,
-                variableSymbol,
-                specificSymbol,
-                czQrPayload: createCzQrPayload({
-                  iban: account.iban,
-                  amount: payment.amount,
-                  currency: payment.currency,
-                  specificSymbol,
-                  variableSymbol,
-                }),
-              })
-            )
+            const paymentIbanValue = removeUndefinedValues({
+              id: paymentId,
+              accountId: bank.accountId,
+              variableSymbol,
+              specificSymbol,
+            })
+
+            return ok(paymentIbanValue)
           })()
     if (bankPayment != null && !bankPayment.ok) {
       return bankPayment

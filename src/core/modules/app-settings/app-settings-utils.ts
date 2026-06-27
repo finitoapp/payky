@@ -8,6 +8,7 @@ export const settingsId =
 
 export const createDefaultSettings = (): AppSettingsRow => ({
   id: settingsId,
+  onboardingCompleted: null,
   fiatCurrency: FiatCurrency.CZK,
   tipsEnabled: sqliteTrue,
   presetTipPercentagesJson: JSON.stringify([5, 10, 15]),

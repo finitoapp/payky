@@ -76,6 +76,26 @@ export const resources = {
     "nav.checkout": "Checkout",
     "nav.home": "Terminal",
     "nav.settings": "Settings",
+    "onboarding.back": "Back",
+    "onboarding.finish": "Finish",
+    "onboarding.language.description":
+      "Choose the language used across the app.",
+    "onboarding.language.title": "Choose language",
+    "onboarding.next": "Next",
+    "onboarding.payments.btc.description":
+      "Accept Bitcoin payments through the Spark Lightning account.",
+    "onboarding.payments.btc.title": "BTC",
+    "onboarding.payments.cash.description":
+      "Record in-person cash payments in the terminal.",
+    "onboarding.payments.cash.title": "Cash",
+    "onboarding.payments.description":
+      "Select the payment methods this terminal should accept.",
+    "onboarding.payments.iban.description":
+      "Show bank transfer QR codes for fiat payments.",
+    "onboarding.payments.iban.title": "IBAN",
+    "onboarding.payments.title": "Payment methods",
+    "onboarding.progress": "Step",
+    "onboarding.title": "Set up Payky",
     "paymentHistory.empty.description":
       "Created payment requests will appear here.",
     "paymentHistory.empty.title": "No payments yet",
@@ -523,6 +543,26 @@ export const resources = {
     "nav.checkout": "Pokladna",
     "nav.home": "Terminál",
     "nav.settings": "Nastavení",
+    "onboarding.back": "Zpět",
+    "onboarding.finish": "Dokončit",
+    "onboarding.language.description":
+      "Vyberte jazyk, který bude aplikace používat.",
+    "onboarding.language.title": "Výběr jazyka",
+    "onboarding.next": "Další",
+    "onboarding.payments.btc.description":
+      "Přijímejte bitcoinové platby přes Spark Lightning účet.",
+    "onboarding.payments.btc.title": "BTC",
+    "onboarding.payments.cash.description":
+      "Evidujte hotovostní platby přímo v terminálu.",
+    "onboarding.payments.cash.title": "Hotovost",
+    "onboarding.payments.description":
+      "Vyberte platební metody, které má terminál přijímat.",
+    "onboarding.payments.iban.description":
+      "Zobrazujte QR kódy pro bankovní převody.",
+    "onboarding.payments.iban.title": "IBAN",
+    "onboarding.payments.title": "Platební metody",
+    "onboarding.progress": "Krok",
+    "onboarding.title": "Nastavení Payky",
     "paymentHistory.empty.description":
       "Vytvořené platební žádosti se zobrazí tady.",
     "paymentHistory.empty.title": "Zatím žádné platby",
@@ -973,6 +1013,26 @@ export const resources = {
     "nav.checkout": "Pokladnica",
     "nav.home": "Terminál",
     "nav.settings": "Nastavenia",
+    "onboarding.back": "Späť",
+    "onboarding.finish": "Dokončiť",
+    "onboarding.language.description":
+      "Vyberte jazyk, ktorý bude aplikácia používať.",
+    "onboarding.language.title": "Výber jazyka",
+    "onboarding.next": "Ďalej",
+    "onboarding.payments.btc.description":
+      "Prijímajte bitcoinové platby cez Spark Lightning účet.",
+    "onboarding.payments.btc.title": "BTC",
+    "onboarding.payments.cash.description":
+      "Evidujte hotovostné platby priamo v termináli.",
+    "onboarding.payments.cash.title": "Hotovosť",
+    "onboarding.payments.description":
+      "Vyberte platobné metódy, ktoré má terminál prijímať.",
+    "onboarding.payments.iban.description":
+      "Zobrazujte QR kódy pre bankové prevody.",
+    "onboarding.payments.iban.title": "IBAN",
+    "onboarding.payments.title": "Platobné metódy",
+    "onboarding.progress": "Krok",
+    "onboarding.title": "Nastavenie Payky",
     "paymentHistory.empty.description":
       "Vytvorené platobné žiadosti sa zobrazia tu.",
     "paymentHistory.empty.title": "Zatiaľ žiadne platby",

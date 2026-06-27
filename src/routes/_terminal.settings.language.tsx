@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_terminal/settings/language")({
 
 interface LanguageOption {
   readonly value: Language
-  readonly label: TranslationKey
+  readonly label: string
   readonly description: TranslationKey
 }
 
@@ -41,17 +41,17 @@ interface LocaleOption {
 const languageOptions: ReadonlyArray<LanguageOption> = [
   {
     value: "en",
-    label: "settings.language.english.title",
+    label: "English",
     description: "settings.language.english.description",
   },
   {
     value: "cs",
-    label: "settings.language.czech.title",
+    label: "Čeština",
     description: "settings.language.czech.description",
   },
   {
     value: "sk",
-    label: "settings.language.slovak.title",
+    label: "Slovenčina",
     description: "settings.language.slovak.description",
   },
 ]
@@ -114,7 +114,7 @@ function LanguagePage() {
               >
                 <Languages className="text-muted-foreground" />
                 <span className="flex flex-col gap-1">
-                  <span className="font-semibold">{t(option.label)}</span>
+                  <span className="font-semibold">{option.label}</span>
                   <span className="text-xs leading-snug text-muted-foreground">
                     {t(option.description)}
                   </span>

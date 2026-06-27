@@ -1,4 +1,4 @@
-import { SqliteBoolean } from "@evolu/common"
+import { SqliteBoolean, sqliteTrue } from "@evolu/common"
 import { z } from "zod"
 
 import { AppSettingsId } from "@/core/modules/app-settings/app-settings-types.ts"
@@ -9,6 +9,7 @@ import {
 
 export const appSettings = {
   id: AppSettingsId,
+  onboardingCompleted: z.literal(sqliteTrue).nullable(),
   fiatCurrency: FiatCurrencySchema,
   tipsEnabled: SqliteBoolean,
   presetTipPercentagesJson: z.string(),

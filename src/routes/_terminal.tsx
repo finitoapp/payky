@@ -1,6 +1,15 @@
-import { createFileRoute, Outlet, useMatches } from "@tanstack/react-router"
+import { sqliteTrue } from "@evolu/common"
+import {
+  createFileRoute,
+  Outlet,
+  useMatches,
+  useNavigate,
+} from "@tanstack/react-router"
+import { useEffect } from "react"
 
 import { PhoneViewport } from "@/components/skeleton.tsx"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/_terminal")({
@@ -8,6 +17,9 @@ export const Route = createFileRoute("/_terminal")({
 })
 
 function TerminalLayout() {
+  const navigate = useNavigate()
+  const { data } = useEvoluQuery(settingsQuery)
+  const [settings] = data
   const terminalLayout = useMatches({
     select: (matches) => {
       for (let index = matches.length - 1; index >= 0; index -= 1) {
@@ -22,6 +34,17 @@ function TerminalLayout() {
       return undefined
     },
   })
+  const onboardingCompleted = settings?.onboardingCompleted === sqliteTrue
+
+  useEffect(() => {
+    if (!onboardingCompleted) {
+      void navigate({ to: "/onboarding", replace: true })
+    }
+  }, [navigate, onboardingCompleted])
+
+  if (!onboardingCompleted) {
+    return null
+  }
 
   return (
     <main

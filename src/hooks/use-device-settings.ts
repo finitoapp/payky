@@ -2,24 +2,18 @@ import * as React from "react"
 import {
   createDefaultDeviceSettings,
   createDeviceQuery,
-  type DeviceLanguage,
   type DeviceSettings,
   type DeviceSettingsRow,
   deviceSettingsId,
   getDeviceLocaleForLanguage,
 } from "@/core/evolu/device-client.ts"
+import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 
-function getPreferredDeviceLanguage(): DeviceLanguage {
-  if (navigator.language.startsWith("cs")) {
-    return "cs"
-  }
-
-  return "en"
-}
-
 export function getDefaultDeviceSettings(): DeviceSettings {
-  return createDefaultDeviceSettings(getPreferredDeviceLanguage())
+  return createDefaultDeviceSettings(
+    getPreferredDeviceLanguage(navigator.language)
+  )
 }
 
 const deviceSettingsQuery = createDeviceQuery((db) =>

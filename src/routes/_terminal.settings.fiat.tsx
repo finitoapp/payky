@@ -39,11 +39,6 @@ interface FiatCurrencyOption {
 
 const fiatCurrencyOptions: ReadonlyArray<FiatCurrencyOption> = [
   {
-    value: FiatCurrency.CZK,
-    label: "settings.fiat.czk.title",
-    description: "settings.fiat.czk.description",
-  },
-  {
     value: FiatCurrency.EUR,
     label: "settings.fiat.eur.title",
     description: "settings.fiat.eur.description",
@@ -52,6 +47,11 @@ const fiatCurrencyOptions: ReadonlyArray<FiatCurrencyOption> = [
     value: FiatCurrency.USD,
     label: "settings.fiat.usd.title",
     description: "settings.fiat.usd.description",
+  },
+  {
+    value: FiatCurrency.CZK,
+    label: "settings.fiat.czk.title",
+    description: "settings.fiat.czk.description",
   },
 ]
 

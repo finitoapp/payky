@@ -41,9 +41,9 @@ export const deviceSettingsId = createIdFromString<"DeviceSettings">(
   "payky-device-settings"
 )
 
-const DeviceLanguageSchema = z.enum(["en", "cs"])
+const DeviceLanguageSchema = z.enum(["en", "cs", "sk"])
 const DeviceThemeSchema = z.enum(["system", "light", "dark"])
-const DeviceLocaleSchema = z.enum(["cs-CZ", "en-US"])
+const DeviceLocaleSchema = z.enum(["cs-CZ", "en-US", "sk-SK"])
 
 export type DeviceLanguage = z.output<typeof DeviceLanguageSchema>
 export type DeviceTheme = z.output<typeof DeviceThemeSchema>
@@ -96,7 +96,15 @@ export type DeviceSettingsRow = InferTable<
 export function getDeviceLocaleForLanguage(
   language: DeviceLanguage
 ): DeviceLocale {
-  return language === "cs" ? "cs-CZ" : "en-US"
+  if (language === "cs") {
+    return "cs-CZ"
+  }
+
+  if (language === "sk") {
+    return "sk-SK"
+  }
+
+  return "en-US"
 }
 
 export function createDefaultDeviceSettings(

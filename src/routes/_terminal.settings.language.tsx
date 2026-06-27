@@ -49,18 +49,28 @@ const languageOptions: ReadonlyArray<LanguageOption> = [
     label: "settings.language.czech.title",
     description: "settings.language.czech.description",
   },
+  {
+    value: "sk",
+    label: "settings.language.slovak.title",
+    description: "settings.language.slovak.description",
+  },
 ]
 
 const localeOptions: ReadonlyArray<LocaleOption> = [
+  {
+    value: "en-US",
+    label: "settings.language.locale.english.title",
+    description: "settings.language.locale.english.description",
+  },
   {
     value: "cs-CZ",
     label: "settings.language.locale.czech.title",
     description: "settings.language.locale.czech.description",
   },
   {
-    value: "en-US",
-    label: "settings.language.locale.english.title",
-    description: "settings.language.locale.english.description",
+    value: "sk-SK",
+    label: "settings.language.locale.slovak.title",
+    description: "settings.language.locale.slovak.description",
   },
 ]
 

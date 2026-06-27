@@ -4,17 +4,9 @@ import {
   createDefaultDeviceSettings,
   createDeviceEvolu,
   createDeviceQuery,
-  type DeviceLanguage,
   deviceSettingsId,
 } from "@/core/evolu/device-client.ts"
-
-function getPreferredDeviceLanguage(): DeviceLanguage {
-  if (navigator.language.startsWith("cs")) {
-    return "cs"
-  }
-
-  return "en"
-}
+import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 
 const deviceSettingsQuery = createDeviceQuery((db) =>
   db
@@ -31,7 +23,9 @@ export const deviceEvoluAtom = atom(async (get) => {
   if (deviceSettings.length === 0) {
     deviceEvolu.upsert(
       "deviceSettings",
-      createDefaultDeviceSettings(getPreferredDeviceLanguage())
+      createDefaultDeviceSettings(
+        getPreferredDeviceLanguage(navigator.language)
+      )
     )
   }
 

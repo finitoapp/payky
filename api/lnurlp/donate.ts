@@ -1,6 +1,5 @@
+import { SparkWallet } from "@buildonspark/spark-sdk"
 import { z } from "zod"
-
-import { createDefaultSparkPaymentWallet } from "../../src/core/spark/spark-wallet.ts"
 
 const MSATS_PER_SAT = 1_000
 const DEFAULT_MIN_SENDABLE_SATS = 1
@@ -187,8 +186,20 @@ const createInvoice = async (
   amountSats: number,
   config: DonateConfig
 ): Promise<LnurlPayInvoice | LnurlError> => {
+  let wallet:
+    | Awaited<ReturnType<typeof SparkWallet.initialize>>["wallet"]
+    | undefined
+
   try {
-    await using wallet = await createDefaultSparkPaymentWallet(config.mnemonic)
+    const initializedWallet = await SparkWallet.initialize({
+      mnemonicOrSeed: config.mnemonic,
+      options: {
+        network: "MAINNET",
+      },
+    })
+
+    wallet = initializedWallet.wallet
+
     const invoice = await wallet.createLightningInvoice({
       amountSats,
       memo: config.description,
@@ -205,6 +216,8 @@ const createInvoice = async (
       status: "ERROR",
       reason: "Could not create Lightning invoice.",
     }
+  } finally {
+    await wallet?.cleanup()
   }
 }
 

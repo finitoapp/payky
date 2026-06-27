@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/.well-known/lnurlp/donate",
+      "destination": "/api/lnurlp/donate"
+    },
+    {
       "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }

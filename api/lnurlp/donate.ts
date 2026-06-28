@@ -59,6 +59,14 @@ interface LnurlPayMetadata {
 interface LnurlPayInvoice {
   readonly pr: string
   readonly routes: readonly []
+  readonly verify: string
+}
+
+interface LnurlVerifyResponse {
+  readonly status: "OK"
+  readonly settled: boolean
+  readonly preimage: string | null
+  readonly pr: string
 }
 
 interface LnurlError {
@@ -116,7 +124,7 @@ const loadConfig = (request: Request): DonateConfig | LnurlError => {
 }
 
 const jsonResponse = (
-  body: LnurlPayMetadata | LnurlPayInvoice | LnurlError,
+  body: LnurlPayMetadata | LnurlPayInvoice | LnurlVerifyResponse | LnurlError,
   init?: ResponseInit
 ): Response =>
   Response.json(body, {
@@ -182,6 +190,27 @@ const validateAmountMsats = (
   return amountMsats / MSATS_PER_SAT
 }
 
+const createWallet = async (
+  config: DonateConfig
+): Promise<Awaited<ReturnType<typeof SparkWallet.initialize>>["wallet"]> => {
+  const initializedWallet = await SparkWallet.initialize({
+    mnemonicOrSeed: config.mnemonic,
+    options: {
+      network: "MAINNET",
+    },
+  })
+
+  return initializedWallet.wallet
+}
+
+const getVerifyUrl = (callbackUrl: string, id: string): string => {
+  const verifyUrl = new URL(callbackUrl)
+  verifyUrl.search = ""
+  verifyUrl.searchParams.set("verify", id)
+
+  return verifyUrl.toString()
+}
+
 const createInvoice = async (
   amountSats: number,
   config: DonateConfig
@@ -191,14 +220,7 @@ const createInvoice = async (
     | undefined
 
   try {
-    const initializedWallet = await SparkWallet.initialize({
-      mnemonicOrSeed: config.mnemonic,
-      options: {
-        network: "MAINNET",
-      },
-    })
-
-    wallet = initializedWallet.wallet
+    wallet = await createWallet(config)
 
     const invoice = await wallet.createLightningInvoice({
       amountSats,
@@ -207,14 +229,70 @@ const createInvoice = async (
       includeSparkInvoice: false,
     })
 
+    if (invoice.id === undefined || invoice.id.trim().length === 0) {
+      return {
+        status: "ERROR",
+        reason: "Could not create verifiable Lightning invoice.",
+      }
+    }
+
     return {
       pr: invoice.invoice.encodedInvoice,
       routes: [],
+      verify: getVerifyUrl(config.callbackUrl, invoice.id),
     }
   } catch {
     return {
       status: "ERROR",
       reason: "Could not create Lightning invoice.",
+    }
+  } finally {
+    await wallet?.cleanup()
+  }
+}
+
+const isSettledLightningReceiveStatus = (status: string): boolean =>
+  status === "LIGHTNING_PAYMENT_RECEIVED" ||
+  status === "PAYMENT_PREIMAGE_RECOVERED" ||
+  status === "TRANSFER_COMPLETED"
+
+const verifyInvoice = async (
+  id: string,
+  config: DonateConfig
+): Promise<LnurlVerifyResponse | LnurlError> => {
+  let wallet:
+    | Awaited<ReturnType<typeof SparkWallet.initialize>>["wallet"]
+    | undefined
+
+  try {
+    wallet = await createWallet(config)
+
+    const invoice = await wallet.getLightningReceiveRequest(id)
+
+    if (invoice === null) {
+      return {
+        status: "ERROR",
+        reason: "Not found",
+      }
+    }
+
+    const preimage =
+      invoice.paymentPreimage === undefined ||
+      invoice.paymentPreimage.trim().length === 0
+        ? null
+        : invoice.paymentPreimage
+
+    return {
+      status: "OK",
+      settled:
+        preimage !== null || isSettledLightningReceiveStatus(invoice.status),
+      preimage,
+      pr: invoice.invoice.encodedInvoice,
+    }
+  } catch {
+    return {
+      status: "ERROR",
+      reason: "Could not verify Lightning invoice.",
     }
   } finally {
     await wallet?.cleanup()
@@ -249,6 +327,29 @@ const handleRequest = async (request: Request): Promise<Response> => {
   }
 
   const requestUrl = new URL(request.url)
+  const verify = requestUrl.searchParams.get("verify")
+
+  if (verify !== null) {
+    if (verify.trim().length === 0) {
+      return jsonResponse(
+        {
+          status: "ERROR",
+          reason: "Not found",
+        },
+        { status: 404 }
+      )
+    }
+
+    const verifyResult = await verifyInvoice(verify, config)
+
+    return jsonResponse(verifyResult, {
+      status:
+        "reason" in verifyResult && verifyResult.reason === "Not found"
+          ? 404
+          : 200,
+    })
+  }
+
   const amount = requestUrl.searchParams.get("amount")
 
   if (amount === null) {

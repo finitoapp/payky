@@ -25,6 +25,8 @@ import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
+import { Route as TerminalSettingsDonateInvoiceRouteImport } from './routes/_terminal.settings.donate-invoice'
+import { Route as TerminalSettingsDonateRouteImport } from './routes/_terminal.settings.donate'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
 import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
@@ -119,6 +121,17 @@ const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
   path: '/fiat',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsDonateInvoiceRoute =
+  TerminalSettingsDonateInvoiceRouteImport.update({
+    id: '/donate-invoice',
+    path: '/donate-invoice',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDonateRoute = TerminalSettingsDonateRouteImport.update({
+  id: '/donate',
+  path: '/donate',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
 const TerminalSettingsDebugConsoleRoute =
   TerminalSettingsDebugConsoleRouteImport.update({
     id: '/debug-console',
@@ -185,6 +198,8 @@ export interface FileRoutesByFullPath {
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
+  '/settings/donate': typeof TerminalSettingsDonateRoute
+  '/settings/donate-invoice': typeof TerminalSettingsDonateInvoiceRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -209,6 +224,8 @@ export interface FileRoutesByTo {
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
+  '/settings/donate': typeof TerminalSettingsDonateRoute
+  '/settings/donate-invoice': typeof TerminalSettingsDonateInvoiceRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -237,6 +254,8 @@ export interface FileRoutesById {
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
+  '/_terminal/settings/donate': typeof TerminalSettingsDonateRoute
+  '/_terminal/settings/donate-invoice': typeof TerminalSettingsDonateInvoiceRoute
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
@@ -265,6 +284,8 @@ export interface FileRouteTypes {
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/debug-console'
+    | '/settings/donate'
+    | '/settings/donate-invoice'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -289,6 +310,8 @@ export interface FileRouteTypes {
     | '/payment/$paymentId'
     | '/settings/accounts'
     | '/settings/debug-console'
+    | '/settings/donate'
+    | '/settings/donate-invoice'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -316,6 +339,8 @@ export interface FileRouteTypes {
     | '/_terminal/settings/about'
     | '/_terminal/settings/accounts'
     | '/_terminal/settings/debug-console'
+    | '/_terminal/settings/donate'
+    | '/_terminal/settings/donate-invoice'
     | '/_terminal/settings/fiat'
     | '/_terminal/settings/fio-plugin'
     | '/_terminal/settings/items'
@@ -450,6 +475,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsFiatRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/donate-invoice': {
+      id: '/_terminal/settings/donate-invoice'
+      path: '/donate-invoice'
+      fullPath: '/settings/donate-invoice'
+      preLoaderRoute: typeof TerminalSettingsDonateInvoiceRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/donate': {
+      id: '/_terminal/settings/donate'
+      path: '/donate'
+      fullPath: '/settings/donate'
+      preLoaderRoute: typeof TerminalSettingsDonateRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/debug-console': {
       id: '/_terminal/settings/debug-console'
       path: '/debug-console'
@@ -537,6 +576,8 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
+  TerminalSettingsDonateRoute: typeof TerminalSettingsDonateRoute
+  TerminalSettingsDonateInvoiceRoute: typeof TerminalSettingsDonateInvoiceRoute
   TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsFioPluginRoute: typeof TerminalSettingsFioPluginRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
@@ -552,6 +593,8 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAboutRoute: TerminalSettingsAboutRouteWithChildren,
   TerminalSettingsAccountsRoute: TerminalSettingsAccountsRoute,
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
+  TerminalSettingsDonateRoute: TerminalSettingsDonateRoute,
+  TerminalSettingsDonateInvoiceRoute: TerminalSettingsDonateInvoiceRoute,
   TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsFioPluginRoute: TerminalSettingsFioPluginRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,

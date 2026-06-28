@@ -4,6 +4,7 @@ import {
   BadgeDollarSign,
   Bug,
   Grid2X2,
+  HeartHandshake,
   Info,
   Landmark,
   Languages,
@@ -80,6 +81,15 @@ const generalSettings: ReadonlyArray<SettingRow> = [
     description: "settings.theme.description",
     to: "/settings/theme",
   },
+]
+
+const supportSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: HeartHandshake,
+    title: "settings.donate.title",
+    description: "settings.donate.description",
+    to: "/settings/donate",
+  },
   {
     icon: Info,
     title: "settings.about.title",
@@ -90,16 +100,16 @@ const generalSettings: ReadonlyArray<SettingRow> = [
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
   {
-    icon: ArrowDown,
-    title: "settings.fiat.title",
-    description: "settings.fiat.description",
-    to: "/settings/fiat",
-  },
-  {
     icon: Landmark,
     title: "settings.paymentAccounts.title",
     description: "settings.paymentAccounts.description",
     to: "/settings/payment-accounts",
+  },
+  {
+    icon: ArrowDown,
+    title: "settings.fiat.title",
+    description: "settings.fiat.description",
+    to: "/settings/fiat",
   },
   {
     icon: ReceiptText,
@@ -156,6 +166,10 @@ function SettingsPage() {
     () => createSettingsNavItems(generalSettings, t),
     [t]
   )
+  const supportItems = useMemo(
+    () => createSettingsNavItems(supportSettings, t),
+    [t]
+  )
   const terminalItems = useMemo(
     () => createSettingsNavItems(terminalSettings, t),
     [t]
@@ -195,9 +209,12 @@ function SettingsPage() {
         items={terminalItems}
       />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
-      <VerticalNav title={t("settings.security")} items={securityItems} />
-      <VerticalNav items={accountItems} />
-      <VerticalNav title={t("settings.general")} items={generalItems} />
+      <VerticalNav
+        title={t("settings.accountAndSync")}
+        items={[...accountItems, ...securityItems]}
+      />
+      <VerticalNav title={t("settings.appearance")} items={generalItems} />
+      <VerticalNav title={t("settings.support")} items={supportItems} />
       <VerticalNav title={t("settings.developers")} items={developerItems} />
     </>
   )

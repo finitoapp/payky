@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { PaymentSuccess } from "@/components/payment-success.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Tabs,
@@ -630,37 +631,36 @@ function PaymentWaitingRequest({
           )}
           aria-hidden={!successVisible}
         >
-          <div className="flex flex-col items-center gap-5 text-center">
-            <div className="flex size-24 items-center justify-center rounded-full bg-green-500 text-[#071012]">
-              <CheckIcon className="size-14" strokeWidth={3} />
-            </div>
-            <p className="text-3xl font-semibold">{t("paymentWait.paid")}</p>
-            <div className="flex flex-col items-center gap-8 pt-16 w-full">
-              <Button
-                size="lg"
-                nativeButton={false}
-                render={<Link to="/" />}
-                className={"h-16 w-80"}
-              >
-                {t("paymentWait.back")}
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className={"h-12 w-80"}
-                nativeButton={false}
-                render={
-                  <Link
-                    to="/activity/$paymentId"
-                    params={{ paymentId }}
-                    aria-label={t("paymentWait.detail")}
-                  />
-                }
-              >
-                {t("paymentWait.detail")}
-              </Button>
-            </div>
-          </div>
+          <PaymentSuccess
+            title={t("paymentWait.paid")}
+            actions={
+              <div className="flex flex-col items-center gap-8 pt-16 w-full">
+                <Button
+                  size="lg"
+                  nativeButton={false}
+                  render={<Link to="/" />}
+                  className={"h-16 w-80"}
+                >
+                  {t("paymentWait.back")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={"h-12 w-80"}
+                  nativeButton={false}
+                  render={
+                    <Link
+                      to="/activity/$paymentId"
+                      params={{ paymentId }}
+                      aria-label={t("paymentWait.detail")}
+                    />
+                  }
+                >
+                  {t("paymentWait.detail")}
+                </Button>
+              </div>
+            }
+          />
         </div>
       </div>
     </>

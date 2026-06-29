@@ -8,6 +8,12 @@ The app is built with React, TypeScript, Vite, TanStack Router, Tailwind CSS,
 shadcn-style local UI components, Base UI primitives, Zod validation, and Evolu
 for persistent application data.
 
+<p>
+  <img src="./docs/mockup/home.webp" alt="Payky numpad" width="32%" />
+  <img src="./docs/mockup/payment.webp" alt="Payky payment" width="32%" />
+  <img src="./docs/mockup/paid.webp" alt="Payky paid payment" width="32%" />
+</p>
+
 ## Requirements
 
 - Bun

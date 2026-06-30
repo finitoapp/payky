@@ -2,6 +2,7 @@ import { RouterProvider } from "@tanstack/react-router"
 import { createStore, Provider } from "jotai"
 import { Suspense } from "react"
 import { AppBackgroundJobs } from "@/components/app-background-jobs.tsx"
+import { NativeBackButtonHandler } from "@/components/native-back-button-handler.tsx"
 import { PwaUpdateToast } from "@/components/pwa-update-toast.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { Toaster } from "@/components/ui/sonner.tsx"
@@ -14,6 +15,7 @@ export function App() {
     <Provider store={jotaiStore}>
       <Suspense fallback={null}>
         <ThemeProvider disableTransitionOnChange>
+          <NativeBackButtonHandler />
           <AppBackgroundJobs />
           <RouterProvider router={router} />
           <PwaUpdateToast />

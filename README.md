@@ -76,8 +76,8 @@ bun run cap:android:dev
 ```
 
 The script starts the HTTP Vite dev server, waits for
-`http://localhost:5173`, forwards the port through `adb reverse`, and launches
-the native Android app with Capacitor live reload. The HTTP server is used only
+`http://127.0.0.1:5173`, forwards the port through Capacitor's Android live
+reload flow, and launches the native Android app. The HTTP server is used only
 for this debug flow so Android WebView does not reject Vite's self-signed HTTPS
 certificate.
 

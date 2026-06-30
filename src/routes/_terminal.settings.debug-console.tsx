@@ -1,8 +1,8 @@
-import type { ConsoleEntry } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import { Pause, Play, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
+import type { ConsoleOutputHistoryEntry } from "@/atoms/console.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -29,9 +29,9 @@ function DebugConsolePage() {
   const { t } = useTranslation()
   const consoleHistory = useConsoleHistory()
   const [isPaused, setIsPaused] = useState(false)
-  const [entries, setEntries] = useState<ReadonlyArray<ConsoleEntry>>(() =>
-    consoleHistory.getEntries()
-  )
+  const [entries, setEntries] = useState<
+    ReadonlyArray<ConsoleOutputHistoryEntry>
+  >(() => consoleHistory.getEntries())
   const visibleEntries = useMemo(() => entries.toReversed(), [entries])
 
   useEffect(() => {
@@ -107,12 +107,22 @@ function DebugConsolePage() {
   )
 }
 
-function ConsoleEntryCard({ entry }: { readonly entry: ConsoleEntry }) {
+function ConsoleEntryCard({
+  entry,
+}: {
+  readonly entry: ConsoleOutputHistoryEntry
+}) {
   const path = entry.path.length > 0 ? entry.path.join("/") : null
 
   return (
     <article className="rounded-md border bg-muted/20 px-2.5 py-2">
       <div className="mb-1.5 flex min-w-0 items-center gap-2">
+        <time
+          className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground"
+          dateTime={new Date(entry.createdAt).toISOString()}
+        >
+          {formatConsoleEntryTime(entry.createdAt)}
+        </time>
         <span
           className={cn(
             "rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase leading-none",
@@ -150,10 +160,20 @@ const methodClassNames = {
   timeEnd: defaultMethodClassName,
   count: defaultMethodClassName,
   countReset: defaultMethodClassName,
-} satisfies Record<ConsoleEntry["method"], string>
+} satisfies Record<ConsoleOutputHistoryEntry["method"], string>
 
 function formatConsoleArgs(args: ReadonlyArray<unknown>): string {
   return args.map(formatConsoleArg).join(" ")
+}
+
+function formatConsoleEntryTime(createdAt: number): string {
+  const date = new Date(createdAt)
+  const hours = date.getHours().toString().padStart(2, "0")
+  const minutes = date.getMinutes().toString().padStart(2, "0")
+  const seconds = date.getSeconds().toString().padStart(2, "0")
+  const milliseconds = date.getMilliseconds().toString().padStart(3, "0")
+
+  return `${hours}:${minutes}:${seconds}.${milliseconds}`
 }
 
 function formatConsoleArg(arg: unknown): string {

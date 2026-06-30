@@ -10,9 +10,13 @@ import { atom } from "jotai"
 const consoleOutputHistoryLimit = 1000
 
 export interface ConsoleOutputHistory extends ConsoleOutput {
-  readonly getEntries: () => ReadonlyArray<ConsoleEntry>
+  readonly getEntries: () => ReadonlyArray<ConsoleOutputHistoryEntry>
   readonly clearEntries: () => void
   readonly subscribe: (listener: () => void) => () => void
+}
+
+export interface ConsoleOutputHistoryEntry extends ConsoleEntry {
+  readonly createdAt: number
 }
 
 function createConsoleOutputHistory({
@@ -20,7 +24,7 @@ function createConsoleOutputHistory({
 }: {
   readonly limit: number
 }): ConsoleOutputHistory {
-  const entries: ConsoleEntry[] = []
+  const entries: ConsoleOutputHistoryEntry[] = []
   const listeners = new Set<() => void>()
 
   const notify = () => {
@@ -31,7 +35,10 @@ function createConsoleOutputHistory({
 
   return {
     write: (entry) => {
-      entries.push(entry)
+      entries.push({
+        ...entry,
+        createdAt: Date.now(),
+      })
 
       if (entries.length > limit) {
         entries.splice(0, entries.length - limit)

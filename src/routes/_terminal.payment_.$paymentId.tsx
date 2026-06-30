@@ -32,6 +32,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { createFetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
+import {
+  getDefaultPaymentMethod,
+  parsePaymentMethodOrder,
+} from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
   markPaymentPaidCash,
   preparePaymentMethod,
@@ -54,7 +60,7 @@ import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 type PaymentMethodTab = "spark" | "iban" | "cash"
-type PaymentMethodKind = "spark" | "iban" | "cashRegister"
+type PaymentMethodKind = DefaultPaymentMethod
 
 interface PaymentMethodOption {
   readonly id: PaymentMethodTab
@@ -245,7 +251,7 @@ function PaymentWaitingRequest({
   >(() => new Set())
   const [successVisible, setSuccessVisible] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<PaymentMethodTab>("spark")
+    useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
     useState<BankQrFormat | null>(null)
   const preparePaymentMethodKeysRef = useRef(new Set<string>())
@@ -253,12 +259,20 @@ function PaymentWaitingRequest({
   const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
   const { data: payments } = useEvoluQuery(query)
   const { data: claims } = useEvoluQuery(claimsQuery)
+  const { data: settingsData } = useEvoluQuery(settingsQuery)
   const { data: enabledPaymentMethodAccounts } = useEvoluQuery(
     enabledPaymentMethodAccountsQuery
   )
   const payment = payments[0]
+  const [settings] = settingsData
   const isPaid = claims.length > 0
   const paymentMethods: PaymentMethodOption[] = []
+  const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
+    settings?.defaultPaymentMethod
+  )
+  const paymentMethodOrder = parsePaymentMethodOrder(
+    settings?.paymentMethodOrderJson
+  )
 
   const enabledSparkAccount = enabledPaymentMethodAccounts.find(
     (account) => account.kind === "spark" && account.sparkMnemonic !== null
@@ -337,9 +351,25 @@ function PaymentWaitingRequest({
     })
   }
 
+  const orderedPaymentMethods = paymentMethods.toSorted(
+    (firstMethod, secondMethod) =>
+      paymentMethodOrder.indexOf(firstMethod.kind) -
+      paymentMethodOrder.indexOf(secondMethod.kind)
+  )
+  const selectedPaymentMethodOption =
+    selectedPaymentMethod === null
+      ? null
+      : (orderedPaymentMethods.find(
+          (method) => method.id === selectedPaymentMethod
+        ) ?? null)
+  const defaultPaymentMethodOption =
+    orderedPaymentMethods.find(
+      (method) => method.kind === configuredDefaultPaymentMethod
+    ) ?? null
   const activePaymentMethod =
-    paymentMethods.find((method) => method.id === selectedPaymentMethod) ??
-    paymentMethods[0] ??
+    selectedPaymentMethodOption ??
+    defaultPaymentMethodOption ??
+    orderedPaymentMethods[0] ??
     null
   const activePreparingPaymentMethodKey =
     activePaymentMethod !== null &&
@@ -360,14 +390,16 @@ function PaymentWaitingRequest({
 
   useEffect(() => {
     if (
-      activePaymentMethod === null ||
-      activePaymentMethod.id === selectedPaymentMethod
+      selectedPaymentMethod === null ||
+      orderedPaymentMethods.some(
+        (method) => method.id === selectedPaymentMethod
+      )
     ) {
       return
     }
 
-    setSelectedPaymentMethod(activePaymentMethod.id)
-  }, [activePaymentMethod, selectedPaymentMethod])
+    setSelectedPaymentMethod(null)
+  }, [orderedPaymentMethods, selectedPaymentMethod])
 
   useEffect(() => {
     if (
@@ -552,7 +584,7 @@ function PaymentWaitingRequest({
                 }}
                 className="w-fit items-center gap-4"
               >
-                {paymentMethods.map((method) => (
+                {orderedPaymentMethods.map((method) => (
                   <TabsContent
                     key={method.id}
                     value={method.id}
@@ -564,7 +596,7 @@ function PaymentWaitingRequest({
                   </TabsContent>
                 ))}
                 <TabsList className="mx-auto h-16 rounded-full border border-black/15 dark:border-white/15  bg-background p-2 px-3 text-muted-foreground">
-                  {paymentMethods.map((method) => (
+                  {orderedPaymentMethods.map((method) => (
                     <TabsTrigger
                       key={method.id}
                       value={method.id}

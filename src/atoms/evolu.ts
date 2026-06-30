@@ -10,10 +10,8 @@ import {
   cashRegisterAccountId,
   sparkAccountId,
 } from "@/core/modules/account/account-utils.ts"
-import {
-  createDefaultSettings,
-  settingsId,
-} from "@/core/modules/app-settings/app-settings-utils.ts"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { createDefaultSettings } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
   FiatCurrency,
   NonEmptyString255,
@@ -52,11 +50,7 @@ export const evoluAtom = atom(async (get) => {
 
   // Create default accounts and payment methods
   {
-    const appSettings = await evolu.loadQuery(
-      createQuery((db) =>
-        db.selectFrom("appSettings").select("id").where("id", "=", settingsId)
-      )
-    )
+    const appSettings = await evolu.loadQuery(settingsQuery)
 
     if (appSettings.length === 0) {
       evolu.upsert("appSettings", createDefaultSettings())

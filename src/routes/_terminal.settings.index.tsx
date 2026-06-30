@@ -3,6 +3,7 @@ import {
   ArrowDown,
   BadgeDollarSign,
   Bug,
+  CircleDollarSign,
   Grid2X2,
   HeartHandshake,
   Info,
@@ -99,6 +100,12 @@ const supportSettings: ReadonlyArray<SettingRow> = [
 ]
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: CircleDollarSign,
+    title: "settings.defaultPaymentMethod.title",
+    description: "settings.defaultPaymentMethod.description",
+    to: "/settings/default-payment-method",
+  },
   {
     icon: Landmark,
     title: "settings.paymentAccounts.title",

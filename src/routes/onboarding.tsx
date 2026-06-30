@@ -42,6 +42,7 @@ import {
 } from "@/core/modules/account/account-actions.ts"
 import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
@@ -274,6 +275,9 @@ function OnboardingPage() {
         updateSettings({
           onboardingCompleted: sqliteTrue,
           fiatCurrency: selectedCurrency,
+          defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
+            selectedPaymentMethods
+          ),
           paymentMethodOrderJson: JSON.stringify(
             getPaymentMethodOrder(selectedPaymentMethods)
           ),
@@ -590,8 +594,12 @@ function StepDots({ activeStep }: { readonly activeStep: OnboardingStep }) {
 
 function getPaymentMethodOrder(
   paymentMethods: ReadonlySet<PaymentMethod>
-): ReadonlyArray<"cashRegister" | "spark" | "iban"> {
-  const order: Array<"cashRegister" | "spark" | "iban"> = []
+): ReadonlyArray<DefaultPaymentMethod> {
+  const order: DefaultPaymentMethod[] = []
+
+  if (paymentMethods.has("iban")) {
+    order.push("iban")
+  }
 
   if (paymentMethods.has("cash")) {
     order.push("cashRegister")
@@ -601,9 +609,13 @@ function getPaymentMethodOrder(
     order.push("spark")
   }
 
-  if (paymentMethods.has("iban")) {
-    order.push("iban")
-  }
-
   return order
+}
+
+function getDefaultPaymentMethodForOnboarding(
+  paymentMethods: ReadonlySet<PaymentMethod>
+): DefaultPaymentMethod {
+  if (paymentMethods.has("btc")) return "spark"
+  if (paymentMethods.has("cash")) return "cashRegister"
+  return "iban"
 }

@@ -1,7 +1,10 @@
 import { SqliteBoolean, sqliteTrue } from "@evolu/common"
 import { z } from "zod"
 
-import { AppSettingsId } from "@/core/modules/app-settings/app-settings-types.ts"
+import {
+  AppSettingsId,
+  DefaultPaymentMethodSchema,
+} from "@/core/modules/app-settings/app-settings-types.ts"
 import {
   FiatCurrencySchema,
   type InferTable,
@@ -15,6 +18,7 @@ export const appSettings = {
   presetTipPercentagesJson: z.string(),
   presetTipFixedAmountsJson: z.string(),
   paymentMethodOrderJson: z.string(),
+  defaultPaymentMethod: DefaultPaymentMethodSchema,
 } as const
 
 export type AppSettingsRow = InferTable<typeof appSettings>

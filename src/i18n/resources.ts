@@ -253,6 +253,27 @@ export const resources = {
     "settings.cashRegisterAccount.save": "Save cash register",
     "settings.cashRegisterAccount.saved": "Cash register saved.",
     "settings.appearance": "APPEARANCE & LANGUAGE",
+    "settings.defaultPaymentMethod.cashRegister.description":
+      "Open new payments with the cash tab selected.",
+    "settings.defaultPaymentMethod.cashRegister.title": "Cash payment",
+    "settings.defaultPaymentMethod.description":
+      "Choose which enabled method is selected first during checkout",
+    "settings.defaultPaymentMethod.empty":
+      "No payment method is currently available for the selected fiat currency.",
+    "settings.defaultPaymentMethod.empty.action": "Manage payment accounts",
+    "settings.defaultPaymentMethod.iban.description":
+      "Open new payments with the bank QR tab selected.",
+    "settings.defaultPaymentMethod.iban.title": "Bank QR payment",
+    "settings.defaultPaymentMethod.mode.description":
+      "Only enabled methods compatible with the selected fiat currency are shown.",
+    "settings.defaultPaymentMethod.mode.disabledDescription":
+      "The saved default is not available. Select a new enabled method.",
+    "settings.defaultPaymentMethod.mode.title": "Default checkout method",
+    "settings.defaultPaymentMethod.saved": "Default payment method saved.",
+    "settings.defaultPaymentMethod.spark.description":
+      "Open new payments with the Bitcoin / Spark tab selected.",
+    "settings.defaultPaymentMethod.spark.title": "Bitcoin / Spark payment",
+    "settings.defaultPaymentMethod.title": "Default Payment Method",
     "settings.debugConsole.clear": "Clear",
     "settings.debugConsole.description": "Inspect captured app console output",
     "settings.debugConsole.empty": "No console entries captured yet.",
@@ -791,6 +812,27 @@ export const resources = {
     "settings.cashRegisterAccount.save": "Uložit pokladnu",
     "settings.cashRegisterAccount.saved": "Pokladna uložena.",
     "settings.appearance": "VZHLED A JAZYK",
+    "settings.defaultPaymentMethod.cashRegister.description":
+      "Nové platby otevřít s vybranou záložkou hotovosti.",
+    "settings.defaultPaymentMethod.cashRegister.title": "Hotovostní platba",
+    "settings.defaultPaymentMethod.description":
+      "Vyberte, která povolená metoda se v checkoutu vybere jako první",
+    "settings.defaultPaymentMethod.empty":
+      "Pro vybranou fiat měnu teď není dostupná žádná platební metoda.",
+    "settings.defaultPaymentMethod.empty.action": "Spravovat platební účty",
+    "settings.defaultPaymentMethod.iban.description":
+      "Nové platby otevřít s vybranou záložkou bankovního QR.",
+    "settings.defaultPaymentMethod.iban.title": "Bankovní QR platba",
+    "settings.defaultPaymentMethod.mode.description":
+      "Zobrazují se jen povolené metody kompatibilní s vybranou fiat měnou.",
+    "settings.defaultPaymentMethod.mode.disabledDescription":
+      "Uložený default není dostupný. Vyberte novou povolenou metodu.",
+    "settings.defaultPaymentMethod.mode.title": "Výchozí metoda checkoutu",
+    "settings.defaultPaymentMethod.saved": "Výchozí platební metoda uložena.",
+    "settings.defaultPaymentMethod.spark.description":
+      "Nové platby otevřít s vybranou záložkou Bitcoin / Spark.",
+    "settings.defaultPaymentMethod.spark.title": "Bitcoin / Spark platba",
+    "settings.defaultPaymentMethod.title": "Výchozí platební metoda",
     "settings.debugConsole.clear": "Vymazat",
     "settings.debugConsole.description":
       "Zobrazit zachycený konzolový výstup aplikace",
@@ -1330,6 +1372,28 @@ export const resources = {
     "settings.cashRegisterAccount.save": "Uložiť pokladnicu",
     "settings.cashRegisterAccount.saved": "Pokladnica uložená.",
     "settings.appearance": "VZHĽAD A JAZYK",
+    "settings.defaultPaymentMethod.cashRegister.description":
+      "Nové platby otvoriť s vybranou záložkou hotovosti.",
+    "settings.defaultPaymentMethod.cashRegister.title": "Hotovostná platba",
+    "settings.defaultPaymentMethod.description":
+      "Vyberte, ktorá povolená metóda sa v checkoute vyberie ako prvá",
+    "settings.defaultPaymentMethod.empty":
+      "Pre vybranú fiat menu teraz nie je dostupná žiadna platobná metóda.",
+    "settings.defaultPaymentMethod.empty.action": "Spravovať platobné účty",
+    "settings.defaultPaymentMethod.iban.description":
+      "Nové platby otvoriť s vybranou záložkou bankového QR.",
+    "settings.defaultPaymentMethod.iban.title": "Banková QR platba",
+    "settings.defaultPaymentMethod.mode.description":
+      "Zobrazujú sa len povolené metódy kompatibilné s vybranou fiat menou.",
+    "settings.defaultPaymentMethod.mode.disabledDescription":
+      "Uložený default nie je dostupný. Vyberte novú povolenú metódu.",
+    "settings.defaultPaymentMethod.mode.title": "Predvolená metóda checkoutu",
+    "settings.defaultPaymentMethod.saved":
+      "Predvolená platobná metóda uložená.",
+    "settings.defaultPaymentMethod.spark.description":
+      "Nové platby otvoriť s vybranou záložkou Bitcoin / Spark.",
+    "settings.defaultPaymentMethod.spark.title": "Bitcoin / Spark platba",
+    "settings.defaultPaymentMethod.title": "Predvolená platobná metóda",
     "settings.debugConsole.clear": "Vymazať",
     "settings.debugConsole.description":
       "Zobraziť zachytený konzolový výstup aplikácie",

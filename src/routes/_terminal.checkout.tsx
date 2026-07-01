@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card.tsx"
 import { Field } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/checkout")({
@@ -65,6 +66,8 @@ export function SearchField({ placeholder }: { readonly placeholder: string }) {
 }
 
 function CheckoutPage() {
+  useScreenWakeLock(true)
+
   const { t } = useTranslation()
 
   return (

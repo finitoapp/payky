@@ -54,6 +54,7 @@ import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -266,6 +267,9 @@ function PaymentWaitingRequest({
   const payment = payments[0]
   const [settings] = settingsData
   const isPaid = claims.length > 0
+  const wakeLockEnabled =
+    payment !== undefined && payment.canceledAt === null && !isPaid
+  const { supported: wakeLockSupported } = useScreenWakeLock(wakeLockEnabled)
   const paymentMethods: PaymentMethodOption[] = []
   const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
     settings?.defaultPaymentMethod
@@ -653,6 +657,11 @@ function PaymentWaitingRequest({
               <LoaderCircleIcon className="animate-spin" />
               <span>{t("paymentWait.waiting")}</span>
             </p>
+            {wakeLockEnabled && !wakeLockSupported ? (
+              <p className="max-w-80 text-balance text-xs text-muted-foreground">
+                {t("paymentWait.wakeLockUnsupported")}
+              </p>
+            ) : null}
           </div>
         </section>
 

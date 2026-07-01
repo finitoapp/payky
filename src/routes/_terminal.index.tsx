@@ -16,6 +16,7 @@ import {
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
+import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/")({
@@ -110,6 +111,8 @@ function TerminalPaymentKeypadLoader() {
 }
 
 function TerminalHomePage() {
+  useScreenWakeLock(true)
+
   return (
     <>
       <Header />

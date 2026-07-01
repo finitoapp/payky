@@ -138,6 +138,8 @@ export const resources = {
     "paymentWait.qrFormatShort.spayd": "CZ",
     "paymentWait.scanOrTap": "Scan and pay",
     "paymentWait.share": "Share payment request",
+    "paymentWait.wakeLockUnsupported":
+      "This browser cannot keep the screen awake automatically.",
     "paymentWait.waiting": "Waiting for payment...",
     "paymentDetail.amount": "Amount",
     "paymentDetail.backToPayment": "Back to payment",
@@ -698,6 +700,8 @@ export const resources = {
     "paymentWait.qrFormatShort.spayd": "CZ",
     "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
     "paymentWait.share": "Sdílet platební žádost",
+    "paymentWait.wakeLockUnsupported":
+      "Tento prohlížeč neumí automaticky udržet obrazovku zapnutou.",
     "paymentWait.waiting": "Čeká se na platbu...",
     "paymentDetail.amount": "Částka",
     "paymentDetail.backToPayment": "Zpět na platbu",
@@ -1258,6 +1262,8 @@ export const resources = {
     "paymentWait.qrFormatShort.spayd": "CZ",
     "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
     "paymentWait.share": "Zdieľať platobnú žiadosť",
+    "paymentWait.wakeLockUnsupported":
+      "Tento prehliadač nevie automaticky udržať obrazovku zapnutú.",
     "paymentWait.waiting": "Čaká sa na platbu...",
     "paymentDetail.amount": "Suma",
     "paymentDetail.backToPayment": "Späť na platbu",

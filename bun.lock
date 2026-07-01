@@ -11,6 +11,7 @@
         "@capacitor/app": "8.1.0",
         "@capacitor/core": "8.4.1",
         "@capacitor/haptics": "8.0.2",
+        "@dedalik/use-react": "1.1.2",
         "@evolu/common": "8.0.0-next.5",
         "@evolu/nodejs": "3.0.0-next.3",
         "@evolu/react": "11.0.0-next.0",
@@ -305,6 +306,8 @@
     "@capacitor/core": ["@capacitor/core@8.4.1", "", { "dependencies": { "tslib": "^2.1.0" } }, "sha512-xqhOGLbTAYeOWK+IDUNSjQJAPapQjRHrIcgk9PYp52or9zFTaaMko31uNi16N6W+CRJ8VrRram6fOYILkBG2Hg=="],
 
     "@capacitor/haptics": ["@capacitor/haptics@8.0.2", "", { "peerDependencies": { "@capacitor/core": ">=8.0.0" } }, "sha512-c2hZzRR5Fk1tbTvhG1jhh2XBAf3EhnIerMIb2sl7Mt41Gxx1fhBJFDa0/BI1IbY4loVepyyuqNC9820/GZuoWQ=="],
+
+    "@dedalik/use-react": ["@dedalik/use-react@1.1.2", "", { "dependencies": { "tslib": "^2.8.1" }, "peerDependencies": { "react": ">=17 || >=18.2.0", "react-dom": ">=17 || >=18.2.0" } }, "sha512-i0nVIQk1XH+eVQAO/RFpMfXf1voVHU1edhJf/EP+PK8ptkBdsTsHLxnFr4Dp7zuMXKX2CSj9SuWKI8MTiy6wDA=="],
 
     "@dotenvx/dotenvx": ["@dotenvx/dotenvx@1.67.0", "", { "dependencies": { "commander": "^11.1.0", "dotenv": "^17.2.1", "eciesjs": "^0.4.10", "enquirer": "^2.4.1", "execa": "^5.1.1", "fdir": "^6.2.0", "ignore": "^5.3.0", "object-treeify": "1.1.33", "picomatch": "^4.0.4", "which": "^4.0.0", "yocto-spinner": "^1.1.0" }, "bin": { "dotenvx": "src/cli/dotenvx.js" } }, "sha512-KBfIx5OrAG6giqSkHCkQWynZmT47XkSTuuYIcvjHxlKoVRlYbxNrJmyIPaefnszU8MCvMwrrB+viJQzPqzgpcg=="],
 

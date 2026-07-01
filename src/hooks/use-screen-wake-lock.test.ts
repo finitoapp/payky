@@ -13,6 +13,19 @@ class FakeDocument extends EventTarget {
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
+function createDeferred<T>() {
+  let resolve: ((value: T) => void) | undefined
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve
+  })
+
+  if (resolve === undefined) {
+    throw new Error("Deferred promise resolver was not initialized")
+  }
+
+  return { promise, resolve }
+}
+
 function setupController() {
   const document = new FakeDocument()
   const window = new EventTarget()
@@ -106,6 +119,65 @@ describe("createScreenWakeLockController", () => {
     document.dispatchEvent(new Event("visibilitychange"))
     await flushPromises()
 
+    expect(request).toHaveBeenCalledTimes(2)
+  })
+
+  test("does not start duplicate acquire while the first request is pending", async () => {
+    const document = new FakeDocument()
+    const window = new EventTarget()
+    const deferredSentinel = createDeferred<FakeWakeLockSentinel>()
+    const request = vi.fn(() => deferredSentinel.promise)
+    const controller = createScreenWakeLockController({
+      document,
+      window,
+      wakeLock: { request },
+    })
+
+    controller.start()
+
+    expect(request).toHaveBeenCalledTimes(1)
+
+    window.dispatchEvent(new Event("pageshow"))
+    document.visibilityState = "visible"
+    document.dispatchEvent(new Event("visibilitychange"))
+
+    expect(request).toHaveBeenCalledTimes(1)
+
+    deferredSentinel.resolve(new FakeWakeLockSentinel())
+    await flushPromises()
+
+    expect(request).toHaveBeenCalledTimes(1)
+  })
+
+  test("retries after a stale pending acquire resolves while visible", async () => {
+    const document = new FakeDocument()
+    const window = new EventTarget()
+    const firstDeferredSentinel = createDeferred<FakeWakeLockSentinel>()
+    const firstSentinel = new FakeWakeLockSentinel()
+    const secondSentinel = new FakeWakeLockSentinel()
+    const request = vi
+      .fn<() => Promise<FakeWakeLockSentinel>>()
+      .mockReturnValueOnce(firstDeferredSentinel.promise)
+      .mockResolvedValueOnce(secondSentinel)
+    const controller = createScreenWakeLockController({
+      document,
+      window,
+      wakeLock: { request },
+    })
+
+    controller.start()
+
+    expect(request).toHaveBeenCalledTimes(1)
+
+    window.dispatchEvent(new Event("pagehide"))
+    window.dispatchEvent(new Event("pageshow"))
+
+    expect(request).toHaveBeenCalledTimes(1)
+
+    firstDeferredSentinel.resolve(firstSentinel)
+    await flushPromises()
+
+    expect(firstSentinel.release).toHaveBeenCalledTimes(1)
     expect(request).toHaveBeenCalledTimes(2)
   })
 })

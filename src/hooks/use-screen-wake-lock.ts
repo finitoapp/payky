@@ -44,6 +44,8 @@ export function createScreenWakeLockController({
   window,
 }: ScreenWakeLockControllerDeps): ScreenWakeLockController {
   let active = false
+  let requestingWakeLock = false
+  let retryWakeLockAfterPending = false
   let requestVersion = 0
   let wakeLockSentinel: WakeLockSentinelLike | null = null
 
@@ -66,6 +68,13 @@ export function createScreenWakeLockController({
       return
     }
 
+    if (requestingWakeLock) {
+      retryWakeLockAfterPending = true
+      return
+    }
+
+    requestingWakeLock = true
+    retryWakeLockAfterPending = false
     const currentRequestVersion = requestVersion + 1
     requestVersion = currentRequestVersion
 
@@ -99,6 +108,19 @@ export function createScreenWakeLockController({
       wakeLockSentinel = nextWakeLock
     } catch {
       // Ignore request failures - permission denials or transient browser issues.
+    } finally {
+      requestingWakeLock = false
+      const shouldRetryWakeLock =
+        retryWakeLockAfterPending &&
+        active &&
+        canUsePage(document) &&
+        wakeLockSentinel === null
+
+      retryWakeLockAfterPending = false
+
+      if (shouldRetryWakeLock) {
+        void acquireWakeLock()
+      }
     }
   }
 

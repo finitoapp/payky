@@ -1,3 +1,4 @@
+import { useWakeLock } from "@dedalik/use-react"
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { createRun } from "@evolu/web"
 import { createFileRoute, Link } from "@tanstack/react-router"
@@ -254,6 +255,11 @@ function PaymentWaitingRequest({
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
     useState<BankQrFormat | null>(null)
+  const {
+    isSupported: wakeLockSupported,
+    release: releaseWakeLock,
+    request: requestWakeLock,
+  } = useWakeLock()
   const preparePaymentMethodKeysRef = useRef(new Set<string>())
   const query = useMemo(() => paymentRequestQuery(paymentId), [paymentId])
   const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
@@ -266,6 +272,8 @@ function PaymentWaitingRequest({
   const payment = payments[0]
   const [settings] = settingsData
   const isPaid = claims.length > 0
+  const wakeLockEnabled =
+    payment !== undefined && payment.canceledAt === null && !isPaid
   const paymentMethods: PaymentMethodOption[] = []
   const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
     settings?.defaultPaymentMethod
@@ -381,6 +389,19 @@ function PaymentWaitingRequest({
     preparePaymentErrorMethods.has(activePaymentMethod.id)
       ? "paymentWait.prepareError"
       : null
+
+  useEffect(() => {
+    if (!wakeLockEnabled) {
+      void releaseWakeLock()
+      return
+    }
+
+    void requestWakeLock()
+
+    return () => {
+      void releaseWakeLock()
+    }
+  }, [releaseWakeLock, requestWakeLock, wakeLockEnabled])
 
   useEffect(() => {
     if (!isPaid || successVisible) return
@@ -653,6 +674,11 @@ function PaymentWaitingRequest({
               <LoaderCircleIcon className="animate-spin" />
               <span>{t("paymentWait.waiting")}</span>
             </p>
+            {wakeLockEnabled && !wakeLockSupported ? (
+              <p className="max-w-80 text-balance text-xs text-muted-foreground">
+                {t("paymentWait.wakeLockUnsupported")}
+              </p>
+            ) : null}
           </div>
         </section>
 

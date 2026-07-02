@@ -1,21 +1,29 @@
 name: Deploy to Vercel
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
   workflow_dispatch:
 
 concurrency:
-  group: vercel-production
-  cancel-in-progress: false
+  group: vercel-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   deploy:
     name: Deploy
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'test' || 'production' }}
+      url: ${{ github.event_name == 'pull_request' && steps.deploy_preview.outputs.url || steps.deploy_production.outputs.url }}
     permissions:
       contents: read
+      deployments: write
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -31,11 +39,36 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Pull Vercel environment
+      - name: Pull Vercel production environment
+        if: github.event_name != 'pull_request'
         run: bunx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Pull Vercel preview environment
+        if: github.event_name == 'pull_request'
+        run: bunx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Build production output
+        if: github.event_name != 'pull_request'
         run: bunx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy prebuilt output
-        run: bunx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build preview output
+        if: github.event_name == 'pull_request'
+        run: bunx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy prebuilt production output
+        id: deploy_production
+        if: github.event_name != 'pull_request'
+        run: |
+          deployment_output="$(bunx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})"
+          echo "$deployment_output"
+          deployment_url="$(echo "$deployment_output" | tail -n 1)"
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy prebuilt preview output
+        id: deploy_preview
+        if: github.event_name == 'pull_request'
+        run: |
+          deployment_output="$(bunx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})"
+          echo "$deployment_output"
+          deployment_url="$(echo "$deployment_output" | tail -n 1)"
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"

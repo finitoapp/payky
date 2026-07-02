@@ -39,6 +39,7 @@ import {
   bankQrFormats,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import { normalizeBankAccountInputToIban } from "@/core/modules/shared/iban-utils.ts"
 import {
   type BankQrFormat,
   FiatCurrency,
@@ -61,9 +62,6 @@ export const Route = createFileRoute("/_terminal/settings/payment-accounts")({
     },
   },
 })
-
-const normalizeIban = (value: string) =>
-  value.replaceAll(/\s/gu, "").toUpperCase()
 
 const normalizeMnemonic = (value: string) =>
   value.trim().replaceAll(/\s+/gu, " ")
@@ -150,9 +148,12 @@ function FiatBankAccountForm() {
         setError(null)
         setSaved(false)
 
-        const normalizedIban = normalizeIban(iban)
-        const ibanResult = normalizedIban
-          ? IbanSchema.safeParse(normalizedIban)
+        const trimmedBankAccount = iban.trim()
+        const bankAccountResult = trimmedBankAccount
+          ? normalizeBankAccountInputToIban(trimmedBankAccount)
+          : null
+        const ibanResult = bankAccountResult?.success
+          ? IbanSchema.safeParse(bankAccountResult.iban)
           : null
 
         if (enabled && !ibanResult) {
@@ -160,7 +161,10 @@ function FiatBankAccountForm() {
           return
         }
 
-        if (ibanResult?.success === false) {
+        if (
+          ibanResult?.success === false ||
+          bankAccountResult?.success === false
+        ) {
           setError("settings.fiatBankAccount.iban.invalid")
           return
         }
@@ -182,7 +186,7 @@ function FiatBankAccountForm() {
             })
           )
 
-          setIban(normalizedIban)
+          setIban(ibanResult?.data ?? "")
           setSaved(true)
         } finally {
           setPending(false)

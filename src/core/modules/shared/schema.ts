@@ -1,6 +1,8 @@
 import type { StandardSchemaV1 } from "@evolu/common"
 import { z } from "zod"
 
+import { isValidIban, normalizeIbanInput } from "./iban-utils.ts"
+
 export type InferTable<T extends Readonly<Record<string, StandardSchemaV1>>> =
   Readonly<{
     [K in keyof T]: StandardSchemaV1.InferOutput<T[K]>
@@ -158,8 +160,8 @@ export const ItemLineTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
 export const BillLineTagSchema = z.enum(["add", "remove"])
 export const IbanSchema = z
   .string()
-  .trim()
-  .regex(/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/u)
+  .transform(normalizeIbanInput)
+  .refine(isValidIban)
   .brand<"Iban">()
 export const VariableSymbolSchema = z
   .string()

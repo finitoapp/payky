@@ -337,7 +337,7 @@ describe("account transaction actions", () => {
         deviceId: null,
         name: "Second bank account",
         iban: {
-          iban: "CZ2408000000001234567899",
+          iban: "CZ5508000000001234567899",
           currency: "CZK",
         },
       })

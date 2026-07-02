@@ -396,7 +396,7 @@ describe("fio account transaction sync job", () => {
       },
       fetch: async () =>
         statementResponse({
-          iban: "CZ2408000000001234567899",
+          iban: "CZ5508000000001234567899",
           transactions: [fioTransaction],
         }),
       date: {

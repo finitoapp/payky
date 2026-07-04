@@ -13,18 +13,22 @@
 
 ## Project Structure
 
-- `src/main.tsx` is the browser entry point. It creates the Evolu client and renders the React app.
-- `src/App.tsx` wires top-level providers and the TanStack Router provider.
+- `src/main.tsx` is the browser entry point. It installs polyfills and renders the React app.
+- `src/App.tsx` wires top-level providers (Jotai store, theme, background jobs, toaster) and the TanStack Router provider.
 - `src/router.tsx` creates the TanStack Router from `src/routeTree.gen.ts`; route files live in `src/routes`.
-- `src/routes/__root.tsx` connects the generated root route to `RootLayout` from `src/pages.tsx`.
-- `src/routes/index.tsx` and `src/routes/activity.tsx` define file-based routes. Keep route files thin and move substantial page UI into page or feature modules.
-- `src/pages.tsx` currently contains the root layout and simple page components. When pages grow, prefer extracting feature-specific components instead of expanding this file indefinitely.
-- `src/components/ui` contains shadcn-style reusable UI primitives built on Base UI, such as `button.tsx` and `button-variants.ts`. Keep generic UI here; avoid feature or domain logic in this directory.
+- `src/routes/__root.tsx` defines the root layout and error boundary; `src/routes/_terminal.tsx` is the layout route for the terminal pages. Keep route files thin and move substantial page UI into page or feature modules.
+- `src/atoms` contains Jotai atoms that bootstrap app singletons: the device Evolu client, the app Evolu client, the active account, console, and run. Evolu clients are created here, not in `main.tsx`.
+- `src/hooks` contains the React bindings for those singletons (`useEvolu`, `useEvoluQuery`, `useDeviceEvoluQuery`, `useConsole`, `useTranslation`, ...). Access Evolu from React through these hooks.
+- `src/components/ui` contains shadcn-style reusable UI primitives built on Base UI, such as `button.tsx`. Keep generic UI here; avoid feature or domain logic in this directory.
 - `src/components/theme-provider.tsx` contains theme-level UI infrastructure.
-- `src/providers/evolu.tsx` creates and exports the typed Evolu React binding hooks and composes app providers.
-- `src/core/evolu` contains Evolu client setup and the app schema composition. Register new Evolu tables and indexes in `src/core/evolu/schema.ts`.
+- `src/core/evolu` contains Evolu client setup, the app schema composition, and the device database (`device-client.ts`, `device-account.ts`). Register new Evolu tables and indexes in `src/core/evolu/schema.ts`.
 - `src/core/modules` contains domain modules. Each module owns its schema, branded ids/types, actions, queries, and tests for one domain concept.
-- `src/core/modules/shared` contains lower-level domain helpers, shared schemas, Evolu dependency helpers, and shared action error utilities.
+- `src/core/modules/shared` contains lower-level domain helpers, shared schemas, Evolu dependency helpers, and the `getFirstOr` Result helper.
+- `src/core/deps.ts` declares small injectable dependency objects (`FetchDep`, `DateDep`, `EvoluOwnerIdDep`); `src/core/error.ts` provides the `defineError` factory.
+- `src/core/background-jobs` contains the background job framework (`BackgroundJobContext`, keyed task queue) and the sync jobs under `jobs/`. Jobs receive all effects — including `lockManager` — through their context; never use ambient globals such as `navigator.locks`.
+- `src/core/integrations` contains HTTP clients for external services (FIO, Yadio, LNURL); `src/core/spark` wraps the Spark wallet SDK.
+- `src/core/cli` contains CLI-runtime helpers (`cli-env.ts`, the in-process lock manager); CLI entry points live in `bin/`.
+- `src/core/native` contains Capacitor/WebView runtime detection and platform plumbing.
 - `src/i18n` contains translation resources and the translation hook. All user-facing React text must use keys from `src/i18n/resources.ts`.
 - `src/lib` contains app-level generic utilities such as `cn`; keep domain code in `src/core/modules` instead.
 - `src/assets` contains static frontend assets.
@@ -43,22 +47,21 @@
 
 ## Domain Action Patterns
 
-- For simple Evolu-only actions, use the curried dependency style shown in `payment-actions.ts`: `(deps: EvoluDep) => async (...) => Promise<...>`.
-- For actions that compose multiple effects or depend on cancellable/injectable services, return an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`.
+- Write every action as an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`, as in `payment-actions.ts`. Simple Evolu-only actions typically need `EvoluDep & EvoluOwnerIdDep`. (The curried `(deps) => async (...)` style in `bill-utils.ts` is legacy; do not add new code in that style.)
 - Express Task dependencies as intersections of small dependency objects, for example `EvoluDep & SparkWalletDep & FetchDep`.
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.
 - Keep direct dependency calls for non-Task services, for example `run.deps.evolu.loadQuery(...)` or `run.deps.sparkWallet.create(...)`.
 - In Task code, use `run.deps.console` for all logging. Do not call global `console.log`, `console.warn`, `console.error`, or related console methods directly.
 - Clean up disposable resources acquired inside Task actions with `finally`, as with wallet cleanup in `createPreparedPayment`.
-- Use shared `ActionError` helpers from `src/core/modules/shared/action-error.ts` for domain failures: `notFound(...)`, `invalidOperation(...)`, `getFirst(...)`, `ok(...)`, and `err(...)`.
-- Return `err(notFound(...))` for missing domain rows or required related records instead of throwing.
-- Convert expected operational failures in action code to `err(invalidOperation(message))`; keep thrown exceptions for programmer errors, schema decode failures, framework boundaries, or established local patterns.
+- Define domain errors with `defineError` from `src/core/error.ts` and export their types via `ReturnType`, for example `const createPaymentNotFoundError = defineError("PaymentNotFound")<{ readonly id: PaymentId }>()` with `export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>`. Type each Task's `E` as the union of its expected errors.
+- Return `err(createXNotFoundError({ id }))` for missing domain rows or required related records instead of throwing. Use `getFirstOr(rows, error)` from `src/core/modules/shared/result.ts` to turn a load-first query into a `Result`.
+- Keep thrown exceptions for programmer errors, schema decode failures, framework boundaries, or established local patterns.
 
 ## Translation Key Rules
 
 - Never hardcode user-facing text in React components.
-- Add every visible label to `src/i18n/resources.ts` for both `en` and `cs`.
+- Add every visible label to `src/i18n/resources.ts` for all languages: `en`, `cs`, and `sk`.
 - Use dot-separated, feature-scoped keys, for example `pay.request`, `settings.language`, or `activity.empty`.
 - Do not rename existing translation keys without updating every usage.
 - Prefer stable semantic keys over text-derived keys; key names should describe purpose, not exact copy.

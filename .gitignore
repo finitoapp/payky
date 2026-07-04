@@ -32,3 +32,8 @@ coverage
 
 .data
 .claude
+
+# Local environment (may contain secrets)
+.env
+.env.*
+!.env.example

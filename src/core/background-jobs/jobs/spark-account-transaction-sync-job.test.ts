@@ -5,6 +5,7 @@ import {
 import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
@@ -186,6 +187,7 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -249,6 +251,7 @@ describe("spark account transaction sync job", () => {
       await using jobRun = testCreateRun({
         console: testCreateConsole(),
         evolu,
+        lockManager: createInProcessLockManager(),
         onError: (error) => {
           errors.push(error)
         },
@@ -312,6 +315,7 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -366,6 +370,7 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -423,6 +428,7 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -461,6 +467,7 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },

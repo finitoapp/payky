@@ -34,6 +34,7 @@ import {
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
+import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   bankQrFormats,
@@ -61,9 +62,6 @@ export const Route = createFileRoute("/_terminal/settings/payment-accounts")({
     },
   },
 })
-
-const normalizeMnemonic = (value: string) =>
-  value.trim().replaceAll(/\s+/gu, " ")
 
 interface FiatBankAccountCurrencyOption {
   readonly value: FiatCurrencyType

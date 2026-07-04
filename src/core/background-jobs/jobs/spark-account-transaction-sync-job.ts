@@ -294,7 +294,7 @@ const createSparkAccountSyncSession = ({
       return "ignored"
     }
 
-    return await navigator.locks.request(
+    return await context.lockManager.request(
       `spark-transfer-${transfer.id}`,
       { ifAvailable: true },
       async (lock) => {

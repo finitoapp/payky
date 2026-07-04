@@ -260,7 +260,7 @@ class FioPluginSync {
   }
 
   private async recordTransaction(transaction: FioTransaction): Promise<void> {
-    await navigator.locks.request(
+    await this.context.lockManager.request(
       `fio-transaction-${this.plugin.accountId}-${transaction.id}`,
       { ifAvailable: true },
       async (lock) => {

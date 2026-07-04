@@ -34,6 +34,7 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
+import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -46,9 +47,6 @@ export const Route = createFileRoute("/_terminal/settings/accounts")({
     },
   },
 })
-
-const normalizeMnemonic = (value: string) =>
-  value.replaceAll(/\s+/gu, " ").trim()
 
 function AccountsSettingsPage() {
   const { language, t } = useTranslation()

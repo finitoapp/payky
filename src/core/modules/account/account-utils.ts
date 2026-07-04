@@ -11,3 +11,6 @@ export const sparkAccountId = createIdFromString<"Account">(
 export const cashRegisterAccountId = createIdFromString<"Account">(
   "payky-cash-register-account"
 )
+
+export const normalizeMnemonic = (value: string): string =>
+  value.replaceAll(/\s+/gu, " ").trim()

@@ -49,16 +49,7 @@ bun run preview
 
 ## Native Targets
 
-Tauri remains available through the existing scripts:
-
-```bash
-bun run tauri:dev
-bun run tauri:build
-bun run tauri:android:dev
-bun run tauri:android:build
-```
-
-Capacitor is available as a parallel Android target:
+Capacitor is available as the Android native target:
 
 ```bash
 bun run cap:android:sync

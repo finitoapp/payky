@@ -38,22 +38,11 @@ export const appFetchAsText =
       }
     )
 
-let tauriHttpFetchPromise:
-  | Promise<typeof import("@tauri-apps/plugin-http").fetch>
-  | undefined
 let capacitorHttpPromise:
   | Promise<{
       readonly CapacitorHttp: typeof import("@capacitor/core").CapacitorHttp
     }>
   | undefined
-
-const getTauriHttpFetch = async () => {
-  tauriHttpFetchPromise ??= import("@tauri-apps/plugin-http").then(
-    ({ fetch }) => fetch
-  )
-
-  return tauriHttpFetchPromise
-}
 
 const getCapacitorHttp = async () => {
   capacitorHttpPromise ??= import("@capacitor/core").then(
@@ -137,10 +126,6 @@ const capacitorFetch: typeof globalThis.fetch = async (input, init) => {
 export const createFetchDep = (): FetchDep => ({
   fetch: async (...args) => {
     const runtime = getNativeRuntime()
-
-    if (runtime === "tauri") {
-      return (await getTauriHttpFetch())(...args)
-    }
 
     if (runtime === "capacitor") {
       return capacitorFetch(...args)

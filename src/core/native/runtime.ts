@@ -1,10 +1,8 @@
 import { Capacitor } from "@capacitor/core"
-import { isTauri } from "@tauri-apps/api/core"
 
-export type NativeRuntime = "tauri" | "capacitor" | "web"
+export type NativeRuntime = "capacitor" | "web"
 
 export function getNativeRuntime(): NativeRuntime {
-  if (isTauri()) return "tauri"
   if (Capacitor.isNativePlatform()) return "capacitor"
 
   return "web"

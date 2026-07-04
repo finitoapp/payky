@@ -229,7 +229,9 @@ export const updateAccountTransaction =
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) => {
-      let kind: AccountTransactionRow["kind"] = "cashRegister"
+      // Without a detail payload, keep the stored kind untouched — a partial
+      // update must not reclassify an existing iban/spark transaction.
+      let kind: AccountTransactionRow["kind"] | undefined
 
       if (iban) {
         kind = "iban"

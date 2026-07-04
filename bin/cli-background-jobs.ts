@@ -1,6 +1,7 @@
 import { createConsole, ok, type Task } from "@evolu/common"
 import { createRun } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
   createDateDep,
   createFetchDep,
@@ -40,6 +41,7 @@ export const registerBackgroundJobsCommand =
             evoluOwnerId,
             ...createDateDep(),
             ...createFetchDep(),
+            lockManager: createInProcessLockManager(),
             onError: (error: unknown) => {
               run.deps.console.error("Background job failed.", error)
             },

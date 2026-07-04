@@ -28,6 +28,7 @@ export function AppBackgroundJobs() {
       evoluOwnerId: evolu.appOwner.id,
       ...createDateDep(),
       ...createFetchDep(),
+      lockManager: navigator.locks,
       console,
       onError: (error: unknown) => {
         console.error("Background job failed.", error)

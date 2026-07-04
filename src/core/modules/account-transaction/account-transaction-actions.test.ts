@@ -4,7 +4,10 @@ import { describe, expect, test } from "vitest"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
-import { createAccountTransaction } from "./account-transaction-actions.ts"
+import {
+  createAccountTransaction,
+  updateAccountTransaction,
+} from "./account-transaction-actions.ts"
 
 const accountTransactionsQuery = createQuery((db) =>
   db
@@ -316,6 +319,61 @@ describe("account transaction actions", () => {
           left.accountTransactionId.localeCompare(right.accountTransactionId)
         )
       )
+  })
+
+  test("keeps kind when updating without a detail payload", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
+
+    const id = await run.orThrow(
+      createAccountTransaction({
+        accountId,
+        amount: 19950,
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "manual",
+        },
+        iban: {
+          variableSymbol: null,
+          constantSymbol: null,
+          specificSymbol: null,
+          bankReference: "123456789",
+        },
+      })
+    )
+
+    await run.orThrow(
+      updateAccountTransaction({
+        id,
+        note: "Updated note",
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(accountTransactionsQuery))
+      .toEqual([
+        {
+          id,
+          accountId,
+          amount: 19950,
+          kind: "iban",
+        },
+      ])
   })
 
   test("scopes IBAN bank reference ids by account", async () => {

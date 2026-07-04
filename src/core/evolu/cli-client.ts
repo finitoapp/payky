@@ -27,7 +27,7 @@ import {
 import { createRun } from "@evolu/nodejs"
 import BetterSQLite, { type Statement } from "better-sqlite3"
 import { cliEnv } from "@/core/cli/cli-env.ts"
-import { createAppEvolu } from "@/core/evolu/client.ts"
+import { createTestAppEvolu } from "@/core/evolu/client.ts"
 
 const createSqliteDep = (
   filename: "memory" | string
@@ -171,7 +171,9 @@ export const createEvolu = async (mode: "memory" | string) => {
 
   const { run } = disposer.use(await setupRunWithEvoluDeps(mode))
 
-  const evolu = await run.orThrow(createAppEvolu())
+  // The CLI database is owned by the shared Evolu test owner until the CLI
+  // gets a real owner identity.
+  const evolu = await run.orThrow(createTestAppEvolu())
 
   const disposables = disposer.move()
 

@@ -20,10 +20,11 @@ import {
 export const evoluAtom = atom(async (get) => {
   const account = await get(accountAtom)
   const run = get(runAtom)
+  // Device-configured transports are not passed on purpose: createAppEvolu
+  // keeps sync transports disabled until sync is wired up.
   const evolu = await run.orThrow(
     createAppEvolu({
       mnemonic: account.mnemonic,
-      transports: account.transports,
     })
   )
   const deviceId = account.device.id

@@ -40,10 +40,10 @@ import {
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import {
+  BankAccountInputIbanSchema,
   type BankQrFormat,
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
-  IbanSchema,
   NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
@@ -61,9 +61,6 @@ export const Route = createFileRoute("/_terminal/settings/payment-accounts")({
     },
   },
 })
-
-const normalizeIban = (value: string) =>
-  value.replaceAll(/\s/gu, "").toUpperCase()
 
 const normalizeMnemonic = (value: string) =>
   value.trim().replaceAll(/\s+/gu, " ")
@@ -150,10 +147,8 @@ function FiatBankAccountForm() {
         setError(null)
         setSaved(false)
 
-        const normalizedIban = normalizeIban(iban)
-        const ibanResult = normalizedIban
-          ? IbanSchema.safeParse(normalizedIban)
-          : null
+        const ibanResult =
+          iban === "" ? null : BankAccountInputIbanSchema.safeParse(iban)
 
         if (enabled && !ibanResult) {
           setError("settings.fiatBankAccount.iban.required")
@@ -182,7 +177,7 @@ function FiatBankAccountForm() {
             })
           )
 
-          setIban(normalizedIban)
+          setIban(ibanResult?.data ?? "")
           setSaved(true)
         } finally {
           setPending(false)

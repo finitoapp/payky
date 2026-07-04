@@ -335,11 +335,12 @@ export const resources = {
       "This app currently uses one deterministic fiat bank account.",
     "settings.fiatBankAccount.form.title": "Bank account details",
     "settings.fiatBankAccount.iban.description":
-      "Spaces are removed before saving.",
-    "settings.fiatBankAccount.iban.invalid": "Enter a valid IBAN.",
-    "settings.fiatBankAccount.iban.label": "IBAN",
+      "Enter an IBAN or a Czech account number such as 123456789/0100. The saved value is normalized to IBAN.",
+    "settings.fiatBankAccount.iban.invalid":
+      "Enter a valid IBAN or Czech account number.",
+    "settings.fiatBankAccount.iban.label": "IBAN or account number",
     "settings.fiatBankAccount.iban.required":
-      "IBAN is required when the bank account is enabled.",
+      "IBAN or account number is required when the bank account is enabled.",
     "settings.fiatBankAccount.qrFormat.description":
       "This format is shown first for bank QR payments.",
     "settings.fiatBankAccount.qrFormat.label": "Default QR format",
@@ -897,11 +898,12 @@ export const resources = {
       "Aplikace teď používá jeden deterministický fiat bankovní účet.",
     "settings.fiatBankAccount.form.title": "Údaje bankovního účtu",
     "settings.fiatBankAccount.iban.description":
-      "Mezery se před uložením odstraní.",
-    "settings.fiatBankAccount.iban.invalid": "Zadejte platný IBAN.",
-    "settings.fiatBankAccount.iban.label": "IBAN",
+      "Zadejte IBAN nebo české číslo účtu, například 123456789/0100. Uložená hodnota se normalizuje na IBAN.",
+    "settings.fiatBankAccount.iban.invalid":
+      "Zadejte platný IBAN nebo české číslo účtu.",
+    "settings.fiatBankAccount.iban.label": "IBAN nebo číslo účtu",
     "settings.fiatBankAccount.iban.required":
-      "IBAN je povinný, když je bankovní účet povolený.",
+      "IBAN nebo číslo účtu je povinné, když je bankovní účet povolený.",
     "settings.fiatBankAccount.qrFormat.description":
       "Tento formát se u bankovních QR plateb zobrazí jako první.",
     "settings.fiatBankAccount.qrFormat.label": "Výchozí formát QR",
@@ -1460,11 +1462,12 @@ export const resources = {
       "Aplikácia teraz používa jeden deterministický fiat bankový účet.",
     "settings.fiatBankAccount.form.title": "Údaje bankového účtu",
     "settings.fiatBankAccount.iban.description":
-      "Medzery sa pred uložením odstránia.",
-    "settings.fiatBankAccount.iban.invalid": "Zadajte platný IBAN.",
-    "settings.fiatBankAccount.iban.label": "IBAN",
+      "Zadajte IBAN alebo české číslo účtu, napríklad 123456789/0100. Uložená hodnota sa normalizuje na IBAN.",
+    "settings.fiatBankAccount.iban.invalid":
+      "Zadajte platný IBAN alebo české číslo účtu.",
+    "settings.fiatBankAccount.iban.label": "IBAN alebo číslo účtu",
     "settings.fiatBankAccount.iban.required":
-      "IBAN je povinný, keď je bankový účet povolený.",
+      "IBAN alebo číslo účtu je povinné, keď je bankový účet povolený.",
     "settings.fiatBankAccount.qrFormat.description":
       "Tento formát sa pri bankových QR platbách zobrazí ako prvý.",
     "settings.fiatBankAccount.qrFormat.label": "Predvolený formát QR",

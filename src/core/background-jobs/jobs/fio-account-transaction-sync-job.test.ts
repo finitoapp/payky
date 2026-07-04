@@ -159,14 +159,14 @@ describe("fio account transaction sync job", () => {
     expect(requestedUrls).toEqual([
       "https://fioapi.fio.cz/v1/rest/periods/fio-token-1/2026-03-31/2026-05-31/transactions.json",
     ])
-    expect(
-      await evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId))
-    ).toEqual([
-      {
-        id: fioPluginId,
-        lastSyncedDate: "2026-05-31",
-      },
-    ])
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId)))
+      .toEqual([
+        {
+          id: fioPluginId,
+          lastSyncedDate: "2026-05-31",
+        },
+      ])
     expect(errors).toEqual([])
   })
 
@@ -396,7 +396,7 @@ describe("fio account transaction sync job", () => {
       },
       fetch: async () =>
         statementResponse({
-          iban: "CZ2408000000001234567899",
+          iban: "CZ5508000000001234567899",
           transactions: [fioTransaction],
         }),
       date: {

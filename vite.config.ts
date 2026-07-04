@@ -71,13 +71,7 @@ function evoluAndroidWebViewWorkerLocksPlugin(): PluginOption {
 }
 
 function isNativeAndroidWebViewBuild(command: string): boolean {
-  return (
-    command === "build" &&
-    (process.env.TAURI_ENV_PLATFORM != null ||
-      process.env.TAURI_ENV_TARGET_TRIPLE != null ||
-      process.env.TAURI_ENV_ARCH != null ||
-      process.env.PAYKY_CAPACITOR_BUILD === "1")
-  )
+  return command === "build" && process.env.PAYKY_CAPACITOR_BUILD === "1"
 }
 
 // https://vite.dev/config/

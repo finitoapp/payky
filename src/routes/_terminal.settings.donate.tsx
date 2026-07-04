@@ -151,10 +151,10 @@ function DonatePage() {
       setLoadErrorKey(null)
 
       try {
-        const nextMetadata = await fetchLnurlPayMetadata({
-          address: donationAddress,
-          fetch: createFetchDep().fetch,
-        })
+        await using run = createRun(createFetchDep())
+        const nextMetadata = await run(
+          fetchLnurlPayMetadata({ address: donationAddress })
+        )
 
         if (!active) return
 
@@ -232,11 +232,10 @@ function DonatePage() {
     setIsCreatingInvoice(true)
 
     try {
-      const nextInvoice = await fetchLnurlPayInvoice({
-        amountSats,
-        fetch: createFetchDep().fetch,
-        metadata,
-      })
+      await using run = createRun(createFetchDep())
+      const nextInvoice = await run(
+        fetchLnurlPayInvoice({ amountSats, metadata })
+      )
 
       if (!nextInvoice.ok) {
         console.error("Failed to create donation invoice", nextInvoice.error)

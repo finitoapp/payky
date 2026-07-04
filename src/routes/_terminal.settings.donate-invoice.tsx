@@ -1,3 +1,4 @@
+import { createRun } from "@evolu/web"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { LoaderCircleIcon } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
@@ -72,10 +73,8 @@ function DonateInvoicePage() {
     }
 
     const verifyPayment = async () => {
-      const result = await fetchLnurlVerify({
-        fetch: createFetchDep().fetch,
-        verifyUrl: verify,
-      })
+      await using run = createRun(createFetchDep())
+      const result = await run(fetchLnurlVerify({ verifyUrl: verify }))
 
       if (!active) return
 

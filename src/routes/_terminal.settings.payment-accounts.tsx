@@ -39,12 +39,11 @@ import {
   bankQrFormats,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import { normalizeBankAccountInputToIban } from "@/core/modules/shared/iban-utils.ts"
 import {
+  BankAccountInputIbanSchema,
   type BankQrFormat,
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
-  IbanSchema,
   NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
@@ -148,23 +147,15 @@ function FiatBankAccountForm() {
         setError(null)
         setSaved(false)
 
-        const trimmedBankAccount = iban.trim()
-        const bankAccountResult = trimmedBankAccount
-          ? normalizeBankAccountInputToIban(trimmedBankAccount)
-          : null
-        const ibanResult = bankAccountResult?.success
-          ? IbanSchema.safeParse(bankAccountResult.iban)
-          : null
+        const ibanResult =
+          iban === "" ? null : BankAccountInputIbanSchema.safeParse(iban)
 
         if (enabled && !ibanResult) {
           setError("settings.fiatBankAccount.iban.required")
           return
         }
 
-        if (
-          ibanResult?.success === false ||
-          bankAccountResult?.success === false
-        ) {
+        if (ibanResult?.success === false) {
           setError("settings.fiatBankAccount.iban.invalid")
           return
         }

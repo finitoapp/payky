@@ -44,9 +44,9 @@ import { updateSettings } from "@/core/modules/app-settings/app-settings-actions
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import {
+  BankAccountInputIbanSchema,
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
-  IbanSchema,
 } from "@/core/modules/shared/schema.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -132,14 +132,14 @@ const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
 
 const currencyOptions: ReadonlyArray<CurrencyOption> = [
   {
-    value: FiatCurrency.EUR,
-    label: "settings.fiat.eur.title",
-    description: "settings.fiat.eur.description",
-  },
-  {
     value: FiatCurrency.USD,
     label: "settings.fiat.usd.title",
     description: "settings.fiat.usd.description",
+  },
+  {
+    value: FiatCurrency.EUR,
+    label: "settings.fiat.eur.title",
+    description: "settings.fiat.eur.description",
   },
   {
     value: FiatCurrency.CZK,
@@ -147,9 +147,6 @@ const currencyOptions: ReadonlyArray<CurrencyOption> = [
     description: "settings.fiat.czk.description",
   },
 ]
-
-const normalizeIban = (value: string) =>
-  value.replaceAll(/\s/gu, "").toUpperCase()
 
 const getStepIndex = (step: OnboardingStep) => steps.indexOf(step)
 
@@ -228,10 +225,8 @@ function OnboardingPage() {
     setIbanError(null)
 
     const ibanEnabled = selectedPaymentMethods.has("iban")
-    const normalizedIban = normalizeIban(iban)
-    const ibanResult = normalizedIban
-      ? IbanSchema.safeParse(normalizedIban)
-      : null
+    const ibanResult =
+      iban === "" ? null : BankAccountInputIbanSchema.safeParse(iban)
 
     if (ibanEnabled && !ibanResult) {
       setIbanError("settings.fiatBankAccount.iban.required")

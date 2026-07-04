@@ -1,7 +1,11 @@
 import type { StandardSchemaV1 } from "@evolu/common"
 import { z } from "zod"
 
-import { isValidIban, normalizeIbanInput } from "./iban-utils.ts"
+import {
+  isValidIban,
+  normalizeBankAccountInputToIban,
+  normalizeIbanInput,
+} from "./iban-utils.ts"
 
 export type InferTable<T extends Readonly<Record<string, StandardSchemaV1>>> =
   Readonly<{
@@ -163,6 +167,23 @@ export const IbanSchema = z
   .transform(normalizeIbanInput)
   .refine(isValidIban)
   .brand<"Iban">()
+export type Iban = z.output<typeof IbanSchema>
+export const BankAccountInputIbanSchema = z
+  .string()
+  .transform((value, context) => {
+    const result = normalizeBankAccountInputToIban(value)
+
+    if (!result.ok) {
+      context.addIssue({
+        code: "custom",
+        message: "Invalid bank account input.",
+      })
+
+      return z.NEVER
+    }
+
+    return result.value as Iban
+  })
 export const VariableSymbolSchema = z
   .string()
   .trim()
@@ -189,6 +210,5 @@ export type ItemLineType = z.output<typeof ItemLineTypeSchema>
 export type BillLineTag = z.output<typeof BillLineTagSchema>
 export type Integer = z.output<typeof IntegerSchema>
 export type FloatString = z.output<typeof NumberStringSchema>
-export type Iban = z.output<typeof IbanSchema>
 export type VariableSymbol = z.output<typeof VariableSymbolSchema>
 export type ConstantSymbol = z.output<typeof ConstantSymbolSchema>

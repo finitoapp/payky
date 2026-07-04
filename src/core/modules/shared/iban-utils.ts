@@ -1,3 +1,6 @@
+import { err, ok, type Result } from "@evolu/common"
+import { z } from "zod"
+
 const ibanCountryLengths: Readonly<Record<string, number>> = {
   AD: 24,
   AE: 23,
@@ -80,18 +83,18 @@ const ibanCountryLengths: Readonly<Record<string, number>> = {
 
 const czechBbanPattern = /^(?:(\d{1,6})-)?(\d{1,10})\/(\d{4})$/u
 
-export interface NormalizedBankAccountInput {
-  readonly success: true
-  readonly iban: string
+export interface InvalidBankAccountInputError {
+  readonly type: "InvalidBankAccountInput"
 }
 
-export interface InvalidBankAccountInput {
-  readonly success: false
-}
+export type BankAccountInputResult = Result<
+  string,
+  InvalidBankAccountInputError
+>
 
-export type BankAccountInputResult =
-  | NormalizedBankAccountInput
-  | InvalidBankAccountInput
+export const invalidBankAccountInput = (): InvalidBankAccountInputError => ({
+  type: "InvalidBankAccountInput",
+})
 
 export const normalizeIbanInput = (value: string) =>
   value.replaceAll(/\s/gu, "").toUpperCase()
@@ -133,7 +136,7 @@ const createIbanFromCountryAndBban = (countryCode: string, bban: string) => {
   return `${countryCode}${String(checkDigits).padStart(2, "0")}${bban}`
 }
 
-export const czechBbanToIban = (value: string) => {
+export const normalizeCzechBbanInput = (value: string) => {
   const normalizedValue = value.replaceAll(/\s/gu, "")
   const match = czechBbanPattern.exec(normalizedValue)
 
@@ -147,7 +150,29 @@ export const czechBbanToIban = (value: string) => {
     return null
   }
 
-  const bban = `${bankCode}${prefix.padStart(6, "0")}${accountNumber.padStart(10, "0")}`
+  return `${bankCode}${prefix.padStart(6, "0")}${accountNumber.padStart(10, "0")}`
+}
+
+export const BbanSchema = z
+  .string()
+  .transform((value, context) => {
+    const bban = normalizeCzechBbanInput(value)
+
+    if (bban === null) {
+      context.addIssue({
+        code: "custom",
+        message: "Invalid BBAN.",
+      })
+
+      return z.NEVER
+    }
+
+    return bban
+  })
+  .brand<"Bban">()
+export type Bban = z.output<typeof BbanSchema>
+
+export const czechBbanToIban = (bban: Bban) => {
   return createIbanFromCountryAndBban("CZ", bban)
 }
 
@@ -157,14 +182,15 @@ export const normalizeBankAccountInputToIban = (
   const iban = normalizeIbanInput(value)
 
   if (isValidIban(iban)) {
-    return { success: true, iban }
+    return ok(iban)
   }
 
-  const czechIban = czechBbanToIban(value)
+  const bban = BbanSchema.safeParse(value)
+  const czechIban = bban.success ? czechBbanToIban(bban.data) : null
 
   if (czechIban && isValidIban(czechIban)) {
-    return { success: true, iban: czechIban }
+    return ok(czechIban)
   }
 
-  return { success: false }
+  return err(invalidBankAccountInput())
 }

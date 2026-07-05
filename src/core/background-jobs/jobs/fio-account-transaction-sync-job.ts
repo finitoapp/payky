@@ -9,6 +9,7 @@ import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts
 import type { DateDep, FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
+  type FioApiDep,
   type FioTransaction,
   fetchFioTransactionsByPeriod,
 } from "@/core/integrations/fio/fio-client.ts"
@@ -150,7 +151,7 @@ class FioPluginSync {
   private readonly timer: ReturnType<typeof setInterval>
   private readonly context: Context
   private readonly plugin: ActiveFioPluginWithTokens
-  private tokenIndex = 0
+  private readonly fioApiDep: FioApiDep
   private readonly syncQueue = createKeyedTaskQueue({
     onError: (error) => this.context.onError(error),
   })
@@ -158,6 +159,13 @@ class FioPluginSync {
   constructor(context: Context, plugin: ActiveFioPluginWithTokens) {
     this.context = context
     this.plugin = plugin
+    // The dep lives as long as this sync session, and `matches()` restarts
+    // the session whenever the token set changes, so the client-side
+    // `getToken` rotation always covers the current tokens.
+    const [firstToken, ...restTokens] = plugin.tokens
+    this.fioApiDep = createFioApiDep({
+      tokens: [firstToken.token, ...restTokens.map((token) => token.token)],
+    })
     this.timer = setInterval(() => {
       this.queueSync()
     }, plugin.numberOfSecondsBetweenChecks * 1000)
@@ -191,12 +199,9 @@ class FioPluginSync {
   }
 
   private async syncTransactions(): Promise<void> {
-    const token = this.getNextToken()
     const run = createRun({
       ...this.context,
-      ...createFioApiDep({
-        tokens: [token.token],
-      }),
+      ...this.fioApiDep,
     })
     const period = await this.getSyncPeriod()
     this.context.console.info("Started FIO transaction sync.", {
@@ -249,14 +254,6 @@ class FioPluginSync {
       recordedCount: transactionsToRecord.length,
       to: period.to,
     })
-  }
-
-  private getNextToken(): FioPluginToken {
-    const token = this.plugin.tokens[this.tokenIndex] ?? this.plugin.tokens[0]
-    this.tokenIndex =
-      this.tokenIndex + 1 >= this.plugin.tokens.length ? 0 : this.tokenIndex + 1
-
-    return token
   }
 
   private async recordTransaction(transaction: FioTransaction): Promise<void> {

@@ -2,7 +2,7 @@ import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import { AccountId } from "../src/core/modules/account/account-types"
@@ -187,7 +187,7 @@ const formatAccountTransferListRows = <Row extends object>(
   })
 
 export const registerAccountTransfersCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   (run) => {
     const { evolu } = run.deps
 

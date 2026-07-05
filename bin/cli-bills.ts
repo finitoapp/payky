@@ -2,7 +2,7 @@ import { ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   addCatalogItemToBill,
@@ -19,9 +19,9 @@ import {
   removeTableFromBill,
   splitBill,
 } from "../src/core/modules/bill/bill-actions"
-import type { BillLineSummary } from "../src/core/modules/bill/bill-line-summary"
 import { BillId } from "../src/core/modules/bill/bill-types"
-import { loadCalculatedBillLineSummaries } from "../src/core/modules/bill/bill-utils"
+import { loadCalculatedBillLineSummaries } from "../src/core/modules/bill-line/bill-line-actions"
+import type { BillLineSummary } from "../src/core/modules/bill-line/bill-line-summary"
 import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import { PaymentId } from "../src/core/modules/payment/payment-types"
@@ -67,10 +67,8 @@ const findLineSummary = (
   summaries.find((summary) => summary.id === id) ?? null
 
 export const registerBillsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   (run) => {
-    const { evolu } = run.deps
-
     const billsCommand = createCommand("bills").description(
       "Manage bills and bill lines."
     )
@@ -113,7 +111,7 @@ export const registerBillsCommand =
 
             run.deps.console.table([bill])
             run.deps.console.table(
-              await loadCalculatedBillLineSummaries({ evolu })(options.id)
+              await run.orThrow(loadCalculatedBillLineSummaries(options.id))
             )
           },
         })
@@ -289,7 +287,9 @@ export const registerBillsCommand =
           },
           async action(_, options) {
             const lineSummary = findLineSummary(
-              await loadCalculatedBillLineSummaries({ evolu })(options.billId),
+              await run.orThrow(
+                loadCalculatedBillLineSummaries(options.billId)
+              ),
               options.lineSummaryId
             )
             if (lineSummary == null) {
@@ -331,9 +331,9 @@ export const registerBillsCommand =
             ),
           },
           async action(_, options) {
-            const sourceItems = await loadCalculatedBillLineSummaries({
-              evolu,
-            })(options.sourceBillId)
+            const sourceItems = await run.orThrow(
+              loadCalculatedBillLineSummaries(options.sourceBillId)
+            )
             const selectedItems: BillLineSummary[] = []
 
             for (const id of options.lineSummaryIds) {

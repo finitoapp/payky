@@ -1,6 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { DateDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
@@ -8,6 +9,14 @@ import {
   createAccountTransaction,
   updateAccountTransaction,
 } from "./account-transaction-actions.ts"
+
+const fixedDate = new Date("2026-06-05T12:00:00.000Z")
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => fixedDate,
+  },
+})
 
 const accountTransactionsQuery = createQuery((db) =>
   db
@@ -29,7 +38,7 @@ describe("account transaction actions", () => {
   test("reuses the same Evolu id for the same Spark transfer", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -101,7 +110,7 @@ describe("account transaction actions", () => {
   test("reuses the same Evolu id for the same IBAN bank reference in one account", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -178,7 +187,7 @@ describe("account transaction actions", () => {
   test("records automatic source for imported IBAN transactions", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -224,7 +233,7 @@ describe("account transaction actions", () => {
   test("creates separate manual IBAN transactions without bank reference", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -324,7 +333,7 @@ describe("account transaction actions", () => {
   test("keeps kind when updating without a detail payload", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -379,7 +388,7 @@ describe("account transaction actions", () => {
   test("scopes IBAN bank reference ids by account", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const firstAccountId = await run.orThrow(
       createAccount({
         deviceId: null,

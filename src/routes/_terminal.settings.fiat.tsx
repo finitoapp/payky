@@ -1,4 +1,3 @@
-import { createRun } from "@evolu/web"
 import { createFileRoute } from "@tanstack/react-router"
 import { BadgeDollarSign } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -9,15 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
-import { useConsole } from "@/hooks/use-console.ts"
-import { useEvolu } from "@/hooks/use-evolu.ts"
+import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -56,9 +54,8 @@ const fiatCurrencyOptions: ReadonlyArray<FiatCurrencyOption> = [
 ]
 
 function FiatCurrencyPage() {
-  const console = useConsole()
+  const appRun = useAppRun()
   const { t } = useTranslation()
-  const evolu = useEvolu()
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
   const selectedCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
@@ -76,41 +73,20 @@ function FiatCurrencyPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ToggleGroup<FiatCurrencyType>
-            value={[selectedCurrency]}
-            onValueChange={async (nextValue) => {
-              const [fiatCurrency] = nextValue
-              if (!fiatCurrency) return
-
-              await using run = createRun({
-                console,
-                evolu,
-                evoluOwnerId: evolu.appOwner.id,
-              })
+          <OptionToggleGroup
+            value={selectedCurrency}
+            options={fiatCurrencyOptions.map((option) => ({
+              value: option.value,
+              icon: BadgeDollarSign,
+              title: t(option.label),
+              description: t(option.description),
+            }))}
+            onChange={async (fiatCurrency) => {
+              await using run = appRun()
 
               await run(updateSettings({ fiatCurrency }))
             }}
-            spacing={2}
-            className="grid w-full grid-cols-1"
-            orientation="vertical"
-            variant="outline"
-          >
-            {fiatCurrencyOptions.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                className="flex justify-start px-6 py-4 gap-6 text-left h-auto"
-              >
-                <BadgeDollarSign className="text-muted-foreground" />
-                <span className="flex flex-col gap-1">
-                  <span className="font-semibold">{t(option.label)}</span>
-                  <span className="text-xs leading-snug text-muted-foreground">
-                    {t(option.description)}
-                  </span>
-                </span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+          />
         </CardContent>
       </Card>
     </>

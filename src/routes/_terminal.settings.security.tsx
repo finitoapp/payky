@@ -31,9 +31,9 @@ import {
   createDeviceQuery,
 } from "@/core/evolu/device-client.ts"
 import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const Route = createFileRoute("/_terminal/settings/security")({
   component: SecuritySettingsPage,
@@ -138,9 +138,8 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
     accountTransportsQuery(accountId)
   )
   const [url, setUrl] = useState("wss://free.evoluhq.com")
-  const [error, setError] = useState<TranslationKey | null>(null)
-  const [saved, setSaved] = useState(false)
-  const [pending, setPending] = useState(false)
+  const { pending, saved, error, setError, resetSaved, submit } =
+    useSettingsForm()
   const [pendingTransportId, setPendingTransportId] = useState<string | null>(
     null
   )
@@ -159,7 +158,7 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
             onSubmit={(event) => {
               event.preventDefault()
               setError(null)
-              setSaved(false)
+              resetSaved()
 
               const result = WssUrlSchema.safeParse(url.trim())
 
@@ -168,8 +167,7 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                 return
               }
 
-              setPending(true)
-              try {
+              void submit(() => {
                 const { id } = deviceEvolu.insert("accountEvoluTransport", {
                   accountId,
                   type: "WebSocket",
@@ -182,10 +180,8 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                 })
 
                 setUrl("")
-                setSaved(true)
-              } finally {
-                setPending(false)
-              }
+                return undefined
+              })
             }}
           >
             <FieldGroup>
@@ -204,7 +200,7 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                   onChange={(event) => {
                     setUrl(event.currentTarget.value)
                     setError(null)
-                    setSaved(false)
+                    resetSaved()
                   }}
                 />
                 <FieldDescription>

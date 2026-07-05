@@ -1,5 +1,4 @@
 import { sqliteTrue } from "@evolu/common"
-import { createRun } from "@evolu/web"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import {
   BadgeDollarSign,
@@ -33,7 +32,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
 import {
   saveCashRegisterAccount,
@@ -48,8 +46,9 @@ import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
-import { useConsole } from "@/hooks/use-console.ts"
-import { useEvolu } from "@/hooks/use-evolu.ts"
+import { languageOptions } from "@/features/settings/language-options.ts"
+import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import {
@@ -65,12 +64,6 @@ export const Route = createFileRoute("/onboarding")({
 
 type OnboardingStep = "language" | "currency" | "payments"
 type PaymentMethod = "cash" | "btc" | "iban"
-
-interface LanguageOption {
-  readonly value: Language
-  readonly label: string
-  readonly description: TranslationKey
-}
 
 interface PaymentMethodOption {
   readonly value: PaymentMethod
@@ -89,24 +82,6 @@ const steps: ReadonlyArray<OnboardingStep> = [
   "language",
   "currency",
   "payments",
-]
-
-const languageOptions: ReadonlyArray<LanguageOption> = [
-  {
-    value: "en",
-    label: "English",
-    description: "settings.language.english.description",
-  },
-  {
-    value: "cs",
-    label: "Čeština",
-    description: "settings.language.czech.description",
-  },
-  {
-    value: "sk",
-    label: "Slovenčina",
-    description: "settings.language.slovak.description",
-  },
 ]
 
 const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
@@ -165,8 +140,7 @@ const getDefaultCurrencyForLanguage = (
 }
 
 function OnboardingPage() {
-  const console = useConsole()
-  const evolu = useEvolu()
+  const appRun = useAppRun()
   const navigate = useNavigate()
   const setLanguage = useTranslationForLanguage()
   const setLocale = useSetLocale()
@@ -242,11 +216,7 @@ function OnboardingPage() {
     try {
       setLocale(getDeviceLocaleForLanguage(language))
 
-      await using run = createRun({
-        console,
-        evolu,
-        evoluOwnerId: evolu.appOwner.id,
-      })
+      await using run = appRun()
 
       await run(
         saveCashRegisterAccount({
@@ -393,36 +363,17 @@ function LanguageStep({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ToggleGroup<Language>
-          value={[language]}
-          onValueChange={(nextValue) => {
-            const [nextLanguage] = nextValue
-            if (nextLanguage) {
-              onSelect(nextLanguage)
-            }
-          }}
-          spacing={2}
-          className="grid w-full grid-cols-1"
-          orientation="vertical"
-          variant="outline"
+        <OptionToggleGroup
+          value={language}
+          options={languageOptions.map((option) => ({
+            value: option.value,
+            icon: Languages,
+            title: option.label,
+            description: t(option.description),
+          }))}
           disabled={pending}
-        >
-          {languageOptions.map((option) => (
-            <ToggleGroupItem
-              key={option.value}
-              value={option.value}
-              className="flex h-auto justify-start gap-6 px-6 py-4 text-left"
-            >
-              <Languages className="text-muted-foreground" />
-              <span className="flex flex-col gap-1">
-                <span className="font-semibold">{option.label}</span>
-                <span className="text-muted-foreground text-xs leading-snug">
-                  {t(option.description)}
-                </span>
-              </span>
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+          onChange={onSelect}
+        />
       </CardContent>
     </>
   )
@@ -446,40 +397,17 @@ function CurrencyStep({
         <CardDescription>{t("settings.fiat.mode.description")}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ToggleGroup<FiatCurrencyType>
-          value={[currency]}
-          onValueChange={(nextValue) => {
-            const [nextCurrency] = nextValue
-            if (
-              nextCurrency === FiatCurrency.CZK ||
-              nextCurrency === FiatCurrency.EUR ||
-              nextCurrency === FiatCurrency.USD
-            ) {
-              onSelect(nextCurrency)
-            }
-          }}
-          spacing={2}
-          className="grid w-full grid-cols-1"
-          orientation="vertical"
-          variant="outline"
+        <OptionToggleGroup
+          value={currency}
+          options={currencyOptions.map((option) => ({
+            value: option.value,
+            icon: BadgeDollarSign,
+            title: t(option.label),
+            description: t(option.description),
+          }))}
           disabled={pending}
-        >
-          {currencyOptions.map((option) => (
-            <ToggleGroupItem
-              key={option.value}
-              value={option.value}
-              className="flex h-auto justify-start gap-6 px-6 py-4 text-left"
-            >
-              <BadgeDollarSign className="text-muted-foreground" />
-              <span className="flex flex-col gap-1">
-                <span className="font-semibold">{t(option.label)}</span>
-                <span className="text-muted-foreground text-xs leading-snug">
-                  {t(option.description)}
-                </span>
-              </span>
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+          onChange={onSelect}
+        />
       </CardContent>
     </>
   )

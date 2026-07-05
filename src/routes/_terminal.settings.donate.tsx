@@ -27,7 +27,10 @@ import {
   fetchLnurlPayMetadata,
   type LnurlPayMetadata,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
-import { fetchYadioBtcExchangeRate } from "@/core/integrations/yadio/yadio-client.ts"
+import {
+  createYadioApiDep,
+  fetchYadioBtcExchangeRate,
+} from "@/core/integrations/yadio/yadio-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { currencyFractionDigits } from "@/core/modules/shared/money.ts"
 import {
@@ -118,7 +121,10 @@ function DonatePage() {
       setLoadErrorKey(null)
 
       try {
-        await using run = createRun(createFetchDep())
+        await using run = createRun({
+          ...createFetchDep(),
+          ...createYadioApiDep(),
+        })
         const result = await run(fetchYadioBtcExchangeRate(currency))
 
         if (!active) return
@@ -312,9 +318,10 @@ function DonatePage() {
                 <FieldDescription>
                   {metadata === null
                     ? t("settings.donate.sats.description")
-                    : t("settings.donate.sats.range")
-                        .replace("{min}", String(metadata.minSendableSats))
-                        .replace("{max}", String(metadata.maxSendableSats))}
+                    : t("settings.donate.sats.range", {
+                        min: metadata.minSendableSats,
+                        max: metadata.maxSendableSats,
+                      })}
                 </FieldDescription>
                 {visibleAmountErrorKey !== null ? (
                   <FieldError>{t(visibleAmountErrorKey)}</FieldError>

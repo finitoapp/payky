@@ -1,4 +1,3 @@
-import { createRun } from "@evolu/web"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { LoaderCircleIcon } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
@@ -17,8 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { createFetchDep } from "@/core/deps.ts"
 import { fetchLnurlVerify } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -50,6 +49,7 @@ export const Route = createFileRoute("/_terminal/settings/donate-invoice")({
 })
 
 function DonateInvoicePage() {
+  const appRun = useAppRun()
   const console = useConsole()
   const { t } = useTranslation()
   const { invoice, verify } = Route.useSearch()
@@ -73,7 +73,7 @@ function DonateInvoicePage() {
     }
 
     const verifyPayment = async () => {
-      await using run = createRun(createFetchDep())
+      await using run = appRun()
       const result = await run(fetchLnurlVerify({ verifyUrl: verify }))
 
       if (!active) return
@@ -101,7 +101,7 @@ function DonateInvoicePage() {
       active = false
       if (timeoutId !== undefined) clearTimeout(timeoutId)
     }
-  }, [console, invoice, verify])
+  }, [appRun, console, invoice, verify])
 
   const copyInvoice = async () => {
     if (invoice.length === 0) return

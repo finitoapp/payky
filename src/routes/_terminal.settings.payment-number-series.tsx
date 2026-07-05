@@ -109,7 +109,9 @@ function PaymentNumberSeriesPage() {
     String(series.serialNumberDigits)
   )
   const [lastSerialNumber, setLastSerialNumber] = useState(
-    paymentLastNumber == null ? "0" : String(paymentLastNumber.serialNumber)
+    paymentLastNumber === undefined
+      ? "0"
+      : String(paymentLastNumber.serialNumber)
   )
   const [lastNumberDate, setLastNumberDate] = useState(
     paymentLastNumber?.date ?? ""
@@ -139,13 +141,15 @@ function PaymentNumberSeriesPage() {
 
   useEffect(() => {
     setLastSerialNumber(
-      paymentLastNumber == null ? "0" : String(paymentLastNumber.serialNumber)
+      paymentLastNumber === undefined
+        ? "0"
+        : String(paymentLastNumber.serialNumber)
     )
     setLastNumberDate(paymentLastNumber?.date ?? "")
   }, [paymentLastNumber])
 
   useEffect(() => {
-    if (storedSeries != null) return
+    if (storedSeries !== undefined) return
 
     let cancelled = false
 

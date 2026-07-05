@@ -22,6 +22,11 @@ const getDeviceId = () => {
   return id
 }
 
+const toOptionalDeviceLabel = (value: string | undefined) =>
+  value === undefined || value === ""
+    ? null
+    : NonEmptyString255(value.slice(0, 255))
+
 const getDevice = () => {
   const uap = new UAParser()
 
@@ -32,10 +37,10 @@ const getDevice = () => {
   return {
     id: getDeviceId(),
     name: NonEmptyString255(faker.internet.username()),
-    deviceType: device.type ?? null,
-    deviceVendor: device.vendor ?? null,
-    browserName: browser.name ?? null,
-    osName: os.name ?? null,
+    deviceType: toOptionalDeviceLabel(device.type),
+    deviceVendor: toOptionalDeviceLabel(device.vendor),
+    browserName: toOptionalDeviceLabel(browser.name),
+    osName: toOptionalDeviceLabel(os.name),
   }
 }
 
@@ -57,9 +62,11 @@ export const accountAtom = atom(async (get) => {
     )
   }
 
-  let device = row.device
-  if (device === null) {
-    device = getDevice()
+  const device =
+    row.device !== null
+      ? { id: row.device.id, name: NonEmptyString255(row.device.name) }
+      : getDevice()
+  if (row.device === null) {
     deviceEvolu.upsert("device", device)
   }
 

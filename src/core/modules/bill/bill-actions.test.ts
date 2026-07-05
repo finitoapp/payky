@@ -363,7 +363,7 @@ describe("bill actions", () => {
       totalAmount: 3_750,
     })
     expect(afterPartialRemove).not.toBeNull()
-    if (afterPartialRemove == null) return
+    if (afterPartialRemove === null) return
 
     const afterFullRemove = await run.orThrow(
       appendRemoveBillLine({

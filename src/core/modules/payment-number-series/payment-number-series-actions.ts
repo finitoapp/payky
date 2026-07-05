@@ -24,7 +24,7 @@ export const getPaymentNumberSeries =
     const existing = (
       await run.deps.evolu.loadQuery(paymentNumberSeriesQuery)
     )[0]
-    if (existing != null) return ok(existing)
+    if (existing !== undefined) return ok(existing)
 
     const defaults = createDefaultPaymentNumberSeries()
     await runMutationWithCompletion((options) =>

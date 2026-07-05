@@ -18,7 +18,8 @@
 - `src/router.tsx` creates the TanStack Router from `src/routeTree.gen.ts`; route files live in `src/routes`.
 - `src/routes/__root.tsx` defines the root layout and error boundary; `src/routes/_terminal.tsx` is the layout route for the terminal pages. Keep route files thin and move substantial page UI into page or feature modules.
 - `src/atoms` contains Jotai atoms that bootstrap app singletons: the device Evolu client, the app Evolu client, the active account, console, and run. Evolu clients are created here, not in `main.tsx`.
-- `src/hooks` contains the React bindings for those singletons (`useEvolu`, `useEvoluQuery`, `useDeviceEvoluQuery`, `useConsole`, `useTranslation`, ...). Access Evolu from React through these hooks.
+- `src/hooks` contains the React bindings for those singletons (`useEvolu`, `useEvoluQuery`, `useDeviceEvoluQuery`, `useConsole`, `useTranslation`, `useAppRun`, ...). Access Evolu from React through these hooks.
+- `src/features` contains feature modules: page-level UI (forms, hooks, presentational components) for one feature, composed from domain modules and `src/components/ui` primitives. `src/features/settings` is the first tenant. Substantial page UI extracted from routes belongs here, not in `src/routes` or `src/components`.
 - `src/components/ui` contains shadcn-style reusable UI primitives built on Base UI, such as `button.tsx`. Keep generic UI here; avoid feature or domain logic in this directory.
 - `src/components/theme-provider.tsx` contains theme-level UI infrastructure.
 - `src/core/evolu` contains Evolu client setup, the app schema composition, and the device database (`device-client.ts`, `device-account.ts`). Register new Evolu tables and indexes in `src/core/evolu/schema.ts`.
@@ -26,10 +27,11 @@
 - `src/core/modules/shared` contains lower-level domain helpers, shared schemas, Evolu dependency helpers, and the `getFirstOr` Result helper.
 - `src/core/deps.ts` declares small injectable dependency objects (`FetchDep`, `DateDep`, `EvoluOwnerIdDep`); `src/core/error.ts` provides the `defineError` factory.
 - `src/core/background-jobs` contains the background job framework (`BackgroundJobContext`, keyed task queue) and the sync jobs under `jobs/`. Jobs receive all effects — including `lockManager` — through their context; never use ambient globals such as `navigator.locks`.
-- `src/core/integrations` contains HTTP clients for external services (FIO, Yadio, LNURL); `src/core/spark` wraps the Spark wallet SDK.
+- `src/core/integrations` contains HTTP clients for external services (FIO, Yadio, LNURL). Clients follow the fio convention: a `createXApiDep` factory, HTTP through `appFetchAsJson` from `src/core/deps.ts`, zod-validated responses, and `defineError` errors carrying `status` and `responseBody`.
+- `src/core/spark` wraps the Spark wallet SDK behind `SparkWalletDep`. Do not call `SparkWallet.initialize` directly outside this wrapper; extend the wrapper when a consumer needs more of the SDK surface.
 - `src/core/cli` contains CLI-runtime helpers (`cli-env.ts`, the in-process lock manager); CLI entry points live in `bin/`.
 - `src/core/native` contains Capacitor/WebView runtime detection and platform plumbing.
-- `src/i18n` contains translation resources and the translation hook. All user-facing React text must use keys from `src/i18n/resources.ts`.
+- `src/i18n` contains translation resources and the translation hook. `src/i18n/en.ts` is the source of truth for translation keys; `cs.ts` and `sk.ts` must cover every key via `satisfies Record<TranslationKey, string>`, and `resources.ts` only composes the languages.
 - `src/lib` contains app-level generic utilities such as `cn`; keep domain code in `src/core/modules` instead.
 - `src/assets` contains static frontend assets.
 - `src/index.css` contains global Tailwind and theme styles.
@@ -44,10 +46,12 @@
 - Use `*-utils.ts` for pure domain helpers that are not tied to Evolu mutation execution.
 - Keep tests beside the module they cover as `*.test.ts`.
 - For aggregate detail tables sharing the root id, keep root and detail table ownership in the same module unless another module clearly owns a separate lifecycle.
+- An actions file writes only to tables its own module owns. To write another module's table, compose that module's Task instead of upserting directly, as `bill-actions.ts` does with `bill-line` and `item` actions.
 
 ## Domain Action Patterns
 
-- Write every action as an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`, as in `payment-actions.ts`. Simple Evolu-only actions typically need `EvoluDep & EvoluOwnerIdDep`. (The curried `(deps) => async (...)` style in `bill-utils.ts` is legacy; do not add new code in that style.)
+- Write every action as an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`, as in `payment-actions.ts`. Simple Evolu-only actions typically need `EvoluDep & EvoluOwnerIdDep`. (The legacy curried `(deps) => async (...)` style has been fully removed; do not reintroduce it.)
+- In React, obtain runs through `useAppRun()` from `src/hooks/use-app-run.ts`: `const appRun = useAppRun()` then `await using run = appRun()` inside handlers. Do not call `createRun` directly in components; the only sanctioned exception is `app-background-jobs.tsx`, which additionally needs `lockManager` and `onError`.
 - Express Task dependencies as intersections of small dependency objects, for example `EvoluDep & SparkWalletDep & FetchDep`.
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.
@@ -61,7 +65,8 @@
 ## Translation Key Rules
 
 - Never hardcode user-facing text in React components.
-- Add every visible label to `src/i18n/resources.ts` for all languages: `en`, `cs`, and `sk`.
+- Add every visible label to `src/i18n/en.ts` and translate it in `cs.ts` and `sk.ts`; the `satisfies Record<TranslationKey, string>` checks enforce full coverage.
+- Use `t(key, params)` with `{name}`-style placeholders for dynamic values instead of string concatenation.
 - Use dot-separated, feature-scoped keys, for example `pay.request`, `settings.language`, or `activity.empty`.
 - Do not rename existing translation keys without updating every usage.
 - Prefer stable semantic keys over text-derived keys; key names should describe purpose, not exact copy.

@@ -538,7 +538,7 @@ export const preparePaymentMethod =
     const payment = paymentResult.value
 
     const cashRegisterPayment =
-      cashRegister == null
+      cashRegister === undefined
         ? null
         : await (async () => {
             const accountResult = getFirstOr(
@@ -565,12 +565,12 @@ export const preparePaymentMethod =
               accountId: cashRegister.accountId,
             })
           })()
-    if (cashRegisterPayment != null && !cashRegisterPayment.ok) {
+    if (cashRegisterPayment !== null && !cashRegisterPayment.ok) {
       return cashRegisterPayment
     }
 
     const bankPayment =
-      bank == null
+      bank === undefined
         ? null
         : await (async () => {
             const accountResult = getFirstOr(
@@ -617,12 +617,12 @@ export const preparePaymentMethod =
 
             return ok(paymentIbanValue)
           })()
-    if (bankPayment != null && !bankPayment.ok) {
+    if (bankPayment !== null && !bankPayment.ok) {
       return bankPayment
     }
 
     const sparkPaymentResult =
-      spark == null
+      spark === undefined
         ? null
         : await (async () => {
             const sparkAccounts = await run.deps.evolu.loadQuery(
@@ -699,14 +699,14 @@ export const preparePaymentMethod =
               await wallet?.cleanup?.()
             }
           })()
-    if (sparkPaymentResult != null && !sparkPaymentResult.ok) {
+    if (sparkPaymentResult !== null && !sparkPaymentResult.ok) {
       return sparkPaymentResult
     }
 
     if (
-      cashRegisterPayment == null &&
-      bankPayment == null &&
-      sparkPaymentResult == null
+      cashRegisterPayment === null &&
+      bankPayment === null &&
+      sparkPaymentResult === null
     ) {
       return ok(paymentId)
     }

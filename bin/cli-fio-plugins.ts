@@ -222,7 +222,7 @@ export const registerFioPluginsCommand =
               fioPluginTokensByPluginIdQuery(options.id)
             )
             const firstToken = tokens[0]
-            if (firstToken == null) {
+            if (firstToken === undefined) {
               throw new Error(`FIO plugin ${options.id} has no active token.`)
             }
 

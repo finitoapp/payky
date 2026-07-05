@@ -19,7 +19,7 @@ export const getSettings =
   async (run) => {
     const { evoluOwnerId } = run.deps
     const existing = (await run.deps.evolu.loadQuery(settingsQuery))[0]
-    if (existing != null) return ok(existing)
+    if (existing !== undefined) return ok(existing)
 
     const defaults = createDefaultSettings()
     await runMutationWithCompletion((options) =>

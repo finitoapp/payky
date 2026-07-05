@@ -8,7 +8,7 @@ import "@/index.css"
 
 const rootElement = document.getElementById("root")
 
-if (rootElement == null) {
+if (rootElement === null) {
   throw new Error("Root element was not found.")
 }
 
@@ -16,7 +16,7 @@ function AppWithLoaderCleanup() {
   useEffect(() => {
     const loader = document.getElementById("app-loader")
 
-    if (loader == null) {
+    if (loader === null) {
       return
     }
 

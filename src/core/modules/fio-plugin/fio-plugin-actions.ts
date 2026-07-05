@@ -142,7 +142,7 @@ export const updateFioPluginSyncPointer =
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) => {
-      if (lastSyncedDate == null) {
+      if (lastSyncedDate === null) {
         return run.deps.evolu.update(
           "fioPluginSyncPointer",
           {

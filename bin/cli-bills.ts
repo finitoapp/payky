@@ -292,7 +292,7 @@ export const registerBillsCommand =
               ),
               options.lineSummaryId
             )
-            if (lineSummary == null) {
+            if (lineSummary === null) {
               run.deps.console.error(
                 `Line summary not found: ${options.lineSummaryId}`
               )
@@ -311,7 +311,7 @@ export const registerBillsCommand =
             )
 
             run.deps.console.table(
-              updatedLineSummary == null ? [] : [updatedLineSummary]
+              updatedLineSummary === null ? [] : [updatedLineSummary]
             )
           },
         })
@@ -338,7 +338,7 @@ export const registerBillsCommand =
 
             for (const id of options.lineSummaryIds) {
               const lineSummary = findLineSummary(sourceItems, id)
-              if (lineSummary == null) {
+              if (lineSummary === null) {
                 run.deps.console.error(`Line summary not found: ${id}`)
                 process.exitCode = 1
                 return

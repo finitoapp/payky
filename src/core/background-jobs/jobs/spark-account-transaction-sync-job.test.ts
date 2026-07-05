@@ -111,7 +111,7 @@ class FakeSparkWallet {
 
   configureEvents(events: Partial<SparkWalletEvents>): void {
     for (const [event, listener] of Object.entries(events)) {
-      if (listener == null) continue
+      if (listener === undefined) continue
 
       this.on(event, listener as (...args: ReadonlyArray<unknown>) => void)
     }

@@ -1,10 +1,12 @@
 import {
+  createIdFromString,
   createOwnerSecret,
   createRandomBytes,
   evoluJsonArrayFrom,
   evoluJsonObjectFrom,
   type KyselyNotNull,
   type Mnemonic,
+  type MutationOptions,
   ownerSecretToMnemonic,
   sqliteFalse,
   sqliteTrue,
@@ -12,6 +14,7 @@ import {
 import { faker } from "@faker-js/faker"
 
 import {
+  type AccountEvoluTransportId,
   type AccountId,
   createDeviceQuery,
   type DeviceEvolu,
@@ -131,6 +134,60 @@ export const createAccountMnemonic = (): Mnemonic =>
 export const createRandomAccountName = () =>
   NonEmptyString255(faker.internet.username())
 
+const createAccountEvoluTransportId = ({
+  accountId,
+  type,
+  url,
+}: {
+  readonly accountId: AccountId
+  readonly type: "WebSocket"
+  readonly url: WssUrl
+}): AccountEvoluTransportId =>
+  createIdFromString<"DeviceAccountEvoluTransportId">(
+    JSON.stringify({ accountId, type, url })
+  )
+
+export const upsertAccountEvoluWebsocketTransport = (
+  deviceEvolu: DeviceEvolu,
+  {
+    accountId,
+    isActive,
+    url,
+  }: {
+    readonly accountId: AccountId
+    readonly isActive: typeof sqliteFalse | typeof sqliteTrue
+    readonly url: WssUrl
+  },
+  options?: MutationOptions
+): AccountEvoluTransportId => {
+  const id = createAccountEvoluTransportId({
+    accountId,
+    type: "WebSocket",
+    url,
+  })
+
+  deviceEvolu.upsert(
+    "accountEvoluTransport",
+    {
+      id,
+      accountId,
+      type: "WebSocket",
+      isActive,
+    },
+    options
+  )
+  deviceEvolu.upsert(
+    "accountEvoluTransportWebsocket",
+    {
+      id,
+      url,
+    },
+    options
+  )
+
+  return id
+}
+
 export const insertAccount = (
   deviceEvolu: DeviceEvolu,
   mnemonic: Mnemonic,
@@ -146,13 +203,9 @@ export const insertAccount = (
     mnemonic,
     lastUseAt: Date.now(),
   })
-  const { id } = deviceEvolu.insert("accountEvoluTransport", {
+  upsertAccountEvoluWebsocketTransport(deviceEvolu, {
     accountId,
-    type: "WebSocket",
     isActive: sqliteFalse,
-  })
-  deviceEvolu.upsert("accountEvoluTransportWebsocket", {
-    id,
     url: transportUrl,
   })
 

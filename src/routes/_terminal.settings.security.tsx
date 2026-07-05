@@ -27,6 +27,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { upsertAccountEvoluWebsocketTransport } from "@/core/evolu/device-account.ts"
 import {
   type AccountId,
   createDeviceQuery,
@@ -175,26 +176,17 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
               }
 
               void submit(async () => {
-                await runMutationWithCompletion((options) => {
-                  const { id } = deviceEvolu.insert(
-                    "accountEvoluTransport",
+                await runMutationWithCompletion((options) =>
+                  upsertAccountEvoluWebsocketTransport(
+                    deviceEvolu,
                     {
                       accountId,
-                      type: "WebSocket",
                       isActive: sqliteTrue,
-                    },
-                    options
-                  )
-
-                  deviceEvolu.upsert(
-                    "accountEvoluTransportWebsocket",
-                    {
-                      id,
                       url: result.data,
                     },
                     options
                   )
-                })
+                )
 
                 reloadAppAccount()
                 setUrl("")

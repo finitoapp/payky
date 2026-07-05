@@ -1,11 +1,12 @@
 import { type KyselyNotNull, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
-import { useAtomValue } from "jotai"
+import { useAtomValue, useSetAtom } from "jotai"
 import { Plus, Power, PowerOff } from "lucide-react"
 import { useId, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
+import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
@@ -31,6 +32,7 @@ import {
   createDeviceQuery,
 } from "@/core/evolu/device-client.ts"
 import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -133,6 +135,7 @@ interface EvoluTransportCardProps {
 function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const setEvoluCounter = useSetAtom(evoluCounterAtom)
   const urlInputId = useId()
   const { data: transports } = useDeviceEvoluQuery(
     accountTransportsQuery(accountId)
@@ -143,6 +146,10 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
   const [pendingTransportId, setPendingTransportId] = useState<string | null>(
     null
   )
+
+  const reloadAppAccount = () => {
+    setEvoluCounter((current) => current + 1)
+  }
 
   return (
     <Card>
@@ -167,18 +174,29 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                 return
               }
 
-              void submit(() => {
-                const { id } = deviceEvolu.insert("accountEvoluTransport", {
-                  accountId,
-                  type: "WebSocket",
-                  isActive: sqliteTrue,
+              void submit(async () => {
+                await runMutationWithCompletion((options) => {
+                  const { id } = deviceEvolu.insert(
+                    "accountEvoluTransport",
+                    {
+                      accountId,
+                      type: "WebSocket",
+                      isActive: sqliteTrue,
+                    },
+                    options
+                  )
+
+                  deviceEvolu.upsert(
+                    "accountEvoluTransportWebsocket",
+                    {
+                      id,
+                      url: result.data,
+                    },
+                    options
+                  )
                 })
 
-                deviceEvolu.upsert("accountEvoluTransportWebsocket", {
-                  id,
-                  url: result.data,
-                })
-
+                reloadAppAccount()
                 setUrl("")
                 return undefined
               })
@@ -232,13 +250,20 @@ function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                   isActive={transport.isActive}
                   pendingTransportId={pendingTransportId}
                   url={transport.url}
-                  onToggle={(isActive) => {
+                  onToggle={async (isActive) => {
                     setPendingTransportId(transport.id)
                     try {
-                      deviceEvolu.update("accountEvoluTransport", {
-                        id: transport.id,
-                        isActive,
-                      })
+                      await runMutationWithCompletion((options) =>
+                        deviceEvolu.update(
+                          "accountEvoluTransport",
+                          {
+                            id: transport.id,
+                            isActive,
+                          },
+                          options
+                        )
+                      )
+                      reloadAppAccount()
                     } finally {
                       setPendingTransportId(null)
                     }

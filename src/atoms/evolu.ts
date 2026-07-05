@@ -1,4 +1,4 @@
-import { sqliteTrue } from "@evolu/common"
+import { isNonEmptyArray, sqliteTrue } from "@evolu/common"
 import { generateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { atom } from "jotai"
@@ -17,16 +17,27 @@ import {
   NonEmptyString255,
 } from "@/core/modules/shared/schema.ts"
 
+let previousEvoluUnuse: (() => unknown) | undefined
+
 export const evoluAtom = atom(async (get) => {
   const account = await get(accountAtom)
   const run = get(runAtom)
-  // Device-configured transports are not passed on purpose: createAppEvolu
-  // keeps sync transports disabled until sync is wired up.
   const evolu = await run.orThrow(
     createAppEvolu({
       mnemonic: account.mnemonic,
+      transports: [],
     })
   )
+
+  if (previousEvoluUnuse !== undefined) {
+    previousEvoluUnuse()
+  }
+
+  previousEvoluUnuse = isNonEmptyArray(account.transports)
+    ? // biome-ignore lint/correctness/useHookAtTopLevel: This is not react hook
+      evolu.useOwner(evolu.appOwner, account.transports)
+    : undefined
+
   const deviceId = account.device.id
 
   // Seed initial data

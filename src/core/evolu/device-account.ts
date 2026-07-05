@@ -6,6 +6,7 @@ import {
   type KyselyNotNull,
   type Mnemonic,
   ownerSecretToMnemonic,
+  sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
 import { faker } from "@faker-js/faker"
@@ -148,7 +149,7 @@ export const insertAccount = (
   const { id } = deviceEvolu.insert("accountEvoluTransport", {
     accountId,
     type: "WebSocket",
-    isActive: sqliteTrue,
+    isActive: sqliteFalse,
   })
   deviceEvolu.upsert("accountEvoluTransportWebsocket", {
     id,
@@ -160,12 +161,7 @@ export const insertAccount = (
     mnemonic,
     name,
     device: null,
-    transports: [
-      {
-        type: "WebSocket",
-        url: transportUrl,
-      },
-    ],
+    transports: [],
   }
 }
 

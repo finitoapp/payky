@@ -11,13 +11,14 @@ import {
 import { AppSchema, createAppIndexes } from "@/core/evolu/schema.ts"
 
 /**
- * Config fields callers may set. `appOwner`, `indexes`, and `transports` are
- * owned by this factory; sync transports are intentionally not wired up yet.
+ * Config fields callers may set. `appOwner`, `appName`, and `indexes` are
+ * owned by this factory.
  */
-type AppEvoluConfig = Omit<
-  EvoluConfig,
-  "appOwner" | "appName" | "indexes" | "transports"
->
+type AppEvoluConfig = Omit<EvoluConfig, "appOwner" | "appName" | "indexes">
+type AppEvoluAccountConfig = AppEvoluConfig & {
+  readonly mnemonic: Mnemonic
+  readonly transports: NonNullable<EvoluConfig["transports"]>
+}
 
 const createAppEvoluWithOwner = (appOwner: AppOwner, config: AppEvoluConfig) =>
   createEvolu(AppSchema, {
@@ -25,13 +26,12 @@ const createAppEvoluWithOwner = (appOwner: AppOwner, config: AppEvoluConfig) =>
     appName: AppName.orThrow("Payky"),
     appOwner,
     indexes: createAppIndexes,
-    transports: [],
   })
 
 export const createAppEvolu = ({
   mnemonic,
   ...config
-}: AppEvoluConfig & { readonly mnemonic: Mnemonic }) =>
+}: AppEvoluAccountConfig) =>
   createAppEvoluWithOwner(
     createAppOwner(mnemonicToOwnerSecret(mnemonic)),
     config
@@ -42,4 +42,4 @@ export const createAppEvolu = ({
  * the CLI, which has no owner identity yet — never for the app itself.
  */
 export const createTestAppEvolu = (config: AppEvoluConfig = {}) =>
-  createAppEvoluWithOwner(testAppOwner, config)
+  createAppEvoluWithOwner(testAppOwner, { transports: [], ...config })

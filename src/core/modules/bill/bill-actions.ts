@@ -195,7 +195,7 @@ export const addCatalogItemToBill =
       })
     )
     const lineSummary = projected.find((row) => row.itemId === item.id)
-    return lineSummary == null
+    return lineSummary === undefined
       ? err(
           billLineSummaryMissing({
             billId: input.billId,
@@ -240,7 +240,7 @@ export const addManualAmountToBill =
       })
     )
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
-    return lineSummary == null
+    return lineSummary === undefined
       ? err(
           billLineSummaryMissing({
             billId: input.billId,
@@ -285,7 +285,7 @@ export const addTipToBill =
       })
     )
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
-    return lineSummary == null
+    return lineSummary === undefined
       ? err(
           billLineSummaryMissing({
             billId: input.billId,

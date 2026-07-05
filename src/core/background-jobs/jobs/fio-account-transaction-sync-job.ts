@@ -139,7 +139,7 @@ class FioAccountTransactionSync {
       this.context.console.info("Started FIO plugin sync.", {
         accountId: plugin.accountId,
         pluginId: plugin.id,
-        replacedExistingSync: current != null,
+        replacedExistingSync: current !== undefined,
         tokenCount: plugin.tokens.length,
       })
       sync.start()
@@ -261,7 +261,7 @@ class FioPluginSync {
       `fio-transaction-${this.plugin.accountId}-${transaction.id}`,
       { ifAvailable: true },
       async (lock) => {
-        if (lock == null) {
+        if (lock === null) {
           this.context.console.debug("Skipped locked FIO transaction.", {
             accountId: this.plugin.accountId,
             bankReference: transaction.id,
@@ -327,7 +327,7 @@ class FioPluginSync {
     const syncLookbackDays =
       this.plugin.syncLookbackDays ?? defaultFioPluginSyncLookbackDays
     const from =
-      pointer?.lastSyncedDate == null
+      pointer?.lastSyncedDate === null || pointer?.lastSyncedDate === undefined
         ? getFioFirstSyncDate(this.context.date.now())
         : dateToDateString(
             subDays(dateStringToDate(pointer.lastSyncedDate), syncLookbackDays)
@@ -447,7 +447,7 @@ const createTransactionNote = (transaction: FioTransaction) => {
     transaction.recipientMessage,
     transaction.userIdentification,
     transaction.type,
-  ].filter((part): part is string => part != null && part.length > 0)
+  ].filter((part): part is string => part !== null && part.length > 0)
 
   if (parts.length === 0) return null
 

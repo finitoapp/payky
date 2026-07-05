@@ -170,7 +170,10 @@ export const registerAccountsCommand =
             }
 
             if (options.kind === "iban") {
-              if (options.iban == null || options.currency == null) {
+              if (
+                options.iban === undefined ||
+                options.currency === undefined
+              ) {
                 printInvalidAccountInput(
                   "IBAN account requires --iban and --currency."
                 )
@@ -191,7 +194,7 @@ export const registerAccountsCommand =
             }
 
             if (options.kind === "spark") {
-              if (options.mnemonic == null) {
+              if (options.mnemonic === undefined) {
                 printInvalidAccountInput("Spark account requires --mnemonic.")
                 return
               }
@@ -208,7 +211,7 @@ export const registerAccountsCommand =
               return
             }
 
-            if (options.currency == null) {
+            if (options.currency === undefined) {
               printInvalidAccountInput(
                 "Cash register account requires --currency."
               )
@@ -257,7 +260,7 @@ export const registerAccountsCommand =
             })
 
             try {
-              if (mnemonic == null) {
+              if (mnemonic === undefined) {
                 printInvalidAccountInput(
                   "Spark wallet did not return a mnemonic."
                 )

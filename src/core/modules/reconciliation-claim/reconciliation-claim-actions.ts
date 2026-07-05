@@ -26,7 +26,11 @@ export const reconcileAccountTransaction =
       activeReconciliationClaimByAccountTransactionIdQuery(accountTransactionId)
     )
     const existingClaim = existingClaims[0]
-    if (existingClaim?.paymentId != null) return ok(existingClaim.paymentId)
+    if (
+      existingClaim?.paymentId !== null &&
+      existingClaim?.paymentId !== undefined
+    )
+      return ok(existingClaim.paymentId)
 
     const ibanCandidates = await run.deps.evolu.loadQuery(
       ibanReconciliationCandidateByAccountTransactionIdQuery(

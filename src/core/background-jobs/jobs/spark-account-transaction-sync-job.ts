@@ -195,7 +195,7 @@ const createSparkAccountSyncManager = ({
       sessions.set(account.id, session)
       context.console.info("Started Spark account sync.", {
         accountId: account.id,
-        replacedExistingSync: current != null,
+        replacedExistingSync: current !== undefined,
       })
     }
   }
@@ -298,7 +298,7 @@ const createSparkAccountSyncSession = ({
       `spark-transfer-${transfer.id}`,
       { ifAvailable: true },
       async (lock) => {
-        if (lock == null) {
+        if (lock === null) {
           context.console.debug("Skipped locked Spark transfer.", {
             accountId: account.id,
             sparkTransferId: transfer.id,
@@ -355,7 +355,7 @@ const createSparkAccountSyncSession = ({
 
   const syncTransferById = async (transferId: string): Promise<void> => {
     const currentWallet = wallet
-    if (currentWallet == null) {
+    if (currentWallet === undefined) {
       bufferTransferSync(
         transferId,
         "Buffered Spark transfer sync before wallet init."
@@ -364,7 +364,7 @@ const createSparkAccountSyncSession = ({
     }
 
     const transfer = await currentWallet.getTransfer(transferId)
-    if (transfer == null) {
+    if (transfer === undefined) {
       context.console.warn(
         "Spark transfer event referenced an unavailable transfer.",
         {
@@ -381,7 +381,7 @@ const createSparkAccountSyncSession = ({
 
   const syncHistory = async (): Promise<void> => {
     const currentWallet = wallet
-    if (currentWallet == null) {
+    if (currentWallet === undefined) {
       bufferHistorySync("Buffered Spark history sync before wallet init.")
       return
     }
@@ -435,7 +435,7 @@ const createSparkAccountSyncSession = ({
   }
 
   const syncTransferSoon = (transferId: string): void => {
-    if (wallet == null) {
+    if (wallet === undefined) {
       bufferTransferSync(
         transferId,
         "Buffered Spark transfer event before wallet init."
@@ -447,7 +447,7 @@ const createSparkAccountSyncSession = ({
   }
 
   const syncHistorySoon = (): void => {
-    if (wallet == null) {
+    if (wallet === undefined) {
       bufferHistorySync("Buffered Spark history event before wallet init.")
       return
     }
@@ -532,7 +532,7 @@ const createSparkAccountSyncSession = ({
       const walletToCleanup = wallet
       wallet = undefined
 
-      if (walletToCleanup == null) {
+      if (walletToCleanup === undefined) {
         context.console.debug("Disposed Spark account sync before init.", {
           accountId: account.id,
         })

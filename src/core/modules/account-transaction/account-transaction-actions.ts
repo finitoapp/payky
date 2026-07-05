@@ -115,7 +115,7 @@ export const createAccountTransaction =
     const id =
       providedId ??
       (iban
-        ? iban.bankReference == null
+        ? iban.bankReference === null || iban.bankReference === undefined
           ? createTableId<"AccountTransaction">()
           : createIdFromString<"AccountTransaction">(
               `accountTransaction:iban:${input.accountId}:${iban.bankReference}`

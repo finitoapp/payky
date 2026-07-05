@@ -35,25 +35,27 @@ export function AppBackgroundJobs() {
       },
     })
 
-    void run
-      .orThrow(runBackgroundJobs(backgroundJobs))
-      .then((startedJobsDisposable) => {
+    void (async () => {
+      try {
+        const startedJobsDisposable = await run.orThrow(
+          runBackgroundJobs(backgroundJobs)
+        )
         if (isDisposed) {
           disposeJobs(startedJobsDisposable)
           return
         }
 
         jobsDisposable = startedJobsDisposable
-      })
-      .catch((error: unknown) => {
+      } catch (error) {
         if (!isDisposed) {
           console.error("Failed to start background jobs.", error)
         }
-      })
+      }
+    })()
 
     return () => {
       isDisposed = true
-      if (jobsDisposable != null) disposeJobs(jobsDisposable)
+      if (jobsDisposable !== null) disposeJobs(jobsDisposable)
       void run[Symbol.asyncDispose]()
     }
   }, [console, evolu])

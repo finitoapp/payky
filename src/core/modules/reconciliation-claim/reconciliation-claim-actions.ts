@@ -1,9 +1,10 @@
 import { createIdFromString, ok, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { TimestampMsSchema } from "@/core/modules/shared/schema.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
@@ -18,7 +19,7 @@ import {
 export const reconcileAccountTransaction =
   (
     accountTransactionId: AccountTransactionId
-  ): Task<PaymentId | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<PaymentId | null, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const existingClaims = await run.deps.evolu.loadQuery(
@@ -65,7 +66,7 @@ export const reconcileAccountTransaction =
           paymentId: candidate.paymentId,
           accountTransactionId,
           source: "auto" as const,
-          claimedAt: Date.now(),
+          claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         }),
         { ...options, ownerId: evoluOwnerId }
       )

@@ -1,5 +1,4 @@
 import { useWakeLock } from "@dedalik/use-react"
-import { createRun } from "@evolu/web"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useStore } from "jotai"
 import { Clock3, Grid2X2, Settings } from "lucide-react"
@@ -7,16 +6,14 @@ import { Suspense, useEffect } from "react"
 import { accountAtom } from "@/atoms/account.ts"
 import { TerminalPaymentKeypadWithSettings } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { createDateDep, createFetchDep } from "@/core/deps.ts"
 import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrencySchema,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
-import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
-import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/")({
@@ -62,22 +59,15 @@ const Header = () => {
 }
 
 function TerminalPaymentKeypadLoader() {
+  const appRun = useAppRun()
   const console = useConsole()
-  const evolu = useEvolu()
   const navigate = useNavigate()
   const jotaiStore = useStore()
 
   const handleCharge = async (money: Money) => {
     const { device } = await jotaiStore.get(accountAtom)
 
-    await using run = createRun({
-      console,
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
-      ...createDateDep(),
-      ...createFetchDep(),
-      ...createSparkWalletDep(),
-    })
+    await using run = appRun()
 
     const amount = NonNegativeInteger(money.value)
     const currency = FiatCurrencySchema.parse(money.currency)

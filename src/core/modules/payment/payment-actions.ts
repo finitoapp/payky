@@ -7,10 +7,17 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type {
+  DateDep,
+  EvoluOwnerIdDep,
+  FetchDep,
+  FetchError,
+} from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import {
   fetchYadioBtcExchangeRate,
+  type YadioApiDep,
+  type YadioApiError,
   type YadioHttpError,
 } from "@/core/integrations/yadio/yadio-client.ts"
 import {
@@ -138,6 +145,8 @@ export type CreatePreparedPaymentError =
   | AccountSparkNotFoundError
   | PaymentPreparationFailedError
   | YadioHttpError
+  | YadioApiError
+  | FetchError
 
 export type MarkPaymentPaidCashError =
   | PaymentNotFoundError
@@ -154,6 +163,8 @@ export type PreparePaymentMethodError =
   | PaymentNumberNotFoundError
   | PaymentPreparationFailedError
   | YadioHttpError
+  | YadioApiError
+  | FetchError
 
 export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
   createPaymentNotFoundError({ id })
@@ -403,7 +414,12 @@ export const createPreparedPayment =
   }): Task<
     PaymentId,
     CreatePreparedPaymentError,
-    EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep & FetchDep
+    EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      SparkWalletDep &
+      FetchDep &
+      YadioApiDep
   > =>
   async (run) => {
     if (!spark) {
@@ -512,7 +528,7 @@ export const preparePaymentMethod =
   }): Task<
     PaymentId,
     PreparePaymentMethodError,
-    EvoluDep & EvoluOwnerIdDep & SparkWalletDep & FetchDep
+    EvoluDep & EvoluOwnerIdDep & SparkWalletDep & FetchDep & YadioApiDep
   > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
@@ -886,7 +902,11 @@ export const markPaymentPaidCash =
     readonly deviceId?: DeviceId | null
     readonly occurredAt?: TimestampMs
     readonly note?: NonEmptyString | null
-  }): Task<PaymentId, MarkPaymentPaidCashError, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<
+    PaymentId,
+    MarkPaymentPaidCashError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const paymentResult = await run(loadPayment(paymentId))
@@ -918,7 +938,8 @@ export const markPaymentPaidCash =
         accountId,
         amount: payment.amount,
         currency: payment.currency,
-        occurredAt: occurredAt ?? Date.now(),
+        occurredAt:
+          occurredAt ?? TimestampMsSchema.decode(run.deps.date.now().getTime()),
         note: note ?? null,
         internalTransferGroupId: null,
         source: {
@@ -942,7 +963,7 @@ export const markPaymentPaidCash =
           paymentId,
           accountTransactionId: accountTransactionResult.value,
           source: "manual" as const,
-          claimedAt: Date.now(),
+          claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         }),
         { ...options, ownerId: evoluOwnerId }
       )
@@ -952,7 +973,9 @@ export const markPaymentPaidCash =
   }
 
 export const cancelPayment =
-  (paymentId: PaymentId): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (
+    paymentId: PaymentId
+  ): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 
@@ -961,7 +984,7 @@ export const cancelPayment =
         "payment",
         {
           id: paymentId,
-          canceledAt: Date.now(),
+          canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         },
         { ...options, ownerId: evoluOwnerId }
       )

@@ -6,17 +6,26 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
-import type { BillLineSummary } from "@/core/modules/bill/bill-line-summary.ts"
 import type {
   BillLineRow,
   billLine,
 } from "@/core/modules/bill-line/bill-line.ts"
+import {
+  appendBillLine,
+  appendBillLines,
+  loadCalculatedBillLineSummaries,
+} from "@/core/modules/bill-line/bill-line-actions.ts"
+import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { item } from "@/core/modules/item/item.ts"
+import {
+  createOrReuseCatalogItemSnapshot,
+  createOrReuseItemSnapshot,
+} from "@/core/modules/item/item-actions.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -24,6 +33,7 @@ import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   NonNegativeInteger,
   PositiveNumber,
+  TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import {
   removeUndefinedValues,
@@ -31,13 +41,6 @@ import {
 } from "@/core/modules/shared/utils.ts"
 import { billByIdQuery, openBillsQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
-import {
-  appendBillLine,
-  appendBillLines,
-  createOrReuseCatalogItemSnapshot,
-  createOrReuseItemSnapshot,
-  loadCalculatedBillLineSummaries,
-} from "./bill-utils.ts"
 
 export interface BillWithItems {
   readonly bill: BillRow
@@ -174,21 +177,23 @@ export const addCatalogItemToBill =
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
-    const item = await createOrReuseCatalogItemSnapshot(run.deps)(
-      catalogItemResult.value
+    const item = await run.orThrow(
+      createOrReuseCatalogItemSnapshot(catalogItemResult.value)
     )
-    const projected = await appendBillLine(run.deps)({
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: catalogItemResult.value.id,
-      itemId: item.id,
-      type: "catalogItem",
-      kind: "add",
-      quantity: input.quantity,
-      totalAmount: NonNegativeInteger(
-        catalogItemResult.value.unitAmount * input.quantity
-      ),
-    })
+    const projected = await run.orThrow(
+      appendBillLine({
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: catalogItemResult.value.id,
+        itemId: item.id,
+        type: "catalogItem",
+        kind: "add",
+        quantity: input.quantity,
+        totalAmount: NonNegativeInteger(
+          catalogItemResult.value.unitAmount * input.quantity
+        ),
+      })
+    )
     const lineSummary = projected.find((row) => row.itemId === item.id)
     return lineSummary == null
       ? err(
@@ -221,17 +226,19 @@ export const addManualAmountToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    await createOrReuseItemSnapshot(run.deps)(snapshot)
-    const projected = await appendBillLine(run.deps)({
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: null,
-      itemId: snapshot.id,
-      type: "manualAmount",
-      kind: "add",
-      quantity: PositiveNumber(1),
-      totalAmount: input.totalAmount,
-    })
+    await run.orThrow(createOrReuseItemSnapshot(snapshot))
+    const projected = await run.orThrow(
+      appendBillLine({
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: null,
+        itemId: snapshot.id,
+        type: "manualAmount",
+        kind: "add",
+        quantity: PositiveNumber(1),
+        totalAmount: input.totalAmount,
+      })
+    )
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
     return lineSummary == null
       ? err(
@@ -264,17 +271,19 @@ export const addTipToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    await createOrReuseItemSnapshot(run.deps)(snapshot)
-    const projected = await appendBillLine(run.deps)({
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: null,
-      itemId: snapshot.id,
-      type: "tip",
-      kind: "add",
-      quantity: PositiveNumber(1),
-      totalAmount: input.totalAmount,
-    })
+    await run.orThrow(createOrReuseItemSnapshot(snapshot))
+    const projected = await run.orThrow(
+      appendBillLine({
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: null,
+        itemId: snapshot.id,
+        type: "tip",
+        kind: "add",
+        quantity: PositiveNumber(1),
+        totalAmount: input.totalAmount,
+      })
+    )
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
     return lineSummary == null
       ? err(
@@ -297,16 +306,18 @@ export const appendRemoveBillLine =
     }
   ): Task<BillLineSummary | null, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const projected = await appendBillLine(run.deps)({
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: input.lineSummary.catalogItemId,
-      itemId: input.lineSummary.itemId,
-      type: input.lineSummary.type,
-      kind: "remove",
-      quantity: input.quantity,
-      totalAmount: input.totalAmount,
-    })
+    const projected = await run.orThrow(
+      appendBillLine({
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: input.lineSummary.catalogItemId,
+        itemId: input.lineSummary.itemId,
+        type: input.lineSummary.type,
+        kind: "remove",
+        quantity: input.quantity,
+        totalAmount: input.totalAmount,
+      })
+    )
     return ok(projected.find((row) => row.id === input.lineSummary.id) ?? null)
   }
 
@@ -318,7 +329,7 @@ export const listOpenBills =
         bills.map(
           async (bill): Promise<BillWithItems> => ({
             bill,
-            items: await loadCalculatedBillLineSummaries(run.deps)(bill.id),
+            items: await run.orThrow(loadCalculatedBillLineSummaries(bill.id)),
           })
         )
       )
@@ -358,9 +369,8 @@ export const splitBill =
         totalAmount: item.totalAmount,
       })
     }
-    const targetItems = await appendBillLines(run.deps)(
-      lines,
-      input.targetBillId
+    const targetItems = await run.orThrow(
+      appendBillLines(lines, input.targetBillId)
     )
 
     return ok({
@@ -394,7 +404,7 @@ export const partiallyPayBill =
   }
 
 export const cancelBill =
-  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 
@@ -404,7 +414,7 @@ export const cancelBill =
         {
           id: billId,
           status: "canceled",
-          canceledAt: Date.now(),
+          canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         },
         { ...options, ownerId: evoluOwnerId }
       )
@@ -414,7 +424,7 @@ export const cancelBill =
   }
 
 export const closeBillAsPaid =
-  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 
@@ -424,7 +434,7 @@ export const closeBillAsPaid =
         {
           id: billId,
           status: "paid",
-          closedAt: Date.now(),
+          closedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         },
         { ...options, ownerId: evoluOwnerId }
       )

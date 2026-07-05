@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -67,39 +67,16 @@ function ThemePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ToggleGroup
-            value={[theme]}
-            onValueChange={(nextValue) => {
-              const [nextTheme] = nextValue
-              if (nextTheme) {
-                setTheme(nextTheme as Theme)
-              }
-            }}
-            spacing={2}
-            className="grid w-full grid-cols-1"
-            orientation="vertical"
-            variant="outline"
-          >
-            {themeOptions.map((option) => {
-              const Icon = option.icon
-
-              return (
-                <ToggleGroupItem
-                  key={option.value}
-                  value={option.value}
-                  className="flex justify-start px-6 py-4 gap-6 text-left h-auto"
-                >
-                  <Icon className="text-muted-foreground" />
-                  <span className="flex flex-col gap-1">
-                    <span className="font-semibold">{t(option.label)}</span>
-                    <span className="text-xs leading-snug text-muted-foreground">
-                      {t(option.description)}
-                    </span>
-                  </span>
-                </ToggleGroupItem>
-              )
-            })}
-          </ToggleGroup>
+          <OptionToggleGroup
+            value={theme}
+            options={themeOptions.map((option) => ({
+              value: option.value,
+              icon: option.icon,
+              title: t(option.label),
+              description: t(option.description),
+            }))}
+            onChange={setTheme}
+          />
         </CardContent>
       </Card>
     </>

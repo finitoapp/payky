@@ -1,7 +1,8 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-
+import type { DateDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { createCatalogItem } from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -24,7 +25,14 @@ import {
 } from "./bill-actions.ts"
 import { billByIdQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
-import { loadCalculatedBillLineSummaries } from "./bill-utils.ts"
+
+const fixedDate = new Date("2026-06-05T12:00:00.000Z")
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => fixedDate,
+  },
+})
 
 const billLinesByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
@@ -59,7 +67,7 @@ describe("bill actions", () => {
   test("creates, loads, assigns, unassigns, and closes a bill through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
 
     const id = await run.orThrow(
@@ -146,7 +154,7 @@ describe("bill actions", () => {
   test("lists only open and partially paid bills with calculated items", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
     await using run = testCreateRun(deps)
 
     const openId = await createOpenBill(deps, {
@@ -276,7 +284,7 @@ describe("bill actions", () => {
     })
 
     await expect
-      .poll(() => loadCalculatedBillLineSummaries(deps)(billId))
+      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(billId)))
       .toMatchObject([
         {
           name: "Coffee",
@@ -369,7 +377,7 @@ describe("bill actions", () => {
 
     expect(afterFullRemove).toBeNull()
     await expect
-      .poll(() => loadCalculatedBillLineSummaries(deps)(billId))
+      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(billId)))
       .toMatchObject([])
     await expect
       .poll(() => evolu.loadQuery(billLinesByBillIdQuery(billId)))
@@ -422,10 +430,10 @@ describe("bill actions", () => {
       ],
     })
     await expect
-      .poll(() => loadCalculatedBillLineSummaries(deps)(sourceBillId))
+      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(sourceBillId)))
       .toMatchObject([])
     await expect
-      .poll(() => loadCalculatedBillLineSummaries(deps)(targetBillId))
+      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(targetBillId)))
       .toMatchObject([
         {
           billId: targetBillId,

@@ -7,9 +7,12 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import {
+  type NonEmptyString255,
+  TimestampMsSchema,
+} from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
   removeUndefinedValues,
@@ -96,7 +99,11 @@ export const createAccountTransaction =
           readonly iban?: never
           readonly spark?: never
         }
-    )): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
+    )): Task<
+    AccountTransactionId,
+    never,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
     if (spark && !hasSparkTransactionIdentifier(spark)) {
       throw new Error(
@@ -177,7 +184,9 @@ export const createAccountTransaction =
           ...source,
           id: sourceId,
           accountTransactionId: id,
-          recordedAt: source.recordedAt ?? Date.now(),
+          recordedAt:
+            source.recordedAt ??
+            TimestampMsSchema.decode(run.deps.date.now().getTime()),
         }),
         { ...options, ownerId: evoluOwnerId }
       )

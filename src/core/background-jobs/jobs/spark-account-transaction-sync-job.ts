@@ -322,7 +322,8 @@ const createSparkAccountSyncSession = ({
         const input = createSparkTransactionInput(
           account.id,
           sparkTransferId,
-          transfer
+          transfer,
+          context.date.now()
         )
         if (!input.ok) {
           context.console.debug("Ignored incomplete Spark transfer.", {
@@ -548,7 +549,8 @@ const createSparkAccountSyncSession = ({
 const createSparkTransactionInput = (
   accountId: AccountId,
   sparkTransferId: NonEmptyString,
-  transfer: SparkTransfer
+  transfer: SparkTransfer,
+  now: Date
 ): Result<SparkTransactionInput, SparkTransactionInputError> => {
   const payload = getSparkTransactionPayload(transfer.userRequest)
   const lnInvoice = nullableNonEmptyString(
@@ -563,7 +565,7 @@ const createSparkTransactionInput = (
     accountId,
     amount: IntegerSchema.decode(getTransferAmount(transfer)),
     currency: "BTC" as const,
-    occurredAt: TimestampMsSchema.decode(getTransferOccurredAt(transfer)),
+    occurredAt: TimestampMsSchema.decode(getTransferOccurredAt(transfer, now)),
     note: getTransferNote(payload?.memo ?? ""),
     internalTransferGroupId: null,
     source: {
@@ -598,8 +600,8 @@ const getTransferAmount = (transfer: SparkTransfer): number =>
     ? -transfer.totalValue
     : transfer.totalValue
 
-const getTransferOccurredAt = (transfer: SparkTransfer): number =>
-  (transfer.updatedTime ?? transfer.createdTime ?? new Date()).getTime()
+const getTransferOccurredAt = (transfer: SparkTransfer, now: Date): number =>
+  (transfer.updatedTime ?? transfer.createdTime ?? now).getTime()
 
 const getTransferNote = (memo: string): NonEmptyString | null =>
   memo === "" ? null : NonEmptyStringSchema.decode(memo)

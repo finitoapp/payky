@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest"
 
-import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
+import type { BillLineRow } from "./bill-line.ts"
 import {
   calculateBillLineSummaries,
   createBillLineSummaryId,
-} from "./bill-utils.ts"
+} from "./bill-line-utils.ts"
 
 describe("bill line summaries", () => {
   test("calculates summaries from bill lines without persistence", () => {

@@ -1,6 +1,5 @@
 import { useWakeLock } from "@dedalik/use-react"
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
-import { createRun } from "@evolu/web"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   BanknoteIcon,
@@ -30,7 +29,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import { createFetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
@@ -50,9 +48,8 @@ import {
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
-import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
-import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -237,10 +234,10 @@ function PaymentWaitingRequest({
 }: {
   readonly paymentId: PaymentId
 }) {
+  const appRun = useAppRun()
   const console = useConsole()
   const { t } = useTranslation()
   const locale = useLocale()
-  const evolu = useEvolu()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
@@ -455,13 +452,7 @@ function PaymentWaitingRequest({
         new Set(methods).add(activePaymentMethod.id)
       )
       try {
-        await using run = createRun({
-          console,
-          evolu,
-          evoluOwnerId: evolu.appOwner.id,
-          ...createFetchDep(),
-          ...createSparkWalletDep(),
-        })
+        await using run = appRun()
 
         const result = await run(
           preparePaymentMethod({
@@ -508,7 +499,7 @@ function PaymentWaitingRequest({
     void prepare()
   }, [
     activePaymentMethod,
-    evolu,
+    appRun,
     isPaid,
     payment,
     paymentId,
@@ -536,11 +527,7 @@ function PaymentWaitingRequest({
     setCashPaymentErrorKey(null)
     setCashPaymentPending(true)
     try {
-      await using run = createRun({
-        console,
-        evolu,
-        evoluOwnerId: evolu.appOwner.id,
-      })
+      await using run = appRun()
 
       const result = await run(
         markPaymentPaidCash({

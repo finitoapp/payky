@@ -35,6 +35,7 @@ import {
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
 import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -55,7 +56,6 @@ function AccountsSettingsPage() {
   const setEvoluCounter = useSetAtom(evoluCounterAtom)
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [mnemonic, setMnemonic] = useState("")
-  const [error, setError] = useState<TranslationKey | null>(null)
   const [status, setStatus] = useState<TranslationKey | null>(null)
   const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
     null
@@ -64,7 +64,7 @@ function AccountsSettingsPage() {
     null
   )
   const [creating, setCreating] = useState(false)
-  const [restoring, setRestoring] = useState(false)
+  const { pending: restoring, error, setError, submit } = useSettingsForm()
   const mnemonicInputId = useId()
 
   const dateFormatter = new Intl.DateTimeFormat(language, {
@@ -133,8 +133,7 @@ function AccountsSettingsPage() {
       return
     }
 
-    setRestoring(true)
-    try {
+    await submit(async () => {
       const result = await createOrSelectAccount(
         deviceEvolu,
         mnemonicResult.value
@@ -146,9 +145,7 @@ function AccountsSettingsPage() {
           : "settings.accounts.restore.existing"
       )
       reloadAppAccount()
-    } finally {
-      setRestoring(false)
-    }
+    })
   }
 
   const pending =

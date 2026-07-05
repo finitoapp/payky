@@ -1,5 +1,13 @@
 import type { HttpHeaders, HttpOptions } from "@capacitor/core"
-import { AbortError, type OwnerId, type Task, tryAsync } from "@evolu/common"
+import {
+  AbortError,
+  err,
+  type OwnerId,
+  ok,
+  type Result,
+  type Task,
+  tryAsync,
+} from "@evolu/common"
 import { defineError } from "@/core/error.ts"
 import { getNativeRuntime } from "@/core/native/runtime.ts"
 
@@ -37,6 +45,58 @@ export const appFetchAsText =
         return createFetchError({ error })
       }
     )
+
+const createFetchJsonError = defineError("FetchJsonError")<{
+  readonly message: string
+  readonly error: unknown
+}>()
+export type FetchJsonError = ReturnType<typeof createFetchJsonError>
+
+const parseJsonBody = (text: string): Result<unknown, FetchJsonError> => {
+  try {
+    return ok(JSON.parse(text) as unknown)
+  } catch (error) {
+    return err(
+      createFetchJsonError({
+        message: "Response body is not valid JSON.",
+        error,
+      })
+    )
+  }
+}
+
+/**
+ * Fetches through {@link appFetchAsText} and additionally parses the body as
+ * JSON.
+ *
+ * HTTP-level handling stays with the caller: `ok`, `status`, and the raw
+ * `text` describe the HTTP response, while `json` carries the parsed body as
+ * a Result. A non-JSON body is represented as a {@link FetchJsonError} on the
+ * `json` Result so each client can turn it into its own typed parse error
+ * (carrying `status` and `responseBody`) after it has handled HTTP-level
+ * failures, matching the FIO client convention.
+ */
+export const appFetchAsJson =
+  (
+    url: string | URL,
+    init?: RequestInit
+  ): Task<
+    Pick<Response, "ok" | "status"> & {
+      readonly text: string
+      readonly json: Result<unknown, FetchJsonError>
+    },
+    FetchError,
+    FetchDep
+  > =>
+  async (run) => {
+    const response = await run(appFetchAsText(url, init))
+    if (!response.ok) return response
+
+    return ok({
+      ...response.value,
+      json: parseJsonBody(response.value.text),
+    })
+  }
 
 let capacitorHttpPromise:
   | Promise<{

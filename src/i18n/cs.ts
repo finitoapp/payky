@@ -375,6 +375,10 @@ export const cs = {
     "Zadejte celé číslo větší než nula.",
   "settings.fioPlugin.syncLookbackDays.label": "Dny zpětné kontroly",
   "settings.fioPlugin.title": "Fio plugin",
+  "settings.fioPlugin.nativeRuntimeWarning.title":
+    "Fio plugin je dostupný jen v nativní aplikaci.",
+  "settings.fioPlugin.nativeRuntimeWarning.description":
+    "Tato aplikace teď běží v běžném prohlížeči/PWA prostředí, takže automatické kontroly plateb Fio se tady nespustí.",
   "settings.fioPlugin.token.description":
     "Nechte prázdné, pokud chcete uložit jen základní nastavení.",
   "settings.fioPlugin.token.firstDescription":

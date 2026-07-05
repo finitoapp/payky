@@ -44,6 +44,7 @@ import {
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
+import { isPluginNativeRuntime } from "@/core/native/runtime.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -73,6 +74,7 @@ const normalizeToken = (value: string) => value.trim()
 
 function FioPluginSettingsPage() {
   const { t } = useTranslation()
+  const isNativeRuntime = isPluginNativeRuntime()
   const { data } = useEvoluQuery(fiatBankAccountFioPluginQuery)
   const [plugin] = data
 
@@ -81,7 +83,8 @@ function FioPluginSettingsPage() {
       <div className="h-6" />
       <FadeHeader title={t("settings.fioPlugin.title")} />
       <div className="flex flex-col gap-5">
-        <FioPluginForm plugin={plugin} />
+        {!isNativeRuntime ? <FioPluginNativeRuntimeAlert /> : null}
+        <FioPluginForm plugin={plugin} isNativeRuntime={isNativeRuntime} />
         {plugin ? (
           <FioPluginTokenList fioPluginId={plugin.id} />
         ) : (
@@ -100,6 +103,7 @@ function FioPluginSettingsPage() {
 }
 
 interface FioPluginFormProps {
+  readonly isNativeRuntime: boolean
   readonly plugin:
     | {
         readonly id: FioPluginId
@@ -110,7 +114,25 @@ interface FioPluginFormProps {
     | undefined
 }
 
-function FioPluginForm({ plugin }: FioPluginFormProps) {
+function FioPluginNativeRuntimeAlert() {
+  const { t } = useTranslation()
+
+  return (
+    <div
+      role="alert"
+      className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-200"
+    >
+      <p className="font-medium">
+        {t("settings.fioPlugin.nativeRuntimeWarning.title")}
+      </p>
+      <p className="mt-2">
+        {t("settings.fioPlugin.nativeRuntimeWarning.description")}
+      </p>
+    </div>
+  )
+}
+
+function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const { data: pointers } = useEvoluQuery(
@@ -230,7 +252,8 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
                 syncLookbackDays: syncLookbackDaysResult.data,
-                isActive: isActive ? sqliteTrue : sqliteFalse,
+                isActive:
+                  isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
                 token: tokenResult?.data,
               })
             )
@@ -246,7 +269,8 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
                 syncLookbackDays: syncLookbackDaysResult.data,
-                isActive: isActive ? sqliteTrue : sqliteFalse,
+                isActive:
+                  isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
                 token: tokenResult.data,
               })
             )
@@ -266,8 +290,8 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
         <Field orientation="horizontal">
           <Checkbox
             id={activeInputId}
-            checked={isActive}
-            disabled={pending}
+            checked={isNativeRuntime && isActive}
+            disabled={pending || !isNativeRuntime}
             onCheckedChange={(checked) => {
               setIsActive(checked)
               resetSaved()

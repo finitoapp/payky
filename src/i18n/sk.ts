@@ -375,6 +375,10 @@ export const sk = {
     "Zadajte celé číslo väčšie ako nula.",
   "settings.fioPlugin.syncLookbackDays.label": "Dni spätnej kontroly",
   "settings.fioPlugin.title": "Fio plugin",
+  "settings.fioPlugin.nativeRuntimeWarning.title":
+    "Fio plugin je dostupný iba v natívnej aplikácii.",
+  "settings.fioPlugin.nativeRuntimeWarning.description":
+    "Táto aplikácia teraz beží v bežnom prehliadači/PWA prostredí, takže automatické kontroly platieb Fio sa tu nespustia.",
   "settings.fioPlugin.token.description":
     "Nechajte prázdne, ak chcete uložiť len základné nastavenia.",
   "settings.fioPlugin.token.firstDescription":

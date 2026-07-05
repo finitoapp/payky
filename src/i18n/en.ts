@@ -373,6 +373,10 @@ export const en = {
     "Enter a whole number greater than zero.",
   "settings.fioPlugin.syncLookbackDays.label": "Sync lookback days",
   "settings.fioPlugin.title": "Fio Plugin",
+  "settings.fioPlugin.nativeRuntimeWarning.title":
+    "Fio plugin is available only in the native app.",
+  "settings.fioPlugin.nativeRuntimeWarning.description":
+    "This app is currently running in a regular browser/PWA environment, so automatic Fio payment checks will not run here.",
   "settings.fioPlugin.token.description":
     "Leave empty to update only basic settings.",
   "settings.fioPlugin.token.firstDescription":

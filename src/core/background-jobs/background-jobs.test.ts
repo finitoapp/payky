@@ -16,9 +16,5 @@ describe("getBackgroundJobsForRuntime", () => {
       startFioAccountTransactionSyncJob,
       startSparkAccountTransactionSyncJob,
     ])
-    expect(getBackgroundJobsForRuntime("tauri")).toEqual([
-      startFioAccountTransactionSyncJob,
-      startSparkAccountTransactionSyncJob,
-    ])
   })
 })

@@ -39,8 +39,7 @@ export function AppBackgroundJobs() {
     void (async () => {
       try {
         const startedJobsDisposable = await run.orThrow(
-        runBackgroundJobs(getBackgroundJobsForRuntime(getNativeRuntime()))
-      )
+          runBackgroundJobs(getBackgroundJobsForRuntime(getNativeRuntime()))
         )
         if (isDisposed) {
           disposeJobs(startedJobsDisposable)

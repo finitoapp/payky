@@ -80,6 +80,16 @@ export const sk = {
   "nav.checkout": "Pokladnica",
   "nav.home": "Terminál",
   "nav.settings": "Nastavenia",
+  "onboarding.account.description":
+    "Skontrolujte identitu, ktorú Payky pre toto zariadenie vygeneroval. Môžete ju premenovať a zapnúť synchronizáciu teraz, alebo neskôr v Nastaveniach.",
+  "onboarding.account.name.description":
+    "Zobrazuje sa v zozname účtov pri prepínaní identít.",
+  "onboarding.account.name.error.required": "Zadajte názov účtu.",
+  "onboarding.account.name.label": "Názov účtu",
+  "onboarding.account.title": "Váš účet",
+  "onboarding.account.transport.description":
+    "Zapnutím synchronizácie tento účet zálohujete a môžete ho použiť na ďalších zariadeniach.",
+  "onboarding.account.transport.title": "Synchronizácia",
   "onboarding.back": "Späť",
   "onboarding.finish": "Dokončiť",
   "onboarding.language.description":

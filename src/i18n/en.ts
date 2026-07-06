@@ -78,6 +78,16 @@ export const en = {
   "nav.checkout": "Checkout",
   "nav.home": "Terminal",
   "nav.settings": "Settings",
+  "onboarding.account.description":
+    "Review the identity Payky generated for this device. You can rename it and turn on sync now or later in Settings.",
+  "onboarding.account.name.description":
+    "Shown in the accounts list when switching identities.",
+  "onboarding.account.name.error.required": "Enter an account name.",
+  "onboarding.account.name.label": "Account name",
+  "onboarding.account.title": "Your account",
+  "onboarding.account.transport.description":
+    "Turn on sync to back up this account and use it on other devices.",
+  "onboarding.account.transport.title": "Sync",
   "onboarding.back": "Back",
   "onboarding.finish": "Finish",
   "onboarding.language.description": "Choose the language used across the app.",

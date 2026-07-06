@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useAtom } from "jotai"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import {
   BadgeDollarSign,
   Banknote,
@@ -12,6 +12,9 @@ import {
 } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 
+import { accountAtom } from "@/atoms/account.ts"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
+import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { PhoneViewport } from "@/components/skeleton.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -32,6 +35,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { updateAccountName } from "@/core/evolu/device-account.ts"
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
 import {
   saveCashRegisterAccount,
@@ -46,6 +50,7 @@ import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import {
   initialOnboardingFormState,
   type OnboardingPaymentMethod,
@@ -55,6 +60,8 @@ import {
 } from "@/features/onboarding/onboarding-form-state.ts"
 import { languageOptions } from "@/features/settings/language-options.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
+import { TransportToggleList } from "@/features/settings/security/transport-toggle-list.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
@@ -315,6 +322,8 @@ function OnboardingPage() {
               />
             ) : null}
 
+            {step === "account" ? <AccountStep /> : null}
+
             <CardFooter className="flex items-center justify-between gap-3">
               <Button
                 type="button"
@@ -325,7 +334,7 @@ function OnboardingPage() {
                 <ChevronLeft data-icon="inline-start" />
                 {t("onboarding.back")}
               </Button>
-              {step === "payments" ? (
+              {step === "account" ? (
                 <Button
                   type="button"
                   disabled={pending}
@@ -497,6 +506,88 @@ function PaymentsStep({
             <FieldError>{ibanError ? t(ibanError) : null}</FieldError>
           </Field>
         </FieldGroup>
+      </CardContent>
+    </>
+  )
+}
+
+function AccountStep() {
+  const { t } = useTranslation()
+  const account = useAtomValue(accountAtom)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const setEvoluCounter = useSetAtom(evoluCounterAtom)
+  const [name, setName] = useState(account.name)
+  const [nameError, setNameError] = useState<TranslationKey | null>(null)
+  const nameInputId = useId()
+
+  const saveName = async () => {
+    const trimmedName = name.trim()
+
+    if (trimmedName === "") {
+      setName(account.name)
+      setNameError("onboarding.account.name.error.required")
+      return
+    }
+
+    setNameError(null)
+
+    if (trimmedName === account.name) {
+      return
+    }
+
+    await runMutationWithCompletion((options) =>
+      updateAccountName(deviceEvolu, account.id, trimmedName, options)
+    )
+    setEvoluCounter((current) => current + 1)
+  }
+
+  return (
+    <>
+      <CardHeader>
+        <CardTitle>{t("onboarding.account.title")}</CardTitle>
+        <CardDescription>{t("onboarding.account.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-5">
+          <FieldGroup>
+            <Field data-invalid={nameError !== null}>
+              <FieldLabel htmlFor={nameInputId}>
+                {t("onboarding.account.name.label")}
+              </FieldLabel>
+              <Input
+                id={nameInputId}
+                value={name}
+                aria-invalid={nameError !== null}
+                autoComplete="off"
+                onChange={(event) => {
+                  setName(event.currentTarget.value)
+                  setNameError(null)
+                }}
+                onBlur={() => {
+                  void saveName()
+                }}
+              />
+              <FieldDescription>
+                {t("onboarding.account.name.description")}
+              </FieldDescription>
+              <FieldError>{nameError ? t(nameError) : null}</FieldError>
+            </Field>
+          </FieldGroup>
+
+          <RecoveryPhraseCard mnemonic={account.mnemonic} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("onboarding.account.transport.title")}</CardTitle>
+              <CardDescription>
+                {t("onboarding.account.transport.description")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TransportToggleList accountId={account.id} />
+            </CardContent>
+          </Card>
+        </div>
       </CardContent>
     </>
   )

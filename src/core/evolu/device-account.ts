@@ -248,6 +248,22 @@ export function selectAccount(deviceEvolu: DeviceEvolu, accountId: AccountId) {
   })
 }
 
+export function updateAccountName(
+  deviceEvolu: DeviceEvolu,
+  accountId: AccountId,
+  name: string,
+  options?: MutationOptions
+) {
+  deviceEvolu.update(
+    "account",
+    {
+      id: accountId,
+      name: NonEmptyString255(name),
+    },
+    options
+  )
+}
+
 export function removeDeviceAccount(
   deviceEvolu: DeviceEvolu,
   accountId: AccountId

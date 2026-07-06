@@ -1,5 +1,5 @@
-import { SparkWallet } from "@buildonspark/spark-sdk"
 import { z } from "zod"
+import { createDonateWallet, type DonateWallet } from "../donate-wallet.ts"
 
 const MSATS_PER_SAT = 1_000
 const DEFAULT_MIN_SENDABLE_SATS = 1
@@ -190,19 +190,6 @@ const validateAmountMsats = (
   return amountMsats / MSATS_PER_SAT
 }
 
-const createWallet = async (
-  config: DonateConfig
-): Promise<Awaited<ReturnType<typeof SparkWallet.initialize>>["wallet"]> => {
-  const initializedWallet = await SparkWallet.initialize({
-    mnemonicOrSeed: config.mnemonic,
-    options: {
-      network: "MAINNET",
-    },
-  })
-
-  return initializedWallet.wallet
-}
-
 const getVerifyUrl = (callbackUrl: string, id: string): string => {
   const verifyUrl = new URL(callbackUrl)
   verifyUrl.search = ""
@@ -215,12 +202,10 @@ const createInvoice = async (
   amountSats: number,
   config: DonateConfig
 ): Promise<LnurlPayInvoice | LnurlError> => {
-  let wallet:
-    | Awaited<ReturnType<typeof SparkWallet.initialize>>["wallet"]
-    | undefined
+  let wallet: DonateWallet | undefined
 
   try {
-    wallet = await createWallet(config)
+    wallet = await createDonateWallet(config)
 
     const invoice = await wallet.createLightningInvoice({
       amountSats,
@@ -260,12 +245,10 @@ const verifyInvoice = async (
   id: string,
   config: DonateConfig
 ): Promise<LnurlVerifyResponse | LnurlError> => {
-  let wallet:
-    | Awaited<ReturnType<typeof SparkWallet.initialize>>["wallet"]
-    | undefined
+  let wallet: DonateWallet | undefined
 
   try {
-    wallet = await createWallet(config)
+    wallet = await createDonateWallet(config)
 
     const invoice = await wallet.getLightningReceiveRequest(id)
 

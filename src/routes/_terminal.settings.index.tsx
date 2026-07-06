@@ -87,9 +87,9 @@ const generalSettings: ReadonlyArray<SettingRow> = [
 const supportSettings: ReadonlyArray<SettingRow> = [
   {
     icon: HeartHandshake,
-    title: "settings.donate.title",
-    description: "settings.donate.description",
-    to: "/settings/donate",
+    title: "settings.donations.title",
+    description: "settings.donations.description",
+    to: "/settings/donations",
   },
   {
     icon: Info,

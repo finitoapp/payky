@@ -38,7 +38,7 @@ const DonateInvoiceSearchSchema = z.object({
 
 type VerifyStatus = "idle" | "waiting" | "paid"
 
-export const Route = createFileRoute("/_terminal/settings/donate-invoice")({
+export const Route = createFileRoute("/_terminal/settings/donations-invoice")({
   component: DonateInvoicePage,
   validateSearch: (search) => DonateInvoiceSearchSchema.parse(search),
   staticData: {
@@ -108,27 +108,27 @@ function DonateInvoicePage() {
 
     try {
       await navigator.clipboard.writeText(invoice)
-      toast.success(t("settings.donate.invoice.copied"))
+      toast.success(t("settings.donations.invoice.copied"))
     } catch {
-      toast.error(t("settings.donate.invoice.copyFailed"))
+      toast.error(t("settings.donations.invoice.copyFailed"))
     }
   }
 
   return (
     <>
       <div className="h-6" />
-      <FadeHeader title={t("settings.donate.invoice.title")} />
+      <FadeHeader title={t("settings.donations.invoice.title")} />
 
       {verifyStatus === "paid" ? (
         <Card>
           <CardContent>
             <div className="flex min-h-[28rem] items-center justify-center">
               <PaymentSuccess
-                title={t("settings.donate.invoice.verify.paid")}
+                title={t("settings.donations.invoice.verify.paid")}
                 actions={
                   <div className="flex w-full flex-col items-center gap-8 pt-10">
                     <p className="max-w-72 text-balance text-center text-muted-foreground">
-                      {t("settings.donate.invoice.verify.paid.description")}
+                      {t("settings.donations.invoice.verify.paid.description")}
                     </p>
                     <Button
                       size="lg"
@@ -136,7 +136,7 @@ function DonateInvoicePage() {
                       render={<Link to="/settings" />}
                       className="h-14 w-80"
                     >
-                      {t("settings.donate.invoice.backToSettings")}
+                      {t("settings.donations.invoice.backToSettings")}
                     </Button>
                   </div>
                 }
@@ -147,11 +147,11 @@ function DonateInvoicePage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>{t("settings.donate.invoice.title")}</CardTitle>
+            <CardTitle>{t("settings.donations.invoice.title")}</CardTitle>
             <CardDescription>
               {invoice.length === 0
-                ? t("settings.donate.invoice.missing")
-                : t("settings.donate.invoice.description")}
+                ? t("settings.donations.invoice.missing")
+                : t("settings.donations.invoice.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -161,7 +161,7 @@ function DonateInvoicePage() {
                   type="button"
                   className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   onClick={() => void copyInvoice()}
-                  aria-label={t("settings.donate.invoice.copy")}
+                  aria-label={t("settings.donations.invoice.copy")}
                 >
                   <span className="flex size-full flex-col">
                     <QRCodeSVG value={invoice} className="size-full" />
@@ -179,7 +179,7 @@ function DonateInvoicePage() {
                 render={<a href={`lightning:${invoice}`} />}
                 className="w-full"
               >
-                {t("settings.donate.invoice.openWallet")}
+                {t("settings.donations.invoice.openWallet")}
               </Button>
             </CardFooter>
           ) : null}
@@ -197,7 +197,7 @@ function DonationVerifyStatus({ status }: { readonly status: VerifyStatus }) {
   return (
     <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
       <LoaderCircleIcon className="animate-spin" />
-      <span>{t("settings.donate.invoice.verify.waiting")}</span>
+      <span>{t("settings.donations.invoice.verify.waiting")}</span>
     </div>
   )
 }

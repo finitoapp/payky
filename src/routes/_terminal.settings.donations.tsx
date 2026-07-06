@@ -4,6 +4,7 @@ import { HeartHandshakeIcon, LoaderCircleIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { z } from "zod"
 
+import { DonationHistory } from "@/components/donation-history.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -49,8 +50,8 @@ const DonationAmountSchema = z.number().int().positive().safe()
 
 type EditedAmount = "fiat" | "sats"
 
-export const Route = createFileRoute("/_terminal/settings/donate")({
-  component: DonatePage,
+export const Route = createFileRoute("/_terminal/settings/donations")({
+  component: DonationsPage,
   staticData: {
     terminalLayout: {
       viewportClassName: "px-5 py-6",
@@ -92,7 +93,7 @@ const getDonationAddress = (): string =>
   import.meta.env.VITE_PAYKY_DONATE_LUD16_ADDRESS ??
   DEFAULT_DONATE_LUD16_ADDRESS
 
-function DonatePage() {
+function DonationsPage() {
   const console = useConsole()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -131,7 +132,7 @@ function DonatePage() {
 
         if (!result.ok) {
           console.error("Failed to load donation exchange rate", result.error)
-          setLoadErrorKey("settings.donate.rate.error")
+          setLoadErrorKey("settings.donations.rate.error")
           setExchangeRate(null)
           return
         }
@@ -170,7 +171,7 @@ function DonatePage() {
             nextMetadata.error
           )
           setMetadata(null)
-          setLoadErrorKey("settings.donate.metadata.error")
+          setLoadErrorKey("settings.donations.metadata.error")
           return
         }
 
@@ -180,7 +181,7 @@ function DonatePage() {
 
         console.error("Failed to load donation LNURL metadata", error)
         setMetadata(null)
-        setLoadErrorKey("settings.donate.metadata.error")
+        setLoadErrorKey("settings.donations.metadata.error")
       } finally {
         if (active) setIsLoadingMetadata(false)
       }
@@ -245,12 +246,12 @@ function DonatePage() {
 
       if (!nextInvoice.ok) {
         console.error("Failed to create donation invoice", nextInvoice.error)
-        setInvoiceErrorKey("settings.donate.invoice.error")
+        setInvoiceErrorKey("settings.donations.invoice.error")
         return
       }
 
       await navigate({
-        to: "/settings/donate-invoice",
+        to: "/settings/donations-invoice",
         search: {
           invoice: nextInvoice.value.pr,
           verify: nextInvoice.value.verify ?? "",
@@ -258,7 +259,7 @@ function DonatePage() {
       })
     } catch (error) {
       console.error("Failed to create donation invoice", error)
-      setInvoiceErrorKey("settings.donate.invoice.error")
+      setInvoiceErrorKey("settings.donations.invoice.error")
     } finally {
       setIsCreatingInvoice(false)
     }
@@ -267,14 +268,14 @@ function DonatePage() {
   return (
     <>
       <div className="h-6" />
-      <FadeHeader title={t("settings.donate.title")} />
+      <FadeHeader title={t("settings.donations.title")} />
 
       <div className="flex flex-col gap-5">
         <Card>
           <CardHeader>
-            <CardTitle>{t("settings.donate.form.title")}</CardTitle>
+            <CardTitle>{t("settings.donations.form.title")}</CardTitle>
             <CardDescription>
-              {t("settings.donate.form.description")}
+              {t("settings.donations.form.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -284,7 +285,7 @@ function DonatePage() {
                 className="gap-2"
               >
                 <FieldLabel htmlFor="donation-fiat">
-                  {t("settings.donate.fiat.label")}
+                  {t("settings.donations.fiat.label")}
                 </FieldLabel>
                 <Input
                   id="donation-fiat"
@@ -297,13 +298,13 @@ function DonatePage() {
                   }}
                 />
                 <FieldDescription>
-                  {t("settings.donate.fiat.description")}
+                  {t("settings.donations.fiat.description")}
                 </FieldDescription>
               </Field>
 
               <Field data-invalid={visibleAmountErrorKey !== null}>
                 <FieldLabel htmlFor="donation-sats">
-                  {t("settings.donate.sats.label")}
+                  {t("settings.donations.sats.label")}
                 </FieldLabel>
                 <Input
                   id="donation-sats"
@@ -317,8 +318,8 @@ function DonatePage() {
                 />
                 <FieldDescription>
                   {metadata === null
-                    ? t("settings.donate.sats.description")
-                    : t("settings.donate.sats.range", {
+                    ? t("settings.donations.sats.description")
+                    : t("settings.donations.sats.range", {
                         min: metadata.minSendableSats,
                         max: metadata.maxSendableSats,
                       })}
@@ -352,12 +353,14 @@ function DonatePage() {
                   <HeartHandshakeIcon />
                 )}
                 {isCreatingInvoice
-                  ? t("settings.donate.create.pending")
-                  : t("settings.donate.create")}
+                  ? t("settings.donations.create.pending")
+                  : t("settings.donations.create")}
               </Button>
             </FieldGroup>
           </CardContent>
         </Card>
+
+        <DonationHistory />
       </div>
     </>
   )
@@ -372,15 +375,15 @@ function getAmountErrorKey({
   readonly metadata: LnurlPayMetadata | null
   readonly satsInput: string
 }): TranslationKey | null {
-  if (satsInput.trim().length === 0) return "settings.donate.amount.required"
-  if (amountSats === null) return "settings.donate.amount.invalid"
+  if (satsInput.trim().length === 0) return "settings.donations.amount.required"
+  if (amountSats === null) return "settings.donations.amount.invalid"
 
   if (
     metadata !== null &&
     (amountSats < metadata.minSendableSats ||
       amountSats > metadata.maxSendableSats)
   ) {
-    return "settings.donate.amount.range"
+    return "settings.donations.amount.range"
   }
 
   return null

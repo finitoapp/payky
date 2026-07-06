@@ -3,7 +3,7 @@ import {
   createDonateWallet,
   type DonateWallet,
   loadDonateWalletConfig,
-} from "./_donate-wallet.ts"
+} from "../src/core/server/donate-wallet.js"
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50

@@ -10,6 +10,7 @@ import {
   Info,
   Landmark,
   Languages,
+  Lock,
   Plug,
   ReceiptText,
   ShieldCheck,
@@ -139,6 +140,15 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
   },
 ]
 
+const privacySettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: Lock,
+    title: "settings.privacy.title",
+    description: "settings.privacy.description",
+    to: "/settings/privacy",
+  },
+]
+
 const developerSettings: ReadonlyArray<SettingRow> = [
   {
     icon: Bug,
@@ -196,6 +206,10 @@ function SettingsPage() {
     () => createSettingsNavItems(developerSettings, t),
     [t]
   )
+  const privacyItems = useMemo(
+    () => createSettingsNavItems(privacySettings, t),
+    [t]
+  )
   const securityItems = useMemo(
     () =>
       createSettingsNavItems(
@@ -228,6 +242,7 @@ function SettingsPage() {
         items={[...accountItems, ...securityItems]}
       />
       <VerticalNav title={t("settings.appearance")} items={generalItems} />
+      <VerticalNav title={t("settings.privacyGroup")} items={privacyItems} />
       <VerticalNav title={t("settings.support")} items={supportItems} />
       <VerticalNav title={t("settings.developers")} items={developerItems} />
     </>

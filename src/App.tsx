@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import { AppBackgroundJobs } from "@/components/app-background-jobs.tsx"
 import { NativeBackButtonHandler } from "@/components/native-back-button-handler.tsx"
 import { PwaUpdateToast } from "@/components/pwa-update-toast.tsx"
+import { SentryController } from "@/components/sentry-controller.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { Toaster } from "@/components/ui/sonner.tsx"
 import { queryClient } from "@/core/query-client.ts"
@@ -18,6 +19,7 @@ export function App() {
       <Provider store={jotaiStore}>
         <Suspense fallback={null}>
           <ThemeProvider disableTransitionOnChange>
+            <SentryController />
             <NativeBackButtonHandler />
             <AppBackgroundJobs />
             <RouterProvider router={router} />

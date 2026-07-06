@@ -201,7 +201,7 @@ export const en = {
   "settings.about.github.title": "Source code on GitHub",
   "settings.about.description": "Version, terms and contact",
   "settings.about.privacy.body":
-    "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, mint information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and mint or wallet access data secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Cashu mints to issue, redeem, or manage ecash tokens\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS\nPayky does not use analytics or tracking services unless they are explicitly added and disclosed in the app.\n\n5. THIRD-PARTY MINTS\nWhen using ecash mints, the mint operator may see transaction amounts, timing, token redemption activity, and related metadata. Choose trusted mints and avoid keeping unnecessary balances with any single mint.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: June 2026",
+    "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, mint information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and mint or wallet access data secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Cashu mints to issue, redeem, or manage ecash tokens\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS AND ERROR REPORTING\nPayky does not use analytics or tracking services. Optional error reporting through Sentry is available to help diagnose crashes and bugs. It is off by default and only activates if you turn it on in Settings > Privacy. When enabled, error reports may include device and app information, and error messages and stack traces; recovery phrases and bank account numbers are automatically redacted before being sent.\n\n5. THIRD-PARTY MINTS\nWhen using ecash mints, the mint operator may see transaction amounts, timing, token redemption activity, and related metadata. Choose trusted mints and avoid keeping unnecessary balances with any single mint.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: June 2026",
   "settings.about.privacy.description":
     "Application data is stored locally and synchronized through Evolu.",
   "settings.about.privacy.heading": "Payky Privacy Policy",
@@ -509,6 +509,16 @@ export const en = {
     "Include the short two-digit year in generated payment numbers",
   "settings.paymentNumberSeries.year.short.title": "Short year",
   "settings.payments": "PAYMENTS",
+  "settings.privacy.description": "Manage error reporting",
+  "settings.privacy.errorReporting.description":
+    "Send crash reports and error details to help fix bugs. Off by default — nothing is sent unless you turn this on.",
+  "settings.privacy.errorReporting.disable": "Disable",
+  "settings.privacy.errorReporting.disabled": "Disabled",
+  "settings.privacy.errorReporting.enable": "Enable",
+  "settings.privacy.errorReporting.enabled": "Enabled",
+  "settings.privacy.errorReporting.title": "Error reporting",
+  "settings.privacy.title": "Privacy",
+  "settings.privacyGroup": "PRIVACY",
   "settings.security": "SECURITY & PRIVACY",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.title": "Security & Sync",

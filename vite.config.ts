@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process"
 import path from "node:path"
+import { sentryVitePlugin } from "@sentry/vite-plugin"
 import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import basicSsl from "@vitejs/plugin-basic-ssl"
@@ -79,10 +80,15 @@ export default (({ command }: ConfigEnv) => {
   const useAndroidWebViewWorkerLocksPlugin =
     isNativeAndroidWebViewBuild(command)
   const useBasicSsl = process.env.PAYKY_DISABLE_BASIC_SSL !== "1"
+  const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
+  const useSentryVitePlugin = command === "build" && Boolean(sentryAuthToken)
 
   return {
     define: {
       __APP_VERSION__: JSON.stringify(getAppVersion()),
+    },
+    build: {
+      sourcemap: useSentryVitePlugin,
     },
     plugins: [
       ...(useBasicSsl ? [basicSsl()] : []),
@@ -106,6 +112,18 @@ export default (({ command }: ConfigEnv) => {
           navigateFallback: "/index.html",
         },
       }),
+      ...(useSentryVitePlugin
+        ? [
+            sentryVitePlugin({
+              org: process.env.SENTRY_ORG,
+              project: process.env.SENTRY_PROJECT,
+              authToken: sentryAuthToken,
+              sourcemaps: {
+                filesToDeleteAfterUpload: ["**/*.js.map"],
+              },
+            }),
+          ]
+        : []),
     ],
     worker: {
       plugins: () =>

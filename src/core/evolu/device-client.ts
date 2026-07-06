@@ -9,6 +9,7 @@ import {
   id,
   Mnemonic,
   ok,
+  sqliteFalse,
   type Task,
   testAppOwner,
 } from "@evolu/common"
@@ -54,6 +55,7 @@ export interface DeviceSettings {
   readonly language: DeviceLanguage
   readonly theme: DeviceTheme
   readonly locale: DeviceLocale
+  readonly errorReportingEnabled: 0 | 1
 }
 
 const deviceEvoluSchema = {
@@ -86,6 +88,7 @@ const deviceEvoluSchema = {
     language: DeviceLanguageSchema.nullable(),
     theme: DeviceThemeSchema.nullable(),
     locale: DeviceLocaleSchema.nullable(),
+    errorReportingEnabled: SqliteBoolSchema.nullable(),
   },
 } as const
 
@@ -115,6 +118,7 @@ export function createDefaultDeviceSettings(
     language,
     theme: "system",
     locale: getDeviceLocaleForLanguage(language),
+    errorReportingEnabled: sqliteFalse,
   }
 }
 

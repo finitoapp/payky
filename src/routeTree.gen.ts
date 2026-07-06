@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as TerminalRouteImport } from './routes/_terminal'
@@ -38,6 +39,11 @@ import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_termin
 import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 
+const RestoreAccountRoute = RestoreAccountRouteImport.update({
+  id: '/restore-account',
+  path: '/restore-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/': typeof TerminalIndexRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/_terminal': typeof TerminalRouteWithChildren
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/restore-account': typeof RestoreAccountRoute
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/checkout': typeof TerminalCheckoutRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/'
     | '/error'
     | '/onboarding'
+    | '/restore-account'
     | '/activity'
     | '/checkout'
     | '/settings'
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
   to:
     | '/error'
     | '/onboarding'
+    | '/restore-account'
     | '/activity'
     | '/checkout'
     | '/'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/_terminal'
     | '/error'
     | '/onboarding'
+    | '/restore-account'
     | '/_terminal/activity'
     | '/_terminal/checkout'
     | '/_terminal/settings'
@@ -372,10 +384,18 @@ export interface RootRouteChildren {
   TerminalRoute: typeof TerminalRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   OnboardingRoute: typeof OnboardingRoute
+  RestoreAccountRoute: typeof RestoreAccountRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/restore-account': {
+      id: '/restore-account'
+      path: '/restore-account'
+      fullPath: '/restore-account'
+      preLoaderRoute: typeof RestoreAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -661,6 +681,7 @@ const rootRouteChildren: RootRouteChildren = {
   TerminalRoute: TerminalRouteWithChildren,
   ErrorRoute: ErrorRoute,
   OnboardingRoute: OnboardingRoute,
+  RestoreAccountRoute: RestoreAccountRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

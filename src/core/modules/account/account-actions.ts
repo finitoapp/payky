@@ -29,10 +29,14 @@ import type {
   accountIban,
   accountSpark,
 } from "./account.ts"
-import { accountByIdQuery } from "./account-queries.ts"
+import {
+  accountByIdQuery,
+  sparkAccountMnemonicQuery,
+} from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
   cashRegisterAccountId,
+  createSparkAccountMnemonic,
   fiatBankAccountId,
   sparkAccountId,
 } from "./account-utils.ts"
@@ -309,13 +313,23 @@ export const saveSparkAccount =
   async (run) => {
     const { evoluOwnerId } = run.deps
 
+    // Preload guards a domain invariant: an existing wallet mnemonic must
+    // never be overwritten, so one is generated only when enabling Spark
+    // without any stored mnemonic.
+    const mnemonicToSave =
+      mnemonic ??
+      (enabled &&
+      (await run.deps.evolu.loadQuery(sparkAccountMnemonicQuery)).length === 0
+        ? createSparkAccountMnemonic()
+        : undefined)
+
     await runMutationWithCompletion((options) => {
-      if (mnemonic !== undefined) {
+      if (mnemonicToSave !== undefined) {
         run.deps.evolu.upsert(
           "accountSpark",
           removeUndefinedValues({
             id: sparkAccountId,
-            mnemonic,
+            mnemonic: mnemonicToSave,
           }),
           { ...options, ownerId: evoluOwnerId }
         )

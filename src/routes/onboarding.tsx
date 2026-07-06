@@ -1,5 +1,5 @@
-import { sqliteTrue } from "@evolu/common"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useAtom } from "jotai"
 import {
   BadgeDollarSign,
   Banknote,
@@ -38,7 +38,7 @@ import {
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
-import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
+import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import {
@@ -46,6 +46,13 @@ import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
+import {
+  initialOnboardingFormState,
+  type OnboardingPaymentMethod,
+  type OnboardingStep,
+  onboardingFormAtom,
+  onboardingSteps,
+} from "@/features/onboarding/onboarding-form-state.ts"
 import { languageOptions } from "@/features/settings/language-options.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -62,11 +69,8 @@ export const Route = createFileRoute("/onboarding")({
   component: OnboardingPage,
 })
 
-type OnboardingStep = "language" | "currency" | "payments"
-type PaymentMethod = "cash" | "btc" | "iban"
-
 interface PaymentMethodOption {
-  readonly value: PaymentMethod
+  readonly value: OnboardingPaymentMethod
   readonly label: TranslationKey
   readonly description: TranslationKey
   readonly icon: typeof Banknote
@@ -77,12 +81,6 @@ interface CurrencyOption {
   readonly label: TranslationKey
   readonly description: TranslationKey
 }
-
-const steps: ReadonlyArray<OnboardingStep> = [
-  "language",
-  "currency",
-  "payments",
-]
 
 const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
   {
@@ -123,7 +121,7 @@ const currencyOptions: ReadonlyArray<CurrencyOption> = [
   },
 ]
 
-const getStepIndex = (step: OnboardingStep) => steps.indexOf(step)
+const getStepIndex = (step: OnboardingStep) => onboardingSteps.indexOf(step)
 
 const getDefaultCurrencyForLanguage = (
   languageValue: Language
@@ -147,50 +145,53 @@ function OnboardingPage() {
   const { language, t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
-  const [step, setStep] = useState<OnboardingStep>("language")
-  const [selectedCurrency, setSelectedCurrency] = useState<FiatCurrencyType>(
-    getDefaultCurrencyForLanguage(language)
-  )
-  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<
-    ReadonlySet<PaymentMethod>
-  >(() => new Set(["cash", "btc"]))
-  const [iban, setIban] = useState("")
+  const [form, setForm] = useAtom(onboardingFormAtom)
   const [ibanError, setIbanError] = useState<TranslationKey | null>(null)
   const [pending, setPending] = useState(false)
   const ibanInputId = useId()
 
+  const { step, iban, paymentMethods: selectedPaymentMethods } = form
+  const selectedCurrency =
+    form.currency ?? getDefaultCurrencyForLanguage(language)
+
   useEffect(() => {
-    if (settings?.onboardingCompleted === sqliteTrue) {
+    // The appSettings row's existence marks the account as onboarded. The row
+    // can also appear mid-form when a restored account finishes its first
+    // sync — leaving then keeps the synced settings intact.
+    if (settings !== undefined) {
       void navigate({ to: "/", replace: true })
     }
-  }, [navigate, settings?.onboardingCompleted])
+  }, [navigate, settings])
 
   const stepIndex = getStepIndex(step)
   const canGoBack = stepIndex > 0 && !pending
 
   const goNext = () => {
-    const nextStep = steps[stepIndex + 1]
+    const nextStep = onboardingSteps[stepIndex + 1]
     if (nextStep) {
-      setStep(nextStep)
+      setForm((current) => ({ ...current, step: nextStep }))
     }
   }
 
   const goBack = () => {
-    const previousStep = steps[stepIndex - 1]
+    const previousStep = onboardingSteps[stepIndex - 1]
     if (previousStep) {
-      setStep(previousStep)
+      setForm((current) => ({ ...current, step: previousStep }))
     }
   }
 
-  const togglePaymentMethod = (method: PaymentMethod, checked: boolean) => {
-    setSelectedPaymentMethods((current) => {
-      const next = new Set(current)
+  const togglePaymentMethod = (
+    method: OnboardingPaymentMethod,
+    checked: boolean
+  ) => {
+    setForm((current) => {
+      const nextMethods = new Set(current.paymentMethods)
       if (checked) {
-        next.add(method)
+        nextMethods.add(method)
       } else {
-        next.delete(method)
+        nextMethods.delete(method)
       }
-      return next
+      return { ...current, paymentMethods: nextMethods }
     })
     setIbanError(null)
   }
@@ -237,8 +238,7 @@ function OnboardingPage() {
         })
       )
       await run(
-        updateSettings({
-          onboardingCompleted: sqliteTrue,
+        completeOnboarding({
           fiatCurrency: selectedCurrency,
           defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
             selectedPaymentMethods
@@ -249,6 +249,7 @@ function OnboardingPage() {
         })
       )
 
+      setForm(initialOnboardingFormState)
       await navigate({ to: "/", replace: true })
     } finally {
       setPending(false)
@@ -262,7 +263,8 @@ function OnboardingPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium text-muted-foreground">
-                {t("onboarding.progress")} {stepIndex + 1}/{steps.length}
+                {t("onboarding.progress")} {stepIndex + 1}/
+                {onboardingSteps.length}
               </p>
               <h1 className="font-semibold text-2xl leading-tight">
                 {t("onboarding.title")}
@@ -280,9 +282,10 @@ function OnboardingPage() {
                   const nextLocale = getDeviceLocaleForLanguage(nextLanguage)
                   setLanguage(nextLanguage)
                   setLocale(nextLocale)
-                  setSelectedCurrency(
-                    getDefaultCurrencyForLanguage(nextLanguage)
-                  )
+                  setForm((current) => ({
+                    ...current,
+                    currency: getDefaultCurrencyForLanguage(nextLanguage),
+                  }))
                 }}
               />
             ) : null}
@@ -291,7 +294,9 @@ function OnboardingPage() {
               <CurrencyStep
                 currency={selectedCurrency}
                 pending={pending}
-                onSelect={setSelectedCurrency}
+                onSelect={(nextCurrency) => {
+                  setForm((current) => ({ ...current, currency: nextCurrency }))
+                }}
               />
             ) : null}
 
@@ -303,7 +308,7 @@ function OnboardingPage() {
                 paymentMethods={selectedPaymentMethods}
                 pending={pending}
                 onIbanChange={(nextIban) => {
-                  setIban(nextIban)
+                  setForm((current) => ({ ...current, iban: nextIban }))
                   setIbanError(null)
                 }}
                 onTogglePaymentMethod={togglePaymentMethod}
@@ -425,11 +430,11 @@ function PaymentsStep({
   readonly iban: string
   readonly ibanError: TranslationKey | null
   readonly ibanInputId: string
-  readonly paymentMethods: ReadonlySet<PaymentMethod>
+  readonly paymentMethods: ReadonlySet<OnboardingPaymentMethod>
   readonly pending: boolean
   readonly onIbanChange: (iban: string) => void
   readonly onTogglePaymentMethod: (
-    method: PaymentMethod,
+    method: OnboardingPaymentMethod,
     checked: boolean
   ) => void
 }) {
@@ -502,7 +507,7 @@ function StepDots({ activeStep }: { readonly activeStep: OnboardingStep }) {
 
   return (
     <div className="flex items-center gap-2" aria-hidden="true">
-      {steps.map((step, index) => (
+      {onboardingSteps.map((step, index) => (
         <span
           key={step}
           className={cn(
@@ -516,7 +521,7 @@ function StepDots({ activeStep }: { readonly activeStep: OnboardingStep }) {
 }
 
 function getPaymentMethodOrder(
-  paymentMethods: ReadonlySet<PaymentMethod>
+  paymentMethods: ReadonlySet<OnboardingPaymentMethod>
 ): ReadonlyArray<DefaultPaymentMethod> {
   const order: DefaultPaymentMethod[] = []
 
@@ -536,7 +541,7 @@ function getPaymentMethodOrder(
 }
 
 function getDefaultPaymentMethodForOnboarding(
-  paymentMethods: ReadonlySet<PaymentMethod>
+  paymentMethods: ReadonlySet<OnboardingPaymentMethod>
 ): DefaultPaymentMethod {
   if (paymentMethods.has("btc")) return "spark"
   if (paymentMethods.has("cash")) return "cashRegister"

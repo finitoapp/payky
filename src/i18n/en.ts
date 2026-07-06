@@ -1,4 +1,7 @@
 export const en = {
+  "accountRestore.description":
+    "Waiting for the account data to sync. This usually takes a few seconds.",
+  "accountRestore.title": "Restoring account",
   "activity.amount.btc": "฿145",
   "activity.amount.usd": "$9.00",
   "activity.balance.label": "Total Balance",
@@ -222,10 +225,8 @@ export const en = {
   "settings.accounts.list.switch": "Switch",
   "settings.accounts.list.title": "Device accounts",
   "settings.accounts.restore.action": "Use recovery phrase",
-  "settings.accounts.restore.created": "Account added.",
   "settings.accounts.restore.description":
     "Paste an existing recovery phrase to open its app data on this device.",
-  "settings.accounts.restore.existing": "Existing account selected.",
   "settings.accounts.restore.mnemonic.description":
     "Whitespace is normalized before validation.",
   "settings.accounts.restore.mnemonic.invalid":

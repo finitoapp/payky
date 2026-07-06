@@ -27,6 +27,12 @@ bun install
 Dependency versions are pinned through Bun. Keep `exact = true` in
 `bunfig.toml`.
 
+Install the locked Codex skills from `skills-lock.json`:
+
+```bash
+bunx skills experimental_install
+```
+
 ## Development
 
 Start the Vite dev server:

@@ -124,6 +124,15 @@ export const sparkAccountQuery = createQuery((db) =>
     }>()
 )
 
+export const sparkAccountMnemonicQuery = createQuery((db) =>
+  db
+    .selectFrom("accountSpark")
+    .select(["id", "mnemonic"])
+    .where("id", "=", sparkAccountId)
+    .where("mnemonic", "is not", null)
+    .$narrowType<{ mnemonic: KyselyNotNull }>()
+)
+
 export const cashRegisterAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")

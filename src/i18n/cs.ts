@@ -1,6 +1,9 @@
 import type { TranslationKey } from "@/i18n/en.ts"
 
 export const cs = {
+  "accountRestore.description":
+    "Čekáme na synchronizaci dat účtu. Obvykle to trvá pár sekund.",
+  "accountRestore.title": "Obnovování účtu",
   "activity.amount.btc": "฿145",
   "activity.amount.usd": "$9.00",
   "activity.balance.label": "Celková bilance",
@@ -222,10 +225,8 @@ export const cs = {
   "settings.accounts.list.switch": "Přepnout",
   "settings.accounts.list.title": "Účty v zařízení",
   "settings.accounts.restore.action": "Použít recovery phrase",
-  "settings.accounts.restore.created": "Účet přidán.",
   "settings.accounts.restore.description":
     "Vložte existující recovery phrase pro otevření jejích aplikačních dat na tomto zařízení.",
-  "settings.accounts.restore.existing": "Existující účet vybrán.",
   "settings.accounts.restore.mnemonic.description":
     "Mezery se před validací sjednotí.",
   "settings.accounts.restore.mnemonic.invalid":

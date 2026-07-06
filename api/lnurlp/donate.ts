@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { createDonateWallet, type DonateWallet } from "../donate-wallet.ts"
+import { createDonateWallet, type DonateWallet } from "../_donate-wallet.ts"
 
 const MSATS_PER_SAT = 1_000
 const DEFAULT_MIN_SENDABLE_SATS = 1

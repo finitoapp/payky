@@ -1,4 +1,4 @@
-import { createRun } from "@evolu/web"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { HeartHandshakeIcon, LoaderCircleIcon } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -22,22 +22,19 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { createFetchDep } from "@/core/deps.ts"
 import {
   fetchLnurlPayInvoice,
   fetchLnurlPayMetadata,
   type LnurlPayMetadata,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
-import {
-  createYadioApiDep,
-  fetchYadioBtcExchangeRate,
-} from "@/core/integrations/yadio/yadio-client.ts"
+import { fetchYadioBtcExchangeRate } from "@/core/integrations/yadio/yadio-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { currencyFractionDigits } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -95,104 +92,86 @@ const getDonationAddress = (): string =>
 
 function DonationsPage() {
   const console = useConsole()
+  const appRun = useAppRun()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
   const currency = settings?.fiatCurrency ?? FiatCurrency.CZK
   const donationAddress = getDonationAddress()
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null)
-  const [metadata, setMetadata] = useState<LnurlPayMetadata | null>(null)
   const [fiatInput, setFiatInput] = useState("")
   const [satsInput, setSatsInput] = useState("")
   const [editedAmount, setEditedAmount] = useState<EditedAmount>("fiat")
-  const [isLoadingRate, setIsLoadingRate] = useState(true)
-  const [isLoadingMetadata, setIsLoadingMetadata] = useState(true)
-  const [isCreatingInvoice, setIsCreatingInvoice] = useState(false)
-  const [loadErrorKey, setLoadErrorKey] = useState<TranslationKey | null>(null)
-  const [invoiceErrorKey, setInvoiceErrorKey] = useState<TranslationKey | null>(
-    null
-  )
 
-  useEffect(() => {
-    let active = true
-
-    const loadExchangeRate = async () => {
-      setIsLoadingRate(true)
-      setLoadErrorKey(null)
+  const exchangeRateQuery = useQuery({
+    queryKey: ["donations", "exchange-rate", currency],
+    queryFn: async () => {
+      await using run = appRun()
 
       try {
-        await using run = createRun({
-          ...createFetchDep(),
-          ...createYadioApiDep(),
-        })
-        const result = await run(fetchYadioBtcExchangeRate(currency))
-
-        if (!active) return
-
-        if (!result.ok) {
-          console.error("Failed to load donation exchange rate", result.error)
-          setLoadErrorKey("settings.donations.rate.error")
-          setExchangeRate(null)
-          return
-        }
-
-        setExchangeRate(result.value.exchangeRate)
-      } finally {
-        if (active) setIsLoadingRate(false)
+        return await run.orThrow(fetchYadioBtcExchangeRate(currency))
+      } catch (error) {
+        console.error("Failed to load donation exchange rate", error)
+        throw error
       }
-    }
+    },
+  })
+  const exchangeRate = exchangeRateQuery.data?.exchangeRate ?? null
 
-    void loadExchangeRate()
-
-    return () => {
-      active = false
-    }
-  }, [console, currency])
-
-  useEffect(() => {
-    let active = true
-
-    const loadMetadata = async () => {
-      setIsLoadingMetadata(true)
-      setLoadErrorKey(null)
+  const metadataQuery = useQuery({
+    queryKey: ["donations", "lnurl-metadata", donationAddress],
+    queryFn: async () => {
+      await using run = appRun()
 
       try {
-        await using run = createRun(createFetchDep())
-        const nextMetadata = await run(
+        return await run.orThrow(
           fetchLnurlPayMetadata({ address: donationAddress })
         )
-
-        if (!active) return
-
-        if (!nextMetadata.ok) {
-          console.error(
-            "Failed to load donation LNURL metadata",
-            nextMetadata.error
-          )
-          setMetadata(null)
-          setLoadErrorKey("settings.donations.metadata.error")
-          return
-        }
-
-        setMetadata(nextMetadata.value)
       } catch (error) {
-        if (!active) return
-
         console.error("Failed to load donation LNURL metadata", error)
-        setMetadata(null)
-        setLoadErrorKey("settings.donations.metadata.error")
-      } finally {
-        if (active) setIsLoadingMetadata(false)
+        throw error
       }
-    }
+    },
+  })
+  const metadata = metadataQuery.data ?? null
 
-    void loadMetadata()
+  const loadErrorKey: TranslationKey | null = exchangeRateQuery.isError
+    ? "settings.donations.rate.error"
+    : metadataQuery.isError
+      ? "settings.donations.metadata.error"
+      : null
 
-    return () => {
-      active = false
-    }
-  }, [console, donationAddress])
+  const createInvoiceMutation = useMutation({
+    mutationFn: async ({
+      amountSats,
+      metadata: invoiceMetadata,
+    }: {
+      readonly amountSats: number
+      readonly metadata: LnurlPayMetadata
+    }) => {
+      try {
+        await using run = appRun()
+        const invoice = await run.orThrow(
+          fetchLnurlPayInvoice({ amountSats, metadata: invoiceMetadata })
+        )
+
+        await navigate({
+          to: "/settings/donations-invoice",
+          search: {
+            invoice: invoice.pr,
+            verify: invoice.verify ?? "",
+          },
+        })
+      } catch (error) {
+        console.error("Failed to create donation invoice", error)
+        throw error
+      }
+    },
+  })
+  const isCreatingInvoice = createInvoiceMutation.isPending
+  const invoiceErrorKey: TranslationKey | null = createInvoiceMutation.isError
+    ? "settings.donations.invoice.error"
+    : null
 
   useEffect(() => {
     if (exchangeRate === null) return
@@ -230,39 +209,12 @@ function DonationsPage() {
     metadata !== null &&
     exchangeRate !== null &&
     !isCreatingInvoice
-  const isLoading = isLoadingRate || isLoadingMetadata
+  const isLoading = exchangeRateQuery.isPending || metadataQuery.isPending
 
-  const createInvoice = async () => {
+  const createInvoice = () => {
     if (!canCreateInvoice || metadata === null || amountSats === null) return
 
-    setInvoiceErrorKey(null)
-    setIsCreatingInvoice(true)
-
-    try {
-      await using run = createRun(createFetchDep())
-      const nextInvoice = await run(
-        fetchLnurlPayInvoice({ amountSats, metadata })
-      )
-
-      if (!nextInvoice.ok) {
-        console.error("Failed to create donation invoice", nextInvoice.error)
-        setInvoiceErrorKey("settings.donations.invoice.error")
-        return
-      }
-
-      await navigate({
-        to: "/settings/donations-invoice",
-        search: {
-          invoice: nextInvoice.value.pr,
-          verify: nextInvoice.value.verify ?? "",
-        },
-      })
-    } catch (error) {
-      console.error("Failed to create donation invoice", error)
-      setInvoiceErrorKey("settings.donations.invoice.error")
-    } finally {
-      setIsCreatingInvoice(false)
-    }
+    createInvoiceMutation.mutate({ amountSats, metadata })
   }
 
   return (
@@ -344,7 +296,7 @@ function DonationsPage() {
                 type="button"
                 size="lg"
                 disabled={!canCreateInvoice || isLoading}
-                onClick={() => void createInvoice()}
+                onClick={createInvoice}
                 className="h-11"
               >
                 {isLoading || isCreatingInvoice ? (

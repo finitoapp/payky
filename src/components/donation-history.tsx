@@ -1,89 +1,44 @@
+import { useInfiniteQuery } from "@tanstack/react-query"
 import {
   CircleAlertIcon,
   HeartHandshakeIcon,
   LoaderCircleIcon,
 } from "lucide-react"
-import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertial-nav.tsx"
-import {
-  type DonationHistoryItem,
-  fetchDonationHistory,
-} from "@/core/integrations/donations/donations-client.ts"
+import { fetchDonationHistory } from "@/core/integrations/donations/donations-client.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
-import { useConsole } from "@/hooks/use-console.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime } from "@/lib/format-utils.ts"
 
 export const DonationHistory = () => {
   const appRun = useAppRun()
-  const console = useConsole()
   const locale = useLocale()
   const { t } = useTranslation()
-  const [items, setItems] = useState<readonly DonationHistoryItem[]>([])
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasError, setHasError] = useState(false)
 
-  useEffect(() => {
-    let active = true
-
-    const loadFirstPage = async () => {
-      setIsLoading(true)
-      setHasError(false)
-
+  const {
+    data,
+    isPending,
+    isError,
+    isFetchNextPageError,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["donations", "history"],
+    queryFn: async ({ pageParam }) => {
       await using run = appRun()
-      const result = await run(fetchDonationHistory({}))
+      return run.orThrow(fetchDonationHistory({ cursor: pageParam }))
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  })
 
-      if (!active) return
-
-      if (!result.ok) {
-        console.error("Failed to load donation history", result.error)
-        setHasError(true)
-        setIsLoading(false)
-        return
-      }
-
-      setItems(result.value.items)
-      setNextCursor(result.value.nextCursor)
-      setIsLoading(false)
-    }
-
-    void loadFirstPage()
-
-    return () => {
-      active = false
-    }
-  }, [appRun, console])
-
-  const loadMore = async () => {
-    if (nextCursor === null) return
-
-    setIsLoadingMore(true)
-    setHasError(false)
-
-    try {
-      await using run = appRun()
-      const result = await run(fetchDonationHistory({ cursor: nextCursor }))
-
-      if (!result.ok) {
-        console.error("Failed to load more donation history", result.error)
-        setHasError(true)
-        return
-      }
-
-      setItems((previous) => [...previous, ...result.value.items])
-      setNextCursor(result.value.nextCursor)
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }
-
+  const items = data?.pages.flatMap((page) => page.items) ?? []
   const navItems = items.length === 0 ? ([false] as const) : items
-  const showInitialError = hasError && items.length === 0 && !isLoading
-  const showLoadMoreError = hasError && items.length > 0
+  const showInitialError = isError && items.length === 0 && !isPending
+  const showLoadMoreError = isFetchNextPageError && items.length > 0
 
   return (
     <div className="flex flex-col gap-3">
@@ -93,7 +48,7 @@ export const DonationHistory = () => {
           if (item === false) {
             return {
               disableAction: true,
-              label: isLoading ? (
+              label: isPending ? (
                 <div className="flex justify-center py-10">
                   <LoaderCircleIcon className="animate-spin text-muted-foreground" />
                 </div>
@@ -146,15 +101,17 @@ export const DonationHistory = () => {
         </p>
       ) : null}
 
-      {nextCursor !== null ? (
+      {hasNextPage ? (
         <Button
           type="button"
           variant="outline"
-          disabled={isLoadingMore}
-          onClick={() => void loadMore()}
+          disabled={isFetchingNextPage}
+          onClick={() => void fetchNextPage()}
         >
-          {isLoadingMore ? <LoaderCircleIcon className="animate-spin" /> : null}
-          {isLoadingMore
+          {isFetchingNextPage ? (
+            <LoaderCircleIcon className="animate-spin" />
+          ) : null}
+          {isFetchingNextPage
             ? t("settings.donations.history.loadMore.pending")
             : t("settings.donations.history.loadMore")}
         </Button>

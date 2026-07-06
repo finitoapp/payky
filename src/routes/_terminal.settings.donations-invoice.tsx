@@ -1,7 +1,7 @@
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { LoaderCircleIcon } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
-import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -53,55 +53,31 @@ function DonateInvoicePage() {
   const console = useConsole()
   const { t } = useTranslation()
   const { invoice, verify } = Route.useSearch()
-  const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>(
-    verify.length > 0 ? "waiting" : "idle"
-  )
+  const canVerify = invoice.length > 0 && verify.length > 0
 
-  useEffect(() => {
-    if (invoice.length === 0 || verify.length === 0) {
-      setVerifyStatus("idle")
-      return
-    }
-
-    let active = true
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
-
-    const scheduleNextVerify = () => {
-      timeoutId = setTimeout(() => {
-        void verifyPayment()
-      }, VERIFY_POLL_INTERVAL_MS)
-    }
-
-    const verifyPayment = async () => {
+  const verifyQuery = useQuery({
+    queryKey: ["donations", "lnurl-verify", verify],
+    queryFn: async () => {
       await using run = appRun()
-      const result = await run(fetchLnurlVerify({ verifyUrl: verify }))
 
-      if (!active) return
-
-      if (!result.ok) {
-        console.error("Failed to verify donation invoice", result.error)
-        setVerifyStatus("waiting")
-        scheduleNextVerify()
-        return
+      try {
+        return await run.orThrow(fetchLnurlVerify({ verifyUrl: verify }))
+      } catch (error) {
+        console.error("Failed to verify donation invoice", error)
+        throw error
       }
+    },
+    enabled: canVerify,
+    retry: false,
+    refetchInterval: (query) =>
+      query.state.data?.settled ? false : VERIFY_POLL_INTERVAL_MS,
+  })
 
-      if (result.value.settled) {
-        setVerifyStatus("paid")
-        return
-      }
-
-      setVerifyStatus("waiting")
-      scheduleNextVerify()
-    }
-
-    setVerifyStatus("waiting")
-    void verifyPayment()
-
-    return () => {
-      active = false
-      if (timeoutId !== undefined) clearTimeout(timeoutId)
-    }
-  }, [appRun, console, invoice, verify])
+  const verifyStatus: VerifyStatus = !canVerify
+    ? "idle"
+    : verifyQuery.data?.settled
+      ? "paid"
+      : "waiting"
 
   const copyInvoice = async () => {
     if (invoice.length === 0) return

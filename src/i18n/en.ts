@@ -577,8 +577,69 @@ export const en = {
   "settings.webhooks.description":
     "Feed sales data to external admin dashboards",
   "settings.webhooks.title": "Webhooks",
-  "settings.withdrawals.description": "Auto-withdraw settings and history",
+  "settings.withdrawals.description":
+    "Send Bitcoin from a Spark account to an on-chain address",
   "settings.withdrawals.title": "Withdrawals",
+  "withdraw.address.invalid": "Enter a valid Bitcoin address.",
+  "withdraw.address.label": "Destination address",
+  "withdraw.address.paste": "Paste",
+  "withdraw.address.pasteError": "Couldn't read the clipboard.",
+  "withdraw.address.placeholder": "Enter or paste a Bitcoin address",
+  "withdraw.address.scan": "Scan",
+  "withdraw.all.description": "Send the entire available balance.",
+  "withdraw.all.label": "Withdraw all",
+  "withdraw.amount.available": "Available: {amount} sats",
+  "withdraw.amount.invalid": "Enter an amount greater than 0.",
+  "withdraw.amount.label": "Amount",
+  "withdraw.amount.placeholder": "Amount in sats",
+  "withdraw.continue": "Continue",
+  "withdraw.error.accountNotFound": "The Spark account could not be found.",
+  "withdraw.error.insufficientBalance":
+    "This amount exceeds your available balance.",
+  "withdraw.form.description":
+    "Send Bitcoin from your Spark wallet to an on-chain address.",
+  "withdraw.form.title": "Withdraw to an address",
+  "withdraw.noAccount.action": "Go to payment accounts",
+  "withdraw.noAccount.description":
+    "Set up a Spark wallet in Payment accounts before withdrawing.",
+  "withdraw.noAccount.title": "No Spark account configured",
+  "withdraw.quoteError.generic": "Couldn't fetch a fee estimate. Try again.",
+  "withdraw.quotePending": "Fetching fee estimate...",
+  "withdraw.result.copied": "Transaction ID copied",
+  "withdraw.result.copyError": "Couldn't copy the transaction ID.",
+  "withdraw.result.copyTxid": "Copy",
+  "withdraw.result.description":
+    "Your withdrawal was submitted to the network.",
+  "withdraw.result.done": "Done",
+  "withdraw.result.status": "Status",
+  "withdraw.result.title": "Withdrawal sent",
+  "withdraw.result.txid": "Transaction ID",
+  "withdraw.result.viewOnExplorer": "View on mempool.space",
+  "withdraw.review.amount": "Withdrawal amount",
+  "withdraw.review.back": "Back",
+  "withdraw.review.confirm": "Confirm withdrawal",
+  "withdraw.review.confirming": "Sending...",
+  "withdraw.review.destination": "Destination",
+  "withdraw.review.error": "The withdrawal could not be completed. Try again.",
+  "withdraw.review.error.interrupted":
+    "The withdrawal was interrupted before it completed. Try again.",
+  "withdraw.review.error.recordFailed":
+    "The wallet sent the withdrawal, but Payky could not save the transaction record. Check history before retrying.",
+  "withdraw.review.error.sparkFailed":
+    "Spark rejected the withdrawal request. Check the wallet balance and destination address, then try again.",
+  "withdraw.review.fee": "Estimated network fee",
+  "withdraw.review.speed.fast": "Fast",
+  "withdraw.review.speed.medium": "Medium",
+  "withdraw.review.speed.slow": "Slow",
+  "withdraw.review.title": "Review withdrawal",
+  "withdraw.review.total": "Total amount deducted",
+  "withdraw.review.warning":
+    "Bitcoin transactions cannot be reversed. Double-check the address before confirming.",
+  "withdraw.sats": "{amount} sats",
+  "withdraw.scan.close": "Close",
+  "withdraw.scan.error":
+    "Couldn't access the camera. Enter the address manually.",
+  "withdraw.scan.title": "Scan address",
 } as const
 
 export type TranslationKey = keyof typeof en

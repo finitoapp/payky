@@ -23,6 +23,7 @@ import type {
   accountTransaction,
   accountTransactionIban,
   accountTransactionLightning,
+  accountTransactionOnchain,
   accountTransactionSource,
   accountTransactionSpark,
   accountTransactionSparkInvoice,
@@ -50,6 +51,11 @@ type AccountTransactionSparkInput = InsertValues<
   >
 }
 
+type AccountTransactionOnchainInput = Omit<
+  InsertValues<typeof accountTransactionOnchain>,
+  "id"
+>
+
 type AccountTransactionSparkUpdateInput = Omit<
   UpdateValues<typeof accountTransactionSpark>,
   "id"
@@ -69,6 +75,7 @@ export const createAccountTransaction =
     id: providedId,
     iban,
     spark,
+    onchain,
     source: providedSource,
     ...input
   }: Omit<InsertValues<typeof accountTransaction>, "kind"> & {
@@ -90,14 +97,22 @@ export const createAccountTransaction =
             readonly bankReference?: NonEmptyString255 | null
           }
           readonly spark?: never
+          readonly onchain?: never
         }
       | {
           readonly iban?: never
           readonly spark: AccountTransactionSparkInput
+          readonly onchain?: never
         }
       | {
           readonly iban?: never
           readonly spark?: never
+          readonly onchain: AccountTransactionOnchainInput
+        }
+      | {
+          readonly iban?: never
+          readonly spark?: never
+          readonly onchain?: never
         }
     )): Task<
     AccountTransactionId,
@@ -124,7 +139,11 @@ export const createAccountTransaction =
           ? createIdFromString<"AccountTransaction">(
               `accountTransaction:spark:${spark.sparkTransferId}`
             )
-          : createTableId<"AccountTransaction">())
+          : onchain
+            ? createIdFromString<"AccountTransaction">(
+                `accountTransaction:onchain:${onchain.coopExitRequestId}`
+              )
+            : createTableId<"AccountTransaction">())
     const source = providedSource
     const sourceId = createIdFromString<"AccountTransactionSource">(
       `accountTransactionSource:${id}:${source.source}`
@@ -176,6 +195,18 @@ export const createAccountTransaction =
             { ...options, ownerId: evoluOwnerId }
           )
         }
+      }
+
+      if (onchain) {
+        kind = "spark"
+        run.deps.evolu.upsert(
+          "accountTransactionOnchain",
+          removeUndefinedValues({
+            ...onchain,
+            id,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
       }
 
       run.deps.evolu.upsert(

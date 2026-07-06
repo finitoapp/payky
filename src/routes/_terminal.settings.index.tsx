@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import {
   ArrowDown,
+  ArrowUpFromLine,
   BadgeDollarSign,
   Bug,
   CircleDollarSign,
@@ -129,6 +130,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.fioPlugin.title",
     description: "settings.fioPlugin.description",
     to: "/settings/fio-plugin",
+  },
+  {
+    icon: ArrowUpFromLine,
+    title: "settings.withdrawals.title",
+    description: "settings.withdrawals.description",
+    to: "/settings/withdraw",
   },
 ]
 

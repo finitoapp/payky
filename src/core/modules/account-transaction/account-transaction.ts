@@ -21,6 +21,11 @@ import {
 } from "@/core/modules/shared/schema.ts"
 
 export const AccountTransactionSourceSchema = z.enum(["manual", "auto"])
+export const AccountTransactionOnchainExitSpeedSchema = z.enum([
+  "fast",
+  "medium",
+  "slow",
+])
 
 export const accountTransaction = {
   id: AccountTransactionId,
@@ -58,6 +63,15 @@ export const accountTransactionLightning = {
   paymentHash: NonEmptyStringSchema.nullable(),
 } as const
 
+export const accountTransactionOnchain = {
+  id: AccountTransactionId,
+  onchainAddress: NonEmptyStringSchema,
+  coopExitRequestId: NonEmptyStringSchema,
+  exitSpeed: AccountTransactionOnchainExitSpeedSchema,
+  feeSats: IntegerSchema,
+  txid: NonEmptyStringSchema.nullable(),
+} as const
+
 export const accountTransactionSource = {
   id: AccountTransactionSourceId,
   deviceId: DeviceId.nullable(),
@@ -85,6 +99,9 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionSparkInvoice_sparkInvoice")
     .on("accountTransactionSparkInvoice")
     .column("sparkInvoice"),
+  create("accountTransactionOnchain_coopExitRequestId")
+    .on("accountTransactionOnchain")
+    .column("coopExitRequestId"),
   create("accountTransactionIban_bankReference")
     .on("accountTransactionIban")
     .column("bankReference"),
@@ -111,6 +128,12 @@ export type AccountTransactionSparkInvoiceRow = InferTable<
 >
 export type AccountTransactionLightningRow = InferTable<
   typeof accountTransactionLightning
+>
+export type AccountTransactionOnchainRow = InferTable<
+  typeof accountTransactionOnchain
+>
+export type AccountTransactionOnchainExitSpeed = z.output<
+  typeof AccountTransactionOnchainExitSpeedSchema
 >
 export type AccountTransactionSourceRow = InferTable<
   typeof accountTransactionSource

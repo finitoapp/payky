@@ -166,6 +166,7 @@ export const cs = {
   "paymentDetail.paymentMethod.cash": "Hotově",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.none": "Zatím nespárováno",
+  "paymentDetail.paymentMethod.onchain": "On-chain",
   "paymentDetail.paymentMethod.spark": "Lightning",
   "paymentDetail.paymentNumber.date": "Datum čísla",
   "paymentDetail.paymentNumber.serialNumber": "Sériové číslo",

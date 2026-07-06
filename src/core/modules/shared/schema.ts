@@ -139,7 +139,12 @@ export type Currency = InferEnumType<typeof Currency>
 
 export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))
-export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
+export const AccountKindSchema = z.enum([
+  "iban",
+  "spark",
+  "cashRegister",
+  "onchain",
+])
 export const BankQrFormatSchema = z.enum([
   "spayd",
   "payBySquare1_0_0",

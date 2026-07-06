@@ -275,7 +275,7 @@ describe("executeWithdrawal", () => {
           accountId,
           amount: -10_500,
           currency: "BTC",
-          kind: "spark",
+          kind: "onchain",
           onchainAddress: validAddress,
           coopExitRequestId: "coop-exit-1",
           exitSpeed: "medium",

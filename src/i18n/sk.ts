@@ -167,6 +167,7 @@ export const sk = {
   "paymentDetail.paymentMethod.cash": "Hotovosť",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.none": "Zatiaľ nespárované",
+  "paymentDetail.paymentMethod.onchain": "On-chain",
   "paymentDetail.paymentMethod.spark": "Lightning",
   "paymentDetail.paymentNumber.date": "Dátum čísla",
   "paymentDetail.paymentNumber.serialNumber": "Sériové číslo",

@@ -198,7 +198,7 @@ export const createAccountTransaction =
       }
 
       if (onchain) {
-        kind = "spark"
+        kind = "onchain"
         run.deps.evolu.upsert(
           "accountTransactionOnchain",
           removeUndefinedValues({

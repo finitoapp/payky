@@ -165,6 +165,7 @@ export const en = {
   "paymentDetail.paymentMethod.cash": "Cash",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.none": "Not reconciled yet",
+  "paymentDetail.paymentMethod.onchain": "On-chain",
   "paymentDetail.paymentMethod.spark": "Lightning",
   "paymentDetail.paymentNumber.date": "Number date",
   "paymentDetail.paymentNumber.serialNumber": "Serial number",

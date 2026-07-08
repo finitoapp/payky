@@ -295,6 +295,48 @@ export const cs = {
   "settings.debugConsole.resume": "Pokračovat",
   "settings.debugConsole.title": "Debug Console",
   "settings.developers": "VÝVOJÁŘI",
+  "settings.evoluExport.action": "Exportovat",
+  "settings.evoluExport.action.pending": "Exportuji...",
+  "settings.evoluExport.confirm.description":
+    "Export bude uložený bez anonymizace.",
+  "settings.evoluExport.confirm.label":
+    "Rozumím, že export může obsahovat citlivá data.",
+  "settings.evoluExport.database.app": "Aplikační databáze",
+  "settings.evoluExport.database.app.description":
+    "Business data, záznamy plateb, metadata peněženky, nastavení účtu a konfigurace pluginů pro aktivní účet.",
+  "settings.evoluExport.database.device": "Databáze zařízení",
+  "settings.evoluExport.database.device.description":
+    "Lokální profil zařízení, aplikační účty, recovery phrase a nastavení synchronizačních transportů uložené na tomto zařízení.",
+  "settings.evoluExport.description":
+    "Export lokálních Evolu databází pro zálohu a podporu",
+  "settings.evoluExport.destination.capacitor":
+    "Soubory se uloží do Documents/Payky na tomto zařízení.",
+  "settings.evoluExport.destination.web": "Soubory stáhne tento prohlížeč.",
+  "settings.evoluExport.format.description":
+    "Každá vybraná databáze se exportuje jako surový SQLite soubor.",
+  "settings.evoluExport.format.sqlite": "SQLite",
+  "settings.evoluExport.options.description":
+    "Vyberte, které lokální databáze se mají zahrnout.",
+  "settings.evoluExport.options.format": "Formát",
+  "settings.evoluExport.options.scope": "Rozsah exportu",
+  "settings.evoluExport.options.title": "Nastavení exportu",
+  "settings.evoluExport.status.createdAt": "Vytvořeno {createdAt}",
+  "settings.evoluExport.status.error": "Export selhal.",
+  "settings.evoluExport.status.savedTo": "Uloženo do {path}",
+  "settings.evoluExport.status.success": "Export dokončen.",
+  "settings.evoluExport.status.title": "Stav exportu",
+  "settings.evoluExport.title": "Evolu Export",
+  "settings.evoluExport.warning.businessData": "business data",
+  "settings.evoluExport.warning.description":
+    "Full export databází může obsahovat data, která umožňují přístup k prostředkům, integracím nebo soukromé obchodní historii. Exportované soubory ukládejte bezpečně a sdílejte je jen s důvěryhodnými příjemci.",
+  "settings.evoluExport.warning.localConfiguration":
+    "lokální konfigurace aplikace a nastavení synchronizace",
+  "settings.evoluExport.warning.payments": "účtenky, platby a transakce",
+  "settings.evoluExport.warning.secrets":
+    "mnemoniky peněženek, recovery phrase a API tokeny",
+  "settings.evoluExport.warning.title": "Citlivý export",
+  "settings.evoluExport.warning.walletMetadata":
+    "metadata související s peněženkou",
   "settings.donations.amount.invalid": "Zadejte kladný celý počet sats.",
   "settings.donations.amount.range": "Částka je mimo povolený rozsah daru.",
   "settings.donations.amount.required": "Zadejte částku daru.",

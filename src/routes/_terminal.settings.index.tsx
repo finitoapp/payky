@@ -5,6 +5,7 @@ import {
   BadgeDollarSign,
   Bug,
   CircleDollarSign,
+  DatabaseBackup,
   Grid2X2,
   HeartHandshake,
   Info,
@@ -150,6 +151,12 @@ const privacySettings: ReadonlyArray<SettingRow> = [
 ]
 
 const developerSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: DatabaseBackup,
+    title: "settings.evoluExport.title",
+    description: "settings.evoluExport.description",
+    to: "/settings/evolu-export",
+  },
   {
     icon: Bug,
     title: "settings.debugConsole.title",

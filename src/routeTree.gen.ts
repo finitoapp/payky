@@ -28,6 +28,7 @@ import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
+import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
@@ -141,6 +142,12 @@ const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
   path: '/fiat',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsEvoluExportRoute =
+  TerminalSettingsEvoluExportRouteImport.update({
+    id: '/evolu-export',
+    path: '/evolu-export',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsDonationsInvoiceRoute =
   TerminalSettingsDonationsInvoiceRouteImport.update({
     id: '/donations-invoice',
@@ -229,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
@@ -293,6 +302,7 @@ export interface FileRoutesById {
   '/_terminal/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/settings/default-payment-method'
     | '/settings/donations'
     | '/settings/donations-invoice'
+    | '/settings/evolu-export'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/settings/default-payment-method'
     | '/settings/donations'
     | '/settings/donations-invoice'
+    | '/settings/evolu-export'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
@@ -390,6 +402,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/default-payment-method'
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
+    | '/_terminal/settings/evolu-export'
     | '/_terminal/settings/fiat'
     | '/_terminal/settings/fio-plugin'
     | '/_terminal/settings/items'
@@ -548,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsFiatRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/evolu-export': {
+      id: '/_terminal/settings/evolu-export'
+      path: '/evolu-export'
+      fullPath: '/settings/evolu-export'
+      preLoaderRoute: typeof TerminalSettingsEvoluExportRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/donations-invoice': {
       id: '/_terminal/settings/donations-invoice'
       path: '/donations-invoice'
@@ -659,6 +679,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsDefaultPaymentMethodRoute: typeof TerminalSettingsDefaultPaymentMethodRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
+  TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
   TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsFioPluginRoute: typeof TerminalSettingsFioPluginRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
@@ -680,6 +701,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
     TerminalSettingsDefaultPaymentMethodRoute,
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
+  TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
   TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsFioPluginRoute: TerminalSettingsFioPluginRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,

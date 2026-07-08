@@ -292,6 +292,48 @@ export const en = {
   "settings.debugConsole.resume": "Resume",
   "settings.debugConsole.title": "Debug Console",
   "settings.developers": "DEVELOPERS",
+  "settings.evoluExport.action": "Export",
+  "settings.evoluExport.action.pending": "Exporting...",
+  "settings.evoluExport.confirm.description":
+    "The export will be saved without redaction.",
+  "settings.evoluExport.confirm.label":
+    "I understand that the export may contain sensitive data.",
+  "settings.evoluExport.database.app": "App database",
+  "settings.evoluExport.database.app.description":
+    "Business data, payment records, wallet metadata, account settings, and plugin configuration for the active account.",
+  "settings.evoluExport.database.device": "Device database",
+  "settings.evoluExport.database.device.description":
+    "Local device profile, app accounts, recovery phrases, and sync transport settings stored on this device.",
+  "settings.evoluExport.description":
+    "Export local Evolu databases for backup and support",
+  "settings.evoluExport.destination.capacitor":
+    "Files will be saved to Documents/Payky on this device.",
+  "settings.evoluExport.destination.web":
+    "Files will be downloaded by this browser.",
+  "settings.evoluExport.format.description":
+    "Each selected database is exported as a raw SQLite file.",
+  "settings.evoluExport.format.sqlite": "SQLite",
+  "settings.evoluExport.options.description":
+    "Choose which local databases should be included.",
+  "settings.evoluExport.options.format": "Format",
+  "settings.evoluExport.options.scope": "Export scope",
+  "settings.evoluExport.options.title": "Export settings",
+  "settings.evoluExport.status.createdAt": "Created at {createdAt}",
+  "settings.evoluExport.status.error": "Export failed.",
+  "settings.evoluExport.status.savedTo": "Saved to {path}",
+  "settings.evoluExport.status.success": "Export completed.",
+  "settings.evoluExport.status.title": "Export status",
+  "settings.evoluExport.title": "Evolu Export",
+  "settings.evoluExport.warning.businessData": "business data",
+  "settings.evoluExport.warning.description":
+    "Full database exports may contain data that grants access to funds, integrations, or private business history. Store exported files securely and share them only with trusted recipients.",
+  "settings.evoluExport.warning.localConfiguration":
+    "local app configuration and sync settings",
+  "settings.evoluExport.warning.payments": "bills, payments, and transactions",
+  "settings.evoluExport.warning.secrets":
+    "wallet mnemonics, recovery phrases, and API tokens",
+  "settings.evoluExport.warning.title": "Sensitive export",
+  "settings.evoluExport.warning.walletMetadata": "wallet-related metadata",
   "settings.donations.amount.invalid": "Enter a positive whole number of sats.",
   "settings.donations.amount.range":
     "The amount is outside the allowed donation range.",

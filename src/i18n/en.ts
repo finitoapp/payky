@@ -307,7 +307,7 @@ export const en = {
   "settings.evoluExport.description":
     "Export local Evolu databases for backup and support",
   "settings.evoluExport.destination.capacitor":
-    "Files will be saved to Documents/Payky on this device.",
+    "Files will be saved to Documents/ on this device.",
   "settings.evoluExport.destination.web":
     "Files will be downloaded by this browser.",
   "settings.evoluExport.format.description":

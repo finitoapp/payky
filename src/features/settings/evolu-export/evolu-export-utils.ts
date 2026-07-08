@@ -24,8 +24,6 @@ export type EvoluExportDestination =
 
 export const evoluExportMimeType = "application/vnd.sqlite3"
 
-const exportDirectory = "Payky"
-
 export function createEvoluExportFilename({
   createdAt,
   database,
@@ -106,12 +104,11 @@ async function saveWithCapacitor(
   file: EvoluExportFile
 ): Promise<EvoluExportDestination> {
   const { Directory, Filesystem } = await import("@capacitor/filesystem")
-  const path = `${exportDirectory}/${file.filename}`
 
   await Filesystem.requestPermissions()
 
   const result = await Filesystem.writeFile({
-    path,
+    path: file.filename,
     data: uint8ArrayToBase64(file.bytes),
     directory: Directory.Documents,
     recursive: true,
@@ -119,7 +116,7 @@ async function saveWithCapacitor(
 
   return {
     type: "capacitor",
-    path,
+    path: file.filename,
     uri: result.uri,
   }
 }

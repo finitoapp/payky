@@ -311,7 +311,7 @@ export const sk = {
   "settings.evoluExport.description":
     "Export lokálnych Evolu databáz pre zálohu a podporu",
   "settings.evoluExport.destination.capacitor":
-    "Súbory sa uložia do Documents/Payky na tomto zariadení.",
+    "Súbory sa uložia do Documents/ na tomto zariadení.",
   "settings.evoluExport.destination.web": "Súbory stiahne tento prehliadač.",
   "settings.evoluExport.format.description":
     "Každá vybraná databáza sa exportuje ako surový SQLite súbor.",

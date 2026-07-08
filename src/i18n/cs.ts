@@ -310,7 +310,7 @@ export const cs = {
   "settings.evoluExport.description":
     "Export lokálních Evolu databází pro zálohu a podporu",
   "settings.evoluExport.destination.capacitor":
-    "Soubory se uloží do Documents/Payky na tomto zařízení.",
+    "Soubory se uloží do Documents/ na tomto zařízení.",
   "settings.evoluExport.destination.web": "Soubory stáhne tento prohlížeč.",
   "settings.evoluExport.format.description":
     "Každá vybraná databáze se exportuje jako surový SQLite soubor.",

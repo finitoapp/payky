@@ -54,6 +54,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { WithdrawQrScanner } from "./withdraw-qr-scanner.tsx"
 import {
+  formatAddressGroups,
   formatSatsAmount,
   type ScannedBitcoinAddress,
 } from "./withdraw-utils.ts"
@@ -101,12 +102,6 @@ const confirmErrorKey = (error: ConfirmWithdrawalError): TranslationKey => {
       return "withdraw.review.error.sparkFailed"
   }
 }
-
-const formatAddressGroups = (address: string): string =>
-  address
-    .toLocaleLowerCase()
-    .replaceAll(/\s+/gu, "")
-    .replaceAll(/(.{4})(?=.)/gu, "$1 ")
 
 export function WithdrawPage() {
   const appRun = useAppRun()

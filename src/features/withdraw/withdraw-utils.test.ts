@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest"
-import { parseScannedBitcoinAddress } from "./withdraw-utils.ts"
+import {
+  formatAddressGroups,
+  parseScannedBitcoinAddress,
+} from "./withdraw-utils.ts"
 
 describe("parseScannedBitcoinAddress", () => {
   test("returns a bare address unchanged", () => {
@@ -34,5 +37,15 @@ describe("parseScannedBitcoinAddress", () => {
     expect(
       parseScannedBitcoinAddress("  1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2  ")
     ).toEqual({ address: "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2" })
+  })
+})
+
+describe("formatAddressGroups", () => {
+  test("preserves exact casing when grouping Base58 addresses for review", () => {
+    const address = "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"
+
+    expect(formatAddressGroups(address)).toBe(
+      "1BvB MSEY stWe tqTF n5Au 4m4G Fg7x JaNV N2"
+    )
   })
 })

@@ -34,3 +34,6 @@ export const parseScannedBitcoinAddress = (
 
 export const formatSatsAmount = (sats: number, locale: string): string =>
   new Intl.NumberFormat(locale).format(sats)
+
+export const formatAddressGroups = (address: string): string =>
+  address.replaceAll(/\s+/gu, "").replaceAll(/(.{4})(?=.)/gu, "$1 ")

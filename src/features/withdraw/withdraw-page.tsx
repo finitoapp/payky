@@ -94,10 +94,10 @@ const confirmErrorKey = (error: ConfirmWithdrawalError): TranslationKey => {
       return "withdraw.review.error.interrupted"
     case "WithdrawalAccountNotFound":
       return "withdraw.error.accountNotFound"
-    case "WithdrawalFailed":
-      return error.message === "Failed to record the withdrawal transaction"
-        ? "withdraw.review.error.recordFailed"
-        : "withdraw.review.error.sparkFailed"
+    case "WithdrawalRequestFailed":
+      return "withdraw.review.error.sparkFailed"
+    case "WithdrawalRecordingFailed":
+      return "withdraw.review.error.recordFailed"
     default:
       return "withdraw.review.error.sparkFailed"
   }

@@ -44,3 +44,29 @@ export const createWithdrawalFailedError = defineError("WithdrawalFailed")<{
 export type WithdrawalFailedError = ReturnType<
   typeof createWithdrawalFailedError
 >
+
+export const createWithdrawalRequestFailedError = defineError(
+  "WithdrawalRequestFailed"
+)<{
+  readonly message: string
+}>()
+export type WithdrawalRequestFailedError = ReturnType<
+  typeof createWithdrawalRequestFailedError
+>
+
+export const createWithdrawalRecordingFailedError = defineError(
+  "WithdrawalRecordingFailed"
+)<{
+  readonly message: string
+}>()
+export type WithdrawalRecordingFailedError = ReturnType<
+  typeof createWithdrawalRecordingFailedError
+>
+
+export type ExecuteWithdrawalFailureError =
+  | WithdrawalRequestFailedError
+  | WithdrawalRecordingFailedError
+
+export type ExecuteWithdrawalError =
+  | WithdrawalAccountNotFoundError
+  | ExecuteWithdrawalFailureError

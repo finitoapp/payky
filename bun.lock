@@ -78,6 +78,7 @@
     },
   },
   "trustedDependencies": [
+    "better-sqlite3",
     "@sentry/cli",
   ],
   "packages": {

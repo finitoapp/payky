@@ -97,6 +97,7 @@
     "vitest": "4.1.10"
   },
   "trustedDependencies": [
-    "@sentry/cli"
+    "@sentry/cli",
+    "better-sqlite3"
   ]
 }

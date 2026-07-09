@@ -332,7 +332,7 @@ describe("executeWithdrawal", () => {
       ])
   })
 
-  test("fails when the wallet cannot complete the withdrawal", async () => {
+  test("fails when the wallet cannot complete the withdrawal request", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const accountId = await createSparkAccount({ evolu })
@@ -362,7 +362,45 @@ describe("executeWithdrawal", () => {
 
     expect(result).toMatchObject({
       ok: false,
-      error: { type: "WithdrawalFailed" },
+      error: { type: "WithdrawalRequestFailed" },
+    })
+  })
+
+  test("fails separately when the withdrawal transaction cannot be recorded", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const accountId = await createSparkAccount({ evolu })
+    const deps = {
+      evolu,
+      ...createDateDeps(),
+      sparkWallet: {
+        create: async () => ({
+          withdraw: async () => ({
+            id: "",
+            status: "INITIATED",
+            txid: "txid-3",
+          }),
+        }),
+      },
+    } satisfies EvoluDep & DateDep & SparkWalletDep
+    await using run = testCreateRun(deps)
+    const exitSpeed: SparkExitSpeed = "medium"
+
+    const result = await run(
+      executeWithdrawal({
+        accountId,
+        onchainAddress: validAddress,
+        amountSats: 10_000,
+        withdrawAll: false,
+        availableSats: 100_000,
+        exitSpeed,
+        feeQuote,
+      })
+    )
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { type: "WithdrawalRecordingFailed" },
     })
   })
 })

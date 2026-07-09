@@ -23,12 +23,13 @@ import {
   createInsufficientWithdrawalBalanceError,
   createInvalidBitcoinAddressError,
   createWithdrawalAccountNotFoundError,
-  createWithdrawalFailedError,
   createWithdrawalQuoteFailedError,
+  createWithdrawalRecordingFailedError,
+  createWithdrawalRequestFailedError,
+  type ExecuteWithdrawalError,
   type InsufficientWithdrawalBalanceError,
   type InvalidBitcoinAddressError,
   type WithdrawalAccountNotFoundError,
-  type WithdrawalFailedError,
   type WithdrawalQuoteFailedError,
 } from "./withdrawal-types.ts"
 import {
@@ -151,7 +152,7 @@ export const executeWithdrawal =
       readonly txid: string | null
       readonly status: string
     },
-    WithdrawalAccountNotFoundError | WithdrawalFailedError,
+    ExecuteWithdrawalError,
     EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
   > =>
   async (run) => {
@@ -175,59 +176,70 @@ export const executeWithdrawal =
       })
       if (!result) {
         return err(
-          createWithdrawalFailedError({
+          createWithdrawalRequestFailedError({
             message: "The withdrawal request could not be completed",
           })
         )
       }
 
-      const totalDebitedSats = computeTotalDebitedSats({
-        amountSats,
-        withdrawAll,
-        availableSats,
-        feeSats: feeEstimate.totalFeeSats,
-      })
-
-      const accountTransactionResult = await run(
-        createAccountTransaction({
-          accountId,
-          amount: Integer(-totalDebitedSats),
-          currency: "BTC",
-          occurredAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
-          note: null,
-          internalTransferGroupId: null,
-          onchain: {
-            onchainAddress: NonEmptyStringSchema.decode(onchainAddress),
-            coopExitRequestId: NonEmptyStringSchema.decode(result.id),
-            exitSpeed,
-            feeSats: Integer(feeEstimate.totalFeeSats),
-            txid:
-              result.txid === null
-                ? null
-                : NonEmptyStringSchema.decode(result.txid),
-          },
-          source: {
-            deviceId: deviceId ?? null,
-            source: "manual",
-          },
+      try {
+        const totalDebitedSats = computeTotalDebitedSats({
+          amountSats,
+          withdrawAll,
+          availableSats,
+          feeSats: feeEstimate.totalFeeSats,
         })
-      )
-      if (!accountTransactionResult.ok) {
+
+        const accountTransactionResult = await run(
+          createAccountTransaction({
+            accountId,
+            amount: Integer(-totalDebitedSats),
+            currency: "BTC",
+            occurredAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+            note: null,
+            internalTransferGroupId: null,
+            onchain: {
+              onchainAddress: NonEmptyStringSchema.decode(onchainAddress),
+              coopExitRequestId: NonEmptyStringSchema.decode(result.id),
+              exitSpeed,
+              feeSats: Integer(feeEstimate.totalFeeSats),
+              txid:
+                result.txid === null
+                  ? null
+                  : NonEmptyStringSchema.decode(result.txid),
+            },
+            source: {
+              deviceId: deviceId ?? null,
+              source: "manual",
+            },
+          })
+        )
+        if (!accountTransactionResult.ok) {
+          return err(
+            createWithdrawalRecordingFailedError({
+              message: "Failed to record the withdrawal transaction",
+            })
+          )
+        }
+
+        return ok({
+          accountTransactionId: accountTransactionResult.value,
+          txid: result.txid,
+          status: result.status,
+        })
+      } catch (error) {
         return err(
-          createWithdrawalFailedError({
-            message: "Failed to record the withdrawal transaction",
+          createWithdrawalRecordingFailedError({
+            message:
+              error instanceof Error
+                ? error.message
+                : "Failed to record the withdrawal transaction",
           })
         )
       }
-
-      return ok({
-        accountTransactionId: accountTransactionResult.value,
-        txid: result.txid,
-        status: result.status,
-      })
     } catch (error) {
       return err(
-        createWithdrawalFailedError({
+        createWithdrawalRequestFailedError({
           message:
             error instanceof Error
               ? error.message

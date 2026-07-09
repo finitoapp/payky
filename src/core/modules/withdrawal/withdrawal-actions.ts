@@ -27,10 +27,7 @@ import {
   createWithdrawalRecordingFailedError,
   createWithdrawalRequestFailedError,
   type ExecuteWithdrawalError,
-  type InsufficientWithdrawalBalanceError,
-  type InvalidBitcoinAddressError,
-  type WithdrawalAccountNotFoundError,
-  type WithdrawalQuoteFailedError,
+  type QuoteWithdrawalError,
 } from "./withdrawal-types.ts"
 import {
   computeTotalDebitedSats,
@@ -61,14 +58,7 @@ export const quoteWithdrawal =
     readonly accountId: AccountId
     readonly onchainAddress: string
     readonly amountSats?: PositiveInteger
-  }): Task<
-    WithdrawalQuote,
-    | WithdrawalAccountNotFoundError
-    | InvalidBitcoinAddressError
-    | InsufficientWithdrawalBalanceError
-    | WithdrawalQuoteFailedError,
-    EvoluDep & SparkWalletDep
-  > =>
+  }): Task<WithdrawalQuote, QuoteWithdrawalError, EvoluDep & SparkWalletDep> =>
   async (run) => {
     if (!isValidBitcoinAddress(onchainAddress)) {
       return err(createInvalidBitcoinAddressError({ address: onchainAddress }))

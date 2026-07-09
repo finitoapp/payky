@@ -1,4 +1,6 @@
+import type { AbortError } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
+import assertNever from "assert-never"
 import {
   ArrowLeftIcon,
   ClipboardPasteIcon,
@@ -42,6 +44,10 @@ import {
   quoteWithdrawal,
   type WithdrawalQuote,
 } from "@/core/modules/withdrawal/withdrawal-actions.ts"
+import type {
+  ExecuteWithdrawalError,
+  QuoteWithdrawalError,
+} from "@/core/modules/withdrawal/withdrawal-types.ts"
 import { isValidBitcoinAddress } from "@/core/modules/withdrawal/withdrawal-utils.ts"
 import {
   createDefaultSparkPaymentWallet,
@@ -70,23 +76,26 @@ const exitSpeedOptions: ReadonlyArray<{
   { value: "slow", label: "withdraw.review.speed.slow" },
 ]
 
-const quoteErrorKey = (errorType: string): TranslationKey => {
-  switch (errorType) {
+const quoteErrorKey = (
+  error: QuoteWithdrawalError | AbortError
+): TranslationKey => {
+  switch (error.type) {
+    case "AbortError":
+      return "withdraw.quoteError.generic"
     case "WithdrawalAccountNotFound":
       return "withdraw.error.accountNotFound"
     case "InvalidBitcoinAddress":
       return "withdraw.address.invalid"
     case "InsufficientWithdrawalBalance":
       return "withdraw.error.insufficientBalance"
-    default:
+    case "WithdrawalQuoteFailed":
       return "withdraw.quoteError.generic"
   }
+
+  return assertNever(error)
 }
 
-interface ConfirmWithdrawalError {
-  readonly type: string
-  readonly message?: string
-}
+type ConfirmWithdrawalError = ExecuteWithdrawalError | AbortError
 
 const confirmErrorKey = (error: ConfirmWithdrawalError): TranslationKey => {
   switch (error.type) {
@@ -98,9 +107,9 @@ const confirmErrorKey = (error: ConfirmWithdrawalError): TranslationKey => {
       return "withdraw.review.error.sparkFailed"
     case "WithdrawalRecordingFailed":
       return "withdraw.review.error.recordFailed"
-    default:
-      return "withdraw.review.error.sparkFailed"
   }
+
+  return assertNever(error)
 }
 
 export function WithdrawPage() {
@@ -229,7 +238,7 @@ export function WithdrawPage() {
       )
 
       if (!quoteResult.ok) {
-        setQuoteError(quoteErrorKey(quoteResult.error.type))
+        setQuoteError(quoteErrorKey(quoteResult.error))
         return
       }
 

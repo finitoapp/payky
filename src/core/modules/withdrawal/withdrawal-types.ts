@@ -67,6 +67,12 @@ export type ExecuteWithdrawalFailureError =
   | WithdrawalRequestFailedError
   | WithdrawalRecordingFailedError
 
+export type QuoteWithdrawalError =
+  | WithdrawalAccountNotFoundError
+  | InvalidBitcoinAddressError
+  | InsufficientWithdrawalBalanceError
+  | WithdrawalQuoteFailedError
+
 export type ExecuteWithdrawalError =
   | WithdrawalAccountNotFoundError
   | ExecuteWithdrawalFailureError

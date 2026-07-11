@@ -11,6 +11,7 @@ const baseInput = {
   hasDefaultPaymentMethod: true,
   isDefaultPaymentMethodAvailable: true,
   hasActiveFioPlugin: true,
+  hasActiveFioPluginToken: true,
 }
 
 describe("createReadinessItems", () => {
@@ -36,6 +37,7 @@ describe("createReadinessItems", () => {
       hasDefaultPaymentMethod: false,
       isDefaultPaymentMethodAvailable: false,
       hasActiveFioPlugin: false,
+      hasActiveFioPluginToken: false,
     })
 
     expect(items).toEqual([
@@ -81,6 +83,26 @@ describe("createReadinessItems", () => {
     expect(items.find((item) => item.id === "fioPlugin")?.completed).toBe(false)
   })
 
+  it("marks Fio incomplete when bank payments are active with an active plugin but no token", () => {
+    const items = createReadinessItems({
+      ...baseInput,
+      hasActiveFioPluginToken: false,
+    })
+
+    expect(items.find((item) => item.id === "fioPlugin")?.completed).toBe(false)
+  })
+
+  it("marks Fio complete when bank payments are inactive even without a plugin token", () => {
+    const items = createReadinessItems({
+      ...baseInput,
+      hasActiveFiatBankAccount: false,
+      hasActiveFioPlugin: false,
+      hasActiveFioPluginToken: false,
+    })
+
+    expect(items.find((item) => item.id === "fioPlugin")?.completed).toBe(true)
+  })
+
   it("accepts any active payment method and only requires Fio for bank payments", () => {
     const items = createReadinessItems({
       ...baseInput,
@@ -88,6 +110,7 @@ describe("createReadinessItems", () => {
       hasActiveCashRegisterAccount: true,
       hasActiveFiatBankAccount: false,
       hasActiveFioPlugin: false,
+      hasActiveFioPluginToken: false,
     })
 
     expect(items.find((item) => item.id === "paymentMethods")?.completed).toBe(

@@ -20,6 +20,7 @@ export interface ReadinessStateInput {
   readonly hasDefaultPaymentMethod: boolean
   readonly isDefaultPaymentMethodAvailable: boolean
   readonly hasActiveFioPlugin: boolean
+  readonly hasActiveFioPluginToken: boolean
 }
 
 export interface ReadinessItem {
@@ -63,6 +64,7 @@ export function createReadinessItems({
   hasDefaultPaymentMethod,
   isDefaultPaymentMethodAvailable,
   hasActiveFioPlugin,
+  hasActiveFioPluginToken,
 }: ReadinessStateInput): ReadonlyArray<ReadinessItem> {
   const hasAnyPaymentMethod =
     hasActiveSparkAccount ||
@@ -114,7 +116,9 @@ export function createReadinessItems({
       id: "fioPlugin",
       title: "settings.readiness.item.fioPlugin.title",
       description: "settings.readiness.item.fioPlugin.description",
-      completed: !hasActiveFiatBankAccount || hasActiveFioPlugin,
+      completed:
+        !hasActiveFiatBankAccount ||
+        (hasActiveFioPlugin && hasActiveFioPluginToken),
       actionLabel: "settings.readiness.item.fioPlugin.action",
       actionTo: "/settings/fio-plugin",
     },

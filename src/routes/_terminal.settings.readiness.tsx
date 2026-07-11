@@ -1,4 +1,4 @@
-import { sqliteTrue } from "@evolu/common"
+import { createIdFromString, sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useAtomValue } from "jotai"
 import { CheckCircle2, CircleAlert } from "lucide-react"
@@ -21,7 +21,10 @@ import {
 } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { getDefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-utils.ts"
-import { fiatBankAccountFioPluginQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
+import {
+  fiatBankAccountFioPluginQuery,
+  fioPluginTokensByPluginIdQuery,
+} from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   createReadinessItems,
@@ -41,6 +44,10 @@ export const Route = createFileRoute("/_terminal/settings/readiness")({
   },
 })
 
+const fioPluginTokenPlaceholderId = createIdFromString<"FioPlugin">(
+  "payky-readiness-fio-plugin-token-placeholder"
+)
+
 function ReadinessPage() {
   const { t } = useTranslation()
   const account = useAtomValue(accountAtom)
@@ -59,6 +66,9 @@ function ReadinessPage() {
   const [sparkAccount] = sparkAccountData
   const [cashRegisterAccount] = cashRegisterAccountData
   const [fioPlugin] = fioPluginData
+  const { data: fioPluginTokens } = useEvoluQuery(
+    fioPluginTokensByPluginIdQuery(fioPlugin?.id ?? fioPluginTokenPlaceholderId)
+  )
   const fiatCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
   const hasActiveFiatBankAccount =
     fiatBankAccount !== undefined &&
@@ -89,6 +99,7 @@ function ReadinessPage() {
       hasActiveFiatBankAccount,
     }),
     hasActiveFioPlugin: fioPlugin?.isActive === sqliteTrue,
+    hasActiveFioPluginToken: fioPluginTokens.length > 0,
   })
   const completedCount = items.filter((item) => item.completed).length
 

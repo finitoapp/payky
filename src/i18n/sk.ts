@@ -565,6 +565,41 @@ export const sk = {
   "settings.privacy.errorReporting.title": "Hlásenie chýb",
   "settings.privacy.title": "Súkromie",
   "settings.privacyGroup": "SÚKROMIE",
+  "settings.readiness.description":
+    "Checklist pre používanie Payky so skutočnými zákazníkmi",
+  "settings.readiness.item.bankAccount.action": "Nastaviť bankový účet",
+  "settings.readiness.item.bankAccount.description":
+    "Bankové QR platby potrebujú povolený účet pre aktuálnu fiat menu.",
+  "settings.readiness.item.bankAccount.title": "Bankový účet",
+  "settings.readiness.item.defaultPaymentMethod.action":
+    "Vybrať predvolenú metódu",
+  "settings.readiness.item.defaultPaymentMethod.description":
+    "Checkout sa má otvárať s platobnou metódou, ktorá je teraz povolená.",
+  "settings.readiness.item.defaultPaymentMethod.title":
+    "Predvolená platobná metóda",
+  "settings.readiness.item.fioPlugin.action": "Nastaviť Fio",
+  "settings.readiness.item.fioPlugin.description":
+    "Automatické párovanie bankových transakcií je pripravené, keď existuje aktívny Fio plugin pre bankové platby.",
+  "settings.readiness.item.fioPlugin.title": "Fio synchronizácia transakcií",
+  "settings.readiness.item.paymentMethods.action": "Spravovať platobné účty",
+  "settings.readiness.item.paymentMethods.description":
+    "Povoľte aspoň jeden spôsob prijímania platieb v termináli.",
+  "settings.readiness.item.paymentMethods.title": "Platobné metódy",
+  "settings.readiness.item.recoveryPhrase.action": "Otvoriť bezpečnosť",
+  "settings.readiness.item.recoveryPhrase.description":
+    "Aktívny účet má recovery phrase dostupnú pre zálohu.",
+  "settings.readiness.item.recoveryPhrase.title": "Recovery phrase",
+  "settings.readiness.item.sync.action": "Nastaviť synchronizáciu",
+  "settings.readiness.item.sync.description":
+    "Aktívny sync transport pomáha zálohovať dáta terminálu medzi zariadeniami.",
+  "settings.readiness.item.sync.title": "Synchronizácia dát",
+  "settings.readiness.progress": "Hotovo {completed} z {total} položiek",
+  "settings.readiness.status.completed": "Hotovo",
+  "settings.readiness.status.notCompleted": "Nie je hotovo",
+  "settings.readiness.summary.description":
+    "Použite tento praktický checklist pred prijímaním skutočných platieb.",
+  "settings.readiness.summary.title": "Checklist nastavenia",
+  "settings.readiness.title": "Stav nastavenia",
   "settings.security": "BEZPEČNOSŤ A SÚKROMIE",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.title": "Bezpečnosť a synchronizácia",

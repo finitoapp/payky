@@ -561,6 +561,40 @@ export const en = {
   "settings.privacy.errorReporting.title": "Error reporting",
   "settings.privacy.title": "Privacy",
   "settings.privacyGroup": "PRIVACY",
+  "settings.readiness.description":
+    "Checklist for using Payky with real customers",
+  "settings.readiness.item.bankAccount.action": "Set up bank account",
+  "settings.readiness.item.bankAccount.description":
+    "Bank QR payments need an enabled account for the current fiat currency.",
+  "settings.readiness.item.bankAccount.title": "Bank account",
+  "settings.readiness.item.defaultPaymentMethod.action": "Choose default",
+  "settings.readiness.item.defaultPaymentMethod.description":
+    "Checkout should open with a payment method that is enabled now.",
+  "settings.readiness.item.defaultPaymentMethod.title":
+    "Default payment method",
+  "settings.readiness.item.fioPlugin.action": "Configure Fio",
+  "settings.readiness.item.fioPlugin.description":
+    "Automatic bank transaction matching is ready when an active Fio plugin exists for bank payments.",
+  "settings.readiness.item.fioPlugin.title": "Fio transaction sync",
+  "settings.readiness.item.paymentMethods.action": "Manage payment accounts",
+  "settings.readiness.item.paymentMethods.description":
+    "Enable at least one way to accept payments in the terminal.",
+  "settings.readiness.item.paymentMethods.title": "Payment methods",
+  "settings.readiness.item.recoveryPhrase.action": "Open security settings",
+  "settings.readiness.item.recoveryPhrase.description":
+    "The active account has a recovery phrase available for backup.",
+  "settings.readiness.item.recoveryPhrase.title": "Recovery phrase",
+  "settings.readiness.item.sync.action": "Configure sync",
+  "settings.readiness.item.sync.description":
+    "An active sync transport helps keep the terminal data backed up across devices.",
+  "settings.readiness.item.sync.title": "Data sync",
+  "settings.readiness.progress": "{completed} of {total} items complete",
+  "settings.readiness.status.completed": "Completed",
+  "settings.readiness.status.notCompleted": "Not completed",
+  "settings.readiness.summary.description":
+    "Use this practical checklist before accepting real payments.",
+  "settings.readiness.summary.title": "Setup checklist",
+  "settings.readiness.title": "Setup Status",
   "settings.security": "SECURITY & PRIVACY",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.title": "Security & Sync",

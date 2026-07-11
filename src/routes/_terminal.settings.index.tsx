@@ -11,6 +11,7 @@ import {
   Info,
   Landmark,
   Languages,
+  ListChecks,
   Lock,
   Plug,
   ReceiptText,
@@ -64,6 +65,12 @@ const terminalSettings: ReadonlyArray<SettingRow> = [
 ]
 
 const accountSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: ListChecks,
+    title: "settings.readiness.title",
+    description: "settings.readiness.description",
+    to: "/settings/readiness",
+  },
   {
     icon: UserRound,
     title: "settings.accounts.nav.title",

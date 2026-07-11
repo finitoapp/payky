@@ -21,6 +21,7 @@ import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.se
 import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
+import { Route as TerminalSettingsReadinessRouteImport } from './routes/_terminal.settings.readiness'
 import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
@@ -101,6 +102,12 @@ const TerminalSettingsSecurityRoute =
   TerminalSettingsSecurityRouteImport.update({
     id: '/security',
     path: '/security',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsReadinessRoute =
+  TerminalSettingsReadinessRouteImport.update({
+    id: '/readiness',
+    path: '/readiness',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsPrivacyRoute = TerminalSettingsPrivacyRouteImport.update({
@@ -244,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
+  '/settings/readiness': typeof TerminalSettingsReadinessRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -275,6 +283,7 @@ export interface FileRoutesByTo {
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
+  '/settings/readiness': typeof TerminalSettingsReadinessRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -310,6 +319,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
+  '/_terminal/settings/readiness': typeof TerminalSettingsReadinessRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
+    | '/settings/readiness'
     | '/settings/security'
     | '/settings/theme'
     | '/settings/withdraw'
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
+    | '/settings/readiness'
     | '/settings/security'
     | '/settings/theme'
     | '/settings/withdraw'
@@ -410,6 +422,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
     | '/_terminal/settings/privacy'
+    | '/_terminal/settings/readiness'
     | '/_terminal/settings/security'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/withdraw'
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       path: '/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/readiness': {
+      id: '/_terminal/settings/readiness'
+      path: '/readiness'
+      fullPath: '/settings/readiness'
+      preLoaderRoute: typeof TerminalSettingsReadinessRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/privacy': {
@@ -687,6 +707,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
   TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
+  TerminalSettingsReadinessRoute: typeof TerminalSettingsReadinessRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsWithdrawRoute: typeof TerminalSettingsWithdrawRoute
@@ -710,6 +731,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
   TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,
+  TerminalSettingsReadinessRoute: TerminalSettingsReadinessRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsWithdrawRoute: TerminalSettingsWithdrawRoute,

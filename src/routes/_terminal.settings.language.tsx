@@ -8,14 +8,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { DeviceLocale } from "@/core/evolu/device-client.ts"
+import { languageOptions } from "@/features/settings/language-options.ts"
+import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useLocale, useSetLocale } from "@/hooks/use-locale.ts"
 import {
   useTranslation,
   useTranslationForLanguage,
 } from "@/hooks/use-translation.ts"
-import type { Language, TranslationKey } from "@/i18n/resources.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const Route = createFileRoute("/_terminal/settings/language")({
   component: LanguagePage,
@@ -26,35 +27,11 @@ export const Route = createFileRoute("/_terminal/settings/language")({
   },
 })
 
-interface LanguageOption {
-  readonly value: Language
-  readonly label: string
-  readonly description: TranslationKey
-}
-
 interface LocaleOption {
   readonly value: DeviceLocale
   readonly label: TranslationKey
   readonly description: TranslationKey
 }
-
-const languageOptions: ReadonlyArray<LanguageOption> = [
-  {
-    value: "en",
-    label: "English",
-    description: "settings.language.english.description",
-  },
-  {
-    value: "cs",
-    label: "Čeština",
-    description: "settings.language.czech.description",
-  },
-  {
-    value: "sk",
-    label: "Slovenčina",
-    description: "settings.language.slovak.description",
-  },
-]
 
 const localeOptions: ReadonlyArray<LocaleOption> = [
   {
@@ -93,35 +70,16 @@ function LanguagePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ToggleGroup
-            value={[language]}
-            onValueChange={(nextValue) => {
-              const [nextLanguage] = nextValue
-              if (nextLanguage) {
-                setLanguage(nextLanguage as Language)
-              }
-            }}
-            spacing={2}
-            className="grid w-full grid-cols-1"
-            orientation="vertical"
-            variant="outline"
-          >
-            {languageOptions.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                className="flex justify-start px-6 py-4 gap-6 text-left h-auto"
-              >
-                <Languages className="text-muted-foreground" />
-                <span className="flex flex-col gap-1">
-                  <span className="font-semibold">{option.label}</span>
-                  <span className="text-xs leading-snug text-muted-foreground">
-                    {t(option.description)}
-                  </span>
-                </span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+          <OptionToggleGroup
+            value={language}
+            options={languageOptions.map((option) => ({
+              value: option.value,
+              icon: Languages,
+              title: option.label,
+              description: t(option.description),
+            }))}
+            onChange={setLanguage}
+          />
         </CardContent>
       </Card>
 
@@ -133,35 +91,16 @@ function LanguagePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ToggleGroup
-            value={[locale]}
-            onValueChange={(nextValue) => {
-              const [nextLocale] = nextValue
-              if (nextLocale) {
-                setLocale(nextLocale as DeviceLocale)
-              }
-            }}
-            spacing={2}
-            className="grid w-full grid-cols-1"
-            orientation="vertical"
-            variant="outline"
-          >
-            {localeOptions.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                className="flex justify-start px-6 py-4 gap-6 text-left h-auto"
-              >
-                <Globe2 className="text-muted-foreground" />
-                <span className="flex flex-col gap-1">
-                  <span className="font-semibold">{t(option.label)}</span>
-                  <span className="text-xs leading-snug text-muted-foreground">
-                    {t(option.description)}
-                  </span>
-                </span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+          <OptionToggleGroup
+            value={locale}
+            options={localeOptions.map((option) => ({
+              value: option.value,
+              icon: Globe2,
+              title: t(option.label),
+              description: t(option.description),
+            }))}
+            onChange={setLocale}
+          />
         </CardContent>
       </Card>
     </>

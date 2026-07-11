@@ -3,9 +3,10 @@ import { useAtomValue } from "jotai"
 import { useEffect } from "react"
 
 import { evoluAtom } from "@/atoms/evolu.ts"
-import { backgroundJobs } from "@/core/background-jobs/background-jobs.ts"
+import { getBackgroundJobsForRuntime } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
 import { createDateDep, createFetchDep } from "@/core/deps.ts"
+import { getNativeRuntime } from "@/core/native/runtime.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
@@ -28,31 +29,34 @@ export function AppBackgroundJobs() {
       evoluOwnerId: evolu.appOwner.id,
       ...createDateDep(),
       ...createFetchDep(),
+      lockManager: navigator.locks,
       console,
       onError: (error: unknown) => {
         console.error("Background job failed.", error)
       },
     })
 
-    void run
-      .orThrow(runBackgroundJobs(backgroundJobs))
-      .then((startedJobsDisposable) => {
+    void (async () => {
+      try {
+        const startedJobsDisposable = await run.orThrow(
+          runBackgroundJobs(getBackgroundJobsForRuntime(getNativeRuntime()))
+        )
         if (isDisposed) {
           disposeJobs(startedJobsDisposable)
           return
         }
 
         jobsDisposable = startedJobsDisposable
-      })
-      .catch((error: unknown) => {
+      } catch (error) {
         if (!isDisposed) {
           console.error("Failed to start background jobs.", error)
         }
-      })
+      }
+    })()
 
     return () => {
       isDisposed = true
-      if (jobsDisposable != null) disposeJobs(jobsDisposable)
+      if (jobsDisposable !== null) disposeJobs(jobsDisposable)
       void run[Symbol.asyncDispose]()
     }
   }, [console, evolu])

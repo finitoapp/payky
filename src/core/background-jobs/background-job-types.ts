@@ -1,4 +1,4 @@
-import type { ConsoleDep, Task } from "@evolu/common"
+import type { ConsoleDep, LockManagerDep, Task } from "@evolu/common"
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 
@@ -11,6 +11,7 @@ export type BackgroundJobContext = EvoluDep &
   ConsoleDep &
   DateDep &
   FetchDep &
+  LockManagerDep &
   BackgroundJobOnErrorDep
 
 export type BackgroundJob = Task<AsyncDisposable, never, BackgroundJobContext>

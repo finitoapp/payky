@@ -5,11 +5,21 @@ import {
 import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
+import type { DateDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
+
+const fixedDate = new Date("2026-06-05T12:00:00.000Z")
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => fixedDate,
+  },
+})
 
 const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
   createQuery((db) =>
@@ -101,7 +111,7 @@ class FakeSparkWallet {
 
   configureEvents(events: Partial<SparkWalletEvents>): void {
     for (const [event, listener] of Object.entries(events)) {
-      if (listener == null) continue
+      if (listener === undefined) continue
 
       this.on(event, listener as (...args: ReadonlyArray<unknown>) => void)
     }
@@ -186,6 +196,8 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -249,6 +261,8 @@ describe("spark account transaction sync job", () => {
       await using jobRun = testCreateRun({
         console: testCreateConsole(),
         evolu,
+        ...createDateDeps(),
+        lockManager: createInProcessLockManager(),
         onError: (error) => {
           errors.push(error)
         },
@@ -312,6 +326,8 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -366,6 +382,8 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -423,6 +441,8 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -461,6 +481,8 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },

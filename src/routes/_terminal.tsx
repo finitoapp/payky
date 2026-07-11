@@ -1,4 +1,3 @@
-import { sqliteTrue } from "@evolu/common"
 import {
   createFileRoute,
   Outlet,
@@ -34,15 +33,22 @@ function TerminalLayout() {
       return undefined
     },
   })
-  const onboardingCompleted = settings?.onboardingCompleted === sqliteTrue
+  // The appSettings row's existence marks the account as onboarded.
+  // TODO: A missing row can mean either "fresh account" or "restored account
+  // whose first sync has not finished yet". These cannot be told apart yet, so
+  // a restored account may briefly land in onboarding (and completing it could
+  // overwrite synced settings via last-write-wins). The next Evolu version
+  // exposes a sync-state API — use it here to wait for the initial sync before
+  // deciding.
+  const onboarded = settings !== undefined
 
   useEffect(() => {
-    if (!onboardingCompleted) {
+    if (!onboarded) {
       void navigate({ to: "/onboarding", replace: true })
     }
-  }, [navigate, onboardingCompleted])
+  }, [navigate, onboarded])
 
-  if (!onboardingCompleted) {
+  if (!onboarded) {
     return null
   }
 

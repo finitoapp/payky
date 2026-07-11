@@ -1,6 +1,7 @@
 import { sqliteTrue, testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
@@ -123,6 +124,7 @@ describe("fio account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -159,14 +161,14 @@ describe("fio account transaction sync job", () => {
     expect(requestedUrls).toEqual([
       "https://fioapi.fio.cz/v1/rest/periods/fio-token-1/2026-03-31/2026-05-31/transactions.json",
     ])
-    expect(
-      await evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId))
-    ).toEqual([
-      {
-        id: fioPluginId,
-        lastSyncedDate: "2026-05-31",
-      },
-    ])
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId)))
+      .toEqual([
+        {
+          id: fioPluginId,
+          lastSyncedDate: "2026-05-31",
+        },
+      ])
     expect(errors).toEqual([])
   })
 
@@ -207,6 +209,7 @@ describe("fio account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -270,6 +273,7 @@ describe("fio account transaction sync job", () => {
       console,
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -336,6 +340,7 @@ describe("fio account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
@@ -391,12 +396,13 @@ describe("fio account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
       onError: (error) => {
         errors.push(error)
       },
       fetch: async () =>
         statementResponse({
-          iban: "CZ2408000000001234567899",
+          iban: "CZ5508000000001234567899",
           transactions: [fioTransaction],
         }),
       date: {

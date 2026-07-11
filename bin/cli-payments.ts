@@ -8,6 +8,7 @@ import {
   createFetchDep,
   type EvoluOwnerIdDep,
 } from "@/core/deps.ts"
+import { createYadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createQuery } from "../src/core/evolu/schema"
@@ -294,6 +295,7 @@ export const registerPaymentsCommand =
               ...createDateDep(),
               ...createFetchDep(),
               ...createSparkWalletDep(),
+              ...createYadioApiDep(),
               evolu,
               evoluOwnerId,
             })

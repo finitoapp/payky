@@ -30,10 +30,10 @@ export const createKeyedTaskQueue = (
       try {
         while (keyOrder.length > 0 && !disposed) {
           const currentKey = keyOrder.shift()
-          if (currentKey == null) break
+          if (currentKey === undefined) break
           const currentWork = queue.get(currentKey)
           queue.delete(currentKey)
-          if (currentWork == null) continue
+          if (currentWork === undefined) continue
           await currentWork()
         }
       } catch (error) {

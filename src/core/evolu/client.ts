@@ -1,5 +1,6 @@
 import {
   AppName,
+  type AppOwner,
   createAppOwner,
   createEvolu,
   type EvoluConfig,
@@ -9,17 +10,36 @@ import {
 } from "@evolu/common"
 import { AppSchema, createAppIndexes } from "@/core/evolu/schema.ts"
 
-export const createAppEvolu = (
-  config: Omit<EvoluConfig, "appOwner" | "appName"> & {
-    mnemonic?: Mnemonic
-  } = {}
-) =>
+/**
+ * Config fields callers may set. `appOwner`, `appName`, and `indexes` are
+ * owned by this factory.
+ */
+type AppEvoluConfig = Omit<EvoluConfig, "appOwner" | "appName" | "indexes">
+type AppEvoluAccountConfig = AppEvoluConfig & {
+  readonly mnemonic: Mnemonic
+  readonly transports: NonNullable<EvoluConfig["transports"]>
+}
+
+const createAppEvoluWithOwner = (appOwner: AppOwner, config: AppEvoluConfig) =>
   createEvolu(AppSchema, {
     ...config,
     appName: AppName.orThrow("Payky"),
-    appOwner: config.mnemonic
-      ? createAppOwner(mnemonicToOwnerSecret(config.mnemonic))
-      : testAppOwner,
+    appOwner,
     indexes: createAppIndexes,
-    transports: [],
   })
+
+export const createAppEvolu = ({
+  mnemonic,
+  ...config
+}: AppEvoluAccountConfig) =>
+  createAppEvoluWithOwner(
+    createAppOwner(mnemonicToOwnerSecret(mnemonic)),
+    config
+  )
+
+/**
+ * App Evolu owned by the publicly known Evolu test owner. Only for tests and
+ * the CLI, which has no owner identity yet — never for the app itself.
+ */
+export const createTestAppEvolu = (config: AppEvoluConfig = {}) =>
+  createAppEvoluWithOwner(testAppOwner, { transports: [], ...config })

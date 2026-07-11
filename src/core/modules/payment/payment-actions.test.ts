@@ -3,6 +3,10 @@ import { describe, expect, test } from "vitest"
 
 import type { DateDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  createYadioApiDep,
+  type YadioApiDep,
+} from "@/core/integrations/yadio/yadio-client.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -306,7 +310,8 @@ describe("payment actions", () => {
         }),
       },
       ...createDateDeps(),
-    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep
+      ...createYadioApiDep(),
+    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
@@ -400,7 +405,8 @@ describe("payment actions", () => {
         }),
       },
       ...createDateDeps(),
-    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep
+      ...createYadioApiDep(),
+    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
@@ -489,7 +495,8 @@ describe("payment actions", () => {
         }),
       },
       ...createDateDeps(),
-    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep
+      ...createYadioApiDep(),
+    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
     await using run = testCreateRun(deps)
     const { sparkAccountId } = await createPaymentAccounts(deps)
     const id = await run.orThrow(

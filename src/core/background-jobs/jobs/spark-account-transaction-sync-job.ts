@@ -195,7 +195,7 @@ const createSparkAccountSyncManager = ({
       sessions.set(account.id, session)
       context.console.info("Started Spark account sync.", {
         accountId: account.id,
-        replacedExistingSync: current != null,
+        replacedExistingSync: current !== undefined,
       })
     }
   }
@@ -294,11 +294,11 @@ const createSparkAccountSyncSession = ({
       return "ignored"
     }
 
-    return await navigator.locks.request(
+    return await context.lockManager.request(
       `spark-transfer-${transfer.id}`,
       { ifAvailable: true },
       async (lock) => {
-        if (lock == null) {
+        if (lock === null) {
           context.console.debug("Skipped locked Spark transfer.", {
             accountId: account.id,
             sparkTransferId: transfer.id,
@@ -322,7 +322,8 @@ const createSparkAccountSyncSession = ({
         const input = createSparkTransactionInput(
           account.id,
           sparkTransferId,
-          transfer
+          transfer,
+          context.date.now()
         )
         if (!input.ok) {
           context.console.debug("Ignored incomplete Spark transfer.", {
@@ -354,7 +355,7 @@ const createSparkAccountSyncSession = ({
 
   const syncTransferById = async (transferId: string): Promise<void> => {
     const currentWallet = wallet
-    if (currentWallet == null) {
+    if (currentWallet === undefined) {
       bufferTransferSync(
         transferId,
         "Buffered Spark transfer sync before wallet init."
@@ -363,7 +364,7 @@ const createSparkAccountSyncSession = ({
     }
 
     const transfer = await currentWallet.getTransfer(transferId)
-    if (transfer == null) {
+    if (transfer === undefined) {
       context.console.warn(
         "Spark transfer event referenced an unavailable transfer.",
         {
@@ -380,7 +381,7 @@ const createSparkAccountSyncSession = ({
 
   const syncHistory = async (): Promise<void> => {
     const currentWallet = wallet
-    if (currentWallet == null) {
+    if (currentWallet === undefined) {
       bufferHistorySync("Buffered Spark history sync before wallet init.")
       return
     }
@@ -434,7 +435,7 @@ const createSparkAccountSyncSession = ({
   }
 
   const syncTransferSoon = (transferId: string): void => {
-    if (wallet == null) {
+    if (wallet === undefined) {
       bufferTransferSync(
         transferId,
         "Buffered Spark transfer event before wallet init."
@@ -446,7 +447,7 @@ const createSparkAccountSyncSession = ({
   }
 
   const syncHistorySoon = (): void => {
-    if (wallet == null) {
+    if (wallet === undefined) {
       bufferHistorySync("Buffered Spark history event before wallet init.")
       return
     }
@@ -531,7 +532,7 @@ const createSparkAccountSyncSession = ({
       const walletToCleanup = wallet
       wallet = undefined
 
-      if (walletToCleanup == null) {
+      if (walletToCleanup === undefined) {
         context.console.debug("Disposed Spark account sync before init.", {
           accountId: account.id,
         })
@@ -548,7 +549,8 @@ const createSparkAccountSyncSession = ({
 const createSparkTransactionInput = (
   accountId: AccountId,
   sparkTransferId: NonEmptyString,
-  transfer: SparkTransfer
+  transfer: SparkTransfer,
+  now: Date
 ): Result<SparkTransactionInput, SparkTransactionInputError> => {
   const payload = getSparkTransactionPayload(transfer.userRequest)
   const lnInvoice = nullableNonEmptyString(
@@ -563,7 +565,7 @@ const createSparkTransactionInput = (
     accountId,
     amount: IntegerSchema.decode(getTransferAmount(transfer)),
     currency: "BTC" as const,
-    occurredAt: TimestampMsSchema.decode(getTransferOccurredAt(transfer)),
+    occurredAt: TimestampMsSchema.decode(getTransferOccurredAt(transfer, now)),
     note: getTransferNote(payload?.memo ?? ""),
     internalTransferGroupId: null,
     source: {
@@ -598,8 +600,8 @@ const getTransferAmount = (transfer: SparkTransfer): number =>
     ? -transfer.totalValue
     : transfer.totalValue
 
-const getTransferOccurredAt = (transfer: SparkTransfer): number =>
-  (transfer.updatedTime ?? transfer.createdTime ?? new Date()).getTime()
+const getTransferOccurredAt = (transfer: SparkTransfer, now: Date): number =>
+  (transfer.updatedTime ?? transfer.createdTime ?? now).getTime()
 
 const getTransferNote = (memo: string): NonEmptyString | null =>
   memo === "" ? null : NonEmptyStringSchema.decode(memo)

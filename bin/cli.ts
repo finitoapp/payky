@@ -5,7 +5,11 @@ import {
   type Task,
 } from "@evolu/common"
 import { type Command, createCommand } from "commander"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import {
+  createDateDep,
+  type DateDep,
+  type EvoluOwnerIdDep,
+} from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { registerAccountTransfersCommand } from "./cli-account-transfers"
@@ -24,7 +28,7 @@ declare const process: {
 
 const commands: ((
   program: Command
-) => Task<void, never, EvoluDep & EvoluOwnerIdDep & ConsoleDep>)[] = [
+) => Task<void, never, EvoluDep & EvoluOwnerIdDep & ConsoleDep & DateDep>)[] = [
   registerCatalogItemsCommand,
   registerBillsCommand,
   registerAccountsCommand,
@@ -48,6 +52,7 @@ const main = async () => {
     evolu,
     evoluOwnerId,
     console,
+    ...createDateDep(),
   })
 
   const program = createCommand()

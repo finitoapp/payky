@@ -1,5 +1,6 @@
 import type { ErrorComponentProps } from "@tanstack/react-router"
 import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -15,6 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
+import { captureReportedError } from "@/core/sentry.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export function AppErrorBoundary({
@@ -24,6 +26,11 @@ export function AppErrorBoundary({
 }: ErrorComponentProps<unknown>) {
   const { t } = useTranslation()
   const detail = formatErrorDetail(error, info?.componentStack)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: report once per caught error, not on every componentStack identity change
+  React.useEffect(() => {
+    captureReportedError(error, info?.componentStack)
+  }, [error])
   const errorName = error instanceof Error ? error.name : t("appError.unknown")
   const errorMessage =
     error instanceof Error ? error.message : t("appError.nonError")

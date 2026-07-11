@@ -77,11 +77,12 @@ export function NativeBackButtonHandler() {
 
     return () => {
       disposed = true
-      void listener.then((handle) => {
+      void (async () => {
+        const handle = await listener
         if (disposed) {
           void handle.remove()
         }
-      })
+      })()
     }
   }, [])
 

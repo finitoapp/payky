@@ -9,6 +9,7 @@ import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts
 import type { DateDep, FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
+  type FioApiDep,
   type FioTransaction,
   fetchFioTransactionsByPeriod,
 } from "@/core/integrations/fio/fio-client.ts"
@@ -138,7 +139,7 @@ class FioAccountTransactionSync {
       this.context.console.info("Started FIO plugin sync.", {
         accountId: plugin.accountId,
         pluginId: plugin.id,
-        replacedExistingSync: current != null,
+        replacedExistingSync: current !== undefined,
         tokenCount: plugin.tokens.length,
       })
       sync.start()
@@ -150,7 +151,7 @@ class FioPluginSync {
   private readonly timer: ReturnType<typeof setInterval>
   private readonly context: Context
   private readonly plugin: ActiveFioPluginWithTokens
-  private tokenIndex = 0
+  private readonly fioApiDep: FioApiDep
   private readonly syncQueue = createKeyedTaskQueue({
     onError: (error) => this.context.onError(error),
   })
@@ -158,6 +159,13 @@ class FioPluginSync {
   constructor(context: Context, plugin: ActiveFioPluginWithTokens) {
     this.context = context
     this.plugin = plugin
+    // The dep lives as long as this sync session, and `matches()` restarts
+    // the session whenever the token set changes, so the client-side
+    // `getToken` rotation always covers the current tokens.
+    const [firstToken, ...restTokens] = plugin.tokens
+    this.fioApiDep = createFioApiDep({
+      tokens: [firstToken.token, ...restTokens.map((token) => token.token)],
+    })
     this.timer = setInterval(() => {
       this.queueSync()
     }, plugin.numberOfSecondsBetweenChecks * 1000)
@@ -191,12 +199,9 @@ class FioPluginSync {
   }
 
   private async syncTransactions(): Promise<void> {
-    const token = this.getNextToken()
     const run = createRun({
       ...this.context,
-      ...createFioApiDep({
-        tokens: [token.token],
-      }),
+      ...this.fioApiDep,
     })
     const period = await this.getSyncPeriod()
     this.context.console.info("Started FIO transaction sync.", {
@@ -251,20 +256,12 @@ class FioPluginSync {
     })
   }
 
-  private getNextToken(): FioPluginToken {
-    const token = this.plugin.tokens[this.tokenIndex] ?? this.plugin.tokens[0]
-    this.tokenIndex =
-      this.tokenIndex + 1 >= this.plugin.tokens.length ? 0 : this.tokenIndex + 1
-
-    return token
-  }
-
   private async recordTransaction(transaction: FioTransaction): Promise<void> {
-    await navigator.locks.request(
+    await this.context.lockManager.request(
       `fio-transaction-${this.plugin.accountId}-${transaction.id}`,
       { ifAvailable: true },
       async (lock) => {
-        if (lock == null) {
+        if (lock === null) {
           this.context.console.debug("Skipped locked FIO transaction.", {
             accountId: this.plugin.accountId,
             bankReference: transaction.id,
@@ -330,7 +327,7 @@ class FioPluginSync {
     const syncLookbackDays =
       this.plugin.syncLookbackDays ?? defaultFioPluginSyncLookbackDays
     const from =
-      pointer?.lastSyncedDate == null
+      pointer?.lastSyncedDate === null || pointer?.lastSyncedDate === undefined
         ? getFioFirstSyncDate(this.context.date.now())
         : dateToDateString(
             subDays(dateStringToDate(pointer.lastSyncedDate), syncLookbackDays)
@@ -450,7 +447,7 @@ const createTransactionNote = (transaction: FioTransaction) => {
     transaction.recipientMessage,
     transaction.userIdentification,
     transaction.type,
-  ].filter((part): part is string => part != null && part.length > 0)
+  ].filter((part): part is string => part !== null && part.length > 0)
 
   if (parts.length === 0) return null
 

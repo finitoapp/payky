@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as TerminalRouteImport } from './routes/_terminal'
@@ -17,16 +18,19 @@ import { Route as TerminalSettingsRouteImport } from './routes/_terminal.setting
 import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
+import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
+import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
-import { Route as TerminalSettingsDonateInvoiceRouteImport } from './routes/_terminal.settings.donate-invoice'
-import { Route as TerminalSettingsDonateRouteImport } from './routes/_terminal.settings.donate'
+import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
+import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
+import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
@@ -38,6 +42,11 @@ import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_termin
 import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 
+const RestoreAccountRoute = RestoreAccountRouteImport.update({
+  id: '/restore-account',
+  path: '/restore-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -77,6 +86,12 @@ const TerminalSettingsIndexRoute = TerminalSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsWithdrawRoute =
+  TerminalSettingsWithdrawRouteImport.update({
+    id: '/withdraw',
+    path: '/withdraw',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
   id: '/theme',
   path: '/theme',
@@ -88,6 +103,11 @@ const TerminalSettingsSecurityRoute =
     path: '/security',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalSettingsPrivacyRoute = TerminalSettingsPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
 const TerminalSettingsPaymentNumberSeriesRoute =
   TerminalSettingsPaymentNumberSeriesRouteImport.update({
     id: '/payment-number-series',
@@ -122,17 +142,24 @@ const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
   path: '/fiat',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
-const TerminalSettingsDonateInvoiceRoute =
-  TerminalSettingsDonateInvoiceRouteImport.update({
-    id: '/donate-invoice',
-    path: '/donate-invoice',
+const TerminalSettingsEvoluExportRoute =
+  TerminalSettingsEvoluExportRouteImport.update({
+    id: '/evolu-export',
+    path: '/evolu-export',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
-const TerminalSettingsDonateRoute = TerminalSettingsDonateRouteImport.update({
-  id: '/donate',
-  path: '/donate',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
+const TerminalSettingsDonationsInvoiceRoute =
+  TerminalSettingsDonationsInvoiceRouteImport.update({
+    id: '/donations-invoice',
+    path: '/donations-invoice',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDonationsRoute =
+  TerminalSettingsDonationsRouteImport.update({
+    id: '/donations',
+    path: '/donations',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsDefaultPaymentMethodRoute =
   TerminalSettingsDefaultPaymentMethodRouteImport.update({
     id: '/default-payment-method',
@@ -196,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
@@ -206,16 +234,19 @@ export interface FileRoutesByFullPath {
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
-  '/settings/donate': typeof TerminalSettingsDonateRoute
-  '/settings/donate-invoice': typeof TerminalSettingsDonateInvoiceRoute
+  '/settings/donations': typeof TerminalSettingsDonationsRoute
+  '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
+  '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/settings/': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
@@ -224,6 +255,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/': typeof TerminalIndexRoute
@@ -233,16 +265,19 @@ export interface FileRoutesByTo {
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
-  '/settings/donate': typeof TerminalSettingsDonateRoute
-  '/settings/donate-invoice': typeof TerminalSettingsDonateInvoiceRoute
+  '/settings/donations': typeof TerminalSettingsDonationsRoute
+  '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
+  '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/settings': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
@@ -253,6 +288,7 @@ export interface FileRoutesById {
   '/_terminal': typeof TerminalRouteWithChildren
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/restore-account': typeof RestoreAccountRoute
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/checkout': typeof TerminalCheckoutRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
@@ -264,16 +300,19 @@ export interface FileRoutesById {
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/_terminal/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
-  '/_terminal/settings/donate': typeof TerminalSettingsDonateRoute
-  '/_terminal/settings/donate-invoice': typeof TerminalSettingsDonateInvoiceRoute
+  '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
+  '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRoute
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
+  '/_terminal/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/_terminal/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
@@ -285,6 +324,7 @@ export interface FileRouteTypes {
     | '/'
     | '/error'
     | '/onboarding'
+    | '/restore-account'
     | '/activity'
     | '/checkout'
     | '/settings'
@@ -295,16 +335,19 @@ export interface FileRouteTypes {
     | '/settings/accounts'
     | '/settings/debug-console'
     | '/settings/default-payment-method'
-    | '/settings/donate'
-    | '/settings/donate-invoice'
+    | '/settings/donations'
+    | '/settings/donations-invoice'
+    | '/settings/evolu-export'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
     | '/settings/language'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
+    | '/settings/privacy'
     | '/settings/security'
     | '/settings/theme'
+    | '/settings/withdraw'
     | '/settings/'
     | '/settings/about/privacy'
     | '/settings/about/terms'
@@ -313,6 +356,7 @@ export interface FileRouteTypes {
   to:
     | '/error'
     | '/onboarding'
+    | '/restore-account'
     | '/activity'
     | '/checkout'
     | '/'
@@ -322,16 +366,19 @@ export interface FileRouteTypes {
     | '/settings/accounts'
     | '/settings/debug-console'
     | '/settings/default-payment-method'
-    | '/settings/donate'
-    | '/settings/donate-invoice'
+    | '/settings/donations'
+    | '/settings/donations-invoice'
+    | '/settings/evolu-export'
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/items'
     | '/settings/language'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
+    | '/settings/privacy'
     | '/settings/security'
     | '/settings/theme'
+    | '/settings/withdraw'
     | '/settings'
     | '/settings/about/privacy'
     | '/settings/about/terms'
@@ -341,6 +388,7 @@ export interface FileRouteTypes {
     | '/_terminal'
     | '/error'
     | '/onboarding'
+    | '/restore-account'
     | '/_terminal/activity'
     | '/_terminal/checkout'
     | '/_terminal/settings'
@@ -352,16 +400,19 @@ export interface FileRouteTypes {
     | '/_terminal/settings/accounts'
     | '/_terminal/settings/debug-console'
     | '/_terminal/settings/default-payment-method'
-    | '/_terminal/settings/donate'
-    | '/_terminal/settings/donate-invoice'
+    | '/_terminal/settings/donations'
+    | '/_terminal/settings/donations-invoice'
+    | '/_terminal/settings/evolu-export'
     | '/_terminal/settings/fiat'
     | '/_terminal/settings/fio-plugin'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
+    | '/_terminal/settings/privacy'
     | '/_terminal/settings/security'
     | '/_terminal/settings/theme'
+    | '/_terminal/settings/withdraw'
     | '/_terminal/settings/'
     | '/_terminal/settings/about/privacy'
     | '/_terminal/settings/about/terms'
@@ -372,10 +423,18 @@ export interface RootRouteChildren {
   TerminalRoute: typeof TerminalRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   OnboardingRoute: typeof OnboardingRoute
+  RestoreAccountRoute: typeof RestoreAccountRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/restore-account': {
+      id: '/restore-account'
+      path: '/restore-account'
+      fullPath: '/restore-account'
+      preLoaderRoute: typeof RestoreAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -432,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsIndexRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/withdraw': {
+      id: '/_terminal/settings/withdraw'
+      path: '/withdraw'
+      fullPath: '/settings/withdraw'
+      preLoaderRoute: typeof TerminalSettingsWithdrawRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/theme': {
       id: '/_terminal/settings/theme'
       path: '/theme'
@@ -444,6 +510,13 @@ declare module '@tanstack/react-router' {
       path: '/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/privacy': {
+      id: '/_terminal/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof TerminalSettingsPrivacyRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/payment-number-series': {
@@ -488,18 +561,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsFiatRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
-    '/_terminal/settings/donate-invoice': {
-      id: '/_terminal/settings/donate-invoice'
-      path: '/donate-invoice'
-      fullPath: '/settings/donate-invoice'
-      preLoaderRoute: typeof TerminalSettingsDonateInvoiceRouteImport
+    '/_terminal/settings/evolu-export': {
+      id: '/_terminal/settings/evolu-export'
+      path: '/evolu-export'
+      fullPath: '/settings/evolu-export'
+      preLoaderRoute: typeof TerminalSettingsEvoluExportRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
-    '/_terminal/settings/donate': {
-      id: '/_terminal/settings/donate'
-      path: '/donate'
-      fullPath: '/settings/donate'
-      preLoaderRoute: typeof TerminalSettingsDonateRouteImport
+    '/_terminal/settings/donations-invoice': {
+      id: '/_terminal/settings/donations-invoice'
+      path: '/donations-invoice'
+      fullPath: '/settings/donations-invoice'
+      preLoaderRoute: typeof TerminalSettingsDonationsInvoiceRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/donations': {
+      id: '/_terminal/settings/donations'
+      path: '/donations'
+      fullPath: '/settings/donations'
+      preLoaderRoute: typeof TerminalSettingsDonationsRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/default-payment-method': {
@@ -597,16 +677,19 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
   TerminalSettingsDefaultPaymentMethodRoute: typeof TerminalSettingsDefaultPaymentMethodRoute
-  TerminalSettingsDonateRoute: typeof TerminalSettingsDonateRoute
-  TerminalSettingsDonateInvoiceRoute: typeof TerminalSettingsDonateInvoiceRoute
+  TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
+  TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
+  TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
   TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsFioPluginRoute: typeof TerminalSettingsFioPluginRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRoute
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
+  TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
+  TerminalSettingsWithdrawRoute: typeof TerminalSettingsWithdrawRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
 }
 
@@ -616,8 +699,9 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
   TerminalSettingsDefaultPaymentMethodRoute:
     TerminalSettingsDefaultPaymentMethodRoute,
-  TerminalSettingsDonateRoute: TerminalSettingsDonateRoute,
-  TerminalSettingsDonateInvoiceRoute: TerminalSettingsDonateInvoiceRoute,
+  TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
+  TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
+  TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
   TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsFioPluginRoute: TerminalSettingsFioPluginRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRoute,
@@ -625,8 +709,10 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsPaymentAccountsRoute: TerminalSettingsPaymentAccountsRoute,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
+  TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
+  TerminalSettingsWithdrawRoute: TerminalSettingsWithdrawRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
 }
 
@@ -661,6 +747,7 @@ const rootRouteChildren: RootRouteChildren = {
   TerminalRoute: TerminalRouteWithChildren,
   ErrorRoute: ErrorRoute,
   OnboardingRoute: OnboardingRoute,
+  RestoreAccountRoute: RestoreAccountRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router"
 import {
   ArrowDown,
+  ArrowUpFromLine,
   BadgeDollarSign,
   Bug,
   CircleDollarSign,
+  DatabaseBackup,
   Grid2X2,
   HeartHandshake,
   Info,
   Landmark,
   Languages,
+  Lock,
   Plug,
   ReceiptText,
   ShieldCheck,
@@ -87,9 +90,9 @@ const generalSettings: ReadonlyArray<SettingRow> = [
 const supportSettings: ReadonlyArray<SettingRow> = [
   {
     icon: HeartHandshake,
-    title: "settings.donate.title",
-    description: "settings.donate.description",
-    to: "/settings/donate",
+    title: "settings.donations.title",
+    description: "settings.donations.description",
+    to: "/settings/donations",
   },
   {
     icon: Info,
@@ -130,9 +133,30 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     description: "settings.fioPlugin.description",
     to: "/settings/fio-plugin",
   },
+  {
+    icon: ArrowUpFromLine,
+    title: "settings.withdrawals.title",
+    description: "settings.withdrawals.description",
+    to: "/settings/withdraw",
+  },
+]
+
+const privacySettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: Lock,
+    title: "settings.privacy.title",
+    description: "settings.privacy.description",
+    to: "/settings/privacy",
+  },
 ]
 
 const developerSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: DatabaseBackup,
+    title: "settings.evoluExport.title",
+    description: "settings.evoluExport.description",
+    to: "/settings/evolu-export",
+  },
   {
     icon: Bug,
     title: "settings.debugConsole.title",
@@ -189,6 +213,10 @@ function SettingsPage() {
     () => createSettingsNavItems(developerSettings, t),
     [t]
   )
+  const privacyItems = useMemo(
+    () => createSettingsNavItems(privacySettings, t),
+    [t]
+  )
   const securityItems = useMemo(
     () =>
       createSettingsNavItems(
@@ -221,6 +249,7 @@ function SettingsPage() {
         items={[...accountItems, ...securityItems]}
       />
       <VerticalNav title={t("settings.appearance")} items={generalItems} />
+      <VerticalNav title={t("settings.privacyGroup")} items={privacyItems} />
       <VerticalNav title={t("settings.support")} items={supportItems} />
       <VerticalNav title={t("settings.developers")} items={developerItems} />
     </>

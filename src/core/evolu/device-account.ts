@@ -1,16 +1,20 @@
 import {
+  createIdFromString,
   createOwnerSecret,
   createRandomBytes,
   evoluJsonArrayFrom,
   evoluJsonObjectFrom,
   type KyselyNotNull,
   type Mnemonic,
+  type MutationOptions,
   ownerSecretToMnemonic,
+  sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
 import { faker } from "@faker-js/faker"
 
 import {
+  type AccountEvoluTransportId,
   type AccountId,
   createDeviceQuery,
   type DeviceEvolu,
@@ -130,6 +134,60 @@ export const createAccountMnemonic = (): Mnemonic =>
 export const createRandomAccountName = () =>
   NonEmptyString255(faker.internet.username())
 
+const createAccountEvoluTransportId = ({
+  accountId,
+  type,
+  url,
+}: {
+  readonly accountId: AccountId
+  readonly type: "WebSocket"
+  readonly url: WssUrl
+}): AccountEvoluTransportId =>
+  createIdFromString<"DeviceAccountEvoluTransportId">(
+    JSON.stringify({ accountId, type, url })
+  )
+
+export const upsertAccountEvoluWebsocketTransport = (
+  deviceEvolu: DeviceEvolu,
+  {
+    accountId,
+    isActive,
+    url,
+  }: {
+    readonly accountId: AccountId
+    readonly isActive: typeof sqliteFalse | typeof sqliteTrue
+    readonly url: WssUrl
+  },
+  options?: MutationOptions
+): AccountEvoluTransportId => {
+  const id = createAccountEvoluTransportId({
+    accountId,
+    type: "WebSocket",
+    url,
+  })
+
+  deviceEvolu.upsert(
+    "accountEvoluTransport",
+    {
+      id,
+      accountId,
+      type: "WebSocket",
+      isActive,
+    },
+    options
+  )
+  deviceEvolu.upsert(
+    "accountEvoluTransportWebsocket",
+    {
+      id,
+      url,
+    },
+    options
+  )
+
+  return id
+}
+
 export const insertAccount = (
   deviceEvolu: DeviceEvolu,
   mnemonic: Mnemonic,
@@ -145,13 +203,9 @@ export const insertAccount = (
     mnemonic,
     lastUseAt: Date.now(),
   })
-  const { id } = deviceEvolu.insert("accountEvoluTransport", {
+  upsertAccountEvoluWebsocketTransport(deviceEvolu, {
     accountId,
-    type: "WebSocket",
-    isActive: sqliteTrue,
-  })
-  deviceEvolu.upsert("accountEvoluTransportWebsocket", {
-    id,
+    isActive: sqliteFalse,
     url: transportUrl,
   })
 
@@ -160,12 +214,7 @@ export const insertAccount = (
     mnemonic,
     name,
     device: null,
-    transports: [
-      {
-        type: "WebSocket",
-        url: transportUrl,
-      },
-    ],
+    transports: [],
   }
 }
 
@@ -197,6 +246,22 @@ export function selectAccount(deviceEvolu: DeviceEvolu, accountId: AccountId) {
     id: accountId,
     lastUseAt: Date.now(),
   })
+}
+
+export function updateAccountName(
+  deviceEvolu: DeviceEvolu,
+  accountId: AccountId,
+  name: string,
+  options?: MutationOptions
+) {
+  deviceEvolu.update(
+    "account",
+    {
+      id: accountId,
+      name: NonEmptyString255(name),
+    },
+    options
+  )
 }
 
 export function removeDeviceAccount(

@@ -1,5 +1,5 @@
 import { Mnemonic } from "@evolu/common"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useAtomValue, useSetAtom } from "jotai"
 import { Check, KeyRound, Plus, Trash2, UserRound } from "lucide-react"
 import { useId, useState } from "react"
@@ -34,9 +34,10 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
+import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const Route = createFileRoute("/_terminal/settings/accounts")({
   component: AccountsSettingsPage,
@@ -47,18 +48,14 @@ export const Route = createFileRoute("/_terminal/settings/accounts")({
   },
 })
 
-const normalizeMnemonic = (value: string) =>
-  value.replaceAll(/\s+/gu, " ").trim()
-
 function AccountsSettingsPage() {
   const { language, t } = useTranslation()
+  const navigate = useNavigate()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const activeAccount = useAtomValue(accountAtom)
   const setEvoluCounter = useSetAtom(evoluCounterAtom)
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [mnemonic, setMnemonic] = useState("")
-  const [error, setError] = useState<TranslationKey | null>(null)
-  const [status, setStatus] = useState<TranslationKey | null>(null)
   const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
     null
   )
@@ -66,7 +63,7 @@ function AccountsSettingsPage() {
     null
   )
   const [creating, setCreating] = useState(false)
-  const [restoring, setRestoring] = useState(false)
+  const { pending: restoring, error, setError, submit } = useSettingsForm()
   const mnemonicInputId = useId()
 
   const dateFormatter = new Intl.DateTimeFormat(language, {
@@ -107,7 +104,6 @@ function AccountsSettingsPage() {
 
   const createNewAccount = async () => {
     setError(null)
-    setStatus(null)
     setCreating(true)
     try {
       await createOrSelectAccount(deviceEvolu, createAccountMnemonic())
@@ -119,7 +115,6 @@ function AccountsSettingsPage() {
 
   const restoreAccount = async () => {
     setError(null)
-    setStatus(null)
 
     const normalizedMnemonic = normalizeMnemonic(mnemonic)
 
@@ -135,22 +130,11 @@ function AccountsSettingsPage() {
       return
     }
 
-    setRestoring(true)
-    try {
-      const result = await createOrSelectAccount(
-        deviceEvolu,
-        mnemonicResult.value
-      )
-      setMnemonic(normalizedMnemonic)
-      setStatus(
-        result.created
-          ? "settings.accounts.restore.created"
-          : "settings.accounts.restore.existing"
-      )
+    await submit(async () => {
+      await createOrSelectAccount(deviceEvolu, mnemonicResult.value)
       reloadAppAccount()
-    } finally {
-      setRestoring(false)
-    }
+      await navigate({ to: "/restore-account" })
+    })
   }
 
   const pending =
@@ -288,7 +272,6 @@ function AccountsSettingsPage() {
                     onChange={(event) => {
                       setMnemonic(event.currentTarget.value)
                       setError(null)
-                      setStatus(null)
                     }}
                   />
                   <FieldDescription>
@@ -297,10 +280,7 @@ function AccountsSettingsPage() {
                   <FieldError>{error ? t(error) : null}</FieldError>
                 </Field>
               </FieldGroup>
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground" aria-live="polite">
-                  {status ? t(status) : null}
-                </p>
+              <div className="mt-4 flex justify-end">
                 <Button type="submit" disabled={pending}>
                   <KeyRound data-icon="inline-start" />
                   {t("settings.accounts.restore.action")}

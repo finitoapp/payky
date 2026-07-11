@@ -1,6 +1,12 @@
 import type { StandardSchemaV1 } from "@evolu/common"
 import { z } from "zod"
 
+import {
+  isValidIban,
+  normalizeBankAccountInputToIban,
+  normalizeIbanInput,
+} from "./iban-utils.ts"
+
 export type InferTable<T extends Readonly<Record<string, StandardSchemaV1>>> =
   Readonly<{
     [K in keyof T]: StandardSchemaV1.InferOutput<T[K]>
@@ -133,7 +139,12 @@ export type Currency = InferEnumType<typeof Currency>
 
 export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))
-export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
+export const AccountKindSchema = z.enum([
+  "iban",
+  "spark",
+  "cashRegister",
+  "onchain",
+])
 export const BankQrFormatSchema = z.enum([
   "spayd",
   "payBySquare1_0_0",
@@ -158,9 +169,26 @@ export const ItemLineTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
 export const BillLineTagSchema = z.enum(["add", "remove"])
 export const IbanSchema = z
   .string()
-  .trim()
-  .regex(/^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$/u)
+  .transform(normalizeIbanInput)
+  .refine(isValidIban)
   .brand<"Iban">()
+export type Iban = z.output<typeof IbanSchema>
+export const BankAccountInputIbanSchema = z
+  .string()
+  .transform((value, context) => {
+    const result = normalizeBankAccountInputToIban(value)
+
+    if (!result.ok) {
+      context.addIssue({
+        code: "custom",
+        message: "Invalid bank account input.",
+      })
+
+      return z.NEVER
+    }
+
+    return result.value as Iban
+  })
 export const VariableSymbolSchema = z
   .string()
   .trim()
@@ -187,6 +215,5 @@ export type ItemLineType = z.output<typeof ItemLineTypeSchema>
 export type BillLineTag = z.output<typeof BillLineTagSchema>
 export type Integer = z.output<typeof IntegerSchema>
 export type FloatString = z.output<typeof NumberStringSchema>
-export type Iban = z.output<typeof IbanSchema>
 export type VariableSymbol = z.output<typeof VariableSymbolSchema>
 export type ConstantSymbol = z.output<typeof ConstantSymbolSchema>

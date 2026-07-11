@@ -1,17 +1,31 @@
 import { Capacitor } from "@capacitor/core"
-import { isTauri } from "@tauri-apps/api/core"
 
-export type NativeRuntime = "tauri" | "capacitor" | "web"
+export type NativeRuntime = "capacitor" | "web"
 
-export function getNativeRuntime(): NativeRuntime {
-  if (isTauri()) return "tauri"
-  if (Capacitor.isNativePlatform()) return "capacitor"
+export interface NativeRuntimeSignals {
+  readonly isCapacitorNativePlatform: boolean
+}
+
+export function detectNativeRuntime({
+  isCapacitorNativePlatform,
+}: NativeRuntimeSignals): NativeRuntime {
+  if (isCapacitorNativePlatform) return "capacitor"
 
   return "web"
 }
 
+export function getNativeRuntime(): NativeRuntime {
+  return detectNativeRuntime({
+    isCapacitorNativePlatform: Capacitor.isNativePlatform(),
+  })
+}
+
+export function isPluginNativeRuntime(runtime = getNativeRuntime()): boolean {
+  return runtime !== "web"
+}
+
 export function isNativeWebViewRuntime() {
-  return getNativeRuntime() !== "web"
+  return isPluginNativeRuntime()
 }
 
 export function isAndroidWebView() {

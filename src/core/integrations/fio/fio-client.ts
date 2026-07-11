@@ -96,7 +96,7 @@ const FioRawTransactionSchema = z
     const normalized: Record<string, string | number> = {}
 
     for (const column of Object.values(columns)) {
-      if (column == null) continue
+      if (column === null) continue
       normalized[column.name] = column.value
     }
 
@@ -123,7 +123,7 @@ const FioOptionalSymbolSchema = z
   .union([z.string(), z.number()])
   .optional()
   .transform((value) => {
-    if (value == null) return null
+    if (value === undefined) return null
 
     const normalized = String(value).trim()
     return normalized.length > 0 ? normalized : null
@@ -133,7 +133,7 @@ const FioOptionalStringSchema = z
   .union([z.string(), z.number()])
   .optional()
   .transform((value) => {
-    if (value == null) return null
+    if (value === undefined) return null
 
     const normalized = String(value).trim()
     return normalized.length > 0 ? normalized : null
@@ -173,7 +173,7 @@ const FioAmountMinorSchema = FioValueSchema.transform((value, ctx): number => {
 const nullableParse =
   <TSchema extends z.ZodType>(schema: TSchema) =>
   (value: string | null): z.output<TSchema> | null => {
-    if (value == null) return null
+    if (value === null) return null
 
     const parsed = schema.safeParse(value)
     return parsed.success ? parsed.data : null
@@ -222,7 +222,7 @@ const FioTransactionListSchema = z.object({
     .optional()
     .transform((transactions, ctx): ReadonlyArray<FioTransaction> => {
       const rawTransactions =
-        transactions == null
+        transactions === undefined
           ? []
           : Array.isArray(transactions)
             ? transactions

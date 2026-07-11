@@ -7,9 +7,12 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import {
+  type NonEmptyString255,
+  TimestampMsSchema,
+} from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
   removeUndefinedValues,
@@ -20,6 +23,7 @@ import type {
   accountTransaction,
   accountTransactionIban,
   accountTransactionLightning,
+  accountTransactionOnchain,
   accountTransactionSource,
   accountTransactionSpark,
   accountTransactionSparkInvoice,
@@ -47,6 +51,11 @@ type AccountTransactionSparkInput = InsertValues<
   >
 }
 
+type AccountTransactionOnchainInput = Omit<
+  InsertValues<typeof accountTransactionOnchain>,
+  "id"
+>
+
 type AccountTransactionSparkUpdateInput = Omit<
   UpdateValues<typeof accountTransactionSpark>,
   "id"
@@ -66,6 +75,7 @@ export const createAccountTransaction =
     id: providedId,
     iban,
     spark,
+    onchain,
     source: providedSource,
     ...input
   }: Omit<InsertValues<typeof accountTransaction>, "kind"> & {
@@ -87,16 +97,28 @@ export const createAccountTransaction =
             readonly bankReference?: NonEmptyString255 | null
           }
           readonly spark?: never
+          readonly onchain?: never
         }
       | {
           readonly iban?: never
           readonly spark: AccountTransactionSparkInput
+          readonly onchain?: never
         }
       | {
           readonly iban?: never
           readonly spark?: never
+          readonly onchain: AccountTransactionOnchainInput
         }
-    )): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
+      | {
+          readonly iban?: never
+          readonly spark?: never
+          readonly onchain?: never
+        }
+    )): Task<
+    AccountTransactionId,
+    never,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
     if (spark && !hasSparkTransactionIdentifier(spark)) {
       throw new Error(
@@ -108,7 +130,7 @@ export const createAccountTransaction =
     const id =
       providedId ??
       (iban
-        ? iban.bankReference == null
+        ? iban.bankReference === null || iban.bankReference === undefined
           ? createTableId<"AccountTransaction">()
           : createIdFromString<"AccountTransaction">(
               `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
@@ -117,7 +139,11 @@ export const createAccountTransaction =
           ? createIdFromString<"AccountTransaction">(
               `accountTransaction:spark:${spark.sparkTransferId}`
             )
-          : createTableId<"AccountTransaction">())
+          : onchain
+            ? createIdFromString<"AccountTransaction">(
+                `accountTransaction:onchain:${onchain.coopExitRequestId}`
+              )
+            : createTableId<"AccountTransaction">())
     const source = providedSource
     const sourceId = createIdFromString<"AccountTransactionSource">(
       `accountTransactionSource:${id}:${source.source}`
@@ -171,13 +197,27 @@ export const createAccountTransaction =
         }
       }
 
+      if (onchain) {
+        kind = "onchain"
+        run.deps.evolu.upsert(
+          "accountTransactionOnchain",
+          removeUndefinedValues({
+            ...onchain,
+            id,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
       run.deps.evolu.upsert(
         "accountTransactionSource",
         removeUndefinedValues({
           ...source,
           id: sourceId,
           accountTransactionId: id,
-          recordedAt: source.recordedAt ?? Date.now(),
+          recordedAt:
+            source.recordedAt ??
+            TimestampMsSchema.decode(run.deps.date.now().getTime()),
         }),
         { ...options, ownerId: evoluOwnerId }
       )
@@ -229,7 +269,9 @@ export const updateAccountTransaction =
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) => {
-      let kind: AccountTransactionRow["kind"] = "cashRegister"
+      // Without a detail payload, keep the stored kind untouched — a partial
+      // update must not reclassify an existing iban/spark transaction.
+      let kind: AccountTransactionRow["kind"] | undefined
 
       if (iban) {
         kind = "iban"

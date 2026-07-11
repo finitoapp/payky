@@ -1,5 +1,4 @@
 import { createIdFromString, sqliteFalse, sqliteTrue } from "@evolu/common"
-import { createRun } from "@evolu/web"
 import { createFileRoute } from "@tanstack/react-router"
 import { format, subDays } from "date-fns"
 import { Plus, Trash2 } from "lucide-react"
@@ -13,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
@@ -46,8 +44,10 @@ import {
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
-import { useConsole } from "@/hooks/use-console.ts"
-import { useEvolu } from "@/hooks/use-evolu.ts"
+import { isPluginNativeRuntime } from "@/core/native/runtime.ts"
+import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -74,6 +74,7 @@ const normalizeToken = (value: string) => value.trim()
 
 function FioPluginSettingsPage() {
   const { t } = useTranslation()
+  const isNativeRuntime = isPluginNativeRuntime()
   const { data } = useEvoluQuery(fiatBankAccountFioPluginQuery)
   const [plugin] = data
 
@@ -82,7 +83,8 @@ function FioPluginSettingsPage() {
       <div className="h-6" />
       <FadeHeader title={t("settings.fioPlugin.title")} />
       <div className="flex flex-col gap-5">
-        <FioPluginForm plugin={plugin} />
+        {!isNativeRuntime ? <FioPluginNativeRuntimeAlert /> : null}
+        <FioPluginForm plugin={plugin} isNativeRuntime={isNativeRuntime} />
         {plugin ? (
           <FioPluginTokenList fioPluginId={plugin.id} />
         ) : (
@@ -101,6 +103,7 @@ function FioPluginSettingsPage() {
 }
 
 interface FioPluginFormProps {
+  readonly isNativeRuntime: boolean
   readonly plugin:
     | {
         readonly id: FioPluginId
@@ -111,10 +114,27 @@ interface FioPluginFormProps {
     | undefined
 }
 
-function FioPluginForm({ plugin }: FioPluginFormProps) {
-  const console = useConsole()
+function FioPluginNativeRuntimeAlert() {
   const { t } = useTranslation()
-  const evolu = useEvolu()
+
+  return (
+    <div
+      role="alert"
+      className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-200"
+    >
+      <p className="font-medium">
+        {t("settings.fioPlugin.nativeRuntimeWarning.title")}
+      </p>
+      <p className="mt-2">
+        {t("settings.fioPlugin.nativeRuntimeWarning.description")}
+      </p>
+    </div>
+  )
+}
+
+function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
+  const appRun = useAppRun()
+  const { t } = useTranslation()
   const { data: pointers } = useEvoluQuery(
     fioPluginSyncPointerByPluginIdQuery(
       plugin?.id ?? fioPluginFormPointerPlaceholderId
@@ -145,8 +165,7 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
   const [lastSyncedDateError, setLastSyncedDateError] =
     useState<TranslationKey | null>(null)
   const [tokenError, setTokenError] = useState<TranslationKey | null>(null)
-  const [saved, setSaved] = useState(false)
-  const [pending, setPending] = useState(false)
+  const { pending, saved, resetSaved, submit } = useSettingsForm()
 
   useEffect(() => {
     setIsActive(plugin?.isActive === sqliteTrue)
@@ -161,14 +180,26 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
   }, [plugin, lastSyncedDate])
 
   return (
-    <form
-      onSubmit={async (event) => {
+    <SettingsFormCard
+      title={t("settings.fioPlugin.form.title")}
+      description={t("settings.fioPlugin.form.description")}
+      savedMessage={saved ? t("settings.fioPlugin.saved") : null}
+      submitLabel={
+        <>
+          <Plus data-icon="inline-start" />
+          {plugin
+            ? t("settings.fioPlugin.save")
+            : t("settings.fioPlugin.create")}
+        </>
+      }
+      pending={pending}
+      onSubmit={(event) => {
         event.preventDefault()
         setIntervalError(null)
         setSyncLookbackDaysError(null)
         setLastSyncedDateError(null)
         setTokenError(null)
-        setSaved(false)
+        resetSaved()
 
         const intervalResult = PositiveIntegerFromStringSchema.safeParse(
           numberOfSecondsBetweenChecks.trim()
@@ -211,13 +242,8 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
           return
         }
 
-        setPending(true)
-        try {
-          await using run = createRun({
-            console,
-            evolu,
-            evoluOwnerId: evolu.appOwner.id,
-          })
+        void submit(async () => {
+          await using run = appRun()
 
           if (plugin) {
             await run.orThrow(
@@ -226,7 +252,8 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
                 syncLookbackDays: syncLookbackDaysResult.data,
-                isActive: isActive ? sqliteTrue : sqliteFalse,
+                isActive:
+                  isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
                 token: tokenResult?.data,
               })
             )
@@ -242,7 +269,8 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
                 syncLookbackDays: syncLookbackDaysResult.data,
-                isActive: isActive ? sqliteTrue : sqliteFalse,
+                isActive:
+                  isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
                 token: tokenResult.data,
               })
             )
@@ -255,153 +283,129 @@ function FioPluginForm({ plugin }: FioPluginFormProps) {
           }
 
           setToken("")
-          setSaved(true)
-        } finally {
-          setPending(false)
-        }
+        })
       }}
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("settings.fioPlugin.form.title")}</CardTitle>
-          <CardDescription>
-            {t("settings.fioPlugin.form.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FieldGroup>
-            <Field orientation="horizontal">
-              <Checkbox
-                id={activeInputId}
-                checked={isActive}
-                disabled={pending}
-                onCheckedChange={(checked) => {
-                  setIsActive(checked)
-                  setSaved(false)
-                }}
-              />
-              <FieldContent>
-                <FieldLabel htmlFor={activeInputId}>
-                  {t("settings.fioPlugin.active.label")}
-                </FieldLabel>
-                <FieldDescription>
-                  {t("settings.fioPlugin.active.description")}
-                </FieldDescription>
-              </FieldContent>
-            </Field>
+      <FieldGroup>
+        <Field orientation="horizontal">
+          <Checkbox
+            id={activeInputId}
+            checked={isNativeRuntime && isActive}
+            disabled={pending || !isNativeRuntime}
+            onCheckedChange={(checked) => {
+              setIsActive(checked)
+              resetSaved()
+            }}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor={activeInputId}>
+              {t("settings.fioPlugin.active.label")}
+            </FieldLabel>
+            <FieldDescription>
+              {t("settings.fioPlugin.active.description")}
+            </FieldDescription>
+          </FieldContent>
+        </Field>
 
-            <Field data-invalid={intervalError !== null}>
-              <FieldLabel htmlFor={intervalInputId}>
-                {t("settings.fioPlugin.interval.label")}
-              </FieldLabel>
-              <Input
-                id={intervalInputId}
-                value={numberOfSecondsBetweenChecks}
-                disabled={pending}
-                aria-invalid={intervalError !== null}
-                inputMode="numeric"
-                min={1}
-                type="number"
-                onChange={(event) => {
-                  setNumberOfSecondsBetweenChecks(event.currentTarget.value)
-                  setIntervalError(null)
-                  setSaved(false)
-                }}
-              />
-              <FieldDescription>
-                {t("settings.fioPlugin.interval.description")}
-              </FieldDescription>
-              <FieldError>{intervalError ? t(intervalError) : null}</FieldError>
-            </Field>
+        <Field data-invalid={intervalError !== null}>
+          <FieldLabel htmlFor={intervalInputId}>
+            {t("settings.fioPlugin.interval.label")}
+          </FieldLabel>
+          <Input
+            id={intervalInputId}
+            value={numberOfSecondsBetweenChecks}
+            disabled={pending}
+            aria-invalid={intervalError !== null}
+            inputMode="numeric"
+            min={1}
+            type="number"
+            onChange={(event) => {
+              setNumberOfSecondsBetweenChecks(event.currentTarget.value)
+              setIntervalError(null)
+              resetSaved()
+            }}
+          />
+          <FieldDescription>
+            {t("settings.fioPlugin.interval.description")}
+          </FieldDescription>
+          <FieldError>{intervalError ? t(intervalError) : null}</FieldError>
+        </Field>
 
-            <Field data-invalid={syncLookbackDaysError !== null}>
-              <FieldLabel htmlFor={syncLookbackDaysInputId}>
-                {t("settings.fioPlugin.syncLookbackDays.label")}
-              </FieldLabel>
-              <Input
-                id={syncLookbackDaysInputId}
-                value={syncLookbackDays}
-                disabled={pending}
-                aria-invalid={syncLookbackDaysError !== null}
-                inputMode="numeric"
-                min={1}
-                type="number"
-                onChange={(event) => {
-                  setSyncLookbackDays(event.currentTarget.value)
-                  setSyncLookbackDaysError(null)
-                  setSaved(false)
-                }}
-              />
-              <FieldDescription>
-                {t("settings.fioPlugin.syncLookbackDays.description")}
-              </FieldDescription>
-              <FieldError>
-                {syncLookbackDaysError ? t(syncLookbackDaysError) : null}
-              </FieldError>
-            </Field>
+        <Field data-invalid={syncLookbackDaysError !== null}>
+          <FieldLabel htmlFor={syncLookbackDaysInputId}>
+            {t("settings.fioPlugin.syncLookbackDays.label")}
+          </FieldLabel>
+          <Input
+            id={syncLookbackDaysInputId}
+            value={syncLookbackDays}
+            disabled={pending}
+            aria-invalid={syncLookbackDaysError !== null}
+            inputMode="numeric"
+            min={1}
+            type="number"
+            onChange={(event) => {
+              setSyncLookbackDays(event.currentTarget.value)
+              setSyncLookbackDaysError(null)
+              resetSaved()
+            }}
+          />
+          <FieldDescription>
+            {t("settings.fioPlugin.syncLookbackDays.description")}
+          </FieldDescription>
+          <FieldError>
+            {syncLookbackDaysError ? t(syncLookbackDaysError) : null}
+          </FieldError>
+        </Field>
 
-            <Field data-invalid={lastSyncedDateError !== null}>
-              <FieldLabel htmlFor={lastSyncedDateInputId}>
-                {t("settings.fioPlugin.lastSyncedDate.label")}
-              </FieldLabel>
-              <Input
-                id={lastSyncedDateInputId}
-                value={editableLastSyncedDate}
-                disabled={pending}
-                aria-invalid={lastSyncedDateError !== null}
-                type="date"
-                onChange={(event) => {
-                  setEditableLastSyncedDate(event.currentTarget.value)
-                  setLastSyncedDateError(null)
-                  setSaved(false)
-                }}
-              />
-              <FieldDescription>
-                {t("settings.fioPlugin.lastSyncedDate.description")}
-              </FieldDescription>
-              <FieldError>
-                {lastSyncedDateError ? t(lastSyncedDateError) : null}
-              </FieldError>
-            </Field>
+        <Field data-invalid={lastSyncedDateError !== null}>
+          <FieldLabel htmlFor={lastSyncedDateInputId}>
+            {t("settings.fioPlugin.lastSyncedDate.label")}
+          </FieldLabel>
+          <Input
+            id={lastSyncedDateInputId}
+            value={editableLastSyncedDate}
+            disabled={pending}
+            aria-invalid={lastSyncedDateError !== null}
+            type="date"
+            onChange={(event) => {
+              setEditableLastSyncedDate(event.currentTarget.value)
+              setLastSyncedDateError(null)
+              resetSaved()
+            }}
+          />
+          <FieldDescription>
+            {t("settings.fioPlugin.lastSyncedDate.description")}
+          </FieldDescription>
+          <FieldError>
+            {lastSyncedDateError ? t(lastSyncedDateError) : null}
+          </FieldError>
+        </Field>
 
-            <Field data-invalid={tokenError !== null}>
-              <FieldLabel htmlFor={tokenInputId}>
-                {t("settings.fioPlugin.token.label")}
-              </FieldLabel>
-              <PasswordTextarea
-                id={tokenInputId}
-                value={token}
-                disabled={pending}
-                aria-invalid={tokenError !== null}
-                autoComplete="off"
-                onChange={(event) => {
-                  setToken(event.currentTarget.value)
-                  setTokenError(null)
-                  setSaved(false)
-                }}
-              />
-              <FieldDescription>
-                {plugin
-                  ? t("settings.fioPlugin.token.description")
-                  : t("settings.fioPlugin.token.firstDescription")}
-              </FieldDescription>
-              <FieldError>{tokenError ? t(tokenError) : null}</FieldError>
-            </Field>
-          </FieldGroup>
-        </CardContent>
-        <CardFooter className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {saved ? t("settings.fioPlugin.saved") : null}
-          </p>
-          <Button type="submit" disabled={pending}>
-            <Plus data-icon="inline-start" />
+        <Field data-invalid={tokenError !== null}>
+          <FieldLabel htmlFor={tokenInputId}>
+            {t("settings.fioPlugin.token.label")}
+          </FieldLabel>
+          <PasswordTextarea
+            id={tokenInputId}
+            value={token}
+            disabled={pending}
+            aria-invalid={tokenError !== null}
+            autoComplete="off"
+            onChange={(event) => {
+              setToken(event.currentTarget.value)
+              setTokenError(null)
+              resetSaved()
+            }}
+          />
+          <FieldDescription>
             {plugin
-              ? t("settings.fioPlugin.save")
-              : t("settings.fioPlugin.create")}
-          </Button>
-        </CardFooter>
-      </Card>
-    </form>
+              ? t("settings.fioPlugin.token.description")
+              : t("settings.fioPlugin.token.firstDescription")}
+          </FieldDescription>
+          <FieldError>{tokenError ? t(tokenError) : null}</FieldError>
+        </Field>
+      </FieldGroup>
+    </SettingsFormCard>
   )
 }
 
@@ -410,9 +414,8 @@ interface FioPluginTokenListProps {
 }
 
 function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
-  const console = useConsole()
+  const appRun = useAppRun()
   const { t } = useTranslation()
-  const evolu = useEvolu()
   const { data: tokens } = useEvoluQuery(
     fioPluginTokensByPluginIdQuery(fioPluginId)
   )
@@ -458,11 +461,7 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
                     onClick={async () => {
                       setPendingTokenId(token.id)
                       try {
-                        await using run = createRun({
-                          console,
-                          evolu,
-                          evoluOwnerId: evolu.appOwner.id,
-                        })
+                        await using run = appRun()
 
                         await run.orThrow(deleteFioPluginToken(token.id))
                       } finally {

@@ -5,5 +5,5 @@ export const getFirstOr = <T, E>(
   error: E
 ): Result<T, E> => {
   const row = rows[0]
-  return row == null ? err(error) : ok(row)
+  return row === null || row === undefined ? err(error) : ok(row)
 }

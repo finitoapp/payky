@@ -1,10 +1,22 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { DateDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
-import { createAccountTransaction } from "./account-transaction-actions.ts"
+import {
+  createAccountTransaction,
+  updateAccountTransaction,
+} from "./account-transaction-actions.ts"
+
+const fixedDate = new Date("2026-06-05T12:00:00.000Z")
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => fixedDate,
+  },
+})
 
 const accountTransactionsQuery = createQuery((db) =>
   db
@@ -26,7 +38,7 @@ describe("account transaction actions", () => {
   test("reuses the same Evolu id for the same Spark transfer", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -98,7 +110,7 @@ describe("account transaction actions", () => {
   test("reuses the same Evolu id for the same IBAN bank reference in one account", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -175,7 +187,7 @@ describe("account transaction actions", () => {
   test("records automatic source for imported IBAN transactions", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -221,7 +233,7 @@ describe("account transaction actions", () => {
   test("creates separate manual IBAN transactions without bank reference", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -318,10 +330,65 @@ describe("account transaction actions", () => {
       )
   })
 
+  test("keeps kind when updating without a detail payload", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Bank account",
+        iban: {
+          iban: "CZ6508000000192000145399",
+          currency: "CZK",
+        },
+      })
+    )
+
+    const id = await run.orThrow(
+      createAccountTransaction({
+        accountId,
+        amount: 19950,
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "manual",
+        },
+        iban: {
+          variableSymbol: null,
+          constantSymbol: null,
+          specificSymbol: null,
+          bankReference: "123456789",
+        },
+      })
+    )
+
+    await run.orThrow(
+      updateAccountTransaction({
+        id,
+        note: "Updated note",
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(accountTransactionsQuery))
+      .toEqual([
+        {
+          id,
+          accountId,
+          amount: 19950,
+          kind: "iban",
+        },
+      ])
+  })
+
   test("scopes IBAN bank reference ids by account", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, ...createDateDeps() })
     const firstAccountId = await run.orThrow(
       createAccount({
         deviceId: null,
@@ -337,7 +404,7 @@ describe("account transaction actions", () => {
         deviceId: null,
         name: "Second bank account",
         iban: {
-          iban: "CZ2408000000001234567899",
+          iban: "CZ5508000000001234567899",
           currency: "CZK",
         },
       })

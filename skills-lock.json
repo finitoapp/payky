@@ -1,11 +1,23 @@
 {
   "version": 1,
   "skills": {
+    "conventional-commit": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/conventional-commit/SKILL.md",
+      "computedHash": "f29c9486cede6c7b2df0cfb0a2e4aa67446552b991bcf17d1b309e903171f03d"
+    },
+    "finito-commit": {
+      "source": "finitoapp/finito",
+      "sourceType": "github",
+      "skillPath": "skills/finito-commit/SKILL.md",
+      "computedHash": "0771b47ac7e592a0013a5d52e25fbb0f109d2209ce056b604ed60ca05656611b"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+      "computedHash": "d81caa0f86aabab65b25e302d454f23a3328760386ed9078345584c0d5c8058e"
     }
   }
 }

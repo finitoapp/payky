@@ -55,9 +55,11 @@ export const createNextPaymentNumberValues = ({
 }): PaymentNumberRow => {
   const currentPeriod = getNumberingPeriod(date, series)
   const previousPeriod =
-    previous?.date == null ? null : getNumberingPeriod(previous.date, series)
+    previous?.date === null || previous?.date === undefined
+      ? null
+      : getNumberingPeriod(previous.date, series)
   const serialNumber = NonNegativeInteger(
-    previous != null && previousPeriod === currentPeriod
+    previous !== undefined && previousPeriod === currentPeriod
       ? previous.serialNumber + 1
       : 1
   )

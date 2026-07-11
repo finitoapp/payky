@@ -10,6 +10,7 @@
       "!node_modules",
       "!coverage",
       "!android",
+      "!ios",
       "!src/routeTree.gen.ts"
     ]
   },

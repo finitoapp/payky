@@ -154,6 +154,7 @@ export default (({ command }: ConfigEnv) => {
     },
     test: {
       exclude: [...defaultExclude, "e2e/**"],
+      setupFiles: ["./src/test/setup.ts"],
       coverage: {
         provider: "v8",
         reporter: ["text", "html", "lcov"],

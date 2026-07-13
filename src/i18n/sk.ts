@@ -137,6 +137,7 @@ export const sk = {
   "paymentWait.paid": "Platba prijatá",
   "paymentWait.pay": "Zaplatiť",
   "paymentWait.prepareError": "Túto platobnú metódu sa nepodarilo pripraviť.",
+  "paymentWait.prepareRetry": "Skúsiť platobnú metódu znova",
   "paymentWait.preparing.cash": "Pripravujem hotovostnú platbu...",
   "paymentWait.preparing.iban": "Pripravujem bankovú QR platbu...",
   "paymentWait.preparing.spark": "Pripravujem Lightning žiadosť...",

@@ -20,7 +20,10 @@ concurrency:
 jobs:
   deploy:
     name: Deploy
-    if: (github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'deploy-preview')) || github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request_target' &&
+      contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event_name == 'pull_request_target' && 'test' || 'production' }}

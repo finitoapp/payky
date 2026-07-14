@@ -136,6 +136,7 @@ export const cs = {
   "paymentWait.paid": "Platba přijata",
   "paymentWait.pay": "Zaplatit",
   "paymentWait.prepareError": "Tuto platební metodu se nepodařilo připravit.",
+  "paymentWait.prepareRetry": "Zkusit platební metodu znovu",
   "paymentWait.preparing.cash": "Připravuji hotovostní platbu...",
   "paymentWait.preparing.iban": "Připravuji bankovní QR platbu...",
   "paymentWait.preparing.spark": "Připravuji Lightning žádost...",

@@ -135,6 +135,7 @@ export const en = {
   "paymentWait.paid": "Payment received",
   "paymentWait.pay": "Pay",
   "paymentWait.prepareError": "Could not prepare this payment method.",
+  "paymentWait.prepareRetry": "Retry payment method",
   "paymentWait.preparing.cash": "Preparing cash payment...",
   "paymentWait.preparing.iban": "Preparing bank QR payment...",
   "paymentWait.preparing.spark": "Preparing Lightning request...",

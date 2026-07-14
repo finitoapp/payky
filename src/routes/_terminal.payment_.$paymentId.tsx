@@ -12,9 +12,9 @@ import { QRCodeSVG } from "qrcode.react"
 import {
   type ReactNode,
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react"
 import { toast } from "sonner"
@@ -48,6 +48,14 @@ import {
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
+import {
+  clearPaymentMethodPreparation,
+  createPaymentMethodPreparationRunner,
+  failPaymentMethodPreparation,
+  type PaymentMethodPreparationState,
+  requestPaymentMethodPreparation,
+  retryPaymentMethodPreparation,
+} from "@/features/payment-wait/payment-method-preparation.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -241,12 +249,11 @@ function PaymentWaitingRequest({
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
-  const [preparePaymentErrorMethods, setPreparePaymentErrorMethods] = useState<
-    ReadonlySet<PaymentMethodTab>
-  >(() => new Set())
-  const [preparingPaymentMethods, setPreparingPaymentMethods] = useState<
-    ReadonlySet<PaymentMethodTab>
-  >(() => new Set())
+  const [paymentMethodPreparationState, setPaymentMethodPreparationState] =
+    useState<PaymentMethodPreparationState>({})
+  const [paymentMethodPreparationRunner] = useState(
+    createPaymentMethodPreparationRunner
+  )
   const [successVisible, setSuccessVisible] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodTab | null>(null)
@@ -257,7 +264,6 @@ function PaymentWaitingRequest({
     release: releaseWakeLock,
     request: requestWakeLock,
   } = useWakeLock()
-  const preparePaymentMethodKeysRef = useRef(new Set<string>())
   const query = useMemo(() => paymentRequestQuery(paymentId), [paymentId])
   const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
   const { data: payments } = useEvoluQuery(query)
@@ -376,16 +382,71 @@ function PaymentWaitingRequest({
     defaultPaymentMethodOption ??
     orderedPaymentMethods[0] ??
     null
+  const activePreparationKey =
+    activePaymentMethod === null
+      ? null
+      : `${paymentId}:${activePaymentMethod.id}:${activePaymentMethod.accountId}`
+  const activePreparationStatus =
+    activePreparationKey === null
+      ? undefined
+      : paymentMethodPreparationState[activePreparationKey]
   const activePreparingPaymentMethodKey =
     activePaymentMethod !== null &&
-    preparingPaymentMethods.has(activePaymentMethod.id)
+    activePreparationStatus?.status === "preparing"
       ? preparingPaymentMethodKeys[activePaymentMethod.id]
       : null
   const activePreparePaymentErrorKey =
-    activePaymentMethod !== null &&
-    preparePaymentErrorMethods.has(activePaymentMethod.id)
+    activePreparationStatus?.status === "failed"
       ? "paymentWait.prepareError"
       : null
+  const activePaymentMethodIsPrepared =
+    activePaymentMethod !== null &&
+    payment !== undefined &&
+    ((activePaymentMethod.id === "spark" &&
+      (payment.lnInvoice !== null || payment.sparkInvoice !== null)) ||
+      (activePaymentMethod.id === "iban" && payment.ibanAccountId !== null) ||
+      (activePaymentMethod.id === "cash" &&
+        payment.cashRegisterAccountId !== null &&
+        payment.cashRegisterAccountId !== undefined))
+
+  const runPaymentMethodPreparation = useCallback(
+    async (
+      method: Pick<PaymentMethodOption, "accountId" | "kind">,
+      preparationKey: string
+    ) => {
+      try {
+        await using run = appRun()
+
+        const result = await run(
+          preparePaymentMethod({
+            paymentId,
+            ...(method.kind === "cashRegister"
+              ? { cashRegister: { accountId: method.accountId } }
+              : {}),
+            ...(method.kind === "iban"
+              ? { bank: { accountId: method.accountId } }
+              : {}),
+            ...(method.kind === "spark"
+              ? { spark: { accountId: method.accountId } }
+              : {}),
+          })
+        )
+
+        if (!result.ok) {
+          console.error("Failed to prepare payment method", result.error)
+          setPaymentMethodPreparationState((state) =>
+            failPaymentMethodPreparation(state, preparationKey, result.error)
+          )
+        }
+      } catch (error) {
+        console.error("Failed to prepare payment method", error)
+        setPaymentMethodPreparationState((state) =>
+          failPaymentMethodPreparation(state, preparationKey, error)
+        )
+      }
+    },
+    [appRun, console, paymentId]
+  )
 
   useEffect(() => {
     if (!wakeLockEnabled) {
@@ -423,89 +484,61 @@ function PaymentWaitingRequest({
     if (
       payment === undefined ||
       activePaymentMethod === null ||
-      preparingPaymentMethods.has(activePaymentMethod.id) ||
+      activePreparationKey === null ||
       isPaid
     ) {
       return
     }
 
-    const isPrepared =
-      (activePaymentMethod.id === "spark" &&
-        (payment.lnInvoice !== null || payment.sparkInvoice !== null)) ||
-      (activePaymentMethod.id === "iban" && payment.ibanAccountId !== null) ||
-      (activePaymentMethod.id === "cash" &&
-        payment.cashRegisterAccountId !== null &&
-        payment.cashRegisterAccountId !== undefined)
-    if (isPrepared) return
-
-    const prepareKey = `${paymentId}:${activePaymentMethod.id}:${activePaymentMethod.accountId}`
-    if (preparePaymentMethodKeysRef.current.has(prepareKey)) return
-    preparePaymentMethodKeysRef.current.add(prepareKey)
-
-    const prepare = async () => {
-      setPreparePaymentErrorMethods((methods) => {
-        const nextMethods = new Set(methods)
-        nextMethods.delete(activePaymentMethod.id)
-        return nextMethods
-      })
-      setPreparingPaymentMethods((methods) =>
-        new Set(methods).add(activePaymentMethod.id)
+    if (activePaymentMethodIsPrepared) {
+      setPaymentMethodPreparationState((state) =>
+        clearPaymentMethodPreparation(state, activePreparationKey)
       )
-      try {
-        await using run = appRun()
-
-        const result = await run(
-          preparePaymentMethod({
-            paymentId,
-            ...(activePaymentMethod.kind === "cashRegister"
-              ? {
-                  cashRegister: {
-                    accountId: activePaymentMethod.accountId,
-                  },
-                }
-              : {}),
-            ...(activePaymentMethod.kind === "iban"
-              ? {
-                  bank: {
-                    accountId: activePaymentMethod.accountId,
-                  },
-                }
-              : {}),
-            ...(activePaymentMethod.kind === "spark"
-              ? {
-                  spark: {
-                    accountId: activePaymentMethod.accountId,
-                  },
-                }
-              : {}),
-          })
-        )
-
-        if (!result.ok) {
-          console.error("Failed to prepare payment method", result.error)
-          setPreparePaymentErrorMethods((methods) =>
-            new Set(methods).add(activePaymentMethod.id)
-          )
-        }
-      } finally {
-        setPreparingPaymentMethods((methods) => {
-          const nextMethods = new Set(methods)
-          nextMethods.delete(activePaymentMethod.id)
-          return nextMethods
-        })
-      }
+      return
     }
 
-    void prepare()
+    const transition = requestPaymentMethodPreparation(
+      paymentMethodPreparationState,
+      activePreparationKey
+    )
+    if (!transition.shouldPrepare) return
+
+    setPaymentMethodPreparationState(transition.state)
+    void paymentMethodPreparationRunner.run(activePreparationKey, () =>
+      runPaymentMethodPreparation(activePaymentMethod, activePreparationKey)
+    )
   }, [
+    activePaymentMethodIsPrepared,
+    activePreparationKey,
     activePaymentMethod,
-    appRun,
     isPaid,
     payment,
-    paymentId,
-    preparingPaymentMethods,
-    console,
+    paymentMethodPreparationRunner,
+    paymentMethodPreparationState,
+    runPaymentMethodPreparation,
   ])
+
+  const handleRetryPaymentMethodPreparation = () => {
+    if (
+      activePaymentMethod === null ||
+      activePreparationKey === null ||
+      activePaymentMethodIsPrepared ||
+      isPaid
+    ) {
+      return
+    }
+
+    const transition = retryPaymentMethodPreparation(
+      paymentMethodPreparationState,
+      activePreparationKey
+    )
+    if (!transition.shouldPrepare) return
+
+    setPaymentMethodPreparationState(transition.state)
+    void paymentMethodPreparationRunner.run(activePreparationKey, () =>
+      runPaymentMethodPreparation(activePaymentMethod, activePreparationKey)
+    )
+  }
 
   if (!payment) {
     return (
@@ -624,9 +657,20 @@ function PaymentWaitingRequest({
           </div>
 
           {activePreparePaymentErrorKey ? (
-            <p className="max-w-72 text-balance text-sm font-medium text-destructive">
-              {t(activePreparePaymentErrorKey)}
-            </p>
+            <div className="flex flex-col items-center gap-3">
+              <p className="max-w-72 text-balance text-sm font-medium text-destructive">
+                {t(activePreparePaymentErrorKey)}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={activePreparationStatus?.status === "preparing"}
+                aria-label={t("paymentWait.prepareRetry")}
+                onClick={handleRetryPaymentMethodPreparation}
+              >
+                {t("paymentWait.prepareRetry")}
+              </Button>
+            </div>
           ) : null}
 
           {activePreparingPaymentMethodKey ? (

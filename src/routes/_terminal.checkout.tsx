@@ -1,4 +1,3 @@
-import { useWakeLock } from "@dedalik/use-react"
 import { createFileRoute } from "@tanstack/react-router"
 import {
   BarChart3,
@@ -9,7 +8,6 @@ import {
   Search,
   ShoppingBag,
 } from "lucide-react"
-import { useEffect } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { HeaderStartLink } from "@/components/skeleton.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
@@ -22,6 +20,7 @@ import {
 } from "@/components/ui/card.tsx"
 import { Field } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/checkout")({
@@ -67,15 +66,7 @@ export function SearchField({ placeholder }: { readonly placeholder: string }) {
 }
 
 function CheckoutPage() {
-  const { release: releaseWakeLock, request: requestWakeLock } = useWakeLock()
-
-  useEffect(() => {
-    void requestWakeLock()
-
-    return () => {
-      void releaseWakeLock()
-    }
-  }, [releaseWakeLock, requestWakeLock])
+  useScreenWakeLock(true)
 
   const { t } = useTranslation()
 

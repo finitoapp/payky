@@ -71,6 +71,97 @@ export const cs = {
   "home.title": "Terminál",
   "item.beer": "Pivo",
   "item.price": "$3.00",
+  "landing.data.backup":
+    "Volitelná šifrovaná záloha — obnovíte historii i po ztrátě telefonu, klíč ale máte jen vy",
+  "landing.data.body":
+    "Payky je local-first: položky, účtenky i historie plateb se ukládají přímo ve vašem zařízení, ne na cizím serveru. Funguje i bez internetu.",
+  "landing.data.offline": "Funguje offline — na trhu, ve sklepě i na horách",
+  "landing.data.private":
+    "Žádná registrace, žádné odesílání tržeb třetí straně",
+  "landing.data.title": "Vaše data zůstávají u vás",
+  "landing.faq.backup.answer":
+    "Vaše data ve výchozím stavu zůstávají jen ve vašem zařízení. Pokud zapnete zálohu, její šifrovaná kopie vám umožní obnovit historii na novém telefonu — dešifrovat ji umíte jen vy.",
+  "landing.faq.backup.question": "Jak funguje šifrovaná záloha?",
+  "landing.faq.cost.answer":
+    "Nic. Payky je zdarma a open source (MIT). Neplatíte žádné měsíční poplatky ani procenta z plateb.",
+  "landing.faq.cost.question": "Kolik Payky stojí?",
+  "landing.faq.data.answer":
+    "U vás. Payky je local-first — položky, účtenky a historie plateb se ukládají ve vašem zařízení a appka funguje i offline.",
+  "landing.faq.data.question": "Kde jsou moje data?",
+  "landing.faq.community.answer":
+    "Payky dělá parta dobrovolníků ve volném čase pro drobné obchodníky, ne firma, která by na tom chtěla vydělat. Pomoc s kódem, překlady, testováním i designem je vždy vítaná — a stejně vítaná je zpětná vazba od obchodníků, kteří Payky používají. Priority dalšího vývoje určuje komunita v GitHub diskuzích, ne firemní plán; nápady, dotazy i chyby můžete probrat tam, nebo v Signal skupině uživatelů.",
+  "landing.faq.community.question": "Kdo Payky vyvíjí a můžu se zapojit?",
+  "landing.faq.eet.answer":
+    "Ano, je to naše nejbližší plánovaná funkce. Přesný termín zatím nemáme — pokud vám na tom záleží, dejte to vědět v GitHub diskuzích, priority dalšího vývoje se řídí tím, o co žádá komunita.",
+  "landing.faq.eet.question": "Bude Payky podporovat EET 2.0?",
+  "landing.faq.money.answer":
+    "QR převod jde přímo na váš bankovní účet, Lightning platba okamžitě do vaší bitcoinové peněženky. Žádný prostředník, žádné čekání na výplatu.",
+  "landing.faq.money.question": "Jak rychle dostanu peníze?",
+  "landing.faq.terminal.answer":
+    "Ne. Stačí telefon nebo tablet — Payky běží v prohlížeči na payky.me, nebo si stáhnete aplikaci pro Android.",
+  "landing.faq.terminal.question": "Potřebuju platební terminál?",
+  "landing.faq.title": "Časté otázky",
+  "landing.footer.description": "Platební terminál pro Česko a Slovensko",
+  "landing.footer.discussions": "Diskuze",
+  "landing.footer.github": "GitHub",
+  "landing.footer.signal": "Signal",
+  "landing.footer.website": "payky.me",
+  "landing.hero.badge": "Zdarma · open source · tvoří ho komunita",
+  "landing.hero.body":
+    "Payky je nezávislá alternativa ke komerčním platebním terminálům. QR bankovní převod, hotovost i bitcoin přijímáte přímo — žádná licencovaná platební instituce mezi vámi a zákazníkem, žádný podíl z tržby. Peníze jdou vždy k vám v plné výši.",
+  "landing.hero.download": "Stáhnout pro Android",
+  "landing.hero.note":
+    "Bez registrace · otevřete prohlížeč a začínáte prodávat · Česko a Slovensko",
+  "landing.hero.open": "Otevřít Payky zdarma",
+  "landing.hero.title": "Přijímejte platby bez prostředníka",
+  "landing.language.czech": "Čeština",
+  "landing.language.czech.short": "CZ",
+  "landing.language.english": "Angličtina",
+  "landing.language.english.short": "EN",
+  "landing.language.label": "Jazyk landing page",
+  "landing.language.slovak": "Slovenština",
+  "landing.language.slovak.short": "SK",
+  "landing.methods.body":
+    "Naťukáte částku, zákazník zaplatí, jak mu to vyhovuje. Nic víc k tomu nepotřebujete.",
+  "landing.methods.highlight.noContract": "Bez smluv",
+  "landing.methods.highlight.noFees": "Bez poplatků",
+  "landing.methods.highlight.noHardware": "Bez speciálního hardwaru",
+  "landing.methods.highlight.noSignup": "Bez registrace",
+  "landing.methods.cash.body":
+    "Hotovostní tržby evidujete na stejném místě jako všechno ostatní. Přehled o denní tržbě máte vždy pohromadě.",
+  "landing.methods.cash.title": "Hotovost",
+  "landing.methods.lightning.body":
+    "Okamžité bitcoinové platby přímo do vaší vlastní peněženky. Self-custody — klíče i sats zůstávají vaše.",
+  "landing.methods.lightning.title": "Bitcoin Lightning",
+  "landing.methods.qr.body":
+    "Zákazník naskenuje QR kód a zaplatí běžným bankovním převodem — rovnou na váš účet. Podporuje české i slovenské formáty QR plateb.",
+  "landing.methods.qr.title": "QR převod",
+  "landing.methods.title": "Tři způsoby platby, jedna appka",
+  "landing.mockup.home.alt": "Domovská obrazovka terminálu Payky",
+  "landing.mockup.paid.alt": "Obrazovka přijaté platby Payky",
+  "landing.mockup.payment.alt": "Obrazovka QR platby Payky",
+  "landing.navigation.community": "Komunita",
+  "landing.navigation.data": "Data u vás",
+  "landing.navigation.faq": "FAQ",
+  "landing.navigation.label": "Navigace landing page",
+  "landing.navigation.open": "Otevřít Payky",
+  "landing.navigation.payments": "Platby",
+  "landing.openSource.body":
+    "Payky dělá parta dobrovolníků ve volném čase — bez investorů, bez firmy, která by chtěla z drobných obchodníků profitovat. Chceme obchodníkům pomoct začít prodávat, ne je zatlačit do kouta poplatky a smlouvami komerčních řešení. Proto je kód otevřený pod MIT licencí a vítaná je jakákoliv pomoc — kód, design, testování, překlady, nebo jen šíření dobrého slova.",
+  "landing.openSource.discussionsLink": "Diskuze na GitHubu",
+  "landing.openSource.label": "Open source",
+  "landing.openSource.link": "github.com/finitoapp/payky",
+  "landing.openSource.signalLink": "Signal skupina",
+  "landing.openSource.title": "Kód je veřejný, kdykoli k nahlédnutí",
+  "landing.price.body":
+    "Žádné měsíční poplatky, žádné procento z transakce. Platby jdou přímo mezi zákazníkem a vámi — Payky nestojí v cestě.",
+  "landing.price.label": "Cena",
+  "landing.price.title": "0 Kč. Vážně.",
+  "landing.roadmap.body":
+    "Budujeme komunitu drobných podnikatelů, kteří Payky používají a společně s námi rozhodují, co budeme stavět dál. Nejblíž v plánu je podpora českého systému evidence tržeb EET 2.0 — v GitHub diskuzích ji můžete podpořit, nebo navrhnout, co by mělo být na řadě po ní.",
+  "landing.roadmap.cta": "Navrhnout nebo podpořit funkci",
+  "landing.roadmap.label": "Co je dál",
+  "landing.roadmap.title": "O tom, co budeme stavět dál, rozhodujete vy",
   "items.add": "Přidat položku",
   "items.clear": "Smazat všechny položky",
   "items.export": "Export do CSV",

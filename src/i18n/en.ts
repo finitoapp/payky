@@ -69,6 +69,97 @@ export const en = {
   "home.title": "Terminal",
   "item.beer": "Pivo",
   "item.price": "$3.00",
+  "landing.data.backup":
+    "Optional encrypted backup — restore your history even after losing your phone, but only you hold the key",
+  "landing.data.body":
+    "Payky is local-first: items, bills, and payment history are stored on your device, not on someone else's server. Works without internet too.",
+  "landing.data.offline":
+    "Works offline — at the market, in a cellar, in the mountains",
+  "landing.data.private": "No sign-up, no sending your sales to a third party",
+  "landing.data.title": "Your data stays with you",
+  "landing.faq.backup.answer":
+    "By default your data lives only on your device. If you turn on backup, an encrypted copy lets you restore your history on a new phone — only you can decrypt it.",
+  "landing.faq.backup.question": "How does the encrypted backup work?",
+  "landing.faq.cost.answer":
+    "Nothing. Payky is free and open source (MIT). No monthly fees, no percentage of your payments.",
+  "landing.faq.cost.question": "How much does Payky cost?",
+  "landing.faq.data.answer":
+    "With you. Payky is local-first — items, bills, and payment history live on your device, and the app works offline.",
+  "landing.faq.data.question": "Where is my data?",
+  "landing.faq.community.answer":
+    "Payky is built by a group of volunteers in their free time for small merchants — not a company looking to profit off the app. Help with code, translations, testing, or design is always welcome, and so is feedback from merchants who use Payky. Development priorities are set by the community in GitHub Discussions, not a company roadmap. Share ideas, questions, or bugs there or in the Signal group for users.",
+  "landing.faq.community.question": "Who builds Payky, and can I get involved?",
+  "landing.faq.eet.answer":
+    "Yes, that's the next big item on our roadmap. We don't have an exact date yet — if it matters to you, say so in GitHub Discussions, since development priorities follow what the community asks for.",
+  "landing.faq.eet.question": "Will Payky support the Czech EET 2.0 system?",
+  "landing.faq.money.answer":
+    "QR transfers go straight to your bank account; Lightning payments arrive instantly in your own bitcoin wallet. No middleman, no payout delays.",
+  "landing.faq.money.question": "How fast do I get my money?",
+  "landing.faq.terminal.answer":
+    "No. A phone or tablet is enough — Payky runs in the browser at payky.me, or as an Android app.",
+  "landing.faq.terminal.question": "Do I need a payment terminal?",
+  "landing.faq.title": "Frequently asked questions",
+  "landing.footer.description": "The payment terminal for Czechia & Slovakia",
+  "landing.footer.discussions": "Discussions",
+  "landing.footer.github": "GitHub",
+  "landing.footer.signal": "Signal",
+  "landing.footer.website": "payky.me",
+  "landing.hero.badge": "Free · open source · shaped by its community",
+  "landing.hero.body":
+    "Payky is an independent alternative to commercial payment terminals. Accept QR bank transfers, cash, and bitcoin directly — no licensed payment institution standing between you and your customer, no cut of your sales. The full amount always goes straight to you.",
+  "landing.hero.download": "Download for Android",
+  "landing.hero.note":
+    "No sign-up · open your browser and start selling · Czechia & Slovakia",
+  "landing.hero.open": "Open Payky for free",
+  "landing.hero.title": "Accept payments without a middleman",
+  "landing.language.czech": "Czech",
+  "landing.language.czech.short": "CZ",
+  "landing.language.english": "English",
+  "landing.language.english.short": "EN",
+  "landing.language.label": "Landing page language",
+  "landing.language.slovak": "Slovak",
+  "landing.language.slovak.short": "SK",
+  "landing.methods.body":
+    "Type the amount, your customer pays however suits them. Nothing else needed.",
+  "landing.methods.highlight.noContract": "No contracts",
+  "landing.methods.highlight.noFees": "No fees",
+  "landing.methods.highlight.noHardware": "No special hardware",
+  "landing.methods.highlight.noSignup": "No sign-up",
+  "landing.methods.cash.body":
+    "Record cash sales in the same place as everything else. Your daily takings stay in one overview.",
+  "landing.methods.cash.title": "Cash",
+  "landing.methods.lightning.body":
+    "Instant bitcoin payments directly to your own wallet. Self-custody — the keys and sats stay yours.",
+  "landing.methods.lightning.title": "Bitcoin Lightning",
+  "landing.methods.qr.body":
+    "The customer scans a QR code and pays with a regular bank transfer — straight to your account. Supports Czech and Slovak QR payment formats.",
+  "landing.methods.qr.title": "QR bank transfer",
+  "landing.methods.title": "Three ways to pay, one app",
+  "landing.mockup.home.alt": "Payky terminal home screen",
+  "landing.mockup.paid.alt": "Payky payment received screen",
+  "landing.mockup.payment.alt": "Payky QR payment screen",
+  "landing.navigation.community": "Community",
+  "landing.navigation.data": "Your data",
+  "landing.navigation.faq": "FAQ",
+  "landing.navigation.label": "Landing page navigation",
+  "landing.navigation.open": "Open Payky",
+  "landing.navigation.payments": "Payments",
+  "landing.openSource.body":
+    "Payky is built by a group of volunteers in their free time — no investors, no company looking to profit off small merchants. We want to help merchants start selling, not push them into a corner with the fees and contracts of commercial solutions. That's why the code is open source under the MIT license, and any kind of help is welcome — code, design, testing, translations, or simply spreading the word.",
+  "landing.openSource.discussionsLink": "GitHub Discussions",
+  "landing.openSource.label": "Open source",
+  "landing.openSource.link": "github.com/finitoapp/payky",
+  "landing.openSource.signalLink": "Signal group",
+  "landing.openSource.title": "The code is public, inspect it anytime",
+  "landing.price.body":
+    "No monthly fees, no cut of your transactions. Payments go directly between your customer and you — Payky never stands in the way.",
+  "landing.price.label": "Price",
+  "landing.price.title": "$0. Really.",
+  "landing.roadmap.body":
+    "We're building a community of small merchants who use Payky and decide together with us what we build next. The next big item on the list is support for the Czech EET 2.0 sales reporting system — vote for it, or suggest what should come after, in GitHub Discussions.",
+  "landing.roadmap.cta": "Suggest or vote for a feature",
+  "landing.roadmap.label": "What's next",
+  "landing.roadmap.title": "You help decide what we build next",
   "items.add": "Add item",
   "items.clear": "Clear All Items",
   "items.export": "Export to CSV",

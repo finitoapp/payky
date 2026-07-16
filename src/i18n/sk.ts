@@ -74,22 +74,26 @@ export const sk = {
   "landing.data.backup":
     "Voliteľná šifrovaná záloha — obnovíte históriu aj po strate telefónu, kľúč ale máte len vy",
   "landing.data.body":
-    "Payky je local-first: položky, účtenky aj história platieb sa ukladajú priamo vo vašom zariadení, nie na cudzom serveri. Funguje aj bez internetu.",
-  "landing.data.offline": "Funguje offline — na trhu, v pivnici aj na horách",
+    "Položky, účtenky aj história platieb sa ukladajú priamo vo vašom telefóne alebo tablete, nie na cudzom serveri — aplikácia funguje aj bez internetu.",
+  "landing.data.offline":
+    "Funguje offline — na trhu, v pivnici, na horách, aj po týždni bez signálu",
   "landing.data.private":
-    "Žiadna registrácia, žiadne odosielanie tržieb tretej strane",
+    "Dáta sú primárne len vo vašom zariadení — nikto iný k nim nemá prístup. Synchronizáciu medzi vlastnými zariadeniami si zapnete dobrovoľne a je vždy šifrovaná.",
   "landing.data.title": "Vaše dáta zostávajú u vás",
   "landing.faq.backup.answer":
-    "Vaše dáta vo východiskovom stave zostávajú len vo vašom zariadení. Ak zapnete zálohu, jej šifrovaná kópia vám umožní obnoviť históriu na novom telefóne — dešifrovať ju viete len vy.",
+    "Vo východiskovom stave aplikácia nikam nič neposiela. Ak zapnete zálohu, uloží sa len ako šifrovaná kópia, ktorú rozšifrujete len vy — vďaka nej obnovíte históriu na novom telefóne, aj po strate toho starého.",
   "landing.faq.backup.question": "Ako funguje šifrovaná záloha?",
+  "landing.faq.catch.answer":
+    "Žiadny. Payky nezarába na vašej tržbe — robí ho komunita vo voľnom čase a kód je verejný pod licenciou MIT, takže si to môže overiť ktokoľvek. Žijeme z toho, že aplikáciu urobíme dobre, nie z percent z vašich platieb.",
+  "landing.faq.catch.question": "V čom je háčik?",
   "landing.faq.cost.answer":
-    "Nič. Payky je zadarmo a open source (MIT). Neplatíte žiadne mesačné poplatky ani percentá z platieb.",
+    "Nič — Payky je zadarmo a zadarmo aj zostane. Žiadne predplatné, žiadna provízia z tržby, žiadny skrytý poplatok za funkcie navyše.",
   "landing.faq.cost.question": "Koľko Payky stojí?",
   "landing.faq.data.answer":
-    "U vás. Payky je local-first — položky, účtenky a história platieb sa ukladajú vo vašom zariadení a aplikácia funguje aj offline.",
+    "U vás, v telefóne alebo tablete — nikde inde. Aplikácia funguje aj offline a nič neposiela na žiadny server, kým si sami nezapnete zálohu alebo synchronizáciu.",
   "landing.faq.data.question": "Kde sú moje dáta?",
   "landing.faq.community.answer":
-    "Payky robí parta dobrovoľníkov vo voľnom čase pre drobných obchodníkov, nie firma, ktorá by na tom chcela zarobiť. Pomoc s kódom, prekladmi, testovaním aj dizajnom je vždy vítaná — a rovnako vítaná je spätná väzba od obchodníkov, ktorí Payky používajú. Priority ďalšieho vývoja určuje komunita v GitHub diskusiách, nie firemný plán; nápady, otázky aj chyby môžete prebrať tam, alebo v Signal skupine používateľov.",
+    "Malá skupina ľudí okolo projektu, vo voľnom čase, bez nároku na podiel z vašej tržby — nie firma s biznis plánom. Zapojiť sa dá kódom, testovaním, prekladmi aj dizajnom, a rovnako cenná je spätná väzba od obchodníkov, ktorí aplikáciu naozaj používajú. O tom, čo bude ďalej, rozhoduje komunita v GitHub diskusiách, nie nikto v centrále — tam preberte nápady, otázky aj chyby, alebo sa pridajte do Signal skupiny používateľov.",
   "landing.faq.community.question": "Kto Payky vyvíja a môžem sa zapojiť?",
   "landing.faq.eet.answer":
     "Áno, je to naša najbližšia plánovaná funkcia. Presný termín zatiaľ nemáme — ak vám na tom záleží, dajte to vedieť v GitHub diskusiách, priority ďalšieho vývoja sa riadia tým, o čo žiada komunita.",
@@ -108,12 +112,13 @@ export const sk = {
   "landing.footer.website": "payky.me",
   "landing.hero.badge": "Zadarmo · open source · tvorí ju komunita",
   "landing.hero.body":
-    "Payky je nezávislá alternatíva ku komerčným platobným terminálom. QR bankový prevod, hotovosť aj bitcoin prijímate priamo — žiadna licencovaná platobná inštitúcia medzi vami a zákazníkom, žiadny podiel z tržby. Peniaze idú vždy k vám v plnej výške.",
+    "Naskenujete kód, zaplatí hotovosťou, alebo pošle bitcoin — peniaze idú vždy priamo vám, v plnej výške. Medzi vami a zákazníkom nestojí žiadna banka ani platobná firma, ktorá by si brala podiel.",
   "landing.hero.download": "Stiahnuť pre Android",
   "landing.hero.note":
-    "Bez registrácie · otvorte prehliadač a začínate predávať · Česko a Slovensko",
+    "Otvorte prehliadač a predávate za pár sekúnd · Česko a Slovensko",
   "landing.hero.open": "Otvoriť Payky zadarmo",
-  "landing.hero.title": "Prijímajte platby bez sprostredkovateľa",
+  "landing.hero.title":
+    "Prijímajte platby bez sprostredkovateľa. Bez poplatkov. Bez zmluvy.",
   "landing.language.czech": "Čeština",
   "landing.language.czech.short": "CZ",
   "landing.language.english": "Angličtina",
@@ -122,7 +127,7 @@ export const sk = {
   "landing.language.slovak": "Slovenčina",
   "landing.language.slovak.short": "SK",
   "landing.methods.body":
-    "Ťuknete sumu, zákazník zaplatí tak, ako mu to vyhovuje. Nič viac nepotrebujete.",
+    "Ťuknete sumu, zákazník si vyberie, ako zaplatí. Žiadny terminál, žiadny kontrakt s bankou, žiadne čakanie na schválenie.",
   "landing.methods.highlight.noContract": "Bez zmlúv",
   "landing.methods.highlight.noFees": "Bez poplatkov",
   "landing.methods.highlight.noHardware": "Bez špeciálneho hardvéru",
@@ -147,7 +152,7 @@ export const sk = {
   "landing.navigation.open": "Otvoriť Payky",
   "landing.navigation.payments": "Platby",
   "landing.openSource.body":
-    "Payky robí parta dobrovoľníkov vo voľnom čase — bez investorov, bez firmy, ktorá by chcela z drobných obchodníkov profitovať. Chceme obchodníkom pomôcť začať predávať, nie ich zatlačiť do kúta poplatkami a zmluvami komerčných riešení. Preto je kód otvorený pod licenciou MIT a vítaná je akákoľvek pomoc — kód, dizajn, testovanie, preklady, alebo len šírenie dobrého slova.",
+    "Payky robí parta dobrovoľníkov vo voľnom čase — bez investorov, bez firmy, ktorá by chcela z drobných obchodníkov profitovať. Žiadny investor, ktorému by sme to jedného dňa museli splatiť zdražením alebo reklamou. Chceme obchodníkom pomôcť začať predávať, nie ich zatlačiť do kúta poplatkami a zmluvami komerčných riešení. Preto je kód otvorený pod licenciou MIT a vítaná je akákoľvek pomoc — kód, dizajn, testovanie, preklady, alebo len šírenie dobrého slova.",
   "landing.openSource.discussionsLink": "Diskusie na GitHube",
   "landing.openSource.label": "Open source",
   "landing.openSource.link": "github.com/finitoapp/payky",
@@ -158,10 +163,10 @@ export const sk = {
   "landing.price.label": "Cena",
   "landing.price.title": "0 €. Naozaj.",
   "landing.roadmap.body":
-    "Budujeme komunitu drobných podnikateľov, ktorí Payky používajú a spoločne s nami rozhodujú, čo budeme stavať ďalej. Najbližšie v pláne je podpora českého systému evidencie tržieb EET 2.0 — v GitHub diskusiách ju môžete podporiť, alebo navrhnúť, čo by malo byť na rade po nej.",
+    "Budujeme komunitu drobných obchodníkov, ktorí Payky používajú a spoločne s nami rozhodujú, čo budeme stavať ďalej. Najbližšie v pláne je podpora českého systému evidencie tržieb EET 2.0 — v GitHub diskusiách ju môžete podporiť, alebo navrhnúť, čo by malo byť na rade po nej.",
   "landing.roadmap.cta": "Navrhnúť alebo podporiť funkciu",
   "landing.roadmap.label": "Čo je ďalej",
-  "landing.roadmap.title": "O tom, čo budeme stavať ďalej, rozhodujete vy",
+  "landing.roadmap.title": "Čo budeme stavať ďalej, rozhodujete vy",
   "items.add": "Pridať položku",
   "items.clear": "Vymazať všetky položky",
   "items.export": "Export do CSV",

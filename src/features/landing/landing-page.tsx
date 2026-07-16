@@ -4,12 +4,14 @@ import {
   BanknoteIcon,
   CheckIcon,
   ChevronDownIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
   LanguagesIcon,
   type LucideIcon,
   QrCodeIcon,
   ZapIcon,
 } from "lucide-react"
-import { type ReactNode, useState } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import { buttonVariants } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -118,6 +120,10 @@ const methodCards: ReadonlyArray<MethodCard> = [
 
 const faqItems: ReadonlyArray<FaqItem> = [
   {
+    question: "landing.faq.catch.question",
+    answer: "landing.faq.catch.answer",
+  },
+  {
     question: "landing.faq.cost.question",
     answer: "landing.faq.cost.answer",
   },
@@ -147,12 +153,15 @@ const faqItems: ReadonlyArray<FaqItem> = [
   },
 ]
 
+const headerFadeDistance = 120
+
 export function LandingPage() {
   const [language, setLanguage] = useState<LandingLanguage>(
     getInitialLandingLanguage
   )
   const [openFaq, setOpenFaq] = useState<TranslationKey | null>(null)
   const t = (key: TranslationKey) => resources[language][key]
+  const headerBackdropRef = useRef<HTMLDivElement>(null)
 
   const handleLanguageChange = (nextLanguage: LandingLanguage | null) => {
     if (nextLanguage !== null) {
@@ -161,10 +170,32 @@ export function LandingPage() {
     }
   }
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const opacity = Math.min(
+        1,
+        Math.max(0, window.scrollY / headerFadeDistance)
+      )
+
+      if (headerBackdropRef.current) {
+        headerBackdropRef.current.style.opacity = opacity.toString()
+      }
+    }
+
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
   return (
     <main className="min-h-svh bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-6 py-5 sm:gap-6 lg:px-8">
+      <header className="fixed inset-x-0 top-0 z-50">
+        <div
+          ref={headerBackdropRef}
+          aria-hidden="true"
+          className="absolute inset-0 border-b border-border bg-background opacity-0"
+        />
+        <div className="relative mx-auto flex h-20 max-w-7xl items-center gap-3 px-6 sm:gap-6 lg:px-8">
           <Link
             to="/landing"
             className="inline-flex shrink-0 items-center gap-2 text-xl font-extrabold tracking-tight"
@@ -175,7 +206,7 @@ export function LandingPage() {
           </Link>
 
           <nav
-            className="ml-auto hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex"
+            className="ml-8 hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex lg:ml-12"
             aria-label={t("landing.navigation.label")}
           >
             <a
@@ -201,7 +232,7 @@ export function LandingPage() {
             </a>
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 md:ml-0">
+          <div className="ml-auto flex items-center gap-3">
             <Select<LandingLanguage>
               value={language}
               onValueChange={handleLanguageChange}
@@ -229,16 +260,17 @@ export function LandingPage() {
               to="/"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "hidden h-10 px-5 sm:inline-flex"
+                "hidden h-10 px-4 has-data-[icon=inline-end]:pr-3 sm:inline-flex"
               )}
             >
               {t("landing.navigation.open")}
+              <ExternalLinkIcon aria-hidden="true" data-icon="inline-end" />
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background">
+      <section className="overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background pt-20">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 pt-16 lg:grid-cols-2 lg:px-8 lg:pt-18">
           <div className="flex flex-col gap-6 pb-16 lg:pb-18">
             <div className="inline-flex self-start items-center gap-2 rounded-full bg-success/10 px-3.5 py-1.5 text-sm font-semibold text-success">
@@ -251,25 +283,44 @@ export function LandingPage() {
             <h1 className="max-w-2xl text-5xl font-extrabold tracking-tight text-balance sm:text-6xl">
               {t("landing.hero.title")}
             </h1>
-            <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
+            <p className="max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground">
               {t("landing.hero.body")}
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link
                 to="/"
-                className={cn(buttonVariants({ size: "lg" }), "h-12 px-7")}
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "h-12 px-7 has-data-[icon=inline-end]:pr-6"
+                )}
               >
                 {t("landing.hero.open")}
+                <ExternalLinkIcon aria-hidden="true" data-icon="inline-end" />
               </Link>
               <a
                 href="https://github.com/finitoapp/payky/releases"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-12 px-7"
+                  "h-12 px-7 has-data-[icon=inline-end]:pr-6"
                 )}
               >
                 {t("landing.hero.download")}
+                <DownloadIcon aria-hidden="true" data-icon="inline-end" />
               </a>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold">
+              {methodHighlights.map((highlight) => (
+                <span
+                  key={highlight}
+                  className="inline-flex items-center gap-2"
+                >
+                  <CheckIcon
+                    aria-hidden="true"
+                    className="size-4 text-success"
+                  />
+                  {t(highlight)}
+                </span>
+              ))}
             </div>
             <p className="text-sm text-muted-foreground">
               {t("landing.hero.note")}
@@ -290,23 +341,9 @@ export function LandingPage() {
             <h2 className="text-4xl font-extrabold tracking-tight text-balance">
               {t("landing.methods.title")}
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+            <p className="mt-4 text-lg leading-relaxed text-pretty text-muted-foreground">
               {t("landing.methods.body")}
             </p>
-            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold">
-              {methodHighlights.map((highlight) => (
-                <span
-                  key={highlight}
-                  className="inline-flex items-center gap-2"
-                >
-                  <CheckIcon
-                    aria-hidden="true"
-                    className="size-4 text-success"
-                  />
-                  {t(highlight)}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -320,7 +357,9 @@ export function LandingPage() {
                       aria-hidden="true"
                       className={cn("size-8", method.iconClassName)}
                     />
-                    <CardTitle>{t(method.title)}</CardTitle>
+                    <CardTitle className="text-lg font-semibold">
+                      {t(method.title)}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <CardDescription>{t(method.body)}</CardDescription>
@@ -351,7 +390,7 @@ export function LandingPage() {
             <h2 className="text-4xl font-extrabold tracking-tight text-balance">
               {t("landing.data.title")}
             </h2>
-            <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            <p className="max-w-2xl text-lg leading-relaxed text-pretty text-muted-foreground">
               {t("landing.data.body")}
             </p>
             <ul className="mt-2 flex flex-col gap-3.5 text-base">
@@ -376,7 +415,7 @@ export function LandingPage() {
               <h2 className="text-4xl font-extrabold tracking-tight text-balance">
                 {t("landing.openSource.title")}
               </h2>
-              <p className="max-w-xl text-lg leading-relaxed text-invert-foreground/70">
+              <p className="max-w-xl text-lg leading-relaxed text-pretty text-invert-foreground/70">
                 {t("landing.openSource.body")}
               </p>
               <a
@@ -419,10 +458,10 @@ export function LandingPage() {
               <p className="text-sm font-bold tracking-[0.12em] text-success uppercase">
                 {t("landing.price.label")}
               </p>
-              <h2 className="text-4xl font-extrabold tracking-tight text-balance">
+              <h2 className="text-4xl font-extrabold tracking-tight text-balance tabular-nums sm:text-5xl">
                 {t("landing.price.title")}
               </h2>
-              <p className="max-w-xl text-lg leading-relaxed text-invert-foreground/70">
+              <p className="max-w-xl text-lg leading-relaxed text-pretty text-invert-foreground/70">
                 {t("landing.price.body")}
               </p>
             </article>
@@ -432,10 +471,10 @@ export function LandingPage() {
             <p className="text-sm font-bold tracking-[0.12em] text-success uppercase">
               {t("landing.roadmap.label")}
             </p>
-            <h3 className="mt-3 max-w-2xl text-2xl font-extrabold tracking-tight text-balance sm:text-3xl">
+            <h3 className="mt-3 max-w-2xl text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">
               {t("landing.roadmap.title")}
             </h3>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-invert-foreground/70">
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-pretty text-invert-foreground/70">
               {t("landing.roadmap.body")}
             </p>
             <a
@@ -481,7 +520,7 @@ export function LandingPage() {
                         )}
                       />
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pb-5 leading-relaxed text-muted-foreground">
+                    <CollapsibleContent className="pb-5 leading-relaxed text-pretty text-muted-foreground">
                       {t(item.answer)}
                     </CollapsibleContent>
                   </Collapsible>
@@ -494,7 +533,7 @@ export function LandingPage() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-6 py-7 text-sm text-muted-foreground md:flex-row md:items-center lg:px-8">
-          <div className="inline-flex items-center gap-2 font-bold text-foreground">
+          <div className="inline-flex items-center gap-2 text-base font-extrabold tracking-tight text-foreground">
             <img src="/pwa-icon.svg" alt="" className="size-6 shrink-0" />
             <span>{t("app.name")}</span>
           </div>

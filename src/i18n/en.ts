@@ -69,6 +69,10 @@ export const en = {
   "home.title": "Terminal",
   "item.beer": "Pivo",
   "item.price": "$3.00",
+  "landing.announcement.eet.cta": "View the roadmap",
+  "landing.announcement.eet.message":
+    "We're planning support for the Czech EET 2.0 reporting system.",
+  "landing.announcement.label": "Announcement",
   "landing.data.backup":
     "Optional encrypted backup — restore your history even after losing your phone, but only you hold the key",
   "landing.data.body":

@@ -8,6 +8,7 @@ import {
   ExternalLinkIcon,
   LanguagesIcon,
   type LucideIcon,
+  MegaphoneIcon,
   QrCodeIcon,
   ZapIcon,
 } from "lucide-react"
@@ -188,8 +189,39 @@ export function LandingPage() {
   }, [])
 
   return (
-    <main className="min-h-svh bg-background text-foreground">
-      <header className="fixed inset-x-0 top-0 z-50">
+    <main className="relative min-h-svh bg-background text-foreground">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-150 bg-gradient-to-br from-primary/10 via-background to-background"
+      />
+
+      <div className="bg-primary text-primary-foreground">
+        <section
+          aria-label={t("landing.announcement.label")}
+          className="mx-auto flex h-10 max-w-7xl items-center gap-2 px-6 lg:px-8"
+        >
+          <MegaphoneIcon aria-hidden="true" className="size-4 shrink-0" />
+          <p className="min-w-0 max-w-[60vw] truncate text-sm font-medium">
+            {t("landing.announcement.eet.message")}
+          </p>
+          <a
+            href="https://github.com/finitoapp/payky/discussions/58"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "shrink-0 text-foreground"
+            )}
+          >
+            {t("landing.announcement.eet.cta")}
+            <ArrowRightIcon
+              aria-hidden="true"
+              data-icon="inline-end"
+              className="size-3.5"
+            />
+          </a>
+        </section>
+      </div>
+
+      <header className="sticky top-0 z-50">
         <div
           ref={headerBackdropRef}
           aria-hidden="true"
@@ -270,7 +302,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section className="overflow-hidden bg-gradient-to-br from-primary/10 via-background to-background pt-20">
+      <section className="overflow-hidden">
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 pt-16 lg:grid-cols-2 lg:px-8 lg:pt-18">
           <div className="flex flex-col gap-6 pb-16 lg:pb-18">
             <div className="inline-flex self-start items-center gap-2 rounded-full bg-success/10 px-3.5 py-1.5 text-sm font-semibold text-success">
@@ -335,7 +367,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="payments" className="scroll-mt-6 bg-muted/70">
+      <section id="payments" className="scroll-mt-20 bg-muted/70">
         <div className="mx-auto max-w-7xl px-6 py-22 lg:px-8">
           <div className="max-w-2xl">
             <h2 className="text-4xl font-extrabold tracking-tight text-balance">
@@ -371,7 +403,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="your-data" className="scroll-mt-6">
+      <section id="your-data" className="scroll-mt-20">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 py-22 lg:grid-cols-2 lg:gap-16 lg:px-8">
           <div className="grid grid-cols-2 place-items-center gap-4 sm:gap-6">
             <img
@@ -404,7 +436,7 @@ export function LandingPage() {
 
       <section
         id="community"
-        className="scroll-mt-6 bg-invert text-invert-foreground"
+        className="scroll-mt-20 bg-invert text-invert-foreground"
       >
         <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
           <div className="grid gap-14 lg:grid-cols-2 lg:gap-16">
@@ -491,7 +523,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="faq" className="scroll-mt-6">
+      <section id="faq" className="scroll-mt-20">
         <div className="mx-auto max-w-7xl px-6 py-22 lg:px-8">
           <div className="max-w-3xl">
             <h2 className="text-4xl font-extrabold tracking-tight text-balance">

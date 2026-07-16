@@ -71,6 +71,10 @@ export const sk = {
   "home.title": "Terminál",
   "item.beer": "Pivo",
   "item.price": "$3.00",
+  "landing.announcement.eet.cta": "Pozrieť plán",
+  "landing.announcement.eet.message":
+    "Chystáme podporu českého systému EET 2.0.",
+  "landing.announcement.label": "Oznámenie",
   "landing.data.backup":
     "Voliteľná šifrovaná záloha — obnovíte históriu aj po strate telefónu, kľúč ale máte len vy",
   "landing.data.body":

@@ -74,22 +74,26 @@ export const cs = {
   "landing.data.backup":
     "Volitelná šifrovaná záloha — obnovíte historii i po ztrátě telefonu, klíč ale máte jen vy",
   "landing.data.body":
-    "Payky je local-first: položky, účtenky i historie plateb se ukládají přímo ve vašem zařízení, ne na cizím serveru. Funguje i bez internetu.",
-  "landing.data.offline": "Funguje offline — na trhu, ve sklepě i na horách",
+    "Položky, účtenky i historie plateb se ukládají přímo ve vašem telefonu nebo tabletu, ne na cizím serveru — appka běží i bez internetu.",
+  "landing.data.offline":
+    "Funguje offline — na trhu, ve sklepě, na horách, i po týdnu bez signálu",
   "landing.data.private":
-    "Žádná registrace, žádné odesílání tržeb třetí straně",
+    "Data jsou primárně jen ve vašem zařízení — nikdo jiný k nim nemá přístup. Synchronizaci mezi vlastními zařízeními si zapnete dobrovolně a je vždy šifrovaná.",
   "landing.data.title": "Vaše data zůstávají u vás",
   "landing.faq.backup.answer":
-    "Vaše data ve výchozím stavu zůstávají jen ve vašem zařízení. Pokud zapnete zálohu, její šifrovaná kopie vám umožní obnovit historii na novém telefonu — dešifrovat ji umíte jen vy.",
+    "Ve výchozím stavu appka nikam nic neposílá. Zapnete-li zálohu, uloží se jen jako šifrovaná kopie, kterou rozšifrujete jen vy — díky ní obnovíte historii na novém telefonu, i po ztrátě toho starého.",
   "landing.faq.backup.question": "Jak funguje šifrovaná záloha?",
+  "landing.faq.catch.answer":
+    "Žádný. Payky nevydělává na vaší tržbě — dělá ho komunita ve volném čase a kód je veřejný pod MIT licencí, takže si to může kdokoli ověřit. Žijeme z toho, že appku uděláme dobře, ne z procent z vašich plateb.",
+  "landing.faq.catch.question": "V čem je háček?",
   "landing.faq.cost.answer":
-    "Nic. Payky je zdarma a open source (MIT). Neplatíte žádné měsíční poplatky ani procenta z plateb.",
+    "Nic — Payky je zdarma a zůstane zdarma. Žádné předplatné, žádná provize z tržby, žádná skrytá platba za funkce navíc.",
   "landing.faq.cost.question": "Kolik Payky stojí?",
   "landing.faq.data.answer":
-    "U vás. Payky je local-first — položky, účtenky a historie plateb se ukládají ve vašem zařízení a appka funguje i offline.",
+    "U vás, v telefonu nebo tabletu — nikde jinde. Appka běží i bez internetu a nic neposílá na žádný server, dokud si sami nezapnete zálohu nebo synchronizaci.",
   "landing.faq.data.question": "Kde jsou moje data?",
   "landing.faq.community.answer":
-    "Payky dělá parta dobrovolníků ve volném čase pro drobné obchodníky, ne firma, která by na tom chtěla vydělat. Pomoc s kódem, překlady, testováním i designem je vždy vítaná — a stejně vítaná je zpětná vazba od obchodníků, kteří Payky používají. Priority dalšího vývoje určuje komunita v GitHub diskuzích, ne firemní plán; nápady, dotazy i chyby můžete probrat tam, nebo v Signal skupině uživatelů.",
+    "Malá skupina lidí kolem projektu, ve volném čase, bez nároku na podíl z vaší tržby — ne firma s byznys plánem. Zapojit se dá kódem, testováním, překlady i designem, a stejně cenná je zpětná vazba od obchodníků, kteří appku reálně používají. Co se bude dít dál, rozhoduje komunita v GitHub diskuzích, ne nikdo v centrále — tam probereme nápady, dotazy i chyby, nebo se přidejte do Signal skupiny uživatelů.",
   "landing.faq.community.question": "Kdo Payky vyvíjí a můžu se zapojit?",
   "landing.faq.eet.answer":
     "Ano, je to naše nejbližší plánovaná funkce. Přesný termín zatím nemáme — pokud vám na tom záleží, dejte to vědět v GitHub diskuzích, priority dalšího vývoje se řídí tím, o co žádá komunita.",
@@ -98,7 +102,7 @@ export const cs = {
     "QR převod jde přímo na váš bankovní účet, Lightning platba okamžitě do vaší bitcoinové peněženky. Žádný prostředník, žádné čekání na výplatu.",
   "landing.faq.money.question": "Jak rychle dostanu peníze?",
   "landing.faq.terminal.answer":
-    "Ne. Stačí telefon nebo tablet — Payky běží v prohlížeči na payky.me, nebo si stáhnete aplikaci pro Android.",
+    "Ne. Stačí telefon nebo tablet — Payky běží v prohlížeči na payky.me, nebo si stáhnete appku pro Android.",
   "landing.faq.terminal.question": "Potřebuju platební terminál?",
   "landing.faq.title": "Časté otázky",
   "landing.footer.description": "Platební terminál pro Česko a Slovensko",
@@ -108,12 +112,13 @@ export const cs = {
   "landing.footer.website": "payky.me",
   "landing.hero.badge": "Zdarma · open source · tvoří ho komunita",
   "landing.hero.body":
-    "Payky je nezávislá alternativa ke komerčním platebním terminálům. QR bankovní převod, hotovost i bitcoin přijímáte přímo — žádná licencovaná platební instituce mezi vámi a zákazníkem, žádný podíl z tržby. Peníze jdou vždy k vám v plné výši.",
+    "Naskenujete kód, zaplatí hotově, nebo pošlete bitcoin — peníze jdou vždy přímo vám, v plné výši. Mezi vámi a zákazníkem nestojí žádná banka ani platební firma, která by si brala podíl.",
   "landing.hero.download": "Stáhnout pro Android",
   "landing.hero.note":
-    "Bez registrace · otevřete prohlížeč a začínáte prodávat · Česko a Slovensko",
+    "Otevřete prohlížeč a prodáváte za pár vteřin · Česko a Slovensko",
   "landing.hero.open": "Otevřít Payky zdarma",
-  "landing.hero.title": "Přijímejte platby bez prostředníka",
+  "landing.hero.title":
+    "Přijímejte platby bez prostředníka. Bez poplatků. Bez smlouvy.",
   "landing.language.czech": "Čeština",
   "landing.language.czech.short": "CZ",
   "landing.language.english": "Angličtina",
@@ -122,7 +127,7 @@ export const cs = {
   "landing.language.slovak": "Slovenština",
   "landing.language.slovak.short": "SK",
   "landing.methods.body":
-    "Naťukáte částku, zákazník zaplatí, jak mu to vyhovuje. Nic víc k tomu nepotřebujete.",
+    "Naťukáte částku, zákazník si vybere, jak zaplatí. Žádný terminál, žádný kontrakt s bankou, žádné čekání na schválení.",
   "landing.methods.highlight.noContract": "Bez smluv",
   "landing.methods.highlight.noFees": "Bez poplatků",
   "landing.methods.highlight.noHardware": "Bez speciálního hardwaru",
@@ -147,7 +152,7 @@ export const cs = {
   "landing.navigation.open": "Otevřít Payky",
   "landing.navigation.payments": "Platby",
   "landing.openSource.body":
-    "Payky dělá parta dobrovolníků ve volném čase — bez investorů, bez firmy, která by chtěla z drobných obchodníků profitovat. Chceme obchodníkům pomoct začít prodávat, ne je zatlačit do kouta poplatky a smlouvami komerčních řešení. Proto je kód otevřený pod MIT licencí a vítaná je jakákoliv pomoc — kód, design, testování, překlady, nebo jen šíření dobrého slova.",
+    "Payky dělá parta dobrovolníků ve volném čase — bez investorů, bez firmy, která by chtěla z drobných obchodníků profitovat. Žádný investor, kterému bychom to jednou museli splatit zdražením nebo reklamou. Chceme obchodníkům pomoct začít prodávat, ne je zatlačit do kouta poplatky a smlouvami komerčních řešení. Proto je kód otevřený pod MIT licencí a vítaná je jakákoliv pomoc — kód, design, testování, překlady, nebo jen šíření dobrého slova.",
   "landing.openSource.discussionsLink": "Diskuze na GitHubu",
   "landing.openSource.label": "Open source",
   "landing.openSource.link": "github.com/finitoapp/payky",
@@ -158,10 +163,10 @@ export const cs = {
   "landing.price.label": "Cena",
   "landing.price.title": "0 Kč. Vážně.",
   "landing.roadmap.body":
-    "Budujeme komunitu drobných podnikatelů, kteří Payky používají a společně s námi rozhodují, co budeme stavět dál. Nejblíž v plánu je podpora českého systému evidence tržeb EET 2.0 — v GitHub diskuzích ji můžete podpořit, nebo navrhnout, co by mělo být na řadě po ní.",
+    "Budujeme komunitu drobných obchodníků, kteří Payky používají a společně s námi rozhodují, co budeme stavět dál. Nejblíž v plánu je podpora českého systému evidence tržeb EET 2.0 — v GitHub diskuzích ji můžete podpořit, nebo navrhnout, co by mělo být na řadě po ní.",
   "landing.roadmap.cta": "Navrhnout nebo podpořit funkci",
   "landing.roadmap.label": "Co je dál",
-  "landing.roadmap.title": "O tom, co budeme stavět dál, rozhodujete vy",
+  "landing.roadmap.title": "Co budeme stavět dál, rozhodujete vy",
   "items.add": "Přidat položku",
   "items.clear": "Smazat všechny položky",
   "items.export": "Export do CSV",

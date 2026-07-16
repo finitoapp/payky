@@ -72,22 +72,26 @@ export const en = {
   "landing.data.backup":
     "Optional encrypted backup — restore your history even after losing your phone, but only you hold the key",
   "landing.data.body":
-    "Payky is local-first: items, bills, and payment history are stored on your device, not on someone else's server. Works without internet too.",
+    "Items, bills, and payment history are stored right on your phone or tablet, not on someone else's server — the app works without internet too.",
   "landing.data.offline":
-    "Works offline — at the market, in a cellar, in the mountains",
-  "landing.data.private": "No sign-up, no sending your sales to a third party",
+    "Works offline — at the market, in a cellar, in the mountains, even after a week with no signal",
+  "landing.data.private":
+    "Your data lives primarily on your own device — no one else has access to it. Syncing between your own devices is opt-in and always encrypted.",
   "landing.data.title": "Your data stays with you",
   "landing.faq.backup.answer":
-    "By default your data lives only on your device. If you turn on backup, an encrypted copy lets you restore your history on a new phone — only you can decrypt it.",
+    "By default the app doesn't send anything anywhere. Turn on backup and it stores only an encrypted copy that only you can decrypt — that's what lets you restore your history on a new phone if you lose the old one.",
   "landing.faq.backup.question": "How does the encrypted backup work?",
+  "landing.faq.catch.answer":
+    "There isn't one. Payky doesn't make money from your sales — it's built by a community in their free time, and the code is public under the MIT license, so anyone can check for themselves. We stay around by making a good app, not by taking a cut of your payments.",
+  "landing.faq.catch.question": "What's the catch?",
   "landing.faq.cost.answer":
-    "Nothing. Payky is free and open source (MIT). No monthly fees, no percentage of your payments.",
+    "Nothing — Payky is free and stays free. No subscription, no cut of your sales, no hidden charge for extra features.",
   "landing.faq.cost.question": "How much does Payky cost?",
   "landing.faq.data.answer":
-    "With you. Payky is local-first — items, bills, and payment history live on your device, and the app works offline.",
+    "With you, on your phone or tablet — nowhere else. The app works offline and doesn't send anything to a server unless you turn on backup or sync yourself.",
   "landing.faq.data.question": "Where is my data?",
   "landing.faq.community.answer":
-    "Payky is built by a group of volunteers in their free time for small merchants — not a company looking to profit off the app. Help with code, translations, testing, or design is always welcome, and so is feedback from merchants who use Payky. Development priorities are set by the community in GitHub Discussions, not a company roadmap. Share ideas, questions, or bugs there or in the Signal group for users.",
+    "A small group of people around the project, in their free time, with no cut of your sales — not a company with a business plan. You can pitch in with code, testing, translations, or design, and feedback from merchants actually using the app is just as valuable. What gets built next is decided by the community in GitHub Discussions, not a head office — share ideas, questions, or bugs there, or join the Signal group for users.",
   "landing.faq.community.question": "Who builds Payky, and can I get involved?",
   "landing.faq.eet.answer":
     "Yes, that's the next big item on our roadmap. We don't have an exact date yet — if it matters to you, say so in GitHub Discussions, since development priorities follow what the community asks for.",
@@ -106,12 +110,13 @@ export const en = {
   "landing.footer.website": "payky.me",
   "landing.hero.badge": "Free · open source · shaped by its community",
   "landing.hero.body":
-    "Payky is an independent alternative to commercial payment terminals. Accept QR bank transfers, cash, and bitcoin directly — no licensed payment institution standing between you and your customer, no cut of your sales. The full amount always goes straight to you.",
+    "Scan a code, take cash, or accept bitcoin — the money always goes straight to you, in full. There's no bank or payment company standing between you and your customer taking a cut.",
   "landing.hero.download": "Download for Android",
   "landing.hero.note":
-    "No sign-up · open your browser and start selling · Czechia & Slovakia",
+    "Open your browser and start selling in seconds · Czechia & Slovakia",
   "landing.hero.open": "Open Payky for free",
-  "landing.hero.title": "Accept payments without a middleman",
+  "landing.hero.title":
+    "Accept payments without a middleman. No fees. No contract.",
   "landing.language.czech": "Czech",
   "landing.language.czech.short": "CZ",
   "landing.language.english": "English",
@@ -120,7 +125,7 @@ export const en = {
   "landing.language.slovak": "Slovak",
   "landing.language.slovak.short": "SK",
   "landing.methods.body":
-    "Type the amount, your customer pays however suits them. Nothing else needed.",
+    "Type the amount, your customer picks how to pay. No terminal, no contract with a bank, no waiting for approval.",
   "landing.methods.highlight.noContract": "No contracts",
   "landing.methods.highlight.noFees": "No fees",
   "landing.methods.highlight.noHardware": "No special hardware",
@@ -145,7 +150,7 @@ export const en = {
   "landing.navigation.open": "Open Payky",
   "landing.navigation.payments": "Payments",
   "landing.openSource.body":
-    "Payky is built by a group of volunteers in their free time — no investors, no company looking to profit off small merchants. We want to help merchants start selling, not push them into a corner with the fees and contracts of commercial solutions. That's why the code is open source under the MIT license, and any kind of help is welcome — code, design, testing, translations, or simply spreading the word.",
+    "Payky is built by a group of volunteers in their free time — no investors, no company looking to profit off small merchants. No investor we'll one day have to pay back by raising prices or bolting on ads. We want to help merchants start selling, not push them into a corner with the fees and contracts of commercial solutions. That's why the code is open source under the MIT license, and any kind of help is welcome — code, design, testing, translations, or simply spreading the word.",
   "landing.openSource.discussionsLink": "GitHub Discussions",
   "landing.openSource.label": "Open source",
   "landing.openSource.link": "github.com/finitoapp/payky",

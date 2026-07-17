@@ -52,6 +52,7 @@
 
 - Write every action as an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`, as in `payment-actions.ts`. Simple Evolu-only actions typically need `EvoluDep & EvoluOwnerIdDep`. (The legacy curried `(deps) => async (...)` style has been fully removed; do not reintroduce it.)
 - In React, obtain runs through `useAppRun()` from `src/hooks/use-app-run.ts`: `const appRun = useAppRun()` then `await using run = appRun()` inside handlers. Do not call `createRun` directly in components; the only sanctioned exception is `app-background-jobs.tsx`, which additionally needs `lockManager` and `onError`.
+- Inside an `await using run = appRun()` scope, always `await` calls to `run(...)`/`run.orThrow(...)` before returning — never `return run.orThrow(...)` bare. `await using` disposes `run` as soon as the enclosing function's synchronous execution finishes, so returning the promise unawaited disposes `run` before the task actually completes.
 - Express Task dependencies as intersections of small dependency objects, for example `EvoluDep & SparkWalletDep & FetchDep`.
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.

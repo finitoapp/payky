@@ -29,7 +29,7 @@ export const DonationHistory = () => {
     queryKey: ["donations", "history"],
     queryFn: async ({ pageParam }) => {
       await using run = appRun()
-      return run.orThrow(fetchDonationHistory({ cursor: pageParam }))
+      return await run.orThrow(fetchDonationHistory({ cursor: pageParam }))
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,

@@ -70,6 +70,13 @@ interface FaqItem {
   readonly answer: TranslationKey
 }
 
+interface UseCaseCard {
+  readonly image: string
+  readonly title: TranslationKey
+  readonly body: TranslationKey
+  readonly alt: TranslationKey
+}
+
 interface LandingBenefitProps {
   readonly children: ReactNode
 }
@@ -116,6 +123,33 @@ const methodCards: ReadonlyArray<MethodCard> = [
     title: "landing.methods.lightning.title",
     body: "landing.methods.lightning.body",
     iconClassName: "text-warning",
+  },
+]
+
+const useCaseCards: ReadonlyArray<UseCaseCard> = [
+  {
+    image: "/landing/bistro.webp",
+    title: "landing.useCases.cafes.title",
+    body: "landing.useCases.cafes.body",
+    alt: "landing.useCases.cafes.alt",
+  },
+  {
+    image: "/landing/seller.webp",
+    title: "landing.useCases.shops.title",
+    body: "landing.useCases.shops.body",
+    alt: "landing.useCases.shops.alt",
+  },
+  {
+    image: "/landing/service.webp",
+    title: "landing.useCases.salons.title",
+    body: "landing.useCases.salons.body",
+    alt: "landing.useCases.salons.alt",
+  },
+  {
+    image: "/landing/craftsman.webp",
+    title: "landing.useCases.craftsmen.title",
+    body: "landing.useCases.craftsmen.body",
+    alt: "landing.useCases.craftsmen.alt",
   },
 ]
 
@@ -246,6 +280,12 @@ export function LandingPage() {
               href="#payments"
             >
               {t("landing.navigation.payments")}
+            </a>
+            <a
+              className="transition-colors hover:text-foreground"
+              href="#use-cases"
+            >
+              {t("landing.navigation.useCases")}
             </a>
             <a
               className="transition-colors hover:text-foreground"
@@ -399,6 +439,39 @@ export function LandingPage() {
                 </Card>
               )
             })}
+          </div>
+        </div>
+      </section>
+
+      <section id="use-cases" className="scroll-mt-20">
+        <div className="mx-auto max-w-7xl px-6 py-22 lg:px-8">
+          <div className="max-w-2xl">
+            <h2 className="text-4xl font-extrabold tracking-tight text-balance">
+              {t("landing.useCases.title")}
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-pretty text-muted-foreground">
+              {t("landing.useCases.body")}
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {useCaseCards.map((useCase) => (
+              <Card key={useCase.title} className="min-h-full">
+                <img
+                  src={useCase.image}
+                  alt={t(useCase.alt)}
+                  className="aspect-4/3 w-full object-cover"
+                />
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">
+                    {t(useCase.title)}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>{t(useCase.body)}</CardDescription>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

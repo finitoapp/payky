@@ -155,6 +155,7 @@ export const sk = {
   "landing.navigation.label": "Navigácia landing page",
   "landing.navigation.open": "Otvoriť Payky",
   "landing.navigation.payments": "Platby",
+  "landing.navigation.useCases": "Pre koho",
   "landing.openSource.body":
     "Payky robí parta dobrovoľníkov vo voľnom čase — bez investorov, bez firmy, ktorá by chcela z drobných obchodníkov profitovať. Žiadny investor, ktorému by sme to jedného dňa museli splatiť zdražením alebo reklamou. Chceme obchodníkom pomôcť začať predávať, nie ich zatlačiť do kúta poplatkami a zmluvami komerčných riešení. Preto je kód otvorený pod licenciou MIT a vítaná je akákoľvek pomoc — kód, dizajn, testovanie, preklady, alebo len šírenie dobrého slova.",
   "landing.openSource.discussionsLink": "Diskusie na GitHube",
@@ -171,6 +172,28 @@ export const sk = {
   "landing.roadmap.cta": "Navrhnúť alebo podporiť funkciu",
   "landing.roadmap.label": "Čo je ďalej",
   "landing.roadmap.title": "Čo budeme stavať ďalej, rozhodujete vy",
+  "landing.useCases.body":
+    "Kdekoľvek obsluhujete zákazníkov priamo — pri pulte, na stánku, alebo priamo u zákazníka — a chcete prijať platbu rýchlo, bez terminálu a bez čakania.",
+  "landing.useCases.cafes.alt":
+    "Obsluha podáva kávu zákazníčke pri stánku s pečivom",
+  "landing.useCases.cafes.body":
+    "QR platba pri pulte, hotovosť na stánku, rýchle vyrovnanie medzi zákazníkmi.",
+  "landing.useCases.cafes.title": "Kaviarne, bistrá a stánky",
+  "landing.useCases.craftsmen.alt": "Stolár pracuje s drevom vo svojej dielni",
+  "landing.useCases.craftsmen.body":
+    "Vyúčtovanie rovno u zákazníka, bez papierovania.",
+  "landing.useCases.craftsmen.title": "Remeselníci a drobní podnikatelia",
+  "landing.useCases.salons.alt":
+    "Kaderníčka stylizuje vlasy zákazníčke v salóne",
+  "landing.useCases.salons.body":
+    "Vyúčtujete hneď po ošetrení alebo službe, bez čakania na terminál.",
+  "landing.useCases.salons.title": "Salóny a služby",
+  "landing.useCases.shops.alt":
+    "Predavačka podáva zákazníčke nákup v obchode s potravinami",
+  "landing.useCases.shops.body":
+    "Naskenujte kód alebo prijmite hotovosť priamo pri pokladni alebo na trhu.",
+  "landing.useCases.shops.title": "Malé obchody a predajcovia",
+  "landing.useCases.title": "Pre koho je Payky ideálne",
   "items.add": "Pridať položku",
   "items.clear": "Vymazať všetky položky",
   "items.export": "Export do CSV",

@@ -153,6 +153,7 @@ export const en = {
   "landing.navigation.label": "Landing page navigation",
   "landing.navigation.open": "Open Payky",
   "landing.navigation.payments": "Payments",
+  "landing.navigation.useCases": "Who it's for",
   "landing.openSource.body":
     "Payky is built by a group of volunteers in their free time — no investors, no company looking to profit off small merchants. No investor we'll one day have to pay back by raising prices or bolting on ads. We want to help merchants start selling, not push them into a corner with the fees and contracts of commercial solutions. That's why the code is open source under the MIT license, and any kind of help is welcome — code, design, testing, translations, or simply spreading the word.",
   "landing.openSource.discussionsLink": "GitHub Discussions",
@@ -169,6 +170,28 @@ export const en = {
   "landing.roadmap.cta": "Suggest or vote for a feature",
   "landing.roadmap.label": "What's next",
   "landing.roadmap.title": "You help decide what we build next",
+  "landing.useCases.body":
+    "Anywhere you serve customers face to face — behind a counter, at a market stall, or out on a job — and want to take payment fast, with no terminal and no waiting.",
+  "landing.useCases.cafes.alt":
+    "Barista serving coffee to a customer at a bakery stall",
+  "landing.useCases.cafes.body":
+    "QR payment at the counter, cash at the stall, quick settling up between customers.",
+  "landing.useCases.cafes.title": "Cafés, bistros & stalls",
+  "landing.useCases.craftsmen.alt":
+    "Carpenter working with wood in his workshop",
+  "landing.useCases.craftsmen.body":
+    "Settle up on the spot at the customer's place, no paperwork.",
+  "landing.useCases.craftsmen.title": "Tradespeople & small business owners",
+  "landing.useCases.salons.alt":
+    "Hairdresser styling a customer's hair in a salon",
+  "landing.useCases.salons.body":
+    "Charge right after the treatment or service, no waiting on a terminal.",
+  "landing.useCases.salons.title": "Salons & services",
+  "landing.useCases.shops.alt": "Shopkeeper handing groceries to a customer",
+  "landing.useCases.shops.body":
+    "Scan a code or take cash right at the till or the market stand.",
+  "landing.useCases.shops.title": "Small shops & vendors",
+  "landing.useCases.title": "Who Payky is for",
   "items.add": "Add item",
   "items.clear": "Clear All Items",
   "items.export": "Export to CSV",

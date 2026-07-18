@@ -15,7 +15,7 @@ import { useEffect, useId, useState } from "react"
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
-import { PhoneViewport } from "@/components/skeleton.tsx"
+import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,

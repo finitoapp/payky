@@ -5,7 +5,7 @@ import {
   LoaderCircleIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button.tsx"
-import { VerticalNav } from "@/components/vertial-nav.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { fetchDonationHistory } from "@/core/integrations/donations/donations-client.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"

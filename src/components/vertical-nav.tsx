@@ -3,6 +3,7 @@
 import { Link, type LinkProps } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
 import type React from "react"
+import type { ComponentProps } from "react"
 import { cn } from "@/lib/utils.ts"
 
 interface NavItem {
@@ -24,6 +25,10 @@ interface VerticalNavProps {
   title?: string
   className?: string
 }
+
+export type VerticalNavItem = ComponentProps<
+  typeof VerticalNav
+>["items"][number]
 
 export function VerticalNav({ items, className, title }: VerticalNavProps) {
   return (

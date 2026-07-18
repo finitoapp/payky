@@ -45,7 +45,7 @@ const createSparkAccount = async (
       deviceId: null,
       name: "Spark account",
       spark: {
-        mnemonic: "spark mnemonic",
+        secret: "42373a7543db65ae0228ead6c9cbffcc",
       },
     })
   )

@@ -1,6 +1,11 @@
 import { SparkWallet } from "@buildonspark/spark-sdk"
 import { ExitSpeed } from "@buildonspark/spark-sdk/types"
 
+import {
+  type SparkSecret,
+  sparkSecretToMnemonic,
+} from "@/core/modules/shared/key-derivation.ts"
+
 export interface SparkWalletSettings {
   readonly ownerIdentityPublicKey: string
   readonly privateEnabled: boolean
@@ -77,7 +82,7 @@ export interface SparkPaymentWallet {
 
 export type SparkWalletDep = {
   readonly sparkWallet: {
-    readonly create: (mnemonic: string) => Promise<SparkPaymentWallet>
+    readonly create: (secret: SparkSecret) => Promise<SparkPaymentWallet>
   }
 }
 
@@ -99,10 +104,10 @@ const toFeeEstimate = (
 })
 
 export const createDefaultSparkPaymentWallet = async (
-  mnemonic: string
+  secret: SparkSecret
 ): Promise<SparkPaymentWallet & AsyncDisposable> => {
   const { wallet } = await SparkWallet.initialize({
-    mnemonicOrSeed: mnemonic,
+    mnemonicOrSeed: sparkSecretToMnemonic(secret),
     options: {
       network: "MAINNET",
     },

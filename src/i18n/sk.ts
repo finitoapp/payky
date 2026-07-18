@@ -250,7 +250,7 @@ export const sk = {
   "onboarding.progress": "Krok",
   "onboarding.restore.action": "Obnoviť účet",
   "onboarding.restore.description":
-    "Zadajte BIP39 recovery phrase účtu, ktorý chcete obnoviť.",
+    "Zadajte SLIP-39 recovery phrase účtu, ktorý chcete obnoviť.",
   "onboarding.restore.title": "Obnovenie existujúceho účtu",
   "onboarding.title": "Nastavenie Payky",
   "paymentHistory.empty.description":
@@ -386,10 +386,10 @@ export const sk = {
   "settings.accounts.restore.mnemonic.description":
     "Medzery sa pred validáciou zjednotia.",
   "settings.accounts.restore.mnemonic.invalid":
-    "Zadajte platnú BIP39 recovery phrase.",
+    "Zadajte platnú SLIP-39 recovery phrase.",
   "settings.accounts.restore.mnemonic.label": "Recovery phrase",
   "settings.accounts.restore.mnemonic.placeholder":
-    "abandon abandon abandon ...",
+    "academic acid academic agency ...",
   "settings.accounts.restore.mnemonic.required": "Recovery phrase je povinná.",
   "settings.accounts.restore.title": "Existujúci účet",
   "settings.accounts.nav.description":
@@ -740,16 +740,11 @@ export const sk = {
     "Vypnutý Spark účet zostane uložený, ale platobné toky ho budú ignorovať.",
   "settings.sparkAccount.enabled.label": "Povoliť Spark účet",
   "settings.sparkAccount.form.description":
-    "Uložte mnemonic Spark peňaženky používanej na príjem Lightning platieb.",
+    "Payky túto Spark peňaženku odvodí z kľúča na obnovu účtu.",
   "settings.sparkAccount.form.title": "Spark účet",
   "settings.sparkAccount.mnemonic.description":
-    "Medzery sa pred uložením zjednotia.",
-  "settings.sparkAccount.mnemonic.invalid":
-    "Zadajte mnemonic dlhý maximálne 255 znakov.",
-  "settings.sparkAccount.mnemonic.label": "Mnemonic",
-  "settings.sparkAccount.mnemonic.placeholder": "abandon abandon abandon ...",
-  "settings.sparkAccount.mnemonic.required":
-    "Mnemonic je povinný, keď je Spark účet povolený.",
+    "Mnemonic uchovávajte v tajnosti. Ktokoľvek s ním má prístup k Spark peňaženke.",
+  "settings.sparkAccount.mnemonic.label": "Mnemonic peňaženky",
   "settings.sparkAccount.privacyMode.description":
     "Zapne režim súkromia Spark peňaženky pre Lightning platby.",
   "settings.sparkAccount.privacyMode.label": "Zapnúť privacy mode",

@@ -1,6 +1,8 @@
 import { createRun } from "@evolu/web"
+import { useAtomValue } from "jotai"
 import { useMemo } from "react"
 
+import { accountAtom } from "@/atoms/account.ts"
 import { createDateDep, createFetchDep } from "@/core/deps.ts"
 import { createYadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
@@ -30,6 +32,7 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
 export const useAppRun = () => {
   const console = useConsole()
   const evolu = useEvolu()
+  const account = useAtomValue(accountAtom)
 
   return useMemo(() => {
     return () =>
@@ -37,10 +40,11 @@ export const useAppRun = () => {
         console,
         evolu,
         evoluOwnerId: evolu.appOwner.id,
+        masterKey: account.masterKey,
         ...createDateDep(),
         ...createFetchDep(),
         ...createSparkWalletDep(),
         ...createYadioApiDep(),
       })
-  }, [console, evolu])
+  }, [account.masterKey, console, evolu])
 }

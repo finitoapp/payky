@@ -1,5 +1,6 @@
 import { ArrowLeftIcon, LoaderCircleIcon } from "lucide-react"
 
+import { PaymentDetailRow } from "@/components/payment-detail.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -93,28 +94,28 @@ export function WithdrawReviewStep({
             ))}
           </ToggleGroup>
 
-          <dl className="flex flex-col gap-3 text-sm">
-            <WithdrawReviewRow label={t("withdraw.review.destination")} stacked>
+          <div className="flex flex-col gap-3">
+            <PaymentDetailRow label={t("withdraw.review.destination")} stacked>
               <span className="break-all font-mono text-xs">
                 {formatAddressGroups(address)}
               </span>
-            </WithdrawReviewRow>
-            <WithdrawReviewRow label={t("withdraw.review.amount")}>
+            </PaymentDetailRow>
+            <PaymentDetailRow label={t("withdraw.review.amount")}>
               {t("withdraw.sats", {
                 amount: formatSatsAmount(quote.amountSats, locale),
               })}
-            </WithdrawReviewRow>
-            <WithdrawReviewRow label={t("withdraw.review.fee")}>
+            </PaymentDetailRow>
+            <PaymentDetailRow label={t("withdraw.review.fee")}>
               {t("withdraw.sats", {
                 amount: formatSatsAmount(feeEstimate.totalFeeSats, locale),
               })}
-            </WithdrawReviewRow>
-            <WithdrawReviewRow label={t("withdraw.review.total")} emphasize>
+            </PaymentDetailRow>
+            <PaymentDetailRow label={t("withdraw.review.total")} emphasize>
               {t("withdraw.sats", {
                 amount: formatSatsAmount(totalSats, locale),
               })}
-            </WithdrawReviewRow>
-          </dl>
+            </PaymentDetailRow>
+          </div>
 
           <p className="text-sm text-muted-foreground">
             {t("withdraw.review.warning")}
@@ -146,30 +147,5 @@ export function WithdrawReviewStep({
         </Button>
       </CardFooter>
     </Card>
-  )
-}
-
-function WithdrawReviewRow({
-  label,
-  emphasize,
-  stacked,
-  children,
-}: {
-  readonly label: string
-  readonly emphasize?: boolean
-  readonly stacked?: boolean
-  readonly children: React.ReactNode
-}) {
-  return (
-    <div
-      className={
-        stacked
-          ? "flex flex-col gap-1"
-          : "flex items-center justify-between gap-4"
-      }
-    >
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={emphasize ? "font-semibold" : undefined}>{children}</dd>
-    </div>
   )
 }

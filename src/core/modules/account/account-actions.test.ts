@@ -9,15 +9,25 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
+  deriveDefaultSparkWalletSecret,
+  MasterKey,
+  SparkSecret,
+} from "../shared/key-derivation.ts"
+import {
   createAccount,
   deleteAccount,
   loadAccount,
   saveFiatBankAccount,
+  saveSparkAccount,
   updateAccount,
 } from "./account-actions.ts"
-import { accountByIdQuery, fiatBankAccountQuery } from "./account-queries.ts"
+import {
+  accountByIdQuery,
+  fiatBankAccountQuery,
+  sparkAccountQuery,
+} from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
-import { fiatBankAccountId } from "./account-utils.ts"
+import { fiatBankAccountId, sparkAccountId } from "./account-utils.ts"
 
 const accountWithDetailsByIdQuery = (id: AccountId) =>
   createQuery((db) =>
@@ -45,7 +55,7 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
             .selectFrom("accountSpark")
             .select([
               "accountSpark.id",
-              "accountSpark.mnemonic",
+              "accountSpark.secret",
               "accountSpark.isDeleted",
             ])
             .whereRef("accountSpark.id", "=", "account.id")
@@ -86,8 +96,7 @@ describe("account actions", () => {
         deviceId: null,
         name: "Spark wallet",
         spark: {
-          mnemonic:
-            "legal winner thank year wave sausage worth useful legal winner thank yellow",
+          secret: "42373a7543db65ae0228ead6c9cbffcc",
         },
       })
     )
@@ -130,8 +139,7 @@ describe("account actions", () => {
           iban: null,
           spark: {
             id: sparkAccountId,
-            mnemonic:
-              "legal winner thank year wave sausage worth useful legal winner thank yellow",
+            secret: "42373a7543db65ae0228ead6c9cbffcc",
           },
           cashRegister: null,
         },
@@ -344,4 +352,54 @@ describe("account actions", () => {
         },
       ])
   }, 15_000)
+
+  test("derives the default Spark wallet secret from the master key", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
+    await using run = testCreateRun({ evolu, masterKey })
+
+    await expect(run(saveSparkAccount({ enabled: true }))).resolves.toEqual({
+      ok: true,
+      value: {
+        accountId: expect.any(String),
+        secret: deriveDefaultSparkWalletSecret(masterKey),
+      },
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toMatchObject([
+        {
+          isDeleted: sqliteFalse,
+          secret: deriveDefaultSparkWalletSecret(masterKey),
+        },
+      ])
+  })
+
+  test("never overwrites an already-attached Spark wallet secret", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
+    await using run = testCreateRun({ evolu, masterKey })
+
+    const attachedSecret = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+    await run.orThrow(
+      updateAccount({
+        id: sparkAccountId,
+        deviceId: undefined,
+        name: "Spark account",
+        spark: { secret: attachedSecret },
+      })
+    )
+
+    await expect(run(saveSparkAccount({ enabled: true }))).resolves.toEqual({
+      ok: true,
+      value: { accountId: sparkAccountId, secret: attachedSecret },
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toMatchObject([{ isDeleted: sqliteFalse, secret: attachedSecret }])
+  })
 })

@@ -1,4 +1,3 @@
-import { Mnemonic } from "@evolu/common"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useState } from "react"
 
@@ -6,6 +5,10 @@ import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { restoreOrSelectAccount } from "@/core/evolu/device-account.ts"
 import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
+import {
+  mnemonicToMasterKey,
+  RecoveryMnemonicSchema,
+} from "@/core/modules/shared/key-derivation.ts"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -43,15 +46,16 @@ export function useRestoreAccount(): RestoreAccount {
       return false
     }
 
-    const mnemonicResult = Mnemonic.from(normalizedMnemonic)
+    const mnemonicResult = RecoveryMnemonicSchema.safeParse(normalizedMnemonic)
 
-    if (!mnemonicResult.ok) {
+    if (!mnemonicResult.success) {
       setError("settings.accounts.restore.mnemonic.invalid")
       return false
     }
 
     await submit(async () => {
-      await restoreOrSelectAccount(deviceEvolu, mnemonicResult.value)
+      const masterKey = await mnemonicToMasterKey(mnemonicResult.data)
+      await restoreOrSelectAccount(deviceEvolu, masterKey)
       setEvoluCounter((current) => current + 1)
     })
 

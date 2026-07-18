@@ -1,13 +1,9 @@
 import {
   createIdFromString,
-  createOwnerSecret,
-  createRandomBytes,
   evoluJsonArrayFrom,
   evoluJsonObjectFrom,
   type KyselyNotNull,
-  type Mnemonic,
   type MutationOptions,
-  ownerSecretToMnemonic,
   sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
@@ -20,11 +16,15 @@ import {
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import {
+  createMasterKey,
+  type MasterKey,
+} from "@/core/modules/shared/key-derivation.ts"
 import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
 
 export interface DeviceAccount {
   readonly id: AccountId
-  readonly mnemonic: Mnemonic
+  readonly masterKey: MasterKey
   readonly name: string
   readonly device: {
     readonly id: DeviceId
@@ -41,7 +41,7 @@ export const activeAccountQuery = createDeviceQuery((db) =>
     .selectFrom("account")
     .select((eb) => [
       "account.id as id",
-      "account.mnemonic as mnemonic",
+      "account.masterKey as masterKey",
       "account.name as name",
 
       evoluJsonObjectFrom(
@@ -84,28 +84,28 @@ export const activeAccountQuery = createDeviceQuery((db) =>
       ).as("transports"),
     ])
     .where("account.isDeleted", "is not", sqliteTrue)
-    .where("account.mnemonic", "is not", null)
+    .where("account.masterKey", "is not", null)
     .where("account.name", "is not", null)
     .orderBy("account.lastUseAt", "desc")
     .limit(1)
     .$narrowType<{
       name: KyselyNotNull
-      mnemonic: KyselyNotNull
+      masterKey: KyselyNotNull
     }>()
 )
 
-export const accountByMnemonicQuery = (mnemonic: Mnemonic) =>
+export const accountByMasterKeyQuery = (masterKey: MasterKey) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("account")
-      .select(["account.id", "account.mnemonic", "account.name"])
+      .select(["account.id", "account.masterKey", "account.name"])
       .where("account.isDeleted", "is not", sqliteTrue)
-      .where("account.mnemonic", "=", mnemonic)
+      .where("account.masterKey", "=", masterKey)
       .where("account.name", "is not", null)
       .limit(1)
       .$narrowType<{
         name: KyselyNotNull
-        mnemonic: KyselyNotNull
+        masterKey: KyselyNotNull
       }>()
   )
 
@@ -115,7 +115,7 @@ export const accountListQuery = createDeviceQuery((db) =>
     .select(["account.id", "account.name", "account.createdAt"])
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
-    .where("account.mnemonic", "is not", null)
+    .where("account.masterKey", "is not", null)
     .where("account.createdAt", "is not", null)
     .orderBy("account.createdAt", "asc")
     .$narrowType<{
@@ -124,12 +124,7 @@ export const accountListQuery = createDeviceQuery((db) =>
     }>()
 )
 
-export const createAccountMnemonic = (): Mnemonic =>
-  ownerSecretToMnemonic(
-    createOwnerSecret({
-      randomBytes: createRandomBytes(),
-    })
-  )
+export const createAccountMasterKey = (): MasterKey => createMasterKey()
 
 export const createRandomAccountName = () =>
   NonEmptyString255(faker.internet.username())
@@ -192,7 +187,7 @@ export const upsertAccountEvoluWebsocketTransport = (
 
 export const insertAccount = (
   deviceEvolu: DeviceEvolu,
-  mnemonic: Mnemonic,
+  masterKey: MasterKey,
   accountName?: string | undefined
 ): DeviceAccount => {
   const name = accountName
@@ -200,7 +195,7 @@ export const insertAccount = (
     : createRandomAccountName()
   const { id: accountId } = deviceEvolu.insert("account", {
     name,
-    mnemonic,
+    masterKey,
     lastUseAt: Date.now(),
   })
   upsertAccountEvoluWebsocketTransport(deviceEvolu, {
@@ -211,7 +206,7 @@ export const insertAccount = (
 
   return {
     id: accountId,
-    mnemonic,
+    masterKey,
     name,
     device: null,
     transports: [],
@@ -225,10 +220,10 @@ export async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {
 
 export async function createOrSelectAccount(
   deviceEvolu: DeviceEvolu,
-  mnemonic: Mnemonic
+  masterKey: MasterKey
 ): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
   const existingAccounts = await deviceEvolu.loadQuery(
-    accountByMnemonicQuery(mnemonic)
+    accountByMasterKeyQuery(masterKey)
   )
   const existingAccount = existingAccounts[0]
 
@@ -237,7 +232,7 @@ export async function createOrSelectAccount(
     return { accountId: existingAccount.id, created: false }
   }
 
-  const account = insertAccount(deviceEvolu, mnemonic)
+  const account = insertAccount(deviceEvolu, masterKey)
   return { accountId: account.id, created: true }
 }
 
@@ -247,9 +242,9 @@ export async function createOrSelectAccount(
  */
 export async function restoreOrSelectAccount(
   deviceEvolu: DeviceEvolu,
-  mnemonic: Mnemonic
+  masterKey: MasterKey
 ): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
-  const result = await createOrSelectAccount(deviceEvolu, mnemonic)
+  const result = await createOrSelectAccount(deviceEvolu, masterKey)
 
   if (result.created) {
     upsertAccountEvoluWebsocketTransport(deviceEvolu, {

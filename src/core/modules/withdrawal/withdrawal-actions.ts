@@ -71,7 +71,7 @@ export const quoteWithdrawal =
 
     let wallet: SparkPaymentWallet | undefined
     try {
-      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+      wallet = await run.deps.sparkWallet.create(sparkAccount.secret)
       const balance = await wallet.getBalance()
       const withdrawAll = amountSats === undefined
       const quoteAmountSats = withdrawAll ? balance.availableSats : amountSats
@@ -155,7 +155,7 @@ export const executeWithdrawal =
 
     let wallet: SparkPaymentWallet | undefined
     try {
-      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+      wallet = await run.deps.sparkWallet.create(sparkAccount.secret)
       const result = await wallet.withdraw({
         onchainAddress,
         exitSpeed,

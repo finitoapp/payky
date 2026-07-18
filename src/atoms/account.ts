@@ -5,11 +5,12 @@ import { UAParser } from "ua-parser-js"
 import { deviceEvoluAtom } from "@/atoms/device-evolu"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import {
-  createAccountMnemonic,
+  createAccountMasterKey,
   insertAccount,
   loadActiveAccountRow,
 } from "@/core/evolu/device-account.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import { masterKeyToMnemonic } from "@/core/modules/shared/key-derivation.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 
 const getDeviceId = () => {
@@ -49,7 +50,9 @@ const activeAccountRowAtom = atom(async (get) => {
   const deviceEvolu = await get(deviceEvoluAtom)
   const activeAccountRow = await loadActiveAccountRow(deviceEvolu)
 
-  return activeAccountRow ?? insertAccount(deviceEvolu, createAccountMnemonic())
+  return (
+    activeAccountRow ?? insertAccount(deviceEvolu, createAccountMasterKey())
+  )
 })
 
 export const accountAtom = atom(async (get) => {
@@ -72,9 +75,20 @@ export const accountAtom = atom(async (get) => {
 
   return {
     id: row.id,
-    mnemonic: row.mnemonic,
+    masterKey: row.masterKey,
     name: row.name,
     transports: row.transports,
     device,
   }
+})
+
+/**
+ * Split out from `accountAtom` because deriving the SLIP-39 recovery phrase
+ * runs a costly PBKDF2-based encoding — only the screens that actually
+ * display it should pay for it, not every consumer of the account (Evolu
+ * bootstrap, `useAppRun`, ...).
+ */
+export const recoveryMnemonicAtom = atom(async (get) => {
+  const account = await get(accountAtom)
+  return masterKeyToMnemonic(account.masterKey)
 })

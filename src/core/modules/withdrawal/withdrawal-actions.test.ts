@@ -38,8 +38,7 @@ const createSparkAccount = async (deps: EvoluDep): Promise<AccountId> => {
       deviceId: null,
       name: "Spark wallet",
       spark: {
-        mnemonic:
-          "legal winner thank year wave sausage worth useful legal winner thank yellow",
+        secret: "42373a7543db65ae0228ead6c9cbffcc",
       },
     })
   )

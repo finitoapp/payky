@@ -109,28 +109,28 @@ export const sparkAccountQuery = createQuery((db) =>
       "account.name",
       "account.kind",
       "account.isDeleted",
-      "accountSpark.mnemonic",
+      "accountSpark.secret",
     ])
     .where("account.id", "=", sparkAccountId)
     .where("account.kind", "=", "spark")
     .where("accountSpark.isDeleted", "is not", 1)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
-    .where("accountSpark.mnemonic", "is not", null)
+    .where("accountSpark.secret", "is not", null)
     .$narrowType<{
       name: KyselyNotNull
       kind: KyselyNotNull
-      mnemonic: KyselyNotNull
+      secret: KyselyNotNull
     }>()
 )
 
-export const sparkAccountMnemonicQuery = createQuery((db) =>
+export const sparkAccountSecretQuery = createQuery((db) =>
   db
     .selectFrom("accountSpark")
-    .select(["id", "mnemonic"])
+    .select(["id", "secret"])
     .where("id", "=", sparkAccountId)
-    .where("mnemonic", "is not", null)
-    .$narrowType<{ mnemonic: KyselyNotNull }>()
+    .where("secret", "is not", null)
+    .$narrowType<{ secret: KyselyNotNull }>()
 )
 
 export const cashRegisterAccountQuery = createQuery((db) =>

@@ -6,14 +6,14 @@ export const activeSparkAccountsQuery = createQuery((db) =>
   db
     .selectFrom("account")
     .innerJoin("accountSpark", "accountSpark.id", "account.id")
-    .select(["account.id", "accountSpark.mnemonic"])
+    .select(["account.id", "accountSpark.secret"])
     .where("account.kind", "=", "spark")
     .where("account.isDeleted", "is not", 1)
     .where("accountSpark.isDeleted", "is not", 1)
     .where("account.id", "is not", null)
-    .where("accountSpark.mnemonic", "is not", null)
+    .where("accountSpark.secret", "is not", null)
     .$narrowType<{
       id: KyselyNotNull
-      mnemonic: KyselyNotNull
+      secret: KyselyNotNull
     }>()
 )

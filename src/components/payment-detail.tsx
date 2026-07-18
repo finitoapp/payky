@@ -1,7 +1,7 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
 import { ReceiptIcon } from "lucide-react"
-import { useMemo } from "react"
+import { type ReactNode, useMemo } from "react"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -464,17 +464,36 @@ function PaymentDetailOptionalRow({
   return <PaymentDetailRow label={label} value={value} />
 }
 
-function PaymentDetailRow({
+export function PaymentDetailRow({
   label,
   value,
+  stacked,
+  emphasize,
+  children,
 }: {
   readonly label: string
-  readonly value: string
+  readonly value?: string
+  readonly stacked?: boolean
+  readonly emphasize?: boolean
+  readonly children?: ReactNode
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 text-sm">
+    <div
+      className={
+        stacked
+          ? "flex flex-col gap-1 text-sm"
+          : "flex items-start justify-between gap-4 text-sm"
+      }
+    >
       <span className="text-muted-foreground">{label}</span>
-      <span className="max-w-56 break-all text-right font-medium">{value}</span>
+      <span
+        className={cn(
+          stacked ? undefined : "max-w-56 break-all text-right",
+          emphasize ? "font-semibold" : "font-medium"
+        )}
+      >
+        {children ?? value}
+      </span>
     </div>
   )
 }

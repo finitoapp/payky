@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/field.tsx"
 import {
   accountListQuery,
-  createAccountMnemonic,
+  createAccountMasterKey,
   createOrSelectAccount,
   removeDeviceAccount,
   selectAccount,
@@ -110,7 +110,7 @@ function AccountsSettingsPage() {
     clearError()
     setCreating(true)
     try {
-      await createOrSelectAccount(deviceEvolu, createAccountMnemonic())
+      await createOrSelectAccount(deviceEvolu, createAccountMasterKey())
       reloadAppAccount()
     } finally {
       setCreating(false)

@@ -22,7 +22,7 @@ import {
 import { type ComponentProps, useMemo } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { VerticalNav } from "@/components/vertial-nav.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 

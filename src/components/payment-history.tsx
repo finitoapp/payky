@@ -1,7 +1,7 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { CheckIcon, ReceiptIcon, RotateCwIcon, XIcon } from "lucide-react"
 import type { FC, ReactNode } from "react"
-import { VerticalNav } from "@/components/vertial-nav.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"

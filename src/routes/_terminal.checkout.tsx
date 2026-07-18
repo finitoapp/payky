@@ -9,7 +9,7 @@ import {
   ShoppingBag,
 } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { HeaderStartLink } from "@/components/skeleton.tsx"
+import { HeaderStartLink } from "@/components/header-start-link.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {

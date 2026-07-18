@@ -1,6 +1,7 @@
 import type { AbortError } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
 import assertNever from "assert-never"
+import { useStore } from "jotai"
 import {
   ArrowLeftIcon,
   ClipboardPasteIcon,
@@ -12,6 +13,7 @@ import {
 import { type FormEvent, useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PaymentSuccess } from "@/components/payment-success.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -114,6 +116,7 @@ const confirmErrorKey = (error: ConfirmWithdrawalError): TranslationKey => {
 
 export function WithdrawPage() {
   const appRun = useAppRun()
+  const jotaiStore = useStore()
   const { t } = useTranslation()
   const locale = useLocale()
   const { data: sparkAccountsData } = useEvoluQuery(activeSparkAccountsQuery)
@@ -256,6 +259,7 @@ export function WithdrawPage() {
     setConfirmPending(true)
     setConfirmError(null)
     try {
+      const { device } = await jotaiStore.get(accountAtom)
       await using run = appRun()
       const executeResult = await run(
         executeWithdrawal({
@@ -266,6 +270,7 @@ export function WithdrawPage() {
           availableSats: quote.availableSats,
           exitSpeed,
           feeQuote: quote.feeQuote,
+          deviceId: device.id,
         })
       )
 

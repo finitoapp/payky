@@ -1,4 +1,4 @@
-import { testCreateRun } from "@evolu/common"
+import { createIdFromString, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { DateDep } from "@/core/deps.ts"
@@ -56,6 +56,11 @@ const accountTransactionsWithOnchainQuery = (accountId: AccountId) =>
         "accountTransactionOnchain.id",
         "accountTransaction.id"
       )
+      .innerJoin(
+        "accountTransactionSource",
+        "accountTransactionSource.accountTransactionId",
+        "accountTransaction.id"
+      )
       .select([
         "accountTransaction.id",
         "accountTransaction.accountId",
@@ -67,6 +72,8 @@ const accountTransactionsWithOnchainQuery = (accountId: AccountId) =>
         "accountTransactionOnchain.exitSpeed",
         "accountTransactionOnchain.feeSats",
         "accountTransactionOnchain.txid",
+        "accountTransactionSource.deviceId",
+        "accountTransactionSource.source",
       ])
       .where("accountTransaction.accountId", "=", accountId)
   )
@@ -245,6 +252,7 @@ describe("executeWithdrawal", () => {
     } satisfies EvoluDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const exitSpeed: SparkExitSpeed = "medium"
+    const deviceId = createIdFromString<"Device">("withdrawal-test-device")
 
     const result = await run(
       executeWithdrawal({
@@ -255,6 +263,7 @@ describe("executeWithdrawal", () => {
         availableSats: 100_000,
         exitSpeed,
         feeQuote,
+        deviceId,
       })
     )
 
@@ -281,6 +290,8 @@ describe("executeWithdrawal", () => {
           exitSpeed: "medium",
           feeSats: 500,
           txid: "txid-1",
+          deviceId,
+          source: "manual",
         },
       ])
   })

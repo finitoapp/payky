@@ -1,4 +1,3 @@
-import { useWakeLock } from "@dedalik/use-react"
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
@@ -60,6 +59,7 @@ import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -259,11 +259,6 @@ function PaymentWaitingRequest({
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
     useState<BankQrFormat | null>(null)
-  const {
-    isSupported: wakeLockSupported,
-    release: releaseWakeLock,
-    request: requestWakeLock,
-  } = useWakeLock()
   const query = useMemo(() => paymentRequestQuery(paymentId), [paymentId])
   const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
   const { data: payments } = useEvoluQuery(query)
@@ -277,6 +272,7 @@ function PaymentWaitingRequest({
   const isPaid = claims.length > 0
   const wakeLockEnabled =
     payment !== undefined && payment.canceledAt === null && !isPaid
+  const { supported: wakeLockSupported } = useScreenWakeLock(wakeLockEnabled)
   const paymentMethods: PaymentMethodOption[] = []
   const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
     settings?.defaultPaymentMethod
@@ -447,19 +443,6 @@ function PaymentWaitingRequest({
     },
     [appRun, console, paymentId]
   )
-
-  useEffect(() => {
-    if (!wakeLockEnabled) {
-      void releaseWakeLock()
-      return
-    }
-
-    void requestWakeLock()
-
-    return () => {
-      void releaseWakeLock()
-    }
-  }, [releaseWakeLock, requestWakeLock, wakeLockEnabled])
 
   useEffect(() => {
     if (!isPaid || successVisible) return

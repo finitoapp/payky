@@ -41,6 +41,8 @@ export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
             <PasswordTextarea
               id={mnemonicInputId}
               value={mnemonic}
+              hideLabel={t("passwordTextarea.hide")}
+              showLabel={t("passwordTextarea.show")}
               readOnly
               aria-readonly="true"
               autoComplete="off"

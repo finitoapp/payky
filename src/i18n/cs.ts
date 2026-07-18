@@ -71,6 +71,8 @@ export const cs = {
   "home.title": "Terminál",
   "item.beer": "Pivo",
   "item.price": "$3.00",
+  "passwordTextarea.hide": "Skrýt obsah",
+  "passwordTextarea.show": "Zobrazit obsah",
   "landing.announcement.eet.cta": "Prohlédnout plán",
   "landing.announcement.eet.message":
     "Chystáme podporu EET 2.0 pro české obchodníky.",

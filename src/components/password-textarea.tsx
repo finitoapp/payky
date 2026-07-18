@@ -4,13 +4,17 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils.ts"
 
-export interface PasswordTextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export type PasswordTextareaProps = React.ComponentProps<typeof Textarea> & {
+  readonly hideLabel: string
+  readonly showLabel: string
+}
 
-export const PasswordTextarea = React.forwardRef<
-  HTMLTextAreaElement,
-  PasswordTextareaProps
->(({ className, ...props }, ref) => {
+export function PasswordTextarea({
+  className,
+  hideLabel,
+  showLabel,
+  ...props
+}: PasswordTextareaProps) {
   const [showPassword, setShowPassword] = React.useState(false)
 
   return (
@@ -21,7 +25,6 @@ export const PasswordTextarea = React.forwardRef<
           showPassword ? "" : "password-mask",
           className
         )}
-        ref={ref}
         {...props}
         style={
           showPassword
@@ -39,7 +42,7 @@ export const PasswordTextarea = React.forwardRef<
         size="sm"
         className="absolute right-0 top-0 h-10 px-3 py-2 hover:bg-transparent"
         onClick={() => setShowPassword((prev) => !prev)}
-        aria-label={showPassword ? "Hide content" : "Show content"}
+        aria-label={showPassword ? hideLabel : showLabel}
       >
         {showPassword ? (
           <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -49,4 +52,4 @@ export const PasswordTextarea = React.forwardRef<
       </Button>
     </div>
   )
-})
+}

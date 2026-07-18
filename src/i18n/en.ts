@@ -69,6 +69,8 @@ export const en = {
   "home.title": "Terminal",
   "item.beer": "Pivo",
   "item.price": "$3.00",
+  "passwordTextarea.hide": "Hide content",
+  "passwordTextarea.show": "Show content",
   "landing.announcement.eet.cta": "View the roadmap",
   "landing.announcement.eet.message":
     "We're planning support for the Czech EET 2.0 reporting system.",

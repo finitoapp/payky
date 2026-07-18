@@ -15,6 +15,12 @@ import {
 import { AccountId } from "../src/core/modules/account/account-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import {
+  createMasterKey,
+  deriveDefaultSparkWalletSecret,
+  SparkSecretSchema,
+  sparkSecretToMnemonic,
+} from "../src/core/modules/shared/key-derivation"
+import {
   AccountKindSchema,
   FiatCurrencySchema,
   IbanSchema,
@@ -42,7 +48,7 @@ const accountsWithDetailsQuery = createQuery((db) =>
       evoluJsonObjectFrom(
         eb
           .selectFrom("accountSpark")
-          .select(["accountSpark.mnemonic"])
+          .select(["accountSpark.secret"])
           .whereRef("accountSpark.id", "=", "account.id")
       ).as("spark"),
       evoluJsonObjectFrom(
@@ -77,7 +83,7 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
         evoluJsonObjectFrom(
           eb
             .selectFrom("accountSpark")
-            .select(["accountSpark.mnemonic"])
+            .select(["accountSpark.secret"])
             .whereRef("accountSpark.id", "=", "account.id")
         ).as("spark"),
         evoluJsonObjectFrom(
@@ -159,8 +165,8 @@ export const registerAccountsCommand =
             currency: FiatCurrencySchema.optional().describe(
               "c;Currency for IBAN or cash register accounts"
             ),
-            mnemonic: NonEmptyString255Schema.optional().describe(
-              "m;Spark wallet mnemonic"
+            secret: SparkSecretSchema.optional().describe(
+              "s;Spark wallet secret as 16-byte hex"
             ),
           },
           async action(_, options) {
@@ -194,8 +200,8 @@ export const registerAccountsCommand =
             }
 
             if (options.kind === "spark") {
-              if (options.mnemonic === undefined) {
-                printInvalidAccountInput("Spark account requires --mnemonic.")
+              if (options.secret === undefined) {
+                printInvalidAccountInput("Spark account requires --secret.")
                 return
               }
 
@@ -203,7 +209,7 @@ export const registerAccountsCommand =
                 createAccount({
                   ...root,
                   spark: {
-                    mnemonic: options.mnemonic,
+                    secret: options.secret,
                   },
                 })
               )
@@ -253,27 +259,21 @@ export const registerAccountsCommand =
               },
             })
 
-            const { wallet, mnemonic } = await SparkWallet.initialize({
+            const secret = deriveDefaultSparkWalletSecret(createMasterKey())
+            const { wallet } = await SparkWallet.initialize({
+              mnemonicOrSeed: sparkSecretToMnemonic(secret),
               options: {
                 network,
               },
             })
 
             try {
-              if (mnemonic === undefined) {
-                printInvalidAccountInput(
-                  "Spark wallet did not return a mnemonic."
-                )
-                return
-              }
-
-              const accountMnemonic = NonEmptyString255Schema.parse(mnemonic)
               const id = await run.orThrow(
                 createAccount({
                   deviceId: options.deviceId ?? null,
                   name: options.name,
                   spark: {
-                    mnemonic: accountMnemonic,
+                    secret,
                   },
                 })
               )
@@ -283,7 +283,8 @@ export const registerAccountsCommand =
                   id,
                   name: options.name,
                   network,
-                  mnemonic,
+                  secret,
+                  mnemonic: sparkSecretToMnemonic(secret),
                 })}`
               )
             } finally {
@@ -309,8 +310,8 @@ export const registerAccountsCommand =
             currency: FiatCurrencySchema.optional().describe(
               "c;Currency for IBAN or cash register accounts"
             ),
-            mnemonic: NonEmptyString255Schema.optional().describe(
-              "m;Spark wallet mnemonic"
+            secret: SparkSecretSchema.optional().describe(
+              "s;Spark wallet secret as 16-byte hex"
             ),
           },
           async action(_, options) {
@@ -339,7 +340,7 @@ export const registerAccountsCommand =
                   deviceId: options.deviceId,
                   name: options.name,
                   spark: {
-                    mnemonic: options.mnemonic,
+                    secret: options.secret,
                   },
                 })
               )

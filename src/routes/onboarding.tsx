@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 
-import { accountAtom } from "@/atoms/account.ts"
+import { accountAtom, recoveryMnemonicAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
@@ -692,6 +692,7 @@ function PaymentsStep({
 function AccountStep() {
   const { t } = useTranslation()
   const account = useAtomValue(accountAtom)
+  const recoveryMnemonic = useAtomValue(recoveryMnemonicAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reloadAppEvolu = useReloadAppEvolu()
   const [name, setName] = useState(account.name)
@@ -752,7 +753,7 @@ function AccountStep() {
             </Field>
           </FieldGroup>
 
-          <RecoveryPhraseCard mnemonic={account.mnemonic} />
+          <RecoveryPhraseCard mnemonic={recoveryMnemonic} />
 
           <Card>
             <CardHeader>

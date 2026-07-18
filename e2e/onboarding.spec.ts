@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test"
 import { completeOnboarding, gotoPage, translate } from "./fixtures.ts"
 
-// A well-known, publicly-shared BIP39 test mnemonic (Hardhat/Ganache's
-// default). Valid checksum, but never onboarded against this app's Evolu
-// relay, so restoring with it always lands on a fresh, unsynced account.
+// A fixed, valid SLIP-39 recovery mnemonic (derived from an arbitrary test
+// master key: ffeeddccbbaa99887766554433221100). Never onboarded against
+// this app's Evolu relay, so restoring with it always lands on a fresh,
+// unsynced account.
 const unregisteredTestMnemonic =
-  "test test test test test test test test test test test junk"
+  "alto wisdom academic academic anxiety saver envy hour campus decision disease mason slush quantity pumps loyalty bracelet muscle western material"
 
 test("complete onboarding as a new account", async ({ page }) => {
   let onboardingMnemonic = ""

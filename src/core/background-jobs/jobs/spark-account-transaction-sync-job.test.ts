@@ -11,6 +11,7 @@ import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
@@ -166,15 +167,15 @@ const createCompletedTransfer = (
   ...override,
 })
 
-const createUniqueHexSeed = (): string =>
-  `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
-    .padEnd(64, "0")
-    .slice(0, 64)
+let uniqueSecretCounter = 0
+
+const createUniqueSecret = (): SparkSecret =>
+  (uniqueSecretCounter++).toString(16).padStart(32, "0") as SparkSecret
 
 const createFakeWalletFactory =
-  (mnemonic: string, wallet: FakeSparkWallet) =>
-  async (receivedMnemonic: string): Promise<FakeSparkWallet> =>
-    receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
+  (secret: SparkSecret, wallet: FakeSparkWallet) =>
+  async (receivedSecret: SparkSecret): Promise<FakeSparkWallet> =>
+    receivedSecret === secret ? wallet : new FakeSparkWallet([])
 
 describe("spark account transaction sync job", () => {
   test("stores completed Spark transfers from the periodic history check without duplicates", async () => {
@@ -182,13 +183,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -209,7 +210,7 @@ describe("spark account transaction sync job", () => {
     })
     await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
-        walletFactory: createFakeWalletFactory(mnemonic, wallet),
+        walletFactory: createFakeWalletFactory(secret, wallet),
         recheckIntervalMs: 10,
       })
     )
@@ -244,13 +245,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -274,7 +275,7 @@ describe("spark account transaction sync job", () => {
       })
       await using _job = await jobRun.orThrow(
         createSparkAccountTransactionSyncJob({
-          walletFactory: createFakeWalletFactory(mnemonic, wallet),
+          walletFactory: createFakeWalletFactory(secret, wallet),
           recheckIntervalMs: 60_000,
         })
       )
@@ -312,13 +313,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -343,9 +344,9 @@ describe("spark account transaction sync job", () => {
         // sync job's init() has had a chance to call subscribe() on it -
         // the event is missed, but the fallback history sync (also run by
         // init()) still records the transfer.
-        walletFactory: async (receivedMnemonic) => {
+        walletFactory: async (receivedSecret) => {
           const selectedWallet =
-            receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
+            receivedSecret === secret ? wallet : new FakeSparkWallet([])
           selectedWallet.emit(SparkWalletEvent.TransferClaimed, transferId)
           return selectedWallet
         },
@@ -369,13 +370,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -397,15 +398,13 @@ describe("spark account transaction sync job", () => {
     })
     await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
-        walletFactory: async (receivedMnemonic) => {
+        walletFactory: async (receivedSecret) => {
           initializationAttempts += 1
-          if (receivedMnemonic === mnemonic && initializationAttempts === 1) {
+          if (receivedSecret === secret && initializationAttempts === 1) {
             throw new Error("Temporary Spark wallet failure")
           }
 
-          return receivedMnemonic === mnemonic
-            ? wallet
-            : new FakeSparkWallet([])
+          return receivedSecret === secret ? wallet : new FakeSparkWallet([])
         },
         recheckIntervalMs: 10,
       })
@@ -428,13 +427,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -470,13 +469,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -498,7 +497,7 @@ describe("spark account transaction sync job", () => {
     })
     await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
-        walletFactory: createFakeWalletFactory(mnemonic, wallet),
+        walletFactory: createFakeWalletFactory(secret, wallet),
         recheckIntervalMs: 10,
       })
     )
@@ -528,13 +527,13 @@ describe("spark account transaction sync job", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
     const errors: unknown[] = []
-    const mnemonic = createUniqueHexSeed()
+    const secret = createUniqueSecret()
     const accountId = await run.orThrow(
       createAccount({
         deviceId: null,
         name: "Spark account",
         spark: {
-          mnemonic,
+          secret,
         },
       })
     )
@@ -557,7 +556,7 @@ describe("spark account transaction sync job", () => {
     })
     await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
-        walletFactory: createFakeWalletFactory(mnemonic, wallet),
+        walletFactory: createFakeWalletFactory(secret, wallet),
         recheckIntervalMs: 10,
       })
     )
@@ -567,47 +566,6 @@ describe("spark account transaction sync job", () => {
     expect(
       await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
     ).toEqual([])
-    expect(errors).toEqual([])
-  })
-
-  test("skips invalid Spark account secrets without starting a wallet", async () => {
-    await using testEvolu = await createEvoluTest()
-    const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
-    const errors: unknown[] = []
-    const startedWallets: string[] = []
-    const invalidMnemonic = `test spark mnemonic ${Date.now()}`
-    await run.orThrow(
-      createAccount({
-        deviceId: null,
-        name: "Invalid Spark account",
-        spark: {
-          mnemonic: invalidMnemonic,
-        },
-      })
-    )
-    await using jobRun = testCreateRun({
-      console: testCreateConsole(),
-      evolu,
-      ...createDateDeps(),
-      lockManager: createInProcessLockManager(),
-      onError: (error) => {
-        errors.push(error)
-      },
-    })
-    await using _job = await jobRun.orThrow(
-      createSparkAccountTransactionSyncJob({
-        walletFactory: async (mnemonic) => {
-          startedWallets.push(mnemonic)
-          return new FakeSparkWallet([])
-        },
-        recheckIntervalMs: 10,
-      })
-    )
-
-    await new Promise((resolve) => setTimeout(resolve, 30))
-
-    expect(startedWallets).not.toContain(invalidMnemonic)
     expect(errors).toEqual([])
   })
 })

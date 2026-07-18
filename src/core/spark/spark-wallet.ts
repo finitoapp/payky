@@ -4,6 +4,10 @@ import {
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
 import { ExitSpeed } from "@buildonspark/spark-sdk/types"
+import {
+  type SparkSecret,
+  sparkSecretToMnemonic,
+} from "@/core/modules/shared/key-derivation.ts"
 import { createRefCountedResourcePool } from "@/lib/ref-counted-resource-pool.ts"
 
 export interface SparkWalletSettings {
@@ -81,7 +85,7 @@ export interface SparkPaymentWallet extends AsyncDisposable {
 
 export type SparkWalletDep = {
   readonly sparkWallet: {
-    readonly create: (mnemonic: string) => Promise<SparkPaymentWallet>
+    readonly create: (secret: SparkSecret) => Promise<SparkPaymentWallet>
   }
 }
 
@@ -159,9 +163,9 @@ export interface SharedSparkSyncWallet extends AsyncDisposable {
 }
 
 export const createSharedSparkSyncWallet = async (
-  mnemonic: string
+  secret: SparkSecret
 ): Promise<SharedSparkSyncWallet> => {
-  const lease = sparkWalletPool.acquire(mnemonic)
+  const lease = sparkWalletPool.acquire(sparkSecretToMnemonic(secret))
   const wallet = await lease.resource
 
   return {
@@ -192,9 +196,9 @@ export const createSharedSparkSyncWallet = async (
 }
 
 export const createDefaultSparkPaymentWallet = async (
-  mnemonic: string
+  secret: SparkSecret
 ): Promise<SparkPaymentWallet> => {
-  const lease = sparkWalletPool.acquire(mnemonic)
+  const lease = sparkWalletPool.acquire(sparkSecretToMnemonic(secret))
   const wallet = await lease.resource
 
   return {

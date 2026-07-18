@@ -164,6 +164,49 @@ Domain modules generally use this structure:
 - `*-utils.ts` for pure helpers.
 - `*.test.ts` beside the module it covers.
 
+## Account Seed and Key Derivation
+
+Each device account has a 128-bit master secret `S` (the `MasterKey`). For a
+path `P`, derive a child key and independent 32-byte entropy:
+
+```text
+R = BIP32.MasterKey(S)
+K = BIP32.Derive(R, P)
+E = HMAC-SHA512(
+  key = "bip-entropy-from-k",
+  message = K.privateKey
+)[0:32]
+```
+
+Payky paths follow [BIP-85](https://github.com/bitcoin/bips/blob/master/bip-0085.mediawiki)
+with the BIP-39 application: `m/83696968'/39'/{language}'/{words}'/{index}'`,
+language `0'` = English. The word count encodes how much of `E` the consumer
+uses (24 words = 32 bytes, 12 words = 16 bytes). The paths must never change
+after accounts exist.
+
+| Consumer | Path `P` | Result |
+| --- | --- | --- |
+| Evolu master owner | `m/83696968'/39'/0'/24'/0'` | `E` as the 32-byte Evolu owner secret |
+| Default Spark wallet | `m/83696968'/39'/0'/12'/0'` | `E[0:16]` as the 16-byte Spark wallet secret |
+| Nostr profile `i` | `m/44'/1237'/i'/0/0` | `K.privateKey` as the Nostr private key |
+
+Nostr profile `0` follows NIP-06 and deliberately uses `K.privateKey` directly;
+using `E` would break NIP-06 compatibility. The Spark wallet secret is stored
+as hex and used as BIP-39 entropy: wallet initialization and the settings UI
+encode it as a 12-word mnemonic (never the raw secret), so the wallet can also
+be restored in any BIP-39-compatible Spark client.
+
+`S` itself is backed up as a single [SLIP-39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md)
+20-word recovery mnemonic (`src/core/modules/shared/key-derivation.ts`, via
+the `slip39-ts` library), encoded as one group with a 1-of-1 threshold — there
+is currently no multi-share Shamir splitting, so the phrase is the sole backup
+of `S` and must be treated with the same care as a BIP-39 seed phrase. SLIP-39
+mnemonics use their own wordlist and checksum and are not interchangeable with
+BIP-39 mnemonics. The mnemonic's identifier is derived deterministically (see
+table above) rather than randomized, so encoding the same `S` always produces
+the same recovery phrase. 256-bit master keys and their 33-word recovery
+mnemonics are not supported.
+
 ## CLI
 
 The CLI reads `.env` files automatically. Environment variables are validated at

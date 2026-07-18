@@ -57,15 +57,15 @@ export function WithdrawPage() {
   const [availableSats, setAvailableSats] = useState<number | null>(null)
 
   useEffect(() => {
-    const mnemonic = sparkAccount?.mnemonic
+    const secret = sparkAccount?.secret
     let active = true
 
     setAvailableSats(null)
-    if (!mnemonic) return
+    if (!secret) return
 
     const loadBalance = async () => {
       try {
-        await using wallet = await createDefaultSparkPaymentWallet(mnemonic)
+        await using wallet = await createDefaultSparkPaymentWallet(secret)
         const balance = await wallet.getBalance()
         if (active) setAvailableSats(balance.availableSats)
       } catch {
@@ -78,7 +78,7 @@ export function WithdrawPage() {
     return () => {
       active = false
     }
-  }, [sparkAccount?.mnemonic])
+  }, [sparkAccount?.secret])
 
   if (!sparkAccount) {
     return (

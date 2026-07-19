@@ -1,4 +1,3 @@
-import { Mnemonic } from "@evolu/common"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useAtomValue, useSetAtom } from "jotai"
 import { Check, KeyRound, Plus, Trash2, UserRound } from "lucide-react"
@@ -34,8 +33,7 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
-import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -55,7 +53,6 @@ function AccountsSettingsPage() {
   const activeAccount = useAtomValue(accountAtom)
   const setEvoluCounter = useSetAtom(evoluCounterAtom)
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
-  const [mnemonic, setMnemonic] = useState("")
   const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
     null
   )
@@ -63,7 +60,14 @@ function AccountsSettingsPage() {
     null
   )
   const [creating, setCreating] = useState(false)
-  const { pending: restoring, error, setError, submit } = useSettingsForm()
+  const {
+    mnemonic,
+    pending: restoring,
+    error,
+    clearError,
+    setMnemonic,
+    restore,
+  } = useRestoreAccount()
   const mnemonicInputId = useId()
 
   const dateFormatter = new Intl.DateTimeFormat(language, {
@@ -103,7 +107,7 @@ function AccountsSettingsPage() {
   }
 
   const createNewAccount = async () => {
-    setError(null)
+    clearError()
     setCreating(true)
     try {
       await createOrSelectAccount(deviceEvolu, createAccountMnemonic())
@@ -114,27 +118,11 @@ function AccountsSettingsPage() {
   }
 
   const restoreAccount = async () => {
-    setError(null)
+    const restored = await restore()
 
-    const normalizedMnemonic = normalizeMnemonic(mnemonic)
-
-    if (normalizedMnemonic === "") {
-      setError("settings.accounts.restore.mnemonic.required")
-      return
-    }
-
-    const mnemonicResult = Mnemonic.from(normalizedMnemonic)
-
-    if (!mnemonicResult.ok) {
-      setError("settings.accounts.restore.mnemonic.invalid")
-      return
-    }
-
-    await submit(async () => {
-      await createOrSelectAccount(deviceEvolu, mnemonicResult.value)
-      reloadAppAccount()
+    if (restored) {
       await navigate({ to: "/restore-account" })
-    })
+    }
   }
 
   const pending =
@@ -273,7 +261,6 @@ function AccountsSettingsPage() {
                     )}
                     onChange={(event) => {
                       setMnemonic(event.currentTarget.value)
-                      setError(null)
                     }}
                   />
                   <FieldDescription>

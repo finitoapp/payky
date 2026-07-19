@@ -3,6 +3,11 @@ import type { TranslationKey } from "@/i18n/en.ts"
 export const cs = {
   "accountRestore.description":
     "Čekáme na synchronizaci dat účtu. Obvykle to trvá pár sekund.",
+  "accountRestore.timeout.continue": "Čekat dál",
+  "accountRestore.timeout.description":
+    "Nastavení účtu zatím nedorazilo. Můžete dále čekat nebo tento účet výslovně nastavit jako nový.",
+  "accountRestore.timeout.setup": "Nastavit jako nový účet",
+  "accountRestore.timeout.title": "Obnova účtu stále probíhá",
   "accountRestore.title": "Obnovování účtu",
   "activity.amount.btc": "฿145",
   "activity.amount.usd": "$9.00",
@@ -206,6 +211,15 @@ export const cs = {
   "nav.settings": "Nastavení",
   "onboarding.account.description":
     "Zkontrolujte identitu, kterou Payky pro toto zařízení vygeneroval. Můžete ji přejmenovat a zapnout synchronizaci teď, nebo později v Nastavení.",
+  "onboarding.accountChoice.description":
+    "Vytvořte nový účet pro toto zařízení nebo obnovte účet, který už používáte.",
+  "onboarding.accountChoice.new.description":
+    "Vygenerujte novou recovery phrase a začněte s prázdným účtem.",
+  "onboarding.accountChoice.new.title": "Založit nový účet",
+  "onboarding.accountChoice.restore.description":
+    "Pomocí recovery phrase otevřete data svého existujícího účtu.",
+  "onboarding.accountChoice.restore.title": "Obnovit existující účet",
+  "onboarding.accountChoice.title": "Výběr účtu",
   "onboarding.account.name.description":
     "Zobrazuje se v seznamu účtů při přepínání identit.",
   "onboarding.account.name.error.required": "Zadejte název účtu.",
@@ -233,6 +247,10 @@ export const cs = {
   "onboarding.payments.iban.title": "IBAN",
   "onboarding.payments.title": "Platební metody",
   "onboarding.progress": "Krok",
+  "onboarding.restore.action": "Obnovit účet",
+  "onboarding.restore.description":
+    "Zadejte BIP39 recovery phrase účtu, který chcete obnovit.",
+  "onboarding.restore.title": "Obnovení existujícího účtu",
   "onboarding.title": "Nastavení Payky",
   "paymentHistory.empty.description":
     "Vytvořené platební žádosti se zobrazí tady.",

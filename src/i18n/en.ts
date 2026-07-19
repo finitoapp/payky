@@ -1,6 +1,11 @@
 export const en = {
   "accountRestore.description":
     "Waiting for the account data to sync. This usually takes a few seconds.",
+  "accountRestore.timeout.continue": "Keep waiting",
+  "accountRestore.timeout.description":
+    "No account settings have arrived yet. You can keep waiting or explicitly set up this account as new.",
+  "accountRestore.timeout.setup": "Set up as a new account",
+  "accountRestore.timeout.title": "Still restoring account",
   "accountRestore.title": "Restoring account",
   "activity.amount.btc": "฿145",
   "activity.amount.usd": "$9.00",
@@ -205,6 +210,15 @@ export const en = {
   "nav.settings": "Settings",
   "onboarding.account.description":
     "Review the identity Payky generated for this device. You can rename it and turn on sync now or later in Settings.",
+  "onboarding.accountChoice.description":
+    "Create a new account for this device or restore one you already use.",
+  "onboarding.accountChoice.new.description":
+    "Generate a new recovery phrase and start with an empty account.",
+  "onboarding.accountChoice.new.title": "Create a new account",
+  "onboarding.accountChoice.restore.description":
+    "Use a recovery phrase to open your existing account data.",
+  "onboarding.accountChoice.restore.title": "Restore an existing account",
+  "onboarding.accountChoice.title": "Choose an account",
   "onboarding.account.name.description":
     "Shown in the accounts list when switching identities.",
   "onboarding.account.name.error.required": "Enter an account name.",
@@ -231,6 +245,10 @@ export const en = {
   "onboarding.payments.iban.title": "IBAN",
   "onboarding.payments.title": "Payment methods",
   "onboarding.progress": "Step",
+  "onboarding.restore.action": "Restore account",
+  "onboarding.restore.description":
+    "Enter the BIP39 recovery phrase for the account you want to restore.",
+  "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
   "paymentHistory.empty.description":
     "Created payment requests will appear here.",

@@ -24,18 +24,17 @@ import {
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
-import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   bankQrFormats,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import { sparkSecretToMnemonic } from "@/core/modules/shared/key-derivation.ts"
 import {
   BankAccountInputIbanSchema,
   type BankQrFormat,
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
-  NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
@@ -294,26 +293,23 @@ function SparkAccountForm() {
   const { data: accountData } = useEvoluQuery(sparkAccountQuery)
   const [account] = accountData
   const [enabled, setEnabled] = useState(false)
-  const [mnemonic, setMnemonic] = useState("")
   const [privacyMode, setPrivacyMode] = useState(false)
   const [privacyModeError, setPrivacyModeError] =
     useState<TranslationKey | null>(null)
   const [privacyModePending, setPrivacyModePending] = useState(false)
-  const { pending, saved, error, setError, resetSaved, submit } =
-    useSettingsForm()
+  const { pending, saved, resetSaved, submit } = useSettingsForm()
 
   useEffect(() => {
     setEnabled(account ? account.isDeleted !== 1 : false)
-    setMnemonic(account?.mnemonic ?? "")
   }, [account])
 
   useEffect(() => {
-    const accountMnemonic = account?.mnemonic
+    const secret = account?.secret
     let active = true
 
     setPrivacyModeError(null)
 
-    if (!accountMnemonic) {
+    if (!secret) {
       setPrivacyMode(false)
       setPrivacyModePending(false)
       return
@@ -323,8 +319,7 @@ function SparkAccountForm() {
       setPrivacyModePending(true)
 
       try {
-        await using wallet =
-          await createDefaultSparkPaymentWallet(accountMnemonic)
+        await using wallet = await createDefaultSparkPaymentWallet(secret)
         const settings = await wallet.getWalletSettings()
 
         if (active) {
@@ -346,7 +341,7 @@ function SparkAccountForm() {
     return () => {
       active = false
     }
-  }, [account?.mnemonic])
+  }, [account?.secret])
 
   return (
     <SettingsFormCard
@@ -357,40 +352,17 @@ function SparkAccountForm() {
       pending={pending}
       onSubmit={(event) => {
         event.preventDefault()
-        setError(null)
         setPrivacyModeError(null)
         resetSaved()
-
-        const normalizedMnemonic = normalizeMnemonic(mnemonic)
-        const mnemonicResult = normalizedMnemonic
-          ? NonEmptyString255Schema.safeParse(normalizedMnemonic)
-          : null
-
-        if (enabled && !mnemonicResult) {
-          setError("settings.sparkAccount.mnemonic.required")
-          return
-        }
-
-        if (mnemonicResult?.success === false) {
-          setError("settings.sparkAccount.mnemonic.invalid")
-          return
-        }
 
         void submit(async () => {
           await using run = appRun()
 
-          await run(
-            saveSparkAccount({
-              enabled,
-              mnemonic: mnemonicResult?.data,
-            })
-          )
+          const { secret } = await run.orThrow(saveSparkAccount({ enabled }))
 
-          if (mnemonicResult) {
+          if (enabled && secret !== undefined) {
             try {
-              await using wallet = await createDefaultSparkPaymentWallet(
-                mnemonicResult.data
-              )
+              await using wallet = await createDefaultSparkPaymentWallet(secret)
               const settings = await wallet.setPrivacyEnabled(privacyMode)
 
               if (!settings) {
@@ -407,7 +379,6 @@ function SparkAccountForm() {
             }
           }
 
-          setMnemonic(normalizedMnemonic)
           return undefined
         })
       }}
@@ -430,31 +401,25 @@ function SparkAccountForm() {
           </FieldContent>
         </Field>
 
-        <Field data-invalid={error !== null}>
-          <FieldLabel htmlFor={mnemonicInputId}>
-            {t("settings.sparkAccount.mnemonic.label")}
-          </FieldLabel>
-          <PasswordTextarea
-            id={mnemonicInputId}
-            value={mnemonic}
-            hideLabel={t("passwordTextarea.hide")}
-            showLabel={t("passwordTextarea.show")}
-            disabled={pending}
-            aria-invalid={error !== null}
-            autoComplete="off"
-            placeholder={t("settings.sparkAccount.mnemonic.placeholder")}
-            onChange={(event) => {
-              setMnemonic(event.currentTarget.value)
-              setError(null)
-              setPrivacyModeError(null)
-              resetSaved()
-            }}
-          />
-          <FieldDescription>
-            {t("settings.sparkAccount.mnemonic.description")}
-          </FieldDescription>
-          <FieldError>{error ? t(error) : null}</FieldError>
-        </Field>
+        {account?.secret != null && (
+          <Field>
+            <FieldLabel htmlFor={mnemonicInputId}>
+              {t("settings.sparkAccount.mnemonic.label")}
+            </FieldLabel>
+            <PasswordTextarea
+              id={mnemonicInputId}
+              value={sparkSecretToMnemonic(account.secret)}
+              hideLabel={t("passwordTextarea.hide")}
+              showLabel={t("passwordTextarea.show")}
+              readOnly
+              aria-readonly="true"
+              autoComplete="off"
+            />
+            <FieldDescription>
+              {t("settings.sparkAccount.mnemonic.description")}
+            </FieldDescription>
+          </Field>
+        )}
 
         <Field
           orientation="horizontal"

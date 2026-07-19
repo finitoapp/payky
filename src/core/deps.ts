@@ -9,6 +9,7 @@ import {
   tryAsync,
 } from "@evolu/common"
 import { defineError } from "@/core/error.ts"
+import type { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 import { getNativeRuntime } from "@/core/native/runtime.ts"
 
 export interface FetchDep {
@@ -196,6 +197,8 @@ export const createFetchDep = (): FetchDep => ({
 })
 
 export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }
+
+export type MasterKeyDep = { readonly masterKey: MasterKey }
 
 export type DateDep = {
   readonly date: {

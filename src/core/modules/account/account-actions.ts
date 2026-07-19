@@ -7,9 +7,13 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  deriveDefaultSparkWalletSecret,
+  type SparkSecret,
+} from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import type {
   BankQrFormat,
@@ -29,14 +33,10 @@ import type {
   accountIban,
   accountSpark,
 } from "./account.ts"
-import {
-  accountByIdQuery,
-  sparkAccountMnemonicQuery,
-} from "./account-queries.ts"
+import { accountByIdQuery, sparkAccountSecretQuery } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
   cashRegisterAccountId,
-  createSparkAccountMnemonic,
   fiatBankAccountId,
   sparkAccountId,
 } from "./account-utils.ts"
@@ -305,31 +305,36 @@ export const saveFiatBankAccount =
 export const saveSparkAccount =
   ({
     enabled,
-    mnemonic,
   }: {
     readonly enabled: boolean
-    readonly mnemonic?: NonEmptyString255
-  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<
+    {
+      readonly accountId: AccountId
+      readonly secret: SparkSecret | undefined
+    },
+    never,
+    EvoluDep & EvoluOwnerIdDep & MasterKeyDep
+  > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwnerId, masterKey } = run.deps
 
-    // Preload guards a domain invariant: an existing wallet mnemonic must
-    // never be overwritten, so one is generated only when enabling Spark
-    // without any stored mnemonic.
-    const mnemonicToSave =
-      mnemonic ??
-      (enabled &&
-      (await run.deps.evolu.loadQuery(sparkAccountMnemonicQuery)).length === 0
-        ? createSparkAccountMnemonic()
-        : undefined)
+    // Preload guards a domain invariant: an existing Spark wallet secret
+    // must never be overwritten, so one is derived only when enabling Spark
+    // without any stored secret yet.
+    const existingSecret = enabled
+      ? (await run.deps.evolu.loadQuery(sparkAccountSecretQuery))[0]?.secret
+      : undefined
+    const secret =
+      existingSecret ??
+      (enabled ? deriveDefaultSparkWalletSecret(masterKey) : undefined)
 
     await runMutationWithCompletion((options) => {
-      if (mnemonicToSave !== undefined) {
+      if (secret !== undefined) {
         run.deps.evolu.upsert(
           "accountSpark",
           removeUndefinedValues({
             id: sparkAccountId,
-            mnemonic: mnemonicToSave,
+            secret,
           }),
           { ...options, ownerId: evoluOwnerId }
         )
@@ -348,7 +353,7 @@ export const saveSparkAccount =
       )
     })
 
-    return ok(sparkAccountId)
+    return ok({ accountId: sparkAccountId, secret })
   }
 
 export const saveCashRegisterAccount =

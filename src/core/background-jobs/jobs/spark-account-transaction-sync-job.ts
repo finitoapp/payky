@@ -4,8 +4,6 @@ import {
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
 import { createRun, err, ok, type Result } from "@evolu/common"
-import { validateMnemonic } from "@scure/bip39"
-import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { z } from "zod"
 
 import type {
@@ -19,6 +17,10 @@ import { createAccountTransaction } from "@/core/modules/account-transaction/acc
 import { accountTransactionSparkByTransferIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
+  type SparkSecret,
+  sparkSecretToMnemonic,
+} from "@/core/modules/shared/key-derivation.ts"
+import {
   IntegerSchema,
   type NonEmptyString,
   NonEmptyStringSchema,
@@ -29,8 +31,6 @@ const DEFAULT_RECHECK_INTERVAL_MS = 60_000
 const TRANSFER_PAGE_SIZE = 50
 const COMPLETED_TRANSFER_STATUS = "TRANSFER_STATUS_COMPLETED"
 const OUTGOING_TRANSFER_DIRECTION = "OUTGOING"
-const HEX_SEED_PATTERN = /^(?:[0-9a-fA-F]{2})+$/u
-
 type SupportedSparkWalletEvent =
   | typeof SparkWalletEvent.TransferClaimed
   | typeof SparkWalletEvent.BalanceUpdate
@@ -69,7 +69,7 @@ interface SparkWalletLike {
 }
 
 type SparkWalletFactory = (
-  mnemonic: string,
+  secret: SparkSecret,
   events: SparkWalletEventHandlers
 ) => Promise<SparkWalletLike>
 
@@ -80,7 +80,7 @@ interface SparkAccountTransactionSyncJobOptions {
 
 interface SparkAccountRow {
   readonly id: AccountId
-  readonly mnemonic: string
+  readonly secret: SparkSecret
 }
 
 interface SparkTransactionDetails {
@@ -103,12 +103,9 @@ type RecordTransferResult =
 type SparkTransactionInput = Parameters<typeof createAccountTransaction>[0]
 type SparkTransactionInputError = "missing-spark-identifier"
 
-const createDefaultSparkWallet: SparkWalletFactory = async (
-  mnemonic,
-  events
-) => {
+const createDefaultSparkWallet: SparkWalletFactory = async (secret, events) => {
   const { wallet } = await SparkWallet.initialize({
-    mnemonicOrSeed: mnemonic,
+    mnemonicOrSeed: sparkSecretToMnemonic(secret),
     options: {
       network: "MAINNET",
       events,
@@ -156,7 +153,10 @@ const createSparkAccountSyncManager = ({
 }): AsyncDisposable => {
   const sessions = new Map<
     AccountId,
-    AsyncDisposable & { readonly mnemonic: string; syncHistorySoon: () => void }
+    AsyncDisposable & {
+      readonly secret: SparkSecret
+      syncHistorySoon: () => void
+    }
   >()
   const refreshQueue = createKeyedTaskQueue({
     onError: (error) => context.onError(error),
@@ -165,7 +165,7 @@ const createSparkAccountSyncManager = ({
   const refreshAccounts = async (): Promise<void> => {
     const rows = await context.evolu.loadQuery(activeSparkAccountsQuery)
     const accounts = rows.map(
-      (row): SparkAccountRow => ({ id: row.id, mnemonic: row.mnemonic })
+      (row): SparkAccountRow => ({ id: row.id, secret: row.secret })
     )
     const activeIds = new Set(accounts.map((account) => account.id))
 
@@ -184,7 +184,7 @@ const createSparkAccountSyncManager = ({
 
     for (const account of accounts) {
       const current = sessions.get(account.id)
-      if (current?.mnemonic === account.mnemonic) continue
+      if (current?.secret === account.secret) continue
 
       await current?.[Symbol.asyncDispose]()
       const session = createSparkAccountSyncSession({
@@ -247,7 +247,7 @@ const createSparkAccountSyncSession = ({
   readonly context: BackgroundJobContext
   readonly walletFactory: SparkWalletFactory
 }): AsyncDisposable & {
-  readonly mnemonic: string
+  readonly secret: SparkSecret
   syncHistorySoon: () => void
 } => {
   let wallet: SparkWalletLike | undefined
@@ -472,14 +472,7 @@ const createSparkAccountSyncSession = ({
       accountId: account.id,
     })
 
-    if (!isValidSparkSecret(account.mnemonic)) {
-      context.console.warn("Skipped Spark account with an invalid secret.", {
-        accountId: account.id,
-      })
-      return
-    }
-
-    const createdWallet = await walletFactory(account.mnemonic, {
+    const createdWallet = await walletFactory(account.secret, {
       [SparkWalletEvent.TransferClaimed]: (transferId) => {
         context.console.debug("Received Spark transfer claimed event.", {
           accountId: account.id,
@@ -517,8 +510,8 @@ const createSparkAccountSyncSession = ({
   })
 
   return {
-    get mnemonic() {
-      return account.mnemonic
+    get secret() {
+      return account.secret
     },
     syncHistorySoon,
     async [Symbol.asyncDispose]() {
@@ -636,6 +629,3 @@ const getSparkTransactionPayload = (
     memo: invoice.memo ?? "",
   }
 }
-
-const isValidSparkSecret = (secret: string): boolean =>
-  validateMnemonic(secret, wordlist) || HEX_SEED_PATTERN.test(secret)

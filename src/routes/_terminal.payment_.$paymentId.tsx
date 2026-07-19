@@ -196,7 +196,7 @@ const enabledPaymentMethodAccountsQuery = createQuery((db) =>
     .select([
       "account.id",
       "account.kind",
-      "accountSpark.mnemonic as sparkMnemonic",
+      "accountSpark.secret as sparkSecret",
       "account.name",
       "accountIban.iban",
       "accountIban.currency as ibanCurrency",
@@ -282,7 +282,7 @@ function PaymentWaitingRequest({
   )
 
   const enabledSparkAccount = enabledPaymentMethodAccounts.find(
-    (account) => account.kind === "spark" && account.sparkMnemonic !== null
+    (account) => account.kind === "spark" && account.sparkSecret !== null
   )
   if (enabledSparkAccount) {
     paymentMethods.push({

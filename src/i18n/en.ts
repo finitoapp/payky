@@ -247,7 +247,7 @@ export const en = {
   "onboarding.progress": "Step",
   "onboarding.restore.action": "Restore account",
   "onboarding.restore.description":
-    "Enter the BIP39 recovery phrase for the account you want to restore.",
+    "Enter the SLIP-39 recovery phrase for the account you want to restore.",
   "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
   "paymentHistory.empty.description":
@@ -385,10 +385,10 @@ export const en = {
   "settings.accounts.restore.mnemonic.description":
     "Whitespace is normalized before validation.",
   "settings.accounts.restore.mnemonic.invalid":
-    "Enter a valid BIP39 recovery phrase.",
+    "Enter a valid SLIP-39 recovery phrase.",
   "settings.accounts.restore.mnemonic.label": "Recovery phrase",
   "settings.accounts.restore.mnemonic.placeholder":
-    "abandon abandon abandon ...",
+    "academic acid academic agency ...",
   "settings.accounts.restore.mnemonic.required": "Recovery phrase is required.",
   "settings.accounts.restore.title": "Existing account",
   "settings.accounts.nav.description":
@@ -736,16 +736,11 @@ export const en = {
     "Disabled Spark accounts stay stored but are ignored by payment flows.",
   "settings.sparkAccount.enabled.label": "Enable Spark account",
   "settings.sparkAccount.form.description":
-    "Store the Spark wallet mnemonic used to receive Lightning payments.",
+    "Payky derives this Spark wallet from your account recovery key.",
   "settings.sparkAccount.form.title": "Spark account",
   "settings.sparkAccount.mnemonic.description":
-    "Whitespace is normalized before saving.",
-  "settings.sparkAccount.mnemonic.invalid":
-    "Enter a mnemonic up to 255 characters.",
-  "settings.sparkAccount.mnemonic.label": "Mnemonic",
-  "settings.sparkAccount.mnemonic.placeholder": "abandon abandon abandon ...",
-  "settings.sparkAccount.mnemonic.required":
-    "Mnemonic is required when the Spark account is enabled.",
+    "Keep this mnemonic private. Anyone with it can access the Spark wallet.",
+  "settings.sparkAccount.mnemonic.label": "Wallet mnemonic",
   "settings.sparkAccount.privacyMode.description":
     "Enables Spark wallet privacy mode for Lightning payments.",
   "settings.sparkAccount.privacyMode.label": "Enable privacy mode",

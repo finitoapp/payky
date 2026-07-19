@@ -34,6 +34,23 @@ export type WithdrawAction =
 
 export const initialWithdrawState: WithdrawState = { step: "form" }
 
+type WithdrawReviewState = Extract<WithdrawState, { step: "review" }>
+
+/**
+ * SET_EXIT_SPEED/CONFIRM_* are only ever dispatched from the review step's UI,
+ * which only exists while `state.step === "review"`. Asserting instead of
+ * silently no-op'ing on a mismatch surfaces a real bug immediately rather
+ * than swallowing it.
+ */
+const assertReviewState = (state: WithdrawState): WithdrawReviewState => {
+  if (state.step !== "review") {
+    throw new Error(
+      `withdrawReducer: expected step "review", got "${state.step}"`
+    )
+  }
+  return state
+}
+
 export const withdrawReducer = (
   state: WithdrawState,
   action: WithdrawAction
@@ -51,19 +68,21 @@ export const withdrawReducer = (
     case "BACK":
       return initialWithdrawState
     case "SET_EXIT_SPEED":
-      return state.step === "review"
-        ? { ...state, exitSpeed: action.exitSpeed }
-        : state
+      return { ...assertReviewState(state), exitSpeed: action.exitSpeed }
     case "CONFIRM_STARTED":
-      return state.step === "review"
-        ? { ...state, confirming: true, confirmError: null }
-        : state
+      return {
+        ...assertReviewState(state),
+        confirming: true,
+        confirmError: null,
+      }
     case "CONFIRM_FAILED":
-      return state.step === "review"
-        ? { ...state, confirming: false, confirmError: action.error }
-        : state
+      return {
+        ...assertReviewState(state),
+        confirming: false,
+        confirmError: action.error,
+      }
     case "CONFIRM_FINISHED":
-      return state.step === "review" ? { ...state, confirming: false } : state
+      return { ...assertReviewState(state), confirming: false }
     case "SHOW_RESULT":
       return { step: "result", result: action.result }
   }

@@ -7,7 +7,6 @@ import {
   type Evolu,
   type EvoluDeps,
   id,
-  Mnemonic,
   ok,
   sqliteFalse,
   type Task,
@@ -15,6 +14,7 @@ import {
 } from "@evolu/common"
 import { z } from "zod"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
+import { MasterKeySchema } from "@/core/modules/shared/key-derivation.ts"
 import {
   type InferTable,
   NonEmptyString255Schema,
@@ -62,7 +62,7 @@ const deviceEvoluSchema = {
   account: {
     id: AccountId,
     name: NonEmptyString255Schema,
-    mnemonic: Mnemonic,
+    masterKey: MasterKeySchema,
     lastUseAt: TimestampMsSchema,
   },
   accountEvoluTransport: {

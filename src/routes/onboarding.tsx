@@ -7,14 +7,17 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  KeyRound,
   Landmark,
   Languages,
+  Plus,
 } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
+import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -51,12 +54,14 @@ import {
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import {
+  getOnboardingSteps,
   initialOnboardingFormState,
+  type OnboardingAccountType,
   type OnboardingPaymentMethod,
   type OnboardingStep,
   onboardingFormAtom,
-  onboardingSteps,
 } from "@/features/onboarding/onboarding-form-state.ts"
 import { languageOptions } from "@/features/settings/language-options.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
@@ -87,6 +92,13 @@ interface CurrencyOption {
   readonly value: FiatCurrencyType
   readonly label: TranslationKey
   readonly description: TranslationKey
+}
+
+interface AccountTypeOption {
+  readonly value: OnboardingAccountType
+  readonly label: TranslationKey
+  readonly description: TranslationKey
+  readonly icon: typeof Plus
 }
 
 const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
@@ -128,7 +140,25 @@ const currencyOptions: ReadonlyArray<CurrencyOption> = [
   },
 ]
 
-const getStepIndex = (step: OnboardingStep) => onboardingSteps.indexOf(step)
+const accountTypeOptions: ReadonlyArray<AccountTypeOption> = [
+  {
+    value: "new",
+    label: "onboarding.accountChoice.new.title",
+    description: "onboarding.accountChoice.new.description",
+    icon: Plus,
+  },
+  {
+    value: "restore",
+    label: "onboarding.accountChoice.restore.title",
+    description: "onboarding.accountChoice.restore.description",
+    icon: KeyRound,
+  },
+]
+
+const getStepIndex = (
+  step: OnboardingStep,
+  onboardingSteps: ReadonlyArray<OnboardingStep>
+) => onboardingSteps.indexOf(step)
 
 const getDefaultCurrencyForLanguage = (
   languageValue: Language
@@ -154,10 +184,24 @@ function OnboardingPage() {
   const [settings] = settingsData
   const [form, setForm] = useAtom(onboardingFormAtom)
   const [ibanError, setIbanError] = useState<TranslationKey | null>(null)
-  const [pending, setPending] = useState(false)
+  const [finishing, setFinishing] = useState(false)
+  const {
+    mnemonic,
+    pending: restoring,
+    error: restoreError,
+    setMnemonic,
+    restore,
+  } = useRestoreAccount()
   const ibanInputId = useId()
 
-  const { step, iban, paymentMethods: selectedPaymentMethods } = form
+  const {
+    step,
+    accountType,
+    iban,
+    paymentMethods: selectedPaymentMethods,
+  } = form
+  const onboardingSteps = getOnboardingSteps(accountType)
+  const pending = finishing || restoring
   const selectedCurrency =
     form.currency ?? getDefaultCurrencyForLanguage(language)
 
@@ -170,7 +214,7 @@ function OnboardingPage() {
     }
   }, [navigate, settings])
 
-  const stepIndex = getStepIndex(step)
+  const stepIndex = getStepIndex(step, onboardingSteps)
   const canGoBack = stepIndex > 0 && !pending
 
   const goNext = () => {
@@ -220,7 +264,7 @@ function OnboardingPage() {
       return
     }
 
-    setPending(true)
+    setFinishing(true)
     try {
       setLocale(getDeviceLocaleForLanguage(language))
 
@@ -259,8 +303,19 @@ function OnboardingPage() {
       setForm(initialOnboardingFormState)
       await navigate({ to: "/", replace: true })
     } finally {
-      setPending(false)
+      setFinishing(false)
     }
+  }
+
+  const restoreExistingAccount = async () => {
+    const restored = await restore()
+
+    if (!restored) {
+      return
+    }
+
+    setForm(initialOnboardingFormState)
+    await navigate({ to: "/restore-account" })
   }
 
   return (
@@ -277,7 +332,7 @@ function OnboardingPage() {
                 {t("onboarding.title")}
               </h1>
             </div>
-            <StepDots activeStep={step} />
+            <StepDots activeStep={step} onboardingSteps={onboardingSteps} />
           </div>
 
           <Card>
@@ -292,6 +347,19 @@ function OnboardingPage() {
                   setForm((current) => ({
                     ...current,
                     currency: getDefaultCurrencyForLanguage(nextLanguage),
+                  }))
+                }}
+              />
+            ) : null}
+
+            {step === "accountChoice" ? (
+              <AccountChoiceStep
+                accountType={accountType}
+                pending={pending}
+                onSelect={(nextAccountType) => {
+                  setForm((current) => ({
+                    ...current,
+                    accountType: nextAccountType,
                   }))
                 }}
               />
@@ -324,32 +392,52 @@ function OnboardingPage() {
 
             {step === "account" ? <AccountStep /> : null}
 
-            <CardFooter className="flex items-center justify-between gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!canGoBack}
-                onClick={goBack}
-              >
-                <ChevronLeft data-icon="inline-start" />
-                {t("onboarding.back")}
-              </Button>
-              {step === "account" ? (
+            {step === "restore" ? (
+              <RestoreAccountStep
+                error={restoreError}
+                mnemonic={mnemonic}
+                pending={pending}
+                onBack={goBack}
+                onMnemonicChange={setMnemonic}
+                onRestore={() => {
+                  void restoreExistingAccount()
+                }}
+              />
+            ) : (
+              <CardFooter className="flex items-center justify-between gap-3">
                 <Button
                   type="button"
-                  disabled={pending}
-                  onClick={finishOnboarding}
+                  variant="outline"
+                  disabled={!canGoBack}
+                  onClick={goBack}
                 >
-                  <Check data-icon="inline-start" />
-                  {t("onboarding.finish")}
+                  <ChevronLeft data-icon="inline-start" />
+                  {t("onboarding.back")}
                 </Button>
-              ) : (
-                <Button type="button" disabled={pending} onClick={goNext}>
-                  {t("onboarding.next")}
-                  <ChevronRight data-icon="inline-end" />
-                </Button>
-              )}
-            </CardFooter>
+                {step === "account" ? (
+                  <Button
+                    type="button"
+                    disabled={pending}
+                    onClick={finishOnboarding}
+                  >
+                    <Check data-icon="inline-start" />
+                    {t("onboarding.finish")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={
+                      pending ||
+                      (step === "accountChoice" && accountType === null)
+                    }
+                    onClick={goNext}
+                  >
+                    {t("onboarding.next")}
+                    <ChevronRight data-icon="inline-end" />
+                  </Button>
+                )}
+              </CardFooter>
+            )}
           </Card>
         </div>
       </PhoneViewport>
@@ -389,6 +477,122 @@ function LanguageStep({
           onChange={onSelect}
         />
       </CardContent>
+    </>
+  )
+}
+
+function AccountChoiceStep({
+  accountType,
+  pending,
+  onSelect,
+}: {
+  readonly accountType: OnboardingAccountType | null
+  readonly pending: boolean
+  readonly onSelect: (accountType: OnboardingAccountType) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <>
+      <CardHeader>
+        <CardTitle>{t("onboarding.accountChoice.title")}</CardTitle>
+        <CardDescription>
+          {t("onboarding.accountChoice.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <OptionToggleGroup
+          value={accountType}
+          options={accountTypeOptions.map((option) => ({
+            value: option.value,
+            icon: option.icon,
+            title: t(option.label),
+            description: t(option.description),
+          }))}
+          disabled={pending}
+          onChange={onSelect}
+        />
+      </CardContent>
+    </>
+  )
+}
+
+function RestoreAccountStep({
+  error,
+  mnemonic,
+  pending,
+  onBack,
+  onMnemonicChange,
+  onRestore,
+}: {
+  readonly error: TranslationKey | null
+  readonly mnemonic: string
+  readonly pending: boolean
+  readonly onBack: () => void
+  readonly onMnemonicChange: (mnemonic: string) => void
+  readonly onRestore: () => void
+}) {
+  const { t } = useTranslation()
+  const mnemonicInputId = useId()
+
+  return (
+    <>
+      <CardHeader>
+        <CardTitle>{t("onboarding.restore.title")}</CardTitle>
+        <CardDescription>{t("onboarding.restore.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            onRestore()
+          }}
+        >
+          <FieldGroup>
+            <Field data-invalid={error !== null}>
+              <FieldLabel htmlFor={mnemonicInputId}>
+                {t("settings.accounts.restore.mnemonic.label")}
+              </FieldLabel>
+              <PasswordTextarea
+                id={mnemonicInputId}
+                value={mnemonic}
+                hideLabel={t("passwordTextarea.hide")}
+                showLabel={t("passwordTextarea.show")}
+                disabled={pending}
+                aria-invalid={error !== null}
+                autoComplete="off"
+                placeholder={t(
+                  "settings.accounts.restore.mnemonic.placeholder"
+                )}
+                onChange={(event) => {
+                  onMnemonicChange(event.currentTarget.value)
+                }}
+              />
+              <FieldDescription>
+                {t("settings.accounts.restore.mnemonic.description")}
+              </FieldDescription>
+              <FieldError>{error ? t(error) : null}</FieldError>
+            </Field>
+          </FieldGroup>
+          <div className="mt-4 flex justify-end">
+            <Button type="submit" disabled={pending}>
+              <KeyRound data-icon="inline-start" />
+              {t("onboarding.restore.action")}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+      <CardFooter>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={pending}
+          onClick={onBack}
+        >
+          <ChevronLeft data-icon="inline-start" />
+          {t("onboarding.back")}
+        </Button>
+      </CardFooter>
     </>
   )
 }
@@ -593,8 +797,14 @@ function AccountStep() {
   )
 }
 
-function StepDots({ activeStep }: { readonly activeStep: OnboardingStep }) {
-  const activeStepIndex = getStepIndex(activeStep)
+function StepDots({
+  activeStep,
+  onboardingSteps,
+}: {
+  readonly activeStep: OnboardingStep
+  readonly onboardingSteps: ReadonlyArray<OnboardingStep>
+}) {
+  const activeStepIndex = getStepIndex(activeStep, onboardingSteps)
 
   return (
     <div className="flex items-center gap-2" aria-hidden="true">

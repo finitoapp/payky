@@ -3,6 +3,11 @@ import type { TranslationKey } from "@/i18n/en.ts"
 export const sk = {
   "accountRestore.description":
     "Čakáme na synchronizáciu údajov účtu. Zvyčajne to trvá pár sekúnd.",
+  "accountRestore.timeout.continue": "Čakať ďalej",
+  "accountRestore.timeout.description":
+    "Nastavenia účtu zatiaľ nedorazili. Môžete ďalej čakať alebo tento účet výslovne nastaviť ako nový.",
+  "accountRestore.timeout.setup": "Nastaviť ako nový účet",
+  "accountRestore.timeout.title": "Obnova účtu stále prebieha",
   "accountRestore.title": "Obnovovanie účtu",
   "activity.amount.btc": "฿145",
   "activity.amount.usd": "$9.00",
@@ -207,6 +212,15 @@ export const sk = {
   "nav.settings": "Nastavenia",
   "onboarding.account.description":
     "Skontrolujte identitu, ktorú Payky pre toto zariadenie vygeneroval. Môžete ju premenovať a zapnúť synchronizáciu teraz, alebo neskôr v Nastaveniach.",
+  "onboarding.accountChoice.description":
+    "Vytvorte nový účet pre toto zariadenie alebo obnovte účet, ktorý už používate.",
+  "onboarding.accountChoice.new.description":
+    "Vygenerujte novú recovery phrase a začnite s prázdnym účtom.",
+  "onboarding.accountChoice.new.title": "Vytvoriť nový účet",
+  "onboarding.accountChoice.restore.description":
+    "Pomocou recovery phrase otvorte dáta svojho existujúceho účtu.",
+  "onboarding.accountChoice.restore.title": "Obnoviť existujúci účet",
+  "onboarding.accountChoice.title": "Výber účtu",
   "onboarding.account.name.description":
     "Zobrazuje sa v zozname účtov pri prepínaní identít.",
   "onboarding.account.name.error.required": "Zadajte názov účtu.",
@@ -234,6 +248,10 @@ export const sk = {
   "onboarding.payments.iban.title": "IBAN",
   "onboarding.payments.title": "Platobné metódy",
   "onboarding.progress": "Krok",
+  "onboarding.restore.action": "Obnoviť účet",
+  "onboarding.restore.description":
+    "Zadajte BIP39 recovery phrase účtu, ktorý chcete obnoviť.",
+  "onboarding.restore.title": "Obnovenie existujúceho účtu",
   "onboarding.title": "Nastavenie Payky",
   "paymentHistory.empty.description":
     "Vytvorené platobné žiadosti sa zobrazia tu.",

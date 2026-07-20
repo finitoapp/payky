@@ -656,7 +656,7 @@ function PaymentWaitingRequest({
             </div>
           ) : null}
 
-          {activePreparingPaymentMethodKey ? (
+          {activePreparingPaymentMethodKey && isCashPaymentMethod ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoaderCircleIcon className="animate-spin" />
               <span>{t(activePreparingPaymentMethodKey)}</span>
@@ -670,6 +670,9 @@ function PaymentWaitingRequest({
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}
               cashRegisterAccountId={cashRegisterAccountId}
+              preparingMessageKey={
+                isCashPaymentMethod ? null : activePreparingPaymentMethodKey
+              }
               selectedIbanQrFormat={selectedIbanQrFormat}
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}
@@ -745,23 +748,31 @@ function PaymentMethodTabContent({
   cashPaymentErrorKey,
   cashPaymentPending,
   cashRegisterAccountId,
+  preparingMessageKey,
   selectedIbanQrFormat,
   onSelectIbanQrFormat,
   onMarkCashPaid,
 }: {
   readonly method: PaymentMethodOption
+  readonly preparingMessageKey: TranslationKey | null
   readonly selectedIbanQrFormat: BankQrFormat | null
   readonly onSelectIbanQrFormat: (format: BankQrFormat) => void
 } & CashPaymentTabProps) {
   switch (method.id) {
     case "spark":
-      return <SparkPaymentTab qrPayload={method.qrPayload} />
+      return (
+        <SparkPaymentTab
+          qrPayload={method.qrPayload}
+          preparingMessageKey={preparingMessageKey}
+        />
+      )
     case "iban":
       return (
         <IbanPaymentTab
           defaultQrFormat={method.defaultQrFormat ?? "spayd"}
           qrPayload={method.qrPayload}
           qrPayloads={method.qrPayloads ?? []}
+          preparingMessageKey={preparingMessageKey}
           selectedQrFormat={selectedIbanQrFormat}
           onSelectQrFormat={onSelectIbanQrFormat}
         />
@@ -779,20 +790,33 @@ function PaymentMethodTabContent({
   }
 }
 
-function SparkPaymentTab({ qrPayload }: { readonly qrPayload: string | null }) {
-  return <QrPaymentRequest qrPayload={qrPayload} />
+function SparkPaymentTab({
+  qrPayload,
+  preparingMessageKey,
+}: {
+  readonly qrPayload: string | null
+  readonly preparingMessageKey: TranslationKey | null
+}) {
+  return (
+    <QrPaymentRequest
+      qrPayload={qrPayload}
+      preparingMessageKey={preparingMessageKey}
+    />
+  )
 }
 
 function IbanPaymentTab({
   defaultQrFormat,
   qrPayload,
   qrPayloads,
+  preparingMessageKey,
   selectedQrFormat,
   onSelectQrFormat,
 }: {
   readonly defaultQrFormat: BankQrFormat
   readonly qrPayload: string | null
   readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
+  readonly preparingMessageKey: TranslationKey | null
   readonly selectedQrFormat: BankQrFormat | null
   readonly onSelectQrFormat: (format: BankQrFormat) => void
 }) {
@@ -801,7 +825,10 @@ function IbanPaymentTab({
 
   return (
     <div className="flex w-full flex-col items-center gap-3">
-      <QrPaymentRequest qrPayload={qrPayload} />
+      <QrPaymentRequest
+        qrPayload={qrPayload}
+        preparingMessageKey={preparingMessageKey}
+      />
       {qrPayloads.length > 1 ? (
         <ToggleGroup<BankQrFormat>
           value={[activeQrFormat]}
@@ -873,14 +900,16 @@ function CashPaymentTab({
 
 function QrPaymentRequest({
   qrPayload,
+  preparingMessageKey,
 }: {
   readonly qrPayload: string | null
+  readonly preparingMessageKey: TranslationKey | null
 }) {
   const { t } = useTranslation()
 
-  if (qrPayload === null) return null
-
   const copyQrPayload = async () => {
+    if (qrPayload === null) return
+
     try {
       await navigator.clipboard.writeText(qrPayload)
       toast.success(t("paymentWait.qrCopied"))
@@ -890,15 +919,23 @@ function QrPaymentRequest({
   }
 
   return (
-    <div className="w-full px-6">
+    <div className="w-full">
       <button
         type="button"
-        className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        disabled={qrPayload === null}
+        className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default"
         onClick={() => void copyQrPayload()}
         aria-label={t("paymentWait.copyQr")}
       >
-        <span className="flex size-full flex-col">
-          <QRCodeSVG value={qrPayload} className="size-full" />
+        <span className="flex size-full flex-col items-center justify-center">
+          {qrPayload !== null ? (
+            <QRCodeSVG value={qrPayload} className="size-full" />
+          ) : preparingMessageKey !== null ? (
+            <span className="flex flex-col items-center gap-2 text-sm text-neutral-500">
+              <LoaderCircleIcon className="animate-spin" />
+              <span>{t(preparingMessageKey)}</span>
+            </span>
+          ) : null}
         </span>
       </button>
     </div>

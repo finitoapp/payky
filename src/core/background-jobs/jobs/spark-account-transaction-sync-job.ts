@@ -1,8 +1,4 @@
-import {
-  SparkWallet,
-  SparkWalletEvent,
-  type SparkWalletEvents,
-} from "@buildonspark/spark-sdk"
+import { SparkWalletEvent } from "@buildonspark/spark-sdk"
 import { createRun, err, ok, type Result } from "@evolu/common"
 import { validateMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
@@ -24,21 +20,16 @@ import {
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
+import {
+  createSharedSparkSyncWallet,
+  type SharedSparkSyncWallet,
+} from "@/core/spark/spark-wallet.ts"
 
 const DEFAULT_RECHECK_INTERVAL_MS = 60_000
 const TRANSFER_PAGE_SIZE = 50
 const COMPLETED_TRANSFER_STATUS = "TRANSFER_STATUS_COMPLETED"
 const OUTGOING_TRANSFER_DIRECTION = "OUTGOING"
 const HEX_SEED_PATTERN = /^(?:[0-9a-fA-F]{2})+$/u
-
-type SupportedSparkWalletEvent =
-  | typeof SparkWalletEvent.TransferClaimed
-  | typeof SparkWalletEvent.BalanceUpdate
-  | typeof SparkWalletEvent.DepositConfirmed
-
-type SparkWalletEventHandlers = Partial<
-  Pick<SparkWalletEvents, SupportedSparkWalletEvent>
->
 
 interface SparkTransfer {
   readonly id: string
@@ -52,26 +43,7 @@ interface SparkTransfer {
   readonly userRequest: unknown
 }
 
-interface SparkTransfersPage {
-  readonly transfers: ReadonlyArray<SparkTransfer>
-  readonly offset: number
-}
-
-interface SparkWalletLike {
-  readonly getTransfers: (
-    limit?: number,
-    offset?: number,
-    createdAfter?: Date,
-    createdBefore?: Date
-  ) => Promise<SparkTransfersPage>
-  readonly getTransfer: (id: string) => Promise<SparkTransfer | undefined>
-  readonly cleanup: () => Promise<void>
-}
-
-type SparkWalletFactory = (
-  mnemonic: string,
-  events: SparkWalletEventHandlers
-) => Promise<SparkWalletLike>
+type SparkWalletFactory = (mnemonic: string) => Promise<SharedSparkSyncWallet>
 
 interface SparkAccountTransactionSyncJobOptions {
   readonly walletFactory?: SparkWalletFactory
@@ -103,29 +75,9 @@ type RecordTransferResult =
 type SparkTransactionInput = Parameters<typeof createAccountTransaction>[0]
 type SparkTransactionInputError = "missing-spark-identifier"
 
-const createDefaultSparkWallet: SparkWalletFactory = async (
-  mnemonic,
-  events
-) => {
-  const { wallet } = await SparkWallet.initialize({
-    mnemonicOrSeed: mnemonic,
-    options: {
-      network: "MAINNET",
-      events,
-    },
-  })
-
-  return {
-    getTransfers: (limit, offset, createdAfter, createdBefore) =>
-      wallet.getTransfers(limit, offset, createdAfter, createdBefore),
-    getTransfer: (id) => wallet.getTransfer(id),
-    cleanup: () => wallet.cleanup(),
-  }
-}
-
 export const createSparkAccountTransactionSyncJob =
   ({
-    walletFactory = createDefaultSparkWallet,
+    walletFactory = createSharedSparkSyncWallet,
     recheckIntervalMs = DEFAULT_RECHECK_INTERVAL_MS,
   }: SparkAccountTransactionSyncJobOptions = {}): BackgroundJob =>
   (run) => {
@@ -250,7 +202,8 @@ const createSparkAccountSyncSession = ({
   readonly mnemonic: string
   syncHistorySoon: () => void
 } => {
-  let wallet: SparkWalletLike | undefined
+  let wallet: SharedSparkSyncWallet | undefined
+  let unsubscribeEvents: (() => void) | undefined
   let disposed = false
   let pendingHistorySync = false
   const pendingTransferIds = new Set<string>()
@@ -479,7 +432,15 @@ const createSparkAccountSyncSession = ({
       return
     }
 
-    const createdWallet = await walletFactory(account.mnemonic, {
+    const createdWallet = await walletFactory(account.mnemonic)
+
+    if (disposed) {
+      await createdWallet[Symbol.asyncDispose]()
+      return
+    }
+
+    wallet = createdWallet
+    unsubscribeEvents = createdWallet.subscribe({
       [SparkWalletEvent.TransferClaimed]: (transferId) => {
         context.console.debug("Received Spark transfer claimed event.", {
           accountId: account.id,
@@ -500,13 +461,6 @@ const createSparkAccountSyncSession = ({
         syncHistorySoon()
       },
     })
-
-    if (disposed) {
-      await createdWallet.cleanup()
-      return
-    }
-
-    wallet = createdWallet
     context.console.info("Initialized Spark wallet.", { accountId: account.id })
     flushBufferedWork()
     syncHistorySoon()
@@ -529,6 +483,9 @@ const createSparkAccountSyncSession = ({
       pendingTransferIds.clear()
       pendingHistorySync = false
 
+      unsubscribeEvents?.()
+      unsubscribeEvents = undefined
+
       const walletToCleanup = wallet
       wallet = undefined
 
@@ -539,9 +496,11 @@ const createSparkAccountSyncSession = ({
         return
       }
 
-      await walletToCleanup.cleanup().catch((error: unknown) => {
+      try {
+        await walletToCleanup[Symbol.asyncDispose]()
+      } catch (error) {
         context.onError(error)
-      })
+      }
     },
   }
 }

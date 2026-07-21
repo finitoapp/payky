@@ -12,6 +12,7 @@ import type {
   SparkWalletDep,
   SparkWithdrawalFeeQuote,
 } from "@/core/spark/spark-wallet.ts"
+import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { executeWithdrawal, quoteWithdrawal } from "./withdrawal-actions.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
@@ -86,10 +87,11 @@ describe("quoteWithdrawal", () => {
     const deps = {
       evolu,
       sparkWallet: {
-        create: async () => ({
-          getBalance: async () => ({ availableSats: 100_000 }),
-          getWithdrawalFeeQuote: async () => feeQuote,
-        }),
+        create: async () =>
+          createFakeSparkWallet({
+            getBalance: async () => ({ availableSats: 100_000 }),
+            getWithdrawalFeeQuote: async () => feeQuote,
+          }),
       },
     } satisfies EvoluDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -120,10 +122,11 @@ describe("quoteWithdrawal", () => {
     const deps = {
       evolu,
       sparkWallet: {
-        create: async () => ({
-          getBalance: async () => ({ availableSats: 50_000 }),
-          getWithdrawalFeeQuote: async () => feeQuote,
-        }),
+        create: async () =>
+          createFakeSparkWallet({
+            getBalance: async () => ({ availableSats: 50_000 }),
+            getWithdrawalFeeQuote: async () => feeQuote,
+          }),
       },
     } satisfies EvoluDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -152,10 +155,11 @@ describe("quoteWithdrawal", () => {
     const deps = {
       evolu,
       sparkWallet: {
-        create: async () => ({
-          getBalance: async () => ({ availableSats: 100_000 }),
-          getWithdrawalFeeQuote: async () => feeQuote,
-        }),
+        create: async () =>
+          createFakeSparkWallet({
+            getBalance: async () => ({ availableSats: 100_000 }),
+            getWithdrawalFeeQuote: async () => feeQuote,
+          }),
       },
     } satisfies EvoluDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -181,10 +185,11 @@ describe("quoteWithdrawal", () => {
     const deps = {
       evolu,
       sparkWallet: {
-        create: async () => ({
-          getBalance: async () => ({ availableSats: 1_000 }),
-          getWithdrawalFeeQuote: async () => feeQuote,
-        }),
+        create: async () =>
+          createFakeSparkWallet({
+            getBalance: async () => ({ availableSats: 1_000 }),
+            getWithdrawalFeeQuote: async () => feeQuote,
+          }),
       },
     } satisfies EvoluDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -209,10 +214,11 @@ describe("quoteWithdrawal", () => {
     const deps = {
       evolu,
       sparkWallet: {
-        create: async () => ({
-          getBalance: async () => ({ availableSats: 100_000 }),
-          getWithdrawalFeeQuote: async () => feeQuote,
-        }),
+        create: async () =>
+          createFakeSparkWallet({
+            getBalance: async () => ({ availableSats: 100_000 }),
+            getWithdrawalFeeQuote: async () => feeQuote,
+          }),
       },
     } satisfies EvoluDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -241,13 +247,14 @@ describe("executeWithdrawal", () => {
       evolu,
       ...createDateDeps(),
       sparkWallet: {
-        create: async () => ({
-          withdraw: async () => ({
-            id: "coop-exit-1",
-            status: "INITIATED",
-            txid: "txid-1",
+        create: async () =>
+          createFakeSparkWallet({
+            withdraw: async () => ({
+              id: "coop-exit-1",
+              status: "INITIATED",
+              txid: "txid-1",
+            }),
           }),
-        }),
       },
     } satisfies EvoluDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -304,13 +311,14 @@ describe("executeWithdrawal", () => {
       evolu,
       ...createDateDeps(),
       sparkWallet: {
-        create: async () => ({
-          withdraw: async () => ({
-            id: "coop-exit-2",
-            status: "INITIATED",
-            txid: "txid-2",
+        create: async () =>
+          createFakeSparkWallet({
+            withdraw: async () => ({
+              id: "coop-exit-2",
+              status: "INITIATED",
+              txid: "txid-2",
+            }),
           }),
-        }),
       },
     } satisfies EvoluDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -351,9 +359,10 @@ describe("executeWithdrawal", () => {
       evolu,
       ...createDateDeps(),
       sparkWallet: {
-        create: async () => ({
-          withdraw: async () => null,
-        }),
+        create: async () =>
+          createFakeSparkWallet({
+            withdraw: async () => null,
+          }),
       },
     } satisfies EvoluDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
@@ -385,13 +394,14 @@ describe("executeWithdrawal", () => {
       evolu,
       ...createDateDeps(),
       sparkWallet: {
-        create: async () => ({
-          withdraw: async () => ({
-            id: "",
-            status: "INITIATED",
-            txid: "txid-3",
+        create: async () =>
+          createFakeSparkWallet({
+            withdraw: async () => ({
+              id: "",
+              status: "INITIATED",
+              txid: "txid-3",
+            }),
           }),
-        }),
       },
     } satisfies EvoluDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)

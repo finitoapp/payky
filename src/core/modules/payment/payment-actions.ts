@@ -54,10 +54,7 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import type {
-  SparkPaymentWallet,
-  SparkWalletDep,
-} from "@/core/spark/spark-wallet.ts"
+import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import {
   type DateString,
   type NonEmptyString,
@@ -436,7 +433,6 @@ export const createPreparedPayment =
       return err(accountSparkNotFound(spark.accountId))
     }
 
-    let wallet: SparkPaymentWallet | undefined
     try {
       const quote = await run(fetchYadioBtcExchangeRate(input.currency))
       if (!quote.ok) {
@@ -446,7 +442,9 @@ export const createPreparedPayment =
       const amountSats = NonNegativeIntegerSchema.decode(
         convertFiatMinorUnitsToSats(input.amount, quote.value.exchangeRate)
       )
-      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+      await using wallet = await run.deps.sparkWallet.create(
+        sparkAccount.mnemonic
+      )
       const lightningInvoice = await wallet.createLightningInvoice(
         removeUndefinedValues({
           amountSats,
@@ -500,8 +498,6 @@ export const createPreparedPayment =
             : "Failed to prepare payment details"
         )
       )
-    } finally {
-      await wallet?.cleanup?.()
     }
   }
 
@@ -633,7 +629,6 @@ export const preparePaymentMethod =
             )
             if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
 
-            let wallet: SparkPaymentWallet | undefined
             try {
               const quote = await run(
                 fetchYadioBtcExchangeRate(payment.currency)
@@ -646,7 +641,9 @@ export const preparePaymentMethod =
                   quote.value.exchangeRate
                 )
               )
-              wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+              await using wallet = await run.deps.sparkWallet.create(
+                sparkAccount.mnemonic
+              )
               const lightningInvoice = await wallet.createLightningInvoice(
                 removeUndefinedValues({
                   amountSats,
@@ -695,8 +692,6 @@ export const preparePaymentMethod =
                     : "Failed to prepare payment details"
                 )
               )
-            } finally {
-              await wallet?.cleanup?.()
             }
           })()
     if (sparkPaymentResult !== null && !sparkPaymentResult.ok) {

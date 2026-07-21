@@ -670,9 +670,7 @@ function PaymentWaitingRequest({
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}
               cashRegisterAccountId={cashRegisterAccountId}
-              preparingMessageKey={
-                isCashPaymentMethod ? null : activePreparingPaymentMethodKey
-              }
+              preparingMessageKey={activePreparingPaymentMethodKey}
               selectedIbanQrFormat={selectedIbanQrFormat}
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}

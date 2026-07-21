@@ -15,6 +15,7 @@ import {
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   cancelPayment,
@@ -297,17 +298,18 @@ describe("payment actions", () => {
           })
         ),
       sparkWallet: {
-        create: async () => ({
-          createLightningInvoice: async () => ({
-            id: "lightning-request-1",
-            invoice: {
-              encodedInvoice: "lnbc8600n1prepared",
-              paymentHash: "payment-hash-1",
-            },
-            paymentPreimage: "payment-preimage-1",
-            sparkInvoice: "spark-invoice-1",
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => ({
+              id: "lightning-request-1",
+              invoice: {
+                encodedInvoice: "lnbc8600n1prepared",
+                paymentHash: "payment-hash-1",
+              },
+              paymentPreimage: "payment-preimage-1",
+              sparkInvoice: "spark-invoice-1",
+            }),
           }),
-        }),
       },
       ...createDateDeps(),
       ...createYadioApiDep(),
@@ -392,17 +394,18 @@ describe("payment actions", () => {
           })
         ),
       sparkWallet: {
-        create: async () => ({
-          createLightningInvoice: async () => ({
-            id: "lightning-request-1",
-            invoice: {
-              encodedInvoice: "lnbc8600n1lazy",
-              paymentHash: "payment-hash-1",
-            },
-            paymentPreimage: "payment-preimage-1",
-            sparkInvoice: "spark-invoice-1",
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => ({
+              id: "lightning-request-1",
+              invoice: {
+                encodedInvoice: "lnbc8600n1lazy",
+                paymentHash: "payment-hash-1",
+              },
+              paymentPreimage: "payment-preimage-1",
+              sparkInvoice: "spark-invoice-1",
+            }),
           }),
-        }),
       },
       ...createDateDeps(),
       ...createYadioApiDep(),
@@ -482,17 +485,18 @@ describe("payment actions", () => {
           })
         ),
       sparkWallet: {
-        create: async () => ({
-          createLightningInvoice: async () => ({
-            id: null,
-            invoice: {
-              encodedInvoice: "lnbc8600n1nullable",
-              paymentHash: null,
-            },
-            paymentPreimage: null,
-            sparkInvoice: null,
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => ({
+              id: null,
+              invoice: {
+                encodedInvoice: "lnbc8600n1nullable",
+                paymentHash: null,
+              },
+              paymentPreimage: null,
+              sparkInvoice: null,
+            }),
           }),
-        }),
       },
       ...createDateDeps(),
       ...createYadioApiDep(),

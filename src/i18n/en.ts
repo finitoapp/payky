@@ -396,6 +396,7 @@ export const en = {
   "settings.accounts.nav.title": "Switch User Account",
   "settings.accounts.title": "App Account",
   "settings.appVersion": "App version:",
+  "settings.appVersionCode": "Version code:",
   "settings.baskets.description": "Create preset names for quick basket saving",
   "settings.baskets.title": "Basket Names",
   "settings.cashRegisterAccount.enabled.description":

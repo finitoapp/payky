@@ -395,6 +395,7 @@ export const cs = {
   "settings.accounts.nav.title": "Přepnutí uživatelského účtu",
   "settings.accounts.title": "Účet aplikace",
   "settings.appVersion": "Verze aplikace:",
+  "settings.appVersionCode": "Kód verze:",
   "settings.baskets.description":
     "Vytvořte předvolené názvy pro rychlé uložení košíků",
   "settings.baskets.title": "Názvy košíků",

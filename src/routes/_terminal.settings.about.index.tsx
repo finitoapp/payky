@@ -1,8 +1,12 @@
+import { App as CapacitorApp } from "@capacitor/app"
+import { Capacitor } from "@capacitor/core"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { GitFork, type Info, ScrollText, ShieldCheck } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
+import { getNativeRuntime } from "@/core/native/runtime.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -73,6 +77,18 @@ function createAboutNavItems(
 function AboutPage() {
   const { t } = useTranslation()
   const aboutItems = useMemo(() => createAboutNavItems(aboutRows, t), [t])
+  const isCapacitorAndroid =
+    getNativeRuntime() === "capacitor" && Capacitor.getPlatform() === "android"
+  const androidVersionCodeQuery = useQuery({
+    queryKey: ["native", "android-version-code"],
+    queryFn: async () => {
+      const { build } = await CapacitorApp.getInfo()
+      return build
+    },
+    enabled: isCapacitorAndroid,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const androidVersionCode = androidVersionCodeQuery.data
 
   return (
     <>
@@ -88,6 +104,11 @@ function AboutPage() {
         <p className="text-sm text-muted-foreground">
           {t("settings.appVersion")} <strong>{appVersion}</strong>
         </p>
+        {androidVersionCode !== undefined ? (
+          <p className="text-sm text-muted-foreground">
+            {t("settings.appVersionCode")} <strong>{androidVersionCode}</strong>
+          </p>
+        ) : null}
       </div>
 
       <VerticalNav title={t("settings.about.app.title")} items={aboutItems} />

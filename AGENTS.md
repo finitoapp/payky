@@ -10,6 +10,7 @@
 - Store persistent application data through Evolu. Avoid direct `localStorage` except for non-critical UI preferences such as language.
 - Use Biome for linting and formatting.
 - Do not create or use `index.ts` barrel files for re-exporting. Import directly from the owning module file.
+- For asynchronous reads from remote or native APIs in React, use TanStack Query's `useQuery` rather than `useEffect` with local state. Use a stable `queryKey` and `enabled` for runtime or input preconditions; keep Evolu subscriptions on `useEvoluQuery`.
 
 ## Project Structure
 

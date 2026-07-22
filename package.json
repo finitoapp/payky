@@ -21,6 +21,8 @@
     "check:tests": "vitest run",
     "check:coverage": "vitest run --coverage",
     "check": "bun run check:lint && bun run check:ts && bun run check:tests",
+    "docs:screenshots": "bun run bin/generate-doc-screenshots.ts",
+    "docs:screenshots:install-browser": "bunx playwright install chromium",
     "format": "biome check --write .",
     "test:watch": "vitest",
     "preview": "vite preview"
@@ -81,6 +83,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.2",
     "@capacitor/cli": "8.4.1",
+    "@playwright/test": "1.61.1",
     "@standard-schema/spec": "1.1.0",
     "@tanstack/router-plugin": "1.168.19",
     "@types/better-sqlite3": "7.6.13",
@@ -90,6 +93,7 @@
     "@vitejs/plugin-basic-ssl": "2.3.0",
     "@vitejs/plugin-react": "6.0.3",
     "@vitest/coverage-v8": "4.1.10",
+    "sharp": "0.35.3",
     "swc-node": "1.0.0",
     "typescript": "6.0.3",
     "vite": "8.1.3",

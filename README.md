@@ -18,6 +18,9 @@ for persistent application data.
 
 - Bun
 
+For native iOS development, install Xcode and the Xcode Command Line Tools.
+Capacitor 8 targets iOS 15 and newer.
+
 Install dependencies with exact versions:
 
 ```bash
@@ -55,12 +58,24 @@ bun run preview
 
 ## Native Targets
 
-Capacitor is available as the Android native target:
+Tauri remains available through the existing scripts:
+
+```bash
+bun run tauri:dev
+bun run tauri:build
+bun run tauri:android:dev
+bun run tauri:android:build
+```
+
+Capacitor is available as a parallel Android and iOS target:
 
 ```bash
 bun run cap:android:sync
 bun run cap:android:dev
 bun run cap:android:build
+bun run cap:ios:sync
+bun run cap:ios:run
+bun run cap:ios:open
 ```
 
 Capacitor builds use the native HTTP bridge through `CapacitorHttp` so mobile
@@ -77,6 +92,40 @@ The script starts the HTTP Vite dev server, waits for
 reload flow, and launches the native Android app. The HTTP server is used only
 for this debug flow so Android WebView does not reject Vite's self-signed HTTPS
 certificate.
+
+For Capacitor iOS simulator development, run:
+
+```bash
+bun run cap:ios:run
+```
+
+For Xcode-driven iOS development, run:
+
+```bash
+bun run cap:ios:sync
+bun run cap:ios:open
+```
+
+Configure the signing team, bundle identifier, provisioning profile, display
+name, icons, launch screen, and deployment target in Xcode. The default bundle
+identifier is `me.payky`.
+
+For iOS live reload on a physical iPhone, start Vite on the local network in one
+terminal:
+
+```bash
+PAYKY_DISABLE_BASIC_SSL=1 bun run dev -- --host 0.0.0.0 --strictPort
+```
+
+Then point Capacitor at the Mac LAN URL from another terminal:
+
+```bash
+PAYKY_CAPACITOR_SERVER_URL=http://<mac-lan-ip>:5173 bunx cap run ios
+```
+
+The iPhone and Mac must be on the same network. iOS does not have an `adb
+reverse` equivalent, so a physical device cannot use `localhost` to reach the
+Mac dev server.
 
 The Android release build signs with `payky-release.keystore`. Set these
 environment variables before running `bun run cap:android:build`:

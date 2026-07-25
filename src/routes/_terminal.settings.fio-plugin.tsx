@@ -388,6 +388,8 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
           <PasswordTextarea
             id={tokenInputId}
             value={token}
+            hideLabel={t("passwordTextarea.hide")}
+            showLabel={t("passwordTextarea.show")}
             disabled={pending}
             aria-invalid={tokenError !== null}
             autoComplete="off"

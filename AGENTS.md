@@ -10,6 +10,7 @@
 - Store persistent application data through Evolu. Avoid direct `localStorage` except for non-critical UI preferences such as language.
 - Use Biome for linting and formatting.
 - Do not create or use `index.ts` barrel files for re-exporting. Import directly from the owning module file.
+- For asynchronous reads from remote or native APIs in React, use TanStack Query's `useQuery` rather than `useEffect` with local state. Use a stable `queryKey` and `enabled` for runtime or input preconditions; keep Evolu subscriptions on `useEvoluQuery`.
 
 ## Project Structure
 
@@ -28,7 +29,7 @@
 - `src/core/deps.ts` declares small injectable dependency objects (`FetchDep`, `DateDep`, `EvoluOwnerIdDep`); `src/core/error.ts` provides the `defineError` factory.
 - `src/core/background-jobs` contains the background job framework (`BackgroundJobContext`, keyed task queue) and the sync jobs under `jobs/`. Jobs receive all effects — including `lockManager` — through their context; never use ambient globals such as `navigator.locks`.
 - `src/core/integrations` contains HTTP clients for external services (FIO, Yadio, LNURL). Clients follow the fio convention: a `createXApiDep` factory, HTTP through `appFetchAsJson` from `src/core/deps.ts`, zod-validated responses, and `defineError` errors carrying `status` and `responseBody`.
-- `src/core/spark` wraps the Spark wallet SDK behind `SparkWalletDep`. Do not call `SparkWallet.initialize` directly outside this wrapper; extend the wrapper when a consumer needs more of the SDK surface.
+- `src/core/spark` wraps the Spark wallet SDK behind `SparkWalletDep`. Do not call `SparkWallet.initialize`/`getOrCreateWallet` directly outside this wrapper; extend the wrapper when a consumer needs more of the SDK surface. Instances are shared per mnemonic and ref-counted (via the internal `createRefCountedResourcePool` in `src/lib/ref-counted-resource-pool.ts`, exposed through `createSharedSparkSyncWallet` and `createDefaultSparkPaymentWallet`): each caller still owns cleanup of its own `sparkWallet.create()` result exactly like any other disposable, but the underlying SDK instance is only actually torn down once every concurrent holder — including the Spark account sync job's long-held reference — has released it, so a warm instance survives back-to-back calls for the same account.
 - `src/core/cli` contains CLI-runtime helpers (`cli-env.ts`, the in-process lock manager); CLI entry points live in `bin/`.
 - `src/core/native` contains Capacitor/WebView runtime detection and platform plumbing.
 - `src/i18n` contains translation resources and the translation hook. `src/i18n/en.ts` is the source of truth for translation keys; `cs.ts` and `sk.ts` must cover every key via `satisfies Record<TranslationKey, string>`, and `resources.ts` only composes the languages.
@@ -52,6 +53,7 @@
 
 - Write every action as an Evolu `Task<T, E, D>` from `@evolu/common` and access dependencies through `run.deps`, as in `payment-actions.ts`. Simple Evolu-only actions typically need `EvoluDep & EvoluOwnerIdDep`. (The legacy curried `(deps) => async (...)` style has been fully removed; do not reintroduce it.)
 - In React, obtain runs through `useAppRun()` from `src/hooks/use-app-run.ts`: `const appRun = useAppRun()` then `await using run = appRun()` inside handlers. Do not call `createRun` directly in components; the only sanctioned exception is `app-background-jobs.tsx`, which additionally needs `lockManager` and `onError`.
+- Inside an `await using run = appRun()` scope, always `await` calls to `run(...)`/`run.orThrow(...)` before returning — never `return run.orThrow(...)` bare. `await using` disposes `run` as soon as the enclosing function's synchronous execution finishes, so returning the promise unawaited disposes `run` before the task actually completes.
 - Express Task dependencies as intersections of small dependency objects, for example `EvoluDep & SparkWalletDep & FetchDep`.
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.

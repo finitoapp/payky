@@ -1,5 +1,10 @@
-import { SparkWallet } from "@buildonspark/spark-sdk"
+import {
+  SparkWallet,
+  SparkWalletEvent,
+  type SparkWalletEvents,
+} from "@buildonspark/spark-sdk"
 import { ExitSpeed } from "@buildonspark/spark-sdk/types"
+import { createRefCountedResourcePool } from "@/lib/ref-counted-resource-pool.ts"
 
 export interface SparkWalletSettings {
   readonly ownerIdentityPublicKey: string
@@ -48,7 +53,7 @@ export interface SparkWalletBalance {
   readonly availableSats: number
 }
 
-export interface SparkPaymentWallet {
+export interface SparkPaymentWallet extends AsyncDisposable {
   readonly createLightningInvoice: (params: {
     readonly amountSats: number
     readonly memo?: string
@@ -72,7 +77,6 @@ export interface SparkPaymentWallet {
     readonly amountSats?: number
     readonly deductFeeFromWithdrawalAmount?: boolean
   }) => Promise<SparkWithdrawalRequest | null>
-  readonly cleanup?: () => void | Promise<void>
 }
 
 export type SparkWalletDep = {
@@ -98,15 +102,100 @@ const toFeeEstimate = (
   totalFeeSats: userFee.originalValue + l1BroadcastFee.originalValue,
 })
 
+/**
+ * Instances are keyed by mnemonic and shared across every consumer (domain
+ * actions, direct UI reads, and the Spark account sync job). Sharing is
+ * ref-counted through {@link createRefCountedResourcePool}: each `acquire()`
+ * call returns its own disposable lease, and the underlying instance is only
+ * torn down once every acquirer has disposed its lease (e.g. a short-lived
+ * action's `finally` cleanup, or the sync job disposing its long-held lease
+ * when an account becomes inactive). This keeps the instance alive across a
+ * burst of calls for the same account without ever outliving its last
+ * consumer.
+ *
+ * Deliberately uses {@link SparkWallet.initialize}, not
+ * `SparkWallet.getOrCreateWallet` — the latter dedupes concurrent
+ * initialization through the SDK's own identity-keyed singleton registry,
+ * which is redundant here (this pool already dedupes concurrent `acquire()`
+ * calls for the same mnemonic) and can race with the pool's own teardown:
+ * `getOrCreateWallet` can hand a new acquirer the very instance this pool is
+ * concurrently disposing, since the two lifecycle mechanisms aren't
+ * synchronized. `initialize` always constructs a fresh instance that this
+ * pool exclusively owns, which avoids that race entirely.
+ */
+const sparkWalletPool = createRefCountedResourcePool<SparkWallet>({
+  create: (mnemonic) =>
+    SparkWallet.initialize({
+      mnemonicOrSeed: mnemonic,
+      options: {
+        network: "MAINNET",
+      },
+    }).then(({ wallet }) => wallet),
+  destroy: (wallet) => wallet.cleanup(),
+})
+
+const SUPPORTED_SYNC_EVENTS = [
+  SparkWalletEvent.TransferClaimed,
+  SparkWalletEvent.BalanceUpdate,
+  SparkWalletEvent.DepositConfirmed,
+] as const
+
+export type SharedSparkSyncWalletEventHandlers = Partial<
+  Pick<SparkWalletEvents, (typeof SUPPORTED_SYNC_EVENTS)[number]>
+>
+
+export interface SharedSparkSyncWallet extends AsyncDisposable {
+  readonly getTransfers: (
+    limit?: number,
+    offset?: number,
+    createdAfter?: Date,
+    createdBefore?: Date
+  ) => ReturnType<SparkWallet["getTransfers"]>
+  readonly getTransfer: (id: string) => ReturnType<SparkWallet["getTransfer"]>
+  /** Subscribes to sync-relevant events on the shared instance; returns an unsubscribe function. */
+  readonly subscribe: (
+    handlers: SharedSparkSyncWalletEventHandlers
+  ) => () => void
+}
+
+export const createSharedSparkSyncWallet = async (
+  mnemonic: string
+): Promise<SharedSparkSyncWallet> => {
+  const lease = sparkWalletPool.acquire(mnemonic)
+  const wallet = await lease.resource
+
+  return {
+    getTransfers: (limit, offset, createdAfter, createdBefore) =>
+      wallet.getTransfers(limit, offset, createdAfter, createdBefore),
+    getTransfer: (id) => wallet.getTransfer(id),
+    subscribe: (handlers) => {
+      const entries = SUPPORTED_SYNC_EVENTS.flatMap((event) => {
+        const listener = handlers[event]
+        return listener === undefined ? [] : [[event, listener] as const]
+      })
+
+      // Each pair's event and listener always correspond (built from the
+      // same `handlers[event]` lookup above), but the union collapses once
+      // stored in a shared array, so TS can no longer verify it structurally.
+      for (const [event, listener] of entries) {
+        wallet.on(event, listener as never)
+      }
+
+      return () => {
+        for (const [event, listener] of entries) {
+          wallet.off(event, listener as never)
+        }
+      }
+    },
+    [Symbol.asyncDispose]: lease[Symbol.asyncDispose],
+  }
+}
+
 export const createDefaultSparkPaymentWallet = async (
   mnemonic: string
-): Promise<SparkPaymentWallet & AsyncDisposable> => {
-  const { wallet } = await SparkWallet.initialize({
-    mnemonicOrSeed: mnemonic,
-    options: {
-      network: "MAINNET",
-    },
-  })
+): Promise<SparkPaymentWallet> => {
+  const lease = sparkWalletPool.acquire(mnemonic)
+  const wallet = await lease.resource
 
   return {
     createLightningInvoice: (params) => wallet.createLightningInvoice(params),
@@ -153,7 +242,6 @@ export const createDefaultSparkPaymentWallet = async (
         txid: result.coopExitTxid ?? null,
       }
     },
-    cleanup: () => wallet.cleanup(),
-    [Symbol.asyncDispose]: () => wallet.cleanup(),
+    [Symbol.asyncDispose]: lease[Symbol.asyncDispose],
   }
 }

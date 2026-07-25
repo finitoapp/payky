@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router"
 import { useEffect } from "react"
 
-import { PhoneViewport } from "@/components/skeleton.tsx"
+import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { cn } from "@/lib/utils.ts"

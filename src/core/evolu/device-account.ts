@@ -134,6 +134,8 @@ export const createAccountMnemonic = (): Mnemonic =>
 export const createRandomAccountName = () =>
   NonEmptyString255(faker.internet.username())
 
+const defaultEvoluTransportUrl = WssUrl("wss://free.evoluhq.com")
+
 const createAccountEvoluTransportId = ({
   accountId,
   type,
@@ -196,8 +198,6 @@ export const insertAccount = (
   const name = accountName
     ? NonEmptyString255(accountName)
     : createRandomAccountName()
-  const transportUrl = WssUrl("wss://free.evoluhq.com")
-
   const { id: accountId } = deviceEvolu.insert("account", {
     name,
     mnemonic,
@@ -206,7 +206,7 @@ export const insertAccount = (
   upsertAccountEvoluWebsocketTransport(deviceEvolu, {
     accountId,
     isActive: sqliteFalse,
-    url: transportUrl,
+    url: defaultEvoluTransportUrl,
   })
 
   return {
@@ -239,6 +239,27 @@ export async function createOrSelectAccount(
 
   const account = insertAccount(deviceEvolu, mnemonic)
   return { accountId: account.id, created: true }
+}
+
+/**
+ * Selects an account from a recovery phrase. Newly imported accounts activate
+ * the default relay so their remote application data can synchronize.
+ */
+export async function restoreOrSelectAccount(
+  deviceEvolu: DeviceEvolu,
+  mnemonic: Mnemonic
+): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
+  const result = await createOrSelectAccount(deviceEvolu, mnemonic)
+
+  if (result.created) {
+    upsertAccountEvoluWebsocketTransport(deviceEvolu, {
+      accountId: result.accountId,
+      isActive: sqliteTrue,
+      url: defaultEvoluTransportUrl,
+    })
+  }
+
+  return result
 }
 
 export function selectAccount(deviceEvolu: DeviceEvolu, accountId: AccountId) {

@@ -15,7 +15,6 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type {
   SparkExitSpeed,
-  SparkPaymentWallet,
   SparkWalletDep,
   SparkWithdrawalFeeQuote,
 } from "@/core/spark/spark-wallet.ts"
@@ -69,9 +68,10 @@ export const quoteWithdrawal =
       return err(createWithdrawalAccountNotFoundError({ accountId }))
     }
 
-    let wallet: SparkPaymentWallet | undefined
     try {
-      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+      await using wallet = await run.deps.sparkWallet.create(
+        sparkAccount.mnemonic
+      )
       const balance = await wallet.getBalance()
       const withdrawAll = amountSats === undefined
       const quoteAmountSats = withdrawAll ? balance.availableSats : amountSats
@@ -112,8 +112,6 @@ export const quoteWithdrawal =
               : "Failed to fetch the withdrawal fee quote",
         })
       )
-    } finally {
-      await wallet?.cleanup?.()
     }
   }
 
@@ -153,9 +151,10 @@ export const executeWithdrawal =
 
     const feeEstimate = feeQuote[exitSpeed]
 
-    let wallet: SparkPaymentWallet | undefined
     try {
-      wallet = await run.deps.sparkWallet.create(sparkAccount.mnemonic)
+      await using wallet = await run.deps.sparkWallet.create(
+        sparkAccount.mnemonic
+      )
       const result = await wallet.withdraw({
         onchainAddress,
         exitSpeed,
@@ -236,7 +235,5 @@ export const executeWithdrawal =
               : "Failed to execute the withdrawal",
         })
       )
-    } finally {
-      await wallet?.cleanup?.()
     }
   }

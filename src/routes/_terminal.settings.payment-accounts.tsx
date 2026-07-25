@@ -437,6 +437,8 @@ function SparkAccountForm() {
           <PasswordTextarea
             id={mnemonicInputId}
             value={mnemonic}
+            hideLabel={t("passwordTextarea.hide")}
+            showLabel={t("passwordTextarea.show")}
             disabled={pending}
             aria-invalid={error !== null}
             autoComplete="off"

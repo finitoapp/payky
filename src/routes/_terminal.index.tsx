@@ -1,8 +1,7 @@
-import { useWakeLock } from "@dedalik/use-react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useStore } from "jotai"
 import { Clock3, Grid2X2, Settings } from "lucide-react"
-import { Suspense, useEffect } from "react"
+import { Suspense } from "react"
 import { accountAtom } from "@/atoms/account.ts"
 import { TerminalPaymentKeypadWithSettings } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -14,6 +13,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
+import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/")({
@@ -101,15 +101,7 @@ function TerminalPaymentKeypadLoader() {
 }
 
 function TerminalHomePage() {
-  const { release: releaseWakeLock, request: requestWakeLock } = useWakeLock()
-
-  useEffect(() => {
-    void requestWakeLock()
-
-    return () => {
-      void releaseWakeLock()
-    }
-  }, [releaseWakeLock, requestWakeLock])
+  useScreenWakeLock(true)
 
   return (
     <>

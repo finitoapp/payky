@@ -69,7 +69,7 @@ interface FakeTransfer {
 }
 
 class FakeSparkWallet {
-  readonly cleanups: unknown[] = []
+  readonly disposals: unknown[] = []
   readonly getTransferIds: string[] = []
   private readonly listeners = new Map<
     string,
@@ -96,24 +96,36 @@ class FakeSparkWallet {
     return this.transfers.find((transfer) => transfer.id === id)
   }
 
-  on(event: string, listener: (...args: ReadonlyArray<unknown>) => void): void {
+  private on(
+    event: string,
+    listener: (...args: ReadonlyArray<unknown>) => void
+  ): void {
     const listeners = this.listeners.get(event) ?? new Set()
     listeners.add(listener)
     this.listeners.set(event, listeners)
   }
 
-  off(
+  private off(
     event: string,
     listener: (...args: ReadonlyArray<unknown>) => void
   ): void {
     this.listeners.get(event)?.delete(listener)
   }
 
-  configureEvents(events: Partial<SparkWalletEvents>): void {
-    for (const [event, listener] of Object.entries(events)) {
-      if (listener === undefined) continue
+  subscribe(handlers: Partial<SparkWalletEvents>): () => void {
+    const entries = Object.entries(handlers).filter(
+      (entry): entry is [string, (...args: ReadonlyArray<unknown>) => void] =>
+        entry[1] !== undefined
+    )
 
-      this.on(event, listener as (...args: ReadonlyArray<unknown>) => void)
+    for (const [event, listener] of entries) {
+      this.on(event, listener)
+    }
+
+    return () => {
+      for (const [event, listener] of entries) {
+        this.off(event, listener)
+      }
     }
   }
 
@@ -121,8 +133,8 @@ class FakeSparkWallet {
     return this.listeners.get(event)?.size ?? 0
   }
 
-  async cleanup(): Promise<void> {
-    this.cleanups.push(null)
+  async [Symbol.asyncDispose](): Promise<void> {
+    this.disposals.push(null)
     this.listeners.clear()
   }
 
@@ -161,15 +173,8 @@ const createUniqueHexSeed = (): string =>
 
 const createFakeWalletFactory =
   (mnemonic: string, wallet: FakeSparkWallet) =>
-  async (
-    receivedMnemonic: string,
-    events: Partial<SparkWalletEvents>
-  ): Promise<FakeSparkWallet> => {
-    const selectedWallet =
-      receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
-    selectedWallet.configureEvents(events)
-    return selectedWallet
-  }
+  async (receivedMnemonic: string): Promise<FakeSparkWallet> =>
+    receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
 
 describe("spark account transaction sync job", () => {
   test("stores completed Spark transfers from the periodic history check without duplicates", async () => {
@@ -298,11 +303,11 @@ describe("spark account transaction sync job", () => {
 
     wallet.emit(SparkWalletEvent.TransferClaimed, transferId)
 
-    expect(wallet.cleanups).toHaveLength(1)
+    expect(wallet.disposals).toHaveLength(1)
     expect(errors).toEqual([])
   })
 
-  test("records a transfer claimed while the Spark wallet is initializing", async () => {
+  test("recovers a transfer claimed before the sync job could subscribe, via the fallback history sync", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({ evolu })
@@ -317,7 +322,7 @@ describe("spark account transaction sync job", () => {
         },
       })
     )
-    const transferId = `spark-transfer-during-init-${accountId}`
+    const transferId = `spark-transfer-before-subscribe-${accountId}`
     const wallet = new FakeSparkWallet([
       createCompletedTransfer({
         id: transferId,
@@ -334,10 +339,13 @@ describe("spark account transaction sync job", () => {
     })
     await using _job = await jobRun.orThrow(
       createSparkAccountTransactionSyncJob({
-        walletFactory: async (receivedMnemonic, events) => {
+        // Simulates the shared wallet instance emitting an event before the
+        // sync job's init() has had a chance to call subscribe() on it -
+        // the event is missed, but the fallback history sync (also run by
+        // init()) still records the transfer.
+        walletFactory: async (receivedMnemonic) => {
           const selectedWallet =
             receivedMnemonic === mnemonic ? wallet : new FakeSparkWallet([])
-          selectedWallet.configureEvents(events)
           selectedWallet.emit(SparkWalletEvent.TransferClaimed, transferId)
           return selectedWallet
         },
@@ -353,7 +361,6 @@ describe("spark account transaction sync job", () => {
           sparkTransferId: transferId,
         },
       ])
-    expect(wallet.getTransferIds).toContain(transferId)
     expect(errors).toEqual([])
   })
 

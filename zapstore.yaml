@@ -29,7 +29,7 @@ website: https://payky.me
 
 icon: ./public/pwa-icon-192.png
 images:
-    - ./docs/screenshots/home.jpg
-    - ./docs/screenshots/payment.jpg
-    - ./docs/screenshots/paid.jpg
-    - ./docs/screenshots/settings.jpg
+    - ./docs/screenshots/en/home.png
+    - ./docs/screenshots/en/payment.png
+    - ./docs/screenshots/en/paid.png
+    - ./docs/screenshots/en/settings.png

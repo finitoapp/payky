@@ -1,4 +1,10 @@
-import { ok, sqliteTrue, type Task, type UpdateValues } from "@evolu/common"
+import {
+  ok,
+  sqliteFalse,
+  sqliteTrue,
+  type Task,
+  type UpdateValues,
+} from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { appSettings } from "@/core/modules/app-settings/app-settings.ts"
@@ -12,6 +18,10 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
+import {
+  stringifyTipFixedAmounts,
+  stringifyTipPercentages,
+} from "./app-settings-tips.ts"
 import { createDefaultSettings, settingsId } from "./app-settings-utils.ts"
 
 /**
@@ -61,3 +71,18 @@ export const updateSettings =
     )
     return ok(settingsId)
   }
+
+export const updateTipSettings =
+  (input: {
+    readonly enabled: boolean
+    readonly fixedAmounts: ReadonlyArray<number>
+    readonly percentages: ReadonlyArray<number>
+  }): Task<AppSettingsId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) =>
+    await run(
+      updateSettings({
+        tipsEnabled: input.enabled ? sqliteTrue : sqliteFalse,
+        presetTipPercentagesJson: stringifyTipPercentages(input.percentages),
+        presetTipFixedAmountsJson: stringifyTipFixedAmounts(input.fixedAmounts),
+      })
+    )

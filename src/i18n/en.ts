@@ -770,6 +770,38 @@ export const en = {
   "settings.theme.system.title": "Auto",
   "settings.theme.title": "Theme",
   "settings.tips.description": "Configure tip options for checkout",
+  "settings.tips.enabled.description": "Customers can add a tip while paying.",
+  "settings.tips.enabled.label": "Enable tips",
+  "settings.tips.fixedAmounts.add": "Add fixed amount",
+  "settings.tips.fixedAmounts.description":
+    "Customers can select these {currency} amounts at checkout.",
+  "settings.tips.fixedAmounts.duplicate":
+    "This fixed amount is already listed.",
+  "settings.tips.fixedAmounts.invalid":
+    "Enter a positive amount with up to two decimal places.",
+  "settings.tips.fixedAmounts.label": "Fixed amount presets",
+  "settings.tips.fixedAmounts.maximum":
+    "You can add up to four fixed amount presets.",
+  "settings.tips.fixedAmounts.placeholder": "e.g. 20.00",
+  "settings.tips.fixedAmounts.value": "{amount} {currency}",
+  "settings.tips.form.description":
+    "Configure the quick-select tip options shown at checkout.",
+  "settings.tips.form.title": "Tip options",
+  "settings.tips.percentages.add": "Add percentage",
+  "settings.tips.percentages.description":
+    "Customers can select these percentages at checkout.",
+  "settings.tips.percentages.duplicate": "This percentage is already listed.",
+  "settings.tips.percentages.invalid":
+    "Enter a whole percentage from 1 to 100.",
+  "settings.tips.percentages.label": "Percentage presets",
+  "settings.tips.percentages.maximum":
+    "You can add up to four percentage presets.",
+  "settings.tips.percentages.placeholder": "e.g. 15",
+  "settings.tips.percentages.value": "{value}%",
+  "settings.tips.preset.remove": "Remove {value}",
+  "settings.tips.reset": "Reset to defaults",
+  "settings.tips.save": "Save tips",
+  "settings.tips.saved": "Tip settings saved.",
   "settings.tips.title": "Tips",
   "settings.title": "Settings",
   "settings.webhooks.description":

@@ -6,6 +6,12 @@ import {
   DefaultPaymentMethodSchema,
 } from "@/core/modules/app-settings/app-settings-types.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import {
+  defaultTipFixedAmounts,
+  defaultTipPercentages,
+  stringifyTipFixedAmounts,
+  stringifyTipPercentages,
+} from "./app-settings-tips.ts"
 
 export const settingsId =
   createIdFromString<"AppSettings">("payky-app-settings")
@@ -23,8 +29,8 @@ export const createDefaultSettings = (): AppSettingsRow => ({
   onboardingCompleted: null,
   fiatCurrency: FiatCurrency.CZK,
   tipsEnabled: sqliteTrue,
-  presetTipPercentagesJson: JSON.stringify([5, 10, 15]),
-  presetTipFixedAmountsJson: JSON.stringify([2000, 5000]),
+  presetTipPercentagesJson: stringifyTipPercentages(defaultTipPercentages),
+  presetTipFixedAmountsJson: stringifyTipFixedAmounts(defaultTipFixedAmounts),
   paymentMethodOrderJson: JSON.stringify(defaultPaymentMethodOrder),
   defaultPaymentMethod,
 })

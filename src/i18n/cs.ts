@@ -773,6 +773,37 @@ export const cs = {
   "settings.theme.system.title": "Auto",
   "settings.theme.title": "Motiv",
   "settings.tips.description": "Nastavení dýška pro pokladnu",
+  "settings.tips.enabled.description":
+    "Zákazníci mohou při placení přidat dýško.",
+  "settings.tips.enabled.label": "Povolit dýška",
+  "settings.tips.fixedAmounts.add": "Přidat pevnou částku",
+  "settings.tips.fixedAmounts.description":
+    "Zákazníci mohou při placení vybrat tyto částky v {currency}.",
+  "settings.tips.fixedAmounts.duplicate": "Tato pevná částka už je v seznamu.",
+  "settings.tips.fixedAmounts.invalid":
+    "Zadejte kladnou částku nejvýše se dvěma desetinnými místy.",
+  "settings.tips.fixedAmounts.label": "Předvolené pevné částky",
+  "settings.tips.fixedAmounts.maximum":
+    "Můžete přidat nejvýše čtyři předvolené pevné částky.",
+  "settings.tips.fixedAmounts.placeholder": "např. 20,00",
+  "settings.tips.fixedAmounts.value": "{amount} {currency}",
+  "settings.tips.form.description":
+    "Nastavte rychlé volby dýška zobrazované při placení.",
+  "settings.tips.form.title": "Možnosti dýška",
+  "settings.tips.percentages.add": "Přidat procento",
+  "settings.tips.percentages.description":
+    "Zákazníci mohou při placení vybrat tato procenta.",
+  "settings.tips.percentages.duplicate": "Toto procento už je v seznamu.",
+  "settings.tips.percentages.invalid": "Zadejte celé procento od 1 do 100.",
+  "settings.tips.percentages.label": "Předvolené procentní hodnoty",
+  "settings.tips.percentages.maximum":
+    "Můžete přidat nejvýše čtyři předvolené procentní hodnoty.",
+  "settings.tips.percentages.placeholder": "např. 15",
+  "settings.tips.percentages.value": "{value} %",
+  "settings.tips.preset.remove": "Odebrat {value}",
+  "settings.tips.reset": "Obnovit výchozí hodnoty",
+  "settings.tips.save": "Uložit dýška",
+  "settings.tips.saved": "Nastavení dýška uloženo.",
   "settings.tips.title": "Dýška",
   "settings.title": "Nastavení",
   "settings.webhooks.description":

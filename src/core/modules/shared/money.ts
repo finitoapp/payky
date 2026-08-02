@@ -34,3 +34,30 @@ export const minorUnitsToDecimalString = (props: Money): NumberString => {
 
   return NumberString(isNegative && base !== "0" ? `-${base}` : base)
 }
+
+export const decimalAmountToMinorUnits = ({
+  currency,
+  value,
+}: {
+  readonly currency: Currency
+  readonly value: string
+}): Integer | null => {
+  const normalized = value.trim().replace(",", ".")
+  const parts = /^(\d+)(?:\.(\d+))?$/u.exec(normalized)
+  if (parts === null) return null
+
+  const wholePart = parts[1]
+  const fractionPart = parts[2] ?? ""
+  if (wholePart === undefined) return null
+
+  const fractionDigits = currencyFractionDigits[currency]
+  if (fractionPart.length > fractionDigits) return null
+
+  const minorUnitFactor = 10 ** fractionDigits
+  const amount =
+    Number(wholePart) * minorUnitFactor +
+    Number(fractionPart.padEnd(fractionDigits, "0"))
+  if (!Number.isSafeInteger(amount) || amount <= 0) return null
+
+  return Integer(amount)
+}

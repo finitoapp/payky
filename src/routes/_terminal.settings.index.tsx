@@ -52,11 +52,6 @@ const terminalSettings: ReadonlyArray<SettingRow> = [
     to: "/settings/items",
   },
   {
-    icon: BadgeDollarSign,
-    title: "settings.tips.title",
-    description: "settings.tips.description",
-  },
-  {
     icon: ShoppingBag,
     title: "settings.baskets.title",
     description: "settings.baskets.description",
@@ -108,6 +103,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.defaultPaymentMethod.title",
     description: "settings.defaultPaymentMethod.description",
     to: "/settings/default-payment-method",
+  },
+  {
+    icon: BadgeDollarSign,
+    title: "settings.tips.title",
+    description: "settings.tips.description",
+    to: "/settings/tips",
   },
   {
     icon: Landmark,

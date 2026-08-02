@@ -775,6 +775,37 @@ export const sk = {
   "settings.theme.system.title": "Auto",
   "settings.theme.title": "Motív",
   "settings.tips.description": "Nastavenie tringeltu pre pokladnicu",
+  "settings.tips.enabled.description":
+    "Zákazníci môžu pri platení pridať tringelt.",
+  "settings.tips.enabled.label": "Povoliť tringelty",
+  "settings.tips.fixedAmounts.add": "Pridať pevnú sumu",
+  "settings.tips.fixedAmounts.description":
+    "Zákazníci môžu pri platení vybrať tieto sumy v {currency}.",
+  "settings.tips.fixedAmounts.duplicate": "Táto pevná suma už je v zozname.",
+  "settings.tips.fixedAmounts.invalid":
+    "Zadajte kladnú sumu najviac s dvoma desatinnými miestami.",
+  "settings.tips.fixedAmounts.label": "Predvolené pevné sumy",
+  "settings.tips.fixedAmounts.maximum":
+    "Môžete pridať najviac štyri predvolené pevné sumy.",
+  "settings.tips.fixedAmounts.placeholder": "napr. 20,00",
+  "settings.tips.fixedAmounts.value": "{amount} {currency}",
+  "settings.tips.form.description":
+    "Nastavte rýchle voľby tringeltu zobrazované pri platení.",
+  "settings.tips.form.title": "Možnosti tringeltu",
+  "settings.tips.percentages.add": "Pridať percento",
+  "settings.tips.percentages.description":
+    "Zákazníci môžu pri platení vybrať tieto percentá.",
+  "settings.tips.percentages.duplicate": "Toto percento už je v zozname.",
+  "settings.tips.percentages.invalid": "Zadajte celé percento od 1 do 100.",
+  "settings.tips.percentages.label": "Predvolené percentuálne hodnoty",
+  "settings.tips.percentages.maximum":
+    "Môžete pridať najviac štyri predvolené percentuálne hodnoty.",
+  "settings.tips.percentages.placeholder": "napr. 15",
+  "settings.tips.percentages.value": "{value} %",
+  "settings.tips.preset.remove": "Odstrániť {value}",
+  "settings.tips.reset": "Obnoviť predvolené hodnoty",
+  "settings.tips.save": "Uložiť tringelty",
+  "settings.tips.saved": "Nastavenie tringeltu uložené.",
   "settings.tips.title": "Tringelty",
   "settings.title": "Nastavenia",
   "settings.webhooks.description":

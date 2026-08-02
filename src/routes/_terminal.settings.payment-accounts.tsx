@@ -13,7 +13,14 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx"
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
@@ -210,14 +217,12 @@ function FiatBankAccountForm() {
         </Field>
 
         <Field>
-          <FieldLabel id={currencyInputId}>
+          <FieldLabel htmlFor={currencyInputId}>
             {t("settings.fiatBankAccount.currency.label")}
           </FieldLabel>
-          <ToggleGroup<FiatCurrencyType>
-            aria-labelledby={currencyInputId}
-            value={[currency]}
-            onValueChange={(value) => {
-              const [nextCurrency] = value
+          <Select<FiatCurrencyType>
+            value={currency}
+            onValueChange={(nextCurrency) => {
               if (
                 nextCurrency === FiatCurrency.EUR ||
                 nextCurrency === FiatCurrency.USD ||
@@ -227,55 +232,59 @@ function FiatBankAccountForm() {
                 resetSaved()
               }
             }}
-            variant="outline"
-            spacing={0}
-            className="grid w-full grid-cols-1"
-            orientation="vertical"
           >
-            {fiatBankAccountCurrencyOptions.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                className="w-full justify-start px-4"
-              >
-                {t(option.label)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+            <SelectTrigger
+              id={currencyInputId}
+              disabled={pending}
+              className="w-full"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {fiatBankAccountCurrencyOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {t(option.label)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <FieldDescription>
             {t("settings.fiatBankAccount.currency.description")}
           </FieldDescription>
         </Field>
 
         <Field>
-          <FieldLabel id={qrFormatInputId}>
+          <FieldLabel htmlFor={qrFormatInputId}>
             {t("settings.fiatBankAccount.qrFormat.label")}
           </FieldLabel>
-          <ToggleGroup<BankQrFormat>
-            aria-labelledby={qrFormatInputId}
-            value={[defaultQrFormat]}
-            onValueChange={(value) => {
-              const [nextFormat] = value
-              if (isBankQrFormat(nextFormat)) {
+          <Select<BankQrFormat>
+            value={defaultQrFormat}
+            onValueChange={(nextFormat) => {
+              if (nextFormat !== null && isBankQrFormat(nextFormat)) {
                 setDefaultQrFormat(nextFormat)
                 resetSaved()
               }
             }}
-            variant="outline"
-            spacing={0}
-            className="grid"
-            orientation="vertical"
           >
-            {fiatBankAccountQrFormatOptions.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                className="w-full justify-start px-4"
-              >
-                {t(option.label)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+            <SelectTrigger
+              id={qrFormatInputId}
+              disabled={pending}
+              className="w-full"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {fiatBankAccountQrFormatOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {t(option.label)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           <FieldDescription>
             {t("settings.fiatBankAccount.qrFormat.description")}
           </FieldDescription>

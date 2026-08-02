@@ -364,6 +364,107 @@ describe("spark account transaction sync job", () => {
     expect(errors).toEqual([])
   })
 
+  test("retries wallet initialization after a transient failure", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const mnemonic = createUniqueHexSeed()
+    const accountId = await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Spark account",
+        spark: {
+          mnemonic,
+        },
+      })
+    )
+    const transferId = `spark-transfer-retry-${accountId}`
+    const wallet = new FakeSparkWallet([
+      createCompletedTransfer({
+        id: transferId,
+      }),
+    ])
+    let initializationAttempts = 0
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
+      onError: (error) => {
+        errors.push(error)
+      },
+    })
+    await using _job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: async (receivedMnemonic) => {
+          initializationAttempts += 1
+          if (receivedMnemonic === mnemonic && initializationAttempts === 1) {
+            throw new Error("Temporary Spark wallet failure")
+          }
+
+          return receivedMnemonic === mnemonic
+            ? wallet
+            : new FakeSparkWallet([])
+        },
+        recheckIntervalMs: 10,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([
+        {
+          sparkTransferId: transferId,
+        },
+      ])
+
+    expect(initializationAttempts).toBeGreaterThanOrEqual(2)
+    expect(errors).toHaveLength(1)
+  })
+
+  test("does not retry wallet initialization after disposal", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu })
+    const errors: unknown[] = []
+    const mnemonic = createUniqueHexSeed()
+    await run.orThrow(
+      createAccount({
+        deviceId: null,
+        name: "Spark account",
+        spark: {
+          mnemonic,
+        },
+      })
+    )
+    let initializationAttempts = 0
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      ...createDateDeps(),
+      lockManager: createInProcessLockManager(),
+      onError: (error) => {
+        errors.push(error)
+      },
+    })
+    const job = await jobRun.orThrow(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: async () => {
+          initializationAttempts += 1
+          throw new Error("Temporary Spark wallet failure")
+        },
+        recheckIntervalMs: 1_000,
+      })
+    )
+
+    await expect.poll(() => errors).toHaveLength(1)
+    await job[Symbol.asyncDispose]()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(initializationAttempts).toBe(1)
+  })
+
   test("records completed Spark transfers without a BOLT11 invoice when Spark invoice exists", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

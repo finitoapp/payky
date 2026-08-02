@@ -205,6 +205,8 @@ const createSparkAccountSyncSession = ({
   let wallet: SharedSparkSyncWallet | undefined
   let unsubscribeEvents: (() => void) | undefined
   let disposed = false
+  let isInitializing = false
+  let hasInvalidSecret = false
   let pendingHistorySync = false
   const pendingTransferIds = new Set<string>()
   const queue = createKeyedTaskQueue({
@@ -402,6 +404,7 @@ const createSparkAccountSyncSession = ({
   const syncHistorySoon = (): void => {
     if (wallet === undefined) {
       bufferHistorySync("Buffered Spark history event before wallet init.")
+      initializeSoon()
       return
     }
 
@@ -421,54 +424,76 @@ const createSparkAccountSyncSession = ({
   }
 
   const init = async (): Promise<void> => {
+    if (
+      disposed ||
+      wallet !== undefined ||
+      isInitializing ||
+      hasInvalidSecret
+    ) {
+      return
+    }
+
     context.console.debug("Initializing Spark wallet.", {
       accountId: account.id,
     })
 
     if (!isValidSparkSecret(account.mnemonic)) {
+      hasInvalidSecret = true
       context.console.warn("Skipped Spark account with an invalid secret.", {
         accountId: account.id,
       })
       return
     }
 
-    const createdWallet = await walletFactory(account.mnemonic)
+    isInitializing = true
 
-    if (disposed) {
-      await createdWallet[Symbol.asyncDispose]()
-      return
+    try {
+      const createdWallet = await walletFactory(account.mnemonic)
+
+      if (disposed) {
+        await createdWallet[Symbol.asyncDispose]()
+        return
+      }
+
+      wallet = createdWallet
+      unsubscribeEvents = createdWallet.subscribe({
+        [SparkWalletEvent.TransferClaimed]: (transferId) => {
+          context.console.debug("Received Spark transfer claimed event.", {
+            accountId: account.id,
+            sparkTransferId: transferId,
+          })
+          syncTransferSoon(transferId)
+        },
+        [SparkWalletEvent.BalanceUpdate]: () => {
+          context.console.debug("Received Spark balance update event.", {
+            accountId: account.id,
+          })
+          syncHistorySoon()
+        },
+        [SparkWalletEvent.DepositConfirmed]: () => {
+          context.console.debug("Received Spark deposit confirmed event.", {
+            accountId: account.id,
+          })
+          syncHistorySoon()
+        },
+      })
+      context.console.info("Initialized Spark wallet.", {
+        accountId: account.id,
+      })
+      flushBufferedWork()
+      syncHistorySoon()
+    } finally {
+      isInitializing = false
     }
-
-    wallet = createdWallet
-    unsubscribeEvents = createdWallet.subscribe({
-      [SparkWalletEvent.TransferClaimed]: (transferId) => {
-        context.console.debug("Received Spark transfer claimed event.", {
-          accountId: account.id,
-          sparkTransferId: transferId,
-        })
-        syncTransferSoon(transferId)
-      },
-      [SparkWalletEvent.BalanceUpdate]: () => {
-        context.console.debug("Received Spark balance update event.", {
-          accountId: account.id,
-        })
-        syncHistorySoon()
-      },
-      [SparkWalletEvent.DepositConfirmed]: () => {
-        context.console.debug("Received Spark deposit confirmed event.", {
-          accountId: account.id,
-        })
-        syncHistorySoon()
-      },
-    })
-    context.console.info("Initialized Spark wallet.", { accountId: account.id })
-    flushBufferedWork()
-    syncHistorySoon()
   }
 
-  void init().catch((error: unknown) => {
-    context.onError(error)
-  })
+  const initializeSoon = (): void => {
+    void init().catch((error: unknown) => {
+      context.onError(error)
+    })
+  }
+
+  initializeSoon()
 
   return {
     get mnemonic() {

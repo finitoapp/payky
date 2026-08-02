@@ -9,53 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RestoreAccountRouteImport } from './routes/restore-account'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as LandingRouteImport } from './routes/landing'
-import { Route as ErrorRouteImport } from './routes/error'
 import { Route as TerminalRouteImport } from './routes/_terminal'
+import { Route as ErrorRouteImport } from './routes/error'
+import { Route as LandingRouteImport } from './routes/landing'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
-import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
-import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
-import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
-import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
-import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
-import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
-import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
-import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
-import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
-import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
-import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
-import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
-import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
-import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
-import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
-import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
-import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
-import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
-import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
-import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
-import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
-import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
+import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
+import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
+import { Route as TerminalItemsEditRouteImport } from './routes/_terminal.items.edit'
+import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
+import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
+import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
+import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
+import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
+import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
+import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
+import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
+import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
+import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
+import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
+import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
+import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
+import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
+import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
+import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
+import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
+import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
+import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
 import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
-import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
+import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
 
-const RestoreAccountRoute = RestoreAccountRouteImport.update({
-  id: '/restore-account',
-  path: '/restore-account',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LandingRoute = LandingRouteImport.update({
-  id: '/landing',
-  path: '/landing',
+const TerminalRoute = TerminalRouteImport.update({
+  id: '/_terminal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -63,8 +52,19 @@ const ErrorRoute = ErrorRouteImport.update({
   path: '/error',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TerminalRoute = TerminalRouteImport.update({
-  id: '/_terminal',
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestoreAccountRoute = RestoreAccountRouteImport.update({
+  id: '/restore-account',
+  path: '/restore-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TerminalIndexRoute = TerminalIndexRouteImport.update({
@@ -72,9 +72,9 @@ const TerminalIndexRoute = TerminalIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TerminalRoute,
 } as any)
-const TerminalSettingsRoute = TerminalSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const TerminalActivityRoute = TerminalActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => TerminalRoute,
 } as any)
 const TerminalCheckoutRoute = TerminalCheckoutRouteImport.update({
@@ -82,122 +82,9 @@ const TerminalCheckoutRoute = TerminalCheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => TerminalRoute,
 } as any)
-const TerminalActivityRoute = TerminalActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
-  getParentRoute: () => TerminalRoute,
-} as any)
-const TerminalSettingsIndexRoute = TerminalSettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
-const TerminalSettingsWithdrawRoute =
-  TerminalSettingsWithdrawRouteImport.update({
-    id: '/withdraw',
-    path: '/withdraw',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
-  id: '/theme',
-  path: '/theme',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
-const TerminalSettingsSecurityRoute =
-  TerminalSettingsSecurityRouteImport.update({
-    id: '/security',
-    path: '/security',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsPrivacyRoute = TerminalSettingsPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
-const TerminalSettingsPaymentNumberSeriesRoute =
-  TerminalSettingsPaymentNumberSeriesRouteImport.update({
-    id: '/payment-number-series',
-    path: '/payment-number-series',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsPaymentAccountsRoute =
-  TerminalSettingsPaymentAccountsRouteImport.update({
-    id: '/payment-accounts',
-    path: '/payment-accounts',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsLanguageRoute =
-  TerminalSettingsLanguageRouteImport.update({
-    id: '/language',
-    path: '/language',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
-const TerminalSettingsFioPluginRoute =
-  TerminalSettingsFioPluginRouteImport.update({
-    id: '/fio-plugin',
-    path: '/fio-plugin',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
-  id: '/fiat',
-  path: '/fiat',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
-const TerminalSettingsEvoluExportRoute =
-  TerminalSettingsEvoluExportRouteImport.update({
-    id: '/evolu-export',
-    path: '/evolu-export',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsDonationsInvoiceRoute =
-  TerminalSettingsDonationsInvoiceRouteImport.update({
-    id: '/donations-invoice',
-    path: '/donations-invoice',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsDonationsRoute =
-  TerminalSettingsDonationsRouteImport.update({
-    id: '/donations',
-    path: '/donations',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsDefaultPaymentMethodRoute =
-  TerminalSettingsDefaultPaymentMethodRouteImport.update({
-    id: '/default-payment-method',
-    path: '/default-payment-method',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsDebugConsoleRoute =
-  TerminalSettingsDebugConsoleRouteImport.update({
-    id: '/debug-console',
-    path: '/debug-console',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsAccountsRoute =
-  TerminalSettingsAccountsRouteImport.update({
-    id: '/accounts',
-    path: '/accounts',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsAboutRoute = TerminalSettingsAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
-const TerminalPaymentPaymentIdRoute =
-  TerminalPaymentPaymentIdRouteImport.update({
-    id: '/payment_/$paymentId',
-    path: '/payment/$paymentId',
-    getParentRoute: () => TerminalRoute,
-  } as any)
-const TerminalItemsEditRoute = TerminalItemsEditRouteImport.update({
-  id: '/items/edit',
-  path: '/items/edit',
+const TerminalSettingsRoute = TerminalSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => TerminalRoute,
 } as any)
 const TerminalActivityPaymentIdRoute =
@@ -206,22 +93,135 @@ const TerminalActivityPaymentIdRoute =
     path: '/activity/$paymentId',
     getParentRoute: () => TerminalRoute,
   } as any)
+const TerminalItemsEditRoute = TerminalItemsEditRouteImport.update({
+  id: '/items/edit',
+  path: '/items/edit',
+  getParentRoute: () => TerminalRoute,
+} as any)
+const TerminalPaymentPaymentIdRoute =
+  TerminalPaymentPaymentIdRouteImport.update({
+    id: '/payment_/$paymentId',
+    path: '/payment/$paymentId',
+    getParentRoute: () => TerminalRoute,
+  } as any)
+const TerminalSettingsIndexRoute = TerminalSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsAboutRoute = TerminalSettingsAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsAccountsRoute =
+  TerminalSettingsAccountsRouteImport.update({
+    id: '/accounts',
+    path: '/accounts',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDebugConsoleRoute =
+  TerminalSettingsDebugConsoleRouteImport.update({
+    id: '/debug-console',
+    path: '/debug-console',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDefaultPaymentMethodRoute =
+  TerminalSettingsDefaultPaymentMethodRouteImport.update({
+    id: '/default-payment-method',
+    path: '/default-payment-method',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDonationsRoute =
+  TerminalSettingsDonationsRouteImport.update({
+    id: '/donations',
+    path: '/donations',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDonationsInvoiceRoute =
+  TerminalSettingsDonationsInvoiceRouteImport.update({
+    id: '/donations-invoice',
+    path: '/donations-invoice',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsEvoluExportRoute =
+  TerminalSettingsEvoluExportRouteImport.update({
+    id: '/evolu-export',
+    path: '/evolu-export',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
+  id: '/fiat',
+  path: '/fiat',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsFioPluginRoute =
+  TerminalSettingsFioPluginRouteImport.update({
+    id: '/fio-plugin',
+    path: '/fio-plugin',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsLanguageRoute =
+  TerminalSettingsLanguageRouteImport.update({
+    id: '/language',
+    path: '/language',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsRoute =
+  TerminalSettingsPaymentAccountsRouteImport.update({
+    id: '/payment-accounts',
+    path: '/payment-accounts',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsPaymentNumberSeriesRoute =
+  TerminalSettingsPaymentNumberSeriesRouteImport.update({
+    id: '/payment-number-series',
+    path: '/payment-number-series',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsPrivacyRoute = TerminalSettingsPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsSecurityRoute =
+  TerminalSettingsSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
+  id: '/theme',
+  path: '/theme',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsWithdrawRoute =
+  TerminalSettingsWithdrawRouteImport.update({
+    id: '/withdraw',
+    path: '/withdraw',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsAboutIndexRoute =
   TerminalSettingsAboutIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => TerminalSettingsAboutRoute,
   } as any)
-const TerminalSettingsAboutTermsRoute =
-  TerminalSettingsAboutTermsRouteImport.update({
-    id: '/terms',
-    path: '/terms',
-    getParentRoute: () => TerminalSettingsAboutRoute,
-  } as any)
 const TerminalSettingsAboutPrivacyRoute =
   TerminalSettingsAboutPrivacyRouteImport.update({
     id: '/privacy',
     path: '/privacy',
+    getParentRoute: () => TerminalSettingsAboutRoute,
+  } as any)
+const TerminalSettingsAboutTermsRoute =
+  TerminalSettingsAboutTermsRouteImport.update({
+    id: '/terms',
+    path: '/terms',
     getParentRoute: () => TerminalSettingsAboutRoute,
   } as any)
 
@@ -441,25 +441,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/restore-account': {
-      id: '/restore-account'
-      path: '/restore-account'
-      fullPath: '/restore-account'
-      preLoaderRoute: typeof RestoreAccountRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/landing': {
-      id: '/landing'
-      path: '/landing'
-      fullPath: '/landing'
-      preLoaderRoute: typeof LandingRouteImport
+    '/_terminal': {
+      id: '/_terminal'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof TerminalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -469,11 +455,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_terminal': {
-      id: '/_terminal'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof TerminalRouteImport
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restore-account': {
+      id: '/restore-account'
+      path: '/restore-account'
+      fullPath: '/restore-account'
+      preLoaderRoute: typeof RestoreAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_terminal/': {
@@ -483,11 +483,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalIndexRouteImport
       parentRoute: typeof TerminalRoute
     }
-    '/_terminal/settings': {
-      id: '/_terminal/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof TerminalSettingsRouteImport
+    '/_terminal/activity': {
+      id: '/_terminal/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof TerminalActivityRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/checkout': {
@@ -497,151 +497,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalCheckoutRouteImport
       parentRoute: typeof TerminalRoute
     }
-    '/_terminal/activity': {
-      id: '/_terminal/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof TerminalActivityRouteImport
-      parentRoute: typeof TerminalRoute
-    }
-    '/_terminal/settings/': {
-      id: '/_terminal/settings/'
-      path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof TerminalSettingsIndexRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/withdraw': {
-      id: '/_terminal/settings/withdraw'
-      path: '/withdraw'
-      fullPath: '/settings/withdraw'
-      preLoaderRoute: typeof TerminalSettingsWithdrawRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/theme': {
-      id: '/_terminal/settings/theme'
-      path: '/theme'
-      fullPath: '/settings/theme'
-      preLoaderRoute: typeof TerminalSettingsThemeRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/security': {
-      id: '/_terminal/settings/security'
-      path: '/security'
-      fullPath: '/settings/security'
-      preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/privacy': {
-      id: '/_terminal/settings/privacy'
-      path: '/privacy'
-      fullPath: '/settings/privacy'
-      preLoaderRoute: typeof TerminalSettingsPrivacyRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/payment-number-series': {
-      id: '/_terminal/settings/payment-number-series'
-      path: '/payment-number-series'
-      fullPath: '/settings/payment-number-series'
-      preLoaderRoute: typeof TerminalSettingsPaymentNumberSeriesRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/payment-accounts': {
-      id: '/_terminal/settings/payment-accounts'
-      path: '/payment-accounts'
-      fullPath: '/settings/payment-accounts'
-      preLoaderRoute: typeof TerminalSettingsPaymentAccountsRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/language': {
-      id: '/_terminal/settings/language'
-      path: '/language'
-      fullPath: '/settings/language'
-      preLoaderRoute: typeof TerminalSettingsLanguageRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/items': {
-      id: '/_terminal/settings/items'
-      path: '/items'
-      fullPath: '/settings/items'
-      preLoaderRoute: typeof TerminalSettingsItemsRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/fio-plugin': {
-      id: '/_terminal/settings/fio-plugin'
-      path: '/fio-plugin'
-      fullPath: '/settings/fio-plugin'
-      preLoaderRoute: typeof TerminalSettingsFioPluginRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/fiat': {
-      id: '/_terminal/settings/fiat'
-      path: '/fiat'
-      fullPath: '/settings/fiat'
-      preLoaderRoute: typeof TerminalSettingsFiatRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/evolu-export': {
-      id: '/_terminal/settings/evolu-export'
-      path: '/evolu-export'
-      fullPath: '/settings/evolu-export'
-      preLoaderRoute: typeof TerminalSettingsEvoluExportRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/donations-invoice': {
-      id: '/_terminal/settings/donations-invoice'
-      path: '/donations-invoice'
-      fullPath: '/settings/donations-invoice'
-      preLoaderRoute: typeof TerminalSettingsDonationsInvoiceRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/donations': {
-      id: '/_terminal/settings/donations'
-      path: '/donations'
-      fullPath: '/settings/donations'
-      preLoaderRoute: typeof TerminalSettingsDonationsRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/default-payment-method': {
-      id: '/_terminal/settings/default-payment-method'
-      path: '/default-payment-method'
-      fullPath: '/settings/default-payment-method'
-      preLoaderRoute: typeof TerminalSettingsDefaultPaymentMethodRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/debug-console': {
-      id: '/_terminal/settings/debug-console'
-      path: '/debug-console'
-      fullPath: '/settings/debug-console'
-      preLoaderRoute: typeof TerminalSettingsDebugConsoleRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/accounts': {
-      id: '/_terminal/settings/accounts'
-      path: '/accounts'
-      fullPath: '/settings/accounts'
-      preLoaderRoute: typeof TerminalSettingsAccountsRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/about': {
-      id: '/_terminal/settings/about'
-      path: '/about'
-      fullPath: '/settings/about'
-      preLoaderRoute: typeof TerminalSettingsAboutRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/payment_/$paymentId': {
-      id: '/_terminal/payment_/$paymentId'
-      path: '/payment/$paymentId'
-      fullPath: '/payment/$paymentId'
-      preLoaderRoute: typeof TerminalPaymentPaymentIdRouteImport
-      parentRoute: typeof TerminalRoute
-    }
-    '/_terminal/items/edit': {
-      id: '/_terminal/items/edit'
-      path: '/items/edit'
-      fullPath: '/items/edit'
-      preLoaderRoute: typeof TerminalItemsEditRouteImport
+    '/_terminal/settings': {
+      id: '/_terminal/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof TerminalSettingsRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/activity_/$paymentId': {
@@ -651,6 +511,146 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalActivityPaymentIdRouteImport
       parentRoute: typeof TerminalRoute
     }
+    '/_terminal/items/edit': {
+      id: '/_terminal/items/edit'
+      path: '/items/edit'
+      fullPath: '/items/edit'
+      preLoaderRoute: typeof TerminalItemsEditRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/payment_/$paymentId': {
+      id: '/_terminal/payment_/$paymentId'
+      path: '/payment/$paymentId'
+      fullPath: '/payment/$paymentId'
+      preLoaderRoute: typeof TerminalPaymentPaymentIdRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/settings/': {
+      id: '/_terminal/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof TerminalSettingsIndexRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/about': {
+      id: '/_terminal/settings/about'
+      path: '/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof TerminalSettingsAboutRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/accounts': {
+      id: '/_terminal/settings/accounts'
+      path: '/accounts'
+      fullPath: '/settings/accounts'
+      preLoaderRoute: typeof TerminalSettingsAccountsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/debug-console': {
+      id: '/_terminal/settings/debug-console'
+      path: '/debug-console'
+      fullPath: '/settings/debug-console'
+      preLoaderRoute: typeof TerminalSettingsDebugConsoleRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/default-payment-method': {
+      id: '/_terminal/settings/default-payment-method'
+      path: '/default-payment-method'
+      fullPath: '/settings/default-payment-method'
+      preLoaderRoute: typeof TerminalSettingsDefaultPaymentMethodRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/donations': {
+      id: '/_terminal/settings/donations'
+      path: '/donations'
+      fullPath: '/settings/donations'
+      preLoaderRoute: typeof TerminalSettingsDonationsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/donations-invoice': {
+      id: '/_terminal/settings/donations-invoice'
+      path: '/donations-invoice'
+      fullPath: '/settings/donations-invoice'
+      preLoaderRoute: typeof TerminalSettingsDonationsInvoiceRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/evolu-export': {
+      id: '/_terminal/settings/evolu-export'
+      path: '/evolu-export'
+      fullPath: '/settings/evolu-export'
+      preLoaderRoute: typeof TerminalSettingsEvoluExportRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/fiat': {
+      id: '/_terminal/settings/fiat'
+      path: '/fiat'
+      fullPath: '/settings/fiat'
+      preLoaderRoute: typeof TerminalSettingsFiatRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/fio-plugin': {
+      id: '/_terminal/settings/fio-plugin'
+      path: '/fio-plugin'
+      fullPath: '/settings/fio-plugin'
+      preLoaderRoute: typeof TerminalSettingsFioPluginRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/items': {
+      id: '/_terminal/settings/items'
+      path: '/items'
+      fullPath: '/settings/items'
+      preLoaderRoute: typeof TerminalSettingsItemsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/language': {
+      id: '/_terminal/settings/language'
+      path: '/language'
+      fullPath: '/settings/language'
+      preLoaderRoute: typeof TerminalSettingsLanguageRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/payment-accounts': {
+      id: '/_terminal/settings/payment-accounts'
+      path: '/payment-accounts'
+      fullPath: '/settings/payment-accounts'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/payment-number-series': {
+      id: '/_terminal/settings/payment-number-series'
+      path: '/payment-number-series'
+      fullPath: '/settings/payment-number-series'
+      preLoaderRoute: typeof TerminalSettingsPaymentNumberSeriesRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/privacy': {
+      id: '/_terminal/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof TerminalSettingsPrivacyRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/security': {
+      id: '/_terminal/settings/security'
+      path: '/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/theme': {
+      id: '/_terminal/settings/theme'
+      path: '/theme'
+      fullPath: '/settings/theme'
+      preLoaderRoute: typeof TerminalSettingsThemeRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/withdraw': {
+      id: '/_terminal/settings/withdraw'
+      path: '/withdraw'
+      fullPath: '/settings/withdraw'
+      preLoaderRoute: typeof TerminalSettingsWithdrawRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/about/': {
       id: '/_terminal/settings/about/'
       path: '/'
@@ -658,18 +658,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsAboutIndexRouteImport
       parentRoute: typeof TerminalSettingsAboutRoute
     }
-    '/_terminal/settings/about/terms': {
-      id: '/_terminal/settings/about/terms'
-      path: '/terms'
-      fullPath: '/settings/about/terms'
-      preLoaderRoute: typeof TerminalSettingsAboutTermsRouteImport
-      parentRoute: typeof TerminalSettingsAboutRoute
-    }
     '/_terminal/settings/about/privacy': {
       id: '/_terminal/settings/about/privacy'
       path: '/privacy'
       fullPath: '/settings/about/privacy'
       preLoaderRoute: typeof TerminalSettingsAboutPrivacyRouteImport
+      parentRoute: typeof TerminalSettingsAboutRoute
+    }
+    '/_terminal/settings/about/terms': {
+      id: '/_terminal/settings/about/terms'
+      path: '/terms'
+      fullPath: '/settings/about/terms'
+      preLoaderRoute: typeof TerminalSettingsAboutTermsRouteImport
       parentRoute: typeof TerminalSettingsAboutRoute
     }
   }

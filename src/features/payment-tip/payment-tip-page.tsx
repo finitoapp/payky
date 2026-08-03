@@ -208,7 +208,11 @@ function PaymentTipForm({
                           variant="outline"
                           className={tipOptionClassName}
                         >
-                          <span className="font-semibold">{percentage}%</span>
+                          <span className="font-semibold">
+                            {t("settings.tips.percentages.value", {
+                              value: percentage,
+                            })}
+                          </span>
                           <span className="text-sm text-muted-foreground">
                             {formatAmount(totalAmount)}
                           </span>

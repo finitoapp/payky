@@ -7,7 +7,6 @@ import {
   LoaderCircleIcon,
   ZapIcon,
 } from "lucide-react"
-import { QRCodeSVG } from "qrcode.react"
 import {
   type ReactNode,
   Suspense,
@@ -16,8 +15,8 @@ import {
   useMemo,
   useState,
 } from "react"
-import { toast } from "sonner"
 
+import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PaymentSuccess } from "@/components/payment-success.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -905,38 +904,16 @@ function QrPaymentRequest({
 }) {
   const { t } = useTranslation()
 
-  const copyQrPayload = async () => {
-    if (qrPayload === null) return
-
-    try {
-      await navigator.clipboard.writeText(qrPayload)
-      toast.success(t("paymentWait.qrCopied"))
-    } catch {
-      toast.error(t("paymentWait.qrCopyFailed"))
-    }
-  }
-
   return (
-    <div className="w-full">
-      <button
-        type="button"
-        disabled={qrPayload === null}
-        className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default"
-        onClick={() => void copyQrPayload()}
-        aria-label={t("paymentWait.copyQr")}
-      >
-        <span className="flex size-full flex-col items-center justify-center">
-          {qrPayload !== null ? (
-            <QRCodeSVG value={qrPayload} className="size-full" />
-          ) : preparingMessageKey !== null ? (
-            <span className="flex flex-col items-center gap-2 text-sm text-neutral-500">
-              <LoaderCircleIcon className="animate-spin" />
-              <span>{t(preparingMessageKey)}</span>
-            </span>
-          ) : null}
-        </span>
-      </button>
-    </div>
+    <CopyableQrCode
+      value={qrPayload}
+      ariaLabel={t("paymentWait.copyQr")}
+      copiedMessage={t("paymentWait.qrCopied")}
+      copyFailedMessage={t("paymentWait.qrCopyFailed")}
+      pendingLabel={
+        preparingMessageKey !== null ? t(preparingMessageKey) : undefined
+      }
+    />
   )
 }
 

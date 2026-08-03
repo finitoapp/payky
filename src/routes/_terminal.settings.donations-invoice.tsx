@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { LoaderCircleIcon } from "lucide-react"
-import { QRCodeSVG } from "qrcode.react"
-import { toast } from "sonner"
 import { z } from "zod"
 
+import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PaymentSuccess } from "@/components/payment-success.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -79,17 +78,6 @@ function DonateInvoicePage() {
       ? "paid"
       : "waiting"
 
-  const copyInvoice = async () => {
-    if (invoice.length === 0) return
-
-    try {
-      await navigator.clipboard.writeText(invoice)
-      toast.success(t("settings.donations.invoice.copied"))
-    } catch {
-      toast.error(t("settings.donations.invoice.copyFailed"))
-    }
-  }
-
   return (
     <>
       <div className="h-6" />
@@ -133,16 +121,12 @@ function DonateInvoicePage() {
           <CardContent>
             {invoice.length > 0 ? (
               <div className="flex flex-col gap-4">
-                <button
-                  type="button"
-                  className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  onClick={() => void copyInvoice()}
-                  aria-label={t("settings.donations.invoice.copy")}
-                >
-                  <span className="flex size-full flex-col">
-                    <QRCodeSVG value={invoice} className="size-full" />
-                  </span>
-                </button>
+                <CopyableQrCode
+                  value={invoice}
+                  ariaLabel={t("settings.donations.invoice.copy")}
+                  copiedMessage={t("settings.donations.invoice.copied")}
+                  copyFailedMessage={t("settings.donations.invoice.copyFailed")}
+                />
 
                 <DonationVerifyStatus status={verifyStatus} />
               </div>

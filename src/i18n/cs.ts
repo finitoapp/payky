@@ -485,7 +485,7 @@ export const cs = {
   "settings.evoluExport.status.success": "Export dokončen.",
   "settings.evoluExport.status.title": "Stav exportu",
   "settings.evoluExport.title": "Evolu Export",
-  "settings.evoluExport.warning.businessData": "business data",
+  "settings.evoluExport.warning.businessData": "obchodní data",
   "settings.evoluExport.warning.description":
     "Full export databází může obsahovat data, která umožňují přístup k prostředkům, integracím nebo soukromé obchodní historii. Exportované soubory ukládejte bezpečně a sdílejte je jen s důvěryhodnými příjemci.",
   "settings.evoluExport.warning.localConfiguration":

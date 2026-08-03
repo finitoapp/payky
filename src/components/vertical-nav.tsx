@@ -7,24 +7,24 @@ import type { ComponentProps } from "react"
 import { cn } from "@/lib/utils.ts"
 
 interface NavItem {
-  component?: typeof Link
-  label: React.ReactNode
-  action?: React.ReactNode
-  to?: LinkProps["to"]
-  href?: string
-  params?: LinkProps["params"]
-  icon?: React.ReactNode
-  active?: boolean
-  onClick?: () => void
-  className?: string
-  disableAction?: boolean
+  readonly component?: typeof Link
+  readonly label: React.ReactNode
+  readonly action?: React.ReactNode
+  readonly to?: LinkProps["to"]
+  readonly href?: string
+  readonly params?: LinkProps["params"]
+  readonly icon?: React.ReactNode
+  readonly active?: boolean
+  readonly onClick?: () => void
+  readonly className?: string
+  readonly disableAction?: boolean
 }
 
 interface VerticalNavProps {
-  items: ReadonlyArray<NavItem>
-  empty?: React.ReactNode
-  title?: string
-  className?: string
+  readonly items: ReadonlyArray<NavItem>
+  readonly empty?: React.ReactNode
+  readonly title?: string
+  readonly className?: string
 }
 
 export type VerticalNavItem = ComponentProps<

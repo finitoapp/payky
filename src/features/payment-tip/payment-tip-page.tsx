@@ -93,6 +93,7 @@ function PaymentTipForm({
   const customTipInputRef = useRef<HTMLInputElement>(null)
   const [customTipFocusRequest, setCustomTipFocusRequest] = useState(0)
   const [pending, setPending] = useState(false)
+  const confirmPendingRef = useRef(false)
   const customTipAmount = decimalAmountToMinorUnits({
     currency,
     value: customTip,
@@ -118,8 +119,9 @@ function PaymentTipForm({
   }, [customTipFocusRequest])
 
   const handleConfirm = async () => {
-    if (selectedTipAmount === null || pending) return
+    if (selectedTipAmount === null || confirmPendingRef.current) return
 
+    confirmPendingRef.current = true
     setPending(true)
     try {
       const paymentAmounts = calculatePaymentAmounts({
@@ -132,6 +134,7 @@ function PaymentTipForm({
       })
       if (!created) toast.error(t("paymentTip.create.error"))
     } finally {
+      confirmPendingRef.current = false
       setPending(false)
     }
   }

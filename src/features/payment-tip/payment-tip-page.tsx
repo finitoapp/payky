@@ -36,10 +36,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
 type TipSelection =
-  | {
-      readonly kind: "custom"
-      readonly tipAmount: NonNegativeIntegerValue | null
-    }
+  | { readonly kind: "custom" }
   | { readonly kind: "fixed"; readonly tipAmount: NonNegativeIntegerValue }
   | { readonly kind: "none"; readonly tipAmount: NonNegativeIntegerValue }
   | {
@@ -99,7 +96,14 @@ function PaymentTipForm({
     value: customTip,
   })
   const customTipInvalid = customTip.length > 0 && customTipAmount === null
-  const selectedTipAmount = selection?.tipAmount ?? null
+  const selectedTipAmount =
+    selection === null
+      ? null
+      : selection.kind === "custom"
+        ? customTipAmount === null
+          ? null
+          : NonNegativeInteger(customTipAmount)
+        : selection.tipAmount
   const hasTipPresets = percentages.length > 0 || fixedAmounts.length > 0
 
   const formatAmount = (value: NonNegativeIntegerValue) =>
@@ -290,13 +294,7 @@ function PaymentTipForm({
               onValueChange={(values) => {
                 const [value] = values
                 if (value === "custom") {
-                  setSelection({
-                    kind: "custom",
-                    tipAmount:
-                      customTipAmount === null
-                        ? null
-                        : NonNegativeInteger(customTipAmount),
-                  })
+                  setSelection({ kind: "custom" })
                   setCustomTipFocusRequest((current) => current + 1)
                   return
                 }
@@ -353,19 +351,7 @@ function PaymentTipForm({
                     aria-invalid={customTipInvalid}
                     placeholder={t("paymentTip.custom.placeholder")}
                     onChange={(event) => {
-                      const nextValue = event.currentTarget.value
-                      const nextTipAmount = decimalAmountToMinorUnits({
-                        currency,
-                        value: nextValue,
-                      })
-                      setCustomTip(nextValue)
-                      setSelection({
-                        kind: "custom",
-                        tipAmount:
-                          nextTipAmount === null
-                            ? null
-                            : NonNegativeInteger(nextTipAmount),
-                      })
+                      setCustomTip(event.currentTarget.value)
                     }}
                   />
                   <FieldError>

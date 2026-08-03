@@ -1,4 +1,4 @@
-import { ok, type Task } from "@evolu/common"
+import { type MutationOptions, ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -83,7 +83,13 @@ export const createPaymentLastNumberValues = ({
   date,
 })
 
-export const createNextPaymentNumber =
+/**
+ * Loads the current series and the previous number, then computes the next
+ * payment number without writing it. Exported so callers that need to fold
+ * the write into a larger mutation batch (e.g. `createPayment`) can reuse the
+ * same load-and-compute logic instead of duplicating it.
+ */
+export const loadNextPaymentNumber =
   ({
     id,
     date,
@@ -94,24 +100,53 @@ export const createNextPaymentNumber =
   async (run) => {
     const series = await run.orThrow(getPaymentNumberSeries())
     const [previous] = await run.deps.evolu.loadQuery(paymentLastNumberQuery)
-    const paymentNumber = createNextPaymentNumberValues({
-      id,
-      date,
-      series,
-      previous,
-    })
-    const paymentLastNumber = createPaymentLastNumberValues(paymentNumber)
+
+    return ok(
+      createNextPaymentNumberValues({
+        id,
+        date,
+        series,
+        previous,
+      })
+    )
+  }
+
+/**
+ * Upserts `paymentNumber` and `paymentLastNumber` for an already-computed
+ * payment number. Takes the caller's own `MutationOptions` so the writes can
+ * join an existing mutation batch instead of always opening a new one.
+ */
+export const upsertPaymentNumberRows = (
+  evolu: EvoluDep["evolu"],
+  paymentNumber: PaymentNumberRow,
+  options: MutationOptions
+): void => {
+  evolu.upsert("paymentNumber", paymentNumber, options)
+  evolu.upsert(
+    "paymentLastNumber",
+    createPaymentLastNumberValues(paymentNumber),
+    options
+  )
+}
+
+export const createNextPaymentNumber =
+  ({
+    id,
+    date,
+  }: {
+    readonly id: PaymentId
+    readonly date: DateString
+  }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const paymentNumber = await run.orThrow(loadNextPaymentNumber({ id, date }))
     const { evoluOwnerId } = run.deps
-    await runMutationWithCompletion((options) => {
-      run.deps.evolu.upsert("paymentNumber", paymentNumber, {
+
+    await runMutationWithCompletion((options) =>
+      upsertPaymentNumberRows(run.deps.evolu, paymentNumber, {
         ...options,
         ownerId: evoluOwnerId,
       })
-      run.deps.evolu.upsert("paymentLastNumber", paymentLastNumber, {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-    })
+    )
 
     return ok(paymentNumber)
   }

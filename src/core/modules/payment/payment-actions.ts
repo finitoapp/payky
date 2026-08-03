@@ -38,15 +38,11 @@ import type {
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
 import {
-  createNextPaymentNumberValues,
-  createPaymentLastNumberValues,
   createPaymentNumberDate,
+  loadNextPaymentNumber,
+  upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
-import {
-  paymentLastNumberQuery,
-  paymentNumberByPaymentIdQuery,
-} from "@/core/modules/payment-number/payment-number-queries.ts"
-import { getPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
+import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
@@ -297,24 +293,15 @@ export const createPayment =
 
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps
-    const series = await run.orThrow(getPaymentNumberSeries())
-    const [previousPaymentNumber] = await run.deps.evolu.loadQuery(
-      paymentLastNumberQuery
+    const paymentNumber = await run.orThrow(
+      loadNextPaymentNumber({
+        id,
+        date: createPaymentNumberDate(run.deps.date.now()),
+      })
     )
-    const paymentNumber = createNextPaymentNumberValues({
-      id,
-      date: createPaymentNumberDate(run.deps.date.now()),
-      series,
-      previous: previousPaymentNumber,
-    })
-    const paymentLastNumber = createPaymentLastNumberValues(paymentNumber)
 
     await runMutationWithCompletion((options) => {
-      run.deps.evolu.upsert("paymentNumber", paymentNumber, {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-      run.deps.evolu.upsert("paymentLastNumber", paymentLastNumber, {
+      upsertPaymentNumberRows(run.deps.evolu, paymentNumber, {
         ...options,
         ownerId: evoluOwnerId,
       })

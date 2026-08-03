@@ -20,6 +20,13 @@ type ThemeProviderState = {
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
 
+/**
+ * Mirrors the resolved theme so index.html's bootstrap script can apply it
+ * synchronously before first paint, ahead of ThemeProvider itself mounting.
+ * Keep this key in sync with the one read in index.html.
+ */
+const THEME_HINT_STORAGE_KEY = "payky.themeHint"
+
 const ThemeProviderContext = React.createContext<
   ThemeProviderState | undefined
 >(undefined)
@@ -98,6 +105,7 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark")
       root.classList.add(resolvedTheme)
+      localStorage.setItem(THEME_HINT_STORAGE_KEY, resolvedTheme)
 
       if (restoreTransitions) {
         restoreTransitions()

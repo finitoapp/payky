@@ -17,6 +17,11 @@
       body {
         margin: 0;
         min-height: 100%;
+        background: oklch(0.985 0.004 84);
+      }
+
+      html.dark,
+      html.dark body {
         background: oklch(0.181 0.005 248.1);
       }
 
@@ -47,6 +52,24 @@
         }
       }
     </style>
+    <script>
+      // Applies the theme synchronously, before first paint, so the boot
+      // background above and the React Suspense fallback (which mounts
+      // before the real ThemeProvider) never flash the wrong theme. Keep
+      // the storage key in sync with THEME_HINT_STORAGE_KEY in
+      // src/components/theme-provider.tsx.
+      (() => {
+        var hint = localStorage.getItem("payky.themeHint")
+        var isDark =
+          hint === "dark" ||
+          (hint !== "light" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches)
+
+        if (isDark) {
+          document.documentElement.classList.add("dark")
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app-loader" aria-label="Loading Payky" role="status">

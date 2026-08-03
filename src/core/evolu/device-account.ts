@@ -134,7 +134,7 @@ export const createAccountMnemonic = (): Mnemonic =>
 export const createRandomAccountName = () =>
   NonEmptyString255(faker.internet.username())
 
-const defaultEvoluTransportUrl = WssUrl("wss://free.evoluhq.com")
+export const defaultEvoluTransportUrl = WssUrl("wss://free.evoluhq.com")
 
 const createAccountEvoluTransportId = ({
   accountId,

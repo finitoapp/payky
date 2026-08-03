@@ -22,7 +22,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { upsertAccountEvoluWebsocketTransport } from "@/core/evolu/device-account.ts"
+import {
+  defaultEvoluTransportUrl,
+  upsertAccountEvoluWebsocketTransport,
+} from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
 import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
@@ -39,7 +42,7 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const setEvoluCounter = useSetAtom(evoluCounterAtom)
   const urlInputId = useId()
-  const [url, setUrl] = useState("wss://free.evoluhq.com")
+  const [url, setUrl] = useState<string>(defaultEvoluTransportUrl)
   const { pending, saved, error, setError, resetSaved, submit } =
     useSettingsForm()
 
@@ -101,7 +104,7 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                   aria-invalid={error !== null}
                   autoComplete="off"
                   inputMode="url"
-                  placeholder="wss://free.evoluhq.com"
+                  placeholder={defaultEvoluTransportUrl}
                   onChange={(event) => {
                     setUrl(event.currentTarget.value)
                     setError(null)

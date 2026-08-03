@@ -95,33 +95,23 @@ export const PaymentHistory = () => {
   const locale = useLocale()
   const { data: items } = useEvoluQuery(latestPaymentsQuery)
 
-  const navItems = items.length === 0 ? ([false] as const) : items
-
   return (
     <VerticalNav
       title={t("paymentHistory.title")}
-      items={navItems.map((item) => {
-        if (item === false) {
-          return {
-            disableAction: true,
-            label: (
-              <div
-                className={
-                  "flex flex-col justify-center items-center gap-8 py-10"
-                }
-              >
-                <ReceiptIcon className="h-10 w-10 text-muted-foreground" />
-                <h2 className={"text-foreground text-lg"}>
-                  {t("paymentHistory.empty.title")}
-                </h2>
-                <p className="text-balance text-sm text-muted-foreground text-center">
-                  {t("paymentHistory.empty.description")}
-                </p>
-              </div>
-            ),
-          }
-        }
-
+      empty={
+        <div
+          className={"flex flex-col justify-center items-center gap-8 py-10"}
+        >
+          <ReceiptIcon className="h-10 w-10 text-muted-foreground" />
+          <h2 className={"text-foreground text-lg"}>
+            {t("paymentHistory.empty.title")}
+          </h2>
+          <p className="text-balance text-sm text-muted-foreground text-center">
+            {t("paymentHistory.empty.description")}
+          </p>
+        </div>
+      }
+      items={items.map((item) => {
         const paymentStatus = resolvePaymentStatus(item)
 
         return {

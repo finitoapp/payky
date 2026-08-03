@@ -21,7 +21,8 @@ interface NavItem {
 }
 
 interface VerticalNavProps {
-  items: NavItem[]
+  items: ReadonlyArray<NavItem>
+  empty?: React.ReactNode
   title?: string
   className?: string
 }
@@ -30,7 +31,12 @@ export type VerticalNavItem = ComponentProps<
   typeof VerticalNav
 >["items"][number]
 
-export function VerticalNav({ items, className, title }: VerticalNavProps) {
+export function VerticalNav({
+  items,
+  empty,
+  className,
+  title,
+}: VerticalNavProps) {
   return (
     <div
       className={cn(
@@ -44,10 +50,14 @@ export function VerticalNav({ items, className, title }: VerticalNavProps) {
         </div>
       )}
       <nav className={"divide-y"}>
-        {items.map((item, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: we don't have any better value
-          <NavItemComponent key={index} item={item} />
-        ))}
+        {items.length === 0 && empty !== undefined ? (
+          <NavItemComponent item={{ disableAction: true, label: empty }} />
+        ) : (
+          items.map((item, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: we don't have any better value
+            <NavItemComponent key={index} item={item} />
+          ))
+        )}
       </nav>
     </div>
   )

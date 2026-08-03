@@ -36,7 +36,6 @@ export const DonationHistory = () => {
   })
 
   const items = data?.pages.flatMap((page) => page.items) ?? []
-  const navItems = items.length === 0 ? ([false] as const) : items
   const showInitialError = isError && items.length === 0 && !isPending
   const showLoadMoreError = isFetchNextPageError && items.length > 0
 
@@ -44,35 +43,31 @@ export const DonationHistory = () => {
     <div className="flex flex-col gap-3">
       <VerticalNav
         title={t("settings.donations.history.title")}
-        items={navItems.map((item) => {
-          if (item === false) {
-            return {
-              disableAction: true,
-              label: isPending ? (
-                <div className="flex justify-center py-10">
-                  <LoaderCircleIcon className="animate-spin text-muted-foreground" />
-                </div>
-              ) : showInitialError ? (
-                <div className="flex flex-col items-center justify-center gap-8 py-10">
-                  <CircleAlertIcon className="h-10 w-10 text-destructive" />
-                  <p className="text-balance text-center text-sm text-muted-foreground">
-                    {t("settings.donations.history.error")}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center gap-8 py-10">
-                  <HeartHandshakeIcon className="h-10 w-10 text-muted-foreground" />
-                  <h2 className="text-foreground text-lg">
-                    {t("settings.donations.history.empty.title")}
-                  </h2>
-                  <p className="text-balance text-center text-sm text-muted-foreground">
-                    {t("settings.donations.history.empty.description")}
-                  </p>
-                </div>
-              ),
-            }
-          }
-
+        empty={
+          isPending ? (
+            <div className="flex justify-center py-10">
+              <LoaderCircleIcon className="animate-spin text-muted-foreground" />
+            </div>
+          ) : showInitialError ? (
+            <div className="flex flex-col items-center justify-center gap-8 py-10">
+              <CircleAlertIcon className="h-10 w-10 text-destructive" />
+              <p className="text-balance text-center text-sm text-muted-foreground">
+                {t("settings.donations.history.error")}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-8 py-10">
+              <HeartHandshakeIcon className="h-10 w-10 text-muted-foreground" />
+              <h2 className="text-foreground text-lg">
+                {t("settings.donations.history.empty.title")}
+              </h2>
+              <p className="text-balance text-center text-sm text-muted-foreground">
+                {t("settings.donations.history.empty.description")}
+              </p>
+            </div>
+          )
+        }
+        items={items.map((item) => {
           return {
             label: (
               <div className="flex justify-between gap-2">

@@ -412,9 +412,6 @@ export const sk = {
   "settings.accounts.title": "Účet aplikácie",
   "settings.appVersion": "Verzia aplikácie:",
   "settings.appVersionCode": "Kód verzie:",
-  "settings.baskets.description":
-    "Vytvorte predvolené názvy pre rýchle uloženie košíkov",
-  "settings.baskets.title": "Názvy košíkov",
   "settings.cashRegisterAccount.enabled.description":
     "Keď je pokladnica povolená, hotovostné platby sa môžu pridať k pripraveným platbám.",
   "settings.cashRegisterAccount.enabled.label": "Povoliť pokladnicu",
@@ -627,7 +624,6 @@ export const sk = {
     "Používať americký dolár pre sumy v termináli",
   "settings.fiat.usd.title": "Americký dolar",
   "settings.general": "VŠEOBECNÉ",
-  "settings.items.description": "Vytvárať a spravovať katalógové položky",
   "settings.items.title": "Položky",
   "settings.language.czech.description": "Používať české preklady",
   "settings.language.czech.title": "Čeština",
@@ -775,7 +771,6 @@ export const sk = {
     "Nastavenie privacy mode v Sparku sa nepodarilo uložiť.",
   "settings.sparkAccount.save": "Uložiť Spark účet",
   "settings.sparkAccount.saved": "Spark účet uložený.",
-  "settings.terminal": "TERMINÁL",
   "settings.theme.description": "Prepínanie medzi svetlým a tmavým režimom",
   "settings.theme.dark.description": "Vždy použiť tmavé rozhranie",
   "settings.theme.dark.title": "Tmavý",

@@ -6,7 +6,7 @@ import {
   Bug,
   CircleDollarSign,
   DatabaseBackup,
-  Grid2X2,
+  type Grid2X2,
   HeartHandshake,
   Info,
   Landmark,
@@ -15,11 +15,10 @@ import {
   Plug,
   ReceiptText,
   ShieldCheck,
-  ShoppingBag,
   SunMoon,
   UserRound,
 } from "lucide-react"
-import { type ComponentProps, useMemo } from "react"
+import type { ComponentProps } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
@@ -43,20 +42,6 @@ interface SettingRow {
   readonly description: TranslationKey
   readonly to?: VerticalNavItem["to"]
 }
-
-const terminalSettings: ReadonlyArray<SettingRow> = [
-  {
-    icon: Grid2X2,
-    title: "settings.items.title",
-    description: "settings.items.description",
-    to: "/settings/items",
-  },
-  {
-    icon: ShoppingBag,
-    title: "settings.baskets.title",
-    description: "settings.baskets.description",
-  },
-]
 
 const accountSettings: ReadonlyArray<SettingRow> = [
   {
@@ -188,62 +173,30 @@ function createSettingsNavItems(
   })
 }
 
+const securitySettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: ShieldCheck,
+    title: "settings.security.title",
+    description: "settings.security.description",
+    to: "/settings/security",
+  },
+]
+
 function SettingsPage() {
   const { t } = useTranslation()
-  const accountItems = useMemo(
-    () => createSettingsNavItems(accountSettings, t),
-    [t]
-  )
-  const generalItems = useMemo(
-    () => createSettingsNavItems(generalSettings, t),
-    [t]
-  )
-  const supportItems = useMemo(
-    () => createSettingsNavItems(supportSettings, t),
-    [t]
-  )
-  const terminalItems = useMemo(
-    () => createSettingsNavItems(terminalSettings, t),
-    [t]
-  )
-  const paymentItems = useMemo(
-    () => createSettingsNavItems(paymentSettings, t),
-    [t]
-  )
-  const developerItems = useMemo(
-    () => createSettingsNavItems(developerSettings, t),
-    [t]
-  )
-  const privacyItems = useMemo(
-    () => createSettingsNavItems(privacySettings, t),
-    [t]
-  )
-  const securityItems = useMemo(
-    () =>
-      createSettingsNavItems(
-        [
-          {
-            icon: ShieldCheck,
-            title: "settings.security.title",
-            description: "settings.security.description",
-            to: "/settings/security",
-          },
-        ],
-        t
-      ),
-    [t]
-  )
+  const accountItems = createSettingsNavItems(accountSettings, t)
+  const generalItems = createSettingsNavItems(generalSettings, t)
+  const supportItems = createSettingsNavItems(supportSettings, t)
+  const paymentItems = createSettingsNavItems(paymentSettings, t)
+  const developerItems = createSettingsNavItems(developerSettings, t)
+  const privacyItems = createSettingsNavItems(privacySettings, t)
+  const securityItems = createSettingsNavItems(securitySettings, t)
 
   return (
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.title")} />
 
-      <VerticalNav
-        className={"hidden"}
-        title={t("settings.terminal")}
-        items={terminalItems}
-      />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav
         title={t("settings.accountAndSync")}

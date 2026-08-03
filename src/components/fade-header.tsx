@@ -14,8 +14,7 @@ export const FadeHeader: FC<{
 
   useEffect(() => {
     const handleScroll = () => {
-      // Calculate opacity based on scroll position
-      // Fade out completely after scrolling 300px
+      // Fade out completely after scrolling fadeDistance px
       const scrollY = window.scrollY
       const fadeDistance = 75
       const newOpacity = Math.max(0, 1 - scrollY / fadeDistance)
@@ -26,7 +25,8 @@ export const FadeHeader: FC<{
       }
     }
 
-    window.addEventListener("scroll", handleScroll)
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 

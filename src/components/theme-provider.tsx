@@ -9,8 +9,8 @@ export type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
 
 type ThemeProviderProps = {
-  children: React.ReactNode
-  disableTransitionOnChange?: boolean
+  readonly children: React.ReactNode
+  readonly disableTransitionOnChange?: boolean
 }
 
 type ThemeProviderState = {
@@ -73,7 +73,6 @@ function isEditableTarget(target: EventTarget | null) {
 export function ThemeProvider({
   children,
   disableTransitionOnChange = true,
-  ...props
 }: ThemeProviderProps) {
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const { theme } = useDeviceSettings()
@@ -172,7 +171,7 @@ export function ThemeProvider({
   )
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider value={value}>
       {children}
     </ThemeProviderContext.Provider>
   )

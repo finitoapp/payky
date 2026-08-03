@@ -8,7 +8,6 @@ import {
 import { LoaderCircle } from "lucide-react"
 import { motion, useAnimationControls, useReducedMotion } from "motion/react"
 import {
-  Suspense,
   useCallback,
   useEffect,
   useEffectEvent,
@@ -17,18 +16,16 @@ import {
   useState,
 } from "react"
 import { Button } from "@/components/ui/button.tsx"
-import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   currencyFractionDigits,
   type Money,
 } from "@/core/modules/shared/money.ts"
 import {
   type Currency,
-  FiatCurrency,
+  type FiatCurrency,
   Integer,
 } from "@/core/modules/shared/schema.ts"
 import { vibrateDevice } from "@/core/native/haptics.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -223,34 +220,6 @@ export function TerminalPaymentKeypad({
         onCharge={handleCharge}
       />
     </>
-  )
-}
-
-export function TerminalPaymentKeypadWithSettings({
-  onCharge,
-}: {
-  readonly onCharge: ChargeHandler
-}) {
-  return (
-    <Suspense fallback={null}>
-      <TerminalPaymentKeypadSettingsLoader onCharge={onCharge} />
-    </Suspense>
-  )
-}
-
-function TerminalPaymentKeypadSettingsLoader({
-  onCharge,
-}: {
-  readonly onCharge: ChargeHandler
-}) {
-  const { data } = useEvoluQuery(settingsQuery)
-  const [settings] = data
-
-  return (
-    <TerminalPaymentKeypad
-      currency={settings?.fiatCurrency ?? FiatCurrency.CZK}
-      onCharge={onCharge}
-    />
   )
 }
 

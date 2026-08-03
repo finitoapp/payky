@@ -1,18 +1,18 @@
+import { sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { useStore } from "jotai"
 import { Clock3, Grid2X2, Settings } from "lucide-react"
 import { Suspense } from "react"
-import { accountAtom } from "@/atoms/account.ts"
-import { TerminalPaymentKeypadWithSettings } from "@/components/terminal-payment-keypad.tsx"
+import { TerminalPaymentKeypad } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
+  FiatCurrency,
   FiatCurrencySchema,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
-import { useConsole } from "@/hooks/use-console.ts"
+import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -59,45 +59,39 @@ const Header = () => {
 }
 
 function TerminalPaymentKeypadLoader() {
-  const appRun = useAppRun()
-  const console = useConsole()
   const navigate = useNavigate()
-  const jotaiStore = useStore()
+  const createTerminalPayment = useCreateTerminalPayment()
+  const { data } = useEvoluQuery(settingsQuery)
+  const [settings] = data
 
   const handleCharge = async (money: Money) => {
-    const { device } = await jotaiStore.get(accountAtom)
-
-    await using run = appRun()
-
     const amount = NonNegativeInteger(money.value)
     const currency = FiatCurrencySchema.parse(money.currency)
 
-    const result = await run(
-      createPreparedPayment({
-        deviceId: device.id,
-        billId: null,
-        tableId: null,
-        amount,
-        currency,
-        tipAmount: NonNegativeInteger(0),
-        canceledAt: null,
+    if (settings?.tipsEnabled === sqliteTrue) {
+      await navigate({
+        to: "/payment/tip",
+        search: {
+          amount,
+          currency,
+        },
       })
-    )
-
-    if (!result.ok) {
-      console.error("Failed to create prepared payment", result.error)
       return
     }
 
-    await navigate({
-      to: "/payment/$paymentId",
-      params: {
-        paymentId: result.value,
-      },
+    await createTerminalPayment({
+      amount,
+      currency,
+      tipAmount: NonNegativeInteger(0),
     })
   }
 
-  return <TerminalPaymentKeypadWithSettings onCharge={handleCharge} />
+  return (
+    <TerminalPaymentKeypad
+      currency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+      onCharge={handleCharge}
+    />
+  )
 }
 
 function TerminalHomePage() {

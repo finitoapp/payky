@@ -43,6 +43,7 @@ import {
   upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
@@ -890,7 +891,6 @@ export const markPaymentPaidCash =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
     const paymentResult = await run(loadPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
 
@@ -932,26 +932,13 @@ export const markPaymentPaidCash =
     )
     if (!accountTransactionResult.ok) return accountTransactionResult
 
-    const id = createIdFromString<"ReconciliationClaim">(
-      `reconciliationClaim:manual:${paymentId}:${accountTransactionResult.value}`
+    return await run(
+      claimManualReconciliation({
+        paymentId,
+        accountTransactionId: accountTransactionResult.value,
+        deviceId: deviceId ?? null,
+      })
     )
-
-    await runMutationWithCompletion((options) =>
-      run.deps.evolu.upsert(
-        "reconciliationClaim",
-        removeUndefinedValues({
-          id,
-          deviceId: deviceId ?? null,
-          paymentId,
-          accountTransactionId: accountTransactionResult.value,
-          source: "manual" as const,
-          claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        }),
-        { ...options, ownerId: evoluOwnerId }
-      )
-    )
-
-    return ok(paymentId)
   }
 
 export const cancelPayment =

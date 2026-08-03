@@ -2,6 +2,7 @@ import { createIdFromString, ok, type Task } from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { TimestampMsSchema } from "@/core/modules/shared/schema.ts"
@@ -15,6 +16,40 @@ import {
   ibanReconciliationCandidateByAccountTransactionIdQuery,
   sparkReconciliationCandidateByAccountTransactionIdQuery,
 } from "./reconciliation-claim-queries.ts"
+
+export const claimManualReconciliation =
+  ({
+    paymentId,
+    accountTransactionId,
+    deviceId,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountTransactionId: AccountTransactionId
+    readonly deviceId: DeviceId | null
+  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+    const id = createIdFromString<"ReconciliationClaim">(
+      `reconciliationClaim:manual:${paymentId}:${accountTransactionId}`
+    )
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.upsert(
+        "reconciliationClaim",
+        removeUndefinedValues({
+          id,
+          deviceId,
+          paymentId,
+          accountTransactionId,
+          source: "manual" as const,
+          claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        }),
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(paymentId)
+  }
 
 export const reconcileAccountTransaction =
   (

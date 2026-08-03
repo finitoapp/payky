@@ -63,6 +63,7 @@ import {
   type OnboardingStep,
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
+import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import { languageOptions } from "@/features/settings/language-options.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
@@ -86,12 +87,6 @@ interface PaymentMethodOption {
   readonly label: TranslationKey
   readonly description: TranslationKey
   readonly icon: typeof Banknote
-}
-
-interface CurrencyOption {
-  readonly value: FiatCurrencyType
-  readonly label: TranslationKey
-  readonly description: TranslationKey
 }
 
 interface AccountTypeOption {
@@ -119,24 +114,6 @@ const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
     label: "onboarding.payments.iban.title",
     description: "onboarding.payments.iban.description",
     icon: Landmark,
-  },
-]
-
-const currencyOptions: ReadonlyArray<CurrencyOption> = [
-  {
-    value: FiatCurrency.USD,
-    label: "settings.fiat.usd.title",
-    description: "settings.fiat.usd.description",
-  },
-  {
-    value: FiatCurrency.EUR,
-    label: "settings.fiat.eur.title",
-    description: "settings.fiat.eur.description",
-  },
-  {
-    value: FiatCurrency.CZK,
-    label: "settings.fiat.czk.title",
-    description: "settings.fiat.czk.description",
   },
 ]
 
@@ -617,7 +594,7 @@ function CurrencyStep({
       <CardContent>
         <OptionToggleGroup
           value={currency}
-          options={currencyOptions.map((option) => ({
+          options={fiatCurrencyOptions.map((option) => ({
             value: option.value,
             icon: BadgeDollarSign,
             title: t(option.label),

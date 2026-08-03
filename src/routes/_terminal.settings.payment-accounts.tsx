@@ -45,6 +45,7 @@ import {
   NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -61,31 +62,10 @@ export const Route = createFileRoute("/_terminal/settings/payment-accounts")({
   },
 })
 
-interface FiatBankAccountCurrencyOption {
-  readonly value: FiatCurrencyType
-  readonly label: TranslationKey
-}
-
 interface FiatBankAccountQrFormatOption {
   readonly value: BankQrFormat
   readonly label: TranslationKey
 }
-
-const fiatBankAccountCurrencyOptions: ReadonlyArray<FiatBankAccountCurrencyOption> =
-  [
-    {
-      value: FiatCurrency.EUR,
-      label: "settings.fiat.eur.title",
-    },
-    {
-      value: FiatCurrency.USD,
-      label: "settings.fiat.usd.title",
-    },
-    {
-      value: FiatCurrency.CZK,
-      label: "settings.fiat.czk.title",
-    },
-  ]
 
 const fiatBankAccountQrFormatOptions: ReadonlyArray<FiatBankAccountQrFormatOption> =
   bankQrFormats.map((format) => ({
@@ -242,7 +222,7 @@ function FiatBankAccountForm() {
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {fiatBankAccountCurrencyOptions.map((option) => (
+                {fiatCurrencyOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {t(option.label)}
                   </SelectItem>

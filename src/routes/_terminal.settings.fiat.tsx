@@ -10,15 +10,12 @@ import {
 } from "@/components/ui/card.tsx"
 import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
-import {
-  FiatCurrency,
-  type FiatCurrency as FiatCurrencyType,
-} from "@/core/modules/shared/schema.ts"
+import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const Route = createFileRoute("/_terminal/settings/fiat")({
   component: FiatCurrencyPage,
@@ -28,30 +25,6 @@ export const Route = createFileRoute("/_terminal/settings/fiat")({
     },
   },
 })
-
-interface FiatCurrencyOption {
-  readonly value: FiatCurrencyType
-  readonly label: TranslationKey
-  readonly description: TranslationKey
-}
-
-const fiatCurrencyOptions: ReadonlyArray<FiatCurrencyOption> = [
-  {
-    value: FiatCurrency.EUR,
-    label: "settings.fiat.eur.title",
-    description: "settings.fiat.eur.description",
-  },
-  {
-    value: FiatCurrency.USD,
-    label: "settings.fiat.usd.title",
-    description: "settings.fiat.usd.description",
-  },
-  {
-    value: FiatCurrency.CZK,
-    label: "settings.fiat.czk.title",
-    description: "settings.fiat.czk.description",
-  },
-]
 
 function FiatCurrencyPage() {
   const appRun = useAppRun()

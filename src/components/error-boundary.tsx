@@ -16,15 +16,31 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
+import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 import { captureReportedError } from "@/core/sentry.ts"
-import { useTranslation } from "@/hooks/use-translation.ts"
+import { resources, type TranslationKey } from "@/i18n/resources.ts"
+
+/**
+ * Deliberately does not use `useTranslation()`/`useDeviceSettings()`: those
+ * suspend on device Evolu, and this component is the error fallback for a
+ * crash that may originate in device-Evolu init itself. A synchronous,
+ * best-effort lookup keeps the recovery UI rendering even then, degrading to
+ * English if anything here goes wrong.
+ */
+function t(key: TranslationKey): string {
+  try {
+    const language = getPreferredDeviceLanguage(navigator.language)
+    return resources[language][key]
+  } catch {
+    return resources.en[key]
+  }
+}
 
 export function AppErrorBoundary({
   error,
   info,
   reset,
 }: ErrorComponentProps<unknown>) {
-  const { t } = useTranslation()
   const detail = formatErrorDetail(error, info?.componentStack)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: report once per caught error, not on every componentStack identity change

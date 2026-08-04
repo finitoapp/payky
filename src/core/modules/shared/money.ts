@@ -35,6 +35,30 @@ export const minorUnitsToDecimalString = (props: Money): NumberString => {
   return NumberString(isNegative && base !== "0" ? `-${base}` : base)
 }
 
+/**
+ * Normalizes a decimal string that may use either "." or "," as the decimal
+ * separator, possibly with the other character used as a thousands grouping
+ * (e.g. "1,234.56" or "1.234,56"). The separator closest to the end of the
+ * string is treated as the decimal point; any earlier "." or "," are
+ * grouping characters and are stripped.
+ */
+const normalizeDecimalSeparators = (value: string): string => {
+  const lastComma = value.lastIndexOf(",")
+  const lastDot = value.lastIndexOf(".")
+  const decimalSeparatorIndex = Math.max(lastComma, lastDot)
+
+  if (decimalSeparatorIndex === -1) {
+    return value
+  }
+
+  const integerPart = value
+    .slice(0, decimalSeparatorIndex)
+    .replaceAll(/[.,]/gu, "")
+  const fractionPart = value.slice(decimalSeparatorIndex + 1)
+
+  return `${integerPart}.${fractionPart}`
+}
+
 export const decimalAmountToMinorUnits = ({
   currency,
   value,
@@ -42,7 +66,7 @@ export const decimalAmountToMinorUnits = ({
   readonly currency: Currency
   readonly value: string
 }): Integer | null => {
-  const normalized = value.trim().replace(",", ".")
+  const normalized = normalizeDecimalSeparators(value.trim())
   const parts = /^(\d+)(?:\.(\d+))?$/u.exec(normalized)
   if (parts === null) return null
 

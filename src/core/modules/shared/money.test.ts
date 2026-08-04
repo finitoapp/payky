@@ -12,6 +12,18 @@ describe("decimalAmountToMinorUnits", () => {
     )
   })
 
+  test("accepts a thousands-grouped amount in US convention (comma group, dot decimal)", () => {
+    expect(
+      decimalAmountToMinorUnits({ currency: "USD", value: "1,234.56" })
+    ).toBe(123_456)
+  })
+
+  test("accepts a thousands-grouped amount in EU convention (dot group, comma decimal)", () => {
+    expect(
+      decimalAmountToMinorUnits({ currency: "CZK", value: "1.234,56" })
+    ).toBe(123_456)
+  })
+
   test("rejects values with too many decimal places", () => {
     expect(
       decimalAmountToMinorUnits({ currency: "CZK", value: "12.555" })

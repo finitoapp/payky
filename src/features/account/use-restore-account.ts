@@ -1,12 +1,12 @@
 import { Mnemonic } from "@evolu/common"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue } from "jotai"
 import { useState } from "react"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { restoreOrSelectAccount } from "@/core/evolu/device-account.ts"
 import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export interface RestoreAccount {
@@ -24,7 +24,7 @@ export interface RestoreAccount {
  */
 export function useRestoreAccount(): RestoreAccount {
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const setEvoluCounter = useSetAtom(evoluCounterAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
   const [mnemonic, setMnemonicValue] = useState("")
   const { pending, error, setError, submit } = useSettingsForm()
 
@@ -52,7 +52,7 @@ export function useRestoreAccount(): RestoreAccount {
 
     await submit(async () => {
       await restoreOrSelectAccount(deviceEvolu, mnemonicResult.value)
-      setEvoluCounter((current) => current + 1)
+      reloadAppEvolu()
     })
 
     return true

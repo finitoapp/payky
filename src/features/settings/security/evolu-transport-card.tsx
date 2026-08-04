@@ -1,10 +1,9 @@
 import { sqliteTrue } from "@evolu/common"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue } from "jotai"
 import { Plus } from "lucide-react"
 import { useId, useState } from "react"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -31,6 +30,7 @@ import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import { TransportToggleList } from "@/features/settings/security/transport-toggle-list.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export interface EvoluTransportCardProps {
@@ -40,15 +40,11 @@ export interface EvoluTransportCardProps {
 export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const setEvoluCounter = useSetAtom(evoluCounterAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
   const urlInputId = useId()
   const [url, setUrl] = useState<string>(defaultEvoluTransportUrl)
   const { pending, saved, error, setError, resetSaved, submit } =
     useSettingsForm()
-
-  const reloadAppAccount = () => {
-    setEvoluCounter((current) => current + 1)
-  }
 
   return (
     <Card>
@@ -86,7 +82,7 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                   )
                 )
 
-                reloadAppAccount()
+                reloadAppEvolu()
                 setUrl("")
                 return undefined
               })

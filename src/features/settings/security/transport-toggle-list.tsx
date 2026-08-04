@@ -1,11 +1,10 @@
 import { type KyselyNotNull, sqliteFalse, sqliteTrue } from "@evolu/common"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue } from "jotai"
 import { Power, PowerOff } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/core/evolu/device-client.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
+import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const accountTransportsQuery = (accountId: AccountId) =>
@@ -50,7 +50,7 @@ export interface TransportToggleListProps {
 export function TransportToggleList({ accountId }: TransportToggleListProps) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const setEvoluCounter = useSetAtom(evoluCounterAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
   const { data: transports } = useDeviceEvoluQuery(
     accountTransportsQuery(accountId)
   )
@@ -87,7 +87,7 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
                   options
                 )
               )
-              setEvoluCounter((current) => current + 1)
+              reloadAppEvolu()
             } catch {
               toast.error(t("settings.saveFailed"))
             } finally {

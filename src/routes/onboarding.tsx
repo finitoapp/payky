@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { useAtom, useAtomValue } from "jotai"
 import {
   BadgeDollarSign,
   Banknote,
@@ -16,7 +16,6 @@ import { useEffect, useId, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -71,6 +70,7 @@ import { TransportToggleList } from "@/features/settings/security/transport-togg
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
+import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import {
   useTranslation,
   useTranslationForLanguage,
@@ -696,7 +696,7 @@ function AccountStep() {
   const { t } = useTranslation()
   const account = useAtomValue(accountAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const setEvoluCounter = useSetAtom(evoluCounterAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
   const [name, setName] = useState(account.name)
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
   const nameInputId = useId()
@@ -719,7 +719,7 @@ function AccountStep() {
     await runMutationWithCompletion((options) =>
       updateAccountName(deviceEvolu, account.id, trimmedName, options)
     )
-    setEvoluCounter((current) => current + 1)
+    reloadAppEvolu()
   }
 
   return (

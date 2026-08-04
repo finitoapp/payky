@@ -1,11 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue } from "jotai"
 import { Check, KeyRound, Plus, Trash2, UserRound } from "lucide-react"
 import { useId, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
@@ -35,6 +34,7 @@ import {
 import type { AccountId } from "@/core/evolu/device-client.ts"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
+import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/accounts")({
@@ -51,7 +51,7 @@ function AccountsSettingsPage() {
   const navigate = useNavigate()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const activeAccount = useAtomValue(accountAtom)
-  const setEvoluCounter = useSetAtom(evoluCounterAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
     null
@@ -75,10 +75,6 @@ function AccountsSettingsPage() {
     timeStyle: "short",
   })
 
-  const reloadAppAccount = () => {
-    setEvoluCounter((current) => current + 1)
-  }
-
   const activateAccount = (accountId: AccountId) => {
     if (accountId === activeAccount.id) {
       return
@@ -87,7 +83,7 @@ function AccountsSettingsPage() {
     setPendingAccountId(accountId)
     try {
       selectAccount(deviceEvolu, accountId)
-      reloadAppAccount()
+      reloadAppEvolu()
     } finally {
       setPendingAccountId(null)
     }
@@ -111,7 +107,7 @@ function AccountsSettingsPage() {
     setCreating(true)
     try {
       await createOrSelectAccount(deviceEvolu, createAccountMnemonic())
-      reloadAppAccount()
+      reloadAppEvolu()
     } finally {
       setCreating(false)
     }

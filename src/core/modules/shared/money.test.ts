@@ -24,6 +24,12 @@ describe("decimalAmountToMinorUnits", () => {
     ).toBe(123_456)
   })
 
+  test("accepts a trailing decimal separator with no fraction digits yet", () => {
+    expect(decimalAmountToMinorUnits({ currency: "CZK", value: "12." })).toBe(
+      1_200
+    )
+  })
+
   test("rejects values with too many decimal places", () => {
     expect(
       decimalAmountToMinorUnits({ currency: "CZK", value: "12.555" })

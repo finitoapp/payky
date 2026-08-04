@@ -18,13 +18,10 @@ import {
 import { Button } from "@/components/ui/button.tsx"
 import {
   currencyFractionDigits,
+  decimalAmountToMinorUnits,
   type Money,
 } from "@/core/modules/shared/money.ts"
-import {
-  type Currency,
-  type FiatCurrency,
-  Integer,
-} from "@/core/modules/shared/schema.ts"
+import type { Currency, FiatCurrency } from "@/core/modules/shared/schema.ts"
 import { vibrateDevice } from "@/core/native/haptics.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -80,22 +77,6 @@ const currencyNumberPartTypes = new Set<Intl.NumberFormatPartTypes>([
   "decimal",
   "fraction",
 ])
-
-function createMoney(amountInput: string, currency: Currency): Money {
-  const fractionDigits = currencyFractionDigits[currency]
-  const [integerPart = "", fractionPart = ""] = amountInput.split(".")
-  const minorUnitsMultiplier = 10 ** fractionDigits
-  const integerMinorUnits =
-    Number(integerPart === "" ? "0" : integerPart) * minorUnitsMultiplier
-  const fractionMinorUnits = Number(
-    fractionPart.padEnd(fractionDigits, "0").slice(0, fractionDigits)
-  )
-
-  return {
-    value: Integer(integerMinorUnits + fractionMinorUnits),
-    currency,
-  }
-}
 
 function getDecimalSeparator(locale: string) {
   return (
@@ -327,9 +308,9 @@ function Keypad({
 
     if (event.key === "Enter") {
       const amountInput = store.get(amountInputAtom)
-      const money = createMoney(amountInput, currency)
-      if (money.value > 0 && !isChargePending) {
-        void onCharge(money)
+      const amount = decimalAmountToMinorUnits({ currency, value: amountInput })
+      if (amount !== null && !isChargePending) {
+        void onCharge({ value: amount, currency })
       }
       event.preventDefault()
     }
@@ -431,17 +412,19 @@ function ChargeButton({
 }) {
   const { t } = useTranslation()
   const amountInput = useAtomValue(amountInputAtom)
-  const money = createMoney(amountInput, currency)
+  const amount = decimalAmountToMinorUnits({ currency, value: amountInput })
 
   return (
     <Button
       variant="outline"
       aria-busy={isChargePending}
       className="h-14 rounded-full text-base font-bold"
-      disabled={money.value <= 0 || isChargePending}
+      disabled={amount === null || isChargePending}
       onClick={() => {
+        if (amount === null) return
+
         vibrateOnTerminalButtonPress()
-        void onCharge(money)
+        void onCharge({ value: amount, currency })
       }}
     >
       {isChargePending ? (

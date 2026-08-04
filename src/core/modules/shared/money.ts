@@ -67,7 +67,7 @@ export const decimalAmountToMinorUnits = ({
   readonly value: string
 }): Integer | null => {
   const normalized = normalizeDecimalSeparators(value.trim())
-  const parts = /^(\d+)(?:\.(\d+))?$/u.exec(normalized)
+  const parts = /^(\d+)(?:\.(\d*))?$/u.exec(normalized)
   if (parts === null) return null
 
   const wholePart = parts[1]

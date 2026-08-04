@@ -4,6 +4,7 @@ import type { IntegerString, TimestampMs } from "@/core/modules/shared/schema"
 
 declare global {
   const __APP_VERSION__: string
+  const __E2E_TEST_BUILD__: boolean
 
   interface BigInt {
     toString(radix?: number): IntegerString

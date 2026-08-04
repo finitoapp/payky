@@ -33,6 +33,11 @@ coverage
 .data
 .claude
 
+# Playwright
+playwright-report
+test-results
+blob-report
+
 # Local environment (may contain secrets)
 .env
 .env.*

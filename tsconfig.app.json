@@ -28,6 +28,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "bin"],
+  "include": ["src", "bin", "e2e", "playwright.config.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

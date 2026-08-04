@@ -252,6 +252,7 @@ export const cs = {
     "Zadejte BIP39 recovery phrase účtu, který chcete obnovit.",
   "onboarding.restore.title": "Obnovení existujícího účtu",
   "onboarding.title": "Nastavení Payky",
+  "payment.create.error": "Platbu se nepodařilo vytvořit.",
   "paymentHistory.empty.description":
     "Vytvořené platební žádosti se zobrazí tady.",
   "paymentHistory.empty.title": "Zatím žádné platby",
@@ -261,7 +262,6 @@ export const cs = {
   "paymentHistory.status.pending": "Čeká",
   "paymentHistory.title": "Historie plateb",
   "paymentTip.continue": "Pokračovat k platbě",
-  "paymentTip.create.error": "Platbu se nepodařilo vytvořit.",
   "paymentTip.creating": "Vytvářím platbu...",
   "paymentTip.custom.actionDescription": "Zadat částku",
   "paymentTip.custom.description":
@@ -720,6 +720,7 @@ export const cs = {
   "settings.privacy.errorReporting.title": "Hlášení chyb",
   "settings.privacy.title": "Soukromí",
   "settings.privacyGroup": "SOUKROMÍ",
+  "settings.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
   "settings.security": "BEZPEČNOST A SOUKROMÍ",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.title": "Bezpečnost a synchronizace",

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { BadgeDollarSign } from "lucide-react"
+import { toast } from "sonner"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
   Card,
@@ -33,6 +34,15 @@ function FiatCurrencyPage() {
   const [settings] = data
   const selectedCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
 
+  const saveFiatCurrency = async (fiatCurrency: FiatCurrency) => {
+    try {
+      await using run = appRun()
+      await run.orThrow(updateSettings({ fiatCurrency }))
+    } catch {
+      toast.error(t("settings.saveFailed"))
+    }
+  }
+
   return (
     <>
       <div className="h-6" />
@@ -54,10 +64,8 @@ function FiatCurrencyPage() {
               title: t(option.label),
               description: t(option.description),
             }))}
-            onChange={async (fiatCurrency) => {
-              await using run = appRun()
-
-              await run(updateSettings({ fiatCurrency }))
+            onChange={(fiatCurrency) => {
+              void saveFiatCurrency(fiatCurrency)
             }}
           />
         </CardContent>

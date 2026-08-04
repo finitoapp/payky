@@ -2,6 +2,7 @@ import { type KyselyNotNull, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { useAtomValue, useSetAtom } from "jotai"
 import { Power, PowerOff } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
@@ -87,6 +88,8 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
                 )
               )
               setEvoluCounter((current) => current + 1)
+            } catch {
+              toast.error(t("settings.saveFailed"))
             } finally {
               setPendingTransportId(null)
             }
@@ -101,7 +104,7 @@ interface TransportListItemProps {
   readonly isActive: 0 | 1
   readonly pendingTransportId: string | null
   readonly url: string
-  readonly onToggle: (isActive: 0 | 1) => void
+  readonly onToggle: (isActive: 0 | 1) => Promise<void>
 }
 
 function TransportListItem({
@@ -136,7 +139,7 @@ function TransportListItem({
           size="sm"
           disabled={pendingTransportId !== null}
           onClick={() => {
-            onToggle(active ? sqliteFalse : sqliteTrue)
+            void onToggle(active ? sqliteFalse : sqliteTrue)
           }}
         >
           <Icon data-icon="inline-start" />

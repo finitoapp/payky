@@ -250,6 +250,7 @@ export const en = {
     "Enter the BIP39 recovery phrase for the account you want to restore.",
   "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
+  "payment.create.error": "Could not create the payment.",
   "paymentHistory.empty.description":
     "Created payment requests will appear here.",
   "paymentHistory.empty.title": "No payments yet",
@@ -259,7 +260,6 @@ export const en = {
   "paymentHistory.status.pending": "Pending",
   "paymentHistory.title": "Payment history",
   "paymentTip.continue": "Continue to payment",
-  "paymentTip.create.error": "Could not create the payment.",
   "paymentTip.creating": "Creating payment...",
   "paymentTip.custom.actionDescription": "Enter amount",
   "paymentTip.custom.description":
@@ -718,6 +718,7 @@ export const en = {
   "settings.privacy.errorReporting.title": "Error reporting",
   "settings.privacy.title": "Privacy",
   "settings.privacyGroup": "PRIVACY",
+  "settings.saveFailed": "Could not save the change. Please try again.",
   "settings.security": "SECURITY & PRIVACY",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.title": "Security & Sync",

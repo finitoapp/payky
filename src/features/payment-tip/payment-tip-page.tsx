@@ -136,7 +136,7 @@ function PaymentTipForm({
         ...paymentAmounts,
         currency,
       })
-      if (!created) toast.error(t("paymentTip.create.error"))
+      if (!created) toast.error(t("payment.create.error"))
     } finally {
       confirmPendingRef.current = false
       setPending(false)

@@ -2,6 +2,7 @@ import { sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Clock3, Grid2X2, Settings } from "lucide-react"
 import { Suspense } from "react"
+import { toast } from "sonner"
 import { TerminalPaymentKeypad } from "@/components/terminal-payment-keypad.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
@@ -60,6 +61,7 @@ const Header = () => {
 
 function TerminalPaymentKeypadLoader() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const createTerminalPayment = useCreateTerminalPayment()
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
@@ -79,11 +81,12 @@ function TerminalPaymentKeypadLoader() {
       return
     }
 
-    await createTerminalPayment({
+    const created = await createTerminalPayment({
       amount,
       currency,
       tipAmount: NonNegativeInteger(0),
     })
+    if (!created) toast.error(t("payment.create.error"))
   }
 
   return (

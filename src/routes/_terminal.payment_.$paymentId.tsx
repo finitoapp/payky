@@ -18,7 +18,7 @@ import {
 
 import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PaymentSuccess } from "@/components/payment-success.tsx"
+import { SuccessPanel } from "@/components/success-panel.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Tabs,
@@ -703,7 +703,7 @@ function PaymentWaitingRequest({
           )}
           aria-hidden={!successVisible}
         >
-          <PaymentSuccess
+          <SuccessPanel
             title={t("paymentWait.paid")}
             actions={
               <div className="flex flex-col items-center gap-8 pt-16 w-full">

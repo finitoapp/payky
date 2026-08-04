@@ -1,7 +1,7 @@
 import { CheckIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
-export function PaymentSuccess({
+export function SuccessPanel({
   actions,
   description,
   title,
@@ -12,7 +12,7 @@ export function PaymentSuccess({
 }) {
   return (
     <div className="flex flex-col items-center gap-5 text-center">
-      <div className="flex size-24 items-center justify-center rounded-full bg-green-500 text-[#071012]">
+      <div className="flex size-24 items-center justify-center rounded-full bg-success text-success-foreground">
         <CheckIcon className="size-14" strokeWidth={3} />
       </div>
       <div className="flex flex-col items-center gap-2">

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { CopyIcon, ExternalLinkIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import { PaymentSuccess } from "@/components/payment-success.tsx"
+import { SuccessPanel } from "@/components/success-panel.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { WithdrawResult } from "./withdraw-flow.ts"
@@ -26,7 +26,7 @@ export function WithdrawResultStep({
   }
 
   return (
-    <PaymentSuccess
+    <SuccessPanel
       title={t("withdraw.result.title")}
       description={t("withdraw.result.description")}
       actions={

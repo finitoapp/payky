@@ -5,7 +5,7 @@ import { z } from "zod"
 
 import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PaymentSuccess } from "@/components/payment-success.tsx"
+import { SuccessPanel } from "@/components/success-panel.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -87,7 +87,7 @@ function DonateInvoicePage() {
         <Card>
           <CardContent>
             <div className="flex min-h-[28rem] items-center justify-center">
-              <PaymentSuccess
+              <SuccessPanel
                 title={t("settings.donations.invoice.verify.paid")}
                 actions={
                   <div className="flex w-full flex-col items-center gap-8 pt-10">

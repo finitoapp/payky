@@ -5,6 +5,7 @@ import { LoaderCircleIcon } from "lucide-react"
 import { Suspense } from "react"
 import { AppBackgroundJobs } from "@/components/app-background-jobs.tsx"
 import { AppLoaderCleanup } from "@/components/app-loader-cleanup.tsx"
+import { E2eTestBridge } from "@/components/e2e-test-bridge.tsx"
 import { NativeBackButtonHandler } from "@/components/native-back-button-handler.tsx"
 import { PwaUpdateToast } from "@/components/pwa-update-toast.tsx"
 import { SentryController } from "@/components/sentry-controller.tsx"
@@ -42,6 +43,7 @@ export function App() {
             <SentryController />
             <NativeBackButtonHandler />
             <AppBackgroundJobs />
+            <E2eTestBridge />
             <RouterProvider router={router} />
             <PwaUpdateToast />
             <Toaster />

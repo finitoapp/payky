@@ -5,10 +5,15 @@ import { fileURLToPath } from "node:url"
 import { chromium, expect, type Page } from "@playwright/test"
 import sharp from "sharp"
 import {
-  type Language,
-  resources,
-  type TranslationKey,
-} from "../src/i18n/resources.ts"
+  completeOnboarding,
+  createPayment,
+  enterAmount,
+  markCashPaid,
+  pageHeight,
+  pageWidth,
+  translate,
+} from "../e2e/fixtures.ts"
+import { type Language, resources } from "../src/i18n/resources.ts"
 
 interface ScreenshotScenario {
   readonly name: "home" | "payment" | "paid" | "settings"
@@ -17,20 +22,12 @@ interface ScreenshotScenario {
 
 const documentationLanguages = Object.keys(resources) as Language[]
 
-const languageOptionKeyByLanguage: Record<Language, TranslationKey> = {
-  en: "settings.language.english.title",
-  cs: "settings.language.czech.title",
-  sk: "settings.language.slovak.title",
-}
-
 const localeByLanguage: Record<Language, string> = {
   en: "en-US",
   cs: "cs-CZ",
   sk: "sk-SK",
 }
 
-const pageWidth = 406
-const pageHeight = 818
 const deviceScaleFactor = 3.5
 const capturedWidth = pageWidth * deviceScaleFactor
 const capturedHeight = pageHeight * deviceScaleFactor
@@ -86,81 +83,6 @@ async function waitForApp(): Promise<void> {
   throw new Error("Timed out waiting for the documentation screenshot server.")
 }
 
-function translate(language: Language, key: TranslationKey): string {
-  return resources[language][key]
-}
-
-async function completeOnboarding(
-  page: Page,
-  language: Language
-): Promise<void> {
-  await page.goto(appUrl, { waitUntil: "domcontentloaded" })
-  await page
-    .getByRole("heading", { name: translate(language, "onboarding.title") })
-    .waitFor()
-  await page
-    .getByRole("button", {
-      name: translate(language, languageOptionKeyByLanguage[language]),
-    })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", {
-      name: translate(language, "onboarding.accountChoice.new.title"),
-    })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.payments.btc.title"),
-    })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.payments.iban.title"),
-    })
-    .click()
-  await page.getByRole("textbox").fill("CZ6508000000192000145399")
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.finish") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "settings.title") })
-    .waitFor()
-}
-
-async function enterAmount(page: Page, language: Language): Promise<void> {
-  await page.getByRole("button", { name: "5", exact: true }).click()
-  await page
-    .getByRole("button", {
-      name: translate(language, "home.keypad.decimal"),
-    })
-    .click()
-  await page.getByRole("button", { name: "9", exact: true }).click()
-}
-
-async function createPayment(page: Page, language: Language): Promise<void> {
-  await enterAmount(page, language)
-  await page
-    .getByRole("button", { name: translate(language, "home.pay") })
-    .click()
-  await page
-    .getByRole("tab", {
-      name: translate(language, "paymentWait.method.iban"),
-    })
-    .waitFor()
-}
-
 async function capturePage(
   page: Page,
   name: ScreenshotScenario["name"],
@@ -175,7 +97,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
   {
     name: "home",
     async capture(page, language) {
-      await completeOnboarding(page, language)
+      await completeOnboarding(page, language, { baseURL: appUrl })
       await enterAmount(page, language)
       await capturePage(page, "home", language)
     },
@@ -183,7 +105,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
   {
     name: "payment",
     async capture(page, language) {
-      await completeOnboarding(page, language)
+      await completeOnboarding(page, language, { baseURL: appUrl })
       await createPayment(page, language)
       await page
         .getByRole("tab", {
@@ -201,17 +123,9 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
   {
     name: "paid",
     async capture(page, language) {
-      await completeOnboarding(page, language)
+      await completeOnboarding(page, language, { baseURL: appUrl })
       await createPayment(page, language)
-      await page
-        .getByRole("button", {
-          name: translate(language, "paymentWait.cashPaid.action"),
-        })
-        .click()
-      await page
-        .locator('[aria-hidden="false"]')
-        .getByText(translate(language, "paymentWait.paid"))
-        .waitFor()
+      await markCashPaid(page, language)
       await page.waitForTimeout(350)
       await capturePage(page, "paid", language)
     },
@@ -219,7 +133,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
   {
     name: "settings",
     async capture(page, language) {
-      await completeOnboarding(page, language)
+      await completeOnboarding(page, language, { baseURL: appUrl })
       await page
         .getByRole("button", { name: translate(language, "settings.title") })
         .click()

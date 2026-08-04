@@ -8,6 +8,7 @@ import react from "@vitejs/plugin-react"
 import type { ConfigEnv, PluginOption } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 import type { ViteUserConfigFnObject } from "vitest/config"
+import { defaultExclude } from "vitest/config"
 
 function getAppVersion(): string {
   try {
@@ -86,6 +87,13 @@ export default (({ command }: ConfigEnv) => {
   return {
     define: {
       __APP_VERSION__: JSON.stringify(getAppVersion()),
+      // Keeps the e2e seed bridge (src/components/e2e-test-bridge.tsx) alive
+      // in the one production build `bun run test:e2e:preview` produces, since
+      // `import.meta.env.DEV` is false in every `vite build` output
+      // regardless of how it's later served. Real production builds never
+      // set PAYKY_E2E_BUILD, so this stays false (and the bridge dead code)
+      // for anything actually shipped.
+      __E2E_TEST_BUILD__: JSON.stringify(process.env.PAYKY_E2E_BUILD === "1"),
     },
     build: {
       sourcemap: useSentryVitePlugin,
@@ -145,6 +153,7 @@ export default (({ command }: ConfigEnv) => {
       ],
     },
     test: {
+      exclude: [...defaultExclude, "e2e/**"],
       coverage: {
         provider: "v8",
         reporter: ["text", "html", "lcov"],

@@ -25,6 +25,9 @@
     "docs:screenshots:install-browser": "bunx playwright install chromium",
     "format": "biome check --write .",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:preview": "PAYKY_E2E_BUILD=1 vite build && PAYKY_E2E_SERVER=preview playwright test",
     "preview": "vite preview"
   },
   "dependencies": {

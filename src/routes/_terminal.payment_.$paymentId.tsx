@@ -702,6 +702,7 @@ function PaymentWaitingRequest({
             successVisible ? "opacity-100" : "pointer-events-none opacity-0"
           )}
           aria-hidden={!successVisible}
+          data-testid="payment-paid-panel"
         >
           <SuccessPanel
             title={t("paymentWait.paid")}

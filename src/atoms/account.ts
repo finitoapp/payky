@@ -1,5 +1,4 @@
 import { createId, createRandomBytes } from "@evolu/common"
-import { faker } from "@faker-js/faker"
 import { atom } from "jotai"
 import { UAParser } from "ua-parser-js"
 import { deviceEvoluAtom } from "@/atoms/device-evolu"
@@ -11,6 +10,7 @@ import {
 } from "@/core/evolu/device-account.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { createRandomDisplayName } from "@/lib/random-name.ts"
 
 const getDeviceId = () => {
   const id = (localStorage.getItem("payky.deviceId") ??
@@ -36,7 +36,7 @@ const getDevice = () => {
 
   return {
     id: getDeviceId(),
-    name: NonEmptyString255(faker.internet.username()),
+    name: NonEmptyString255(createRandomDisplayName()),
     deviceType: toOptionalDeviceLabel(device.type),
     deviceVendor: toOptionalDeviceLabel(device.vendor),
     browserName: toOptionalDeviceLabel(browser.name),

@@ -11,7 +11,6 @@ import {
   sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
-import { faker } from "@faker-js/faker"
 
 import {
   type AccountEvoluTransportId,
@@ -21,6 +20,7 @@ import {
 } from "@/core/evolu/device-client.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
+import { createRandomDisplayName } from "@/lib/random-name.ts"
 
 export interface DeviceAccount {
   readonly id: AccountId
@@ -132,7 +132,7 @@ export const createAccountMnemonic = (): Mnemonic =>
   )
 
 export const createRandomAccountName = () =>
-  NonEmptyString255(faker.internet.username())
+  NonEmptyString255(createRandomDisplayName())
 
 export const defaultEvoluTransportUrl = WssUrl("wss://free.evoluhq.com")
 

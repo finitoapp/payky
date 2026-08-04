@@ -19,7 +19,6 @@
         "@evolu/react-web": "3.0.0-next.0",
         "@evolu/sqlite-wasm": "2.2.4",
         "@evolu/web": "3.0.0-next.1",
-        "@faker-js/faker": "10.5.0",
         "@fontsource-variable/geist": "5.3.0",
         "@scure/bip39": "2.2.0",
         "@scure/btc-signer": "2.2.0",
@@ -341,8 +340,6 @@
     "@evolu/sqlite-wasm": ["@evolu/sqlite-wasm@2.2.4", "", { "bin": { "sqlite-wasm": "bin/index.js" } }, "sha512-/JOYGFN93QspD2C8HVxVgBUlFWqJ1IpaVuIhEB53u4+ZvE+D3LjpNHDYiwZgf0n7VaH2U85OY5eV3wUrWc3scg=="],
 
     "@evolu/web": ["@evolu/web@3.0.0-next.1", "", { "dependencies": { "@evolu/sqlite-wasm": "2.2.4", "idb-keyval": "^6.2.2" }, "peerDependencies": { "@evolu/common": "^8.0.0-next.0" } }, "sha512-dLqG5Pq/asQUx14lwqDiAuDqazCFcCob3v1BhKfNUrWZXrNON4WC5TW44Eml3Pa08vS4msTmRJw6qMvFyq6+yA=="],
-
-    "@faker-js/faker": ["@faker-js/faker@10.5.0", "", {}, "sha512-bsxD8WLS5lIj7aaoCx1YJkktqYj5vlBUE6HWzu2Q51ksrGJ0H737ECCKlFU7Yf8Br45z9t99frBp/J7kzbMPAg=="],
 
     "@floating-ui/core": ["@floating-ui/core@1.7.5", "", { "dependencies": { "@floating-ui/utils": "^0.2.11" } }, "sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ=="],
 

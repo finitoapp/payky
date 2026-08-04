@@ -1,8 +1,8 @@
-import { useAtomValue } from "jotai"
 import * as React from "react"
-import { deviceEvoluAtom } from "@/atoms/device-evolu"
-import { deviceSettingsId } from "@/core/evolu/device-client.ts"
-import { useDeviceSettings } from "@/hooks/use-device-settings.ts"
+import {
+  useDeviceSettings,
+  useUpdateDeviceSettings,
+} from "@/hooks/use-device-settings.ts"
 import {
   type Language,
   resources,
@@ -37,16 +37,13 @@ export function useTranslation() {
   )
 }
 
-export function useTranslationForLanguage() {
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+export function useSetLanguage() {
+  const updateDeviceSettings = useUpdateDeviceSettings()
 
   return React.useCallback(
     (nextLanguage: Language) => {
-      deviceEvolu.update("deviceSettings", {
-        id: deviceSettingsId,
-        language: nextLanguage,
-      })
+      updateDeviceSettings({ language: nextLanguage })
     },
-    [deviceEvolu]
+    [updateDeviceSettings]
   )
 }

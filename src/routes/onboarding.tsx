@@ -71,10 +71,7 @@ import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
-import {
-  useTranslation,
-  useTranslationForLanguage,
-} from "@/hooks/use-translation.ts"
+import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -154,7 +151,7 @@ const getDefaultCurrencyForLanguage = (
 function OnboardingPage() {
   const appRun = useAppRun()
   const navigate = useNavigate()
-  const setLanguage = useTranslationForLanguage()
+  const setLanguage = useSetLanguage()
   const setLocale = useSetLocale()
   const { language, t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)

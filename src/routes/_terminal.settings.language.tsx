@@ -12,10 +12,7 @@ import type { DeviceLocale } from "@/core/evolu/device-client.ts"
 import { languageOptions } from "@/features/settings/language-options.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useLocale, useSetLocale } from "@/hooks/use-locale.ts"
-import {
-  useTranslation,
-  useTranslationForLanguage,
-} from "@/hooks/use-translation.ts"
+import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const Route = createFileRoute("/_terminal/settings/language")({
@@ -54,7 +51,7 @@ const localeOptions: ReadonlyArray<LocaleOption> = [
 function LanguagePage() {
   const locale = useLocale()
   const { language, t } = useTranslation()
-  const setLanguage = useTranslationForLanguage()
+  const setLanguage = useSetLanguage()
   const setLocale = useSetLocale()
 
   return (

@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useAtomValue } from "jotai"
 import * as React from "react"
-import { deviceEvoluAtom } from "@/atoms/device-evolu"
-import { deviceSettingsId } from "@/core/evolu/device-client.ts"
-import { useDeviceSettings } from "@/hooks/use-device-settings.ts"
+import {
+  useDeviceSettings,
+  useUpdateDeviceSettings,
+} from "@/hooks/use-device-settings.ts"
 
 export type Theme = "dark" | "light" | "system"
 type ResolvedTheme = "dark" | "light"
@@ -81,17 +81,14 @@ export function ThemeProvider({
   children,
   disableTransitionOnChange = true,
 }: ThemeProviderProps) {
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const { theme } = useDeviceSettings()
+  const updateDeviceSettings = useUpdateDeviceSettings()
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      deviceEvolu.update("deviceSettings", {
-        id: deviceSettingsId,
-        theme: nextTheme,
-      })
+      updateDeviceSettings({ theme: nextTheme })
     },
-    [deviceEvolu]
+    [updateDeviceSettings]
   )
 
   const applyTheme = React.useCallback(

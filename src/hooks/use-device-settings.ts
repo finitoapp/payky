@@ -1,4 +1,6 @@
+import { useAtomValue } from "jotai"
 import * as React from "react"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import {
   createDefaultDeviceSettings,
   createDeviceQuery,
@@ -46,5 +48,19 @@ export function useDeviceSettings(): DeviceSettings {
   return React.useMemo(
     () => withDeviceSettingsDefaults(deviceSettings),
     [deviceSettings]
+  )
+}
+
+export function useUpdateDeviceSettings() {
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+
+  return React.useCallback(
+    (patch: Partial<Omit<DeviceSettings, "id">>) => {
+      deviceEvolu.update("deviceSettings", {
+        id: deviceSettingsId,
+        ...patch,
+      })
+    },
+    [deviceEvolu]
   )
 }

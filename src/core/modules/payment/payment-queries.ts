@@ -53,3 +53,36 @@ export const paymentSparkDetailsByIdQuery = (idValue: PaymentId) =>
         amountSats: KyselyNotNull
       }>()
   )
+
+/**
+ * The account, amount, and symbol identifiers an IBAN payment was prepared
+ * with, for matching an incoming bank transaction the same way
+ * `ibanReconciliationCandidateByAccountTransactionIdQuery` does.
+ */
+export const paymentIbanDetailsByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("payment")
+      .innerJoin("paymentIban", (join) =>
+        join
+          .onRef("paymentIban.id", "=", "payment.id")
+          .on("paymentIban.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "payment.amount",
+        "payment.currency",
+        "paymentIban.accountId",
+        "paymentIban.variableSymbol",
+        "paymentIban.specificSymbol",
+      ])
+      .where("payment.id", "=", idValue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where("payment.amount", "is not", null)
+      .where("payment.currency", "is not", null)
+      .where("paymentIban.accountId", "is not", null)
+      .$narrowType<{
+        amount: KyselyNotNull
+        currency: KyselyNotNull
+        accountId: KyselyNotNull
+      }>()
+  )

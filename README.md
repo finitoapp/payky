@@ -186,15 +186,15 @@ after accounts exist.
 
 | Consumer | Path `P` | Result |
 | --- | --- | --- |
-| Evolu master owner | `m/83696968'/39'/0'/24'/0'` | `E` as the 32-byte Evolu owner secret |
+| Cashu wallet (reserved, unused) | `m/83696968'/39'/0'/24'/0'` | index `0'` is set aside; nothing derives from it yet |
+| Evolu master owner | `m/83696968'/39'/0'/24'/1'` | `E` as the 32-byte Evolu owner secret |
 | Default Spark wallet | `m/83696968'/39'/0'/12'/0'` | `E[0:16]` as the 16-byte Spark wallet secret |
-| Nostr profile `i` | `m/44'/1237'/i'/0/0` | `K.privateKey` as the Nostr private key |
 
-Nostr profile `0` follows NIP-06 and deliberately uses `K.privateKey` directly;
-using `E` would break NIP-06 compatibility. The Spark wallet secret is stored
-as hex and used as BIP-39 entropy: wallet initialization and the settings UI
-encode it as a 12-word mnemonic (never the raw secret), so the wallet can also
-be restored in any BIP-39-compatible Spark client.
+The Spark wallet secret is stored as hex and used as BIP-39 entropy: wallet
+initialization and the settings UI encode it as a 12-word mnemonic (never the
+raw secret), so the wallet can also be restored in any BIP-39-compatible Spark
+client. There is no Cashu wallet yet — the path is reserved so that when one
+ships, its secret won't collide with an index already used by something else.
 
 `S` itself is backed up as a single [SLIP-39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md)
 20-word recovery mnemonic (`src/core/modules/shared/key-derivation.ts`, via
@@ -202,10 +202,10 @@ the `slip39-ts` library), encoded as one group with a 1-of-1 threshold — there
 is currently no multi-share Shamir splitting, so the phrase is the sole backup
 of `S` and must be treated with the same care as a BIP-39 seed phrase. SLIP-39
 mnemonics use their own wordlist and checksum and are not interchangeable with
-BIP-39 mnemonics. The mnemonic's identifier is derived deterministically (see
-table above) rather than randomized, so encoding the same `S` always produces
-the same recovery phrase. 256-bit master keys and their 33-word recovery
-mnemonics are not supported.
+BIP-39 mnemonics. The mnemonic's identifier (SLIP-39's 15-bit metadata field)
+is derived deterministically from `S` via HMAC-SHA512 rather than randomized,
+so encoding the same `S` always produces the same recovery phrase. 256-bit
+master keys and their 33-word recovery mnemonics are not supported.
 
 ## CLI
 

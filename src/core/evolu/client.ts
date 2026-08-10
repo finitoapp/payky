@@ -4,11 +4,13 @@ import {
   createAppOwner,
   createEvolu,
   type EvoluConfig,
-  type Mnemonic,
-  mnemonicToOwnerSecret,
   testAppOwner,
 } from "@evolu/common"
 import { AppSchema, createAppIndexes } from "@/core/evolu/schema.ts"
+import {
+  deriveEvoluOwnerSecret,
+  type MasterKey,
+} from "@/core/modules/shared/key-derivation.ts"
 
 /**
  * Config fields callers may set. `appOwner`, `appName`, and `indexes` are
@@ -16,7 +18,7 @@ import { AppSchema, createAppIndexes } from "@/core/evolu/schema.ts"
  */
 type AppEvoluConfig = Omit<EvoluConfig, "appOwner" | "appName" | "indexes">
 type AppEvoluAccountConfig = AppEvoluConfig & {
-  readonly mnemonic: Mnemonic
+  readonly masterKey: MasterKey
   readonly transports: NonNullable<EvoluConfig["transports"]>
 }
 
@@ -29,11 +31,11 @@ const createAppEvoluWithOwner = (appOwner: AppOwner, config: AppEvoluConfig) =>
   })
 
 export const createAppEvolu = ({
-  mnemonic,
+  masterKey,
   ...config
 }: AppEvoluAccountConfig) =>
   createAppEvoluWithOwner(
-    createAppOwner(mnemonicToOwnerSecret(mnemonic)),
+    createAppOwner(deriveEvoluOwnerSecret(masterKey)),
     config
   )
 

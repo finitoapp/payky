@@ -2,6 +2,7 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 
 import { AccountId } from "@/core/modules/account/account-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
+import { SparkSecretSchema } from "@/core/modules/shared/key-derivation.ts"
 import {
   AccountKindSchema,
   BankQrFormatSchema,
@@ -27,7 +28,7 @@ export const accountIban = {
 
 export const accountSpark = {
   id: AccountId,
-  mnemonic: NonEmptyString255Schema,
+  secret: SparkSecretSchema,
 } as const
 
 export const accountCashRegister = {

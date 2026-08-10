@@ -431,7 +431,7 @@ export const createPreparedPayment =
         convertFiatMinorUnitsToSats(input.amount, quote.value.exchangeRate)
       )
       await using wallet = await run.deps.sparkWallet.create(
-        sparkAccount.mnemonic
+        sparkAccount.secret
       )
       const lightningInvoice = await wallet.createLightningInvoice(
         removeUndefinedValues({
@@ -630,7 +630,7 @@ export const preparePaymentMethod =
                 )
               )
               await using wallet = await run.deps.sparkWallet.create(
-                sparkAccount.mnemonic
+                sparkAccount.secret
               )
               const lightningInvoice = await wallet.createLightningInvoice(
                 removeUndefinedValues({

@@ -70,7 +70,7 @@ export const quoteWithdrawal =
 
     try {
       await using wallet = await run.deps.sparkWallet.create(
-        sparkAccount.mnemonic
+        sparkAccount.secret
       )
       const balance = await wallet.getBalance()
       const withdrawAll = amountSats === undefined
@@ -153,7 +153,7 @@ export const executeWithdrawal =
 
     try {
       await using wallet = await run.deps.sparkWallet.create(
-        sparkAccount.mnemonic
+        sparkAccount.secret
       )
       const result = await wallet.withdraw({
         onchainAddress,

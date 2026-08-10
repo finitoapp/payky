@@ -9,16 +9,10 @@ export const evoluAtom = atom(async (get, { signal }) => {
   const run = get(runAtom)
   const evolu = await run.orThrow(
     createAppEvolu({
-      mnemonic: account.mnemonic,
+      masterKey: account.masterKey,
       transports: [],
     })
   )
-
-  const appOwner = evolu.appOwner
-  if (appOwner.mnemonic === null || appOwner.mnemonic === undefined)
-    throw new Error(
-      "App owner mnemonic is not set. Please create a new account."
-    )
 
   const unuse = isNonEmptyArray(account.transports)
     ? // biome-ignore lint/correctness/useHookAtTopLevel: This is not react hook

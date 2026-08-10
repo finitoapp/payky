@@ -1,4 +1,4 @@
-import type { KyselyNotNull } from "@evolu/common"
+import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -16,5 +16,40 @@ export const paymentByIdQuery = (idValue: PaymentId) =>
         amount: KyselyNotNull
         currency: KyselyNotNull
         tipAmount: KyselyNotNull
+      }>()
+  )
+
+/**
+ * The account and invoice identifiers a Spark payment was prepared with, for
+ * matching an incoming transfer the same way
+ * `sparkReconciliationCandidateByAccountTransactionIdQuery` does.
+ */
+export const paymentSparkDetailsByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentBtc")
+      .leftJoin("paymentBtcLightning", (join) =>
+        join
+          .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
+          .on("paymentBtcLightning.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentBtcSpark", (join) =>
+        join
+          .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
+          .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "paymentBtc.accountId",
+        "paymentBtc.amountSats",
+        "paymentBtcLightning.lnInvoice",
+        "paymentBtcSpark.sparkInvoice",
+      ])
+      .where("paymentBtc.id", "=", idValue)
+      .where("paymentBtc.isDeleted", "is not", sqliteTrue)
+      .where("paymentBtc.accountId", "is not", null)
+      .where("paymentBtc.amountSats", "is not", null)
+      .$narrowType<{
+        accountId: KyselyNotNull
+        amountSats: KyselyNotNull
       }>()
   )

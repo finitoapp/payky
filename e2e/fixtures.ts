@@ -70,12 +70,16 @@ export async function reloadPage(
  */
 export async function seedCurrentAccountOnboarding(
   page: Page,
-  language: Language
+  language: Language,
+  options?: { readonly spark?: boolean }
 ): Promise<void> {
   await page.waitForFunction(
     () => typeof window.__e2eSeedOnboarding === "function"
   )
-  await page.evaluate(() => window.__e2eSeedOnboarding?.())
+  await page.evaluate(
+    (seedOptions) => window.__e2eSeedOnboarding?.(seedOptions),
+    options
+  )
   await page
     .getByRole("button", { name: translate(language, "settings.title") })
     .waitFor()
@@ -84,14 +88,16 @@ export async function seedCurrentAccountOnboarding(
 /**
  * Reaches the terminal home screen without clicking through onboarding. Use
  * this in specs that don't test onboarding itself — `completeOnboarding()`
- * remains the one exercising the real onboarding UI.
+ * remains the one exercising the real onboarding UI. Pass `{ spark: true }`
+ * to also enable the Spark payment method (disabled by default).
  */
 export async function seedOnboarding(
   page: Page,
-  language: Language
+  language: Language,
+  options?: { readonly spark?: boolean }
 ): Promise<void> {
   await page.goto("/", { waitUntil: "domcontentloaded" })
-  await seedCurrentAccountOnboarding(page, language)
+  await seedCurrentAccountOnboarding(page, language, options)
 }
 
 interface Fixtures {
@@ -262,6 +268,54 @@ export async function markCashPaid(
       name: translate(language, "paymentWait.cashPaid.action"),
     })
     .click()
+  await page
+    .getByTestId("payment-paid-panel")
+    .getByText(translate(language, "paymentWait.paid"))
+    .waitFor()
+}
+
+/**
+ * Selects the Lightning/Spark tab on the payment-wait screen and waits for
+ * the invoice to finish preparing (the QR code becomes renderable), so the
+ * payment has an `lnInvoice`/`sparkInvoice` for `markSparkPaid` to match
+ * against.
+ */
+export async function prepareSparkPayment(
+  page: Page,
+  language: Language
+): Promise<void> {
+  await page
+    .getByRole("tab", {
+      name: translate(language, "paymentWait.method.lightning"),
+    })
+    .click()
+  // The button also contains a spinner `<svg>` (lucide's LoaderCircleIcon)
+  // while preparing, so match the QR code's own class rather than any `svg`.
+  await page
+    .getByRole("button", { name: translate(language, "paymentWait.copyQr") })
+    .locator("svg.size-full")
+    .waitFor()
+}
+
+/**
+ * Simulates an incoming Spark transfer settling the current payment via
+ * `window.__e2eMarkSparkPaid` (see src/components/e2e-test-bridge.tsx) —
+ * there is no real counterparty to pay the Lightning invoice in a test run.
+ * Reads the payment id off the current `/payment/$paymentId` URL.
+ */
+export async function markSparkPaid(
+  page: Page,
+  language: Language
+): Promise<void> {
+  const paymentId = new URL(page.url()).pathname.split("/").pop()
+  if (!paymentId) {
+    throw new Error(`Could not determine payment id from URL ${page.url()}`)
+  }
+
+  await page.waitForFunction(
+    () => typeof window.__e2eMarkSparkPaid === "function"
+  )
+  await page.evaluate((id) => window.__e2eMarkSparkPaid?.(id), paymentId)
   await page
     .getByTestId("payment-paid-panel")
     .getByText(translate(language, "paymentWait.paid"))

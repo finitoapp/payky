@@ -14,7 +14,8 @@ jobs:
     name: Playwright E2E (production build)
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      contains(github.event.pull_request.labels.*.name, 'run-e2e')
+      (github.event.action == 'labeled' && github.event.label.name == 'run-e2e') ||
+      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'run-e2e'))
     runs-on: ubuntu-latest
     permissions:
       contents: read

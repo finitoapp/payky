@@ -297,25 +297,69 @@ export async function prepareSparkPayment(
     .waitFor()
 }
 
+/** Reads the payment id off the current `/payment/$paymentId` URL. */
+function getPaymentIdFromUrl(page: Page): string {
+  const paymentId = new URL(page.url()).pathname.split("/").pop()
+  if (!paymentId) {
+    throw new Error(`Could not determine payment id from URL ${page.url()}`)
+  }
+  return paymentId
+}
+
 /**
  * Simulates an incoming Spark transfer settling the current payment via
  * `window.__e2eMarkSparkPaid` (see src/components/e2e-test-bridge.tsx) —
  * there is no real counterparty to pay the Lightning invoice in a test run.
- * Reads the payment id off the current `/payment/$paymentId` URL.
  */
 export async function markSparkPaid(
   page: Page,
   language: Language
 ): Promise<void> {
-  const paymentId = new URL(page.url()).pathname.split("/").pop()
-  if (!paymentId) {
-    throw new Error(`Could not determine payment id from URL ${page.url()}`)
-  }
+  const paymentId = getPaymentIdFromUrl(page)
 
   await page.waitForFunction(
     () => typeof window.__e2eMarkSparkPaid === "function"
   )
   await page.evaluate((id) => window.__e2eMarkSparkPaid?.(id), paymentId)
+  await page
+    .getByTestId("payment-paid-panel")
+    .getByText(translate(language, "paymentWait.paid"))
+    .waitFor()
+}
+
+/**
+ * Selects the IBAN tab on the payment-wait screen and waits for the bank QR
+ * to finish preparing, so the payment has a `variableSymbol` for
+ * `markIbanPaid` to match against.
+ */
+export async function prepareIbanPayment(
+  page: Page,
+  language: Language
+): Promise<void> {
+  await page
+    .getByRole("tab", { name: translate(language, "paymentWait.method.iban") })
+    .click()
+  await page
+    .getByRole("button", { name: translate(language, "paymentWait.copyQr") })
+    .locator("svg.size-full")
+    .waitFor()
+}
+
+/**
+ * Simulates an incoming bank transaction settling the current IBAN payment
+ * via `window.__e2eMarkIbanPaid` (see src/components/e2e-test-bridge.tsx) —
+ * there is no real bank transfer in a test run.
+ */
+export async function markIbanPaid(
+  page: Page,
+  language: Language
+): Promise<void> {
+  const paymentId = getPaymentIdFromUrl(page)
+
+  await page.waitForFunction(
+    () => typeof window.__e2eMarkIbanPaid === "function"
+  )
+  await page.evaluate((id) => window.__e2eMarkIbanPaid?.(id), paymentId)
   await page
     .getByTestId("payment-paid-panel")
     .getByText(translate(language, "paymentWait.paid"))

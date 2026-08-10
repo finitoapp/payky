@@ -1,4 +1,11 @@
-import { createPayment, expect, test, translate } from "./fixtures.ts"
+import {
+  createPayment,
+  expect,
+  markIbanPaid,
+  prepareIbanPayment,
+  test,
+  translate,
+} from "./fixtures.ts"
 
 test("selecting the IBAN method renders a scannable bank QR", async ({
   seededPage: page,
@@ -27,5 +34,25 @@ test("selecting the IBAN method renders a scannable bank QR", async ({
     await payBySquareFormat.click()
     await expect(payBySquareFormat).toHaveAttribute("aria-pressed", "true")
     await expect(qrButton.locator("svg")).toBeVisible()
+  })
+})
+
+test("pay with IBAN then simulate the incoming bank payment", async ({
+  seededPage: page,
+}) => {
+  await test.step("create a payment", () => createPayment(page, "en"))
+
+  await test.step("select the IBAN tab and wait for the bank QR", () =>
+    prepareIbanPayment(page, "en"))
+
+  await test.step("simulate the incoming bank payment", () =>
+    markIbanPaid(page, "en"))
+
+  await test.step("verify the paid confirmation is shown", async () => {
+    await expect(
+      page
+        .getByTestId("payment-paid-panel")
+        .getByText(translate("en", "paymentWait.paid"))
+    ).toBeVisible()
   })
 })

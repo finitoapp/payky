@@ -49,12 +49,12 @@ export function OptionToggleGroup<Value extends string>({
           <ToggleGroupItem
             key={option.value}
             value={option.value}
-            className="flex h-auto justify-start gap-6 px-6 py-4 text-left"
+            className="flex h-auto justify-start gap-6 whitespace-normal px-6 py-4 text-left"
           >
             {Icon === undefined ? null : (
               <Icon className="text-muted-foreground" />
             )}
-            <span className="flex flex-col gap-1">
+            <span className="flex min-w-0 flex-col gap-1">
               <span className="font-semibold">{option.title}</span>
               {option.description === undefined ? null : (
                 <span className="text-xs leading-snug text-muted-foreground">

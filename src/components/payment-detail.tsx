@@ -2,6 +2,16 @@ import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
 import { ReceiptIcon } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
+import {
+  Timeline,
+  TimelineContent,
+  TimelineDate,
+  TimelineHeader,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
+} from "@/components/reui/timeline.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -335,116 +345,122 @@ function PaymentDetailContent({
         <CardHeader>
           <CardTitle>{t("paymentDetail.reconciliations")}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent>
           {reconciliations.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t("paymentDetail.reconciliations.empty")}
             </p>
           ) : (
-            reconciliations.map((reconciliation) => (
-              <div
-                key={reconciliation.id}
-                className="rounded-lg border bg-muted/20 p-3"
-              >
-                <div className="mb-3 flex items-start justify-between gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold">
+            <Timeline value={reconciliations.length}>
+              {reconciliations.map((reconciliation, index) => (
+                <TimelineItem key={reconciliation.id} step={index + 1}>
+                  <TimelineHeader>
+                    <TimelineDate>
+                      {formatDateTime(
+                        new Date(reconciliation.claimedAt),
+                        locale
+                      )}
+                    </TimelineDate>
+                    <TimelineTitle>
                       {t(paymentMethodLabelKey[reconciliation.transactionKind])}
-                    </span>
-                    <span className="break-all text-xs text-muted-foreground">
-                      {reconciliation.id}
-                    </span>
-                  </div>
-                  <Badge variant="secondary">
-                    {t(claimSourceLabelKey[reconciliation.source])}
-                  </Badge>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <PaymentDetailRow
-                    label={t("paymentDetail.reconciliation.claimedAt")}
-                    value={formatDateTime(
-                      new Date(reconciliation.claimedAt),
-                      locale
-                    )}
-                  />
-                  <PaymentDetailRow
-                    label={t("paymentDetail.transaction.id")}
-                    value={
-                      reconciliation.accountTransactionId ??
-                      t("paymentDetail.emptyValue")
-                    }
-                  />
-                  <PaymentDetailRow
-                    label={t("paymentDetail.transaction.account")}
-                    value={
-                      reconciliation.accountName ??
-                      reconciliation.accountId ??
-                      t("paymentDetail.emptyValue")
-                    }
-                  />
-                  <PaymentDetailRow
-                    label={t("paymentDetail.transaction.amount")}
-                    value={formatMoney(
-                      {
-                        value: reconciliation.transactionAmount,
-                        currency: reconciliation.transactionCurrency,
-                      },
-                      locale
-                    )}
-                  />
-                  <PaymentDetailRow
-                    label={t("paymentDetail.transaction.occurredAt")}
-                    value={formatDateTime(
-                      new Date(reconciliation.transactionOccurredAt),
-                      locale
-                    )}
-                  />
-                  <PaymentDetailRow
-                    label={t("paymentDetail.transaction.recordedAt")}
-                    value={
-                      reconciliation.transactionRecordedAt === null
-                        ? t("paymentDetail.emptyValue")
-                        : formatDateTime(
-                            new Date(reconciliation.transactionRecordedAt),
+                    </TimelineTitle>
+                  </TimelineHeader>
+                  <TimelineIndicator />
+                  <TimelineSeparator />
+                  <TimelineContent>
+                    <div className="mt-2 rounded-lg border bg-muted/20 p-3">
+                      <div className="mb-3 flex items-start justify-between gap-4">
+                        <span className="break-all text-xs text-muted-foreground">
+                          {reconciliation.id}
+                        </span>
+                        <Badge variant="secondary">
+                          {t(claimSourceLabelKey[reconciliation.source])}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <PaymentDetailRow
+                          label={t("paymentDetail.transaction.id")}
+                          value={
+                            reconciliation.accountTransactionId ??
+                            t("paymentDetail.emptyValue")
+                          }
+                        />
+                        <PaymentDetailRow
+                          label={t("paymentDetail.transaction.account")}
+                          value={
+                            reconciliation.accountName ??
+                            reconciliation.accountId ??
+                            t("paymentDetail.emptyValue")
+                          }
+                        />
+                        <PaymentDetailRow
+                          label={t("paymentDetail.transaction.amount")}
+                          value={formatMoney(
+                            {
+                              value: reconciliation.transactionAmount,
+                              currency: reconciliation.transactionCurrency,
+                            },
                             locale
-                          )
-                    }
-                  />
-                  <PaymentDetailRow
-                    label={t("paymentDetail.transaction.source")}
-                    value={
-                      reconciliation.transactionSource === null
-                        ? t("paymentDetail.emptyValue")
-                        : t(
-                            claimSourceLabelKey[
-                              reconciliation.transactionSource
-                            ]
-                          )
-                    }
-                  />
-                  <PaymentDetailOptionalRow
-                    label={t("paymentDetail.transaction.note")}
-                    value={reconciliation.transactionNote}
-                  />
-                  <PaymentDetailOptionalRow
-                    label={t("paymentDetail.transaction.variableSymbol")}
-                    value={reconciliation.variableSymbol}
-                  />
-                  <PaymentDetailOptionalRow
-                    label={t("paymentDetail.transaction.bankReference")}
-                    value={reconciliation.bankReference}
-                  />
-                  <PaymentDetailOptionalRow
-                    label={t("paymentDetail.transaction.sparkTransferId")}
-                    value={reconciliation.sparkTransferId}
-                  />
-                  <PaymentDetailOptionalRow
-                    label={t("paymentDetail.transaction.paymentHash")}
-                    value={reconciliation.paymentHash}
-                  />
-                </div>
-              </div>
-            ))
+                          )}
+                        />
+                        <PaymentDetailRow
+                          label={t("paymentDetail.transaction.occurredAt")}
+                          value={formatDateTime(
+                            new Date(reconciliation.transactionOccurredAt),
+                            locale
+                          )}
+                        />
+                        <PaymentDetailRow
+                          label={t("paymentDetail.transaction.recordedAt")}
+                          value={
+                            reconciliation.transactionRecordedAt === null
+                              ? t("paymentDetail.emptyValue")
+                              : formatDateTime(
+                                  new Date(
+                                    reconciliation.transactionRecordedAt
+                                  ),
+                                  locale
+                                )
+                          }
+                        />
+                        <PaymentDetailRow
+                          label={t("paymentDetail.transaction.source")}
+                          value={
+                            reconciliation.transactionSource === null
+                              ? t("paymentDetail.emptyValue")
+                              : t(
+                                  claimSourceLabelKey[
+                                    reconciliation.transactionSource
+                                  ]
+                                )
+                          }
+                        />
+                        <PaymentDetailOptionalRow
+                          label={t("paymentDetail.transaction.note")}
+                          value={reconciliation.transactionNote}
+                        />
+                        <PaymentDetailOptionalRow
+                          label={t("paymentDetail.transaction.variableSymbol")}
+                          value={reconciliation.variableSymbol}
+                        />
+                        <PaymentDetailOptionalRow
+                          label={t("paymentDetail.transaction.bankReference")}
+                          value={reconciliation.bankReference}
+                        />
+                        <PaymentDetailOptionalRow
+                          label={t("paymentDetail.transaction.sparkTransferId")}
+                          value={reconciliation.sparkTransferId}
+                        />
+                        <PaymentDetailOptionalRow
+                          label={t("paymentDetail.transaction.paymentHash")}
+                          value={reconciliation.paymentHash}
+                        />
+                      </div>
+                    </div>
+                  </TimelineContent>
+                </TimelineItem>
+              ))}
+            </Timeline>
           )}
         </CardContent>
       </Card>

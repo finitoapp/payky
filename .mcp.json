@@ -7,6 +7,10 @@
     "chrome-devtools": {
       "command": "bunx",
       "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "reui": {
+      "type": "http",
+      "url": "https://mcp.reui.io/api/mcp"
     }
   }
 }

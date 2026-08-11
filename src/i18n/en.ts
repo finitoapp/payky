@@ -328,7 +328,6 @@ export const en = {
   "paymentDetail.paymentMethod.spark": "Lightning",
   "paymentDetail.paymentNumber.date": "Number date",
   "paymentDetail.paymentNumber.serialNumber": "Serial number",
-  "paymentDetail.reconciliation.claimedAt": "Reconciled at",
   "paymentDetail.reconciliation.source.auto": "Auto",
   "paymentDetail.reconciliation.source.manual": "Manual",
   "paymentDetail.reconciliations": "Reconciliations",

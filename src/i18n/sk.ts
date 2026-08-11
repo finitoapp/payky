@@ -329,7 +329,6 @@ export const sk = {
   "paymentDetail.paymentMethod.spark": "Lightning",
   "paymentDetail.paymentNumber.date": "Dátum čísla",
   "paymentDetail.paymentNumber.serialNumber": "Sériové číslo",
-  "paymentDetail.reconciliation.claimedAt": "Spárované",
   "paymentDetail.reconciliation.source.auto": "Automaticky",
   "paymentDetail.reconciliation.source.manual": "Ručne",
   "paymentDetail.reconciliations": "Spárovania",

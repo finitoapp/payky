@@ -18,6 +18,13 @@ import { accountAtom, recoveryMnemonicAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperNav,
+  StepperSeparator,
+} from "@/components/reui/stepper.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -73,7 +80,6 @@ import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
-import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/onboarding")({
   component: OnboardingPage,
@@ -306,7 +312,23 @@ function OnboardingPage() {
                 {t("onboarding.title")}
               </h1>
             </div>
-            <StepDots activeStep={step} onboardingSteps={onboardingSteps} />
+            <Stepper
+              value={stepIndex + 1}
+              orientation="horizontal"
+              aria-hidden="true"
+              className="w-auto"
+            >
+              <StepperNav>
+                {onboardingSteps.map((onboardingStep, index) => (
+                  <StepperItem key={onboardingStep} step={index + 1}>
+                    <StepperIndicator className="size-2 bg-muted-foreground/30 data-[state=active]:bg-primary data-[state=completed]:bg-primary" />
+                    {index < onboardingSteps.length - 1 ? (
+                      <StepperSeparator className="w-4" />
+                    ) : null}
+                  </StepperItem>
+                ))}
+              </StepperNav>
+            </Stepper>
           </div>
 
           <Card>
@@ -769,30 +791,6 @@ function AccountStep() {
         </div>
       </CardContent>
     </>
-  )
-}
-
-function StepDots({
-  activeStep,
-  onboardingSteps,
-}: {
-  readonly activeStep: OnboardingStep
-  readonly onboardingSteps: ReadonlyArray<OnboardingStep>
-}) {
-  const activeStepIndex = getStepIndex(activeStep, onboardingSteps)
-
-  return (
-    <div className="flex items-center gap-2" aria-hidden="true">
-      {onboardingSteps.map((step, index) => (
-        <span
-          key={step}
-          className={cn(
-            "size-2 rounded-full bg-muted-foreground/30",
-            index === activeStepIndex && "bg-primary"
-          )}
-        />
-      ))}
-    </div>
   )
 }
 

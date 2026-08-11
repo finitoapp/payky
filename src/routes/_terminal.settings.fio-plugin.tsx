@@ -1,11 +1,16 @@
 import { createIdFromString, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import { format, subDays } from "date-fns"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, TriangleAlert } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/reui/alert.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -118,17 +123,15 @@ function FioPluginNativeRuntimeAlert() {
   const { t } = useTranslation()
 
   return (
-    <div
-      role="alert"
-      className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-200"
-    >
-      <p className="font-medium">
+    <Alert variant="warning">
+      <TriangleAlert />
+      <AlertTitle>
         {t("settings.fioPlugin.nativeRuntimeWarning.title")}
-      </p>
-      <p className="mt-2">
+      </AlertTitle>
+      <AlertDescription>
         {t("settings.fioPlugin.nativeRuntimeWarning.description")}
-      </p>
-    </div>
+      </AlertDescription>
+    </Alert>
   )
 }
 

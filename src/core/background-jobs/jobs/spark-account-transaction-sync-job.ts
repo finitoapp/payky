@@ -7,6 +7,7 @@ import type {
   BackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
+import { reconcileAccountSyncSessions } from "@/core/background-jobs/reconcile-account-sync-sessions.ts"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
@@ -122,37 +123,30 @@ const createSparkAccountSyncManager = ({
     const accounts = rows.map(
       (row): SparkAccountRow => ({ id: row.id, secret: row.secret })
     )
-    const activeIds = new Set(accounts.map((account) => account.id))
 
     context.console.debug("Refreshing Spark account syncs.", {
       activeAccountCount: accounts.length,
       runningAccountCount: sessions.size,
     })
 
-    for (const [accountId, session] of sessions) {
-      if (activeIds.has(accountId)) continue
-
-      await session[Symbol.asyncDispose]()
-      sessions.delete(accountId)
-      context.console.info("Stopped Spark account sync.", { accountId })
-    }
-
-    for (const account of accounts) {
-      const current = sessions.get(account.id)
-      if (current?.secret === account.secret) continue
-
-      await current?.[Symbol.asyncDispose]()
-      const session = createSparkAccountSyncSession({
-        account,
-        context,
-        walletFactory,
-      })
-      sessions.set(account.id, session)
-      context.console.info("Started Spark account sync.", {
-        accountId: account.id,
-        replacedExistingSync: current !== undefined,
-      })
-    }
+    await reconcileAccountSyncSessions({
+      sessions,
+      activeAccounts: accounts,
+      getKey: (account) => account.id,
+      matches: (session, account) => session.secret === account.secret,
+      createSession: (account) =>
+        createSparkAccountSyncSession({ account, context, walletFactory }),
+      disposeSession: (session) => session[Symbol.asyncDispose](),
+      onSessionStopped: (accountId) => {
+        context.console.info("Stopped Spark account sync.", { accountId })
+      },
+      onSessionStarted: (accountId, _account, replacedExistingSync) => {
+        context.console.info("Started Spark account sync.", {
+          accountId,
+          replacedExistingSync,
+        })
+      },
+    })
   }
 
   const refreshSoon = (): void => {

@@ -6,6 +6,7 @@ import type {
   BackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
+import { reconcileAccountSyncSessions } from "@/core/background-jobs/reconcile-account-sync-sessions.ts"
 import type { DateDep, FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
@@ -110,7 +111,6 @@ class FioAccountTransactionSync {
   private async refreshPlugins(): Promise<void> {
     const plugins = await loadActiveFioPlugins(this.context)
     const activePlugins = plugins.filter(hasFioTokens)
-    const activeIds = new Set(activePlugins.map((plugin) => plugin.id))
 
     this.context.console.debug("Refreshing FIO plugin syncs.", {
       activePluginCount: activePlugins.length,
@@ -119,31 +119,29 @@ class FioAccountTransactionSync {
       skippedPluginWithoutTokenCount: plugins.length - activePlugins.length,
     })
 
-    for (const [pluginId, sync] of this.pluginSyncs) {
-      if (activeIds.has(pluginId)) continue
-
-      sync.dispose()
-      this.pluginSyncs.delete(pluginId)
-      this.context.console.info("Stopped FIO plugin sync.", {
-        pluginId,
-      })
-    }
-
-    for (const plugin of activePlugins) {
-      const current = this.pluginSyncs.get(plugin.id)
-      if (current?.matches(plugin) === true) continue
-
-      current?.dispose()
-      const sync = new FioPluginSync(this.context, plugin)
-      this.pluginSyncs.set(plugin.id, sync)
-      this.context.console.info("Started FIO plugin sync.", {
-        accountId: plugin.accountId,
-        pluginId: plugin.id,
-        replacedExistingSync: current !== undefined,
-        tokenCount: plugin.tokens.length,
-      })
-      sync.start()
-    }
+    await reconcileAccountSyncSessions({
+      sessions: this.pluginSyncs,
+      activeAccounts: activePlugins,
+      getKey: (plugin) => plugin.id,
+      matches: (sync, plugin) => sync.matches(plugin),
+      createSession: (plugin) => {
+        const sync = new FioPluginSync(this.context, plugin)
+        sync.start()
+        return sync
+      },
+      disposeSession: (sync) => sync.dispose(),
+      onSessionStopped: (pluginId) => {
+        this.context.console.info("Stopped FIO plugin sync.", { pluginId })
+      },
+      onSessionStarted: (pluginId, plugin, replacedExistingSync) => {
+        this.context.console.info("Started FIO plugin sync.", {
+          accountId: plugin.accountId,
+          pluginId,
+          replacedExistingSync,
+          tokenCount: plugin.tokens.length,
+        })
+      },
+    })
   }
 }
 

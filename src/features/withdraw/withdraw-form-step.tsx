@@ -30,10 +30,10 @@ import { Input } from "@/components/ui/input.tsx"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { PositiveIntegerSchema } from "@/core/modules/shared/schema.ts"
 import {
+  type QuoteWithdrawalError,
   quoteWithdrawal,
   type WithdrawalQuote,
 } from "@/core/modules/withdrawal/withdrawal-actions.ts"
-import type { QuoteWithdrawalError } from "@/core/modules/withdrawal/withdrawal-types.ts"
 import { isValidBitcoinAddress } from "@/core/modules/withdrawal/withdrawal-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"

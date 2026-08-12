@@ -15,6 +15,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import {
   createTableId,
+  hasSparkIdentifier,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
@@ -29,14 +30,6 @@ import type {
   accountTransactionSparkInvoice,
 } from "./account-transaction.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
-
-const hasSparkTransactionIdentifier = ({
-  sparkInvoice,
-  lightning,
-}: {
-  readonly lightning?: object
-  readonly sparkInvoice?: object
-}): boolean => lightning !== undefined || sparkInvoice !== undefined
 
 type AccountTransactionSparkInput = InsertValues<
   typeof accountTransactionSpark
@@ -120,7 +113,7 @@ export const createAccountTransaction =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    if (spark && !hasSparkTransactionIdentifier(spark)) {
+    if (spark && !hasSparkIdentifier(spark)) {
       throw new Error(
         "Spark account transaction requires lnInvoice or sparkInvoice."
       )

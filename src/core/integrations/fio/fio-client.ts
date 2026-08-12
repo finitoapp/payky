@@ -1,7 +1,12 @@
-import { err, ok, type Task } from "@evolu/common"
+import { err, ok, type Result, type Task } from "@evolu/common"
 import { z } from "zod"
 
-import { appFetchAsText, type FetchDep, type FetchError } from "@/core/deps.ts"
+import {
+  appFetchAsJson,
+  type FetchDep,
+  type FetchError,
+  type FetchJsonError,
+} from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import {
   ConstantSymbolSchema,
@@ -14,7 +19,6 @@ import {
   SpecificSymbolSchema,
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
-import { jsonCodec } from "@/zod-utils.ts"
 
 const FIO_BASE_URL = "https://fioapi.fio.cz"
 
@@ -294,7 +298,7 @@ export const setFioLastDate =
     )
     if (!response.ok) return response
 
-    return ok(response.value)
+    return ok(response.value.text)
   }
 
 const getFioStatement =
@@ -307,8 +311,17 @@ const getFioStatement =
     )
     if (!response.ok) return response
 
-    const parsed = jsonCodec(FioAccountStatementSchema).safeParse(
-      response.value
+    if (!response.value.json.ok) {
+      return err(
+        createFioApiError({
+          message: "Invalid FIO account statement response.",
+          cause: response.value.json.error,
+        })
+      )
+    }
+
+    const parsed = FioAccountStatementSchema.safeParse(
+      response.value.json.value
     )
     if (!parsed.success) {
       return err(
@@ -332,7 +345,7 @@ const requestFioApi =
   (
     path: string
   ): Task<
-    string,
+    { readonly text: string; readonly json: Result<unknown, FetchJsonError> },
     | FioHttpError
     | FioRateLimitError
     | FioStrongAuthorizationRequiredError
@@ -342,7 +355,7 @@ const requestFioApi =
   async (run) => {
     const url = new URL(path, run.deps.fioApi.baseUrl)
     const responseResult = await run(
-      appFetchAsText(url, {
+      appFetchAsJson(url, {
         method: "GET",
         headers: {
           Accept: "application/json, text/plain",
@@ -387,7 +400,7 @@ const requestFioApi =
       )
     }
 
-    return ok(response.text)
+    return ok({ text: response.text, json: response.json })
   }
 
 const isFioStrongAuthorizationRequiredResponse = (

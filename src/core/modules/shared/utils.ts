@@ -51,3 +51,11 @@ const randomBytes = createRandomBytes()
 
 export const createTableId = <Table extends TypeName>(): Id & Brand<Table> =>
   createId<Table>({ randomBytes }) as Id & Brand<Table>
+
+export const hasSparkIdentifier = ({
+  sparkInvoice,
+  lightning,
+}: {
+  readonly lightning?: object
+  readonly sparkInvoice?: object
+}): boolean => lightning !== undefined || sparkInvoice !== undefined

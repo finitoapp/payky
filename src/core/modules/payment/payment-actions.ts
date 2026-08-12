@@ -48,6 +48,7 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   createTableId,
+  hasSparkIdentifier,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
@@ -250,14 +251,6 @@ const optionalNonEmptySparkInvoice = (
       }
 }
 
-const hasSparkPaymentIdentifier = ({
-  sparkInvoice,
-  lightning,
-}: {
-  readonly lightning?: object
-  readonly sparkInvoice?: object
-}): boolean => lightning !== undefined || sparkInvoice !== undefined
-
 type PaymentBtcInput = Omit<InsertValues<typeof paymentBtc>, "id"> & {
   readonly lightning?: Omit<InsertValues<typeof paymentBtcLightning>, "id">
   readonly sparkInvoice?: Omit<InsertValues<typeof paymentBtcSpark>, "id">
@@ -288,7 +281,7 @@ export const createPayment =
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
   }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
-    if (spark && !hasSparkPaymentIdentifier(spark)) {
+    if (spark && !hasSparkIdentifier(spark)) {
       throw new Error("Spark payment requires lnInvoice or sparkInvoice.")
     }
 

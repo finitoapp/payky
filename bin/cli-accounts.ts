@@ -3,6 +3,7 @@ import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
+import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
@@ -26,10 +27,6 @@ import {
   IbanSchema,
   NonEmptyString255Schema,
 } from "../src/core/modules/shared/schema"
-
-declare const process: {
-  exitCode?: number
-}
 
 const accountsWithDetailsQuery = createQuery((db) =>
   db
@@ -109,11 +106,6 @@ export const registerAccountsCommand =
   (run) => {
     const { evolu } = run.deps
 
-    const printInvalidAccountInput = (message: string): void => {
-      run.deps.console.error(message)
-      process.exitCode = 1
-    }
-
     const accountsCommand = createCommand("accounts").description(
       "Manage payment accounts."
     )
@@ -180,7 +172,8 @@ export const registerAccountsCommand =
                 options.iban === undefined ||
                 options.currency === undefined
               ) {
-                printInvalidAccountInput(
+                printCliError(
+                  run.deps.console,
                   "IBAN account requires --iban and --currency."
                 )
                 return
@@ -201,7 +194,10 @@ export const registerAccountsCommand =
 
             if (options.kind === "spark") {
               if (options.secret === undefined) {
-                printInvalidAccountInput("Spark account requires --secret.")
+                printCliError(
+                  run.deps.console,
+                  "Spark account requires --secret."
+                )
                 return
               }
 
@@ -218,7 +214,8 @@ export const registerAccountsCommand =
             }
 
             if (options.currency === undefined) {
-              printInvalidAccountInput(
+              printCliError(
+                run.deps.console,
                 "Cash register account requires --currency."
               )
               return

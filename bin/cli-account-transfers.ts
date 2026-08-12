@@ -2,6 +2,7 @@ import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
+import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
@@ -24,10 +25,6 @@ import {
   TimestampMsSchema,
   VariableSymbolSchema,
 } from "../src/core/modules/shared/schema"
-
-declare const process: {
-  exitCode?: number
-}
 
 const TimestampMsFromStringSchema = z.string().transform((value, ctx) => {
   const trimmed = value.trim()
@@ -191,16 +188,6 @@ export const registerAccountTransfersCommand =
   (run) => {
     const { evolu } = run.deps
 
-    const printAccountTransferNotFound = (id: AccountTransactionId): void => {
-      run.deps.console.error(`accountTransfer not found: ${id}`)
-      process.exitCode = 1
-    }
-
-    const printInvalidAccountTransferInput = (message: string): void => {
-      run.deps.console.error(message)
-      process.exitCode = 1
-    }
-
     const accountTransfersCommand = createCommand(
       "account-transfers"
     ).description("Manage account transfer records.")
@@ -306,7 +293,8 @@ export const registerAccountTransfersCommand =
 
             if (options.kind === "iban") {
               if (options.bankReference === undefined) {
-                printInvalidAccountTransferInput(
+                printCliError(
+                  run.deps.console,
                   "IBAN account transfer requires --bankReference."
                 )
                 return
@@ -333,7 +321,8 @@ export const registerAccountTransfersCommand =
                 (options.lnInvoice === undefined &&
                   options.sparkInvoice === undefined)
               ) {
-                printInvalidAccountTransferInput(
+                printCliError(
+                  run.deps.console,
                   "Spark account transfer requires --sparkTransferId and --lnInvoice or --sparkInvoice."
                 )
                 return
@@ -424,7 +413,10 @@ export const registerAccountTransfersCommand =
               accountTransfer === undefined ||
               accountTransfer.kind === null
             ) {
-              printAccountTransferNotFound(options.id)
+              printCliError(
+                run.deps.console,
+                `accountTransfer not found: ${options.id}`
+              )
               return
             }
 
@@ -464,7 +456,8 @@ export const registerAccountTransfersCommand =
                 (options.lnInvoice === undefined &&
                   options.sparkInvoice === undefined)
               ) {
-                printInvalidAccountTransferInput(
+                printCliError(
+                  run.deps.console,
                   "Spark account transfer update requires --sparkTransferId or an existing Spark transfer id, and --lnInvoice or --sparkInvoice."
                 )
                 return

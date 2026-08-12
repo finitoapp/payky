@@ -67,13 +67,6 @@ export type WithdrawalQuoteFailedError = ReturnType<
   typeof createWithdrawalQuoteFailedError
 >
 
-export const createWithdrawalFailedError = defineError("WithdrawalFailed")<{
-  readonly message: string
-}>()
-export type WithdrawalFailedError = ReturnType<
-  typeof createWithdrawalFailedError
->
-
 export const createWithdrawalRequestFailedError = defineError(
   "WithdrawalRequestFailed"
 )<{

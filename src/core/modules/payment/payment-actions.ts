@@ -45,6 +45,7 @@ import {
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   createTableId,
@@ -55,6 +56,7 @@ import {
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import {
   type DateString,
+  type FiatCurrency,
   type NonEmptyString,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
@@ -261,6 +263,90 @@ type PaymentBtcUpdateInput = Omit<UpdateValues<typeof paymentBtc>, "id"> & {
   readonly sparkInvoice?: Omit<UpdateValues<typeof paymentBtcSpark>, "id">
 }
 
+/**
+ * Quotes the fiat amount in sats, creates a Spark Lightning invoice, and
+ * shapes the result into the `paymentBtc`/`paymentBtcLightning`/
+ * `paymentBtcSpark` payload shared by `createPreparedPayment` and
+ * `preparePaymentMethod`. Does not write anything.
+ */
+const createSparkLightningInvoice =
+  ({
+    accountId,
+    secret,
+    currency,
+    amount,
+    memo,
+    expirySeconds,
+    includeSparkInvoice,
+  }: {
+    readonly accountId: AccountId
+    readonly secret: SparkSecret
+    readonly currency: FiatCurrency
+    readonly amount: number
+    readonly memo?: string
+    readonly expirySeconds?: number
+    readonly includeSparkInvoice?: boolean
+  }): Task<
+    PaymentBtcInput,
+    PaymentPreparationFailedError | YadioHttpError | YadioApiError | FetchError,
+    EvoluDep & SparkWalletDep & FetchDep & YadioApiDep
+  > =>
+  async (run) => {
+    const quote = await run(fetchYadioBtcExchangeRate(currency))
+    if (!quote.ok) return quote
+
+    const amountSats = NonNegativeIntegerSchema.decode(
+      convertFiatMinorUnitsToSats(amount, quote.value.exchangeRate)
+    )
+
+    try {
+      await using wallet = await run.deps.sparkWallet.create(secret)
+      const lightningInvoice = await wallet.createLightningInvoice(
+        removeUndefinedValues({
+          amountSats,
+          memo,
+          expirySeconds,
+          includeSparkInvoice: includeSparkInvoice ?? true,
+        })
+      )
+
+      return ok({
+        accountId,
+        amountSats,
+        exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
+        exchangeRateSource: "yadio" as const,
+        exchangeRateFetchedAt: TimestampMsSchema.decode(quote.value.fetchedAt),
+        lightning: {
+          lnInvoice: NonEmptyStringSchema.decode(
+            lightningInvoice.invoice.encodedInvoice
+          ),
+          ...removeUndefinedValues({
+            lightningReceiveRequestId: optionalNonEmptyString(
+              lightningInvoice.id
+            ),
+            paymentHash: optionalNonEmptyString(
+              lightningInvoice.invoice.paymentHash
+            ),
+            paymentPreimage: optionalNonEmptyString(
+              lightningInvoice.paymentPreimage
+            ),
+          }),
+        },
+        sparkInvoice: optionalNonEmptySparkInvoice(
+          lightningInvoice.sparkInvoice
+        ),
+      })
+    } catch (error) {
+      return err(
+        paymentPreparationFailed(
+          error instanceof Error
+            ? error.message
+            : "Failed to prepare payment details"
+        )
+      )
+    }
+  }
+
 export const loadPayment =
   (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>
   async (run) =>
@@ -414,72 +500,25 @@ export const createPreparedPayment =
       return err(accountSparkNotFound(spark.accountId))
     }
 
-    try {
-      const quote = await run(fetchYadioBtcExchangeRate(input.currency))
-      if (!quote.ok) {
-        return quote
-      }
+    const sparkPaymentResult = await run(
+      createSparkLightningInvoice({
+        accountId: spark.accountId,
+        secret: sparkAccount.secret,
+        currency: input.currency,
+        amount: input.amount,
+        memo: spark.memo,
+        expirySeconds: spark.expirySeconds,
+        includeSparkInvoice: spark.includeSparkInvoice,
+      })
+    )
+    if (!sparkPaymentResult.ok) return sparkPaymentResult
 
-      const amountSats = NonNegativeIntegerSchema.decode(
-        convertFiatMinorUnitsToSats(input.amount, quote.value.exchangeRate)
-      )
-      await using wallet = await run.deps.sparkWallet.create(
-        sparkAccount.secret
-      )
-      const lightningInvoice = await wallet.createLightningInvoice(
-        removeUndefinedValues({
-          amountSats,
-          memo: spark.memo,
-          expirySeconds: spark.expirySeconds,
-          includeSparkInvoice: spark.includeSparkInvoice ?? true,
-        })
-      )
-
-      const paymentResult = await run(
-        createPayment({
-          ...input,
-          spark: {
-            accountId: spark.accountId,
-            amountSats,
-            exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
-            exchangeRateSource: "yadio",
-            exchangeRateFetchedAt: TimestampMsSchema.decode(
-              quote.value.fetchedAt
-            ),
-            lightning: {
-              lnInvoice: NonEmptyStringSchema.decode(
-                lightningInvoice.invoice.encodedInvoice
-              ),
-              ...removeUndefinedValues({
-                lightningReceiveRequestId: optionalNonEmptyString(
-                  lightningInvoice.id
-                ),
-                paymentHash: optionalNonEmptyString(
-                  lightningInvoice.invoice.paymentHash
-                ),
-                paymentPreimage: optionalNonEmptyString(
-                  lightningInvoice.paymentPreimage
-                ),
-              }),
-            },
-            sparkInvoice: optionalNonEmptySparkInvoice(
-              lightningInvoice.sparkInvoice
-            ),
-          },
-        })
-      )
-      if (!paymentResult.ok) return paymentResult
-
-      return ok(paymentResult.value)
-    } catch (error) {
-      return err(
-        paymentPreparationFailed(
-          error instanceof Error
-            ? error.message
-            : "Failed to prepare payment details"
-        )
-      )
-    }
+    return run(
+      createPayment({
+        ...input,
+        spark: sparkPaymentResult.value,
+      })
+    )
   }
 
 export const preparePaymentMethod =
@@ -610,70 +649,20 @@ export const preparePaymentMethod =
             )
             if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
 
-            try {
-              const quote = await run(
-                fetchYadioBtcExchangeRate(payment.currency)
-              )
-              if (!quote.ok) return quote
-
-              const amountSats = NonNegativeIntegerSchema.decode(
-                convertFiatMinorUnitsToSats(
-                  payment.amount,
-                  quote.value.exchangeRate
-                )
-              )
-              await using wallet = await run.deps.sparkWallet.create(
-                sparkAccount.secret
-              )
-              const lightningInvoice = await wallet.createLightningInvoice(
-                removeUndefinedValues({
-                  amountSats,
-                  memo: spark.memo,
-                  expirySeconds: spark.expirySeconds,
-                  includeSparkInvoice: spark.includeSparkInvoice ?? true,
-                })
-              )
-
-              return ok({
-                id: paymentId,
+            const sparkInvoiceResult = await run(
+              createSparkLightningInvoice({
                 accountId: spark.accountId,
-                amountSats,
-                exchangeRate: PositiveNumberSchema.decode(
-                  quote.value.exchangeRate
-                ),
-                exchangeRateSource: "yadio" as const,
-                exchangeRateFetchedAt: TimestampMsSchema.decode(
-                  quote.value.fetchedAt
-                ),
-                lightning: {
-                  lnInvoice: NonEmptyStringSchema.decode(
-                    lightningInvoice.invoice.encodedInvoice
-                  ),
-                  ...removeUndefinedValues({
-                    lightningReceiveRequestId: optionalNonEmptyString(
-                      lightningInvoice.id
-                    ),
-                    paymentHash: optionalNonEmptyString(
-                      lightningInvoice.invoice.paymentHash
-                    ),
-                    paymentPreimage: optionalNonEmptyString(
-                      lightningInvoice.paymentPreimage
-                    ),
-                  }),
-                },
-                sparkInvoice: optionalNonEmptySparkInvoice(
-                  lightningInvoice.sparkInvoice
-                ),
+                secret: sparkAccount.secret,
+                currency: payment.currency,
+                amount: payment.amount,
+                memo: spark.memo,
+                expirySeconds: spark.expirySeconds,
+                includeSparkInvoice: spark.includeSparkInvoice,
               })
-            } catch (error) {
-              return err(
-                paymentPreparationFailed(
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to prepare payment details"
-                )
-              )
-            }
+            )
+            if (!sparkInvoiceResult.ok) return sparkInvoiceResult
+
+            return ok({ id: paymentId, ...sparkInvoiceResult.value })
           })()
     if (sparkPaymentResult !== null && !sparkPaymentResult.ok) {
       return sparkPaymentResult

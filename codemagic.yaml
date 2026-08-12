@@ -1,0 +1,45 @@
+workflows:
+  ios-release:
+    name: iOS release (TestFlight)
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      groups:
+        # Create this group in Codemagic (Team settings > Environment
+        # variables) with SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT if
+        # you want release builds to upload sourcemaps to Sentry. Optional —
+        # the build works fine without it, just skips the Sentry plugin.
+        - sentry
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: me.payky
+    integrations:
+      # Name this integration under Team settings > Integrations > App
+      # Store Connect first (App Store Connect API key with App Manager
+      # access). It powers both automatic signing (xcode-project
+      # use-profiles) and the TestFlight publish step below.
+      app_store_connect: payky_app_store_connect
+    scripts:
+      - name: Install Bun
+        script: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "PATH=$HOME/.bun/bin:$PATH" >> "$CM_ENV"
+      - name: Install dependencies
+        script: bun install --frozen-lockfile
+      - name: Sync Capacitor iOS project
+        script: bun run cap:ios:sync
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build ipa
+        script: |
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

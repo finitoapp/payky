@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/card.tsx"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import { PositiveInteger } from "@/core/modules/shared/schema.ts"
-import { executeWithdrawal } from "@/core/modules/withdrawal/withdrawal-actions.ts"
-import type { ExecuteWithdrawalError } from "@/core/modules/withdrawal/withdrawal-types.ts"
+import {
+  type ExecuteWithdrawalError,
+  executeWithdrawal,
+} from "@/core/modules/withdrawal/withdrawal-actions.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

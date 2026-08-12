@@ -2,6 +2,7 @@ import { ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
+import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -33,10 +34,6 @@ import {
   PositiveNumberFromStringSchema,
 } from "../src/core/modules/shared/schema"
 import { TableId } from "../src/core/modules/table/table-types"
-
-declare const process: {
-  exitCode?: number
-}
 
 const LineSummaryIdsFromStringSchema = z
   .string()
@@ -293,10 +290,10 @@ export const registerBillsCommand =
               options.lineSummaryId
             )
             if (lineSummary === null) {
-              run.deps.console.error(
+              printCliError(
+                run.deps.console,
                 `Line summary not found: ${options.lineSummaryId}`
               )
-              process.exitCode = 1
               return
             }
 
@@ -339,8 +336,7 @@ export const registerBillsCommand =
             for (const id of options.lineSummaryIds) {
               const lineSummary = findLineSummary(sourceItems, id)
               if (lineSummary === null) {
-                run.deps.console.error(`Line summary not found: ${id}`)
-                process.exitCode = 1
+                printCliError(run.deps.console, `Line summary not found: ${id}`)
                 return
               }
               selectedItems.push(lineSummary)

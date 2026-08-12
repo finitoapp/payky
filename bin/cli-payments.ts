@@ -3,6 +3,7 @@ import { createRun } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
+import { printCliError } from "@/core/cli/cli-errors.ts"
 import {
   createDateDep,
   createFetchDep,
@@ -32,10 +33,6 @@ import {
   VariableSymbolSchema,
 } from "../src/core/modules/shared/schema"
 import { TableId } from "../src/core/modules/table/table-types"
-
-declare const process: {
-  exitCode?: number
-}
 
 const TimestampMsFromStringSchema = z.string().transform((value, ctx) => {
   const trimmed = value.trim()
@@ -184,11 +181,6 @@ export const registerPaymentsCommand =
   (run) => {
     const { evolu, evoluOwnerId } = run.deps
 
-    const printInvalidPaymentInput = (message: string): void => {
-      run.deps.console.error(message)
-      process.exitCode = 1
-    }
-
     const paymentsCommand = createCommand("payments").description(
       "Manage payment requests and receipts."
     )
@@ -277,7 +269,8 @@ export const registerPaymentsCommand =
               const { ibanAccountId, specificSymbol, variableSymbol } = options
 
               if (ibanAccountId === undefined) {
-                printInvalidPaymentInput(
+                printCliError(
+                  run.deps.console,
                   "IBAN payment requires --ibanAccountId."
                 )
                 return null

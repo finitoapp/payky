@@ -1,4 +1,4 @@
-import { ok, type Task } from "@evolu/common"
+import { type MutationOptions, ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -12,6 +12,21 @@ import type { BillLineRow } from "./bill-line.ts"
 import { billLinesByBillIdQuery } from "./bill-line-queries.ts"
 import type { BillLineSummary } from "./bill-line-summary.ts"
 import { calculateBillLineSummaries } from "./bill-line-utils.ts"
+
+/**
+ * Inserts already-computed bill line rows. Takes the caller's own
+ * `MutationOptions` so the writes can join an existing mutation batch instead
+ * of always opening a new one.
+ */
+export const insertBillLineRows = (
+  evolu: EvoluDep["evolu"],
+  lines: ReadonlyArray<Omit<BillLineRow, "id">>,
+  options: MutationOptions
+): void => {
+  for (const line of lines) {
+    evolu.insert("billLine", removeUndefinedValues(line), options)
+  }
+}
 
 export const loadCalculatedBillLineSummaries =
   (billId: BillId): Task<ReadonlyArray<BillLineSummary>, never, EvoluDep> =>
@@ -33,14 +48,12 @@ export const appendBillLines =
     const { evoluOwnerId } = run.deps
 
     if (lines.length > 0) {
-      await runMutationWithCompletion((options) => {
-        for (const line of lines) {
-          run.deps.evolu.insert("billLine", removeUndefinedValues(line), {
-            ...options,
-            ownerId: evoluOwnerId,
-          })
-        }
-      })
+      await runMutationWithCompletion((options) =>
+        insertBillLineRows(run.deps.evolu, lines, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
+      )
     }
 
     const targetBillId = returnBillId ?? lines.at(-1)?.billId

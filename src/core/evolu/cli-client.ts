@@ -166,7 +166,7 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
   } as const
 }
 
-export const createEvolu = async (mode: "memory" | string) => {
+export const createCliEvolu = async (mode: "memory" | string) => {
   await using disposer = new AsyncDisposableStack()
 
   const { run } = disposer.use(await setupRunWithEvoluDeps(mode))
@@ -184,6 +184,6 @@ export const createEvolu = async (mode: "memory" | string) => {
 }
 
 export const createEvoluCli = (mode = cliEnv.PAYKY_SQLITE_PATH) =>
-  createEvolu(mode)
+  createCliEvolu(mode)
 
-export const createEvoluTest = () => createEvolu("memory")
+export const createEvoluTest = () => createCliEvolu("memory")

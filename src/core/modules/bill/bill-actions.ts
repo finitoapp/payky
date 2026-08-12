@@ -16,17 +16,18 @@ import type {
 import {
   appendBillLine,
   appendBillLines,
+  insertBillLineRows,
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { item } from "@/core/modules/item/item.ts"
+import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import {
-  createOrReuseCatalogItemSnapshot,
-  createOrReuseItemSnapshot,
-} from "@/core/modules/item/item-actions.ts"
-import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
+  createCatalogItemSnapshot,
+  createStandaloneItemSnapshot,
+} from "@/core/modules/item/item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
@@ -177,22 +178,34 @@ export const addCatalogItemToBill =
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
-    const item = await run.orThrow(
-      createOrReuseCatalogItemSnapshot(catalogItemResult.value)
-    )
-    const projected = await run.orThrow(
-      appendBillLine({
-        billId: input.billId,
-        deviceId: input.deviceId ?? null,
-        catalogItemId: catalogItemResult.value.id,
-        itemId: item.id,
-        type: "catalogItem",
-        kind: "add",
-        quantity: input.quantity,
-        totalAmount: NonNegativeInteger(
-          catalogItemResult.value.unitAmount * input.quantity
-        ),
+    const item = createCatalogItemSnapshot(catalogItemResult.value)
+    const line = {
+      billId: input.billId,
+      deviceId: input.deviceId ?? null,
+      catalogItemId: catalogItemResult.value.id,
+      itemId: item.id,
+      type: "catalogItem",
+      kind: "add",
+      quantity: input.quantity,
+      totalAmount: NonNegativeInteger(
+        catalogItemResult.value.unitAmount * input.quantity
+      ),
+    } satisfies Omit<BillLineRow, "id">
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      upsertItemSnapshot(run.deps.evolu, item, {
+        ...options,
+        ownerId: evoluOwnerId,
       })
+      insertBillLineRows(run.deps.evolu, [line], {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    })
+
+    const projected = await run.orThrow(
+      loadCalculatedBillLineSummaries(input.billId)
     )
     const lineSummary = projected.find((row) => row.itemId === item.id)
     return lineSummary === undefined
@@ -226,18 +239,31 @@ export const addManualAmountToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    await run.orThrow(createOrReuseItemSnapshot(snapshot))
-    const projected = await run.orThrow(
-      appendBillLine({
-        billId: input.billId,
-        deviceId: input.deviceId ?? null,
-        catalogItemId: null,
-        itemId: snapshot.id,
-        type: "manualAmount",
-        kind: "add",
-        quantity: PositiveNumber(1),
-        totalAmount: input.totalAmount,
+    const line = {
+      billId: input.billId,
+      deviceId: input.deviceId ?? null,
+      catalogItemId: null,
+      itemId: snapshot.id,
+      type: "manualAmount",
+      kind: "add",
+      quantity: PositiveNumber(1),
+      totalAmount: input.totalAmount,
+    } satisfies Omit<BillLineRow, "id">
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      upsertItemSnapshot(run.deps.evolu, snapshot, {
+        ...options,
+        ownerId: evoluOwnerId,
       })
+      insertBillLineRows(run.deps.evolu, [line], {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    })
+
+    const projected = await run.orThrow(
+      loadCalculatedBillLineSummaries(input.billId)
     )
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
     return lineSummary === undefined
@@ -271,18 +297,31 @@ export const addTipToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    await run.orThrow(createOrReuseItemSnapshot(snapshot))
-    const projected = await run.orThrow(
-      appendBillLine({
-        billId: input.billId,
-        deviceId: input.deviceId ?? null,
-        catalogItemId: null,
-        itemId: snapshot.id,
-        type: "tip",
-        kind: "add",
-        quantity: PositiveNumber(1),
-        totalAmount: input.totalAmount,
+    const line = {
+      billId: input.billId,
+      deviceId: input.deviceId ?? null,
+      catalogItemId: null,
+      itemId: snapshot.id,
+      type: "tip",
+      kind: "add",
+      quantity: PositiveNumber(1),
+      totalAmount: input.totalAmount,
+    } satisfies Omit<BillLineRow, "id">
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      upsertItemSnapshot(run.deps.evolu, snapshot, {
+        ...options,
+        ownerId: evoluOwnerId,
       })
+      insertBillLineRows(run.deps.evolu, [line], {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    })
+
+    const projected = await run.orThrow(
+      loadCalculatedBillLineSummaries(input.billId)
     )
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
     return lineSummary === undefined

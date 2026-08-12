@@ -12,6 +12,8 @@ import {
   PositiveNumberSchema,
 } from "@/core/modules/shared/schema.ts"
 
+// Table schema for a future line-item breakdown of a payment; no actions,
+// queries, or writes exist yet — the table is registered ahead of that work.
 export const paymentLine = {
   id: PaymentLineId,
   paymentId: PaymentId,

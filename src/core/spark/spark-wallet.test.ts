@@ -214,6 +214,50 @@ describe("Spark wallet pool sharing", () => {
     await walletB[Symbol.asyncDispose]()
     expect(fakeWallet.cleanup).toHaveBeenCalledTimes(1)
   })
+
+  test("defaults to the MAINNET network", async () => {
+    initializeMock.mockResolvedValueOnce({ wallet: createFakeSdkWallet() })
+
+    await using _wallet = await createDefaultSparkPaymentWallet(nextSecret())
+
+    expect(initializeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ options: { network: "MAINNET" } })
+    )
+  })
+
+  test("passes a requested network through to the SDK", async () => {
+    initializeMock.mockResolvedValueOnce({ wallet: createFakeSdkWallet() })
+
+    await using _wallet = await createDefaultSparkPaymentWallet(
+      nextSecret(),
+      "REGTEST"
+    )
+
+    expect(initializeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ options: { network: "REGTEST" } })
+    )
+  })
+
+  test("keeps MAINNET and REGTEST instances separate for the same secret", async () => {
+    const fakeMainnetWallet = createFakeSdkWallet()
+    const fakeRegtestWallet = createFakeSdkWallet()
+    initializeMock.mockResolvedValueOnce({ wallet: fakeMainnetWallet })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeRegtestWallet })
+
+    const secret = nextSecret()
+    await using mainnetWallet = await createDefaultSparkPaymentWallet(secret)
+    await using regtestWallet = await createDefaultSparkPaymentWallet(
+      secret,
+      "REGTEST"
+    )
+
+    await mainnetWallet.getBalance()
+    await regtestWallet.getBalance()
+
+    expect(initializeMock).toHaveBeenCalledTimes(2)
+    expect(fakeMainnetWallet.getBalance).toHaveBeenCalledTimes(1)
+    expect(fakeRegtestWallet.getBalance).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe("createSharedSparkSyncWallet", () => {

@@ -1,4 +1,5 @@
 import {
+  type NetworkType,
   SparkWallet,
   SparkWalletEvent,
   type SparkWalletEvents,
@@ -26,6 +27,8 @@ interface SparkLightningInvoice {
 }
 
 export type SparkExitSpeed = "fast" | "medium" | "slow"
+
+export type SparkNetwork = NetworkType
 
 const exitSpeedToSdk: Record<SparkExitSpeed, ExitSpeed> = {
   fast: ExitSpeed.FAST,
@@ -107,15 +110,15 @@ const toFeeEstimate = (
 })
 
 /**
- * Instances are keyed by mnemonic and shared across every consumer (domain
- * actions, direct UI reads, and the Spark account sync job). Sharing is
- * ref-counted through {@link createRefCountedResourcePool}: each `acquire()`
- * call returns its own disposable lease, and the underlying instance is only
- * torn down once every acquirer has disposed its lease (e.g. a short-lived
- * action's `finally` cleanup, or the sync job disposing its long-held lease
- * when an account becomes inactive). This keeps the instance alive across a
- * burst of calls for the same account without ever outliving its last
- * consumer.
+ * Instances are keyed by mnemonic + network and shared across every consumer
+ * (domain actions, direct UI reads, and the Spark account sync job — all of
+ * which use the default `MAINNET` network). Sharing is ref-counted through
+ * {@link createRefCountedResourcePool}: each `acquire()` call returns its own
+ * disposable lease, and the underlying instance is only torn down once every
+ * acquirer has disposed its lease (e.g. a short-lived action's `finally`
+ * cleanup, or the sync job disposing its long-held lease when an account
+ * becomes inactive). This keeps the instance alive across a burst of calls
+ * for the same account without ever outliving its last consumer.
  *
  * Deliberately uses {@link SparkWallet.initialize}, not
  * `SparkWallet.getOrCreateWallet` — the latter dedupes concurrent
@@ -127,14 +130,22 @@ const toFeeEstimate = (
  * synchronized. `initialize` always constructs a fresh instance that this
  * pool exclusively owns, which avoids that race entirely.
  */
+const sparkWalletPoolKey = (mnemonic: string, network: SparkNetwork): string =>
+  `${network}:${mnemonic}`
+
 const sparkWalletPool = createRefCountedResourcePool<SparkWallet>({
-  create: (mnemonic) =>
-    SparkWallet.initialize({
+  create: (key) => {
+    const separatorIndex = key.indexOf(":")
+    const network = key.slice(0, separatorIndex) as SparkNetwork
+    const mnemonic = key.slice(separatorIndex + 1)
+
+    return SparkWallet.initialize({
       mnemonicOrSeed: mnemonic,
       options: {
-        network: "MAINNET",
+        network,
       },
-    }).then(({ wallet }) => wallet),
+    }).then(({ wallet }) => wallet)
+  },
   destroy: (wallet) => wallet.cleanup(),
 })
 
@@ -163,9 +174,12 @@ export interface SharedSparkSyncWallet extends AsyncDisposable {
 }
 
 export const createSharedSparkSyncWallet = async (
-  secret: SparkSecret
+  secret: SparkSecret,
+  network: SparkNetwork = "MAINNET"
 ): Promise<SharedSparkSyncWallet> => {
-  const lease = sparkWalletPool.acquire(sparkSecretToMnemonic(secret))
+  const lease = sparkWalletPool.acquire(
+    sparkWalletPoolKey(sparkSecretToMnemonic(secret), network)
+  )
   const wallet = await lease.resource
 
   return {
@@ -196,9 +210,12 @@ export const createSharedSparkSyncWallet = async (
 }
 
 export const createDefaultSparkPaymentWallet = async (
-  secret: SparkSecret
+  secret: SparkSecret,
+  network: SparkNetwork = "MAINNET"
 ): Promise<SparkPaymentWallet> => {
-  const lease = sparkWalletPool.acquire(sparkSecretToMnemonic(secret))
+  const lease = sparkWalletPool.acquire(
+    sparkWalletPoolKey(sparkSecretToMnemonic(secret), network)
+  )
   const wallet = await lease.resource
 
   return {

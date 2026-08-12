@@ -1,4 +1,3 @@
-import { SparkWallet } from "@buildonspark/spark-sdk"
 import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
@@ -6,6 +5,7 @@ import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import {
   createAccount,
@@ -257,36 +257,30 @@ export const registerAccountsCommand =
             })
 
             const secret = deriveDefaultSparkWalletSecret(createMasterKey())
-            const { wallet } = await SparkWallet.initialize({
-              mnemonicOrSeed: sparkSecretToMnemonic(secret),
-              options: {
-                network,
-              },
-            })
+            await using _wallet = await createDefaultSparkPaymentWallet(
+              secret,
+              network
+            )
 
-            try {
-              const id = await run.orThrow(
-                createAccount({
-                  deviceId: options.deviceId ?? null,
-                  name: options.name,
-                  spark: {
-                    secret,
-                  },
-                })
-              )
-
-              run.deps.console.log(
-                `Inserted Spark account ${id}: ${JSON.stringify({
-                  id,
-                  name: options.name,
-                  network,
+            const id = await run.orThrow(
+              createAccount({
+                deviceId: options.deviceId ?? null,
+                name: options.name,
+                spark: {
                   secret,
-                  mnemonic: sparkSecretToMnemonic(secret),
-                })}`
-              )
-            } finally {
-              await wallet.cleanup()
-            }
+                },
+              })
+            )
+
+            run.deps.console.log(
+              `Inserted Spark account ${id}: ${JSON.stringify({
+                id,
+                name: options.name,
+                network,
+                secret,
+                mnemonic: sparkSecretToMnemonic(secret),
+              })}`
+            )
           },
         })
       )

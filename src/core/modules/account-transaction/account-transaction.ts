@@ -9,6 +9,7 @@ import {
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   AccountTransactionKindSchema,
+  BitcoinAddressSchema,
   ConstantSymbolSchema,
   CurrencySchema,
   type InferTable,
@@ -65,7 +66,7 @@ export const accountTransactionLightning = {
 
 export const accountTransactionOnchain = {
   id: AccountTransactionId,
-  onchainAddress: NonEmptyStringSchema,
+  onchainAddress: BitcoinAddressSchema,
   coopExitRequestId: NonEmptyStringSchema,
   exitSpeed: AccountTransactionOnchainExitSpeedSchema,
   feeSats: IntegerSchema,

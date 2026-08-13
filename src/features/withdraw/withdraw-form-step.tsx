@@ -28,13 +28,16 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { PositiveIntegerSchema } from "@/core/modules/shared/schema.ts"
+import {
+  type BitcoinAddress,
+  BitcoinAddressSchema,
+  PositiveIntegerSchema,
+} from "@/core/modules/shared/schema.ts"
 import {
   type QuoteWithdrawalError,
   quoteWithdrawal,
   type WithdrawalQuote,
 } from "@/core/modules/withdrawal/withdrawal-actions.ts"
-import { isValidBitcoinAddress } from "@/core/modules/withdrawal/withdrawal-utils.ts"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -72,7 +75,7 @@ export function WithdrawFormStep({
 }: {
   readonly accountId: AccountId
   readonly availableSats: number | null
-  readonly onReview: (address: string, quote: WithdrawalQuote) => void
+  readonly onReview: (address: BitcoinAddress, quote: WithdrawalQuote) => void
 }) {
   const appRun = useAppRun()
   const { t } = useTranslation()
@@ -114,8 +117,8 @@ export function WithdrawFormStep({
     setAddressError(null)
     setQuoteError(null)
 
-    const trimmedAddress = address.trim()
-    if (!isValidBitcoinAddress(trimmedAddress)) {
+    const trimmedAddressResult = BitcoinAddressSchema.safeParse(address.trim())
+    if (trimmedAddressResult.error) {
       setAddressError("withdraw.address.invalid")
       return
     }
@@ -133,7 +136,7 @@ export function WithdrawFormStep({
       const quoteResult = await run(
         quoteWithdrawal({
           accountId,
-          onchainAddress: trimmedAddress,
+          onchainAddress: trimmedAddressResult.data,
           amountSats: amountResult?.success ? amountResult.data : undefined,
         })
       )
@@ -143,7 +146,7 @@ export function WithdrawFormStep({
         return false
       }
 
-      onReview(trimmedAddress, quoteResult.value)
+      onReview(trimmedAddressResult.data, quoteResult.value)
     })
   }
 

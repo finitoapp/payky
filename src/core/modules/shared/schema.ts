@@ -2,6 +2,7 @@ import type { StandardSchemaV1 } from "@evolu/common"
 import type { ValueOf } from "type-fest"
 import { z } from "zod"
 
+import { isValidBitcoinAddress } from "./bitcoin-address-utils.ts"
 import {
   isValidIban,
   normalizeBankAccountInputToIban,
@@ -182,6 +183,12 @@ export const BankAccountInputIbanSchema = z
 
     return result.value as Iban
   })
+export const BitcoinAddressSchema = z
+  .string()
+  .refine(isValidBitcoinAddress)
+  .brand<"BitcoinAddress">()
+export const BitcoinAddress = BitcoinAddressSchema.decode
+export type BitcoinAddress = z.output<typeof BitcoinAddressSchema>
 export const VariableSymbolSchema = z
   .string()
   .trim()

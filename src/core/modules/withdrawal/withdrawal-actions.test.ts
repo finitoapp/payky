@@ -7,6 +7,7 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { BitcoinAddress } from "@/core/modules/shared/schema.ts"
 import type {
   SparkExitSpeed,
   SparkWalletDep,
@@ -16,7 +17,9 @@ import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.t
 import { executeWithdrawal, quoteWithdrawal } from "./withdrawal-actions.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
-const validAddress = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
+const validAddress = BitcoinAddress(
+  "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
+)
 
 const createDateDeps = (): DateDep => ({
   date: {

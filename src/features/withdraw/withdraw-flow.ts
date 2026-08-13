@@ -1,3 +1,4 @@
+import type { BitcoinAddress } from "@/core/modules/shared/schema.ts"
 import type { WithdrawalQuote } from "@/core/modules/withdrawal/withdrawal-actions.ts"
 import type {
   SparkExitSpeed,
@@ -14,7 +15,7 @@ export type WithdrawState =
   | { readonly step: "form" }
   | {
       readonly step: "review"
-      readonly address: string
+      readonly address: BitcoinAddress
       readonly quote: WithdrawalQuote
       readonly exitSpeed: SparkExitSpeed
       readonly confirming: boolean
@@ -25,7 +26,7 @@ export type WithdrawState =
 export type WithdrawAction =
   | {
       readonly type: "OPEN_REVIEW"
-      readonly address: string
+      readonly address: BitcoinAddress
       readonly quote: WithdrawalQuote
     }
   | { readonly type: "BACK" }

@@ -6,8 +6,10 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import { isValidBitcoinAddress } from "@/core/modules/shared/bitcoin-address-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  type BitcoinAddress,
   Integer,
   NonEmptyStringSchema,
   type PositiveInteger,
@@ -19,10 +21,7 @@ import type {
   SparkWithdrawalFeeQuote,
   SparkWithdrawalStatus,
 } from "@/core/spark/spark-wallet.ts"
-import {
-  computeTotalDebitedSats,
-  isValidBitcoinAddress,
-} from "./withdrawal-utils.ts"
+import { computeTotalDebitedSats } from "./withdrawal-utils.ts"
 
 export interface WithdrawalQuote {
   readonly availableSats: number
@@ -115,7 +114,7 @@ export const quoteWithdrawal =
     amountSats,
   }: {
     readonly accountId: AccountId
-    readonly onchainAddress: string
+    readonly onchainAddress: BitcoinAddress
     readonly amountSats?: PositiveInteger
   }): Task<WithdrawalQuote, QuoteWithdrawalError, EvoluDep & SparkWalletDep> =>
   async (run) => {
@@ -184,7 +183,7 @@ export const executeWithdrawal =
     deviceId,
   }: {
     readonly accountId: AccountId
-    readonly onchainAddress: string
+    readonly onchainAddress: BitcoinAddress
     readonly quote: WithdrawalQuote
     readonly exitSpeed: SparkExitSpeed
     readonly deviceId?: DeviceId | null
@@ -242,7 +241,7 @@ export const executeWithdrawal =
             note: null,
             internalTransferGroupId: null,
             onchain: {
-              onchainAddress: NonEmptyStringSchema.decode(onchainAddress),
+              onchainAddress,
               coopExitRequestId: NonEmptyStringSchema.decode(result.id),
               exitSpeed,
               feeSats: Integer(feeEstimate.totalFeeSats),

@@ -1,3 +1,4 @@
+import { err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
 import {
   createDonateWallet,
@@ -101,19 +102,19 @@ const getDefaultIdentifier = (request: Request): string => {
   return `donate@${host}`
 }
 
-const loadConfig = (request: Request): DonateConfig | LnurlError => {
+const loadConfig = (request: Request): Result<DonateConfig, LnurlError> => {
   const parsedEnv = EnvSchema.safeParse(process.env)
 
   if (!parsedEnv.success) {
-    return {
+    return err({
       status: "ERROR",
       reason: "Donation endpoint is not configured.",
-    }
+    })
   }
 
   const env = parsedEnv.data
 
-  return {
+  return ok({
     mnemonic: env.PAYKY_DONATE_SPARK_MNEMONIC,
     minSendableMsats: env.PAYKY_DONATE_MIN_SATS * MSATS_PER_SAT,
     maxSendableMsats: env.PAYKY_DONATE_MAX_SATS * MSATS_PER_SAT,
@@ -123,7 +124,7 @@ const loadConfig = (request: Request): DonateConfig | LnurlError => {
       env.PAYKY_DONATE_CALLBACK_URL ??
       `${getRequestOrigin(request)}/.well-known/lnurlp/donate`,
     invoiceExpirySeconds: env.PAYKY_DONATE_INVOICE_EXPIRY_SECONDS,
-  }
+  })
 }
 
 const jsonResponse = (
@@ -149,48 +150,48 @@ const createMetadata = (config: DonateConfig): LnurlPayMetadata => ({
   ]),
 })
 
-const parseAmountMsats = (value: string | null): number | LnurlError => {
+const parseAmountMsats = (value: string | null): Result<number, LnurlError> => {
   if (value === null) {
-    return {
+    return err({
       status: "ERROR",
       reason: "Missing amount.",
-    }
+    })
   }
 
   const amount = Number(value)
 
   if (!Number.isSafeInteger(amount) || amount <= 0) {
-    return {
+    return err({
       status: "ERROR",
       reason: "Amount must be a positive integer in millisatoshi.",
-    }
+    })
   }
 
-  return amount
+  return ok(amount)
 }
 
 const validateAmountMsats = (
   amountMsats: number,
   config: DonateConfig
-): number | LnurlError => {
+): Result<number, LnurlError> => {
   if (
     amountMsats < config.minSendableMsats ||
     amountMsats > config.maxSendableMsats
   ) {
-    return {
+    return err({
       status: "ERROR",
       reason: "Amount is outside the allowed donation range.",
-    }
+    })
   }
 
   if (amountMsats % MSATS_PER_SAT !== 0) {
-    return {
+    return err({
       status: "ERROR",
       reason: "Amount must be divisible by 1000 millisatoshi.",
-    }
+    })
   }
 
-  return amountMsats / MSATS_PER_SAT
+  return ok(amountMsats / MSATS_PER_SAT)
 }
 
 const getVerifyUrl = (callbackUrl: string, id: string): string => {
@@ -204,7 +205,7 @@ const getVerifyUrl = (callbackUrl: string, id: string): string => {
 const createInvoice = async (
   amountSats: number,
   config: DonateConfig
-): Promise<LnurlPayInvoice | LnurlError> => {
+): Promise<Result<LnurlPayInvoice, LnurlError>> => {
   let wallet: DonateWallet | undefined
 
   try {
@@ -218,22 +219,22 @@ const createInvoice = async (
     })
 
     if (invoice.id === undefined || invoice.id.trim().length === 0) {
-      return {
+      return err({
         status: "ERROR",
         reason: "Could not create verifiable Lightning invoice.",
-      }
+      })
     }
 
-    return {
+    return ok({
       pr: invoice.invoice.encodedInvoice,
       routes: [],
       verify: getVerifyUrl(config.callbackUrl, invoice.id),
-    }
+    })
   } catch {
-    return {
+    return err({
       status: "ERROR",
       reason: "Could not create Lightning invoice.",
-    }
+    })
   } finally {
     await wallet?.cleanup()
   }
@@ -247,7 +248,7 @@ const isSettledLightningReceiveStatus = (status: string): boolean =>
 const verifyInvoice = async (
   id: string,
   config: DonateConfig
-): Promise<LnurlVerifyResponse | LnurlError> => {
+): Promise<Result<LnurlVerifyResponse, LnurlError>> => {
   let wallet: DonateWallet | undefined
 
   try {
@@ -256,10 +257,10 @@ const verifyInvoice = async (
     const invoice = await wallet.getLightningReceiveRequest(id)
 
     if (invoice === null) {
-      return {
+      return err({
         status: "ERROR",
         reason: "Not found",
-      }
+      })
     }
 
     const preimage =
@@ -268,18 +269,18 @@ const verifyInvoice = async (
         ? null
         : invoice.paymentPreimage
 
-    return {
+    return ok({
       status: "OK",
       settled:
         preimage !== null || isSettledLightningReceiveStatus(invoice.status),
       preimage,
       pr: invoice.invoice.encodedInvoice,
-    }
+    })
   } catch {
-    return {
+    return err({
       status: "ERROR",
       reason: "Could not verify Lightning invoice.",
-    }
+    })
   } finally {
     await wallet?.cleanup()
   }
@@ -306,12 +307,13 @@ const handleRequest = async (request: Request): Promise<Response> => {
     )
   }
 
-  const config = loadConfig(request)
+  const configResult = loadConfig(request)
 
-  if ("status" in config) {
-    return jsonResponse(config, { status: 500 })
+  if (!configResult.ok) {
+    return jsonResponse(configResult.error, { status: 500 })
   }
 
+  const config = configResult.value
   const requestUrl = new URL(request.url)
   const verify = requestUrl.searchParams.get("verify")
 
@@ -328,12 +330,15 @@ const handleRequest = async (request: Request): Promise<Response> => {
 
     const verifyResult = await verifyInvoice(verify, config)
 
-    return jsonResponse(verifyResult, {
-      status:
-        "reason" in verifyResult && verifyResult.reason === "Not found"
-          ? 404
-          : 200,
-    })
+    return jsonResponse(
+      verifyResult.ok ? verifyResult.value : verifyResult.error,
+      {
+        status:
+          !verifyResult.ok && verifyResult.error.reason === "Not found"
+            ? 404
+            : 200,
+      }
+    )
   }
 
   const amount = requestUrl.searchParams.get("amount")
@@ -342,19 +347,23 @@ const handleRequest = async (request: Request): Promise<Response> => {
     return jsonResponse(createMetadata(config))
   }
 
-  const parsedAmount = parseAmountMsats(amount)
+  const parsedAmountResult = parseAmountMsats(amount)
 
-  if (typeof parsedAmount !== "number") {
-    return jsonResponse(parsedAmount, { status: 400 })
+  if (!parsedAmountResult.ok) {
+    return jsonResponse(parsedAmountResult.error, { status: 400 })
   }
 
-  const amountSats = validateAmountMsats(parsedAmount, config)
+  const amountSatsResult = validateAmountMsats(parsedAmountResult.value, config)
 
-  if (typeof amountSats !== "number") {
-    return jsonResponse(amountSats, { status: 400 })
+  if (!amountSatsResult.ok) {
+    return jsonResponse(amountSatsResult.error, { status: 400 })
   }
 
-  return jsonResponse(await createInvoice(amountSats, config))
+  const invoiceResult = await createInvoice(amountSatsResult.value, config)
+
+  return jsonResponse(
+    invoiceResult.ok ? invoiceResult.value : invoiceResult.error
+  )
 }
 
 export const GET = handleRequest

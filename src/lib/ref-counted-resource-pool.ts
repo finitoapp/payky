@@ -1,20 +1,26 @@
-export interface RefCountedResourcePoolDeps<TResource> {
-  readonly create: (key: string) => Promise<TResource>
+export interface RefCountedResourcePoolDeps<TResource, TKey = string> {
+  readonly create: (key: TKey) => Promise<TResource>
   readonly destroy: (resource: TResource) => void | Promise<void>
+  /**
+   * Maps a structured `TKey` to the string used for the internal `Map`
+   * lookup. Defaults to `String(key)`, which is the identity for the
+   * default `TKey = string`.
+   */
+  readonly keyOf?: (key: TKey) => string
 }
 
 export interface RefCountedResourceLease<TResource> extends AsyncDisposable {
   readonly resource: Promise<TResource>
 }
 
-export interface RefCountedResourcePool<TResource> {
+export interface RefCountedResourcePool<TResource, TKey = string> {
   /**
    * Returns the shared resource for `key`, creating it on the first
    * acquisition. The resource is destroyed once every lease acquired for
    * that key has been disposed - disposing one lease never affects another
    * concurrent holder of the same key.
    */
-  readonly acquire: (key: string) => RefCountedResourceLease<TResource>
+  readonly acquire: (key: TKey) => RefCountedResourceLease<TResource>
 }
 
 interface PoolEntry<TResource> {
@@ -22,22 +28,24 @@ interface PoolEntry<TResource> {
   refCount: number
 }
 
-export const createRefCountedResourcePool = <TResource>(
-  deps: RefCountedResourcePoolDeps<TResource>
-): RefCountedResourcePool<TResource> => {
+export const createRefCountedResourcePool = <TResource, TKey = string>(
+  deps: RefCountedResourcePoolDeps<TResource, TKey>
+): RefCountedResourcePool<TResource, TKey> => {
+  const keyOf = deps.keyOf ?? ((key: TKey) => String(key))
   const entries = new Map<string, PoolEntry<TResource>>()
 
-  const acquire = (key: string): RefCountedResourceLease<TResource> => {
-    let entry = entries.get(key)
+  const acquire = (key: TKey): RefCountedResourceLease<TResource> => {
+    const mapKey = keyOf(key)
+    let entry = entries.get(mapKey)
 
     if (!entry) {
       const resource = deps.create(key)
       entry = { resource, refCount: 0 }
-      entries.set(key, entry)
+      entries.set(mapKey, entry)
 
       resource.catch(() => {
-        if (entries.get(key) === entry) {
-          entries.delete(key)
+        if (entries.get(mapKey) === entry) {
+          entries.delete(mapKey)
         }
       })
     }
@@ -51,9 +59,9 @@ export const createRefCountedResourcePool = <TResource>(
     stack.defer(async () => {
       acquiredEntry.refCount -= 1
       if (acquiredEntry.refCount > 0) return
-      if (entries.get(key) !== acquiredEntry) return
+      if (entries.get(mapKey) !== acquiredEntry) return
 
-      entries.delete(key)
+      entries.delete(mapKey)
       const resource = await acquiredEntry.resource
       await deps.destroy(resource)
     })

@@ -513,6 +513,7 @@ export const cs = {
   "settings.donations.invoice.missing": "Faktura pro dar chybí.",
   "settings.donations.invoice.openWallet": "Otevřít v peněžence",
   "settings.donations.invoice.title": "Lightning faktura",
+  "settings.donations.invoice.verify.error": "Platbu se nepodařilo ověřit.",
   "settings.donations.invoice.verify.paid": "Platba přijata",
   "settings.donations.invoice.verify.paid.description":
     "Děkujeme za podporu vývoje této aplikace.",

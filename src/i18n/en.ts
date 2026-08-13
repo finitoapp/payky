@@ -514,6 +514,7 @@ export const en = {
   "settings.donations.invoice.missing": "The donation invoice is missing.",
   "settings.donations.invoice.openWallet": "Open in wallet",
   "settings.donations.invoice.title": "Lightning invoice",
+  "settings.donations.invoice.verify.error": "Could not verify the payment.",
   "settings.donations.invoice.verify.paid": "Payment received",
   "settings.donations.invoice.verify.paid.description":
     "Thank you for supporting the development of this app.",

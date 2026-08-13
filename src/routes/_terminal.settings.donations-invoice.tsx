@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { LoaderCircleIcon } from "lucide-react"
+import { CircleAlertIcon, LoaderCircleIcon } from "lucide-react"
 import { z } from "zod"
 
 import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
@@ -35,7 +35,7 @@ const DonateInvoiceSearchSchema = z.object({
     .default(""),
 })
 
-type VerifyStatus = "idle" | "waiting" | "paid"
+type VerifyStatus = "idle" | "waiting" | "paid" | "error"
 
 export const Route = createFileRoute("/_terminal/settings/donations-invoice")({
   component: DonateInvoicePage,
@@ -74,9 +74,11 @@ function DonateInvoicePage() {
 
   const verifyStatus: VerifyStatus = !canVerify
     ? "idle"
-    : verifyQuery.data?.settled
-      ? "paid"
-      : "waiting"
+    : verifyQuery.isError
+      ? "error"
+      : verifyQuery.data?.settled
+        ? "paid"
+        : "waiting"
 
   return (
     <>
@@ -152,12 +154,23 @@ function DonateInvoicePage() {
 function DonationVerifyStatus({ status }: { readonly status: VerifyStatus }) {
   const { t } = useTranslation()
 
-  if (status !== "waiting") return null
+  if (status === "waiting") {
+    return (
+      <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+        <LoaderCircleIcon className="animate-spin" />
+        <span>{t("settings.donations.invoice.verify.waiting")}</span>
+      </div>
+    )
+  }
 
-  return (
-    <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-      <LoaderCircleIcon className="animate-spin" />
-      <span>{t("settings.donations.invoice.verify.waiting")}</span>
-    </div>
-  )
+  if (status === "error") {
+    return (
+      <div className="flex items-center justify-center gap-2 text-destructive text-sm">
+        <CircleAlertIcon />
+        <span>{t("settings.donations.invoice.verify.error")}</span>
+      </div>
+    )
+  }
+
+  return null
 }

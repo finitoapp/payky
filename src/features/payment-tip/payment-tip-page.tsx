@@ -36,7 +36,10 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
 type TipSelection =
-  | { readonly kind: "custom" }
+  | {
+      readonly kind: "custom"
+      readonly tipAmount: NonNegativeIntegerValue | null
+    }
   | { readonly kind: "fixed"; readonly tipAmount: NonNegativeIntegerValue }
   | { readonly kind: "none"; readonly tipAmount: NonNegativeIntegerValue }
   | {
@@ -91,19 +94,15 @@ function PaymentTipForm({
   const [customTipFocusRequest, setCustomTipFocusRequest] = useState(0)
   const [pending, setPending] = useState(false)
   const confirmPendingRef = useRef(false)
-  const customTipAmount = decimalAmountToMinorUnits({
-    currency,
-    value: customTip,
-  })
-  const customTipInvalid = customTip.length > 0 && customTipAmount === null
-  const selectedTipAmount =
-    selection === null
-      ? null
-      : selection.kind === "custom"
-        ? customTipAmount === null
-          ? null
-          : NonNegativeInteger(customTipAmount)
-        : selection.tipAmount
+  const parseCustomTipAmount = (
+    value: string
+  ): NonNegativeIntegerValue | null => {
+    const amount = decimalAmountToMinorUnits({ currency, value })
+    return amount === null ? null : NonNegativeInteger(amount)
+  }
+  const customTipInvalid =
+    customTip.length > 0 && parseCustomTipAmount(customTip) === null
+  const selectedTipAmount = selection?.tipAmount ?? null
   const hasTipPresets = percentages.length > 0 || fixedAmounts.length > 0
 
   const formatAmount = (value: NonNegativeIntegerValue) =>
@@ -294,7 +293,10 @@ function PaymentTipForm({
               onValueChange={(values) => {
                 const [value] = values
                 if (value === "custom") {
-                  setSelection({ kind: "custom" })
+                  setSelection({
+                    kind: "custom",
+                    tipAmount: parseCustomTipAmount(customTip),
+                  })
                   setCustomTipFocusRequest((current) => current + 1)
                   return
                 }
@@ -351,7 +353,12 @@ function PaymentTipForm({
                     aria-invalid={customTipInvalid}
                     placeholder={t("paymentTip.custom.placeholder")}
                     onChange={(event) => {
-                      setCustomTip(event.currentTarget.value)
+                      const value = event.currentTarget.value
+                      setCustomTip(value)
+                      setSelection({
+                        kind: "custom",
+                        tipAmount: parseCustomTipAmount(value),
+                      })
                     }}
                   />
                   <FieldError>

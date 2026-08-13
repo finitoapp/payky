@@ -1,3 +1,4 @@
+import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { z } from "zod"
 import {
   createDonateWallet,
@@ -27,9 +28,9 @@ interface DonationsError {
 }
 
 export interface DonateTransfer {
-  readonly status: string
+  readonly status: WalletTransfer["status"]
   readonly totalValue: number
-  readonly transferDirection: string
+  readonly transferDirection: WalletTransfer["transferDirection"]
   readonly createdTime: Date | undefined
   readonly updatedTime: Date | undefined
 }

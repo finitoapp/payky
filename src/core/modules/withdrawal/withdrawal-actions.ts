@@ -179,20 +179,14 @@ export const executeWithdrawal =
   ({
     accountId,
     onchainAddress,
-    amountSats,
-    withdrawAll,
-    availableSats,
+    quote: { amountSats, withdrawAll, availableSats, feeQuote },
     exitSpeed,
-    feeQuote,
     deviceId,
   }: {
     readonly accountId: AccountId
     readonly onchainAddress: string
-    readonly amountSats: PositiveInteger
-    readonly withdrawAll: boolean
-    readonly availableSats: number
+    readonly quote: WithdrawalQuote
     readonly exitSpeed: SparkExitSpeed
-    readonly feeQuote: SparkWithdrawalFeeQuote
     readonly deviceId?: DeviceId | null
   }): Task<
     {

@@ -264,11 +264,13 @@ describe("executeWithdrawal", () => {
       executeWithdrawal({
         accountId,
         onchainAddress: validAddress,
-        amountSats: 10_000,
-        withdrawAll: false,
-        availableSats: 100_000,
+        quote: {
+          amountSats: 10_000,
+          withdrawAll: false,
+          availableSats: 100_000,
+          feeQuote,
+        },
         exitSpeed,
-        feeQuote,
         deviceId,
       })
     )
@@ -327,11 +329,13 @@ describe("executeWithdrawal", () => {
       executeWithdrawal({
         accountId,
         onchainAddress: validAddress,
-        amountSats: 50_000,
-        withdrawAll: true,
-        availableSats: 50_000,
+        quote: {
+          amountSats: 50_000,
+          withdrawAll: true,
+          availableSats: 50_000,
+          feeQuote,
+        },
         exitSpeed,
-        feeQuote,
       })
     )
 
@@ -371,11 +375,13 @@ describe("executeWithdrawal", () => {
       executeWithdrawal({
         accountId,
         onchainAddress: validAddress,
-        amountSats: 10_000,
-        withdrawAll: false,
-        availableSats: 100_000,
+        quote: {
+          amountSats: 10_000,
+          withdrawAll: false,
+          availableSats: 100_000,
+          feeQuote,
+        },
         exitSpeed,
-        feeQuote,
       })
     )
 
@@ -410,11 +416,13 @@ describe("executeWithdrawal", () => {
       executeWithdrawal({
         accountId,
         onchainAddress: validAddress,
-        amountSats: 10_000,
-        withdrawAll: false,
-        availableSats: 100_000,
+        quote: {
+          amountSats: 10_000,
+          withdrawAll: false,
+          availableSats: 100_000,
+          feeQuote,
+        },
         exitSpeed,
-        feeQuote,
       })
     )
 

@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import assertNever from "assert-never"
 
 export type NativeRuntime = "capacitor" | "web"
 
@@ -21,7 +22,14 @@ export function getNativeRuntime(): NativeRuntime {
 }
 
 export function isPluginNativeRuntime(runtime = getNativeRuntime()): boolean {
-  return runtime !== "web"
+  switch (runtime) {
+    case "web":
+      return false
+    case "capacitor":
+      return true
+  }
+
+  return assertNever(runtime)
 }
 
 export function isNativeWebViewRuntime() {

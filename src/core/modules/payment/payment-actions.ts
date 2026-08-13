@@ -3,6 +3,7 @@ import {
   err,
   type InsertValues,
   ok,
+  type Result,
   sqliteTrue,
   type Task,
   type UpdateValues,
@@ -194,6 +195,39 @@ const paymentPreparationFailed = (
 const paymentNumberNotFound = (
   paymentId: PaymentId
 ): PaymentNumberNotFoundError => createPaymentNumberNotFoundError({ paymentId })
+
+/**
+ * Shared "load the first row or fail, then check its currency matches" step
+ * behind both `preparePaymentMethod`'s cash-register/IBAN branches and
+ * `markPaymentPaidCash`.
+ */
+const loadAccountWithCurrencyCheck = <
+  TRow extends { readonly currency: FiatCurrency },
+  TNotFoundError,
+>(
+  rows: ReadonlyArray<TRow>,
+  notFoundError: TNotFoundError,
+  accountKind: "cashRegister" | "iban",
+  accountId: AccountId,
+  expectedCurrency: FiatCurrency
+): Result<TRow, TNotFoundError | AccountCurrencyMismatchError> => {
+  const accountResult = getFirstOr(rows, notFoundError)
+  if (!accountResult.ok) return accountResult
+
+  const account = accountResult.value
+  if (account.currency !== expectedCurrency) {
+    return err(
+      accountCurrencyMismatch({
+        accountKind,
+        id: accountId,
+        accountCurrency: account.currency,
+        paymentCurrency: expectedCurrency,
+      })
+    )
+  }
+
+  return ok(account)
+}
 
 const convertFiatMinorUnitsToSats = (
   amount: number,
@@ -537,25 +571,16 @@ export const preparePaymentMethod =
       cashRegister === undefined
         ? null
         : await (async () => {
-            const accountResult = getFirstOr(
+            const accountResult = loadAccountWithCurrencyCheck(
               await run.deps.evolu.loadQuery(
                 cashRegisterAccountByIdQuery(cashRegister.accountId)
               ),
-              cashRegisterAccountNotFound(cashRegister.accountId)
+              cashRegisterAccountNotFound(cashRegister.accountId),
+              "cashRegister",
+              cashRegister.accountId,
+              payment.currency
             )
             if (!accountResult.ok) return accountResult
-
-            const account = accountResult.value
-            if (account.currency !== payment.currency) {
-              return err(
-                accountCurrencyMismatch({
-                  accountKind: "cashRegister",
-                  id: cashRegister.accountId,
-                  accountCurrency: account.currency,
-                  paymentCurrency: payment.currency,
-                })
-              )
-            }
 
             return ok({
               id: paymentId,
@@ -570,25 +595,16 @@ export const preparePaymentMethod =
       bank === undefined
         ? null
         : await (async () => {
-            const accountResult = getFirstOr(
+            const accountResult = loadAccountWithCurrencyCheck(
               await run.deps.evolu.loadQuery(
                 ibanAccountByIdQuery(bank.accountId)
               ),
-              ibanAccountNotFound(bank.accountId)
+              ibanAccountNotFound(bank.accountId),
+              "iban",
+              bank.accountId,
+              payment.currency
             )
             if (!accountResult.ok) return accountResult
-
-            const account = accountResult.value
-            if (account.currency !== payment.currency) {
-              return err(
-                accountCurrencyMismatch({
-                  accountKind: "iban",
-                  id: bank.accountId,
-                  accountCurrency: account.currency,
-                  paymentCurrency: payment.currency,
-                })
-              )
-            }
 
             const paymentNumberResult = getFirstOr(
               await run.deps.evolu.loadQuery(
@@ -859,23 +875,14 @@ export const markPaymentPaidCash =
     if (!paymentResult.ok) return paymentResult
 
     const payment = paymentResult.value
-    const cashRegisterAccountResult = getFirstOr(
+    const cashRegisterAccountResult = loadAccountWithCurrencyCheck(
       await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
-      cashRegisterAccountNotFound(accountId)
+      cashRegisterAccountNotFound(accountId),
+      "cashRegister",
+      accountId,
+      payment.currency
     )
     if (!cashRegisterAccountResult.ok) return cashRegisterAccountResult
-
-    const cashRegisterAccount = cashRegisterAccountResult.value
-    if (cashRegisterAccount.currency !== payment.currency) {
-      return err(
-        accountCurrencyMismatch({
-          accountKind: "cashRegister",
-          id: accountId,
-          accountCurrency: cashRegisterAccount.currency,
-          paymentCurrency: payment.currency,
-        })
-      )
-    }
 
     const accountTransactionResult = await run(
       createAccountTransaction({

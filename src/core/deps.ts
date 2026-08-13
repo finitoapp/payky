@@ -9,6 +9,7 @@ import {
   tryAsync,
 } from "@evolu/common"
 import type { JsonValue } from "type-fest"
+import type { z } from "zod"
 import { defineError } from "@/core/error.ts"
 import type { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 import { getNativeRuntime } from "@/core/native/runtime.ts"
@@ -97,6 +98,103 @@ export const appFetchAsJson =
     return ok({
       ...response.value,
       json: parseJsonBody(response.value.text),
+    })
+  }
+
+/**
+ * Runs the shared HTTP-ok → JSON-parsed → schema-valid checks against an
+ * already-fetched {@link appFetchAsJson} response, letting each caller
+ * supply its own error types via `onHttpError`/`onResponseError`.
+ */
+export const validateJsonResponse = <
+  TSchema extends z.ZodType,
+  EHttp,
+  EResponse,
+>(
+  response: Pick<Response, "ok" | "status"> & {
+    readonly text: string
+    readonly json: Result<JsonValue, FetchJsonError>
+  },
+  {
+    schema,
+    onHttpError,
+    onResponseError,
+  }: {
+    readonly schema: TSchema
+    readonly onHttpError: (info: {
+      readonly status: number
+      readonly responseBody: string
+    }) => EHttp
+    readonly onResponseError: (info: {
+      readonly status: number
+      readonly responseBody: string
+      readonly cause: unknown
+    }) => EResponse
+  }
+): Result<z.output<TSchema>, EHttp | EResponse> => {
+  if (!response.ok) {
+    return err(
+      onHttpError({ status: response.status, responseBody: response.text })
+    )
+  }
+
+  if (!response.json.ok) {
+    return err(
+      onResponseError({
+        status: response.status,
+        responseBody: response.text,
+        cause: response.json.error,
+      })
+    )
+  }
+
+  const parsed = schema.safeParse(response.json.value)
+  if (!parsed.success) {
+    return err(
+      onResponseError({
+        status: response.status,
+        responseBody: response.text,
+        cause: parsed.error,
+      })
+    )
+  }
+
+  return ok(parsed.data)
+}
+
+/**
+ * Fetches JSON and validates it against `schema` in one step, combining
+ * {@link appFetchAsJson} with {@link validateJsonResponse}.
+ */
+export const fetchAndValidateJson =
+  <TSchema extends z.ZodType, EHttp, EResponse>({
+    url,
+    init,
+    schema,
+    onHttpError,
+    onResponseError,
+  }: {
+    readonly url: string | URL
+    readonly init?: RequestInit
+    readonly schema: TSchema
+    readonly onHttpError: (info: {
+      readonly status: number
+      readonly responseBody: string
+    }) => EHttp
+    readonly onResponseError: (info: {
+      readonly status: number
+      readonly responseBody: string
+      readonly cause: unknown
+    }) => EResponse
+  }): Task<z.output<TSchema>, EHttp | EResponse | FetchError, FetchDep> =>
+  async (run) => {
+    const responseResult = await run(appFetchAsJson(url, init))
+    if (!responseResult.ok) return responseResult
+
+    return validateJsonResponse(responseResult.value, {
+      schema,
+      onHttpError,
+      onResponseError,
     })
   }
 

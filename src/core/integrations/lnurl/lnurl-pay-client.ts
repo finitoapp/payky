@@ -1,6 +1,11 @@
 import { err, ok, type Result, type Task } from "@evolu/common"
 import { z } from "zod"
-import { appFetchAsJson, type FetchDep, type FetchError } from "@/core/deps.ts"
+import {
+  appFetchAsJson,
+  type FetchDep,
+  type FetchError,
+  validateJsonResponse,
+} from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 
 const MSATS_PER_SAT = 1_000
@@ -136,33 +141,54 @@ const fetchLnurlJson =
       }
     }
 
-    if (!response.ok) {
-      return err(
+    const validated = validateJsonResponse(response, {
+      schema: z.unknown(),
+      onHttpError: ({ status, responseBody }) =>
         createLnurlPayHttpError({
-          message: `${describe} request failed: ${response.status}`,
-          status: response.status,
-          responseBody: response.text,
-        })
-      )
-    }
-
-    if (!response.json.ok) {
-      return err(
+          message: `${describe} request failed: ${status}`,
+          status,
+          responseBody,
+        }),
+      onResponseError: ({ status, responseBody, cause }) =>
         createLnurlPayResponseError({
           message: `Invalid ${describe} response.`,
-          status: response.status,
-          responseBody: response.text,
-          cause: response.json.error,
-        })
-      )
-    }
+          status,
+          responseBody,
+          cause,
+        }),
+    })
+    if (!validated.ok) return validated
 
     return ok({
-      json: response.json.value,
+      json: validated.value,
       status: response.status,
       responseBody: response.text,
     })
   }
+
+const parseLnurlBody = <TSchema extends z.ZodType>(
+  response: {
+    readonly json: unknown
+    readonly status: number
+    readonly responseBody: string
+  },
+  schema: TSchema,
+  message: string
+): Result<z.output<TSchema>, LnurlPayResponseError> => {
+  const parsed = schema.safeParse(response.json)
+  if (!parsed.success) {
+    return err(
+      createLnurlPayResponseError({
+        message,
+        status: response.status,
+        responseBody: response.responseBody,
+        cause: parsed.error,
+      })
+    )
+  }
+
+  return ok(parsed.data)
+}
 
 export const fetchLnurlPayMetadata =
   ({ address }: { readonly address: string }): LnurlPayTask<LnurlPayMetadata> =>
@@ -175,22 +201,17 @@ export const fetchLnurlPayMetadata =
     )
     if (!response.ok) return response
 
-    const metadata = LnurlPayMetadataSchema.safeParse(response.value.json)
-    if (!metadata.success) {
-      return err(
-        createLnurlPayResponseError({
-          message: "Invalid LNURL metadata response.",
-          status: response.value.status,
-          responseBody: response.value.responseBody,
-          cause: metadata.error,
-        })
-      )
-    }
+    const metadata = parseLnurlBody(
+      response.value,
+      LnurlPayMetadataSchema,
+      "Invalid LNURL metadata response."
+    )
+    if (!metadata.ok) return metadata
 
     return ok({
-      callback: metadata.data.callback,
-      minSendableSats: metadata.data.minSendable / MSATS_PER_SAT,
-      maxSendableSats: metadata.data.maxSendable / MSATS_PER_SAT,
+      callback: metadata.value.callback,
+      minSendableSats: metadata.value.minSendable / MSATS_PER_SAT,
+      maxSendableSats: metadata.value.maxSendable / MSATS_PER_SAT,
     })
   }
 
@@ -209,21 +230,16 @@ export const fetchLnurlPayInvoice =
     const response = await run(fetchLnurlJson(callbackUrl, "LNURL invoice"))
     if (!response.ok) return response
 
-    const invoice = LnurlPayInvoiceSchema.safeParse(response.value.json)
-    if (!invoice.success) {
-      return err(
-        createLnurlPayResponseError({
-          message: "Invalid LNURL invoice response.",
-          status: response.value.status,
-          responseBody: response.value.responseBody,
-          cause: invoice.error,
-        })
-      )
-    }
+    const invoice = parseLnurlBody(
+      response.value,
+      LnurlPayInvoiceSchema,
+      "Invalid LNURL invoice response."
+    )
+    if (!invoice.ok) return invoice
 
     return ok({
-      pr: invoice.data.pr,
-      verify: invoice.data.verify,
+      pr: invoice.value.pr,
+      verify: invoice.value.verify,
     })
   }
 
@@ -233,21 +249,16 @@ export const fetchLnurlVerify =
     const response = await run(fetchLnurlJson(verifyUrl, "LNURL verify"))
     if (!response.ok) return response
 
-    const verify = LnurlVerifySchema.safeParse(response.value.json)
-    if (!verify.success) {
-      return err(
-        createLnurlPayResponseError({
-          message: "Invalid LNURL verify response.",
-          status: response.value.status,
-          responseBody: response.value.responseBody,
-          cause: verify.error,
-        })
-      )
-    }
+    const verify = parseLnurlBody(
+      response.value,
+      LnurlVerifySchema,
+      "Invalid LNURL verify response."
+    )
+    if (!verify.ok) return verify
 
     return ok({
-      settled: verify.data.settled,
-      preimage: verify.data.preimage,
-      pr: verify.data.pr,
+      settled: verify.value.settled,
+      preimage: verify.value.preimage,
+      pr: verify.value.pr,
     })
   }

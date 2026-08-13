@@ -1,6 +1,10 @@
-import { err, ok, type Task } from "@evolu/common"
+import type { Task } from "@evolu/common"
 import { z } from "zod"
-import { appFetchAsJson, type FetchDep, type FetchError } from "@/core/deps.ts"
+import {
+  type FetchDep,
+  type FetchError,
+  fetchAndValidateJson,
+} from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 
 const DONATIONS_URL = "/api/donations"
@@ -58,44 +62,23 @@ export const fetchDonationHistory =
   }: {
     readonly cursor?: string
   }): Task<DonationHistoryPage, DonationsError, FetchDep> =>
-  async (run) => {
-    const response = await run(appFetchAsJson(buildDonationsUrl(cursor)))
-    if (!response.ok) return response
-
-    if (!response.value.ok) {
-      return err(
-        createDonationsHttpError({
-          message: `Donation history request failed: ${response.value.status}`,
-          status: response.value.status,
-          responseBody: response.value.text,
-        })
-      )
-    }
-
-    if (!response.value.json.ok) {
-      return err(
-        createDonationsResponseError({
-          message: "Invalid donation history response.",
-          status: response.value.status,
-          responseBody: response.value.text,
-          cause: response.value.json.error,
-        })
-      )
-    }
-
-    const parsed = DonationHistoryResponseSchema.safeParse(
-      response.value.json.value
+  (run) =>
+    run(
+      fetchAndValidateJson({
+        url: buildDonationsUrl(cursor),
+        schema: DonationHistoryResponseSchema,
+        onHttpError: ({ status, responseBody }) =>
+          createDonationsHttpError({
+            message: `Donation history request failed: ${status}`,
+            status,
+            responseBody,
+          }),
+        onResponseError: ({ status, responseBody, cause }) =>
+          createDonationsResponseError({
+            message: "Invalid donation history response.",
+            status,
+            responseBody,
+            cause,
+          }),
+      })
     )
-    if (!parsed.success) {
-      return err(
-        createDonationsResponseError({
-          message: "Invalid donation history response.",
-          status: response.value.status,
-          responseBody: response.value.text,
-          cause: parsed.error,
-        })
-      )
-    }
-
-    return ok(parsed.data)
-  }

@@ -18,6 +18,7 @@ import {
   hasSparkIdentifier,
   removeUndefinedValues,
   runMutationWithCompletion,
+  type WithSparkDetails,
 } from "@/core/modules/shared/utils.ts"
 import type {
   AccountTransactionRow,
@@ -31,37 +32,22 @@ import type {
 } from "./account-transaction.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 
-type AccountTransactionSparkInput = InsertValues<
-  typeof accountTransactionSpark
-> & {
-  readonly lightning?: Omit<
-    InsertValues<typeof accountTransactionLightning>,
-    "id"
-  >
-  readonly sparkInvoice?: Omit<
-    InsertValues<typeof accountTransactionSparkInvoice>,
-    "id"
-  >
-}
+type AccountTransactionSparkInput = WithSparkDetails<
+  InsertValues<typeof accountTransactionSpark>,
+  Omit<InsertValues<typeof accountTransactionLightning>, "id">,
+  Omit<InsertValues<typeof accountTransactionSparkInvoice>, "id">
+>
 
 type AccountTransactionOnchainInput = Omit<
   InsertValues<typeof accountTransactionOnchain>,
   "id"
 >
 
-type AccountTransactionSparkUpdateInput = Omit<
-  UpdateValues<typeof accountTransactionSpark>,
-  "id"
-> & {
-  readonly lightning?: Omit<
-    UpdateValues<typeof accountTransactionLightning>,
-    "id"
-  >
-  readonly sparkInvoice?: Omit<
-    UpdateValues<typeof accountTransactionSparkInvoice>,
-    "id"
-  >
-}
+type AccountTransactionSparkUpdateInput = WithSparkDetails<
+  Omit<UpdateValues<typeof accountTransactionSpark>, "id">,
+  Omit<UpdateValues<typeof accountTransactionLightning>, "id">,
+  Omit<UpdateValues<typeof accountTransactionSparkInvoice>, "id">
+>
 
 export const createAccountTransaction =
   ({

@@ -16,11 +16,11 @@ import {
   NonEmptyString255Schema,
   NonEmptyStringSchema,
   SpecificSymbolSchema,
+  SyncSourceSchema,
   TimestampMsSchema,
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
 
-export const AccountTransactionSourceSchema = z.enum(["manual", "auto"])
 export const AccountTransactionOnchainExitSpeedSchema = z.enum([
   "fast",
   "medium",
@@ -76,7 +76,7 @@ export const accountTransactionSource = {
   id: AccountTransactionSourceId,
   deviceId: DeviceId.nullable(),
   accountTransactionId: AccountTransactionId,
-  source: AccountTransactionSourceSchema,
+  source: SyncSourceSchema,
   recordedAt: TimestampMsSchema,
 } as const
 
@@ -113,9 +113,6 @@ export const accountTransactionIndexes = ((create) => [
     .column("source"),
 ]) satisfies IndexesConfig
 
-export type AccountTransactionSource = z.output<
-  typeof AccountTransactionSourceSchema
->
 export type AccountTransactionRow = InferTable<typeof accountTransaction>
 export type AccountTransactionIbanRow = InferTable<
   typeof accountTransactionIban

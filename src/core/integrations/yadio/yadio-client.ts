@@ -1,6 +1,10 @@
-import { err, ok, type Task } from "@evolu/common"
+import { ok, type Task } from "@evolu/common"
 import { z } from "zod"
-import { appFetchAsJson, type FetchDep, type FetchError } from "@/core/deps.ts"
+import {
+  type FetchDep,
+  type FetchError,
+  fetchAndValidateJson,
+} from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 
@@ -58,49 +62,29 @@ export const fetchYadioBtcExchangeRate =
     YadioApiDep & FetchDep
   > =>
   async (run) => {
-    const responseResult = await run(
-      appFetchAsJson(new URL(`/exrates/${currency}`, run.deps.yadioApi.baseUrl))
+    const result = await run(
+      fetchAndValidateJson({
+        url: new URL(`/exrates/${currency}`, run.deps.yadioApi.baseUrl),
+        schema: YadioExchangeRateResponseSchema,
+        onHttpError: ({ status, responseBody }) =>
+          createYadioHttpError({
+            message: `Yadio exchange rate request failed: ${status}`,
+            status,
+            responseBody,
+          }),
+        onResponseError: ({ status, responseBody, cause }) =>
+          createYadioApiError({
+            message: "Invalid Yadio exchange rate response.",
+            status,
+            responseBody,
+            cause,
+          }),
+      })
     )
-    if (!responseResult.ok) return responseResult
-
-    const response = responseResult.value
-    if (!response.ok) {
-      return err(
-        createYadioHttpError({
-          message: `Yadio exchange rate request failed: ${response.status}`,
-          status: response.status,
-          responseBody: response.text,
-        })
-      )
-    }
-
-    if (!response.json.ok) {
-      return err(
-        createYadioApiError({
-          message: "Invalid Yadio exchange rate response.",
-          status: response.status,
-          responseBody: response.text,
-          cause: response.json.error,
-        })
-      )
-    }
-
-    const parsed = YadioExchangeRateResponseSchema.safeParse(
-      response.json.value
-    )
-    if (!parsed.success) {
-      return err(
-        createYadioApiError({
-          message: "Invalid Yadio exchange rate response.",
-          status: response.status,
-          responseBody: response.text,
-          cause: parsed.error,
-        })
-      )
-    }
+    if (!result.ok) return result
 
     return ok({
-      exchangeRate: parsed.data.BTC,
-      fetchedAt: parsed.data.timestamp,
+      exchangeRate: result.value.BTC,
+      fetchedAt: result.value.timestamp,
     })
   }

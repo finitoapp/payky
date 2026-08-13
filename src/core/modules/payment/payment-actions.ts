@@ -110,17 +110,6 @@ export type CashRegisterAccountNotFoundError = ReturnType<
   typeof createCashRegisterAccountNotFoundError
 >
 
-const createCashRegisterAccountCurrencyMismatchError = defineError(
-  "CashRegisterAccountCurrencyMismatch"
-)<{
-  readonly id: AccountId
-  readonly accountCurrency: string
-  readonly paymentCurrency: string
-}>()
-export type CashRegisterAccountCurrencyMismatchError = ReturnType<
-  typeof createCashRegisterAccountCurrencyMismatchError
->
-
 const createIbanAccountNotFoundError = defineError("IbanAccountNotFound")<{
   readonly id: AccountId
 }>()
@@ -128,15 +117,16 @@ export type IbanAccountNotFoundError = ReturnType<
   typeof createIbanAccountNotFoundError
 >
 
-const createIbanAccountCurrencyMismatchError = defineError(
-  "IbanAccountCurrencyMismatch"
+const createAccountCurrencyMismatchError = defineError(
+  "AccountCurrencyMismatch"
 )<{
+  readonly accountKind: "cashRegister" | "iban"
   readonly id: AccountId
-  readonly accountCurrency: string
-  readonly paymentCurrency: string
+  readonly accountCurrency: FiatCurrency
+  readonly paymentCurrency: FiatCurrency
 }>()
-export type IbanAccountCurrencyMismatchError = ReturnType<
-  typeof createIbanAccountCurrencyMismatchError
+export type AccountCurrencyMismatchError = ReturnType<
+  typeof createAccountCurrencyMismatchError
 >
 
 export type CreatePreparedPaymentError =
@@ -149,15 +139,14 @@ export type CreatePreparedPaymentError =
 export type MarkPaymentPaidCashError =
   | PaymentNotFoundError
   | CashRegisterAccountNotFoundError
-  | CashRegisterAccountCurrencyMismatchError
+  | AccountCurrencyMismatchError
 
 export type PreparePaymentMethodError =
   | PaymentNotFoundError
   | CashRegisterAccountNotFoundError
-  | CashRegisterAccountCurrencyMismatchError
+  | AccountCurrencyMismatchError
   | AccountSparkNotFoundError
   | IbanAccountNotFoundError
-  | IbanAccountCurrencyMismatchError
   | PaymentNumberNotFoundError
   | PaymentPreparationFailedError
   | YadioHttpError
@@ -176,34 +165,22 @@ export const cashRegisterAccountNotFound = (
 ): CashRegisterAccountNotFoundError =>
   createCashRegisterAccountNotFoundError({ id })
 
-export const cashRegisterAccountCurrencyMismatch = ({
-  id,
-  accountCurrency,
-  paymentCurrency,
-}: {
-  readonly id: AccountId
-  readonly accountCurrency: string
-  readonly paymentCurrency: string
-}): CashRegisterAccountCurrencyMismatchError =>
-  createCashRegisterAccountCurrencyMismatchError({
-    id,
-    accountCurrency,
-    paymentCurrency,
-  })
-
 export const ibanAccountNotFound = (id: AccountId): IbanAccountNotFoundError =>
   createIbanAccountNotFoundError({ id })
 
-export const ibanAccountCurrencyMismatch = ({
+export const accountCurrencyMismatch = ({
+  accountKind,
   id,
   accountCurrency,
   paymentCurrency,
 }: {
+  readonly accountKind: "cashRegister" | "iban"
   readonly id: AccountId
-  readonly accountCurrency: string
-  readonly paymentCurrency: string
-}): IbanAccountCurrencyMismatchError =>
-  createIbanAccountCurrencyMismatchError({
+  readonly accountCurrency: FiatCurrency
+  readonly paymentCurrency: FiatCurrency
+}): AccountCurrencyMismatchError =>
+  createAccountCurrencyMismatchError({
+    accountKind,
     id,
     accountCurrency,
     paymentCurrency,
@@ -571,7 +548,8 @@ export const preparePaymentMethod =
             const account = accountResult.value
             if (account.currency !== payment.currency) {
               return err(
-                cashRegisterAccountCurrencyMismatch({
+                accountCurrencyMismatch({
+                  accountKind: "cashRegister",
                   id: cashRegister.accountId,
                   accountCurrency: account.currency,
                   paymentCurrency: payment.currency,
@@ -603,7 +581,8 @@ export const preparePaymentMethod =
             const account = accountResult.value
             if (account.currency !== payment.currency) {
               return err(
-                ibanAccountCurrencyMismatch({
+                accountCurrencyMismatch({
+                  accountKind: "iban",
                   id: bank.accountId,
                   accountCurrency: account.currency,
                   paymentCurrency: payment.currency,
@@ -889,7 +868,8 @@ export const markPaymentPaidCash =
     const cashRegisterAccount = cashRegisterAccountResult.value
     if (cashRegisterAccount.currency !== payment.currency) {
       return err(
-        cashRegisterAccountCurrencyMismatch({
+        accountCurrencyMismatch({
+          accountKind: "cashRegister",
           id: accountId,
           accountCurrency: cashRegisterAccount.currency,
           paymentCurrency: payment.currency,

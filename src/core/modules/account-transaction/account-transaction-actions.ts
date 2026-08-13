@@ -6,7 +6,7 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { RequireOneOrNone } from "type-fest"
+import type { RequireOneOrNone, Simplify } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -57,30 +57,28 @@ export const createAccountTransaction =
     onchain,
     source: providedSource,
     ...input
-  }: Omit<InsertValues<typeof accountTransaction>, "kind"> & {
-    readonly id?: AccountTransactionId
-    readonly source: Omit<
-      InsertValues<typeof accountTransactionSource>,
-      "id" | "accountTransactionId" | "recordedAt"
-    > & {
-      readonly recordedAt?: InsertValues<
-        typeof accountTransactionSource
-      >["recordedAt"]
-    }
-  } & RequireOneOrNone<{
-      iban: Omit<
-        InsertValues<typeof accountTransactionIban>,
-        "bankReference"
+  }: Simplify<
+    Omit<InsertValues<typeof accountTransaction>, "kind"> & {
+      readonly id?: AccountTransactionId
+      readonly source: Omit<
+        InsertValues<typeof accountTransactionSource>,
+        "id" | "accountTransactionId" | "recordedAt"
       > & {
-        readonly bankReference?: NonEmptyString255 | null
+        readonly recordedAt?: InsertValues<
+          typeof accountTransactionSource
+        >["recordedAt"]
       }
-      spark: AccountTransactionSparkInput
-      onchain: AccountTransactionOnchainInput
-    }>): Task<
-    AccountTransactionId,
-    never,
-    EvoluDep & EvoluOwnerIdDep & DateDep
-  > =>
+    } & RequireOneOrNone<{
+        iban: Omit<
+          InsertValues<typeof accountTransactionIban>,
+          "bankReference"
+        > & {
+          readonly bankReference?: NonEmptyString255 | null
+        }
+        spark: AccountTransactionSparkInput
+        onchain: AccountTransactionOnchainInput
+      }>
+  >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     if (spark && !hasSparkIdentifier(spark)) {
       throw new Error(
@@ -203,20 +201,22 @@ export const updateAccountTransaction =
     iban,
     spark,
     ...input
-  }: Pick<
-    UpdateValues<typeof accountTransaction>,
-    | "id"
-    | "accountId"
-    | "amount"
-    | "currency"
-    | "occurredAt"
-    | "note"
-    | "internalTransferGroupId"
-  > &
-    RequireOneOrNone<{
-      iban: Omit<UpdateValues<typeof accountTransactionIban>, "id">
-      spark: AccountTransactionSparkUpdateInput
-    }>): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }: Simplify<
+    Pick<
+      UpdateValues<typeof accountTransaction>,
+      | "id"
+      | "accountId"
+      | "amount"
+      | "currency"
+      | "occurredAt"
+      | "note"
+      | "internalTransferGroupId"
+    > &
+      RequireOneOrNone<{
+        iban: Omit<UpdateValues<typeof accountTransactionIban>, "id">
+        spark: AccountTransactionSparkUpdateInput
+      }>
+  >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 

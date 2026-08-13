@@ -6,7 +6,7 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { RequireExactlyOne } from "type-fest"
+import type { RequireExactlyOne, Simplify } from "type-fest"
 import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -77,12 +77,14 @@ export const createAccount =
     spark,
     cashRegister,
     ...input
-  }: Omit<InsertValues<typeof account>, "kind"> &
-    RequireExactlyOne<{
-      iban: AccountIbanCreateInput
-      spark: InsertValues<typeof accountSpark>
-      cashRegister: InsertValues<typeof accountCashRegister>
-    }>): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }: Simplify<
+    Omit<InsertValues<typeof account>, "kind"> &
+      RequireExactlyOne<{
+        iban: AccountIbanCreateInput
+        spark: InsertValues<typeof accountSpark>
+        cashRegister: InsertValues<typeof accountCashRegister>
+      }>
+  >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const id = createTableId<"Account">()
@@ -147,12 +149,14 @@ export const updateAccount =
     spark,
     cashRegister,
     ...input
-  }: Pick<UpdateValues<typeof account>, "id" | "deviceId" | "name"> &
-    RequireExactlyOne<{
-      iban: AccountIbanUpdateInput
-      spark: Omit<UpdateValues<typeof accountSpark>, "id">
-      cashRegister: Omit<UpdateValues<typeof accountCashRegister>, "id">
-    }>): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }: Simplify<
+    Pick<UpdateValues<typeof account>, "id" | "deviceId" | "name"> &
+      RequireExactlyOne<{
+        iban: AccountIbanUpdateInput
+        spark: Omit<UpdateValues<typeof accountSpark>, "id">
+        cashRegister: Omit<UpdateValues<typeof accountCashRegister>, "id">
+      }>
+  >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 

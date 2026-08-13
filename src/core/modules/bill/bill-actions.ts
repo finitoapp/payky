@@ -22,7 +22,7 @@ import {
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import type { item } from "@/core/modules/item/item.ts"
+import type { ItemRow, item } from "@/core/modules/item/item.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import {
   createCatalogItemSnapshot,
@@ -32,6 +32,7 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
+  type ItemLineType,
   NonNegativeInteger,
   PositiveNumber,
   TimestampMsSchema,
@@ -160,6 +161,56 @@ export const removeTableFromBill =
     return ok(billId)
   }
 
+/**
+ * Shared "insert a snapshot + an `add` bill line for it, then read back the
+ * resulting summary" step behind `addCatalogItemToBill`, `addManualAmountToBill`,
+ * and `addTipToBill` — they differ only in the line's `type` and how its
+ * snapshot/detail fields are produced.
+ */
+const addBillLine =
+  <TType extends ItemLineType>(
+    type: TType,
+    snapshot: ItemRow,
+    line: Pick<
+      BillLineRow,
+      "billId" | "deviceId" | "catalogItemId" | "quantity" | "totalAmount"
+    >
+  ): Task<
+    BillLineSummary,
+    BillLineSummaryMissingError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      upsertItemSnapshot(run.deps.evolu, snapshot, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+      insertBillLineRows(
+        run.deps.evolu,
+        [{ ...line, itemId: snapshot.id, type, kind: "add" }],
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    const projected = await run.orThrow(
+      loadCalculatedBillLineSummaries(line.billId)
+    )
+    const lineSummary = projected.find((row) => row.itemId === snapshot.id)
+
+    return lineSummary === undefined
+      ? err(
+          billLineSummaryMissing({
+            billId: line.billId,
+            itemId: snapshot.id,
+            lineType: type,
+          })
+        )
+      : ok(lineSummary)
+  }
+
 export const addCatalogItemToBill =
   (
     input: Pick<
@@ -178,45 +229,19 @@ export const addCatalogItemToBill =
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
-    const item = createCatalogItemSnapshot(catalogItemResult.value)
-    const line = {
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: catalogItemResult.value.id,
-      itemId: item.id,
-      type: "catalogItem",
-      kind: "add",
-      quantity: input.quantity,
-      totalAmount: NonNegativeInteger(
-        catalogItemResult.value.unitAmount * input.quantity
-      ),
-    } satisfies Omit<BillLineRow, "id">
-    const { evoluOwnerId } = run.deps
+    const snapshot = createCatalogItemSnapshot(catalogItemResult.value)
 
-    await runMutationWithCompletion((options) => {
-      upsertItemSnapshot(run.deps.evolu, item, {
-        ...options,
-        ownerId: evoluOwnerId,
+    return run(
+      addBillLine("catalogItem", snapshot, {
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: catalogItemResult.value.id,
+        quantity: input.quantity,
+        totalAmount: NonNegativeInteger(
+          catalogItemResult.value.unitAmount * input.quantity
+        ),
       })
-      insertBillLineRows(run.deps.evolu, [line], {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-    })
-
-    const projected = await run.orThrow(
-      loadCalculatedBillLineSummaries(input.billId)
     )
-    const lineSummary = projected.find((row) => row.itemId === item.id)
-    return lineSummary === undefined
-      ? err(
-          billLineSummaryMissing({
-            billId: input.billId,
-            itemId: item.id,
-            lineType: "catalogItem",
-          })
-        )
-      : ok(lineSummary)
   }
 
 export const addManualAmountToBill =
@@ -231,7 +256,7 @@ export const addManualAmountToBill =
     BillLineSummaryMissingError,
     EvoluDep & EvoluOwnerIdDep
   > =>
-  async (run) => {
+  (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -239,42 +264,16 @@ export const addManualAmountToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    const line = {
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: null,
-      itemId: snapshot.id,
-      type: "manualAmount",
-      kind: "add",
-      quantity: PositiveNumber(1),
-      totalAmount: input.totalAmount,
-    } satisfies Omit<BillLineRow, "id">
-    const { evoluOwnerId } = run.deps
 
-    await runMutationWithCompletion((options) => {
-      upsertItemSnapshot(run.deps.evolu, snapshot, {
-        ...options,
-        ownerId: evoluOwnerId,
+    return run(
+      addBillLine("manualAmount", snapshot, {
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: null,
+        quantity: PositiveNumber(1),
+        totalAmount: input.totalAmount,
       })
-      insertBillLineRows(run.deps.evolu, [line], {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-    })
-
-    const projected = await run.orThrow(
-      loadCalculatedBillLineSummaries(input.billId)
     )
-    const lineSummary = projected.find((row) => row.itemId === snapshot.id)
-    return lineSummary === undefined
-      ? err(
-          billLineSummaryMissing({
-            billId: input.billId,
-            itemId: snapshot.id,
-            lineType: "manualAmount",
-          })
-        )
-      : ok(lineSummary)
   }
 
 export const addTipToBill =
@@ -289,7 +288,7 @@ export const addTipToBill =
     BillLineSummaryMissingError,
     EvoluDep & EvoluOwnerIdDep
   > =>
-  async (run) => {
+  (run) => {
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -297,42 +296,16 @@ export const addTipToBill =
       currency: input.currency,
       unitAmount: input.totalAmount,
     })
-    const line = {
-      billId: input.billId,
-      deviceId: input.deviceId ?? null,
-      catalogItemId: null,
-      itemId: snapshot.id,
-      type: "tip",
-      kind: "add",
-      quantity: PositiveNumber(1),
-      totalAmount: input.totalAmount,
-    } satisfies Omit<BillLineRow, "id">
-    const { evoluOwnerId } = run.deps
 
-    await runMutationWithCompletion((options) => {
-      upsertItemSnapshot(run.deps.evolu, snapshot, {
-        ...options,
-        ownerId: evoluOwnerId,
+    return run(
+      addBillLine("tip", snapshot, {
+        billId: input.billId,
+        deviceId: input.deviceId ?? null,
+        catalogItemId: null,
+        quantity: PositiveNumber(1),
+        totalAmount: input.totalAmount,
       })
-      insertBillLineRows(run.deps.evolu, [line], {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-    })
-
-    const projected = await run.orThrow(
-      loadCalculatedBillLineSummaries(input.billId)
     )
-    const lineSummary = projected.find((row) => row.itemId === snapshot.id)
-    return lineSummary === undefined
-      ? err(
-          billLineSummaryMissing({
-            billId: input.billId,
-            itemId: snapshot.id,
-            lineType: "tip",
-          })
-        )
-      : ok(lineSummary)
   }
 
 export const appendRemoveBillLine =

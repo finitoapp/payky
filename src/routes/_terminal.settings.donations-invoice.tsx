@@ -124,6 +124,7 @@ function DonateInvoicePage() {
             {invoice.length > 0 ? (
               <div className="flex flex-col gap-4">
                 <CopyableQrCode
+                  state="ready"
                   value={invoice}
                   ariaLabel={t("settings.donations.invoice.copy")}
                   copiedMessage={t("settings.donations.invoice.copied")}

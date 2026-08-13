@@ -914,13 +914,14 @@ function QrPaymentRequest({
 
   return (
     <CopyableQrCode
-      value={qrPayload}
+      {...(qrPayload !== null
+        ? { state: "ready" as const, value: qrPayload }
+        : preparingMessageKey !== null
+          ? { state: "pending" as const, pendingLabel: t(preparingMessageKey) }
+          : { state: "empty" as const })}
       ariaLabel={t("paymentWait.copyQr")}
       copiedMessage={t("paymentWait.qrCopied")}
       copyFailedMessage={t("paymentWait.qrCopyFailed")}
-      pendingLabel={
-        preparingMessageKey !== null ? t(preparingMessageKey) : undefined
-      }
     />
   )
 }

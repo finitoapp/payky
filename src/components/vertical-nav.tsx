@@ -6,16 +6,23 @@ import type React from "react"
 import type { ComponentProps } from "react"
 import { cn } from "@/lib/utils.ts"
 
-interface NavItem {
-  readonly component?: typeof Link
+export type NavLinkTo = LinkProps["to"]
+
+type NavItemTarget =
+  | {
+      readonly kind: "link"
+      readonly to: NavLinkTo
+      readonly params?: LinkProps["params"]
+      readonly component?: typeof Link
+    }
+  | { readonly kind: "href"; readonly href: string }
+  | { readonly kind: "button"; readonly onClick?: () => void }
+
+type NavItem = NavItemTarget & {
   readonly label: React.ReactNode
   readonly action?: React.ReactNode
-  readonly to?: LinkProps["to"]
-  readonly href?: string
-  readonly params?: LinkProps["params"]
   readonly icon?: React.ReactNode
   readonly active?: boolean
-  readonly onClick?: () => void
   readonly className?: string
   readonly disableAction?: boolean
 }
@@ -51,7 +58,9 @@ export function VerticalNav({
       )}
       <nav className={"divide-y"}>
         {items.length === 0 && empty !== undefined ? (
-          <NavItemComponent item={{ disableAction: true, label: empty }} />
+          <NavItemComponent
+            item={{ kind: "button", disableAction: true, label: empty }}
+          />
         ) : (
           items.map((item, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: we don't have any better value
@@ -64,7 +73,6 @@ export function VerticalNav({
 }
 
 function NavItemComponent({ item }: { item: NavItem }) {
-  const Component = item.component ?? (item.to ? Link : "button")
   const className = cn(
     "text-left",
     "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
@@ -74,32 +82,46 @@ function NavItemComponent({ item }: { item: NavItem }) {
     "data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
     item.className
   )
+  const dataState = item.active ? "on" : "off"
 
-  if (item.href) {
-    return (
-      <a
-        href={item.href}
-        target="_blank"
-        rel="noreferrer"
-        className={className}
-        data-state={item.active ? "on" : "off"}
-      >
-        <NavItemContent item={item} />
-      </a>
-    )
+  switch (item.kind) {
+    case "href":
+      return (
+        <a
+          href={item.href}
+          target="_blank"
+          rel="noreferrer"
+          className={className}
+          data-state={dataState}
+        >
+          <NavItemContent item={item} />
+        </a>
+      )
+    case "link": {
+      const Component = item.component ?? Link
+      return (
+        <Component
+          to={item.to}
+          params={item.params}
+          className={className}
+          data-state={dataState}
+        >
+          <NavItemContent item={item} />
+        </Component>
+      )
+    }
+    case "button":
+      return (
+        <button
+          type="button"
+          onClick={item.onClick}
+          className={className}
+          data-state={dataState}
+        >
+          <NavItemContent item={item} />
+        </button>
+      )
   }
-
-  return (
-    <Component
-      to={item.to}
-      params={item.params}
-      onClick={item.onClick}
-      className={className}
-      data-state={item.active ? "on" : "off"}
-    >
-      <NavItemContent item={item} />
-    </Component>
-  )
 }
 
 function NavItemContent({ item }: { item: NavItem }) {

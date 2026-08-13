@@ -69,6 +69,7 @@ export const DonationHistory = () => {
         }
         items={items.map((item) => {
           return {
+            kind: "button" as const,
             label: (
               <div className="flex justify-between gap-2">
                 <div className="flex w-max flex-col items-start gap-2">

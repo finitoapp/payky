@@ -135,23 +135,24 @@ const toFeeEstimate = (
  * synchronized. `initialize` always constructs a fresh instance that this
  * pool exclusively owns, which avoids that race entirely.
  */
-const sparkWalletPoolKey = (mnemonic: string, network: SparkNetwork): string =>
-  `${network}:${mnemonic}`
+interface SparkWalletPoolKey {
+  readonly network: SparkNetwork
+  readonly mnemonic: string
+}
 
-const sparkWalletPool = createRefCountedResourcePool<SparkWallet>({
-  create: (key) => {
-    const separatorIndex = key.indexOf(":")
-    const network = key.slice(0, separatorIndex) as SparkNetwork
-    const mnemonic = key.slice(separatorIndex + 1)
-
-    return SparkWallet.initialize({
+const sparkWalletPool = createRefCountedResourcePool<
+  SparkWallet,
+  SparkWalletPoolKey
+>({
+  create: ({ mnemonic, network }) =>
+    SparkWallet.initialize({
       mnemonicOrSeed: mnemonic,
       options: {
         network,
       },
-    }).then(({ wallet }) => wallet)
-  },
+    }).then(({ wallet }) => wallet),
   destroy: (wallet) => wallet.cleanup(),
+  keyOf: ({ mnemonic, network }) => `${network}:${mnemonic}`,
 })
 
 const SUPPORTED_SYNC_EVENTS = [
@@ -182,9 +183,10 @@ export const createSharedSparkSyncWallet = async (
   secret: SparkSecret,
   network: SparkNetwork = "MAINNET"
 ): Promise<SharedSparkSyncWallet> => {
-  const lease = sparkWalletPool.acquire(
-    sparkWalletPoolKey(sparkSecretToMnemonic(secret), network)
-  )
+  const lease = sparkWalletPool.acquire({
+    network,
+    mnemonic: sparkSecretToMnemonic(secret),
+  })
   const wallet = await lease.resource
 
   return {
@@ -218,9 +220,10 @@ export const createDefaultSparkPaymentWallet = async (
   secret: SparkSecret,
   network: SparkNetwork = "MAINNET"
 ): Promise<SparkPaymentWallet> => {
-  const lease = sparkWalletPool.acquire(
-    sparkWalletPoolKey(sparkSecretToMnemonic(secret), network)
-  )
+  const lease = sparkWalletPool.acquire({
+    network,
+    mnemonic: sparkSecretToMnemonic(secret),
+  })
   const wallet = await lease.resource
 
   return {

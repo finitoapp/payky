@@ -2,15 +2,14 @@ import {
   type Money,
   minorUnitsToDecimalString,
 } from "@/core/modules/shared/money.ts"
-import type { Iban } from "@/core/modules/shared/schema.ts"
+import type { Currency, Iban } from "@/core/modules/shared/schema.ts"
 
 export function formatAmount(
   amount: number,
-  currency?: string | undefined,
+  currency?: Currency | undefined,
   locale: string = "en-US"
 ) {
-  const normalizedCurrency = currency ? currency.toUpperCase() : undefined
-  if (normalizedCurrency && ["BTC"].includes(normalizedCurrency)) {
+  if (currency === "BTC") {
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currencyDisplay: "code",
@@ -25,11 +24,11 @@ export function formatAmount(
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: currency ? currency.toUpperCase() : undefined,
+      currency,
       minimumFractionDigits: 2,
     }).format(amount)
   } catch (_error) {
-    return `${amount.toLocaleString()}${currency ? ` ${currency.toUpperCase()}` : ""}`
+    return `${amount.toLocaleString()}${currency ? ` ${currency}` : ""}`
   }
 }
 

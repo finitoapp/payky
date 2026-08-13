@@ -47,6 +47,15 @@ const DonationAmountSchema = z.number().int().positive().safe()
 
 type EditedAmount = "fiat" | "sats"
 
+type DonationLoadState =
+  | { readonly status: "loading" }
+  | { readonly status: "error"; readonly key: TranslationKey }
+  | {
+      readonly status: "ready"
+      readonly exchangeRate: number
+      readonly metadata: LnurlPayMetadata
+    }
+
 export const Route = createFileRoute("/_terminal/settings/donations")({
   component: DonationsPage,
   staticData: {
@@ -116,8 +125,6 @@ function DonationsPage() {
       }
     },
   })
-  const exchangeRate = exchangeRateQuery.data?.exchangeRate ?? null
-
   const metadataQuery = useQuery({
     queryKey: ["donations", "lnurl-metadata", donationAddress],
     queryFn: async () => {
@@ -133,13 +140,24 @@ function DonationsPage() {
       }
     },
   })
-  const metadata = metadataQuery.data ?? null
-
-  const loadErrorKey: TranslationKey | null = exchangeRateQuery.isError
-    ? "settings.donations.rate.error"
+  const donationLoadState: DonationLoadState = exchangeRateQuery.isError
+    ? { status: "error", key: "settings.donations.rate.error" }
     : metadataQuery.isError
-      ? "settings.donations.metadata.error"
-      : null
+      ? { status: "error", key: "settings.donations.metadata.error" }
+      : exchangeRateQuery.data !== undefined && metadataQuery.data !== undefined
+        ? {
+            status: "ready",
+            exchangeRate: exchangeRateQuery.data.exchangeRate,
+            metadata: metadataQuery.data,
+          }
+        : { status: "loading" }
+  const exchangeRate =
+    donationLoadState.status === "ready" ? donationLoadState.exchangeRate : null
+  const metadata =
+    donationLoadState.status === "ready" ? donationLoadState.metadata : null
+  const loadErrorKey =
+    donationLoadState.status === "error" ? donationLoadState.key : null
+  const isLoading = donationLoadState.status === "loading"
 
   const createInvoiceMutation = useMutation({
     mutationFn: async ({
@@ -206,15 +224,17 @@ function DonationsPage() {
   const canCreateInvoice =
     amountSats !== null &&
     amountErrorKey === null &&
-    metadata !== null &&
-    exchangeRate !== null &&
+    donationLoadState.status === "ready" &&
     !isCreatingInvoice
-  const isLoading = exchangeRateQuery.isPending || metadataQuery.isPending
 
   const createInvoice = () => {
-    if (!canCreateInvoice || metadata === null || amountSats === null) return
+    if (donationLoadState.status !== "ready") return
+    if (!canCreateInvoice || amountSats === null) return
 
-    createInvoiceMutation.mutate({ amountSats, metadata })
+    createInvoiceMutation.mutate({
+      amountSats,
+      metadata: donationLoadState.metadata,
+    })
   }
 
   return (

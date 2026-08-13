@@ -17,6 +17,7 @@ import type {
   SparkExitSpeed,
   SparkWalletDep,
   SparkWithdrawalFeeQuote,
+  SparkWithdrawalStatus,
 } from "@/core/spark/spark-wallet.ts"
 import {
   computeTotalDebitedSats,
@@ -197,7 +198,7 @@ export const executeWithdrawal =
     {
       readonly accountTransactionId: AccountTransactionId
       readonly txid: string | null
-      readonly status: string
+      readonly status: SparkWithdrawalStatus
     },
     ExecuteWithdrawalError,
     EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep

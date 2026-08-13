@@ -65,18 +65,25 @@ import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 type PaymentMethodTab = "spark" | "iban" | "cash"
-type PaymentMethodKind = DefaultPaymentMethod
 
-interface PaymentMethodOption {
-  readonly id: PaymentMethodTab
-  readonly kind: PaymentMethodKind
+interface PaymentMethodOptionBase {
+  readonly kind: DefaultPaymentMethod
   readonly accountId: AccountId
   readonly label: string
-  readonly qrPayload: string | null
-  readonly qrPayloads?: ReadonlyArray<IbanQrPayloadOption>
-  readonly defaultQrFormat?: BankQrFormat
   readonly icon: ReactNode
 }
+
+type PaymentMethodOption = PaymentMethodOptionBase &
+  (
+    | { readonly id: "spark"; readonly qrPayload: string | null }
+    | {
+        readonly id: "iban"
+        readonly qrPayload: string | null
+        readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
+        readonly defaultQrFormat: BankQrFormat
+      }
+    | { readonly id: "cash"; readonly qrPayload: null }
+  )
 
 type IbanQrPayloadOption = BankQrPayload
 
@@ -767,9 +774,9 @@ function PaymentMethodTabContent({
     case "iban":
       return (
         <IbanPaymentTab
-          defaultQrFormat={method.defaultQrFormat ?? "spayd"}
+          defaultQrFormat={method.defaultQrFormat}
           qrPayload={method.qrPayload}
-          qrPayloads={method.qrPayloads ?? []}
+          qrPayloads={method.qrPayloads}
           preparingMessageKey={preparingMessageKey}
           selectedQrFormat={selectedIbanQrFormat}
           onSelectQrFormat={onSelectIbanQrFormat}

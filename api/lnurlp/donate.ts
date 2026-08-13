@@ -1,3 +1,4 @@
+import { LightningReceiveRequestStatus } from "@buildonspark/spark-sdk/types"
 import { err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
 import {
@@ -240,10 +241,12 @@ const createInvoice = async (
   }
 }
 
-const isSettledLightningReceiveStatus = (status: string): boolean =>
-  status === "LIGHTNING_PAYMENT_RECEIVED" ||
-  status === "PAYMENT_PREIMAGE_RECOVERED" ||
-  status === "TRANSFER_COMPLETED"
+const isSettledLightningReceiveStatus = (
+  status: LightningReceiveRequestStatus
+): boolean =>
+  status === LightningReceiveRequestStatus.LIGHTNING_PAYMENT_RECEIVED ||
+  status === LightningReceiveRequestStatus.PAYMENT_PREIMAGE_RECOVERED ||
+  status === LightningReceiveRequestStatus.TRANSFER_COMPLETED
 
 const verifyInvoice = async (
   id: string,

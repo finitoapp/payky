@@ -6,7 +6,7 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-
+import type { RequireOneOrNone } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -81,33 +81,16 @@ export const createAccountTransaction =
         typeof accountTransactionSource
       >["recordedAt"]
     }
-  } & (
-      | {
-          readonly iban: Omit<
-            InsertValues<typeof accountTransactionIban>,
-            "bankReference"
-          > & {
-            readonly bankReference?: NonEmptyString255 | null
-          }
-          readonly spark?: never
-          readonly onchain?: never
-        }
-      | {
-          readonly iban?: never
-          readonly spark: AccountTransactionSparkInput
-          readonly onchain?: never
-        }
-      | {
-          readonly iban?: never
-          readonly spark?: never
-          readonly onchain: AccountTransactionOnchainInput
-        }
-      | {
-          readonly iban?: never
-          readonly spark?: never
-          readonly onchain?: never
-        }
-    )): Task<
+  } & RequireOneOrNone<{
+      iban: Omit<
+        InsertValues<typeof accountTransactionIban>,
+        "bankReference"
+      > & {
+        readonly bankReference?: NonEmptyString255 | null
+      }
+      spark: AccountTransactionSparkInput
+      onchain: AccountTransactionOnchainInput
+    }>): Task<
     AccountTransactionId,
     never,
     EvoluDep & EvoluOwnerIdDep & DateDep
@@ -244,20 +227,10 @@ export const updateAccountTransaction =
     | "note"
     | "internalTransferGroupId"
   > &
-    (
-      | {
-          readonly iban: Omit<UpdateValues<typeof accountTransactionIban>, "id">
-          readonly spark?: never
-        }
-      | {
-          readonly iban?: never
-          readonly spark: AccountTransactionSparkUpdateInput
-        }
-      | {
-          readonly iban?: never
-          readonly spark?: never
-        }
-    )): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
+    RequireOneOrNone<{
+      iban: Omit<UpdateValues<typeof accountTransactionIban>, "id">
+      spark: AccountTransactionSparkUpdateInput
+    }>): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 

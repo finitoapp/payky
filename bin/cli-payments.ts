@@ -176,6 +176,41 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
       .where("payment.id", "=", id)
   )
 
+type IbanInputResult =
+  | { readonly kind: "absent" }
+  | { readonly kind: "invalid" }
+  | {
+      readonly kind: "value"
+      readonly iban: {
+        readonly accountId: AccountId
+        readonly variableSymbol: z.output<typeof VariableSymbolSchema> | null
+        readonly specificSymbol: z.output<typeof SpecificSymbolSchema> | null
+      }
+    }
+
+const parseIbanInput = (options: {
+  readonly ibanAccountId?: AccountId
+  readonly variableSymbol?: z.output<typeof VariableSymbolSchema>
+  readonly specificSymbol?: z.output<typeof SpecificSymbolSchema>
+}): IbanInputResult => {
+  const hasIbanInput =
+    options.ibanAccountId !== undefined ||
+    options.variableSymbol !== undefined ||
+    options.specificSymbol !== undefined
+
+  if (!hasIbanInput) return { kind: "absent" }
+  if (options.ibanAccountId === undefined) return { kind: "invalid" }
+
+  return {
+    kind: "value",
+    iban: {
+      accountId: options.ibanAccountId,
+      variableSymbol: options.variableSymbol ?? null,
+      specificSymbol: options.specificSymbol ?? null,
+    },
+  }
+}
+
 export const registerPaymentsCommand =
   (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
   (run) => {
@@ -258,31 +293,15 @@ export const registerPaymentsCommand =
             ),
           },
           async action(_, options) {
-            const hasIbanInput =
-              options.ibanAccountId !== undefined ||
-              options.variableSymbol !== undefined ||
-              options.specificSymbol !== undefined
+            const ibanInput = parseIbanInput(options)
 
-            const iban = (() => {
-              if (!hasIbanInput) return undefined
-
-              const { ibanAccountId, specificSymbol, variableSymbol } = options
-
-              if (ibanAccountId === undefined) {
-                printCliError(
-                  run.deps.console,
-                  "IBAN payment requires --ibanAccountId."
-                )
-                return null
-              }
-
-              return {
-                accountId: ibanAccountId,
-                variableSymbol: variableSymbol ?? null,
-                specificSymbol: specificSymbol ?? null,
-              }
-            })()
-            if (iban === null) return
+            if (ibanInput.kind === "invalid") {
+              printCliError(
+                run.deps.console,
+                "IBAN payment requires --ibanAccountId."
+              )
+              return
+            }
 
             const sparkRun = createRun({
               ...createDateDep(),
@@ -316,7 +335,7 @@ export const registerPaymentsCommand =
                         accountId: options.sparkAccountId,
                       },
                     }),
-                ...(iban === null ? {} : { iban }),
+                ...(ibanInput.kind === "value" ? { iban: ibanInput.iban } : {}),
               })
             )
 

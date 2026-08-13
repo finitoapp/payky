@@ -21,6 +21,7 @@ import { useConsole } from "@/hooks/use-console.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 const VERIFY_POLL_INTERVAL_MS = 2_000
+const VERIFY_ERROR_THRESHOLD = 3
 
 const DonateInvoiceSearchSchema = z.object({
   invoice: z.string().trim().min(1).optional().default(""),
@@ -74,10 +75,11 @@ function DonateInvoicePage() {
 
   const verifyStatus: VerifyStatus = !canVerify
     ? "idle"
-    : verifyQuery.isError
-      ? "error"
-      : verifyQuery.data?.settled
-        ? "paid"
+    : verifyQuery.data?.settled
+      ? "paid"
+      : verifyQuery.isError &&
+          verifyQuery.failureCount >= VERIFY_ERROR_THRESHOLD
+        ? "error"
         : "waiting"
 
   return (

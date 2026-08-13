@@ -52,6 +52,7 @@ import {
   hasSparkIdentifier,
   removeUndefinedValues,
   runMutationWithCompletion,
+  type WithSparkDetails,
 } from "@/core/modules/shared/utils.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import {
@@ -253,15 +254,17 @@ const optionalNonEmptySparkInvoice = (
       }
 }
 
-type PaymentBtcInput = Omit<InsertValues<typeof paymentBtc>, "id"> & {
-  readonly lightning?: Omit<InsertValues<typeof paymentBtcLightning>, "id">
-  readonly sparkInvoice?: Omit<InsertValues<typeof paymentBtcSpark>, "id">
-}
+type PaymentBtcInput = WithSparkDetails<
+  Omit<InsertValues<typeof paymentBtc>, "id">,
+  Omit<InsertValues<typeof paymentBtcLightning>, "id">,
+  Omit<InsertValues<typeof paymentBtcSpark>, "id">
+>
 
-type PaymentBtcUpdateInput = Omit<UpdateValues<typeof paymentBtc>, "id"> & {
-  readonly lightning?: Omit<UpdateValues<typeof paymentBtcLightning>, "id">
-  readonly sparkInvoice?: Omit<UpdateValues<typeof paymentBtcSpark>, "id">
-}
+type PaymentBtcUpdateInput = WithSparkDetails<
+  Omit<UpdateValues<typeof paymentBtc>, "id">,
+  Omit<UpdateValues<typeof paymentBtcLightning>, "id">,
+  Omit<UpdateValues<typeof paymentBtcSpark>, "id">
+>
 
 /**
  * Quotes the fiat amount in sats, creates a Spark Lightning invoice, and

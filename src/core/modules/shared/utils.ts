@@ -52,10 +52,17 @@ const randomBytes = createRandomBytes()
 export const createTableId = <Table extends TypeName>(): Id & Brand<Table> =>
   createId<Table>({ randomBytes }) as Id & Brand<Table>
 
-export const hasSparkIdentifier = ({
-  sparkInvoice,
-  lightning,
-}: {
-  readonly lightning?: object
-  readonly sparkInvoice?: object
-}): boolean => lightning !== undefined || sparkInvoice !== undefined
+/**
+ * A Spark money movement's base row plus its optional Lightning invoice
+ * and/or Spark invoice detail, shared by payment and account-transaction
+ * insert/update input types.
+ */
+export type WithSparkDetails<TBase, TLightning, TSparkInvoice> = TBase & {
+  readonly lightning?: TLightning
+  readonly sparkInvoice?: TSparkInvoice
+}
+
+export const hasSparkIdentifier = (
+  detail: WithSparkDetails<unknown, object, object>
+): boolean =>
+  detail.lightning !== undefined || detail.sparkInvoice !== undefined

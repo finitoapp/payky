@@ -35,6 +35,7 @@ import {
   type WithdrawalQuote,
 } from "@/core/modules/withdrawal/withdrawal-actions.ts"
 import { isValidBitcoinAddress } from "@/core/modules/withdrawal/withdrawal-utils.ts"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -81,8 +82,12 @@ export function WithdrawFormStep({
   const [amountInput, setAmountInput] = useState("")
   const [withdrawAll, setWithdrawAll] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false)
-  const [quotePending, setQuotePending] = useState(false)
-  const [quoteError, setQuoteError] = useState<TranslationKey | null>(null)
+  const {
+    pending: quotePending,
+    error: quoteError,
+    setError: setQuoteError,
+    submit,
+  } = useSettingsForm<TranslationKey>()
 
   const applyScannedAddress = (scanned: ScannedBitcoinAddress) => {
     setAddress(scanned.address)
@@ -123,8 +128,7 @@ export function WithdrawFormStep({
       return
     }
 
-    setQuotePending(true)
-    try {
+    await submit(async () => {
       await using run = appRun()
       const quoteResult = await run(
         quoteWithdrawal({
@@ -136,13 +140,11 @@ export function WithdrawFormStep({
 
       if (!quoteResult.ok) {
         setQuoteError(quoteErrorKey(quoteResult.error))
-        return
+        return false
       }
 
       onReview(trimmedAddress, quoteResult.value)
-    } finally {
-      setQuotePending(false)
-    }
+    })
   }
 
   return (

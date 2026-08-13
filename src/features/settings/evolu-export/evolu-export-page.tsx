@@ -42,11 +42,10 @@ interface ExportState {
   readonly files: ReadonlyArray<SavedEvoluExportFile>
 }
 
-type ExportOutcome =
-  | { readonly status: "idle" }
-  | { readonly status: "pending" }
-  | { readonly status: "success"; readonly export: ExportState }
-  | { readonly status: "error"; readonly message: string }
+type ExportStatus =
+  | { readonly kind: "idle" }
+  | { readonly kind: "pending" }
+  | { readonly kind: "error"; readonly message: string }
 
 interface ExportSelection {
   readonly app: boolean
@@ -67,19 +66,18 @@ export function EvoluExportPage() {
     device: true,
   })
   const [acceptedWarning, setAcceptedWarning] = useState(false)
-  const [outcome, setOutcome] = useState<ExportOutcome>({ status: "idle" })
+  const [status, setStatus] = useState<ExportStatus>({ kind: "idle" })
+  const [lastExport, setLastExport] = useState<ExportState | null>(null)
   const runtime = getNativeRuntime()
   const selectedDatabases = getSelectedDatabases(selection)
   const canExport =
-    acceptedWarning &&
-    selectedDatabases.length > 0 &&
-    outcome.status !== "pending"
+    acceptedWarning && selectedDatabases.length > 0 && status.kind !== "pending"
 
   const handleExport = async () => {
     if (!canExport) return
 
     const createdAt = new Date()
-    setOutcome({ status: "pending" })
+    setStatus({ kind: "pending" })
 
     try {
       const files = await Promise.all(
@@ -97,10 +95,11 @@ export function EvoluExportPage() {
         })
       )
 
-      setOutcome({ status: "success", export: { createdAt, files } })
+      setLastExport({ createdAt, files })
+      setStatus({ kind: "idle" })
       toast.success(t("settings.evoluExport.status.success"))
     } catch (exportError) {
-      setOutcome({ status: "error", message: formatExportError(exportError) })
+      setStatus({ kind: "error", message: formatExportError(exportError) })
       toast.error(t("settings.evoluExport.status.error"))
     }
   }
@@ -226,37 +225,37 @@ export function EvoluExportPage() {
           </p>
           <Button type="button" onClick={handleExport} disabled={!canExport}>
             <Download data-icon="inline-start" />
-            {outcome.status === "pending"
+            {status.kind === "pending"
               ? t("settings.evoluExport.action.pending")
               : t("settings.evoluExport.action")}
           </Button>
         </CardFooter>
       </Card>
 
-      {outcome.status === "success" || outcome.status === "error" ? (
+      {lastExport || status.kind === "error" ? (
         <Card>
           <CardHeader>
             <CardTitle>{t("settings.evoluExport.status.title")}</CardTitle>
             <CardDescription>
-              {outcome.status === "success"
-                ? t("settings.evoluExport.status.createdAt", {
-                    createdAt: formatExportCreatedAt(outcome.export.createdAt),
-                  })
-                : t("settings.evoluExport.status.error")}
+              {status.kind === "error"
+                ? t("settings.evoluExport.status.error")
+                : lastExport
+                  ? t("settings.evoluExport.status.createdAt", {
+                      createdAt: formatExportCreatedAt(lastExport.createdAt),
+                    })
+                  : null}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {outcome.status === "error" ? (
-              <p className="text-sm text-destructive">{outcome.message}</p>
+            {status.kind === "error" ? (
+              <p className="text-sm text-destructive">{status.message}</p>
             ) : null}
-            {outcome.status === "success"
-              ? outcome.export.files.map((file) => (
-                  <ExportedFileRow
-                    key={`${file.database}:${file.filename}`}
-                    file={file}
-                  />
-                ))
-              : null}
+            {lastExport?.files.map((file) => (
+              <ExportedFileRow
+                key={`${file.database}:${file.filename}`}
+                file={file}
+              />
+            ))}
           </CardContent>
         </Card>
       ) : null}

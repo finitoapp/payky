@@ -141,9 +141,7 @@ export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))
 export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
 export const AccountTransactionKindSchema = z.enum([
-  "iban",
-  "spark",
-  "cashRegister",
+  ...AccountKindSchema.options,
   "onchain",
 ])
 export const BankQrFormatSchema = z.enum([

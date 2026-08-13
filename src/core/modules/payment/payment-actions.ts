@@ -567,10 +567,10 @@ export const preparePaymentMethod =
 
     const payment = paymentResult.value
 
-    const cashRegisterPayment =
+    const [cashRegisterPayment, bankPayment] = await Promise.all([
       cashRegister === undefined
-        ? null
-        : await (async () => {
+        ? Promise.resolve(null)
+        : (async () => {
             const accountResult = loadAccountWithCurrencyCheck(
               await run.deps.evolu.loadQuery(
                 cashRegisterAccountByIdQuery(cashRegister.accountId)
@@ -586,15 +586,10 @@ export const preparePaymentMethod =
               id: paymentId,
               accountId: cashRegister.accountId,
             })
-          })()
-    if (cashRegisterPayment !== null && !cashRegisterPayment.ok) {
-      return cashRegisterPayment
-    }
-
-    const bankPayment =
+          })(),
       bank === undefined
-        ? null
-        : await (async () => {
+        ? Promise.resolve(null)
+        : (async () => {
             const accountResult = loadAccountWithCurrencyCheck(
               await run.deps.evolu.loadQuery(
                 ibanAccountByIdQuery(bank.accountId)
@@ -630,7 +625,11 @@ export const preparePaymentMethod =
             })
 
             return ok(paymentIbanValue)
-          })()
+          })(),
+    ])
+    if (cashRegisterPayment !== null && !cashRegisterPayment.ok) {
+      return cashRegisterPayment
+    }
     if (bankPayment !== null && !bankPayment.ok) {
       return bankPayment
     }

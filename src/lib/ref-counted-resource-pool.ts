@@ -1,13 +1,22 @@
-export interface RefCountedResourcePoolDeps<TResource, TKey = string> {
+interface RefCountedResourcePoolBaseDeps<TResource, TKey> {
   readonly create: (key: TKey) => Promise<TResource>
   readonly destroy: (resource: TResource) => void | Promise<void>
-  /**
-   * Maps a structured `TKey` to the string used for the internal `Map`
-   * lookup. Defaults to `String(key)`, which is the identity for the
-   * default `TKey = string`.
-   */
-  readonly keyOf?: (key: TKey) => string
 }
+
+/**
+ * `keyOf` maps a structured `TKey` to the string used for the internal `Map`
+ * lookup. It's optional only when `TKey` is already a `string` (identity
+ * mapping); any other key type must supply it explicitly - there's no safe
+ * generic default (e.g. `String(key)` collapses every object key to
+ * `"[object Object]"`).
+ */
+export type RefCountedResourcePoolDeps<
+  TResource,
+  TKey = string,
+> = RefCountedResourcePoolBaseDeps<TResource, TKey> &
+  (TKey extends string
+    ? { readonly keyOf?: (key: TKey) => string }
+    : { readonly keyOf: (key: TKey) => string })
 
 export interface RefCountedResourceLease<TResource> extends AsyncDisposable {
   readonly resource: Promise<TResource>

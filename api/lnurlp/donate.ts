@@ -74,10 +74,25 @@ interface LnurlVerifyResponse {
   readonly pr: string
 }
 
+type LnurlErrorKind =
+  | "config"
+  | "method-not-allowed"
+  | "not-found"
+  | "invalid-amount"
+  | "invoice"
+  | "verify"
+
 interface LnurlError {
   readonly status: "ERROR"
+  readonly kind: LnurlErrorKind
   readonly reason: string
 }
+
+const lnurlError = (kind: LnurlErrorKind, reason: string): LnurlError => ({
+  status: "ERROR",
+  kind,
+  reason,
+})
 
 const jsonHeaders = {
   "access-control-allow-origin": "*",
@@ -107,10 +122,7 @@ const loadConfig = (request: Request): Result<DonateConfig, LnurlError> => {
   const parsedEnv = EnvSchema.safeParse(process.env)
 
   if (!parsedEnv.success) {
-    return err({
-      status: "ERROR",
-      reason: "Donation endpoint is not configured.",
-    })
+    return err(lnurlError("config", "Donation endpoint is not configured."))
   }
 
   const env = parsedEnv.data
@@ -153,19 +165,18 @@ const createMetadata = (config: DonateConfig): LnurlPayMetadata => ({
 
 const parseAmountMsats = (value: string | null): Result<number, LnurlError> => {
   if (value === null) {
-    return err({
-      status: "ERROR",
-      reason: "Missing amount.",
-    })
+    return err(lnurlError("invalid-amount", "Missing amount."))
   }
 
   const amount = Number(value)
 
   if (!Number.isSafeInteger(amount) || amount <= 0) {
-    return err({
-      status: "ERROR",
-      reason: "Amount must be a positive integer in millisatoshi.",
-    })
+    return err(
+      lnurlError(
+        "invalid-amount",
+        "Amount must be a positive integer in millisatoshi."
+      )
+    )
   }
 
   return ok(amount)
@@ -179,17 +190,21 @@ const validateAmountMsats = (
     amountMsats < config.minSendableMsats ||
     amountMsats > config.maxSendableMsats
   ) {
-    return err({
-      status: "ERROR",
-      reason: "Amount is outside the allowed donation range.",
-    })
+    return err(
+      lnurlError(
+        "invalid-amount",
+        "Amount is outside the allowed donation range."
+      )
+    )
   }
 
   if (amountMsats % MSATS_PER_SAT !== 0) {
-    return err({
-      status: "ERROR",
-      reason: "Amount must be divisible by 1000 millisatoshi.",
-    })
+    return err(
+      lnurlError(
+        "invalid-amount",
+        "Amount must be divisible by 1000 millisatoshi."
+      )
+    )
   }
 
   return ok(amountMsats / MSATS_PER_SAT)
@@ -220,10 +235,9 @@ const createInvoice = async (
     })
 
     if (invoice.id === undefined || invoice.id.trim().length === 0) {
-      return err({
-        status: "ERROR",
-        reason: "Could not create verifiable Lightning invoice.",
-      })
+      return err(
+        lnurlError("invoice", "Could not create verifiable Lightning invoice.")
+      )
     }
 
     return ok({
@@ -232,10 +246,7 @@ const createInvoice = async (
       verify: getVerifyUrl(config.callbackUrl, invoice.id),
     })
   } catch {
-    return err({
-      status: "ERROR",
-      reason: "Could not create Lightning invoice.",
-    })
+    return err(lnurlError("invoice", "Could not create Lightning invoice."))
   } finally {
     await wallet?.cleanup()
   }
@@ -260,10 +271,7 @@ const verifyInvoice = async (
     const invoice = await wallet.getLightningReceiveRequest(id)
 
     if (invoice === null) {
-      return err({
-        status: "ERROR",
-        reason: "Not found",
-      })
+      return err(lnurlError("not-found", "Not found"))
     }
 
     const preimage =
@@ -280,10 +288,7 @@ const verifyInvoice = async (
       pr: invoice.invoice.encodedInvoice,
     })
   } catch {
-    return err({
-      status: "ERROR",
-      reason: "Could not verify Lightning invoice.",
-    })
+    return err(lnurlError("verify", "Could not verify Lightning invoice."))
   } finally {
     await wallet?.cleanup()
   }
@@ -302,10 +307,7 @@ const handleRequest = async (request: Request): Promise<Response> => {
 
   if (request.method !== "GET") {
     return jsonResponse(
-      {
-        status: "ERROR",
-        reason: "Method not allowed.",
-      },
+      lnurlError("method-not-allowed", "Method not allowed."),
       { status: 405 }
     )
   }
@@ -322,13 +324,9 @@ const handleRequest = async (request: Request): Promise<Response> => {
 
   if (verify !== null) {
     if (verify.trim().length === 0) {
-      return jsonResponse(
-        {
-          status: "ERROR",
-          reason: "Not found",
-        },
-        { status: 404 }
-      )
+      return jsonResponse(lnurlError("not-found", "Not found"), {
+        status: 404,
+      })
     }
 
     const verifyResult = await verifyInvoice(verify, config)
@@ -337,7 +335,7 @@ const handleRequest = async (request: Request): Promise<Response> => {
       verifyResult.ok ? verifyResult.value : verifyResult.error,
       {
         status:
-          !verifyResult.ok && verifyResult.error.reason === "Not found"
+          !verifyResult.ok && verifyResult.error.kind === "not-found"
             ? 404
             : 200,
       }

@@ -114,7 +114,7 @@ const createSparkAccountSyncManager = ({
       syncHistorySoon: () => void
     }
   >()
-  const refreshQueue = createKeyedTaskQueue({
+  const refreshQueue = createKeyedTaskQueue<"refresh">({
     onError: (error) => context.onError(error),
   })
 
@@ -205,7 +205,7 @@ const createSparkAccountSyncSession = ({
   let isInitializing = false
   let pendingHistorySync = false
   const pendingTransferIds = new Set<string>()
-  const queue = createKeyedTaskQueue({
+  const queue = createKeyedTaskQueue<"history" | `transfer:${string}`>({
     onError: (error) => context.onError(error),
   })
 

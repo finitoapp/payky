@@ -2,20 +2,21 @@ export interface KeyedTaskQueueDeps {
   readonly onError: (error: unknown) => void
 }
 
-export interface KeyedTaskQueue extends Disposable {
-  readonly enqueue: (key: string, work: () => Promise<void>) => void
+export interface KeyedTaskQueue<TKey extends string = string>
+  extends Disposable {
+  readonly enqueue: (key: TKey, work: () => Promise<void>) => void
   readonly isDisposed: boolean
 }
 
-export const createKeyedTaskQueue = (
+export const createKeyedTaskQueue = <TKey extends string = string>(
   deps: KeyedTaskQueueDeps
-): KeyedTaskQueue => {
-  const queue = new Map<string, () => Promise<void>>()
-  const keyOrder: string[] = []
+): KeyedTaskQueue<TKey> => {
+  const queue = new Map<TKey, () => Promise<void>>()
+  const keyOrder: TKey[] = []
   let running = false
   let disposed = false
 
-  const enqueue = (key: string, work: () => Promise<void>): void => {
+  const enqueue = (key: TKey, work: () => Promise<void>): void => {
     if (disposed) return
 
     if (!queue.has(key)) {

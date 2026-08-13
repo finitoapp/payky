@@ -1,4 +1,5 @@
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { BillLineSummaryId } from "@/core/modules/bill-line/bill-line-types.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { ItemId } from "@/core/modules/item/item-types.ts"
 import type {
@@ -10,7 +11,7 @@ import type {
 } from "@/core/modules/shared/schema.ts"
 
 export interface BillLineSummary {
-  readonly id: string
+  readonly id: BillLineSummaryId
   readonly billId: BillId
   readonly catalogItemId: CatalogItemId | null
   readonly itemId: ItemId

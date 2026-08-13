@@ -23,6 +23,7 @@ import {
 import { BillId } from "../src/core/modules/bill/bill-types"
 import { loadCalculatedBillLineSummaries } from "../src/core/modules/bill-line/bill-line-actions"
 import type { BillLineSummary } from "../src/core/modules/bill-line/bill-line-summary"
+import type { BillLineSummaryId } from "../src/core/modules/bill-line/bill-line-types"
 import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import { PaymentId } from "../src/core/modules/payment/payment-types"
@@ -51,7 +52,7 @@ const LineSummaryIdsFromStringSchema = z
         })
         return z.NEVER
       }
-      ids.push(id)
+      ids.push(id as BillLineSummaryId)
     }
 
     return ids
@@ -272,7 +273,12 @@ export const registerBillsCommand =
           args: {},
           opts: {
             billId: BillId.describe("Bill id"),
-            lineSummaryId: z.string().trim().min(1).describe("Line summary id"),
+            lineSummaryId: z
+              .string()
+              .trim()
+              .min(1)
+              .transform((value) => value as BillLineSummaryId)
+              .describe("Line summary id"),
             quantity: PositiveNumberFromStringSchema.describe(
               "q;Quantity to remove"
             ),

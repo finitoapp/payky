@@ -111,7 +111,8 @@
     - Keep shared types/helpers in lower-level modules when that matches nearby structure.
     - Do not create barrels or convenience imports that introduce cycles.
 - Use utility types from `type-fest` where they clarify intent or match local usage:
-    - Common examples in this repo include `ValueOf`, `Simplify`, `ExactObject`, `EmptyObject`, `JsonObject`, `JsonValue`, `Replace`, `Get`, and `DistributedPick`.
+    - Common examples in this repo include `ValueOf`, `Simplify`, `ExactObject`, `EmptyObject`, `JsonObject`, `JsonValue`, `Replace`, `Get`, `DistributedPick`, `RequireExactlyOne`, and `RequireOneOrNone`.
+    - For mutually exclusive fields (exactly one of a set required, or at most one allowed), use `RequireExactlyOne`/`RequireOneOrNone` instead of hand-writing a union of `?: never` siblings.
     - Do not add a new custom utility type when `type-fest` already provides a clear equivalent.
 - Prefer `async`/`await` over `Promise.then(...)` chains.
     - Keep promise combinators such as `Promise.all` when they express concurrency clearly.

@@ -111,22 +111,18 @@ export const createLud16MetadataUrl = (
 }
 
 /**
- * Fetches an LNURL endpoint and returns its JSON body together with the HTTP
- * status and raw body for error reporting.
+ * Fetches an LNURL endpoint and validates its JSON body against `schema`.
  *
  * An LNURL `{ status: "ERROR", reason }` body takes precedence over the HTTP
  * status (per LUD-06 it may arrive with any status code), then HTTP failures,
- * then a non-JSON body.
+ * then schema validation.
  */
 const fetchLnurlJson =
-  (
+  <TSchema extends z.ZodType>(
     url: string | URL,
-    describe: string
-  ): LnurlPayTask<{
-    readonly json: unknown
-    readonly status: number
-    readonly responseBody: string
-  }> =>
+    describe: string,
+    schema: TSchema
+  ): LnurlPayTask<z.output<TSchema>> =>
   async (run) => {
     const responseResult = await run(appFetchAsJson(url))
     if (!responseResult.ok) return responseResult
@@ -141,8 +137,8 @@ const fetchLnurlJson =
       }
     }
 
-    const validated = validateJsonResponse(response, {
-      schema: z.unknown(),
+    return validateJsonResponse(response, {
+      schema,
       onHttpError: ({ status, responseBody }) =>
         createLnurlPayHttpError({
           message: `${describe} request failed: ${status}`,
@@ -157,38 +153,7 @@ const fetchLnurlJson =
           cause,
         }),
     })
-    if (!validated.ok) return validated
-
-    return ok({
-      json: validated.value,
-      status: response.status,
-      responseBody: response.text,
-    })
   }
-
-const parseLnurlBody = <TSchema extends z.ZodType>(
-  response: {
-    readonly json: unknown
-    readonly status: number
-    readonly responseBody: string
-  },
-  schema: TSchema,
-  message: string
-): Result<z.output<TSchema>, LnurlPayResponseError> => {
-  const parsed = schema.safeParse(response.json)
-  if (!parsed.success) {
-    return err(
-      createLnurlPayResponseError({
-        message,
-        status: response.status,
-        responseBody: response.responseBody,
-        cause: parsed.error,
-      })
-    )
-  }
-
-  return ok(parsed.data)
-}
 
 export const fetchLnurlPayMetadata =
   ({ address }: { readonly address: string }): LnurlPayTask<LnurlPayMetadata> =>
@@ -196,15 +161,12 @@ export const fetchLnurlPayMetadata =
     const metadataUrl = createLud16MetadataUrl(address)
     if (!metadataUrl.ok) return metadataUrl
 
-    const response = await run(
-      fetchLnurlJson(metadataUrl.value, "LNURL metadata")
-    )
-    if (!response.ok) return response
-
-    const metadata = parseLnurlBody(
-      response.value,
-      LnurlPayMetadataSchema,
-      "Invalid LNURL metadata response."
+    const metadata = await run(
+      fetchLnurlJson(
+        metadataUrl.value,
+        "LNURL metadata",
+        LnurlPayMetadataSchema
+      )
     )
     if (!metadata.ok) return metadata
 
@@ -227,13 +189,8 @@ export const fetchLnurlPayInvoice =
     const callbackUrl = new URL(metadata.callback)
     callbackUrl.searchParams.set("amount", String(amountSats * MSATS_PER_SAT))
 
-    const response = await run(fetchLnurlJson(callbackUrl, "LNURL invoice"))
-    if (!response.ok) return response
-
-    const invoice = parseLnurlBody(
-      response.value,
-      LnurlPayInvoiceSchema,
-      "Invalid LNURL invoice response."
+    const invoice = await run(
+      fetchLnurlJson(callbackUrl, "LNURL invoice", LnurlPayInvoiceSchema)
     )
     if (!invoice.ok) return invoice
 
@@ -246,13 +203,8 @@ export const fetchLnurlPayInvoice =
 export const fetchLnurlVerify =
   ({ verifyUrl }: { readonly verifyUrl: string }): LnurlPayTask<LnurlVerify> =>
   async (run) => {
-    const response = await run(fetchLnurlJson(verifyUrl, "LNURL verify"))
-    if (!response.ok) return response
-
-    const verify = parseLnurlBody(
-      response.value,
-      LnurlVerifySchema,
-      "Invalid LNURL verify response."
+    const verify = await run(
+      fetchLnurlJson(verifyUrl, "LNURL verify", LnurlVerifySchema)
     )
     if (!verify.ok) return verify
 

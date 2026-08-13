@@ -151,13 +151,8 @@ function DonationsPage() {
             metadata: metadataQuery.data,
           }
         : { status: "loading" }
-  const exchangeRate =
-    donationLoadState.status === "ready" ? donationLoadState.exchangeRate : null
-  const metadata =
-    donationLoadState.status === "ready" ? donationLoadState.metadata : null
-  const loadErrorKey =
-    donationLoadState.status === "error" ? donationLoadState.key : null
-  const isLoading = donationLoadState.status === "loading"
+  const { exchangeRate, metadata, loadErrorKey, isLoading } =
+    getDonationView(donationLoadState)
 
   const createInvoiceMutation = useMutation({
     mutationFn: async ({
@@ -336,6 +331,43 @@ function DonationsPage() {
       </div>
     </>
   )
+}
+
+/**
+ * Maps `DonationLoadState` to its rendered fields through an exhaustive
+ * switch (explicit return type), so adding a new status variant without
+ * handling it here is a compile error - the single place these fields can
+ * derive from the union stays in sync with it.
+ */
+function getDonationView(state: DonationLoadState): {
+  readonly exchangeRate: number | null
+  readonly metadata: LnurlPayMetadata | null
+  readonly loadErrorKey: TranslationKey | null
+  readonly isLoading: boolean
+} {
+  switch (state.status) {
+    case "loading":
+      return {
+        exchangeRate: null,
+        metadata: null,
+        loadErrorKey: null,
+        isLoading: true,
+      }
+    case "error":
+      return {
+        exchangeRate: null,
+        metadata: null,
+        loadErrorKey: state.key,
+        isLoading: false,
+      }
+    case "ready":
+      return {
+        exchangeRate: state.exchangeRate,
+        metadata: state.metadata,
+        loadErrorKey: null,
+        isLoading: false,
+      }
+  }
 }
 
 function getAmountErrorKey({

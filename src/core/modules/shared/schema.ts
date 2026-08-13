@@ -151,14 +151,6 @@ export const BankQrFormatSchema = z.enum([
   "payBySquare1_2_0",
 ])
 export type BankQrFormat = z.output<typeof BankQrFormatSchema>
-export const PaymentStatusSchema = z.enum([
-  "created",
-  "pending",
-  "paid",
-  "failed",
-  "expired",
-  "canceled",
-])
 export const BillStatusSchema = z.enum([
   "open",
   "partiallyPaid",
@@ -212,7 +204,6 @@ export type AccountKind = z.output<typeof AccountKindSchema>
 export type AccountTransactionKind = z.output<
   typeof AccountTransactionKindSchema
 >
-export type PaymentStatus = z.output<typeof PaymentStatusSchema>
 export type BillStatus = z.output<typeof BillStatusSchema>
 export type ItemLineType = z.output<typeof ItemLineTypeSchema>
 export type BillLineTag = z.output<typeof BillLineTagSchema>

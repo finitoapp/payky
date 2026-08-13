@@ -13,8 +13,17 @@ type PaymentHistoryStatus = "canceled" | "paid" | "pending"
 
 interface PaymentHistoryStatusInput {
   readonly canceledAt: number | null
-  readonly claimCount: number | string | bigint
+  readonly claimCount: number
 }
+
+/**
+ * `eb.fn.count<number>(...)` below only asserts the output type to
+ * TypeScript — some SQLite drivers actually return COUNT() as a `bigint` or
+ * `string` at runtime. Coerce once here, at the query boundary, instead of
+ * letting the driver-dependent union leak into `PaymentHistoryStatusInput`.
+ */
+const toClaimCount = (value: number | string | bigint): number =>
+  typeof value === "number" ? value : Number(value)
 
 const latestPaymentsQuery = createQuery((db) =>
   db
@@ -86,7 +95,7 @@ const resolvePaymentStatus = (
 ): PaymentHistoryStatus =>
   payment.canceledAt !== null
     ? "canceled"
-    : Number(payment.claimCount) > 0
+    : payment.claimCount > 0
       ? "paid"
       : "pending"
 
@@ -112,7 +121,10 @@ export const PaymentHistory = () => {
         </div>
       }
       items={items.map((item) => {
-        const paymentStatus = resolvePaymentStatus(item)
+        const paymentStatus = resolvePaymentStatus({
+          canceledAt: item.canceledAt,
+          claimCount: toClaimCount(item.claimCount),
+        })
 
         return {
           kind: "link" as const,

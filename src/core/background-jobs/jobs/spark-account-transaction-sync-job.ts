@@ -1,4 +1,5 @@
 import { SparkWalletEvent } from "@buildonspark/spark-sdk"
+import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { createRun, err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
 
@@ -32,9 +33,9 @@ const OUTGOING_TRANSFER_DIRECTION = "OUTGOING"
 
 interface SparkTransfer {
   readonly id: string
-  readonly status: string
+  readonly status: WalletTransfer["status"]
   readonly totalValue: number
-  readonly transferDirection: string
+  readonly transferDirection: WalletTransfer["transferDirection"]
   readonly updatedTime: Date | undefined
   readonly createdTime: Date | undefined
   readonly lnInvoice?: string | undefined

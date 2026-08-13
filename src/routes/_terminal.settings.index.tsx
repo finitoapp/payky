@@ -21,7 +21,7 @@ import {
 import type { ComponentProps } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { VerticalNav } from "@/components/vertical-nav.tsx"
+import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -34,13 +34,11 @@ export const Route = createFileRoute("/_terminal/settings/")({
   },
 })
 
-type VerticalNavItem = ComponentProps<typeof VerticalNav>["items"][number]
-
 interface SettingRow {
   readonly icon: typeof Grid2X2
   readonly title: TranslationKey
   readonly description: TranslationKey
-  readonly to?: VerticalNavItem["to"]
+  readonly to: NavLinkTo
 }
 
 const accountSettings: ReadonlyArray<SettingRow> = [
@@ -159,6 +157,7 @@ function createSettingsNavItems(
     const Icon = item.icon
 
     return {
+      kind: "link" as const,
       label: (
         <span className="flex flex-col gap-1">
           <span className="text-sm font-semibold">{t(item.title)}</span>

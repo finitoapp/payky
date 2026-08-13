@@ -115,6 +115,7 @@ export const PaymentHistory = () => {
         const paymentStatus = resolvePaymentStatus(item)
 
         return {
+          kind: "link" as const,
           to: "/activity/$paymentId",
           params: {
             paymentId: item.id,

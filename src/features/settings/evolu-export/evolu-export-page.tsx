@@ -42,6 +42,12 @@ interface ExportState {
   readonly files: ReadonlyArray<SavedEvoluExportFile>
 }
 
+type ExportOutcome =
+  | { readonly status: "idle" }
+  | { readonly status: "pending" }
+  | { readonly status: "success"; readonly export: ExportState }
+  | { readonly status: "error"; readonly message: string }
+
 interface ExportSelection {
   readonly app: boolean
   readonly device: boolean
@@ -61,20 +67,19 @@ export function EvoluExportPage() {
     device: true,
   })
   const [acceptedWarning, setAcceptedWarning] = useState(false)
-  const [pending, setPending] = useState(false)
-  const [lastExport, setLastExport] = useState<ExportState | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<ExportOutcome>({ status: "idle" })
   const runtime = getNativeRuntime()
   const selectedDatabases = getSelectedDatabases(selection)
   const canExport =
-    acceptedWarning && selectedDatabases.length > 0 && pending === false
+    acceptedWarning &&
+    selectedDatabases.length > 0 &&
+    outcome.status !== "pending"
 
   const handleExport = async () => {
     if (!canExport) return
 
     const createdAt = new Date()
-    setPending(true)
-    setError(null)
+    setOutcome({ status: "pending" })
 
     try {
       const files = await Promise.all(
@@ -92,13 +97,11 @@ export function EvoluExportPage() {
         })
       )
 
-      setLastExport({ createdAt, files })
+      setOutcome({ status: "success", export: { createdAt, files } })
       toast.success(t("settings.evoluExport.status.success"))
     } catch (exportError) {
-      setError(formatExportError(exportError))
+      setOutcome({ status: "error", message: formatExportError(exportError) })
       toast.error(t("settings.evoluExport.status.error"))
-    } finally {
-      setPending(false)
     }
   }
 
@@ -223,35 +226,37 @@ export function EvoluExportPage() {
           </p>
           <Button type="button" onClick={handleExport} disabled={!canExport}>
             <Download data-icon="inline-start" />
-            {pending
+            {outcome.status === "pending"
               ? t("settings.evoluExport.action.pending")
               : t("settings.evoluExport.action")}
           </Button>
         </CardFooter>
       </Card>
 
-      {lastExport !== null || error !== null ? (
+      {outcome.status === "success" || outcome.status === "error" ? (
         <Card>
           <CardHeader>
             <CardTitle>{t("settings.evoluExport.status.title")}</CardTitle>
             <CardDescription>
-              {lastExport === null
-                ? t("settings.evoluExport.status.error")
-                : t("settings.evoluExport.status.createdAt", {
-                    createdAt: formatExportCreatedAt(lastExport.createdAt),
-                  })}
+              {outcome.status === "success"
+                ? t("settings.evoluExport.status.createdAt", {
+                    createdAt: formatExportCreatedAt(outcome.export.createdAt),
+                  })
+                : t("settings.evoluExport.status.error")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {error !== null ? (
-              <p className="text-sm text-destructive">{error}</p>
+            {outcome.status === "error" ? (
+              <p className="text-sm text-destructive">{outcome.message}</p>
             ) : null}
-            {lastExport?.files.map((file) => (
-              <ExportedFileRow
-                key={`${file.database}:${file.filename}`}
-                file={file}
-              />
-            ))}
+            {outcome.status === "success"
+              ? outcome.export.files.map((file) => (
+                  <ExportedFileRow
+                    key={`${file.database}:${file.filename}`}
+                    file={file}
+                  />
+                ))
+              : null}
           </CardContent>
         </Card>
       ) : null}

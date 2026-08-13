@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { GitFork, type Info, ScrollText, ShieldCheck } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { VerticalNav } from "@/components/vertical-nav.tsx"
+import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
 import { getNativeRuntime } from "@/core/native/runtime.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -20,14 +20,16 @@ export const Route = createFileRoute("/_terminal/settings/about/")({
 })
 
 const appVersion = __APP_VERSION__
-type VerticalNavItem = ComponentProps<typeof VerticalNav>["items"][number]
+
+type AboutRowTarget =
+  | { readonly kind: "link"; readonly to: NavLinkTo }
+  | { readonly kind: "href"; readonly href: string }
 
 interface AboutRow {
   readonly icon: typeof Info
   readonly title: TranslationKey
   readonly description: TranslationKey
-  readonly to?: VerticalNavItem["to"]
-  readonly href?: string
+  readonly target: AboutRowTarget
 }
 
 const aboutRows: ReadonlyArray<AboutRow> = [
@@ -35,19 +37,19 @@ const aboutRows: ReadonlyArray<AboutRow> = [
     icon: ShieldCheck,
     title: "settings.about.privacy.title",
     description: "settings.about.privacy.description",
-    to: "/settings/about/privacy",
+    target: { kind: "link", to: "/settings/about/privacy" },
   },
   {
     icon: ScrollText,
     title: "settings.about.terms.title",
     description: "settings.about.terms.description",
-    to: "/settings/about/terms",
+    target: { kind: "link", to: "/settings/about/terms" },
   },
   {
     icon: GitFork,
     title: "settings.about.github.title",
     description: "settings.about.github.description",
-    href: "https://github.com/finitoapp/payky",
+    target: { kind: "href", href: "https://github.com/finitoapp/payky" },
   },
 ]
 
@@ -59,6 +61,7 @@ function createAboutNavItems(
     const Icon = row.icon
 
     return {
+      ...row.target,
       label: (
         <span className="flex flex-col gap-1">
           <span className="text-sm font-semibold">{t(row.title)}</span>
@@ -67,8 +70,6 @@ function createAboutNavItems(
           </span>
         </span>
       ),
-      to: row.to,
-      href: row.href,
       icon: <Icon className="text-muted-foreground" />,
     }
   })

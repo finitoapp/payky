@@ -9,6 +9,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type { BillLineRow } from "./bill-line.ts"
 import type { BillLineSummary } from "./bill-line-summary.ts"
+import type { BillLineSummaryId } from "./bill-line-types.ts"
 
 interface BillLineSummaryIdentityInput {
   readonly billId: BillId
@@ -19,7 +20,7 @@ interface BillLineSummaryIdentityInput {
 
 export const createBillLineSummaryId = (
   input: BillLineSummaryIdentityInput
-): string =>
+): BillLineSummaryId =>
   createIdFromString<"BillLineSummary">(
     JSON.stringify({
       billId: input.billId,
@@ -34,7 +35,7 @@ export const calculateBillLineSummaries = (
   itemRows: ReadonlyArray<ItemRow>
 ): ReadonlyArray<BillLineSummary> => {
   const itemsById = new Map(itemRows.map((item) => [item.id, item]))
-  const projected = new Map<string, BillLineSummary>()
+  const projected = new Map<BillLineSummaryId, BillLineSummary>()
 
   for (const line of lineRows) {
     const item = itemsById.get(line.itemId)

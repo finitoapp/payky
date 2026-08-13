@@ -514,6 +514,7 @@ export const sk = {
   "settings.donations.invoice.missing": "Faktúra pre dar chýba.",
   "settings.donations.invoice.openWallet": "Otvoriť v peňaženke",
   "settings.donations.invoice.title": "Lightning faktúra",
+  "settings.donations.invoice.verify.error": "Platbu sa nepodarilo overiť.",
   "settings.donations.invoice.verify.paid": "Platba prijatá",
   "settings.donations.invoice.verify.paid.description":
     "Ďakujeme za podporu vývoja tejto aplikácie.",

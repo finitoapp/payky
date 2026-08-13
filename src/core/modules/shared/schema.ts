@@ -1,4 +1,5 @@
 import type { StandardSchemaV1 } from "@evolu/common"
+import type { ValueOf } from "type-fest"
 import { z } from "zod"
 
 import {
@@ -122,20 +123,18 @@ export const PositiveIntegerFromStringSchema = z
   .regex(/^(?:[1-9]\d*)$/)
   .transform((value) => Number(value) as PositiveInteger)
 
-export type InferEnumType<T extends Record<string, string>> = T[keyof T]
-
 export const FiatCurrency = {
   USD: "USD",
   EUR: "EUR",
   CZK: "CZK",
 } as const
-export type FiatCurrency = InferEnumType<typeof FiatCurrency>
+export type FiatCurrency = ValueOf<typeof FiatCurrency>
 
 export const Currency = {
   ...FiatCurrency,
   BTC: "BTC",
 } as const
-export type Currency = InferEnumType<typeof Currency>
+export type Currency = ValueOf<typeof Currency>
 
 export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))

@@ -4,7 +4,10 @@ import {
   SparkWalletEvent,
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
-import { ExitSpeed } from "@buildonspark/spark-sdk/types"
+import {
+  ExitSpeed,
+  type SparkCoopExitRequestStatus,
+} from "@buildonspark/spark-sdk/types"
 import {
   type SparkSecret,
   sparkSecretToMnemonic,
@@ -50,9 +53,11 @@ export interface SparkWithdrawalFeeQuote {
   readonly slow: SparkWithdrawalFeeEstimate
 }
 
+export type SparkWithdrawalStatus = SparkCoopExitRequestStatus
+
 export interface SparkWithdrawalRequest {
   readonly id: string
-  readonly status: string
+  readonly status: SparkWithdrawalStatus
   readonly txid: string | null
 }
 

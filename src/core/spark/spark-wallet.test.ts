@@ -108,7 +108,7 @@ describe("createDefaultSparkPaymentWallet", () => {
   test("maps each SparkExitSpeed to the SDK enum when withdrawing", async () => {
     const fakeWithdraw = vi.fn(async () => ({
       id: "withdrawal-1",
-      status: "PENDING",
+      status: "WAITING_ON_TX_CONFIRMATIONS",
       coopExitTxid: null,
     }))
     const fakeWallet = createFakeSdkWallet({ withdraw: fakeWithdraw })
@@ -131,7 +131,7 @@ describe("createDefaultSparkPaymentWallet", () => {
     const fakeWallet = createFakeSdkWallet({
       withdraw: vi.fn(async () => ({
         id: "withdrawal-1",
-        status: "COMPLETED",
+        status: "SUCCEEDED",
         coopExitTxid: "txid-1",
       })),
     })
@@ -147,7 +147,7 @@ describe("createDefaultSparkPaymentWallet", () => {
 
     expect(result).toEqual({
       id: "withdrawal-1",
-      status: "COMPLETED",
+      status: "SUCCEEDED",
       txid: "txid-1",
     })
   })

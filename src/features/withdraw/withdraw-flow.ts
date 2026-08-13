@@ -1,10 +1,13 @@
 import type { WithdrawalQuote } from "@/core/modules/withdrawal/withdrawal-actions.ts"
-import type { SparkExitSpeed } from "@/core/spark/spark-wallet.ts"
+import type {
+  SparkExitSpeed,
+  SparkWithdrawalStatus,
+} from "@/core/spark/spark-wallet.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export interface WithdrawResult {
   readonly txid: string | null
-  readonly status: string
+  readonly status: SparkWithdrawalStatus
 }
 
 export type WithdrawState =

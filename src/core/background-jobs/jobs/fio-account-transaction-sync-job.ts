@@ -73,7 +73,7 @@ class FioAccountTransactionSync {
   private readonly pluginSyncs = new Map<FioPluginId, FioPluginSync>()
   private readonly unsubscribePlugins: () => void
   private readonly context: Context
-  private readonly refreshQueue = createKeyedTaskQueue({
+  private readonly refreshQueue = createKeyedTaskQueue<"refresh">({
     onError: (error) => this.context.onError(error),
   })
 
@@ -150,7 +150,7 @@ class FioPluginSync {
   private readonly context: Context
   private readonly plugin: ActiveFioPluginWithTokens
   private readonly fioApiDep: FioApiDep
-  private readonly syncQueue = createKeyedTaskQueue({
+  private readonly syncQueue = createKeyedTaskQueue<"sync">({
     onError: (error) => this.context.onError(error),
   })
 

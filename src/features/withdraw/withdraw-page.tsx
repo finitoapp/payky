@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
-import { PositiveInteger } from "@/core/modules/shared/schema.ts"
 import {
   type ExecuteWithdrawalError,
   executeWithdrawal,
@@ -119,11 +118,8 @@ export function WithdrawPage() {
         executeWithdrawal({
           accountId: sparkAccount.id,
           onchainAddress: state.address,
-          amountSats: PositiveInteger(state.quote.amountSats),
-          withdrawAll: state.quote.withdrawAll,
-          availableSats: state.quote.availableSats,
+          quote: state.quote,
           exitSpeed: state.exitSpeed,
-          feeQuote: state.quote.feeQuote,
           deviceId: device.id,
         })
       )

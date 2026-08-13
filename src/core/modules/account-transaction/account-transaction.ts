@@ -8,7 +8,7 @@ import {
 } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
-  AccountKindSchema,
+  AccountTransactionKindSchema,
   ConstantSymbolSchema,
   CurrencySchema,
   type InferTable,
@@ -30,7 +30,7 @@ export const AccountTransactionOnchainExitSpeedSchema = z.enum([
 export const accountTransaction = {
   id: AccountTransactionId,
   accountId: AccountId,
-  kind: AccountKindSchema,
+  kind: AccountTransactionKindSchema,
   amount: IntegerSchema,
   currency: CurrencySchema,
   occurredAt: TimestampMsSchema,

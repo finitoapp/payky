@@ -8,6 +8,7 @@ import {
   type Task,
   tryAsync,
 } from "@evolu/common"
+import type { JsonValue } from "type-fest"
 import { defineError } from "@/core/error.ts"
 import type { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 import { getNativeRuntime } from "@/core/native/runtime.ts"
@@ -53,9 +54,9 @@ const createFetchJsonError = defineError("FetchJsonError")<{
 }>()
 export type FetchJsonError = ReturnType<typeof createFetchJsonError>
 
-const parseJsonBody = (text: string): Result<unknown, FetchJsonError> => {
+const parseJsonBody = (text: string): Result<JsonValue, FetchJsonError> => {
   try {
-    return ok(JSON.parse(text) as unknown)
+    return ok(JSON.parse(text) as JsonValue)
   } catch (error) {
     return err(
       createFetchJsonError({
@@ -84,7 +85,7 @@ export const appFetchAsJson =
   ): Task<
     Pick<Response, "ok" | "status"> & {
       readonly text: string
-      readonly json: Result<unknown, FetchJsonError>
+      readonly json: Result<JsonValue, FetchJsonError>
     },
     FetchError,
     FetchDep

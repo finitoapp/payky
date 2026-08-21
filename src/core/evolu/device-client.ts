@@ -1,16 +1,17 @@
 import {
   AppName,
   type Evolu as BaseEvolu,
+  createAppOwner,
   createEvolu,
   createIdFromString,
   createQueryBuilder,
   type Evolu,
   type EvoluDeps,
   id,
+  OwnerSecret,
   ok,
   sqliteFalse,
   type Task,
-  testAppOwner,
 } from "@evolu/common"
 import { z } from "zod"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -26,17 +27,17 @@ import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const AccountIdRaw = id("DeviceAccountId")
 export const AccountId = standardSchemaToZod(AccountIdRaw)
-export type AccountId = typeof AccountIdRaw.Type
+export type AccountId = typeof AccountIdRaw.Output
 
 export const AccountEvoluTransportIdRaw = id("DeviceAccountEvoluTransportId")
 export const AccountEvoluTransportId = standardSchemaToZod(
   AccountEvoluTransportIdRaw
 )
-export type AccountEvoluTransportId = typeof AccountEvoluTransportIdRaw.Type
+export type AccountEvoluTransportId = typeof AccountEvoluTransportIdRaw.Output
 
 export const DeviceSettingsIdRaw = id("DeviceSettings")
 export const DeviceSettingsId = standardSchemaToZod(DeviceSettingsIdRaw)
-export type DeviceSettingsId = typeof DeviceSettingsIdRaw.Type
+export type DeviceSettingsId = typeof DeviceSettingsIdRaw.Output
 
 export const deviceSettingsId = createIdFromString<"DeviceSettings">(
   "payky-device-settings"
@@ -124,15 +125,25 @@ export function createDefaultDeviceSettings(
 
 export const createDeviceQuery = createQueryBuilder(deviceEvoluSchema)
 
+// Currently a static ownerSecret. Plan to migrate to WebAuthn+PRF, see
+// https://github.com/finitoapp/payky/issues/5
+const ownerSecret = OwnerSecret.orThrow(
+  new Uint8Array([
+    32, 99, 101, 230, 222, 46, 149, 166, 144, 165, 217, 240, 14, 24, 40, 8, 210,
+    93, 169, 86, 19, 180, 45, 103, 217, 209, 37, 156, 30, 227, 201, 137,
+  ])
+)
+const appOwner = createAppOwner(ownerSecret)
+
 export const createDeviceEvolu: Task<
   Evolu<DeviceEvoluSchema>,
   never,
   EvoluDeps
 > = async (run) => {
-  const evolu = await run.orThrow(
+  const evolu = await run.ok(
     createEvolu(deviceEvoluSchema, {
       appName: AppName.orThrow("PaykyDevice"),
-      appOwner: testAppOwner,
+      appOwner,
       transports: [], // Disable syncing for now
       indexes: () => [],
     })

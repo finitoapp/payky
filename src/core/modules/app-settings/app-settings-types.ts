@@ -4,7 +4,7 @@ import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const AppSettingsIdRaw = id("AppSettings")
 export const AppSettingsId = standardSchemaToZod(AppSettingsIdRaw)
-export type AppSettingsId = typeof AppSettingsIdRaw.Type
+export type AppSettingsId = typeof AppSettingsIdRaw.Output
 
 export const DefaultPaymentMethodSchema = z.enum([
   "cashRegister",

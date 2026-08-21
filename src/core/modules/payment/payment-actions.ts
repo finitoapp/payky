@@ -387,7 +387,7 @@ export const createPayment =
 
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps
-    const paymentNumber = await run.orThrow(
+    const paymentNumber = await run.ok(
       loadNextPaymentNumber({
         id,
         date: createPaymentNumberDate(run.deps.date.now()),

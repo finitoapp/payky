@@ -36,7 +36,7 @@ export const runMutationWithCompletion = async <TResult>(
 }
 
 export const removeUndefinedValues = <const TData extends object>(
-  data: TData
+  data: { [key in keyof TData]: TData[key] | undefined }
 ): ConditionalExcept<TData, undefined> => {
   const values = { ...data } as Record<string, unknown>
   for (const key of Object.keys(values)) {
@@ -50,7 +50,7 @@ export const removeUndefinedValues = <const TData extends object>(
 const randomBytes = createRandomBytes()
 
 export const createTableId = <Table extends TypeName>(): Id & Brand<Table> =>
-  createId<Table>({ randomBytes }) as Id & Brand<Table>
+  createId<never>({ randomBytes }) as Id & Brand<Table>
 
 /**
  * A Spark money movement's base row plus its optional Lightning invoice

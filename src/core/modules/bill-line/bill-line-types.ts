@@ -3,7 +3,7 @@ import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const BillLineIdRaw = id("BillLine")
 export const BillLineId = standardSchemaToZod(BillLineIdRaw)
-export type BillLineId = typeof BillLineIdRaw.Type
+export type BillLineId = typeof BillLineIdRaw.Output
 
 /**
  * `BillLineSummary` rows are computed in memory (never written to an Evolu

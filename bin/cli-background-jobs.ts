@@ -1,5 +1,5 @@
 import { createConsole, ok, type Task } from "@evolu/common"
-import { createRun } from "@evolu/nodejs"
+import { runMain } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
@@ -10,16 +10,6 @@ import {
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { backgroundJobs } from "../src/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "../src/core/background-jobs/run-background-jobs"
-
-declare const process: {
-  readonly once: (event: "SIGINT" | "SIGTERM", listener: () => void) => void
-}
-
-const waitForShutdownSignal = (): Promise<void> =>
-  new Promise((resolve) => {
-    process.once("SIGINT", () => resolve())
-    process.once("SIGTERM", () => resolve())
-  })
 
 export const registerBackgroundJobsCommand =
   (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
@@ -35,7 +25,7 @@ export const registerBackgroundJobsCommand =
         .description("Run all registered background jobs until shutdown.")
         .action(async () => {
           const appConsole = createConsole()
-          await using run = createRun({
+          await runMain({
             console: appConsole,
             evolu,
             evoluOwnerId,
@@ -43,17 +33,15 @@ export const registerBackgroundJobsCommand =
             ...createFetchDep(),
             lockManager: createInProcessLockManager(),
             onError: (error: unknown) => {
-              run.deps.console.error("Background job failed.", error)
+              appConsole.error("Background job failed.", error)
             },
+          })(async (run) => {
+            const backgroundJobsDisposable = await run.ok(
+              runBackgroundJobs(backgroundJobs)
+            )
+            run.deps.console.log("Background jobs are running.")
+            return ok(backgroundJobsDisposable)
           })
-
-          await using _backgroundJobsDisposable = await run.orThrow(
-            runBackgroundJobs(backgroundJobs)
-          )
-
-          run.deps.console.log("Background jobs are running.")
-          await waitForShutdownSignal()
-          run.deps.console.log("Stopping background jobs.")
         })
     )
 

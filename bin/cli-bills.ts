@@ -80,7 +80,7 @@ export const registerBillsCommand =
           args: {},
           opts: {},
           async action() {
-            const results = await run.orThrow(listOpenBills())
+            const results = await run.ok(listOpenBills())
 
             run.deps.console.table(
               results.map(({ bill, items }) => ({
@@ -109,7 +109,7 @@ export const registerBillsCommand =
 
             run.deps.console.table([bill])
             run.deps.console.table(
-              await run.orThrow(loadCalculatedBillLineSummaries(options.id))
+              await run.ok(loadCalculatedBillLineSummaries(options.id))
             )
           },
         })
@@ -140,7 +140,7 @@ export const registerBillsCommand =
               currency: options.currency,
             }
 
-            const id = await run.orThrow(createBill(data))
+            const id = await run.ok(createBill(data))
 
             run.deps.console.log(
               `Inserted bill ${id}: ${JSON.stringify({ id, ...data })}`
@@ -159,7 +159,7 @@ export const registerBillsCommand =
             tableId: TableId.describe("t;Table id"),
           },
           async action(_, options) {
-            await run.orThrow(assignBillToTable(options))
+            await run.ok(assignBillToTable(options))
             run.deps.console.log(
               `Assigned bill ${options.id} to table ${options.tableId}`
             )
@@ -176,7 +176,7 @@ export const registerBillsCommand =
             id: BillId.describe("Bill id"),
           },
           async action(_, options) {
-            await run.orThrow(removeTableFromBill(options.id))
+            await run.ok(removeTableFromBill(options.id))
             run.deps.console.log(`Removed table from bill ${options.id}`)
           },
         })
@@ -290,9 +290,7 @@ export const registerBillsCommand =
           },
           async action(_, options) {
             const lineSummary = findLineSummary(
-              await run.orThrow(
-                loadCalculatedBillLineSummaries(options.billId)
-              ),
+              await run.ok(loadCalculatedBillLineSummaries(options.billId)),
               options.lineSummaryId
             )
             if (lineSummary === null) {
@@ -303,7 +301,7 @@ export const registerBillsCommand =
               return
             }
 
-            const updatedLineSummary = await run.orThrow(
+            const updatedLineSummary = await run.ok(
               appendRemoveBillLine({
                 billId: options.billId,
                 deviceId: options.deviceId ?? null,
@@ -334,7 +332,7 @@ export const registerBillsCommand =
             ),
           },
           async action(_, options) {
-            const sourceItems = await run.orThrow(
+            const sourceItems = await run.ok(
               loadCalculatedBillLineSummaries(options.sourceBillId)
             )
             const selectedItems: BillLineSummary[] = []
@@ -372,7 +370,7 @@ export const registerBillsCommand =
             paymentId: PaymentId.describe("Payment id"),
           },
           async action(_, options) {
-            await run.orThrow(partiallyPayBill(options))
+            await run.ok(partiallyPayBill(options))
             run.deps.console.log(`Marked bill ${options.id} as partially paid`)
           },
         })
@@ -387,7 +385,7 @@ export const registerBillsCommand =
             id: BillId.describe("Bill id"),
           },
           async action(_, options) {
-            await run.orThrow(cancelBill(options.id))
+            await run.ok(cancelBill(options.id))
             run.deps.console.log(`Canceled bill ${options.id}`)
           },
         })
@@ -402,7 +400,7 @@ export const registerBillsCommand =
             id: BillId.describe("Bill id"),
           },
           async action(_, options) {
-            await run.orThrow(closeBillAsPaid(options.id))
+            await run.ok(closeBillAsPaid(options.id))
             run.deps.console.log(`Closed bill ${options.id} as paid`)
           },
         })

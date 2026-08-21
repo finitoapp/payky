@@ -249,7 +249,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
           await using run = appRun()
 
           if (plugin) {
-            await run.orThrow(
+            await run.ok(
               updateFioPlugin({
                 id: plugin.id,
                 accountId: fiatBankAccountId,
@@ -260,14 +260,14 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
                 token: tokenResult?.data,
               })
             )
-            await run.orThrow(
+            await run.ok(
               updateFioPluginSyncPointer({
                 id: plugin.id,
                 lastSyncedDate: lastSyncedDateResult.data,
               })
             )
           } else if (tokenResult) {
-            const fioPluginId = await run.orThrow(
+            const fioPluginId = await run.ok(
               createFioPlugin({
                 accountId: fiatBankAccountId,
                 numberOfSecondsBetweenChecks: intervalResult.data,
@@ -277,7 +277,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
                 token: tokenResult.data,
               })
             )
-            await run.orThrow(
+            await run.ok(
               updateFioPluginSyncPointer({
                 id: fioPluginId,
                 lastSyncedDate: lastSyncedDateResult.data,
@@ -468,7 +468,7 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
                       try {
                         await using run = appRun()
 
-                        await run.orThrow(deleteFioPluginToken(token.id))
+                        await run.ok(deleteFioPluginToken(token.id))
                       } finally {
                         setPendingTokenId(null)
                       }

@@ -5,4 +5,4 @@ export const PaymentNumberSeriesIdRaw = id("PaymentNumberSeries")
 export const PaymentNumberSeriesId = standardSchemaToZod(
   PaymentNumberSeriesIdRaw
 )
-export type PaymentNumberSeriesId = typeof PaymentNumberSeriesIdRaw.Type
+export type PaymentNumberSeriesId = typeof PaymentNumberSeriesIdRaw.Output

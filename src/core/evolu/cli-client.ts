@@ -1,14 +1,15 @@
 import { rmSync } from "node:fs"
 import {
   type CreateSqliteDriverDep,
+  constVoid,
   createConsole,
   createConsoleStoreOutput,
   createMessagePort,
   createPreparedStatementsCache,
+  createRun,
   createSharedWorker,
   createSqlite,
   createWorker,
-  lazyVoid,
   Name,
   ok,
   type SqliteRow,
@@ -24,7 +25,6 @@ import {
   type SharedWorkerOutput,
   startDbWorker,
 } from "@evolu/common/local-first"
-import { createRun } from "@evolu/nodejs"
 import BetterSQLite, { type Statement } from "better-sqlite3"
 import { cliEnv } from "@/core/cli/cli-env.ts"
 import { createTestAppEvolu } from "@/core/evolu/client.ts"
@@ -54,7 +54,7 @@ const createSqliteDep = (
     const cache = disposer.use(
       createPreparedStatementsCache<Statement>(
         (sql) => db.prepare(sql),
-        lazyVoid
+        constVoid
       )
     )
     const disposables = disposer.move()
@@ -101,30 +101,42 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
   await using disposer = new AsyncDisposableStack()
 
   const consoleStoreOutput = createConsoleStoreOutput()
+  const console = createConsole({ level: "log" })
+  // The default reportDefect rethrows after a microtask to crash loudly.
+  // Evolu's SharedWorker/tenant teardown can race benignly across this
+  // single-process, multi-root simulation when everything shuts down at
+  // once, so log instead of letting that crash the CLI or the test run
+  // (matching @evolu/nodejs's runMain convention).
+  const reportDefect = (reported: unknown) => {
+    console.error(reported)
+  }
 
   const run = disposer.use(
     createRun({
-      console: createConsole({ level: "log" }),
+      console,
       consoleStoreOutputEntry: consoleStoreOutput.entry,
       createBroadcastChannel: testCreateBroadcastChannel,
       createMessageChannel: testCreateMessageChannel,
       createMessagePort: createMessagePort,
       createWebSocket: testCreateWebSocket({ throwOnCreate: true }),
       lockManager: testCreateLockManager(),
+      reportDefect,
     })
   )
 
-  const driver = await run.orThrow(
+  const driver = await run.ok(
     createSqliteDep(mode).createSqliteDriver(Name.orThrow("test"))
   )
 
   const workerRun = disposer.use(
     createRun({
+      console,
       consoleStoreOutputEntry: consoleStoreOutput.entry,
       createBroadcastChannel: testCreateBroadcastChannel,
       createMessagePort,
       lockManager: testCreateLockManager(),
       createSqliteDriver: () => () => ok(driver),
+      reportDefect,
     })
   )
 
@@ -147,13 +159,13 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
   })
 
   const sqlite = disposer.use(
-    await workerRun.orThrow(createSqlite(Name.orThrow("test")))
+    await workerRun.ok(createSqlite(Name.orThrow("test")))
   )
   const runWithEvoluDeps = disposer.use(
     run.create({
       ...run.deps,
       createDbWorker,
-      reloadApp: lazyVoid,
+      reloadApp: constVoid,
       sharedWorker,
     })
   )
@@ -173,7 +185,7 @@ export const createCliEvolu = async (mode: "memory" | string) => {
 
   // The CLI database is owned by the shared Evolu test owner until the CLI
   // gets a real owner identity.
-  const evolu = await run.orThrow(createTestAppEvolu())
+  const evolu = disposer.use(await run.ok(createTestAppEvolu()))
 
   const disposables = disposer.move()
 

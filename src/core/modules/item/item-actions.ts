@@ -40,7 +40,7 @@ export const createOrReuseCatalogItemSnapshot =
   ): Task<ItemRow, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) =>
     ok(
-      await run.orThrow(
+      await run.ok(
         createOrReuseItemSnapshot(createCatalogItemSnapshot(catalogItem))
       )
     )

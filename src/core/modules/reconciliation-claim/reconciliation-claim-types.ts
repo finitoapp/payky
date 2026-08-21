@@ -5,4 +5,4 @@ export const ReconciliationClaimIdRaw = id("ReconciliationClaim")
 export const ReconciliationClaimId = standardSchemaToZod(
   ReconciliationClaimIdRaw
 )
-export type ReconciliationClaimId = typeof ReconciliationClaimIdRaw.Type
+export type ReconciliationClaimId = typeof ReconciliationClaimIdRaw.Output

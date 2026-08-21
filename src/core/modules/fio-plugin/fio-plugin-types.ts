@@ -3,8 +3,8 @@ import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const FioPluginIdRaw = id("FioPlugin")
 export const FioPluginId = standardSchemaToZod(FioPluginIdRaw)
-export type FioPluginId = typeof FioPluginIdRaw.Type
+export type FioPluginId = typeof FioPluginIdRaw.Output
 
 export const FioPluginTokenIdRaw = id("FioPluginToken")
 export const FioPluginTokenId = standardSchemaToZod(FioPluginTokenIdRaw)
-export type FioPluginTokenId = typeof FioPluginTokenIdRaw.Type
+export type FioPluginTokenId = typeof FioPluginTokenIdRaw.Output

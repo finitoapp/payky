@@ -287,10 +287,10 @@ const createSparkAccountSyncSession = ({
         }
 
         const run = createRun(context)
-        const accountTransactionId = await run.orThrow(
+        const accountTransactionId = await run.ok(
           createAccountTransaction(input.value)
         )
-        const paymentId = await run.orThrow(
+        const paymentId = await run.ok(
           reconcileAccountTransaction(accountTransactionId)
         )
         context.console.info("Created Spark account transaction.", {

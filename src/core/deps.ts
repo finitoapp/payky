@@ -43,8 +43,8 @@ export const appFetchAsText =
           status: response.status,
         }
       },
-      (error): FetchError | AbortError => {
-        if (AbortError.is(error)) return error
+      (error): FetchError => {
+        if (AbortError.is(error)) throw error
         return createFetchError({ error })
       }
     )

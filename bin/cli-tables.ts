@@ -79,7 +79,7 @@ export const registerTablesCommand =
               sortOrder: options.sortOrder,
             }
 
-            const id = await run.orThrow(createTable(data))
+            const id = await run.ok(createTable(data))
             run.deps.console.log(
               `Inserted table ${id}: ${JSON.stringify({ id, ...data })}`
             )
@@ -104,7 +104,7 @@ export const registerTablesCommand =
             ),
           },
           async action(_, options) {
-            await run.orThrow(updateTable(removeUndefinedValues(options)))
+            await run.ok(updateTable(removeUndefinedValues(options)))
             run.deps.console.log(`Updated table ${options.id}`)
           },
         })
@@ -119,7 +119,7 @@ export const registerTablesCommand =
             id: TableId.describe("Table id"),
           },
           async action(_, options) {
-            await run.orThrow(deleteTable(options.id))
+            await run.ok(deleteTable(options.id))
             run.deps.console.log(`Deleted table ${options.id}`)
           },
         })

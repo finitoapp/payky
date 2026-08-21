@@ -3,4 +3,4 @@ import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const ItemIdRaw = id("Item")
 export const ItemId = standardSchemaToZod(ItemIdRaw)
-export type ItemId = typeof ItemIdRaw.Type
+export type ItemId = typeof ItemIdRaw.Output

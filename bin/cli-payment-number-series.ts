@@ -48,7 +48,7 @@ export const registerPaymentNumberSeriesCommand =
           args: {},
           opts: {},
           async action() {
-            const series = await run.orThrow(getPaymentNumberSeries())
+            const series = await run.ok(getPaymentNumberSeries())
             run.deps.console.table([series])
           },
         })
@@ -79,7 +79,7 @@ export const registerPaymentNumberSeriesCommand =
             ),
           },
           async action(_, options) {
-            const id = await run.orThrow(
+            const id = await run.ok(
               updatePaymentNumberSeries({
                 serialNumberDigits: options.serialNumberDigits,
                 yearFormat: options.yearFormat,

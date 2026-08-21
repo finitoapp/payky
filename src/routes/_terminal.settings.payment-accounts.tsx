@@ -347,7 +347,7 @@ function SparkAccountForm() {
         void submit(async () => {
           await using run = appRun()
 
-          const { secret } = await run.orThrow(saveSparkAccount({ enabled }))
+          const { secret } = await run.ok(saveSparkAccount({ enabled }))
 
           if (enabled && secret !== undefined) {
             try {

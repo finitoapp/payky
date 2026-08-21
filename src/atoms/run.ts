@@ -6,7 +6,6 @@ export const runAtom = atom((get) => {
   const console = get(consoleAtom)
 
   return createRun({
-    console,
-    ...createEvoluDeps(),
+    ...createEvoluDeps({ console }),
   })
 })

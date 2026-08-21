@@ -130,9 +130,10 @@ describe("runBackgroundJobs", () => {
     ]
 
     await using run = testCreateRun(context)
-    await expect(run.orThrow(runBackgroundJobs(jobs))).rejects.toThrow(
-      startError
-    )
+    await expect(run.orThrow(runBackgroundJobs(jobs))).rejects.toMatchObject({
+      type: "AbortError",
+      reason: { type: "PanicAbortReason", defect: startError },
+    })
     expect(disposedJobs).toEqual(["first"])
     expect(errors).toEqual([])
   })

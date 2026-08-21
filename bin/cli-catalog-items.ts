@@ -71,7 +71,7 @@ export const registerCatalogItemsCommand =
               sortOrder: options.sortOrder,
             }
 
-            const id = await run.orThrow(createCatalogItem(data))
+            const id = await run.ok(createCatalogItem(data))
             run.deps.console.log(
               `Inserted catalogItem ${id}: ${JSON.stringify({
                 id: id,
@@ -121,7 +121,7 @@ export const registerCatalogItemsCommand =
           },
           async action(_, options) {
             run.deps.console.log("Updating catalogItem", options.id)
-            await run.orThrow(updateCatalogItem(removeUndefinedValues(options)))
+            await run.ok(updateCatalogItem(removeUndefinedValues(options)))
           },
         })
       )
@@ -136,7 +136,7 @@ export const registerCatalogItemsCommand =
           },
           async action(_, options) {
             run.deps.console.log("Deleting catalogItem", options.id)
-            await run.orThrow(
+            await run.ok(
               updateCatalogItem({
                 id: options.id,
                 isDeleted: sqliteTrue,

@@ -37,7 +37,7 @@ function FiatCurrencyPage() {
   const saveFiatCurrency = async (fiatCurrency: FiatCurrency) => {
     try {
       await using run = appRun()
-      await run.orThrow(updateSettings({ fiatCurrency }))
+      await run.ok(updateSettings({ fiatCurrency }))
     } catch {
       toast.error(t("settings.saveFailed"))
     }

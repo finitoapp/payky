@@ -60,12 +60,14 @@ function DonateInvoicePage() {
     queryFn: async () => {
       await using run = appRun()
 
-      try {
-        return await run.orThrow(fetchLnurlVerify({ verifyUrl: verify }))
-      } catch (error) {
-        console.error("Failed to verify donation invoice", error)
-        throw error
+      const result = await run(fetchLnurlVerify({ verifyUrl: verify }))
+
+      if (!result.ok) {
+        console.error("Failed to verify donation invoice", result.error)
+        throw result.error
       }
+
+      return result.value
     },
     enabled: canVerify,
     retry: false,

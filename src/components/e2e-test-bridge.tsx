@@ -101,7 +101,7 @@ export function E2eTestBridge() {
         )
       }
 
-      const accountTransactionId = await run.orThrow(
+      const accountTransactionId = await run.ok(
         createAccountTransaction({
           accountId: sparkDetails.accountId,
           amount: sparkDetails.amountSats,
@@ -138,7 +138,7 @@ export function E2eTestBridge() {
         })
       )
 
-      await run.orThrow(reconcileAccountTransaction(accountTransactionId))
+      await run.ok(reconcileAccountTransaction(accountTransactionId))
     }
 
     window.__e2eMarkIbanPaid = async (paymentIdValue) => {
@@ -154,7 +154,7 @@ export function E2eTestBridge() {
         )
       }
 
-      const accountTransactionId = await run.orThrow(
+      const accountTransactionId = await run.ok(
         createAccountTransaction({
           accountId: ibanDetails.accountId,
           amount: ibanDetails.amount,
@@ -174,7 +174,7 @@ export function E2eTestBridge() {
         })
       )
 
-      await run.orThrow(reconcileAccountTransaction(accountTransactionId))
+      await run.ok(reconcileAccountTransaction(accountTransactionId))
     }
 
     return () => {

@@ -71,7 +71,7 @@ export const appendBillLines =
           async (lineBillId) =>
             [
               lineBillId,
-              await run.orThrow(loadCalculatedBillLineSummaries(lineBillId)),
+              await run.ok(loadCalculatedBillLineSummaries(lineBillId)),
             ] as const
         )
       )
@@ -85,4 +85,4 @@ export const appendBillLine =
     line: Omit<BillLineRow, "id">
   ): Task<ReadonlyArray<BillLineSummary>, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) =>
-    ok(await run.orThrow(appendBillLines([line])))
+    ok(await run.ok(appendBillLines([line])))

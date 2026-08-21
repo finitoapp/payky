@@ -195,9 +195,7 @@ const addBillLine =
       )
     })
 
-    const projected = await run.orThrow(
-      loadCalculatedBillLineSummaries(line.billId)
-    )
+    const projected = await run.ok(loadCalculatedBillLineSummaries(line.billId))
     const lineSummary = projected.find((row) => row.itemId === snapshot.id)
 
     return lineSummary === undefined
@@ -318,7 +316,7 @@ export const appendRemoveBillLine =
     }
   ): Task<BillLineSummary | null, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const projected = await run.orThrow(
+    const projected = await run.ok(
       appendBillLine({
         billId: input.billId,
         deviceId: input.deviceId ?? null,
@@ -341,7 +339,7 @@ export const listOpenBills =
         bills.map(
           async (bill): Promise<BillWithItems> => ({
             bill,
-            items: await run.orThrow(loadCalculatedBillLineSummaries(bill.id)),
+            items: await run.ok(loadCalculatedBillLineSummaries(bill.id)),
           })
         )
       )
@@ -381,9 +379,7 @@ export const splitBill =
         totalAmount: item.totalAmount,
       })
     }
-    const targetItems = await run.orThrow(
-      appendBillLines(lines, input.targetBillId)
-    )
+    const targetItems = await run.ok(appendBillLines(lines, input.targetBillId))
 
     return ok({
       bill: targetBillResult.value,

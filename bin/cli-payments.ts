@@ -1,5 +1,4 @@
-import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
-import { createRun } from "@evolu/nodejs"
+import { createRun, evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
@@ -422,7 +421,7 @@ export const registerPaymentsCommand =
               options.variableSymbol !== undefined ||
               options.specificSymbol !== undefined
 
-            await run.orThrow(
+            await run.ok(
               updatePayment({
                 id: options.id,
                 deviceId: options.deviceId,
@@ -492,7 +491,7 @@ export const registerPaymentsCommand =
             id: PaymentId.describe("Payment id"),
           },
           async action(_, options) {
-            await run.orThrow(deletePayment(options.id))
+            await run.ok(deletePayment(options.id))
             run.deps.console.log(`Deleted payment ${options.id}`)
           },
         })

@@ -7,7 +7,7 @@ import { createAppEvolu } from "@/core/evolu/client.ts"
 export const evoluAtom = atom(async (get, { signal }) => {
   const account = await get(accountAtom)
   const run = get(runAtom)
-  const evolu = await run.orThrow(
+  const evolu = await run.ok(
     createAppEvolu({
       masterKey: account.masterKey,
       transports: [],

@@ -179,7 +179,7 @@ export const registerAccountsCommand =
                 return
               }
 
-              const id = await run.orThrow(
+              const id = await run.ok(
                 createAccount({
                   ...root,
                   iban: {
@@ -201,7 +201,7 @@ export const registerAccountsCommand =
                 return
               }
 
-              const id = await run.orThrow(
+              const id = await run.ok(
                 createAccount({
                   ...root,
                   spark: {
@@ -221,7 +221,7 @@ export const registerAccountsCommand =
               return
             }
 
-            const id = await run.orThrow(
+            const id = await run.ok(
               createAccount({
                 ...root,
                 cashRegister: {
@@ -262,7 +262,7 @@ export const registerAccountsCommand =
               network
             )
 
-            const id = await run.orThrow(
+            const id = await run.ok(
               createAccount({
                 deviceId: options.deviceId ?? null,
                 name: options.name,
@@ -308,7 +308,7 @@ export const registerAccountsCommand =
           async action(_, options) {
             const account = await run.orThrow(loadAccount(options.id))
             if (account.kind === "iban") {
-              await run.orThrow(
+              await run.ok(
                 updateAccount({
                   id: options.id,
                   deviceId: options.deviceId,
@@ -325,7 +325,7 @@ export const registerAccountsCommand =
             }
 
             if (account.kind === "spark") {
-              await run.orThrow(
+              await run.ok(
                 updateAccount({
                   id: options.id,
                   deviceId: options.deviceId,
@@ -339,7 +339,7 @@ export const registerAccountsCommand =
               return
             }
 
-            await run.orThrow(
+            await run.ok(
               updateAccount({
                 id: options.id,
                 deviceId: options.deviceId,
@@ -363,7 +363,7 @@ export const registerAccountsCommand =
             id: AccountId.describe("Account id"),
           },
           async action(_, options) {
-            await run.orThrow(deleteAccount(options.id))
+            await run.ok(deleteAccount(options.id))
             run.deps.console.log(`Deleted account ${options.id}`)
           },
         })

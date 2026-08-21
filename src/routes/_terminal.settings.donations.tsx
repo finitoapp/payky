@@ -117,12 +117,14 @@ function DonationsPage() {
     queryFn: async () => {
       await using run = appRun()
 
-      try {
-        return await run.orThrow(fetchYadioBtcExchangeRate(currency))
-      } catch (error) {
-        console.error("Failed to load donation exchange rate", error)
-        throw error
+      const result = await run(fetchYadioBtcExchangeRate(currency))
+
+      if (!result.ok) {
+        console.error("Failed to load donation exchange rate", result.error)
+        throw result.error
       }
+
+      return result.value
     },
   })
   const metadataQuery = useQuery({
@@ -130,14 +132,16 @@ function DonationsPage() {
     queryFn: async () => {
       await using run = appRun()
 
-      try {
-        return await run.orThrow(
-          fetchLnurlPayMetadata({ address: donationAddress })
-        )
-      } catch (error) {
-        console.error("Failed to load donation LNURL metadata", error)
-        throw error
+      const result = await run(
+        fetchLnurlPayMetadata({ address: donationAddress })
+      )
+
+      if (!result.ok) {
+        console.error("Failed to load donation LNURL metadata", result.error)
+        throw result.error
       }
+
+      return result.value
     },
   })
   const donationLoadState: DonationLoadState = exchangeRateQuery.isError
@@ -162,23 +166,24 @@ function DonationsPage() {
       readonly amountSats: number
       readonly metadata: LnurlPayMetadata
     }) => {
-      try {
-        await using run = appRun()
-        const invoice = await run.orThrow(
-          fetchLnurlPayInvoice({ amountSats, metadata: invoiceMetadata })
-        )
+      await using run = appRun()
 
-        await navigate({
-          to: "/settings/donations-invoice",
-          search: {
-            invoice: invoice.pr,
-            verify: invoice.verify ?? "",
-          },
-        })
-      } catch (error) {
-        console.error("Failed to create donation invoice", error)
-        throw error
+      const result = await run(
+        fetchLnurlPayInvoice({ amountSats, metadata: invoiceMetadata })
+      )
+
+      if (!result.ok) {
+        console.error("Failed to create donation invoice", result.error)
+        throw result.error
       }
+
+      await navigate({
+        to: "/settings/donations-invoice",
+        search: {
+          invoice: result.value.pr,
+          verify: result.value.verify ?? "",
+        },
+      })
     },
   })
   const isCreatingInvoice = createInvoiceMutation.isPending

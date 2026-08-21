@@ -4,6 +4,7 @@ import {
   createRun,
   type Task,
 } from "@evolu/common"
+import { installPolyfills } from "@evolu/common/polyfills"
 import { type Command, createCommand } from "commander"
 import {
   createDateDep,
@@ -41,6 +42,8 @@ const commands: ((
 ]
 
 const main = async () => {
+  installPolyfills()
+
   await using evoluCli = await createEvoluCli()
   const { evolu } = evoluCli
   const evoluOwnerId = evolu.appOwner.id

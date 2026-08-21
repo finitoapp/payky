@@ -98,7 +98,7 @@ export const loadNextPaymentNumber =
     readonly date: DateString
   }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const series = await run.orThrow(getPaymentNumberSeries())
+    const series = await run.ok(getPaymentNumberSeries())
     const [previous] = await run.deps.evolu.loadQuery(paymentLastNumberQuery)
 
     return ok(
@@ -138,7 +138,7 @@ export const createNextPaymentNumber =
     readonly date: DateString
   }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const paymentNumber = await run.orThrow(loadNextPaymentNumber({ id, date }))
+    const paymentNumber = await run.ok(loadNextPaymentNumber({ id, date }))
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>

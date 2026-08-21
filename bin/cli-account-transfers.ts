@@ -300,7 +300,7 @@ export const registerAccountTransfersCommand =
                 return
               }
 
-              const id = await run.orThrow(
+              const id = await run.ok(
                 createAccountTransaction({
                   ...root,
                   iban: {
@@ -328,7 +328,7 @@ export const registerAccountTransfersCommand =
                 return
               }
 
-              const id = await run.orThrow(
+              const id = await run.ok(
                 createAccountTransaction({
                   ...root,
                   spark: {
@@ -354,7 +354,7 @@ export const registerAccountTransfersCommand =
               return
             }
 
-            const id = await run.orThrow(createAccountTransaction(root))
+            const id = await run.ok(createAccountTransaction(root))
             run.deps.console.log(`Inserted accountTransfer ${id}`)
           },
         })
@@ -431,7 +431,7 @@ export const registerAccountTransfersCommand =
             }
 
             if (accountTransfer.kind === "iban") {
-              await run.orThrow(
+              await run.ok(
                 updateAccountTransaction({
                   ...root,
                   iban: {
@@ -463,7 +463,7 @@ export const registerAccountTransfersCommand =
                 return
               }
 
-              await run.orThrow(
+              await run.ok(
                 updateAccountTransaction({
                   ...root,
                   spark: {
@@ -489,7 +489,7 @@ export const registerAccountTransfersCommand =
               return
             }
 
-            await run.orThrow(updateAccountTransaction(root))
+            await run.ok(updateAccountTransaction(root))
             run.deps.console.log(`Updated accountTransfer ${options.id}`)
           },
         })
@@ -504,7 +504,7 @@ export const registerAccountTransfersCommand =
             id: AccountTransactionId.describe("Account transfer id"),
           },
           async action(_, options) {
-            await run.orThrow(deleteAccountTransaction(options.id))
+            await run.ok(deleteAccountTransaction(options.id))
             run.deps.console.log(`Deleted accountTransfer ${options.id}`)
           },
         })

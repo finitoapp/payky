@@ -271,7 +271,7 @@ class FioPluginSync {
         const bankReference = NonEmptyString255Schema.decode(transaction.id)
 
         const run = createRun(this.context)
-        const accountTransactionId = await run.orThrow(
+        const accountTransactionId = await run.ok(
           createAccountTransaction({
             accountId: this.plugin.accountId,
             amount: IntegerSchema.decode(transaction.amountMinor),
@@ -299,7 +299,7 @@ class FioPluginSync {
           bankReference,
           pluginId: this.plugin.id,
         })
-        const paymentId = await run.orThrow(
+        const paymentId = await run.ok(
           reconcileAccountTransaction(accountTransactionId)
         )
         this.context.console.info("Created FIO account transaction.", {

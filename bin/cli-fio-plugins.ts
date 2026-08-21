@@ -1,4 +1,5 @@
 import {
+  createRun,
   evoluJsonArrayFrom,
   ok,
   type SqliteBoolean,
@@ -6,7 +7,6 @@ import {
   sqliteTrue,
   type Task,
 } from "@evolu/common"
-import { createRun } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
@@ -155,7 +155,7 @@ export const registerFioPluginsCommand =
             token: NonEmptyString255Schema.describe("t;FIO API token"),
           },
           async action(_, options) {
-            const fioPluginId = await run.orThrow(
+            const fioPluginId = await run.ok(
               createFioPlugin({
                 accountId: options.accountId,
                 numberOfSecondsBetweenChecks:
@@ -191,7 +191,7 @@ export const registerFioPluginsCommand =
           async action(_, options) {
             await run.orThrow(loadFioPlugin(options.id))
 
-            const fioPluginId = await run.orThrow(
+            const fioPluginId = await run.ok(
               updateFioPlugin({
                 id: options.id,
                 accountId: options.accountId,
@@ -255,7 +255,7 @@ export const registerFioPluginsCommand =
             id: FioPluginId.describe("FIO plugin id"),
           },
           async action(_, options) {
-            const fioPluginId = await run.orThrow(deleteFioPlugin(options.id))
+            const fioPluginId = await run.ok(deleteFioPlugin(options.id))
 
             run.deps.console.log(`Deleted FIO plugin ${fioPluginId}`)
           },

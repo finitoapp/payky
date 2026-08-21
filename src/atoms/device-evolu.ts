@@ -17,7 +17,7 @@ const deviceSettingsQuery = createDeviceQuery((db) =>
 
 export const deviceEvoluAtom = atom(async (get) => {
   const run = get(runAtom)
-  const deviceEvolu = await run.orThrow(createDeviceEvolu)
+  const deviceEvolu = await run.ok(createDeviceEvolu)
   const deviceSettings = await deviceEvolu.loadQuery(deviceSettingsQuery)
 
   if (deviceSettings.length === 0) {

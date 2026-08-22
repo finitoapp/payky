@@ -20,7 +20,6 @@
         "@evolu/react-web": "3.0.1",
         "@evolu/sqlite-wasm": "2.2.4",
         "@evolu/web": "3.0.2",
-        "@faker-js/faker": "10.5.0",
         "@fontsource-variable/geist": "5.3.0",
         "@noble/hashes": "2.0.1",
         "@scure/bip32": "1.7.0",
@@ -346,8 +345,6 @@
     "@evolu/sqlite-wasm": ["@evolu/sqlite-wasm@2.2.4", "", { "bin": { "sqlite-wasm": "bin/index.js" } }, "sha512-/JOYGFN93QspD2C8HVxVgBUlFWqJ1IpaVuIhEB53u4+ZvE+D3LjpNHDYiwZgf0n7VaH2U85OY5eV3wUrWc3scg=="],
 
     "@evolu/web": ["@evolu/web@3.0.2", "", { "dependencies": { "@evolu/sqlite-wasm": "2.2.4", "idb-keyval": "^6.2.2" }, "peerDependencies": { "@evolu/common": "^8.0.0" } }, "sha512-57zHr92jU0tK8q9awiTJeeIXeymgjE7sLitvQoJlaol87uJjJ/VMJQ9g2QQgB2avm2fs1PSY/IB1fHCQkJ5okg=="],
-
-    "@faker-js/faker": ["@faker-js/faker@10.5.0", "", {}, "sha512-bsxD8WLS5lIj7aaoCx1YJkktqYj5vlBUE6HWzu2Q51ksrGJ0H737ECCKlFU7Yf8Br45z9t99frBp/J7kzbMPAg=="],
 
     "@floating-ui/core": ["@floating-ui/core@1.8.0", "", { "dependencies": { "@floating-ui/utils": "^0.2.12" } }, "sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ=="],
 

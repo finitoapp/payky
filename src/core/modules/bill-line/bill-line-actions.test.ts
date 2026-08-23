@@ -1,6 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
 import { createOrReuseItemSnapshot } from "@/core/modules/item/item-actions.ts"
@@ -47,26 +48,32 @@ describe("bill line actions", () => {
   test("returns no summaries when appending no lines", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    await expect(run.orThrow(appendBillLines([]))).resolves.toEqual([])
+    await expect(run.ok(appendBillLines([]))).resolves.toEqual([])
     await expect(
-      run.orThrow(appendBillLines([], "bill-1" as BillId))
+      run.ok(appendBillLines([], "bill-1" as BillId))
     ).resolves.toEqual([])
   }, 15_000)
 
   test("persists a line and returns the bill's calculated summaries", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
     const item = coffeeSnapshot()
-    await run.orThrow(createOrReuseItemSnapshot(item))
+    await run.ok(createOrReuseItemSnapshot(item))
 
-    const summaries = await run.orThrow(
+    const summaries = await run.ok(
       appendBillLine(
         coffeeLine(billId, item, { quantity: 2, totalAmount: 11_800 })
       )
@@ -83,7 +90,7 @@ describe("bill line actions", () => {
       },
     ])
     await expect(
-      run.orThrow(loadCalculatedBillLineSummaries(billId))
+      run.ok(loadCalculatedBillLineSummaries(billId))
     ).resolves.toMatchObject([
       {
         billId,
@@ -97,19 +104,22 @@ describe("bill line actions", () => {
   test("projects add and remove lines to a net summary", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
     const item = coffeeSnapshot()
-    await run.orThrow(createOrReuseItemSnapshot(item))
+    await run.ok(createOrReuseItemSnapshot(item))
 
-    await run.orThrow(
+    await run.ok(
       appendBillLine(
         coffeeLine(billId, item, { quantity: 2, totalAmount: 11_800 })
       )
     )
-    const summaries = await run.orThrow(
+    const summaries = await run.ok(
       appendBillLine(
         coffeeLine(billId, item, {
           kind: "remove",
@@ -132,15 +142,18 @@ describe("bill line actions", () => {
   test("returns the requested bill's summaries when lines span bills", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     const sourceBillId = "bill-source" as BillId
     const targetBillId = "bill-target" as BillId
     const item = coffeeSnapshot()
-    await run.orThrow(createOrReuseItemSnapshot(item))
+    await run.ok(createOrReuseItemSnapshot(item))
 
-    const summaries = await run.orThrow(
+    const summaries = await run.ok(
       appendBillLines(
         [
           coffeeLine(sourceBillId, item, { kind: "remove" }),
@@ -159,7 +172,7 @@ describe("bill line actions", () => {
       },
     ])
     await expect(
-      run.orThrow(loadCalculatedBillLineSummaries(sourceBillId))
+      run.ok(loadCalculatedBillLineSummaries(sourceBillId))
     ).resolves.toEqual([])
   }, 15_000)
 })

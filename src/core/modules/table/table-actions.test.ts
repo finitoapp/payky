@@ -1,8 +1,13 @@
 import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  NonEmptyString255,
+  NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createTable,
@@ -24,14 +29,17 @@ describe("table actions", () => {
   test("creates, updates, and soft deletes a table through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createTable({
         deviceId: null,
-        name: "Main room",
-        sortOrder: 10,
+        name: NonEmptyString255("Main room"),
+        sortOrder: NonNegativeInteger(10),
       })
     )
 
@@ -48,11 +56,11 @@ describe("table actions", () => {
       ])
 
     expect(
-      await run.orThrow(
+      await run.ok(
         updateTable({
           id,
-          name: "Patio",
-          sortOrder: 20,
+          name: NonEmptyString255("Patio"),
+          sortOrder: NonNegativeInteger(20),
         })
       )
     ).toBe(id)
@@ -69,7 +77,7 @@ describe("table actions", () => {
       ])
 
     expect(
-      await run.orThrow(
+      await run.ok(
         updateTable({
           id,
           name: undefined,
@@ -89,7 +97,7 @@ describe("table actions", () => {
         },
       ])
 
-    expect(await run.orThrow(deleteTable(id))).toBe(id)
+    expect(await run.ok(deleteTable(id))).toBe(id)
 
     await expect
       .poll(() => evolu.loadQuery(tableRecordByIdQuery(id)))
@@ -106,34 +114,37 @@ describe("table actions", () => {
   test("lists only active complete tables ordered by sort order", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    const secondId = await run.orThrow(
+    const secondId = await run.ok(
       createTable({
         deviceId: null,
-        name: "Second",
-        sortOrder: 20,
+        name: NonEmptyString255("Second"),
+        sortOrder: NonNegativeInteger(20),
       })
     )
-    const firstId = await run.orThrow(
+    const firstId = await run.ok(
       createTable({
         deviceId: null,
-        name: "First",
-        sortOrder: 10,
+        name: NonEmptyString255("First"),
+        sortOrder: NonNegativeInteger(10),
       })
     )
-    const deletedId = await run.orThrow(
+    const deletedId = await run.ok(
       createTable({
         deviceId: null,
-        name: "Deleted",
-        sortOrder: 5,
+        name: NonEmptyString255("Deleted"),
+        sortOrder: NonNegativeInteger(5),
       })
     )
-    await run.orThrow(deleteTable(deletedId))
+    await run.ok(deleteTable(deletedId))
 
     await expect
-      .poll(() => run.orThrow(listTables()))
+      .poll(() => run.ok(listTables()))
       .toMatchObject([
         {
           id: firstId,

@@ -26,7 +26,7 @@ describe("tip settings actions", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun(createDeps(evolu))
 
-    await run.orThrow(
+    await run.ok(
       completeOnboarding({
         fiatCurrency: "CZK",
         defaultPaymentMethod,
@@ -40,7 +40,7 @@ describe("tip settings actions", () => {
           tipsEnabled: 1,
         }),
       ])
-    await run.orThrow(
+    await run.ok(
       updateTipSettings({
         enabled: false,
         percentages: [10, 20],

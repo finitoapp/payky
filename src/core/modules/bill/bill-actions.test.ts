@@ -1,12 +1,19 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import type { DateDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { createCatalogItem } from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  NonEmptyString255,
+  NonNegativeInteger,
+  PositiveInteger,
+  PositiveNumber,
+} from "@/core/modules/shared/schema.ts"
+import type { TableId } from "@/core/modules/table/table-types.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   addCatalogItemToBill,
@@ -44,18 +51,18 @@ const billLinesByBillIdQuery = (billId: BillId) =>
   )
 
 const createOpenBill = async (
-  deps: EvoluDep,
+  deps: EvoluDep & EvoluOwnerIdDep,
   input?: {
     readonly displayNumber?: number
     readonly label?: string | null
   }
 ): Promise<BillId> => {
   await using run = testCreateRun(deps)
-  const id = await run.orThrow(
+  const id = await run.ok(
     createBill({
       deviceId: null,
-      displayNumber: input?.displayNumber ?? 1,
-      label: input?.label ?? null,
+      displayNumber: PositiveInteger(input?.displayNumber ?? 1),
+      label: input?.label != null ? NonEmptyString255(input.label) : null,
       tableId: null,
       currency: "CZK",
     })
@@ -67,14 +74,18 @@ describe("bill actions", () => {
   test("creates, loads, assigns, unassigns, and closes a bill through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createBill({
         deviceId: null,
-        displayNumber: 42,
-        label: "Dinner",
+        displayNumber: PositiveInteger(42),
+        label: NonEmptyString255("Dinner"),
         tableId: null,
         currency: "CZK",
       })
@@ -104,7 +115,7 @@ describe("bill actions", () => {
       },
     })
 
-    await run.orThrow(assignBillToTable({ id, tableId: "table-1" }))
+    await run.ok(assignBillToTable({ id, tableId: "table-1" as TableId }))
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(id)))
       .toMatchObject([
@@ -114,7 +125,7 @@ describe("bill actions", () => {
         },
       ])
 
-    await run.orThrow(removeTableFromBill(id))
+    await run.ok(removeTableFromBill(id))
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(id)))
       .toMatchObject([
@@ -124,7 +135,7 @@ describe("bill actions", () => {
         },
       ])
 
-    await run.orThrow(
+    await run.ok(
       partiallyPayBill({
         id,
         paymentId: "payment-1" as PaymentId,
@@ -139,7 +150,7 @@ describe("bill actions", () => {
         },
       ])
 
-    await run.orThrow(closeBillAsPaid(id))
+    await run.ok(closeBillAsPaid(id))
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(id)))
       .toMatchObject([
@@ -154,7 +165,11 @@ describe("bill actions", () => {
   test("lists only open and partially paid bills with calculated items", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
     const openId = await createOpenBill(deps, {
@@ -174,21 +189,21 @@ describe("bill actions", () => {
       addManualAmountToBill({
         billId: openId,
         deviceId: null,
-        name: "Service",
+        name: NonEmptyString255("Service"),
         currency: "CZK",
-        totalAmount: 1_000,
+        totalAmount: NonNegativeInteger(1_000),
       })
     )
-    await run.orThrow(
+    await run.ok(
       partiallyPayBill({
         id: partiallyPaidId,
         paymentId: "payment-1" as PaymentId,
       })
     )
-    await run.orThrow(cancelBill(canceledId))
+    await run.ok(cancelBill(canceledId))
 
     await expect
-      .poll(() => run.orThrow(listOpenBills()))
+      .poll(() => run.ok(listOpenBills()))
       .toMatchObject([
         {
           bill: {
@@ -216,17 +231,20 @@ describe("bill actions", () => {
   test("adds catalog, manual amount, and tip lines to a bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
-    const catalogItemId = await run.orThrow(
+    const catalogItemId = await run.ok(
       createCatalogItem({
         deviceId: null,
-        name: "Coffee",
-        description: "Double espresso",
+        name: NonEmptyString255("Coffee"),
+        description: NonEmptyString255("Double espresso"),
         currency: "CZK",
-        unitAmount: 5_900,
-        sortOrder: 10,
+        unitAmount: NonNegativeInteger(5_900),
+        sortOrder: NonNegativeInteger(10),
       })
     )
 
@@ -235,25 +253,25 @@ describe("bill actions", () => {
         billId,
         deviceId: null,
         catalogItemId,
-        quantity: 2,
+        quantity: PositiveNumber(2),
       })
     )
     const manualLineSummary = await run.orThrow(
       addManualAmountToBill({
         billId,
         deviceId: null,
-        name: "Custom discount correction",
+        name: NonEmptyString255("Custom discount correction"),
         currency: "CZK",
-        totalAmount: 1_500,
+        totalAmount: NonNegativeInteger(1_500),
       })
     )
     const tipLineSummary = await run.orThrow(
       addTipToBill({
         billId,
         deviceId: null,
-        name: "Tip",
+        name: NonEmptyString255("Tip"),
         currency: "CZK",
-        totalAmount: 2_000,
+        totalAmount: NonNegativeInteger(2_000),
       })
     )
 
@@ -284,7 +302,7 @@ describe("bill actions", () => {
     })
 
     await expect
-      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(billId)))
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(billId)))
       .toMatchObject([
         {
           name: "Coffee",
@@ -310,7 +328,10 @@ describe("bill actions", () => {
   test("returns an error when adding a missing catalog item", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
 
@@ -320,7 +341,7 @@ describe("bill actions", () => {
           billId,
           deviceId: null,
           catalogItemId: "catalog-item-1" as CatalogItemId,
-          quantity: 1,
+          quantity: PositiveNumber(1),
         })
       )
     ).resolves.toMatchObject({
@@ -334,26 +355,29 @@ describe("bill actions", () => {
   test("appends a remove line and removes depleted bill line summaries", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
     const lineSummary = await run.orThrow(
       addManualAmountToBill({
         billId,
         deviceId: null,
-        name: "Manual charge",
+        name: NonEmptyString255("Manual charge"),
         currency: "CZK",
-        totalAmount: 5_000,
+        totalAmount: NonNegativeInteger(5_000),
       })
     )
 
-    const afterPartialRemove = await run.orThrow(
+    const afterPartialRemove = await run.ok(
       appendRemoveBillLine({
         billId,
         deviceId: null,
         lineSummary,
-        quantity: 0.25,
-        totalAmount: 1_250,
+        quantity: PositiveNumber(0.25),
+        totalAmount: NonNegativeInteger(1_250),
       })
     )
 
@@ -365,19 +389,19 @@ describe("bill actions", () => {
     expect(afterPartialRemove).not.toBeNull()
     if (afterPartialRemove === null) return
 
-    const afterFullRemove = await run.orThrow(
+    const afterFullRemove = await run.ok(
       appendRemoveBillLine({
         billId,
         deviceId: null,
         lineSummary: afterPartialRemove,
-        quantity: 0.75,
-        totalAmount: 3_750,
+        quantity: PositiveNumber(0.75),
+        totalAmount: NonNegativeInteger(3_750),
       })
     )
 
     expect(afterFullRemove).toBeNull()
     await expect
-      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(billId)))
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(billId)))
       .toMatchObject([])
     await expect
       .poll(() => evolu.loadQuery(billLinesByBillIdQuery(billId)))
@@ -387,7 +411,10 @@ describe("bill actions", () => {
   test("splits selected items from a source bill into an existing target bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, {
       displayNumber: 1,
@@ -401,9 +428,9 @@ describe("bill actions", () => {
       addManualAmountToBill({
         billId: sourceBillId,
         deviceId: null,
-        name: "Shared dish",
+        name: NonEmptyString255("Shared dish"),
         currency: "CZK",
-        totalAmount: 12_000,
+        totalAmount: NonNegativeInteger(12_000),
       })
     )
 
@@ -430,10 +457,10 @@ describe("bill actions", () => {
       ],
     })
     await expect
-      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(sourceBillId)))
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
       .toMatchObject([])
     await expect
-      .poll(() => run.orThrow(loadCalculatedBillLineSummaries(targetBillId)))
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(targetBillId)))
       .toMatchObject([
         {
           billId: targetBillId,
@@ -445,7 +472,10 @@ describe("bill actions", () => {
   test("returns an error when splitting into a missing target bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps)
 

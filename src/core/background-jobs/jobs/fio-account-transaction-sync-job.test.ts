@@ -11,7 +11,12 @@ import {
   updateFioPlugin,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
-import { DateStringSchema } from "@/core/modules/shared/schema.ts"
+import {
+  DateStringSchema,
+  IbanSchema,
+  NonEmptyString255,
+  PositiveInteger,
+} from "@/core/modules/shared/schema.ts"
 import { createFioAccountTransactionSyncJob } from "./fio-account-transaction-sync-job.ts"
 
 const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
@@ -98,26 +103,26 @@ describe("fio account transaction sync job", () => {
   test("downloads FIO transactions into IBAN account transactions without duplicates", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const requestedUrls: string[] = []
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    const fioPluginId = await run.orThrow(
+    const fioPluginId = await run.ok(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 60,
-        syncLookbackDays: 1,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        syncLookbackDays: PositiveInteger(1),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     await using jobRun = testCreateRun({
@@ -125,10 +130,10 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
-      fetch: async (input) => {
+      fetch: async (input: RequestInfo | URL) => {
         requestedUrls.push(inputToString(input))
         return statementResponse({
           transactions: [fioTransaction, fioTransaction],
@@ -138,9 +143,7 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    await using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob()
-    )
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
     await expect
       .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
@@ -175,26 +178,26 @@ describe("fio account transaction sync job", () => {
   test("uses local sync pointer and configured lookback for the next period", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const requestedUrls: string[] = []
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    const fioPluginId = await run.orThrow(
+    const fioPluginId = await run.ok(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 60,
-        syncLookbackDays: 3,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        syncLookbackDays: PositiveInteger(3),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     evolu.upsert(
@@ -210,10 +213,10 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
-      fetch: async (input) => {
+      fetch: async (input: RequestInfo | URL) => {
         requestedUrls.push(inputToString(input))
         return statementResponse({
           transactions: [fioTransaction],
@@ -223,9 +226,7 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    await using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob()
-    )
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
     await expect
       .poll(() => evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId)))
@@ -248,25 +249,25 @@ describe("fio account transaction sync job", () => {
   test("logs FIO rate limiting without reporting a job error", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const console = testCreateConsole()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    const fioPluginId = await run.orThrow(
+    const fioPluginId = await run.ok(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 60,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     await using jobRun = testCreateRun({
@@ -274,7 +275,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
       fetch: async () =>
@@ -285,9 +286,7 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    await using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob()
-    )
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
     await expect
       .poll(() => console.getEntriesSnapshot())
@@ -309,31 +308,31 @@ describe("fio account transaction sync job", () => {
   test("rotates FIO tokens between sync cycles", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const requestedUrls: string[] = []
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    const fioPluginId = await run.orThrow(
+    const fioPluginId = await run.ok(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 1,
+        numberOfSecondsBetweenChecks: PositiveInteger(1),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
-    await run.orThrow(
+    await run.ok(
       updateFioPlugin({
         id: fioPluginId,
-        token: "fio-token-2",
+        token: NonEmptyString255("fio-token-2"),
       })
     )
     await using jobRun = testCreateRun({
@@ -341,10 +340,10 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
-      fetch: async (input) => {
+      fetch: async (input: RequestInfo | URL) => {
         requestedUrls.push(inputToString(input))
         return statementResponse({
           transactions: [],
@@ -354,9 +353,7 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    await using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob()
-    )
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
     await expect
       .poll(() => requestedUrls.length, { timeout: 3_000 })
@@ -372,24 +369,24 @@ describe("fio account transaction sync job", () => {
   test("skips statements for a different IBAN", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    await run.orThrow(
+    await run.ok(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 60,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     await using jobRun = testCreateRun({
@@ -397,7 +394,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
       fetch: async () =>
@@ -409,9 +406,7 @@ describe("fio account transaction sync job", () => {
         now: () => new Date("2026-05-31T10:00:00.000Z"),
       },
     })
-    await using _job = await jobRun.orThrow(
-      createFioAccountTransactionSyncJob()
-    )
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
     await new Promise((resolve) => setTimeout(resolve, 50))
 

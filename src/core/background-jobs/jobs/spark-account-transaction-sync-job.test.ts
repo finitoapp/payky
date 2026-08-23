@@ -2,16 +2,18 @@ import {
   SparkWalletEvent,
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
+import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
-import type { DateDep } from "@/core/deps.ts"
+import type { DateDep, FetchDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
@@ -21,6 +23,10 @@ const createDateDeps = (): DateDep => ({
     now: () => fixedDate,
   },
 })
+
+const unimplementedFetch: FetchDep["fetch"] = (() => {
+  throw new Error("fetch is not implemented in this test.")
+}) as unknown as FetchDep["fetch"]
 
 const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
   createQuery((db) =>
@@ -77,7 +83,11 @@ class FakeSparkWallet {
     Set<(...args: ReadonlyArray<unknown>) => void>
   >()
 
-  constructor(private readonly transfers: ReadonlyArray<FakeTransfer>) {}
+  private readonly transfers: ReadonlyArray<FakeTransfer>
+
+  constructor(transfers: ReadonlyArray<FakeTransfer>) {
+    this.transfers = transfers
+  }
 
   async getTransfers(limit = 20, offset = 0) {
     const transfers = this.transfers.slice(offset, offset + limit)
@@ -87,14 +97,19 @@ class FakeSparkWallet {
         : offset
 
     return {
-      transfers,
+      // FakeTransfer intentionally implements only the subset of
+      // WalletTransfer that the sync job reads (see its own narrower
+      // `SparkTransfer` interface).
+      transfers: transfers as unknown as WalletTransfer[],
       offset: nextOffset,
     }
   }
 
   async getTransfer(id: string) {
     this.getTransferIds.push(id)
-    return this.transfers.find((transfer) => transfer.id === id)
+    return this.transfers.find((transfer) => transfer.id === id) as
+      | WalletTransfer
+      | undefined
   }
 
   private on(
@@ -181,13 +196,13 @@ describe("spark account transaction sync job", () => {
   test("stores completed Spark transfers from the periodic history check without duplicates", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -202,13 +217,15 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
+      fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
     })
-    await using _job = await jobRun.orThrow(
+    await using _job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         walletFactory: createFakeWalletFactory(secret, wallet),
         recheckIntervalMs: 10,
@@ -243,13 +260,13 @@ describe("spark account transaction sync job", () => {
   test("records a claimed transfer live and removes listeners on dispose", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -267,13 +284,15 @@ describe("spark account transaction sync job", () => {
       await using jobRun = testCreateRun({
         console: testCreateConsole(),
         evolu,
+        evoluOwnerId: evolu.appOwner.id,
         ...createDateDeps(),
+        fetch: unimplementedFetch,
         lockManager: createInProcessLockManager(),
-        onError: (error) => {
+        onError: (error: unknown) => {
           errors.push(error)
         },
       })
-      await using _job = await jobRun.orThrow(
+      await using _job = await jobRun.ok(
         createSparkAccountTransactionSyncJob({
           walletFactory: createFakeWalletFactory(secret, wallet),
           recheckIntervalMs: 60_000,
@@ -311,13 +330,13 @@ describe("spark account transaction sync job", () => {
   test("recovers a transfer claimed before the sync job could subscribe, via the fallback history sync", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -332,13 +351,15 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
+      fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
     })
-    await using _job = await jobRun.orThrow(
+    await using _job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         // Simulates the shared wallet instance emitting an event before the
         // sync job's init() has had a chance to call subscribe() on it -
@@ -368,13 +389,13 @@ describe("spark account transaction sync job", () => {
   test("retries wallet initialization after a transient failure", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -390,13 +411,15 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
+      fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
     })
-    await using _job = await jobRun.orThrow(
+    await using _job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         walletFactory: async (receivedSecret) => {
           initializationAttempts += 1
@@ -425,13 +448,13 @@ describe("spark account transaction sync job", () => {
   test("does not retry wallet initialization after disposal", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    await run.orThrow(
+    await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -441,13 +464,15 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
+      fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
     })
-    const job = await jobRun.orThrow(
+    const job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         walletFactory: async () => {
           initializationAttempts += 1
@@ -467,13 +492,13 @@ describe("spark account transaction sync job", () => {
   test("records completed Spark transfers without a BOLT11 invoice when Spark invoice exists", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -489,13 +514,15 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
+      fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
     })
-    await using _job = await jobRun.orThrow(
+    await using _job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         walletFactory: createFakeWalletFactory(secret, wallet),
         recheckIntervalMs: 10,
@@ -525,13 +552,13 @@ describe("spark account transaction sync job", () => {
   test("ignores completed Spark transfers without a Spark or BOLT11 invoice", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu })
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
-    const accountId = await run.orThrow(
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
           secret,
         },
@@ -548,13 +575,15 @@ describe("spark account transaction sync job", () => {
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
+      fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
-      onError: (error) => {
+      onError: (error: unknown) => {
         errors.push(error)
       },
     })
-    await using _job = await jobRun.orThrow(
+    await using _job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         walletFactory: createFakeWalletFactory(secret, wallet),
         recheckIntervalMs: 10,

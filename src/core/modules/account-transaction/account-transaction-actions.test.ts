@@ -1,10 +1,19 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { DateDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import {
+  IbanSchema,
+  Integer,
+  NonEmptyString255,
+  NonEmptyStringSchema,
+  VariableSymbol,
+} from "@/core/modules/shared/schema.ts"
 import {
   createAccountTransaction,
   updateAccountTransaction,
@@ -17,6 +26,13 @@ const createDateDeps = (): DateDep => ({
     now: () => fixedDate,
   },
 })
+
+const createDeps = (evolu: EvoluDep["evolu"]) =>
+  ({
+    evolu,
+    evoluOwnerId: evolu.appOwner.id,
+    ...createDateDeps(),
+  }) satisfies EvoluDep & EvoluOwnerIdDep & DateDep
 
 const accountTransactionsQuery = createQuery((db) =>
   db
@@ -38,21 +54,22 @@ describe("account transaction actions", () => {
   test("reuses the same Evolu id for the same Spark transfer", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
-    const accountId = await run.orThrow(
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: {
-          secret: "42373a7543db65ae0228ead6c9cbffcc",
+          secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
         },
       })
     )
 
-    const firstId = await run.orThrow(
+    const firstId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 1000,
+        amount: Integer(1000),
         currency: "BTC",
         occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
         note: null,
@@ -62,19 +79,19 @@ describe("account transaction actions", () => {
           source: "manual",
         },
         spark: {
-          sparkTransferId: "spark-transfer-1",
+          sparkTransferId: NonEmptyStringSchema.decode("spark-transfer-1"),
           lightning: {
-            lnInvoice: "lnbc1invoice",
-            preImage: "preimage-1",
-            paymentHash: "payment-hash-1",
+            lnInvoice: NonEmptyStringSchema.decode("lnbc1invoice"),
+            preImage: NonEmptyStringSchema.decode("preimage-1"),
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
           },
         },
       })
     )
-    const secondId = await run.orThrow(
+    const secondId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 1000,
+        amount: Integer(1000),
         currency: "BTC",
         occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
         note: null,
@@ -84,11 +101,11 @@ describe("account transaction actions", () => {
           source: "manual",
         },
         spark: {
-          sparkTransferId: "spark-transfer-1",
+          sparkTransferId: NonEmptyStringSchema.decode("spark-transfer-1"),
           lightning: {
-            lnInvoice: "lnbc1invoice",
-            preImage: "preimage-1",
-            paymentHash: "payment-hash-1",
+            lnInvoice: NonEmptyStringSchema.decode("lnbc1invoice"),
+            preImage: NonEmptyStringSchema.decode("preimage-1"),
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
           },
         },
       })
@@ -110,22 +127,23 @@ describe("account transaction actions", () => {
   test("reuses the same Evolu id for the same IBAN bank reference in one account", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
-    const accountId = await run.orThrow(
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
 
-    const firstId = await run.orThrow(
+    const firstId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19950,
+        amount: Integer(19950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -138,14 +156,14 @@ describe("account transaction actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
-    const secondId = await run.orThrow(
+    const secondId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19950,
+        amount: Integer(19950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -158,7 +176,7 @@ describe("account transaction actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
@@ -187,22 +205,23 @@ describe("account transaction actions", () => {
   test("records automatic source for imported IBAN transactions", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
-    const accountId = await run.orThrow(
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19950,
+        amount: Integer(19950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -215,7 +234,7 @@ describe("account transaction actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
@@ -233,22 +252,23 @@ describe("account transaction actions", () => {
   test("creates separate manual IBAN transactions without bank reference", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
-    const accountId = await run.orThrow(
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
 
-    const firstId = await run.orThrow(
+    const firstId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19950,
+        amount: Integer(19950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -258,16 +278,16 @@ describe("account transaction actions", () => {
           source: "manual",
         },
         iban: {
-          variableSymbol: "123456",
+          variableSymbol: VariableSymbol("123456"),
           constantSymbol: null,
           specificSymbol: null,
         },
       })
     )
-    const secondId = await run.orThrow(
+    const secondId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19950,
+        amount: Integer(19950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -277,7 +297,7 @@ describe("account transaction actions", () => {
           source: "manual",
         },
         iban: {
-          variableSymbol: "123456",
+          variableSymbol: VariableSymbol("123456"),
           constantSymbol: null,
           specificSymbol: null,
         },
@@ -310,8 +330,17 @@ describe("account transaction actions", () => {
     await expect
       .poll(async () =>
         (await evolu.loadQuery(accountTransactionSourcesQuery)).toSorted(
-          (left, right) =>
-            left.accountTransactionId.localeCompare(right.accountTransactionId)
+          (left, right) => {
+            if (
+              left.accountTransactionId === null ||
+              right.accountTransactionId === null
+            ) {
+              throw new Error("accountTransactionId must not be null")
+            }
+            return left.accountTransactionId.localeCompare(
+              right.accountTransactionId
+            )
+          }
         )
       )
       .toEqual(
@@ -333,22 +362,23 @@ describe("account transaction actions", () => {
   test("keeps kind when updating without a detail payload", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
-    const accountId = await run.orThrow(
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19950,
+        amount: Integer(19950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -361,15 +391,15 @@ describe("account transaction actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
 
-    await run.orThrow(
+    await run.ok(
       updateAccountTransaction({
         id,
-        note: "Updated note",
+        note: NonEmptyStringSchema.decode("Updated note"),
       })
     )
 
@@ -388,32 +418,33 @@ describe("account transaction actions", () => {
   test("scopes IBAN bank reference ids by account", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
-    const firstAccountId = await run.orThrow(
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const firstAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "First bank account",
+        name: NonEmptyString255("First bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    const secondAccountId = await run.orThrow(
+    const secondAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Second bank account",
+        name: NonEmptyString255("Second bank account"),
         iban: {
-          iban: "CZ5508000000001234567899",
+          iban: IbanSchema.decode("CZ5508000000001234567899"),
           currency: "CZK",
         },
       })
     )
 
-    const firstId = await run.orThrow(
+    const firstId = await run.ok(
       createAccountTransaction({
         accountId: firstAccountId,
-        amount: 1000,
+        amount: Integer(1000),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -426,14 +457,14 @@ describe("account transaction actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
-    const secondId = await run.orThrow(
+    const secondId = await run.ok(
       createAccountTransaction({
         accountId: secondAccountId,
-        amount: 2000,
+        amount: Integer(2000),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -446,7 +477,7 @@ describe("account transaction actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
@@ -470,7 +501,12 @@ describe("account transaction actions", () => {
     await expect
       .poll(async () =>
         (await evolu.loadQuery(accountTransactionsQuery)).toSorted(
-          (left, right) => left.accountId.localeCompare(right.accountId)
+          (left, right) => {
+            if (left.accountId === null || right.accountId === null) {
+              throw new Error("accountId must not be null")
+            }
+            return left.accountId.localeCompare(right.accountId)
+          }
         )
       )
       .toEqual(expectedTransactions)

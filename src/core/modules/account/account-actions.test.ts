@@ -5,8 +5,10 @@ import {
   testCreateRun,
 } from "@evolu/common"
 import { describe, expect, test } from "vitest"
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { IbanSchema, NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   deriveDefaultSparkWalletSecret,
@@ -78,32 +80,35 @@ describe("account actions", () => {
   test("creates and loads account variants through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    const ibanAccountId = await run.orThrow(
+    const ibanAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
     )
-    const sparkAccountId = await run.orThrow(
+    const sparkAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Spark wallet",
+        name: NonEmptyString255("Spark wallet"),
         spark: {
-          secret: "42373a7543db65ae0228ead6c9cbffcc",
+          secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
         },
       })
     )
-    const cashRegisterAccountId = await run.orThrow(
+    const cashRegisterAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Cash register",
+        name: NonEmptyString255("Cash register"),
         cashRegister: {
           currency: "CZK",
         },
@@ -187,15 +192,18 @@ describe("account actions", () => {
   test("updates account details without writing undefined values", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Bank account",
+        name: NonEmptyString255("Bank account"),
         iban: {
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         },
       })
@@ -210,9 +218,9 @@ describe("account actions", () => {
         updateAccount({
           id,
           deviceId: undefined,
-          name: "Updated bank account",
+          name: NonEmptyString255("Updated bank account"),
           iban: {
-            iban: "CZ5508000000001234567899",
+            iban: IbanSchema.decode("CZ5508000000001234567899"),
             currency: undefined,
           },
         })
@@ -239,13 +247,16 @@ describe("account actions", () => {
   test("soft deletes only the account root row", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Cash register",
+        name: NonEmptyString255("Cash register"),
         cashRegister: {
           currency: "CZK",
         },
@@ -285,14 +296,17 @@ describe("account actions", () => {
   test("saves the deterministic fiat bank account and toggles soft delete", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     await expect(
       run(
         saveFiatBankAccount({
           enabled: true,
-          iban: "CZ6508000000192000145399",
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
           currency: "CZK",
         })
       )
@@ -315,7 +329,7 @@ describe("account actions", () => {
       run(
         saveFiatBankAccount({
           enabled: false,
-          iban: "CZ5508000000001234567899",
+          iban: IbanSchema.decode("CZ5508000000001234567899"),
           currency: "EUR",
         })
       )
@@ -357,7 +371,11 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
-    await using run = testCreateRun({ evolu, masterKey })
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      masterKey,
+    })
 
     await expect(run(saveSparkAccount({ enabled: true }))).resolves.toEqual({
       ok: true,
@@ -381,14 +399,18 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
-    await using run = testCreateRun({ evolu, masterKey })
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      masterKey,
+    })
 
     const attachedSecret = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
-    await run.orThrow(
+    await run.ok(
       updateAccount({
         id: sparkAccountId,
         deviceId: undefined,
-        name: "Spark account",
+        name: NonEmptyString255("Spark account"),
         spark: { secret: attachedSecret },
       })
     )

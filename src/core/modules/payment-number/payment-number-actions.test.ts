@@ -36,7 +36,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-05"),
@@ -70,13 +70,13 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-05"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2026-06-05"),
@@ -95,7 +95,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(6),
         yearFormat: "default",
@@ -104,13 +104,13 @@ describe("payment number actions", () => {
         prefix: null,
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-05"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2026-06-06"),
@@ -129,7 +129,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(6),
         yearFormat: "default",
@@ -138,13 +138,13 @@ describe("payment number actions", () => {
         prefix: null,
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-05"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2026-06-06"),
@@ -163,7 +163,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(6),
         yearFormat: "default",
@@ -172,13 +172,13 @@ describe("payment number actions", () => {
         prefix: null,
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-30"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2026-07-01"),
@@ -197,7 +197,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(6),
         yearFormat: "default",
@@ -206,13 +206,13 @@ describe("payment number actions", () => {
         prefix: null,
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-30"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2026-07-01"),
@@ -231,7 +231,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(6),
         yearFormat: "short",
@@ -240,13 +240,13 @@ describe("payment number actions", () => {
         prefix: null,
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-12-31"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2027-01-01"),
@@ -265,7 +265,7 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(6),
         yearFormat: "default",
@@ -274,19 +274,19 @@ describe("payment number actions", () => {
         prefix: null,
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-07-01"),
       })
     )
-    await run.orThrow(
+    await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-2"),
         date: dateString("2026-06-30"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-3"),
         date: dateString("2026-07-02"),
@@ -305,13 +305,13 @@ describe("payment number actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentLastNumber({
         serialNumber: NonNegativeInteger(41),
         date: dateString("2026-06-05"),
       })
     )
-    const row = await run.orThrow(
+    const row = await run.ok(
       createNextPaymentNumber({
         id: paymentId("payment-1"),
         date: dateString("2026-06-05"),

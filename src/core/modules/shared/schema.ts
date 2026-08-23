@@ -38,19 +38,7 @@ export const NonEmptyString255Schema =
 export type NonEmptyString255 = z.output<typeof NonEmptyString255Schema>
 export const NonEmptyString255 = NonEmptyString255Schema.decode
 
-export const HttpsUrlSchema = z
-  .url()
-  .refine((value) => value.startsWith("https://"), {
-    message: "URL must use HTTPS.",
-  })
-  .brand<"HttpsUrl">()
-
 export const SqliteBoolSchema = z.union([z.literal(0), z.literal(1)])
-
-export const BoolToSqliteBoolSchema = z
-  .boolean()
-  .transform((value) => (value ? 1 : 0))
-  .pipe(SqliteBoolSchema)
 
 export const WssUrlSchema = z
   .url({ protocol: /^wss$/ })

@@ -1,13 +1,27 @@
+import type { DisposableRun, TestRunDefaultDeps } from "@evolu/common"
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { DateDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import {
+  IbanSchema,
+  Integer,
+  NonEmptyString255,
+  NonEmptyStringSchema,
+  NonNegativeInteger,
+  PositiveNumber,
+  SpecificSymbol,
+  TimestampMs,
+  VariableSymbol,
+} from "@/core/modules/shared/schema.ts"
 import { reconcileAccountTransaction } from "./reconciliation-claim-actions.ts"
 
 const createDateDeps = (): DateDep => ({
@@ -16,6 +30,8 @@ const createDateDeps = (): DateDep => ({
   },
 })
 
+type TestRun = DisposableRun<TestRunDefaultDeps & EvoluDep & EvoluOwnerIdDep>
+
 const reconciliationClaimsQuery = createQuery((db) =>
   db
     .selectFrom("reconciliationClaim")
@@ -23,40 +39,34 @@ const reconciliationClaimsQuery = createQuery((db) =>
     .where("isDeleted", "is not", 1)
 )
 
-const createIbanAccount = async (
-  run: ReturnType<typeof testCreateRun>
-): Promise<AccountId> =>
-  run.orThrow(
+const createIbanAccount = async (run: TestRun): Promise<AccountId> =>
+  run.ok(
     createAccount({
       deviceId: null,
-      name: "Bank account",
+      name: NonEmptyString255("Bank account"),
       iban: {
-        iban: "CZ6508000000192000145399",
+        iban: IbanSchema.decode("CZ6508000000192000145399"),
         currency: "CZK",
       },
     })
   )
 
-const createSparkAccount = async (
-  run: ReturnType<typeof testCreateRun>
-): Promise<AccountId> =>
-  run.orThrow(
+const createSparkAccount = async (run: TestRun): Promise<AccountId> =>
+  run.ok(
     createAccount({
       deviceId: null,
-      name: "Spark account",
+      name: NonEmptyString255("Spark account"),
       spark: {
-        secret: "42373a7543db65ae0228ead6c9cbffcc",
+        secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
       },
     })
   )
 
-const createCashRegisterAccount = async (
-  run: ReturnType<typeof testCreateRun>
-): Promise<AccountId> =>
-  run.orThrow(
+const createCashRegisterAccount = async (run: TestRun): Promise<AccountId> =>
+  run.ok(
     createAccount({
       deviceId: null,
-      name: "Cash register",
+      name: NonEmptyString255("Cash register"),
       cashRegister: {
         currency: "CZK",
       },
@@ -67,26 +77,31 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles a cash register account transaction by amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
     const accountId = await createCashRegisterAccount(run)
-    const paymentId = await run.orThrow(
+    const paymentId = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         cashRegister: {
           accountId,
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 12_900,
+        amount: Integer(12_900),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T12:00:00.000Z"),
         note: null,
@@ -119,28 +134,33 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles an IBAN account transaction by variable symbol and amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
-    const paymentId = await run.orThrow(
+    const paymentId = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 19_950,
+        amount: NonNegativeInteger(19_950),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: Date.parse("2026-05-26T12:00:00.000Z"),
         iban: {
           accountId,
-          variableSymbol: "123456",
-          specificSymbol: "260605",
+          variableSymbol: VariableSymbol("123456"),
+          specificSymbol: SpecificSymbol("260605"),
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19_950,
+        amount: Integer(19_950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -150,10 +170,10 @@ describe("reconciliation claim actions", () => {
           source: "auto",
         },
         iban: {
-          variableSymbol: "123456",
+          variableSymbol: VariableSymbol("123456"),
           constantSymbol: null,
-          specificSymbol: "260605",
-          bankReference: "123456789",
+          specificSymbol: SpecificSymbol("260605"),
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
@@ -185,28 +205,33 @@ describe("reconciliation claim actions", () => {
   test("does not reconcile an IBAN account transaction with a different specific symbol", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
-    await run.orThrow(
+    await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 19_950,
+        amount: NonNegativeInteger(19_950),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: Date.parse("2026-05-26T12:00:00.000Z"),
         iban: {
           accountId,
-          variableSymbol: "123456",
-          specificSymbol: "260605",
+          variableSymbol: VariableSymbol("123456"),
+          specificSymbol: SpecificSymbol("260605"),
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19_950,
+        amount: Integer(19_950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -216,10 +241,10 @@ describe("reconciliation claim actions", () => {
           source: "auto",
         },
         iban: {
-          variableSymbol: "123456",
+          variableSymbol: VariableSymbol("123456"),
           constantSymbol: null,
-          specificSymbol: "260606",
-          bankReference: "123456790",
+          specificSymbol: SpecificSymbol("260606"),
+          bankReference: NonEmptyString255("123456790"),
         },
       })
     )
@@ -239,16 +264,21 @@ describe("reconciliation claim actions", () => {
   test("does not reconcile an IBAN account transaction without variable symbol", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
-    await run.orThrow(
+    await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 19_950,
+        amount: NonNegativeInteger(19_950),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         iban: {
           accountId,
@@ -257,10 +287,10 @@ describe("reconciliation claim actions", () => {
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 19_950,
+        amount: Integer(19_950),
         currency: "CZK",
         occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
         note: null,
@@ -273,7 +303,7 @@ describe("reconciliation claim actions", () => {
           variableSymbol: null,
           constantSymbol: null,
           specificSymbol: null,
-          bankReference: "123456789",
+          bankReference: NonEmptyString255("123456789"),
         },
       })
     )
@@ -293,36 +323,41 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles a Spark account transaction by LN invoice and sats amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
     const accountId = await createSparkAccount(run)
-    const paymentId = await run.orThrow(
+    const paymentId = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         spark: {
           accountId,
-          amountSats: 8_600,
-          exchangeRate: 1_500_000,
+          amountSats: NonNegativeInteger(8_600),
+          exchangeRate: PositiveNumber(1_500_000),
           exchangeRateSource: "yadio",
-          exchangeRateFetchedAt: 1_700_000_000_000,
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
           lightning: {
-            lnInvoice: "lnbc8600n1prepared",
+            lnInvoice: NonEmptyStringSchema.decode("lnbc8600n1prepared"),
             lightningReceiveRequestId: null,
-            paymentHash: "payment-hash-1",
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
             paymentPreimage: null,
           },
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 8_600,
+        amount: Integer(8_600),
         currency: "BTC",
         occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
         note: null,
@@ -332,11 +367,11 @@ describe("reconciliation claim actions", () => {
           source: "auto",
         },
         spark: {
-          sparkTransferId: "spark-transfer-1",
+          sparkTransferId: NonEmptyStringSchema.decode("spark-transfer-1"),
           lightning: {
-            lnInvoice: "lnbc8600n1prepared",
-            preImage: "preimage-1",
-            paymentHash: "payment-hash-1",
+            lnInvoice: NonEmptyStringSchema.decode("lnbc8600n1prepared"),
+            preImage: NonEmptyStringSchema.decode("preimage-1"),
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
           },
         },
       })
@@ -363,33 +398,38 @@ describe("reconciliation claim actions", () => {
   test("automatically reconciles a Spark account transaction by Spark invoice and sats amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, ...createDateDeps() })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
     const accountId = await createSparkAccount(run)
-    const paymentId = await run.orThrow(
+    const paymentId = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         spark: {
           accountId,
-          amountSats: 8_600,
-          exchangeRate: 1_500_000,
+          amountSats: NonNegativeInteger(8_600),
+          exchangeRate: PositiveNumber(1_500_000),
           exchangeRateSource: "yadio",
-          exchangeRateFetchedAt: 1_700_000_000_000,
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
           sparkInvoice: {
-            sparkInvoice: "spark-invoice-prepared",
+            sparkInvoice: NonEmptyStringSchema.decode("spark-invoice-prepared"),
           },
         },
       })
     )
-    const accountTransactionId = await run.orThrow(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         accountId,
-        amount: 8_600,
+        amount: Integer(8_600),
         currency: "BTC",
         occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
         note: null,
@@ -399,9 +439,9 @@ describe("reconciliation claim actions", () => {
           source: "auto",
         },
         spark: {
-          sparkTransferId: "spark-transfer-1",
+          sparkTransferId: NonEmptyStringSchema.decode("spark-transfer-1"),
           sparkInvoice: {
-            sparkInvoice: "spark-invoice-prepared",
+            sparkInvoice: NonEmptyStringSchema.decode("spark-invoice-prepared"),
           },
         },
       })

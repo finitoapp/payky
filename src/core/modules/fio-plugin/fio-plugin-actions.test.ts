@@ -6,12 +6,18 @@ import {
 } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
-import { DateStringSchema } from "../shared/schema.ts"
+import {
+  DateStringSchema,
+  IbanSchema,
+  NonEmptyString255,
+  PositiveInteger,
+} from "../shared/schema.ts"
 import {
   createFioPlugin,
   deleteFioPlugin,
@@ -57,14 +63,16 @@ const fioPluginSyncPointerByIdQuery = (id: FioPluginId) =>
       .where("id", "=", id)
   )
 
-const createIbanAccount = async (deps: EvoluDep): Promise<AccountId> => {
+const createIbanAccount = async (
+  deps: EvoluDep & EvoluOwnerIdDep
+): Promise<AccountId> => {
   await using run = testCreateRun(deps)
-  return await run.orThrow(
+  return await run.ok(
     createAccount({
       deviceId: null,
-      name: "Bank account",
+      name: NonEmptyString255("Bank account"),
       iban: {
-        iban: "CZ6508000000192000145399",
+        iban: IbanSchema.decode("CZ6508000000192000145399"),
         currency: "CZK",
       },
     })
@@ -75,16 +83,19 @@ describe("fio plugin actions", () => {
   test("creates and loads a FIO plugin with token through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 300,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
 
@@ -123,16 +134,19 @@ describe("fio plugin actions", () => {
   test("updates FIO plugin config and adds a token without preloading existing rows", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 300,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     expect(idResult.ok).toBe(true)
@@ -142,9 +156,9 @@ describe("fio plugin actions", () => {
     const updateResult = await run(
       updateFioPlugin({
         id,
-        numberOfSecondsBetweenChecks: 600,
+        numberOfSecondsBetweenChecks: PositiveInteger(600),
         isActive: sqliteFalse,
-        token: "fio-token-2",
+        token: NonEmptyString255("fio-token-2"),
       })
     )
 
@@ -179,12 +193,15 @@ describe("fio plugin actions", () => {
   test("creates a FIO plugin without validating account existence or kind", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
-    const cashRegisterAccountId = await run.orThrow(
+    const cashRegisterAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Cash register",
+        name: NonEmptyString255("Cash register"),
         cashRegister: {
           currency: "CZK",
         },
@@ -194,9 +211,9 @@ describe("fio plugin actions", () => {
     const idResult = await run(
       createFioPlugin({
         accountId: cashRegisterAccountId,
-        numberOfSecondsBetweenChecks: 300,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
 
@@ -233,16 +250,19 @@ describe("fio plugin actions", () => {
   test("soft deletes only the plugin root row", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 300,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     expect(idResult.ok).toBe(true)
@@ -284,7 +304,7 @@ describe("fio plugin actions", () => {
       run(
         updateFioPlugin({
           id,
-          numberOfSecondsBetweenChecks: 900,
+          numberOfSecondsBetweenChecks: PositiveInteger(900),
         })
       )
     ).resolves.toEqual({
@@ -296,26 +316,29 @@ describe("fio plugin actions", () => {
   test("soft deletes one FIO plugin token", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 300,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
     expect(idResult.ok).toBe(true)
     if (!idResult.ok) return
 
     const id = idResult.value
-    await run.orThrow(
+    await run.ok(
       updateFioPlugin({
         id,
-        token: "fio-token-2",
+        token: NonEmptyString255("fio-token-2"),
       })
     )
 
@@ -352,20 +375,23 @@ describe("fio plugin actions", () => {
   test("updates, clears, and restores the deterministic sync pointer", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createFioPlugin({
         accountId,
-        numberOfSecondsBetweenChecks: 300,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: "fio-token-1",
+        token: NonEmptyString255("fio-token-1"),
       })
     )
 
-    await run.orThrow(
+    await run.ok(
       updateFioPluginSyncPointer({
         id,
         lastSyncedDate: DateStringSchema.decode("2026-05-31"),
@@ -381,7 +407,7 @@ describe("fio plugin actions", () => {
         },
       ])
 
-    await run.orThrow(
+    await run.ok(
       updateFioPluginSyncPointer({
         id,
         lastSyncedDate: null,
@@ -397,7 +423,7 @@ describe("fio plugin actions", () => {
         },
       ])
 
-    await run.orThrow(
+    await run.ok(
       updateFioPluginSyncPointer({
         id,
         lastSyncedDate: DateStringSchema.decode("2026-06-01"),

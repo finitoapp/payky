@@ -73,7 +73,7 @@ describe("yadio client", () => {
   })
 
   test("passes the task abort signal to fetch", async () => {
-    const receivedSignals: readonly (AbortSignal | null | undefined)[] = []
+    const receivedSignals: Array<AbortSignal | null | undefined> = []
     const deps = {
       ...createYadioApiDep(),
       fetch: async (_input, init) => {

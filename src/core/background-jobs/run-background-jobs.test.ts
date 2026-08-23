@@ -1,10 +1,17 @@
-import { ok, testCreateConsole, testCreateRun } from "@evolu/common"
+import {
+  type OwnerId,
+  ok,
+  testCreateConsole,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type {
   BackgroundJob,
   BackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
+import type { FetchDep } from "@/core/deps.ts"
 import type { Evolu } from "@/core/evolu/schema.ts"
 import { runBackgroundJobs } from "./run-background-jobs.ts"
 
@@ -13,6 +20,12 @@ const createBackgroundJobContext = (
 ): BackgroundJobContext => ({
   console: testCreateConsole(),
   evolu: {} as Evolu,
+  evoluOwnerId: "test-owner-id" as OwnerId,
+  date: { now: () => new Date() },
+  fetch: (() => {
+    throw new Error("fetch is not implemented in this test.")
+  }) as unknown as FetchDep["fetch"],
+  lockManager: createInProcessLockManager(),
   onError: (error) => {
     errors.push(error)
   },
@@ -21,7 +34,7 @@ const createBackgroundJobContext = (
 const createDisposable = (
   dispose: () => void | Promise<void>
 ): AsyncDisposable => ({
-  [Symbol.asyncDispose]: dispose,
+  [Symbol.asyncDispose]: () => Promise.resolve(dispose()),
 })
 
 describe("runBackgroundJobs", () => {
@@ -43,7 +56,7 @@ describe("runBackgroundJobs", () => {
     ]
 
     await using run = testCreateRun(context)
-    await using _disposable = await run.orThrow(runBackgroundJobs(jobs))
+    await using _disposable = await run.ok(runBackgroundJobs(jobs))
 
     expect(startedJobs).toEqual(["first", "second"])
   })
@@ -54,11 +67,11 @@ describe("runBackgroundJobs", () => {
 
     {
       await using run = testCreateRun(context)
-      await using _disposable = await run.orThrow(
+      await using _disposable = await run.ok(
         runBackgroundJobs([
-          () => ok(createDisposable(() => disposedJobs.push("first"))),
-          () => ok(createDisposable(() => disposedJobs.push("second"))),
-          () => ok(createDisposable(() => disposedJobs.push("third"))),
+          () => ok(createDisposable(() => void disposedJobs.push("first"))),
+          () => ok(createDisposable(() => void disposedJobs.push("second"))),
+          () => ok(createDisposable(() => void disposedJobs.push("third"))),
         ])
       )
     }
@@ -74,9 +87,9 @@ describe("runBackgroundJobs", () => {
 
     {
       await using run = testCreateRun(context)
-      await using _disposable = await run.orThrow(
+      await using _disposable = await run.ok(
         runBackgroundJobs([
-          () => ok(createDisposable(() => disposedJobs.push("first"))),
+          () => ok(createDisposable(() => void disposedJobs.push("first"))),
           () =>
             ok(
               createDisposable(() => {
@@ -84,7 +97,7 @@ describe("runBackgroundJobs", () => {
                 throw cleanupError
               })
             ),
-          () => ok(createDisposable(() => disposedJobs.push("third"))),
+          () => ok(createDisposable(() => void disposedJobs.push("third"))),
         ])
       )
     }
@@ -99,7 +112,7 @@ describe("runBackgroundJobs", () => {
 
     {
       await using run = testCreateRun(context)
-      await using _disposable = await run.orThrow(
+      await using _disposable = await run.ok(
         runBackgroundJobs([
           () =>
             ok(
@@ -122,15 +135,15 @@ describe("runBackgroundJobs", () => {
     const disposedJobs: string[] = []
 
     const jobs: ReadonlyArray<BackgroundJob> = [
-      () => ok(createDisposable(() => disposedJobs.push("first"))),
+      () => ok(createDisposable(() => void disposedJobs.push("first"))),
       () => {
         throw startError
       },
-      () => ok(createDisposable(() => disposedJobs.push("third"))),
+      () => ok(createDisposable(() => void disposedJobs.push("third"))),
     ]
 
     await using run = testCreateRun(context)
-    await expect(run.orThrow(runBackgroundJobs(jobs))).rejects.toMatchObject({
+    await expect(run.ok(runBackgroundJobs(jobs))).rejects.toMatchObject({
       type: "AbortError",
       reason: { type: "PanicAbortReason", defect: startError },
     })

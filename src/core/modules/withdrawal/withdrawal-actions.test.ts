@@ -1,17 +1,23 @@
 import { createIdFromString, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { DateDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { BitcoinAddress } from "@/core/modules/shared/schema.ts"
+import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import {
+  BitcoinAddress,
+  NonEmptyString255,
+  PositiveInteger,
+} from "@/core/modules/shared/schema.ts"
 import type {
   SparkExitSpeed,
   SparkWalletDep,
   SparkWithdrawalFeeQuote,
+  SparkWithdrawalStatus,
 } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { executeWithdrawal, quoteWithdrawal } from "./withdrawal-actions.ts"
@@ -35,14 +41,16 @@ const feeQuote: SparkWithdrawalFeeQuote = {
   slow: { userFeeSats: 100, l1BroadcastFeeSats: 150, totalFeeSats: 250 },
 }
 
-const createSparkAccount = async (deps: EvoluDep): Promise<AccountId> => {
+const createSparkAccount = async (
+  deps: EvoluDep & EvoluOwnerIdDep
+): Promise<AccountId> => {
   await using run = testCreateRun(deps)
-  const accountId = await run.orThrow(
+  const accountId = await run.ok(
     createAccount({
       deviceId: null,
-      name: "Spark wallet",
+      name: NonEmptyString255("Spark wallet"),
       spark: {
-        secret: "42373a7543db65ae0228ead6c9cbffcc",
+        secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
       },
     })
   )
@@ -85,7 +93,10 @@ describe("quoteWithdrawal", () => {
   test("returns a fee quote for a specific amount", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
       sparkWallet: {
@@ -102,7 +113,7 @@ describe("quoteWithdrawal", () => {
       quoteWithdrawal({
         accountId,
         onchainAddress: validAddress,
-        amountSats: 10_000,
+        amountSats: PositiveInteger(10_000),
       })
     )
 
@@ -120,7 +131,10 @@ describe("quoteWithdrawal", () => {
   test("quotes against the full balance when withdrawing all", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
       sparkWallet: {
@@ -153,7 +167,10 @@ describe("quoteWithdrawal", () => {
   test("rejects an invalid Bitcoin address", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
       sparkWallet: {
@@ -169,8 +186,8 @@ describe("quoteWithdrawal", () => {
     const result = await run(
       quoteWithdrawal({
         accountId,
-        onchainAddress: "not-a-bitcoin-address",
-        amountSats: 10_000,
+        onchainAddress: "not-a-bitcoin-address" as BitcoinAddress,
+        amountSats: PositiveInteger(10_000),
       })
     )
 
@@ -183,7 +200,10 @@ describe("quoteWithdrawal", () => {
   test("rejects a request for more than the available balance", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
       sparkWallet: {
@@ -200,7 +220,7 @@ describe("quoteWithdrawal", () => {
       quoteWithdrawal({
         accountId,
         onchainAddress: validAddress,
-        amountSats: 10_000,
+        amountSats: PositiveInteger(10_000),
       })
     )
 
@@ -229,7 +249,7 @@ describe("quoteWithdrawal", () => {
       quoteWithdrawal({
         accountId: "unknown" as AccountId,
         onchainAddress: validAddress,
-        amountSats: 10_000,
+        amountSats: PositiveInteger(10_000),
       })
     )
 
@@ -244,21 +264,25 @@ describe("executeWithdrawal", () => {
   test("withdraws a specific amount and records the ledger entry", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
             withdraw: async () => ({
               id: "coop-exit-1",
-              status: "INITIATED",
+              status: "INITIATED" as SparkWithdrawalStatus,
               txid: "txid-1",
             }),
           }),
       },
-    } satisfies EvoluDep & DateDep & SparkWalletDep
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const exitSpeed: SparkExitSpeed = "medium"
     const deviceId = createIdFromString<"Device">("withdrawal-test-device")
@@ -310,21 +334,25 @@ describe("executeWithdrawal", () => {
   test("debits the full balance when withdrawing all", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
             withdraw: async () => ({
               id: "coop-exit-2",
-              status: "INITIATED",
+              status: "INITIATED" as SparkWithdrawalStatus,
               txid: "txid-2",
             }),
           }),
       },
-    } satisfies EvoluDep & DateDep & SparkWalletDep
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const exitSpeed: SparkExitSpeed = "fast"
 
@@ -360,9 +388,13 @@ describe("executeWithdrawal", () => {
   test("fails when the wallet cannot complete the withdrawal request", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       sparkWallet: {
         create: async () =>
@@ -370,7 +402,7 @@ describe("executeWithdrawal", () => {
             withdraw: async () => null,
           }),
       },
-    } satisfies EvoluDep & DateDep & SparkWalletDep
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const exitSpeed: SparkExitSpeed = "medium"
 
@@ -397,21 +429,25 @@ describe("executeWithdrawal", () => {
   test("fails separately when the withdrawal transaction cannot be recorded", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const accountId = await createSparkAccount({ evolu })
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
     const deps = {
       evolu,
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
             withdraw: async () => ({
               id: "",
-              status: "INITIATED",
+              status: "INITIATED" as SparkWithdrawalStatus,
               txid: "txid-3",
             }),
           }),
       },
-    } satisfies EvoluDep & DateDep & SparkWalletDep
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
     await using run = testCreateRun(deps)
     const exitSpeed: SparkExitSpeed = "medium"
 

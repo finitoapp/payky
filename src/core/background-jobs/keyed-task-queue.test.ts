@@ -115,11 +115,21 @@ describe("createKeyedTaskQueue", () => {
 
     await delay(0)
 
-    queue.enqueue("a", async () => executions.push("a1"))
-    queue.enqueue("b", async () => executions.push("b1"))
-    queue.enqueue("a", async () => executions.push("a2"))
-    queue.enqueue("c", async () => executions.push("c1"))
-    queue.enqueue("b", async () => executions.push("b2"))
+    queue.enqueue("a", async () => {
+      executions.push("a1")
+    })
+    queue.enqueue("b", async () => {
+      executions.push("b1")
+    })
+    queue.enqueue("a", async () => {
+      executions.push("a2")
+    })
+    queue.enqueue("c", async () => {
+      executions.push("c1")
+    })
+    queue.enqueue("b", async () => {
+      executions.push("b2")
+    })
 
     deferred.resolve()
     await delay(0)

@@ -28,7 +28,7 @@ describe("payment number series actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    const series = await run.orThrow(getPaymentNumberSeries())
+    const series = await run.ok(getPaymentNumberSeries())
 
     expect(series).toEqual({
       id: paymentNumberSeriesId,
@@ -50,7 +50,7 @@ describe("payment number series actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    await run.orThrow(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(4),
         yearFormat: "short",
@@ -60,7 +60,7 @@ describe("payment number series actions", () => {
       })
     )
 
-    const series = await run.orThrow(getPaymentNumberSeries())
+    const series = await run.ok(getPaymentNumberSeries())
 
     expect(series).toMatchObject({
       id: paymentNumberSeriesId,
@@ -78,7 +78,7 @@ describe("payment number series actions", () => {
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    const firstUpdateId = await run.orThrow(
+    const firstUpdateId = await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(8),
         yearFormat: "default",
@@ -90,7 +90,7 @@ describe("payment number series actions", () => {
 
     expect(firstUpdateId).toBe(paymentNumberSeriesId)
 
-    const secondUpdateId = await run.orThrow(
+    const secondUpdateId = await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: PositiveInteger(10),
         yearFormat: undefined,

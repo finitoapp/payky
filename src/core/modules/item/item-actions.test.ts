@@ -1,6 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -33,11 +34,14 @@ describe("item actions", () => {
   test("persists the snapshot and returns it", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     const snapshot = coffeeSnapshot()
-    const returned = await run.orThrow(createOrReuseItemSnapshot(snapshot))
+    const returned = await run.ok(createOrReuseItemSnapshot(snapshot))
 
     expect(returned).toEqual(snapshot)
     await expect
@@ -56,12 +60,15 @@ describe("item actions", () => {
   test("reuses the same row for an identical snapshot", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     const snapshot = coffeeSnapshot()
-    await run.orThrow(createOrReuseItemSnapshot(snapshot))
-    await run.orThrow(createOrReuseItemSnapshot(snapshot))
+    await run.ok(createOrReuseItemSnapshot(snapshot))
+    await run.ok(createOrReuseItemSnapshot(snapshot))
 
     await expect
       .poll(async () => (await evolu.loadQuery(allItemsQuery)).length)
@@ -71,7 +78,10 @@ describe("item actions", () => {
   test("derives a stable item snapshot from a catalog item", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
     const catalogItem = {
@@ -84,9 +94,7 @@ describe("item actions", () => {
       sortOrder: 0,
     } as CatalogItemRow
 
-    const returned = await run.orThrow(
-      createOrReuseCatalogItemSnapshot(catalogItem)
-    )
+    const returned = await run.ok(createOrReuseCatalogItemSnapshot(catalogItem))
 
     expect(returned).toEqual(createCatalogItemSnapshot(catalogItem))
     expect(returned.catalogItemId).toBe(catalogItem.id)

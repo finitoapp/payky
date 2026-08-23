@@ -1,7 +1,12 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  NonEmptyString255,
+  NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import { createCatalogItem, updateCatalogItem } from "./catalog-item-actions.ts"
 
@@ -9,17 +14,20 @@ describe("catalog item actions", () => {
   test("creates and updates a catalog item through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu } satisfies EvoluDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createCatalogItem({
         deviceId: null,
-        name: "Coffee",
-        description: "Double espresso",
+        name: NonEmptyString255("Coffee"),
+        description: NonEmptyString255("Double espresso"),
         currency: "CZK",
-        unitAmount: 5900,
-        sortOrder: 10,
+        unitAmount: NonNegativeInteger(5900),
+        sortOrder: NonNegativeInteger(10),
       })
     )
 
@@ -38,13 +46,13 @@ describe("catalog item actions", () => {
       ])
 
     expect(
-      await run.orThrow(
+      await run.ok(
         updateCatalogItem({
           id,
-          name: "Espresso",
+          name: NonEmptyString255("Espresso"),
           description: null,
           currency: undefined,
-          unitAmount: 6900,
+          unitAmount: NonNegativeInteger(6900),
           sortOrder: undefined,
         })
       )

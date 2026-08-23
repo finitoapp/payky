@@ -1,7 +1,7 @@
 import { evoluJsonObjectFrom, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { DateDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createYadioApiDep,
@@ -10,9 +10,17 @@ import {
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
+  IbanSchema,
+  NonEmptyString255,
   NonEmptyStringSchema,
+  NonNegativeInteger,
+  PositiveNumber,
+  SpecificSymbol,
+  TimestampMs,
   TimestampMsSchema,
+  VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
@@ -133,37 +141,37 @@ const accountTransactionsByPaymentIdQuery = (id: PaymentId) =>
   )
 
 const createPaymentAccounts = async (
-  deps: EvoluDep
+  deps: EvoluDep & EvoluOwnerIdDep
 ): Promise<{
   readonly cashRegisterAccountId: AccountId
   readonly sparkAccountId: AccountId
   readonly ibanAccountId: AccountId
 }> => {
   await using run = testCreateRun(deps)
-  const cashRegisterAccountId = await run.orThrow(
+  const cashRegisterAccountId = await run.ok(
     createAccount({
       deviceId: null,
-      name: "Cash register",
+      name: NonEmptyString255("Cash register"),
       cashRegister: {
         currency: "CZK",
       },
     })
   )
-  const sparkAccountId = await run.orThrow(
+  const sparkAccountId = await run.ok(
     createAccount({
       deviceId: null,
-      name: "Spark wallet",
+      name: NonEmptyString255("Spark wallet"),
       spark: {
-        secret: "42373a7543db65ae0228ead6c9cbffcc",
+        secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
       },
     })
   )
-  const ibanAccountId = await run.orThrow(
+  const ibanAccountId = await run.ok(
     createAccount({
       deviceId: null,
-      name: "Bank account",
+      name: NonEmptyString255("Bank account"),
       iban: {
-        iban: "CZ6508000000192000145399",
+        iban: IbanSchema.decode("CZ6508000000192000145399"),
         currency: "CZK",
       },
     })
@@ -180,43 +188,47 @@ describe("payment actions", () => {
   test("creates and loads a payment with payment option details through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 1_000,
+        tipAmount: NonNegativeInteger(1_000),
         canceledAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
         },
         spark: {
           accountId: sparkAccountId,
-          amountSats: 20_000,
-          exchangeRate: 1_500_000,
+          amountSats: NonNegativeInteger(20_000),
+          exchangeRate: PositiveNumber(1_500_000),
           exchangeRateSource: "yadio",
-          exchangeRateFetchedAt: 1_700_000_000_000,
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
           lightning: {
-            lnInvoice: "lnbc200u1test",
+            lnInvoice: NonEmptyStringSchema.decode("lnbc200u1test"),
             lightningReceiveRequestId: null,
-            paymentHash: "abc",
+            paymentHash: NonEmptyStringSchema.decode("abc"),
             paymentPreimage: null,
           },
           sparkInvoice: {
-            sparkInvoice: "spark-invoice-test",
+            sparkInvoice: NonEmptyStringSchema.decode("spark-invoice-test"),
           },
         },
         iban: {
           accountId: ibanAccountId,
-          variableSymbol: "1234567890",
-          specificSymbol: "9876543210",
+          variableSymbol: VariableSymbol("1234567890"),
+          specificSymbol: SpecificSymbol("9876543210"),
         },
       })
     )
@@ -310,9 +322,15 @@ describe("payment actions", () => {
             }),
           }),
       },
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       ...createYadioApiDep(),
-    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
@@ -322,9 +340,9 @@ describe("payment actions", () => {
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 1_000,
+        tipAmount: NonNegativeInteger(1_000),
         canceledAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
@@ -335,7 +353,7 @@ describe("payment actions", () => {
         },
         iban: {
           accountId: ibanAccountId,
-          variableSymbol: "1234567890",
+          variableSymbol: VariableSymbol("1234567890"),
           specificSymbol: null,
         },
       })
@@ -406,21 +424,27 @@ describe("payment actions", () => {
             }),
           }),
       },
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       ...createYadioApiDep(),
-    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
       })
     )
@@ -497,19 +521,25 @@ describe("payment actions", () => {
             }),
           }),
       },
+      evoluOwnerId: evolu.appOwner.id,
       ...createDateDeps(),
       ...createYadioApiDep(),
-    } satisfies EvoluDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
     await using run = testCreateRun(deps)
     const { sparkAccountId } = await createPaymentAccounts(deps)
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
       })
     )
@@ -546,20 +576,24 @@ describe("payment actions", () => {
   test("marks a payment paid in cash by creating a cash account transaction", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
     const note = NonEmptyStringSchema.decode("Paid in cash")
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
@@ -612,20 +646,24 @@ describe("payment actions", () => {
   test("marking a payment paid in cash twice to the same account does not duplicate the transaction or claim", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
     const note = NonEmptyStringSchema.decode("Paid in cash")
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
@@ -673,13 +711,17 @@ describe("payment actions", () => {
   test("marking a payment paid in cash to two different accounts creates two transactions and two claims", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
-    const secondCashRegisterAccountId = await run.orThrow(
+    const secondCashRegisterAccountId = await run.ok(
       createAccount({
         deviceId: null,
-        name: "Second cash register",
+        name: NonEmptyString255("Second cash register"),
         cashRegister: {
           currency: "CZK",
         },
@@ -687,14 +729,14 @@ describe("payment actions", () => {
     )
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
@@ -738,18 +780,22 @@ describe("payment actions", () => {
   test("cancels a payment", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = { evolu, ...createDateDeps() } satisfies EvoluDep & DateDep
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
 
-    const id = await run.orThrow(
+    const id = await run.ok(
       createPayment({
         deviceId: null,
         billId: null,
         tableId: null,
-        amount: 12_900,
+        amount: NonNegativeInteger(12_900),
         currency: "CZK",
-        tipAmount: 0,
+        tipAmount: NonNegativeInteger(0),
         canceledAt: null,
         iban: {
           accountId: ibanAccountId,

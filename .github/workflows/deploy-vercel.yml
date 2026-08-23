@@ -13,10 +13,6 @@ on:
       - main
   workflow_dispatch:
 
-concurrency:
-  group: vercel-${{ github.event_name == 'pull_request_target' && format('pr-{0}', github.event.pull_request.number) || 'production' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
-
 jobs:
   deploy:
     name: Deploy
@@ -25,6 +21,9 @@ jobs:
       (github.event_name == 'pull_request_target' &&
       ((github.event.action == 'labeled' && github.event.label.name == 'deploy-preview') ||
       (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))))
+    concurrency:
+      group: vercel-${{ github.event_name == 'pull_request_target' && format('pr-{0}', github.event.pull_request.number) || 'production' }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event_name == 'pull_request_target' && 'test' || 'production' }}

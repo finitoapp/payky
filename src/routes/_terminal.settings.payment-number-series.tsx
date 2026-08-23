@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { ReceiptText } from "lucide-react"
-import { useEffect, useId, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
@@ -103,7 +103,10 @@ function PaymentNumberSeriesPage() {
   const { data: paymentLastNumbers } = useEvoluQuery(paymentLastNumberQuery)
   const [storedSeries] = data
   const [paymentLastNumber] = paymentLastNumbers
-  const series = storedSeries ?? createDefaultPaymentNumberSeries()
+  const series = useMemo(
+    () => storedSeries ?? createDefaultPaymentNumberSeries(),
+    [storedSeries]
+  )
   const [prefix, setPrefix] = useState(series.prefix ?? "")
   const [serialNumberDigits, setSerialNumberDigits] = useState(
     String(series.serialNumberDigits)

@@ -1,4 +1,3 @@
-import { SparkWalletEvent } from "@buildonspark/spark-sdk"
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { createRun, err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
@@ -440,21 +439,25 @@ const createSparkAccountSyncSession = ({
       }
 
       wallet = createdWallet
+      // Uses the SDK's SparkWalletEvent string values directly (verified
+      // against its declaration) instead of importing the enum, so this
+      // module doesn't pull the Spark SDK's runtime code into the app's
+      // main bundle — see spark-wallet.ts's sparkWalletPool comment.
       unsubscribeEvents = createdWallet.subscribe({
-        [SparkWalletEvent.TransferClaimed]: (transferId) => {
+        "transfer:claimed": (transferId) => {
           context.console.debug("Received Spark transfer claimed event.", {
             accountId: account.id,
             sparkTransferId: transferId,
           })
           syncTransferSoon(transferId)
         },
-        [SparkWalletEvent.BalanceUpdate]: () => {
+        "balance:update": () => {
           context.console.debug("Received Spark balance update event.", {
             accountId: account.id,
           })
           syncHistorySoon()
         },
-        [SparkWalletEvent.DepositConfirmed]: () => {
+        "deposit:confirmed": () => {
           context.console.debug("Received Spark deposit confirmed event.", {
             accountId: account.id,
           })

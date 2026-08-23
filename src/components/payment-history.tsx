@@ -127,6 +127,7 @@ export const PaymentHistory = () => {
         })
 
         return {
+          id: item.id,
           kind: "link" as const,
           to: "/activity/$paymentId",
           params: {

@@ -1,12 +1,11 @@
-import {
-  type NetworkType,
+import type {
+  NetworkType,
   SparkWallet,
-  SparkWalletEvent,
-  type SparkWalletEvents,
+  SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
-import {
+import type {
   ExitSpeed,
-  type SparkCoopExitRequestStatus,
+  SparkCoopExitRequestStatus,
 } from "@buildonspark/spark-sdk/types"
 import {
   type SparkSecret,
@@ -33,10 +32,17 @@ export type SparkExitSpeed = "fast" | "medium" | "slow"
 
 export type SparkNetwork = NetworkType
 
+/**
+ * Mirrors the SDK's `ExitSpeed` enum values ("FAST"/"MEDIUM"/"SLOW") as
+ * literals instead of importing the enum itself, so this module doesn't pull
+ * in the Spark SDK's runtime code just to read three constant strings — see
+ * the module-level comment on `sparkWalletPool` for why keeping the SDK out
+ * of this file's static import graph matters.
+ */
 const exitSpeedToSdk: Record<SparkExitSpeed, ExitSpeed> = {
-  fast: ExitSpeed.FAST,
-  medium: ExitSpeed.MEDIUM,
-  slow: ExitSpeed.SLOW,
+  fast: "FAST" as ExitSpeed,
+  medium: "MEDIUM" as ExitSpeed,
+  slow: "SLOW" as ExitSpeed,
 }
 
 export interface SparkWithdrawalFeeEstimate {
@@ -144,21 +150,31 @@ const sparkWalletPool = createRefCountedResourcePool<
   SparkWallet,
   SparkWalletPoolKey
 >({
-  create: ({ mnemonic, network }) =>
-    SparkWallet.initialize({
+  // Loaded via a dynamic import rather than a static one so that merely
+  // importing this module (as every route does transitively through
+  // useAppRun) doesn't pull the Spark SDK's own dependency graph into the
+  // shared app bundle — it's fetched only once a wallet is actually acquired.
+  create: async ({ mnemonic, network }) => {
+    const { SparkWallet } = await import("@buildonspark/spark-sdk")
+    const { wallet } = await SparkWallet.initialize({
       mnemonicOrSeed: mnemonic,
       options: {
         network,
       },
-    }).then(({ wallet }) => wallet),
+    })
+    return wallet
+  },
   destroy: (wallet) => wallet.cleanup(),
   keyOf: ({ mnemonic, network }) => `${network}:${mnemonic}`,
 })
 
+// Mirrors the SDK's SparkWalletEvent values as literals (verified against
+// its declaration) instead of importing the enum, for the same reason the
+// sparkWalletPool's `create` uses a dynamic import above.
 const SUPPORTED_SYNC_EVENTS = [
-  SparkWalletEvent.TransferClaimed,
-  SparkWalletEvent.BalanceUpdate,
-  SparkWalletEvent.DepositConfirmed,
+  "transfer:claimed",
+  "balance:update",
+  "deposit:confirmed",
 ] as const
 
 export type SharedSparkSyncWalletEventHandlers = Partial<

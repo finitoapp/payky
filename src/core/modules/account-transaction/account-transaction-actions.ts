@@ -14,8 +14,8 @@ import {
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import {
+  assertHasSparkIdentifier,
   createTableId,
-  hasSparkIdentifier,
   removeUndefinedValues,
   runMutationWithCompletion,
   type WithSparkDetails,
@@ -80,11 +80,10 @@ export const createAccountTransaction =
       }>
   >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
-    if (spark && !hasSparkIdentifier(spark)) {
-      throw new Error(
-        "Spark account transaction requires lnInvoice or sparkInvoice."
-      )
-    }
+    assertHasSparkIdentifier(
+      spark,
+      "Spark account transaction requires lnInvoice or sparkInvoice."
+    )
 
     const { evoluOwnerId } = run.deps
     const id =

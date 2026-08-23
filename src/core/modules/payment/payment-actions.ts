@@ -49,8 +49,8 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
+  assertHasSparkIdentifier,
   createTableId,
-  hasSparkIdentifier,
   removeUndefinedValues,
   runMutationWithCompletion,
   type WithSparkDetails,
@@ -381,9 +381,10 @@ export const createPayment =
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
   }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
-    if (spark && !hasSparkIdentifier(spark)) {
-      throw new Error("Spark payment requires lnInvoice or sparkInvoice.")
-    }
+    assertHasSparkIdentifier(
+      spark,
+      "Spark payment requires lnInvoice or sparkInvoice."
+    )
 
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps

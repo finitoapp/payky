@@ -1,4 +1,4 @@
-import { evoluJsonObjectFrom, testCreateRun } from "@evolu/common"
+import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
@@ -29,9 +29,11 @@ import {
   cancelPayment,
   createPayment,
   createPreparedPayment,
+  deletePayment,
   loadPayment,
   markPaymentPaidCash,
   preparePaymentMethod,
+  updatePayment,
 } from "./payment-actions.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -820,5 +822,148 @@ describe("payment actions", () => {
     await expect
       .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
       .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+  }, 15_000)
+
+  test("updates a payment's amount and its cashRegister/spark/iban details", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    const id = await run.ok(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(1_000),
+        canceledAt: null,
+        cashRegister: {
+          accountId: cashRegisterAccountId,
+        },
+        spark: {
+          accountId: sparkAccountId,
+          amountSats: NonNegativeInteger(20_000),
+          exchangeRate: PositiveNumber(1_500_000),
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc200u1test"),
+            lightningReceiveRequestId: null,
+            paymentHash: NonEmptyStringSchema.decode("abc"),
+            paymentPreimage: null,
+          },
+          sparkInvoice: {
+            sparkInvoice: NonEmptyStringSchema.decode("spark-invoice-test"),
+          },
+        },
+        iban: {
+          accountId: ibanAccountId,
+          variableSymbol: VariableSymbol("1234567890"),
+          specificSymbol: SpecificSymbol("9876543210"),
+        },
+      })
+    )
+
+    await expect(
+      run.ok(
+        updatePayment({
+          id,
+          deviceId: undefined,
+          billId: undefined,
+          tableId: undefined,
+          amount: NonNegativeInteger(15_000),
+          currency: undefined,
+          tipAmount: NonNegativeInteger(2_000),
+          canceledAt: undefined,
+          cashRegister: {
+            accountId: cashRegisterAccountId,
+          },
+          spark: {
+            amountSats: NonNegativeInteger(25_000),
+            exchangeRate: PositiveNumber(1_600_000),
+            lightning: {
+              lnInvoice: NonEmptyStringSchema.decode("lnbc300u1test"),
+            },
+            sparkInvoice: {
+              sparkInvoice: NonEmptyStringSchema.decode(
+                "spark-invoice-updated"
+              ),
+            },
+          },
+          iban: {
+            variableSymbol: VariableSymbol("1111111111"),
+            specificSymbol: SpecificSymbol("2222222222"),
+          },
+        })
+      )
+    ).resolves.toBe(id)
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          amount: 15_000,
+          tipAmount: 2_000,
+          spark: {
+            amountSats: 25_000,
+            exchangeRate: 1_600_000,
+            lnInvoice: "lnbc300u1test",
+            sparkInvoice: "spark-invoice-updated",
+          },
+          iban: {
+            variableSymbol: "1111111111",
+            specificSymbol: "2222222222",
+          },
+        },
+      ])
+  }, 15_000)
+
+  test("deletes a payment by soft-deleting it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { ibanAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.ok(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        iban: {
+          accountId: ibanAccountId,
+          variableSymbol: undefined,
+          specificSymbol: null,
+        },
+      })
+    )
+
+    await expect(run.ok(deletePayment(id))).resolves.toBe(id)
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          isDeleted: sqliteTrue,
+        },
+      ])
   }, 15_000)
 })

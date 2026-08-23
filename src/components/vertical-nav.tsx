@@ -19,6 +19,8 @@ type NavItemTarget =
   | { readonly kind: "button"; readonly onClick?: () => void }
 
 type NavItem = NavItemTarget & {
+  /** Stable identity for list reconciliation; falls back to array index when omitted. */
+  readonly id?: string
   readonly label: React.ReactNode
   readonly action?: React.ReactNode
   readonly icon?: React.ReactNode
@@ -63,8 +65,7 @@ export function VerticalNav({
           />
         ) : (
           items.map((item, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: we don't have any better value
-            <NavItemComponent key={index} item={item} />
+            <NavItemComponent key={item.id ?? index} item={item} />
           ))
         )}
       </nav>

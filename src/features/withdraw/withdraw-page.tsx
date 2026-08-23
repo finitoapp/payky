@@ -1,8 +1,9 @@
 import type { AbortError } from "@evolu/common"
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import assertNever from "assert-never"
 import { useStore } from "jotai"
-import { useEffect, useReducer, useState } from "react"
+import { useReducer } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -55,31 +56,20 @@ export function WithdrawPage() {
   const { data: sparkAccountsData } = useEvoluQuery(activeSparkAccountsQuery)
   const [sparkAccount] = sparkAccountsData
   const [state, dispatch] = useReducer(withdrawReducer, initialWithdrawState)
-  const [availableSats, setAvailableSats] = useState<number | null>(null)
 
-  useEffect(() => {
-    const secret = sparkAccount?.secret
-    let active = true
+  const balanceQuery = useQuery({
+    queryKey: ["withdraw", "spark-balance", sparkAccount?.id],
+    queryFn: async () => {
+      const secret = sparkAccount?.secret
+      if (!secret) throw new Error("No Spark account secret available.")
 
-    setAvailableSats(null)
-    if (!secret) return
-
-    const loadBalance = async () => {
-      try {
-        await using wallet = await createDefaultSparkPaymentWallet(secret)
-        const balance = await wallet.getBalance()
-        if (active) setAvailableSats(balance.availableSats)
-      } catch {
-        if (active) setAvailableSats(null)
-      }
-    }
-
-    void loadBalance()
-
-    return () => {
-      active = false
-    }
-  }, [sparkAccount?.secret])
+      await using wallet = await createDefaultSparkPaymentWallet(secret)
+      const balance = await wallet.getBalance()
+      return balance.availableSats
+    },
+    enabled: sparkAccount !== undefined,
+  })
+  const availableSats = balanceQuery.data ?? null
 
   if (!sparkAccount) {
     return (

@@ -2,7 +2,7 @@ import {
   type Money,
   minorUnitsToDecimalString,
 } from "@/core/modules/shared/money.ts"
-import type { Currency, Iban } from "@/core/modules/shared/schema.ts"
+import type { Currency } from "@/core/modules/shared/schema.ts"
 
 export function formatAmount(
   amount: number,
@@ -37,22 +37,9 @@ export function formatMoney(money: Money, locale: string = "en-US") {
   return formatAmount(Number(value), money.currency, locale)
 }
 
-export function formatIban(iban: Iban) {
-  return iban.replace(/(.{4})/g, "$1\u00A0")
-}
-
-export function formatPostalCode(postalCode: string) {
-  return postalCode.replace(/(.{3})/g, "$1\u00A0")
-}
-
 export const formatDate = (value: Date, locale: string = "en-US") =>
   value.toLocaleDateString(locale, {
     dateStyle: "medium",
-  })
-
-export const formatTime = (value: Date, locale: string = "en-US") =>
-  value.toLocaleTimeString(locale, {
-    timeStyle: "short",
   })
 
 export const formatDateTime = (value: Date, locale: string = "en-US") =>

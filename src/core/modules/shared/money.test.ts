@@ -1,6 +1,54 @@
 import { describe, expect, test } from "vitest"
 
-import { decimalAmountToMinorUnits } from "./money.ts"
+import { Integer } from "@/core/modules/shared/schema.ts"
+import {
+  decimalAmountToMinorUnits,
+  minorUnitsToDecimalString,
+} from "./money.ts"
+
+describe("minorUnitsToDecimalString", () => {
+  test("formats a two-decimal fiat currency", () => {
+    expect(
+      minorUnitsToDecimalString({ value: Integer(1_250), currency: "CZK" })
+    ).toBe("12.5")
+  })
+
+  test("formats an eight-decimal BTC amount down to a single sat", () => {
+    expect(
+      minorUnitsToDecimalString({ value: Integer(1), currency: "BTC" })
+    ).toBe("0.00000001")
+    expect(
+      minorUnitsToDecimalString({
+        value: Integer(100_000_000),
+        currency: "BTC",
+      })
+    ).toBe("1")
+  })
+
+  test("strips trailing fraction zeros", () => {
+    expect(
+      minorUnitsToDecimalString({ value: Integer(1_200), currency: "CZK" })
+    ).toBe("12")
+  })
+
+  test("pads a value smaller than the fraction digits with a leading zero", () => {
+    expect(
+      minorUnitsToDecimalString({ value: Integer(5), currency: "CZK" })
+    ).toBe("0.05")
+  })
+
+  test("formats zero without a sign", () => {
+    expect(
+      minorUnitsToDecimalString({ value: Integer(0), currency: "CZK" })
+    ).toBe("0")
+  })
+
+  test("prefixes negative values with a minus sign", () => {
+    expect(
+      minorUnitsToDecimalString({ value: Integer(-1_250), currency: "CZK" })
+    ).toBe("-12.5")
+  })
+})
 
 describe("decimalAmountToMinorUnits", () => {
   test("converts decimal values including a localized decimal separator", () => {

@@ -2,7 +2,7 @@ import { createIdFromString, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import { format, subDays } from "date-fns"
 import { Plus, Trash2, TriangleAlert } from "lucide-react"
-import { useEffect, useId, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
@@ -138,11 +138,14 @@ function FioPluginNativeRuntimeAlert() {
 function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const { data: pointers } = useEvoluQuery(
-    fioPluginSyncPointerByPluginIdQuery(
-      plugin?.id ?? fioPluginFormPointerPlaceholderId
-    )
+  const pointerQuery = useMemo(
+    () =>
+      fioPluginSyncPointerByPluginIdQuery(
+        plugin?.id ?? fioPluginFormPointerPlaceholderId
+      ),
+    [plugin?.id]
   )
+  const { data: pointers } = useEvoluQuery(pointerQuery)
   const [pointer] = pointers
   const lastSyncedDate = pointer?.lastSyncedDate ?? getDefaultLastSyncedDate()
   const activeInputId = useId()
@@ -421,9 +424,11 @@ interface FioPluginTokenListProps {
 function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const { data: tokens } = useEvoluQuery(
-    fioPluginTokensByPluginIdQuery(fioPluginId)
+  const tokensQuery = useMemo(
+    () => fioPluginTokensByPluginIdQuery(fioPluginId),
+    [fioPluginId]
   )
+  const { data: tokens } = useEvoluQuery(tokensQuery)
   const [pendingTokenId, setPendingTokenId] = useState<string | null>(null)
 
   return (

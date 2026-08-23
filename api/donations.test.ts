@@ -1,14 +1,36 @@
-import { describe, expect, test } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
+import type {
+  DonateWallet,
+  DonateWalletConfig,
+} from "../src/core/server/donate-wallet.js"
 import {
   collectDonationsPage,
   type DonateTransfer,
   type DonateTransferSource,
   decodeCursor,
   encodeCursor,
+  GET,
   isDonation,
+  OPTIONS,
   parseLimit,
   toDonationItem,
 } from "./donations.ts"
+
+vi.mock("../src/core/server/donate-wallet.js", () => ({
+  loadDonateWalletConfig: vi.fn(),
+  createDonateWallet: vi.fn(),
+}))
+
+const { loadDonateWalletConfig, createDonateWallet } = await import(
+  "../src/core/server/donate-wallet.js"
+)
+
+const config: DonateWalletConfig = { mnemonic: "test mnemonic" }
+
+afterEach(() => {
+  vi.mocked(loadDonateWalletConfig).mockReset()
+  vi.mocked(createDonateWallet).mockReset()
+})
 
 const donation = (overrides: Partial<DonateTransfer> = {}): DonateTransfer => ({
   status: "TRANSFER_STATUS_COMPLETED",
@@ -156,5 +178,119 @@ describe("collectDonationsPage", () => {
 
     expect(result.items).toEqual([])
     expect(result.nextCursor).toBeNull()
+  })
+})
+
+describe("GET/OPTIONS request handling", () => {
+  test("answers an OPTIONS preflight without touching the wallet", async () => {
+    const response = await OPTIONS(
+      new Request("https://example.test/api/donations", { method: "OPTIONS" })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("access-control-allow-methods")).toBe(
+      "GET, OPTIONS"
+    )
+    expect(loadDonateWalletConfig).not.toHaveBeenCalled()
+  })
+
+  test("rejects a non-GET request", async () => {
+    const response = await GET(
+      new Request("https://example.test/api/donations", { method: "POST" })
+    )
+
+    expect(response.status).toBe(405)
+    expect(await response.json()).toEqual({
+      status: "ERROR",
+      reason: "Method not allowed.",
+    })
+  })
+
+  test("returns 500 when the donation endpoint is not configured", async () => {
+    vi.mocked(loadDonateWalletConfig).mockReturnValue(null)
+
+    const response = await GET(
+      new Request("https://example.test/api/donations")
+    )
+
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({
+      status: "ERROR",
+      reason: "Donation endpoint is not configured.",
+    })
+  })
+
+  test("returns 400 for an invalid cursor", async () => {
+    vi.mocked(loadDonateWalletConfig).mockReturnValue(config)
+
+    const response = await GET(
+      new Request(
+        "https://example.test/api/donations?cursor=not-a-valid-cursor"
+      )
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({
+      status: "ERROR",
+      reason: "Invalid cursor.",
+    })
+  })
+
+  test("returns donations and cleans up the wallet on success", async () => {
+    vi.mocked(loadDonateWalletConfig).mockReturnValue(config)
+    const cleanup = vi.fn().mockResolvedValue(undefined)
+    const wallet = {
+      getTransfers: () =>
+        Promise.resolve({
+          transfers: [donation({ totalValue: 42 })],
+          offset: 0,
+        }),
+      cleanup,
+    } as unknown as DonateWallet
+    vi.mocked(createDonateWallet).mockResolvedValue(wallet)
+
+    const response = await GET(
+      new Request("https://example.test/api/donations")
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      items: [{ amountSats: 42 }],
+    })
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
+  test("returns 502 and still cleans up when the wallet fails", async () => {
+    vi.mocked(loadDonateWalletConfig).mockReturnValue(config)
+    const cleanup = vi.fn().mockResolvedValue(undefined)
+    const wallet = {
+      getTransfers: () => Promise.reject(new Error("upstream failure")),
+      cleanup,
+    } as unknown as DonateWallet
+    vi.mocked(createDonateWallet).mockResolvedValue(wallet)
+
+    const response = await GET(
+      new Request("https://example.test/api/donations")
+    )
+
+    expect(response.status).toBe(502)
+    expect(await response.json()).toEqual({
+      status: "ERROR",
+      reason: "Could not load donation history.",
+    })
+    expect(cleanup).toHaveBeenCalledOnce()
+  })
+
+  test("returns 502 without a cleanup call when wallet creation itself fails", async () => {
+    vi.mocked(loadDonateWalletConfig).mockReturnValue(config)
+    vi.mocked(createDonateWallet).mockRejectedValue(
+      new Error("could not initialize")
+    )
+
+    const response = await GET(
+      new Request("https://example.test/api/donations")
+    )
+
+    expect(response.status).toBe(502)
   })
 })

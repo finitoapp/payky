@@ -102,7 +102,7 @@ const createPayBySquareQrPayload = ({
     )
   )
 
-export const createBankQrPayload = ({
+const createBankQrPayload = ({
   beneficiaryName,
   format,
   iban,

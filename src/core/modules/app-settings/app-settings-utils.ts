@@ -35,11 +35,6 @@ export const createDefaultSettings = (): AppSettingsRow => ({
   defaultPaymentMethod,
 })
 
-export const isDefaultPaymentMethod = (
-  value: unknown
-): value is DefaultPaymentMethod =>
-  DefaultPaymentMethodSchema.safeParse(value).success
-
 export const getDefaultPaymentMethod = (
   value: DefaultPaymentMethod | undefined
 ): DefaultPaymentMethod => value ?? defaultPaymentMethod

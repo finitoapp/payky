@@ -279,96 +279,105 @@ function PaymentWaitingRequest({
   const wakeLockEnabled =
     payment !== undefined && payment.canceledAt === null && !isPaid
   const { supported: wakeLockSupported } = useScreenWakeLock(wakeLockEnabled)
-  const paymentMethods: PaymentMethodOption[] = []
   const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
     settings?.defaultPaymentMethod
   )
-  const paymentMethodOrder = parsePaymentMethodOrder(
-    settings?.paymentMethodOrderJson
-  )
 
-  const enabledSparkAccount = enabledPaymentMethodAccounts.find(
-    (account) => account.kind === "spark" && account.sparkSecret !== null
-  )
-  if (enabledSparkAccount) {
-    paymentMethods.push({
-      id: "spark",
-      kind: "spark",
-      accountId: enabledSparkAccount.id,
-      label: t("paymentWait.method.lightning"),
-      qrPayload: payment?.lnInvoice ?? payment?.sparkInvoice ?? null,
-      icon: <ZapIcon />,
-    })
-  }
+  const orderedPaymentMethods = useMemo(() => {
+    const paymentMethods: PaymentMethodOption[] = []
+    const paymentMethodOrder = parsePaymentMethodOrder(
+      settings?.paymentMethodOrderJson
+    )
 
-  const enabledIbanAccount = enabledPaymentMethodAccounts.find(
-    (account) =>
-      account.kind === "iban" &&
-      account.iban !== null &&
-      account.ibanCurrency === payment?.currency
-  )
-  if (enabledIbanAccount) {
-    const defaultQrFormat = enabledIbanAccount.ibanDefaultQrFormat ?? "spayd"
-    const activeQrFormat = selectedIbanQrFormat ?? defaultQrFormat
-    const canCreateIbanQrPayloads =
-      payment !== undefined &&
-      payment.ibanAccountId !== null &&
-      enabledIbanAccount.iban !== null &&
-      enabledIbanAccount.name !== null
-    const availableIbanQrPayloads: ReadonlyArray<IbanQrPayloadOption> =
-      canCreateIbanQrPayloads
-        ? createBankQrPayloads({
-            beneficiaryName: enabledIbanAccount.name,
-            iban: enabledIbanAccount.iban,
-            amount: payment.amount,
-            currency: payment.currency,
-            specificSymbol: payment.specificSymbol,
-            variableSymbol: payment.variableSymbol,
-          })
-        : []
-    const activeQrPayload =
-      availableIbanQrPayloads.find(
-        (payload) => payload.format === activeQrFormat
-      )?.payload ??
-      availableIbanQrPayloads.find(
-        (payload) => payload.format === defaultQrFormat
-      )?.payload ??
-      availableIbanQrPayloads[0]?.payload ??
-      null
+    const enabledSparkAccount = enabledPaymentMethodAccounts.find(
+      (account) => account.kind === "spark" && account.sparkSecret !== null
+    )
+    if (enabledSparkAccount) {
+      paymentMethods.push({
+        id: "spark",
+        kind: "spark",
+        accountId: enabledSparkAccount.id,
+        label: t("paymentWait.method.lightning"),
+        qrPayload: payment?.lnInvoice ?? payment?.sparkInvoice ?? null,
+        icon: <ZapIcon />,
+      })
+    }
 
-    paymentMethods.push({
-      id: "iban",
-      kind: "iban",
-      accountId: enabledIbanAccount.id,
-      label: t("paymentWait.method.iban"),
-      qrPayload: activeQrPayload,
-      qrPayloads: availableIbanQrPayloads,
-      defaultQrFormat,
-      icon: <LandmarkIcon />,
-    })
-  }
+    const enabledIbanAccount = enabledPaymentMethodAccounts.find(
+      (account) =>
+        account.kind === "iban" &&
+        account.iban !== null &&
+        account.ibanCurrency === payment?.currency
+    )
+    if (enabledIbanAccount) {
+      const defaultQrFormat = enabledIbanAccount.ibanDefaultQrFormat ?? "spayd"
+      const activeQrFormat = selectedIbanQrFormat ?? defaultQrFormat
+      const canCreateIbanQrPayloads =
+        payment !== undefined &&
+        payment.ibanAccountId !== null &&
+        enabledIbanAccount.iban !== null &&
+        enabledIbanAccount.name !== null
+      const availableIbanQrPayloads: ReadonlyArray<IbanQrPayloadOption> =
+        canCreateIbanQrPayloads
+          ? createBankQrPayloads({
+              beneficiaryName: enabledIbanAccount.name,
+              iban: enabledIbanAccount.iban,
+              amount: payment.amount,
+              currency: payment.currency,
+              specificSymbol: payment.specificSymbol,
+              variableSymbol: payment.variableSymbol,
+            })
+          : []
+      const activeQrPayload =
+        availableIbanQrPayloads.find(
+          (payload) => payload.format === activeQrFormat
+        )?.payload ??
+        availableIbanQrPayloads.find(
+          (payload) => payload.format === defaultQrFormat
+        )?.payload ??
+        availableIbanQrPayloads[0]?.payload ??
+        null
 
-  const enabledCashRegisterAccount = enabledPaymentMethodAccounts.find(
-    (account) =>
-      account.kind === "cashRegister" &&
-      account.cashRegisterCurrency === payment?.currency
-  )
-  if (enabledCashRegisterAccount) {
-    paymentMethods.push({
-      id: "cash",
-      kind: "cashRegister",
-      accountId: enabledCashRegisterAccount.id,
-      label: t("paymentWait.method.cash"),
-      qrPayload: null,
-      icon: <BanknoteIcon />,
-    })
-  }
+      paymentMethods.push({
+        id: "iban",
+        kind: "iban",
+        accountId: enabledIbanAccount.id,
+        label: t("paymentWait.method.iban"),
+        qrPayload: activeQrPayload,
+        qrPayloads: availableIbanQrPayloads,
+        defaultQrFormat,
+        icon: <LandmarkIcon />,
+      })
+    }
 
-  const orderedPaymentMethods = paymentMethods.toSorted(
-    (firstMethod, secondMethod) =>
-      paymentMethodOrder.indexOf(firstMethod.kind) -
-      paymentMethodOrder.indexOf(secondMethod.kind)
-  )
+    const enabledCashRegisterAccount = enabledPaymentMethodAccounts.find(
+      (account) =>
+        account.kind === "cashRegister" &&
+        account.cashRegisterCurrency === payment?.currency
+    )
+    if (enabledCashRegisterAccount) {
+      paymentMethods.push({
+        id: "cash",
+        kind: "cashRegister",
+        accountId: enabledCashRegisterAccount.id,
+        label: t("paymentWait.method.cash"),
+        qrPayload: null,
+        icon: <BanknoteIcon />,
+      })
+    }
+
+    return paymentMethods.toSorted(
+      (firstMethod, secondMethod) =>
+        paymentMethodOrder.indexOf(firstMethod.kind) -
+        paymentMethodOrder.indexOf(secondMethod.kind)
+    )
+  }, [
+    enabledPaymentMethodAccounts,
+    payment,
+    selectedIbanQrFormat,
+    settings?.paymentMethodOrderJson,
+    t,
+  ])
   const selectedPaymentMethodOption =
     selectedPaymentMethod === null
       ? null

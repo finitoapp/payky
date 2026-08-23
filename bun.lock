@@ -16,7 +16,6 @@
         "@dedalik/use-react": "1.1.2",
         "@evolu/common": "8.5.0",
         "@evolu/nodejs": "3.0.1",
-        "@evolu/react": "11.0.1",
         "@evolu/react-web": "3.0.1",
         "@evolu/sqlite-wasm": "2.2.4",
         "@evolu/web": "3.1.0",
@@ -334,8 +333,6 @@
     "@evolu/common": ["@evolu/common@8.5.0", "", { "dependencies": { "@noble/ciphers": "^2.3.0", "@noble/hashes": "^2.3.0", "@scure/bip39": "^2.3.0", "@standard-schema/spec": "^1.1.0", "kysely": "^0.29.5", "msgpackr": "^2.0.5", "random": "5.5.1" } }, "sha512-Okc+OhSI//NZrSCLP+4i1l8cveYyYGFWqZ/PiSSibkoabszhG0c78j5hUNIoKGDa2mIfOFPFdwDCS1hHg95Wkg=="],
 
     "@evolu/nodejs": ["@evolu/nodejs@3.0.1", "", { "dependencies": { "better-sqlite3": "^12.11.1", "ws": "^8.19.0" }, "peerDependencies": { "@evolu/common": "^8.0.0", "vite": ">=8.0.0", "webpack": ">=5.108.4" }, "optionalPeers": ["vite", "webpack"] }, "sha512-tCTTRKpJ4BFKpF2TeIoYydVvIGHBsW3DepulYwZPIeBGGACvkZ1wV/BT8skde0TOTYmR5yoPhEi3WrCD8fThwg=="],
-
-    "@evolu/react": ["@evolu/react@11.0.1", "", { "peerDependencies": { "@evolu/common": "^8.0.0", "react": ">=19" } }, "sha512-NagSnHLcsSOaPYe7onbHq/Aoo+Jwosd9XOwvt37B4WANy+M7rlSqm/BpRhtM1cBYidcoX1o+aIQLJcD1+ClBCA=="],
 
     "@evolu/react-web": ["@evolu/react-web@3.0.1", "", { "peerDependencies": { "@evolu/common": "^8.0.0", "@evolu/web": "^3.0.0", "react": ">=19", "react-dom": ">=19" } }, "sha512-u71asCL3HjYLbYXPwqdziVnTZO5wcpDmcXvCHjNifOfTc/VHKoqt/sb0sWHo1bkEfNCf8GNGUPHxNaM8TW1a0w=="],
 

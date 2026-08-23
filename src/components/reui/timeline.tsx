@@ -2,7 +2,13 @@
 
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import { createContext, useCallback, useContext, useState } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -57,6 +63,11 @@ function Timeline({
 
   const currentStep = value ?? activeStep
 
+  const contextValue = useMemo<TimelineContextValue>(
+    () => ({ activeStep: currentStep, setActiveStep }),
+    [currentStep, setActiveStep]
+  )
+
   const defaultProps = {
     className: cn(
       "group/timeline flex data-[orientation=horizontal]:w-full data-[orientation=horizontal]:flex-row data-[orientation=vertical]:flex-col",
@@ -68,9 +79,7 @@ function Timeline({
   }
 
   return (
-    <TimelineContext.Provider
-      value={{ activeStep: currentStep, setActiveStep }}
-    >
+    <TimelineContext.Provider value={contextValue}>
       {useRender({
         defaultTagName: "div",
         render,

@@ -40,7 +40,6 @@
         "jotai": "2.20.2",
         "lucide-react": "1.33.0",
         "motion": "13.1.1",
-        "navigator.locks": "0.9.1",
         "qrcode.react": "4.2.0",
         "react": "19.2.8",
         "react-dom": "19.2.8",
@@ -1517,8 +1516,6 @@
     "napi-build-utils": ["napi-build-utils@2.0.0", "", {}, "sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA=="],
 
     "native-run": ["native-run@2.0.3", "", { "dependencies": { "@ionic/utils-fs": "^3.1.7", "@ionic/utils-terminal": "^2.3.4", "bplist-parser": "^0.3.2", "debug": "^4.3.4", "elementtree": "^0.1.7", "ini": "^4.1.1", "plist": "^3.1.0", "split2": "^4.2.0", "through2": "^4.0.2", "tslib": "^2.6.2", "yauzl": "^2.10.0" }, "bin": { "native-run": "bin/native-run" } }, "sha512-U1PllBuzW5d1gfan+88L+Hky2eZx+9gv3Pf6rNBxKbORxi7boHzqiA6QFGSnqMem4j0A9tZ08NMIs5+0m/VS1Q=="],
-
-    "navigator.locks": ["navigator.locks@0.9.1", "", {}, "sha512-YU7OJ8ZcXGmuSuevuCfxleeVsndj2SrOE1fz+cWcI060hcrqG+lKz7Yf2MLkMzq80zA0SoN/lmY9Gn5df8L3FQ=="],
 
     "negotiator": ["negotiator@1.0.0", "", {}, "sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg=="],
 

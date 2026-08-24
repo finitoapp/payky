@@ -1,0 +1,405 @@
+import { useNavigate } from "@tanstack/react-router"
+import { Trash2Icon } from "lucide-react"
+import { useId, useState } from "react"
+import { toast } from "sonner"
+
+import { FadeHeader } from "@/components/fade-header.tsx"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog.tsx"
+import { Button } from "@/components/ui/button.tsx"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field.tsx"
+import { Input } from "@/components/ui/input.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select.tsx"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
+import {
+  createCatalogItemAtEnd,
+  deleteCatalogItem,
+  updateCatalogItem,
+} from "@/core/modules/catalog-item/catalog-item-actions.ts"
+import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import {
+  CatalogItemId,
+  type CatalogItemId as CatalogItemIdType,
+} from "@/core/modules/catalog-item/catalog-item-types.ts"
+import {
+  decimalAmountToMinorUnits,
+  minorUnitsToDecimalString,
+} from "@/core/modules/shared/money.ts"
+import {
+  FiatCurrency,
+  type FiatCurrency as FiatCurrencyType,
+  Integer,
+  NonEmptyString255Schema,
+  NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
+import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
+import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
+
+export function NewCatalogItemPage() {
+  const { t } = useTranslation()
+  const { data } = useEvoluQuery(settingsQuery)
+  const [settings] = data
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.items.form.title.create")} />
+      <CatalogItemForm
+        mode="create"
+        defaultCurrency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+      />
+    </>
+  )
+}
+
+export function EditCatalogItemPage({
+  catalogItemId,
+}: {
+  readonly catalogItemId: string
+}) {
+  const parsedId = CatalogItemId.safeParse(catalogItemId)
+
+  if (!parsedId.success) {
+    return (
+      <CatalogItemFormEmptyState messageKey="settings.items.form.invalidId" />
+    )
+  }
+
+  return <EditCatalogItemPageContent catalogItemId={parsedId.data} />
+}
+
+function EditCatalogItemPageContent({
+  catalogItemId,
+}: {
+  readonly catalogItemId: CatalogItemIdType
+}) {
+  const { t } = useTranslation()
+  const { data } = useEvoluQuery(catalogItemByIdQuery(catalogItemId))
+  const [item] = data
+
+  if (item === undefined) {
+    return (
+      <CatalogItemFormEmptyState messageKey="settings.items.form.notFound" />
+    )
+  }
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.items.form.title.edit")} />
+      <CatalogItemForm mode="edit" item={item} />
+    </>
+  )
+}
+
+function CatalogItemFormEmptyState({
+  messageKey,
+}: {
+  readonly messageKey:
+    | "settings.items.form.invalidId"
+    | "settings.items.form.notFound"
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.items.form.title.edit")} />
+      <p className="mt-16 px-6 text-center text-muted-foreground">
+        {t(messageKey)}
+      </p>
+    </>
+  )
+}
+
+function CatalogItemForm({
+  mode,
+  item,
+  defaultCurrency,
+}: {
+  readonly mode: "create" | "edit"
+  readonly item?: CatalogItemRow
+  readonly defaultCurrency?: FiatCurrencyType
+}) {
+  const appRun = useAppRun()
+  const navigate = useNavigate()
+  const { t } = useTranslation()
+  const nameInputId = useId()
+  const descriptionInputId = useId()
+  const priceInputId = useId()
+  const currencyInputId = useId()
+  const [name, setName] = useState(item?.name ?? "")
+  const [description, setDescription] = useState(item?.description ?? "")
+  const [currency, setCurrency] = useState<FiatCurrencyType>(
+    item?.currency ?? defaultCurrency ?? FiatCurrency.CZK
+  )
+  const [price, setPrice] = useState(() =>
+    item === undefined
+      ? ""
+      : minorUnitsToDecimalString({
+          value: Integer(item.unitAmount),
+          currency: item.currency,
+        })
+  )
+  const [nameError, setNameError] = useState<TranslationKey | null>(null)
+  const [priceError, setPriceError] = useState<TranslationKey | null>(null)
+  const [descriptionError, setDescriptionError] =
+    useState<TranslationKey | null>(null)
+  const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  return (
+    <div className="flex flex-col gap-5">
+      <SettingsFormCard
+        title={t("settings.items.form.card.title")}
+        description={t("settings.items.form.card.description")}
+        savedMessage={
+          saved
+            ? t(
+                mode === "create"
+                  ? "settings.items.form.saved.create"
+                  : "settings.items.form.saved.edit"
+              )
+            : null
+        }
+        submitLabel={t(
+          mode === "create"
+            ? "settings.items.form.save.create"
+            : "settings.items.form.save.edit"
+        )}
+        pending={pending}
+        onSubmit={(event) => {
+          event.preventDefault()
+          setNameError(null)
+          setPriceError(null)
+          setDescriptionError(null)
+          resetSaved()
+
+          const trimmedName = name.trim()
+          const nameResult = NonEmptyString255Schema.safeParse(trimmedName)
+          if (!nameResult.success) {
+            setNameError("settings.items.form.name.invalid")
+            return
+          }
+
+          const priceAmount = decimalAmountToMinorUnits({
+            currency,
+            value: price,
+          })
+          if (priceAmount === null) {
+            setPriceError("settings.items.form.price.invalid")
+            return
+          }
+          const unitAmount = NonNegativeInteger(priceAmount)
+
+          const trimmedDescription = description.trim()
+          const descriptionResult = trimmedDescription
+            ? NonEmptyString255Schema.safeParse(trimmedDescription)
+            : null
+          if (descriptionResult?.success === false) {
+            setDescriptionError("settings.items.form.description.invalid")
+            return
+          }
+
+          void submit(async () => {
+            await using run = appRun()
+
+            if (mode === "create") {
+              await run(
+                createCatalogItemAtEnd({
+                  deviceId: null,
+                  name: nameResult.data,
+                  description: descriptionResult?.data ?? null,
+                  currency,
+                  unitAmount,
+                })
+              )
+              void navigate({ to: "/settings/items" })
+              return
+            }
+
+            if (item === undefined) return
+
+            await run(
+              updateCatalogItem({
+                id: item.id,
+                name: nameResult.data,
+                description: descriptionResult?.data ?? null,
+                currency,
+                unitAmount,
+              })
+            )
+          })
+        }}
+      >
+        <FieldGroup>
+          <Field data-invalid={nameError !== null}>
+            <FieldLabel htmlFor={nameInputId}>
+              {t("settings.items.form.name.label")}
+            </FieldLabel>
+            <Input
+              id={nameInputId}
+              value={name}
+              disabled={pending}
+              aria-invalid={nameError !== null}
+              autoComplete="off"
+              placeholder={t("settings.items.form.name.placeholder")}
+              onChange={(event) => {
+                setName(event.currentTarget.value)
+                setNameError(null)
+                resetSaved()
+              }}
+            />
+            <FieldError>{nameError ? t(nameError) : null}</FieldError>
+          </Field>
+
+          <Field data-invalid={priceError !== null}>
+            <FieldLabel htmlFor={priceInputId}>
+              {t("settings.items.form.price.label")}
+            </FieldLabel>
+            <div className="flex gap-2">
+              <Input
+                id={priceInputId}
+                value={price}
+                disabled={pending}
+                aria-invalid={priceError !== null}
+                autoComplete="off"
+                inputMode="decimal"
+                onChange={(event) => {
+                  setPrice(event.currentTarget.value)
+                  setPriceError(null)
+                  resetSaved()
+                }}
+              />
+              <Select<FiatCurrencyType>
+                value={currency}
+                onValueChange={(nextCurrency) => {
+                  if (
+                    nextCurrency === FiatCurrency.EUR ||
+                    nextCurrency === FiatCurrency.USD ||
+                    nextCurrency === FiatCurrency.CZK
+                  ) {
+                    setCurrency(nextCurrency)
+                    resetSaved()
+                  }
+                }}
+              >
+                <SelectTrigger
+                  id={currencyInputId}
+                  disabled={pending}
+                  aria-label={t("settings.items.form.currency.label")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {fiatCurrencyOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.value}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <FieldError>{priceError ? t(priceError) : null}</FieldError>
+          </Field>
+
+          <Field data-invalid={descriptionError !== null}>
+            <FieldLabel htmlFor={descriptionInputId}>
+              {t("settings.items.form.description.label")}
+            </FieldLabel>
+            <Input
+              id={descriptionInputId}
+              value={description}
+              disabled={pending}
+              aria-invalid={descriptionError !== null}
+              autoComplete="off"
+              placeholder={t("settings.items.form.description.placeholder")}
+              onChange={(event) => {
+                setDescription(event.currentTarget.value)
+                setDescriptionError(null)
+                resetSaved()
+              }}
+            />
+            <FieldError>
+              {descriptionError ? t(descriptionError) : null}
+            </FieldError>
+          </Field>
+        </FieldGroup>
+      </SettingsFormCard>
+
+      {mode === "edit" && item !== undefined && (
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <Button variant="destructive">
+                <Trash2Icon data-icon="inline-start" />
+                {t("settings.items.delete")}
+              </Button>
+            }
+          />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("settings.items.delete.confirm.title", { name: item.name })}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("settings.items.delete.confirm.description", {
+                  name: item.name,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>
+                {t("settings.items.delete.confirm.cancel")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      await using run = appRun()
+                      await run(deleteCatalogItem(item.id))
+                      void navigate({ to: "/settings/items" })
+                    } catch {
+                      toast.error(t("settings.saveFailed"))
+                    }
+                  })()
+                }}
+              >
+                {t("settings.items.delete.confirm.confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </div>
+  )
+}

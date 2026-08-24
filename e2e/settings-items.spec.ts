@@ -1,0 +1,107 @@
+import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
+
+test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
+  await test.step("open item settings and see the empty state", () =>
+    gotoPage(page, "/settings/items", "en", "settings.items.title"))
+
+  await expect(
+    page.getByText(translate("en", "settings.items.empty.title"))
+  ).toBeVisible()
+
+  await test.step("go to the add item form", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "settings.items.add") })
+      .click()
+    await page
+      .getByRole("heading", {
+        name: translate("en", "settings.items.form.title.create"),
+      })
+      .waitFor()
+  })
+
+  await test.step("fill in and save a new item", async () => {
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.name.label"),
+      })
+      .fill("Coffee")
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.price.label"),
+      })
+      .fill("59")
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.form.save.create"),
+      })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "settings.items.title") })
+      .waitFor()
+  })
+
+  const itemRow = page.getByRole("link", { name: "Coffee" })
+
+  await test.step("verify the item appears in the list", async () => {
+    await expect(itemRow).toBeVisible()
+    await expect(itemRow).toContainText("59")
+  })
+
+  await test.step("edit the item's name and price", async () => {
+    await itemRow.click()
+    await page
+      .getByRole("heading", {
+        name: translate("en", "settings.items.form.title.edit"),
+      })
+      .waitFor()
+
+    const nameInput = page.getByRole("textbox", {
+      name: translate("en", "settings.items.form.name.label"),
+    })
+    await expect(nameInput).toHaveValue("Coffee")
+
+    await nameInput.fill("Espresso")
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.price.label"),
+      })
+      .fill("69")
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.form.save.edit"),
+      })
+      .click()
+    await page
+      .getByText(translate("en", "settings.items.form.saved.edit"))
+      .waitFor()
+  })
+
+  await test.step("verify the edit persists after reload", async () => {
+    await reloadPage(page, "en", "settings.items.form.title.edit")
+    await expect(
+      page.getByRole("textbox", {
+        name: translate("en", "settings.items.form.name.label"),
+      })
+    ).toHaveValue("Espresso")
+  })
+
+  await test.step("delete the item and confirm", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "settings.items.delete") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.delete.confirm.confirm"),
+      })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "settings.items.title") })
+      .waitFor()
+  })
+
+  await test.step("verify the list is empty again", async () => {
+    await expect(
+      page.getByText(translate("en", "settings.items.empty.title"))
+    ).toBeVisible()
+  })
+})

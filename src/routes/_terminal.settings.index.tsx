@@ -15,6 +15,7 @@ import {
   Plug,
   ReceiptText,
   ShieldCheck,
+  ShoppingBag,
   SunMoon,
   UserRound,
 } from "lucide-react"
@@ -81,6 +82,12 @@ const supportSettings: ReadonlyArray<SettingRow> = [
 ]
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
+  {
+    icon: ShoppingBag,
+    title: "settings.items.title",
+    description: "settings.items.description",
+    to: "/settings/items",
+  },
   {
     icon: CircleDollarSign,
     title: "settings.defaultPaymentMethod.title",

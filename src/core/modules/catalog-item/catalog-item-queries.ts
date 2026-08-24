@@ -11,6 +11,7 @@ export const catalogItemByIdQuery = (idValue: CatalogItemId) =>
       .where("id", "=", idValue)
       .where("name", "is not", null)
       .where("currency", "is not", null)
+      .where("isDeleted", "is", null)
       .$narrowType<{
         name: KyselyNotNull
         currency: KyselyNotNull
@@ -20,5 +21,17 @@ export const catalogItemByIdQuery = (idValue: CatalogItemId) =>
   )
 
 export const catalogItemsQuery = createQuery((db) =>
-  db.selectFrom("catalogItem").selectAll().orderBy("sortOrder", "asc")
+  db
+    .selectFrom("catalogItem")
+    .selectAll()
+    .where("name", "is not", null)
+    .where("currency", "is not", null)
+    .where("isDeleted", "is", null)
+    .$narrowType<{
+      name: KyselyNotNull
+      currency: KyselyNotNull
+      unitAmount: KyselyNotNull
+      sortOrder: KyselyNotNull
+    }>()
+    .orderBy("sortOrder", "asc")
 )

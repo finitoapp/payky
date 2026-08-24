@@ -67,6 +67,7 @@
 - Define domain errors with `defineError` from `src/core/error.ts` and export their types via `ReturnType`, for example `const createPaymentNotFoundError = defineError("PaymentNotFound")<{ readonly id: PaymentId }>()` with `export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>`. Type each Task's `E` as the union of its expected errors.
 - Return `err(createXNotFoundError({ id }))` for missing domain rows or required related records instead of throwing. Use `getFirstOr(rows, error)` from `src/core/modules/shared/result.ts` to turn a load-first query into a `Result`.
 - Keep thrown exceptions for programmer errors, schema decode failures, framework boundaries, or established local patterns.
+- For a React call site invoking a Task whose error type is `never` (its only realistic failure is an unexpected infra error, not a domain `Result`), don't build bespoke pending/error UI: call it in a plain `try`/`catch` and show `toast.error(t("settings.saveFailed"))` on failure, letting the surrounding UI (button, dialog) act optimistically — close/navigate immediately rather than waiting on the mutation. See `saveFiatCurrency` in `_terminal.settings.fiat.tsx` and the catalog-item delete confirmation in `item-form-page.tsx` for this pattern.
 
 ## Translation Key Rules
 

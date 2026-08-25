@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router"
 import { PlusIcon, TagIcon } from "lucide-react"
 
+import { useMemo } from "react"
+
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
+import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import { minorUnitsToDecimalString } from "@/core/modules/shared/money.ts"
 import { Integer } from "@/core/modules/shared/schema.ts"
@@ -13,6 +16,11 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export function ItemsSettingsPage() {
   const { t } = useTranslation()
   const { data: items } = useEvoluQuery(catalogItemsQuery)
+  const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories]
+  )
 
   return (
     <>
@@ -52,7 +60,17 @@ export function ItemsSettingsPage() {
           to: "/settings/items/$catalogItemId",
           params: { catalogItemId: item.id },
           icon: <TagIcon className="text-muted-foreground" />,
-          label: item.name,
+          label: (
+            <span className="flex flex-col">
+              <span>{item.name}</span>
+              {item.categoryId !== null &&
+                categoryNameById.get(item.categoryId) !== undefined && (
+                  <span className="text-xs text-muted-foreground">
+                    {categoryNameById.get(item.categoryId)}
+                  </span>
+                )}
+            </span>
+          ),
           action: (
             <span className="text-sm font-medium text-muted-foreground">
               {minorUnitsToDecimalString({

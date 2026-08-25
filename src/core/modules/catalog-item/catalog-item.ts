@@ -1,3 +1,4 @@
+import { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
@@ -10,6 +11,7 @@ import {
 export const catalogItem = {
   id: CatalogItemId,
   deviceId: DeviceId.nullable(),
+  categoryId: CatalogCategoryId.nullable(),
   name: NonEmptyString255Schema,
   description: NonEmptyString255Schema.nullable(),
   currency: FiatCurrencySchema,

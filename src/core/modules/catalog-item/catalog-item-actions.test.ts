@@ -31,6 +31,7 @@ describe("catalog item actions", () => {
     const id = await run.ok(
       createCatalogItem({
         deviceId: null,
+        categoryId: null,
         name: NonEmptyString255("Coffee"),
         description: NonEmptyString255("Double espresso"),
         currency: "CZK",
@@ -93,6 +94,7 @@ describe("catalog item actions", () => {
     const firstId = await run.ok(
       createCatalogItemAtEnd({
         deviceId: null,
+        categoryId: null,
         name: NonEmptyString255("Coffee"),
         description: null,
         currency: "CZK",
@@ -102,6 +104,7 @@ describe("catalog item actions", () => {
     const secondId = await run.ok(
       createCatalogItemAtEnd({
         deviceId: null,
+        categoryId: null,
         name: NonEmptyString255("Tea"),
         description: null,
         currency: "CZK",
@@ -129,6 +132,7 @@ describe("catalog item actions", () => {
     const id = await run.ok(
       createCatalogItem({
         deviceId: null,
+        categoryId: null,
         name: NonEmptyString255("Coffee"),
         description: null,
         currency: "CZK",

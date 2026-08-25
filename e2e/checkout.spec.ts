@@ -1,4 +1,5 @@
 import {
+  addCatalogCategory,
   addCatalogItem,
   expect,
   gotoPage,
@@ -466,5 +467,59 @@ test("adds a bulk quantity through the quantity dialog", async ({
         name: translate("en", "checkout.brick.quantity.input.aria"),
       })
     ).toHaveValue("12")
+  })
+})
+
+test("filters the item grid by category", async ({ seededPage: page }) => {
+  await test.step("create a category and items in and out of it", async () => {
+    await addCatalogCategory(page, "en", "Drinks")
+    await addCatalogItem(page, "en", {
+      name: "Coffee",
+      price: "5",
+      categoryName: "Drinks",
+    })
+    await addCatalogItem(page, "en", { name: "Sandwich", price: "6" })
+  })
+
+  await test.step("open the checkout", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .waitFor()
+  })
+
+  const coffeeCard = page.getByText("Coffee", { exact: true })
+  const sandwichCard = page.getByText("Sandwich", { exact: true })
+
+  await test.step("both items are visible with the 'all' filter", async () => {
+    await expect(coffeeCard).toBeVisible()
+    await expect(sandwichCard).toBeVisible()
+  })
+
+  await test.step("the 'Drinks' filter only shows the categorized item", async () => {
+    await page.getByRole("button", { name: "Drinks" }).click()
+    await expect(coffeeCard).toBeVisible()
+    await expect(sandwichCard).not.toBeVisible()
+  })
+
+  await test.step("the 'Uncategorized' filter only shows the other item", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "checkout.category.uncategorized"),
+      })
+      .click()
+    await expect(sandwichCard).toBeVisible()
+    await expect(coffeeCard).not.toBeVisible()
+  })
+
+  await test.step("the 'All' filter shows both items again", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "checkout.category.all") })
+      .click()
+    await expect(coffeeCard).toBeVisible()
+    await expect(sandwichCard).toBeVisible()
   })
 })

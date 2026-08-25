@@ -222,7 +222,11 @@ export async function completeOnboardingDefaults(
 export async function addCatalogItem(
   page: Page,
   language: Language,
-  input: { readonly name: string; readonly price: string }
+  input: {
+    readonly name: string
+    readonly price: string
+    readonly categoryName?: string
+  }
 ): Promise<void> {
   await gotoPage(page, "/settings/items", language, "settings.items.title")
   await page
@@ -243,6 +247,14 @@ export async function addCatalogItem(
       name: translate(language, "settings.items.form.price.label"),
     })
     .fill(input.price)
+  if (input.categoryName !== undefined) {
+    await page
+      .getByRole("combobox", {
+        name: translate(language, "settings.items.form.category.label"),
+      })
+      .click()
+    await page.getByRole("option", { name: input.categoryName }).click()
+  }
   await page
     .getByRole("button", {
       name: translate(language, "settings.items.form.save.create"),
@@ -250,6 +262,45 @@ export async function addCatalogItem(
     .click()
   await page
     .getByRole("heading", { name: translate(language, "settings.items.title") })
+    .waitFor()
+}
+
+/** Adds a catalog category through the real settings UI (used to seed categories for checkout filter specs). */
+export async function addCatalogCategory(
+  page: Page,
+  language: Language,
+  name: string
+): Promise<void> {
+  await gotoPage(
+    page,
+    "/settings/categories",
+    language,
+    "settings.categories.title"
+  )
+  await page
+    .getByRole("button", {
+      name: translate(language, "settings.categories.add"),
+    })
+    .click()
+  await page
+    .getByRole("heading", {
+      name: translate(language, "settings.categories.form.title.create"),
+    })
+    .waitFor()
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.categories.form.name.label"),
+    })
+    .fill(name)
+  await page
+    .getByRole("button", {
+      name: translate(language, "settings.categories.form.save.create"),
+    })
+    .click()
+  await page
+    .getByRole("heading", {
+      name: translate(language, "settings.categories.title"),
+    })
     .waitFor()
 }
 

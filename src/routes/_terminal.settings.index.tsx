@@ -6,6 +6,7 @@ import {
   Bug,
   CircleDollarSign,
   DatabaseBackup,
+  FolderIcon,
   type Grid2X2,
   HeartHandshake,
   Info,
@@ -87,6 +88,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.items.title",
     description: "settings.items.description",
     to: "/settings/items",
+  },
+  {
+    icon: FolderIcon,
+    title: "settings.categories.title",
+    description: "settings.categories.description",
+    to: "/settings/categories",
   },
   {
     icon: CircleDollarSign,

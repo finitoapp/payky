@@ -277,6 +277,7 @@ describe("bill actions", () => {
     const catalogItemId = await run.ok(
       createCatalogItem({
         deviceId: null,
+        categoryId: null,
         name: NonEmptyString255("Coffee"),
         description: NonEmptyString255("Double espresso"),
         currency: "CZK",

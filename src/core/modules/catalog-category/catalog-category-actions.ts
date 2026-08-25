@@ -7,32 +7,28 @@ import {
 } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
-import type { CatalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
-import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import type { CatalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
+import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import type { CatalogItemId } from "./catalog-item-types.ts"
+import type { CatalogCategoryId } from "./catalog-category-types.ts"
 
-export const createCatalogItem =
+export const createCatalogCategory =
   (
-    input: InsertValues<CatalogItem>
-  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+    input: InsertValues<CatalogCategory>
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert(
-        "catalogItem",
+        "catalogCategory",
         {
           deviceId: input.deviceId,
-          categoryId: input.categoryId,
           name: input.name,
-          description: input.description,
-          currency: input.currency,
-          unitAmount: input.unitAmount,
           sortOrder: input.sortOrder,
         },
         { ...options, ownerId: evoluOwnerId }
@@ -41,15 +37,15 @@ export const createCatalogItem =
     return ok(id)
   }
 
-export const updateCatalogItem =
+export const updateCatalogCategory =
   (
-    input: UpdateValues<CatalogItem>
-  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+    input: UpdateValues<CatalogCategory>
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.update("catalogItem", removeUndefinedValues(input), {
+      run.deps.evolu.update("catalogCategory", removeUndefinedValues(input), {
         ...options,
         ownerId: evoluOwnerId,
       })
@@ -58,22 +54,22 @@ export const updateCatalogItem =
   }
 
 /**
- * Creates a catalog item appended after the current last one, deriving
+ * Creates a catalog category appended after the current last one, deriving
  * `sortOrder` from the highest existing value instead of taking it as input.
  * There is no reorder UI yet, so this is the only way callers assign
- * `sortOrder` when adding a new item.
+ * `sortOrder` when adding a new category.
  */
-export const createCatalogItemAtEnd =
+export const createCatalogCategoryAtEnd =
   (
-    input: Omit<InsertValues<CatalogItem>, "sortOrder">
-  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+    input: Omit<InsertValues<CatalogCategory>, "sortOrder">
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const existing = await run.deps.evolu.loadQuery(catalogItemsQuery)
+    const existing = await run.deps.evolu.loadQuery(catalogCategoriesQuery)
     const lastSortOrder = existing.at(-1)?.sortOrder ?? -1
 
     return ok(
       await run.ok(
-        createCatalogItem({
+        createCatalogCategory({
           ...input,
           sortOrder: NonNegativeInteger(lastSortOrder + 1),
         })
@@ -81,14 +77,16 @@ export const createCatalogItemAtEnd =
     )
   }
 
-export const deleteCatalogItem =
-  (id: CatalogItemId): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+export const deleteCatalogCategory =
+  (
+    id: CatalogCategoryId
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
-        "catalogItem",
+        "catalogCategory",
         { id, isDeleted: sqliteTrue },
         {
           ...options,

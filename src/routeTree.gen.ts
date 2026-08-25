@@ -25,6 +25,7 @@ import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
 import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
+import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_terminal.settings.categories'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
 import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
@@ -44,6 +45,9 @@ import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
+import { Route as TerminalSettingsCategoriesIndexRouteImport } from './routes/_terminal.settings.categories.index'
+import { Route as TerminalSettingsCategoriesCatalogCategoryIdRouteImport } from './routes/_terminal.settings.categories.$catalogCategoryId'
+import { Route as TerminalSettingsCategoriesNewRouteImport } from './routes/_terminal.settings.categories.new'
 import { Route as TerminalSettingsItemsIndexRouteImport } from './routes/_terminal.settings.items.index'
 import { Route as TerminalSettingsItemsCatalogItemIdRouteImport } from './routes/_terminal.settings.items.$catalogItemId'
 import { Route as TerminalSettingsItemsNewRouteImport } from './routes/_terminal.settings.items.new'
@@ -128,6 +132,12 @@ const TerminalSettingsAccountsRoute =
   TerminalSettingsAccountsRouteImport.update({
     id: '/accounts',
     path: '/accounts',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsCategoriesRoute =
+  TerminalSettingsCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsDebugConsoleRoute =
@@ -239,6 +249,24 @@ const TerminalSettingsAboutTermsRoute =
     path: '/terms',
     getParentRoute: () => TerminalSettingsAboutRoute,
   } as any)
+const TerminalSettingsCategoriesIndexRoute =
+  TerminalSettingsCategoriesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsCategoriesRoute,
+  } as any)
+const TerminalSettingsCategoriesCatalogCategoryIdRoute =
+  TerminalSettingsCategoriesCatalogCategoryIdRouteImport.update({
+    id: '/$catalogCategoryId',
+    path: '/$catalogCategoryId',
+    getParentRoute: () => TerminalSettingsCategoriesRoute,
+  } as any)
+const TerminalSettingsCategoriesNewRoute =
+  TerminalSettingsCategoriesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => TerminalSettingsCategoriesRoute,
+  } as any)
 const TerminalSettingsItemsIndexRoute =
   TerminalSettingsItemsIndexRouteImport.update({
     id: '/',
@@ -273,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
+  '/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
@@ -292,9 +321,12 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
+  '/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
+  '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
+  '/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items/': typeof TerminalSettingsItemsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -328,9 +360,12 @@ export interface FileRoutesByTo {
   '/settings': typeof TerminalSettingsIndexRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
+  '/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
+  '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
+  '/settings/categories': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items': typeof TerminalSettingsItemsIndexRoute
 }
 export interface FileRoutesById {
@@ -350,6 +385,7 @@ export interface FileRoutesById {
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRoute
+  '/_terminal/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/_terminal/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
@@ -369,9 +405,12 @@ export interface FileRoutesById {
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/_terminal/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
+  '/_terminal/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
+  '/_terminal/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/_terminal/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/_terminal/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
+  '/_terminal/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/_terminal/settings/items/': typeof TerminalSettingsItemsIndexRoute
 }
 export interface FileRouteTypes {
@@ -391,6 +430,7 @@ export interface FileRouteTypes {
     | '/payment/$paymentId'
     | '/settings/about'
     | '/settings/accounts'
+    | '/settings/categories'
     | '/settings/debug-console'
     | '/settings/default-payment-method'
     | '/settings/donations'
@@ -410,9 +450,12 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/settings/about/privacy'
     | '/settings/about/terms'
+    | '/settings/categories/$catalogCategoryId'
+    | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
     | '/settings/about/'
+    | '/settings/categories/'
     | '/settings/items/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -446,9 +489,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/settings/about/privacy'
     | '/settings/about/terms'
+    | '/settings/categories/$catalogCategoryId'
+    | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
     | '/settings/about'
+    | '/settings/categories'
     | '/settings/items'
   id:
     | '__root__'
@@ -467,6 +513,7 @@ export interface FileRouteTypes {
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
     | '/_terminal/settings/accounts'
+    | '/_terminal/settings/categories'
     | '/_terminal/settings/debug-console'
     | '/_terminal/settings/default-payment-method'
     | '/_terminal/settings/donations'
@@ -486,9 +533,12 @@ export interface FileRouteTypes {
     | '/_terminal/settings/'
     | '/_terminal/settings/about/privacy'
     | '/_terminal/settings/about/terms'
+    | '/_terminal/settings/categories/$catalogCategoryId'
+    | '/_terminal/settings/categories/new'
     | '/_terminal/settings/items/$catalogItemId'
     | '/_terminal/settings/items/new'
     | '/_terminal/settings/about/'
+    | '/_terminal/settings/categories/'
     | '/_terminal/settings/items/'
   fileRoutesById: FileRoutesById
 }
@@ -612,6 +662,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/settings/accounts'
       preLoaderRoute: typeof TerminalSettingsAccountsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/categories': {
+      id: '/_terminal/settings/categories'
+      path: '/categories'
+      fullPath: '/settings/categories'
+      preLoaderRoute: typeof TerminalSettingsCategoriesRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/debug-console': {
@@ -747,6 +804,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsAboutTermsRouteImport
       parentRoute: typeof TerminalSettingsAboutRoute
     }
+    '/_terminal/settings/categories/': {
+      id: '/_terminal/settings/categories/'
+      path: '/'
+      fullPath: '/settings/categories/'
+      preLoaderRoute: typeof TerminalSettingsCategoriesIndexRouteImport
+      parentRoute: typeof TerminalSettingsCategoriesRoute
+    }
+    '/_terminal/settings/categories/$catalogCategoryId': {
+      id: '/_terminal/settings/categories/$catalogCategoryId'
+      path: '/$catalogCategoryId'
+      fullPath: '/settings/categories/$catalogCategoryId'
+      preLoaderRoute: typeof TerminalSettingsCategoriesCatalogCategoryIdRouteImport
+      parentRoute: typeof TerminalSettingsCategoriesRoute
+    }
+    '/_terminal/settings/categories/new': {
+      id: '/_terminal/settings/categories/new'
+      path: '/new'
+      fullPath: '/settings/categories/new'
+      preLoaderRoute: typeof TerminalSettingsCategoriesNewRouteImport
+      parentRoute: typeof TerminalSettingsCategoriesRoute
+    }
     '/_terminal/settings/items/': {
       id: '/_terminal/settings/items/'
       path: '/'
@@ -788,6 +866,25 @@ const TerminalSettingsAboutRouteWithChildren =
     TerminalSettingsAboutRouteChildren,
   )
 
+interface TerminalSettingsCategoriesRouteChildren {
+  TerminalSettingsCategoriesCatalogCategoryIdRoute: typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
+  TerminalSettingsCategoriesNewRoute: typeof TerminalSettingsCategoriesNewRoute
+  TerminalSettingsCategoriesIndexRoute: typeof TerminalSettingsCategoriesIndexRoute
+}
+
+const TerminalSettingsCategoriesRouteChildren: TerminalSettingsCategoriesRouteChildren =
+  {
+    TerminalSettingsCategoriesCatalogCategoryIdRoute:
+      TerminalSettingsCategoriesCatalogCategoryIdRoute,
+    TerminalSettingsCategoriesNewRoute: TerminalSettingsCategoriesNewRoute,
+    TerminalSettingsCategoriesIndexRoute: TerminalSettingsCategoriesIndexRoute,
+  }
+
+const TerminalSettingsCategoriesRouteWithChildren =
+  TerminalSettingsCategoriesRoute._addFileChildren(
+    TerminalSettingsCategoriesRouteChildren,
+  )
+
 interface TerminalSettingsItemsRouteChildren {
   TerminalSettingsItemsCatalogItemIdRoute: typeof TerminalSettingsItemsCatalogItemIdRoute
   TerminalSettingsItemsNewRoute: typeof TerminalSettingsItemsNewRoute
@@ -809,6 +906,7 @@ const TerminalSettingsItemsRouteWithChildren =
 interface TerminalSettingsRouteChildren {
   TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
+  TerminalSettingsCategoriesRoute: typeof TerminalSettingsCategoriesRouteWithChildren
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
   TerminalSettingsDefaultPaymentMethodRoute: typeof TerminalSettingsDefaultPaymentMethodRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
@@ -831,6 +929,7 @@ interface TerminalSettingsRouteChildren {
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAboutRoute: TerminalSettingsAboutRouteWithChildren,
   TerminalSettingsAccountsRoute: TerminalSettingsAccountsRoute,
+  TerminalSettingsCategoriesRoute: TerminalSettingsCategoriesRouteWithChildren,
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
   TerminalSettingsDefaultPaymentMethodRoute:
     TerminalSettingsDefaultPaymentMethodRoute,

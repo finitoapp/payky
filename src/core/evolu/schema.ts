@@ -24,6 +24,7 @@ import {
   billLine,
   billLineIndexes,
 } from "@/core/modules/bill-line/bill-line.ts"
+import { catalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
 import { catalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
 import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
@@ -70,6 +71,7 @@ export const AppSchema = {
   accountTransactionLightning,
   accountTransactionOnchain,
   accountTransactionSource,
+  catalogCategory,
   catalogItem,
   item,
   table,

@@ -49,11 +49,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
+import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import {
@@ -102,12 +105,15 @@ export function CheckoutPage({
     },
   })
   const [search, setSearch] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
   const [summaryOpen, setSummaryOpen] = useState(false)
 
   const sharedProps = {
     cart,
     search,
     onSearchChange: setSearch,
+    categoryFilter,
+    onCategoryFilterChange: setCategoryFilter,
     summaryOpen,
     onSummaryOpenChange: setSummaryOpen,
   }
@@ -211,10 +217,14 @@ interface CartApi {
   readonly redo: () => Promise<void>
 }
 
+type CategoryFilter = "all" | "uncategorized" | CatalogCategoryId
+
 interface SharedCartViewProps {
   readonly cart: CartApi
   readonly search: string
   readonly onSearchChange: (value: string) => void
+  readonly categoryFilter: CategoryFilter
+  readonly onCategoryFilterChange: (value: CategoryFilter) => void
   readonly summaryOpen: boolean
   readonly onSummaryOpenChange: (open: boolean) => void
 }
@@ -226,6 +236,8 @@ function CheckoutCartView({
   cart,
   search,
   onSearchChange,
+  categoryFilter,
+  onCategoryFilterChange,
   summaryOpen,
   onSummaryOpenChange,
 }: {
@@ -242,6 +254,7 @@ function CheckoutCartView({
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
+  const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const [chargePending, setChargePending] = useState(false)
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false)
 
@@ -249,12 +262,30 @@ function CheckoutCartView({
     () => catalogItems.filter((item) => item.currency === currency),
     [catalogItems, currency]
   )
+  const usedCategoryIds = useMemo(
+    () => new Set(currencyItems.map((item) => item.categoryId)),
+    [currencyItems]
+  )
+  const availableCategories = useMemo(
+    () => categories.filter((category) => usedCategoryIds.has(category.id)),
+    [categories, usedCategoryIds]
+  )
+  const showUncategorizedFilter = usedCategoryIds.has(null)
+  const categoryFilteredItems = useMemo(() => {
+    if (categoryFilter === "all") return currencyItems
+    if (categoryFilter === "uncategorized") {
+      return currencyItems.filter((item) => item.categoryId === null)
+    }
+    return currencyItems.filter((item) => item.categoryId === categoryFilter)
+  }, [currencyItems, categoryFilter])
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase()
     return query === ""
-      ? currencyItems
-      : currencyItems.filter((item) => item.name.toLowerCase().includes(query))
-  }, [currencyItems, search])
+      ? categoryFilteredItems
+      : categoryFilteredItems.filter((item) =>
+          item.name.toLowerCase().includes(query)
+        )
+  }, [categoryFilteredItems, search])
 
   const totalAmount = useMemo(
     () =>
@@ -339,6 +370,35 @@ function CheckoutCartView({
             </Button>
           )}
         </div>
+        {availableCategories.length > 0 && (
+          <div className="mt-2 overflow-x-auto">
+            <ToggleGroup<CategoryFilter>
+              value={[categoryFilter]}
+              onValueChange={(nextValue) => {
+                const [nextFilter] = nextValue
+                if (nextFilter === undefined) return
+                onCategoryFilterChange(nextFilter)
+              }}
+              variant="outline"
+              size="sm"
+              className="w-max"
+            >
+              <ToggleGroupItem value="all">
+                {t("checkout.category.all")}
+              </ToggleGroupItem>
+              {availableCategories.map((category) => (
+                <ToggleGroupItem key={category.id} value={category.id}>
+                  {category.name}
+                </ToggleGroupItem>
+              ))}
+              {showUncategorizedFilter && (
+                <ToggleGroupItem value="uncategorized">
+                  {t("checkout.category.uncategorized")}
+                </ToggleGroupItem>
+              )}
+            </ToggleGroup>
+          </div>
+        )}
       </div>
       <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {currencyItems.length === 0 ? (

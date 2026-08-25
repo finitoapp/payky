@@ -32,6 +32,8 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
+import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import {
   createCatalogItemAtEnd,
@@ -155,8 +157,13 @@ function CatalogItemForm({
   const descriptionInputId = useId()
   const priceInputId = useId()
   const currencyInputId = useId()
+  const categoryInputId = useId()
+  const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const [name, setName] = useState(item?.name ?? "")
   const [description, setDescription] = useState(item?.description ?? "")
+  const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
+    item?.categoryId ?? "none"
+  )
   const [currency, setCurrency] = useState<FiatCurrencyType>(
     item?.currency ?? defaultCurrency ?? FiatCurrency.CZK
   )
@@ -234,6 +241,7 @@ function CatalogItemForm({
               await run(
                 createCatalogItemAtEnd({
                   deviceId: null,
+                  categoryId: categoryId === "none" ? null : categoryId,
                   name: nameResult.data,
                   description: descriptionResult?.data ?? null,
                   currency,
@@ -249,6 +257,7 @@ function CatalogItemForm({
             await run(
               updateCatalogItem({
                 id: item.id,
+                categoryId: categoryId === "none" ? null : categoryId,
                 name: nameResult.data,
                 description: descriptionResult?.data ?? null,
                 currency,
@@ -351,6 +360,42 @@ function CatalogItemForm({
             <FieldError>
               {descriptionError ? t(descriptionError) : null}
             </FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor={categoryInputId}>
+              {t("settings.items.form.category.label")}
+            </FieldLabel>
+            <Select<CatalogCategoryId | "none">
+              items={{
+                none: t("settings.items.form.category.none"),
+                ...Object.fromEntries(
+                  categories.map((category) => [category.id, category.name])
+                ),
+              }}
+              value={categoryId}
+              onValueChange={(nextCategoryId) => {
+                if (nextCategoryId === null) return
+                setCategoryId(nextCategoryId)
+                resetSaved()
+              }}
+            >
+              <SelectTrigger id={categoryInputId} disabled={pending}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="none">
+                    {t("settings.items.form.category.none")}
+                  </SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </Field>
         </FieldGroup>
       </SettingsFormCard>

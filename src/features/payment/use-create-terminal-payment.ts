@@ -3,6 +3,7 @@ import { useStore } from "jotai"
 import { useCallback } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
 import type {
   FiatCurrency,
@@ -22,10 +23,12 @@ export function useCreateTerminalPayment() {
       amount,
       currency,
       tipAmount,
+      billId = null,
     }: {
       readonly amount: NonNegativeInteger
       readonly currency: FiatCurrency
       readonly tipAmount: NonNegativeInteger
+      readonly billId?: BillId | null
     }): Promise<boolean> => {
       const { device } = await jotaiStore.get(accountAtom)
 
@@ -34,7 +37,7 @@ export function useCreateTerminalPayment() {
       const result = await run(
         createPreparedPayment({
           deviceId: device.id,
-          billId: null,
+          billId,
           tableId: null,
           amount,
           currency,

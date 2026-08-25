@@ -1,6 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Clock3, Grid2X2, Settings } from "lucide-react"
+import { Clock3, Settings, ShoppingBag } from "lucide-react"
 import { Suspense } from "react"
 import { toast } from "sonner"
 import { TerminalPaymentKeypad } from "@/components/terminal-payment-keypad.tsx"
@@ -33,11 +33,10 @@ const Header = () => {
     <header className="flex items-center justify-between">
       <Button
         variant={"ghost"}
-        className={"invisible"}
         nativeButton={false}
         render={<Link aria-label={t("nav.checkout")} to="/checkout" />}
       >
-        <Grid2X2 className={"size-6"} strokeWidth={3} />
+        <ShoppingBag className={"size-6"} strokeWidth={3} />
       </Button>
       <div className="flex items-center gap-4">
         <Button

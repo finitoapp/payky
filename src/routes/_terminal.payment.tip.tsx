@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { z } from "zod"
+import { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   FiatCurrencySchema,
   NonNegativeInteger,
@@ -10,6 +11,7 @@ import { PaymentTipPage } from "@/features/payment-tip/payment-tip-page.tsx"
 const PaymentTipSearchSchema = z.object({
   amount: z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   currency: FiatCurrencySchema,
+  billId: BillId.optional(),
 })
 
 export const Route = createFileRoute("/_terminal/payment/tip")({
@@ -24,11 +26,15 @@ export const Route = createFileRoute("/_terminal/payment/tip")({
 })
 
 function PaymentTipRoute() {
-  const { amount, currency } = Route.useSearch()
+  const { amount, currency, billId } = Route.useSearch()
 
   return (
     <Suspense fallback={null}>
-      <PaymentTipPage amount={NonNegativeInteger(amount)} currency={currency} />
+      <PaymentTipPage
+        amount={NonNegativeInteger(amount)}
+        currency={currency}
+        billId={billId ?? null}
+      />
     </Suspense>
   )
 }

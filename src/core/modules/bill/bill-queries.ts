@@ -33,3 +33,19 @@ export const openBillsQuery = createQuery((db) =>
       currency: KyselyNotNull
     }>()
 )
+
+/**
+ * Every bill's `displayNumber`, oldest first, regardless of status — the
+ * source `createBillAtEnd` derives the next sequential number from. Must
+ * include closed/canceled bills too so numbers are never reused.
+ */
+export const allBillDisplayNumbersQuery = createQuery((db) =>
+  db
+    .selectFrom("bill")
+    .select(["displayNumber"])
+    .where("displayNumber", "is not", null)
+    .$narrowType<{
+      displayNumber: KyselyNotNull
+    }>()
+    .orderBy("displayNumber", "asc")
+)

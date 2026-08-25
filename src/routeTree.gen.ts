@@ -19,6 +19,7 @@ import { Route as TerminalActivityRouteImport } from './routes/_terminal.activit
 import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
+import { Route as TerminalCheckoutBillsRouteImport } from './routes/_terminal.checkout_.bills'
 import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payment.tip'
 import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
@@ -97,6 +98,11 @@ const TerminalActivityPaymentIdRoute =
     path: '/activity/$paymentId',
     getParentRoute: () => TerminalRoute,
   } as any)
+const TerminalCheckoutBillsRoute = TerminalCheckoutBillsRouteImport.update({
+  id: '/checkout_/bills',
+  path: '/checkout/bills',
+  getParentRoute: () => TerminalRoute,
+} as any)
 const TerminalPaymentTipRoute = TerminalPaymentTipRouteImport.update({
   id: '/payment/tip',
   path: '/payment/tip',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof TerminalCheckoutRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
+  '/checkout/bills': typeof TerminalCheckoutBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof TerminalCheckoutRoute
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
+  '/checkout/bills': typeof TerminalCheckoutBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
+  '/_terminal/checkout_/bills': typeof TerminalCheckoutBillsRoute
   '/_terminal/payment/tip': typeof TerminalPaymentTipRoute
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -377,6 +386,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/settings'
     | '/activity/$paymentId'
+    | '/checkout/bills'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/about'
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/'
     | '/activity/$paymentId'
+    | '/checkout/bills'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/accounts'
@@ -451,6 +462,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings'
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
+    | '/_terminal/checkout_/bills'
     | '/_terminal/payment/tip'
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
@@ -558,6 +570,13 @@ declare module '@tanstack/react-router' {
       path: '/activity/$paymentId'
       fullPath: '/activity/$paymentId'
       preLoaderRoute: typeof TerminalActivityPaymentIdRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/checkout_/bills': {
+      id: '/_terminal/checkout_/bills'
+      path: '/checkout/bills'
+      fullPath: '/checkout/bills'
+      preLoaderRoute: typeof TerminalCheckoutBillsRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/payment/tip': {
@@ -842,6 +861,7 @@ interface TerminalRouteChildren {
   TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
+  TerminalCheckoutBillsRoute: typeof TerminalCheckoutBillsRoute
   TerminalPaymentTipRoute: typeof TerminalPaymentTipRoute
   TerminalPaymentPaymentIdRoute: typeof TerminalPaymentPaymentIdRoute
 }
@@ -852,6 +872,7 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
+  TerminalCheckoutBillsRoute: TerminalCheckoutBillsRoute,
   TerminalPaymentTipRoute: TerminalPaymentTipRoute,
   TerminalPaymentPaymentIdRoute: TerminalPaymentPaymentIdRoute,
 }

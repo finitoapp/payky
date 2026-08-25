@@ -36,7 +36,6 @@ export function ItemsSettingsPage() {
       />
 
       <VerticalNav
-        className="mt-6"
         empty={
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <p className="text-lg font-semibold">

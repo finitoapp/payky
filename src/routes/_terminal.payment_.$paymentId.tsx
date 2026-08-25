@@ -13,8 +13,10 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react"
+import { toast } from "sonner"
 
 import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -35,6 +37,8 @@ import {
   getDefaultPaymentMethod,
   parsePaymentMethodOrder,
 } from "@/core/modules/app-settings/app-settings-utils.ts"
+import { closeBillAsPaid } from "@/core/modules/bill/bill-actions.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   markPaymentPaidCash,
   preparePaymentMethod,
@@ -147,6 +151,7 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
       )
       .select([
         "payment.id",
+        "payment.billId",
         "payment.amount",
         "payment.currency",
         "payment.tipAmount",
@@ -261,6 +266,7 @@ function PaymentWaitingRequest({
     createPaymentMethodPreparationRunner
   )
   const [successVisible, setSuccessVisible] = useState(false)
+  const closedBillIdsRef = useRef(new Set<BillId>())
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
@@ -459,11 +465,34 @@ function PaymentWaitingRequest({
     [appRun, console, paymentId]
   )
 
-  useEffect(() => {
-    if (!isPaid || successVisible) return
+  const closePaidBill = useCallback(
+    async (billId: BillId) => {
+      if (closedBillIdsRef.current.has(billId)) return
+      closedBillIdsRef.current.add(billId)
 
-    setSuccessVisible(true)
-  }, [isPaid, successVisible])
+      try {
+        await using run = appRun()
+        await run.orThrow(closeBillAsPaid(billId))
+      } catch (error) {
+        closedBillIdsRef.current.delete(billId)
+        console.error("Failed to close paid bill", error)
+        toast.error(t("paymentWait.closeBillError"))
+      }
+    },
+    [appRun, console, t]
+  )
+
+  useEffect(() => {
+    if (isPaid) setSuccessVisible(true)
+  }, [isPaid])
+
+  useEffect(() => {
+    if (!isPaid) return
+    const billId = payment?.billId
+    if (billId === null || billId === undefined) return
+
+    void closePaidBill(billId)
+  }, [closePaidBill, isPaid, payment?.billId])
 
   useEffect(() => {
     if (
@@ -570,6 +599,11 @@ function PaymentWaitingRequest({
       if (!result.ok) {
         console.error("Failed to mark cash payment paid", result.error)
         setCashPaymentErrorKey("paymentWait.cashPaid.error")
+        return
+      }
+
+      if (payment.billId !== null) {
+        await closePaidBill(payment.billId)
       }
     } finally {
       setCashPaymentPending(false)

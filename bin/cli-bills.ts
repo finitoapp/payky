@@ -301,7 +301,7 @@ export const registerBillsCommand =
               return
             }
 
-            const updatedLineSummary = await run.ok(
+            const updatedLineSummary = await run.orThrow(
               appendRemoveBillLine({
                 billId: options.billId,
                 deviceId: options.deviceId ?? null,
@@ -370,7 +370,7 @@ export const registerBillsCommand =
             paymentId: PaymentId.describe("Payment id"),
           },
           async action(_, options) {
-            await run.ok(partiallyPayBill(options))
+            await run.orThrow(partiallyPayBill(options))
             run.deps.console.log(`Marked bill ${options.id} as partially paid`)
           },
         })
@@ -385,7 +385,7 @@ export const registerBillsCommand =
             id: BillId.describe("Bill id"),
           },
           async action(_, options) {
-            await run.ok(cancelBill(options.id))
+            await run.orThrow(cancelBill(options.id))
             run.deps.console.log(`Canceled bill ${options.id}`)
           },
         })
@@ -400,7 +400,7 @@ export const registerBillsCommand =
             id: BillId.describe("Bill id"),
           },
           async action(_, options) {
-            await run.ok(closeBillAsPaid(options.id))
+            await run.orThrow(closeBillAsPaid(options.id))
             run.deps.console.log(`Closed bill ${options.id} as paid`)
           },
         })

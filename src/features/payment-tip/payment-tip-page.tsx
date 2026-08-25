@@ -19,6 +19,7 @@ import {
   parseTipFixedAmounts,
   parseTipPercentages,
 } from "@/core/modules/app-settings/app-settings-tips.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   calculatePaymentAmounts,
   calculatePercentageTipAmount,
@@ -48,12 +49,17 @@ type TipSelection =
 interface PaymentTipPageProps {
   readonly amount: NonNegativeIntegerValue
   readonly currency: FiatCurrency
+  readonly billId?: BillId | null
 }
 
 const tipOptionClassName =
   "h-[clamp(4.5rem,10dvh,6rem)] flex-col gap-1 py-3 text-lg"
 
-export function PaymentTipPage({ amount, currency }: PaymentTipPageProps) {
+export function PaymentTipPage({
+  amount,
+  currency,
+  billId = null,
+}: PaymentTipPageProps) {
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
 
@@ -63,6 +69,7 @@ export function PaymentTipPage({ amount, currency }: PaymentTipPageProps) {
     <PaymentTipForm
       amount={amount}
       currency={currency}
+      billId={billId}
       fixedAmounts={parseTipFixedAmounts(settings.presetTipFixedAmountsJson)}
       percentages={parseTipPercentages(settings.presetTipPercentagesJson)}
       tipsEnabled={settings.tipsEnabled === sqliteTrue}
@@ -73,6 +80,7 @@ export function PaymentTipPage({ amount, currency }: PaymentTipPageProps) {
 function PaymentTipForm({
   amount,
   currency,
+  billId = null,
   fixedAmounts,
   percentages,
   tipsEnabled,
@@ -134,6 +142,7 @@ function PaymentTipForm({
       const created = await createTerminalPayment({
         ...paymentAmounts,
         currency,
+        billId,
       })
       if (!created) toast.error(t("payment.create.error"))
     } finally {

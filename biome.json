@@ -9,6 +9,8 @@
       "!skills",
       "!node_modules",
       "!coverage",
+      "!playwright-report",
+      "!test-results",
       "!android",
       "!ios",
       "!src/routeTree.gen.ts"

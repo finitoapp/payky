@@ -218,6 +218,41 @@ export async function completeOnboardingDefaults(
     .waitFor()
 }
 
+/** Adds a catalog item through the real settings UI (used to seed items for cart specs). */
+export async function addCatalogItem(
+  page: Page,
+  language: Language,
+  input: { readonly name: string; readonly price: string }
+): Promise<void> {
+  await gotoPage(page, "/settings/items", language, "settings.items.title")
+  await page
+    .getByRole("button", { name: translate(language, "settings.items.add") })
+    .click()
+  await page
+    .getByRole("heading", {
+      name: translate(language, "settings.items.form.title.create"),
+    })
+    .waitFor()
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.items.form.name.label"),
+    })
+    .fill(input.name)
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.items.form.price.label"),
+    })
+    .fill(input.price)
+  await page
+    .getByRole("button", {
+      name: translate(language, "settings.items.form.save.create"),
+    })
+    .click()
+  await page
+    .getByRole("heading", { name: translate(language, "settings.items.title") })
+    .waitFor()
+}
+
 export async function enterAmount(
   page: Page,
   language: Language

@@ -32,8 +32,10 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
+  type BillStatus,
   type ItemLineType,
   NonNegativeInteger,
+  PositiveInteger,
   PositiveNumber,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -41,7 +43,11 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import { billByIdQuery, openBillsQuery } from "./bill-queries.ts"
+import {
+  allBillDisplayNumbersQuery,
+  billByIdQuery,
+  openBillsQuery,
+} from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 
 export interface BillWithItems {
@@ -53,6 +59,12 @@ const createBillNotFoundError = defineError("BillNotFound")<{
   readonly id: BillId
 }>()
 export type BillNotFoundError = ReturnType<typeof createBillNotFoundError>
+
+const createBillNotOpenError = defineError("BillNotOpen")<{
+  readonly id: BillId
+  readonly status: BillStatus
+}>()
+export type BillNotOpenError = ReturnType<typeof createBillNotOpenError>
 
 const createCatalogItemNotFoundError = defineError("CatalogItemNotFound")<{
   readonly id: CatalogItemId
@@ -75,11 +87,16 @@ export type BillLineSummaryMissingError = ReturnType<
 export type AddBillLineError =
   | CatalogItemNotFoundError
   | BillLineSummaryMissingError
+  | BillNotFoundError
+  | BillNotOpenError
 
-export type SplitBillError = BillNotFoundError
+export type SplitBillError = BillNotFoundError | BillNotOpenError
 
 export const billNotFound = (id: BillId): BillNotFoundError =>
   createBillNotFoundError({ id })
+
+export const billNotOpen = (id: BillId, status: BillStatus): BillNotOpenError =>
+  createBillNotOpenError({ id, status })
 
 export const catalogItemNotFound = (
   id: CatalogItemId
@@ -98,6 +115,63 @@ export const loadBill =
       await run.deps.evolu.loadQuery(billByIdQuery(idValue)),
       billNotFound(idValue)
     )
+
+/**
+ * Loads a bill and rejects it unless its status is one of `allowedStatuses`.
+ * Used to guard domain invariants around the `open` -> `partiallyPaid` ->
+ * `paid`/`canceled` lifecycle before a mutation is applied.
+ */
+const requireBillInStatus =
+  (
+    billId: BillId,
+    allowedStatuses: ReadonlySet<BillStatus>
+  ): Task<BillRow, BillNotFoundError | BillNotOpenError, EvoluDep> =>
+  async (run) => {
+    const billResult = await run(loadBill(billId))
+    if (!billResult.ok) return billResult
+
+    const { value: billRow } = billResult
+    if (!allowedStatuses.has(billRow.status)) {
+      return err(billNotOpen(billId, billRow.status))
+    }
+
+    return ok(billRow)
+  }
+
+const openBillStatuses: ReadonlySet<BillStatus> = new Set([
+  "open",
+  "partiallyPaid",
+])
+
+/** A bill still accepting line/status changes: not yet `paid` or `canceled`. */
+const requireOpenBill = (billId: BillId) =>
+  requireBillInStatus(billId, openBillStatuses)
+
+const closableBillStatuses: ReadonlySet<BillStatus> = new Set([
+  "open",
+  "partiallyPaid",
+  "paid",
+])
+
+/**
+ * Allows re-closing an already-`paid` bill as an idempotent no-op (two
+ * devices racing to close the same bill), but rejects a `canceled` one.
+ */
+const requireClosableBill = (billId: BillId) =>
+  requireBillInStatus(billId, closableBillStatuses)
+
+const cancelableBillStatuses: ReadonlySet<BillStatus> = new Set([
+  "open",
+  "partiallyPaid",
+  "canceled",
+])
+
+/**
+ * Allows re-canceling an already-`canceled` bill as an idempotent no-op, but
+ * rejects a `paid` one.
+ */
+const requireCancelableBill = (billId: BillId) =>
+  requireBillInStatus(billId, cancelableBillStatuses)
 
 export const createBill =
   (
@@ -120,6 +194,33 @@ export const createBill =
     )
 
     return ok(id)
+  }
+
+/**
+ * Creates a bill with a `displayNumber` derived from the highest existing
+ * one (across every status, not just open bills, so numbers are never
+ * reused) instead of taking it as input. This is the entry point cart UIs
+ * use to lazily create the bill behind a new cart.
+ */
+export const createBillAtEnd =
+  (
+    input: Pick<
+      InsertValues<typeof bill>,
+      "deviceId" | "label" | "tableId" | "currency"
+    >
+  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const existing = await run.deps.evolu.loadQuery(allBillDisplayNumbersQuery)
+    const lastDisplayNumber = existing.at(-1)?.displayNumber ?? 0
+
+    return ok(
+      await run.ok(
+        createBill({
+          ...input,
+          displayNumber: PositiveInteger(lastDisplayNumber + 1),
+        })
+      )
+    )
   }
 
 export const assignBillToTable =
@@ -221,6 +322,9 @@ export const addCatalogItemToBill =
     }
   ): Task<BillLineSummary, AddBillLineError, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const billResult = await run(requireOpenBill(input.billId))
+    if (!billResult.ok) return billResult
+
     const catalogItemResult = getFirstOr(
       await run.deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
       catalogItemNotFound(input.catalogItemId)
@@ -251,10 +355,13 @@ export const addManualAmountToBill =
       Pick<InsertValues<typeof item>, "name" | "currency">
   ): Task<
     BillLineSummary,
-    BillLineSummaryMissingError,
+    BillLineSummaryMissingError | BillNotFoundError | BillNotOpenError,
     EvoluDep & EvoluOwnerIdDep
   > =>
-  (run) => {
+  async (run) => {
+    const billResult = await run(requireOpenBill(input.billId))
+    if (!billResult.ok) return billResult
+
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -283,10 +390,13 @@ export const addTipToBill =
       Pick<InsertValues<typeof item>, "name" | "currency">
   ): Task<
     BillLineSummary,
-    BillLineSummaryMissingError,
+    BillLineSummaryMissingError | BillNotFoundError | BillNotOpenError,
     EvoluDep & EvoluOwnerIdDep
   > =>
-  (run) => {
+  async (run) => {
+    const billResult = await run(requireOpenBill(input.billId))
+    if (!billResult.ok) return billResult
+
     const snapshot = createStandaloneItemSnapshot({
       catalogItemId: null,
       name: input.name,
@@ -314,8 +424,15 @@ export const appendRemoveBillLine =
     > & {
       readonly lineSummary: BillLineSummary
     }
-  ): Task<BillLineSummary | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<
+    BillLineSummary | null,
+    BillNotFoundError | BillNotOpenError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
+    const billResult = await run(requireOpenBill(input.billId))
+    if (!billResult.ok) return billResult
+
     const projected = await run.ok(
       appendBillLine({
         billId: input.billId,
@@ -353,7 +470,10 @@ export const splitBill =
     readonly items: ReadonlyArray<BillLineSummary>
   }): Task<BillWithItems, SplitBillError, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const targetBillResult = await run(loadBill(input.targetBillId))
+    const sourceBillResult = await run(requireOpenBill(input.sourceBillId))
+    if (!sourceBillResult.ok) return sourceBillResult
+
+    const targetBillResult = await run(requireOpenBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
     const lines: Omit<BillLineRow, "id">[] = []
@@ -392,8 +512,15 @@ export const partiallyPayBill =
     input: Pick<UpdateValues<typeof bill>, "id"> & {
       readonly paymentId: PaymentId
     }
-  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<
+    BillId,
+    BillNotFoundError | BillNotOpenError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
+    const billResult = await run(requireOpenBill(input.id))
+    if (!billResult.ok) return billResult
+
     const { evoluOwnerId } = run.deps
     void input.paymentId
 
@@ -412,8 +539,17 @@ export const partiallyPayBill =
   }
 
 export const cancelBill =
-  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  (
+    billId: BillId
+  ): Task<
+    BillId,
+    BillNotFoundError | BillNotOpenError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
+    const billResult = await run(requireCancelableBill(billId))
+    if (!billResult.ok) return billResult
+
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>
@@ -432,8 +568,17 @@ export const cancelBill =
   }
 
 export const closeBillAsPaid =
-  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  (
+    billId: BillId
+  ): Task<
+    BillId,
+    BillNotFoundError | BillNotOpenError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
+    const billResult = await run(requireClosableBill(billId))
+    if (!billResult.ok) return billResult
+
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>

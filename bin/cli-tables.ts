@@ -7,6 +7,7 @@ import { DeviceId } from "../src/core/modules/device/device-types"
 import {
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
+  PositiveIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
 import { removeUndefinedValues } from "../src/core/modules/shared/utils"
 import {
@@ -19,6 +20,7 @@ import {
   tablesQuery,
 } from "../src/core/modules/table/table-queries"
 import { TableId } from "../src/core/modules/table/table-types"
+import { generateTableCode } from "../src/core/modules/table/table-utils"
 
 export const registerTablesCommand =
   (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
@@ -66,8 +68,12 @@ export const registerTablesCommand =
           args: {},
           opts: {
             name: NonEmptyString255Schema.describe("n;Table name"),
+            seatCount: PositiveIntegerFromStringSchema.describe("p;Seat count"),
             sortOrder:
               NonNegativeIntegerFromStringSchema.describe("s;Sort order"),
+            code: NonEmptyString255Schema.optional().describe(
+              "Table code (generated if omitted); reserved for a future QR code, not used yet"
+            ),
             deviceId: DeviceId.optional().describe(
               "Device id that created the table"
             ),
@@ -76,6 +82,8 @@ export const registerTablesCommand =
             const data = {
               deviceId: options.deviceId ?? null,
               name: options.name,
+              seatCount: options.seatCount,
+              code: options.code ?? generateTableCode(),
               sortOrder: options.sortOrder,
             }
 
@@ -95,6 +103,10 @@ export const registerTablesCommand =
           opts: {
             id: TableId.describe("Table id"),
             name: NonEmptyString255Schema.optional().describe("n;Table name"),
+            seatCount:
+              PositiveIntegerFromStringSchema.optional().describe(
+                "p;Seat count"
+              ),
             sortOrder:
               NonNegativeIntegerFromStringSchema.optional().describe(
                 "s;Sort order"

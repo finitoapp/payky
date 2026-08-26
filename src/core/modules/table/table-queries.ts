@@ -8,10 +8,14 @@ export const tablesQuery = createQuery((db) =>
     .selectFrom("table")
     .selectAll()
     .where("name", "is not", null)
+    .where("seatCount", "is not", null)
+    .where("code", "is not", null)
     .where("sortOrder", "is not", null)
     .where("isDeleted", "is", null)
     .$narrowType<{
       name: KyselyNotNull
+      seatCount: KyselyNotNull
+      code: KyselyNotNull
       sortOrder: KyselyNotNull
     }>()
     .orderBy("sortOrder", "asc")
@@ -24,9 +28,13 @@ export const tableByIdQuery = (idValue: TableId) =>
       .selectAll()
       .where("id", "=", idValue)
       .where("name", "is not", null)
+      .where("seatCount", "is not", null)
+      .where("code", "is not", null)
       .where("sortOrder", "is not", null)
       .$narrowType<{
         name: KyselyNotNull
+        seatCount: KyselyNotNull
+        code: KyselyNotNull
         sortOrder: KyselyNotNull
       }>()
   )

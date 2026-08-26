@@ -7,10 +7,12 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255,
   NonNegativeInteger,
+  PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createTable,
+  createTableAtEnd,
   deleteTable,
   listTables,
   updateTable,
@@ -39,6 +41,8 @@ describe("table actions", () => {
       createTable({
         deviceId: null,
         name: NonEmptyString255("Main room"),
+        seatCount: PositiveInteger(4),
+        code: NonEmptyString255("ABCD1234"),
         sortOrder: NonNegativeInteger(10),
       })
     )
@@ -124,6 +128,8 @@ describe("table actions", () => {
       createTable({
         deviceId: null,
         name: NonEmptyString255("Second"),
+        seatCount: PositiveInteger(2),
+        code: NonEmptyString255("SECOND01"),
         sortOrder: NonNegativeInteger(20),
       })
     )
@@ -131,6 +137,8 @@ describe("table actions", () => {
       createTable({
         deviceId: null,
         name: NonEmptyString255("First"),
+        seatCount: PositiveInteger(2),
+        code: NonEmptyString255("FIRST001"),
         sortOrder: NonNegativeInteger(10),
       })
     )
@@ -138,6 +146,8 @@ describe("table actions", () => {
       createTable({
         deviceId: null,
         name: NonEmptyString255("Deleted"),
+        seatCount: PositiveInteger(2),
+        code: NonEmptyString255("DELETED1"),
         sortOrder: NonNegativeInteger(5),
       })
     )
@@ -159,5 +169,42 @@ describe("table actions", () => {
           isDeleted: null,
         },
       ])
+  }, 15_000)
+
+  test("appends tables with an increasing sortOrder and a generated code", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    const firstId = await run.ok(
+      createTableAtEnd({
+        deviceId: null,
+        name: NonEmptyString255("First"),
+        seatCount: PositiveInteger(2),
+      })
+    )
+    const secondId = await run.ok(
+      createTableAtEnd({
+        deviceId: null,
+        name: NonEmptyString255("Second"),
+        seatCount: PositiveInteger(4),
+      })
+    )
+
+    await expect
+      .poll(() => run.ok(listTables()))
+      .toMatchObject([
+        { id: firstId, sortOrder: 0 },
+        { id: secondId, sortOrder: 1 },
+      ])
+
+    const [first, second] = await run.ok(listTables())
+    expect(first?.code).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$/)
+    expect(second?.code).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$/)
+    expect(first?.code).not.toBe(second?.code)
   }, 15_000)
 })

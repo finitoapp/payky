@@ -304,6 +304,43 @@ export async function addCatalogCategory(
     .waitFor()
 }
 
+/** Adds a table through the real settings UI (used to seed tables for checkout/floor-view specs). */
+export async function addTable(
+  page: Page,
+  language: Language,
+  input: { readonly name: string; readonly seatCount: string }
+): Promise<void> {
+  await gotoPage(page, "/settings/tables", language, "settings.tables.title")
+  await page
+    .getByRole("button", { name: translate(language, "settings.tables.add") })
+    .click()
+  await page
+    .getByRole("heading", {
+      name: translate(language, "settings.tables.form.title.create"),
+    })
+    .waitFor()
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.tables.form.name.label"),
+    })
+    .fill(input.name)
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.tables.form.seatCount.label"),
+    })
+    .fill(input.seatCount)
+  await page
+    .getByRole("button", {
+      name: translate(language, "settings.tables.form.save.create"),
+    })
+    .click()
+  await page
+    .getByRole("heading", {
+      name: translate(language, "settings.tables.title"),
+    })
+    .waitFor()
+}
+
 export async function enterAmount(
   page: Page,
   language: Language

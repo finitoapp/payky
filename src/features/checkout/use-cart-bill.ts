@@ -17,6 +17,7 @@ import {
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
+import type { TableId } from "@/core/modules/table/table-types.ts"
 import { getBillLineSummaryUnitAmount } from "@/features/checkout/cart-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
@@ -46,10 +47,13 @@ const invertLine = (line: CartLine): CartLine => ({
 export function useCartBill({
   billId,
   currency,
+  tableId,
   onBillCreated,
 }: {
   readonly billId: BillId | undefined
   readonly currency: FiatCurrency
+  /** Table to assign when the bill is lazily created on the first line. */
+  readonly tableId: TableId | null
   readonly onBillCreated: (createdBillId: BillId) => void
 }) {
   const appRun = useAppRun()
@@ -77,13 +81,13 @@ export function useCartBill({
       createBillAtEnd({
         deviceId: device.id,
         label: null,
-        tableId: null,
+        tableId,
         currency,
       })
     )
     onBillCreated(created)
     return created
-  }, [appRun, billId, currency, jotaiStore, onBillCreated])
+  }, [appRun, billId, currency, jotaiStore, onBillCreated, tableId])
 
   const addQuantity = useCallback(
     async (catalogItem: CatalogItemRow, quantity: PositiveNumber) => {

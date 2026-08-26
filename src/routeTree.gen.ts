@@ -18,6 +18,7 @@ import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
 import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
+import { Route as TerminalTablesRouteImport } from './routes/_terminal.tables'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
 import { Route as TerminalCheckoutBillsRouteImport } from './routes/_terminal.checkout_.bills'
 import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payment.tip'
@@ -39,6 +40,7 @@ import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_t
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
+import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.settings.tables'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsTipsRouteImport } from './routes/_terminal.settings.tips'
 import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
@@ -51,6 +53,9 @@ import { Route as TerminalSettingsCategoriesNewRouteImport } from './routes/_ter
 import { Route as TerminalSettingsItemsIndexRouteImport } from './routes/_terminal.settings.items.index'
 import { Route as TerminalSettingsItemsCatalogItemIdRouteImport } from './routes/_terminal.settings.items.$catalogItemId'
 import { Route as TerminalSettingsItemsNewRouteImport } from './routes/_terminal.settings.items.new'
+import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
+import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_terminal.settings.tables.$tableId'
+import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_terminal.settings.tables.new'
 
 const TerminalRoute = TerminalRouteImport.update({
   id: '/_terminal',
@@ -94,6 +99,11 @@ const TerminalCheckoutRoute = TerminalCheckoutRouteImport.update({
 const TerminalSettingsRoute = TerminalSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => TerminalRoute,
+} as any)
+const TerminalTablesRoute = TerminalTablesRouteImport.update({
+  id: '/tables',
+  path: '/tables',
   getParentRoute: () => TerminalRoute,
 } as any)
 const TerminalActivityPaymentIdRoute =
@@ -215,6 +225,11 @@ const TerminalSettingsSecurityRoute =
     path: '/security',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalSettingsTablesRoute = TerminalSettingsTablesRouteImport.update({
+  id: '/tables',
+  path: '/tables',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
 const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
   id: '/theme',
   path: '/theme',
@@ -285,6 +300,24 @@ const TerminalSettingsItemsNewRoute =
     path: '/new',
     getParentRoute: () => TerminalSettingsItemsRoute,
   } as any)
+const TerminalSettingsTablesIndexRoute =
+  TerminalSettingsTablesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsTablesRoute,
+  } as any)
+const TerminalSettingsTablesTableIdRoute =
+  TerminalSettingsTablesTableIdRouteImport.update({
+    id: '/$tableId',
+    path: '/$tableId',
+    getParentRoute: () => TerminalSettingsTablesRoute,
+  } as any)
+const TerminalSettingsTablesNewRoute =
+  TerminalSettingsTablesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => TerminalSettingsTablesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
@@ -295,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
+  '/tables': typeof TerminalTablesRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/checkout/bills': typeof TerminalCheckoutBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
@@ -315,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
+  '/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/tips': typeof TerminalSettingsTipsRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -325,9 +360,12 @@ export interface FileRoutesByFullPath {
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
+  '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
   '/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items/': typeof TerminalSettingsItemsIndexRoute
+  '/settings/tables/': typeof TerminalSettingsTablesIndexRoute
 }
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
@@ -336,6 +374,7 @@ export interface FileRoutesByTo {
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/checkout': typeof TerminalCheckoutRoute
+  '/tables': typeof TerminalTablesRoute
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/checkout/bills': typeof TerminalCheckoutBillsRoute
@@ -364,9 +403,12 @@ export interface FileRoutesByTo {
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
+  '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
   '/settings/categories': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items': typeof TerminalSettingsItemsIndexRoute
+  '/settings/tables': typeof TerminalSettingsTablesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -378,6 +420,7 @@ export interface FileRoutesById {
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/checkout': typeof TerminalCheckoutRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
+  '/_terminal/tables': typeof TerminalTablesRoute
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/checkout_/bills': typeof TerminalCheckoutBillsRoute
@@ -399,6 +442,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
+  '/_terminal/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/tips': typeof TerminalSettingsTipsRoute
   '/_terminal/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -409,9 +453,12 @@ export interface FileRoutesById {
   '/_terminal/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/_terminal/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/_terminal/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
+  '/_terminal/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
   '/_terminal/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/_terminal/settings/items/': typeof TerminalSettingsItemsIndexRoute
+  '/_terminal/settings/tables/': typeof TerminalSettingsTablesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -424,6 +471,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/checkout'
     | '/settings'
+    | '/tables'
     | '/activity/$paymentId'
     | '/checkout/bills'
     | '/payment/tip'
@@ -444,6 +492,7 @@ export interface FileRouteTypes {
     | '/settings/payment-number-series'
     | '/settings/privacy'
     | '/settings/security'
+    | '/settings/tables'
     | '/settings/theme'
     | '/settings/tips'
     | '/settings/withdraw'
@@ -454,9 +503,12 @@ export interface FileRouteTypes {
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
+    | '/settings/tables/$tableId'
+    | '/settings/tables/new'
     | '/settings/about/'
     | '/settings/categories/'
     | '/settings/items/'
+    | '/settings/tables/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/error'
@@ -465,6 +517,7 @@ export interface FileRouteTypes {
     | '/restore-account'
     | '/activity'
     | '/checkout'
+    | '/tables'
     | '/'
     | '/activity/$paymentId'
     | '/checkout/bills'
@@ -493,9 +546,12 @@ export interface FileRouteTypes {
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
+    | '/settings/tables/$tableId'
+    | '/settings/tables/new'
     | '/settings/about'
     | '/settings/categories'
     | '/settings/items'
+    | '/settings/tables'
   id:
     | '__root__'
     | '/_terminal'
@@ -506,6 +562,7 @@ export interface FileRouteTypes {
     | '/_terminal/activity'
     | '/_terminal/checkout'
     | '/_terminal/settings'
+    | '/_terminal/tables'
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
     | '/_terminal/checkout_/bills'
@@ -527,6 +584,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-number-series'
     | '/_terminal/settings/privacy'
     | '/_terminal/settings/security'
+    | '/_terminal/settings/tables'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/tips'
     | '/_terminal/settings/withdraw'
@@ -537,9 +595,12 @@ export interface FileRouteTypes {
     | '/_terminal/settings/categories/new'
     | '/_terminal/settings/items/$catalogItemId'
     | '/_terminal/settings/items/new'
+    | '/_terminal/settings/tables/$tableId'
+    | '/_terminal/settings/tables/new'
     | '/_terminal/settings/about/'
     | '/_terminal/settings/categories/'
     | '/_terminal/settings/items/'
+    | '/_terminal/settings/tables/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -613,6 +674,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof TerminalSettingsRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/tables': {
+      id: '/_terminal/tables'
+      path: '/tables'
+      fullPath: '/tables'
+      preLoaderRoute: typeof TerminalTablesRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/activity_/$paymentId': {
@@ -762,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/tables': {
+      id: '/_terminal/settings/tables'
+      path: '/tables'
+      fullPath: '/settings/tables'
+      preLoaderRoute: typeof TerminalSettingsTablesRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/theme': {
       id: '/_terminal/settings/theme'
       path: '/theme'
@@ -846,6 +921,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsItemsNewRouteImport
       parentRoute: typeof TerminalSettingsItemsRoute
     }
+    '/_terminal/settings/tables/': {
+      id: '/_terminal/settings/tables/'
+      path: '/'
+      fullPath: '/settings/tables/'
+      preLoaderRoute: typeof TerminalSettingsTablesIndexRouteImport
+      parentRoute: typeof TerminalSettingsTablesRoute
+    }
+    '/_terminal/settings/tables/$tableId': {
+      id: '/_terminal/settings/tables/$tableId'
+      path: '/$tableId'
+      fullPath: '/settings/tables/$tableId'
+      preLoaderRoute: typeof TerminalSettingsTablesTableIdRouteImport
+      parentRoute: typeof TerminalSettingsTablesRoute
+    }
+    '/_terminal/settings/tables/new': {
+      id: '/_terminal/settings/tables/new'
+      path: '/new'
+      fullPath: '/settings/tables/new'
+      preLoaderRoute: typeof TerminalSettingsTablesNewRouteImport
+      parentRoute: typeof TerminalSettingsTablesRoute
+    }
   }
 }
 
@@ -903,6 +999,24 @@ const TerminalSettingsItemsRouteWithChildren =
     TerminalSettingsItemsRouteChildren,
   )
 
+interface TerminalSettingsTablesRouteChildren {
+  TerminalSettingsTablesTableIdRoute: typeof TerminalSettingsTablesTableIdRoute
+  TerminalSettingsTablesNewRoute: typeof TerminalSettingsTablesNewRoute
+  TerminalSettingsTablesIndexRoute: typeof TerminalSettingsTablesIndexRoute
+}
+
+const TerminalSettingsTablesRouteChildren: TerminalSettingsTablesRouteChildren =
+  {
+    TerminalSettingsTablesTableIdRoute: TerminalSettingsTablesTableIdRoute,
+    TerminalSettingsTablesNewRoute: TerminalSettingsTablesNewRoute,
+    TerminalSettingsTablesIndexRoute: TerminalSettingsTablesIndexRoute,
+  }
+
+const TerminalSettingsTablesRouteWithChildren =
+  TerminalSettingsTablesRoute._addFileChildren(
+    TerminalSettingsTablesRouteChildren,
+  )
+
 interface TerminalSettingsRouteChildren {
   TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
@@ -920,6 +1034,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
   TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
+  TerminalSettingsTablesRoute: typeof TerminalSettingsTablesRouteWithChildren
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsTipsRoute: typeof TerminalSettingsTipsRoute
   TerminalSettingsWithdrawRoute: typeof TerminalSettingsWithdrawRoute
@@ -945,6 +1060,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
     TerminalSettingsPaymentNumberSeriesRoute,
   TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
+  TerminalSettingsTablesRoute: TerminalSettingsTablesRouteWithChildren,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsTipsRoute: TerminalSettingsTipsRoute,
   TerminalSettingsWithdrawRoute: TerminalSettingsWithdrawRoute,
@@ -958,6 +1074,7 @@ interface TerminalRouteChildren {
   TerminalActivityRoute: typeof TerminalActivityRoute
   TerminalCheckoutRoute: typeof TerminalCheckoutRoute
   TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
+  TerminalTablesRoute: typeof TerminalTablesRoute
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
   TerminalCheckoutBillsRoute: typeof TerminalCheckoutBillsRoute
@@ -969,6 +1086,7 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalActivityRoute: TerminalActivityRoute,
   TerminalCheckoutRoute: TerminalCheckoutRoute,
   TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
+  TerminalTablesRoute: TerminalTablesRoute,
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
   TerminalCheckoutBillsRoute: TerminalCheckoutBillsRoute,

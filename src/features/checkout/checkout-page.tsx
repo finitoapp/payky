@@ -9,6 +9,7 @@ import {
   Redo2,
   Search,
   ShoppingBag,
+  Table2,
   Trash2Icon,
   Undo2,
   X,
@@ -51,7 +52,11 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
-import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
+import {
+  assignBillToTable,
+  cancelBill,
+  removeTableFromBill,
+} from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
@@ -65,10 +70,13 @@ import {
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
+import { tablesQuery } from "@/core/modules/table/table-queries.ts"
+import type { TableId } from "@/core/modules/table/table-types.ts"
 import { getLatestCatalogItemSummary } from "@/features/checkout/cart-utils.ts"
 import { useBillLineSummaries } from "@/features/checkout/use-bill-line-summaries.ts"
 import { useCartBill } from "@/features/checkout/use-cart-bill.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
+import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -80,14 +88,23 @@ import { cn } from "@/lib/utils.ts"
 
 export function CheckoutPage({
   billId,
+  initialTableId,
 }: {
   readonly billId: BillId | undefined
+  readonly initialTableId?: TableId
 }) {
   useScreenWakeLock(true)
   const navigate = useNavigate()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const fallbackCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
+
+  // Only meaningful before a bill exists: it seeds the table the lazily
+  // created bill is assigned to. Once a bill exists, `bill.tableId` is the
+  // source of truth and this state is no longer read.
+  const [pendingTableId, setPendingTableId] = useState<TableId | null>(
+    initialTableId ?? null
+  )
 
   // Owned here, not inside CheckoutCartView, so search text, the summary's
   // open/closed state, and the undo/redo history survive the moment the
@@ -96,6 +113,7 @@ export function CheckoutPage({
   const cart = useCartBill({
     billId,
     currency: fallbackCurrency,
+    tableId: pendingTableId,
     onBillCreated: (createdBillId) => {
       void navigate({
         to: "/checkout",
@@ -114,6 +132,7 @@ export function CheckoutPage({
     onSearchChange: setSearch,
     categoryFilter,
     onCategoryFilterChange: setCategoryFilter,
+    onPendingTableIdChange: setPendingTableId,
     summaryOpen,
     onSummaryOpenChange: setSummaryOpen,
   }
@@ -124,6 +143,7 @@ export function CheckoutPage({
         billId={undefined}
         currency={fallbackCurrency}
         summaries={EMPTY_SUMMARIES}
+        tableId={pendingTableId}
         {...sharedProps}
       />
     </CheckoutPageLayout>
@@ -152,6 +172,7 @@ function CheckoutExistingBillBody({
         billId={billId}
         currency={bill.currency}
         summaries={summaries}
+        tableId={bill.tableId}
         {...sharedProps}
       />
     )
@@ -225,6 +246,7 @@ interface SharedCartViewProps {
   readonly onSearchChange: (value: string) => void
   readonly categoryFilter: CategoryFilter
   readonly onCategoryFilterChange: (value: CategoryFilter) => void
+  readonly onPendingTableIdChange: (tableId: TableId | null) => void
   readonly summaryOpen: boolean
   readonly onSummaryOpenChange: (open: boolean) => void
 }
@@ -233,17 +255,20 @@ function CheckoutCartView({
   billId,
   currency,
   summaries,
+  tableId,
   cart,
   search,
   onSearchChange,
   categoryFilter,
   onCategoryFilterChange,
+  onPendingTableIdChange,
   summaryOpen,
   onSummaryOpenChange,
 }: {
   readonly billId: BillId | undefined
   readonly currency: FiatCurrencyType
   readonly summaries: ReadonlyArray<BillLineSummary>
+  readonly tableId: TableId | null
 } & SharedCartViewProps) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -255,8 +280,33 @@ function CheckoutCartView({
   const [settings] = settingsData
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
+  const { data: tables } = useEvoluQuery(tablesQuery)
   const [chargePending, setChargePending] = useState(false)
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false)
+  const [tablePickerOpen, setTablePickerOpen] = useState(false)
+
+  const currentTable = tables.find((table) => table.id === tableId)
+
+  const handleAssignTable = async (nextTableId: TableId | null) => {
+    setTablePickerOpen(false)
+
+    if (billId === undefined) {
+      onPendingTableIdChange(nextTableId)
+      return
+    }
+
+    try {
+      await using run = appRun()
+      if (nextTableId === null) {
+        await run(removeTableFromBill(billId))
+      } else {
+        await run(assignBillToTable({ id: billId, tableId: nextTableId }))
+      }
+    } catch (error) {
+      console.error("Failed to assign table to cart", error)
+      toast.error(t("settings.saveFailed"))
+    }
+  }
 
   const currencyItems = useMemo(
     () => catalogItems.filter((item) => item.currency === currency),
@@ -348,6 +398,42 @@ function CheckoutCartView({
   return (
     <>
       <div className="shrink-0">
+        <div className="mt-2 flex justify-start">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={t("checkout.table.aria")}
+            onClick={() => setTablePickerOpen(true)}
+          >
+            <Table2 data-icon="inline-start" />
+            {currentTable?.name ?? t("checkout.table.assign")}
+          </Button>
+        </div>
+
+        <Dialog open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("checkout.table.dialog.title")}</DialogTitle>
+            </DialogHeader>
+            <OptionToggleGroup<TableId | "none">
+              value={tableId ?? "none"}
+              options={[
+                {
+                  value: "none" as const,
+                  title: t("checkout.table.dialog.none"),
+                },
+                ...tables.map((table) => ({
+                  value: table.id,
+                  title: table.name,
+                })),
+              ]}
+              onChange={(nextValue) =>
+                void handleAssignTable(nextValue === "none" ? null : nextValue)
+              }
+            />
+          </DialogContent>
+        </Dialog>
+
         <div className="relative mt-2">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input

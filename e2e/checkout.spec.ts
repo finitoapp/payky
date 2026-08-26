@@ -1,6 +1,7 @@
 import {
   addCatalogCategory,
   addCatalogItem,
+  addTable,
   expect,
   gotoPage,
   markCashPaid,
@@ -168,6 +169,12 @@ test("discards a resumed cart from the checkout page", async ({
         name: nameParam("checkout.brick.add.aria", "Coffee"),
       })
       .click()
+    // Wait for the lazily-created bill's own navigation (replacing the URL
+    // with its billId) to land before parking, so it can't race Park's
+    // navigate-to-"/" and leave the router on neither URL.
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("billId"))
+      .not.toBeNull()
     await page
       .getByRole("button", {
         name: translate("en", "checkout.park"),
@@ -177,8 +184,25 @@ test("discards a resumed cart from the checkout page", async ({
     await page.waitForURL("/")
   })
 
+  const openSavedCarts = async () => {
+    // Client-side nav clicks, not gotoPage: a hard reload right after the
+    // park/discard mutation that just landed on "/" is what made this test
+    // flaky — it can race Evolu's OPFS SQLite WASM re-init.
+    await page
+      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "checkout.savedCarts.aria"),
+      })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "checkout.bills.title") })
+      .waitFor()
+  }
+
   await test.step("resume the saved cart", async () => {
-    await gotoPage(page, "/checkout/bills", "en", "checkout.bills.title")
+    await openSavedCarts()
     await page.getByText(translateValue("en", "checkout.itemsCount", 1)).click()
     await page
       .getByRole("heading", { name: translate("en", "checkout.title") })
@@ -198,7 +222,7 @@ test("discards a resumed cart from the checkout page", async ({
   })
 
   await test.step("the cart no longer appears in the saved carts list", async () => {
-    await gotoPage(page, "/checkout/bills", "en", "checkout.bills.title")
+    await openSavedCarts()
     await expect(
       page.getByText(translate("en", "checkout.bills.empty.title"))
     ).toBeVisible()
@@ -521,5 +545,85 @@ test("filters the item grid by category", async ({ seededPage: page }) => {
       .click()
     await expect(coffeeCard).toBeVisible()
     await expect(sandwichCard).toBeVisible()
+  })
+})
+
+test("assigns and clears a table on a cart from the checkout header", async ({
+  seededPage: page,
+}) => {
+  await test.step("seed a table and a catalog item", async () => {
+    await addTable(page, "en", { name: "Patio 1", seatCount: "4" })
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  })
+
+  await test.step("open the checkout", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .waitFor()
+  })
+
+  const tableButton = page.getByRole("button", {
+    name: translate("en", "checkout.table.aria"),
+  })
+
+  await test.step("assign the table before the cart has a bill yet", async () => {
+    await tableButton.click()
+    const dialog = page.getByRole("dialog", {
+      name: translate("en", "checkout.table.dialog.title"),
+    })
+    await dialog.getByRole("button", { name: "Patio 1" }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(tableButton).toContainText("Patio 1")
+  })
+
+  await test.step("the lazily created bill keeps the assigned table", async () => {
+    await page
+      .getByRole("button", {
+        name: nameParam("checkout.brick.add.aria", "Coffee"),
+      })
+      .click()
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("billId"))
+      .not.toBeNull()
+    await expect(tableButton).toContainText("Patio 1")
+  })
+
+  await test.step("the saved carts list shows the assigned table", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "checkout.savedCarts.aria"),
+      })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "checkout.bills.title") })
+      .waitFor()
+    // Scoped to a link, not getByText: the table filter chip added to this
+    // page also renders a "Patio 1" button, which would make a bare text
+    // locator ambiguous.
+    await expect(page.getByRole("link", { name: /Patio 1/ })).toBeVisible()
+  })
+
+  await test.step("clear the table assignment", async () => {
+    await page.goBack()
+    await page
+      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .waitFor()
+    await tableButton.click()
+    const dialog = page.getByRole("dialog", {
+      name: translate("en", "checkout.table.dialog.title"),
+    })
+    await dialog
+      .getByRole("button", {
+        name: translate("en", "checkout.table.dialog.none"),
+      })
+      .click()
+    await expect(dialog).not.toBeVisible()
+    await expect(tableButton).toContainText(
+      translate("en", "checkout.table.assign")
+    )
   })
 })

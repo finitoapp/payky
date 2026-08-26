@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { z } from "zod"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
+import { TableId } from "@/core/modules/table/table-types.ts"
 import { CheckoutPage } from "@/features/checkout/checkout-page.tsx"
 
 const CheckoutSearchSchema = z.object({
   billId: BillId.optional(),
+  tableId: TableId.optional(),
 })
 
 export const Route = createFileRoute("/_terminal/checkout")({
@@ -20,11 +22,11 @@ export const Route = createFileRoute("/_terminal/checkout")({
 })
 
 function CheckoutRoute() {
-  const { billId } = Route.useSearch()
+  const { billId, tableId } = Route.useSearch()
 
   return (
     <Suspense fallback={null}>
-      <CheckoutPage billId={billId} />
+      <CheckoutPage billId={billId} initialTableId={tableId} />
     </Suspense>
   )
 }

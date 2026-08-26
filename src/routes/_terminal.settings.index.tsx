@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   SunMoon,
+  Table2Icon,
   UserRound,
 } from "lucide-react"
 import type { ComponentProps } from "react"
@@ -94,6 +95,12 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.categories.title",
     description: "settings.categories.description",
     to: "/settings/categories",
+  },
+  {
+    icon: Table2Icon,
+    title: "settings.tables.title",
+    description: "settings.tables.description",
+    to: "/settings/tables",
   },
   {
     icon: CircleDollarSign,

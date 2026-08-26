@@ -28,12 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import {
-  Card,
-  CardAction,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card.tsx"
+import { Card, CardContent } from "@/components/ui/card.tsx"
 import {
   Collapsible,
   CollapsibleContent,
@@ -482,107 +477,108 @@ function BillCartView({
         )}
       </section>
 
-      <div
+      <Card
         className={cn(
-          "grid shrink-0 overflow-hidden transition-[grid-template-rows] duration-300 ease-out",
-          billId === undefined ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
+          "fixed inset-x-0 bottom-0 z-10 p-0 rounded-none rounded-t-xl transition-transform duration-200 ease-out max-w-xl mx-auto",
+          billId === undefined ? "translate-y-full" : "translate-y-0"
         )}
       >
-        <div className="min-h-0 pt-2">
+        <CardContent className="pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <Collapsible open={summaryOpen} onOpenChange={onSummaryOpenChange}>
-            <Card size="sm" className="bg-card">
-              <CollapsibleTrigger
-                data-testid="bill-summary-trigger"
-                className="w-full text-left"
-                disabled={summaries.length === 0 && !cart.canUndo}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base text-muted-foreground">
-                    <ShoppingBag className="size-4" />
-                    {t("bill.itemsCount", { value: itemCount })}
-                  </CardTitle>
-                  <CardAction className="flex items-center gap-2 text-base font-semibold">
-                    {formatMoney({ value: totalAmount, currency }, locale)}
-                    <ChevronDown
-                      className={
-                        summaryOpen
-                          ? "size-4 transition-transform duration-200"
-                          : "size-4 rotate-180 transition-transform duration-200"
-                      }
-                    />
-                  </CardAction>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent
-                data-testid="bill-summary-panel"
-                className="grid grid-rows-[1fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-out data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr]"
-              >
-                {/*
-                 * `grid-template-rows: 0fr -> 1fr` (rather than animating a
-                 * measured pixel height) keeps tracking the content's actual
-                 * size every frame, so it can't visibly jump if that size
-                 * settles a moment after the row is measured.
-                 */}
-                <div className="flex min-h-0 flex-col gap-4 px-4">
-                  <div className="max-h-48 overflow-y-auto">
-                    <div className="flex flex-col divide-y">
-                      {summaries.map((summary) => (
-                        <div
-                          key={summary.id}
-                          className="flex items-center justify-between gap-2 py-1.5"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">
-                              {summary.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {summary.quantity} ×{" "}
-                              {formatMoney(
-                                {
-                                  value: NonNegativeInteger(
-                                    summary.totalAmount / summary.quantity
-                                  ),
-                                  currency: summary.currency,
-                                },
-                                locale
-                              )}
-                            </p>
-                          </div>
-                          <p className="text-sm font-semibold">
+            <CollapsibleTrigger
+              data-testid="bill-summary-trigger"
+              className="w-full pt-4 text-left"
+              disabled={summaries.length === 0 && !cart.canUndo}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-base text-muted-foreground">
+                  <ShoppingBag className="size-4" />
+                  {t("bill.itemsCount", { value: itemCount })}
+                </div>
+                <div className="flex items-center gap-2 text-base font-semibold">
+                  {formatMoney({ value: totalAmount, currency }, locale)}
+                  <ChevronDown
+                    className={
+                      summaryOpen
+                        ? "size-4 transition-transform duration-200"
+                        : "size-4 rotate-180 transition-transform duration-200"
+                    }
+                  />
+                </div>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent
+              data-testid="bill-summary-panel"
+              className="grid grid-rows-[1fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-out data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr]"
+            >
+              {/*
+               * `grid-template-rows: 0fr -> 1fr` (rather than animating a
+               * measured pixel height) keeps tracking the content's actual
+               * size every frame, so it can't visibly jump if that size
+               * settles a moment after the row is measured.
+               */}
+              <div className="flex min-h-0 flex-col gap-4 pt-4">
+                <div className="max-h-48 overflow-y-auto">
+                  <div className="flex flex-col divide-y">
+                    {summaries.map((summary) => (
+                      <div
+                        key={summary.id}
+                        className="flex items-center justify-between gap-2 py-1"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
+                            {summary.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {summary.quantity} ×{" "}
                             {formatMoney(
                               {
-                                value: summary.totalAmount,
+                                value: NonNegativeInteger(
+                                  summary.totalAmount / summary.quantity
+                                ),
                                 currency: summary.currency,
                               },
                               locale
                             )}
                           </p>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={t("bill.summary.removeLine.aria", {
-                              name: summary.name,
-                            })}
-                            disabled={cart.pending}
-                            onClick={() => {
-                              void cart.removeLine(summary).then(() => {
-                                showUndoToast(
-                                  t("bill.summary.removeLine.toast", {
-                                    name: summary.name,
-                                  })
-                                )
-                              })
-                            }}
-                          >
-                            <X />
-                          </Button>
                         </div>
-                      ))}
-                    </div>
+                        <p className="text-sm font-semibold">
+                          {formatMoney(
+                            {
+                              value: summary.totalAmount,
+                              currency: summary.currency,
+                            },
+                            locale
+                          )}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={t("bill.summary.removeLine.aria", {
+                            name: summary.name,
+                          })}
+                          disabled={cart.pending}
+                          onClick={() => {
+                            void cart.removeLine(summary).then(() => {
+                              showUndoToast(
+                                t("bill.summary.removeLine.toast", {
+                                  name: summary.name,
+                                })
+                              )
+                            })
+                          }}
+                        >
+                          <X />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-end gap-3">
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <div className={"gap-1 flex"}>
                     <Button
                       variant="outline"
+                      size={"xs"}
                       disabled={!cart.canUndo || cart.pending}
                       onClick={() => void cart.undo()}
                     >
@@ -591,27 +587,29 @@ function BillCartView({
                     </Button>
                     <Button
                       variant="outline"
+                      size={"xs"}
                       disabled={!cart.canRedo || cart.pending}
                       onClick={() => void cart.redo()}
                     >
                       <Redo2 data-icon="inline-start" />
                       {t("bill.summary.redo")}
                     </Button>
-                    <Button
-                      variant="outline"
-                      disabled={summaries.length === 0 || cart.pending}
-                      onClick={() => {
-                        void cart.clear(summaries).then(() => {
-                          showUndoToast(t("bill.summary.clear.toast"))
-                        })
-                      }}
-                    >
-                      {t("bill.summary.clear")}
-                    </Button>
                   </div>
+                  <Button
+                    variant="outline"
+                    size={"xs"}
+                    disabled={summaries.length === 0 || cart.pending}
+                    onClick={() => {
+                      void cart.clear(summaries).then(() => {
+                        showUndoToast(t("bill.summary.clear.toast"))
+                      })
+                    }}
+                  >
+                    {t("bill.summary.clear")}
+                  </Button>
                 </div>
-              </CollapsibleContent>
-            </Card>
+              </div>
+            </CollapsibleContent>
           </Collapsible>
 
           <div className="flex items-center gap-2 pt-4">
@@ -627,7 +625,7 @@ function BillCartView({
             </Button>
             <Button
               variant="outline"
-              className="h-12 flex-1 rounded-full text-base font-bold"
+              className="h-12 flex-1 text-sm"
               aria-label={t("bill.table.aria")}
               onClick={() => setTablePickerOpen(true)}
             >
@@ -636,7 +634,7 @@ function BillCartView({
             </Button>
             <Button
               variant="default"
-              className="h-12 flex-1 rounded-full text-base font-bold"
+              className="h-12 flex-1 text-sm font-bold"
               disabled={
                 billId === undefined || summaries.length === 0 || chargePending
               }
@@ -645,35 +643,35 @@ function BillCartView({
               {t("home.pay")}
             </Button>
           </div>
+        </CardContent>
 
-          <AlertDialog
-            open={discardDialogOpen}
-            onOpenChange={setDiscardDialogOpen}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {t("bill.discard.confirm.title")}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("bill.discard.confirm.description")}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  {t("bill.discard.confirm.cancel")}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={() => void handleDiscard()}
-                >
-                  {t("bill.discard.confirm.confirm")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+        <AlertDialog
+          open={discardDialogOpen}
+          onOpenChange={setDiscardDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("bill.discard.confirm.title")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("bill.discard.confirm.description")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>
+                {t("bill.discard.confirm.cancel")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => void handleDiscard()}
+              >
+                {t("bill.discard.confirm.confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Card>
     </>
   )
 }

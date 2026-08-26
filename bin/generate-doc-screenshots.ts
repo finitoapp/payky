@@ -10,11 +10,12 @@ import {
   completeOnboarding,
   createPayment,
   enterAmount,
+  gotoPosOverview,
   markCashPaid,
   pageHeight,
   pageWidth,
+  startNewBill,
   translate,
-  translateValue,
 } from "../e2e/fixtures.ts"
 import {
   type Language,
@@ -239,12 +240,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
       const cartItems = billCartByLanguage[language]
 
       await page.goto("/", { waitUntil: "domcontentloaded" })
-      await page
-        .getByRole("button", { name: translate(language, "nav.bill") })
-        .click()
-      await page
-        .getByRole("heading", { name: translate(language, "bill.title") })
-        .waitFor()
+      await startNewBill(page, language)
 
       for (const item of cartItems) {
         const addButton = page.getByRole("button", {
@@ -281,16 +277,17 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
         price: cartItem.price,
       })
 
-      await page.goto("/", { waitUntil: "domcontentloaded" })
+      await gotoPosOverview(page, language)
 
       const parkCartOnTable = async (tableName: string) => {
         await page
-          .getByRole("button", { name: translate(language, "nav.bill") })
+          .getByTestId("no-table-tile")
+          .getByRole("link", {
+            name: translate(language, "tables.tile.newBill"),
+          })
           .click()
         await page
-          .getByRole("heading", {
-            name: translate(language, "bill.title"),
-          })
+          .getByRole("heading", { name: translate(language, "bill.title") })
           .waitFor()
         await page
           .getByRole("button", {
@@ -311,12 +308,9 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
           .poll(() => new URL(page.url()).searchParams.get("billId"))
           .not.toBeNull()
         await page
-          .getByRole("button", {
-            name: translate(language, "bill.park"),
-            exact: true,
-          })
+          .getByRole("button", { name: translate(language, "nav.back") })
           .click()
-        await page.waitForURL("/")
+        await page.getByTestId("no-table-tile").waitFor()
       }
 
       const [firstTable, secondTable] = tableNames
@@ -324,15 +318,18 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
       await parkCartOnTable(secondTable)
       await parkCartOnTable(secondTable)
 
-      await page
-        .getByRole("button", { name: translate(language, "nav.tables") })
-        .click()
-      await page
-        .getByRole("heading", { name: translate(language, "tables.title") })
-        .waitFor()
+      // Prefix shared by every bill row's accessible name (e.g. "Bill #"),
+      // distinct enough from the tile's "new bill" link not to match it.
+      const billLabelPrefix = translate(language, "bill.list.label").split(
+        "{number}"
+      )[0]
+
       await expect(
-        page.getByRole("link", { name: new RegExp(secondTable) })
-      ).toContainText(translateValue(language, "tables.tile.multipleBills", 2))
+        page
+          .getByTestId("table-tile")
+          .filter({ hasText: secondTable })
+          .getByRole("link", { name: billLabelPrefix })
+      ).toHaveCount(2)
       await capturePage(page, "tables", language)
     },
   },

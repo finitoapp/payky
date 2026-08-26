@@ -46,10 +46,14 @@ export const deviceSettingsId = createIdFromString<"DeviceSettings">(
 const DeviceLanguageSchema = z.enum(["en", "cs", "sk"])
 const DeviceThemeSchema = z.enum(["system", "light", "dark"])
 const DeviceLocaleSchema = z.enum(["cs-CZ", "en-US", "sk-SK"])
+const DeviceTerminalHomeModeSchema = z.enum(["numpad", "pos"])
 
 export type DeviceLanguage = z.output<typeof DeviceLanguageSchema>
 export type DeviceTheme = z.output<typeof DeviceThemeSchema>
 export type DeviceLocale = z.output<typeof DeviceLocaleSchema>
+export type DeviceTerminalHomeMode = z.output<
+  typeof DeviceTerminalHomeModeSchema
+>
 
 export interface DeviceSettings {
   readonly id: DeviceSettingsId
@@ -57,6 +61,7 @@ export interface DeviceSettings {
   readonly theme: DeviceTheme
   readonly locale: DeviceLocale
   readonly errorReportingEnabled: 0 | 1
+  readonly terminalHomeMode: DeviceTerminalHomeMode
 }
 
 const deviceEvoluSchema = {
@@ -90,6 +95,7 @@ const deviceEvoluSchema = {
     theme: DeviceThemeSchema.nullable(),
     locale: DeviceLocaleSchema.nullable(),
     errorReportingEnabled: SqliteBoolSchema.nullable(),
+    terminalHomeMode: DeviceTerminalHomeModeSchema.nullable(),
   },
 } as const
 
@@ -120,6 +126,7 @@ export function createDefaultDeviceSettings(
     theme: "system",
     locale: getDeviceLocaleForLanguage(language),
     errorReportingEnabled: sqliteFalse,
+    terminalHomeMode: "numpad",
   }
 }
 

@@ -5,7 +5,6 @@ import {
   Minus,
   Package,
   Plus,
-  ReceiptIcon,
   Redo2,
   Search,
   ShoppingBag,
@@ -72,11 +71,11 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
+import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -178,34 +177,35 @@ function BillExistingBody({
     )
   }
 
-  return <BillPageLayout>{content}</BillPageLayout>
+  const title =
+    bill === undefined
+      ? undefined
+      : (bill.label ?? t("bill.list.label", { number: bill.displayNumber }))
+
+  return <BillPageLayout title={title}>{content}</BillPageLayout>
 }
 
 /**
  * Every bill state (new cart, resumed cart, not-found/closed message)
  * renders through this single frame, so the header — and its always-visible
  * link to saved carts — can never be left out of one state by accident.
+ * `title` shows the bill's own label (falling back to its number) once one
+ * exists; before that, and for the not-found/closed messages, it falls
+ * back to the generic "Bill" title.
  */
-function BillPageLayout({ children }: { readonly children: ReactNode }) {
+function BillPageLayout({
+  title,
+  children,
+}: {
+  readonly title?: string
+  readonly children: ReactNode
+}) {
   const { t } = useTranslation()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="h-6" />
-      <FadeHeader
-        title={t("bill.title")}
-        endAddon={
-          <Button
-            variant="ghost"
-            nativeButton={false}
-            render={
-              <Link aria-label={t("bill.list.viewAria")} to="/bill/list" />
-            }
-          >
-            <ReceiptIcon className="text-primary size-5" strokeWidth={2} />
-          </Button>
-        }
-      />
+      <FadeHeader title={title ?? t("bill.title")} />
       {children}
     </div>
   )
@@ -395,41 +395,13 @@ function BillCartView({
   return (
     <>
       <div className="shrink-0">
-        <div className="mt-2 flex justify-start">
-          <Button
-            variant="outline"
-            size="sm"
-            aria-label={t("bill.table.aria")}
-            onClick={() => setTablePickerOpen(true)}
-          >
-            <Table2 data-icon="inline-start" />
-            {currentTable?.name ?? t("bill.table.assign")}
-          </Button>
-        </div>
-
-        <Dialog open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("bill.table.dialog.title")}</DialogTitle>
-            </DialogHeader>
-            <OptionToggleGroup<TableId | "none">
-              value={tableId ?? "none"}
-              options={[
-                {
-                  value: "none" as const,
-                  title: t("bill.table.dialog.none"),
-                },
-                ...tables.map((table) => ({
-                  value: table.id,
-                  title: table.name,
-                })),
-              ]}
-              onChange={(nextValue) =>
-                void handleAssignTable(nextValue === "none" ? null : nextValue)
-              }
-            />
-          </DialogContent>
-        </Dialog>
+        <AssignTableDialog
+          open={tablePickerOpen}
+          onOpenChange={setTablePickerOpen}
+          billId={billId}
+          currentTableId={tableId}
+          onAssign={(nextTableId) => void handleAssignTable(nextTableId)}
+        />
 
         <div className="relative mt-2">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
@@ -656,9 +628,11 @@ function BillCartView({
             <Button
               variant="outline"
               className="h-12 flex-1 rounded-full text-base font-bold"
-              onClick={() => void navigate({ to: "/" })}
+              aria-label={t("bill.table.aria")}
+              onClick={() => setTablePickerOpen(true)}
             >
-              {t("bill.park")}
+              <Table2 data-icon="inline-start" />
+              {currentTable?.name ?? t("bill.table.assign")}
             </Button>
             <Button
               variant="default"

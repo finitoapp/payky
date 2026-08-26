@@ -2,6 +2,7 @@ import { useRouter } from "@tanstack/react-router"
 import { ArrowLeftIcon } from "lucide-react"
 import { type FC, type ReactNode, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const FadeHeader: FC<{
   title?: ReactNode
@@ -11,6 +12,7 @@ export const FadeHeader: FC<{
 }> = (props) => {
   const divRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,6 +37,7 @@ export const FadeHeader: FC<{
       <Button
         type={"button"}
         variant={"ghost"}
+        aria-label={t("nav.back")}
         onClick={props.customStartAddonOnClick ?? (() => router.history.back())}
       >
         <ArrowLeftIcon className={"text-primary size-5"} strokeWidth={3} />

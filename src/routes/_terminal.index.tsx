@@ -1,6 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Clock3, Settings, ShoppingBag, Table2 } from "lucide-react"
+import { Calculator, Clock3, LayoutGrid, Settings } from "lucide-react"
 import { Suspense } from "react"
 import { toast } from "sonner"
 import { TerminalPaymentKeypad } from "@/components/terminal-payment-keypad.tsx"
@@ -13,39 +13,50 @@ import {
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
+import { PosOverviewPage } from "@/features/pos/pos-overview-page.tsx"
+import {
+  useDeviceSettings,
+  useUpdateDeviceSettings,
+} from "@/hooks/use-device-settings.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/_terminal/")({
   component: TerminalHomePage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "justify-between px-8 py-6",
+      viewportClassName: "px-8 py-6",
     },
   },
 })
 
 const Header = () => {
   const { t } = useTranslation()
+  const { terminalHomeMode } = useDeviceSettings()
+  const updateDeviceSettings = useUpdateDeviceSettings()
+
+  const toggleHomeMode = () => {
+    updateDeviceSettings({
+      terminalHomeMode: terminalHomeMode === "pos" ? "numpad" : "pos",
+    })
+  }
 
   return (
     <header className="flex items-center justify-between">
       <Button
         variant={"ghost"}
-        nativeButton={false}
-        render={<Link aria-label={t("nav.bill")} to="/bill" />}
+        onClick={toggleHomeMode}
+        aria-label={t(terminalHomeMode === "pos" ? "nav.numpad" : "nav.pos")}
       >
-        <ShoppingBag className={"size-6"} strokeWidth={3} />
+        {terminalHomeMode === "pos" ? (
+          <Calculator className={"size-6"} strokeWidth={3} />
+        ) : (
+          <LayoutGrid className={"size-6"} strokeWidth={3} />
+        )}
       </Button>
       <div className="flex items-center gap-4">
-        <Button
-          nativeButton={false}
-          variant={"ghost"}
-          render={<Link aria-label={t("nav.tables")} to="/tables" />}
-        >
-          <Table2 className={"size-6"} strokeWidth={3} />
-        </Button>
         <Button
           nativeButton={false}
           variant={"ghost"}
@@ -105,14 +116,18 @@ function TerminalPaymentKeypadLoader() {
 
 function TerminalHomePage() {
   useScreenWakeLock(true)
+  const { terminalHomeMode } = useDeviceSettings()
+  const isNumpadMode = terminalHomeMode !== "pos"
 
   return (
-    <>
+    <div
+      className={cn("flex flex-1 flex-col", isNumpadMode && "justify-between")}
+    >
       <Header />
 
       <Suspense fallback={null}>
-        <TerminalPaymentKeypadLoader />
+        {isNumpadMode ? <TerminalPaymentKeypadLoader /> : <PosOverviewPage />}
       </Suspense>
-    </>
+    </div>
   )
 }

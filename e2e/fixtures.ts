@@ -218,6 +218,49 @@ export async function completeOnboardingDefaults(
     .waitFor()
 }
 
+/**
+ * Navigates to "/" and ensures the home screen is showing tables/POS mode,
+ * switching it via the home icon if it isn't already (the choice persists
+ * across navigations, so this is a no-op once a test has switched once).
+ * Waits for the "no table" tile, so the grid is ready to interact with.
+ */
+export async function gotoPosOverview(
+  page: Page,
+  language: Language
+): Promise<void> {
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  const noTableTile = page.getByTestId("no-table-tile")
+  const switchToPos = page.getByRole("button", {
+    name: translate(language, "nav.pos"),
+  })
+  await noTableTile.or(switchToPos).first().waitFor()
+  if (await switchToPos.isVisible()) {
+    await switchToPos.click()
+  }
+  await noTableTile.waitFor()
+}
+
+/**
+ * Switches the home screen into tables/POS mode via the home icon and
+ * starts a new bill via the "no table" tile's "+" link, landing on the
+ * bill page. Assumes the page is already on "/".
+ */
+export async function startNewBill(
+  page: Page,
+  language: Language
+): Promise<void> {
+  await page
+    .getByRole("button", { name: translate(language, "nav.pos") })
+    .click()
+  await page
+    .getByTestId("no-table-tile")
+    .getByRole("link", { name: translate(language, "tables.tile.newBill") })
+    .click()
+  await page
+    .getByRole("heading", { name: translate(language, "bill.title") })
+    .waitFor()
+}
+
 /** Adds a catalog item through the real settings UI (used to seed items for cart specs). */
 export async function addCatalogItem(
   page: Page,

@@ -3,16 +3,16 @@ import { Suspense } from "react"
 import { z } from "zod"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { TableId } from "@/core/modules/table/table-types.ts"
-import { CheckoutPage } from "@/features/checkout/checkout-page.tsx"
+import { BillPage } from "@/features/bill/bill-page.tsx"
 
-const CheckoutSearchSchema = z.object({
+const BillSearchSchema = z.object({
   billId: BillId.optional(),
   tableId: TableId.optional(),
 })
 
-export const Route = createFileRoute("/_terminal/checkout")({
-  component: CheckoutRoute,
-  validateSearch: (search) => CheckoutSearchSchema.parse(search),
+export const Route = createFileRoute("/_terminal/bill")({
+  component: BillRoute,
+  validateSearch: (search) => BillSearchSchema.parse(search),
   staticData: {
     terminalLayout: {
       viewportClassName:
@@ -21,12 +21,12 @@ export const Route = createFileRoute("/_terminal/checkout")({
   },
 })
 
-function CheckoutRoute() {
+function BillRoute() {
   const { billId, tableId } = Route.useSearch()
 
   return (
     <Suspense fallback={null}>
-      <CheckoutPage billId={billId} initialTableId={tableId} />
+      <BillPage billId={billId} initialTableId={tableId} />
     </Suspense>
   )
 }

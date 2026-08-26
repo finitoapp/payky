@@ -11,7 +11,7 @@ import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import type { TableRow } from "@/core/modules/table/table.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
-import { useBillLineSummaries } from "@/features/checkout/use-bill-line-summaries.ts"
+import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -77,7 +77,7 @@ function TableTile({
 
   if (bills.length === 0) {
     return (
-      <Link to="/checkout" search={{ tableId: table.id }} className="block">
+      <Link to="/bill" search={{ tableId: table.id }} className="block">
         <TableTileShell table={table} occupied={false}>
           <p className="text-sm text-muted-foreground">
             {t("tables.tile.free")}
@@ -92,7 +92,7 @@ function TableTile({
     if (bill === undefined) return null
 
     return (
-      <Link to="/checkout" search={{ billId: bill.id }} className="block">
+      <Link to="/bill" search={{ billId: bill.id }} className="block">
         <TableTileShell table={table} occupied>
           <OccupiedTableSummary bill={bill} />
         </TableTileShell>
@@ -101,7 +101,7 @@ function TableTile({
   }
 
   return (
-    <Link to="/checkout/bills" search={{ tableId: table.id }} className="block">
+    <Link to="/bill/list" search={{ tableId: table.id }} className="block">
       <TableTileShell table={table} occupied>
         <p className="text-sm text-primary-foreground/80">
           {t("tables.tile.multipleBills", { value: bills.length })}
@@ -125,9 +125,7 @@ function OccupiedTableSummary({ bill }: { readonly bill: BillRow }) {
 
   return (
     <div className="flex flex-col gap-0.5 text-primary-foreground/80">
-      <p className="text-sm">
-        {t("checkout.itemsCount", { value: itemCount })}
-      </p>
+      <p className="text-sm">{t("bill.itemsCount", { value: itemCount })}</p>
       <p className="text-sm font-semibold text-primary-foreground">
         {formatMoney({ value: totalAmount, currency: bill.currency }, locale)}
       </p>

@@ -1,8 +1,6 @@
 import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
 
-test("change the default checkout payment method", async ({
-  seededPage: page,
-}) => {
+test("change the default bill payment method", async ({ seededPage: page }) => {
   await test.step("open default payment method settings", () =>
     gotoPage(
       page,

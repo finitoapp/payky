@@ -22,28 +22,28 @@ test("build a cart, save it, resume it, and discard it", async ({
   await test.step("open the cart from the home icon", async () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
   })
 
   const addCoffee = page.getByRole("button", {
-    name: nameParam("checkout.brick.add.aria", "Coffee"),
+    name: nameParam("bill.brick.add.aria", "Coffee"),
   })
   const removeCoffee = page.getByRole("button", {
-    name: nameParam("checkout.brick.remove.aria", "Coffee"),
+    name: nameParam("bill.brick.remove.aria", "Coffee"),
   })
-  const summaryTrigger = page.getByTestId("checkout-summary-trigger")
+  const summaryTrigger = page.getByTestId("bill-summary-trigger")
 
   await test.step("search filters the item grid", async () => {
     const searchInput = page.getByRole("textbox", {
-      name: translate("en", "checkout.search"),
+      name: translate("en", "bill.search"),
     })
     await searchInput.fill("nonexistent")
     await expect(
-      page.getByText(translate("en", "checkout.emptySearch"))
+      page.getByText(translate("en", "bill.emptySearch"))
     ).toBeVisible()
     await searchInput.fill("")
     await expect(addCoffee).toBeVisible()
@@ -53,15 +53,15 @@ test("build a cart, save it, resume it, and discard it", async ({
     await addCoffee.click()
     await addCoffee.click()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 2)
+      translateValue("en", "bill.itemsCount", 2)
     )
     await removeCoffee.click()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+      translateValue("en", "bill.itemsCount", 1)
     )
   })
 
-  const summaryPanel = page.getByTestId("checkout-summary-panel")
+  const summaryPanel = page.getByTestId("bill-summary-panel")
 
   await test.step("expand the summary and undo/redo/clear", async () => {
     await summaryTrigger.click()
@@ -70,39 +70,39 @@ test("build a cart, save it, resume it, and discard it", async ({
     // Scoped to the summary panel: a clear/remove below also raises an
     // undo toast whose action button shares this same accessible name.
     const undoButton = summaryPanel.getByRole("button", {
-      name: translate("en", "checkout.summary.undo"),
+      name: translate("en", "bill.summary.undo"),
     })
     const redoButton = summaryPanel.getByRole("button", {
-      name: translate("en", "checkout.summary.redo"),
+      name: translate("en", "bill.summary.redo"),
     })
     const clearButton = summaryPanel.getByRole("button", {
-      name: translate("en", "checkout.summary.clear"),
+      name: translate("en", "bill.summary.clear"),
     })
 
     // Last action was "remove one" (quantity 1 -> 2 on undo).
     await undoButton.click()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 2)
+      translateValue("en", "bill.itemsCount", 2)
     )
     await redoButton.click()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+      translateValue("en", "bill.itemsCount", 1)
     )
 
     await clearButton.click()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 0)
+      translateValue("en", "bill.itemsCount", 0)
     )
     await undoButton.click()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+      translateValue("en", "bill.itemsCount", 1)
     )
   })
 
   await test.step("save returns to the home screen", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.park"),
+        name: translate("en", "bill.park"),
         exact: true,
       })
       .click()
@@ -111,62 +111,62 @@ test("build a cart, save it, resume it, and discard it", async ({
 
   await test.step("the saved cart appears in the open carts list", async () => {
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.savedCarts.aria"),
+        name: translate("en", "bill.list.viewAria"),
       })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.bills.title") })
+      .getByRole("heading", { name: translate("en", "bill.list.title") })
       .waitFor()
     await expect(
-      page.getByText(translateValue("en", "checkout.itemsCount", 1))
+      page.getByText(translateValue("en", "bill.itemsCount", 1))
     ).toBeVisible()
 
-    await page.getByText(translateValue("en", "checkout.itemsCount", 1)).click()
+    await page.getByText(translateValue("en", "bill.itemsCount", 1)).click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+      translateValue("en", "bill.itemsCount", 1)
     )
   })
 
   await test.step("discard the resumed cart with confirmation", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.savedCarts.aria"),
+        name: translate("en", "bill.list.viewAria"),
       })
       .click()
     const discardButton = page.getByRole("button", {
-      name: translate("en", "checkout.discard"),
+      name: translate("en", "bill.discard"),
     })
     await discardButton.click()
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.discard.confirm.confirm"),
+        name: translate("en", "bill.discard.confirm.confirm"),
       })
       .click()
     await expect(
-      page.getByText(translate("en", "checkout.bills.empty.title"))
+      page.getByText(translate("en", "bill.list.empty.title"))
     ).toBeVisible()
   })
 })
 
-test("discards a resumed cart from the checkout page", async ({
+test("discards a resumed cart from the bill page", async ({
   seededPage: page,
 }) => {
   await test.step("create an item and save it in a cart", async () => {
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
     // Wait for the lazily-created bill's own navigation (replacing the URL
@@ -177,7 +177,7 @@ test("discards a resumed cart from the checkout page", async ({
       .not.toBeNull()
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.park"),
+        name: translate("en", "bill.park"),
         exact: true,
       })
       .click()
@@ -189,33 +189,33 @@ test("discards a resumed cart from the checkout page", async ({
     // park/discard mutation that just landed on "/" is what made this test
     // flaky — it can race Evolu's OPFS SQLite WASM re-init.
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.savedCarts.aria"),
+        name: translate("en", "bill.list.viewAria"),
       })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.bills.title") })
+      .getByRole("heading", { name: translate("en", "bill.list.title") })
       .waitFor()
   }
 
   await test.step("resume the saved cart", async () => {
     await openSavedCarts()
-    await page.getByText(translateValue("en", "checkout.itemsCount", 1)).click()
+    await page.getByText(translateValue("en", "bill.itemsCount", 1)).click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
   })
 
   await test.step("discard it via the discard button", async () => {
     await page
-      .getByRole("button", { name: translate("en", "checkout.discard") })
+      .getByRole("button", { name: translate("en", "bill.discard") })
       .click()
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.discard.confirm.confirm"),
+        name: translate("en", "bill.discard.confirm.confirm"),
       })
       .click()
     await page.waitForURL("/")
@@ -224,7 +224,7 @@ test("discards a resumed cart from the checkout page", async ({
   await test.step("the cart no longer appears in the saved carts list", async () => {
     await openSavedCarts()
     await expect(
-      page.getByText(translate("en", "checkout.bills.empty.title"))
+      page.getByText(translate("en", "bill.list.empty.title"))
     ).toBeVisible()
   })
 })
@@ -238,11 +238,11 @@ test("keeps the saved-carts link visible for a closed or missing bill", async ({
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
 
@@ -271,23 +271,21 @@ test("keeps the saved-carts link visible for a closed or missing bill", async ({
       .getByRole("button", { name: translate("en", "paymentWait.back") })
       .click()
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .waitFor()
   })
 
   await test.step("the closed bill still shows the saved-carts link", async () => {
-    await page.goto(`/checkout?billId=${billId}`, {
+    await page.goto(`/bill?billId=${billId}`, {
       waitUntil: "domcontentloaded",
     })
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
-    await expect(
-      page.getByText(translate("en", "checkout.bill.closed"))
-    ).toBeVisible()
+    await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
     await expect(
       page.getByRole("button", {
-        name: translate("en", "checkout.savedCarts.aria"),
+        name: translate("en", "bill.list.viewAria"),
       })
     ).toBeVisible()
   })
@@ -297,18 +295,16 @@ test("keeps the saved-carts link visible for a closed or missing bill", async ({
     // bits in their last character, so only the first character of a known
     // valid id is swapped, keeping the rest (and its encoding) untouched.
     const missingBillId = `${billId?.[0] === "a" ? "b" : "a"}${billId?.slice(1)}`
-    await page.goto(`/checkout?billId=${missingBillId}`, {
+    await page.goto(`/bill?billId=${missingBillId}`, {
       waitUntil: "domcontentloaded",
     })
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
-    await expect(
-      page.getByText(translate("en", "checkout.bill.notFound"))
-    ).toBeVisible()
+    await expect(page.getByText(translate("en", "bill.notFound"))).toBeVisible()
     await expect(
       page.getByRole("button", {
-        name: translate("en", "checkout.savedCarts.aria"),
+        name: translate("en", "bill.list.viewAria"),
       })
     ).toBeVisible()
   })
@@ -321,19 +317,19 @@ test("decrements a saved item after its catalog snapshot changes", async ({
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
-    await expect(page.getByTestId("checkout-summary-trigger")).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+    await expect(page.getByTestId("bill-summary-trigger")).toContainText(
+      translateValue("en", "bill.itemsCount", 1)
     )
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.park"),
+        name: translate("en", "bill.park"),
         exact: true,
       })
       .click()
@@ -358,15 +354,15 @@ test("decrements a saved item after its catalog snapshot changes", async ({
   })
 
   await test.step("resume the cart and remove its old snapshot", async () => {
-    await gotoPage(page, "/checkout/bills", "en", "checkout.bills.title")
-    await page.getByText(translateValue("en", "checkout.itemsCount", 1)).click()
+    await gotoPage(page, "/bill/list", "en", "bill.list.title")
+    await page.getByText(translateValue("en", "bill.itemsCount", 1)).click()
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.remove.aria", "Coffee"),
+        name: nameParam("bill.brick.remove.aria", "Coffee"),
       })
       .click()
-    await expect(page.getByTestId("checkout-summary-trigger")).toContainText(
-      translateValue("en", "checkout.itemsCount", 0)
+    await expect(page.getByTestId("bill-summary-trigger")).toContainText(
+      translateValue("en", "bill.itemsCount", 0)
     )
   })
 })
@@ -378,11 +374,11 @@ test("charges a cart and closes it once cash is paid", async ({
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
 
@@ -416,14 +412,14 @@ test("charges a cart and closes it once cash is paid", async ({
       .getByRole("button", { name: translate("en", "paymentWait.back") })
       .click()
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .waitFor()
   })
 
   await test.step("verify the paid bill is no longer resumable", async () => {
-    await gotoPage(page, "/checkout/bills", "en", "checkout.bills.title")
+    await gotoPage(page, "/bill/list", "en", "bill.list.title")
     await expect(
-      page.getByText(translate("en", "checkout.bills.empty.title"))
+      page.getByText(translate("en", "bill.list.empty.title"))
     ).toBeVisible()
   })
 })
@@ -435,16 +431,16 @@ test("adds a bulk quantity through the quantity dialog", async ({
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
   })
 
-  const summaryTrigger = page.getByTestId("checkout-summary-trigger")
+  const summaryTrigger = page.getByTestId("bill-summary-trigger")
   const quantityTrigger = page.getByRole("button", {
-    name: nameParam("checkout.brick.quantity.trigger.aria", "Coffee"),
+    name: nameParam("bill.brick.quantity.trigger.aria", "Coffee"),
   })
 
   await test.step("cancelling the dialog leaves the cart untouched", async () => {
@@ -452,12 +448,12 @@ test("adds a bulk quantity through the quantity dialog", async ({
     await page
       .getByRole("dialog", { name: "Coffee" })
       .getByRole("textbox", {
-        name: translate("en", "checkout.brick.quantity.input.aria"),
+        name: translate("en", "bill.brick.quantity.input.aria"),
       })
       .fill("7")
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.brick.quantity.cancel"),
+        name: translate("en", "bill.brick.quantity.cancel"),
       })
       .click()
     await expect(page.getByRole("dialog", { name: "Coffee" })).not.toBeVisible()
@@ -469,18 +465,18 @@ test("adds a bulk quantity through the quantity dialog", async ({
     const dialog = page.getByRole("dialog", { name: "Coffee" })
     await dialog
       .getByRole("textbox", {
-        name: translate("en", "checkout.brick.quantity.input.aria"),
+        name: translate("en", "bill.brick.quantity.input.aria"),
       })
       .fill("12")
     await dialog
       .getByRole("button", {
-        name: translate("en", "checkout.brick.quantity.confirm"),
+        name: translate("en", "bill.brick.quantity.confirm"),
       })
       .click()
     await expect(dialog).not.toBeVisible()
     await expect(quantityTrigger).toContainText("12")
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "checkout.itemsCount", 12)
+      translateValue("en", "bill.itemsCount", 12)
     )
   })
 
@@ -488,7 +484,7 @@ test("adds a bulk quantity through the quantity dialog", async ({
     await quantityTrigger.click()
     await expect(
       page.getByRole("dialog", { name: "Coffee" }).getByRole("textbox", {
-        name: translate("en", "checkout.brick.quantity.input.aria"),
+        name: translate("en", "bill.brick.quantity.input.aria"),
       })
     ).toHaveValue("12")
   })
@@ -505,13 +501,13 @@ test("filters the item grid by category", async ({ seededPage: page }) => {
     await addCatalogItem(page, "en", { name: "Sandwich", price: "6" })
   })
 
-  await test.step("open the checkout", async () => {
+  await test.step("open the bill", async () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
   })
 
@@ -532,7 +528,7 @@ test("filters the item grid by category", async ({ seededPage: page }) => {
   await test.step("the 'Uncategorized' filter only shows the other item", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.category.uncategorized"),
+        name: translate("en", "bill.category.uncategorized"),
       })
       .click()
     await expect(sandwichCard).toBeVisible()
@@ -541,14 +537,14 @@ test("filters the item grid by category", async ({ seededPage: page }) => {
 
   await test.step("the 'All' filter shows both items again", async () => {
     await page
-      .getByRole("button", { name: translate("en", "checkout.category.all") })
+      .getByRole("button", { name: translate("en", "bill.category.all") })
       .click()
     await expect(coffeeCard).toBeVisible()
     await expect(sandwichCard).toBeVisible()
   })
 })
 
-test("assigns and clears a table on a cart from the checkout header", async ({
+test("assigns and clears a table on a cart from the bill header", async ({
   seededPage: page,
 }) => {
   await test.step("seed a table and a catalog item", async () => {
@@ -556,24 +552,24 @@ test("assigns and clears a table on a cart from the checkout header", async ({
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
   })
 
-  await test.step("open the checkout", async () => {
+  await test.step("open the bill", async () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
   })
 
   const tableButton = page.getByRole("button", {
-    name: translate("en", "checkout.table.aria"),
+    name: translate("en", "bill.table.aria"),
   })
 
   await test.step("assign the table before the cart has a bill yet", async () => {
     await tableButton.click()
     const dialog = page.getByRole("dialog", {
-      name: translate("en", "checkout.table.dialog.title"),
+      name: translate("en", "bill.table.dialog.title"),
     })
     await dialog.getByRole("button", { name: "Patio 1" }).click()
     await expect(dialog).not.toBeVisible()
@@ -583,7 +579,7 @@ test("assigns and clears a table on a cart from the checkout header", async ({
   await test.step("the lazily created bill keeps the assigned table", async () => {
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
     await expect
@@ -595,11 +591,11 @@ test("assigns and clears a table on a cart from the checkout header", async ({
   await test.step("the saved carts list shows the assigned table", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.savedCarts.aria"),
+        name: translate("en", "bill.list.viewAria"),
       })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.bills.title") })
+      .getByRole("heading", { name: translate("en", "bill.list.title") })
       .waitFor()
     // Scoped to a link, not getByText: the table filter chip added to this
     // page also renders a "Patio 1" button, which would make a bare text
@@ -610,20 +606,20 @@ test("assigns and clears a table on a cart from the checkout header", async ({
   await test.step("clear the table assignment", async () => {
     await page.goBack()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
     await tableButton.click()
     const dialog = page.getByRole("dialog", {
-      name: translate("en", "checkout.table.dialog.title"),
+      name: translate("en", "bill.table.dialog.title"),
     })
     await dialog
       .getByRole("button", {
-        name: translate("en", "checkout.table.dialog.none"),
+        name: translate("en", "bill.table.dialog.none"),
       })
       .click()
     await expect(dialog).not.toBeVisible()
     await expect(tableButton).toContainText(
-      translate("en", "checkout.table.assign")
+      translate("en", "bill.table.assign")
     )
   })
 })

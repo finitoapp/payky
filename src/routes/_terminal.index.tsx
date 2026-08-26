@@ -34,7 +34,7 @@ const Header = () => {
       <Button
         variant={"ghost"}
         nativeButton={false}
-        render={<Link aria-label={t("nav.checkout")} to="/checkout" />}
+        render={<Link aria-label={t("nav.bill")} to="/bill" />}
       >
         <ShoppingBag className={"size-6"} strokeWidth={3} />
       </Button>

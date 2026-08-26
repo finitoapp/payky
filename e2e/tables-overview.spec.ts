@@ -31,11 +31,11 @@ test("shows a free table, starts a cart from it, then shows it occupied", async 
   await test.step("tap the free table and add an item", async () => {
     await tableTile.click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
     await expect
@@ -43,7 +43,7 @@ test("shows a free table, starts a cart from it, then shows it occupied", async 
       .not.toBeNull()
     billId = new URL(page.url()).searchParams.get("billId")
     await expect(
-      page.getByRole("button", { name: translate("en", "checkout.table.aria") })
+      page.getByRole("button", { name: translate("en", "bill.table.aria") })
     ).toContainText("Table A")
   })
 
@@ -54,14 +54,14 @@ test("shows a free table, starts a cart from it, then shows it occupied", async 
       translate("en", "tables.tile.free")
     )
     await expect(tableTile).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+      translateValue("en", "bill.itemsCount", 1)
     )
   })
 
   await test.step("tapping the occupied table resumes its cart", async () => {
     await tableTile.click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
     await expect
       .poll(() => new URL(page.url()).searchParams.get("billId"))
@@ -82,25 +82,25 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
   seededPage: page,
 }) => {
   const billLabel = (number: number) =>
-    translate("en", "checkout.bills.label").replace("{number}", String(number))
+    translate("en", "bill.list.label").replace("{number}", String(number))
 
   const parkCart = async (tableName: string | null) => {
     // A client-side nav click, not gotoPage/page.goto: this runs several
     // times in a row and a hard reload re-inits Evolu's OPFS SQLite WASM
     // each time, which gets slow enough after a few carts to time out.
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.title") })
+      .getByRole("heading", { name: translate("en", "bill.title") })
       .waitFor()
 
     if (tableName !== null) {
       await page
-        .getByRole("button", { name: translate("en", "checkout.table.aria") })
+        .getByRole("button", { name: translate("en", "bill.table.aria") })
         .click()
       const dialog = page.getByRole("dialog", {
-        name: translate("en", "checkout.table.dialog.title"),
+        name: translate("en", "bill.table.dialog.title"),
       })
       await dialog.getByRole("button", { name: tableName }).click()
       await expect(dialog).not.toBeVisible()
@@ -108,7 +108,7 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
 
     await page
       .getByRole("button", {
-        name: nameParam("checkout.brick.add.aria", "Coffee"),
+        name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
     await expect
@@ -116,7 +116,7 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
       .not.toBeNull()
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.park"),
+        name: translate("en", "bill.park"),
         exact: true,
       })
       .click()
@@ -132,7 +132,7 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
   await test.step("return to the home screen", async () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", { name: translate("en", "nav.checkout") })
+      .getByRole("button", { name: translate("en", "nav.bill") })
       .waitFor()
   })
 
@@ -157,14 +157,14 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
       translateValue("en", "tables.tile.multipleBills", 2)
     )
     await expect(tableCTile).toContainText(
-      translateValue("en", "checkout.itemsCount", 1)
+      translateValue("en", "bill.itemsCount", 1)
     )
   })
 
   await test.step("tapping Table B opens the saved carts list pre-filtered to it", async () => {
     await tableBTile.click()
     await page
-      .getByRole("heading", { name: translate("en", "checkout.bills.title") })
+      .getByRole("heading", { name: translate("en", "bill.list.title") })
       .waitFor()
     await expect(new URL(page.url()).searchParams.get("tableId")).not.toBeNull()
 
@@ -178,7 +178,7 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
     const tableBChip = page.getByRole("button", { name: "Table B" })
     const tableCChip = page.getByRole("button", { name: "Table C" })
     const noTableChip = page.getByRole("button", {
-      name: translate("en", "checkout.bills.table.none"),
+      name: translate("en", "bill.list.table.none"),
     })
     await expect(tableBChip).toBeVisible()
     await expect(tableCChip).toBeVisible()
@@ -188,7 +188,7 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
   await test.step("switching the filter to 'All' shows every saved cart", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.bills.table.all"),
+        name: translate("en", "bill.list.table.all"),
       })
       .click()
     await expect(page.getByText(billLabel(1))).toBeVisible()
@@ -200,7 +200,7 @@ test("a table with multiple open carts links to the saved carts list pre-filtere
   await test.step("the 'No table' filter shows only the unassigned cart", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "checkout.bills.table.none"),
+        name: translate("en", "bill.list.table.none"),
       })
       .click()
     await expect(page.getByText(billLabel(4))).toBeVisible()

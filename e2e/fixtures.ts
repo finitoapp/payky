@@ -265,7 +265,7 @@ export async function addCatalogItem(
     .waitFor()
 }
 
-/** Adds a catalog category through the real settings UI (used to seed categories for checkout filter specs). */
+/** Adds a catalog category through the real settings UI (used to seed categories for bill filter specs). */
 export async function addCatalogCategory(
   page: Page,
   language: Language,
@@ -304,7 +304,7 @@ export async function addCatalogCategory(
     .waitFor()
 }
 
-/** Adds a table through the real settings UI (used to seed tables for checkout/floor-view specs). */
+/** Adds a table through the real settings UI (used to seed tables for bill/floor-view specs). */
 export async function addTable(
   page: Page,
   language: Language,

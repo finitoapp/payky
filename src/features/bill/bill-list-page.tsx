@@ -23,7 +23,7 @@ import { openBillsQuery } from "@/core/modules/bill/bill-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
-import { useBillLineSummaries } from "@/features/checkout/use-bill-line-summaries.ts"
+import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -33,7 +33,7 @@ import { formatMoney } from "@/lib/format-utils.ts"
 
 type TableFilter = "all" | "none" | TableId
 
-export function OpenBillsPage({
+export function BillListPage({
   initialTableId,
 }: {
   readonly initialTableId?: TableId
@@ -72,14 +72,12 @@ export function OpenBillsPage({
     <>
       <div className="h-6" />
       <FadeHeader
-        title={t("checkout.bills.title")}
+        title={t("bill.list.title")}
         endAddon={
           <Button
             variant="ghost"
             nativeButton={false}
-            render={
-              <Link aria-label={t("checkout.bills.new.aria")} to="/checkout" />
-            }
+            render={<Link aria-label={t("bill.list.new.aria")} to="/bill" />}
           >
             <PlusIcon className="size-5 text-primary" strokeWidth={3} />
           </Button>
@@ -100,7 +98,7 @@ export function OpenBillsPage({
             className="w-max"
           >
             <ToggleGroupItem value="all">
-              {t("checkout.bills.table.all")}
+              {t("bill.list.table.all")}
             </ToggleGroupItem>
             {availableTables.map((table) => (
               <ToggleGroupItem key={table.id} value={table.id}>
@@ -109,7 +107,7 @@ export function OpenBillsPage({
             ))}
             {showNoTableFilter && (
               <ToggleGroupItem value="none">
-                {t("checkout.bills.table.none")}
+                {t("bill.list.table.none")}
               </ToggleGroupItem>
             )}
           </ToggleGroup>
@@ -118,11 +116,9 @@ export function OpenBillsPage({
 
       {sortedBills.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
-          <p className="text-lg font-semibold">
-            {t("checkout.bills.empty.title")}
-          </p>
+          <p className="text-lg font-semibold">{t("bill.list.empty.title")}</p>
           <p className="max-w-72 text-balance text-sm text-muted-foreground">
-            {t("checkout.bills.empty.description")}
+            {t("bill.list.empty.description")}
           </p>
         </div>
       ) : (
@@ -180,7 +176,7 @@ function OpenBillRow({
   return (
     <div className="flex items-center rounded-xl bg-card ring-1 ring-foreground/10 p-2 gap-3">
       <Link
-        to="/checkout"
+        to="/bill"
         search={{ billId: bill.id }}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg"
       >
@@ -189,11 +185,10 @@ function OpenBillRow({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">
-            {bill.label ??
-              t("checkout.bills.label", { number: bill.displayNumber })}
+            {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
           </p>
           <p className="text-sm text-muted-foreground">
-            {t("checkout.itemsCount", { value: itemCount })}
+            {t("bill.itemsCount", { value: itemCount })}
           </p>
           {tableName !== null && (
             <p className="truncate text-xs text-muted-foreground">
@@ -211,7 +206,7 @@ function OpenBillRow({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={t("checkout.discard")}
+              aria-label={t("bill.discard")}
               className="text-destructive"
             >
               <Trash2Icon />
@@ -221,21 +216,21 @@ function OpenBillRow({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("checkout.discard.confirm.title")}
+              {t("bill.discard.confirm.title")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("checkout.discard.confirm.description")}
+              {t("bill.discard.confirm.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>
-              {t("checkout.discard.confirm.cancel")}
+              {t("bill.discard.confirm.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => void handleDiscard()}
             >
-              {t("checkout.discard.confirm.confirm")}
+              {t("bill.discard.confirm.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

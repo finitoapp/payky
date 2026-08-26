@@ -16,11 +16,11 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
-import { Route as TerminalCheckoutRouteImport } from './routes/_terminal.checkout'
+import { Route as TerminalBillRouteImport } from './routes/_terminal.bill'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
 import { Route as TerminalTablesRouteImport } from './routes/_terminal.tables'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
-import { Route as TerminalCheckoutBillsRouteImport } from './routes/_terminal.checkout_.bills'
+import { Route as TerminalBillListRouteImport } from './routes/_terminal.bill_.list'
 import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payment.tip'
 import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
@@ -91,9 +91,9 @@ const TerminalActivityRoute = TerminalActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => TerminalRoute,
 } as any)
-const TerminalCheckoutRoute = TerminalCheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
+const TerminalBillRoute = TerminalBillRouteImport.update({
+  id: '/bill',
+  path: '/bill',
   getParentRoute: () => TerminalRoute,
 } as any)
 const TerminalSettingsRoute = TerminalSettingsRouteImport.update({
@@ -112,9 +112,9 @@ const TerminalActivityPaymentIdRoute =
     path: '/activity/$paymentId',
     getParentRoute: () => TerminalRoute,
   } as any)
-const TerminalCheckoutBillsRoute = TerminalCheckoutBillsRouteImport.update({
-  id: '/checkout_/bills',
-  path: '/checkout/bills',
+const TerminalBillListRoute = TerminalBillListRouteImport.update({
+  id: '/bill_/list',
+  path: '/bill/list',
   getParentRoute: () => TerminalRoute,
 } as any)
 const TerminalPaymentTipRoute = TerminalPaymentTipRouteImport.update({
@@ -326,11 +326,11 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
-  '/checkout': typeof TerminalCheckoutRoute
+  '/bill': typeof TerminalBillRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
   '/tables': typeof TerminalTablesRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
-  '/checkout/bills': typeof TerminalCheckoutBillsRoute
+  '/bill/list': typeof TerminalBillListRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -373,11 +373,11 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
-  '/checkout': typeof TerminalCheckoutRoute
+  '/bill': typeof TerminalBillRoute
   '/tables': typeof TerminalTablesRoute
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
-  '/checkout/bills': typeof TerminalCheckoutBillsRoute
+  '/bill/list': typeof TerminalBillListRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
@@ -418,12 +418,12 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/restore-account': typeof RestoreAccountRoute
   '/_terminal/activity': typeof TerminalActivityRoute
-  '/_terminal/checkout': typeof TerminalCheckoutRoute
+  '/_terminal/bill': typeof TerminalBillRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
   '/_terminal/tables': typeof TerminalTablesRoute
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
-  '/_terminal/checkout_/bills': typeof TerminalCheckoutBillsRoute
+  '/_terminal/bill_/list': typeof TerminalBillListRoute
   '/_terminal/payment/tip': typeof TerminalPaymentTipRoute
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -469,11 +469,11 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/restore-account'
     | '/activity'
-    | '/checkout'
+    | '/bill'
     | '/settings'
     | '/tables'
     | '/activity/$paymentId'
-    | '/checkout/bills'
+    | '/bill/list'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/about'
@@ -516,11 +516,11 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/restore-account'
     | '/activity'
-    | '/checkout'
+    | '/bill'
     | '/tables'
     | '/'
     | '/activity/$paymentId'
-    | '/checkout/bills'
+    | '/bill/list'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/accounts'
@@ -560,12 +560,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/restore-account'
     | '/_terminal/activity'
-    | '/_terminal/checkout'
+    | '/_terminal/bill'
     | '/_terminal/settings'
     | '/_terminal/tables'
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
-    | '/_terminal/checkout_/bills'
+    | '/_terminal/bill_/list'
     | '/_terminal/payment/tip'
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
@@ -662,11 +662,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalActivityRouteImport
       parentRoute: typeof TerminalRoute
     }
-    '/_terminal/checkout': {
-      id: '/_terminal/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof TerminalCheckoutRouteImport
+    '/_terminal/bill': {
+      id: '/_terminal/bill'
+      path: '/bill'
+      fullPath: '/bill'
+      preLoaderRoute: typeof TerminalBillRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/settings': {
@@ -690,11 +690,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalActivityPaymentIdRouteImport
       parentRoute: typeof TerminalRoute
     }
-    '/_terminal/checkout_/bills': {
-      id: '/_terminal/checkout_/bills'
-      path: '/checkout/bills'
-      fullPath: '/checkout/bills'
-      preLoaderRoute: typeof TerminalCheckoutBillsRouteImport
+    '/_terminal/bill_/list': {
+      id: '/_terminal/bill_/list'
+      path: '/bill/list'
+      fullPath: '/bill/list'
+      preLoaderRoute: typeof TerminalBillListRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/payment/tip': {
@@ -1072,24 +1072,24 @@ const TerminalSettingsRouteWithChildren =
 
 interface TerminalRouteChildren {
   TerminalActivityRoute: typeof TerminalActivityRoute
-  TerminalCheckoutRoute: typeof TerminalCheckoutRoute
+  TerminalBillRoute: typeof TerminalBillRoute
   TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
   TerminalTablesRoute: typeof TerminalTablesRoute
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
-  TerminalCheckoutBillsRoute: typeof TerminalCheckoutBillsRoute
+  TerminalBillListRoute: typeof TerminalBillListRoute
   TerminalPaymentTipRoute: typeof TerminalPaymentTipRoute
   TerminalPaymentPaymentIdRoute: typeof TerminalPaymentPaymentIdRoute
 }
 
 const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalActivityRoute: TerminalActivityRoute,
-  TerminalCheckoutRoute: TerminalCheckoutRoute,
+  TerminalBillRoute: TerminalBillRoute,
   TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
   TerminalTablesRoute: TerminalTablesRoute,
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
-  TerminalCheckoutBillsRoute: TerminalCheckoutBillsRoute,
+  TerminalBillListRoute: TerminalBillListRoute,
   TerminalPaymentTipRoute: TerminalPaymentTipRoute,
   TerminalPaymentPaymentIdRoute: TerminalPaymentPaymentIdRoute,
 }

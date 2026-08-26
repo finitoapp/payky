@@ -18,7 +18,7 @@ import {
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
-import { getBillLineSummaryUnitAmount } from "@/features/checkout/cart-utils.ts"
+import { getBillLineSummaryUnitAmount } from "@/features/bill/cart-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 

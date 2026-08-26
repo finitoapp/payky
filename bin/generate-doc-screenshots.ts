@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url"
 import { chromium, expect, type Page } from "@playwright/test"
 import sharp from "sharp"
 import {
+  addCatalogItem,
+  addTable,
   completeOnboarding,
   createPayment,
   enterAmount,
@@ -12,11 +14,16 @@ import {
   pageHeight,
   pageWidth,
   translate,
+  translateValue,
 } from "../e2e/fixtures.ts"
-import { type Language, resources } from "../src/i18n/resources.ts"
+import {
+  type Language,
+  resources,
+  type TranslationKey,
+} from "../src/i18n/resources.ts"
 
 interface ScreenshotScenario {
-  readonly name: "home" | "payment" | "paid" | "settings"
+  readonly name: "home" | "payment" | "paid" | "settings" | "bill" | "tables"
   readonly capture: (page: Page, language: Language) => Promise<void>
 }
 
@@ -83,6 +90,85 @@ async function waitForApp(): Promise<void> {
   throw new Error("Timed out waiting for the documentation screenshot server.")
 }
 
+function nameParam(
+  language: Language,
+  key: TranslationKey,
+  name: string
+): string {
+  return translate(language, key).replace("{name}", name)
+}
+
+interface CatalogItem {
+  readonly name: string
+  readonly price: string
+}
+
+interface CartItem extends CatalogItem {
+  readonly quantity: number
+}
+
+/**
+ * A fuller-looking catalog grid for the bill screenshot. Only the first
+ * two items are actually added to the cart (2x and 1x, see
+ * `billCartByLanguage`); the rest just fill out the grid.
+ */
+const billCatalogByLanguage: Record<Language, ReadonlyArray<CatalogItem>> = {
+  en: [
+    { name: "Coffee", price: "4.5" },
+    { name: "Croissant", price: "3.25" },
+    { name: "Sandwich", price: "6" },
+    { name: "Orange Juice", price: "3.5" },
+    { name: "Bagel", price: "4" },
+    { name: "Iced Tea", price: "3.75" },
+  ],
+  cs: [
+    { name: "Káva", price: "65" },
+    { name: "Croissant", price: "55" },
+    { name: "Sendvič", price: "89" },
+    { name: "Pomerančový džus", price: "45" },
+    { name: "Bagel", price: "60" },
+    { name: "Ledový čaj", price: "55" },
+  ],
+  sk: [
+    { name: "Káva", price: "2.5" },
+    { name: "Croissant", price: "2" },
+    { name: "Sendvič", price: "3.5" },
+    { name: "Pomarančový džús", price: "1.8" },
+    { name: "Bagel", price: "2.2" },
+    { name: "Ľadový čaj", price: "2" },
+  ],
+}
+
+const billCartByLanguage: Record<Language, ReadonlyArray<CartItem>> = {
+  en: [
+    { name: "Coffee", price: "4.5", quantity: 2 },
+    { name: "Croissant", price: "3.25", quantity: 1 },
+  ],
+  cs: [
+    { name: "Káva", price: "65", quantity: 2 },
+    { name: "Croissant", price: "55", quantity: 1 },
+  ],
+  sk: [
+    { name: "Káva", price: "2.5", quantity: 2 },
+    { name: "Croissant", price: "2", quantity: 1 },
+  ],
+}
+
+const tableNamesByLanguage: Record<
+  Language,
+  readonly [string, string, string, string, string, string]
+> = {
+  en: ["Table 1", "Table 2", "Table 3", "Table 4", "Table 5", "Table 6"],
+  cs: ["Stůl 1", "Stůl 2", "Stůl 3", "Stůl 4", "Stůl 5", "Stůl 6"],
+  sk: ["Stôl 1", "Stôl 2", "Stôl 3", "Stôl 4", "Stôl 5", "Stôl 6"],
+}
+
+const tablesCartItemByLanguage: Record<Language, CartItem> = {
+  en: { name: "Coffee", price: "4.5", quantity: 1 },
+  cs: { name: "Káva", price: "65", quantity: 1 },
+  sk: { name: "Káva", price: "2.5", quantity: 1 },
+}
+
 async function capturePage(
   page: Page,
   name: ScreenshotScenario["name"],
@@ -141,6 +227,113 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
         .getByRole("heading", { name: translate(language, "settings.title") })
         .waitFor()
       await capturePage(page, "settings", language)
+    },
+  },
+  {
+    name: "bill",
+    async capture(page, language) {
+      await completeOnboarding(page, language, { baseURL: appUrl })
+      for (const item of billCatalogByLanguage[language]) {
+        await addCatalogItem(page, language, item)
+      }
+      const cartItems = billCartByLanguage[language]
+
+      await page.goto("/", { waitUntil: "domcontentloaded" })
+      await page
+        .getByRole("button", { name: translate(language, "nav.bill") })
+        .click()
+      await page
+        .getByRole("heading", { name: translate(language, "bill.title") })
+        .waitFor()
+
+      for (const item of cartItems) {
+        const addButton = page.getByRole("button", {
+          name: nameParam(language, "bill.brick.add.aria", item.name),
+        })
+        for (let count = 0; count < item.quantity; count += 1) {
+          await addButton.click()
+        }
+      }
+
+      await expect
+        .poll(() => new URL(page.url()).searchParams.get("billId"))
+        .not.toBeNull()
+
+      await page.getByTestId("bill-summary-trigger").click()
+      await page.getByTestId("bill-summary-panel").waitFor()
+      // The summary panel's expand/collapse is a 300ms CSS transition
+      // (grid-template-rows), not a mount/unmount `waitFor()` can catch.
+      await page.waitForTimeout(400)
+      await capturePage(page, "bill", language)
+    },
+  },
+  {
+    name: "tables",
+    async capture(page, language) {
+      await completeOnboarding(page, language, { baseURL: appUrl })
+      const tableNames = tableNamesByLanguage[language]
+      for (const name of tableNames) {
+        await addTable(page, language, { name, seatCount: "4" })
+      }
+      const cartItem = tablesCartItemByLanguage[language]
+      await addCatalogItem(page, language, {
+        name: cartItem.name,
+        price: cartItem.price,
+      })
+
+      await page.goto("/", { waitUntil: "domcontentloaded" })
+
+      const parkCartOnTable = async (tableName: string) => {
+        await page
+          .getByRole("button", { name: translate(language, "nav.bill") })
+          .click()
+        await page
+          .getByRole("heading", {
+            name: translate(language, "bill.title"),
+          })
+          .waitFor()
+        await page
+          .getByRole("button", {
+            name: translate(language, "bill.table.aria"),
+          })
+          .click()
+        const dialog = page.getByRole("dialog", {
+          name: translate(language, "bill.table.dialog.title"),
+        })
+        await dialog.getByRole("button", { name: tableName }).click()
+        await expect(dialog).not.toBeVisible()
+        await page
+          .getByRole("button", {
+            name: nameParam(language, "bill.brick.add.aria", cartItem.name),
+          })
+          .click()
+        await expect
+          .poll(() => new URL(page.url()).searchParams.get("billId"))
+          .not.toBeNull()
+        await page
+          .getByRole("button", {
+            name: translate(language, "bill.park"),
+            exact: true,
+          })
+          .click()
+        await page.waitForURL("/")
+      }
+
+      const [firstTable, secondTable] = tableNames
+      await parkCartOnTable(firstTable)
+      await parkCartOnTable(secondTable)
+      await parkCartOnTable(secondTable)
+
+      await page
+        .getByRole("button", { name: translate(language, "nav.tables") })
+        .click()
+      await page
+        .getByRole("heading", { name: translate(language, "tables.title") })
+        .waitFor()
+      await expect(
+        page.getByRole("link", { name: new RegExp(secondTable) })
+      ).toContainText(translateValue(language, "tables.tile.multipleBills", 2))
+      await capturePage(page, "tables", language)
     },
   },
 ]
@@ -284,6 +477,7 @@ async function run(): Promise<void> {
             `Generating ${language} documentation screenshot: ${scenario.name}`
           )
           const context = await browser.newContext({
+            baseURL: appUrl,
             colorScheme: "dark",
             deviceScaleFactor,
             locale: localeByLanguage[language],

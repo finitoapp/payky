@@ -1,6 +1,6 @@
 # Payky
 
-Payky is a local-first point-of-sale application for managing terminal checkout
+Payky is a local-first point-of-sale application for managing terminal bill
 flows, catalog items, bills, payments, account transactions, and background sync
 jobs.
 
@@ -270,4 +270,4 @@ above.
 
 All user-facing React text should come from `src/i18n/resources.ts`. Add keys for
 both `en` and `cs`, and use stable, feature-scoped names such as
-`checkout.save`, `settings.items.title`, or `activity.empty`.
+`bill.save`, `settings.items.title`, or `activity.empty`.

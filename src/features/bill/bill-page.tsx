@@ -72,9 +72,9 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
-import { getLatestCatalogItemSummary } from "@/features/checkout/cart-utils.ts"
-import { useBillLineSummaries } from "@/features/checkout/use-bill-line-summaries.ts"
-import { useCartBill } from "@/features/checkout/use-cart-bill.ts"
+import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
+import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -86,7 +86,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-export function CheckoutPage({
+export function BillPage({
   billId,
   initialTableId,
 }: {
@@ -106,7 +106,7 @@ export function CheckoutPage({
     initialTableId ?? null
   )
 
-  // Owned here, not inside CheckoutCartView, so search text, the summary's
+  // Owned here, not inside BillCartView, so search text, the summary's
   // open/closed state, and the undo/redo history survive the moment the
   // first added item lazily creates the bill and the route's `billId`
   // search param switches from absent to present.
@@ -116,7 +116,7 @@ export function CheckoutPage({
     tableId: pendingTableId,
     onBillCreated: (createdBillId) => {
       void navigate({
-        to: "/checkout",
+        to: "/bill",
         search: { billId: createdBillId },
         replace: true,
       })
@@ -138,21 +138,21 @@ export function CheckoutPage({
   }
 
   return billId === undefined ? (
-    <CheckoutPageLayout>
-      <CheckoutCartView
+    <BillPageLayout>
+      <BillCartView
         billId={undefined}
         currency={fallbackCurrency}
         summaries={EMPTY_SUMMARIES}
         tableId={pendingTableId}
         {...sharedProps}
       />
-    </CheckoutPageLayout>
+    </BillPageLayout>
   ) : (
-    <CheckoutExistingBillBody billId={billId} {...sharedProps} />
+    <BillExistingBody billId={billId} {...sharedProps} />
   )
 }
 
-function CheckoutExistingBillBody({
+function BillExistingBody({
   billId,
   ...sharedProps
 }: { readonly billId: BillId } & SharedCartViewProps) {
@@ -163,12 +163,12 @@ function CheckoutExistingBillBody({
 
   let content: ReactNode
   if (bill === undefined) {
-    content = <CheckoutMessage message={t("checkout.bill.notFound")} />
+    content = <BillMessage message={t("bill.notFound")} />
   } else if (bill.status !== "open" && bill.status !== "partiallyPaid") {
-    content = <CheckoutMessage message={t("checkout.bill.closed")} />
+    content = <BillMessage message={t("bill.closed")} />
   } else {
     content = (
-      <CheckoutCartView
+      <BillCartView
         billId={billId}
         currency={bill.currency}
         summaries={summaries}
@@ -178,31 +178,28 @@ function CheckoutExistingBillBody({
     )
   }
 
-  return <CheckoutPageLayout>{content}</CheckoutPageLayout>
+  return <BillPageLayout>{content}</BillPageLayout>
 }
 
 /**
- * Every checkout state (new cart, resumed cart, not-found/closed message)
+ * Every bill state (new cart, resumed cart, not-found/closed message)
  * renders through this single frame, so the header — and its always-visible
  * link to saved carts — can never be left out of one state by accident.
  */
-function CheckoutPageLayout({ children }: { readonly children: ReactNode }) {
+function BillPageLayout({ children }: { readonly children: ReactNode }) {
   const { t } = useTranslation()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="h-6" />
       <FadeHeader
-        title={t("checkout.title")}
+        title={t("bill.title")}
         endAddon={
           <Button
             variant="ghost"
             nativeButton={false}
             render={
-              <Link
-                aria-label={t("checkout.savedCarts.aria")}
-                to="/checkout/bills"
-              />
+              <Link aria-label={t("bill.list.viewAria")} to="/bill/list" />
             }
           >
             <ReceiptIcon className="text-primary size-5" strokeWidth={2} />
@@ -214,7 +211,7 @@ function CheckoutPageLayout({ children }: { readonly children: ReactNode }) {
   )
 }
 
-function CheckoutMessage({ message }: { readonly message: string }) {
+function BillMessage({ message }: { readonly message: string }) {
   return (
     <p className="mt-16 px-6 text-center text-muted-foreground">{message}</p>
   )
@@ -251,7 +248,7 @@ interface SharedCartViewProps {
   readonly onSummaryOpenChange: (open: boolean) => void
 }
 
-function CheckoutCartView({
+function BillCartView({
   billId,
   currency,
   summaries,
@@ -377,7 +374,7 @@ function CheckoutCartView({
   const showUndoToast = (message: string) =>
     toast(message, {
       action: {
-        label: t("checkout.summary.undo"),
+        label: t("bill.summary.undo"),
         onClick: () => void cart.undo(),
       },
     })
@@ -402,25 +399,25 @@ function CheckoutCartView({
           <Button
             variant="outline"
             size="sm"
-            aria-label={t("checkout.table.aria")}
+            aria-label={t("bill.table.aria")}
             onClick={() => setTablePickerOpen(true)}
           >
             <Table2 data-icon="inline-start" />
-            {currentTable?.name ?? t("checkout.table.assign")}
+            {currentTable?.name ?? t("bill.table.assign")}
           </Button>
         </div>
 
         <Dialog open={tablePickerOpen} onOpenChange={setTablePickerOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t("checkout.table.dialog.title")}</DialogTitle>
+              <DialogTitle>{t("bill.table.dialog.title")}</DialogTitle>
             </DialogHeader>
             <OptionToggleGroup<TableId | "none">
               value={tableId ?? "none"}
               options={[
                 {
                   value: "none" as const,
-                  title: t("checkout.table.dialog.none"),
+                  title: t("bill.table.dialog.none"),
                 },
                 ...tables.map((table) => ({
                   value: table.id,
@@ -437,8 +434,8 @@ function CheckoutCartView({
         <div className="relative mt-2">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            aria-label={t("checkout.search")}
-            placeholder={t("checkout.search")}
+            aria-label={t("bill.search")}
+            placeholder={t("bill.search")}
             value={search}
             autoComplete="off"
             className="h-12 border-none bg-card pl-12 text-base"
@@ -449,7 +446,7 @@ function CheckoutCartView({
               variant="ghost"
               size="icon-sm"
               className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full"
-              aria-label={t("checkout.search.clear.aria")}
+              aria-label={t("bill.search.clear.aria")}
               onClick={() => onSearchChange("")}
             >
               <X />
@@ -470,7 +467,7 @@ function CheckoutCartView({
               className="w-max"
             >
               <ToggleGroupItem value="all">
-                {t("checkout.category.all")}
+                {t("bill.category.all")}
               </ToggleGroupItem>
               {availableCategories.map((category) => (
                 <ToggleGroupItem key={category.id} value={category.id}>
@@ -479,7 +476,7 @@ function CheckoutCartView({
               ))}
               {showUncategorizedFilter && (
                 <ToggleGroupItem value="uncategorized">
-                  {t("checkout.category.uncategorized")}
+                  {t("bill.category.uncategorized")}
                 </ToggleGroupItem>
               )}
             </ToggleGroup>
@@ -488,10 +485,10 @@ function CheckoutCartView({
       </div>
       <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {currencyItems.length === 0 ? (
-          <CheckoutEmptyCatalog />
+          <BillEmptyCatalog />
         ) : filteredItems.length === 0 ? (
           <p className="mt-10 text-center text-muted-foreground">
-            {t("checkout.emptySearch")}
+            {t("bill.emptySearch")}
           </p>
         ) : (
           <div className="mt-4 grid grid-cols-2 gap-2 pb-4">
@@ -523,14 +520,14 @@ function CheckoutCartView({
           <Collapsible open={summaryOpen} onOpenChange={onSummaryOpenChange}>
             <Card size="sm" className="bg-card">
               <CollapsibleTrigger
-                data-testid="checkout-summary-trigger"
+                data-testid="bill-summary-trigger"
                 className="w-full text-left"
                 disabled={summaries.length === 0 && !cart.canUndo}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base text-muted-foreground">
                     <ShoppingBag className="size-4" />
-                    {t("checkout.itemsCount", { value: itemCount })}
+                    {t("bill.itemsCount", { value: itemCount })}
                   </CardTitle>
                   <CardAction className="flex items-center gap-2 text-base font-semibold">
                     {formatMoney({ value: totalAmount, currency }, locale)}
@@ -545,7 +542,7 @@ function CheckoutCartView({
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent
-                data-testid="checkout-summary-panel"
+                data-testid="bill-summary-panel"
                 className="grid grid-rows-[1fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-out data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr]"
               >
                 {/*
@@ -591,14 +588,14 @@ function CheckoutCartView({
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            aria-label={t("checkout.summary.removeLine.aria", {
+                            aria-label={t("bill.summary.removeLine.aria", {
                               name: summary.name,
                             })}
                             disabled={cart.pending}
                             onClick={() => {
                               void cart.removeLine(summary).then(() => {
                                 showUndoToast(
-                                  t("checkout.summary.removeLine.toast", {
+                                  t("bill.summary.removeLine.toast", {
                                     name: summary.name,
                                   })
                                 )
@@ -618,7 +615,7 @@ function CheckoutCartView({
                       onClick={() => void cart.undo()}
                     >
                       <Undo2 data-icon="inline-start" />
-                      {t("checkout.summary.undo")}
+                      {t("bill.summary.undo")}
                     </Button>
                     <Button
                       variant="outline"
@@ -626,18 +623,18 @@ function CheckoutCartView({
                       onClick={() => void cart.redo()}
                     >
                       <Redo2 data-icon="inline-start" />
-                      {t("checkout.summary.redo")}
+                      {t("bill.summary.redo")}
                     </Button>
                     <Button
                       variant="outline"
                       disabled={summaries.length === 0 || cart.pending}
                       onClick={() => {
                         void cart.clear(summaries).then(() => {
-                          showUndoToast(t("checkout.summary.clear.toast"))
+                          showUndoToast(t("bill.summary.clear.toast"))
                         })
                       }}
                     >
-                      {t("checkout.summary.clear")}
+                      {t("bill.summary.clear")}
                     </Button>
                   </div>
                 </div>
@@ -651,7 +648,7 @@ function CheckoutCartView({
               size="icon"
               className="h-12 w-12 shrink-0 rounded-full text-destructive"
               disabled={billId === undefined}
-              aria-label={t("checkout.discard")}
+              aria-label={t("bill.discard")}
               onClick={() => setDiscardDialogOpen(true)}
             >
               <Trash2Icon />
@@ -661,7 +658,7 @@ function CheckoutCartView({
               className="h-12 flex-1 rounded-full text-base font-bold"
               onClick={() => void navigate({ to: "/" })}
             >
-              {t("checkout.park")}
+              {t("bill.park")}
             </Button>
             <Button
               variant="default"
@@ -682,21 +679,21 @@ function CheckoutCartView({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  {t("checkout.discard.confirm.title")}
+                  {t("bill.discard.confirm.title")}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  {t("checkout.discard.confirm.description")}
+                  {t("bill.discard.confirm.description")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>
-                  {t("checkout.discard.confirm.cancel")}
+                  {t("bill.discard.confirm.cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={() => void handleDiscard()}
                 >
-                  {t("checkout.discard.confirm.confirm")}
+                  {t("bill.discard.confirm.confirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -707,7 +704,7 @@ function CheckoutCartView({
   )
 }
 
-function CheckoutEmptyCatalog() {
+function BillEmptyCatalog() {
   const { t } = useTranslation()
 
   return (
@@ -813,7 +810,7 @@ function ItemBrick({
           variant="ghost"
           size="icon"
           className="size-10 rounded-full"
-          aria-label={t("checkout.brick.remove.aria", {
+          aria-label={t("bill.brick.remove.aria", {
             name: catalogItem.name,
           })}
           disabled={disabled || quantity === 0}
@@ -827,7 +824,7 @@ function ItemBrick({
           type="button"
           variant="ghost"
           className="h-10 min-w-6 rounded-full px-2 font-semibold tabular-nums"
-          aria-label={t("checkout.brick.quantity.trigger.aria", {
+          aria-label={t("bill.brick.quantity.trigger.aria", {
             name: catalogItem.name,
           })}
           disabled={disabled}
@@ -842,7 +839,7 @@ function ItemBrick({
           variant="ghost"
           size="icon"
           className="size-10 rounded-full"
-          aria-label={t("checkout.brick.add.aria", { name: catalogItem.name })}
+          aria-label={t("bill.brick.add.aria", { name: catalogItem.name })}
           disabled={disabled}
           onClick={onAdd}
         >
@@ -855,11 +852,11 @@ function ItemBrick({
           <DialogHeader>
             <DialogTitle>{catalogItem.name}</DialogTitle>
             <DialogDescription>
-              {t("checkout.brick.quantity.description")}
+              {t("bill.brick.quantity.description")}
             </DialogDescription>
           </DialogHeader>
           <Input
-            aria-label={t("checkout.brick.quantity.input.aria")}
+            aria-label={t("bill.brick.quantity.input.aria")}
             type="text"
             inputMode="numeric"
             autoComplete="off"
@@ -878,13 +875,13 @@ function ItemBrick({
               render={<Button variant="outline" />}
               onClick={() => setQuantityInput("")}
             >
-              {t("checkout.brick.quantity.cancel")}
+              {t("bill.brick.quantity.cancel")}
             </DialogClose>
             <Button
               disabled={!canConfirmQuantity}
               onClick={handleConfirmQuantity}
             >
-              {t("checkout.brick.quantity.confirm")}
+              {t("bill.brick.quantity.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

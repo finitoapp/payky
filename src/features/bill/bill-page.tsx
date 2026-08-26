@@ -477,12 +477,7 @@ function BillCartView({
         )}
       </section>
 
-      <Card
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-10 p-0 rounded-none rounded-t-xl transition-transform duration-200 ease-out max-w-xl mx-auto",
-          billId === undefined ? "translate-y-full" : "translate-y-0"
-        )}
-      >
+      <Card className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-xl rounded-none rounded-t-xl p-0">
         <CardContent className="pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <Collapsible open={summaryOpen} onOpenChange={onSummaryOpenChange}>
             <CollapsibleTrigger
@@ -616,7 +611,7 @@ function BillCartView({
             <Button
               variant="outline"
               size="icon"
-              className="h-12 w-12 shrink-0 rounded-full text-destructive"
+              className="h-12 w-12 shrink-0 text-destructive"
               disabled={billId === undefined}
               aria-label={t("bill.discard")}
               onClick={() => setDiscardDialogOpen(true)}
@@ -746,7 +741,7 @@ function ItemBrick({
   return (
     <Card
       className={cn(
-        "relative gap-3 p-4",
+        "relative gap-3 p-3",
         inCart && "bg-primary text-primary-foreground"
       )}
     >
@@ -774,7 +769,7 @@ function ItemBrick({
       </div>
       <div
         className={cn(
-          "flex items-center justify-end gap-1 self-end rounded-full bg-muted p-1",
+          "flex items-center justify-end gap-1 self-end rounded-md bg-muted p-1",
           inCart && "bg-primary-foreground/15"
         )}
       >

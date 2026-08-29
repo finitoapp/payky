@@ -38,6 +38,10 @@ playwright-report
 test-results
 blob-report
 
+# Generated video pipeline output (pilot — see bin/generate-doc-videos.ts)
+remotion/public/generated
+docs/videos
+
 # Local environment (may contain secrets)
 .env
 .env.*

@@ -13,7 +13,9 @@
       "!test-results",
       "!android",
       "!ios",
-      "!src/routeTree.gen.ts"
+      "!src/routeTree.gen.ts",
+      "!remotion/public/generated",
+      "!docs/videos"
     ]
   },
   "formatter": {

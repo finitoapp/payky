@@ -1,13 +1,13 @@
 import type { Page } from "@playwright/test"
 import { test as base } from "@playwright/test"
+import type { FiatCurrency } from "../src/core/modules/shared/schema.ts"
 import {
   type Language,
   resources,
   type TranslationKey,
 } from "../src/i18n/resources.ts"
 
-export const pageWidth = 406
-export const pageHeight = 818
+export { pageHeight, pageWidth } from "./viewport.ts"
 
 const languageOptionKeyByLanguage: Record<Language, TranslationKey> = {
   en: "settings.language.english.title",
@@ -71,7 +71,7 @@ export async function reloadPage(
 export async function seedCurrentAccountOnboarding(
   page: Page,
   language: Language,
-  options?: { readonly spark?: boolean }
+  options?: { readonly spark?: boolean; readonly fiatCurrency?: FiatCurrency }
 ): Promise<void> {
   await page.waitForFunction(
     () => typeof window.__e2eSeedOnboarding === "function"
@@ -94,7 +94,7 @@ export async function seedCurrentAccountOnboarding(
 export async function seedOnboarding(
   page: Page,
   language: Language,
-  options?: { readonly spark?: boolean }
+  options?: { readonly spark?: boolean; readonly fiatCurrency?: FiatCurrency }
 ): Promise<void> {
   await page.goto("/", { waitUntil: "domcontentloaded" })
   await seedCurrentAccountOnboarding(page, language, options)

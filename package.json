@@ -28,6 +28,10 @@
     "check": "bun run check:lint && bun run check:ts && bun run check:tests",
     "docs:screenshots": "bun run bin/generate-doc-screenshots.ts",
     "docs:screenshots:install-browser": "bunx playwright install chromium",
+    "docs:videos:capture": "bun run bin/generate-doc-videos.ts",
+    "docs:videos:render": "bun run bin/render-doc-videos.ts",
+    "docs:videos": "bun run docs:videos:capture && bun run docs:videos:render",
+    "docs:videos:studio": "remotion studio",
     "format": "biome check --write .",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -88,6 +92,9 @@
     "@biomejs/biome": "2.5.10",
     "@capacitor/cli": "8.5.0",
     "@playwright/test": "1.62.1",
+    "@remotion/bundler": "4.0.518",
+    "@remotion/cli": "4.0.518",
+    "@remotion/renderer": "4.0.518",
     "@standard-schema/spec": "1.1.0",
     "@tanstack/router-plugin": "1.168.35",
     "@types/better-sqlite3": "9.6.0",
@@ -97,6 +104,7 @@
     "@vitejs/plugin-basic-ssl": "2.3.0",
     "@vitejs/plugin-react": "6.1.0",
     "@vitest/coverage-v8": "4.1.11",
+    "remotion": "4.0.518",
     "shadcn": "4.19.0",
     "sharp": "0.35.3",
     "swc-node": "1.0.0",
@@ -107,6 +115,10 @@
   },
   "trustedDependencies": [
     "@sentry/cli",
-    "better-sqlite3"
+    "@swc/core",
+    "better-sqlite3",
+    "esbuild",
+    "msgpackr-extract",
+    "protobufjs"
   ]
 }

@@ -28,5 +28,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "bin", "e2e", "playwright.config.ts"]
+  "include": [
+    "src",
+    "bin",
+    "e2e",
+    "remotion",
+    "playwright.config.ts",
+    "remotion.config.ts"
+  ]
 }

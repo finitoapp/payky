@@ -22,6 +22,19 @@ import {
   resources,
   type TranslationKey,
 } from "../src/i18n/resources.ts"
+import {
+  contentBottomInset,
+  contentTopInset,
+  deviceScaleFactor,
+  frameHeight,
+  frameScreenCornerRadius,
+  frameScreenHeight,
+  frameScreenLeft,
+  frameScreenTop,
+  frameScreenWidth,
+  frameWidth,
+  outputWidth,
+} from "./phone-frame-geometry.ts"
 
 interface ScreenshotScenario {
   readonly name: "home" | "payment" | "paid" | "settings" | "bill" | "tables"
@@ -36,23 +49,12 @@ const localeByLanguage: Record<Language, string> = {
   sk: "sk-SK",
 }
 
-const deviceScaleFactor = 3.5
 const capturedWidth = pageWidth * deviceScaleFactor
 const capturedHeight = pageHeight * deviceScaleFactor
-const outputWidth = 1260
-const contentTopInset = Math.round(60 * deviceScaleFactor)
-const contentBottomInset = Math.round(38 * deviceScaleFactor)
 const appScreenshotHeight = Math.round(
   (capturedHeight / capturedWidth) * outputWidth
 )
 const outputHeight = contentTopInset + appScreenshotHeight + contentBottomInset
-const frameWidth = 1164
-const frameHeight = 2044
-const frameScreenLeft = 202
-const frameScreenTop = 201
-const frameScreenWidth = 760
-const frameScreenHeight = 1629
-const frameScreenCornerRadius = 80
 const projectRoot = fileURLToPath(new URL("..", import.meta.url))
 const rawScreenshotsDirectory = `${projectRoot}/.tmp/docs-screenshots`
 const screenshotsDirectory = `${projectRoot}/docs/screenshots`

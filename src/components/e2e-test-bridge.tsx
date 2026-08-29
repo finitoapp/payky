@@ -26,6 +26,7 @@ declare global {
   interface Window {
     __e2eSeedOnboarding?: (options?: {
       readonly spark?: boolean
+      readonly fiatCurrency?: FiatCurrency
     }) => Promise<void>
     __e2eMarkSparkPaid?: (paymentId: string) => Promise<void>
     __e2eMarkIbanPaid?: (paymentId: string) => Promise<void>
@@ -35,8 +36,8 @@ declare global {
 /**
  * Exposes `window.__e2eSeedOnboarding`, which writes the same account/settings
  * rows the onboarding UI would (cash + IBAN enabled, USD, tips on defaults;
- * pass `{ spark: true }` to also enable Spark), so e2e specs can skip
- * clicking through onboarding.
+ * pass `{ spark: true }` to also enable Spark, `{ fiatCurrency }` to seed a
+ * different currency), so e2e specs can skip clicking through onboarding.
  *
  * Also exposes `window.__e2eMarkSparkPaid`/`window.__e2eMarkIbanPaid`, which
  * simulate an incoming Spark transfer/bank transaction settling a prepared
@@ -62,22 +63,23 @@ export function E2eTestBridge() {
 
     window.__e2eSeedOnboarding = async (options) => {
       const sparkEnabled = options?.spark ?? false
+      const fiatCurrency = options?.fiatCurrency ?? FiatCurrency.USD
       await using run = appRun()
 
       await run(
-        saveCashRegisterAccount({ enabled: true, currency: FiatCurrency.USD })
+        saveCashRegisterAccount({ enabled: true, currency: fiatCurrency })
       )
       await run(saveSparkAccount({ enabled: sparkEnabled }))
       await run(
         saveFiatBankAccount({
           enabled: true,
           iban: BankAccountInputIbanSchema.parse("CZ6508000000192000145399"),
-          currency: FiatCurrency.USD,
+          currency: fiatCurrency,
         })
       )
       await run(
         completeOnboarding({
-          fiatCurrency: FiatCurrency.USD,
+          fiatCurrency,
           defaultPaymentMethod: "cashRegister",
           paymentMethodOrderJson: JSON.stringify(
             sparkEnabled

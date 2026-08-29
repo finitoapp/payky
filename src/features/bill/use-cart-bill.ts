@@ -7,11 +7,14 @@ import {
   appendRemoveBillLine,
   createBillAtEnd,
 } from "@/core/modules/bill/bill-actions.ts"
+import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import { appendBillLines } from "@/core/modules/bill-line/bill-line-actions.ts"
+import { billLinesByBillIdQuery } from "@/core/modules/bill-line/bill-line-queries.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
+import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   NonNegativeInteger,
@@ -21,6 +24,7 @@ import type { TableId } from "@/core/modules/table/table-types.ts"
 import { getBillLineSummaryUnitAmount } from "@/features/bill/cart-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
+import { useEvolu } from "@/hooks/use-evolu.ts"
 
 type CartLine = Omit<BillLineRow, "id">
 type CartHistoryEntry = ReadonlyArray<CartLine>
@@ -58,6 +62,7 @@ export function useCartBill({
 }) {
   const appRun = useAppRun()
   const console = useConsole()
+  const evolu = useEvolu()
   const jotaiStore = useStore()
   const [undoStack, setUndoStack] = useState<ReadonlyArray<CartHistoryEntry>>(
     []
@@ -85,9 +90,20 @@ export function useCartBill({
         currency,
       })
     )
+
+    // Warm the read-side queries the newly mounted bill view will run
+    // before flipping `billId`, so they're already resolved and `use()`
+    // doesn't suspend — an uncached suspend here bubbled up to the route's
+    // Suspense boundary and blanked the whole page for a beat.
+    await Promise.all([
+      evolu.loadQuery(billByIdQuery(created)),
+      evolu.loadQuery(billLinesByBillIdQuery(created)),
+      evolu.loadQuery(itemsQuery),
+    ])
+
     onBillCreated(created)
     return created
-  }, [appRun, billId, currency, jotaiStore, onBillCreated, tableId])
+  }, [appRun, billId, currency, evolu, jotaiStore, onBillCreated, tableId])
 
   const addQuantity = useCallback(
     async (catalogItem: CatalogItemRow, quantity: PositiveNumber) => {

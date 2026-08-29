@@ -13,7 +13,7 @@ import {
   Undo2,
   X,
 } from "lucide-react"
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, startTransition, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -109,10 +109,15 @@ export function BillPage({
     currency: fallbackCurrency,
     tableId: pendingTableId,
     onBillCreated: (createdBillId) => {
-      void navigate({
-        to: "/bill",
-        search: { billId: createdBillId },
-        replace: true,
+      // A transition so React keeps the current cart on screen instead of
+      // showing the route's `fallback={null}` if anything on this path ever
+      // suspends again, rather than blanking the page for a beat.
+      startTransition(() => {
+        void navigate({
+          to: "/bill",
+          search: { billId: createdBillId },
+          replace: true,
+        })
       })
     },
   })

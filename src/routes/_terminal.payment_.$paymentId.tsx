@@ -1,5 +1,5 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   BanknoteIcon,
   CheckIcon,
@@ -13,7 +13,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react"
 import { toast } from "sonner"
@@ -37,9 +36,9 @@ import {
   getDefaultPaymentMethod,
   parsePaymentMethodOrder,
 } from "@/core/modules/app-settings/app-settings-utils.ts"
-import { closeBillAsPaid } from "@/core/modules/bill/bill-actions.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
+  cancelPayment,
   markPaymentPaidCash,
   preparePaymentMethod,
 } from "@/core/modules/payment/payment-actions.ts"
@@ -48,8 +47,13 @@ import {
   createBankQrPayloads,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import {
+  DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
+  derivePaymentStatus,
+} from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
+import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import {
   clearPaymentMethodPreparation,
   createPaymentMethodPreparationRunner,
@@ -156,6 +160,7 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
         "payment.currency",
         "payment.tipAmount",
         "payment.canceledAt",
+        "payment.expiresAt",
         "paymentBtc.amountSats",
         "paymentBtcLightning.lnInvoice",
         "paymentBtcSpark.sparkInvoice",
@@ -257,16 +262,17 @@ function PaymentWaitingRequest({
   const console = useConsole()
   const { t } = useTranslation()
   const locale = useLocale()
+  const navigate = useNavigate()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
+  const [cancelPending, setCancelPending] = useState(false)
   const [paymentMethodPreparationState, setPaymentMethodPreparationState] =
     useState<PaymentMethodPreparationState>({})
   const [paymentMethodPreparationRunner] = useState(
     createPaymentMethodPreparationRunner
   )
   const [successVisible, setSuccessVisible] = useState(false)
-  const closedBillIdsRef = useRef(new Set<BillId>())
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
@@ -281,9 +287,21 @@ function PaymentWaitingRequest({
   )
   const payment = payments[0]
   const [settings] = settingsData
-  const isPaid = claims.length > 0
-  const wakeLockEnabled =
-    payment !== undefined && payment.canceledAt === null && !isPaid
+  const paymentStatus =
+    payment === undefined
+      ? null
+      : derivePaymentStatus({
+          canceledAt: payment.canceledAt,
+          expiresAt: payment.expiresAt,
+          hasActiveClaim: claims.length > 0,
+          now: new Date(),
+        })
+  // `derivePaymentStatus` ranks `canceled` above `paid` (see
+  // docs/bill-payment-states.md), so `isPaid` here can never be true for a
+  // payment that also has `canceledAt` set — unlike the old `claims.length >
+  // 0` check, which ignored cancellation entirely.
+  const isPaid = paymentStatus === "paid"
+  const wakeLockEnabled = payment !== undefined && paymentStatus === "pending"
   const { supported: wakeLockSupported } = useScreenWakeLock(wakeLockEnabled)
   const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
     settings?.defaultPaymentMethod
@@ -444,7 +462,12 @@ function PaymentWaitingRequest({
               ? { bank: { accountId: method.accountId } }
               : {}),
             ...(method.kind === "spark"
-              ? { spark: { accountId: method.accountId } }
+              ? {
+                  spark: {
+                    accountId: method.accountId,
+                    expirySeconds: DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
+                  },
+                }
               : {}),
           })
         )
@@ -465,34 +488,9 @@ function PaymentWaitingRequest({
     [appRun, console, paymentId]
   )
 
-  const closePaidBill = useCallback(
-    async (billId: BillId) => {
-      if (closedBillIdsRef.current.has(billId)) return
-      closedBillIdsRef.current.add(billId)
-
-      try {
-        await using run = appRun()
-        await run.orThrow(closeBillAsPaid(billId))
-      } catch (error) {
-        closedBillIdsRef.current.delete(billId)
-        console.error("Failed to close paid bill", error)
-        toast.error(t("paymentWait.closeBillError"))
-      }
-    },
-    [appRun, console, t]
-  )
-
   useEffect(() => {
     if (isPaid) setSuccessVisible(true)
   }, [isPaid])
-
-  useEffect(() => {
-    if (!isPaid) return
-    const billId = payment?.billId
-    if (billId === null || billId === undefined) return
-
-    void closePaidBill(billId)
-  }, [closePaidBill, isPaid, payment?.billId])
 
   useEffect(() => {
     if (
@@ -573,6 +571,12 @@ function PaymentWaitingRequest({
     )
   }
 
+  if (payment.canceledAt !== null) {
+    return (
+      <PaymentWaitingMessage>{t("paymentWait.canceled")}</PaymentWaitingMessage>
+    )
+  }
+
   const cashRegisterAccountId = payment.cashRegisterAccountId
   const isCashPaymentMethod = activePaymentMethod?.id === "cash"
   const canMarkCashPaid =
@@ -580,6 +584,7 @@ function PaymentWaitingRequest({
     cashRegisterAccountId !== null &&
     cashRegisterAccountId !== undefined &&
     !isPaid
+  const canCancelPayment = payment.canceledAt === null && !isPaid
 
   const handleMarkCashPaid = async () => {
     if (!canMarkCashPaid) return
@@ -599,14 +604,33 @@ function PaymentWaitingRequest({
       if (!result.ok) {
         console.error("Failed to mark cash payment paid", result.error)
         setCashPaymentErrorKey("paymentWait.cashPaid.error")
-        return
-      }
-
-      if (payment.billId !== null) {
-        await closePaidBill(payment.billId)
       }
     } finally {
       setCashPaymentPending(false)
+    }
+  }
+
+  const handleCancelPayment = async () => {
+    if (!canCancelPayment) return
+
+    setCancelPending(true)
+    try {
+      await using run = appRun()
+      const result = await run(cancelPayment(paymentId))
+
+      if (!result.ok) {
+        console.error("Failed to cancel payment", result.error)
+        toast.error(t("paymentWait.cancelError"))
+        return
+      }
+
+      await navigate(
+        payment.billId !== null
+          ? { to: "/bill", search: { billId: payment.billId } }
+          : { to: "/" }
+      )
+    } finally {
+      setCancelPending(false)
     }
   }
 
@@ -743,6 +767,20 @@ function PaymentWaitingRequest({
                 {t("paymentWait.wakeLockUnsupported")}
               </p>
             ) : null}
+            {canCancelPayment ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={cancelPending}
+                onClick={() => void handleCancelPayment()}
+              >
+                {cancelPending ? (
+                  <LoaderCircleIcon className="animate-spin" />
+                ) : null}
+                {t("paymentWait.cancel")}
+              </Button>
+            ) : null}
           </div>
         </section>
 
@@ -754,39 +792,68 @@ function PaymentWaitingRequest({
           aria-hidden={!successVisible}
           data-testid="payment-paid-panel"
         >
-          <SuccessPanel
-            title={t("paymentWait.paid")}
-            actions={
-              <div className="flex flex-col items-center gap-8 pt-16 w-full">
-                <Button
-                  size="lg"
-                  nativeButton={false}
-                  render={<Link to="/" />}
-                  className={"h-16 w-80"}
-                >
-                  {t("paymentWait.back")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={"h-12 w-80"}
-                  nativeButton={false}
-                  render={
-                    <Link
-                      to="/activity/$paymentId"
-                      params={{ paymentId }}
-                      aria-label={t("paymentWait.detail")}
-                    />
-                  }
-                >
-                  {t("paymentWait.detail")}
-                </Button>
-              </div>
-            }
-          />
+          <div className="flex flex-col items-center gap-4">
+            <SuccessPanel
+              title={t("paymentWait.paid")}
+              actions={
+                <div className="flex flex-col items-center gap-8 pt-16 w-full">
+                  <Button
+                    size="lg"
+                    nativeButton={false}
+                    render={<Link to="/" />}
+                    className={"h-16 w-80"}
+                  >
+                    {t("paymentWait.back")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className={"h-12 w-80"}
+                    nativeButton={false}
+                    render={
+                      <Link
+                        to="/activity/$paymentId"
+                        params={{ paymentId }}
+                        aria-label={t("paymentWait.detail")}
+                      />
+                    }
+                  >
+                    {t("paymentWait.detail")}
+                  </Button>
+                </div>
+              }
+            />
+            {payment.billId !== null ? (
+              <BillCoverageNote billId={payment.billId} />
+            ) : null}
+          </div>
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * Once a payment is confirmed paid, tells staff whether the bill it belongs
+ * to is now fully covered — a bill can have more than one payment (split
+ * payments), so a single paid payment doesn't guarantee the whole bill is
+ * settled. Silent when `paid`; the checkmark above already says that. See
+ * docs/bill-payment-states.md.
+ */
+function BillCoverageNote({ billId }: { readonly billId: BillId }) {
+  const { t } = useTranslation()
+  const coverage = useBillCoverage(billId)
+
+  if (coverage === "paid") return null
+
+  return (
+    <p className="max-w-72 text-balance text-sm text-muted-foreground">
+      {t(
+        coverage === "underpaid"
+          ? "paymentWait.billUnderpaid"
+          : "paymentWait.billOverpaid"
+      )}
+    </p>
   )
 }
 

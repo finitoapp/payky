@@ -28,6 +28,11 @@ import {
 import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type {
+  BillNotFoundError,
+  BillNotOpenError,
+} from "@/core/modules/bill/bill-actions.ts"
+import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-actions.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
@@ -38,6 +43,7 @@ import type {
   paymentCashRegister,
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
+import { computePaymentExpiresAt } from "@/core/modules/payment/payment-status-utils.ts"
 import {
   createPaymentNumberDate,
   loadNextPaymentNumber,
@@ -45,6 +51,7 @@ import {
 } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import { activeReconciliationClaimsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
@@ -78,6 +85,13 @@ const createPaymentNotFoundError = defineError("PaymentNotFound")<{
   readonly id: PaymentId
 }>()
 export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>
+
+const createPaymentAlreadyPaidError = defineError("PaymentAlreadyPaid")<{
+  readonly id: PaymentId
+}>()
+export type PaymentAlreadyPaidError = ReturnType<
+  typeof createPaymentAlreadyPaidError
+>
 
 const createAccountSparkNotFoundError = defineError("AccountSparkNotFound")<{
   readonly id: AccountId
@@ -136,6 +150,7 @@ export type CreatePreparedPaymentError =
   | YadioHttpError
   | YadioApiError
   | FetchError
+  | CreatePaymentError
 
 export type MarkPaymentPaidCashError =
   | PaymentNotFoundError
@@ -156,6 +171,9 @@ export type PreparePaymentMethodError =
 
 export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
   createPaymentNotFoundError({ id })
+
+export const paymentAlreadyPaid = (id: PaymentId): PaymentAlreadyPaidError =>
+  createPaymentAlreadyPaidError({ id })
 
 export const accountSparkNotFound = (
   id: AccountId
@@ -369,6 +387,8 @@ export const loadPayment =
       paymentNotFound(idValue)
     )
 
+export type CreatePaymentError = BillNotFoundError | BillNotOpenError
+
 export const createPayment =
   ({
     cashRegister,
@@ -379,12 +399,26 @@ export const createPayment =
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: PaymentBtcInput
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
-  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  }): Task<
+    PaymentId,
+    CreatePaymentError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
     assertHasSparkIdentifier(
       spark,
       "Spark payment requires lnInvoice or sparkInvoice."
     )
+
+    // A new payment attempt requires the bill to still be `open` — but does
+    // not check for an already-pending payment on it: split payments mean
+    // more than one payment can legitimately be in flight for the same bill
+    // at once. See docs/bill-payment-states.md.
+    const billId = input.billId ?? null
+    if (billId !== null) {
+      const openResult = await run(requireBillAcceptingPayment(billId))
+      if (!openResult.ok) return openResult
+    }
 
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps
@@ -475,7 +509,7 @@ export const createPreparedPayment =
   ({
     spark,
     ...input
-  }: InsertValues<typeof payment> & {
+  }: Omit<InsertValues<typeof payment>, "expiresAt"> & {
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: Omit<
       InsertValues<typeof paymentBtc>,
@@ -502,7 +536,7 @@ export const createPreparedPayment =
   > =>
   async (run) => {
     if (!spark) {
-      return run(createPayment(input))
+      return run(createPayment({ ...input, expiresAt: null }))
     }
 
     const sparkAccounts = await run.deps.evolu.loadQuery(
@@ -531,6 +565,10 @@ export const createPreparedPayment =
     return run(
       createPayment({
         ...input,
+        expiresAt: computePaymentExpiresAt(
+          run.deps.date.now(),
+          spark.expirySeconds
+        ),
         spark: sparkPaymentResult.value,
       })
     )
@@ -559,7 +597,12 @@ export const preparePaymentMethod =
   }): Task<
     PaymentId,
     PreparePaymentMethodError,
-    EvoluDep & EvoluOwnerIdDep & SparkWalletDep & FetchDep & YadioApiDep
+    EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      SparkWalletDep &
+      FetchDep &
+      YadioApiDep
   > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
@@ -734,6 +777,19 @@ export const preparePaymentMethod =
               ...options,
               ownerId: evoluOwnerId,
             }
+          )
+        }
+        if (spark?.expirySeconds !== undefined) {
+          run.deps.evolu.update(
+            "payment",
+            {
+              id: paymentId,
+              expiresAt: computePaymentExpiresAt(
+                run.deps.date.now(),
+                spark.expirySeconds
+              ),
+            },
+            { ...options, ownerId: evoluOwnerId }
           )
         }
       }
@@ -916,8 +972,25 @@ export const markPaymentPaidCash =
 export const cancelPayment =
   (
     paymentId: PaymentId
-  ): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  ): Task<
+    PaymentId,
+    PaymentAlreadyPaidError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
+    // A payment that already has an active claim (money arrived) cannot be
+    // canceled — mirrors the bill-side guard that a paid bill cannot be
+    // canceled. A concurrent multi-device merge can still race past this on
+    // a single device's check; that residual case is resolved by
+    // `derivePaymentStatus`'s precedence, not by this guard. See
+    // docs/bill-payment-states.md.
+    const activeClaims = await run.deps.evolu.loadQuery(
+      activeReconciliationClaimsByPaymentIdQuery(paymentId)
+    )
+    if (activeClaims.length > 0) {
+      return err(paymentAlreadyPaid(paymentId))
+    }
+
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>

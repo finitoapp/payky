@@ -8,6 +8,11 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  addManualAmountToBill,
+  createBill,
+} from "@/core/modules/bill/bill-actions.ts"
+import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -17,6 +22,7 @@ import {
   NonEmptyString255,
   NonEmptyStringSchema,
   NonNegativeInteger,
+  PositiveInteger,
   PositiveNumber,
   SpecificSymbol,
   TimestampMs,
@@ -84,7 +90,7 @@ describe("reconciliation claim actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createCashRegisterAccount(run)
-    const paymentId = await run.ok(
+    const paymentId = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -93,6 +99,7 @@ describe("reconciliation claim actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         cashRegister: {
           accountId,
         },
@@ -141,7 +148,7 @@ describe("reconciliation claim actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
-    const paymentId = await run.ok(
+    const paymentId = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -150,6 +157,7 @@ describe("reconciliation claim actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: Date.parse("2026-05-26T12:00:00.000Z"),
+        expiresAt: null,
         iban: {
           accountId,
           variableSymbol: VariableSymbol("123456"),
@@ -212,7 +220,7 @@ describe("reconciliation claim actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
-    await run.ok(
+    await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -221,6 +229,7 @@ describe("reconciliation claim actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: Date.parse("2026-05-26T12:00:00.000Z"),
+        expiresAt: null,
         iban: {
           accountId,
           variableSymbol: VariableSymbol("123456"),
@@ -271,7 +280,7 @@ describe("reconciliation claim actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
-    await run.ok(
+    await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -280,6 +289,7 @@ describe("reconciliation claim actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         iban: {
           accountId,
           variableSymbol: null,
@@ -330,7 +340,7 @@ describe("reconciliation claim actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createSparkAccount(run)
-    const paymentId = await run.ok(
+    const paymentId = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -339,6 +349,7 @@ describe("reconciliation claim actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         spark: {
           accountId,
           amountSats: NonNegativeInteger(8_600),
@@ -405,7 +416,7 @@ describe("reconciliation claim actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createSparkAccount(run)
-    const paymentId = await run.ok(
+    const paymentId = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -414,6 +425,7 @@ describe("reconciliation claim actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         spark: {
           accountId,
           amountSats: NonNegativeInteger(8_600),
@@ -463,5 +475,74 @@ describe("reconciliation claim actions", () => {
           source: "auto",
         },
       ])
+  })
+
+  test("automatically reconciling a payment's claim closes its fully covered bill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createCashRegisterAccount(run)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(12_900),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(12_900),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T12:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "manual",
+        },
+      })
+    )
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: paymentId,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
   })
 })

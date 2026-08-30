@@ -1,16 +1,17 @@
 import { useStore } from "jotai"
 import { useCallback, useState } from "react"
+import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
 import {
   addCatalogItemToBill,
+  appendGuardedBillLines,
   appendRemoveBillLine,
   createBillAtEnd,
 } from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
-import { appendBillLines } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { billLinesByBillIdQuery } from "@/core/modules/bill-line/bill-line-queries.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
@@ -25,6 +26,23 @@ import { getBillLineSummaryUnitAmount } from "@/features/bill/cart-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
+
+/**
+ * Shows a toast for a failed cart mutation. `BillLocked` gets its own
+ * message (reusing the same copy as the bill page's "locked" state) since
+ * it is now a routine, expected outcome — a pending payment on the bill —
+ * not a rare error; everything else falls back to the generic save-failed
+ * message. See docs/bill-payment-states.md.
+ */
+const showCartMutationErrorToast = (
+  t: ReturnType<typeof useTranslation>["t"],
+  error: { readonly type: string }
+): void => {
+  toast.error(
+    error.type === "BillLocked" ? t("bill.locked") : t("settings.saveFailed")
+  )
+}
 
 type CartLine = Omit<BillLineRow, "id">
 type CartHistoryEntry = ReadonlyArray<CartLine>
@@ -64,6 +82,7 @@ export function useCartBill({
   const console = useConsole()
   const evolu = useEvolu()
   const jotaiStore = useStore()
+  const { t } = useTranslation()
   const [undoStack, setUndoStack] = useState<ReadonlyArray<CartHistoryEntry>>(
     []
   )
@@ -123,6 +142,7 @@ export function useCartBill({
         )
         if (!result.ok) {
           console.error("Failed to add catalog item to cart", result.error)
+          showCartMutationErrorToast(t, result.error)
           return
         }
 
@@ -142,7 +162,7 @@ export function useCartBill({
         setPending(false)
       }
     },
-    [appRun, console, ensureBillId, jotaiStore, record]
+    [appRun, console, ensureBillId, jotaiStore, record, t]
   )
 
   const addOne = useCallback(
@@ -173,6 +193,7 @@ export function useCartBill({
         )
         if (!result.ok) {
           console.error("Failed to remove item from cart", result.error)
+          showCartMutationErrorToast(t, result.error)
           return
         }
 
@@ -192,7 +213,7 @@ export function useCartBill({
         setPending(false)
       }
     },
-    [appRun, console, billId, jotaiStore, record]
+    [appRun, console, billId, jotaiStore, record, t]
   )
 
   const removeLine = useCallback(
@@ -214,6 +235,7 @@ export function useCartBill({
         )
         if (!result.ok) {
           console.error("Failed to remove line from cart", result.error)
+          showCartMutationErrorToast(t, result.error)
           return
         }
 
@@ -233,7 +255,7 @@ export function useCartBill({
         setPending(false)
       }
     },
-    [appRun, console, billId, jotaiStore, record]
+    [appRun, console, billId, jotaiStore, record, t]
   )
 
   const clear = useCallback(
@@ -255,13 +277,19 @@ export function useCartBill({
         }))
 
         await using run = appRun()
-        await run.ok(appendBillLines(lines, billId))
+        const result = await run(appendGuardedBillLines(billId, lines))
+        if (!result.ok) {
+          console.error("Failed to clear cart", result.error)
+          showCartMutationErrorToast(t, result.error)
+          return
+        }
+
         record(lines)
       } finally {
         setPending(false)
       }
     },
-    [appRun, billId, jotaiStore, record]
+    [appRun, console, billId, jotaiStore, record, t]
   )
 
   const undo = useCallback(async () => {
@@ -271,13 +299,21 @@ export function useCartBill({
     setPending(true)
     try {
       await using run = appRun()
-      await run.ok(appendBillLines(entry.map(invertLine), billId))
+      const result = await run(
+        appendGuardedBillLines(billId, entry.map(invertLine))
+      )
+      if (!result.ok) {
+        console.error("Failed to undo cart change", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
+
       setUndoStack((stack) => stack.slice(0, -1))
       setRedoStack((stack) => [...stack, entry])
     } finally {
       setPending(false)
     }
-  }, [appRun, billId, undoStack])
+  }, [appRun, console, billId, undoStack, t])
 
   const redo = useCallback(async () => {
     const entry = redoStack.at(-1)
@@ -286,13 +322,19 @@ export function useCartBill({
     setPending(true)
     try {
       await using run = appRun()
-      await run.ok(appendBillLines(entry, billId))
+      const result = await run(appendGuardedBillLines(billId, entry))
+      if (!result.ok) {
+        console.error("Failed to redo cart change", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
+
       setRedoStack((stack) => stack.slice(0, -1))
       setUndoStack((stack) => [...stack, entry])
     } finally {
       setPending(false)
     }
-  }, [appRun, billId, redoStack])
+  }, [appRun, console, billId, redoStack, t])
 
   return {
     pending,

@@ -1,20 +1,24 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
-import { CheckIcon, ReceiptIcon, RotateCwIcon, XIcon } from "lucide-react"
+import {
+  CheckIcon,
+  ClockIcon,
+  ReceiptIcon,
+  RotateCwIcon,
+  XIcon,
+} from "lucide-react"
 import type { FC, ReactNode } from "react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  derivePaymentStatus,
+  type PaymentStatus,
+} from "@/core/modules/payment/payment-status-utils.ts"
+import type { TimestampMs } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
-
-type PaymentHistoryStatus = "canceled" | "paid" | "pending"
-
-interface PaymentHistoryStatusInput {
-  readonly canceledAt: number | null
-  readonly claimCount: number
-}
 
 /**
  * `eb.fn.count<number>(...)` below only asserts the output type to
@@ -39,6 +43,7 @@ const latestPaymentsQuery = createQuery((db) =>
       "payment.currency",
       "payment.tipAmount",
       "payment.canceledAt",
+      "payment.expiresAt",
       "payment.createdAt",
     ])
     .select((eb) =>
@@ -55,6 +60,7 @@ const latestPaymentsQuery = createQuery((db) =>
       "payment.currency",
       "payment.tipAmount",
       "payment.canceledAt",
+      "payment.expiresAt",
       "payment.createdAt",
     ])
     .orderBy("payment.createdAt", "desc")
@@ -70,11 +76,12 @@ const latestPaymentsQuery = createQuery((db) =>
 const paymentStatusData = {
   canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
   paid: ["bg-success/10 text-success", <CheckIcon key="paid" />],
+  expired: ["bg-muted text-muted-foreground", <ClockIcon key="expired" />],
   pending: ["bg-warning/10 text-warning", <RotateCwIcon key="pending" />],
-} satisfies Record<PaymentHistoryStatus, readonly [string, ReactNode]>
+} satisfies Record<PaymentStatus, readonly [string, ReactNode]>
 
 const PaymentStatusIcon: FC<{
-  readonly paymentStatus: PaymentHistoryStatus
+  readonly paymentStatus: PaymentStatus
 }> = (props) => {
   const [className, icon] = paymentStatusData[props.paymentStatus]
 
@@ -90,14 +97,17 @@ const PaymentStatusIcon: FC<{
   )
 }
 
-const resolvePaymentStatus = (
-  payment: PaymentHistoryStatusInput
-): PaymentHistoryStatus =>
-  payment.canceledAt !== null
-    ? "canceled"
-    : payment.claimCount > 0
-      ? "paid"
-      : "pending"
+const resolvePaymentStatus = (payment: {
+  readonly canceledAt: TimestampMs | null
+  readonly expiresAt: TimestampMs | null
+  readonly claimCount: number
+}): PaymentStatus =>
+  derivePaymentStatus({
+    canceledAt: payment.canceledAt,
+    expiresAt: payment.expiresAt,
+    hasActiveClaim: payment.claimCount > 0,
+    now: new Date(),
+  })
 
 export const PaymentHistory = () => {
   const { t } = useTranslation()
@@ -123,6 +133,7 @@ export const PaymentHistory = () => {
       items={items.map((item) => {
         const paymentStatus = resolvePaymentStatus({
           canceledAt: item.canceledAt,
+          expiresAt: item.expiresAt,
           claimCount: toClaimCount(item.claimCount),
         })
 

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
+import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -32,15 +33,15 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-type PaymentDetailStatus = "canceled" | "paid" | "pending"
 type PaymentDetailPaymentMethod = "cashRegister" | "iban" | "onchain" | "spark"
 type PaymentDetailClaimSource = "auto" | "manual"
 
 const paymentDetailStatusBadgeClassName = {
   canceled: null,
   paid: "bg-success/10 text-success",
+  expired: "bg-muted text-muted-foreground",
   pending: "bg-warning/10 text-warning",
-} satisfies Record<PaymentDetailStatus, string | null>
+} satisfies Record<ReturnType<typeof derivePaymentStatus>, string | null>
 
 const paymentMethodLabelKey = {
   cashRegister: "paymentDetail.paymentMethod.cash",
@@ -67,6 +68,7 @@ const paymentDetailQuery = (paymentId: PaymentId) =>
         "currency",
         "tipAmount",
         "canceledAt",
+        "expiresAt",
         "createdAt",
         "updatedAt",
       ])
@@ -197,12 +199,12 @@ function PaymentDetailContent({
     return <PaymentDetailEmptyState messageKey="paymentDetail.notFound" />
   }
 
-  const paymentStatus: PaymentDetailStatus =
-    payment.canceledAt !== null
-      ? "canceled"
-      : reconciliations.length > 0
-        ? "paid"
-        : "pending"
+  const paymentStatus = derivePaymentStatus({
+    canceledAt: payment.canceledAt,
+    expiresAt: payment.expiresAt,
+    hasActiveClaim: reconciliations.length > 0,
+    now: new Date(),
+  })
   const isPending = paymentStatus === "pending"
   const paymentMethodValue =
     reconciliations.length === 0

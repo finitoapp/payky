@@ -12,11 +12,10 @@ import {
   appendRemoveBillLine,
   assignBillToTable,
   cancelBill,
-  closeBillAsPaid,
+  closeBill,
   createBill,
   listOpenBills,
   loadBill,
-  partiallyPayBill,
   removeTableFromBill,
   splitBill,
 } from "../src/core/modules/bill/bill-actions"
@@ -26,7 +25,6 @@ import type { BillLineSummary } from "../src/core/modules/bill-line/bill-line-su
 import type { BillLineSummaryId } from "../src/core/modules/bill-line/bill-line-types"
 import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
-import { PaymentId } from "../src/core/modules/payment/payment-types"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
@@ -362,22 +360,6 @@ export const registerBillsCommand =
 
       .addCommand(
         zodCommand({
-          name: "partial-pay",
-          description: "Mark a bill as partially paid by a payment.",
-          args: {},
-          opts: {
-            id: BillId.describe("Bill id"),
-            paymentId: PaymentId.describe("Payment id"),
-          },
-          async action(_, options) {
-            await run.orThrow(partiallyPayBill(options))
-            run.deps.console.log(`Marked bill ${options.id} as partially paid`)
-          },
-        })
-      )
-
-      .addCommand(
-        zodCommand({
           name: "cancel",
           description: "Cancel a bill.",
           args: {},
@@ -393,15 +375,15 @@ export const registerBillsCommand =
 
       .addCommand(
         zodCommand({
-          name: "close-paid",
-          description: "Close a bill as fully paid.",
+          name: "close",
+          description: "Close a bill (its line items become frozen).",
           args: {},
           opts: {
             id: BillId.describe("Bill id"),
           },
           async action(_, options) {
-            await run.orThrow(closeBillAsPaid(options.id))
-            run.deps.console.log(`Closed bill ${options.id} as paid`)
+            await run.orThrow(closeBill(options.id))
+            run.deps.console.log(`Closed bill ${options.id}`)
           },
         })
       )

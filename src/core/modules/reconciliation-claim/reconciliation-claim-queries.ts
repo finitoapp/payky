@@ -2,6 +2,19 @@ import type { KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+
+/** Whether a payment has been claimed by a matched incoming transaction. */
+export const activeReconciliationClaimsByPaymentIdQuery = (
+  paymentId: PaymentId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .selectAll()
+      .where("paymentId", "=", paymentId)
+      .where("isDeleted", "is not", 1)
+  )
 
 export const activeReconciliationClaimByAccountTransactionIdQuery = (
   accountTransactionId: AccountTransactionId

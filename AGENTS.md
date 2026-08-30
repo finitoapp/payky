@@ -50,6 +50,7 @@
 - Keep tests beside the module they cover as `*.test.ts`.
 - For aggregate detail tables sharing the root id, keep root and detail table ownership in the same module unless another module clearly owns a separate lifecycle.
 - An actions file writes only to tables its own module owns. To write another module's table, compose that module's Task instead of upserting directly, as `bill-actions.ts` does with `bill-line` and `item` actions.
+- The intended bill/payment lifecycle — `bill.status` values and transitions, `payment` cancellation/expiry, and how the two combine into a derived paid/underpaid/overpaid coverage — is specified in `docs/bill-payment-states.md`. Read it before changing `bill-actions.ts`, `payment-actions.ts`, or any status/coverage derivation between them.
 
 ## Domain Action Patterns
 

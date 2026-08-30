@@ -23,7 +23,7 @@ export const openBillsQuery = createQuery((db) =>
   db
     .selectFrom("bill")
     .selectAll()
-    .where("status", "in", ["open", "partiallyPaid"])
+    .where("status", "=", "open")
     .where("displayNumber", "is not", null)
     .where("status", "is not", null)
     .where("currency", "is not", null)

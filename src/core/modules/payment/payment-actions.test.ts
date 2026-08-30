@@ -9,6 +9,20 @@ import {
 } from "@/core/integrations/yadio/yadio-client.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import {
+  addCatalogItemToBill,
+  addManualAmountToBill,
+  addTipToBill,
+  appendGuardedBillLines,
+  appendRemoveBillLine,
+  cancelBill,
+  createBill,
+  loadBillCoverage,
+  splitBill,
+} from "@/core/modules/bill/bill-actions.ts"
+import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
+import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
+import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
@@ -16,6 +30,7 @@ import {
   NonEmptyString255,
   NonEmptyStringSchema,
   NonNegativeInteger,
+  PositiveInteger,
   PositiveNumber,
   SpecificSymbol,
   TimestampMs,
@@ -59,6 +74,7 @@ const paymentWithDetailsByIdQuery = (id: PaymentId) =>
         "payment.currency",
         "payment.tipAmount",
         "payment.canceledAt",
+        "payment.expiresAt",
         "payment.isDeleted",
         evoluJsonObjectFrom(
           eb
@@ -199,7 +215,7 @@ describe("payment actions", () => {
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -208,6 +224,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(1_000),
         canceledAt: null,
+        expiresAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
         },
@@ -352,6 +369,7 @@ describe("payment actions", () => {
         spark: {
           accountId: sparkAccountId,
           memo: "Payment 129 CZK",
+          expirySeconds: 900,
         },
         iban: {
           accountId: ibanAccountId,
@@ -373,6 +391,7 @@ describe("payment actions", () => {
           amount: 12_900,
           currency: "CZK",
           tipAmount: 1_000,
+          expiresAt: fixedDate.getTime() + 900_000,
           cashRegister: {
             id,
             accountId: cashRegisterAccountId,
@@ -439,7 +458,7 @@ describe("payment actions", () => {
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -448,6 +467,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
       })
     )
 
@@ -463,6 +483,7 @@ describe("payment actions", () => {
           },
           spark: {
             accountId: sparkAccountId,
+            expirySeconds: 1_800,
           },
         })
       )
@@ -473,6 +494,7 @@ describe("payment actions", () => {
       .toMatchObject([
         {
           id,
+          expiresAt: fixedDate.getTime() + 1_800_000,
           cashRegister: {
             id,
             accountId: cashRegisterAccountId,
@@ -534,7 +556,7 @@ describe("payment actions", () => {
       YadioApiDep
     await using run = testCreateRun(deps)
     const { sparkAccountId } = await createPaymentAccounts(deps)
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -543,6 +565,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
       })
     )
 
@@ -588,7 +611,7 @@ describe("payment actions", () => {
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
     const note = NonEmptyStringSchema.decode("Paid in cash")
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -597,6 +620,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
         },
@@ -658,7 +682,7 @@ describe("payment actions", () => {
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
     const note = NonEmptyStringSchema.decode("Paid in cash")
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -667,6 +691,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
         },
@@ -731,7 +756,7 @@ describe("payment actions", () => {
     )
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -740,6 +765,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
         },
@@ -790,7 +816,7 @@ describe("payment actions", () => {
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -799,6 +825,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         iban: {
           accountId: ibanAccountId,
           variableSymbol: undefined,
@@ -824,6 +851,52 @@ describe("payment actions", () => {
       .toSatisfy((rows) => rows[0]?.canceledAt !== null)
   }, 15_000)
 
+  test("rejects canceling a payment that already has an active claim", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: {
+          accountId: cashRegisterAccountId,
+        },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(run(cancelPayment(id))).resolves.toMatchObject({
+      ok: false,
+      error: { type: "PaymentAlreadyPaid", id },
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
+      .toMatchObject([{ id, canceledAt: null }])
+  }, 15_000)
+
   test("updates a payment's amount and its cashRegister/spark/iban details", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -836,7 +909,7 @@ describe("payment actions", () => {
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
       await createPaymentAccounts(deps)
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -845,6 +918,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(1_000),
         canceledAt: null,
+        expiresAt: null,
         cashRegister: {
           accountId: cashRegisterAccountId,
         },
@@ -938,7 +1012,7 @@ describe("payment actions", () => {
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
 
-    const id = await run.ok(
+    const id = await run.orThrow(
       createPayment({
         deviceId: null,
         billId: null,
@@ -947,6 +1021,7 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
+        expiresAt: null,
         iban: {
           accountId: ibanAccountId,
           variableSymbol: undefined,
@@ -965,5 +1040,1206 @@ describe("payment actions", () => {
           isDeleted: sqliteTrue,
         },
       ])
+  }, 15_000)
+
+  test("creating a payment for a bill neither closes nor unlocks it, and a second/split payment is still accepted", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+
+    const firstPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "open" }])
+
+    // A second/split payment attempt while the first is still pending and
+    // unresolved is deliberately allowed — only editing the bill's lines is
+    // locked while a payment is pending, not creating another payment.
+    const secondPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+    expect(secondPaymentId).not.toBe(firstPaymentId)
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "open" }])
+  }, 15_000)
+
+  test("a pending payment locks its bill against edits; canceling the payment unlocks it again", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Late addition"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+
+    await run.orThrow(cancelPayment(paymentId))
+
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Late addition"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+  }, 15_000)
+
+  test("confirming a payment that fully covers the bill closes it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+  }, 15_000)
+
+  test("confirming a payment that only partially covers the bill leaves it open and unlocked", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(400),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "open" }])
+
+    // The confirmed payment is no longer pending (it's paid), so the bill
+    // is open *and* editable again — only a live/pending payment locks it.
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Dessert"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(200),
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+  }, 15_000)
+
+  test("rejects creating a payment for a canceled bill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(cancelBill(billId))
+
+    await expect(
+      run(
+        createPayment({
+          deviceId: null,
+          billId,
+          tableId: null,
+          amount: NonNegativeInteger(12_900),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillNotOpen", status: "canceled" },
+    })
+  }, 15_000)
+
+  test("rejects creating a payment for an already-closed bill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    await run.orThrow(
+      markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+
+    await expect(
+      run(
+        createPayment({
+          deviceId: null,
+          billId,
+          tableId: null,
+          amount: NonNegativeInteger(500),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillNotOpen", status: "closed" },
+    })
+  }, 15_000)
+
+  test("canceling a bill with a pending payment leaves it canceled even after that payment is later confirmed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    // `cancelBill` does not check the editing lock, so discarding a cart
+    // with a still-pending payment attached is allowed — the UI hides this
+    // path (the bill page shows the "locked" message instead of the cart
+    // once a payment is pending), but the domain guard doesn't forbid it,
+    // matching a real cross-device race (one device cancels while another
+    // is mid-payment on a different terminal). See docs/bill-payment-states.md.
+    await run.orThrow(cancelBill(billId))
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "canceled" }])
+
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    // The claim still landed and still counts toward coverage, but the
+    // cancellation is never overridden — the bill stays `canceled`, not
+    // force-closed.
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "canceled" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_000,
+      coverage: "paid",
+    })
+  }, 15_000)
+
+  test("a payment canceled after being claimed (a CRDT merge race) still counts toward bill coverage", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    // `cancelPayment` itself refuses to cancel an already-claimed payment
+    // (see the "rejects canceling a payment that already has an active
+    // claim" test), so this state can only be reached the way a real
+    // multi-device merge would produce it: a concurrent cancellation write
+    // that lands after the claim already did. Simulate that merged state
+    // directly rather than going through `cancelPayment`.
+    evolu.update("payment", {
+      id: paymentId,
+      canceledAt: TimestampMsSchema.decode(deps.date.now().getTime()),
+    })
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(paymentId)))
+      .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+
+    // The payment now displays as canceled, but the money it already
+    // claimed still counts — the bill it closed stays `closed`/`paid`, not
+    // reverted.
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_000,
+      coverage: "paid",
+    })
+  }, 15_000)
+
+  test("the editing lock rejects addCatalogItemToBill, addTipToBill, appendRemoveBillLine, and splitBill the same way it rejects addManualAmountToBill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    const existingLine = await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Starter"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(500),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        addCatalogItemToBill({
+          billId,
+          deviceId: null,
+          catalogItemId: "catalog-item-1" as CatalogItemId,
+          quantity: PositiveNumber(1),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+
+    await expect(
+      run(
+        addTipToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Tip"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(100),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+
+    await expect(
+      run(
+        appendRemoveBillLine({
+          billId,
+          deviceId: null,
+          lineSummary: existingLine,
+          quantity: PositiveNumber(1),
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+
+    const otherBillId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(2),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await expect(
+      run(
+        splitBill({
+          sourceBillId: billId,
+          targetBillId: otherBillId,
+          items: [existingLine],
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+  }, 15_000)
+
+  test("appendGuardedBillLines rejects a locked bill, unlike the unguarded appendBillLines it replaced in cart undo/redo/clear", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    const lineSummary = await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Starter"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+    const line = {
+      billId,
+      deviceId: null,
+      catalogItemId: lineSummary.catalogItemId,
+      itemId: lineSummary.itemId,
+      type: lineSummary.type,
+      kind: "remove" as const,
+      quantity: lineSummary.quantity,
+      totalAmount: lineSummary.totalAmount,
+    }
+
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(500),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(appendGuardedBillLines(billId, [line]))
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+    await expect
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(billId)))
+      .toMatchObject([{ id: lineSummary.id, totalAmount: 500 }])
+  }, 15_000)
+
+  test("splitBill rejects a locked target bill even when the source bill is open", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const sourceBillId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    const lineSummary = await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Shared dish"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+
+    const targetBillId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(2),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: targetBillId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        splitBill({
+          sourceBillId,
+          targetBillId,
+          items: [lineSummary],
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+  }, 15_000)
+
+  test("confirming a payment whose amount exceeds the bill total closes it as overpaid", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_500),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_500,
+      coverage: "overpaid",
+    })
+  }, 15_000)
+
+  test("a payment's tip amount does not count toward bill coverage", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_200),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(200),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_000,
+      coverage: "paid",
+    })
+  }, 15_000)
+
+  test("a second confirmed split payment re-closes an already-closed bill and updates its coverage", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const firstPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    // A second/split payment created while the bill is still open, and
+    // still confirmed after the bill has already closed from the first one.
+    const secondPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(500),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: firstPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+
+    // Confirming the second payment must not be rejected just because the
+    // bill is already `closed` — `loadBillClosingAfterClaim` re-closes it
+    // idempotently instead of erroring.
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: secondPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_500,
+      coverage: "overpaid",
+    })
+  }, 15_000)
+
+  test("preserves a bill's original closedAt across a later re-close instead of overwriting it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    let now = new Date("2026-06-05T12:00:00.000Z")
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      date: { now: () => now },
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const firstPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    // Created while the bill is still `open` — `createPayment` would
+    // reject a second payment once the bill is `closed`, so this one must
+    // be created *before* the first payment below is confirmed.
+    const secondPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(200),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: firstPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    const [firstClose] = await evolu.loadQuery(billByIdQuery(billId))
+    const firstClosedAt = firstClose?.closedAt
+    expect(firstClosedAt).not.toBeNull()
+
+    // The clock advances, and the second (overpaying) payment is confirmed
+    // afterward — re-closing the already-`closed` bill idempotently.
+    now = new Date(now.getTime() + 60_000)
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: secondPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    // Still closed, but `closedAt` must stay the *first* close time, not
+    // get bumped to the second claim's time.
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([
+        { id: billId, status: "closed", closedAt: firstClosedAt },
+      ])
+  }, 15_000)
+
+  test("concurrently confirming two payments that together cover a bill still closes it correctly", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const firstPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(600),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    const secondPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(400),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    // Neither payment alone covers the bill — each call's own pre-write
+    // coverage check can only see itself if the two run concurrently
+    // without waiting on each other. `writeClaimAndCloseBillIfCovered`'s
+    // post-commit recheck exists precisely so the bill still ends up
+    // closed correctly either way. See docs/bill-payment-states.md.
+    const [firstResult, secondResult] = await Promise.all([
+      run(
+        markPaymentPaidCash({
+          paymentId: firstPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      ),
+      run(
+        markPaymentPaidCash({
+          paymentId: secondPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      ),
+    ])
+    expect(firstResult.ok).toBe(true)
+    expect(secondResult.ok).toBe(true)
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_000,
+      coverage: "paid",
+    })
+  }, 15_000)
+
+  test("createPreparedPayment leaves expiresAt null when no spark method is involved", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            BTC: 1_500_000,
+            timestamp: 1_700_000_000_000,
+          })
+        ),
+      sparkWallet: {
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => {
+              throw new Error("Should not be called without a spark method")
+            },
+          }),
+      },
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    const idResult = await run(
+      createPreparedPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+        iban: {
+          accountId: ibanAccountId,
+          variableSymbol: VariableSymbol("1234567890"),
+          specificSymbol: null,
+        },
+      })
+    )
+    expect(idResult.ok).toBe(true)
+    if (!idResult.ok) return
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(idResult.value)))
+      .toMatchObject([{ id: idResult.value, expiresAt: null }])
+  }, 15_000)
+
+  test("a bill with a zero line-item total is trivially paid once its zero-amount payment is confirmed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    // No line items added — the bill's total stays 0 (e.g. fully discounted).
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(0),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 0,
+      claimedSum: 0,
+      coverage: "paid",
+    })
   }, 15_000)
 })

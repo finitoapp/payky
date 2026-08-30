@@ -69,6 +69,7 @@ import type { TableId } from "@/core/modules/table/table-types.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillLock } from "@/features/bill/use-bill-lock.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -159,12 +160,15 @@ function BillExistingBody({
   const { data: billRows } = useEvoluQuery(billByIdQuery(billId))
   const bill = billRows[0]
   const summaries = useBillLineSummaries(billId)
+  const locked = useBillLock(billId)
 
   let content: ReactNode
   if (bill === undefined) {
     content = <BillMessage message={t("bill.notFound")} />
-  } else if (bill.status !== "open" && bill.status !== "partiallyPaid") {
+  } else if (bill.status !== "open") {
     content = <BillMessage message={t("bill.closed")} />
+  } else if (locked) {
+    content = <BillMessage message={t("bill.locked")} />
   } else {
     content = (
       <BillCartView
@@ -382,14 +386,15 @@ function BillCartView({
   const handleDiscard = async () => {
     if (billId === undefined) return
 
-    try {
-      await using run = appRun()
-      await run.orThrow(cancelBill(billId))
-      await navigate({ to: "/" })
-    } catch (error) {
-      console.error("Failed to discard cart", error)
+    await using run = appRun()
+    const result = await run(cancelBill(billId))
+    if (!result.ok) {
+      console.error("Failed to discard cart", result.error)
       toast.error(t("settings.saveFailed"))
+      return
     }
+
+    await navigate({ to: "/" })
   }
 
   return (

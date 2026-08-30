@@ -5,7 +5,6 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { createCatalogItem } from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255,
@@ -22,12 +21,12 @@ import {
   appendRemoveBillLine,
   assignBillToTable,
   cancelBill,
-  closeBillAsPaid,
+  closeBill,
   createBill,
   createBillAtEnd,
   listOpenBills,
   loadBill,
-  partiallyPayBill,
+  loadBillCoverage,
   removeTableFromBill,
   splitBill,
 } from "./bill-actions.ts"
@@ -136,28 +135,13 @@ describe("bill actions", () => {
         },
       ])
 
-    await run.orThrow(
-      partiallyPayBill({
-        id,
-        paymentId: "payment-1" as PaymentId,
-      })
-    )
+    await run.orThrow(closeBill(id))
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(id)))
       .toMatchObject([
         {
           id,
-          status: "partiallyPaid",
-        },
-      ])
-
-    await run.orThrow(closeBillAsPaid(id))
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(id)))
-      .toMatchObject([
-        {
-          id,
-          status: "paid",
+          status: "closed",
           closedAt: expect.any(Number),
         },
       ])
@@ -199,7 +183,7 @@ describe("bill actions", () => {
       .toMatchObject([{ id: secondId, displayNumber: 2 }])
   }, 15_000)
 
-  test("lists only open and partially paid bills with calculated items", async () => {
+  test("lists only open bills with calculated items", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
@@ -213,9 +197,9 @@ describe("bill actions", () => {
       displayNumber: 1,
       label: "Open",
     })
-    const partiallyPaidId = await createOpenBill(deps, {
+    const closedId = await createOpenBill(deps, {
       displayNumber: 2,
-      label: "Partially paid",
+      label: "Closed",
     })
     const canceledId = await createOpenBill(deps, {
       displayNumber: 3,
@@ -231,12 +215,7 @@ describe("bill actions", () => {
         totalAmount: NonNegativeInteger(1_000),
       })
     )
-    await run.orThrow(
-      partiallyPayBill({
-        id: partiallyPaidId,
-        paymentId: "payment-1" as PaymentId,
-      })
-    )
+    await run.orThrow(closeBill(closedId))
     await run.orThrow(cancelBill(canceledId))
 
     await expect
@@ -255,13 +234,6 @@ describe("bill actions", () => {
             },
           ],
         },
-        {
-          bill: {
-            id: partiallyPaidId,
-            status: "partiallyPaid",
-          },
-          items: [],
-        },
       ])
   }, 15_000)
 
@@ -271,7 +243,8 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-    } satisfies EvoluDep & EvoluOwnerIdDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
     const catalogItemId = await run.ok(
@@ -369,7 +342,8 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-    } satisfies EvoluDep & EvoluOwnerIdDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
 
@@ -396,7 +370,8 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-    } satisfies EvoluDep & EvoluOwnerIdDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
     const lineSummary = await run.orThrow(
@@ -452,7 +427,8 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-    } satisfies EvoluDep & EvoluOwnerIdDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, {
       displayNumber: 1,
@@ -513,7 +489,8 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-    } satisfies EvoluDep & EvoluOwnerIdDep
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps)
 
@@ -533,7 +510,7 @@ describe("bill actions", () => {
     })
   }, 15_000)
 
-  test("rejects adding or removing lines on a canceled or paid bill", async () => {
+  test("rejects adding or removing lines on a canceled or closed bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
@@ -544,10 +521,10 @@ describe("bill actions", () => {
     await using run = testCreateRun(deps)
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
     await run.orThrow(cancelBill(canceledBillId))
-    const paidBillId = await createOpenBill(deps, { displayNumber: 2 })
-    await run.orThrow(closeBillAsPaid(paidBillId))
+    const closedBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await run.orThrow(closeBill(closedBillId))
 
-    for (const billId of [canceledBillId, paidBillId]) {
+    for (const billId of [canceledBillId, closedBillId]) {
       await expect(
         run(
           addManualAmountToBill({
@@ -562,7 +539,7 @@ describe("bill actions", () => {
     }
   }, 15_000)
 
-  test("rejects canceling a paid bill but allows re-canceling a canceled one", async () => {
+  test("rejects canceling a closed bill but allows re-canceling a canceled one", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
@@ -571,12 +548,12 @@ describe("bill actions", () => {
       ...createDateDeps(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
-    const paidBillId = await createOpenBill(deps, { displayNumber: 1 })
-    await run.orThrow(closeBillAsPaid(paidBillId))
+    const closedBillId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(closeBill(closedBillId))
 
-    await expect(run(cancelBill(paidBillId))).resolves.toMatchObject({
+    await expect(run(cancelBill(closedBillId))).resolves.toMatchObject({
       ok: false,
-      error: { type: "BillNotOpen", status: "paid" },
+      error: { type: "BillNotOpen", status: "closed" },
     })
 
     const canceledBillId = await createOpenBill(deps, { displayNumber: 2 })
@@ -586,7 +563,7 @@ describe("bill actions", () => {
     )
   }, 15_000)
 
-  test("rejects closing a canceled bill as paid but allows re-closing a paid one", async () => {
+  test("rejects closing a canceled bill but allows re-closing an already-closed one", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
@@ -598,15 +575,63 @@ describe("bill actions", () => {
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
     await run.orThrow(cancelBill(canceledBillId))
 
-    await expect(run(closeBillAsPaid(canceledBillId))).resolves.toMatchObject({
+    await expect(run(closeBill(canceledBillId))).resolves.toMatchObject({
       ok: false,
       error: { type: "BillNotOpen", status: "canceled" },
     })
 
-    const paidBillId = await createOpenBill(deps, { displayNumber: 2 })
-    await run.orThrow(closeBillAsPaid(paidBillId))
-    await expect(run.orThrow(closeBillAsPaid(paidBillId))).resolves.toBe(
-      paidBillId
+    const closedBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await run.orThrow(closeBill(closedBillId))
+    await expect(run.orThrow(closeBill(closedBillId))).resolves.toBe(
+      closedBillId
     )
+  }, 15_000)
+
+  test("rejects manually closing an underpaid bill, but allows a fully covered one", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const underpaidBillId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId: underpaidBillId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+
+    // No payment was ever claimed for this bill — `closeBill` must not be
+    // able to produce a `closed`+`underpaid` bill; docs/bill-payment-states.md
+    // states that combination can never occur.
+    await expect(run(closeBill(underpaidBillId))).resolves.toMatchObject({
+      ok: false,
+      error: {
+        type: "BillUnderpaid",
+        id: underpaidBillId,
+        billTotal: 1_000,
+        claimedSum: 0,
+      },
+    })
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(underpaidBillId)))
+      .toMatchObject([{ id: underpaidBillId, status: "open" }])
+
+    // A bill with nothing charged for it (billTotal 0) is trivially "paid"
+    // and can still be closed manually.
+    const emptyBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await expect(run.orThrow(closeBill(emptyBillId))).resolves.toBe(emptyBillId)
+    await expect(run.ok(loadBillCoverage(emptyBillId))).resolves.toMatchObject({
+      billTotal: 0,
+      claimedSum: 0,
+      coverage: "paid",
+    })
   }, 15_000)
 })

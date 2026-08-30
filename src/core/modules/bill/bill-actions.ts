@@ -1,6 +1,7 @@
 import {
   err,
   type InsertValues,
+  type MutationOptions,
   ok,
   type Task,
   type UpdateValues,
@@ -37,6 +38,7 @@ import {
   NonNegativeInteger,
   PositiveInteger,
   PositiveNumber,
+  type TimestampMs,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import {
@@ -44,11 +46,22 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
 import {
+  claimedPaymentsByBillIdQuery,
+  paymentsByBillIdQuery,
+} from "./bill-coverage-queries.ts"
+import {
   allBillDisplayNumbersQuery,
   billByIdQuery,
   openBillsQuery,
 } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
+import {
+  type BillCoverage,
+  calculateClaimedSum,
+  claimedPaymentIdSet,
+  deriveBillCoverage,
+  hasPendingPayment,
+} from "./bill-utils.ts"
 
 export interface BillWithItems {
   readonly bill: BillRow
@@ -65,6 +78,18 @@ const createBillNotOpenError = defineError("BillNotOpen")<{
   readonly status: BillStatus
 }>()
 export type BillNotOpenError = ReturnType<typeof createBillNotOpenError>
+
+const createBillLockedError = defineError("BillLocked")<{
+  readonly id: BillId
+}>()
+export type BillLockedError = ReturnType<typeof createBillLockedError>
+
+const createBillUnderpaidError = defineError("BillUnderpaid")<{
+  readonly id: BillId
+  readonly billTotal: NonNegativeInteger
+  readonly claimedSum: NonNegativeInteger
+}>()
+export type BillUnderpaidError = ReturnType<typeof createBillUnderpaidError>
 
 const createCatalogItemNotFoundError = defineError("CatalogItemNotFound")<{
   readonly id: CatalogItemId
@@ -89,14 +114,27 @@ export type AddBillLineError =
   | BillLineSummaryMissingError
   | BillNotFoundError
   | BillNotOpenError
+  | BillLockedError
 
-export type SplitBillError = BillNotFoundError | BillNotOpenError
+export type SplitBillError =
+  | BillNotFoundError
+  | BillNotOpenError
+  | BillLockedError
 
 export const billNotFound = (id: BillId): BillNotFoundError =>
   createBillNotFoundError({ id })
 
 export const billNotOpen = (id: BillId, status: BillStatus): BillNotOpenError =>
   createBillNotOpenError({ id, status })
+
+export const billLocked = (id: BillId): BillLockedError =>
+  createBillLockedError({ id })
+
+export const billUnderpaid = (
+  id: BillId,
+  billTotal: NonNegativeInteger,
+  claimedSum: NonNegativeInteger
+): BillUnderpaidError => createBillUnderpaidError({ id, billTotal, claimedSum })
 
 export const catalogItemNotFound = (
   id: CatalogItemId
@@ -116,10 +154,69 @@ export const loadBill =
       billNotFound(idValue)
     )
 
+export interface BillCoverageSummary {
+  readonly billTotal: NonNegativeInteger
+  readonly claimedSum: NonNegativeInteger
+  readonly coverage: BillCoverage
+}
+
+/**
+ * Shared "bill's line-item total + its claimed payments" load behind
+ * `loadBillCoverage` and `loadBillClosingAfterClaim`.
+ */
+const loadBillTotalAndClaimedSum =
+  (
+    billId: BillId
+  ): Task<
+    {
+      readonly billTotal: NonNegativeInteger
+      readonly claimedPayments: ReadonlyArray<{
+        readonly id: PaymentId
+        readonly amount: NonNegativeInteger
+        readonly tipAmount: NonNegativeInteger
+      }>
+    },
+    never,
+    EvoluDep
+  > =>
+  async (run) => {
+    const [summaries, claimedPayments] = await Promise.all([
+      run.ok(loadCalculatedBillLineSummaries(billId)),
+      run.deps.evolu.loadQuery(claimedPaymentsByBillIdQuery(billId)),
+    ])
+
+    return ok({
+      billTotal: NonNegativeInteger(
+        summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+      ),
+      claimedPayments,
+    })
+  }
+
+/**
+ * Compares a bill's line-item total against what has actually been claimed
+ * as paid across all of its payments, independent of `bill.status`. See
+ * docs/bill-payment-states.md.
+ */
+export const loadBillCoverage =
+  (billId: BillId): Task<BillCoverageSummary, never, EvoluDep> =>
+  async (run) => {
+    const { billTotal, claimedPayments } = await run.ok(
+      loadBillTotalAndClaimedSum(billId)
+    )
+    const claimedSum = calculateClaimedSum(claimedPayments)
+
+    return ok({
+      billTotal,
+      claimedSum,
+      coverage: deriveBillCoverage(billTotal, claimedSum),
+    })
+  }
+
 /**
  * Loads a bill and rejects it unless its status is one of `allowedStatuses`.
- * Used to guard domain invariants around the `open` -> `partiallyPaid` ->
- * `paid`/`canceled` lifecycle before a mutation is applied.
+ * Used to guard domain invariants around the `open` -> `closed`/`canceled`
+ * lifecycle before a mutation is applied. See `docs/bill-payment-states.md`.
  */
 const requireBillInStatus =
   (
@@ -138,40 +235,142 @@ const requireBillInStatus =
     return ok(billRow)
   }
 
-const openBillStatuses: ReadonlySet<BillStatus> = new Set([
-  "open",
-  "partiallyPaid",
-])
+const openBillStatuses: ReadonlySet<BillStatus> = new Set(["open"])
 
-/** A bill still accepting line/status changes: not yet `paid` or `canceled`. */
-const requireOpenBill = (billId: BillId) =>
+/**
+ * Whether a bill currently has a live (pending) payment attempt — see
+ * `hasPendingPayment`.
+ */
+const isBillLocked =
+  (billId: BillId): Task<boolean, never, EvoluDep & DateDep> =>
+  async (run) => {
+    const [payments, claimedPayments] = await Promise.all([
+      run.deps.evolu.loadQuery(paymentsByBillIdQuery(billId)),
+      run.deps.evolu.loadQuery(claimedPaymentsByBillIdQuery(billId)),
+    ])
+
+    return ok(
+      hasPendingPayment(
+        payments,
+        claimedPaymentIdSet(claimedPayments),
+        run.deps.date.now()
+      )
+    )
+  }
+
+/**
+ * A bill that currently accepts line/table edits: `open`, and not locked by
+ * a live payment attempt. This is the guard behind every cart-editing
+ * action (`addCatalogItemToBill`, `addManualAmountToBill`, `addTipToBill`,
+ * `appendRemoveBillLine`, `splitBill`). See docs/bill-payment-states.md.
+ */
+const requireEditableBill =
+  (
+    billId: BillId
+  ): Task<
+    BillRow,
+    BillNotFoundError | BillNotOpenError | BillLockedError,
+    EvoluDep & DateDep
+  > =>
+  async (run) => {
+    const billResult = await run(requireBillInStatus(billId, openBillStatuses))
+    if (!billResult.ok) return billResult
+
+    const locked = await run.ok(isBillLocked(billId))
+    if (locked) return err(billLocked(billId))
+
+    return billResult
+  }
+
+/**
+ * A bill that can accept a new payment attempt: still `open`. Unlike
+ * `requireEditableBill`, this deliberately does **not** check for an
+ * existing pending payment — starting a second/split payment attempt while
+ * another is still pending and unresolved is allowed. Guards here are
+ * best-effort for the common single-device path, not a proof, under
+ * CRDT/multi-device concurrency. Exported for `payment-actions.ts`'s
+ * `createPayment`. See docs/bill-payment-states.md.
+ */
+export const requireBillAcceptingPayment = (billId: BillId) =>
   requireBillInStatus(billId, openBillStatuses)
 
 const closableBillStatuses: ReadonlySet<BillStatus> = new Set([
   "open",
-  "partiallyPaid",
-  "paid",
+  "closed",
 ])
 
 /**
- * Allows re-closing an already-`paid` bill as an idempotent no-op (two
- * devices racing to close the same bill), but rejects a `canceled` one.
+ * Allows re-closing an already-`closed` bill as an idempotent no-op (two
+ * devices racing to close the same bill, or two claims landing close
+ * together), but rejects a `canceled` one.
  */
-const requireClosableBill = (billId: BillId) =>
+export const requireClosableBill = (billId: BillId) =>
   requireBillInStatus(billId, closableBillStatuses)
 
 const cancelableBillStatuses: ReadonlySet<BillStatus> = new Set([
   "open",
-  "partiallyPaid",
   "canceled",
 ])
 
 /**
  * Allows re-canceling an already-`canceled` bill as an idempotent no-op, but
- * rejects a `paid` one.
+ * rejects a `closed` one — once a bill is fully settled it is closed and
+ * final, never cancelable.
  */
 const requireCancelableBill = (billId: BillId) =>
   requireBillInStatus(billId, cancelableBillStatuses)
+
+/**
+ * Given a payment that just gained a reconciliation claim, checks whether
+ * the bill it belongs to is now fully covered (`paid` or `overpaid`, i.e.
+ * no longer `underpaid`) and, if so, returns the closing write ready to
+ * fold into the caller's own mutation batch alongside the claim insert —
+ * see `upsertBillClosedRow`. Returns `null` when the payment has no bill,
+ * the bill isn't (yet) fully covered, or the bill is `canceled` (a
+ * cancellation is never overridden by a late/stray claim — see
+ * docs/bill-payment-states.md).
+ */
+export const loadBillClosingAfterClaim =
+  (payment: {
+    readonly id: PaymentId
+    readonly billId: BillId | null
+    readonly amount: NonNegativeInteger
+    readonly tipAmount: NonNegativeInteger
+  }): Task<
+    { readonly billId: BillId; readonly closedAt: TimestampMs } | null,
+    never,
+    EvoluDep & DateDep
+  > =>
+  async (run) => {
+    if (payment.billId === null) return ok(null)
+
+    const closableResult = await run(requireClosableBill(payment.billId))
+    if (!closableResult.ok) return ok(null)
+
+    const { billTotal, claimedPayments } = await run.ok(
+      loadBillTotalAndClaimedSum(payment.billId)
+    )
+    const alreadyClaimed = claimedPayments.some(
+      (claimed) => claimed.id === payment.id
+    )
+    const claimedSum = calculateClaimedSum(
+      alreadyClaimed ? claimedPayments : [...claimedPayments, payment]
+    )
+
+    if (deriveBillCoverage(billTotal, claimedSum) === "underpaid") {
+      return ok(null)
+    }
+
+    return ok({
+      billId: payment.billId,
+      // Preserve the bill's original closing time across an idempotent
+      // re-close (e.g. a second split payment confirmed after the bill
+      // already closed) instead of overwriting it with `now()` every time.
+      closedAt:
+        closableResult.value.closedAt ??
+        TimestampMsSchema.decode(run.deps.date.now().getTime()),
+    })
+  }
 
 export const createBill =
   (
@@ -320,9 +519,13 @@ export const addCatalogItemToBill =
         InsertValues<typeof billLine>["catalogItemId"]
       >
     }
-  ): Task<BillLineSummary, AddBillLineError, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<
+    BillLineSummary,
+    AddBillLineError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
-    const billResult = await run(requireOpenBill(input.billId))
+    const billResult = await run(requireEditableBill(input.billId))
     if (!billResult.ok) return billResult
 
     const catalogItemResult = getFirstOr(
@@ -355,11 +558,14 @@ export const addManualAmountToBill =
       Pick<InsertValues<typeof item>, "name" | "currency">
   ): Task<
     BillLineSummary,
-    BillLineSummaryMissingError | BillNotFoundError | BillNotOpenError,
-    EvoluDep & EvoluOwnerIdDep
+    | BillLineSummaryMissingError
+    | BillNotFoundError
+    | BillNotOpenError
+    | BillLockedError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const billResult = await run(requireOpenBill(input.billId))
+    const billResult = await run(requireEditableBill(input.billId))
     if (!billResult.ok) return billResult
 
     const snapshot = createStandaloneItemSnapshot({
@@ -390,11 +596,14 @@ export const addTipToBill =
       Pick<InsertValues<typeof item>, "name" | "currency">
   ): Task<
     BillLineSummary,
-    BillLineSummaryMissingError | BillNotFoundError | BillNotOpenError,
-    EvoluDep & EvoluOwnerIdDep
+    | BillLineSummaryMissingError
+    | BillNotFoundError
+    | BillNotOpenError
+    | BillLockedError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const billResult = await run(requireOpenBill(input.billId))
+    const billResult = await run(requireEditableBill(input.billId))
     if (!billResult.ok) return billResult
 
     const snapshot = createStandaloneItemSnapshot({
@@ -426,11 +635,11 @@ export const appendRemoveBillLine =
     }
   ): Task<
     BillLineSummary | null,
-    BillNotFoundError | BillNotOpenError,
-    EvoluDep & EvoluOwnerIdDep
+    BillNotFoundError | BillNotOpenError | BillLockedError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const billResult = await run(requireOpenBill(input.billId))
+    const billResult = await run(requireEditableBill(input.billId))
     if (!billResult.ok) return billResult
 
     const projected = await run.ok(
@@ -468,12 +677,16 @@ export const splitBill =
     readonly sourceBillId: BillId
     readonly targetBillId: BillId
     readonly items: ReadonlyArray<BillLineSummary>
-  }): Task<BillWithItems, SplitBillError, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<
+    BillWithItems,
+    SplitBillError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
   async (run) => {
-    const sourceBillResult = await run(requireOpenBill(input.sourceBillId))
+    const sourceBillResult = await run(requireEditableBill(input.sourceBillId))
     if (!sourceBillResult.ok) return sourceBillResult
 
-    const targetBillResult = await run(requireOpenBill(input.targetBillId))
+    const targetBillResult = await run(requireEditableBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
     const lines: Omit<BillLineRow, "id">[] = []
@@ -507,37 +720,6 @@ export const splitBill =
     })
   }
 
-export const partiallyPayBill =
-  (
-    input: Pick<UpdateValues<typeof bill>, "id"> & {
-      readonly paymentId: PaymentId
-    }
-  ): Task<
-    BillId,
-    BillNotFoundError | BillNotOpenError,
-    EvoluDep & EvoluOwnerIdDep
-  > =>
-  async (run) => {
-    const billResult = await run(requireOpenBill(input.id))
-    if (!billResult.ok) return billResult
-
-    const { evoluOwnerId } = run.deps
-    void input.paymentId
-
-    await runMutationWithCompletion((options) =>
-      run.deps.evolu.update(
-        "bill",
-        {
-          id: input.id,
-          status: "partiallyPaid",
-        },
-        { ...options, ownerId: evoluOwnerId }
-      )
-    )
-
-    return ok(input.id)
-  }
-
 export const cancelBill =
   (
     billId: BillId
@@ -567,31 +749,81 @@ export const cancelBill =
     return ok(billId)
   }
 
-export const closeBillAsPaid =
+/**
+ * Marks a bill closed (a fully covered/settled tab, final). Takes the
+ * caller's own `MutationOptions` so the write can join an existing mutation
+ * batch — `reconciliation-claim-actions.ts` folds this in via
+ * `loadBillClosingAfterClaim` so a bill closes in the same batch that
+ * writes the reconciliation claim confirming it, instead of opening a
+ * second round trip that could fail independently. See
+ * docs/bill-payment-states.md.
+ */
+export const upsertBillClosedRow = (
+  evolu: EvoluDep["evolu"],
+  billId: BillId,
+  closedAt: BillRow["closedAt"],
+  options: MutationOptions
+): void => {
+  evolu.update("bill", { id: billId, status: "closed", closedAt }, options)
+}
+
+/**
+ * Manually closes a bill (e.g. `bin/cli-bills.ts close`). Rejects an
+ * `underpaid` bill: `docs/bill-payment-states.md` states a closed bill is
+ * always `paid` or `overpaid`, never `underpaid` — this guard is what keeps
+ * that true for closes that don't go through `loadBillClosingAfterClaim`.
+ */
+export const closeBill =
   (
     billId: BillId
   ): Task<
     BillId,
-    BillNotFoundError | BillNotOpenError,
+    BillNotFoundError | BillNotOpenError | BillUnderpaidError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
     const billResult = await run(requireClosableBill(billId))
     if (!billResult.ok) return billResult
 
+    const coverage = await run.ok(loadBillCoverage(billId))
+    if (coverage.coverage === "underpaid") {
+      return err(billUnderpaid(billId, coverage.billTotal, coverage.claimedSum))
+    }
+
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.update(
-        "bill",
-        {
-          id: billId,
-          status: "paid",
-          closedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        },
+      upsertBillClosedRow(
+        run.deps.evolu,
+        billId,
+        billResult.value.closedAt ??
+          TimestampMsSchema.decode(run.deps.date.now().getTime()),
         { ...options, ownerId: evoluOwnerId }
       )
     )
 
     return ok(billId)
+  }
+
+/**
+ * Appends a batch of already-computed bill lines after checking the bill is
+ * still editable — used by cart-level undo/redo/clear (`use-cart-bill.ts`),
+ * which otherwise called `appendBillLines` directly with no status/lock
+ * guard at all, silently bypassing the editing lock for as long as a
+ * payment is pending on the bill. See docs/bill-payment-states.md.
+ */
+export const appendGuardedBillLines =
+  (
+    billId: BillId,
+    lines: ReadonlyArray<Omit<BillLineRow, "id">>
+  ): Task<
+    ReadonlyArray<BillLineSummary>,
+    BillNotFoundError | BillNotOpenError | BillLockedError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const billResult = await run(requireEditableBill(billId))
+    if (!billResult.ok) return billResult
+
+    return run(appendBillLines(lines, billId))
   }

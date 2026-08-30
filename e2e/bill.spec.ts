@@ -357,6 +357,85 @@ test("charges a cart and closes it once cash is paid", async ({
   })
 })
 
+test("locks a bill while its payment is pending, and unlocks it once that payment is canceled", async ({
+  seededPage: page,
+}) => {
+  let billId: string | null = null
+  let paymentPageUrl = ""
+
+  await test.step("add a cart item and start a payment", async () => {
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+    await page
+      .getByRole("button", {
+        name: nameParam("bill.brick.add.aria", "Coffee"),
+      })
+      .click()
+
+    const chargeButton = page.getByRole("button", {
+      name: translate("en", "home.pay"),
+    })
+    await expect(chargeButton).toBeInViewport()
+    await chargeButton.click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentTip.title") })
+      .waitFor()
+    billId = new URL(page.url()).searchParams.get("billId")
+    expect(billId).not.toBeNull()
+
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.none") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.continue") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentWait.cancel") })
+      .waitFor()
+    paymentPageUrl = page.url()
+  })
+
+  await test.step("the bill shows as locked while the payment is pending", async () => {
+    await page.goto(`/bill?billId=${billId}`, {
+      waitUntil: "domcontentloaded",
+    })
+    await page.getByRole("heading", { name: /^Bill #/ }).waitFor()
+    await expect(page.getByText(translate("en", "bill.locked"))).toBeVisible()
+  })
+
+  await test.step("canceling the payment unlocks the bill again", async () => {
+    await page.goto(paymentPageUrl, { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("button", { name: translate("en", "paymentWait.cancel") })
+      .click()
+
+    // The cancel handler navigates back to the bill itself since this
+    // payment has a billId.
+    await page.getByRole("heading", { name: /^Bill #/ }).waitFor()
+    await expect(
+      page.getByText(translate("en", "bill.locked"))
+    ).not.toBeVisible()
+    await expect(
+      page.getByRole("button", {
+        name: nameParam("bill.brick.add.aria", "Coffee"),
+      })
+    ).toBeVisible()
+  })
+
+  await test.step("the canceled payment's own page shows it as canceled, not paid", async () => {
+    await page.goto(paymentPageUrl, { waitUntil: "domcontentloaded" })
+    await expect(
+      page.getByText(translate("en", "paymentWait.canceled"))
+    ).toBeVisible()
+    // The success ("paid") panel must not render at all for a canceled
+    // payment — `isPaid` is now derived from `derivePaymentStatus`, which
+    // ranks `canceled` above `paid` even though a claim could in principle
+    // still exist. See docs/bill-payment-states.md.
+    await expect(page.getByTestId("payment-paid-panel")).toHaveCount(0)
+  })
+})
+
 test("adds a bulk quantity through the quantity dialog", async ({
   seededPage: page,
 }) => {

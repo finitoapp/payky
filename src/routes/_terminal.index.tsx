@@ -27,7 +27,10 @@ export const Route = createFileRoute("/_terminal/")({
   component: TerminalHomePage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-8 py-6",
+      // Matches /settings's own top-level page width instead of a wider,
+      // home-only inset — the tables/bills grid otherwise reads as wider
+      // than every other screen in the app.
+      viewportClassName: "px-6 py-6",
     },
   },
 })

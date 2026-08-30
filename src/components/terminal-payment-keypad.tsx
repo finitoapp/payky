@@ -22,7 +22,7 @@ import {
   type Money,
 } from "@/core/modules/shared/money.ts"
 import type { Currency, FiatCurrency } from "@/core/modules/shared/schema.ts"
-import { vibrateDevice } from "@/core/native/haptics.ts"
+import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -42,7 +42,6 @@ const keypad = [
 ] as const
 
 const maxIntegerDigits = 9
-const keypadVibrationMs = 30
 const keypadButtonBubbleAnimation = {
   opacity: [0.28, 0.16, 0],
   scale: [0.25, 1.15, 1.65],
@@ -153,10 +152,6 @@ function applyKeypadPress(
   })
 }
 
-function vibrateOnTerminalButtonPress() {
-  void vibrateDevice(keypadVibrationMs)
-}
-
 export function TerminalPaymentKeypad({
   currency,
   onCharge,
@@ -264,7 +259,7 @@ function Keypad({
   function handleKeypadPress(key: KeypadKey) {
     if (isChargePending) return
 
-    vibrateOnTerminalButtonPress()
+    vibrateOnButtonPress()
     applyKeypadPress(setAmountInput, key, currency)
   }
 
@@ -423,7 +418,7 @@ function ChargeButton({
       onClick={() => {
         if (amount === null) return
 
-        vibrateOnTerminalButtonPress()
+        vibrateOnButtonPress()
         void onCharge({ value: amount, currency })
       }}
     >

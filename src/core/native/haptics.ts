@@ -25,3 +25,9 @@ export async function vibrateDevice(duration: number): Promise<void> {
 
   globalThis.navigator.vibrate?.(duration)
 }
+
+const buttonPressVibrationMs = 30
+
+export function vibrateOnButtonPress() {
+  void vibrateDevice(buttonPressVibrationMs)
+}

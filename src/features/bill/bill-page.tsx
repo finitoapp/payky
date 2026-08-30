@@ -13,6 +13,7 @@ import {
   Undo2,
   X,
 } from "lucide-react"
+import { motion } from "motion/react"
 import { type ReactNode, startTransition, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -66,6 +67,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
+import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
@@ -73,6 +75,7 @@ import { useBillLock } from "@/features/bill/use-bill-lock.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useChangePulse } from "@/hooks/use-change-pulse.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -349,6 +352,7 @@ function BillCartView({
     () => summaries.reduce((sum, summary) => sum + summary.quantity, 0),
     [summaries]
   )
+  const totalAmountPulseControls = useChangePulse(totalAmount)
 
   const handleCharge = async () => {
     if (billId === undefined || summaries.length === 0) return
@@ -468,7 +472,7 @@ function BillCartView({
             {t("bill.emptySearch")}
           </p>
         ) : (
-          <div className="mt-4 grid grid-cols-2 gap-2 pb-4">
+          <div className="mt-2 grid grid-cols-2 gap-2 pb-4">
             {filteredItems.map((catalogItem) => (
               <ItemBrick
                 key={catalogItem.id}
@@ -501,7 +505,9 @@ function BillCartView({
                   {t("bill.itemsCount", { value: itemCount })}
                 </div>
                 <div className="flex items-center gap-2 text-base font-semibold">
-                  {formatMoney({ value: totalAmount, currency }, locale)}
+                  <motion.span animate={totalAmountPulseControls}>
+                    {formatMoney({ value: totalAmount, currency }, locale)}
+                  </motion.span>
                   <ChevronDown
                     className={
                       summaryOpen
@@ -523,59 +529,24 @@ function BillCartView({
                * settles a moment after the row is measured.
                */}
               <div className="flex min-h-0 flex-col gap-4 pt-4">
-                <div className="max-h-48 overflow-y-auto">
+                <div className="max-h-48 overflow-x-hidden overflow-y-auto">
                   <div className="flex flex-col divide-y">
                     {summaries.map((summary) => (
-                      <div
+                      <SummaryRow
                         key={summary.id}
-                        className="flex items-center justify-between gap-2 py-1"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            {summary.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {summary.quantity} ×{" "}
-                            {formatMoney(
-                              {
-                                value: NonNegativeInteger(
-                                  summary.totalAmount / summary.quantity
-                                ),
-                                currency: summary.currency,
-                              },
-                              locale
-                            )}
-                          </p>
-                        </div>
-                        <p className="text-sm font-semibold">
-                          {formatMoney(
-                            {
-                              value: summary.totalAmount,
-                              currency: summary.currency,
-                            },
-                            locale
-                          )}
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={t("bill.summary.removeLine.aria", {
-                            name: summary.name,
-                          })}
-                          disabled={cart.pending}
-                          onClick={() => {
-                            void cart.removeLine(summary).then(() => {
-                              showUndoToast(
-                                t("bill.summary.removeLine.toast", {
-                                  name: summary.name,
-                                })
-                              )
-                            })
-                          }}
-                        >
-                          <X />
-                        </Button>
-                      </div>
+                        summary={summary}
+                        locale={locale}
+                        disabled={cart.pending}
+                        onRemove={(removedSummary) => {
+                          void cart.removeLine(removedSummary).then(() => {
+                            showUndoToast(
+                              t("bill.summary.removeLine.toast", {
+                                name: removedSummary.name,
+                              })
+                            )
+                          })
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -643,7 +614,10 @@ function BillCartView({
               disabled={
                 billId === undefined || summaries.length === 0 || chargePending
               }
-              onClick={() => void handleCharge()}
+              onClick={() => {
+                vibrateOnButtonPress()
+                void handleCharge()
+              }}
             >
               {t("home.pay")}
             </Button>
@@ -701,6 +675,55 @@ function BillEmptyCatalog() {
   )
 }
 
+function SummaryRow({
+  summary,
+  locale,
+  disabled,
+  onRemove,
+}: {
+  readonly summary: BillLineSummary
+  readonly locale: string
+  readonly disabled: boolean
+  readonly onRemove: (summary: BillLineSummary) => void
+}) {
+  const { t } = useTranslation()
+  const pulseControls = useChangePulse(summary.quantity)
+
+  return (
+    <div className="flex items-center justify-between gap-2 py-1">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{summary.name}</p>
+        <p className="text-xs text-muted-foreground">
+          <motion.span animate={pulseControls}>{summary.quantity}</motion.span>{" "}
+          ×{" "}
+          {formatMoney(
+            {
+              value: NonNegativeInteger(summary.totalAmount / summary.quantity),
+              currency: summary.currency,
+            },
+            locale
+          )}
+        </p>
+      </div>
+      <motion.p className="text-sm font-semibold" animate={pulseControls}>
+        {formatMoney(
+          { value: summary.totalAmount, currency: summary.currency },
+          locale
+        )}
+      </motion.p>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={t("bill.summary.removeLine.aria", { name: summary.name })}
+        disabled={disabled}
+        onClick={() => onRemove(summary)}
+      >
+        <X />
+      </Button>
+    </div>
+  )
+}
+
 function ItemBrick({
   catalogItem,
   summaries,
@@ -734,6 +757,7 @@ function ItemBrick({
     () => getLatestCatalogItemSummary(matchingSummaries, catalogItem.id),
     [catalogItem.id, matchingSummaries]
   )
+  const quantityPulseControls = useChangePulse(quantity)
 
   const inCart = quantity > 0
 
@@ -792,7 +816,10 @@ function ItemBrick({
           })}
           disabled={disabled || quantity === 0}
           onClick={() => {
-            if (latestSummary !== undefined) onRemove(latestSummary)
+            if (latestSummary === undefined) return
+
+            vibrateOnButtonPress()
+            onRemove(latestSummary)
           }}
         >
           <Minus />
@@ -800,7 +827,7 @@ function ItemBrick({
         <Button
           type="button"
           variant="ghost"
-          className="h-10 min-w-6 rounded-full px-2 font-semibold tabular-nums"
+          className="h-10 min-w-10 rounded-full px-2 font-semibold tabular-nums"
           aria-label={t("bill.brick.quantity.trigger.aria", {
             name: catalogItem.name,
           })}
@@ -810,7 +837,7 @@ function ItemBrick({
             setQuantityDialogOpen(true)
           }}
         >
-          {quantity}
+          <motion.span animate={quantityPulseControls}>{quantity}</motion.span>
         </Button>
         <Button
           variant="ghost"
@@ -818,7 +845,10 @@ function ItemBrick({
           className="size-10 rounded-full"
           aria-label={t("bill.brick.add.aria", { name: catalogItem.name })}
           disabled={disabled}
-          onClick={onAdd}
+          onClick={() => {
+            vibrateOnButtonPress()
+            onAdd()
+          }}
         >
           <Plus />
         </Button>

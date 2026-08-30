@@ -83,7 +83,7 @@ const supportSettings: ReadonlyArray<SettingRow> = [
   },
 ]
 
-const paymentSettings: ReadonlyArray<SettingRow> = [
+const catalogSettings: ReadonlyArray<SettingRow> = [
   {
     icon: ShoppingBag,
     title: "settings.items.title",
@@ -102,6 +102,9 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     description: "settings.tables.description",
     to: "/settings/tables",
   },
+]
+
+const paymentSettings: ReadonlyArray<SettingRow> = [
   {
     icon: CircleDollarSign,
     title: "settings.defaultPaymentMethod.title",
@@ -204,6 +207,7 @@ const securitySettings: ReadonlyArray<SettingRow> = [
 
 function SettingsPage() {
   const { t } = useTranslation()
+  const catalogItems = createSettingsNavItems(catalogSettings, t)
   const accountItems = createSettingsNavItems(accountSettings, t)
   const generalItems = createSettingsNavItems(generalSettings, t)
   const supportItems = createSettingsNavItems(supportSettings, t)
@@ -217,6 +221,7 @@ function SettingsPage() {
       <div className="h-6" />
       <FadeHeader title={t("settings.title")} />
 
+      <VerticalNav title={t("settings.catalog")} items={catalogItems} />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav
         title={t("settings.accountAndSync")}

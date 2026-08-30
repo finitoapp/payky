@@ -617,6 +617,7 @@ export const cs = {
   "settings.fiat.usd.description":
     "Používat americký dolar pro částky v terminálu",
   "settings.fiat.usd.title": "Americký dolar",
+  "settings.catalog": "NABÍDKA",
   "settings.categories.add": "Přidat kategorii",
   "settings.categories.delete": "Smazat kategorii",
   "settings.categories.delete.confirm.cancel": "Zrušit",

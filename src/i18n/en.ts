@@ -617,6 +617,7 @@ export const en = {
   "settings.fiat.title": "Fiat Currency",
   "settings.fiat.usd.description": "Use US dollar for terminal amounts",
   "settings.fiat.usd.title": "US dollar",
+  "settings.catalog": "MENU",
   "settings.categories.add": "Add category",
   "settings.categories.delete": "Delete category",
   "settings.categories.delete.confirm.cancel": "Cancel",

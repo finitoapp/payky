@@ -9,6 +9,10 @@ import {
   appendRemoveBillLine,
   createBillAtEnd,
 } from "@/core/modules/bill/bill-actions.ts"
+import {
+  claimedPaymentsByBillIdQuery,
+  paymentsByBillIdQuery,
+} from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
@@ -113,11 +117,15 @@ export function useCartBill({
     // Warm the read-side queries the newly mounted bill view will run
     // before flipping `billId`, so they're already resolved and `use()`
     // doesn't suspend — an uncached suspend here bubbled up to the route's
-    // Suspense boundary and blanked the whole page for a beat.
+    // Suspense boundary and blanked the whole page for a beat. Keep this in
+    // sync with every query the bill view's `use()` reads unconditionally
+    // once `billId` is set, including `useBillLock`'s.
     await Promise.all([
       evolu.loadQuery(billByIdQuery(created)),
       evolu.loadQuery(billLinesByBillIdQuery(created)),
       evolu.loadQuery(itemsQuery),
+      evolu.loadQuery(paymentsByBillIdQuery(created)),
+      evolu.loadQuery(claimedPaymentsByBillIdQuery(created)),
     ])
 
     onBillCreated(created)

@@ -23,9 +23,15 @@ import {
 } from "@/components/ui/card.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
+import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import type { BillStatus } from "@/core/modules/shared/schema.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
+import { tablesQuery } from "@/core/modules/table/table-queries.ts"
+import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -54,6 +60,18 @@ const claimSourceLabelKey = {
   auto: "paymentDetail.reconciliation.source.auto",
   manual: "paymentDetail.reconciliation.source.manual",
 } satisfies Record<PaymentDetailClaimSource, TranslationKey>
+
+const billStatusBadgeClassName = {
+  open: "bg-warning/10 text-warning",
+  closed: "bg-success/10 text-success",
+  canceled: null,
+} satisfies Record<BillStatus, string | null>
+
+const billStatusLabelKey = {
+  open: "paymentDetail.bill.status.open",
+  closed: "paymentDetail.bill.status.closed",
+  canceled: "paymentDetail.bill.status.canceled",
+} satisfies Record<BillStatus, TranslationKey>
 
 const paymentDetailQuery = (paymentId: PaymentId) =>
   createQuery((db) =>
@@ -331,17 +349,13 @@ function PaymentDetailContent({
               label={t("paymentDetail.deviceId")}
               value={payment.deviceId ?? t("paymentDetail.emptyValue")}
             />
-            <PaymentDetailRow
-              label={t("paymentDetail.billId")}
-              value={payment.billId ?? t("paymentDetail.emptyValue")}
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.tableId")}
-              value={payment.tableId ?? t("paymentDetail.emptyValue")}
-            />
           </div>
         </CardContent>
       </Card>
+
+      {payment.billId !== null ? (
+        <PaymentDetailBillCard billId={payment.billId} />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -467,6 +481,104 @@ function PaymentDetailContent({
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const query = useMemo(() => billByIdQuery(billId), [billId])
+  const { data: bills } = useEvoluQuery(query)
+  const { data: tables } = useEvoluQuery(tablesQuery)
+  const summaries = useBillLineSummaries(billId)
+  const bill = bills[0]
+
+  if (!bill) {
+    return null
+  }
+
+  const table = tables.find((candidate) => candidate.id === bill.tableId)
+  const totalAmount = NonNegativeInteger(
+    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+  )
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("paymentDetail.bill.title")}</CardTitle>
+        <CardDescription>
+          {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-muted-foreground">
+              {t("paymentDetail.bill.table")}
+            </span>
+            <span className="text-sm font-medium">
+              {table?.name ?? t("paymentDetail.emptyValue")}
+            </span>
+          </div>
+          <Badge
+            variant={bill.status === "canceled" ? "destructive" : "secondary"}
+            className={cn(billStatusBadgeClassName[bill.status])}
+          >
+            {t(billStatusLabelKey[bill.status])}
+          </Badge>
+        </div>
+
+        <Separator />
+
+        {summaries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t("paymentDetail.bill.empty")}
+          </p>
+        ) : (
+          <div className="flex flex-col divide-y">
+            {summaries.map((summary) => (
+              <div
+                key={summary.id}
+                className="flex items-center justify-between gap-2 py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{summary.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {summary.quantity} ×{" "}
+                    {formatMoney(
+                      {
+                        value: NonNegativeInteger(
+                          summary.totalAmount / summary.quantity
+                        ),
+                        currency: summary.currency,
+                      },
+                      locale
+                    )}
+                  </p>
+                </div>
+                <p className="text-sm font-semibold">
+                  {formatMoney(
+                    { value: summary.totalAmount, currency: summary.currency },
+                    locale
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Separator />
+
+        <PaymentDetailRow
+          label={t("paymentDetail.bill.total")}
+          value={formatMoney(
+            { value: totalAmount, currency: bill.currency },
+            locale
+          )}
+          emphasize
+        />
+      </CardContent>
+    </Card>
   )
 }
 

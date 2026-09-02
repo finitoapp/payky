@@ -259,7 +259,6 @@ export const sk = {
   "payment.create.error": "Platbu sa nepodarilo vytvoriť.",
   "paymentHistory.billOverpaid": "Účet preplatený",
   "paymentHistory.billUnderpaid": "Účet nedoplatený",
-  "paymentHistory.collision": "Vyžaduje kontrolu",
   "paymentHistory.empty.description":
     "Vytvorené platobné žiadosti sa zobrazia tu.",
   "paymentHistory.empty.title": "Zatiaľ žiadne platby",
@@ -321,14 +320,21 @@ export const sk = {
   "paymentWait.waiting": "Čaká sa na platbu...",
   "paymentDetail.amount": "Suma",
   "paymentDetail.backToPayment": "Späť na platbu",
-  "paymentDetail.bill.coverage.expectedAmount": "Očakávané",
-  "paymentDetail.bill.coverage.overpaid.description":
-    "Tento účet bol zaplatený za viac, než aktuálne stojí — pravdepodobne iné zariadenie zmenilo položky účtu, zatiaľ čo táto platba už prebiehala.",
-  "paymentDetail.bill.coverage.overpaid.title": "Preplatené",
   "paymentDetail.bill.coverage.changesTitle": "Zmeny od vzniku platby",
+  "paymentDetail.bill.coverage.delta.overpaid":
+    "Zaplatené o {amount} viac, než účet stojí",
+  "paymentDetail.bill.coverage.delta.underpaid": "Ešte chýba {amount}",
+  "paymentDetail.bill.coverage.expectedAmount": "Očakávané",
+  "paymentDetail.bill.coverage.overpaid.fact":
+    "Tento účet bol zaplatený za viac, než aktuálne stojí.",
+  "paymentDetail.bill.coverage.overpaid.title": "Preplatené",
   "paymentDetail.bill.coverage.paidAmount": "Zaplatené",
-  "paymentDetail.bill.coverage.underpaid.description":
-    "Tento účet zatiaľ nie je plne pokrytý potvrdenými platbami — to je bežné, kým platba stále prebieha. Ak je táto platba už zaplatená, pravdepodobne iné zariadenie zmenilo položky účtu, kým bežala.",
+  "paymentDetail.bill.coverage.reason.billLinesChanged":
+    "Pravdepodobne iné zariadenie zmenilo položky účtu, zatiaľ čo táto platba už prebiehala.",
+  "paymentDetail.bill.coverage.reason.multiplePayments":
+    "Tento účet zahŕňa viac než jednu platbu — pozrite sa na tie ostatné nižšie.",
+  "paymentDetail.bill.coverage.underpaid.fact":
+    "Tento účet zatiaľ nie je plne pokrytý potvrdenými platbami.",
   "paymentDetail.bill.coverage.underpaid.title": "Nie je doplatené",
   "paymentDetail.bill.empty": "Tento účet nemá žiadne položky.",
   "paymentDetail.bill.status.canceled": "Zrušené",

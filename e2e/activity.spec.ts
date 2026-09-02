@@ -1,5 +1,6 @@
 import {
   addCatalogItem,
+  createAndPaySecondPayment,
   createPayment,
   expect,
   gotoPage,
@@ -85,7 +86,7 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
   await test.step("the activity list flags the collision", async () => {
     await gotoPage(page, "/activity", "en", "activity.title")
     await expect(
-      page.getByText(translate("en", "paymentHistory.collision"))
+      page.getByText(translate("en", "paymentDetail.collision.title"))
     ).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/activity-list-collision.png`,
@@ -97,7 +98,7 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
     await page
       .locator("nav")
       .getByRole("link", {
-        name: translate("en", "paymentHistory.collision"),
+        name: translate("en", "paymentDetail.collision.title"),
       })
       .click()
     await page
@@ -135,7 +136,7 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
   await test.step("the activity list no longer flags the resolved payment", async () => {
     await gotoPage(page, "/activity", "en", "activity.title")
     await expect(
-      page.getByText(translate("en", "paymentHistory.collision"))
+      page.getByText(translate("en", "paymentDetail.collision.title"))
     ).toBeHidden()
     await expect(
       page
@@ -351,12 +352,110 @@ test("a payment with both a cancellation collision and an overpaid bill shows bo
     await gotoPage(page, "/activity", "en", "activity.title")
     await expect(
       page.getByText(
-        `${translate("en", "paymentHistory.collision")} · ${translate("en", "paymentHistory.billOverpaid")}`
+        `${translate("en", "paymentDetail.collision.title")} · ${translate("en", "paymentHistory.billOverpaid")}`
       )
     ).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/activity-list-multiple-issues.png`,
       fullPage: true,
     })
+  })
+})
+
+test("a bill overpaid by two separately paid payments is flagged on the payment detail", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+
+  await test.step("pay the bill once, then create and pay a second, independent payment for it", async () => {
+    const billId = await startBillAndBeginCashPayment(page)
+    await markCashPaid(page, "en")
+
+    // The bill page's own "Charge" button disappears once the bill isn't
+    // `open` anymore (which the first payment being claimed just caused),
+    // so a genuine second payment can't be started by clicking through the
+    // UI at this point — this goes through the real domain actions
+    // directly instead. See docs/bill-payment-states.md.
+    await createAndPaySecondPayment(page, billId)
+  })
+
+  await test.step("the payment detail shows the bill as overpaid by the combined total", async () => {
+    await page
+      .getByTestId("payment-paid-panel")
+      .getByRole("button", { name: translate("en", "paymentWait.detail") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+      .waitFor()
+    const overpaidAlert = page.getByRole("alert").filter({
+      hasText: translate("en", "paymentDetail.bill.coverage.overpaid.title"),
+    })
+    await expect(overpaidAlert).toBeVisible()
+    await expect(overpaidAlert).toContainText("$5.00")
+    await expect(overpaidAlert).toContainText("$10.00")
+
+    await page.screenshot({
+      path: `${screenshotDir}/payment-detail-bill-overpaid-two-payments.png`,
+      fullPage: true,
+    })
+  })
+})
+
+test("the activity list flags a payment's own duplicate settlement without also flagging its bill as overpaid", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+
+  await startBillAndBeginCashPayment(page)
+  // Visiting the IBAN tab is what actually prepares it (`preparePaymentMethod`
+  // is lazy, per-tab) — needed so `simulateDuplicateSettlement` below has
+  // IBAN details to settle against. Switch back to the cash tab afterward,
+  // since `markCashPaid`'s button only renders while it's active.
+  await prepareIbanPayment(page, "en")
+  await page
+    .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+    .click()
+  await markCashPaid(page, "en")
+  await simulateDuplicateSettlement(page)
+
+  await gotoPage(page, "/activity", "en", "activity.title")
+  const row = page.locator("nav").getByRole("link")
+  await expect(row).toHaveCount(1)
+  await expect(row).toContainText(
+    translate("en", "paymentDetail.excessCollision.title")
+  )
+  await expect(row).not.toContainText(
+    translate("en", "paymentHistory.billOverpaid")
+  )
+  await page.screenshot({
+    path: `${screenshotDir}/activity-list-excess-settlement-only.png`,
+    fullPage: true,
+  })
+})
+
+test("the activity list flags a bill overpaid by two separate payments without flagging either as a duplicate settlement", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+
+  const billId = await startBillAndBeginCashPayment(page)
+  await markCashPaid(page, "en")
+  await createAndPaySecondPayment(page, billId)
+
+  await gotoPage(page, "/activity", "en", "activity.title")
+  const rows = page.locator("nav").getByRole("link")
+  await expect(rows).toHaveCount(2)
+  await expect(rows.nth(0)).toContainText(
+    translate("en", "paymentHistory.billOverpaid")
+  )
+  await expect(rows.nth(1)).toContainText(
+    translate("en", "paymentHistory.billOverpaid")
+  )
+  await expect(
+    page.getByText(translate("en", "paymentDetail.excessCollision.title"))
+  ).toHaveCount(0)
+  await page.screenshot({
+    path: `${screenshotDir}/activity-list-bill-overpaid-two-payments.png`,
+    fullPage: true,
   })
 })

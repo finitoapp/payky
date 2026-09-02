@@ -5,6 +5,7 @@ import {
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
+import { cashRegisterAccountId } from "@/core/modules/account/account-utils.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
@@ -16,6 +17,10 @@ import {
 } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
+import {
+  createPayment,
+  markPaymentPaidCash,
+} from "@/core/modules/payment/payment-actions.ts"
 import {
   paymentIbanDetailsByIdQuery,
   paymentSparkDetailsByIdQuery,
@@ -51,6 +56,7 @@ declare global {
       billId: string,
       mode: "add" | "removeAll"
     ) => Promise<void>
+    __e2eCreateAndPaySecondPayment?: (billId: string) => Promise<void>
     __e2eCancelBill?: (billId: string) => Promise<void>
   }
 }
@@ -106,6 +112,17 @@ declare global {
  * overpaid coverage note on the payment detail page without two real
  * devices.
  *
+ * Also exposes `window.__e2eCreateAndPaySecondPayment`, which creates a
+ * *second*, independent payment for `billId` (for its current line-item
+ * total, cash) and marks it paid immediately — the real `createPayment`/
+ * `markPaymentPaidCash` actions, not a bypass of anything, since split
+ * payments are an intended capability (see docs/bill-payment-states.md's
+ * "Editing lock" section: creating a new payment deliberately does not
+ * check the lock). Used to reach the "two paid payments on one bill, each
+ * fully covering it" overpaid case through the bill page's own UI has no
+ * way to trigger, since its own "Charge" button disappears once the bill's
+ * derived status is no longer `open`.
+ *
  * Also exposes `window.__e2eCancelBill`, which calls the real `cancelBill`
  * action directly — the bill-level mirror of the above, letting a test
  * discard a bill while its payment is still pending (a transition the
@@ -115,7 +132,7 @@ declare global {
  * UI). Confirming that same payment afterward produces the canceled+funded
  * bill collision `confirmBillClosedDespiteCancellation` resolves.
  *
- * All seven are dead code in any real production build: kept alive only in
+ * All eight are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -375,6 +392,56 @@ export function E2eTestBridge() {
       })
     }
 
+    window.__e2eCreateAndPaySecondPayment = async (billIdValue) => {
+      const parsedBillId = BillId.parse(billIdValue)
+      await using run = appRun()
+
+      const [billRow] = await run.deps.evolu.loadQuery(
+        billByIdQuery(parsedBillId)
+      )
+      if (!billRow) {
+        throw new Error(`Bill ${parsedBillId} not found.`)
+      }
+
+      const summaries = await run.ok(
+        loadCalculatedBillLineSummaries(parsedBillId)
+      )
+      const totalAmount = NonNegativeInteger(
+        summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+      )
+
+      const paymentResult = await run(
+        createPayment({
+          deviceId: null,
+          billId: parsedBillId,
+          tableId: null,
+          amount: totalAmount,
+          currency: billRow.currency,
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+          cashRegister: { accountId: cashRegisterAccountId },
+        })
+      )
+      if (!paymentResult.ok) {
+        throw new Error(
+          `Failed to create a second payment for bill ${parsedBillId}: ${paymentResult.error.type}`
+        )
+      }
+
+      const payResult = await run(
+        markPaymentPaidCash({
+          paymentId: paymentResult.value,
+          accountId: cashRegisterAccountId,
+        })
+      )
+      if (!payResult.ok) {
+        throw new Error(
+          `Failed to pay the second payment for bill ${parsedBillId}: ${payResult.error.type}`
+        )
+      }
+    }
+
     window.__e2eCancelBill = async (billIdValue) => {
       const parsedBillId = BillId.parse(billIdValue)
       await using run = appRun()
@@ -394,6 +461,7 @@ export function E2eTestBridge() {
       delete window.__e2eSimulateCancelAfterClaim
       delete window.__e2eSimulateDuplicateSettlement
       delete window.__e2eSimulateBillModifiedDuringPayment
+      delete window.__e2eCreateAndPaySecondPayment
       delete window.__e2eCancelBill
     }
   }, [appRun])

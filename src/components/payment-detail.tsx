@@ -30,6 +30,7 @@ import {
 import { Separator } from "@/components/ui/separator.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-actions.ts"
+import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
@@ -653,6 +654,11 @@ function PaymentDetailBillCard({
   const billStatus = useBillStatus(billId)
   const { claimedSum, coverage } = useBillCoverage(billId)
   const lineDiff = useBillLineSummaryDiff(paymentId, billId)
+  const claimedPaymentsQuery = useMemo(
+    () => claimedPaymentsByBillIdQuery(billId),
+    [billId]
+  )
+  const { data: claimedPayments } = useEvoluQuery(claimedPaymentsQuery)
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
@@ -663,6 +669,29 @@ function PaymentDetailBillCard({
   const totalAmount = NonNegativeInteger(
     summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
   )
+
+  // Which of the two known causes actually explains this bill's coverage
+  // mismatch (see docs/bill-payment-states.md's "Bill payment coverage"
+  // section) — a bill-line change since this payment was made, or another
+  // payment also claimed against the same bill. Neither is mutually
+  // exclusive with the other collisions on this page, and either can be
+  // absent (e.g. a payment created before the paymentLine snapshot existed),
+  // in which case only the plain coverage fact is shown.
+  const hasLineDiff =
+    lineDiff !== null &&
+    (lineDiff.added.length > 0 ||
+      lineDiff.removed.length > 0 ||
+      lineDiff.changed.length > 0)
+  const otherClaimedPaymentIds = [
+    ...new Set(claimedPayments.map((payment) => payment.id)),
+  ].filter((id) => id !== paymentId)
+  const coverageMismatchReason: "billLinesChanged" | "multiplePayments" | null =
+    hasLineDiff
+      ? "billLinesChanged"
+      : otherClaimedPaymentIds.length > 0
+        ? "multiplePayments"
+        : null
+  const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
 
   const handleConfirmClosedDespiteCancellation = async () => {
     setResolvePending(true)
@@ -803,12 +832,28 @@ function PaymentDetailBillCard({
               )}
             </AlertTitle>
             <AlertDescription>
+              <p className="text-sm font-semibold text-foreground">
+                {t(
+                  coverage === "underpaid"
+                    ? "paymentDetail.bill.coverage.delta.underpaid"
+                    : "paymentDetail.bill.coverage.delta.overpaid",
+                  {
+                    amount: formatMoney(
+                      { value: coverageDelta, currency: bill.currency },
+                      locale
+                    ),
+                  }
+                )}
+              </p>
               <p>
                 {t(
                   coverage === "underpaid"
-                    ? "paymentDetail.bill.coverage.underpaid.description"
-                    : "paymentDetail.bill.coverage.overpaid.description"
+                    ? "paymentDetail.bill.coverage.underpaid.fact"
+                    : "paymentDetail.bill.coverage.overpaid.fact"
                 )}
+                {coverageMismatchReason === null
+                  ? null
+                  : ` ${t(`paymentDetail.bill.coverage.reason.${coverageMismatchReason}`)}`}
               </p>
               <div className="flex w-full items-center justify-between gap-4">
                 <span>{t("paymentDetail.bill.coverage.expectedAmount")}</span>
@@ -829,15 +874,36 @@ function PaymentDetailBillCard({
                 </span>
               </div>
 
-              {lineDiff !== null &&
-              (lineDiff.removed.length > 0 ||
-                lineDiff.added.length > 0 ||
-                lineDiff.changed.length > 0) ? (
+              {coverageMismatchReason === "multiplePayments" ? (
+                <div className="flex w-full flex-col gap-2 border-t border-warning/30 pt-2">
+                  {otherClaimedPaymentIds.map((otherPaymentId, index) => (
+                    <Button
+                      key={otherPaymentId}
+                      variant="outline"
+                      nativeButton={false}
+                      render={
+                        <Link
+                          to="/activity/$paymentId"
+                          params={{ paymentId: otherPaymentId }}
+                        />
+                      }
+                    >
+                      {otherClaimedPaymentIds.length > 1
+                        ? t("bill.collision.viewPayment.numbered", {
+                            number: index + 1,
+                          })
+                        : t("bill.collision.viewPayment")}
+                    </Button>
+                  ))}
+                </div>
+              ) : null}
+
+              {hasLineDiff ? (
                 <div className="flex w-full flex-col gap-1 border-t border-warning/30 pt-2">
                   <span className="font-medium text-foreground">
                     {t("paymentDetail.bill.coverage.changesTitle")}
                   </span>
-                  {lineDiff.removed.map((summary) => (
+                  {lineDiff?.removed.map((summary) => (
                     <div
                       key={summary.id}
                       className="flex w-full items-center justify-between gap-4"
@@ -856,7 +922,7 @@ function PaymentDetailBillCard({
                       </span>
                     </div>
                   ))}
-                  {lineDiff.added.map((summary) => (
+                  {lineDiff?.added.map((summary) => (
                     <div
                       key={summary.id}
                       className="flex w-full items-center justify-between gap-4"
@@ -875,7 +941,7 @@ function PaymentDetailBillCard({
                       </span>
                     </div>
                   ))}
-                  {lineDiff.changed.map(({ before, after }) => (
+                  {lineDiff?.changed.map(({ before, after }) => (
                     <div
                       key={after.id}
                       className="flex w-full items-center justify-between gap-4"

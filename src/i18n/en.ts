@@ -256,7 +256,6 @@ export const en = {
   "payment.create.error": "Could not create the payment.",
   "paymentHistory.billOverpaid": "Bill overpaid",
   "paymentHistory.billUnderpaid": "Bill underpaid",
-  "paymentHistory.collision": "Needs review",
   "paymentHistory.empty.description":
     "Created payment requests will appear here.",
   "paymentHistory.empty.title": "No payments yet",
@@ -320,14 +319,21 @@ export const en = {
   "paymentWait.waiting": "Waiting for payment...",
   "paymentDetail.amount": "Amount",
   "paymentDetail.backToPayment": "Back to payment",
-  "paymentDetail.bill.coverage.expectedAmount": "Expected",
-  "paymentDetail.bill.coverage.overpaid.description":
-    "This bill has been paid for more than it's currently worth — another device likely changed the bill's items while this payment was already in progress.",
-  "paymentDetail.bill.coverage.overpaid.title": "Overpaid",
   "paymentDetail.bill.coverage.changesTitle": "Changes since this payment",
+  "paymentDetail.bill.coverage.delta.overpaid":
+    "Paid {amount} more than the bill is worth",
+  "paymentDetail.bill.coverage.delta.underpaid": "Still missing {amount}",
+  "paymentDetail.bill.coverage.expectedAmount": "Expected",
+  "paymentDetail.bill.coverage.overpaid.fact":
+    "This bill has been paid for more than it's currently worth.",
+  "paymentDetail.bill.coverage.overpaid.title": "Overpaid",
   "paymentDetail.bill.coverage.paidAmount": "Paid",
-  "paymentDetail.bill.coverage.underpaid.description":
-    "This bill isn't fully covered by confirmed payments yet — expected while a payment is still in progress. If this payment already shows as paid, another device likely changed the bill's items while it was in flight.",
+  "paymentDetail.bill.coverage.reason.billLinesChanged":
+    "Another device likely changed the bill's items while this payment was already in progress.",
+  "paymentDetail.bill.coverage.reason.multiplePayments":
+    "This bill involves more than one payment — see the others below.",
+  "paymentDetail.bill.coverage.underpaid.fact":
+    "This bill isn't fully covered by confirmed payments yet.",
   "paymentDetail.bill.coverage.underpaid.title": "Not fully paid",
   "paymentDetail.bill.empty": "This bill has no items.",
   "paymentDetail.bill.status.canceled": "Canceled",

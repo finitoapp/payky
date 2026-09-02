@@ -620,6 +620,30 @@ export async function simulateBillModifiedDuringPayment(
 }
 
 /**
+ * Creates and pays a *second*, independent payment for `billId` via
+ * `window.__e2eCreateAndPaySecondPayment` (see
+ * src/components/e2e-test-bridge.tsx) — the real `createPayment`/
+ * `markPaymentPaidCash` actions, not a bypass. Split payments are an
+ * intended capability, but the bill page's own "Charge" button disappears
+ * once the bill's derived status is no longer `open` (e.g. once a first
+ * payment already fully covers it), so this is the only way to reach "two
+ * paid payments on one bill" without two real devices. Produces a genuine
+ * overpaid bill once both are claimed.
+ */
+export async function createAndPaySecondPayment(
+  page: Page,
+  billId: string
+): Promise<void> {
+  await page.waitForFunction(
+    () => typeof window.__e2eCreateAndPaySecondPayment === "function"
+  )
+  await page.evaluate(
+    (id) => window.__e2eCreateAndPaySecondPayment?.(id),
+    billId
+  )
+}
+
+/**
  * Cancels `billId` directly via `window.__e2eCancelBill` (see
  * src/components/e2e-test-bridge.tsx) — the real `cancelBill` action,
  * called directly because the bill page's own UI hides the cart's discard

@@ -42,6 +42,7 @@ import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.t
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   cancelPayment,
+  confirmPaymentPaidDespiteCancellation,
   createPayment,
   createPreparedPayment,
   deletePayment,
@@ -895,6 +896,142 @@ describe("payment actions", () => {
     await expect
       .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
       .toMatchObject([{ id, canceledAt: null }])
+  }, 15_000)
+
+  test("resolves a canceled+claimed collision back to paid via confirmPaymentPaidDespiteCancellation", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    // `cancelPayment` itself refuses to cancel an already-claimed payment
+    // (see "rejects canceling a payment that already has an active claim"
+    // above), so simulate the CRDT merge race the same way "a payment
+    // canceled after being claimed" does further down this file.
+    evolu.update("payment", {
+      id,
+      canceledAt: TimestampMsSchema.decode(deps.date.now().getTime()),
+    })
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
+      .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+
+    await expect(
+      run(confirmPaymentPaidDespiteCancellation(id))
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
+      .toSatisfy((rows) => rows[0]?.confirmedPaidAt !== null)
+  }, 15_000)
+
+  test("rejects confirmPaymentPaidDespiteCancellation on a payment that isn't canceled", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      run(confirmPaymentPaidDespiteCancellation(id))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "PaymentNotCanceled", id },
+    })
+  }, 15_000)
+
+  test("rejects confirmPaymentPaidDespiteCancellation on a canceled payment with no active claim", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { ibanAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        iban: {
+          accountId: ibanAccountId,
+          variableSymbol: undefined,
+          specificSymbol: null,
+        },
+      })
+    )
+
+    await expect(run(cancelPayment(id))).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      run(confirmPaymentPaidDespiteCancellation(id))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "PaymentNotClaimed", id },
+    })
   }, 15_000)
 
   test("updates a payment's amount and its cashRegister/spark/iban details", async () => {

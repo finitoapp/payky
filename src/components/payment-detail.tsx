@@ -1,7 +1,8 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
-import { ReceiptIcon } from "lucide-react"
-import { type ReactNode, useMemo } from "react"
+import { AlertTriangleIcon, ReceiptIcon } from "lucide-react"
+import { type ReactNode, useMemo, useState } from "react"
+import { toast } from "sonner"
 import {
   Timeline,
   TimelineContent,
@@ -25,6 +26,7 @@ import { Separator } from "@/components/ui/separator.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import { confirmPaymentPaidDespiteCancellation } from "@/core/modules/payment/payment-actions.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
@@ -32,6 +34,7 @@ import type { BillStatus } from "@/core/modules/shared/schema.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -86,6 +89,7 @@ const paymentDetailQuery = (paymentId: PaymentId) =>
         "currency",
         "tipAmount",
         "canceledAt",
+        "confirmedPaidAt",
         "expiresAt",
         "createdAt",
         "updatedAt",
@@ -198,6 +202,8 @@ function PaymentDetailContent({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
+  const appRun = useAppRun()
+  const [resolvePending, setResolvePending] = useState(false)
   const query = useMemo(() => paymentDetailQuery(paymentId), [paymentId])
   const reconciliationsQuery = useMemo(
     () => paymentReconciliationsQuery(paymentId),
@@ -219,11 +225,38 @@ function PaymentDetailContent({
 
   const paymentStatus = derivePaymentStatus({
     canceledAt: payment.canceledAt,
+    confirmedPaidAt: payment.confirmedPaidAt,
     expiresAt: payment.expiresAt,
     hasActiveClaim: reconciliations.length > 0,
     now: new Date(),
   })
   const isPending = paymentStatus === "pending"
+  // The collision docs/bill-payment-states.md calls out: a multi-device
+  // merge can leave a payment canceled with an active claim (real money) at
+  // the same time — `derivePaymentStatus` still shows it as Canceled until
+  // staff explicitly resolves it via `confirmPaymentPaidDespiteCancellation`.
+  const hasCancellationCollision =
+    payment.canceledAt !== null &&
+    payment.confirmedPaidAt === null &&
+    reconciliations.length > 0
+
+  const handleConfirmPaidDespiteCancellation = async () => {
+    setResolvePending(true)
+    try {
+      await using run = appRun()
+      const result = await run(confirmPaymentPaidDespiteCancellation(paymentId))
+
+      if (!result.ok) {
+        toast.error(t("paymentDetail.collision.markPaid.error"))
+      }
+    } finally {
+      setResolvePending(false)
+    }
+  }
+
+  const handleRefund = () => {
+    toast.info(t("paymentDetail.collision.refund.comingSoon"))
+  }
   const paymentMethodValue =
     reconciliations.length === 0
       ? t("paymentDetail.paymentMethod.none")
@@ -283,6 +316,38 @@ function PaymentDetailContent({
               {t(`paymentDetail.status.${paymentStatus}`)}
             </Badge>
           </div>
+
+          {hasCancellationCollision ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-warning" />
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-warning">
+                    {t("paymentDetail.collision.title")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("paymentDetail.collision.description")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  className="h-12 flex-1"
+                  disabled={resolvePending}
+                  onClick={() => void handleConfirmPaidDespiteCancellation()}
+                >
+                  {t("paymentDetail.collision.markPaid")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 flex-1"
+                  onClick={handleRefund}
+                >
+                  {t("paymentDetail.collision.refund")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           <Separator />
 

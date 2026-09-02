@@ -13,6 +13,7 @@ describe("derivePaymentStatus", () => {
     expect(
       derivePaymentStatus({
         canceledAt: null,
+        confirmedPaidAt: null,
         expiresAt: null,
         hasActiveClaim: false,
         now,
@@ -24,6 +25,7 @@ describe("derivePaymentStatus", () => {
     expect(
       derivePaymentStatus({
         canceledAt: null,
+        confirmedPaidAt: null,
         expiresAt: TimestampMs(now.getTime() - 1),
         hasActiveClaim: false,
         now,
@@ -35,6 +37,7 @@ describe("derivePaymentStatus", () => {
     expect(
       derivePaymentStatus({
         canceledAt: null,
+        confirmedPaidAt: null,
         expiresAt: TimestampMs(now.getTime() + 1),
         hasActiveClaim: false,
         now,
@@ -46,6 +49,7 @@ describe("derivePaymentStatus", () => {
     expect(
       derivePaymentStatus({
         canceledAt: null,
+        confirmedPaidAt: null,
         expiresAt: TimestampMs(now.getTime() - 1),
         hasActiveClaim: true,
         now,
@@ -57,6 +61,7 @@ describe("derivePaymentStatus", () => {
     expect(
       derivePaymentStatus({
         canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedPaidAt: null,
         expiresAt: null,
         hasActiveClaim: true,
         now,
@@ -68,11 +73,36 @@ describe("derivePaymentStatus", () => {
     expect(
       derivePaymentStatus({
         canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedPaidAt: null,
         expiresAt: TimestampMs(now.getTime() - 1),
         hasActiveClaim: false,
         now,
       })
     ).toBe("canceled")
+  })
+
+  test("confirmedPaidAt outranks canceled — staff resolving the cancel+claim collision wins the display", () => {
+    expect(
+      derivePaymentStatus({
+        canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedPaidAt: TimestampMs(now.getTime() - 1),
+        expiresAt: null,
+        hasActiveClaim: true,
+        now,
+      })
+    ).toBe("paid")
+  })
+
+  test("confirmedPaidAt outranks expired too", () => {
+    expect(
+      derivePaymentStatus({
+        canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedPaidAt: TimestampMs(now.getTime() - 1),
+        expiresAt: TimestampMs(now.getTime() - 1),
+        hasActiveClaim: true,
+        now,
+      })
+    ).toBe("paid")
   })
 })
 

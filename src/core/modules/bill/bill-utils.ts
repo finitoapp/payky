@@ -79,6 +79,13 @@ export const derivePendingPaymentIds = (
       (payment) =>
         derivePaymentStatus({
           canceledAt: payment.canceledAt,
+          // `confirmedPaidAt` can only ever be set once `canceledAt` already
+          // is (see `confirmPaymentPaidDespiteCancellation`), and both of
+          // those branches resolve to a non-"pending" status ahead of this
+          // one — so passing `null` here can never change whether a bill
+          // counts as locked. Not selected by this query on purpose, to
+          // avoid widening it for a value that can't affect the result.
+          confirmedPaidAt: null,
           expiresAt: payment.expiresAt,
           hasActiveClaim: claimedPaymentIds.has(payment.id),
           now,

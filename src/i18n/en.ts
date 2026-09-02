@@ -244,6 +244,7 @@ export const en = {
   "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
   "payment.create.error": "Could not create the payment.",
+  "paymentHistory.collision": "Needs review",
   "paymentHistory.empty.description":
     "Created payment requests will appear here.",
   "paymentHistory.empty.title": "No payments yet",
@@ -317,6 +318,14 @@ export const en = {
   "paymentDetail.bill.title": "Bill",
   "paymentDetail.bill.total": "Total",
   "paymentDetail.canceledAt": "Canceled at",
+  "paymentDetail.collision.description":
+    "This payment was canceled, but a claim for it exists — the money still counts toward the bill. Resolve the collision below.",
+  "paymentDetail.collision.markPaid": "Mark as paid",
+  "paymentDetail.collision.markPaid.error":
+    "Couldn't mark the payment as paid. Try again.",
+  "paymentDetail.collision.refund": "Refund",
+  "paymentDetail.collision.refund.comingSoon": "Refunds aren't supported yet.",
+  "paymentDetail.collision.title": "Canceled, but money arrived",
   "paymentDetail.createdAt": "Created at",
   "paymentDetail.deviceId": "Device",
   "paymentDetail.emptyValue": "—",

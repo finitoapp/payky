@@ -531,3 +531,25 @@ export async function markIbanPaid(
     .getByText(translate(language, "paymentWait.paid"))
     .waitFor()
 }
+
+/**
+ * Simulates the CRDT merge race documented in docs/bill-payment-states.md
+ * via `window.__e2eSimulateCancelAfterClaim` (see
+ * src/components/e2e-test-bridge.tsx): cancels the current (already-claimed)
+ * payment directly, bypassing `cancelPayment`'s guard, so it ends up
+ * canceled+claimed — the collision the payment-detail/payment-history UI
+ * surfaces via `confirmPaymentPaidDespiteCancellation`. Assumes the page is
+ * still on the `/payment/$paymentId` URL for that payment (e.g. right after
+ * `markCashPaid`).
+ */
+export async function simulateCancelAfterClaim(page: Page): Promise<void> {
+  const paymentId = getPaymentIdFromUrl(page)
+
+  await page.waitForFunction(
+    () => typeof window.__e2eSimulateCancelAfterClaim === "function"
+  )
+  await page.evaluate(
+    (id) => window.__e2eSimulateCancelAfterClaim?.(id),
+    paymentId
+  )
+}

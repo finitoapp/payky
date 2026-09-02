@@ -26,6 +26,7 @@ export const payment = {
   currency: FiatCurrencySchema,
   tipAmount: NonNegativeIntegerSchema,
   canceledAt: TimestampMsSchema.nullable(),
+  confirmedPaidAt: TimestampMsSchema.nullable(),
   expiresAt: TimestampMsSchema.nullable(),
 } as const
 

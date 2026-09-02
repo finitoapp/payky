@@ -160,6 +160,7 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
         "payment.currency",
         "payment.tipAmount",
         "payment.canceledAt",
+        "payment.confirmedPaidAt",
         "payment.expiresAt",
         "paymentBtc.amountSats",
         "paymentBtcLightning.lnInvoice",
@@ -292,6 +293,7 @@ function PaymentWaitingRequest({
       ? null
       : derivePaymentStatus({
           canceledAt: payment.canceledAt,
+          confirmedPaidAt: payment.confirmedPaidAt,
           expiresAt: payment.expiresAt,
           hasActiveClaim: claims.length > 0,
           now: new Date(),

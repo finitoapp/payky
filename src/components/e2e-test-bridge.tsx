@@ -20,6 +20,7 @@ import {
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 
 declare global {
@@ -30,6 +31,7 @@ declare global {
     }) => Promise<void>
     __e2eMarkSparkPaid?: (paymentId: string) => Promise<void>
     __e2eMarkIbanPaid?: (paymentId: string) => Promise<void>
+    __e2eSimulateCancelAfterClaim?: (paymentId: string) => Promise<void>
   }
 }
 
@@ -48,7 +50,17 @@ declare global {
  * touching the Spark wallet SDK or a real bank, since there is no
  * counterparty to actually pay/transfer in a test run.
  *
- * All three are dead code in any real production build: kept alive only in
+ * Also exposes `window.__e2eSimulateCancelAfterClaim`, which writes
+ * `payment.canceledAt` directly (bypassing `cancelPayment`'s guard) on a
+ * payment that already has an active claim — simulating the CRDT merge race
+ * documented in docs/bill-payment-states.md (one device cancels while
+ * another records a claim), the same way `payment-actions.test.ts`'s "a
+ * payment canceled after being claimed" test does via a direct
+ * `evolu.update` call. Used to exercise the canceled+claimed collision UI
+ * (the payment-detail/payment-history warning and
+ * `confirmPaymentPaidDespiteCancellation`) without a real second device.
+ *
+ * All four are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -179,10 +191,28 @@ export function E2eTestBridge() {
       await run.ok(reconcileAccountTransaction(accountTransactionId))
     }
 
+    window.__e2eSimulateCancelAfterClaim = async (paymentIdValue) => {
+      const parsedPaymentId = PaymentId.parse(paymentIdValue)
+      await using run = appRun()
+      const { evoluOwnerId } = run.deps
+
+      await runMutationWithCompletion((options) =>
+        run.deps.evolu.update(
+          "payment",
+          {
+            id: parsedPaymentId,
+            canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+          },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
+    }
+
     return () => {
       delete window.__e2eSeedOnboarding
       delete window.__e2eMarkSparkPaid
       delete window.__e2eMarkIbanPaid
+      delete window.__e2eSimulateCancelAfterClaim
     }
   }, [appRun])
 

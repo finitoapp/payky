@@ -1,5 +1,6 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import {
+  AlertTriangleIcon,
   CheckIcon,
   ClockIcon,
   ReceiptIcon,
@@ -43,6 +44,7 @@ const latestPaymentsQuery = createQuery((db) =>
       "payment.currency",
       "payment.tipAmount",
       "payment.canceledAt",
+      "payment.confirmedPaidAt",
       "payment.expiresAt",
       "payment.createdAt",
     ])
@@ -60,6 +62,7 @@ const latestPaymentsQuery = createQuery((db) =>
       "payment.currency",
       "payment.tipAmount",
       "payment.canceledAt",
+      "payment.confirmedPaidAt",
       "payment.expiresAt",
       "payment.createdAt",
     ])
@@ -82,8 +85,11 @@ const paymentStatusData = {
 
 const PaymentStatusIcon: FC<{
   readonly paymentStatus: PaymentStatus
+  readonly hasCancellationCollision: boolean
 }> = (props) => {
-  const [className, icon] = paymentStatusData[props.paymentStatus]
+  const [className, icon] = props.hasCancellationCollision
+    ? ["bg-warning/10 text-warning", <AlertTriangleIcon key="collision" />]
+    : paymentStatusData[props.paymentStatus]
 
   return (
     <div
@@ -99,15 +105,33 @@ const PaymentStatusIcon: FC<{
 
 const resolvePaymentStatus = (payment: {
   readonly canceledAt: TimestampMs | null
+  readonly confirmedPaidAt: TimestampMs | null
   readonly expiresAt: TimestampMs | null
   readonly claimCount: number
 }): PaymentStatus =>
   derivePaymentStatus({
     canceledAt: payment.canceledAt,
+    confirmedPaidAt: payment.confirmedPaidAt,
     expiresAt: payment.expiresAt,
     hasActiveClaim: payment.claimCount > 0,
     now: new Date(),
   })
+
+/**
+ * The canceled+claimed collision described in docs/bill-payment-states.md:
+ * `derivePaymentStatus` still shows the payment as Canceled until staff
+ * resolves it via `confirmPaymentPaidDespiteCancellation` on the detail
+ * page, but the list should surface it too so it isn't only discoverable by
+ * opening every canceled payment.
+ */
+const resolveHasCancellationCollision = (payment: {
+  readonly canceledAt: TimestampMs | null
+  readonly confirmedPaidAt: TimestampMs | null
+  readonly claimCount: number
+}): boolean =>
+  payment.canceledAt !== null &&
+  payment.confirmedPaidAt === null &&
+  payment.claimCount > 0
 
 export const PaymentHistory = () => {
   const { t } = useTranslation()
@@ -131,10 +155,17 @@ export const PaymentHistory = () => {
         </div>
       }
       items={items.map((item) => {
+        const claimCount = toClaimCount(item.claimCount)
         const paymentStatus = resolvePaymentStatus({
           canceledAt: item.canceledAt,
+          confirmedPaidAt: item.confirmedPaidAt,
           expiresAt: item.expiresAt,
-          claimCount: toClaimCount(item.claimCount),
+          claimCount,
+        })
+        const hasCancellationCollision = resolveHasCancellationCollision({
+          canceledAt: item.canceledAt,
+          confirmedPaidAt: item.confirmedPaidAt,
+          claimCount,
         })
 
         return {
@@ -163,12 +194,20 @@ export const PaymentHistory = () => {
                     {formatDateTime(new Date(item.createdAt), locale)}
                   </span>
                 </div>
+                {hasCancellationCollision ? (
+                  <span className="text-xs font-medium text-warning">
+                    {t("paymentHistory.collision")}
+                  </span>
+                ) : null}
               </div>
             </div>
           ),
           icon: (
             <div className={"p-2"}>
-              <PaymentStatusIcon paymentStatus={paymentStatus} />
+              <PaymentStatusIcon
+                paymentStatus={paymentStatus}
+                hasCancellationCollision={hasCancellationCollision}
+              />
             </div>
           ),
           action: (

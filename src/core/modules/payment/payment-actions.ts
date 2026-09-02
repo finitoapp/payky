@@ -93,6 +93,20 @@ export type PaymentAlreadyPaidError = ReturnType<
   typeof createPaymentAlreadyPaidError
 >
 
+const createPaymentNotCanceledError = defineError("PaymentNotCanceled")<{
+  readonly id: PaymentId
+}>()
+export type PaymentNotCanceledError = ReturnType<
+  typeof createPaymentNotCanceledError
+>
+
+const createPaymentNotClaimedError = defineError("PaymentNotClaimed")<{
+  readonly id: PaymentId
+}>()
+export type PaymentNotClaimedError = ReturnType<
+  typeof createPaymentNotClaimedError
+>
+
 const createAccountSparkNotFoundError = defineError("AccountSparkNotFound")<{
   readonly id: AccountId
 }>()
@@ -174,6 +188,12 @@ export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
 
 export const paymentAlreadyPaid = (id: PaymentId): PaymentAlreadyPaidError =>
   createPaymentAlreadyPaidError({ id })
+
+export const paymentNotCanceled = (id: PaymentId): PaymentNotCanceledError =>
+  createPaymentNotCanceledError({ id })
+
+export const paymentNotClaimed = (id: PaymentId): PaymentNotClaimedError =>
+  createPaymentNotClaimedError({ id })
 
 export const accountSparkNotFound = (
   id: AccountId
@@ -999,6 +1019,65 @@ export const cancelPayment =
         {
           id: paymentId,
           canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(paymentId)
+  }
+
+export type ConfirmPaymentPaidDespiteCancellationError =
+  | PaymentNotFoundError
+  | PaymentNotCanceledError
+  | PaymentNotClaimedError
+
+/**
+ * Resolves the canceled+claimed collision described in
+ * docs/bill-payment-states.md: a multi-device merge can leave a payment with
+ * both `canceledAt` set and an active `reconciliationClaim` — money that
+ * genuinely arrived — which `derivePaymentStatus` displays as Canceled by
+ * default. This lets staff explicitly acknowledge that and flip the
+ * *display* back to Paid via `confirmedPaidAt`, set once and never cleared,
+ * mirroring `canceledAt`'s own style.
+ *
+ * Requires both `canceledAt` and an active claim to already be set — this
+ * resolves an existing collision, it does not create a way to mark an
+ * arbitrary payment paid without a claim behind it. Coverage math keeps
+ * reading claims only; this field never feeds into it.
+ */
+export const confirmPaymentPaidDespiteCancellation =
+  (
+    paymentId: PaymentId
+  ): Task<
+    PaymentId,
+    ConfirmPaymentPaidDespiteCancellationError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+    if (paymentResult.value.canceledAt === null) {
+      return err(paymentNotCanceled(paymentId))
+    }
+
+    const activeClaims = await run.deps.evolu.loadQuery(
+      activeReconciliationClaimsByPaymentIdQuery(paymentId)
+    )
+    if (activeClaims.length === 0) {
+      return err(paymentNotClaimed(paymentId))
+    }
+
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "payment",
+        {
+          id: paymentId,
+          confirmedPaidAt: TimestampMsSchema.decode(
+            run.deps.date.now().getTime()
+          ),
         },
         { ...options, ownerId: evoluOwnerId }
       )

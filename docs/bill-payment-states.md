@@ -3,9 +3,9 @@
 This document specifies the intended lifecycle of a `bill` and of a
 `payment`, and how the two combine. It is the source of truth for *why* the
 states are shaped this way, not just what the code currently does — read it
-before changing `bill.status`, the bill's editing lock, `payment.canceledAt`/
-`expiresAt`, or any of the guards in `bill-actions.ts` / `payment-actions.ts`
-/ `reconciliation-claim-actions.ts`.
+before changing `bill.status`, the bill's editing lock,
+`payment.canceledAt`/`confirmedPaidAt`/`expiresAt`, or any of the guards in
+`bill-actions.ts` / `payment-actions.ts` / `reconciliation-claim-actions.ts`.
 
 ## Two independent verticals
 
@@ -32,16 +32,28 @@ each vertical is decided on its own.
 
 - `payment.canceledAt: timestamp | null` — set once, never cleared. Marks the
   payment as deliberately called off.
+- `payment.confirmedPaidAt: timestamp | null` — set once, never cleared, by
+  `confirmPaymentPaidDespiteCancellation`. Staff's explicit resolution of the
+  canceled+claimed collision described in ["Derived
+  status"](#derived-status) below: it acknowledges that a claim landed for a
+  payment that also carries `canceledAt`, and flips the payment's *display*
+  back to Paid. The action only ever sets it once both `canceledAt` and an
+  active claim already exist (see ["Guard"](#guard)) — it is a resolution of
+  an existing collision, not a way to mark an arbitrary payment paid without
+  a claim behind it, and it never feeds into [Bill payment
+  coverage](#bill-payment-coverage), which keeps reading claims only.
 - `payment.expiresAt: timestamp | null` — set at creation time from the
   payment method's own expiry (e.g. a Lightning invoice's `expirySeconds`).
   `null` means the payment never expires on its own (cash, IBAN transfer —
   there is no natural "too late" for those; staff waits as long as it takes,
   or explicitly cancels — see ["Editing lock"](#editing-lock)).
 
-No other payment status field exists. "Paid" is never written to the
-`payment` row — it is read off the `reconciliationClaim` table instead (see
-below), because a claim is a first-class fact (which account transaction
-paid it, when, automatically or manually) that a boolean could not carry.
+Beyond these, no other payment status field exists. "Paid" is still normally
+read off the `reconciliationClaim` table (see below) rather than stored
+directly on `payment`, because a claim is a first-class fact (which account
+transaction paid it, when, automatically or manually) that a boolean could
+not carry. `confirmedPaidAt` doesn't change that — it only overrides which
+*display* status wins when `canceledAt` and a claim disagree.
 
 ### Derived status
 
@@ -50,10 +62,16 @@ order (first match wins):
 
 | Priority | Status | Condition |
 |---|---|---|
-| 1 | **Canceled** | `canceledAt !== null` |
-| 2 | **Paid** | an active (non-deleted) `reconciliationClaim` exists for this payment |
-| 3 | **Expired** | `expiresAt !== null` and `now > expiresAt` |
-| 4 | **Pending** | none of the above |
+| 1 | **Paid** | `confirmedPaidAt !== null` — staff's explicit resolution, see below |
+| 2 | **Canceled** | `canceledAt !== null` |
+| 3 | **Paid** | an active (non-deleted) `reconciliationClaim` exists for this payment |
+| 4 | **Expired** | `expiresAt !== null` and `now > expiresAt` |
+| 5 | **Pending** | none of the above |
+
+Priorities 1 and 3 both display as **Paid** — there is only one `paid` value
+in `PaymentStatus`. What differs is how the display got there: priority 3 is
+the ordinary path (a claim exists, nothing else overrides it); priority 1 is
+staff overriding a `Canceled` display that priority 2 would otherwise win.
 
 **Canceled outranks Paid on purpose.** `cancelPayment` itself refuses to
 cancel a payment that already has an active claim (see next section), so in
@@ -69,6 +87,17 @@ hidden — it still counts toward the bill's coverage sum below, which is
 exactly what surfaces this edge case to staff (as an `overpaid` bill) instead
 of silently discarding it.
 
+**`confirmedPaidAt` outranks Canceled — staff's explicit resolution.** The
+precedence rule above is deliberately conservative by default (an explicit
+cancellation wins), but it can leave a payment permanently mislabeled
+Canceled even though real money is sitting in the bill's coverage sum.
+`confirmPaymentPaidDespiteCancellation` is the staff-facing escape hatch for
+that: once both `canceledAt` and an active claim exist, staff can
+acknowledge the collision and flip the display back to Paid. This changes
+nothing about `canceledAt` itself (still never cleared) or about coverage
+(still computed from claims only, unaffected by this field) — it only
+changes which status a human looking at this one payment sees.
+
 **Paid outranks Expired.** A claim landing after the expiry window just means
 the payment arrived late — the money is real regardless of the clock, so it
 still counts as Paid.
@@ -82,6 +111,13 @@ still counts as Paid.
 described above, this guard prevents the conflict on a single device but
 cannot prevent it across a concurrent multi-device merge — that residual case
 is handled by the precedence rule, not by trying to make the guard airtight.
+
+`confirmPaymentPaidDespiteCancellation` is the mirror guard for that residual
+case: it requires **both** `canceledAt !== null` and an active claim to
+already exist before it will set `confirmedPaidAt`, rejecting with
+`PaymentNotCanceledError` or `PaymentNotClaimedError` otherwise. It exists
+specifically to resolve the collision `cancelPayment`'s guard cannot prevent
+— it is not a general-purpose "mark any payment paid" action.
 
 ## Bill vertical
 
@@ -237,13 +273,34 @@ guard doesn't forbid it). If that payment is confirmed afterward,
 is never forced out of `canceled` — see "the editing lock rejects..." and
 "canceling a bill with a pending payment..." in `payment-actions.test.ts`.
 
+**`confirmPaymentPaidDespiteCancellation` only resolves the *payment's own*
+display collision, not this bill-level one.** The two are related but
+distinct: a payment can show Canceled-despite-claimed independently of
+whatever its bill's `status` happens to be, and resolving it via
+`confirmedPaidAt` (see the payment vertical) never writes to `bill.status`.
+So a bill can still show `canceled` while one of its payments now displays
+as Paid instead of Canceled — the bill row above is unaffected either way.
+Flipping a `canceled` bill itself back to something else is out of scope
+here; see ["Non-goals"](#non-goals--explicitly-out-of-scope) below.
+
 ## Non-goals / explicitly out of scope
 
 - No automatic reopening of a `closed` or `canceled` bill back to `open`,
   ever, under any combination of payment outcomes.
 - No automatic refund or reconciliation action when a bill is found
   `overpaid` — it is surfaced to staff visually; resolving it is a manual,
-  out-of-band process.
+  out-of-band process. This includes the "Refund" action surfaced next to a
+  canceled+claimed payment's collision in the UI — it is a placeholder that
+  tells staff refunds aren't supported yet, not a working refund flow.
+- No automatic resolution of the canceled+claimed payment display collision
+  either — `confirmPaymentPaidDespiteCancellation` is a manual, per-payment
+  staff action (see the payment vertical's ["Derived
+  status"](#derived-status)), not something the app resolves on its own when
+  a sync merge produces the collision.
+- No way to flip a `canceled` **bill** back to `closed` (or any other
+  status) — only the payment-level display collision above has a resolution
+  action today; see ["Reading the combination"](#reading-the-combination)
+  for why the two are distinct.
 - No enforcement that stops a bill from accumulating more than one
   concurrent payment attempt — multiple payments per bill (split payments)
   are an intended capability, not a bug to guard against, and creating a new

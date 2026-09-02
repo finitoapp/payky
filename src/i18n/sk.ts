@@ -246,6 +246,7 @@ export const sk = {
   "onboarding.restore.title": "Obnovenie existujúceho účtu",
   "onboarding.title": "Nastavenie Payky",
   "payment.create.error": "Platbu sa nepodarilo vytvoriť.",
+  "paymentHistory.collision": "Vyžaduje kontrolu",
   "paymentHistory.empty.description":
     "Vytvorené platobné žiadosti sa zobrazia tu.",
   "paymentHistory.empty.title": "Zatiaľ žiadne platby",
@@ -317,6 +318,15 @@ export const sk = {
   "paymentDetail.bill.title": "Účet",
   "paymentDetail.bill.total": "Spolu",
   "paymentDetail.canceledAt": "Zrušené",
+  "paymentDetail.collision.description":
+    "Táto platba bola zrušená, ale existuje k nej nárok na úhradu — peniaze sa stále počítajú do účtu. Vyriešte kolíziu nižšie.",
+  "paymentDetail.collision.markPaid": "Označiť ako zaplatené",
+  "paymentDetail.collision.markPaid.error":
+    "Platbu sa nepodarilo označiť ako zaplatenú. Skúste to znova.",
+  "paymentDetail.collision.refund": "Vrátiť platbu",
+  "paymentDetail.collision.refund.comingSoon":
+    "Vracanie platieb zatiaľ nie je podporované.",
+  "paymentDetail.collision.title": "Zrušené, ale peniaze dorazili",
   "paymentDetail.createdAt": "Vytvorené",
   "paymentDetail.deviceId": "Zariadenie",
   "paymentDetail.emptyValue": "—",

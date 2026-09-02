@@ -952,6 +952,13 @@ describe("payment actions", () => {
     await expect
       .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
       .toSatisfy((rows) => rows[0]?.confirmedPaidAt !== null)
+
+    // Calling it again on an already-resolved payment is an idempotent
+    // no-op, not a rejection — `canceledAt` and the claim are both still
+    // there, exactly what the guard requires.
+    await expect(
+      run(confirmPaymentPaidDespiteCancellation(id))
+    ).resolves.toEqual({ ok: true, value: id })
   }, 15_000)
 
   test("rejects confirmPaymentPaidDespiteCancellation on a payment that isn't canceled", async () => {
@@ -1033,6 +1040,84 @@ describe("payment actions", () => {
       ok: false,
       error: { type: "PaymentNotClaimed", id },
     })
+  }, 15_000)
+
+  test("resolving a payment's canceled+claimed collision never changes its bill's coverage or status", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+
+    // Simulate the CRDT merge race (same as "a payment canceled after being
+    // claimed" below): the payment ends up canceled+claimed, independent of
+    // whatever its bill is doing.
+    evolu.update("payment", {
+      id: paymentId,
+      canceledAt: TimestampMsSchema.decode(deps.date.now().getTime()),
+    })
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(paymentId)))
+      .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+
+    // The bill is still closed/paid throughout — a payment's own display
+    // collision never touches bill coverage either way.
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+    const coverageBeforeResolve = await run.ok(loadBillCoverage(billId))
+
+    await expect(
+      run(confirmPaymentPaidDespiteCancellation(paymentId))
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toEqual(
+      coverageBeforeResolve
+    )
   }, 15_000)
 
   test("updates a payment's amount and its cashRegister/spark/iban details", async () => {
@@ -1280,6 +1365,71 @@ describe("payment actions", () => {
     ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
 
     await run.orThrow(cancelPayment(paymentId))
+
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Late addition"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+  }, 15_000)
+
+  test("a pending payment with an expiry unlocks its bill once that expiry passes, with no cancellation needed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    let now = new Date("2026-06-05T12:00:00.000Z")
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      date: { now: () => now },
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: TimestampMsSchema.decode(now.getTime() + 900_000),
+      })
+    )
+
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Late addition"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+
+    // The clock advances past the payment's own expiry — no cancellation
+    // and no other explicit action at all. docs/bill-payment-states.md:
+    // Lightning has a natural resolution path via `expiresAt` (unlike cash
+    // and IBAN, which need the manual "Cancel payment" escape hatch) — an
+    // abandoned invoice recovers its bill purely from time passing.
+    now = new Date(now.getTime() + 900_001)
 
     await expect(
       run(
@@ -2049,8 +2199,10 @@ describe("payment actions", () => {
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
 
     // Confirming the second payment must not be rejected just because the
-    // bill is already `closed` — `loadBillClosingAfterClaim` re-closes it
-    // idempotently instead of erroring.
+    // bill already reads `closed` — status is derived live from coverage,
+    // not gated by any stored "already closed" field, so a second covering
+    // claim is just as welcome as the first (and refreshes the `closedAt`
+    // cache idempotently via `loadBillClosedAtIfCovered`).
     await expect(
       run(
         markPaymentPaidCash({
@@ -2217,11 +2369,14 @@ describe("payment actions", () => {
       })
     )
 
-    // Neither payment alone covers the bill — each call's own pre-write
-    // coverage check can only see itself if the two run concurrently
-    // without waiting on each other. `writeClaimAndCloseBillIfCovered`'s
-    // post-commit recheck exists precisely so the bill still ends up
-    // closed correctly either way. See docs/bill-payment-states.md.
+    // Neither payment alone covers the bill, so if the two claims are
+    // written concurrently, each write's own pre-write coverage check may
+    // only see itself and skip refreshing the `closedAt` cache. That no
+    // longer matters for correctness: `loadBillStatus` derives status live
+    // from whatever claims exist by the time it's called, not from that
+    // cache, so the bill still reads `closed` regardless of which write
+    // "saw" the other first. See docs/bill-payment-states.md's "`closedAt`
+    // is a cache, not a status".
     const [firstResult, secondResult] = await Promise.all([
       run(
         markPaymentPaidCash({

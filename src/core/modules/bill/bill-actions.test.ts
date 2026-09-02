@@ -277,6 +277,36 @@ describe("bill actions", () => {
     await expect(run.orThrow(loadBillStatus(openId))).resolves.toBe("open")
   }, 15_000)
 
+  test("a bill can linger in listOpenBills after it's already closed, if its closedAt cache never got written", async () => {
+    // This is the one documented limitation of the `closedAt` cache (see
+    // docs/bill-payment-states.md's "`closedAt` is a cache, not a status"):
+    // `openBillsQuery`/`listOpenBills` filter on the cache for cheapness,
+    // not on live coverage, so a bill whose cache write never landed (the
+    // multi-device race described there) can still show up as "open" even
+    // though `loadBillStatus` already correctly reports it `closed`. Nothing
+    // money-correctness-related is affected — only this one list view.
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await closeBillWithCashPayment(deps, billId, 1_000)
+    evolu.update("bill", { id: billId, closedAt: null })
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, closedAt: null }])
+
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+    await expect
+      .poll(() => run.ok(listOpenBills()))
+      .toMatchObject([{ bill: { id: billId } }])
+  }, 15_000)
+
   test("adds catalog, manual amount, and tip lines to a bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -633,6 +663,16 @@ describe("bill actions", () => {
       .poll(() => evolu.loadQuery(billByIdQuery(closedBillId)))
       .toMatchObject([{ id: closedBillId, closedAt: null }])
 
+    // The central guarantee this whole cache exists to make safe: the
+    // *derived* status never depended on `closedAt` in the first place, so
+    // it already reads `closed` here even though the cache is stale/absent
+    // — nothing money-correctness-related needed `closeBill` to run yet.
+    // See docs/bill-payment-states.md's "`closedAt` is a cache, not a
+    // status".
+    await expect(run.orThrow(loadBillStatus(closedBillId))).resolves.toBe(
+      "closed"
+    )
+
     await run.orThrow(closeBill(closedBillId))
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(closedBillId)))
@@ -769,6 +809,113 @@ describe("bill actions", () => {
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(billId)))
       .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+  }, 15_000)
+
+  test("resolves a canceled+overpaid collision too — the guard only rejects underpaid, not overpaid", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_500),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+
+    await run.orThrow(cancelBill(billId))
+    await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_500,
+      coverage: "overpaid",
+    })
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("canceled")
+
+    await expect(
+      run.orThrow(confirmBillClosedDespiteCancellation(billId))
+    ).resolves.toBe(billId)
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+  }, 15_000)
+
+  test("calling confirmBillClosedDespiteCancellation again on an already-resolved bill is an idempotent no-op", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+    await run.orThrow(cancelBill(billId))
+    await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+    await run.orThrow(confirmBillClosedDespiteCancellation(billId))
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+
+    await expect(
+      run.orThrow(confirmBillClosedDespiteCancellation(billId))
+    ).resolves.toBe(billId)
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
   }, 15_000)
 
   test("rejects confirmBillClosedDespiteCancellation on a bill that isn't canceled", async () => {

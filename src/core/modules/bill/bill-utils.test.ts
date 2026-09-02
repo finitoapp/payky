@@ -8,8 +8,116 @@ import {
   calculateClaimedSum,
   claimedPaymentIdSet,
   deriveBillCoverage,
+  deriveBillStatus,
   hasPendingPayment,
 } from "./bill-utils.ts"
+
+const now = new Date("2026-06-05T12:00:00.000Z")
+
+describe("deriveBillStatus", () => {
+  test("open when nothing else applies", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        hasActiveClaim: false,
+        coverage: "underpaid",
+      })
+    ).toBe("open")
+  })
+
+  test("open when coverage is trivially 'paid' but no claim has ever landed — the fresh-empty-cart guard", () => {
+    // A brand-new bill with no line items yet has billTotal === claimedSum
+    // === 0, which `deriveBillCoverage` calls "paid" — but with zero
+    // payments, that must not read as `closed`. See the doc comment above
+    // `deriveBillStatus` and docs/bill-payment-states.md.
+    expect(
+      deriveBillStatus({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        hasActiveClaim: false,
+        coverage: "paid",
+      })
+    ).toBe("open")
+  })
+
+  test("closed when a claim exists and coverage is paid", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        hasActiveClaim: true,
+        coverage: "paid",
+      })
+    ).toBe("closed")
+  })
+
+  test("closed when a claim exists and coverage is overpaid", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        hasActiveClaim: true,
+        coverage: "overpaid",
+      })
+    ).toBe("closed")
+  })
+
+  test("open when a claim exists but coverage is still underpaid — a split/partial payment", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        hasActiveClaim: true,
+        coverage: "underpaid",
+      })
+    ).toBe("open")
+  })
+
+  test("canceled outranks closed-by-coverage — an explicit discard wins the display", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedClosedAt: null,
+        hasActiveClaim: true,
+        coverage: "paid",
+      })
+    ).toBe("canceled")
+  })
+
+  test("canceled when nothing has been claimed either", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedClosedAt: null,
+        hasActiveClaim: false,
+        coverage: "underpaid",
+      })
+    ).toBe("canceled")
+  })
+
+  test("confirmedClosedAt outranks canceled — staff resolving the cancel+funded collision wins the display", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedClosedAt: TimestampMs(now.getTime() - 1),
+        hasActiveClaim: true,
+        coverage: "paid",
+      })
+    ).toBe("closed")
+  })
+
+  test("confirmedClosedAt outranks canceled even for an overpaid bill", () => {
+    expect(
+      deriveBillStatus({
+        canceledAt: TimestampMs(now.getTime() - 1_000),
+        confirmedClosedAt: TimestampMs(now.getTime() - 1),
+        hasActiveClaim: true,
+        coverage: "overpaid",
+      })
+    ).toBe("closed")
+  })
+})
 
 describe("deriveBillCoverage", () => {
   test("paid when the claimed sum matches the total exactly", () => {

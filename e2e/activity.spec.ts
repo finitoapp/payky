@@ -71,7 +71,7 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
   })
 
   await test.step("simulate a CRDT merge race that cancels the already-claimed payment", () =>
-    simulateCancelAfterClaim(page))
+    simulateCancelAfterClaim(page, "en"))
 
   await test.step("the activity list flags the collision", async () => {
     await gotoPage(page, "/activity", "en", "activity.title")

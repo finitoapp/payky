@@ -138,7 +138,6 @@ export const BankQrFormatSchema = z.enum([
   "payBySquare1_2_0",
 ])
 export type BankQrFormat = z.output<typeof BankQrFormatSchema>
-export const BillStatusSchema = z.enum(["open", "closed", "canceled"])
 export const ItemLineTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
 export const BillLineTagSchema = z.enum(["add", "remove"])
 export const SyncSourceSchema = z.enum(["manual", "auto"])
@@ -193,7 +192,6 @@ export type AccountKind = z.output<typeof AccountKindSchema>
 export type AccountTransactionKind = z.output<
   typeof AccountTransactionKindSchema
 >
-export type BillStatus = z.output<typeof BillStatusSchema>
 export type ItemLineType = z.output<typeof ItemLineTypeSchema>
 export type BillLineTag = z.output<typeof BillLineTagSchema>
 export type SyncSource = z.output<typeof SyncSourceSchema>

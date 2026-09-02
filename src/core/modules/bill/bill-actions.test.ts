@@ -2,9 +2,14 @@ import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import { createAccount } from "@/core/modules/account/account-actions.ts"
 import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { createCatalogItem } from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import {
+  createPayment,
+  markPaymentPaidCash,
+} from "@/core/modules/payment/payment-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255,
@@ -22,11 +27,13 @@ import {
   assignBillToTable,
   cancelBill,
   closeBill,
+  confirmBillClosedDespiteCancellation,
   createBill,
   createBillAtEnd,
   listOpenBills,
   loadBill,
   loadBillCoverage,
+  loadBillStatus,
   removeTableFromBill,
   splitBill,
 } from "./bill-actions.ts"
@@ -70,8 +77,53 @@ const createOpenBill = async (
   return id
 }
 
+/**
+ * Adds a manual-amount line for `amount` and confirms a cash payment that
+ * covers it, so `billId` becomes derived-`closed` through the ordinary
+ * automatic path (a claim covering its total) rather than through
+ * `closeBill`, which is now reserved for the manual "closedAt` cache is
+ * missing/stale" repair case — see `bill-actions.ts`'s doc comment.
+ */
+const closeBillWithCashPayment = async (
+  deps: EvoluDep & EvoluOwnerIdDep & DateDep,
+  billId: BillId,
+  amount: number
+): Promise<void> => {
+  await using run = testCreateRun(deps)
+  const accountId = await run.ok(
+    createAccount({
+      deviceId: null,
+      name: NonEmptyString255("Cash register"),
+      cashRegister: { currency: "CZK" },
+    })
+  )
+  await run.orThrow(
+    addManualAmountToBill({
+      billId,
+      deviceId: null,
+      name: NonEmptyString255("Dinner"),
+      currency: "CZK",
+      totalAmount: NonNegativeInteger(amount),
+    })
+  )
+  const paymentId = await run.orThrow(
+    createPayment({
+      deviceId: null,
+      billId,
+      tableId: null,
+      amount: NonNegativeInteger(amount),
+      currency: "CZK",
+      tipAmount: NonNegativeInteger(0),
+      canceledAt: null,
+      expiresAt: null,
+      cashRegister: { accountId },
+    })
+  )
+  await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+}
+
 describe("bill actions", () => {
-  test("creates, loads, assigns, unassigns, and closes a bill through real Evolu", async () => {
+  test("creates, loads, assigns, and unassigns a bill through real Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
@@ -100,7 +152,6 @@ describe("bill actions", () => {
           displayNumber: 42,
           label: "Dinner",
           tableId: null,
-          status: "open",
           currency: "CZK",
         },
       ])
@@ -110,10 +161,10 @@ describe("bill actions", () => {
       value: {
         id,
         displayNumber: 42,
-        status: "open",
         currency: "CZK",
       },
     })
+    await expect(run.orThrow(loadBillStatus(id))).resolves.toBe("open")
 
     await run.ok(assignBillToTable({ id, tableId: "table-1" as TableId }))
     await expect
@@ -132,17 +183,6 @@ describe("bill actions", () => {
         {
           id,
           tableId: null,
-        },
-      ])
-
-    await run.orThrow(closeBill(id))
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(id)))
-      .toMatchObject([
-        {
-          id,
-          status: "closed",
-          closedAt: expect.any(Number),
         },
       ])
   }, 15_000)
@@ -215,7 +255,7 @@ describe("bill actions", () => {
         totalAmount: NonNegativeInteger(1_000),
       })
     )
-    await run.orThrow(closeBill(closedId))
+    await closeBillWithCashPayment(deps, closedId, 2_000)
     await run.orThrow(cancelBill(canceledId))
 
     await expect
@@ -224,7 +264,6 @@ describe("bill actions", () => {
         {
           bill: {
             id: openId,
-            status: "open",
           },
           items: [
             {
@@ -235,6 +274,7 @@ describe("bill actions", () => {
           ],
         },
       ])
+    await expect(run.orThrow(loadBillStatus(openId))).resolves.toBe("open")
   }, 15_000)
 
   test("adds catalog, manual amount, and tip lines to a bill", async () => {
@@ -522,7 +562,7 @@ describe("bill actions", () => {
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
     await run.orThrow(cancelBill(canceledBillId))
     const closedBillId = await createOpenBill(deps, { displayNumber: 2 })
-    await run.orThrow(closeBill(closedBillId))
+    await closeBillWithCashPayment(deps, closedBillId, 1_000)
 
     for (const billId of [canceledBillId, closedBillId]) {
       await expect(
@@ -549,7 +589,7 @@ describe("bill actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const closedBillId = await createOpenBill(deps, { displayNumber: 1 })
-    await run.orThrow(closeBill(closedBillId))
+    await closeBillWithCashPayment(deps, closedBillId, 1_000)
 
     await expect(run(cancelBill(closedBillId))).resolves.toMatchObject({
       ok: false,
@@ -580,8 +620,24 @@ describe("bill actions", () => {
       error: { type: "BillNotOpen", status: "canceled" },
     })
 
+    // `closeBill` is a repair tool for the `closedAt` cache, not the normal
+    // closing path — get the bill covered via a real claim first (which
+    // already sets `closedAt` automatically), then null it out to simulate
+    // the write never landing (the multi-device race `bill.ts`'s doc
+    // comment describes), and verify `closeBill` can both repair it and be
+    // called again afterward as an idempotent no-op.
     const closedBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await closeBillWithCashPayment(deps, closedBillId, 1_000)
+    evolu.update("bill", { id: closedBillId, closedAt: null })
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(closedBillId)))
+      .toMatchObject([{ id: closedBillId, closedAt: null }])
+
     await run.orThrow(closeBill(closedBillId))
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(closedBillId)))
+      .toSatisfy((rows) => rows[0]?.closedAt !== null)
+
     await expect(run.orThrow(closeBill(closedBillId))).resolves.toBe(
       closedBillId
     )
@@ -620,18 +676,149 @@ describe("bill actions", () => {
         claimedSum: 0,
       },
     })
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(underpaidBillId)))
-      .toMatchObject([{ id: underpaidBillId, status: "open" }])
+    await expect(run.orThrow(loadBillStatus(underpaidBillId))).resolves.toBe(
+      "open"
+    )
 
-    // A bill with nothing charged for it (billTotal 0) is trivially "paid"
-    // and can still be closed manually.
+    // An empty bill (billTotal 0, no payments) is trivially "paid" by
+    // `deriveBillCoverage`'s own definition, but `closeBill` still requires
+    // an actual claim — otherwise a brand-new, still-empty cart would read
+    // as closeable the instant it's created. See `deriveBillStatus`'s doc
+    // comment in bill-utils.ts.
     const emptyBillId = await createOpenBill(deps, { displayNumber: 2 })
-    await expect(run.orThrow(closeBill(emptyBillId))).resolves.toBe(emptyBillId)
-    await expect(run.ok(loadBillCoverage(emptyBillId))).resolves.toMatchObject({
-      billTotal: 0,
-      claimedSum: 0,
+    await expect(run(closeBill(emptyBillId))).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillUnderpaid", id: emptyBillId },
+    })
+
+    // A bill covered by an actual claim can be closed manually, including
+    // repairing a `closedAt` cache that never got written.
+    const coveredBillId = await createOpenBill(deps, { displayNumber: 3 })
+    await closeBillWithCashPayment(deps, coveredBillId, 1_000)
+    evolu.update("bill", { id: coveredBillId, closedAt: null })
+
+    await expect(run.orThrow(closeBill(coveredBillId))).resolves.toBe(
+      coveredBillId
+    )
+    await expect(
+      run.ok(loadBillCoverage(coveredBillId))
+    ).resolves.toMatchObject({
+      billTotal: 1_000,
+      claimedSum: 1_000,
       coverage: "paid",
+    })
+  }, 15_000)
+
+  test("resolves a canceled+funded collision back to closed via confirmBillClosedDespiteCancellation", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+
+    // Staff discards the cart while the payment is still pending (allowed —
+    // `cancelBill` doesn't consult the editing lock) ...
+    await run.orThrow(cancelBill(billId))
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("canceled")
+
+    // ... and the payment is confirmed anyway. The bill's derived status
+    // stays `canceled` even though it's now fully covered — the collision.
+    await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("canceled")
+
+    await expect(
+      run.orThrow(confirmBillClosedDespiteCancellation(billId))
+    ).resolves.toBe(billId)
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+
+    // `canceledAt` itself is never touched — only the derived status flips.
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+  }, 15_000)
+
+  test("rejects confirmBillClosedDespiteCancellation on a bill that isn't canceled", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await closeBillWithCashPayment(deps, billId, 1_000)
+
+    await expect(
+      run(confirmBillClosedDespiteCancellation(billId))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillNotCanceled", id: billId },
+    })
+  }, 15_000)
+
+  test("rejects confirmBillClosedDespiteCancellation on a canceled bill with no active claim", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    await run.orThrow(cancelBill(billId))
+
+    await expect(
+      run(confirmBillClosedDespiteCancellation(billId))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillUnderpaid", id: billId },
     })
   }, 15_000)
 })

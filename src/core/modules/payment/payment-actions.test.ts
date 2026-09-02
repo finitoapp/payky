@@ -18,6 +18,7 @@ import {
   cancelBill,
   createBill,
   loadBillCoverage,
+  loadBillStatus,
   splitBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
@@ -1212,9 +1213,7 @@ describe("payment actions", () => {
       })
     )
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "open" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("open")
 
     // A second/split payment attempt while the first is still pending and
     // unresolved is deliberately allowed — only editing the bill's lines is
@@ -1233,9 +1232,7 @@ describe("payment actions", () => {
     )
     expect(secondPaymentId).not.toBe(firstPaymentId)
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "open" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("open")
   }, 15_000)
 
   test("a pending payment locks its bill against edits; canceling the payment unlocks it again", async () => {
@@ -1344,9 +1341,7 @@ describe("payment actions", () => {
       run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
     ).resolves.toMatchObject({ ok: true })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
   }, 15_000)
 
   test("confirming a payment that only partially covers the bill leaves it open and unlocked", async () => {
@@ -1396,9 +1391,7 @@ describe("payment actions", () => {
       run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
     ).resolves.toMatchObject({ ok: true })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "open" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("open")
 
     // The confirmed payment is no longer pending (it's paid), so the bill
     // is open *and* editable again — only a live/pending payment locks it.
@@ -1500,9 +1493,7 @@ describe("payment actions", () => {
     await run.orThrow(
       markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId })
     )
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
 
     await expect(
       run(
@@ -1573,9 +1564,7 @@ describe("payment actions", () => {
     // matching a real cross-device race (one device cancels while another
     // is mid-payment on a different terminal). See docs/bill-payment-states.md.
     await run.orThrow(cancelBill(billId))
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "canceled" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("canceled")
 
     await expect(
       run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
@@ -1584,9 +1573,7 @@ describe("payment actions", () => {
     // The claim still landed and still counts toward coverage, but the
     // cancellation is never overridden — the bill stays `canceled`, not
     // force-closed.
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "canceled" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("canceled")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 1_000,
       claimedSum: 1_000,
@@ -1657,9 +1644,7 @@ describe("payment actions", () => {
     // The payment now displays as canceled, but the money it already
     // claimed still counts — the bill it closed stays `closed`/`paid`, not
     // reverted.
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 1_000,
       claimedSum: 1_000,
@@ -1932,9 +1917,7 @@ describe("payment actions", () => {
       run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
     ).resolves.toMatchObject({ ok: true })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 1_000,
       claimedSum: 1_500,
@@ -1989,9 +1972,7 @@ describe("payment actions", () => {
       run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
     ).resolves.toMatchObject({ ok: true })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 1_000,
       claimedSum: 1_000,
@@ -2065,9 +2046,7 @@ describe("payment actions", () => {
         })
       )
     ).resolves.toMatchObject({ ok: true })
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
 
     // Confirming the second payment must not be rejected just because the
     // bill is already `closed` — `loadBillClosingAfterClaim` re-closes it
@@ -2081,9 +2060,7 @@ describe("payment actions", () => {
       )
     ).resolves.toMatchObject({ ok: true })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 1_000,
       claimedSum: 1_500,
@@ -2178,11 +2155,10 @@ describe("payment actions", () => {
 
     // Still closed, but `closedAt` must stay the *first* close time, not
     // get bumped to the second claim's time.
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([
-        { id: billId, status: "closed", closedAt: firstClosedAt },
-      ])
+      .toMatchObject([{ id: billId, closedAt: firstClosedAt }])
   }, 15_000)
 
   test("concurrently confirming two payments that together cover a bill still closes it correctly", async () => {
@@ -2263,9 +2239,7 @@ describe("payment actions", () => {
     expect(firstResult.ok).toBe(true)
     expect(secondResult.ok).toBe(true)
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 1_000,
       claimedSum: 1_000,
@@ -2370,9 +2344,7 @@ describe("payment actions", () => {
       run(markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId }))
     ).resolves.toMatchObject({ ok: true })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       billTotal: 0,
       claimedSum: 0,

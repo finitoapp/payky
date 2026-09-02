@@ -10,26 +10,33 @@ export const billByIdQuery = (idValue: BillId) =>
       .selectAll()
       .where("id", "=", idValue)
       .where("displayNumber", "is not", null)
-      .where("status", "is not", null)
       .where("currency", "is not", null)
       .$narrowType<{
         displayNumber: KyselyNotNull
-        status: KyselyNotNull
         currency: KyselyNotNull
       }>()
   )
 
+/**
+ * A cheap, SQL-only approximation of "still open" for list views (the POS
+ * floor overview, the assign-table dialog) — filters on the best-effort
+ * `closedAt`/`canceledAt` cache fields instead of computing coverage for
+ * every bill the account has ever had. See `bill.ts`'s doc comment and
+ * docs/bill-payment-states.md: this can rarely under- or over-include a
+ * bill for a moment after a multi-device race, which is why nothing that
+ * needs to be *correct* (guards, the bill detail page) uses this — those
+ * derive status live via `deriveBillStatus`/`loadBillStatus`.
+ */
 export const openBillsQuery = createQuery((db) =>
   db
     .selectFrom("bill")
     .selectAll()
-    .where("status", "=", "open")
+    .where("canceledAt", "is", null)
+    .where("closedAt", "is", null)
     .where("displayNumber", "is not", null)
-    .where("status", "is not", null)
     .where("currency", "is not", null)
     .$narrowType<{
       displayNumber: KyselyNotNull
-      status: KyselyNotNull
       currency: KyselyNotNull
     }>()
 )

@@ -542,7 +542,10 @@ export async function markIbanPaid(
  * still on the `/payment/$paymentId` URL for that payment (e.g. right after
  * `markCashPaid`).
  */
-export async function simulateCancelAfterClaim(page: Page): Promise<void> {
+export async function simulateCancelAfterClaim(
+  page: Page,
+  language: Language
+): Promise<void> {
   const paymentId = getPaymentIdFromUrl(page)
 
   await page.waitForFunction(
@@ -552,4 +555,36 @@ export async function simulateCancelAfterClaim(page: Page): Promise<void> {
     (id) => window.__e2eSimulateCancelAfterClaim?.(id),
     paymentId
   )
+
+  // Wait for this same page's own reactive query to reflect the
+  // cancellation (it renders `paymentWait.canceled` once `canceledAt` is
+  // non-null — see `_terminal.payment_.$paymentId.tsx`) before letting the
+  // caller navigate away — a full-page navigation right after the bridge
+  // call can otherwise race ahead of the in-memory update. Even then, a
+  // hard navigation immediately afterward can still occasionally load a
+  // snapshot from just before local storage caught up (unlike every other
+  // mutation in this file, `simulateCancelAfterClaim` goes through
+  // `evolu.update` directly rather than a real domain action, so this is
+  // the only place that races a fresh page load this closely) — the extra
+  // wait below gives that a moment to settle.
+  await page.getByText(translate(language, "paymentWait.canceled")).waitFor()
+  await page.waitForTimeout(1000)
+}
+
+/**
+ * Cancels `billId` directly via `window.__e2eCancelBill` (see
+ * src/components/e2e-test-bridge.tsx) — the real `cancelBill` action,
+ * called directly because the bill page's own UI hides the cart's discard
+ * button while a payment is pending, making this transition (allowed by the
+ * domain guard, not by the UI) hard to trigger by clicking through. Unlike
+ * `simulateCancelAfterClaim`, this goes through the real action (the same
+ * one `runMutationWithCompletion`-backed path a UI click would use), so it
+ * doesn't need the extra settle time that bypassing the guard does.
+ */
+export async function cancelBillDirectly(
+  page: Page,
+  billId: string
+): Promise<void> {
+  await page.waitForFunction(() => typeof window.__e2eCancelBill === "function")
+  await page.evaluate((id) => window.__e2eCancelBill?.(id), billId)
 }

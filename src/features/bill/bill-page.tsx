@@ -1,6 +1,7 @@
 import { sqliteTrue } from "@evolu/common"
 import { Link, useNavigate } from "@tanstack/react-router"
 import {
+  AlertTriangleIcon,
   ChevronDown,
   Minus,
   Package,
@@ -50,6 +51,7 @@ import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.
 import {
   assignBillToTable,
   cancelBill,
+  confirmBillClosedDespiteCancellation,
   removeTableFromBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
@@ -72,6 +74,7 @@ import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { usePendingPayments } from "@/features/bill/use-pending-payments.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
@@ -165,12 +168,17 @@ function BillExistingBody({
   const bill = billRows[0]
   const summaries = useBillLineSummaries(billId)
   const pendingPaymentIds = usePendingPayments(billId)
+  const billStatus = useBillStatus(billId)
 
   let content: ReactNode
   if (bill === undefined) {
     content = <BillMessage message={t("bill.notFound")} />
-  } else if (bill.status !== "open") {
-    content = <BillMessage message={t("bill.closed")} />
+  } else if (billStatus?.status !== "open") {
+    content = billStatus?.hasCancellationCollision ? (
+      <BillCancellationCollisionMessage billId={billId} />
+    ) : (
+      <BillMessage message={t("bill.closed")} />
+    )
   } else if (pendingPaymentIds.length > 0) {
     content = <BillLockedMessage paymentIds={pendingPaymentIds} />
   } else {
@@ -222,6 +230,66 @@ function BillPageLayout({
 function BillMessage({ message }: { readonly message: string }) {
   return (
     <p className="mt-16 px-6 text-center text-muted-foreground">{message}</p>
+  )
+}
+
+/**
+ * The bill-level mirror of `payment-detail.tsx`'s canceled+claimed payment
+ * collision: this bill was discarded, but its payments already cover its
+ * total. Shown instead of the generic "closed" message whenever
+ * `useBillStatus` reports the collision — see docs/bill-payment-states.md.
+ */
+function BillCancellationCollisionMessage({
+  billId,
+}: {
+  readonly billId: BillId
+}) {
+  const { t } = useTranslation()
+  const appRun = useAppRun()
+  const [resolvePending, setResolvePending] = useState(false)
+
+  const handleConfirmClosedDespiteCancellation = async () => {
+    setResolvePending(true)
+    try {
+      await using run = appRun()
+      const result = await run(confirmBillClosedDespiteCancellation(billId))
+
+      if (!result.ok) {
+        toast.error(t("bill.collision.markClosed.error"))
+      }
+    } finally {
+      setResolvePending(false)
+    }
+  }
+
+  const handleRefund = () => {
+    toast.info(t("bill.collision.refund.comingSoon"))
+  }
+
+  return (
+    <div className="mt-16 flex flex-col items-center gap-4 px-6 text-center">
+      <div className="flex flex-col items-center gap-2">
+        <AlertTriangleIcon className="size-8 text-warning" />
+        <p className="font-semibold text-warning">
+          {t("bill.collision.title")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("bill.collision.description")}
+        </p>
+      </div>
+      <div className="flex w-full max-w-xs flex-col gap-2">
+        <Button
+          className="h-12"
+          disabled={resolvePending}
+          onClick={() => void handleConfirmClosedDespiteCancellation()}
+        >
+          {t("bill.collision.markClosed")}
+        </Button>
+        <Button variant="outline" className="h-12" onClick={handleRefund}>
+          {t("bill.collision.refund")}
+        </Button>
+      </div>
+    </div>
   )
 }
 

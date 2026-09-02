@@ -11,8 +11,8 @@ import { createAccountTransaction } from "@/core/modules/account-transaction/acc
 import {
   addManualAmountToBill,
   createBill,
+  loadBillStatus,
 } from "@/core/modules/bill/bill-actions.ts"
-import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -541,8 +541,6 @@ describe("reconciliation claim actions", () => {
       value: paymentId,
     })
 
-    await expect
-      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, status: "closed" }])
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
   })
 })

@@ -3,8 +3,8 @@ import { createIdFromString, ok, type Task } from "@evolu/common"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
-  loadBillClosingAfterClaim,
-  upsertBillClosedRow,
+  loadBillClosedAtIfCovered,
+  upsertBillClosedAt,
 } from "@/core/modules/bill/bill-actions.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -29,14 +29,14 @@ import {
 import type { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
 
 /**
- * Given a payment about to gain a claim, checks whether closing its bill
- * should be folded into the same mutation batch as the claim write — see
- * `loadBillClosingAfterClaim`. Reads the payment directly through
- * `payment-queries.ts` (not `payment-actions.ts`) to avoid a circular
- * dependency, since `payment-actions.ts` composes this module's
+ * Given a payment about to gain a claim, checks whether its bill's
+ * `closedAt` cache should be refreshed in the same mutation batch as the
+ * claim write — see `loadBillClosedAtIfCovered`. Reads the payment directly
+ * through `payment-queries.ts` (not `payment-actions.ts`) to avoid a
+ * circular dependency, since `payment-actions.ts` composes this module's
  * `claimManualReconciliation`.
  */
-const loadBillClosingForPayment =
+const loadBillClosedAtForPayment =
   (
     paymentId: PaymentId
   ): Task<
@@ -50,22 +50,23 @@ const loadBillClosingForPayment =
     )
     if (paymentRow === undefined) return ok(null)
 
-    return ok(await run.ok(loadBillClosingAfterClaim(paymentRow)))
+    return ok(await run.ok(loadBillClosedAtIfCovered(paymentRow)))
   }
 
 /**
  * Writes a reconciliation claim and, if it now fully covers the claimed
- * payment's bill, closes that bill in the same mutation batch — shared by
- * `claimManualReconciliation` and `reconcileAccountTransaction` so the
- * "closing is atomic with the claim" guarantee lives in one place instead
- * of being duplicated (and possibly forgotten) at each call site.
+ * payment's bill, refreshes that bill's `closedAt` cache in the same
+ * mutation batch — shared by `claimManualReconciliation` and
+ * `reconcileAccountTransaction` so this isn't duplicated (and possibly
+ * forgotten) at each call site.
  *
- * Re-checks once more immediately after the batch commits, folding in a
- * closing write then if warranted. This narrows — but, under CRDT/
- * multi-device concurrency, cannot fully eliminate — the window where two
- * payments on the same split bill are reconciled at nearly the same time
- * and each computes "still underpaid" before seeing the other's not-yet-
- * committed claim. See docs/bill-payment-states.md.
+ * Unlike the old status-closing write this replaced, there is no
+ * "recheck right after commit" step: `closedAt` is only ever a best-effort
+ * cache (see `bill.ts`'s doc comment) — nothing that decides
+ * money-correctness reads it, so under CRDT/multi-device concurrency it can
+ * lag a split bill's true coverage for a while without being a correctness
+ * problem, only a cosmetic one in `openBillsQuery`'s list. See
+ * docs/bill-payment-states.md.
  */
 const writeClaimAndCloseBillIfCovered =
   (claim: {
@@ -78,7 +79,9 @@ const writeClaimAndCloseBillIfCovered =
   }): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const billClosing = await run.ok(loadBillClosingForPayment(claim.paymentId))
+    const billClosing = await run.ok(
+      loadBillClosedAtForPayment(claim.paymentId)
+    )
 
     await runMutationWithCompletion((options) => {
       run.deps.evolu.upsert(
@@ -91,7 +94,7 @@ const writeClaimAndCloseBillIfCovered =
       )
 
       if (billClosing !== null) {
-        upsertBillClosedRow(
+        upsertBillClosedAt(
           run.deps.evolu,
           billClosing.billId,
           billClosing.closedAt,
@@ -99,20 +102,6 @@ const writeClaimAndCloseBillIfCovered =
         )
       }
     })
-
-    if (billClosing === null) {
-      const recheck = await run.ok(loadBillClosingForPayment(claim.paymentId))
-      if (recheck !== null) {
-        await runMutationWithCompletion((options) =>
-          upsertBillClosedRow(
-            run.deps.evolu,
-            recheck.billId,
-            recheck.closedAt,
-            { ...options, ownerId: evoluOwnerId }
-          )
-        )
-      }
-    }
 
     return ok(undefined)
   }

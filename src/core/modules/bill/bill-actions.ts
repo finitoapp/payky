@@ -33,7 +33,6 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
-  type BillStatus,
   type ItemLineType,
   NonNegativeInteger,
   PositiveInteger,
@@ -57,9 +56,11 @@ import {
 import type { BillId } from "./bill-types.ts"
 import {
   type BillCoverage,
+  type BillStatus,
   calculateClaimedSum,
   claimedPaymentIdSet,
   deriveBillCoverage,
+  deriveBillStatus,
   hasPendingPayment,
 } from "./bill-utils.ts"
 
@@ -90,6 +91,11 @@ const createBillUnderpaidError = defineError("BillUnderpaid")<{
   readonly claimedSum: NonNegativeInteger
 }>()
 export type BillUnderpaidError = ReturnType<typeof createBillUnderpaidError>
+
+const createBillNotCanceledError = defineError("BillNotCanceled")<{
+  readonly id: BillId
+}>()
+export type BillNotCanceledError = ReturnType<typeof createBillNotCanceledError>
 
 const createCatalogItemNotFoundError = defineError("CatalogItemNotFound")<{
   readonly id: CatalogItemId
@@ -136,6 +142,9 @@ export const billUnderpaid = (
   claimedSum: NonNegativeInteger
 ): BillUnderpaidError => createBillUnderpaidError({ id, billTotal, claimedSum })
 
+export const billNotCanceled = (id: BillId): BillNotCanceledError =>
+  createBillNotCanceledError({ id })
+
 export const catalogItemNotFound = (
   id: CatalogItemId
 ): CatalogItemNotFoundError => createCatalogItemNotFoundError({ id })
@@ -162,7 +171,7 @@ export interface BillCoverageSummary {
 
 /**
  * Shared "bill's line-item total + its claimed payments" load behind
- * `loadBillCoverage` and `loadBillClosingAfterClaim`.
+ * `loadBillCoverage` and `loadBillClosedAtIfCovered`.
  */
 const loadBillTotalAndClaimedSum =
   (
@@ -213,10 +222,67 @@ export const loadBillCoverage =
     })
   }
 
+interface BillStatusSnapshot {
+  readonly bill: BillRow
+  readonly status: BillStatus
+  readonly coverage: BillCoverage
+  readonly billTotal: NonNegativeInteger
+  readonly claimedSum: NonNegativeInteger
+  /** Whether at least one payment on this bill has an active claim. */
+  readonly hasActiveClaim: boolean
+}
+
 /**
- * Loads a bill and rejects it unless its status is one of `allowedStatuses`.
- * Used to guard domain invariants around the `open` -> `closed`/`canceled`
- * lifecycle before a mutation is applied. See `docs/bill-payment-states.md`.
+ * Loads a bill together with its live-derived status and coverage — the
+ * one place that composes `deriveBillStatus` from the bill row's
+ * `canceledAt`/`confirmedClosedAt` and its payments' coverage. Every guard
+ * below reads through this instead of any stored field, so a bill's
+ * editability/cancelability is always computed fresh. See
+ * docs/bill-payment-states.md.
+ */
+const loadBillStatusSnapshot =
+  (billId: BillId): Task<BillStatusSnapshot, BillNotFoundError, EvoluDep> =>
+  async (run) => {
+    const billResult = await run(loadBill(billId))
+    if (!billResult.ok) return billResult
+
+    const { billTotal, claimedPayments } = await run.ok(
+      loadBillTotalAndClaimedSum(billId)
+    )
+    const claimedSum = calculateClaimedSum(claimedPayments)
+    const coverage = deriveBillCoverage(billTotal, claimedSum)
+    const hasActiveClaim = claimedPayments.length > 0
+    const status = deriveBillStatus({
+      canceledAt: billResult.value.canceledAt,
+      confirmedClosedAt: billResult.value.confirmedClosedAt,
+      hasActiveClaim,
+      coverage,
+    })
+
+    return ok({
+      bill: billResult.value,
+      status,
+      coverage,
+      billTotal,
+      claimedSum,
+      hasActiveClaim,
+    })
+  }
+
+/** Reactive-free (`Task`) equivalent of `useBillStatus` — a bill's current derived status. */
+export const loadBillStatus =
+  (billId: BillId): Task<BillStatus, BillNotFoundError, EvoluDep> =>
+  async (run) => {
+    const snapshotResult = await run(loadBillStatusSnapshot(billId))
+    if (!snapshotResult.ok) return snapshotResult
+    return ok(snapshotResult.value.status)
+  }
+
+/**
+ * Loads a bill and rejects it unless its *derived* status is one of
+ * `allowedStatuses`. Used to guard domain invariants around the `open` ->
+ * `closed`/`canceled` lifecycle before a mutation is applied. See
+ * `docs/bill-payment-states.md`.
  */
 const requireBillInStatus =
   (
@@ -224,12 +290,12 @@ const requireBillInStatus =
     allowedStatuses: ReadonlySet<BillStatus>
   ): Task<BillRow, BillNotFoundError | BillNotOpenError, EvoluDep> =>
   async (run) => {
-    const billResult = await run(loadBill(billId))
-    if (!billResult.ok) return billResult
+    const snapshotResult = await run(loadBillStatusSnapshot(billId))
+    if (!snapshotResult.ok) return snapshotResult
 
-    const { value: billRow } = billResult
-    if (!allowedStatuses.has(billRow.status)) {
-      return err(billNotOpen(billId, billRow.status))
+    const { bill: billRow, status } = snapshotResult.value
+    if (!allowedStatuses.has(status)) {
+      return err(billNotOpen(billId, status))
     }
 
     return ok(billRow)
@@ -294,19 +360,6 @@ const requireEditableBill =
 export const requireBillAcceptingPayment = (billId: BillId) =>
   requireBillInStatus(billId, openBillStatuses)
 
-const closableBillStatuses: ReadonlySet<BillStatus> = new Set([
-  "open",
-  "closed",
-])
-
-/**
- * Allows re-closing an already-`closed` bill as an idempotent no-op (two
- * devices racing to close the same bill, or two claims landing close
- * together), but rejects a `canceled` one.
- */
-export const requireClosableBill = (billId: BillId) =>
-  requireBillInStatus(billId, closableBillStatuses)
-
 const cancelableBillStatuses: ReadonlySet<BillStatus> = new Set([
   "open",
   "canceled",
@@ -321,16 +374,21 @@ const requireCancelableBill = (billId: BillId) =>
   requireBillInStatus(billId, cancelableBillStatuses)
 
 /**
- * Given a payment that just gained a reconciliation claim, checks whether
- * the bill it belongs to is now fully covered (`paid` or `overpaid`, i.e.
- * no longer `underpaid`) and, if so, returns the closing write ready to
- * fold into the caller's own mutation batch alongside the claim insert —
- * see `upsertBillClosedRow`. Returns `null` when the payment has no bill,
- * the bill isn't (yet) fully covered, or the bill is `canceled` (a
- * cancellation is never overridden by a late/stray claim — see
- * docs/bill-payment-states.md).
+ * Given a payment about to gain (or that just gained) a claim, checks
+ * whether its bill's coverage is now fully covered (`paid`/`overpaid`,
+ * i.e. no longer `underpaid`) and, if so, returns the `closedAt` write
+ * ready to fold into the caller's own mutation batch alongside the claim
+ * insert — see `upsertBillClosedAt`. Returns `null` when the payment has no
+ * bill or the bill isn't (yet) fully covered.
+ *
+ * Unlike a `status` transition, this no longer excludes `canceled` bills:
+ * `closedAt` is just a best-effort cache of "when did this bill's coverage
+ * stop being underpaid", independent of `canceledAt` (see `bill.ts`'s doc
+ * comment). A cancellation is never overridden by this — the *derived*
+ * status still reads `canceled` until staff explicitly resolves it via
+ * `confirmBillClosedDespiteCancellation`. See docs/bill-payment-states.md.
  */
-export const loadBillClosingAfterClaim =
+export const loadBillClosedAtIfCovered =
   (payment: {
     readonly id: PaymentId
     readonly billId: BillId | null
@@ -344,8 +402,8 @@ export const loadBillClosingAfterClaim =
   async (run) => {
     if (payment.billId === null) return ok(null)
 
-    const closableResult = await run(requireClosableBill(payment.billId))
-    if (!closableResult.ok) return ok(null)
+    const billResult = await run(loadBill(payment.billId))
+    if (!billResult.ok) return ok(null)
 
     const { billTotal, claimedPayments } = await run.ok(
       loadBillTotalAndClaimedSum(payment.billId)
@@ -367,7 +425,7 @@ export const loadBillClosingAfterClaim =
       // re-close (e.g. a second split payment confirmed after the bill
       // already closed) instead of overwriting it with `now()` every time.
       closedAt:
-        closableResult.value.closedAt ??
+        billResult.value.closedAt ??
         TimestampMsSchema.decode(run.deps.date.now().getTime()),
     })
   }
@@ -382,14 +440,10 @@ export const createBill =
   async (run) => {
     const { evoluOwnerId } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
-      run.deps.evolu.insert(
-        "bill",
-        removeUndefinedValues({
-          ...input,
-          status: "open",
-        }),
-        { ...options, ownerId: evoluOwnerId }
-      )
+      run.deps.evolu.insert("bill", removeUndefinedValues({ ...input }), {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
     )
 
     return ok(id)
@@ -397,9 +451,9 @@ export const createBill =
 
 /**
  * Creates a bill with a `displayNumber` derived from the highest existing
- * one (across every status, not just open bills, so numbers are never
- * reused) instead of taking it as input. This is the entry point cart UIs
- * use to lazily create the bill behind a new cart.
+ * one (across every bill ever created, not just currently-open ones, so
+ * numbers are never reused) instead of taking it as input. This is the
+ * entry point cart UIs use to lazily create the bill behind a new cart.
  */
 export const createBillAtEnd =
   (
@@ -739,7 +793,6 @@ export const cancelBill =
         "bill",
         {
           id: billId,
-          status: "canceled",
           canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         },
         { ...options, ownerId: evoluOwnerId }
@@ -750,28 +803,31 @@ export const cancelBill =
   }
 
 /**
- * Marks a bill closed (a fully covered/settled tab, final). Takes the
- * caller's own `MutationOptions` so the write can join an existing mutation
- * batch — `reconciliation-claim-actions.ts` folds this in via
- * `loadBillClosingAfterClaim` so a bill closes in the same batch that
- * writes the reconciliation claim confirming it, instead of opening a
- * second round trip that could fail independently. See
- * docs/bill-payment-states.md.
+ * Writes the `closedAt` best-effort cache (see `bill.ts`'s doc comment).
+ * Takes the caller's own `MutationOptions` so the write can join an
+ * existing mutation batch — `reconciliation-claim-actions.ts` folds this in
+ * via `loadBillClosedAtIfCovered` so it lands in the same batch as the
+ * reconciliation claim confirming it, instead of opening a second round
+ * trip that could fail independently. See docs/bill-payment-states.md.
  */
-export const upsertBillClosedRow = (
+export const upsertBillClosedAt = (
   evolu: EvoluDep["evolu"],
   billId: BillId,
   closedAt: BillRow["closedAt"],
   options: MutationOptions
 ): void => {
-  evolu.update("bill", { id: billId, status: "closed", closedAt }, options)
+  evolu.update("bill", { id: billId, closedAt }, options)
 }
 
 /**
- * Manually closes a bill (e.g. `bin/cli-bills.ts close`). Rejects an
- * `underpaid` bill: `docs/bill-payment-states.md` states a closed bill is
- * always `paid` or `overpaid`, never `underpaid` — this guard is what keeps
- * that true for closes that don't go through `loadBillClosingAfterClaim`.
+ * Manually refreshes a bill's `closedAt` cache (e.g. `bin/cli-bills.ts
+ * close`) — a repair tool for the rare multi-device race where the
+ * automatic write in `loadBillClosedAtIfCovered` never landed (see
+ * `bill.ts`'s doc comment), not a way to force a bill closed. Rejects a
+ * `canceled` bill (use `confirmBillClosedDespiteCancellation` for that
+ * collision) and one with no active claim yet or still `underpaid` —
+ * `docs/bill-payment-states.md` states a `closed` bill is always `paid` or
+ * `overpaid`, never `underpaid`.
  */
 export const closeBill =
   (
@@ -782,22 +838,95 @@ export const closeBill =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const billResult = await run(requireClosableBill(billId))
-    if (!billResult.ok) return billResult
+    const snapshotResult = await run(loadBillStatusSnapshot(billId))
+    if (!snapshotResult.ok) return snapshotResult
 
-    const coverage = await run.ok(loadBillCoverage(billId))
-    if (coverage.coverage === "underpaid") {
-      return err(billUnderpaid(billId, coverage.billTotal, coverage.claimedSum))
+    const {
+      bill: billRow,
+      status,
+      coverage,
+      billTotal,
+      claimedSum,
+      hasActiveClaim,
+    } = snapshotResult.value
+
+    if (status === "canceled") {
+      return err(billNotOpen(billId, status))
+    }
+    if (!hasActiveClaim || coverage === "underpaid") {
+      return err(billUnderpaid(billId, billTotal, claimedSum))
     }
 
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>
-      upsertBillClosedRow(
+      upsertBillClosedAt(
         run.deps.evolu,
         billId,
-        billResult.value.closedAt ??
+        billRow.closedAt ??
           TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(billId)
+  }
+
+export type ConfirmBillClosedDespiteCancellationError =
+  | BillNotFoundError
+  | BillNotCanceledError
+  | BillUnderpaidError
+
+/**
+ * Resolves the canceled+funded collision mirrored from the payment
+ * vertical's `confirmPaymentPaidDespiteCancellation`: a bill can be
+ * `canceled` (an explicit discard) while its payments' claims already cover
+ * its total — money that arrived despite the cancellation. This lets staff
+ * explicitly acknowledge that and flip the bill's *derived* status from
+ * `canceled` to `closed` via `confirmedClosedAt`, without ever touching
+ * `canceledAt` itself. Requires both an existing cancellation and an
+ * already-covered bill — this resolves an existing collision, it does not
+ * create a way to force-close an underpaid canceled bill. See
+ * docs/bill-payment-states.md.
+ */
+export const confirmBillClosedDespiteCancellation =
+  (
+    billId: BillId
+  ): Task<
+    BillId,
+    ConfirmBillClosedDespiteCancellationError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const snapshotResult = await run(loadBillStatusSnapshot(billId))
+    if (!snapshotResult.ok) return snapshotResult
+
+    const {
+      bill: billRow,
+      coverage,
+      billTotal,
+      claimedSum,
+      hasActiveClaim,
+    } = snapshotResult.value
+
+    if (billRow.canceledAt === null) {
+      return err(billNotCanceled(billId))
+    }
+    if (!hasActiveClaim || coverage === "underpaid") {
+      return err(billUnderpaid(billId, billTotal, claimedSum))
+    }
+
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "bill",
+        {
+          id: billId,
+          confirmedClosedAt: TimestampMsSchema.decode(
+            run.deps.date.now().getTime()
+          ),
+        },
         { ...options, ownerId: evoluOwnerId }
       )
     )

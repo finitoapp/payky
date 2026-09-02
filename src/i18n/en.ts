@@ -47,6 +47,14 @@ export const en = {
   "bill.brick.remove.aria": "Remove {name}",
   "bill.category.all": "All",
   "bill.category.uncategorized": "Uncategorized",
+  "bill.collision.description":
+    "This bill was discarded, but its payments already cover the total — resolve the collision below.",
+  "bill.collision.markClosed": "Mark as closed",
+  "bill.collision.markClosed.error":
+    "Couldn't mark the bill as closed. Try again.",
+  "bill.collision.refund": "Refund",
+  "bill.collision.refund.comingSoon": "Refunds aren't supported yet.",
+  "bill.collision.title": "Canceled, but payments cover it",
   "bill.discard": "Discard cart",
   "bill.table.aria": "Assign table",
   "bill.table.assign": "Assign table",

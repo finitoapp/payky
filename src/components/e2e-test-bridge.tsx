@@ -7,6 +7,8 @@ import {
 } from "@/core/modules/account/account-actions.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
+import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
+import { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   paymentIbanDetailsByIdQuery,
   paymentSparkDetailsByIdQuery,
@@ -32,6 +34,7 @@ declare global {
     __e2eMarkSparkPaid?: (paymentId: string) => Promise<void>
     __e2eMarkIbanPaid?: (paymentId: string) => Promise<void>
     __e2eSimulateCancelAfterClaim?: (paymentId: string) => Promise<void>
+    __e2eCancelBill?: (billId: string) => Promise<void>
   }
 }
 
@@ -60,7 +63,16 @@ declare global {
  * (the payment-detail/payment-history warning and
  * `confirmPaymentPaidDespiteCancellation`) without a real second device.
  *
- * All four are dead code in any real production build: kept alive only in
+ * Also exposes `window.__e2eCancelBill`, which calls the real `cancelBill`
+ * action directly — the bill-level mirror of the above, letting a test
+ * discard a bill while its payment is still pending (a transition the
+ * domain guard allows, per docs/bill-payment-states.md, but the bill page's
+ * own UI hides the cart's discard button behind the "locked" message once a
+ * payment is pending, making it hard to trigger by clicking through the
+ * UI). Confirming that same payment afterward produces the canceled+funded
+ * bill collision `confirmBillClosedDespiteCancellation` resolves.
+ *
+ * All five are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -208,11 +220,24 @@ export function E2eTestBridge() {
       )
     }
 
+    window.__e2eCancelBill = async (billIdValue) => {
+      const parsedBillId = BillId.parse(billIdValue)
+      await using run = appRun()
+
+      const result = await run(cancelBill(parsedBillId))
+      if (!result.ok) {
+        throw new Error(
+          `Failed to cancel bill ${parsedBillId}: ${result.error.type}`
+        )
+      }
+    }
+
     return () => {
       delete window.__e2eSeedOnboarding
       delete window.__e2eMarkSparkPaid
       delete window.__e2eMarkIbanPaid
       delete window.__e2eSimulateCancelAfterClaim
+      delete window.__e2eCancelBill
     }
   }, [appRun])
 

@@ -48,6 +48,14 @@ export const cs = {
   "bill.brick.remove.aria": "Odebrat {name}",
   "bill.category.all": "Vše",
   "bill.category.uncategorized": "Bez kategorie",
+  "bill.collision.description":
+    "Tato účtenka byla zrušena, ale její platby už pokrývají celkovou částku — vyřešte kolizi níže.",
+  "bill.collision.markClosed": "Označit jako uzavřené",
+  "bill.collision.markClosed.error":
+    "Účtenku se nepodařilo označit jako uzavřenou. Zkuste to znovu.",
+  "bill.collision.refund": "Vrátit platbu",
+  "bill.collision.refund.comingSoon": "Vracení plateb zatím není podporováno.",
+  "bill.collision.title": "Zrušeno, ale platby ho pokrývají",
   "bill.table.aria": "Přiřadit stůl",
   "bill.table.assign": "Přiřadit stůl",
   "bill.table.dialog.none": "Bez stolu",

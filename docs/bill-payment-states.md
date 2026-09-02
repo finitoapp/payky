@@ -3,9 +3,10 @@
 This document specifies the intended lifecycle of a `bill` and of a
 `payment`, and how the two combine. It is the source of truth for *why* the
 states are shaped this way, not just what the code currently does — read it
-before changing `bill.status`, the bill's editing lock,
-`payment.canceledAt`/`confirmedPaidAt`/`expiresAt`, or any of the guards in
-`bill-actions.ts` / `payment-actions.ts` / `reconciliation-claim-actions.ts`.
+before changing the bill's derived status, the editing lock,
+`payment.canceledAt`/`confirmedPaidAt`/`expiresAt`, `bill.canceledAt`/
+`confirmedClosedAt`/`closedAt`, or any of the guards in `bill-actions.ts` /
+`payment-actions.ts` / `reconciliation-claim-actions.ts`.
 
 ## Two independent verticals
 
@@ -25,6 +26,17 @@ currently **locked** for editing (a live payment is in flight — see
 **covered** by money that actually arrived (see
 ["Bill payment coverage"](#bill-payment-coverage)). Everything else about
 each vertical is decided on its own.
+
+Neither vertical stores its display status as a mutable field with guarded
+transitions. Both instead store only the small set of facts that can't be
+derived from anything else (an explicit cancellation, an explicit staff
+override) and compute everything else — `PaymentStatus`, `BillStatus`,
+coverage, the editing lock — fresh at read time. This was always true of the
+payment vertical ("Paid" has never been a stored value); the bill vertical
+used to be the exception, with a stored `bill.status` enum and a transition
+table mirroring this document's old shape. It no longer is — see the bill
+vertical section below for why, and what one narrow exception remains for
+query performance.
 
 ## Payment vertical
 
@@ -121,36 +133,69 @@ specifically to resolve the collision `cancelPayment`'s guard cannot prevent
 
 ## Bill vertical
 
-### Stored status
+### Stored fields
 
-`bill.status` has exactly three values: **`open`**, **`closed`**,
-**`canceled`**. Both `closed` and `canceled` are **final** — neither has any
-transition back to `open` or to each other.
+- `bill.canceledAt: timestamp | null` — set once, never cleared. An explicit
+  human decision to discard the bill (the trash icon on the bill page, or
+  `cancelBill`). Exactly the same shape and role as `payment.canceledAt`.
+- `bill.confirmedClosedAt: timestamp | null` — set once, never cleared, by
+  `confirmBillClosedDespiteCancellation`. Staff's explicit resolution of the
+  canceled+funded collision described in ["Reading the
+  combination"](#reading-the-combination) below: it acknowledges that the
+  bill's payments already cover its total despite the cancellation, and
+  flips the bill's *derived* status from `canceled` to `closed`. Exactly the
+  same shape and role as `payment.confirmedPaidAt`.
+- `bill.closedAt: timestamp | null` — **not** a source of truth for
+  anything. A best-effort, self-healing *cache*: written (idempotently)
+  whenever a claim brings the bill's coverage out of `underpaid`, regardless
+  of `canceledAt` — see ["`closedAt` is a cache, not a
+  status"](#closedat-is-a-cache-not-a-status) below for why it exists and
+  what its one job is.
 
-| Transition | Trigger | Guard |
+There is no `bill.status` column. `open`/`closed`/`canceled` is derived at
+read time — see the next section — the same way a payment's display status
+has always been derived rather than stored.
+
+### Derived status
+
+A bill's display status is computed at read time, in this precedence order
+(first match wins), mirroring the payment vertical's shape:
+
+| Priority | Status | Condition |
 |---|---|---|
-| *(none)* → `open` | bill created (lazily, on the first cart line) | — |
-| `open` → `closed` | a payment for this bill gains an active `reconciliationClaim` **and** the bill's resulting coverage is no longer `underpaid` (i.e. `paid` or `overpaid`) | only from `open` or an already-`closed` bill (idempotent); never from `canceled` — see `loadBillClosingAfterClaim` |
-| `open` → `canceled` | the cart is discarded (trash icon on the bill page) | only from `open`; idempotent if called again on an already-`canceled` bill; does **not** check the editing lock — see below |
-| `closed` → anything | never | rejected |
-| `canceled` → anything | never | rejected |
+| 1 | **Closed** | `confirmedClosedAt !== null` — staff's explicit resolution, see below |
+| 2 | **Canceled** | `canceledAt !== null` |
+| 3 | **Closed** | at least one of the bill's payments has an active claim, **and** coverage (see below) is not `underpaid` |
+| 4 | **Open** | none of the above |
 
-Creating a *new* payment for a bill (`createPayment`) only requires the bill
-to still be `open` — it does not by itself change `bill.status`, and it does
-not check the editing lock below (see why in the next section). It rejects a
-`canceled` or already-`closed` bill: once a bill is closed it is fully
-settled and final, and a canceled bill was explicitly discarded before any
-money was involved.
+**Canceled outranks Closed by coverage, for the same reason as the payment
+vertical:** an explicit discard should not be silently undone just because a
+stray/late claim happens to cover the total. `confirmBillClosedDespiteCancellation`
+is the explicit staff override for that collision, and outranks `canceledAt`
+the same way `payment.confirmedPaidAt` outranks `payment.canceledAt` — see
+["Reading the combination"](#reading-the-combination).
+
+**Priority 3 requires an active claim, not just "coverage isn't
+underpaid".** `deriveBillCoverage` (see below) says a bill with `billTotal
+== 0` is trivially `paid` even with zero claimed payments — which is exactly
+true of a **brand-new, still-empty cart** the instant it's created (bill
+created lazily, no line items yet, `billTotal === claimedSum === 0`). If
+"closed" only checked coverage, a fresh empty bill would read as
+closed/uneditable before staff could add a single item. Requiring at least
+one active claim is what keeps that from happening: closing always requires
+an actual settling event (a real claim, even a $0 one for a fully-discounted
+bill — see [Bill payment coverage](#bill-payment-coverage)'s "paid" row), not
+merely the absence of anything owed.
 
 ### Editing lock
 
 Editing the bill's line items — the guard behind `addCatalogItemToBill`,
 `addManualAmountToBill`, `addTipToBill`, `appendRemoveBillLine`, and
-`splitBill` — requires more than `bill.status === "open"`. A bill is also
+`splitBill` — requires more than a derived status of `open`. A bill is also
 **locked** whenever it has a *live* payment attempt:
 
 ```
-editable = bill.status === "open"
+editable = deriveBillStatus(...) === "open"
            AND no payment on this bill has derivePaymentStatus === "pending"
 ```
 
@@ -174,8 +219,8 @@ coverage mechanism below, not prevented outright — see
 **The gap this closes.** A bill must stop accepting edits the moment a
 payment attempt is genuinely in flight, not only once money has arrived —
 otherwise nothing stops staff from changing the cart mid-payment while a
-customer is looking at a QR code for a specific total, on a bill that
-`bill.status` alone would still call `open`.
+customer is looking at a QR code for a specific total, on a bill whose
+derived status alone would still call `open`.
 
 **The gap this leaves — and how it's closed.** The lock only clears itself
 once the live payment resolves. Lightning has a natural resolution path via
@@ -187,35 +232,64 @@ payment is not yet paid or canceled: it is the manual escape hatch that
 makes the lock recoverable for every payment method, not only the ones with
 an expiry.
 
-### Bill closing happens atomically with the claim
+### `closedAt` is a cache, not a status
 
-Closing is folded into the *same mutation batch* as the write that confirms
-the payment — the `reconciliationClaim` insert in
-`claimManualReconciliation` (used by `markPaymentPaidCash`) and in
-`reconcileAccountTransaction` (automatic bank/Spark matching), both in
-`reconciliation-claim-actions.ts`. Both compose `loadBillClosingAfterClaim`
-(bill module — computes whether closing applies, without writing anything)
-with `upsertBillClosedRow` (bill module — a plain upsert taking the caller's
-`MutationOptions`) to fold the write into their own batch. This is the same
-load/compute-Task-plus-plain-upsert-function pattern used elsewhere in this
-codebase for cross-module writes (see `payment-number-actions.ts`), and it
-means the closing write can never happen as a separate, independently
-failable step after the claim.
+Nothing that decides money-correctness — the editing lock, `requireEditableBill`,
+`requireBillAcceptingPayment`, `requireCancelableBill`, the bill detail
+page's badge — reads `bill.closedAt`. They all call `loadBillStatus`/
+`deriveBillStatus`, which recomputes status live from `canceledAt`/
+`confirmedClosedAt` and a fresh coverage calculation every time. `closedAt`
+exists for exactly one consumer: `openBillsQuery`, the reactive list behind
+the POS floor overview and the assign-table dialog.
 
-Both entry points share one helper, `writeClaimAndCloseBillIfCovered`, which
-also re-checks coverage once more immediately after its own batch commits
-and folds in a closing write then if warranted. This narrows — but, under
-CRDT/multi-device concurrency, cannot fully eliminate — the window where two
-payments on the same split bill are confirmed at nearly the same time and
-each computes "still underpaid" from a pre-write snapshot that doesn't yet
-include the other's claim. It also preserves the bill's original `closedAt`
-across any later re-close instead of overwriting it with the new claim's
-time.
+That query needs to cheaply answer "which bills are still open" without
+computing coverage (a bill-line-ledger sum vs. a claimed-payments sum) for
+every bill the account has ever had — a scan that only grows over the
+account's lifetime. `closedAt IS NULL AND canceledAt IS NULL` is a plain
+indexed filter that answers the same question in the overwhelming majority
+of cases, because `closedAt` is written (via `loadBillClosedAtIfCovered`,
+folded into the same mutation batch as the confirming claim — see
+`reconciliation-claim-actions.ts`) the moment a claim brings the bill out of
+`underpaid`, the same trigger `deriveBillStatus`'s priority 3 reacts to live.
+
+The two can disagree, briefly: under CRDT/multi-device concurrency, two
+split payments on the same bill confirmed at nearly the same time can each
+compute "still underpaid" from a pre-write snapshot that doesn't yet include
+the other's claim, and neither writes `closedAt`. Once both facts have
+synced, `deriveBillStatus` reflects the true, covered status on the very
+next read anywhere it's consulted live — but `openBillsQuery`'s cache can
+lag until something else writes to that bill again. The bill lingers in the
+floor view's "open" list a little longer than it should; nothing incorrect
+happens with money, editing, or guards. `closeBill` (see below) is the
+manual repair tool for exactly this lag.
+
+`closedAt`'s value, once set, is preserved across any later re-close instead
+of being overwritten with a newer claim's time (`loadBillClosedAtIfCovered`'s
+`billResult.value.closedAt ?? now()`) — it always reflects the first time
+this bill was observed covered, i.e. roughly when the money arrived.
+
+### `closeBill` and `confirmBillClosedDespiteCancellation`
+
+Two actions write the fields above outside the automatic claim path, both in
+`bill-actions.ts`:
+
+- **`closeBill`** (`bin/cli-bills.ts close`) manually refreshes the
+  `closedAt` cache — a repair tool for the lag described above, not a way to
+  force a bill closed. It rejects a `canceled` bill (use
+  `confirmBillClosedDespiteCancellation` for that collision) and one with no
+  active claim yet or still `underpaid` (`BillUnderpaidError`) — a bill with
+  nothing actually settling it can never read as closed, matching
+  `deriveBillStatus`'s priority-3 requirement above.
+- **`confirmBillClosedDespiteCancellation`** resolves the canceled+funded
+  collision: requires an existing `canceledAt` **and** an already-covered
+  bill (an active claim, coverage not `underpaid`), rejecting with
+  `BillNotCanceledError`/`BillUnderpaidError` otherwise. See ["Reading the
+  combination"](#reading-the-combination) for the collision itself.
 
 ## Bill payment coverage
 
-Independent of `bill.status`, a bill's payments are compared against its
-line-item total to answer "has this bill actually been paid for":
+A bill's payments are compared against its line-item total to answer "has
+this bill actually been paid for":
 
 ```
 claimedSum = Σ (payment.amount − payment.tipAmount)
@@ -233,19 +307,19 @@ line items are worth, and must not skew the comparison.
 
 | Coverage | Condition |
 |---|---|
-| **paid** | `claimedSum == billTotal` (a bill with `billTotal == 0`, e.g. fully discounted, is trivially `paid` with zero payments) |
+| **paid** | `claimedSum == billTotal` (a bill with `billTotal == 0`, e.g. fully discounted, is trivially `paid` — but see the derived-status section above for why that alone doesn't make it `closed`) |
 | **underpaid** | `claimedSum < billTotal` (includes the common case of no claimed payment at all, `claimedSum == 0`) |
 | **overpaid** | `claimedSum > billTotal` |
 
-This is computed purely from data, with no stored field, and applies
-regardless of `bill.status`. `bill.status` transitions to `closed` precisely
-when this stops being `underpaid` (see the transition table above) — so a
-`closed` bill is always `paid` or `overpaid`, never `underpaid`, by
-construction.
+This is computed purely from data, with no stored field. A bill's derived
+status is `closed` precisely when this stops being `underpaid` *and* at
+least one claim exists (see the bill vertical's ["Derived
+status"](#derived-status-1) above) — so a `closed` bill is always `paid` or
+`overpaid`, never `underpaid`, by construction.
 
 ## Reading the combination
 
-| `bill.status` | coverage | editable? | Meaning |
+| Derived `bill` status | coverage | editable? | Meaning |
 |---|---|---|---|
 | `open` | underpaid (0) | yes | ordinary cart, nothing charged yet |
 | `open` | underpaid | **no** (locked) | checkout in progress — a live payment is pending |
@@ -253,35 +327,36 @@ construction.
 | `closed` | paid | — (final) | fully settled — the expected happy path |
 | `closed` | overpaid | — (final) | more money confirmed than the bill was worth — a legitimate split-payment overshoot, **or** the canceled-but-claimed race described in the payment vertical; needs a human to look at it |
 | `canceled` | underpaid (0) | — (final) | ordinary discarded cart, no payment was ever involved |
-| `canceled` | paid or overpaid | — (final) | a bill was discarded while a payment was still pending, and that payment was confirmed anyway — see below |
+| `canceled` | paid or overpaid | — (final, until resolved) | a bill was discarded while a payment was still pending, and that payment was confirmed anyway — see below |
 
 There is no bill-level stored state for "awaiting payment" — it is exactly
 the `open` + locked row above, read from the two verticals together.
-`closed` + `underpaid` never occurs, by construction of the closing
-transition.
+`closed` + `underpaid` never occurs, by construction of `deriveBillStatus`.
 
 **`canceled` + `paid`/`overpaid` is reachable through ordinary, single-device
-use, not only a multi-device race.** `cancelBill` only checks `bill.status`
-(via `requireCancelableBill`) — unlike `createPayment`, it does **not**
-consult the editing lock. So `open` with a pending payment → `canceled` is
-an allowed transition: staff can discard a cart while a payment is still
-in flight (the bill page's own UI makes this hard to trigger by hiding the
-cart behind the "locked" message once a payment is pending, but the domain
-guard doesn't forbid it). If that payment is confirmed afterward,
-`loadBillClosingAfterClaim`'s `requireClosableBill` check excludes
-`canceled` bills, so the claim still counts toward coverage but the bill
-is never forced out of `canceled` — see "the editing lock rejects..." and
-"canceling a bill with a pending payment..." in `payment-actions.test.ts`.
+use, not only a multi-device race.** `cancelBill` only checks the bill's
+derived status (via `requireCancelableBill`) — unlike `createPayment`, it
+does **not** consult the editing lock. So `open` with a pending payment →
+`canceled` is an allowed transition: staff can discard a cart while a
+payment is still in flight (the bill page's own UI makes this hard to
+trigger by hiding the cart behind the "locked" message once a payment is
+pending, but the domain guard doesn't forbid it). If that payment is
+confirmed afterward, the claim still counts toward coverage (and still
+refreshes the `closedAt` cache — see above), but the *derived* status stays
+`canceled` until staff explicitly resolves it — see "the editing lock
+rejects..." and "canceling a bill with a pending payment..." in
+`payment-actions.test.ts`.
 
-**`confirmPaymentPaidDespiteCancellation` only resolves the *payment's own*
-display collision, not this bill-level one.** The two are related but
-distinct: a payment can show Canceled-despite-claimed independently of
-whatever its bill's `status` happens to be, and resolving it via
-`confirmedPaidAt` (see the payment vertical) never writes to `bill.status`.
-So a bill can still show `canceled` while one of its payments now displays
-as Paid instead of Canceled — the bill row above is unaffected either way.
-Flipping a `canceled` bill itself back to something else is out of scope
-here; see ["Non-goals"](#non-goals--explicitly-out-of-scope) below.
+**This is the same shape as the payment vertical's canceled+claimed
+collision, one level up.** A canceled bill whose payments already cover its
+total is flagged to staff the same way a canceled+claimed payment is (see
+the payment vertical), and `confirmBillClosedDespiteCancellation` is its
+resolution action — staff acknowledges the collision, and the bill's
+*derived* status flips fully from `canceled` to `closed`, without
+`canceledAt` itself ever being touched. The two collisions are independent,
+though related: a payment can display Canceled-despite-claimed regardless of
+what its bill's derived status is doing, and resolving one never writes to
+the other's fields.
 
 ## Non-goals / explicitly out of scope
 
@@ -292,15 +367,11 @@ here; see ["Non-goals"](#non-goals--explicitly-out-of-scope) below.
   out-of-band process. This includes the "Refund" action surfaced next to a
   canceled+claimed payment's collision in the UI — it is a placeholder that
   tells staff refunds aren't supported yet, not a working refund flow.
-- No automatic resolution of the canceled+claimed payment display collision
-  either — `confirmPaymentPaidDespiteCancellation` is a manual, per-payment
-  staff action (see the payment vertical's ["Derived
-  status"](#derived-status)), not something the app resolves on its own when
-  a sync merge produces the collision.
-- No way to flip a `canceled` **bill** back to `closed` (or any other
-  status) — only the payment-level display collision above has a resolution
-  action today; see ["Reading the combination"](#reading-the-combination)
-  for why the two are distinct.
+- No automatic resolution of either canceled+funded collision (payment or
+  bill) — both `confirmPaymentPaidDespiteCancellation` and
+  `confirmBillClosedDespiteCancellation` are manual, explicit staff actions,
+  not something the app resolves on its own when a sync merge produces the
+  collision.
 - No enforcement that stops a bill from accumulating more than one
   concurrent payment attempt — multiple payments per bill (split payments)
   are an intended capability, not a bug to guard against, and creating a new
@@ -311,3 +382,7 @@ here; see ["Non-goals"](#non-goals--explicitly-out-of-scope) below.
   underlying payment/claim rows change, and freshly on every guarded write —
   it is not guaranteed to visually flip the instant a timer elapses with
   nothing else happening on screen.
+- No SQL-level correctness guarantee for `openBillsQuery`'s "still open"
+  filter — see ["`closedAt` is a cache, not a
+  status"](#closedat-is-a-cache-not-a-status). It is a performance
+  optimization allowed to be briefly stale, not a second source of truth.

@@ -1,9 +1,9 @@
 import { useMemo } from "react"
 
+import type { BillCoverageSummary } from "@/core/modules/bill/bill-actions.ts"
 import { claimedTransactionsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
-  type BillCoverage,
   calculateClaimedSum,
   deriveBillCoverage,
 } from "@/core/modules/bill/bill-utils.ts"
@@ -13,10 +13,10 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 /**
  * Reactive equivalent of `loadBillCoverage`: subscribes to the bill's line
- * ledger and its claimed payments, then re-derives paid/underpaid/overpaid
- * on every change. See docs/bill-payment-states.md.
+ * ledger and its claimed payments, then re-derives billTotal/claimedSum/
+ * paid-underpaid-overpaid on every change. See docs/bill-payment-states.md.
  */
-export function useBillCoverage(billId: BillId): BillCoverage {
+export function useBillCoverage(billId: BillId): BillCoverageSummary {
   const summaries = useBillLineSummaries(billId)
   const claimedQuery = useMemo(
     () => claimedTransactionsByBillIdQuery(billId),
@@ -28,9 +28,11 @@ export function useBillCoverage(billId: BillId): BillCoverage {
     const billTotal = NonNegativeInteger(
       summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
     )
-    return deriveBillCoverage(
+    const claimedSum = calculateClaimedSum(claimedTransactions)
+    return {
       billTotal,
-      calculateClaimedSum(claimedTransactions)
-    )
+      claimedSum,
+      coverage: deriveBillCoverage(billTotal, claimedSum),
+    }
   }, [summaries, claimedTransactions])
 }

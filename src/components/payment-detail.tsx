@@ -644,7 +644,7 @@ function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
   const { data: tables } = useEvoluQuery(tablesQuery)
   const summaries = useBillLineSummaries(billId)
   const billStatus = useBillStatus(billId)
-  const coverage = useBillCoverage(billId)
+  const { claimedSum, coverage } = useBillCoverage(billId)
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
@@ -795,11 +795,31 @@ function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
               )}
             </AlertTitle>
             <AlertDescription>
-              {t(
-                coverage === "underpaid"
-                  ? "paymentDetail.bill.coverage.underpaid.description"
-                  : "paymentDetail.bill.coverage.overpaid.description"
-              )}
+              <p>
+                {t(
+                  coverage === "underpaid"
+                    ? "paymentDetail.bill.coverage.underpaid.description"
+                    : "paymentDetail.bill.coverage.overpaid.description"
+                )}
+              </p>
+              <div className="flex w-full items-center justify-between gap-4">
+                <span>{t("paymentDetail.bill.coverage.expectedAmount")}</span>
+                <span className="font-medium text-foreground">
+                  {formatMoney(
+                    { value: totalAmount, currency: bill.currency },
+                    locale
+                  )}
+                </span>
+              </div>
+              <div className="flex w-full items-center justify-between gap-4">
+                <span>{t("paymentDetail.bill.coverage.paidAmount")}</span>
+                <span className="font-medium text-foreground">
+                  {formatMoney(
+                    { value: claimedSum, currency: bill.currency },
+                    locale
+                  )}
+                </span>
+              </div>
             </AlertDescription>
           </Alert>
         )}

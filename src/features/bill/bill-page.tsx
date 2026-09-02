@@ -17,8 +17,12 @@ import {
 import { motion } from "motion/react"
 import { type ReactNode, startTransition, useMemo, useState } from "react"
 import { toast } from "sonner"
-
 import { FadeHeader } from "@/components/fade-header.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/reui/alert.tsx"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -294,18 +298,14 @@ function BillCancellationCollisionMessage({
 
   return (
     <div className="mt-16 flex flex-col items-center gap-4 px-6 text-center">
-      <div className="flex flex-col items-center gap-2">
-        <AlertTriangleIcon className="size-8 text-warning" />
-        <p className="font-semibold text-warning">
-          {t("bill.collision.title")}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t("bill.collision.description")}
-        </p>
-        <strong className="text-2xl font-semibold tracking-tight">
-          {formatMoney({ value: totalAmount, currency }, locale)}
-        </strong>
-      </div>
+      <Alert variant="warning" className="text-left">
+        <AlertTriangleIcon />
+        <AlertTitle>{t("bill.collision.title")}</AlertTitle>
+        <AlertDescription>{t("bill.collision.description")}</AlertDescription>
+      </Alert>
+      <strong className="text-2xl font-semibold tracking-tight">
+        {formatMoney({ value: totalAmount, currency }, locale)}
+      </strong>
       <div className="flex w-full max-w-xs flex-col gap-2">
         {paymentIds.map((paymentId, index) => (
           <Button

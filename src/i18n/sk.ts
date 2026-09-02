@@ -321,9 +321,11 @@ export const sk = {
   "paymentWait.waiting": "Čaká sa na platbu...",
   "paymentDetail.amount": "Suma",
   "paymentDetail.backToPayment": "Späť na platbu",
+  "paymentDetail.bill.coverage.expectedAmount": "Očakávané",
   "paymentDetail.bill.coverage.overpaid.description":
     "Tento účet bol zaplatený za viac, než aktuálne stojí — pravdepodobne iné zariadenie zmenilo položky účtu, zatiaľ čo táto platba už prebiehala.",
   "paymentDetail.bill.coverage.overpaid.title": "Preplatené",
+  "paymentDetail.bill.coverage.paidAmount": "Zaplatené",
   "paymentDetail.bill.coverage.underpaid.description":
     "Tento účet zatiaľ nie je plne pokrytý potvrdenými platbami — to je bežné, kým platba stále prebieha. Ak je táto platba už zaplatená, pravdepodobne iné zariadenie zmenilo položky účtu, kým bežala.",
   "paymentDetail.bill.coverage.underpaid.title": "Nie je doplatené",

@@ -162,7 +162,7 @@ function PaymentHistoryIssues({
   readonly billId: BillId | null
 }) {
   const { t } = useTranslation()
-  const coverage = useBillCoverage(billId ?? NO_BILL_ID)
+  const { coverage } = useBillCoverage(billId ?? NO_BILL_ID)
 
   const issues = [
     hasCancellationCollision ? t("paymentHistory.collision") : null,

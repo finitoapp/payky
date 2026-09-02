@@ -54,6 +54,7 @@ import {
   confirmBillClosedDespiteCancellation,
   removeTableFromBill,
 } from "@/core/modules/bill/bill-actions.ts"
+import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
@@ -175,7 +176,10 @@ function BillExistingBody({
     content = <BillMessage message={t("bill.notFound")} />
   } else if (billStatus?.status !== "open") {
     content = billStatus?.hasCancellationCollision ? (
-      <BillCancellationCollisionMessage billId={billId} />
+      <BillCancellationCollisionMessage
+        billId={billId}
+        currency={bill.currency}
+      />
     ) : (
       <BillMessage message={t("bill.closed")} />
     )
@@ -238,15 +242,37 @@ function BillMessage({ message }: { readonly message: string }) {
  * collision: this bill was discarded, but its payments already cover its
  * total. Shown instead of the generic "closed" message whenever
  * `useBillStatus` reports the collision — see docs/bill-payment-states.md.
+ *
+ * Unlike a generic "closed" message, this is a screen staff must act on, so
+ * it shows what's actually at stake (the bill's total) and links straight to
+ * the payment(s) that funded it — the same "here's the specific payment,
+ * go check it" pattern `BillLockedMessage` above already uses for a pending
+ * one.
  */
 function BillCancellationCollisionMessage({
   billId,
+  currency,
 }: {
   readonly billId: BillId
+  readonly currency: FiatCurrencyType
 }) {
   const { t } = useTranslation()
+  const locale = useLocale()
   const appRun = useAppRun()
   const [resolvePending, setResolvePending] = useState(false)
+  const summaries = useBillLineSummaries(billId)
+  const claimedQuery = useMemo(
+    () => claimedPaymentsByBillIdQuery(billId),
+    [billId]
+  )
+  const { data: claimedPayments } = useEvoluQuery(claimedQuery)
+  const paymentIds = useMemo(
+    () => [...new Set(claimedPayments.map((payment) => payment.id))],
+    [claimedPayments]
+  )
+  const totalAmount = NonNegativeInteger(
+    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+  )
 
   const handleConfirmClosedDespiteCancellation = async () => {
     setResolvePending(true)
@@ -276,8 +302,23 @@ function BillCancellationCollisionMessage({
         <p className="text-sm text-muted-foreground">
           {t("bill.collision.description")}
         </p>
+        <strong className="text-2xl font-semibold tracking-tight">
+          {formatMoney({ value: totalAmount, currency }, locale)}
+        </strong>
       </div>
       <div className="flex w-full max-w-xs flex-col gap-2">
+        {paymentIds.map((paymentId, index) => (
+          <Button
+            key={paymentId}
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/activity/$paymentId" params={{ paymentId }} />}
+          >
+            {paymentIds.length > 1
+              ? t("bill.collision.viewPayment.numbered", { number: index + 1 })
+              : t("bill.collision.viewPayment")}
+          </Button>
+        ))}
         <Button
           className="h-12"
           disabled={resolvePending}

@@ -16,6 +16,7 @@ import {
   appendGuardedBillLines,
   appendRemoveBillLine,
   cancelBill,
+  confirmBillClosedDespiteCancellation,
   createBill,
   loadBillCoverage,
   loadBillStatus,
@@ -1645,6 +1646,76 @@ describe("payment actions", () => {
     )
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
 
+    await expect(
+      run(
+        createPayment({
+          deviceId: null,
+          billId,
+          tableId: null,
+          amount: NonNegativeInteger(500),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillNotOpen", status: "closed" },
+    })
+  }, 15_000)
+
+  test("rejects creating a payment for a bill resolved via confirmBillClosedDespiteCancellation", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    await run.orThrow(cancelBill(billId))
+    await run.orThrow(
+      markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId })
+    )
+    await run.orThrow(confirmBillClosedDespiteCancellation(billId))
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+
+    // Once resolved, the bill is just as final as an ordinarily-closed one
+    // — a new payment attempt is rejected the same way.
     await expect(
       run(
         createPayment({

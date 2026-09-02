@@ -366,6 +366,75 @@ test("charges a cart and closes it once cash is paid", async ({
   })
 })
 
+test("the assign-table dialog shows a table as free again once its bill is settled", async ({
+  seededPage: page,
+}) => {
+  await test.step("seed a table and a catalog item", async () => {
+    await addTable(page, "en", { name: "Patio 1", seatCount: "4" })
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  })
+
+  await test.step("start a bill on Patio 1 and pay it off", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+    await page
+      .getByRole("button", {
+        name: translate("en", "bill.table.aria"),
+      })
+      .click()
+    const dialog = page.getByRole("dialog", {
+      name: translate("en", "bill.table.dialog.title"),
+    })
+    await dialog.getByRole("button", { name: "Patio 1" }).click()
+    await expect(dialog).not.toBeVisible()
+
+    await page
+      .getByRole("button", {
+        name: nameParam("bill.brick.add.aria", "Coffee"),
+      })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "home.pay") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.none") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.continue") })
+      .click()
+    await markCashPaid(page, "en")
+    await page
+      .getByRole("button", { name: translate("en", "paymentWait.back") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "nav.numpad") })
+      .waitFor()
+  })
+
+  await test.step("Patio 1 shows as free in a new bill's assign-table dialog", async () => {
+    // Paying off the first bill already left the home screen in tables/POS
+    // mode, so `startNewBill`'s own unconditional "switch to POS" click
+    // would find nothing to click — go through `gotoPosOverview` instead,
+    // which tolerates already being there.
+    await gotoPosOverview(page, "en")
+    await page
+      .getByTestId("no-table-tile")
+      .getByRole("link", { name: translate("en", "tables.tile.newBill") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "bill.title") })
+      .waitFor()
+    await page
+      .getByRole("button", { name: translate("en", "bill.table.aria") })
+      .click()
+    const dialog = page.getByRole("dialog", {
+      name: translate("en", "bill.table.dialog.title"),
+    })
+    const patioTile = dialog.getByRole("button", { name: "Patio 1" })
+    await expect(patioTile).toContainText(translate("en", "tables.tile.free"))
+  })
+})
+
 test("locks a bill while its payment is pending, and unlocks it once that payment is canceled", async ({
   seededPage: page,
 }) => {
@@ -744,6 +813,92 @@ test("a bill canceled while its payment is pending, then confirmed anyway, is fl
     await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/bill-page-resolved.png`,
+      fullPage: true,
+    })
+  })
+})
+
+test("the bill page's own collision message shows the total and a link to the funding payment, and resolves it directly", async ({
+  seededPage: page,
+}) => {
+  let billId = ""
+  let paymentPageUrl = ""
+
+  await test.step("add a cart item and start a payment", async () => {
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+    await page
+      .getByRole("button", {
+        name: nameParam("bill.brick.add.aria", "Coffee"),
+      })
+      .click()
+
+    const chargeButton = page.getByRole("button", {
+      name: translate("en", "home.pay"),
+    })
+    await expect(chargeButton).toBeInViewport()
+    await chargeButton.click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentTip.title") })
+      .waitFor()
+    billId = new URL(page.url()).searchParams.get("billId") ?? ""
+    expect(billId).not.toBe("")
+
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.none") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.continue") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentWait.cancel") })
+      .waitFor()
+    paymentPageUrl = page.url()
+  })
+
+  await test.step("the bill is discarded while the payment is still pending, then confirmed anyway", async () => {
+    await cancelBillDirectly(page, billId)
+    await page.goto(paymentPageUrl, { waitUntil: "domcontentloaded" })
+    await markCashPaid(page, "en")
+    await page.waitForTimeout(1000)
+  })
+
+  await test.step("the bill page shows the total and a link to the payment", async () => {
+    await page.goto(`/bill?billId=${billId}`, { waitUntil: "domcontentloaded" })
+    await expect(
+      page.getByText(translate("en", "bill.collision.title"))
+    ).toBeVisible()
+    await expect(page.getByText("$5.00")).toBeVisible()
+
+    const viewPaymentButton = page.getByRole("button", {
+      name: translate("en", "bill.collision.viewPayment"),
+    })
+    await expect(viewPaymentButton).toBeVisible()
+    await viewPaymentButton.click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+      .waitFor()
+    // Goes straight to the payment's detail page, not the wait screen —
+    // unlike `bill.locked.viewPayment`'s link, this payment is already
+    // settled, so there's no "pending" state left to wait on.
+    const paymentId = new URL(paymentPageUrl).pathname.split("/").pop()
+    expect(page.url()).toContain(`/activity/${paymentId}`)
+  })
+
+  await test.step("resolving the collision directly from the bill page", async () => {
+    await page.goto(`/bill?billId=${billId}`, { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("button", {
+        name: translate("en", "bill.collision.markClosed"),
+      })
+      .click()
+    await expect(
+      page.getByText(translate("en", "bill.collision.title"))
+    ).toBeHidden()
+    await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
+    await page.screenshot({
+      path: `${screenshotDir}/bill-page-resolved-directly.png`,
       fullPage: true,
     })
   })

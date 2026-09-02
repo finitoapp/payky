@@ -56,6 +56,8 @@ export const cs = {
   "bill.collision.refund": "Vrátit platbu",
   "bill.collision.refund.comingSoon": "Vracení plateb zatím není podporováno.",
   "bill.collision.title": "Zrušeno, ale platby ho pokrývají",
+  "bill.collision.viewPayment": "Zobrazit platbu",
+  "bill.collision.viewPayment.numbered": "Zobrazit platbu {number}",
   "bill.table.aria": "Přiřadit stůl",
   "bill.table.assign": "Přiřadit stůl",
   "bill.table.dialog.none": "Bez stolu",

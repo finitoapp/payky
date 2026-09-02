@@ -57,6 +57,8 @@ export const sk = {
   "bill.collision.refund.comingSoon":
     "Vracanie platieb zatiaľ nie je podporované.",
   "bill.collision.title": "Zrušené, ale platby ho pokrývajú",
+  "bill.collision.viewPayment": "Zobraziť platbu",
+  "bill.collision.viewPayment.numbered": "Zobraziť platbu {number}",
   "bill.table.aria": "Priradiť stôl",
   "bill.table.assign": "Priradiť stôl",
   "bill.table.dialog.none": "Bez stola",

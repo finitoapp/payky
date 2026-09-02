@@ -55,6 +55,8 @@ export const en = {
   "bill.collision.refund": "Refund",
   "bill.collision.refund.comingSoon": "Refunds aren't supported yet.",
   "bill.collision.title": "Canceled, but payments cover it",
+  "bill.collision.viewPayment": "View payment",
+  "bill.collision.viewPayment.numbered": "View payment {number}",
   "bill.discard": "Discard cart",
   "bill.table.aria": "Assign table",
   "bill.table.assign": "Assign table",

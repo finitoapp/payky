@@ -53,6 +53,7 @@ export const billIndexes = ((create) => [
   create("bill_canceledAt_closedAt")
     .on("bill")
     .columns(["canceledAt", "closedAt"]),
+  create("bill_createdAt").on("bill").column("createdAt"),
 ]) satisfies IndexesConfig
 
 export type BillRow = InferTable<typeof bill>

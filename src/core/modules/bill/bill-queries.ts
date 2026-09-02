@@ -1,4 +1,4 @@
-import type { KyselyNotNull } from "@evolu/common"
+import { evoluJsonArrayFrom, type KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "./bill-types.ts"
@@ -46,11 +46,91 @@ export const openBillsQuery = createQuery((db) =>
  * model behind the `/activity/bills` list. Mirrors `latestPaymentsQuery` in
  * `payment-history.tsx`: a flat, capped list for a history view, not a
  * lock/coverage computation.
+ *
+ * Embeds each bill's line ledger (`lines`) and claimed-transaction rows
+ * (`claimedTransactions`) as `evoluJsonArrayFrom` subqueries instead of
+ * making `BillHistory` load them per row via separate `billId`-scoped
+ * queries (as `useBillLineSummaries`/`useBillCoverage`/`useBillStatus` do
+ * for the single-bill detail page). Loading those per row — combined with
+ * React's `use()` suspending on each newly-seen query — turned the list
+ * into a sequential Suspense waterfall, one round trip per bill. Folding
+ * the raw rows into this one query keeps the list to a single round trip
+ * regardless of how many bills are shown; `deriveBillHistoryItemSummary` in
+ * `bill-utils.ts` then re-derives status/coverage from `lines`/
+ * `claimedTransactions` with the same pure logic the detail page uses.
  */
 export const latestBillsQuery = createQuery((db) =>
   db
     .selectFrom("bill")
     .selectAll()
+    .select((eb) => [
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("billLine")
+          .select([
+            "billLine.id",
+            "billLine.billId",
+            "billLine.deviceId",
+            "billLine.catalogItemId",
+            "billLine.itemId",
+            "billLine.type",
+            "billLine.kind",
+            "billLine.quantity",
+            "billLine.totalAmount",
+            "billLine.createdAt",
+            "billLine.updatedAt",
+            "billLine.isDeleted",
+            "billLine.ownerId",
+          ])
+          .whereRef("billLine.billId", "=", "bill.id")
+          .where("billLine.billId", "is not", null)
+          .where("billLine.itemId", "is not", null)
+          .where("billLine.type", "is not", null)
+          .where("billLine.kind", "is not", null)
+          .where("billLine.quantity", "is not", null)
+          .where("billLine.totalAmount", "is not", null)
+          .orderBy("billLine.createdAt", "asc")
+          .$narrowType<{
+            billId: KyselyNotNull
+            itemId: KyselyNotNull
+            type: KyselyNotNull
+            kind: KyselyNotNull
+            quantity: KyselyNotNull
+            totalAmount: KyselyNotNull
+          }>()
+      ).as("lines"),
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("payment")
+          .innerJoin("reconciliationClaim", (join) =>
+            join
+              .onRef("reconciliationClaim.paymentId", "=", "payment.id")
+              .on("reconciliationClaim.isDeleted", "is not", 1)
+          )
+          .innerJoin(
+            "accountTransaction",
+            "accountTransaction.id",
+            "reconciliationClaim.accountTransactionId"
+          )
+          .select([
+            "payment.id as paymentId",
+            "payment.tipAmount",
+            "reconciliationClaim.accountTransactionId",
+            "accountTransaction.amount",
+          ])
+          .whereRef("payment.billId", "=", "bill.id")
+          .where("payment.isDeleted", "is not", 1)
+          .where("payment.tipAmount", "is not", null)
+          .where("reconciliationClaim.accountTransactionId", "is not", null)
+          .where("accountTransaction.isDeleted", "is not", 1)
+          .where("accountTransaction.amount", "is not", null)
+          .$narrowType<{
+            tipAmount: KyselyNotNull
+            accountTransactionId: KyselyNotNull
+            amount: KyselyNotNull
+          }>()
+      ).as("claimedTransactions"),
+    ])
     .where("displayNumber", "is not", null)
     .where("currency", "is not", null)
     .where("createdAt", "is not", null)

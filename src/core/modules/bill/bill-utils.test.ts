@@ -9,6 +9,7 @@ import {
   calculateClaimedSum,
   claimedPaymentIdSet,
   deriveBillCoverage,
+  deriveBillHistoryItemSummary,
   deriveBillStatus,
   hasPendingPayment,
 } from "./bill-utils.ts"
@@ -305,6 +306,87 @@ describe("hasPendingPayment", () => {
         now
       )
     ).toBe(true)
+  })
+})
+
+describe("deriveBillHistoryItemSummary", () => {
+  test("open, no collision, for a fresh bill with nothing claimed", () => {
+    expect(
+      deriveBillHistoryItemSummary({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        billTotal: NonNegativeInteger(1_000),
+        claimedTransactions: [],
+      })
+    ).toEqual({
+      status: "open",
+      hasCancellationCollision: false,
+      billTotal: 1_000,
+      claimedSum: 0,
+      coverage: "underpaid",
+    })
+  })
+
+  test("closed once claims cover the total", () => {
+    expect(
+      deriveBillHistoryItemSummary({
+        canceledAt: null,
+        confirmedClosedAt: null,
+        billTotal: NonNegativeInteger(1_000),
+        claimedTransactions: [
+          {
+            paymentId: "payment-1" as PaymentId,
+            accountTransactionId: "tx-1" as AccountTransactionId,
+            amount: 1_000,
+            tipAmount: NonNegativeInteger(0),
+          },
+        ],
+      })
+    ).toEqual({
+      status: "closed",
+      hasCancellationCollision: false,
+      billTotal: 1_000,
+      claimedSum: 1_000,
+      coverage: "paid",
+    })
+  })
+
+  test("flags the canceled+funded collision: canceled but already covered by a claim", () => {
+    const summary = deriveBillHistoryItemSummary({
+      canceledAt: TimestampMs(now.getTime() - 1_000),
+      confirmedClosedAt: null,
+      billTotal: NonNegativeInteger(1_000),
+      claimedTransactions: [
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-1" as AccountTransactionId,
+          amount: 1_000,
+          tipAmount: NonNegativeInteger(0),
+        },
+      ],
+    })
+
+    expect(summary.status).toBe("canceled")
+    expect(summary.hasCancellationCollision).toBe(true)
+  })
+
+  test("no collision flag once staff confirms the bill closed despite the cancellation", () => {
+    const summary = deriveBillHistoryItemSummary({
+      canceledAt: TimestampMs(now.getTime() - 1_000),
+      confirmedClosedAt: TimestampMs(now.getTime() - 1),
+      billTotal: NonNegativeInteger(1_000),
+      claimedTransactions: [
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-1" as AccountTransactionId,
+          amount: 1_000,
+          tipAmount: NonNegativeInteger(0),
+        },
+      ],
+    })
+
+    expect(summary.status).toBe("closed")
+    expect(summary.hasCancellationCollision).toBe(false)
   })
 })
 

@@ -105,6 +105,68 @@ export const calculateClaimedSum = (
   return NonNegativeInteger(sum)
 }
 
+export interface BillHistoryItemSummary {
+  readonly status: BillStatus
+  /**
+   * The canceled+funded collision from docs/bill-payment-states.md: the
+   * bill was discarded, but its payments already cover its total —
+   * `deriveBillStatus` still reads `canceled` until staff explicitly
+   * resolves it via `confirmBillClosedDespiteCancellation`.
+   */
+  readonly hasCancellationCollision: boolean
+  readonly billTotal: NonNegativeInteger
+  readonly claimedSum: NonNegativeInteger
+  readonly coverage: BillCoverage
+}
+
+/**
+ * Combines a bill's `canceledAt`/`confirmedClosedAt`, its precomputed
+ * `billTotal` (from `calculateBillLineSummaries`), and its claimed
+ * transactions into the same derived status/coverage shape
+ * `useBillStatus`/`useBillCoverage` compute per bill on the detail page —
+ * reused by `latestBillsQuery`'s list rendering (`BillHistory`) so both
+ * places agree on the same pure logic instead of duplicating it. See
+ * docs/bill-payment-states.md.
+ */
+export const deriveBillHistoryItemSummary = ({
+  canceledAt,
+  confirmedClosedAt,
+  billTotal,
+  claimedTransactions,
+}: {
+  readonly canceledAt: TimestampMs | null
+  readonly confirmedClosedAt: TimestampMs | null
+  readonly billTotal: NonNegativeInteger
+  readonly claimedTransactions: ReadonlyArray<{
+    readonly paymentId: PaymentId
+    readonly accountTransactionId: AccountTransactionId
+    readonly amount: number
+    readonly tipAmount: NonNegativeInteger
+  }>
+}): BillHistoryItemSummary => {
+  const claimedSum = calculateClaimedSum(claimedTransactions)
+  const coverage = deriveBillCoverage(billTotal, claimedSum)
+  const hasActiveClaim = claimedTransactions.length > 0
+  const status = deriveBillStatus({
+    canceledAt,
+    confirmedClosedAt,
+    hasActiveClaim,
+    coverage,
+  })
+
+  return {
+    status,
+    hasCancellationCollision:
+      canceledAt !== null &&
+      confirmedClosedAt === null &&
+      hasActiveClaim &&
+      coverage !== "underpaid",
+    billTotal,
+    claimedSum,
+    coverage,
+  }
+}
+
 /**
  * Turns a list of claimed-payment rows into a `Set` of their ids — shared by
  * `isBillLocked` (`bill-actions.ts`) and `usePendingPayments` (the reactive

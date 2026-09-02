@@ -1,4 +1,9 @@
-import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
+import {
+  evoluJsonArrayFrom,
+  type InferRow,
+  type KyselyNotNull,
+  sqliteTrue,
+} from "@evolu/common"
 import {
   AlertTriangleIcon,
   CheckIcon,
@@ -7,24 +12,23 @@ import {
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
-import { type FC, type ReactNode, useMemo } from "react"
+import type { FC, ReactNode } from "react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
-import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
-import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import {
+  calculateClaimedSum,
+  deriveBillCoverage,
+} from "@/core/modules/bill/bill-utils.ts"
+import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
+import type { ItemRow } from "@/core/modules/item/item.ts"
+import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import {
   calculatePaymentClaimedSum,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
-import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import { activeClaimedTransactionsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
-import type {
-  NonNegativeInteger,
-  TimestampMs,
-} from "@/core/modules/shared/schema.ts"
-import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -41,6 +45,33 @@ import { cn } from "@/lib/utils.ts"
 const toClaimCount = (value: number | string | bigint): number =>
   typeof value === "number" ? value : Number(value)
 
+/**
+ * The most recent payments, newest first — the read model behind the
+ * `/activity` list. Mirrors `latestBillsQuery` in `bill-queries.ts`: embeds
+ * everything `PaymentHistoryIssues` used to load per row via separate
+ * `billId`/`paymentId`-scoped queries (`useBillCoverage`,
+ * `activeClaimedTransactionsByPaymentIdQuery`, `claimedPaymentsByBillIdQuery`)
+ * as `evoluJsonArrayFrom` subqueries, so the whole list loads in one round
+ * trip instead of a per-row Suspense waterfall:
+ *
+ * - `ownClaimedTransactions` — this payment's own claimed transactions
+ *   (mirrors `activeClaimedTransactionsByPaymentIdQuery`), for
+ *   `derivePaymentHasExcessSettlement`.
+ * - `billLines` — the bill's line ledger (mirrors `billLinesByBillIdQuery`),
+ *   reduced via `calculateBillLineSummaries` for the bill's total.
+ * - `billClaimedTransactions` — every claimed transaction across every
+ *   payment on the same bill (mirrors `claimedTransactionsByBillIdQuery`),
+ *   for the bill's `coverage` and for `hasOtherClaimedPayment` (any row here
+ *   whose `paymentId` isn't this payment's). Reusing this instead of also
+ *   embedding `claimedPaymentsByBillIdQuery`'s looser "has any claim at all"
+ *   definition is a deliberate simplification: the two definitions only
+ *   differ when a claim's `accountTransaction` was itself deleted after the
+ *   fact, which no domain action in this app currently does.
+ *
+ * A `billId`-less payment naturally gets empty `billLines`/
+ * `billClaimedTransactions` (the `whereRef` never matches `NULL`), the same
+ * "nothing to flag" result the old `NO_BILL_ID` sentinel produced.
+ */
 const latestPaymentsQuery = createQuery((db) =>
   db
     .selectFrom("payment")
@@ -61,9 +92,94 @@ const latestPaymentsQuery = createQuery((db) =>
       "payment.expiresAt",
       "payment.createdAt",
     ])
-    .select((eb) =>
-      eb.fn.count<number>("reconciliationClaim.id").as("claimCount")
-    )
+    .select((eb) => [
+      eb.fn.count<number>("reconciliationClaim.id").as("claimCount"),
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("reconciliationClaim as ownClaim")
+          .innerJoin(
+            "accountTransaction as ownClaimTx",
+            "ownClaimTx.id",
+            "ownClaim.accountTransactionId"
+          )
+          .select(["ownClaim.accountTransactionId", "ownClaimTx.amount"])
+          .whereRef("ownClaim.paymentId", "=", "payment.id")
+          .where("ownClaim.isDeleted", "is not", sqliteTrue)
+          .where("ownClaim.accountTransactionId", "is not", null)
+          .where("ownClaimTx.isDeleted", "is not", sqliteTrue)
+          .where("ownClaimTx.amount", "is not", null)
+          .$narrowType<{
+            accountTransactionId: KyselyNotNull
+            amount: KyselyNotNull
+          }>()
+      ).as("ownClaimedTransactions"),
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("billLine")
+          .select([
+            "billLine.id",
+            "billLine.billId",
+            "billLine.deviceId",
+            "billLine.catalogItemId",
+            "billLine.itemId",
+            "billLine.type",
+            "billLine.kind",
+            "billLine.quantity",
+            "billLine.totalAmount",
+            "billLine.createdAt",
+            "billLine.updatedAt",
+            "billLine.isDeleted",
+            "billLine.ownerId",
+          ])
+          .whereRef("billLine.billId", "=", "payment.billId")
+          .where("billLine.billId", "is not", null)
+          .where("billLine.itemId", "is not", null)
+          .where("billLine.type", "is not", null)
+          .where("billLine.kind", "is not", null)
+          .where("billLine.quantity", "is not", null)
+          .where("billLine.totalAmount", "is not", null)
+          .orderBy("billLine.createdAt", "asc")
+          .$narrowType<{
+            billId: KyselyNotNull
+            itemId: KyselyNotNull
+            type: KyselyNotNull
+            kind: KyselyNotNull
+            quantity: KyselyNotNull
+            totalAmount: KyselyNotNull
+          }>()
+      ).as("billLines"),
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("payment as billPayment")
+          .innerJoin("reconciliationClaim as billClaim", (join) =>
+            join
+              .onRef("billClaim.paymentId", "=", "billPayment.id")
+              .on("billClaim.isDeleted", "is not", sqliteTrue)
+          )
+          .innerJoin(
+            "accountTransaction as billClaimTx",
+            "billClaimTx.id",
+            "billClaim.accountTransactionId"
+          )
+          .select([
+            "billPayment.id as paymentId",
+            "billPayment.tipAmount",
+            "billClaim.accountTransactionId",
+            "billClaimTx.amount",
+          ])
+          .whereRef("billPayment.billId", "=", "payment.billId")
+          .where("billPayment.isDeleted", "is not", sqliteTrue)
+          .where("billPayment.tipAmount", "is not", null)
+          .where("billClaim.accountTransactionId", "is not", null)
+          .where("billClaimTx.isDeleted", "is not", sqliteTrue)
+          .where("billClaimTx.amount", "is not", null)
+          .$narrowType<{
+            tipAmount: KyselyNotNull
+            accountTransactionId: KyselyNotNull
+            amount: KyselyNotNull
+          }>()
+      ).as("billClaimedTransactions"),
+    ])
     .where("payment.isDeleted", "is not", sqliteTrue)
     .where("payment.amount", "is not", null)
     .where("payment.currency", "is not", null)
@@ -90,6 +206,8 @@ const latestPaymentsQuery = createQuery((db) =>
       createdAt: KyselyNotNull
     }>()
 )
+
+type PaymentHistoryRow = InferRow<typeof latestPaymentsQuery>
 
 const paymentStatusData = {
   canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
@@ -119,9 +237,9 @@ const PaymentStatusIcon: FC<{
 }
 
 const resolvePaymentStatus = (payment: {
-  readonly canceledAt: TimestampMs | null
-  readonly confirmedPaidAt: TimestampMs | null
-  readonly expiresAt: TimestampMs | null
+  readonly canceledAt: PaymentHistoryRow["canceledAt"]
+  readonly confirmedPaidAt: PaymentHistoryRow["confirmedPaidAt"]
+  readonly expiresAt: PaymentHistoryRow["expiresAt"]
   readonly claimCount: number
 }): PaymentStatus =>
   derivePaymentStatus({
@@ -140,89 +258,81 @@ const resolvePaymentStatus = (payment: {
  * opening every canceled payment.
  */
 const resolveHasCancellationCollision = (payment: {
-  readonly canceledAt: TimestampMs | null
-  readonly confirmedPaidAt: TimestampMs | null
+  readonly canceledAt: PaymentHistoryRow["canceledAt"]
+  readonly confirmedPaidAt: PaymentHistoryRow["confirmedPaidAt"]
   readonly claimCount: number
 }): boolean =>
   payment.canceledAt !== null &&
   payment.confirmedPaidAt === null &&
   payment.claimCount > 0
 
-/**
- * Never a real bill — passed to `useBillCoverage` instead of skipping the
- * call when a payment has no `billId`, so the hook is still called
- * unconditionally on every render (a payment's own `billId` is stable for
- * the lifetime of its row). Querying a nonexistent bill just returns empty
- * line/claim rows, which `deriveBillCoverage` reads as trivially "paid" —
- * exactly the "nothing to flag" result this needs when there's no bill.
- */
-const NO_BILL_ID = "no-bill" as BillId
+interface PaymentHistoryIssueFlags {
+  readonly hasCancellationCollision: boolean
+  readonly hasExcessSettlement: boolean
+  readonly billUnderpaid: boolean
+  readonly billOverpaid: boolean
+}
 
 /**
- * Every issue this payment's row should flag, joined with " · " — the
- * canceled+claimed collision (see `resolveHasCancellationCollision`), this
- * payment's own duplicate-settlement collision, and/or its bill's coverage
- * being off (see docs/bill-payment-states.md's "Bill payment coverage"
- * section). A payment can show more than one at once; they're independent
- * conditions. `null` when none apply.
- *
- * Overpaid coverage is deliberately suppressed when it's fully explained by
- * this same payment's own excess settlement (this is the only claimed
- * payment on the bill) — "Paid more than once" already says that, and
- * showing "Bill overpaid" alongside it would restate the identical fact
- * from the bill's point of view instead of flagging a second, independent
- * one. It still shows when *another* payment is also claimed against the
- * bill, since that's a genuinely different cause.
+ * Every issue a payment's row should flag — the canceled+claimed collision,
+ * this payment's own duplicate-settlement collision, and/or its bill's
+ * coverage being off (see docs/bill-payment-states.md's "Bill payment
+ * coverage" section). `billOverpaid` is deliberately suppressed when it's
+ * fully explained by this same payment's own excess settlement (this is the
+ * only claimed payment on the bill) — "Paid more than once" already says
+ * that, and flagging both would restate the identical fact from the bill's
+ * point of view instead of a second, independent one. It still shows when
+ * *another* payment is also claimed against the bill, since that's a
+ * genuinely different cause.
  */
+const resolvePaymentHistoryIssueFlags = (
+  item: PaymentHistoryRow,
+  itemRows: ReadonlyArray<ItemRow>,
+  hasCancellationCollision: boolean
+): PaymentHistoryIssueFlags => {
+  const billSummaries = calculateBillLineSummaries(item.billLines, itemRows)
+  const billTotal = NonNegativeInteger(
+    billSummaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+  )
+  const billClaimedSum = calculateClaimedSum(item.billClaimedTransactions)
+  const coverage = deriveBillCoverage(billTotal, billClaimedSum)
+
+  const hasExcessSettlement = derivePaymentHasExcessSettlement({
+    amount: item.amount,
+    excessAcknowledgedAt: item.excessAcknowledgedAt,
+    claimedSum: calculatePaymentClaimedSum(item.ownClaimedTransactions),
+  })
+  const hasOtherClaimedPayment = item.billClaimedTransactions.some(
+    (transaction) => transaction.paymentId !== item.id
+  )
+
+  return {
+    hasCancellationCollision,
+    hasExcessSettlement,
+    billUnderpaid: item.billId !== null && coverage === "underpaid",
+    billOverpaid:
+      item.billId !== null &&
+      coverage === "overpaid" &&
+      (!hasExcessSettlement || hasOtherClaimedPayment),
+  }
+}
+
 function PaymentHistoryIssues({
-  hasCancellationCollision,
-  billId,
-  paymentId,
-  amount,
-  excessAcknowledgedAt,
+  flags,
 }: {
-  readonly hasCancellationCollision: boolean
-  readonly billId: BillId | null
-  readonly paymentId: PaymentId
-  readonly amount: NonNegativeInteger
-  readonly excessAcknowledgedAt: TimestampMs | null
+  readonly flags: PaymentHistoryIssueFlags
 }) {
   const { t } = useTranslation()
-  const { coverage } = useBillCoverage(billId ?? NO_BILL_ID)
-  const claimedTransactionsQuery = useMemo(
-    () => activeClaimedTransactionsByPaymentIdQuery(paymentId),
-    [paymentId]
-  )
-  const { data: claimedTransactions } = useEvoluQuery(claimedTransactionsQuery)
-  const hasExcessSettlement = derivePaymentHasExcessSettlement({
-    amount,
-    excessAcknowledgedAt,
-    claimedSum: calculatePaymentClaimedSum(claimedTransactions),
-  })
-  const claimedPaymentsQuery = useMemo(
-    () => claimedPaymentsByBillIdQuery(billId ?? NO_BILL_ID),
-    [billId]
-  )
-  const { data: claimedPayments } = useEvoluQuery(claimedPaymentsQuery)
-  const hasOtherClaimedPayment = [
-    ...new Set(claimedPayments.map((payment) => payment.id)),
-  ].some((id) => id !== paymentId)
-  const showBillOverpaid =
-    billId !== null &&
-    coverage === "overpaid" &&
-    (!hasExcessSettlement || hasOtherClaimedPayment)
 
   const issues = [
     // Both reuse the same title `payment-detail.tsx` shows for the
     // identical collision, rather than a separate, list-only wording — one
     // specific label per distinct error, instead of a single generic
     // "Needs review" that didn't say which of them applied.
-    hasCancellationCollision ? t("paymentDetail.collision.title") : null,
-    hasExcessSettlement ? t("paymentDetail.excessCollision.title") : null,
-    billId !== null && coverage === "underpaid"
-      ? t("paymentHistory.billUnderpaid")
-      : null,
-    showBillOverpaid ? t("paymentHistory.billOverpaid") : null,
+    flags.hasCancellationCollision ? t("paymentDetail.collision.title") : null,
+    flags.hasExcessSettlement ? t("paymentDetail.excessCollision.title") : null,
+    flags.billUnderpaid ? t("paymentHistory.billUnderpaid") : null,
+    flags.billOverpaid ? t("paymentHistory.billOverpaid") : null,
   ].filter((issue): issue is string => issue !== null)
 
   if (issues.length === 0) return null
@@ -238,6 +348,7 @@ export const PaymentHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
   const { data: items } = useEvoluQuery(latestPaymentsQuery)
+  const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   const empty = (
     <div className={"flex flex-col justify-center items-center gap-8 py-10"}>
@@ -278,6 +389,11 @@ export const PaymentHistory = () => {
               confirmedPaidAt: item.confirmedPaidAt,
               claimCount,
             })
+            const issueFlags = resolvePaymentHistoryIssueFlags(
+              item,
+              itemRows,
+              hasCancellationCollision
+            )
 
             return {
               id: item.id,
@@ -305,13 +421,7 @@ export const PaymentHistory = () => {
                         {formatTime(new Date(item.createdAt), locale)}
                       </span>
                     </div>
-                    <PaymentHistoryIssues
-                      hasCancellationCollision={hasCancellationCollision}
-                      billId={item.billId}
-                      paymentId={item.id}
-                      amount={item.amount}
-                      excessAcknowledgedAt={item.excessAcknowledgedAt}
-                    />
+                    <PaymentHistoryIssues flags={issueFlags} />
                   </div>
                 </div>
               ),

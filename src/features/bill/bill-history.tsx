@@ -6,15 +6,17 @@ import {
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
-import type { ReactNode } from "react"
+import { type ReactNode, useMemo } from "react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { latestBillsQuery } from "@/core/modules/bill/bill-queries.ts"
-import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
+import {
+  type BillHistoryItemSummary,
+  deriveBillHistoryItemSummary,
+} from "@/core/modules/bill/bill-utils.ts"
+import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
+import type { ItemRow } from "@/core/modules/item/item.ts"
+import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
-import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
-import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
-import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -28,13 +30,16 @@ const billStatusIconData = {
   open: ["bg-warning/10 text-warning", <RotateCwIcon key="open" />],
   closed: ["bg-success/10 text-success", <CheckIcon key="closed" />],
   canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
-} satisfies Record<BillStatus, readonly [string, ReactNode]>
+} satisfies Record<
+  BillHistoryItemSummary["status"],
+  readonly [string, ReactNode]
+>
 
 function BillStatusIcon({
   status,
   hasCancellationCollision,
 }: {
-  readonly status: BillStatus
+  readonly status: BillHistoryItemSummary["status"]
   readonly hasCancellationCollision: boolean
 }) {
   const [className, icon] = hasCancellationCollision
@@ -63,15 +68,17 @@ function BillStatusIcon({
  * signal (see the "reading the combination" table in
  * docs/bill-payment-states.md).
  */
-function BillHistoryIssues({ billId }: { readonly billId: BillId }) {
+function BillHistoryIssues({
+  summary,
+}: {
+  readonly summary: BillHistoryItemSummary
+}) {
   const { t } = useTranslation()
-  const billStatus = useBillStatus(billId)
-  const { claimedSum, coverage } = useBillCoverage(billId)
 
   const issues = [
-    billStatus?.hasCancellationCollision ? t("bill.collision.title") : null,
-    coverage === "overpaid" ? t("billHistory.overpaid") : null,
-    coverage === "underpaid" && claimedSum > 0
+    summary.hasCancellationCollision ? t("bill.collision.title") : null,
+    summary.coverage === "overpaid" ? t("billHistory.overpaid") : null,
+    summary.coverage === "underpaid" && summary.claimedSum > 0
       ? t("billHistory.underpaid")
       : null,
   ].filter((issue): issue is string => issue !== null)
@@ -89,28 +96,42 @@ function BillHistoryIssues({ billId }: { readonly billId: BillId }) {
  * Reproduces the icon/label/action layout `NavItemContent` (`vertical-nav.tsx`)
  * and `PaymentHistory` build from separate `item` slots — bill rows can't use
  * those slots directly since every piece (icon, amount, status text) needs
- * its own `useBillStatus`/`useBillLineSummaries` subscription, which only
- * one component render can host, not a plain `.map()` callback. Assembling
- * the equivalent DOM by hand here, instead, is what keeps a bill row visually
- * identical to a payment row.
+ * `bill.lines`/`bill.claimedTransactions`, already loaded by `latestBillsQuery`
+ * for every row in one round trip, reduced here through the same pure
+ * `calculateBillLineSummaries`/`deriveBillHistoryItemSummary` the detail page
+ * uses — not a plain `.map()` callback. Assembling the equivalent DOM by hand
+ * here, instead, is what keeps a bill row visually identical to a payment row.
  */
-function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
+function BillHistoryItemContent({
+  bill,
+  itemRows,
+}: {
+  readonly bill: BillHistoryRow
+  readonly itemRows: ReadonlyArray<ItemRow>
+}) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const summaries = useBillLineSummaries(bill.id)
-  const billStatus = useBillStatus(bill.id)
-  const totalAmount = NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  )
 
-  if (billStatus === undefined) return null
+  const summary = useMemo(() => {
+    const summaries = calculateBillLineSummaries(bill.lines, itemRows)
+    const billTotal = NonNegativeInteger(
+      summaries.reduce((sum, item) => sum + item.totalAmount, 0)
+    )
+
+    return deriveBillHistoryItemSummary({
+      canceledAt: bill.canceledAt,
+      confirmedClosedAt: bill.confirmedClosedAt,
+      billTotal,
+      claimedTransactions: bill.claimedTransactions,
+    })
+  }, [bill, itemRows])
 
   return (
     <div className={"flex items-center gap-3 w-full"}>
       <div className={"p-2"}>
         <BillStatusIcon
-          status={billStatus.status}
-          hasCancellationCollision={billStatus.hasCancellationCollision}
+          status={summary.status}
+          hasCancellationCollision={summary.hasCancellationCollision}
         />
       </div>
       <div className={"flex gap-2 justify-between w-full"}>
@@ -121,7 +142,7 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
           <div className={"flex text-xs"}>
             <span>
               {formatMoney(
-                { value: totalAmount, currency: bill.currency },
+                { value: summary.billTotal, currency: bill.currency },
                 locale
               )}
             </span>
@@ -130,12 +151,12 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
               {formatTime(new Date(bill.createdAt), locale)}
             </span>
           </div>
-          <BillHistoryIssues billId={bill.id} />
+          <BillHistoryIssues summary={summary} />
         </div>
       </div>
       <div className={"pl-2"}>
         <span className="text-xs font-medium text-muted-foreground">
-          {t(`billHistory.status.${billStatus.status}`)}
+          {t(`billHistory.status.${summary.status}`)}
         </span>
       </div>
     </div>
@@ -146,6 +167,7 @@ export const BillHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
   const { data: items } = useEvoluQuery(latestBillsQuery)
+  const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   const empty = (
     <div className={"flex flex-col justify-center items-center gap-8 py-10"}>
@@ -179,7 +201,7 @@ export const BillHistory = () => {
             to: "/activity/bills/$billId",
             params: { billId: bill.id },
             disableAction: true,
-            label: <BillHistoryItemContent bill={bill} />,
+            label: <BillHistoryItemContent bill={bill} itemRows={itemRows} />,
           }))}
         />
       ))}

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
+import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { ActivityTabs } from "@/components/activity-tabs.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PaymentHistory } from "@/components/payment-history.tsx"
@@ -24,7 +25,7 @@ function ActivityPage() {
 
       <section className="flex flex-col gap-8">
         <ActivityTabs active="payments" />
-        <Suspense fallback={null}>
+        <Suspense fallback={<ActivityHistorySkeleton />}>
           <PaymentHistory />
         </Suspense>
       </section>

@@ -7,17 +7,18 @@ import {
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   claimedPaymentIdSet,
-  hasPendingPayment,
+  derivePendingPaymentIds,
 } from "@/core/modules/bill/bill-utils.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 /**
  * Reactive equivalent of the `isBillLocked` check behind `requireEditableBill`:
- * whether the bill currently has a live (pending) payment attempt, which
- * blocks cart edits regardless of `bill.status`. See
- * docs/bill-payment-states.md.
+ * the ids of the bill's live (pending) payment attempts, which block cart
+ * edits regardless of `bill.status`. An empty array means the bill isn't
+ * locked. See docs/bill-payment-states.md.
  */
-export function useBillLock(billId: BillId): boolean {
+export function usePendingPayments(billId: BillId): ReadonlyArray<PaymentId> {
   const paymentsQuery = useMemo(() => paymentsByBillIdQuery(billId), [billId])
   const claimedQuery = useMemo(
     () => claimedPaymentsByBillIdQuery(billId),
@@ -28,7 +29,7 @@ export function useBillLock(billId: BillId): boolean {
 
   return useMemo(
     () =>
-      hasPendingPayment(
+      derivePendingPaymentIds(
         payments,
         claimedPaymentIdSet(claimedPayments),
         new Date()

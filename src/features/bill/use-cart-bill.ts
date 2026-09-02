@@ -119,7 +119,7 @@ export function useCartBill({
     // doesn't suspend — an uncached suspend here bubbled up to the route's
     // Suspense boundary and blanked the whole page for a beat. Keep this in
     // sync with every query the bill view's `use()` reads unconditionally
-    // once `billId` is set, including `useBillLock`'s.
+    // once `billId` is set, including `usePendingPayments`'s.
     await Promise.all([
       evolu.loadQuery(billByIdQuery(created)),
       evolu.loadQuery(billLinesByBillIdQuery(created)),

@@ -34,6 +34,8 @@ export const en = {
   "bill.list.label": "Bill #{number}",
   "bill.closed": "This cart has already been settled.",
   "bill.locked": "This bill is awaiting payment and can't be edited right now.",
+  "bill.locked.viewPayment": "View payment",
+  "bill.locked.viewPayment.numbered": "View payment {number}",
   "bill.notFound": "This cart no longer exists.",
   "bill.brick.add.aria": "Add {name}",
   "bill.brick.quantity.cancel": "Cancel",

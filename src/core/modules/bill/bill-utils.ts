@@ -47,7 +47,7 @@ export const calculateClaimedSum = (
 
 /**
  * Turns a list of claimed-payment rows into a `Set` of their ids — shared by
- * `isBillLocked` (`bill-actions.ts`) and `useBillLock` (the reactive
+ * `isBillLocked` (`bill-actions.ts`) and `usePendingPayments` (the reactive
  * equivalent) so the "which payments are claimed" adaptation step isn't
  * duplicated between the Task and hook versions.
  */
@@ -57,7 +57,7 @@ export const claimedPaymentIdSet = (
   new Set(claimedPayments.map((payment) => payment.id))
 
 /**
- * Whether a bill currently has a *live* payment attempt — one whose derived
+ * The ids of every *live* payment attempt on a bill — one whose derived
  * status (see `derivePaymentStatus`) is `pending`. This is the basis of the
  * bill's editing lock: `editable = bill.status === "open" && !hasPendingPayment(...)`.
  * Nothing is stored for this — it is recomputed from the payment rows every
@@ -65,6 +65,27 @@ export const claimedPaymentIdSet = (
  * (paid, canceled, or expires), with no separate "unlock" step. See
  * docs/bill-payment-states.md.
  */
+export const derivePendingPaymentIds = (
+  payments: ReadonlyArray<{
+    readonly id: PaymentId
+    readonly canceledAt: TimestampMs | null
+    readonly expiresAt: TimestampMs | null
+  }>,
+  claimedPaymentIds: ReadonlySet<PaymentId>,
+  now: Date
+): ReadonlyArray<PaymentId> =>
+  payments
+    .filter(
+      (payment) =>
+        derivePaymentStatus({
+          canceledAt: payment.canceledAt,
+          expiresAt: payment.expiresAt,
+          hasActiveClaim: claimedPaymentIds.has(payment.id),
+          now,
+        }) === "pending"
+    )
+    .map((payment) => payment.id)
+
 export const hasPendingPayment = (
   payments: ReadonlyArray<{
     readonly id: PaymentId
@@ -74,12 +95,4 @@ export const hasPendingPayment = (
   claimedPaymentIds: ReadonlySet<PaymentId>,
   now: Date
 ): boolean =>
-  payments.some(
-    (payment) =>
-      derivePaymentStatus({
-        canceledAt: payment.canceledAt,
-        expiresAt: payment.expiresAt,
-        hasActiveClaim: claimedPaymentIds.has(payment.id),
-        now,
-      }) === "pending"
-  )
+  derivePendingPaymentIds(payments, claimedPaymentIds, now).length > 0

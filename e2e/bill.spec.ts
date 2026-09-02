@@ -402,6 +402,20 @@ test("locks a bill while its payment is pending, and unlocks it once that paymen
     })
     await page.getByRole("heading", { name: /^Bill #/ }).waitFor()
     await expect(page.getByText(translate("en", "bill.locked"))).toBeVisible()
+
+    const viewPaymentButton = page.getByRole("button", {
+      name: translate("en", "bill.locked.viewPayment"),
+    })
+    await expect(viewPaymentButton).toBeVisible()
+    await viewPaymentButton.click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentWait.cancel") })
+      .waitFor()
+    expect(page.url()).toBe(paymentPageUrl)
+
+    await page.goto(`/bill?billId=${billId}`, {
+      waitUntil: "domcontentloaded",
+    })
   })
 
   await test.step("canceling the payment unlocks the bill again", async () => {

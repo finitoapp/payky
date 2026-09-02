@@ -59,6 +59,7 @@ import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
@@ -71,8 +72,8 @@ import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
-import { useBillLock } from "@/features/bill/use-bill-lock.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
+import { usePendingPayments } from "@/features/bill/use-pending-payments.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
@@ -163,15 +164,15 @@ function BillExistingBody({
   const { data: billRows } = useEvoluQuery(billByIdQuery(billId))
   const bill = billRows[0]
   const summaries = useBillLineSummaries(billId)
-  const locked = useBillLock(billId)
+  const pendingPaymentIds = usePendingPayments(billId)
 
   let content: ReactNode
   if (bill === undefined) {
     content = <BillMessage message={t("bill.notFound")} />
   } else if (bill.status !== "open") {
     content = <BillMessage message={t("bill.closed")} />
-  } else if (locked) {
-    content = <BillMessage message={t("bill.locked")} />
+  } else if (pendingPaymentIds.length > 0) {
+    content = <BillLockedMessage paymentIds={pendingPaymentIds} />
   } else {
     content = (
       <BillCartView
@@ -221,6 +222,34 @@ function BillPageLayout({
 function BillMessage({ message }: { readonly message: string }) {
   return (
     <p className="mt-16 px-6 text-center text-muted-foreground">{message}</p>
+  )
+}
+
+function BillLockedMessage({
+  paymentIds,
+}: {
+  readonly paymentIds: ReadonlyArray<PaymentId>
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="mt-16 flex flex-col items-center gap-4 px-6 text-center">
+      <p className="text-muted-foreground">{t("bill.locked")}</p>
+      <div className="flex flex-col gap-2">
+        {paymentIds.map((paymentId, index) => (
+          <Button
+            key={paymentId}
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/payment/$paymentId" params={{ paymentId }} />}
+          >
+            {paymentIds.length > 1
+              ? t("bill.locked.viewPayment.numbered", { number: index + 1 })
+              : t("bill.locked.viewPayment")}
+          </Button>
+        ))}
+      </div>
+    </div>
   )
 }
 

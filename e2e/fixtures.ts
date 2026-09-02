@@ -773,3 +773,23 @@ export async function cancelBillDirectly(
   await page.waitForFunction(() => typeof window.__e2eCancelBill === "function")
   await page.evaluate((id) => window.__e2eCancelBill?.(id), billId)
 }
+
+/**
+ * `startBillAndBeginCashPayment`, then cancels the bill directly while that
+ * payment is still pending and confirms it paid anyway — the canceled+funded
+ * collision from docs/bill-payment-states.md. Shared setup for every spec
+ * that checks how a surface (the bill cart page, the bills list/detail
+ * pages, the payment detail page) displays or resolves this collision,
+ * instead of each hand-rolling the same cart → payment → cancel → pay
+ * sequence.
+ */
+export async function startCollisionBill(
+  page: Page,
+  language: Language
+): Promise<{ readonly billId: string; readonly paymentPageUrl: string }> {
+  const billId = await startBillAndBeginCashPayment(page, language)
+  const paymentPageUrl = page.url()
+  await cancelBillDirectly(page, billId)
+  await markCashPaidAndSettle(page, language)
+  return { billId, paymentPageUrl }
+}

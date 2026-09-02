@@ -145,7 +145,7 @@ function AccountsSettingsPage() {
                 {t("settings.accounts.list.empty")}
               </p>
             ) : (
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col gap-3" data-testid="account-list">
                 {accounts.map((account) => (
                   <li
                     key={account.id}

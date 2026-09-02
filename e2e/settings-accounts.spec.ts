@@ -27,7 +27,7 @@ test("create, switch, and remove a device account", async ({
   await test.step("complete onboarding for the new account", () =>
     completeOnboardingDefaults(page, "en"))
 
-  const accountRows = page.locator("li")
+  const accountRows = page.getByTestId("account-list").getByRole("listitem")
   // accountListQuery orders by createdAt ascending, so the first-created
   // account is always the first row regardless of which one is active.
   const [firstCreatedRow, secondCreatedRow] = [

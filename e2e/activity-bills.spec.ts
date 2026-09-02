@@ -5,6 +5,9 @@ import {
   expect,
   gotoPage,
   markCashPaid,
+  markCashPaidAndSettle,
+  nameParam,
+  screenshotDir,
   simulateBillModifiedDuringPayment,
   simulateCancelAfterClaim,
   startBillAndBeginCashPayment,
@@ -14,150 +17,126 @@ import {
   translate,
 } from "./fixtures.ts"
 
-/**
- * Playwright's own artifact directory (already git-ignored — see
- * .gitignore's "Playwright" section) — screenshots taken explicitly by a
- * spec live alongside its auto-captured failure screenshots instead of a
- * new, separately-ignored directory.
- */
-const screenshotDir = "test-results/e2e-screenshots"
+/** Locates a bill's row in the `/activity/bills` list by its id. */
+const billRow = (page: Parameters<typeof markCashPaid>[0], billId: string) =>
+  page.locator("nav").locator(`a[href$="/${billId}"]`)
 
-/** `translate()` for a `{name}`-templated key, e.g. `"bill.brick.add.aria"`. */
-const nameParam = (key: Parameters<typeof translate>[1], name: string) =>
-  translate("en", key).replace("{name}", name)
-
-/**
- * Right after `markCashPaid`, a hard navigation (`gotoPosOverview`'s
- * `page.goto("/")`, or a fresh `gotoPage`) can otherwise race ahead of that
- * write settling — see `simulateCancelAfterClaim`'s doc comment in
- * fixtures.ts and bill.spec.ts's "closing the bill after cash payment is a
- * fire-and-forget write" comment for the same caveat. Give it a moment to
- * settle before navigating.
- */
-async function markCashPaidAndSettle(
-  page: Parameters<typeof markCashPaid>[0]
-): Promise<void> {
-  await markCashPaid(page, "en")
-  await page.waitForTimeout(1000)
-}
-
-test("the bills list shows every bill status and coverage edge case at once", async ({
+test("the bills list shows an ordinary open bill with nothing paid yet", async ({
   seededPage: page,
 }) => {
-  // Six full bill/payment cycles through the real UI, each followed by a
-  // settle wait, comfortably exceed Playwright's default 30s test timeout.
-  test.setTimeout(120_000)
-
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  const billId = await startBillWithCoffee(page, "en")
 
-  let openBillId = ""
-  let canceledBillId = ""
-  let closedBillId = ""
-  let underpaidBillId = ""
-  let overpaidBillId = ""
-  let collisionBillId = ""
-
-  await test.step("an ordinary open bill with nothing paid yet", async () => {
-    openBillId = await startBillWithCoffee(page, "en")
+  await gotoPage(page, "/activity/bills", "en", "activity.title")
+  const row = billRow(page, billId)
+  await expect(row).toContainText(translate("en", "billHistory.status.open"))
+  await expect(row).not.toContainText(translate("en", "billHistory.underpaid"))
+  await expect(row).not.toContainText(translate("en", "billHistory.overpaid"))
+  await expect(row).not.toContainText(translate("en", "bill.collision.title"))
+  await page.screenshot({
+    path: `${screenshotDir}/activity-bills-list-open.png`,
+    fullPage: true,
   })
+})
 
-  await test.step("an ordinary canceled bill, discarded before any payment", async () => {
-    canceledBillId = await startBillWithCoffee(page, "en")
-    await page
-      .getByRole("button", { name: translate("en", "bill.discard") })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "bill.discard.confirm.confirm"),
-      })
-      .click()
-    await page.getByTestId("no-table-tile").waitFor()
-  })
-
-  await test.step("an ordinary closed bill, fully paid", async () => {
-    closedBillId = await startBillAndBeginCashPayment(page, "en")
-    await markCashPaidAndSettle(page)
-  })
-
-  await test.step("an underpaid bill: another device grew the total while the payment was in flight", async () => {
-    underpaidBillId = await startBillAndBeginCashPayment(page, "en")
-    await simulateBillModifiedDuringPayment(page, underpaidBillId, "add")
-    await markCashPaidAndSettle(page)
-  })
-
-  await test.step("an overpaid bill: another device shrank the total while the payment was in flight", async () => {
-    overpaidBillId = await startBillAndBeginCashPayment(page, "en")
-    await simulateBillModifiedDuringPayment(page, overpaidBillId, "removeAll")
-    await markCashPaidAndSettle(page)
-  })
-
-  await test.step("a canceled+funded collision bill: discarded while its payment was pending, then confirmed anyway", async () => {
-    collisionBillId = await startBillAndBeginCashPayment(page, "en")
-    await cancelBillDirectly(page, collisionBillId)
-    await markCashPaidAndSettle(page)
-  })
-
-  await test.step("the bills list shows every state at once", async () => {
-    await gotoPage(page, "/activity/bills", "en", "activity.title")
-
-    const row = (billId: string) =>
-      page.locator("nav").locator(`a[href$="/${billId}"]`)
-
-    await expect(row(openBillId)).toContainText(
-      translate("en", "billHistory.status.open")
-    )
-    await expect(row(openBillId)).not.toContainText(
-      translate("en", "billHistory.underpaid")
-    )
-    await expect(row(openBillId)).not.toContainText(
-      translate("en", "billHistory.overpaid")
-    )
-    await expect(row(openBillId)).not.toContainText(
-      translate("en", "bill.collision.title")
-    )
-
-    await expect(row(canceledBillId)).toContainText(
-      translate("en", "billHistory.status.canceled")
-    )
-    await expect(row(canceledBillId)).not.toContainText(
-      translate("en", "bill.collision.title")
-    )
-
-    await expect(row(closedBillId)).toContainText(
-      translate("en", "billHistory.status.closed")
-    )
-    await expect(row(closedBillId)).not.toContainText(
-      translate("en", "billHistory.underpaid")
-    )
-    await expect(row(closedBillId)).not.toContainText(
-      translate("en", "billHistory.overpaid")
-    )
-
-    await expect(row(underpaidBillId)).toContainText(
-      translate("en", "billHistory.status.open")
-    )
-    await expect(row(underpaidBillId)).toContainText(
-      translate("en", "billHistory.underpaid")
-    )
-
-    await expect(row(overpaidBillId)).toContainText(
-      translate("en", "billHistory.status.closed")
-    )
-    await expect(row(overpaidBillId)).toContainText(
-      translate("en", "billHistory.overpaid")
-    )
-
-    await expect(row(collisionBillId)).toContainText(
-      translate("en", "billHistory.status.canceled")
-    )
-    await expect(row(collisionBillId)).toContainText(
-      translate("en", "bill.collision.title")
-    )
-
-    await page.screenshot({
-      path: `${screenshotDir}/activity-bills-list-edge-cases.png`,
-      fullPage: true,
+test("the bills list shows an ordinary canceled bill, discarded before any payment", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  const billId = await startBillWithCoffee(page, "en")
+  await page
+    .getByRole("button", { name: translate("en", "bill.discard") })
+    .click()
+  await page
+    .getByRole("button", {
+      name: translate("en", "bill.discard.confirm.confirm"),
     })
+    .click()
+  await page.getByTestId("no-table-tile").waitFor()
+
+  await gotoPage(page, "/activity/bills", "en", "activity.title")
+  const row = billRow(page, billId)
+  await expect(row).toContainText(
+    translate("en", "billHistory.status.canceled")
+  )
+  await expect(row).not.toContainText(translate("en", "bill.collision.title"))
+  await page.screenshot({
+    path: `${screenshotDir}/activity-bills-list-canceled.png`,
+    fullPage: true,
+  })
+})
+
+test("the bills list shows an ordinary closed bill, fully paid", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  const billId = await startBillAndBeginCashPayment(page, "en")
+  await markCashPaidAndSettle(page, "en")
+
+  await gotoPage(page, "/activity/bills", "en", "activity.title")
+  const row = billRow(page, billId)
+  await expect(row).toContainText(translate("en", "billHistory.status.closed"))
+  await expect(row).not.toContainText(translate("en", "billHistory.underpaid"))
+  await expect(row).not.toContainText(translate("en", "billHistory.overpaid"))
+  await page.screenshot({
+    path: `${screenshotDir}/activity-bills-list-closed.png`,
+    fullPage: true,
+  })
+})
+
+test("the bills list shows an underpaid bill when another device grew the total while the payment was in flight", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  const billId = await startBillAndBeginCashPayment(page, "en")
+  await simulateBillModifiedDuringPayment(page, billId, "add")
+  await markCashPaidAndSettle(page, "en")
+
+  await gotoPage(page, "/activity/bills", "en", "activity.title")
+  const row = billRow(page, billId)
+  await expect(row).toContainText(translate("en", "billHistory.status.open"))
+  await expect(row).toContainText(translate("en", "billHistory.underpaid"))
+  await page.screenshot({
+    path: `${screenshotDir}/activity-bills-list-underpaid.png`,
+    fullPage: true,
+  })
+})
+
+test("the bills list shows an overpaid bill when another device shrank the total while the payment was in flight", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  const billId = await startBillAndBeginCashPayment(page, "en")
+  await simulateBillModifiedDuringPayment(page, billId, "removeAll")
+  await markCashPaidAndSettle(page, "en")
+
+  await gotoPage(page, "/activity/bills", "en", "activity.title")
+  const row = billRow(page, billId)
+  await expect(row).toContainText(translate("en", "billHistory.status.closed"))
+  await expect(row).toContainText(translate("en", "billHistory.overpaid"))
+  await page.screenshot({
+    path: `${screenshotDir}/activity-bills-list-overpaid.png`,
+    fullPage: true,
+  })
+})
+
+test("the bills list shows a canceled+funded collision bill discarded while its payment was pending, then confirmed anyway", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  const billId = await startBillAndBeginCashPayment(page, "en")
+  await cancelBillDirectly(page, billId)
+  await markCashPaidAndSettle(page, "en")
+
+  await gotoPage(page, "/activity/bills", "en", "activity.title")
+  const row = billRow(page, billId)
+  await expect(row).toContainText(
+    translate("en", "billHistory.status.canceled")
+  )
+  await expect(row).toContainText(translate("en", "bill.collision.title"))
+  await page.screenshot({
+    path: `${screenshotDir}/activity-bills-list-collision.png`,
+    fullPage: true,
   })
 })
 
@@ -166,10 +145,10 @@ test("clicking a bill row in the list opens its detail page", async ({
 }) => {
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
   const billId = await startBillAndBeginCashPayment(page, "en")
-  await markCashPaidAndSettle(page)
+  await markCashPaidAndSettle(page, "en")
 
   await gotoPage(page, "/activity/bills", "en", "activity.title")
-  await page.locator("nav").locator(`a[href$="/${billId}"]`).click()
+  await billRow(page, billId).click()
 
   await page
     .getByRole("heading", { name: translate("en", "billDetail.title") })
@@ -190,12 +169,12 @@ test("the bill detail page shows an invalid id or a missing bill message", async
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
   await test.step("an invalid id shows the invalid-id message", async () => {
-    await page.goto("/activity/bills/not-a-real-id", {
-      waitUntil: "domcontentloaded",
-    })
-    await page
-      .getByRole("heading", { name: translate("en", "billDetail.title") })
-      .waitFor()
+    await gotoPage(
+      page,
+      "/activity/bills/not-a-real-id",
+      "en",
+      "billDetail.title"
+    )
     await expect(
       page.getByText(translate("en", "billDetail.invalidId"))
     ).toBeVisible()
@@ -207,12 +186,12 @@ test("the bill detail page shows an invalid id or a missing bill message", async
     // bits in their last character, so only the first character of a known
     // valid id is swapped, keeping the rest (and its encoding) untouched.
     const missingBillId = `${billId[0] === "a" ? "b" : "a"}${billId.slice(1)}`
-    await page.goto(`/activity/bills/${missingBillId}`, {
-      waitUntil: "domcontentloaded",
-    })
-    await page
-      .getByRole("heading", { name: translate("en", "billDetail.title") })
-      .waitFor()
+    await gotoPage(
+      page,
+      `/activity/bills/${missingBillId}`,
+      "en",
+      "billDetail.title"
+    )
     await expect(
       page.getByText(translate("en", "billDetail.notFound"))
     ).toBeVisible()
@@ -251,14 +230,9 @@ test("the bill detail page shows the total, items, table, and linked payment", a
   await page
     .getByRole("button", { name: translate("en", "paymentTip.continue") })
     .click()
-  await markCashPaidAndSettle(page)
+  await markCashPaidAndSettle(page, "en")
 
-  await page.goto(`/activity/bills/${billId}`, {
-    waitUntil: "domcontentloaded",
-  })
-  await page
-    .getByRole("heading", { name: translate("en", "billDetail.title") })
-    .waitFor()
+  await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
 
   await expect(
     page.getByText(translate("en", "paymentDetail.bill.status.closed"))
@@ -285,14 +259,9 @@ test("the bill detail page shows coverage as underpaid or overpaid when another 
   await test.step("underpaid: another device grows the total while the payment is in flight", async () => {
     const billId = await startBillAndBeginCashPayment(page, "en")
     await simulateBillModifiedDuringPayment(page, billId, "add")
-    await markCashPaidAndSettle(page)
+    await markCashPaidAndSettle(page, "en")
 
-    await page.goto(`/activity/bills/${billId}`, {
-      waitUntil: "domcontentloaded",
-    })
-    await page
-      .getByRole("heading", { name: translate("en", "billDetail.title") })
-      .waitFor()
+    await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
     await expect(
       page.getByText(
         translate("en", "paymentDetail.bill.coverage.underpaid.title")
@@ -307,14 +276,9 @@ test("the bill detail page shows coverage as underpaid or overpaid when another 
   await test.step("overpaid: another device shrinks the total while the payment is in flight", async () => {
     const billId = await startBillAndBeginCashPayment(page, "en")
     await simulateBillModifiedDuringPayment(page, billId, "removeAll")
-    await markCashPaidAndSettle(page)
+    await markCashPaidAndSettle(page, "en")
 
-    await page.goto(`/activity/bills/${billId}`, {
-      waitUntil: "domcontentloaded",
-    })
-    await page
-      .getByRole("heading", { name: translate("en", "billDetail.title") })
-      .waitFor()
+    await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
     await expect(
       page.getByText(
         translate("en", "paymentDetail.bill.coverage.overpaid.title")
@@ -334,14 +298,9 @@ test("the bill detail page flags a canceled+funded collision and can be resolved
 
   const billId = await startBillAndBeginCashPayment(page, "en")
   await cancelBillDirectly(page, billId)
-  await markCashPaidAndSettle(page)
+  await markCashPaidAndSettle(page, "en")
 
-  await page.goto(`/activity/bills/${billId}`, {
-    waitUntil: "domcontentloaded",
-  })
-  await page
-    .getByRole("heading", { name: translate("en", "billDetail.title") })
-    .waitFor()
+  await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
 
   await test.step("shows the collision message", async () => {
     await expect(
@@ -383,12 +342,7 @@ test("a payment individually canceled after being claimed shows a warning icon i
   await markCashPaid(page, "en")
   await simulateCancelAfterClaim(page, "en")
 
-  await page.goto(`/activity/bills/${billId}`, {
-    waitUntil: "domcontentloaded",
-  })
-  await page
-    .getByRole("heading", { name: translate("en", "billDetail.title") })
-    .waitFor()
+  await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
 
   await expect(
     page

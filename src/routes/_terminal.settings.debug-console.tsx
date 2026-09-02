@@ -91,7 +91,10 @@ function DebugConsolePage() {
               {t("settings.debugConsole.empty")}
             </p>
           ) : (
-            <div className="flex flex-col gap-1.5">
+            <div
+              className="flex flex-col gap-1.5"
+              data-testid="debug-console-entries"
+            >
               {visibleEntries.map((entry, index) => (
                 <ConsoleEntryCard
                   // biome-ignore lint/suspicious/noArrayIndexKey: console entries do not expose stable ids

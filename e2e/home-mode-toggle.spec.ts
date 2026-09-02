@@ -1,10 +1,8 @@
-import { expect, seedOnboarding, test, translate } from "./fixtures.ts"
+import { expect, test, translate } from "./fixtures.ts"
 
 test("toggling the home icon switches between numpad and tables, and the choice survives a reload", async ({
-  page,
+  seededPage: page,
 }) => {
-  await seedOnboarding(page, "en")
-
   const homeToggle = page.getByRole("button", {
     name: translate("en", "nav.pos"),
   })

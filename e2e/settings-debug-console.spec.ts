@@ -11,7 +11,7 @@ test("view, pause, and clear captured console output", async ({
       "settings.debugConsole.title"
     ))
 
-  const entries = page.locator("article")
+  const entries = page.getByTestId("debug-console-entries").getByRole("article")
   const pauseButton = page.getByRole("button", {
     name: translate("en", "settings.debugConsole.pause"),
   })

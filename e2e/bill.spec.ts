@@ -7,22 +7,14 @@ import {
   gotoPage,
   gotoPosOverview,
   markCashPaid,
+  markCashPaidAndSettle,
+  nameParam,
+  screenshotDir,
   startNewBill,
   test,
   translate,
   translateValue,
 } from "./fixtures.ts"
-
-const nameParam = (key: Parameters<typeof translate>[1], name: string) =>
-  translate("en", key).replace("{name}", name)
-
-/**
- * Playwright's own artifact directory (already git-ignored — see
- * .gitignore's "Playwright" section) — screenshots taken explicitly by a
- * spec live alongside its auto-captured failure screenshots instead of a
- * new, separately-ignored directory.
- */
-const screenshotDir = "test-results/e2e-screenshots"
 
 test("build a cart, save it, resume it, and discard it", async ({
   seededPage: page,
@@ -246,12 +238,7 @@ test("shows the right message for a closed or missing bill", async ({
     // bits in their last character, so only the first character of a known
     // valid id is swapped, keeping the rest (and its encoding) untouched.
     const missingBillId = `${billId?.[0] === "a" ? "b" : "a"}${billId?.slice(1)}`
-    await page.goto(`/bill?billId=${missingBillId}`, {
-      waitUntil: "domcontentloaded",
-    })
-    await page
-      .getByRole("heading", { name: translate("en", "bill.title") })
-      .waitFor()
+    await gotoPage(page, `/bill?billId=${missingBillId}`, "en", "bill.title")
     await expect(page.getByText(translate("en", "bill.notFound"))).toBeVisible()
   })
 })
@@ -757,8 +744,7 @@ test("a bill canceled while its payment is pending, then confirmed anyway, is fl
 
   await test.step("the pending payment is confirmed anyway", async () => {
     await page.goto(paymentPageUrl, { waitUntil: "domcontentloaded" })
-    await markCashPaid(page, "en")
-    await page.waitForTimeout(1000)
+    await markCashPaidAndSettle(page, "en")
   })
 
   await test.step("the bill page flags the canceled+funded collision", async () => {
@@ -860,8 +846,7 @@ test("the bill page's own collision message shows the total and a link to the fu
   await test.step("the bill is discarded while the payment is still pending, then confirmed anyway", async () => {
     await cancelBillDirectly(page, billId)
     await page.goto(paymentPageUrl, { waitUntil: "domcontentloaded" })
-    await markCashPaid(page, "en")
-    await page.waitForTimeout(1000)
+    await markCashPaidAndSettle(page, "en")
   })
 
   await test.step("the bill page shows the total and a link to the payment", async () => {

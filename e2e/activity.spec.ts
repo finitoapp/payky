@@ -6,21 +6,15 @@ import {
   gotoPage,
   markCashPaid,
   prepareIbanPayment,
+  screenshotDir,
   simulateBillModifiedDuringPayment,
   simulateCancelAfterClaim,
   simulateDuplicateSettlement,
   startBillAndBeginCashPayment,
   test,
   translate,
+  waitForLocalWriteToSettle,
 } from "./fixtures.ts"
-
-/**
- * Playwright's own artifact directory (already git-ignored — see
- * .gitignore's "Playwright" section) — screenshots taken explicitly by a
- * spec live alongside its auto-captured failure screenshots instead of a
- * new, separately-ignored directory.
- */
-const screenshotDir = "test-results/e2e-screenshots"
 
 test("a paid payment shows up in activity list and detail", async ({
   seededPage: page,
@@ -363,6 +357,9 @@ test("the activity list flags a payment's own duplicate settlement without also 
     .click()
   await markCashPaid(page, "en")
   await simulateDuplicateSettlement(page)
+  // Settle wait covers both fire-and-forget writes above before the hard
+  // navigation below — see `waitForLocalWriteToSettle`.
+  await waitForLocalWriteToSettle(page)
 
   await gotoPage(page, "/activity", "en", "activity.title")
   const row = page.locator("nav").getByRole("link")
@@ -387,6 +384,9 @@ test("the activity list flags a bill overpaid by two separate payments without f
   const billId = await startBillAndBeginCashPayment(page, "en")
   await markCashPaid(page, "en")
   await createAndPaySecondPayment(page, billId)
+  // Settle wait covers both fire-and-forget writes above before the hard
+  // navigation below — see `waitForLocalWriteToSettle`.
+  await waitForLocalWriteToSettle(page)
 
   await gotoPage(page, "/activity", "en", "activity.title")
   const rows = page.locator("nav").getByRole("link")

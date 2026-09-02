@@ -19,6 +19,19 @@ export function translate(language: Language, key: TranslationKey): string {
   return resources[language][key]
 }
 
+/** `translate()` for a `{name}`-templated key, e.g. `"bill.brick.add.aria"`. Always English — every current call site only ever needs it in the default test language. */
+export function nameParam(key: TranslationKey, name: string): string {
+  return translate("en", key).replace("{name}", name)
+}
+
+/**
+ * Playwright's own artifact directory (already git-ignored — see
+ * .gitignore's "Playwright" section) — screenshots taken explicitly by a
+ * spec live alongside its auto-captured failure screenshots instead of a
+ * new, separately-ignored directory.
+ */
+export const screenshotDir = "test-results/e2e-screenshots"
+
 /** `translate()` for a `{value}`-templated key, e.g. `"settings.tips.percentages.value"` ("{value}%"). */
 export function translateValue(
   language: Language,
@@ -513,6 +526,34 @@ export async function markCashPaid(
 }
 
 /**
+ * A local write made through the real domain action layer (e.g.
+ * `markCashPaid`) or through one of the `window.__e2e*` bridges is
+ * fire-and-forget from Evolu's own perspective — the write is queued
+ * against the local SQLite database, and a hard navigation or a fresh page
+ * load can otherwise race ahead of it actually landing and read a stale
+ * snapshot. Give it a moment to settle before navigating away or reloading.
+ * See `markCashPaidAndSettle` and `simulateCancelAfterClaim` for the two
+ * call shapes this covers.
+ */
+export async function waitForLocalWriteToSettle(page: Page): Promise<void> {
+  await page.waitForTimeout(1000)
+}
+
+/**
+ * `markCashPaid`, then waits for that write to settle (see
+ * `waitForLocalWriteToSettle`) before the caller navigates away or reloads —
+ * a hard navigation right after `markCashPaid` can otherwise race ahead of
+ * it and load a stale snapshot.
+ */
+export async function markCashPaidAndSettle(
+  page: Page,
+  language: Language
+): Promise<void> {
+  await markCashPaid(page, language)
+  await waitForLocalWriteToSettle(page)
+}
+
+/**
  * Selects the Lightning/Spark tab on the payment-wait screen and waits for
  * the invoice to finish preparing (the QR code becomes renderable), so the
  * payment has an `lnInvoice`/`sparkInvoice` for `markSparkPaid` to match
@@ -640,7 +681,7 @@ export async function simulateCancelAfterClaim(
   // the only place that races a fresh page load this closely) — the extra
   // wait below gives that a moment to settle.
   await page.getByText(translate(language, "paymentWait.canceled")).waitFor()
-  await page.waitForTimeout(1000)
+  await waitForLocalWriteToSettle(page)
 }
 
 /**

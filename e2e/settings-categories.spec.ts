@@ -1,4 +1,11 @@
-import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
+import {
+  addCatalogCategory,
+  expect,
+  gotoPage,
+  reloadPage,
+  test,
+  translate,
+} from "./fixtures.ts"
 
 test("create, edit and delete a catalog category", async ({
   seededPage: page,
@@ -108,34 +115,8 @@ test("create, edit and delete a catalog category", async ({
 test("assign a category to an item from the item form", async ({
   seededPage: page,
 }) => {
-  await test.step("create a category", async () => {
-    await gotoPage(
-      page,
-      "/settings/categories",
-      "en",
-      "settings.categories.title"
-    )
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.categories.add"),
-      })
-      .click()
-    await page
-      .getByRole("textbox", {
-        name: translate("en", "settings.categories.form.name.label"),
-      })
-      .fill("Drinks")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.categories.form.save.create"),
-      })
-      .click()
-    await page
-      .getByRole("heading", {
-        name: translate("en", "settings.categories.title"),
-      })
-      .waitFor()
-  })
+  await test.step("create a category", () =>
+    addCatalogCategory(page, "en", "Drinks"))
 
   await test.step("create an item and assign the category", async () => {
     await gotoPage(page, "/settings/items", "en", "settings.items.title")

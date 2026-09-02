@@ -3,12 +3,10 @@ import {
   addTable,
   expect,
   gotoPosOverview,
+  nameParam,
   test,
   translate,
 } from "./fixtures.ts"
-
-const nameParam = (key: Parameters<typeof translate>[1], name: string) =>
-  translate("en", key).replace("{name}", name)
 
 test("shows a free table, starts a cart from it, then shows it occupied", async ({
   seededPage: page,

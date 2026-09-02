@@ -12,8 +12,15 @@ import {
   PositiveNumberSchema,
 } from "@/core/modules/shared/schema.ts"
 
-// Table schema for a future line-item breakdown of a payment; no actions,
-// queries, or writes exist yet — the table is registered ahead of that work.
+/**
+ * A frozen snapshot of one net bill-line at the moment a payment was
+ * created — written once, by `snapshotBillLinesForPayment`
+ * (`payment-line-actions.ts`), from `createPayment`, and never updated
+ * afterward. Lets the payment detail page show *what* changed on the bill
+ * since this payment was made (see `deriveBillLineSummaryDiff` in
+ * `bill-line-utils.ts`), not just that the amounts no longer match. See
+ * docs/bill-payment-states.md's "Bill payment coverage" section.
+ */
 export const paymentLine = {
   id: PaymentLineId,
   paymentId: PaymentId,

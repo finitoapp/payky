@@ -33,6 +33,7 @@ import type {
   BillNotOpenError,
 } from "@/core/modules/bill/bill-actions.ts"
 import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-actions.ts"
+import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
@@ -47,6 +48,7 @@ import {
   calculatePaymentClaimedSum,
   computePaymentExpiresAt,
 } from "@/core/modules/payment/payment-status-utils.ts"
+import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
   createPaymentNumberDate,
   loadNextPaymentNumber,
@@ -456,6 +458,15 @@ export const createPayment =
       if (!openResult.ok) return openResult
     }
 
+    // Frozen for `snapshotBillLinesForPayment` below — captured from this
+    // device's own local view, before the mutation batch, since it can't be
+    // reliably reconstructed later from `billLine.createdAt` (see that
+    // function's doc comment).
+    const billLineSnapshot =
+      billId !== null
+        ? await run.ok(loadCalculatedBillLineSummaries(billId))
+        : null
+
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps
     const paymentNumber = await run.ok(
@@ -526,6 +537,13 @@ export const createPayment =
           }),
           { ...options, ownerId: evoluOwnerId }
         )
+      }
+
+      if (billLineSnapshot !== null) {
+        snapshotBillLinesForPayment(run.deps.evolu, id, billLineSnapshot, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
       }
 
       return run.deps.evolu.upsert(

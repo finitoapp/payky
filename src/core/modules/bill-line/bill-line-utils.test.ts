@@ -10,11 +10,29 @@ import {
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import type { BillLineRow } from "./bill-line.ts"
-import type { BillLineId } from "./bill-line-types.ts"
+import type { BillLineSummary } from "./bill-line-summary.ts"
+import type { BillLineId, BillLineSummaryId } from "./bill-line-types.ts"
 import {
   calculateBillLineSummaries,
   createBillLineSummaryId,
+  deriveBillLineSummaryDiff,
 } from "./bill-line-utils.ts"
+
+const billId = "bill-1" as BillId
+
+const makeSummary = (
+  overrides: Partial<BillLineSummary> & Pick<BillLineSummary, "itemId" | "name">
+): BillLineSummary => ({
+  id: `summary-${overrides.itemId}` as BillLineSummaryId,
+  billId,
+  catalogItemId: null,
+  type: "catalogItem",
+  description: null,
+  currency: "CZK",
+  quantity: PositiveNumber(1),
+  totalAmount: NonNegativeInteger(500),
+  ...overrides,
+})
 
 describe("bill line summaries", () => {
   test("calculates summaries from bill lines without persistence", () => {
@@ -78,5 +96,99 @@ describe("bill line summaries", () => {
     expect(createBillLineSummaryId({ ...identity, type: "tip" })).not.toBe(
       createBillLineSummaryId(identity)
     )
+  })
+})
+
+describe("deriveBillLineSummaryDiff", () => {
+  test("reports nothing when both sides are identical", () => {
+    const coffee = makeSummary({
+      itemId: "item-coffee" as ItemId,
+      name: NonEmptyString255("Coffee"),
+    })
+
+    expect(deriveBillLineSummaryDiff([coffee], [coffee])).toEqual({
+      added: [],
+      removed: [],
+      changed: [],
+    })
+  })
+
+  test("reports a quantity/amount change for the same exact item as changed, not add+remove", () => {
+    const before = makeSummary({
+      itemId: "item-coffee" as ItemId,
+      name: NonEmptyString255("Coffee"),
+      quantity: PositiveNumber(1),
+      totalAmount: NonNegativeInteger(500),
+    })
+    const after = {
+      ...before,
+      quantity: PositiveNumber(2),
+      totalAmount: NonNegativeInteger(1000),
+    }
+
+    const diff = deriveBillLineSummaryDiff([before], [after])
+    expect(diff.added).toEqual([])
+    expect(diff.removed).toEqual([])
+    expect(diff.changed).toEqual([{ before, after }])
+  })
+
+  test("reports a brand-new item (no correlated catalogItemId) as added", () => {
+    const sandwich = makeSummary({
+      itemId: "item-sandwich" as ItemId,
+      name: NonEmptyString255("Sandwich"),
+    })
+
+    const diff = deriveBillLineSummaryDiff([], [sandwich])
+    expect(diff.added).toEqual([sandwich])
+    expect(diff.removed).toEqual([])
+    expect(diff.changed).toEqual([])
+  })
+
+  test("reports a fully removed item (no correlated catalogItemId) as removed", () => {
+    const coffee = makeSummary({
+      itemId: "item-coffee" as ItemId,
+      name: NonEmptyString255("Coffee"),
+    })
+
+    const diff = deriveBillLineSummaryDiff([coffee], [])
+    expect(diff.added).toEqual([])
+    expect(diff.removed).toEqual([coffee])
+    expect(diff.changed).toEqual([])
+  })
+
+  test("correlates a price change on the same catalog item as changed, not an unrelated add+remove", () => {
+    const before = makeSummary({
+      itemId: "item-coffee-old-price" as ItemId,
+      catalogItemId: "catalog-coffee" as CatalogItemId,
+      name: NonEmptyString255("Coffee"),
+      totalAmount: NonNegativeInteger(500),
+    })
+    const after = makeSummary({
+      itemId: "item-coffee-new-price" as ItemId,
+      catalogItemId: "catalog-coffee" as CatalogItemId,
+      name: NonEmptyString255("Coffee"),
+      totalAmount: NonNegativeInteger(600),
+    })
+
+    const diff = deriveBillLineSummaryDiff([before], [after])
+    expect(diff.added).toEqual([])
+    expect(diff.removed).toEqual([])
+    expect(diff.changed).toEqual([{ before, after }])
+  })
+
+  test("without a shared catalogItemId, an unrelated swap is reported as separate removed and added entries", () => {
+    const coffee = makeSummary({
+      itemId: "item-coffee" as ItemId,
+      name: NonEmptyString255("Coffee"),
+    })
+    const tea = makeSummary({
+      itemId: "item-tea" as ItemId,
+      name: NonEmptyString255("Tea"),
+    })
+
+    const diff = deriveBillLineSummaryDiff([coffee], [tea])
+    expect(diff.added).toEqual([tea])
+    expect(diff.removed).toEqual([coffee])
+    expect(diff.changed).toEqual([])
   })
 })

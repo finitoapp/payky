@@ -325,6 +325,7 @@ export const sk = {
   "paymentDetail.bill.coverage.overpaid.description":
     "Tento účet bol zaplatený za viac, než aktuálne stojí — pravdepodobne iné zariadenie zmenilo položky účtu, zatiaľ čo táto platba už prebiehala.",
   "paymentDetail.bill.coverage.overpaid.title": "Preplatené",
+  "paymentDetail.bill.coverage.changesTitle": "Zmeny od vzniku platby",
   "paymentDetail.bill.coverage.paidAmount": "Zaplatené",
   "paymentDetail.bill.coverage.underpaid.description":
     "Tento účet zatiaľ nie je plne pokrytý potvrdenými platbami — to je bežné, kým platba stále prebieha. Ak je táto platba už zaplatená, pravdepodobne iné zariadenie zmenilo položky účtu, kým bežala.",

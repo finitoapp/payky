@@ -323,6 +323,7 @@ export const cs = {
   "paymentDetail.bill.coverage.overpaid.description":
     "Tento účet byl zaplacen za víc, než aktuálně stojí — pravděpodobně jiné zařízení změnilo položky účtu, zatímco tato platba už probíhala.",
   "paymentDetail.bill.coverage.overpaid.title": "Přeplaceno",
+  "paymentDetail.bill.coverage.changesTitle": "Změny od vzniku platby",
   "paymentDetail.bill.coverage.paidAmount": "Zaplaceno",
   "paymentDetail.bill.coverage.underpaid.description":
     "Tento účet zatím není plně pokrytý potvrzenými platbami — to je běžné, dokud platba stále probíhá. Pokud je tato platba už zaplacená, pravděpodobně jiné zařízení změnilo položky účtu, zatímco běžela.",

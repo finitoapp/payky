@@ -48,6 +48,7 @@ import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -504,7 +505,7 @@ function PaymentDetailContent({
       </Card>
 
       {payment.billId !== null ? (
-        <PaymentDetailBillCard billId={payment.billId} />
+        <PaymentDetailBillCard billId={payment.billId} paymentId={paymentId} />
       ) : null}
 
       <Card>
@@ -634,7 +635,13 @@ function PaymentDetailContent({
   )
 }
 
-function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
+function PaymentDetailBillCard({
+  billId,
+  paymentId,
+}: {
+  readonly billId: BillId
+  readonly paymentId: PaymentId
+}) {
   const { t } = useTranslation()
   const locale = useLocale()
   const appRun = useAppRun()
@@ -645,6 +652,7 @@ function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
   const summaries = useBillLineSummaries(billId)
   const billStatus = useBillStatus(billId)
   const { claimedSum, coverage } = useBillCoverage(billId)
+  const lineDiff = useBillLineSummaryDiff(paymentId, billId)
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
@@ -820,6 +828,80 @@ function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
                   )}
                 </span>
               </div>
+
+              {lineDiff !== null &&
+              (lineDiff.removed.length > 0 ||
+                lineDiff.added.length > 0 ||
+                lineDiff.changed.length > 0) ? (
+                <div className="flex w-full flex-col gap-1 border-t border-warning/30 pt-2">
+                  <span className="font-medium text-foreground">
+                    {t("paymentDetail.bill.coverage.changesTitle")}
+                  </span>
+                  {lineDiff.removed.map((summary) => (
+                    <div
+                      key={summary.id}
+                      className="flex w-full items-center justify-between gap-4"
+                    >
+                      <span>
+                        − {summary.quantity} × {summary.name}
+                      </span>
+                      <span>
+                        {formatMoney(
+                          {
+                            value: summary.totalAmount,
+                            currency: summary.currency,
+                          },
+                          locale
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                  {lineDiff.added.map((summary) => (
+                    <div
+                      key={summary.id}
+                      className="flex w-full items-center justify-between gap-4"
+                    >
+                      <span>
+                        + {summary.quantity} × {summary.name}
+                      </span>
+                      <span>
+                        {formatMoney(
+                          {
+                            value: summary.totalAmount,
+                            currency: summary.currency,
+                          },
+                          locale
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                  {lineDiff.changed.map(({ before, after }) => (
+                    <div
+                      key={after.id}
+                      className="flex w-full items-center justify-between gap-4"
+                    >
+                      <span>{after.name}</span>
+                      <span>
+                        {formatMoney(
+                          {
+                            value: before.totalAmount,
+                            currency: before.currency,
+                          },
+                          locale
+                        )}
+                        {" → "}
+                        {formatMoney(
+                          {
+                            value: after.totalAmount,
+                            currency: after.currency,
+                          },
+                          locale
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </AlertDescription>
           </Alert>
         )}

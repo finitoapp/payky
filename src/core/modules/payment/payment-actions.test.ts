@@ -24,8 +24,14 @@ import {
   splitBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
-import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
+import {
+  insertBillLineRows,
+  loadCalculatedBillLineSummaries,
+} from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
+import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
+import { paymentLinesByPaymentIdQuery } from "@/core/modules/payment-line/payment-line-queries.ts"
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -42,6 +48,7 @@ import {
   TimestampMsSchema,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
@@ -320,6 +327,112 @@ describe("payment actions", () => {
         tipAmount: 1_000,
       },
     })
+
+    // No bill — nothing to snapshot.
+    await expect(
+      evolu.loadQuery(paymentLinesByPaymentIdQuery(id))
+    ).resolves.toEqual([])
+  }, 15_000)
+
+  test("snapshots the bill's line-item summaries as paymentLine rows when the payment is tied to a bill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const expectedSummaries = await run.ok(
+      loadCalculatedBillLineSummaries(billId)
+    )
+
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentLinesByPaymentIdQuery(paymentId)))
+      .toMatchObject(
+        expectedSummaries.map((summary) => ({
+          paymentId,
+          billId,
+          catalogItemId: summary.catalogItemId,
+          itemId: summary.itemId,
+          type: summary.type,
+          quantity: summary.quantity,
+          totalAmount: summary.totalAmount,
+        }))
+      )
+
+    // Simulates another (still offline) device adding an item to the same
+    // bill after this payment was created — a direct, unguarded write, the
+    // same way the e2e bridge simulates it, since `addManualAmountToBill`'s
+    // own editing lock correctly refuses this on this device (a pending
+    // payment locks the bill). Must not retroactively change the frozen
+    // snapshot — that's the whole point of it.
+    const extraSnapshot = createStandaloneItemSnapshot({
+      catalogItemId: null,
+      name: NonEmptyString255("Extra"),
+      description: null,
+      currency: "CZK",
+      unitAmount: NonNegativeInteger(300),
+    })
+    await runMutationWithCompletion((options) => {
+      upsertItemSnapshot(evolu, extraSnapshot, {
+        ...options,
+        ownerId: deps.evoluOwnerId,
+      })
+      insertBillLineRows(
+        evolu,
+        [
+          {
+            billId,
+            deviceId: null,
+            catalogItemId: null,
+            itemId: extraSnapshot.id,
+            type: "manualAmount",
+            kind: "add",
+            quantity: PositiveNumber(1),
+            totalAmount: NonNegativeInteger(300),
+          },
+        ],
+        { ...options, ownerId: deps.evoluOwnerId }
+      )
+    })
+
+    const snapshotRows = await evolu.loadQuery(
+      paymentLinesByPaymentIdQuery(paymentId)
+    )
+    expect(snapshotRows).toHaveLength(expectedSummaries.length)
   }, 15_000)
 
   test("creates a prepared payment by generating spark payment details", async () => {

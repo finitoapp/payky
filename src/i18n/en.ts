@@ -324,6 +324,7 @@ export const en = {
   "paymentDetail.bill.coverage.overpaid.description":
     "This bill has been paid for more than it's currently worth — another device likely changed the bill's items while this payment was already in progress.",
   "paymentDetail.bill.coverage.overpaid.title": "Overpaid",
+  "paymentDetail.bill.coverage.changesTitle": "Changes since this payment",
   "paymentDetail.bill.coverage.paidAmount": "Paid",
   "paymentDetail.bill.coverage.underpaid.description":
     "This bill isn't fully covered by confirmed payments yet — expected while a payment is still in progress. If this payment already shows as paid, another device likely changed the bill's items while it was in flight.",

@@ -287,6 +287,12 @@ test("the payment detail shows the bill's coverage as underpaid or overpaid when
         translate("en", "paymentDetail.bill.coverage.underpaid.title")
       )
     ).toBeVisible()
+    await expect(
+      page.getByText(
+        translate("en", "paymentDetail.bill.coverage.changesTitle")
+      )
+    ).toBeVisible()
+    await expect(page.getByText("+ 1 × e2e: concurrent addition")).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/payment-detail-bill-underpaid.png`,
       fullPage: true,
@@ -313,6 +319,14 @@ test("the payment detail shows the bill's coverage as underpaid or overpaid when
       page.getByText(
         translate("en", "paymentDetail.bill.coverage.overpaid.title")
       )
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        translate("en", "paymentDetail.bill.coverage.changesTitle")
+      )
+    ).toBeVisible()
+    await expect(
+      page.locator("span", { hasText: "− 1 × Coffee" })
     ).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/payment-detail-bill-overpaid.png`,

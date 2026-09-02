@@ -381,6 +381,38 @@ fact, not to prevent it. See ["Reading the
 combination"](#reading-the-combination) for the other, single-device path to
 `overpaid` (a canceled bill whose pending payment is confirmed anyway).
 
+**Showing *what* changed, not just that it did.** Knowing the two amounts
+disagree doesn't tell staff *why* — for that, the payment detail page also
+shows a diff of the bill's line items against what they were when the
+payment was created. This can't be reconstructed after the fact from
+`billLine.createdAt`: under CRDT/multi-device sync, a device can create a
+payment *before* it has synced an earlier (by timestamp) edit from another
+device, so filtering the ledger by "created before this payment" would
+include changes this device never actually saw when it computed the
+payment's amount. What a device locally believed the bill looked like at
+write time is a fact that only exists in that moment — if it isn't captured
+then, it's gone.
+
+So it's captured explicitly instead: `createPayment` freezes the bill's
+current line-item summaries as `paymentLine` rows tied to the new payment
+(see `snapshotBillLinesForPayment` in `payment-line-actions.ts`), in the
+same mutation batch as the payment itself — one row per net line, the same
+shape `calculateBillLineSummaries` produces, immutable from then on. A
+payment created before this existed simply has no snapshot rows; the diff
+is skipped for it rather than shown as "everything was added" (see
+`paymentLinesByPaymentIdQuery`'s doc comment).
+
+`deriveBillLineSummaryDiff` (`bill-line-utils.ts`) compares that frozen
+snapshot against the bill's live summaries. It matches lines primarily by
+`itemId` — content-addressed, so an exact match with an unchanged
+quantity/amount is not reported at all, and one whose amount differs is
+`changed`. A line present on only one side is then correlated by
+`catalogItemId` (the menu item's identity, independent of its price)
+against a line present on only the other side, so "removed: old-price
+Coffee, added: new-price Coffee" is reported as a single `changed` entry
+instead of two unrelated-looking lines. Only what's left after that is a
+genuine `added`/`removed`.
+
 ## Reading the combination
 
 | Derived `bill` status | coverage | editable? | Meaning |

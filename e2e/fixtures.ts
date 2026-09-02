@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test"
-import { test as base } from "@playwright/test"
+import { test as base, expect } from "@playwright/test"
 import type { FiatCurrency } from "../src/core/modules/shared/schema.ts"
 import {
   type Language,
@@ -116,7 +116,7 @@ export const test = base.extend<Fixtures>({
     await use(page)
   },
 })
-export { expect } from "@playwright/test"
+export { expect }
 
 /** Completes onboarding as a new account and returns its recovery phrase. */
 export async function completeOnboarding(
@@ -259,6 +259,78 @@ export async function startNewBill(
   await page
     .getByRole("heading", { name: translate(language, "bill.title") })
     .waitFor()
+}
+
+/**
+ * Starts a fresh bill and adds one "Coffee" ($5) brick to it (assumes a
+ * catalog item named "Coffee" was already seeded via `addCatalogItem`),
+ * returning its bill id read off the URL. Leaves the page on the bill's own
+ * cart view. Uses `gotoPosOverview` (tolerant of already being in POS/tables
+ * mode, e.g. right after a previous bill's pay cycle in the same test)
+ * rather than assuming the numpad is showing.
+ */
+export async function startBillWithCoffee(
+  page: Page,
+  language: Language
+): Promise<string> {
+  await gotoPosOverview(page, language)
+  await page
+    .getByTestId("no-table-tile")
+    .getByRole("link", { name: translate(language, "tables.tile.newBill") })
+    .click()
+  await page
+    .getByRole("heading", { name: translate(language, "bill.title") })
+    .waitFor()
+  await page
+    .getByRole("button", {
+      name: translate(language, "bill.brick.add.aria").replace(
+        "{name}",
+        "Coffee"
+      ),
+    })
+    .click()
+
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("billId"))
+    .not.toBeNull()
+  const billId = new URL(page.url()).searchParams.get("billId")
+  if (!billId) {
+    throw new Error("Could not determine bill id from URL.")
+  }
+  return billId
+}
+
+/**
+ * `startBillWithCoffee`, then begins a cash payment for it, skipping the tip
+ * screen — shared setup for specs that need a bill mid-payment (coverage-
+ * mismatch and collision scenarios). Leaves the page on the payment wait
+ * screen, not yet marked paid.
+ */
+export async function startBillAndBeginCashPayment(
+  page: Page,
+  language: Language
+): Promise<string> {
+  const billId = await startBillWithCoffee(page, language)
+
+  await page
+    .getByRole("button", { name: translate(language, "home.pay") })
+    .click()
+  const skipTipButton = page.getByRole("button", {
+    name: translate(language, "paymentTip.none"),
+  })
+  const cashPaidButton = page.getByRole("button", {
+    name: translate(language, "paymentWait.cashPaid.action"),
+  })
+  await skipTipButton.or(cashPaidButton).first().waitFor()
+  if (await skipTipButton.isVisible()) {
+    await skipTipButton.click()
+    await page
+      .getByRole("button", { name: translate(language, "paymentTip.continue") })
+      .click()
+    await cashPaidButton.waitFor()
+  }
+
+  return billId
 }
 
 /** Adds a catalog item through the real settings UI (used to seed items for cart specs). */

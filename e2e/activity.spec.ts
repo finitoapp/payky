@@ -4,12 +4,12 @@ import {
   createPayment,
   expect,
   gotoPage,
-  gotoPosOverview,
   markCashPaid,
   prepareIbanPayment,
   simulateBillModifiedDuringPayment,
   simulateCancelAfterClaim,
   simulateDuplicateSettlement,
+  startBillAndBeginCashPayment,
   test,
   translate,
 } from "./fixtures.ts"
@@ -21,10 +21,6 @@ import {
  * new, separately-ignored directory.
  */
 const screenshotDir = "test-results/e2e-screenshots"
-
-/** `translate()` for a `{name}`-templated key, e.g. `"bill.brick.add.aria"`. */
-const nameParam = (key: Parameters<typeof translate>[1], name: string) =>
-  translate("en", key).replace("{name}", name)
 
 test("a paid payment shows up in activity list and detail", async ({
   seededPage: page,
@@ -210,63 +206,13 @@ test("a duplicate-settlement payment collision is flagged in the payment detail 
   })
 })
 
-/**
- * Starts a fresh bill, adds one "Coffee" ($5) brick to it, and begins a cash
- * payment for it (skipping the tip screen) — the shared setup for both
- * coverage-mismatch scenarios below. Returns the bill id read off the bill
- * page's URL before charging. Uses `gotoPosOverview` (tolerant of already
- * being in POS/tables mode, e.g. right after a previous bill's pay cycle in
- * the same test) rather than assuming the numpad is showing.
- */
-async function startBillAndBeginCashPayment(
-  page: Parameters<typeof gotoPosOverview>[0]
-): Promise<string> {
-  await gotoPosOverview(page, "en")
-  await page
-    .getByTestId("no-table-tile")
-    .getByRole("link", { name: translate("en", "tables.tile.newBill") })
-    .click()
-  await page
-    .getByRole("heading", { name: translate("en", "bill.title") })
-    .waitFor()
-  await page
-    .getByRole("button", { name: nameParam("bill.brick.add.aria", "Coffee") })
-    .click()
-
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get("billId"))
-    .not.toBeNull()
-  const billId = new URL(page.url()).searchParams.get("billId")
-  if (!billId) {
-    throw new Error("Could not determine bill id from URL.")
-  }
-
-  await page.getByRole("button", { name: translate("en", "home.pay") }).click()
-  const skipTipButton = page.getByRole("button", {
-    name: translate("en", "paymentTip.none"),
-  })
-  const cashPaidButton = page.getByRole("button", {
-    name: translate("en", "paymentWait.cashPaid.action"),
-  })
-  await skipTipButton.or(cashPaidButton).first().waitFor()
-  if (await skipTipButton.isVisible()) {
-    await skipTipButton.click()
-    await page
-      .getByRole("button", { name: translate("en", "paymentTip.continue") })
-      .click()
-    await cashPaidButton.waitFor()
-  }
-
-  return billId
-}
-
 test("the payment detail shows the bill's coverage as underpaid or overpaid when another device edits it mid-payment", async ({
   seededPage: page,
 }) => {
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
   await test.step("underpaid: another device adds an item while the payment is in flight", async () => {
-    const billId = await startBillAndBeginCashPayment(page)
+    const billId = await startBillAndBeginCashPayment(page, "en")
 
     // Simulates a CRDT merge race, not a real second payment: while this
     // device's $5 payment is in flight, another (still offline) device adds
@@ -301,7 +247,7 @@ test("the payment detail shows the bill's coverage as underpaid or overpaid when
   })
 
   await test.step("overpaid: another device removes the item while the payment is in flight", async () => {
-    const billId = await startBillAndBeginCashPayment(page)
+    const billId = await startBillAndBeginCashPayment(page, "en")
 
     // Same race, opposite direction: the other device removes the bill's
     // only item, shrinking its total below the payment's already-fixed
@@ -342,7 +288,7 @@ test("a payment with both a cancellation collision and an overpaid bill shows bo
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
   await test.step("set up a payment that ends up both canceled+claimed and tied to an overpaid bill", async () => {
-    const billId = await startBillAndBeginCashPayment(page)
+    const billId = await startBillAndBeginCashPayment(page, "en")
     await simulateBillModifiedDuringPayment(page, billId, "removeAll")
     await markCashPaid(page, "en")
     await simulateCancelAfterClaim(page, "en")
@@ -368,7 +314,7 @@ test("a bill overpaid by two separately paid payments is flagged on the payment 
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
   await test.step("pay the bill once, then create and pay a second, independent payment for it", async () => {
-    const billId = await startBillAndBeginCashPayment(page)
+    const billId = await startBillAndBeginCashPayment(page, "en")
     await markCashPaid(page, "en")
 
     // The bill page's own "Charge" button disappears once the bill isn't
@@ -406,7 +352,7 @@ test("the activity list flags a payment's own duplicate settlement without also 
 }) => {
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
-  await startBillAndBeginCashPayment(page)
+  await startBillAndBeginCashPayment(page, "en")
   // Visiting the IBAN tab is what actually prepares it (`preparePaymentMethod`
   // is lazy, per-tab) — needed so `simulateDuplicateSettlement` below has
   // IBAN details to settle against. Switch back to the cash tab afterward,
@@ -438,7 +384,7 @@ test("the activity list flags a bill overpaid by two separate payments without f
 }) => {
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
-  const billId = await startBillAndBeginCashPayment(page)
+  const billId = await startBillAndBeginCashPayment(page, "en")
   await markCashPaid(page, "en")
   await createAndPaySecondPayment(page, billId)
 

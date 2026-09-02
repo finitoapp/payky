@@ -19,6 +19,7 @@ import { Route as TerminalActivityRouteImport } from './routes/_terminal.activit
 import { Route as TerminalBillRouteImport } from './routes/_terminal.bill'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
+import { Route as TerminalActivityBillsRouteImport } from './routes/_terminal.activity_.bills'
 import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payment.tip'
 import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
@@ -42,6 +43,7 @@ import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.s
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsTipsRouteImport } from './routes/_terminal.settings.tips'
 import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
+import { Route as TerminalActivityBillsBillIdRouteImport } from './routes/_terminal.activity_.bills_.$billId'
 import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
@@ -105,6 +107,11 @@ const TerminalActivityPaymentIdRoute =
     path: '/activity/$paymentId',
     getParentRoute: () => TerminalRoute,
   } as any)
+const TerminalActivityBillsRoute = TerminalActivityBillsRouteImport.update({
+  id: '/activity_/bills',
+  path: '/activity/bills',
+  getParentRoute: () => TerminalRoute,
+} as any)
 const TerminalPaymentTipRoute = TerminalPaymentTipRouteImport.update({
   id: '/payment/tip',
   path: '/payment/tip',
@@ -234,6 +241,12 @@ const TerminalSettingsWithdrawRoute =
     path: '/withdraw',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalActivityBillsBillIdRoute =
+  TerminalActivityBillsBillIdRouteImport.update({
+    id: '/activity_/bills_/$billId',
+    path: '/activity/bills/$billId',
+    getParentRoute: () => TerminalRoute,
+  } as any)
 const TerminalSettingsAboutIndexRoute =
   TerminalSettingsAboutIndexRouteImport.update({
     id: '/',
@@ -317,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/bill': typeof TerminalBillRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
+  '/activity/bills': typeof TerminalActivityBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -340,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/settings/tips': typeof TerminalSettingsTipsRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/settings/': typeof TerminalSettingsIndexRoute
+  '/activity/bills/$billId': typeof TerminalActivityBillsBillIdRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
   '/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
@@ -362,6 +377,7 @@ export interface FileRoutesByTo {
   '/bill': typeof TerminalBillRoute
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
+  '/activity/bills': typeof TerminalActivityBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
@@ -381,6 +397,7 @@ export interface FileRoutesByTo {
   '/settings/tips': typeof TerminalSettingsTipsRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/settings': typeof TerminalSettingsIndexRoute
+  '/activity/bills/$billId': typeof TerminalActivityBillsBillIdRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
   '/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
@@ -406,6 +423,7 @@ export interface FileRoutesById {
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
+  '/_terminal/activity_/bills': typeof TerminalActivityBillsRoute
   '/_terminal/payment/tip': typeof TerminalPaymentTipRoute
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -429,6 +447,7 @@ export interface FileRoutesById {
   '/_terminal/settings/tips': typeof TerminalSettingsTipsRoute
   '/_terminal/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
+  '/_terminal/activity_/bills_/$billId': typeof TerminalActivityBillsBillIdRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/_terminal/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
   '/_terminal/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
@@ -454,6 +473,7 @@ export interface FileRouteTypes {
     | '/bill'
     | '/settings'
     | '/activity/$paymentId'
+    | '/activity/bills'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/about'
@@ -477,6 +497,7 @@ export interface FileRouteTypes {
     | '/settings/tips'
     | '/settings/withdraw'
     | '/settings/'
+    | '/activity/bills/$billId'
     | '/settings/about/privacy'
     | '/settings/about/terms'
     | '/settings/categories/$catalogCategoryId'
@@ -499,6 +520,7 @@ export interface FileRouteTypes {
     | '/bill'
     | '/'
     | '/activity/$paymentId'
+    | '/activity/bills'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/accounts'
@@ -518,6 +540,7 @@ export interface FileRouteTypes {
     | '/settings/tips'
     | '/settings/withdraw'
     | '/settings'
+    | '/activity/bills/$billId'
     | '/settings/about/privacy'
     | '/settings/about/terms'
     | '/settings/categories/$catalogCategoryId'
@@ -542,6 +565,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings'
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
+    | '/_terminal/activity_/bills'
     | '/_terminal/payment/tip'
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
@@ -565,6 +589,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/tips'
     | '/_terminal/settings/withdraw'
     | '/_terminal/settings/'
+    | '/_terminal/activity_/bills_/$billId'
     | '/_terminal/settings/about/privacy'
     | '/_terminal/settings/about/terms'
     | '/_terminal/settings/categories/$catalogCategoryId'
@@ -657,6 +682,13 @@ declare module '@tanstack/react-router' {
       path: '/activity/$paymentId'
       fullPath: '/activity/$paymentId'
       preLoaderRoute: typeof TerminalActivityPaymentIdRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/activity_/bills': {
+      id: '/_terminal/activity_/bills'
+      path: '/activity/bills'
+      fullPath: '/activity/bills'
+      preLoaderRoute: typeof TerminalActivityBillsRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/payment/tip': {
@@ -819,6 +851,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/withdraw'
       preLoaderRoute: typeof TerminalSettingsWithdrawRouteImport
       parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/activity_/bills_/$billId': {
+      id: '/_terminal/activity_/bills_/$billId'
+      path: '/activity/bills/$billId'
+      fullPath: '/activity/bills/$billId'
+      preLoaderRoute: typeof TerminalActivityBillsBillIdRouteImport
+      parentRoute: typeof TerminalRoute
     }
     '/_terminal/settings/about/': {
       id: '/_terminal/settings/about/'
@@ -1038,8 +1077,10 @@ interface TerminalRouteChildren {
   TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
+  TerminalActivityBillsRoute: typeof TerminalActivityBillsRoute
   TerminalPaymentTipRoute: typeof TerminalPaymentTipRoute
   TerminalPaymentPaymentIdRoute: typeof TerminalPaymentPaymentIdRoute
+  TerminalActivityBillsBillIdRoute: typeof TerminalActivityBillsBillIdRoute
 }
 
 const TerminalRouteChildren: TerminalRouteChildren = {
@@ -1048,8 +1089,10 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
+  TerminalActivityBillsRoute: TerminalActivityBillsRoute,
   TerminalPaymentTipRoute: TerminalPaymentTipRoute,
   TerminalPaymentPaymentIdRoute: TerminalPaymentPaymentIdRoute,
+  TerminalActivityBillsBillIdRoute: TerminalActivityBillsBillIdRoute,
 }
 
 const TerminalRouteWithChildren = TerminalRoute._addFileChildren(

@@ -28,7 +28,8 @@ import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
+import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
+import { groupByDay } from "@/lib/group-by-day.ts"
 import { cn } from "@/lib/utils.ts"
 
 /**
@@ -238,87 +239,99 @@ export const PaymentHistory = () => {
   const locale = useLocale()
   const { data: items } = useEvoluQuery(latestPaymentsQuery)
 
-  return (
-    <VerticalNav
-      title={t("paymentHistory.title")}
-      empty={
-        <div
-          className={"flex flex-col justify-center items-center gap-8 py-10"}
-        >
-          <ReceiptIcon className="h-10 w-10 text-muted-foreground" />
-          <h2 className={"text-foreground text-lg"}>
-            {t("paymentHistory.empty.title")}
-          </h2>
-          <p className="text-balance text-sm text-muted-foreground text-center">
-            {t("paymentHistory.empty.description")}
-          </p>
-        </div>
-      }
-      items={items.map((item) => {
-        const claimCount = toClaimCount(item.claimCount)
-        const paymentStatus = resolvePaymentStatus({
-          canceledAt: item.canceledAt,
-          confirmedPaidAt: item.confirmedPaidAt,
-          expiresAt: item.expiresAt,
-          claimCount,
-        })
-        const hasCancellationCollision = resolveHasCancellationCollision({
-          canceledAt: item.canceledAt,
-          confirmedPaidAt: item.confirmedPaidAt,
-          claimCount,
-        })
+  const empty = (
+    <div className={"flex flex-col justify-center items-center gap-8 py-10"}>
+      <ReceiptIcon className="h-10 w-10 text-muted-foreground" />
+      <h2 className={"text-foreground text-lg"}>
+        {t("paymentHistory.empty.title")}
+      </h2>
+      <p className="text-balance text-sm text-muted-foreground text-center">
+        {t("paymentHistory.empty.description")}
+      </p>
+    </div>
+  )
 
-        return {
-          id: item.id,
-          kind: "link" as const,
-          to: "/activity/$paymentId",
-          params: {
-            paymentId: item.id,
-          },
-          label: (
-            <div className={"flex gap-2 justify-between"}>
-              <div className={"flex flex-col gap-2 items-start w-max"}>
-                <strong>{t("paymentHistory.payment")}</strong>
-                <div className={"flex justify-between w-full text-xs"}>
-                  <span>
-                    {formatMoney(
-                      {
-                        value: item.amount,
-                        currency: item.currency,
-                      },
-                      locale
-                    )}
-                  </span>
-                  &nbsp;&nbsp;•&nbsp;&nbsp;
-                  <span className={"text-muted-foreground"}>
-                    {formatDateTime(new Date(item.createdAt), locale)}
-                  </span>
+  if (items.length === 0) {
+    return (
+      <VerticalNav title={t("paymentHistory.title")} empty={empty} items={[]} />
+    )
+  }
+
+  const dayGroups = groupByDay(items, (item) => new Date(item.createdAt))
+
+  return (
+    <div className="flex flex-col gap-4">
+      {dayGroups.map((group) => (
+        <VerticalNav
+          key={group.date.toDateString()}
+          title={formatDate(group.date, locale)}
+          items={group.items.map((item) => {
+            const claimCount = toClaimCount(item.claimCount)
+            const paymentStatus = resolvePaymentStatus({
+              canceledAt: item.canceledAt,
+              confirmedPaidAt: item.confirmedPaidAt,
+              expiresAt: item.expiresAt,
+              claimCount,
+            })
+            const hasCancellationCollision = resolveHasCancellationCollision({
+              canceledAt: item.canceledAt,
+              confirmedPaidAt: item.confirmedPaidAt,
+              claimCount,
+            })
+
+            return {
+              id: item.id,
+              kind: "link" as const,
+              to: "/activity/$paymentId",
+              params: {
+                paymentId: item.id,
+              },
+              label: (
+                <div className={"flex gap-2 justify-between"}>
+                  <div className={"flex flex-col gap-2 items-start w-max"}>
+                    <strong>{t("paymentHistory.payment")}</strong>
+                    <div className={"flex text-xs"}>
+                      <span>
+                        {formatMoney(
+                          {
+                            value: item.amount,
+                            currency: item.currency,
+                          },
+                          locale
+                        )}
+                      </span>
+                      &nbsp;&nbsp;•&nbsp;&nbsp;
+                      <span className={"text-muted-foreground"}>
+                        {formatTime(new Date(item.createdAt), locale)}
+                      </span>
+                    </div>
+                    <PaymentHistoryIssues
+                      hasCancellationCollision={hasCancellationCollision}
+                      billId={item.billId}
+                      paymentId={item.id}
+                      amount={item.amount}
+                      excessAcknowledgedAt={item.excessAcknowledgedAt}
+                    />
+                  </div>
                 </div>
-                <PaymentHistoryIssues
-                  hasCancellationCollision={hasCancellationCollision}
-                  billId={item.billId}
-                  paymentId={item.id}
-                  amount={item.amount}
-                  excessAcknowledgedAt={item.excessAcknowledgedAt}
-                />
-              </div>
-            </div>
-          ),
-          icon: (
-            <div className={"p-2"}>
-              <PaymentStatusIcon
-                paymentStatus={paymentStatus}
-                hasCancellationCollision={hasCancellationCollision}
-              />
-            </div>
-          ),
-          action: (
-            <span className="text-xs font-medium text-muted-foreground">
-              {t(`paymentHistory.status.${paymentStatus}`)}
-            </span>
-          ),
-        }
-      })}
-    />
+              ),
+              icon: (
+                <div className={"p-2"}>
+                  <PaymentStatusIcon
+                    paymentStatus={paymentStatus}
+                    hasCancellationCollision={hasCancellationCollision}
+                  />
+                </div>
+              ),
+              action: (
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t(`paymentHistory.status.${paymentStatus}`)}
+                </span>
+              ),
+            }
+          })}
+        />
+      ))}
+    </div>
   )
 }

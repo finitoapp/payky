@@ -18,7 +18,8 @@ import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
+import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
+import { groupByDay } from "@/lib/group-by-day.ts"
 import { cn } from "@/lib/utils.ts"
 
 type BillHistoryRow = InferRow<typeof latestBillsQuery>
@@ -117,7 +118,7 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
           <strong>
             {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
           </strong>
-          <div className={"flex justify-between w-full text-xs"}>
+          <div className={"flex text-xs"}>
             <span>
               {formatMoney(
                 { value: totalAmount, currency: bill.currency },
@@ -126,7 +127,7 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
             </span>
             &nbsp;&nbsp;•&nbsp;&nbsp;
             <span className={"text-muted-foreground"}>
-              {formatDateTime(new Date(bill.createdAt), locale)}
+              {formatTime(new Date(bill.createdAt), locale)}
             </span>
           </div>
           <BillHistoryIssues billId={bill.id} />
@@ -143,32 +144,45 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
 
 export const BillHistory = () => {
   const { t } = useTranslation()
+  const locale = useLocale()
   const { data: items } = useEvoluQuery(latestBillsQuery)
 
+  const empty = (
+    <div className={"flex flex-col justify-center items-center gap-8 py-10"}>
+      <ReceiptIcon className="h-10 w-10 text-muted-foreground" />
+      <h2 className={"text-foreground text-lg"}>
+        {t("billHistory.empty.title")}
+      </h2>
+      <p className="text-balance text-sm text-muted-foreground text-center">
+        {t("billHistory.empty.description")}
+      </p>
+    </div>
+  )
+
+  if (items.length === 0) {
+    return (
+      <VerticalNav title={t("billHistory.title")} empty={empty} items={[]} />
+    )
+  }
+
+  const dayGroups = groupByDay(items, (bill) => new Date(bill.createdAt))
+
   return (
-    <VerticalNav
-      title={t("billHistory.title")}
-      empty={
-        <div
-          className={"flex flex-col justify-center items-center gap-8 py-10"}
-        >
-          <ReceiptIcon className="h-10 w-10 text-muted-foreground" />
-          <h2 className={"text-foreground text-lg"}>
-            {t("billHistory.empty.title")}
-          </h2>
-          <p className="text-balance text-sm text-muted-foreground text-center">
-            {t("billHistory.empty.description")}
-          </p>
-        </div>
-      }
-      items={items.map((bill) => ({
-        id: bill.id,
-        kind: "link" as const,
-        to: "/activity/bills/$billId",
-        params: { billId: bill.id },
-        disableAction: true,
-        label: <BillHistoryItemContent bill={bill} />,
-      }))}
-    />
+    <div className="flex flex-col gap-4">
+      {dayGroups.map((group) => (
+        <VerticalNav
+          key={group.date.toDateString()}
+          title={formatDate(group.date, locale)}
+          items={group.items.map((bill) => ({
+            id: bill.id,
+            kind: "link" as const,
+            to: "/activity/bills/$billId",
+            params: { billId: bill.id },
+            disableAction: true,
+            label: <BillHistoryItemContent bill={bill} />,
+          }))}
+        />
+      ))}
+    </div>
   )
 }

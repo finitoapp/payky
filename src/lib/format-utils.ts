@@ -47,3 +47,8 @@ export const formatDateTime = (value: Date, locale: string = "en-US") =>
     timeStyle: "short",
     dateStyle: "medium",
   })
+
+export const formatTime = (value: Date, locale: string = "en-US") =>
+  value.toLocaleTimeString(locale, {
+    timeStyle: "short",
+  })

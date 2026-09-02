@@ -8,7 +8,14 @@ import {
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
+import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
+import {
+  insertBillLineRows,
+  loadCalculatedBillLineSummaries,
+} from "@/core/modules/bill-line/bill-line-actions.ts"
+import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
+import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import {
   paymentIbanDetailsByIdQuery,
   paymentSparkDetailsByIdQuery,
@@ -23,6 +30,8 @@ import {
   FiatCurrency,
   NonEmptyString255Schema,
   NonEmptyStringSchema,
+  NonNegativeInteger,
+  PositiveNumber,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
@@ -38,6 +47,10 @@ declare global {
     __e2eMarkIbanPaid?: (paymentId: string) => Promise<void>
     __e2eSimulateCancelAfterClaim?: (paymentId: string) => Promise<void>
     __e2eSimulateDuplicateSettlement?: (paymentId: string) => Promise<void>
+    __e2eSimulateBillModifiedDuringPayment?: (
+      billId: string,
+      mode: "add" | "removeAll"
+    ) => Promise<void>
     __e2eCancelBill?: (billId: string) => Promise<void>
   }
 }
@@ -80,6 +93,19 @@ declare global {
  * collision UI (the payment-detail warning and
  * `acknowledgePaymentExcessSettlement`) without two real devices.
  *
+ * Also exposes `window.__e2eSimulateBillModifiedDuringPayment`, which edits
+ * a bill's line items directly (bypassing `requireEditableBill`'s lock —
+ * the guard only prevents this on the *same* device the pending payment is
+ * visible on) — `mode: "add"` appends a manual-amount line, `mode:
+ * "removeAll"` inserts a matching "remove" counter-line for every existing
+ * one. Simulates the CRDT merge race docs/bill-payment-states.md's "Bill
+ * payment coverage" section describes: one device starts a payment against
+ * the bill's total at that moment, while another, still offline, edits the
+ * bill's lines — once synced, the payment's already-fixed `amount` no
+ * longer matches the bill's new total. Used to exercise the underpaid/
+ * overpaid coverage note on the payment detail page without two real
+ * devices.
+ *
  * Also exposes `window.__e2eCancelBill`, which calls the real `cancelBill`
  * action directly — the bill-level mirror of the above, letting a test
  * discard a bill while its payment is still pending (a transition the
@@ -89,7 +115,7 @@ declare global {
  * UI). Confirming that same payment afterward produces the canceled+funded
  * bill collision `confirmBillClosedDespiteCancellation` resolves.
  *
- * All six are dead code in any real production build: kept alive only in
+ * All seven are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -279,6 +305,76 @@ export function E2eTestBridge() {
       )
     }
 
+    window.__e2eSimulateBillModifiedDuringPayment = async (
+      billIdValue,
+      mode
+    ) => {
+      const parsedBillId = BillId.parse(billIdValue)
+      await using run = appRun()
+      const { evoluOwnerId } = run.deps
+
+      if (mode === "add") {
+        const [billRow] = await run.deps.evolu.loadQuery(
+          billByIdQuery(parsedBillId)
+        )
+        if (!billRow) {
+          throw new Error(`Bill ${parsedBillId} not found.`)
+        }
+
+        const snapshot = createStandaloneItemSnapshot({
+          catalogItemId: null,
+          name: NonEmptyString255Schema.decode("e2e: concurrent addition"),
+          description: null,
+          currency: billRow.currency,
+          unitAmount: NonNegativeInteger(300),
+        })
+
+        await runMutationWithCompletion((options) => {
+          upsertItemSnapshot(run.deps.evolu, snapshot, {
+            ...options,
+            ownerId: evoluOwnerId,
+          })
+          insertBillLineRows(
+            run.deps.evolu,
+            [
+              {
+                billId: parsedBillId,
+                deviceId: null,
+                catalogItemId: null,
+                itemId: snapshot.id,
+                type: "manualAmount",
+                kind: "add",
+                quantity: PositiveNumber(1),
+                totalAmount: NonNegativeInteger(300),
+              },
+            ],
+            { ...options, ownerId: evoluOwnerId }
+          )
+        })
+        return
+      }
+
+      const summaries = await run.ok(
+        loadCalculatedBillLineSummaries(parsedBillId)
+      )
+      await runMutationWithCompletion((options) => {
+        insertBillLineRows(
+          run.deps.evolu,
+          summaries.map((summary) => ({
+            billId: parsedBillId,
+            deviceId: null,
+            catalogItemId: summary.catalogItemId,
+            itemId: summary.itemId,
+            type: summary.type,
+            kind: "remove" as const,
+            quantity: summary.quantity,
+            totalAmount: summary.totalAmount,
+          })),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      })
+    }
+
     window.__e2eCancelBill = async (billIdValue) => {
       const parsedBillId = BillId.parse(billIdValue)
       await using run = appRun()
@@ -297,6 +393,7 @@ export function E2eTestBridge() {
       delete window.__e2eMarkIbanPaid
       delete window.__e2eSimulateCancelAfterClaim
       delete window.__e2eSimulateDuplicateSettlement
+      delete window.__e2eSimulateBillModifiedDuringPayment
       delete window.__e2eCancelBill
     }
   }, [appRun])

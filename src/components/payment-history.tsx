@@ -10,11 +10,13 @@ import {
 import type { FC, ReactNode } from "react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   derivePaymentStatus,
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
 import type { TimestampMs } from "@/core/modules/shared/schema.ts"
+import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -40,6 +42,7 @@ const latestPaymentsQuery = createQuery((db) =>
     )
     .select([
       "payment.id",
+      "payment.billId",
       "payment.amount",
       "payment.currency",
       "payment.tipAmount",
@@ -58,6 +61,7 @@ const latestPaymentsQuery = createQuery((db) =>
     .where("payment.createdAt", "is not", null)
     .groupBy([
       "payment.id",
+      "payment.billId",
       "payment.amount",
       "payment.currency",
       "payment.tipAmount",
@@ -133,6 +137,52 @@ const resolveHasCancellationCollision = (payment: {
   payment.confirmedPaidAt === null &&
   payment.claimCount > 0
 
+/**
+ * Never a real bill — passed to `useBillCoverage` instead of skipping the
+ * call when a payment has no `billId`, so the hook is still called
+ * unconditionally on every render (a payment's own `billId` is stable for
+ * the lifetime of its row). Querying a nonexistent bill just returns empty
+ * line/claim rows, which `deriveBillCoverage` reads as trivially "paid" —
+ * exactly the "nothing to flag" result this needs when there's no bill.
+ */
+const NO_BILL_ID = "no-bill" as BillId
+
+/**
+ * Every issue this payment's row should flag, joined with " · " — the
+ * canceled+claimed collision (see `resolveHasCancellationCollision`) and/or
+ * its bill's coverage being off (see docs/bill-payment-states.md's "Bill
+ * payment coverage" section). A payment can show more than one at once;
+ * they're independent conditions. `null` when none apply.
+ */
+function PaymentHistoryIssues({
+  hasCancellationCollision,
+  billId,
+}: {
+  readonly hasCancellationCollision: boolean
+  readonly billId: BillId | null
+}) {
+  const { t } = useTranslation()
+  const coverage = useBillCoverage(billId ?? NO_BILL_ID)
+
+  const issues = [
+    hasCancellationCollision ? t("paymentHistory.collision") : null,
+    billId !== null && coverage === "underpaid"
+      ? t("paymentHistory.billUnderpaid")
+      : null,
+    billId !== null && coverage === "overpaid"
+      ? t("paymentHistory.billOverpaid")
+      : null,
+  ].filter((issue): issue is string => issue !== null)
+
+  if (issues.length === 0) return null
+
+  return (
+    <span className="text-xs font-medium text-warning">
+      {issues.join(" · ")}
+    </span>
+  )
+}
+
 export const PaymentHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -194,11 +244,10 @@ export const PaymentHistory = () => {
                     {formatDateTime(new Date(item.createdAt), locale)}
                   </span>
                 </div>
-                {hasCancellationCollision ? (
-                  <span className="text-xs font-medium text-warning">
-                    {t("paymentHistory.collision")}
-                  </span>
-                ) : null}
+                <PaymentHistoryIssues
+                  hasCancellationCollision={hasCancellationCollision}
+                  billId={item.billId}
+                />
               </div>
             </div>
           ),

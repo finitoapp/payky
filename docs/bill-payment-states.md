@@ -247,10 +247,10 @@ it in the first place.
 bill can have more than one payment (split payments), starting a second
 payment attempt while another is still pending and unresolved is allowed.
 Like every guard in this document, this is best-effort for the common
-single-device path, not a proof: two devices can still race past it under
-CRDT/multi-device concurrency. Any resulting overshoot is caught by the
-coverage mechanism below, not prevented outright — see
-`requireBillAcceptingPayment` vs. `requireEditableBill` in `bill-actions.ts`.
+single-device path, not a proof — see `requireBillAcceptingPayment` vs.
+`requireEditableBill` in `bill-actions.ts`, and [Bill payment
+coverage](#bill-payment-coverage) for what a multi-device race past it
+produces and why it can't simply be prevented outright.
 
 **The gap this closes.** A bill must stop accepting edits the moment a
 payment attempt is genuinely in flight, not only once money has arrived —
@@ -324,6 +324,11 @@ Two actions write the fields above outside the automatic claim path, both in
 
 ## Bill payment coverage
 
+Only a **bill** has under/overpaid coverage. `PaymentStatus` (see the payment
+vertical above) has no such value — a single payment is always exactly
+Paid, Canceled, Expired, or Pending; its own narrower money-mismatch is the
+[Duplicate settlement](#duplicate-settlement) collision, not this one.
+
 A bill's payments are compared against its line-item total to answer "has
 this bill actually been paid for":
 
@@ -360,6 +365,22 @@ least one claim exists (see the bill vertical's ["Derived
 status"](#derived-status-1) above) — so a `closed` bill is always `paid` or
 `overpaid`, never `underpaid`, by construction.
 
+**Why coverage can diverge from `billTotal` at all.** A payment's `amount`
+is fixed the moment it's created and never renegotiated — nothing keeps it
+in sync with the bill's line-item total afterward. On a single device this
+can't cause a mismatch: [the editing lock](#editing-lock) blocks line edits
+from the moment a payment exists for the bill, so the total a payment was
+created against can't change under it before that payment resolves. The
+mismatch is only reachable across devices — one device edits the bill's
+lines while, offline, another already created or claimed a payment against
+the pre-edit total; once synced, the fixed payment amount and the
+just-changed total simply don't line up. This is the same category of gap
+as the two collisions above (a local-first guard is only ever best-effort
+per device): coverage's job is to surface the resulting mismatch after the
+fact, not to prevent it. See ["Reading the
+combination"](#reading-the-combination) for the other, single-device path to
+`overpaid` (a canceled bill whose pending payment is confirmed anyway).
+
 ## Reading the combination
 
 | Derived `bill` status | coverage | editable? | Meaning |
@@ -368,7 +389,7 @@ status"](#derived-status-1) above) — so a `closed` bill is always `paid` or
 | `open` | underpaid | **no** (locked) | checkout in progress — a live payment is pending |
 | `open` | underpaid (>0) | yes | a split/partial payment was confirmed but didn't cover the total, and nothing is currently pending — bill stays open for the rest |
 | `closed` | paid | — (final) | fully settled — the expected happy path |
-| `closed` | overpaid | — (final) | more money confirmed than the bill was worth — a legitimate split-payment overshoot, **or** the canceled-but-claimed race described in the payment vertical; needs a human to look at it |
+| `closed` | overpaid | — (final) | more money confirmed than the bill is currently worth — see [why coverage can diverge](#bill-payment-coverage); needs a human to look at it |
 | `canceled` | underpaid (0) | — (final) | ordinary discarded cart, no payment was ever involved |
 | `canceled` | paid or overpaid | — (final, until resolved) | a bill was discarded while a payment was still pending, and that payment was confirmed anyway — see below |
 

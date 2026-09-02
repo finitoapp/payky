@@ -36,7 +36,6 @@ import {
   getDefaultPaymentMethod,
   parsePaymentMethodOrder,
 } from "@/core/modules/app-settings/app-settings-utils.ts"
-import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   cancelPayment,
   markPaymentPaidCash,
@@ -53,7 +52,6 @@ import {
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
-import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import {
   clearPaymentMethodPreparation,
   createPaymentMethodPreparationRunner,
@@ -825,37 +823,10 @@ function PaymentWaitingRequest({
                 </div>
               }
             />
-            {payment.billId !== null ? (
-              <BillCoverageNote billId={payment.billId} />
-            ) : null}
           </div>
         </div>
       </div>
     </>
-  )
-}
-
-/**
- * Once a payment is confirmed paid, tells staff whether the bill it belongs
- * to is now fully covered — a bill can have more than one payment (split
- * payments), so a single paid payment doesn't guarantee the whole bill is
- * settled. Silent when `paid`; the checkmark above already says that. See
- * docs/bill-payment-states.md.
- */
-function BillCoverageNote({ billId }: { readonly billId: BillId }) {
-  const { t } = useTranslation()
-  const coverage = useBillCoverage(billId)
-
-  if (coverage === "paid") return null
-
-  return (
-    <p className="max-w-72 text-balance text-sm text-muted-foreground">
-      {t(
-        coverage === "underpaid"
-          ? "paymentWait.billUnderpaid"
-          : "paymentWait.billOverpaid"
-      )}
-    </p>
   )
 }
 

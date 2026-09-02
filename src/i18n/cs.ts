@@ -255,6 +255,8 @@ export const cs = {
   "onboarding.restore.title": "Obnovení existujícího účtu",
   "onboarding.title": "Nastavení Payky",
   "payment.create.error": "Platbu se nepodařilo vytvořit.",
+  "paymentHistory.billOverpaid": "Účet přeplacen",
+  "paymentHistory.billUnderpaid": "Účet nedoplacen",
   "paymentHistory.collision": "Vyžaduje kontrolu",
   "paymentHistory.empty.description":
     "Vytvořené platební žádosti se zobrazí tady.",
@@ -280,8 +282,6 @@ export const cs = {
   "paymentTip.percentages": "Dýška v procentech",
   "paymentTip.title": "Chcete přidat dýško?",
   "paymentWait.back": "Zpět na terminál",
-  "paymentWait.billOverpaid": "Tento účet byl přeplacen.",
-  "paymentWait.billUnderpaid": "Tento účet ještě není doplacený.",
   "paymentWait.cancel": "Zrušit platbu",
   "paymentWait.cancelError": "Platbu se nepodařilo zrušit.",
   "paymentWait.canceled": "Tato platba byla zrušena.",
@@ -319,6 +319,12 @@ export const cs = {
   "paymentWait.waiting": "Čeká se na platbu...",
   "paymentDetail.amount": "Částka",
   "paymentDetail.backToPayment": "Zpět na platbu",
+  "paymentDetail.bill.coverage.overpaid.description":
+    "Tento účet byl zaplacen za víc, než aktuálně stojí — pravděpodobně jiné zařízení změnilo položky účtu, zatímco tato platba už probíhala.",
+  "paymentDetail.bill.coverage.overpaid.title": "Přeplaceno",
+  "paymentDetail.bill.coverage.underpaid.description":
+    "Tento účet zatím není plně pokrytý potvrzenými platbami — to je běžné, dokud platba stále probíhá. Pokud je tato platba už zaplacená, pravděpodobně jiné zařízení změnilo položky účtu, zatímco běžela.",
+  "paymentDetail.bill.coverage.underpaid.title": "Není doplaceno",
   "paymentDetail.bill.empty": "Tento účet nemá žádné položky.",
   "paymentDetail.bill.status.canceled": "Zrušeno",
   "paymentDetail.bill.status.closed": "Uzavřeno",

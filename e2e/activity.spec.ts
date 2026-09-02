@@ -1,9 +1,12 @@
 import {
+  addCatalogItem,
   createPayment,
   expect,
   gotoPage,
+  gotoPosOverview,
   markCashPaid,
   prepareIbanPayment,
+  simulateBillModifiedDuringPayment,
   simulateCancelAfterClaim,
   simulateDuplicateSettlement,
   test,
@@ -17,6 +20,10 @@ import {
  * new, separately-ignored directory.
  */
 const screenshotDir = "test-results/e2e-screenshots"
+
+/** `translate()` for a `{name}`-templated key, e.g. `"bill.brick.add.aria"`. */
+const nameParam = (key: Parameters<typeof translate>[1], name: string) =>
+  translate("en", key).replace("{name}", name)
 
 test("a paid payment shows up in activity list and detail", async ({
   seededPage: page,
@@ -197,6 +204,144 @@ test("a duplicate-settlement payment collision is flagged in the payment detail 
     ).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/payment-detail-excess-resolved.png`,
+      fullPage: true,
+    })
+  })
+})
+
+/**
+ * Starts a fresh bill, adds one "Coffee" ($5) brick to it, and begins a cash
+ * payment for it (skipping the tip screen) — the shared setup for both
+ * coverage-mismatch scenarios below. Returns the bill id read off the bill
+ * page's URL before charging. Uses `gotoPosOverview` (tolerant of already
+ * being in POS/tables mode, e.g. right after a previous bill's pay cycle in
+ * the same test) rather than assuming the numpad is showing.
+ */
+async function startBillAndBeginCashPayment(
+  page: Parameters<typeof gotoPosOverview>[0]
+): Promise<string> {
+  await gotoPosOverview(page, "en")
+  await page
+    .getByTestId("no-table-tile")
+    .getByRole("link", { name: translate("en", "tables.tile.newBill") })
+    .click()
+  await page
+    .getByRole("heading", { name: translate("en", "bill.title") })
+    .waitFor()
+  await page
+    .getByRole("button", { name: nameParam("bill.brick.add.aria", "Coffee") })
+    .click()
+
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("billId"))
+    .not.toBeNull()
+  const billId = new URL(page.url()).searchParams.get("billId")
+  if (!billId) {
+    throw new Error("Could not determine bill id from URL.")
+  }
+
+  await page.getByRole("button", { name: translate("en", "home.pay") }).click()
+  const skipTipButton = page.getByRole("button", {
+    name: translate("en", "paymentTip.none"),
+  })
+  const cashPaidButton = page.getByRole("button", {
+    name: translate("en", "paymentWait.cashPaid.action"),
+  })
+  await skipTipButton.or(cashPaidButton).first().waitFor()
+  if (await skipTipButton.isVisible()) {
+    await skipTipButton.click()
+    await page
+      .getByRole("button", { name: translate("en", "paymentTip.continue") })
+      .click()
+    await cashPaidButton.waitFor()
+  }
+
+  return billId
+}
+
+test("the payment detail shows the bill's coverage as underpaid or overpaid when another device edits it mid-payment", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+
+  await test.step("underpaid: another device adds an item while the payment is in flight", async () => {
+    const billId = await startBillAndBeginCashPayment(page)
+
+    // Simulates a CRDT merge race, not a real second payment: while this
+    // device's $5 payment is in flight, another (still offline) device adds
+    // an item to the same bill, growing its total past that payment's
+    // already-fixed amount. See docs/bill-payment-states.md's "Bill payment
+    // coverage" section.
+    await simulateBillModifiedDuringPayment(page, billId, "add")
+    await markCashPaid(page, "en")
+
+    await page
+      .getByTestId("payment-paid-panel")
+      .getByRole("button", { name: translate("en", "paymentWait.detail") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+      .waitFor()
+    await expect(
+      page.getByText(
+        translate("en", "paymentDetail.bill.coverage.underpaid.title")
+      )
+    ).toBeVisible()
+    await page.screenshot({
+      path: `${screenshotDir}/payment-detail-bill-underpaid.png`,
+      fullPage: true,
+    })
+  })
+
+  await test.step("overpaid: another device removes the item while the payment is in flight", async () => {
+    const billId = await startBillAndBeginCashPayment(page)
+
+    // Same race, opposite direction: the other device removes the bill's
+    // only item, shrinking its total below the payment's already-fixed
+    // amount.
+    await simulateBillModifiedDuringPayment(page, billId, "removeAll")
+    await markCashPaid(page, "en")
+
+    await page
+      .getByTestId("payment-paid-panel")
+      .getByRole("button", { name: translate("en", "paymentWait.detail") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+      .waitFor()
+    await expect(
+      page.getByText(
+        translate("en", "paymentDetail.bill.coverage.overpaid.title")
+      )
+    ).toBeVisible()
+    await page.screenshot({
+      path: `${screenshotDir}/payment-detail-bill-overpaid.png`,
+      fullPage: true,
+    })
+  })
+})
+
+test("a payment with both a cancellation collision and an overpaid bill shows both issues in the list, separated by a middle dot", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+
+  await test.step("set up a payment that ends up both canceled+claimed and tied to an overpaid bill", async () => {
+    const billId = await startBillAndBeginCashPayment(page)
+    await simulateBillModifiedDuringPayment(page, billId, "removeAll")
+    await markCashPaid(page, "en")
+    await simulateCancelAfterClaim(page, "en")
+  })
+
+  await test.step("the activity list shows both issues on the same row, joined by a middle dot", async () => {
+    await gotoPage(page, "/activity", "en", "activity.title")
+    await expect(
+      page.getByText(
+        `${translate("en", "paymentHistory.collision")} · ${translate("en", "paymentHistory.billOverpaid")}`
+      )
+    ).toBeVisible()
+    await page.screenshot({
+      path: `${screenshotDir}/activity-list-multiple-issues.png`,
       fullPage: true,
     })
   })

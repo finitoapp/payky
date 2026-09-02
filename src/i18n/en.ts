@@ -254,6 +254,8 @@ export const en = {
   "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
   "payment.create.error": "Could not create the payment.",
+  "paymentHistory.billOverpaid": "Bill overpaid",
+  "paymentHistory.billUnderpaid": "Bill underpaid",
   "paymentHistory.collision": "Needs review",
   "paymentHistory.empty.description":
     "Created payment requests will appear here.",
@@ -279,8 +281,6 @@ export const en = {
   "paymentTip.percentages": "Percentage tips",
   "paymentTip.title": "Would you like to add a tip?",
   "paymentWait.back": "Back to terminal",
-  "paymentWait.billOverpaid": "This bill has been overpaid.",
-  "paymentWait.billUnderpaid": "This bill is not fully paid yet.",
   "paymentWait.cancel": "Cancel payment",
   "paymentWait.cancelError": "Could not cancel the payment.",
   "paymentWait.canceled": "This payment was canceled.",
@@ -320,6 +320,12 @@ export const en = {
   "paymentWait.waiting": "Waiting for payment...",
   "paymentDetail.amount": "Amount",
   "paymentDetail.backToPayment": "Back to payment",
+  "paymentDetail.bill.coverage.overpaid.description":
+    "This bill has been paid for more than it's currently worth — another device likely changed the bill's items while this payment was already in progress.",
+  "paymentDetail.bill.coverage.overpaid.title": "Overpaid",
+  "paymentDetail.bill.coverage.underpaid.description":
+    "This bill isn't fully covered by confirmed payments yet — expected while a payment is still in progress. If this payment already shows as paid, another device likely changed the bill's items while it was in flight.",
+  "paymentDetail.bill.coverage.underpaid.title": "Not fully paid",
   "paymentDetail.bill.empty": "This bill has no items.",
   "paymentDetail.bill.status.canceled": "Canceled",
   "paymentDetail.bill.status.closed": "Closed",

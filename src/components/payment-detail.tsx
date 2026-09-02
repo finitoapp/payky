@@ -4,6 +4,11 @@ import { AlertTriangleIcon, ReceiptIcon } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
 import { toast } from "sonner"
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/reui/alert.tsx"
+import {
   Timeline,
   TimelineContent,
   TimelineDate,
@@ -41,6 +46,7 @@ import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
+import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -638,6 +644,7 @@ function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
   const { data: tables } = useEvoluQuery(tablesQuery)
   const summaries = useBillLineSummaries(billId)
   const billStatus = useBillStatus(billId)
+  const coverage = useBillCoverage(billId)
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
@@ -776,6 +783,26 @@ function PaymentDetailBillCard({ billId }: { readonly billId: BillId }) {
           )}
           emphasize
         />
+
+        {coverage === "paid" ? null : (
+          <Alert variant="warning">
+            <AlertTriangleIcon />
+            <AlertTitle>
+              {t(
+                coverage === "underpaid"
+                  ? "paymentDetail.bill.coverage.underpaid.title"
+                  : "paymentDetail.bill.coverage.overpaid.title"
+              )}
+            </AlertTitle>
+            <AlertDescription>
+              {t(
+                coverage === "underpaid"
+                  ? "paymentDetail.bill.coverage.underpaid.description"
+                  : "paymentDetail.bill.coverage.overpaid.description"
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   )

@@ -464,7 +464,7 @@ export async function prepareSparkPayment(
 }
 
 /** Reads the payment id off the current `/payment/$paymentId` URL. */
-function getPaymentIdFromUrl(page: Page): string {
+export function getPaymentIdFromUrl(page: Page): string {
   const paymentId = new URL(page.url()).pathname.split("/").pop()
   if (!paymentId) {
     throw new Error(`Could not determine payment id from URL ${page.url()}`)
@@ -590,6 +590,32 @@ export async function simulateDuplicateSettlement(page: Page): Promise<void> {
   await page.evaluate(
     (id) => window.__e2eSimulateDuplicateSettlement?.(id),
     paymentId
+  )
+}
+
+/**
+ * Simulates another, still-offline device editing `billId`'s line items
+ * while a payment against it is in flight, via
+ * `window.__e2eSimulateBillModifiedDuringPayment` (see
+ * src/components/e2e-test-bridge.tsx) — bypasses `requireEditableBill`'s
+ * lock, which only prevents this on the *same* device the pending payment
+ * is visible on. `mode: "add"` grows the bill's total past the payment's
+ * already-fixed amount (underpaid once claimed); `mode: "removeAll"`
+ * shrinks it below (overpaid once claimed). See
+ * docs/bill-payment-states.md's "Bill payment coverage" section.
+ */
+export async function simulateBillModifiedDuringPayment(
+  page: Page,
+  billId: string,
+  mode: "add" | "removeAll"
+): Promise<void> {
+  await page.waitForFunction(
+    () => typeof window.__e2eSimulateBillModifiedDuringPayment === "function"
+  )
+  await page.evaluate(
+    ({ id, mode: pickedMode }) =>
+      window.__e2eSimulateBillModifiedDuringPayment?.(id, pickedMode),
+    { id: billId, mode }
   )
 }
 

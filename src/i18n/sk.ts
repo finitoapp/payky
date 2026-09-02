@@ -257,6 +257,8 @@ export const sk = {
   "onboarding.restore.title": "Obnovenie existujúceho účtu",
   "onboarding.title": "Nastavenie Payky",
   "payment.create.error": "Platbu sa nepodarilo vytvoriť.",
+  "paymentHistory.billOverpaid": "Účet preplatený",
+  "paymentHistory.billUnderpaid": "Účet nedoplatený",
   "paymentHistory.collision": "Vyžaduje kontrolu",
   "paymentHistory.empty.description":
     "Vytvorené platobné žiadosti sa zobrazia tu.",
@@ -281,8 +283,6 @@ export const sk = {
   "paymentTip.percentages": "Prepitné v percentách",
   "paymentTip.title": "Chcete pridať prepitné?",
   "paymentWait.back": "Späť na terminál",
-  "paymentWait.billOverpaid": "Tento účet bol preplatený.",
-  "paymentWait.billUnderpaid": "Tento účet ešte nie je doplatený.",
   "paymentWait.cancel": "Zrušiť platbu",
   "paymentWait.cancelError": "Platbu sa nepodarilo zrušiť.",
   "paymentWait.canceled": "Táto platba bola zrušená.",
@@ -321,6 +321,12 @@ export const sk = {
   "paymentWait.waiting": "Čaká sa na platbu...",
   "paymentDetail.amount": "Suma",
   "paymentDetail.backToPayment": "Späť na platbu",
+  "paymentDetail.bill.coverage.overpaid.description":
+    "Tento účet bol zaplatený za viac, než aktuálne stojí — pravdepodobne iné zariadenie zmenilo položky účtu, zatiaľ čo táto platba už prebiehala.",
+  "paymentDetail.bill.coverage.overpaid.title": "Preplatené",
+  "paymentDetail.bill.coverage.underpaid.description":
+    "Tento účet zatiaľ nie je plne pokrytý potvrdenými platbami — to je bežné, kým platba stále prebieha. Ak je táto platba už zaplatená, pravdepodobne iné zariadenie zmenilo položky účtu, kým bežala.",
+  "paymentDetail.bill.coverage.underpaid.title": "Nie je doplatené",
   "paymentDetail.bill.empty": "Tento účet nemá žiadne položky.",
   "paymentDetail.bill.status.canceled": "Zrušené",
   "paymentDetail.bill.status.closed": "Uzavreté",

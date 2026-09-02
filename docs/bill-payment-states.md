@@ -54,6 +54,15 @@ query performance.
   an existing collision, not a way to mark an arbitrary payment paid without
   a claim behind it, and it never feeds into [Bill payment
   coverage](#bill-payment-coverage), which keeps reading claims only.
+- `payment.excessAcknowledgedAt: timestamp | null` — set once, never
+  cleared, by `acknowledgePaymentExcessSettlement`. Staff's explicit
+  resolution of the duplicate-settlement collision described in ["Duplicate
+  settlement"](#duplicate-settlement) below: it acknowledges that this
+  payment has been claimed for more than its own `amount` (e.g. two offline
+  devices each independently settling it through a different method) and
+  silences the warning. Unlike `confirmedPaidAt`, it doesn't change what
+  `derivePaymentStatus` returns — the payment is unambiguously Paid either
+  way — it only silences a separate, additive warning about the *amount*.
 - `payment.expiresAt: timestamp | null` — set at creation time from the
   payment method's own expiry (e.g. a Lightning invoice's `expirySeconds`).
   `null` means the payment never expires on its own (cash, IBAN transfer —
@@ -130,6 +139,33 @@ already exist before it will set `confirmedPaidAt`, rejecting with
 `PaymentNotCanceledError` or `PaymentNotClaimedError` otherwise. It exists
 specifically to resolve the collision `cancelPayment`'s guard cannot prevent
 — it is not a general-purpose "mark any payment paid" action.
+
+### Duplicate settlement
+
+A payment can end up with more than one active `reconciliationClaim`,
+pointing at *different* underlying `accountTransaction` rows — most
+commonly a genuine CRDT merge race: two offline devices each independently
+settle the same payment through a different method (e.g. one confirms it in
+cash while another reconciles a matching incoming bank transfer), and since
+each claim is real money, neither is discarded on merge. It can also arise
+deliberately: `preparePaymentMethod` lets one payment be prepared with more
+than one method at once (cash, Lightning, IBAN all offered for the same
+amount, not mutually exclusive — see `payment.ts`'s satellite tables), and
+`claimManualReconciliation` (unlike the automatic matchers) has no
+already-claimed exclusion, so staff can manually attach more than one
+transaction to a payment.
+
+Either way, [Bill payment coverage](#bill-payment-coverage) sums the
+*distinct claimed transactions*' real amounts (deduplicated by transaction
+id, not payment id), so a payment claimed for more than its own `amount`
+correctly shows up as extra money rather than being silently capped at the
+nominal amount. `acknowledgePaymentExcessSettlement` is staff's explicit
+resolution: it requires the payment to actually be claimed for more than its
+`amount`, rejecting with `PaymentNotOverpaidError` otherwise, and sets
+`excessAcknowledgedAt` once that's confirmed. This is a separate collision
+from canceled+claimed above — a payment can be simultaneously
+Canceled-despite-claimed *and* over-claimed, and resolving one never writes
+to the other's field.
 
 ## Bill vertical
 
@@ -292,16 +328,23 @@ A bill's payments are compared against its line-item total to answer "has
 this bill actually been paid for":
 
 ```
-claimedSum = Σ (payment.amount − payment.tipAmount)
-             over every payment with payment.billId = bill.id
-             that has an active reconciliationClaim
+claimedSum = Σ over every payment with payment.billId = bill.id:
+               max(0, Σ accountTransaction.amount − payment.tipAmount)
+                 over every *distinct* accountTransaction actively claimed
+                 against that payment
              — regardless of that payment's own canceled/expired display status
 
 billTotal = sum of the bill's line-item summaries (bill-line ledger, "add" − "remove")
 ```
 
-`payment.tipAmount` is subtracted because `payment.amount` already includes
-the tip on top of what was charged for the bill's items (see
+The inner sum is over *distinct claimed transactions*, deduplicated by
+transaction id rather than payment id — see ["Duplicate
+settlement"](#duplicate-settlement). Normally a payment has exactly one
+claimed transaction whose amount equals `payment.amount`, so this reduces to
+the single-transaction case; it only differs when a payment ends up claimed
+for more (or, mid-split, less) than its own amount. `payment.tipAmount` is
+subtracted once per payment (not per transaction) because it already
+includes the tip on top of what was charged for the bill's items (see
 `calculatePaymentAmounts`) — a tip is gratuity, not part of what the bill's
 line items are worth, and must not skew the comparison.
 
@@ -365,13 +408,16 @@ the other's fields.
 - No automatic refund or reconciliation action when a bill is found
   `overpaid` — it is surfaced to staff visually; resolving it is a manual,
   out-of-band process. This includes the "Refund" action surfaced next to a
-  canceled+claimed payment's collision in the UI — it is a placeholder that
-  tells staff refunds aren't supported yet, not a working refund flow.
-- No automatic resolution of either canceled+funded collision (payment or
-  bill) — both `confirmPaymentPaidDespiteCancellation` and
-  `confirmBillClosedDespiteCancellation` are manual, explicit staff actions,
-  not something the app resolves on its own when a sync merge produces the
-  collision.
+  canceled+claimed payment's, canceled+funded bill's, and duplicate-settlement
+  payment's collisions in the UI — it is the same placeholder in all three
+  places, telling staff refunds aren't supported yet, not a working refund
+  flow.
+- No automatic resolution of any of the three collisions (payment
+  canceled+claimed, bill canceled+funded, payment duplicate-settlement) —
+  `confirmPaymentPaidDespiteCancellation`, `confirmBillClosedDespiteCancellation`,
+  and `acknowledgePaymentExcessSettlement` are all manual, explicit staff
+  actions, not something the app resolves on its own when a sync merge
+  produces the collision.
 - No enforcement that stops a bill from accumulating more than one
   concurrent payment attempt — multiple payments per bill (split payments)
   are an intended capability, not a bug to guard against, and creating a new

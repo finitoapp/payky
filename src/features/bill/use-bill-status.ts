@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 
-import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
+import { claimedTransactionsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
@@ -34,11 +34,11 @@ export interface BillStatusInfo {
 export function useBillStatus(billId: BillId): BillStatusInfo | undefined {
   const billQuery = useMemo(() => billByIdQuery(billId), [billId])
   const claimedQuery = useMemo(
-    () => claimedPaymentsByBillIdQuery(billId),
+    () => claimedTransactionsByBillIdQuery(billId),
     [billId]
   )
   const { data: billRows } = useEvoluQuery(billQuery)
-  const { data: claimedPayments } = useEvoluQuery(claimedQuery)
+  const { data: claimedTransactions } = useEvoluQuery(claimedQuery)
   const summaries = useBillLineSummaries(billId)
   const bill = billRows[0]
 
@@ -48,9 +48,9 @@ export function useBillStatus(billId: BillId): BillStatusInfo | undefined {
     const billTotal = NonNegativeInteger(
       summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
     )
-    const claimedSum = calculateClaimedSum(claimedPayments)
+    const claimedSum = calculateClaimedSum(claimedTransactions)
     const coverage = deriveBillCoverage(billTotal, claimedSum)
-    const hasActiveClaim = claimedPayments.length > 0
+    const hasActiveClaim = claimedTransactions.length > 0
 
     const status = deriveBillStatus({
       canceledAt: bill.canceledAt,
@@ -67,5 +67,5 @@ export function useBillStatus(billId: BillId): BillStatusInfo | undefined {
         hasActiveClaim &&
         coverage !== "underpaid",
     }
-  }, [bill, summaries, claimedPayments])
+  }, [bill, summaries, claimedTransactions])
 }

@@ -341,6 +341,12 @@ export const sk = {
   "paymentDetail.createdAt": "Vytvorené",
   "paymentDetail.deviceId": "Zariadenie",
   "paymentDetail.emptyValue": "—",
+  "paymentDetail.excessCollision.acknowledge": "Označiť ako vyriešené",
+  "paymentDetail.excessCollision.acknowledge.error":
+    "Kolíziu sa nepodarilo označiť ako vyriešenú. Skúste to znova.",
+  "paymentDetail.excessCollision.description":
+    "Táto platba bola vysporiadaná viackrát — pravdepodobne dve offline zariadenia nezávisle potvrdili iný spôsob úhrady. Vyriešte kolíziu nižšie.",
+  "paymentDetail.excessCollision.title": "Zaplatené viackrát",
   "paymentDetail.invalidId": "Neplatné ID platby.",
   "paymentDetail.notFound": "Platba sa nenašla.",
   "paymentDetail.paymentMethod": "Zaplatené cez",

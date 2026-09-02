@@ -339,6 +339,12 @@ export const cs = {
   "paymentDetail.createdAt": "Vytvořeno",
   "paymentDetail.deviceId": "Zařízení",
   "paymentDetail.emptyValue": "—",
+  "paymentDetail.excessCollision.acknowledge": "Označit jako vyřešeno",
+  "paymentDetail.excessCollision.acknowledge.error":
+    "Kolizi se nepodařilo označit jako vyřešenou. Zkuste to znovu.",
+  "paymentDetail.excessCollision.description":
+    "Tato platba byla vypořádána vícekrát — pravděpodobně dvě offline zařízení nezávisle potvrdila jiný způsob úhrady. Vyřešte kolizi níže.",
+  "paymentDetail.excessCollision.title": "Zaplaceno vícekrát",
   "paymentDetail.invalidId": "Neplatné id platby.",
   "paymentDetail.notFound": "Platba nebyla nalezena.",
   "paymentDetail.paymentMethod": "Zaplaceno přes",

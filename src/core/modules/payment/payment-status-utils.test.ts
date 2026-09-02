@@ -1,8 +1,14 @@
 import { describe, expect, test } from "vitest"
-import { TimestampMs } from "@/core/modules/shared/schema.ts"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
+  NonNegativeInteger,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
+import {
+  calculatePaymentClaimedSum,
   computePaymentExpiresAt,
   DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
+  derivePaymentHasExcessSettlement,
   derivePaymentStatus,
 } from "./payment-status-utils.ts"
 
@@ -126,5 +132,73 @@ describe("computePaymentExpiresAt", () => {
     expect(
       computePaymentExpiresAt(now, DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS)
     ).toBe(now.getTime() + DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1000)
+  })
+})
+
+describe("calculatePaymentClaimedSum", () => {
+  test("sums distinct claimed transactions", () => {
+    expect(
+      calculatePaymentClaimedSum([
+        {
+          accountTransactionId: "tx-cash" as AccountTransactionId,
+          amount: 1_000,
+        },
+        {
+          accountTransactionId: "tx-lightning" as AccountTransactionId,
+          amount: 1_000,
+        },
+      ])
+    ).toBe(2_000)
+  })
+
+  test("deduplicates the same transaction claimed more than once", () => {
+    expect(
+      calculatePaymentClaimedSum([
+        {
+          accountTransactionId: "tx-cash" as AccountTransactionId,
+          amount: 1_000,
+        },
+        {
+          accountTransactionId: "tx-cash" as AccountTransactionId,
+          amount: 1_000,
+        },
+      ])
+    ).toBe(1_000)
+  })
+
+  test("returns zero for no claimed transactions", () => {
+    expect(calculatePaymentClaimedSum([])).toBe(0)
+  })
+})
+
+describe("derivePaymentHasExcessSettlement", () => {
+  test("false when the claimed sum matches the payment's amount exactly", () => {
+    expect(
+      derivePaymentHasExcessSettlement({
+        amount: NonNegativeInteger(1_000),
+        excessAcknowledgedAt: null,
+        claimedSum: NonNegativeInteger(1_000),
+      })
+    ).toBe(false)
+  })
+
+  test("true when the claimed sum exceeds the payment's amount — two distinct settlements", () => {
+    expect(
+      derivePaymentHasExcessSettlement({
+        amount: NonNegativeInteger(1_000),
+        excessAcknowledgedAt: null,
+        claimedSum: NonNegativeInteger(2_000),
+      })
+    ).toBe(true)
+  })
+
+  test("false once staff has acknowledged the excess, even though it's still overpaid", () => {
+    expect(
+      derivePaymentHasExcessSettlement({
+        amount: NonNegativeInteger(1_000),
+        excessAcknowledgedAt: TimestampMs(now.getTime()),
+        claimedSum: NonNegativeInteger(2_000),
+      })
+    ).toBe(false)
   })
 })

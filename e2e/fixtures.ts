@@ -572,6 +572,28 @@ export async function simulateCancelAfterClaim(
 }
 
 /**
+ * Simulates a second offline device independently settling the current
+ * (already cash-claimed) payment through its other prepared method — IBAN —
+ * via `window.__e2eSimulateDuplicateSettlement` (see
+ * src/components/e2e-test-bridge.tsx). Produces the duplicate-settlement
+ * collision: the payment ends up claimed for more than its own amount.
+ * Assumes the page is still on the `/payment/$paymentId` URL for that
+ * payment (e.g. right after `markCashPaid`), and that the payment was
+ * created with `createPayment` (which prepares both cash and IBAN).
+ */
+export async function simulateDuplicateSettlement(page: Page): Promise<void> {
+  const paymentId = getPaymentIdFromUrl(page)
+
+  await page.waitForFunction(
+    () => typeof window.__e2eSimulateDuplicateSettlement === "function"
+  )
+  await page.evaluate(
+    (id) => window.__e2eSimulateDuplicateSettlement?.(id),
+    paymentId
+  )
+}
+
+/**
  * Cancels `billId` directly via `window.__e2eCancelBill` (see
  * src/components/e2e-test-bridge.tsx) — the real `cancelBill` action,
  * called directly because the bill page's own UI hides the cart's discard

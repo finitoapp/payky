@@ -9,6 +9,7 @@ import {
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
 import type {
   BillLineRow,
@@ -46,6 +47,7 @@ import {
 } from "@/core/modules/shared/utils.ts"
 import {
   claimedPaymentsByBillIdQuery,
+  claimedTransactionsByBillIdQuery,
   paymentsByBillIdQuery,
 } from "./bill-coverage-queries.ts"
 import {
@@ -170,7 +172,7 @@ export interface BillCoverageSummary {
 }
 
 /**
- * Shared "bill's line-item total + its claimed payments" load behind
+ * Shared "bill's line-item total + its claimed transactions" load behind
  * `loadBillCoverage` and `loadBillClosedAtIfCovered`.
  */
 const loadBillTotalAndClaimedSum =
@@ -179,9 +181,10 @@ const loadBillTotalAndClaimedSum =
   ): Task<
     {
       readonly billTotal: NonNegativeInteger
-      readonly claimedPayments: ReadonlyArray<{
-        readonly id: PaymentId
-        readonly amount: NonNegativeInteger
+      readonly claimedTransactions: ReadonlyArray<{
+        readonly paymentId: PaymentId
+        readonly accountTransactionId: AccountTransactionId
+        readonly amount: number
         readonly tipAmount: NonNegativeInteger
       }>
     },
@@ -189,16 +192,16 @@ const loadBillTotalAndClaimedSum =
     EvoluDep
   > =>
   async (run) => {
-    const [summaries, claimedPayments] = await Promise.all([
+    const [summaries, claimedTransactions] = await Promise.all([
       run.ok(loadCalculatedBillLineSummaries(billId)),
-      run.deps.evolu.loadQuery(claimedPaymentsByBillIdQuery(billId)),
+      run.deps.evolu.loadQuery(claimedTransactionsByBillIdQuery(billId)),
     ])
 
     return ok({
       billTotal: NonNegativeInteger(
         summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
       ),
-      claimedPayments,
+      claimedTransactions,
     })
   }
 
@@ -210,10 +213,10 @@ const loadBillTotalAndClaimedSum =
 export const loadBillCoverage =
   (billId: BillId): Task<BillCoverageSummary, never, EvoluDep> =>
   async (run) => {
-    const { billTotal, claimedPayments } = await run.ok(
+    const { billTotal, claimedTransactions } = await run.ok(
       loadBillTotalAndClaimedSum(billId)
     )
-    const claimedSum = calculateClaimedSum(claimedPayments)
+    const claimedSum = calculateClaimedSum(claimedTransactions)
 
     return ok({
       billTotal,
@@ -246,12 +249,12 @@ const loadBillStatusSnapshot =
     const billResult = await run(loadBill(billId))
     if (!billResult.ok) return billResult
 
-    const { billTotal, claimedPayments } = await run.ok(
+    const { billTotal, claimedTransactions } = await run.ok(
       loadBillTotalAndClaimedSum(billId)
     )
-    const claimedSum = calculateClaimedSum(claimedPayments)
+    const claimedSum = calculateClaimedSum(claimedTransactions)
     const coverage = deriveBillCoverage(billTotal, claimedSum)
-    const hasActiveClaim = claimedPayments.length > 0
+    const hasActiveClaim = claimedTransactions.length > 0
     const status = deriveBillStatus({
       canceledAt: billResult.value.canceledAt,
       confirmedClosedAt: billResult.value.confirmedClosedAt,
@@ -389,12 +392,15 @@ const requireCancelableBill = (billId: BillId) =>
  * `confirmBillClosedDespiteCancellation`. See docs/bill-payment-states.md.
  */
 export const loadBillClosedAtIfCovered =
-  (payment: {
-    readonly id: PaymentId
-    readonly billId: BillId | null
-    readonly amount: NonNegativeInteger
-    readonly tipAmount: NonNegativeInteger
-  }): Task<
+  (
+    payment: {
+      readonly id: PaymentId
+      readonly billId: BillId | null
+      readonly amount: NonNegativeInteger
+      readonly tipAmount: NonNegativeInteger
+    },
+    accountTransactionId: AccountTransactionId
+  ): Task<
     { readonly billId: BillId; readonly closedAt: TimestampMs } | null,
     never,
     EvoluDep & DateDep
@@ -405,15 +411,23 @@ export const loadBillClosedAtIfCovered =
     const billResult = await run(loadBill(payment.billId))
     if (!billResult.ok) return ok(null)
 
-    const { billTotal, claimedPayments } = await run.ok(
+    const { billTotal, claimedTransactions } = await run.ok(
       loadBillTotalAndClaimedSum(payment.billId)
     )
-    const alreadyClaimed = claimedPayments.some(
-      (claimed) => claimed.id === payment.id
-    )
-    const claimedSum = calculateClaimedSum(
-      alreadyClaimed ? claimedPayments : [...claimedPayments, payment]
-    )
+    // The new claim isn't written yet, so it can't show up in
+    // `claimedTransactions` — append it here. If it's a retry of a claim
+    // that (per a concurrent write) already landed, `calculateClaimedSum`'s
+    // own dedup-by-transaction-id collapses the duplicate, so this never
+    // double-counts.
+    const claimedSum = calculateClaimedSum([
+      ...claimedTransactions,
+      {
+        paymentId: payment.id,
+        accountTransactionId,
+        amount: payment.amount,
+        tipAmount: payment.tipAmount,
+      },
+    ])
 
     if (deriveBillCoverage(billTotal, claimedSum) === "underpaid") {
       return ok(null)

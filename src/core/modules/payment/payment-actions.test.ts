@@ -9,6 +9,7 @@ import {
 } from "@/core/integrations/yadio/yadio-client.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import {
   addCatalogItemToBill,
   addManualAmountToBill,
@@ -25,10 +26,12 @@ import {
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
   IbanSchema,
+  Integer,
   NonEmptyString255,
   NonEmptyStringSchema,
   NonNegativeInteger,
@@ -43,6 +46,7 @@ import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
+  acknowledgePaymentExcessSettlement,
   cancelPayment,
   confirmPaymentPaidDespiteCancellation,
   createPayment,
@@ -1040,6 +1044,141 @@ describe("payment actions", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: { type: "PaymentNotClaimed", id },
+    })
+  }, 15_000)
+
+  test("resolves a duplicate-settlement collision via acknowledgePaymentExcessSettlement", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    // A payment prepared with both cash and IBAN as offered methods — the
+    // same multi-method design `preparePaymentMethod` supports for a real
+    // payment attempt.
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+        iban: {
+          accountId: ibanAccountId,
+          variableSymbol: VariableSymbol("123456"),
+          specificSymbol: SpecificSymbol("260605"),
+        },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    // Simulate a second offline device independently settling the *same*
+    // payment through the other prepared method — a real, distinct incoming
+    // bank transaction, manually reconciled (the automatic IBAN matcher
+    // itself excludes an already-claimed payment; a genuine CRDT merge race
+    // bypasses that exclusion the same way, since each device only sees its
+    // own claim at write time). See docs/bill-payment-states.md.
+    const secondTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId: ibanAccountId,
+        amount: Integer(12_900),
+        currency: "CZK",
+        occurredAt: TimestampMsSchema.decode(deps.date.now().getTime()),
+        note: null,
+        internalTransferGroupId: null,
+        source: { deviceId: null, source: "auto" },
+        iban: {
+          variableSymbol: VariableSymbol("123456"),
+          constantSymbol: null,
+          specificSymbol: SpecificSymbol("260605"),
+          bankReference: NonEmptyString255("123456789"),
+        },
+      })
+    )
+    await expect(
+      run(
+        claimManualReconciliation({
+          paymentId: id,
+          accountTransactionId: secondTransactionId,
+          deviceId: null,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(run(acknowledgePaymentExcessSettlement(id))).resolves.toEqual({
+      ok: true,
+      value: id,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
+      .toSatisfy((rows) => rows[0]?.excessAcknowledgedAt !== null)
+
+    // Idempotent: still claimed for more than its amount, so re-resolving is
+    // a no-op, not a rejection.
+    await expect(run(acknowledgePaymentExcessSettlement(id))).resolves.toEqual({
+      ok: true,
+      value: id,
+    })
+  }, 15_000)
+
+  test("rejects acknowledgePaymentExcessSettlement on a payment that isn't overpaid", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: id,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      run(acknowledgePaymentExcessSettlement(id))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "PaymentNotOverpaid", id },
     })
   }, 15_000)
 

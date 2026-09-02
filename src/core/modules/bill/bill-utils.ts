@@ -1,3 +1,4 @@
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
@@ -58,28 +59,50 @@ export const deriveBillCoverage = (
 }
 
 /**
- * Sums the non-tip portion (`amount - tipAmount`) of every claimed payment,
- * deduplicated by payment id — a single payment can carry more than one
- * active claim (e.g. `markPaymentPaidCash` claimed against two accounts),
- * and its amount must only count once toward the bill's coverage.
+ * Sums, per payment, the non-tip portion of every distinct account
+ * transaction actively claimed against it, then adds those per-payment
+ * totals together. Deduplicates by *transaction* id (not payment id) —
+ * `calculatePaymentClaimedSum`'s doc comment explains why a payment can
+ * carry more than one active claim (a genuine multi-method split, or a
+ * CRDT merge race across two offline devices), and either way the real
+ * money that arrived for it is the sum of its distinct transactions, not
+ * its nominal `amount` counted once regardless of how much was actually
+ * claimed. Tip is still subtracted only once per payment (it's an
+ * attribute of the payment, not of any one transaction), and a payment
+ * whose transactions still fall short of its tip (a partial, incomplete
+ * split) contributes zero rather than a negative amount.
  */
 export const calculateClaimedSum = (
-  claimedPayments: ReadonlyArray<{
-    readonly id: PaymentId
-    readonly amount: NonNegativeInteger
+  claimedTransactions: ReadonlyArray<{
+    readonly paymentId: PaymentId
+    readonly accountTransactionId: AccountTransactionId
+    readonly amount: number
     readonly tipAmount: NonNegativeInteger
   }>
 ): NonNegativeInteger => {
-  const uniqueById = new Map(
-    claimedPayments.map((payment) => [payment.id, payment])
+  const uniqueTransactions = new Map(
+    claimedTransactions.map((transaction) => [
+      transaction.accountTransactionId,
+      transaction,
+    ])
   )
 
-  return NonNegativeInteger(
-    [...uniqueById.values()].reduce(
-      (sum, payment) => sum + (payment.amount - payment.tipAmount),
-      0
+  const grossByPayment = new Map<PaymentId, number>()
+  const tipByPayment = new Map<PaymentId, NonNegativeInteger>()
+  for (const transaction of uniqueTransactions.values()) {
+    grossByPayment.set(
+      transaction.paymentId,
+      (grossByPayment.get(transaction.paymentId) ?? 0) + transaction.amount
     )
-  )
+    tipByPayment.set(transaction.paymentId, transaction.tipAmount)
+  }
+
+  let sum = 0
+  for (const [paymentId, gross] of grossByPayment) {
+    sum += Math.max(0, gross - (tipByPayment.get(paymentId) ?? 0))
+  }
+
+  return NonNegativeInteger(sum)
 }
 
 /**

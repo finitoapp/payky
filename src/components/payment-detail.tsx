@@ -28,8 +28,15 @@ import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-a
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
-import { confirmPaymentPaidDespiteCancellation } from "@/core/modules/payment/payment-actions.ts"
-import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
+import {
+  acknowledgePaymentExcessSettlement,
+  confirmPaymentPaidDespiteCancellation,
+} from "@/core/modules/payment/payment-actions.ts"
+import {
+  calculatePaymentClaimedSum,
+  derivePaymentHasExcessSettlement,
+  derivePaymentStatus,
+} from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
@@ -92,6 +99,7 @@ const paymentDetailQuery = (paymentId: PaymentId) =>
         "tipAmount",
         "canceledAt",
         "confirmedPaidAt",
+        "excessAcknowledgedAt",
         "expiresAt",
         "createdAt",
         "updatedAt",
@@ -206,6 +214,7 @@ function PaymentDetailContent({
   const locale = useLocale()
   const appRun = useAppRun()
   const [resolvePending, setResolvePending] = useState(false)
+  const [excessResolvePending, setExcessResolvePending] = useState(false)
   const query = useMemo(() => paymentDetailQuery(paymentId), [paymentId])
   const reconciliationsQuery = useMemo(
     () => paymentReconciliationsQuery(paymentId),
@@ -241,6 +250,28 @@ function PaymentDetailContent({
     payment.canceledAt !== null &&
     payment.confirmedPaidAt === null &&
     reconciliations.length > 0
+  // The duplicate-settlement collision from docs/bill-payment-states.md: two
+  // offline devices can each independently claim this payment through a
+  // different method — both real money, so the sum of its distinct claimed
+  // transactions can exceed its own `amount`. See `payment.ts`'s
+  // `excessAcknowledgedAt` doc comment.
+  const claimedTransactionSum = calculatePaymentClaimedSum(
+    reconciliations.flatMap((reconciliation) =>
+      reconciliation.accountTransactionId === null
+        ? []
+        : [
+            {
+              accountTransactionId: reconciliation.accountTransactionId,
+              amount: reconciliation.transactionAmount,
+            },
+          ]
+    )
+  )
+  const hasExcessSettlementCollision = derivePaymentHasExcessSettlement({
+    amount: payment.amount,
+    excessAcknowledgedAt: payment.excessAcknowledgedAt,
+    claimedSum: claimedTransactionSum,
+  })
 
   const handleConfirmPaidDespiteCancellation = async () => {
     setResolvePending(true)
@@ -253,6 +284,20 @@ function PaymentDetailContent({
       }
     } finally {
       setResolvePending(false)
+    }
+  }
+
+  const handleAcknowledgeExcessSettlement = async () => {
+    setExcessResolvePending(true)
+    try {
+      await using run = appRun()
+      const result = await run(acknowledgePaymentExcessSettlement(paymentId))
+
+      if (!result.ok) {
+        toast.error(t("paymentDetail.excessCollision.acknowledge.error"))
+      }
+    } finally {
+      setExcessResolvePending(false)
     }
   }
 
@@ -339,6 +384,38 @@ function PaymentDetailContent({
                   onClick={() => void handleConfirmPaidDespiteCancellation()}
                 >
                   {t("paymentDetail.collision.markPaid")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 flex-1"
+                  onClick={handleRefund}
+                >
+                  {t("paymentDetail.collision.refund")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {hasExcessSettlementCollision ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-warning" />
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-semibold text-warning">
+                    {t("paymentDetail.excessCollision.title")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("paymentDetail.excessCollision.description")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  className="h-12 flex-1"
+                  disabled={excessResolvePending}
+                  onClick={() => void handleAcknowledgeExcessSettlement()}
+                >
+                  {t("paymentDetail.excessCollision.acknowledge")}
                 </Button>
                 <Button
                   variant="outline"

@@ -27,6 +27,18 @@ export const payment = {
   tipAmount: NonNegativeIntegerSchema,
   canceledAt: TimestampMsSchema.nullable(),
   confirmedPaidAt: TimestampMsSchema.nullable(),
+  /**
+   * Set once, never cleared, by `acknowledgePaymentExcessSettlement`.
+   * Staff's explicit resolution of the duplicate-settlement collision: two
+   * offline devices can each independently claim the same payment through a
+   * different method (e.g. one settles it in cash while another
+   * reconciles an incoming bank transfer for the same amount) — both
+   * claims are real money, so neither is discarded, but the payment ends
+   * up claimed for more than its own `amount`. This field records that
+   * staff has seen the excess and decided how to handle it (e.g. refund),
+   * silencing the warning. See docs/bill-payment-states.md.
+   */
+  excessAcknowledgedAt: TimestampMsSchema.nullable(),
   expiresAt: TimestampMsSchema.nullable(),
 } as const
 

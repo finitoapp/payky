@@ -27,6 +27,40 @@ export const activeReconciliationClaimByAccountTransactionIdQuery = (
       .where("isDeleted", "is not", 1)
   )
 
+/**
+ * Every distinct account transaction actively claimed against a single
+ * payment, with the real transaction amount — the basis for
+ * `calculatePaymentClaimedSum`/`derivePaymentHasExcessSettlement`
+ * (`payment-status-utils.ts`), which detect the duplicate-settlement
+ * collision: a payment claimed for more than its own `amount`. See
+ * docs/bill-payment-states.md.
+ */
+export const activeClaimedTransactionsByPaymentIdQuery = (
+  paymentId: PaymentId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "reconciliationClaim.accountTransactionId"
+      )
+      .select([
+        "reconciliationClaim.accountTransactionId",
+        "accountTransaction.amount",
+      ])
+      .where("reconciliationClaim.paymentId", "=", paymentId)
+      .where("reconciliationClaim.isDeleted", "is not", 1)
+      .where("reconciliationClaim.accountTransactionId", "is not", null)
+      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.amount", "is not", null)
+      .$narrowType<{
+        accountTransactionId: KyselyNotNull
+        amount: KyselyNotNull
+      }>()
+  )
+
 export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
   accountTransactionId: AccountTransactionId
 ) =>

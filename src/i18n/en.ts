@@ -339,6 +339,12 @@ export const en = {
   "paymentDetail.createdAt": "Created at",
   "paymentDetail.deviceId": "Device",
   "paymentDetail.emptyValue": "—",
+  "paymentDetail.excessCollision.acknowledge": "Mark as resolved",
+  "paymentDetail.excessCollision.acknowledge.error":
+    "Couldn't mark the collision as resolved. Try again.",
+  "paymentDetail.excessCollision.description":
+    "This payment was settled more than once — likely two offline devices each confirmed a different payment method for it. Resolve the collision below.",
+  "paymentDetail.excessCollision.title": "Paid more than once",
   "paymentDetail.invalidId": "Invalid payment id.",
   "paymentDetail.notFound": "Payment was not found.",
   "paymentDetail.paymentMethod": "Paid by",

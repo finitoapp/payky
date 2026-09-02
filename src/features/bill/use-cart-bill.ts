@@ -11,6 +11,7 @@ import {
 } from "@/core/modules/bill/bill-actions.ts"
 import {
   claimedPaymentsByBillIdQuery,
+  claimedTransactionsByBillIdQuery,
   paymentsByBillIdQuery,
 } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
@@ -129,6 +130,7 @@ export function useCartBill({
       evolu.loadQuery(itemsQuery),
       evolu.loadQuery(paymentsByBillIdQuery(created)),
       evolu.loadQuery(claimedPaymentsByBillIdQuery(created)),
+      evolu.loadQuery(claimedTransactionsByBillIdQuery(created)),
     ])
 
     onBillCreated(created)

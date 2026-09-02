@@ -14,7 +14,10 @@ import {
   paymentSparkDetailsByIdQuery,
 } from "@/core/modules/payment/payment-queries.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import {
+  claimManualReconciliation,
+  reconcileAccountTransaction,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
@@ -34,6 +37,7 @@ declare global {
     __e2eMarkSparkPaid?: (paymentId: string) => Promise<void>
     __e2eMarkIbanPaid?: (paymentId: string) => Promise<void>
     __e2eSimulateCancelAfterClaim?: (paymentId: string) => Promise<void>
+    __e2eSimulateDuplicateSettlement?: (paymentId: string) => Promise<void>
     __e2eCancelBill?: (billId: string) => Promise<void>
   }
 }
@@ -63,6 +67,19 @@ declare global {
  * (the payment-detail/payment-history warning and
  * `confirmPaymentPaidDespiteCancellation`) without a real second device.
  *
+ * Also exposes `window.__e2eSimulateDuplicateSettlement`, which simulates a
+ * second offline device independently settling the *same* (already-claimed)
+ * payment through its other prepared method — a real account transaction
+ * for the payment's IBAN details, claimed via `claimManualReconciliation`
+ * rather than `reconcileAccountTransaction`, since the automatic matcher
+ * itself excludes a payment that already has a claim (see
+ * `ibanReconciliationCandidateByAccountTransactionIdQuery`'s `reconciliationClaim.id
+ * is null` guard). A genuine CRDT merge race bypasses that same exclusion
+ * for the same reason `__e2eSimulateCancelAfterClaim` does: each device only
+ * sees its own writes until sync. Used to exercise the duplicate-settlement
+ * collision UI (the payment-detail warning and
+ * `acknowledgePaymentExcessSettlement`) without two real devices.
+ *
  * Also exposes `window.__e2eCancelBill`, which calls the real `cancelBill`
  * action directly — the bill-level mirror of the above, letting a test
  * discard a bill while its payment is still pending (a transition the
@@ -72,7 +89,7 @@ declare global {
  * UI). Confirming that same payment afterward produces the canceled+funded
  * bill collision `confirmBillClosedDespiteCancellation` resolves.
  *
- * All five are dead code in any real production build: kept alive only in
+ * All six are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -220,6 +237,48 @@ export function E2eTestBridge() {
       )
     }
 
+    window.__e2eSimulateDuplicateSettlement = async (paymentIdValue) => {
+      const parsedPaymentId = PaymentId.parse(paymentIdValue)
+      await using run = appRun()
+
+      const [ibanDetails] = await run.deps.evolu.loadQuery(
+        paymentIbanDetailsByIdQuery(parsedPaymentId)
+      )
+      if (!ibanDetails) {
+        throw new Error(
+          `No prepared IBAN payment found for payment ${parsedPaymentId}.`
+        )
+      }
+
+      const accountTransactionId = await run.ok(
+        createAccountTransaction({
+          accountId: ibanDetails.accountId,
+          amount: ibanDetails.amount,
+          currency: ibanDetails.currency,
+          occurredAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+          note: null,
+          internalTransferGroupId: null,
+          source: { deviceId: null, source: "auto" },
+          iban: {
+            variableSymbol: ibanDetails.variableSymbol,
+            constantSymbol: null,
+            specificSymbol: ibanDetails.specificSymbol,
+            bankReference: NonEmptyString255Schema.decode(
+              `e2e:duplicate:${parsedPaymentId}`
+            ),
+          },
+        })
+      )
+
+      await run.ok(
+        claimManualReconciliation({
+          paymentId: parsedPaymentId,
+          accountTransactionId,
+          deviceId: null,
+        })
+      )
+    }
+
     window.__e2eCancelBill = async (billIdValue) => {
       const parsedBillId = BillId.parse(billIdValue)
       await using run = appRun()
@@ -237,6 +296,7 @@ export function E2eTestBridge() {
       delete window.__e2eMarkSparkPaid
       delete window.__e2eMarkIbanPaid
       delete window.__e2eSimulateCancelAfterClaim
+      delete window.__e2eSimulateDuplicateSettlement
       delete window.__e2eCancelBill
     }
   }, [appRun])

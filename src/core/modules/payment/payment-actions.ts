@@ -43,7 +43,10 @@ import type {
   paymentCashRegister,
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
-import { computePaymentExpiresAt } from "@/core/modules/payment/payment-status-utils.ts"
+import {
+  calculatePaymentClaimedSum,
+  computePaymentExpiresAt,
+} from "@/core/modules/payment/payment-status-utils.ts"
 import {
   createPaymentNumberDate,
   loadNextPaymentNumber,
@@ -51,7 +54,10 @@ import {
 } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
-import { activeReconciliationClaimsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
+import {
+  activeClaimedTransactionsByPaymentIdQuery,
+  activeReconciliationClaimsByPaymentIdQuery,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
@@ -105,6 +111,13 @@ const createPaymentNotClaimedError = defineError("PaymentNotClaimed")<{
 }>()
 export type PaymentNotClaimedError = ReturnType<
   typeof createPaymentNotClaimedError
+>
+
+const createPaymentNotOverpaidError = defineError("PaymentNotOverpaid")<{
+  readonly id: PaymentId
+}>()
+export type PaymentNotOverpaidError = ReturnType<
+  typeof createPaymentNotOverpaidError
 >
 
 const createAccountSparkNotFoundError = defineError("AccountSparkNotFound")<{
@@ -194,6 +207,9 @@ export const paymentNotCanceled = (id: PaymentId): PaymentNotCanceledError =>
 
 export const paymentNotClaimed = (id: PaymentId): PaymentNotClaimedError =>
   createPaymentNotClaimedError({ id })
+
+export const paymentNotOverpaid = (id: PaymentId): PaymentNotOverpaidError =>
+  createPaymentNotOverpaidError({ id })
 
 export const accountSparkNotFound = (
   id: AccountId
@@ -1076,6 +1092,63 @@ export const confirmPaymentPaidDespiteCancellation =
         {
           id: paymentId,
           confirmedPaidAt: TimestampMsSchema.decode(
+            run.deps.date.now().getTime()
+          ),
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(paymentId)
+  }
+
+export type AcknowledgePaymentExcessSettlementError =
+  | PaymentNotFoundError
+  | PaymentNotOverpaidError
+
+/**
+ * Resolves the duplicate-settlement collision described in
+ * docs/bill-payment-states.md and `payment.ts`'s `excessAcknowledgedAt` doc
+ * comment: two offline devices can each independently claim the same
+ * payment through a different method (e.g. one settles it in cash while
+ * another reconciles a matching incoming bank transfer), and since each
+ * claim is real money, neither is discarded on merge — the payment simply
+ * ends up claimed for more than its own `amount`.
+ *
+ * This lets staff explicitly acknowledge that (e.g. once they've refunded
+ * the excess, or decided to keep it) via `excessAcknowledgedAt`, set once
+ * and never cleared. Requires the payment to actually be claimed for more
+ * than its `amount` — this resolves an existing collision, it does not
+ * silence a warning that isn't there.
+ */
+export const acknowledgePaymentExcessSettlement =
+  (
+    paymentId: PaymentId
+  ): Task<
+    PaymentId,
+    AcknowledgePaymentExcessSettlementError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    const claimedTransactions = await run.deps.evolu.loadQuery(
+      activeClaimedTransactionsByPaymentIdQuery(paymentId)
+    )
+    const claimedSum = calculatePaymentClaimedSum(claimedTransactions)
+    if (claimedSum <= paymentResult.value.amount) {
+      return err(paymentNotOverpaid(paymentId))
+    }
+
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "payment",
+        {
+          id: paymentId,
+          excessAcknowledgedAt: TimestampMsSchema.decode(
             run.deps.date.now().getTime()
           ),
         },

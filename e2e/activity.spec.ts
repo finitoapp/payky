@@ -3,7 +3,9 @@ import {
   expect,
   gotoPage,
   markCashPaid,
+  prepareIbanPayment,
   simulateCancelAfterClaim,
+  simulateDuplicateSettlement,
   test,
   translate,
 } from "./fixtures.ts"
@@ -138,6 +140,63 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
     ).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/activity-list-resolved.png`,
+      fullPage: true,
+    })
+  })
+})
+
+test("a duplicate-settlement payment collision is flagged in the payment detail and can be resolved", async ({
+  seededPage: page,
+}) => {
+  await test.step("create and claim a cash payment, also preparing IBAN as an offered method", async () => {
+    await createPayment(page, "en")
+    // Visiting the IBAN tab is what actually prepares it (`preparePaymentMethod`
+    // is lazy, per-tab) — needed so `simulateDuplicateSettlement` below has
+    // IBAN details to settle against. Switch back to the cash tab afterward,
+    // since `markCashPaid`'s button only renders while it's active.
+    await prepareIbanPayment(page, "en")
+    await page
+      .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+      .click()
+    await markCashPaid(page, "en")
+  })
+
+  await test.step("simulate a second offline device settling the same payment via IBAN", () =>
+    simulateDuplicateSettlement(page))
+
+  await test.step("opening the payment detail shows the duplicate-settlement warning", async () => {
+    await page
+      .getByTestId("payment-paid-panel")
+      .getByRole("button", { name: translate("en", "paymentWait.detail") })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+      .waitFor()
+    await expect(
+      page.getByText(translate("en", "paymentDetail.excessCollision.title"))
+    ).toBeVisible()
+    await page.screenshot({
+      path: `${screenshotDir}/payment-detail-excess-collision.png`,
+      fullPage: true,
+    })
+  })
+
+  await test.step("resolving the collision hides the warning and keeps the payment paid", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "paymentDetail.excessCollision.acknowledge"),
+      })
+      .click()
+    await expect(
+      page.getByText(translate("en", "paymentDetail.excessCollision.title"))
+    ).toBeHidden()
+    await expect(
+      page.getByText(translate("en", "paymentDetail.status.paid"), {
+        exact: true,
+      })
+    ).toBeVisible()
+    await page.screenshot({
+      path: `${screenshotDir}/payment-detail-excess-resolved.png`,
       fullPage: true,
     })
   })

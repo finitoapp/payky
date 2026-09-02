@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   NonNegativeInteger,
@@ -153,37 +154,79 @@ describe("calculateClaimedSum", () => {
     expect(
       calculateClaimedSum([
         {
-          id: "payment-1" as PaymentId,
-          amount: NonNegativeInteger(1_000),
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-1" as AccountTransactionId,
+          amount: 1_000,
           tipAmount: NonNegativeInteger(0),
         },
         {
-          id: "payment-2" as PaymentId,
-          amount: NonNegativeInteger(2_500),
+          paymentId: "payment-2" as PaymentId,
+          accountTransactionId: "tx-2" as AccountTransactionId,
+          amount: 2_500,
           tipAmount: NonNegativeInteger(500),
         },
       ])
     ).toBe(3_000)
   })
 
-  test("deduplicates a payment that appears more than once (multiple claims)", () => {
+  test("deduplicates a transaction claimed more than once for the same payment", () => {
     expect(
       calculateClaimedSum([
         {
-          id: "payment-1" as PaymentId,
-          amount: NonNegativeInteger(1_000),
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-1" as AccountTransactionId,
+          amount: 1_000,
           tipAmount: NonNegativeInteger(0),
         },
         {
-          id: "payment-1" as PaymentId,
-          amount: NonNegativeInteger(1_000),
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-1" as AccountTransactionId,
+          amount: 1_000,
           tipAmount: NonNegativeInteger(0),
         },
       ])
     ).toBe(1_000)
   })
 
-  test("returns zero for no claimed payments", () => {
+  test("sums two distinct transactions claimed for the same payment (a genuine split, or a duplicate-settlement collision)", () => {
+    expect(
+      calculateClaimedSum([
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-cash" as AccountTransactionId,
+          amount: 1_000,
+          tipAmount: NonNegativeInteger(0),
+        },
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-lightning" as AccountTransactionId,
+          amount: 1_000,
+          tipAmount: NonNegativeInteger(0),
+        },
+      ])
+    ).toBe(2_000)
+  })
+
+  test("subtracts tip only once per payment across its distinct transactions", () => {
+    expect(
+      calculateClaimedSum([
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-cash" as AccountTransactionId,
+          amount: 600,
+          tipAmount: NonNegativeInteger(100),
+        },
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-lightning" as AccountTransactionId,
+          amount: 400,
+          tipAmount: NonNegativeInteger(100),
+        },
+      ])
+    ).toBe(900)
+  })
+
+  test("returns zero for no claimed transactions", () => {
     expect(calculateClaimedSum([])).toBe(0)
   })
 })

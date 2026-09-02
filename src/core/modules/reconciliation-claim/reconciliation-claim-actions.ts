@@ -38,7 +38,8 @@ import type { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
  */
 const loadBillClosedAtForPayment =
   (
-    paymentId: PaymentId
+    paymentId: PaymentId,
+    accountTransactionId: AccountTransactionId
   ): Task<
     { readonly billId: BillId; readonly closedAt: TimestampMs } | null,
     never,
@@ -50,7 +51,9 @@ const loadBillClosedAtForPayment =
     )
     if (paymentRow === undefined) return ok(null)
 
-    return ok(await run.ok(loadBillClosedAtIfCovered(paymentRow)))
+    return ok(
+      await run.ok(loadBillClosedAtIfCovered(paymentRow, accountTransactionId))
+    )
   }
 
 /**
@@ -80,7 +83,7 @@ const writeClaimAndCloseBillIfCovered =
   async (run) => {
     const { evoluOwnerId } = run.deps
     const billClosing = await run.ok(
-      loadBillClosedAtForPayment(claim.paymentId)
+      loadBillClosedAtForPayment(claim.paymentId, claim.accountTransactionId)
     )
 
     await runMutationWithCompletion((options) => {

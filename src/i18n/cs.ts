@@ -822,6 +822,8 @@ export const cs = {
   "settings.legalEntity.title": "Země a DPH",
   "settings.legalEntity.vatPayer.label": "Jsem plátce DPH",
   "settings.items.add": "Přidat položku",
+  "settings.items.category.all": "Vše",
+  "settings.items.category.uncategorized": "Bez kategorie",
   "settings.items.delete": "Smazat položku",
   "settings.items.delete.confirm.cancel": "Zrušit",
   "settings.items.delete.confirm.confirm": "Smazat",

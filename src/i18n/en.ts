@@ -821,6 +821,8 @@ export const en = {
   "settings.legalEntity.title": "Country & VAT",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
   "settings.items.add": "Add item",
+  "settings.items.category.all": "All",
+  "settings.items.category.uncategorized": "Uncategorized",
   "settings.items.delete": "Delete item",
   "settings.items.delete.confirm.cancel": "Cancel",
   "settings.items.delete.confirm.confirm": "Delete",

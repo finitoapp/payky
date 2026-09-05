@@ -825,6 +825,8 @@ export const sk = {
   "settings.legalEntity.title": "Krajina a DPH",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.items.add": "Pridať položku",
+  "settings.items.category.all": "Všetko",
+  "settings.items.category.uncategorized": "Bez kategórie",
   "settings.items.delete": "Vymazať položku",
   "settings.items.delete.confirm.cancel": "Zrušiť",
   "settings.items.delete.confirm.confirm": "Vymazať",

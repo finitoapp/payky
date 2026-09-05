@@ -3,6 +3,7 @@ import { ChevronRight, PlusIcon, TagIcon } from "lucide-react"
 
 import { useMemo, useState } from "react"
 
+import { CategoryFilterBar } from "@/components/category-filter-bar.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -10,6 +11,8 @@ import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import {
+  type CategoryFilter,
+  filterCatalogItemsByCategory,
   getStaffDisplayName,
   matchesCatalogItemSearch,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
@@ -29,13 +32,25 @@ export function ItemsSettingsPage() {
     [categories]
   )
   const [search, setSearch] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
+  const usedCategoryIds = useMemo(
+    () => new Set(items.map((item) => item.categoryId)),
+    [items]
+  )
+  const categoryFilteredItems = useMemo(
+    () => filterCatalogItemsByCategory(items, categoryFilter),
+    [items, categoryFilter]
+  )
   const filteredItems = useMemo(
-    () => items.filter((item) => matchesCatalogItemSearch(item, search)),
-    [items, search]
+    () =>
+      categoryFilteredItems.filter((item) =>
+        matchesCatalogItemSearch(item, search)
+      ),
+    [categoryFilteredItems, search]
   )
 
   return (
-    <>
+    <div className={"flex flex-col gap-2"}>
       <div className="h-6" />
       <FadeHeader
         title={t("settings.items.title")}
@@ -63,6 +78,15 @@ export function ItemsSettingsPage() {
           clearAriaLabel={t("settings.items.search.clear.aria")}
         />
       )}
+
+      <CategoryFilterBar
+        categories={categories}
+        usedCategoryIds={usedCategoryIds}
+        value={categoryFilter}
+        onValueChange={setCategoryFilter}
+        allLabel={t("settings.items.category.all")}
+        uncategorizedLabel={t("settings.items.category.uncategorized")}
+      />
 
       <VerticalNav
         empty={
@@ -111,6 +135,6 @@ export function ItemsSettingsPage() {
           ),
         }))}
       />
-    </>
+    </div>
   )
 }

@@ -1,4 +1,7 @@
+import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
+
+export type CategoryFilter = "all" | "uncategorized" | CatalogCategoryId
 
 /**
  * The name to show staff in the app (catalog list, item picker, scan
@@ -40,6 +43,24 @@ export const findCatalogItemsByScanCode = (
  * `internalName`, `sku`, and `scanCode` so staff can find an item by whatever
  * identifier they have on hand, regardless of which name variant is shown.
  */
+/**
+ * Filters items by category for the "all" / a specific category / "no
+ * category" toggle used on both the bill cart grid and the settings item
+ * list.
+ */
+export const filterCatalogItemsByCategory = <
+  T extends { readonly categoryId: CatalogCategoryId | null },
+>(
+  items: ReadonlyArray<T>,
+  filter: CategoryFilter
+): ReadonlyArray<T> => {
+  if (filter === "all") return items
+  if (filter === "uncategorized") {
+    return items.filter((item) => item.categoryId === null)
+  }
+  return items.filter((item) => item.categoryId === filter)
+}
+
 export const matchesCatalogItemSearch = (
   item: CatalogItemRow,
   query: string

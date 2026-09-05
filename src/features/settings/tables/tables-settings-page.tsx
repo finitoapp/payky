@@ -23,7 +23,7 @@ export function TablesSettingsPage() {
   }, [tables, search])
 
   return (
-    <>
+    <div className={"flex flex-col gap-2"}>
       <div className="h-6" />
       <FadeHeader
         title={t("settings.tables.title")}
@@ -83,6 +83,6 @@ export function TablesSettingsPage() {
           ),
         }))}
       />
-    </>
+    </div>
   )
 }

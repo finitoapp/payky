@@ -1,4 +1,5 @@
 import {
+  addCatalogCategory,
   addCatalogItem,
   expect,
   gotoPage,
@@ -161,6 +162,52 @@ test("search filters the items list", async ({ seededPage: page }) => {
     await expect(searchInput).toHaveValue("")
     await expect(coffeeRow).toBeVisible()
     await expect(teaRow).toBeVisible()
+  })
+})
+
+test("filters the items list by category", async ({ seededPage: page }) => {
+  await test.step("create a category and items in and out of it", async () => {
+    await addCatalogCategory(page, "en", "Drinks")
+    await addCatalogItem(page, "en", {
+      name: "Coffee",
+      price: "5",
+      categoryName: "Drinks",
+    })
+    await addCatalogItem(page, "en", { name: "Sandwich", price: "6" })
+  })
+
+  const coffeeRow = page.getByRole("link", { name: "Coffee" })
+  const sandwichRow = page.getByRole("link", { name: "Sandwich" })
+
+  await test.step("both items are visible with the 'all' filter", async () => {
+    await expect(coffeeRow).toBeVisible()
+    await expect(sandwichRow).toBeVisible()
+  })
+
+  await test.step("the 'Drinks' filter only shows the categorized item", async () => {
+    await page.getByRole("button", { name: "Drinks" }).click()
+    await expect(coffeeRow).toBeVisible()
+    await expect(sandwichRow).not.toBeVisible()
+  })
+
+  await test.step("the 'Uncategorized' filter only shows the other item", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.category.uncategorized"),
+      })
+      .click()
+    await expect(sandwichRow).toBeVisible()
+    await expect(coffeeRow).not.toBeVisible()
+  })
+
+  await test.step("the 'All' filter shows both items again", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.category.all"),
+      })
+      .click()
+    await expect(coffeeRow).toBeVisible()
+    await expect(sandwichRow).toBeVisible()
   })
 })
 

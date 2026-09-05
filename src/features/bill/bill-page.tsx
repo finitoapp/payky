@@ -15,6 +15,7 @@ import {
 import { motion } from "motion/react"
 import { type ReactNode, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { CategoryFilterBar } from "@/components/category-filter-bar.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
   Alert,
@@ -29,7 +30,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   assignBillToTable,
@@ -45,10 +45,11 @@ import {
 } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
-import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import {
+  type CategoryFilter,
+  filterCatalogItemsByCategory,
   getStaffDisplayName,
   matchesCatalogItemSearch,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
@@ -372,8 +373,6 @@ interface CartApi {
   readonly redo: () => Promise<void>
 }
 
-type CategoryFilter = "all" | "uncategorized" | CatalogCategoryId
-
 interface SharedCartViewProps {
   readonly cart: CartApi
   readonly search: string
@@ -458,18 +457,10 @@ function BillCartView({
     () => new Set(currencyItems.map((item) => item.categoryId)),
     [currencyItems]
   )
-  const availableCategories = useMemo(
-    () => categories.filter((category) => usedCategoryIds.has(category.id)),
-    [categories, usedCategoryIds]
+  const categoryFilteredItems = useMemo(
+    () => filterCatalogItemsByCategory(currencyItems, categoryFilter),
+    [currencyItems, categoryFilter]
   )
-  const showUncategorizedFilter = usedCategoryIds.has(null)
-  const categoryFilteredItems = useMemo(() => {
-    if (categoryFilter === "all") return currencyItems
-    if (categoryFilter === "uncategorized") {
-      return currencyItems.filter((item) => item.categoryId === null)
-    }
-    return currencyItems.filter((item) => item.categoryId === categoryFilter)
-  }, [currencyItems, categoryFilter])
   const filteredItems = useMemo(
     () =>
       categoryFilteredItems.filter((item) =>
@@ -578,34 +569,16 @@ function BillCartView({
             <ScanLineIcon />
           </Button>
         </div>
-        {!scanMode && availableCategories.length > 0 && (
-          <div className="mt-2 overflow-x-auto">
-            <ToggleGroup<CategoryFilter>
-              value={[categoryFilter]}
-              onValueChange={(nextValue) => {
-                const [nextFilter] = nextValue
-                if (nextFilter === undefined) return
-                onCategoryFilterChange(nextFilter)
-              }}
-              variant="outline"
-              size="sm"
-              className="w-max"
-            >
-              <ToggleGroupItem value="all">
-                {t("bill.category.all")}
-              </ToggleGroupItem>
-              {availableCategories.map((category) => (
-                <ToggleGroupItem key={category.id} value={category.id}>
-                  {category.name}
-                </ToggleGroupItem>
-              ))}
-              {showUncategorizedFilter && (
-                <ToggleGroupItem value="uncategorized">
-                  {t("bill.category.uncategorized")}
-                </ToggleGroupItem>
-              )}
-            </ToggleGroup>
-          </div>
+        {!scanMode && (
+          <CategoryFilterBar
+            className="mt-2"
+            categories={categories}
+            usedCategoryIds={usedCategoryIds}
+            value={categoryFilter}
+            onValueChange={onCategoryFilterChange}
+            allLabel={t("bill.category.all")}
+            uncategorizedLabel={t("bill.category.uncategorized")}
+          />
         )}
       </div>
       <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain mt-2">

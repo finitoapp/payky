@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { PlusIcon, TagIcon } from "lucide-react"
+import { ChevronRight, PlusIcon, TagIcon } from "lucide-react"
 
 import { useMemo, useState } from "react"
 
@@ -13,13 +13,15 @@ import {
   getStaffDisplayName,
   matchesCatalogItemSearch,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
-import { minorUnitsToDecimalString } from "@/core/modules/shared/money.ts"
 import { Integer } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { formatMoney } from "@/lib/format-utils.ts"
 
 export function ItemsSettingsPage() {
   const { t } = useTranslation()
+  const locale = useLocale()
   const { data: items } = useEvoluQuery(catalogItemsQuery)
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const categoryNameById = useMemo(
@@ -97,12 +99,14 @@ export function ItemsSettingsPage() {
             </span>
           ),
           action: (
-            <span className="text-sm font-medium text-muted-foreground">
-              {minorUnitsToDecimalString({
-                value: Integer(item.unitAmount),
-                currency: item.currency,
-              })}{" "}
-              {item.currency}
+            <span className="flex items-center gap-1 shrink-0">
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                {formatMoney(
+                  { value: Integer(item.unitAmount), currency: item.currency },
+                  locale
+                )}
+              </span>
+              <ChevronRight className="size-4 text-muted-foreground" />
             </span>
           ),
         }))}

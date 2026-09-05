@@ -21,14 +21,7 @@ export function getDefaultDeviceSettings(): DeviceSettings {
 const deviceSettingsQuery = createDeviceQuery((db) =>
   db
     .selectFrom("deviceSettings")
-    .select([
-      "id",
-      "language",
-      "theme",
-      "locale",
-      "errorReportingEnabled",
-      "terminalHomeMode",
-    ])
+    .select(["id", "language", "theme", "locale", "errorReportingEnabled"])
     .where("id", "=", deviceSettingsId)
 )
 
@@ -45,7 +38,6 @@ function withDeviceSettingsDefaults(
     locale: row?.locale ?? getDeviceLocaleForLanguage(language),
     errorReportingEnabled:
       row?.errorReportingEnabled ?? defaults.errorReportingEnabled,
-    terminalHomeMode: row?.terminalHomeMode ?? defaults.terminalHomeMode,
   }
 }
 

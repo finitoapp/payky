@@ -435,6 +435,8 @@ export const en = {
   "scanner.error.permissionDenied":
     "Camera access was denied. Allow camera access to scan, or enter the code manually.",
   "scanner.error.unsupported": "Scanning isn't supported on this device.",
+  "scanner.torch.off": "Turn off flashlight",
+  "scanner.torch.on": "Turn on flashlight",
   "settings.about.app.title": "Payky",
   "settings.about.github.description":
     "Join the development and follow the project",

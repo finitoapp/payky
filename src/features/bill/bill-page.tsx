@@ -79,6 +79,7 @@ import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { usePendingPayments } from "@/features/bill/use-pending-payments.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useBillInsertMode } from "@/hooks/use-bill-insert-mode.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -132,7 +133,7 @@ export function BillPage({
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
   const [summaryOpen, setSummaryOpen] = useState(false)
-  const [scanMode, setScanMode] = useState(false)
+  const [scanMode, setScanMode] = useBillInsertMode()
 
   const sharedProps = {
     cart,

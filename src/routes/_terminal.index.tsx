@@ -14,12 +14,9 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { PosOverviewPage } from "@/features/pos/pos-overview-page.tsx"
-import {
-  useDeviceSettings,
-  useUpdateDeviceSettings,
-} from "@/hooks/use-device-settings.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
+import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -37,13 +34,10 @@ export const Route = createFileRoute("/_terminal/")({
 
 const Header = () => {
   const { t } = useTranslation()
-  const { terminalHomeMode } = useDeviceSettings()
-  const updateDeviceSettings = useUpdateDeviceSettings()
+  const [terminalHomeMode, setTerminalHomeMode] = useTerminalHomeMode()
 
   const toggleHomeMode = () => {
-    updateDeviceSettings({
-      terminalHomeMode: terminalHomeMode === "pos" ? "numpad" : "pos",
-    })
+    setTerminalHomeMode(terminalHomeMode === "pos" ? "numpad" : "pos")
   }
 
   return (
@@ -119,7 +113,7 @@ function TerminalPaymentKeypadLoader() {
 
 function TerminalHomePage() {
   useScreenWakeLock(true)
-  const { terminalHomeMode } = useDeviceSettings()
+  const [terminalHomeMode] = useTerminalHomeMode()
   const isNumpadMode = terminalHomeMode !== "pos"
 
   return (

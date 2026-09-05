@@ -1,8 +1,14 @@
-import { type IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner"
+import {
+  type IDetectedBarcode,
+  type IScannerHandle,
+  Scanner,
+} from "@yudiel/react-qr-scanner"
 import { XIcon } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 
+import { ScannerTorchButton } from "@/components/scanner-torch-button.tsx"
 import { Button } from "@/components/ui/button.tsx"
+import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import {
   parseScannedBitcoinAddress,
@@ -18,6 +24,11 @@ export function WithdrawQrScanner({
 }) {
   const { t } = useTranslation()
   const [hasError, setHasError] = useState(false)
+  const scannerRef = useRef<IScannerHandle>(null)
+  const { torchOn, torchSupported, toggleTorch } = useScannerTorch(
+    scannerRef,
+    true
+  )
 
   const handleScan = (detectedCodes: ReadonlyArray<IDetectedBarcode>) => {
     const [first] = detectedCodes
@@ -45,12 +56,17 @@ export function WithdrawQrScanner({
       </div>
       <div className="relative flex-1">
         <Scanner
+          ref={scannerRef}
           onScan={handleScan}
           onError={() => setHasError(true)}
           constraints={{ facingMode: "environment" }}
           formats={["qr_code"]}
           allowMultiple={false}
+          components={{ torch: false }}
         />
+        {torchSupported && (
+          <ScannerTorchButton torchOn={torchOn} onToggle={toggleTorch} />
+        )}
       </div>
       {hasError ? (
         <p className="px-4 py-3 text-center text-sm text-red-400">

@@ -439,6 +439,8 @@ export const sk = {
     "Prístup ku kamere bol zamietnutý. Povoľte prístup ku kamere, alebo zadajte kód ručne.",
   "scanner.error.unsupported":
     "Skenovanie nie je na tomto zariadení podporované.",
+  "scanner.torch.off": "Vypnúť svetlo",
+  "scanner.torch.on": "Zapnúť svetlo",
   "settings.about.app.title": "Payky",
   "settings.about.github.description": "Zapojte sa do vývoja aplikácie",
   "settings.about.github.title": "Zdrojový kód na GitHube",

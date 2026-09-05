@@ -435,6 +435,8 @@ export const cs = {
   "scanner.error.permissionDenied":
     "Přístup ke kameře byl zamítnut. Povolte přístup ke kameře, nebo zadejte kód ručně.",
   "scanner.error.unsupported": "Skenování není na tomto zařízení podporováno.",
+  "scanner.torch.off": "Vypnout svítilnu",
+  "scanner.torch.on": "Zapnout svítilnu",
   "settings.about.app.title": "Payky",
   "settings.about.github.description": "Zapojte se do vývoje aplikace",
   "settings.about.github.title": "Zdrojový kód na GitHubu",

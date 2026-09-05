@@ -11,8 +11,10 @@ import {
   simulateCancelAfterClaim,
   simulateDuplicateSettlement,
   startBillAndBeginCashPayment,
+  startBillWithCoffee,
   test,
   translate,
+  translateValue,
   waitForLocalWriteToSettle,
 } from "./fixtures.ts"
 
@@ -59,6 +61,48 @@ test("a paid payment shows up in activity list and detail", async ({
         exact: true,
       })
     ).toBeVisible()
+  })
+})
+
+test("the payment detail's bill items list includes the tip so its total matches the payment amount", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+  await startBillWithCoffee(page, "en")
+
+  await page.getByRole("button", { name: translate("en", "home.pay") }).click()
+  await page
+    .getByRole("heading", { name: translate("en", "paymentTip.title") })
+    .waitFor()
+  await page
+    .getByRole("button", {
+      name: translateValue("en", "settings.tips.percentages.value", 10),
+    })
+    .click()
+  await page
+    .getByRole("button", { name: translate("en", "paymentTip.continue") })
+    .click()
+  await markCashPaid(page, "en")
+
+  await page
+    .getByTestId("payment-paid-panel")
+    .getByRole("button", { name: translate("en", "paymentWait.detail") })
+    .click()
+  await page
+    .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+    .waitFor()
+
+  // Coffee $5.00 + a 10% tip ($0.50) = $5.50.
+  const billCard = page.locator('[data-slot="card"]', { hasText: "Coffee" })
+  await expect(billCard.getByText("Coffee")).toBeVisible()
+  await expect(
+    billCard.getByText(translate("en", "paymentDetail.tipAmount"))
+  ).toBeVisible()
+  await expect(billCard.getByText("$0.50")).toBeVisible()
+  await expect(billCard.getByText("$5.50")).toBeVisible()
+  await page.screenshot({
+    path: `${screenshotDir}/activity-payment-detail-bill-with-tip.png`,
+    fullPage: true,
   })
 })
 

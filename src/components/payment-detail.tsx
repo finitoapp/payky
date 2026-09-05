@@ -506,7 +506,11 @@ function PaymentDetailContent({
       </Card>
 
       {payment.billId !== null ? (
-        <PaymentDetailBillCard billId={payment.billId} paymentId={paymentId} />
+        <PaymentDetailBillCard
+          billId={payment.billId}
+          paymentId={paymentId}
+          tipAmount={payment.tipAmount}
+        />
       ) : null}
 
       <Card>
@@ -639,9 +643,11 @@ function PaymentDetailContent({
 function PaymentDetailBillCard({
   billId,
   paymentId,
+  tipAmount,
 }: {
   readonly billId: BillId
   readonly paymentId: PaymentId
+  readonly tipAmount: NonNegativeInteger
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -669,6 +675,11 @@ function PaymentDetailBillCard({
   const totalAmount = NonNegativeInteger(
     summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
   )
+  // Bill total plus this payment's tip, so the items list's own total
+  // reconciles with `payment.amount` (see `calculatePaymentAmounts`) — kept
+  // separate from `totalAmount`, which the coverage math below compares
+  // against `claimedSum` (also tip-excluded, see `calculateClaimedSum`).
+  const totalAmountWithTip = NonNegativeInteger(totalAmount + tipAmount)
 
   // Which of the two known causes actually explains this bill's coverage
   // mismatch (see docs/bill-payment-states.md's "Bill payment coverage"
@@ -773,7 +784,7 @@ function PaymentDetailBillCard({
 
         <Separator />
 
-        {summaries.length === 0 ? (
+        {summaries.length === 0 && tipAmount === 0 ? (
           <p className="text-sm text-muted-foreground">
             {t("paymentDetail.bill.empty")}
           </p>
@@ -807,6 +818,19 @@ function PaymentDetailBillCard({
                 </p>
               </div>
             ))}
+            {tipAmount > 0 ? (
+              <div className="flex items-center justify-between gap-2 py-2">
+                <p className="text-sm font-medium">
+                  {t("paymentDetail.tipAmount")}
+                </p>
+                <p className="text-sm font-semibold">
+                  {formatMoney(
+                    { value: tipAmount, currency: bill.currency },
+                    locale
+                  )}
+                </p>
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -815,7 +839,7 @@ function PaymentDetailBillCard({
         <PaymentDetailRow
           label={t("paymentDetail.bill.total")}
           value={formatMoney(
-            { value: totalAmount, currency: bill.currency },
+            { value: totalAmountWithTip, currency: bill.currency },
             locale
           )}
           emphasize

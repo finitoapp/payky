@@ -203,6 +203,17 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
             </Badge>
           </div>
 
+          {billStatus.status === "open" ? (
+            <Button
+              variant="outline"
+              className="h-12"
+              nativeButton={false}
+              render={<Link to="/bill" search={{ billId }} />}
+            >
+              {t("billDetail.backToBill")}
+            </Button>
+          ) : null}
+
           {billStatus.hasCancellationCollision ? (
             <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
               <div className="flex items-start gap-3">

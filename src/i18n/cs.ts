@@ -94,6 +94,7 @@ export const cs = {
   "bill.summary.removeLine.toast": "{name} odebráno",
   "bill.summary.undo": "Zpět",
   "bill.title": "Účet",
+  "billDetail.backToBill": "Zpět na účet",
   "billDetail.createdAt": "Vytvořeno",
   "billDetail.emptyValue": "—",
   "billDetail.invalidId": "Neplatné ID účtu.",

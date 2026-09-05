@@ -107,6 +107,36 @@ test("clicking a bill row in the list opens its detail page", async ({
   })
 })
 
+test("the bill detail page's back-to-bill button returns to an open bill and is hidden once it's closed", async ({
+  seededPage: page,
+}) => {
+  await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+
+  await test.step("an open bill's detail page links back to /bill", async () => {
+    const billId = await startBillWithCoffee(page, "en")
+
+    await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
+    await page
+      .getByRole("button", { name: translate("en", "billDetail.backToBill") })
+      .click()
+
+    await page
+      .getByRole("heading", { name: translate("en", "bill.title") })
+      .waitFor()
+    expect(new URL(page.url()).searchParams.get("billId")).toBe(billId)
+  })
+
+  await test.step("a closed bill's detail page has no back-to-bill button", async () => {
+    const billId = await startBillAndBeginCashPayment(page, "en")
+    await markCashPaidAndSettle(page, "en")
+
+    await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
+    await expect(
+      page.getByRole("link", { name: translate("en", "billDetail.backToBill") })
+    ).toBeHidden()
+  })
+})
+
 test("the bill detail page shows an invalid id or a missing bill message", async ({
   seededPage: page,
 }) => {

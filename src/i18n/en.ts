@@ -93,6 +93,7 @@ export const en = {
   "bill.summary.removeLine.toast": "{name} removed",
   "bill.summary.undo": "Undo",
   "bill.title": "Bill",
+  "billDetail.backToBill": "Back to bill",
   "billDetail.createdAt": "Created at",
   "billDetail.emptyValue": "—",
   "billDetail.invalidId": "Invalid bill id.",

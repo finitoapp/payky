@@ -50,7 +50,10 @@ import {
   CatalogItemId,
   type CatalogItemId as CatalogItemIdType,
 } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import { findCatalogItemsByScanCode } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import {
+  findCatalogItemsByScanCode,
+  getStaffDisplayName,
+} from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import {
   decimalAmountToMinorUnits,
   minorUnitsToDecimalString,
@@ -161,6 +164,9 @@ function CatalogItemForm({
   const { t } = useTranslation()
   const nameInputId = useId()
   const descriptionInputId = useId()
+  const internalNameInputId = useId()
+  const internalDescriptionInputId = useId()
+  const skuInputId = useId()
   const priceInputId = useId()
   const currencyInputId = useId()
   const categoryInputId = useId()
@@ -169,6 +175,11 @@ function CatalogItemForm({
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const [name, setName] = useState(item?.name ?? "")
   const [description, setDescription] = useState(item?.description ?? "")
+  const [internalName, setInternalName] = useState(item?.internalName ?? "")
+  const [internalDescription, setInternalDescription] = useState(
+    item?.internalDescription ?? ""
+  )
+  const [sku, setSku] = useState(item?.sku ?? "")
   const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
     item?.categoryId ?? "none"
   )
@@ -189,6 +200,11 @@ function CatalogItemForm({
   const [priceError, setPriceError] = useState<TranslationKey | null>(null)
   const [descriptionError, setDescriptionError] =
     useState<TranslationKey | null>(null)
+  const [internalNameError, setInternalNameError] =
+    useState<TranslationKey | null>(null)
+  const [internalDescriptionError, setInternalDescriptionError] =
+    useState<TranslationKey | null>(null)
+  const [skuError, setSkuError] = useState<TranslationKey | null>(null)
   const [scanCodeError, setScanCodeError] = useState<TranslationKey | null>(
     null
   )
@@ -230,6 +246,9 @@ function CatalogItemForm({
           setNameError(null)
           setPriceError(null)
           setDescriptionError(null)
+          setInternalNameError(null)
+          setInternalDescriptionError(null)
+          setSkuError(null)
           setScanCodeError(null)
           resetSaved()
 
@@ -259,6 +278,35 @@ function CatalogItemForm({
             return
           }
 
+          const trimmedInternalName = internalName.trim()
+          const internalNameResult = trimmedInternalName
+            ? NonEmptyString255Schema.safeParse(trimmedInternalName)
+            : null
+          if (internalNameResult?.success === false) {
+            setInternalNameError("settings.items.form.internalName.invalid")
+            return
+          }
+
+          const trimmedInternalDescription = internalDescription.trim()
+          const internalDescriptionResult = trimmedInternalDescription
+            ? NonEmptyString255Schema.safeParse(trimmedInternalDescription)
+            : null
+          if (internalDescriptionResult?.success === false) {
+            setInternalDescriptionError(
+              "settings.items.form.internalDescription.invalid"
+            )
+            return
+          }
+
+          const trimmedSku = sku.trim()
+          const skuResult = trimmedSku
+            ? NonEmptyString255Schema.safeParse(trimmedSku)
+            : null
+          if (skuResult?.success === false) {
+            setSkuError("settings.items.form.sku.invalid")
+            return
+          }
+
           const trimmedScanCode = scanCode.trim()
           const scanCodeResult = trimmedScanCode
             ? NonEmptyString255Schema.safeParse(trimmedScanCode)
@@ -278,6 +326,9 @@ function CatalogItemForm({
                   categoryId: categoryId === "none" ? null : categoryId,
                   name: nameResult.data,
                   description: descriptionResult?.data ?? null,
+                  internalName: internalNameResult?.data ?? null,
+                  internalDescription: internalDescriptionResult?.data ?? null,
+                  sku: skuResult?.data ?? null,
                   currency,
                   unitAmount,
                   scanCode: scanCodeResult?.data ?? null,
@@ -295,6 +346,9 @@ function CatalogItemForm({
                 categoryId: categoryId === "none" ? null : categoryId,
                 name: nameResult.data,
                 description: descriptionResult?.data ?? null,
+                internalName: internalNameResult?.data ?? null,
+                internalDescription: internalDescriptionResult?.data ?? null,
+                sku: skuResult?.data ?? null,
                 currency,
                 unitAmount,
                 scanCode: scanCodeResult?.data ?? null,
@@ -322,6 +376,31 @@ function CatalogItemForm({
               }}
             />
             <FieldError>{nameError ? t(nameError) : null}</FieldError>
+          </Field>
+
+          <Field data-invalid={internalNameError !== null}>
+            <FieldLabel htmlFor={internalNameInputId}>
+              {t("settings.items.form.internalName.label")}
+            </FieldLabel>
+            <Input
+              id={internalNameInputId}
+              value={internalName}
+              disabled={pending}
+              aria-invalid={internalNameError !== null}
+              autoComplete="off"
+              placeholder={t("settings.items.form.internalName.placeholder")}
+              onChange={(event) => {
+                setInternalName(event.currentTarget.value)
+                setInternalNameError(null)
+                resetSaved()
+              }}
+            />
+            <FieldDescription>
+              {t("settings.items.form.internalName.hint")}
+            </FieldDescription>
+            <FieldError>
+              {internalNameError ? t(internalNameError) : null}
+            </FieldError>
           </Field>
 
           <Field data-invalid={priceError !== null}>
@@ -398,6 +477,50 @@ function CatalogItemForm({
             </FieldError>
           </Field>
 
+          <Field data-invalid={internalDescriptionError !== null}>
+            <FieldLabel htmlFor={internalDescriptionInputId}>
+              {t("settings.items.form.internalDescription.label")}
+            </FieldLabel>
+            <Input
+              id={internalDescriptionInputId}
+              value={internalDescription}
+              disabled={pending}
+              aria-invalid={internalDescriptionError !== null}
+              autoComplete="off"
+              placeholder={t(
+                "settings.items.form.internalDescription.placeholder"
+              )}
+              onChange={(event) => {
+                setInternalDescription(event.currentTarget.value)
+                setInternalDescriptionError(null)
+                resetSaved()
+              }}
+            />
+            <FieldError>
+              {internalDescriptionError ? t(internalDescriptionError) : null}
+            </FieldError>
+          </Field>
+
+          <Field data-invalid={skuError !== null}>
+            <FieldLabel htmlFor={skuInputId}>
+              {t("settings.items.form.sku.label")}
+            </FieldLabel>
+            <Input
+              id={skuInputId}
+              value={sku}
+              disabled={pending}
+              aria-invalid={skuError !== null}
+              autoComplete="off"
+              placeholder={t("settings.items.form.sku.placeholder")}
+              onChange={(event) => {
+                setSku(event.currentTarget.value)
+                setSkuError(null)
+                resetSaved()
+              }}
+            />
+            <FieldError>{skuError ? t(skuError) : null}</FieldError>
+          </Field>
+
           <Field>
             <FieldLabel htmlFor={categoryInputId}>
               {t("settings.items.form.category.label")}
@@ -469,7 +592,7 @@ function CatalogItemForm({
               <FieldDescription>
                 {t("settings.items.form.scanCode.duplicate", {
                   name: scanCodeCollisions
-                    .map((match) => match.name)
+                    .map((match) => getStaffDisplayName(match))
                     .join(", "),
                 })}
               </FieldDescription>
@@ -502,11 +625,13 @@ function CatalogItemForm({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {t("settings.items.delete.confirm.title", { name: item.name })}
+                {t("settings.items.delete.confirm.title", {
+                  name: getStaffDisplayName(item),
+                })}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {t("settings.items.delete.confirm.description", {
-                  name: item.name,
+                  name: getStaffDisplayName(item),
                 })}
               </AlertDialogDescription>
             </AlertDialogHeader>

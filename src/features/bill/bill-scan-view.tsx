@@ -15,7 +15,10 @@ import { Card } from "@/components/ui/card.tsx"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { CatalogCategoryRow } from "@/core/modules/catalog-category/catalog-category.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
-import { findCatalogItemsByScanCode } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import {
+  findCatalogItemsByScanCode,
+  getStaffDisplayName,
+} from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type {
   FiatCurrency as FiatCurrencyType,
   PositiveNumber,
@@ -131,7 +134,7 @@ export function BillScanView({
             )}
           >
             <div className="min-w-0">
-              <p className="font-medium">{lastScanned.name}</p>
+              <p className="font-medium">{getStaffDisplayName(lastScanned)}</p>
               <p
                 className={cn(
                   "text-sm text-muted-foreground",
@@ -148,7 +151,7 @@ export function BillScanView({
               </p>
             </div>
             <ItemQuantityControls
-              name={lastScanned.name}
+              name={getStaffDisplayName(lastScanned)}
               quantity={quantity}
               disabled={disabled}
               inCart={quantity > 0}

@@ -787,6 +787,18 @@ export const sk = {
     "Popis je príliš dlhý (max. 255 znakov).",
   "settings.items.form.description.label": "Popis",
   "settings.items.form.description.placeholder": "Nepovinné",
+  "settings.items.form.internalDescription.invalid":
+    "Interný popis je príliš dlhý (max. 255 znakov).",
+  "settings.items.form.internalDescription.label": "Interný popis",
+  "settings.items.form.internalDescription.placeholder":
+    "Nepovinné – viditeľné iba pre personál",
+  "settings.items.form.internalName.hint":
+    "Zobrazí sa personálu namiesto verejného názvu. Zákazníci na účte stále vidia verejný názov a popis.",
+  "settings.items.form.internalName.invalid":
+    "Interný názov je príliš dlhý (max. 255 znakov).",
+  "settings.items.form.internalName.label": "Interný názov",
+  "settings.items.form.internalName.placeholder":
+    "Nepovinné – zobrazí sa personálu namiesto verejného názvu",
   "settings.items.form.invalidId": "Neplatné ID položky.",
   "settings.items.form.name.invalid": "Zadajte názov.",
   "settings.items.form.name.label": "Názov",
@@ -803,6 +815,9 @@ export const sk = {
   "settings.items.form.scanCode.label": "Kód na skenovanie",
   "settings.items.form.scanCode.placeholder": "napr. 8594001234567",
   "settings.items.form.scanCode.scan.aria": "Naskenovať kód",
+  "settings.items.form.sku.invalid": "SKU je príliš dlhé (max. 255 znakov).",
+  "settings.items.form.sku.label": "SKU",
+  "settings.items.form.sku.placeholder": "Nepovinné",
   "settings.items.form.title.create": "Pridať položku",
   "settings.items.form.title.edit": "Upraviť položku",
   "settings.items.title": "Položky",

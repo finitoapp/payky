@@ -2,7 +2,11 @@ import { describe, expect, test } from "vitest"
 
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import { findCatalogItemsByScanCode } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import {
+  findCatalogItemsByScanCode,
+  getStaffDisplayDescription,
+  getStaffDisplayName,
+} from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import {
   NonEmptyString255,
   NonNegativeInteger,
@@ -15,11 +19,68 @@ const makeItem = (
   categoryId: null,
   name: NonEmptyString255("Coffee"),
   description: null,
+  internalName: null,
+  internalDescription: null,
+  sku: null,
   currency: "CZK",
   unitAmount: NonNegativeInteger(5900),
   sortOrder: NonNegativeInteger(0),
   scanCode: null,
   ...overrides,
+})
+
+describe("getStaffDisplayName", () => {
+  test("prefers the internal name when set", () => {
+    const item = makeItem({
+      id: "cat-1" as CatalogItemId,
+      name: NonEmptyString255("Coffee"),
+      internalName: NonEmptyString255("COF-01"),
+    })
+
+    expect(getStaffDisplayName(item)).toBe("COF-01")
+  })
+
+  test("falls back to the public name when no internal name is set", () => {
+    const item = makeItem({
+      id: "cat-1" as CatalogItemId,
+      name: NonEmptyString255("Coffee"),
+      internalName: null,
+    })
+
+    expect(getStaffDisplayName(item)).toBe("Coffee")
+  })
+})
+
+describe("getStaffDisplayDescription", () => {
+  test("prefers the internal description when set", () => {
+    const item = makeItem({
+      id: "cat-1" as CatalogItemId,
+      description: NonEmptyString255("Double espresso"),
+      internalDescription: NonEmptyString255("Uses the cheap beans"),
+    })
+
+    expect(getStaffDisplayDescription(item)).toBe("Uses the cheap beans")
+  })
+
+  test("falls back to the public description when no internal description is set", () => {
+    const item = makeItem({
+      id: "cat-1" as CatalogItemId,
+      description: NonEmptyString255("Double espresso"),
+      internalDescription: null,
+    })
+
+    expect(getStaffDisplayDescription(item)).toBe("Double espresso")
+  })
+
+  test("returns null when neither description is set", () => {
+    const item = makeItem({
+      id: "cat-1" as CatalogItemId,
+      description: null,
+      internalDescription: null,
+    })
+
+    expect(getStaffDisplayDescription(item)).toBeNull()
+  })
 })
 
 describe("findCatalogItemsByScanCode", () => {

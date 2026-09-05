@@ -56,6 +56,7 @@ import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   FiatCurrency,
@@ -938,7 +939,7 @@ function ItemBrick({
         <Package className="size-5" />
       </div>
       <div className="min-w-0 pr-11">
-        <p className="font-medium">{catalogItem.name}</p>
+        <p className="font-medium">{getStaffDisplayName(catalogItem)}</p>
         <p
           className={cn(
             "text-sm text-muted-foreground",
@@ -952,7 +953,7 @@ function ItemBrick({
         </p>
       </div>
       <ItemQuantityControls
-        name={catalogItem.name}
+        name={getStaffDisplayName(catalogItem)}
         quantity={quantity}
         disabled={disabled}
         inCart={inCart}

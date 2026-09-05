@@ -59,6 +59,15 @@ export const registerCatalogItemsCommand =
             description: NonEmptyString255Schema.optional().describe(
               "Optional item description"
             ),
+            internalName: NonEmptyString255Schema.optional().describe(
+              "Optional staff-only name, shown instead of the public name"
+            ),
+            internalDescription: NonEmptyString255Schema.optional().describe(
+              "Optional staff-only description"
+            ),
+            sku: NonEmptyString255Schema.optional().describe(
+              "Optional SKU / internal code"
+            ),
           },
           async action(_, options) {
             const data = {
@@ -66,6 +75,13 @@ export const registerCatalogItemsCommand =
               ...(options.description
                 ? { description: options.description }
                 : {}),
+              ...(options.internalName
+                ? { internalName: options.internalName }
+                : {}),
+              ...(options.internalDescription
+                ? { internalDescription: options.internalDescription }
+                : {}),
+              ...(options.sku ? { sku: options.sku } : {}),
               currency: options.currency,
               unitAmount: options.unitAmount,
               sortOrder: options.sortOrder,
@@ -117,6 +133,15 @@ export const registerCatalogItemsCommand =
             ),
             description: NonEmptyString255Schema.optional().describe(
               "Optional item description"
+            ),
+            internalName: NonEmptyString255Schema.optional().describe(
+              "Optional staff-only name, shown instead of the public name"
+            ),
+            internalDescription: NonEmptyString255Schema.optional().describe(
+              "Optional staff-only description"
+            ),
+            sku: NonEmptyString255Schema.optional().describe(
+              "Optional SKU / internal code"
             ),
           },
           async action(_, options) {

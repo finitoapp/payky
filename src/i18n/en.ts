@@ -783,6 +783,18 @@ export const en = {
     "Description is too long (255 characters max).",
   "settings.items.form.description.label": "Description",
   "settings.items.form.description.placeholder": "Optional",
+  "settings.items.form.internalDescription.invalid":
+    "Internal description is too long (255 characters max).",
+  "settings.items.form.internalDescription.label": "Internal description",
+  "settings.items.form.internalDescription.placeholder":
+    "Optional — visible only to staff",
+  "settings.items.form.internalName.hint":
+    "Shown to staff instead of the public name. Customers still see the public name and description on the bill.",
+  "settings.items.form.internalName.invalid":
+    "Internal name is too long (255 characters max).",
+  "settings.items.form.internalName.label": "Internal name",
+  "settings.items.form.internalName.placeholder":
+    "Optional — shown to staff instead of the public name",
   "settings.items.form.invalidId": "Invalid item id.",
   "settings.items.form.name.invalid": "Enter a name.",
   "settings.items.form.name.label": "Name",
@@ -799,6 +811,9 @@ export const en = {
   "settings.items.form.scanCode.label": "Scan code",
   "settings.items.form.scanCode.placeholder": "e.g. 8594001234567",
   "settings.items.form.scanCode.scan.aria": "Scan code",
+  "settings.items.form.sku.invalid": "SKU is too long (255 characters max).",
+  "settings.items.form.sku.label": "SKU",
+  "settings.items.form.sku.placeholder": "Optional",
   "settings.items.form.title.create": "Add item",
   "settings.items.form.title.edit": "Edit item",
   "settings.items.title": "Items",

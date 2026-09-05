@@ -784,6 +784,18 @@ export const cs = {
     "Popis je příliš dlouhý (max. 255 znaků).",
   "settings.items.form.description.label": "Popis",
   "settings.items.form.description.placeholder": "Nepovinné",
+  "settings.items.form.internalDescription.invalid":
+    "Interní popis je příliš dlouhý (max. 255 znaků).",
+  "settings.items.form.internalDescription.label": "Interní popis",
+  "settings.items.form.internalDescription.placeholder":
+    "Nepovinné – viditelné pouze pro personál",
+  "settings.items.form.internalName.hint":
+    "Zobrazí se personálu místo veřejného názvu. Zákazníci na účtu stále vidí veřejný název a popis.",
+  "settings.items.form.internalName.invalid":
+    "Interní název je příliš dlouhý (max. 255 znaků).",
+  "settings.items.form.internalName.label": "Interní název",
+  "settings.items.form.internalName.placeholder":
+    "Nepovinné – zobrazí se personálu místo veřejného názvu",
   "settings.items.form.invalidId": "Neplatné ID položky.",
   "settings.items.form.name.invalid": "Zadejte název.",
   "settings.items.form.name.label": "Název",
@@ -800,6 +812,9 @@ export const cs = {
   "settings.items.form.scanCode.label": "Kód pro skenování",
   "settings.items.form.scanCode.placeholder": "např. 8594001234567",
   "settings.items.form.scanCode.scan.aria": "Naskenovat kód",
+  "settings.items.form.sku.invalid": "SKU je příliš dlouhé (max. 255 znaků).",
+  "settings.items.form.sku.label": "SKU",
+  "settings.items.form.sku.placeholder": "Nepovinné",
   "settings.items.form.title.create": "Přidat položku",
   "settings.items.form.title.edit": "Upravit položku",
   "settings.items.title": "Položky",

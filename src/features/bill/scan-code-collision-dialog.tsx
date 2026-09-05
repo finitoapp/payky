@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
+import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -49,7 +50,7 @@ export function ScanCodeCollisionDialog({
               onClick={() => onSelect(candidate)}
             >
               <Card className="flex-row items-center justify-between gap-2 px-4 py-3">
-                <p className="font-medium">{candidate.name}</p>
+                <p className="font-medium">{getStaffDisplayName(candidate)}</p>
                 <p className="text-sm text-muted-foreground">
                   {formatMoney(
                     {

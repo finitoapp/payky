@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import { minorUnitsToDecimalString } from "@/core/modules/shared/money.ts"
 import { Integer } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -62,7 +63,7 @@ export function ItemsSettingsPage() {
           icon: <TagIcon className="text-muted-foreground" />,
           label: (
             <span className="flex flex-col">
-              <span>{item.name}</span>
+              <span>{getStaffDisplayName(item)}</span>
               {item.categoryId !== null &&
                 categoryNameById.get(item.categoryId) !== undefined && (
                   <span className="text-xs text-muted-foreground">

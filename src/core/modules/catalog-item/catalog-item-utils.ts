@@ -34,3 +34,20 @@ export const findCatalogItemsByScanCode = (
 
   return items.filter((item) => item.scanCode === trimmed)
 }
+
+/**
+ * Matches a catalog item against a free-text search query. Checks `name`,
+ * `internalName`, `sku`, and `scanCode` so staff can find an item by whatever
+ * identifier they have on hand, regardless of which name variant is shown.
+ */
+export const matchesCatalogItemSearch = (
+  item: CatalogItemRow,
+  query: string
+): boolean => {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (normalizedQuery === "") return true
+
+  return [item.name, item.internalName, item.sku, item.scanCode].some((field) =>
+    field?.toLowerCase().includes(normalizedQuery)
+  )
+}

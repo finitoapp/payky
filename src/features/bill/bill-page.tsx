@@ -55,7 +55,10 @@ import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import {
+  getStaffDisplayName,
+  matchesCatalogItemSearch,
+} from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   FiatCurrency,
@@ -470,14 +473,13 @@ function BillCartView({
     }
     return currencyItems.filter((item) => item.categoryId === categoryFilter)
   }, [currencyItems, categoryFilter])
-  const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return query === ""
-      ? categoryFilteredItems
-      : categoryFilteredItems.filter((item) =>
-          item.name.toLowerCase().includes(query)
-        )
-  }, [categoryFilteredItems, search])
+  const filteredItems = useMemo(
+    () =>
+      categoryFilteredItems.filter((item) =>
+        matchesCatalogItemSearch(item, search)
+      ),
+    [categoryFilteredItems, search]
+  )
 
   const totalAmount = useMemo(
     () =>

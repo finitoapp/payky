@@ -164,6 +164,51 @@ test("search filters the items list", async ({ seededPage: page }) => {
   })
 })
 
+test("search matches internal name, SKU and scan code", async ({
+  seededPage: page,
+}) => {
+  await test.step("add items with distinct internal name, SKU and scan code", async () => {
+    await addCatalogItem(page, "en", {
+      name: "Coffee",
+      price: "5",
+      internalName: "Espresso Blend",
+      sku: "COF-001",
+      scanCode: "8594001234567",
+    })
+    await addCatalogItem(page, "en", { name: "Tea", price: "3" })
+  })
+
+  const searchInput = page.getByRole("textbox", {
+    name: translate("en", "settings.items.search"),
+  })
+  const coffeeRow = page.getByRole("link", { name: "Espresso Blend" })
+  const teaRow = page.getByRole("link", { name: "Tea" })
+
+  await test.step("matches by internal name", async () => {
+    await searchInput.fill("Espresso")
+    await expect(coffeeRow).toBeVisible()
+    await expect(teaRow).not.toBeVisible()
+  })
+
+  await test.step("matches by SKU", async () => {
+    await searchInput.fill("COF-001")
+    await expect(coffeeRow).toBeVisible()
+    await expect(teaRow).not.toBeVisible()
+  })
+
+  await test.step("matches by scan code", async () => {
+    await searchInput.fill("8594001234567")
+    await expect(coffeeRow).toBeVisible()
+    await expect(teaRow).not.toBeVisible()
+  })
+
+  await test.step("still matches by the public name even when an internal name is set", async () => {
+    await searchInput.fill("Coffee")
+    await expect(coffeeRow).toBeVisible()
+    await expect(teaRow).not.toBeVisible()
+  })
+})
+
 test("shows a non-blocking warning for a duplicate scan code but still saves", async ({
   seededPage: page,
 }) => {

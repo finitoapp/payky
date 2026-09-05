@@ -355,6 +355,8 @@ export async function addCatalogItem(
     readonly price: string
     readonly categoryName?: string
     readonly scanCode?: string
+    readonly internalName?: string
+    readonly sku?: string
   }
 ): Promise<void> {
   await gotoPage(page, "/settings/items", language, "settings.items.title")
@@ -377,6 +379,20 @@ export async function addCatalogItem(
       name: translate(language, "settings.items.form.price.label"),
     })
     .fill(input.price)
+  if (input.internalName !== undefined) {
+    await page
+      .getByRole("textbox", {
+        name: translate(language, "settings.items.form.internalName.label"),
+      })
+      .fill(input.internalName)
+  }
+  if (input.sku !== undefined) {
+    await page
+      .getByRole("textbox", {
+        name: translate(language, "settings.items.form.sku.label"),
+      })
+      .fill(input.sku)
+  }
   if (input.categoryName !== undefined) {
     await page
       .getByRole("combobox", {

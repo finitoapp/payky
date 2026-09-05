@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import {
+  getStaffDisplayName,
+  matchesCatalogItemSearch,
+} from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import { minorUnitsToDecimalString } from "@/core/modules/shared/money.ts"
 import { Integer } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -24,14 +27,10 @@ export function ItemsSettingsPage() {
     [categories]
   )
   const [search, setSearch] = useState("")
-  const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return query === ""
-      ? items
-      : items.filter((item) =>
-          getStaffDisplayName(item).toLowerCase().includes(query)
-        )
-  }, [items, search])
+  const filteredItems = useMemo(
+    () => items.filter((item) => matchesCatalogItemSearch(item, search)),
+    [items, search]
+  )
 
   return (
     <>

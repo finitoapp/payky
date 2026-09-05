@@ -130,6 +130,60 @@ test("build a cart, save it, resume it, and discard it", async ({
   })
 })
 
+test("search matches internal name, SKU and scan code", async ({
+  seededPage: page,
+}) => {
+  await test.step("add items with distinct internal name, SKU and scan code", async () => {
+    await addCatalogItem(page, "en", {
+      name: "Coffee",
+      price: "5",
+      internalName: "Espresso Blend",
+      sku: "COF-001",
+      scanCode: "8594001234567",
+    })
+    await addCatalogItem(page, "en", { name: "Tea", price: "3" })
+  })
+
+  await test.step("open the cart", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+  })
+
+  const searchInput = page.getByRole("textbox", {
+    name: translate("en", "bill.search"),
+  })
+  const coffeeBrick = page.getByRole("button", {
+    name: nameParam("bill.brick.add.aria", "Espresso Blend"),
+  })
+  const teaBrick = page.getByRole("button", {
+    name: nameParam("bill.brick.add.aria", "Tea"),
+  })
+
+  await test.step("matches by internal name", async () => {
+    await searchInput.fill("Espresso")
+    await expect(coffeeBrick).toBeVisible()
+    await expect(teaBrick).not.toBeVisible()
+  })
+
+  await test.step("matches by SKU", async () => {
+    await searchInput.fill("COF-001")
+    await expect(coffeeBrick).toBeVisible()
+    await expect(teaBrick).not.toBeVisible()
+  })
+
+  await test.step("matches by scan code", async () => {
+    await searchInput.fill("8594001234567")
+    await expect(coffeeBrick).toBeVisible()
+    await expect(teaBrick).not.toBeVisible()
+  })
+
+  await test.step("still matches by the public name even when an internal name is set", async () => {
+    await searchInput.fill("Coffee")
+    await expect(coffeeBrick).toBeVisible()
+    await expect(teaBrick).not.toBeVisible()
+  })
+})
+
 test("discards a resumed cart from the bill page", async ({
   seededPage: page,
 }) => {

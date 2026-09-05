@@ -14,6 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog.tsx"
+import { buttonVariants } from "@/components/ui/button.tsx"
+import { cn } from "@/lib/utils.ts"
 
 const variantClassName = {
   default: undefined,
@@ -82,11 +84,17 @@ export function ConfirmDialogHost() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => close(false)}>
+              <AlertDialogCancel
+                className={buttonVariants({ size: "lg", variant: "outline" })}
+                onClick={() => close(false)}
+              >
                 {displayed.cancelLabel}
               </AlertDialogCancel>
               <AlertDialogAction
-                className={variantClassName[displayed.variant ?? "default"]}
+                className={cn(
+                  variantClassName[displayed.variant ?? "default"],
+                  buttonVariants({ size: "lg" })
+                )}
                 onClick={() => close(true)}
               >
                 {displayed.confirmLabel}

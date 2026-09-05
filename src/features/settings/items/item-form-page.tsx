@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router"
+import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
 import { toast } from "sonner"
@@ -151,7 +151,7 @@ function CatalogItemForm({
   readonly defaultCurrency?: FiatCurrencyType
 }) {
   const appRun = useAppRun()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
   const descriptionInputId = useId()
@@ -248,7 +248,7 @@ function CatalogItemForm({
                   unitAmount,
                 })
               )
-              void navigate({ to: "/settings/items" })
+              router.history.back()
               return
             }
 
@@ -432,7 +432,7 @@ function CatalogItemForm({
                     try {
                       await using run = appRun()
                       await run(deleteCatalogItem(item.id))
-                      void navigate({ to: "/settings/items" })
+                      router.history.back()
                     } catch {
                       toast.error(t("settings.saveFailed"))
                     }

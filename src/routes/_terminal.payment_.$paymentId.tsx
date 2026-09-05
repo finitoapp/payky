@@ -1,5 +1,5 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router"
 import {
   BanknoteIcon,
   CheckIcon,
@@ -261,7 +261,7 @@ function PaymentWaitingRequest({
   const console = useConsole()
   const { t } = useTranslation()
   const locale = useLocale()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
@@ -624,11 +624,7 @@ function PaymentWaitingRequest({
         return
       }
 
-      await navigate(
-        payment.billId !== null
-          ? { to: "/bill", search: { billId: payment.billId } }
-          : { to: "/" }
-      )
+      router.history.back()
     } finally {
       setCancelPending(false)
     }

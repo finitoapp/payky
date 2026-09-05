@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router"
+import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
 import { toast } from "sonner"
@@ -122,7 +122,7 @@ function CatalogCategoryForm({
   readonly category?: CatalogCategoryRow
 }) {
   const appRun = useAppRun()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
   const [name, setName] = useState(category?.name ?? "")
@@ -171,7 +171,7 @@ function CatalogCategoryForm({
                   name: nameResult.data,
                 })
               )
-              void navigate({ to: "/settings/categories" })
+              router.history.back()
               return
             }
 
@@ -243,7 +243,7 @@ function CatalogCategoryForm({
                     try {
                       await using run = appRun()
                       await run(deleteCatalogCategory(category.id))
-                      void navigate({ to: "/settings/categories" })
+                      router.history.back()
                     } catch {
                       toast.error(t("settings.saveFailed"))
                     }

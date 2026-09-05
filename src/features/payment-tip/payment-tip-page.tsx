@@ -155,11 +155,7 @@ function PaymentTipForm({
 
   return (
     <>
-      <FadeHeader
-        customStartAddonOnClick={() => {
-          void navigate({ to: "/" })
-        }}
-      />
+      <FadeHeader />
 
       <div className="flex h-full min-h-0 flex-col overflow-hidden pt-4">
         <section className="shrink-0 flex flex-col items-center gap-2 text-center">

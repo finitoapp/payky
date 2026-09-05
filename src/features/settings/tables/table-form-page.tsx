@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router"
+import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
 import { toast } from "sonner"
@@ -114,7 +114,7 @@ function TableForm({
   readonly table?: TableRow
 }) {
   const appRun = useAppRun()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
   const seatCountInputId = useId()
@@ -180,7 +180,7 @@ function TableForm({
                   seatCount: seatCountValue,
                 })
               )
-              void navigate({ to: "/settings/tables" })
+              router.history.back()
               return
             }
 
@@ -289,7 +289,7 @@ function TableForm({
                     try {
                       await using run = appRun()
                       await run(deleteTable(table.id))
-                      void navigate({ to: "/settings/tables" })
+                      router.history.back()
                     } catch {
                       toast.error(t("settings.saveFailed"))
                     }

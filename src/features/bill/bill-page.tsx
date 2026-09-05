@@ -1,5 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
-import { Link, useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import {
   AlertTriangleIcon,
   ChevronDown,
@@ -415,6 +415,7 @@ function BillCartView({
   const { t } = useTranslation()
   const locale = useLocale()
   const navigate = useNavigate()
+  const router = useRouter()
   const appRun = useAppRun()
   const console = useConsole()
   const createTerminalPayment = useCreateTerminalPayment()
@@ -536,7 +537,7 @@ function BillCartView({
       return
     }
 
-    await navigate({ to: "/" })
+    router.history.back()
   }
 
   return (

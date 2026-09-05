@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_terminal/settings/fiat")({
   component: FiatCurrencyPage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-5 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

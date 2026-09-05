@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_terminal/bill")({
   staticData: {
     terminalLayout: {
       viewportClassName:
-        "h-[calc(100svh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] px-5 py-6",
+        "h-[calc(100svh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] px-3 py-6",
     },
   },
 })

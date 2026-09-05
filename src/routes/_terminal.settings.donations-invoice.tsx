@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_terminal/settings/donations-invoice")({
   validateSearch: (search) => DonateInvoiceSearchSchema.parse(search),
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-5 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

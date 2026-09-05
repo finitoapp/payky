@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_terminal/payment/tip")({
   staticData: {
     terminalLayout: {
       viewportClassName:
-        "h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] px-7 py-6",
+        "h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] px-6 py-6",
     },
   },
 })

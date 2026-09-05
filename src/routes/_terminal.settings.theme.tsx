@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_terminal/settings/theme")({
   component: ThemePage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-5 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

@@ -38,7 +38,7 @@ export const Route = createFileRoute(
   component: DefaultPaymentMethodPage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-5 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

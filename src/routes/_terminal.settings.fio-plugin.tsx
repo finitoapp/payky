@@ -61,7 +61,7 @@ export const Route = createFileRoute("/_terminal/settings/fio-plugin")({
   component: FioPluginSettingsPage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-5 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

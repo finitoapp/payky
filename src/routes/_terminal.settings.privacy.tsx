@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_terminal/settings/privacy")({
   component: PrivacySettingsPage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-5 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

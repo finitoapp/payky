@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_terminal/activity_/bills_/$billId")({
   component: BillDetailPage,
   staticData: {
     terminalLayout: {
-      viewportClassName: "px-6 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })

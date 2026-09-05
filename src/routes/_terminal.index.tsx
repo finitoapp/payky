@@ -18,7 +18,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/_terminal/")({
   component: TerminalHomePage,
@@ -27,7 +26,7 @@ export const Route = createFileRoute("/_terminal/")({
       // Matches /settings's own top-level page width instead of a wider,
       // home-only inset — the tables/bills grid otherwise reads as wider
       // than every other screen in the app.
-      viewportClassName: "px-6 py-6",
+      viewportClassName: "px-3 py-6",
     },
   },
 })
@@ -41,7 +40,7 @@ const Header = () => {
   }
 
   return (
-    <header className="flex items-center justify-between">
+    <header className="px-4 flex items-center justify-between">
       <Button
         variant={"ghost"}
         onClick={toggleHomeMode}
@@ -104,10 +103,14 @@ function TerminalPaymentKeypadLoader() {
   }
 
   return (
-    <TerminalPaymentKeypad
-      currency={settings?.fiatCurrency ?? FiatCurrency.CZK}
-      onCharge={handleCharge}
-    />
+    <div className={"px-4 flex flex-1 flex-col justify-between"}>
+      <div>&nbsp;</div>
+
+      <TerminalPaymentKeypad
+        currency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+        onCharge={handleCharge}
+      />
+    </div>
   )
 }
 
@@ -117,9 +120,7 @@ function TerminalHomePage() {
   const isNumpadMode = terminalHomeMode !== "pos"
 
   return (
-    <div
-      className={cn("flex flex-1 flex-col", isNumpadMode && "justify-between")}
-    >
+    <div className={"flex flex-1 flex-col"}>
       <Header />
 
       <Suspense fallback={null}>

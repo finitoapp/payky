@@ -38,7 +38,7 @@ import {
   splitBill,
 } from "./bill-actions.ts"
 import { billByIdQuery } from "./bill-queries.ts"
-import type { BillId } from "./bill-types.ts"
+import { type BillId, createRandomBillId } from "./bill-types.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
 
@@ -197,8 +197,10 @@ describe("bill actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
-    const firstId = await run.ok(
+    const firstId = createRandomBillId()
+    await run.ok(
       createBillAtEnd({
+        id: firstId,
         deviceId: null,
         label: null,
         tableId: null,
@@ -206,8 +208,10 @@ describe("bill actions", () => {
       })
     )
     await run.orThrow(cancelBill(firstId))
-    const secondId = await run.ok(
+    const secondId = createRandomBillId()
+    await run.ok(
       createBillAtEnd({
+        id: secondId,
         deviceId: null,
         label: null,
         tableId: null,

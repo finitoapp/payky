@@ -38,7 +38,6 @@ export const en = {
   "bill.locked": "This bill is awaiting payment and can't be edited right now.",
   "bill.locked.viewPayment": "View payment",
   "bill.locked.viewPayment.numbered": "View payment {number}",
-  "bill.notFound": "This cart no longer exists.",
   "bill.brick.add.aria": "Add {name}",
   "bill.brick.quantity.cancel": "Cancel",
   "bill.brick.quantity.confirm": "Add",

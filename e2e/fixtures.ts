@@ -322,6 +322,12 @@ export async function tapAddBrick(page: Page, name: string): Promise<void> {
  * cart view. Uses `gotoPosOverview` (tolerant of already being in POS/tables
  * mode, e.g. right after a previous bill's pay cycle in the same test)
  * rather than assuming the numpad is showing.
+ *
+ * `billId` is in the URL from the moment the cart opens (generated up
+ * front, not once the bill is lazily created), so it's no longer a signal
+ * that the create-plus-add-line write has landed — waits for that to settle
+ * (see `waitForLocalWriteToSettle`) before returning, so callers that hard-
+ * navigate right away don't race ahead of it.
  */
 export async function startBillWithCoffee(
   page: Page,
@@ -351,6 +357,7 @@ export async function startBillWithCoffee(
   if (!billId) {
     throw new Error("Could not determine bill id from URL.")
   }
+  await waitForLocalWriteToSettle(page)
   return billId
 }
 

@@ -40,7 +40,6 @@ export const sk = {
   "bill.locked": "Tento účet čaká na platbu, teraz ho nemožno upravovať.",
   "bill.locked.viewPayment": "Zobraziť platbu",
   "bill.locked.viewPayment.numbered": "Zobraziť platbu {number}",
-  "bill.notFound": "Tento košík už neexistuje.",
   "bill.brick.add.aria": "Pridať {name}",
   "bill.brick.quantity.cancel": "Zrušiť",
   "bill.brick.quantity.confirm": "Pridať",

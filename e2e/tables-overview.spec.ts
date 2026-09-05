@@ -6,6 +6,7 @@ import {
   nameParam,
   test,
   translate,
+  waitForLocalWriteToSettle,
 } from "./fixtures.ts"
 
 test("shows a free table, starts a cart from it, then shows it occupied", async ({
@@ -49,6 +50,11 @@ test("shows a free table, starts a cart from it, then shows it occupied", async 
     await expect(
       page.getByRole("button", { name: translate("en", "bill.table.aria") })
     ).toContainText("Table A")
+    // `billId` is in the URL before the add-item tap now (generated up
+    // front, not once the bill is lazily created), so the poll above no
+    // longer proves the create-plus-table-assign write has landed — the
+    // hard nav below could otherwise race ahead of it.
+    await waitForLocalWriteToSettle(page)
   })
 
   await test.step("back on the overview, the table now shows as occupied with its one bill", async () => {

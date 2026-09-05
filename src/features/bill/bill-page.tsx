@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react"
 import { motion } from "motion/react"
-import { type ReactNode, startTransition, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
@@ -39,7 +39,10 @@ import {
 } from "@/core/modules/bill/bill-actions.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
-import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import {
+  type BillId,
+  createRandomBillId,
+} from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
@@ -73,10 +76,7 @@ import { useBillInsertMode } from "@/hooks/use-bill-insert-mode.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
-import {
-  useEvoluQuery,
-  useOptionalEvoluQuery,
-} from "@/hooks/use-evolu-query.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -84,20 +84,20 @@ import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 /**
- * The whole bill screen — the cart before its bill exists, the cart of an
- * existing bill, and the not-found/closed/locked messages — lives in this
- * one component on purpose. Lazily creating the bill on the first added item
- * flips `billId` from absent to present mid-tap; if that swapped one body
- * component for another, React would tear down and rebuild every DOM node
- * under it, and a second tap whose press and release straddle the swap is
+ * The whole bill screen — the cart before its bill row exists and the cart
+ * of an already-created bill, plus the closed/locked messages — lives in
+ * this one component on purpose, so it never remounts across the moment the
+ * first added item lazily creates the row: a remount tears down every DOM
+ * node under it, and a tap whose press and release straddle that swap is
  * silently dropped by the browser (its click event lands on the two nodes'
- * common ancestor, never on the button). Keeping one component — and one
- * `BillCartView` element position — means the transition only updates props.
- * The bill-scoped hooks below all accept an `undefined` `billId` for the
- * same reason.
+ * common ancestor, never on the button). `billId` itself is stable from the
+ * first render — generated client-side and put in the URL by whatever
+ * linked here (see `pos-overview-page.tsx`'s `NewBillLink`) — only its row's
+ * existence changes mid-session, which is why the bill-scoped hooks below
+ * all tolerate a `billId` whose row hasn't been created yet.
  */
 export function BillPage({
-  billId,
+  billId: billIdFromRoute,
   initialTableId,
 }: {
   readonly billId: BillId | undefined
@@ -110,53 +110,56 @@ export function BillPage({
   const [settings] = settingsData
   const fallbackCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
 
-  // Only meaningful before a bill exists: it seeds the table the lazily
-  // created bill is assigned to. Once a bill exists, `bill.tableId` is the
-  // source of truth and this state is no longer read.
+  // A stable fallback for the rare direct navigation to `/bill` with no
+  // `billId` search param at all — every in-app link already includes one
+  // (see `pos-overview-page.tsx`'s `NewBillLink`). Keeps `billId`
+  // unconditionally defined from the very first render, so the rest of this
+  // component and `useCartBill` never need an `undefined` branch. The effect
+  // below corrects the URL to match, once.
+  const [generatedBillId] = useState(createRandomBillId)
+  const billId = billIdFromRoute ?? generatedBillId
+
+  useEffect(() => {
+    if (billIdFromRoute === undefined) {
+      void navigate({
+        to: "/bill",
+        search: { billId: generatedBillId, tableId: initialTableId },
+        replace: true,
+      })
+    }
+  }, [billIdFromRoute, generatedBillId, initialTableId, navigate])
+
+  // Only meaningful before the bill row exists: it seeds the table the
+  // lazily created row is assigned to. Once the row exists, `bill.tableId`
+  // is the source of truth and this state is no longer read.
   const [pendingTableId, setPendingTableId] = useState<TableId | null>(
     initialTableId ?? null
   )
 
+  const billQuery = useMemo(() => billByIdQuery(billId), [billId])
+  const { data: billRows } = useEvoluQuery(billQuery)
+  const bill = billRows[0]
+
   // Owned here, not inside BillCartView, so search text, the summary's
   // open/closed state, and the undo/redo history survive the moment the
-  // first added item lazily creates the bill and the route's `billId`
-  // search param switches from absent to present.
+  // first added item lazily creates the bill row.
   const cart = useCartBill({
     billId,
     currency: fallbackCurrency,
     tableId: pendingTableId,
-    onBillCreated: (createdBillId) => {
-      // A transition so React keeps the current cart on screen instead of
-      // showing the route's `fallback={null}` if anything on this path ever
-      // suspends again, rather than blanking the page for a beat.
-      startTransition(() => {
-        void navigate({
-          to: "/bill",
-          search: { billId: createdBillId },
-          replace: true,
-        })
-      })
-    },
+    billExists: bill !== undefined,
   })
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [scanMode, setScanMode] = useBillInsertMode()
 
-  const billQuery = useMemo(
-    () => (billId === undefined ? null : billByIdQuery(billId)),
-    [billId]
-  )
-  const { data: billRows } = useOptionalEvoluQuery(billQuery)
-  const bill = billRows[0]
   const summaries = useBillLineSummaries(billId)
   const pendingPaymentIds = usePendingPayments(billId)
   const billStatus = useBillStatus(billId)
 
   let content: ReactNode
-  if (billId !== undefined && bill === undefined) {
-    content = <BillMessage message={t("bill.notFound")} />
-  } else if (bill !== undefined && billStatus?.status !== "open") {
+  if (bill !== undefined && billStatus?.status !== "open") {
     content = billStatus?.hasCancellationCollision ? (
       <BillCancellationCollisionMessage
         billId={bill.id}
@@ -171,14 +174,13 @@ export function BillPage({
     content = (
       <BillCartView
         billId={billId}
+        billExists={bill !== undefined}
         currency={bill?.currency ?? fallbackCurrency}
         summaries={summaries}
-        // `pendingTableId` only seeds the bill that's about to be created;
-        // once one exists its own `tableId` is the source of truth, so a
-        // table cleared on the bill isn't overwritten by the stale seed.
-        tableId={
-          billId === undefined ? pendingTableId : (bill?.tableId ?? null)
-        }
+        // `pendingTableId` only seeds the bill row that's about to be
+        // created; once it exists its own `tableId` is the source of truth,
+        // so a table cleared on the bill isn't overwritten by the stale seed.
+        tableId={bill === undefined ? pendingTableId : bill.tableId}
         cart={cart}
         search={search}
         onSearchChange={setSearch}
@@ -387,6 +389,7 @@ interface SharedCartViewProps {
 
 function BillCartView({
   billId,
+  billExists,
   currency,
   summaries,
   tableId,
@@ -401,7 +404,9 @@ function BillCartView({
   scanMode,
   onScanModeChange,
 }: {
-  readonly billId: BillId | undefined
+  readonly billId: BillId
+  /** Whether `billId`'s row has been written to Evolu yet. */
+  readonly billExists: boolean
   readonly currency: FiatCurrencyType
   readonly summaries: ReadonlyArray<BillLineSummary>
   readonly tableId: TableId | null
@@ -427,7 +432,7 @@ function BillCartView({
   const handleAssignTable = async (nextTableId: TableId | null) => {
     setTablePickerOpen(false)
 
-    if (billId === undefined) {
+    if (!billExists) {
       onPendingTableIdChange(nextTableId)
       return
     }
@@ -487,7 +492,7 @@ function BillCartView({
   const totalAmountPulseControls = useChangePulse(totalAmount)
 
   const handleCharge = async () => {
-    if (billId === undefined || summaries.length === 0) return
+    if (summaries.length === 0) return
 
     setChargePending(true)
     try {
@@ -520,7 +525,7 @@ function BillCartView({
     })
 
   const handleDiscard = async () => {
-    if (billId === undefined) return
+    if (!billExists) return
 
     const confirmed = await confirm({
       title: t("bill.discard.confirm.title"),
@@ -744,7 +749,7 @@ function BillCartView({
               variant="outline"
               size="icon"
               className="h-12 w-12 shrink-0 text-destructive"
-              disabled={billId === undefined}
+              disabled={!billExists}
               aria-label={t("bill.discard")}
               onClick={() => void handleDiscard()}
             >
@@ -762,9 +767,7 @@ function BillCartView({
             <Button
               variant="default"
               className="h-12 flex-1 text-sm font-bold"
-              disabled={
-                billId === undefined || summaries.length === 0 || chargePending
-              }
+              disabled={summaries.length === 0 || chargePending}
               onClick={() => {
                 vibrateOnButtonPress()
                 void handleCharge()

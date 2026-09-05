@@ -16,6 +16,7 @@ import {
   test,
   translate,
   translateValue,
+  waitForLocalWriteToSettle,
 } from "./fixtures.ts"
 
 test("build a cart, save it, resume it, and discard it", async ({
@@ -289,13 +290,25 @@ test("shows the right message for a closed or missing bill", async ({
     await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
   })
 
-  await test.step("a missing bill shows the not-found message", async () => {
+  await test.step("a never-issued bill id opens as a fresh, empty cart", async () => {
     // A well-formed but never-issued id: real ids encode trailing padding
     // bits in their last character, so only the first character of a known
     // valid id is swapped, keeping the rest (and its encoding) untouched.
+    // The bill row behind such an id is only ever written lazily on its
+    // first added item (see `use-cart-bill.ts`), the same as any other
+    // fresh cart's client-generated id — there's nothing that distinguishes
+    // it as "invalid" ahead of that, so it opens ready to use rather than
+    // showing an error.
     const missingBillId = `${billId?.[0] === "a" ? "b" : "a"}${billId?.slice(1)}`
     await gotoPage(page, `/bill?billId=${missingBillId}`, "en", "bill.title")
-    await expect(page.getByText(translate("en", "bill.notFound"))).toBeVisible()
+    await page
+      .getByRole("button", {
+        name: nameParam("bill.brick.add.aria", "Coffee"),
+      })
+      .click()
+    await expect(page.getByTestId("bill-summary-trigger")).toContainText(
+      translateValue("en", "bill.itemsCount", 1)
+    )
   })
 })
 
@@ -687,10 +700,13 @@ test("assigns and clears a table on a cart from the bill header", async ({
         name: nameParam("bill.brick.add.aria", "Coffee"),
       })
       .click()
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get("billId"))
-      .not.toBeNull()
     await expect(tableButton).toContainText("Patio 1")
+    // `billId` is already in the URL before this tap (it's generated up
+    // front now, not once the bill is lazily created), so it's no longer a
+    // signal that the create-plus-assign write has landed — the hard nav
+    // below could otherwise race ahead of it and reload before the table
+    // assignment is visible to the POS overview.
+    await waitForLocalWriteToSettle(page)
   })
 
   await test.step("the POS overview shows the bill inside Patio 1's tile", async () => {

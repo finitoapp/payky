@@ -1,5 +1,5 @@
 import { useStore } from "jotai"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
@@ -63,9 +63,9 @@ const invertLine = (line: CartLine): CartLine => ({
 })
 
 /**
- * Owns the mutation side of a cart: lazily creating the bill on the first
- * line, adding/removing catalog item taps and whole lines, clearing the
- * cart, and a local undo/redo stack over the lines actually appended.
+ * Owns the mutation side of a cart: lazily creating the bill row on the
+ * first line, adding/removing catalog item taps and whole lines, clearing
+ * the cart, and a local undo/redo stack over the lines actually appended.
  *
  * The visible cart contents are never derived from this hook's state —
  * only from the live `useBillLineSummaries` query — this hook only issues
@@ -75,13 +75,19 @@ export function useCartBill({
   billId,
   currency,
   tableId,
-  onBillCreated,
+  billExists,
 }: {
-  readonly billId: BillId | undefined
+  /**
+   * Generated client-side and already in the `/bill` URL from the first
+   * render — see `bill-page.tsx` and `pos-overview-page.tsx`'s
+   * `NewBillLink`. Its row may not exist yet; see `billExists`.
+   */
+  readonly billId: BillId
   readonly currency: FiatCurrency
-  /** Table to assign when the bill is lazily created on the first line. */
+  /** Table to assign when the bill row is lazily created on the first line. */
   readonly tableId: TableId | null
-  readonly onBillCreated: (createdBillId: BillId) => void
+  /** Whether `billId`'s row has been written to Evolu yet. */
+  readonly billExists: boolean
 }) {
   const appRun = useAppRun()
   const console = useConsole()
@@ -130,36 +136,33 @@ export function useCartBill({
     []
   )
 
-  // Guards `ensureBillId` against creating more than one bill when several
-  // adds are triggered before `billId` prop flips from undefined to the
-  // created id (re-render lag, or two rapid scans in scan mode) — without
-  // it, each call sees `billId === undefined` and starts its own
-  // `createBillAtEnd`. Reset whenever the caller's `billId` prop goes back
-  // to undefined (e.g. after discarding this cart), so a later add starts a
-  // fresh bill instead of reusing a stale resolved promise.
-  const pendingBillCreationRef = useRef<Promise<BillId> | null>(null)
-  useEffect(() => {
-    if (billId === undefined) {
-      pendingBillCreationRef.current = null
-    }
-  }, [billId])
+  // Guards `ensureBillExists` against creating the bill row twice when
+  // several adds are triggered before `billExists` (derived from the bill
+  // query) turns true (re-render lag, or two rapid scans in scan mode) —
+  // without it, each call sees `billExists === false` and starts its own
+  // `createBillAtEnd`. Unlike the id, this never needs resetting mid-mount:
+  // `billId` is fixed for the lifetime of this cart (see `bill-page.tsx`),
+  // so there's no "later add should start a fresh bill" case to guard for.
+  const pendingBillCreationRef = useRef<Promise<void> | null>(null)
 
   const record = useCallback((entry: CartHistoryEntry) => {
     setUndoStack((stack) => [...stack, entry])
     setRedoStack([])
   }, [])
 
-  const ensureBillId = useCallback(async (): Promise<BillId> => {
-    if (billId !== undefined) return billId
+  const ensureBillExists = useCallback(async (): Promise<void> => {
+    if (billExists) return
     if (pendingBillCreationRef.current !== null) {
-      return pendingBillCreationRef.current
+      await pendingBillCreationRef.current
+      return
     }
 
     const creation = (async () => {
       const { device } = await jotaiStore.get(accountAtom)
       await using run = appRun()
-      const created = await run.ok(
+      await run.ok(
         createBillAtEnd({
+          id: billId,
           deviceId: device.id,
           label: null,
           tableId,
@@ -167,48 +170,44 @@ export function useCartBill({
         })
       )
 
-      // Warm the read-side queries the newly mounted bill view will run
-      // before flipping `billId`, so they're already resolved and `use()`
-      // doesn't suspend — an uncached suspend here bubbled up to the route's
-      // Suspense boundary and blanked the whole page for a beat. Keep this
-      // in sync with every query the bill view's `use()` reads
-      // unconditionally once `billId` is set, including
-      // `usePendingPayments`'s and `useBillStatus`'s — the latter also
-      // reads `billLinesByBillIdQuery`/`itemsQuery` (already listed here
-      // for line summaries), so a brand-new bill's derived status is never
-      // computed from an unresolved query.
+      // Warm the read-side queries the bill view reads unconditionally, so
+      // they're already resolved and `use()` doesn't suspend — an uncached
+      // suspend here bubbled up to the route's Suspense boundary and
+      // blanked the whole page for a beat. Keep this in sync with every
+      // query the bill view's `use()` reads, including `usePendingPayments`'s
+      // and `useBillStatus`'s — the latter also reads
+      // `billLinesByBillIdQuery`/`itemsQuery` (already listed here for line
+      // summaries), so a brand-new bill's derived status is never computed
+      // from an unresolved query.
       await Promise.all([
-        evolu.loadQuery(billByIdQuery(created)),
-        evolu.loadQuery(billLinesByBillIdQuery(created)),
+        evolu.loadQuery(billByIdQuery(billId)),
+        evolu.loadQuery(billLinesByBillIdQuery(billId)),
         evolu.loadQuery(itemsQuery),
-        evolu.loadQuery(paymentsByBillIdQuery(created)),
-        evolu.loadQuery(claimedPaymentsByBillIdQuery(created)),
-        evolu.loadQuery(claimedTransactionsByBillIdQuery(created)),
+        evolu.loadQuery(paymentsByBillIdQuery(billId)),
+        evolu.loadQuery(claimedPaymentsByBillIdQuery(billId)),
+        evolu.loadQuery(claimedTransactionsByBillIdQuery(billId)),
       ])
-
-      onBillCreated(created)
-      return created
     })()
     pendingBillCreationRef.current = creation
 
     try {
-      return await creation
+      await creation
     } catch (error) {
       pendingBillCreationRef.current = null
       throw error
     }
-  }, [appRun, billId, currency, evolu, jotaiStore, onBillCreated, tableId])
+  }, [appRun, billExists, billId, currency, evolu, jotaiStore, tableId])
 
   const addQuantity = useCallback(
     (catalogItem: CatalogItemRow, quantity: PositiveNumber) =>
       runQueued(async () => {
-        const targetBillId = await ensureBillId()
+        await ensureBillExists()
         const { device } = await jotaiStore.get(accountAtom)
         await using run = appRun()
 
         const result = await run(
           addCatalogItemToBill({
-            billId: targetBillId,
+            billId,
             deviceId: device.id,
             catalogItemId: catalogItem.id,
             quantity,
@@ -222,7 +221,7 @@ export function useCartBill({
 
         record([
           {
-            billId: targetBillId,
+            billId,
             deviceId: device.id,
             catalogItemId: catalogItem.id,
             itemId: result.value.itemId,
@@ -233,7 +232,16 @@ export function useCartBill({
           },
         ])
       }),
-    [appRun, console, ensureBillId, jotaiStore, record, runQueued, t]
+    [
+      appRun,
+      billId,
+      console,
+      ensureBillExists,
+      jotaiStore,
+      record,
+      runQueued,
+      t,
+    ]
   )
 
   const addOne = useCallback(
@@ -244,8 +252,6 @@ export function useCartBill({
 
   const removeOne = useCallback(
     async (summary: BillLineSummary) => {
-      if (billId === undefined) return
-
       await runQueued(async () => {
         const { device } = await jotaiStore.get(accountAtom)
         const quantity = PositiveNumber(1)
@@ -286,8 +292,6 @@ export function useCartBill({
 
   const removeLine = useCallback(
     async (summary: BillLineSummary) => {
-      if (billId === undefined) return
-
       await runQueued(async () => {
         const { device } = await jotaiStore.get(accountAtom)
         await using run = appRun()
@@ -325,7 +329,7 @@ export function useCartBill({
 
   const clear = useCallback(
     async (summaries: ReadonlyArray<BillLineSummary>) => {
-      if (billId === undefined || summaries.length === 0) return
+      if (summaries.length === 0) return
 
       await runQueued(async () => {
         const { device } = await jotaiStore.get(accountAtom)
@@ -356,7 +360,7 @@ export function useCartBill({
 
   const undo = useCallback(async () => {
     const entry = undoStack.at(-1)
-    if (billId === undefined || entry === undefined) return
+    if (entry === undefined) return
 
     await runQueued(async () => {
       await using run = appRun()
@@ -376,7 +380,7 @@ export function useCartBill({
 
   const redo = useCallback(async () => {
     const entry = redoStack.at(-1)
-    if (billId === undefined || entry === undefined) return
+    if (entry === undefined) return
 
     await runQueued(async () => {
       await using run = appRun()

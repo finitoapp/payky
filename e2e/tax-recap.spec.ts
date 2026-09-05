@@ -229,6 +229,12 @@ test("no VAT breakdown appears when no item has a tax rate", async ({
       .poll(() => new URL(page.url()).searchParams.get("billId"))
       .not.toBeNull()
     const billId = new URL(page.url()).searchParams.get("billId") ?? ""
+    // `billId` is in the URL before the add-item tap now (generated up
+    // front, not once the bill is lazily created), so the poll above no
+    // longer proves the create-plus-add-line write has landed — the hard
+    // nav below could otherwise race ahead of it. See the other two tests
+    // in this file for the same guard.
+    await waitForLocalWriteToSettle(page)
     await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
     await expect(
       page.getByText(translate("en", "taxRecap.title"))

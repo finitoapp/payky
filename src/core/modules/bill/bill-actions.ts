@@ -5,6 +5,7 @@ import {
   ok,
   type Task,
   type UpdateValues,
+  type UpsertValues,
 } from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
@@ -464,30 +465,40 @@ export const createBill =
   }
 
 /**
- * Creates a bill with a `displayNumber` derived from the highest existing
- * one (across every bill ever created, not just currently-open ones, so
- * numbers are never reused) instead of taking it as input. This is the
- * entry point cart UIs use to lazily create the bill behind a new cart.
+ * Creates a bill at an `id` the caller already chose — the cart UI generates
+ * it client-side and puts it in the `/bill` URL before this ever runs, so the
+ * URL stays stable across the lazy-creation moment (see `use-cart-bill.ts`'s
+ * `ensureBillExists`). Upserts rather than inserts for that reason: `id` is
+ * known ahead of time instead of coming back from the write.
+ *
+ * `displayNumber` is derived from the highest existing one (across every
+ * bill ever created, not just currently-open ones, so numbers are never
+ * reused) instead of taking it as input.
  */
 export const createBillAtEnd =
   (
     input: Pick<
-      InsertValues<typeof bill>,
-      "deviceId" | "label" | "tableId" | "currency"
+      UpsertValues<typeof bill>,
+      "id" | "deviceId" | "label" | "tableId" | "currency"
     >
   ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
+    const { evoluOwnerId } = run.deps
     const existing = await run.deps.evolu.loadQuery(allBillDisplayNumbersQuery)
     const lastDisplayNumber = existing.at(-1)?.displayNumber ?? 0
 
-    return ok(
-      await run.ok(
-        createBill({
+    const { id } = await runMutationWithCompletion((options) =>
+      run.deps.evolu.upsert(
+        "bill",
+        removeUndefinedValues({
           ...input,
           displayNumber: PositiveInteger(lastDisplayNumber + 1),
-        })
+        }),
+        { ...options, ownerId: evoluOwnerId }
       )
     )
+
+    return ok(id)
   }
 
 export const assignBillToTable =

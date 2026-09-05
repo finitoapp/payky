@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import { PlusIcon } from "lucide-react"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 
 import type { BillRow } from "@/core/modules/bill/bill.ts"
 import { openBillsQuery } from "@/core/modules/bill/bill-queries.ts"
+import { createRandomBillId } from "@/core/modules/bill/bill-types.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import type { TableRow } from "@/core/modules/table/table.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
@@ -138,11 +139,15 @@ function NewBillLink({
   readonly occupied: boolean
 }) {
   const { t } = useTranslation()
+  // Generated once per mount, put in the link's href up front so `/bill`'s
+  // URL is already stable before the first tap — no post-tap redirect once
+  // the bill row is lazily created (see `bill-page.tsx`, `use-cart-bill.ts`).
+  const [billId] = useState(createRandomBillId)
 
   return (
     <Link
       to="/bill"
-      search={tableId === undefined ? {} : { tableId }}
+      search={tableId === undefined ? { billId } : { billId, tableId }}
       aria-label={t("tables.tile.newBill")}
       className={cn(
         "flex items-center justify-center rounded-lg px-3 py-2.5 transition-colors",

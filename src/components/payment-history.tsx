@@ -13,6 +13,8 @@ import {
   XIcon,
 } from "lucide-react"
 import type { FC, ReactNode } from "react"
+import { useCallback } from "react"
+import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
@@ -30,6 +32,7 @@ import {
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
+import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
@@ -71,143 +74,148 @@ const toClaimCount = (value: number | string | bigint): number =>
  * A `billId`-less payment naturally gets empty `billLines`/
  * `billClaimedTransactions` (the `whereRef` never matches `NULL`), the same
  * "nothing to flag" result the old `NO_BILL_ID` sentinel produced.
+ *
+ * Parametrized by `limit` for the infinite-scroll list: pass
+ * `limit: pageSize + 1` and slice off the extra row to detect whether more
+ * payments remain without a separate count query.
  */
-const latestPaymentsQuery = createQuery((db) =>
-  db
-    .selectFrom("payment")
-    .leftJoin("reconciliationClaim", (join) =>
-      join
-        .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-        .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
-    )
-    .select([
-      "payment.id",
-      "payment.billId",
-      "payment.amount",
-      "payment.currency",
-      "payment.tipAmount",
-      "payment.canceledAt",
-      "payment.confirmedPaidAt",
-      "payment.excessAcknowledgedAt",
-      "payment.expiresAt",
-      "payment.createdAt",
-    ])
-    .select((eb) => [
-      eb.fn.count<number>("reconciliationClaim.id").as("claimCount"),
-      evoluJsonArrayFrom(
-        eb
-          .selectFrom("reconciliationClaim as ownClaim")
-          .innerJoin(
-            "accountTransaction as ownClaimTx",
-            "ownClaimTx.id",
-            "ownClaim.accountTransactionId"
-          )
-          .select(["ownClaim.accountTransactionId", "ownClaimTx.amount"])
-          .whereRef("ownClaim.paymentId", "=", "payment.id")
-          .where("ownClaim.isDeleted", "is not", sqliteTrue)
-          .where("ownClaim.accountTransactionId", "is not", null)
-          .where("ownClaimTx.isDeleted", "is not", sqliteTrue)
-          .where("ownClaimTx.amount", "is not", null)
-          .$narrowType<{
-            accountTransactionId: KyselyNotNull
-            amount: KyselyNotNull
-          }>()
-      ).as("ownClaimedTransactions"),
-      evoluJsonArrayFrom(
-        eb
-          .selectFrom("billLine")
-          .select([
-            "billLine.id",
-            "billLine.billId",
-            "billLine.deviceId",
-            "billLine.catalogItemId",
-            "billLine.itemId",
-            "billLine.type",
-            "billLine.kind",
-            "billLine.quantity",
-            "billLine.totalAmount",
-            "billLine.createdAt",
-            "billLine.updatedAt",
-            "billLine.isDeleted",
-            "billLine.ownerId",
-          ])
-          .whereRef("billLine.billId", "=", "payment.billId")
-          .where("billLine.billId", "is not", null)
-          .where("billLine.itemId", "is not", null)
-          .where("billLine.type", "is not", null)
-          .where("billLine.kind", "is not", null)
-          .where("billLine.quantity", "is not", null)
-          .where("billLine.totalAmount", "is not", null)
-          .orderBy("billLine.createdAt", "asc")
-          .$narrowType<{
-            billId: KyselyNotNull
-            itemId: KyselyNotNull
-            type: KyselyNotNull
-            kind: KyselyNotNull
-            quantity: KyselyNotNull
-            totalAmount: KyselyNotNull
-          }>()
-      ).as("billLines"),
-      evoluJsonArrayFrom(
-        eb
-          .selectFrom("payment as billPayment")
-          .innerJoin("reconciliationClaim as billClaim", (join) =>
-            join
-              .onRef("billClaim.paymentId", "=", "billPayment.id")
-              .on("billClaim.isDeleted", "is not", sqliteTrue)
-          )
-          .innerJoin(
-            "accountTransaction as billClaimTx",
-            "billClaimTx.id",
-            "billClaim.accountTransactionId"
-          )
-          .select([
-            "billPayment.id as paymentId",
-            "billPayment.tipAmount",
-            "billClaim.accountTransactionId",
-            "billClaimTx.amount",
-          ])
-          .whereRef("billPayment.billId", "=", "payment.billId")
-          .where("billPayment.isDeleted", "is not", sqliteTrue)
-          .where("billPayment.tipAmount", "is not", null)
-          .where("billClaim.accountTransactionId", "is not", null)
-          .where("billClaimTx.isDeleted", "is not", sqliteTrue)
-          .where("billClaimTx.amount", "is not", null)
-          .$narrowType<{
-            tipAmount: KyselyNotNull
-            accountTransactionId: KyselyNotNull
-            amount: KyselyNotNull
-          }>()
-      ).as("billClaimedTransactions"),
-    ])
-    .where("payment.isDeleted", "is not", sqliteTrue)
-    .where("payment.amount", "is not", null)
-    .where("payment.currency", "is not", null)
-    .where("payment.tipAmount", "is not", null)
-    .where("payment.createdAt", "is not", null)
-    .groupBy([
-      "payment.id",
-      "payment.billId",
-      "payment.amount",
-      "payment.currency",
-      "payment.tipAmount",
-      "payment.canceledAt",
-      "payment.confirmedPaidAt",
-      "payment.excessAcknowledgedAt",
-      "payment.expiresAt",
-      "payment.createdAt",
-    ])
-    .orderBy("payment.createdAt", "desc")
-    .limit(50)
-    .$narrowType<{
-      amount: KyselyNotNull
-      currency: KyselyNotNull
-      tipAmount: KyselyNotNull
-      createdAt: KyselyNotNull
-    }>()
-)
+const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
+  createQuery((db) =>
+    db
+      .selectFrom("payment")
+      .leftJoin("reconciliationClaim", (join) =>
+        join
+          .onRef("reconciliationClaim.paymentId", "=", "payment.id")
+          .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "payment.id",
+        "payment.billId",
+        "payment.amount",
+        "payment.currency",
+        "payment.tipAmount",
+        "payment.canceledAt",
+        "payment.confirmedPaidAt",
+        "payment.excessAcknowledgedAt",
+        "payment.expiresAt",
+        "payment.createdAt",
+      ])
+      .select((eb) => [
+        eb.fn.count<number>("reconciliationClaim.id").as("claimCount"),
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("reconciliationClaim as ownClaim")
+            .innerJoin(
+              "accountTransaction as ownClaimTx",
+              "ownClaimTx.id",
+              "ownClaim.accountTransactionId"
+            )
+            .select(["ownClaim.accountTransactionId", "ownClaimTx.amount"])
+            .whereRef("ownClaim.paymentId", "=", "payment.id")
+            .where("ownClaim.isDeleted", "is not", sqliteTrue)
+            .where("ownClaim.accountTransactionId", "is not", null)
+            .where("ownClaimTx.isDeleted", "is not", sqliteTrue)
+            .where("ownClaimTx.amount", "is not", null)
+            .$narrowType<{
+              accountTransactionId: KyselyNotNull
+              amount: KyselyNotNull
+            }>()
+        ).as("ownClaimedTransactions"),
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("billLine")
+            .select([
+              "billLine.id",
+              "billLine.billId",
+              "billLine.deviceId",
+              "billLine.catalogItemId",
+              "billLine.itemId",
+              "billLine.type",
+              "billLine.kind",
+              "billLine.quantity",
+              "billLine.totalAmount",
+              "billLine.createdAt",
+              "billLine.updatedAt",
+              "billLine.isDeleted",
+              "billLine.ownerId",
+            ])
+            .whereRef("billLine.billId", "=", "payment.billId")
+            .where("billLine.billId", "is not", null)
+            .where("billLine.itemId", "is not", null)
+            .where("billLine.type", "is not", null)
+            .where("billLine.kind", "is not", null)
+            .where("billLine.quantity", "is not", null)
+            .where("billLine.totalAmount", "is not", null)
+            .orderBy("billLine.createdAt", "asc")
+            .$narrowType<{
+              billId: KyselyNotNull
+              itemId: KyselyNotNull
+              type: KyselyNotNull
+              kind: KyselyNotNull
+              quantity: KyselyNotNull
+              totalAmount: KyselyNotNull
+            }>()
+        ).as("billLines"),
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("payment as billPayment")
+            .innerJoin("reconciliationClaim as billClaim", (join) =>
+              join
+                .onRef("billClaim.paymentId", "=", "billPayment.id")
+                .on("billClaim.isDeleted", "is not", sqliteTrue)
+            )
+            .innerJoin(
+              "accountTransaction as billClaimTx",
+              "billClaimTx.id",
+              "billClaim.accountTransactionId"
+            )
+            .select([
+              "billPayment.id as paymentId",
+              "billPayment.tipAmount",
+              "billClaim.accountTransactionId",
+              "billClaimTx.amount",
+            ])
+            .whereRef("billPayment.billId", "=", "payment.billId")
+            .where("billPayment.isDeleted", "is not", sqliteTrue)
+            .where("billPayment.tipAmount", "is not", null)
+            .where("billClaim.accountTransactionId", "is not", null)
+            .where("billClaimTx.isDeleted", "is not", sqliteTrue)
+            .where("billClaimTx.amount", "is not", null)
+            .$narrowType<{
+              tipAmount: KyselyNotNull
+              accountTransactionId: KyselyNotNull
+              amount: KyselyNotNull
+            }>()
+        ).as("billClaimedTransactions"),
+      ])
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where("payment.amount", "is not", null)
+      .where("payment.currency", "is not", null)
+      .where("payment.tipAmount", "is not", null)
+      .where("payment.createdAt", "is not", null)
+      .groupBy([
+        "payment.id",
+        "payment.billId",
+        "payment.amount",
+        "payment.currency",
+        "payment.tipAmount",
+        "payment.canceledAt",
+        "payment.confirmedPaidAt",
+        "payment.excessAcknowledgedAt",
+        "payment.expiresAt",
+        "payment.createdAt",
+      ])
+      .orderBy("payment.createdAt", "desc")
+      .limit(limit)
+      .$narrowType<{
+        amount: KyselyNotNull
+        currency: KyselyNotNull
+        tipAmount: KyselyNotNull
+        createdAt: KyselyNotNull
+      }>()
+  )
 
-type PaymentHistoryRow = InferRow<typeof latestPaymentsQuery>
+type PaymentHistoryRow = InferRow<ReturnType<typeof latestPaymentsQuery>>
 
 const paymentStatusData = {
   canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
@@ -347,7 +355,16 @@ function PaymentHistoryIssues({
 export const PaymentHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
-  const { data: items } = useEvoluQuery(latestPaymentsQuery)
+  const createPageQuery = useCallback(
+    (limit: number) => latestPaymentsQuery({ limit }),
+    []
+  )
+  const {
+    rows: items,
+    hasMore,
+    isPending,
+    sentinelRef,
+  } = useInfiniteEvoluQuery("", createPageQuery)
   const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   const empty = (
@@ -442,6 +459,12 @@ export const PaymentHistory = () => {
           })}
         />
       ))}
+      {hasMore && (
+        <>
+          {isPending && <ActivityHistorySkeleton rows={5} />}
+          <div ref={sentinelRef} aria-hidden className="h-1" />
+        </>
+      )}
     </div>
   )
 }

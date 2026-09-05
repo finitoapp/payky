@@ -42,9 +42,11 @@ export const openBillsQuery = createQuery((db) =>
 )
 
 /**
- * The most recent bills, newest first, regardless of status — the read
- * model behind the `/activity/bills` list. Mirrors `latestPaymentsQuery` in
- * `payment-history.tsx`: a flat, capped list for a history view, not a
+ * A page of the most recent bills, newest first, regardless of status — the
+ * read model behind the `/activity/bills` infinite-scroll list. Pass
+ * `limit: pageSize + 1` and slice off the extra row to detect whether more
+ * bills remain without a separate count query. Mirrors `latestPaymentsQuery`
+ * in `payment-history.tsx`: a flat, paginated list for a history view, not a
  * lock/coverage computation.
  *
  * Embeds each bill's line ledger (`lines`) and claimed-transaction rows
@@ -59,89 +61,90 @@ export const openBillsQuery = createQuery((db) =>
  * `bill-utils.ts` then re-derives status/coverage from `lines`/
  * `claimedTransactions` with the same pure logic the detail page uses.
  */
-export const latestBillsQuery = createQuery((db) =>
-  db
-    .selectFrom("bill")
-    .selectAll()
-    .select((eb) => [
-      evoluJsonArrayFrom(
-        eb
-          .selectFrom("billLine")
-          .select([
-            "billLine.id",
-            "billLine.billId",
-            "billLine.deviceId",
-            "billLine.catalogItemId",
-            "billLine.itemId",
-            "billLine.type",
-            "billLine.kind",
-            "billLine.quantity",
-            "billLine.totalAmount",
-            "billLine.createdAt",
-            "billLine.updatedAt",
-            "billLine.isDeleted",
-            "billLine.ownerId",
-          ])
-          .whereRef("billLine.billId", "=", "bill.id")
-          .where("billLine.billId", "is not", null)
-          .where("billLine.itemId", "is not", null)
-          .where("billLine.type", "is not", null)
-          .where("billLine.kind", "is not", null)
-          .where("billLine.quantity", "is not", null)
-          .where("billLine.totalAmount", "is not", null)
-          .orderBy("billLine.createdAt", "asc")
-          .$narrowType<{
-            billId: KyselyNotNull
-            itemId: KyselyNotNull
-            type: KyselyNotNull
-            kind: KyselyNotNull
-            quantity: KyselyNotNull
-            totalAmount: KyselyNotNull
-          }>()
-      ).as("lines"),
-      evoluJsonArrayFrom(
-        eb
-          .selectFrom("payment")
-          .innerJoin("reconciliationClaim", (join) =>
-            join
-              .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-              .on("reconciliationClaim.isDeleted", "is not", 1)
-          )
-          .innerJoin(
-            "accountTransaction",
-            "accountTransaction.id",
-            "reconciliationClaim.accountTransactionId"
-          )
-          .select([
-            "payment.id as paymentId",
-            "payment.tipAmount",
-            "reconciliationClaim.accountTransactionId",
-            "accountTransaction.amount",
-          ])
-          .whereRef("payment.billId", "=", "bill.id")
-          .where("payment.isDeleted", "is not", 1)
-          .where("payment.tipAmount", "is not", null)
-          .where("reconciliationClaim.accountTransactionId", "is not", null)
-          .where("accountTransaction.isDeleted", "is not", 1)
-          .where("accountTransaction.amount", "is not", null)
-          .$narrowType<{
-            tipAmount: KyselyNotNull
-            accountTransactionId: KyselyNotNull
-            amount: KyselyNotNull
-          }>()
-      ).as("claimedTransactions"),
-    ])
-    .where("displayNumber", "is not", null)
-    .where("currency", "is not", null)
-    .where("createdAt", "is not", null)
-    .$narrowType<{
-      displayNumber: KyselyNotNull
-      currency: KyselyNotNull
-      createdAt: KyselyNotNull
-    }>()
-    .orderBy("createdAt", "desc")
-    .limit(50)
-)
+export const latestBillsQuery = ({ limit }: { readonly limit: number }) =>
+  createQuery((db) =>
+    db
+      .selectFrom("bill")
+      .selectAll()
+      .select((eb) => [
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("billLine")
+            .select([
+              "billLine.id",
+              "billLine.billId",
+              "billLine.deviceId",
+              "billLine.catalogItemId",
+              "billLine.itemId",
+              "billLine.type",
+              "billLine.kind",
+              "billLine.quantity",
+              "billLine.totalAmount",
+              "billLine.createdAt",
+              "billLine.updatedAt",
+              "billLine.isDeleted",
+              "billLine.ownerId",
+            ])
+            .whereRef("billLine.billId", "=", "bill.id")
+            .where("billLine.billId", "is not", null)
+            .where("billLine.itemId", "is not", null)
+            .where("billLine.type", "is not", null)
+            .where("billLine.kind", "is not", null)
+            .where("billLine.quantity", "is not", null)
+            .where("billLine.totalAmount", "is not", null)
+            .orderBy("billLine.createdAt", "asc")
+            .$narrowType<{
+              billId: KyselyNotNull
+              itemId: KyselyNotNull
+              type: KyselyNotNull
+              kind: KyselyNotNull
+              quantity: KyselyNotNull
+              totalAmount: KyselyNotNull
+            }>()
+        ).as("lines"),
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("payment")
+            .innerJoin("reconciliationClaim", (join) =>
+              join
+                .onRef("reconciliationClaim.paymentId", "=", "payment.id")
+                .on("reconciliationClaim.isDeleted", "is not", 1)
+            )
+            .innerJoin(
+              "accountTransaction",
+              "accountTransaction.id",
+              "reconciliationClaim.accountTransactionId"
+            )
+            .select([
+              "payment.id as paymentId",
+              "payment.tipAmount",
+              "reconciliationClaim.accountTransactionId",
+              "accountTransaction.amount",
+            ])
+            .whereRef("payment.billId", "=", "bill.id")
+            .where("payment.isDeleted", "is not", 1)
+            .where("payment.tipAmount", "is not", null)
+            .where("reconciliationClaim.accountTransactionId", "is not", null)
+            .where("accountTransaction.isDeleted", "is not", 1)
+            .where("accountTransaction.amount", "is not", null)
+            .$narrowType<{
+              tipAmount: KyselyNotNull
+              accountTransactionId: KyselyNotNull
+              amount: KyselyNotNull
+            }>()
+        ).as("claimedTransactions"),
+      ])
+      .where("displayNumber", "is not", null)
+      .where("currency", "is not", null)
+      .where("createdAt", "is not", null)
+      .$narrowType<{
+        displayNumber: KyselyNotNull
+        currency: KyselyNotNull
+        createdAt: KyselyNotNull
+      }>()
+      .orderBy("createdAt", "desc")
+      .limit(limit)
+  )
 
 /**
  * Every bill's `displayNumber`, oldest first, regardless of status — the

@@ -13,7 +13,13 @@ import {
   X,
 } from "lucide-react"
 import { motion } from "motion/react"
-import { type ReactNode, useEffect, useMemo, useState } from "react"
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 import { toast } from "sonner"
 import { CategoryFilterBar } from "@/components/category-filter-bar.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -46,12 +52,13 @@ import {
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
-import { catalogItemsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import {
+  catalogItemsPageQuery,
+  catalogItemsQuery,
+} from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import {
   type CategoryFilter,
-  filterCatalogItemsByCategory,
   getStaffDisplayName,
-  matchesCatalogItemSearch,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
@@ -66,6 +73,7 @@ import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { BillScanView } from "@/features/bill/bill-scan-view.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
+import { ItemBrickGridSkeleton } from "@/features/bill/item-brick-grid-skeleton.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
@@ -77,7 +85,9 @@ import { useBillInsertMode } from "@/hooks/use-bill-insert-mode.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
+import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -457,16 +467,41 @@ function BillCartView({
     () => new Set(currencyItems.map((item) => item.categoryId)),
     [currencyItems]
   )
-  const categoryFilteredItems = useMemo(
-    () => filterCatalogItemsByCategory(currencyItems, categoryFilter),
-    [currencyItems, categoryFilter]
+
+  // The grid's own SQL-filtered, paginated read: `currencyItems` above stays
+  // the full per-currency list (needed by scan mode's barcode lookup, which
+  // must match against every item, not just the currently loaded page).
+  // Every value feeding the grid's query goes through `useDebouncedValue`
+  // with `transition: true` — including `categoryFilter` and `currency`,
+  // which aren't otherwise "debounced" but still must not drive the query
+  // outside a transition — so a search keystroke or a category tap never
+  // re-suspends this component: `BillPage`'s doc comment explains why a
+  // remount here would drop a tap mid-press. `search`/`categoryFilter`
+  // themselves stay plain, immediate state so the input text and the
+  // selected chip highlight update without any lag.
+  const searchForQuery = useDebouncedValue(search, 250, { transition: true })
+  const categoryFilterForQuery = useDebouncedValue(categoryFilter, 0, {
+    transition: true,
+  })
+  const currencyForQuery = useDebouncedValue(currency, 0, { transition: true })
+  const createGridPageQuery = useCallback(
+    (limit: number) =>
+      catalogItemsPageQuery({
+        search: searchForQuery,
+        categoryFilter: categoryFilterForQuery,
+        currency: currencyForQuery,
+        limit,
+      }),
+    [searchForQuery, categoryFilterForQuery, currencyForQuery]
   )
-  const filteredItems = useMemo(
-    () =>
-      categoryFilteredItems.filter((item) =>
-        matchesCatalogItemSearch(item, search)
-      ),
-    [categoryFilteredItems, search]
+  const {
+    rows: pagedItems,
+    hasMore: hasMoreItems,
+    isPending: isLoadingMoreItems,
+    sentinelRef: itemsSentinelRef,
+  } = useInfiniteEvoluQuery(
+    `${searchForQuery}::${categoryFilterForQuery}::${currencyForQuery}`,
+    createGridPageQuery
   )
 
   const totalAmount = useMemo(
@@ -597,26 +632,34 @@ function BillCartView({
           />
         ) : currencyItems.length === 0 ? (
           <BillEmptyCatalog />
-        ) : filteredItems.length === 0 ? (
+        ) : pagedItems.length === 0 ? (
           <p className="mt-10 text-center text-muted-foreground">
             {t("bill.emptySearch")}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-2 pb-4">
-            {filteredItems.map((catalogItem) => (
-              <ItemBrick
-                key={catalogItem.id}
-                catalogItem={catalogItem}
-                summaries={summaries}
-                locale={locale}
-                onAdd={() => void cart.addOne(catalogItem)}
-                onAddQuantity={(quantity) =>
-                  void cart.addQuantity(catalogItem, quantity)
-                }
-                onRemove={(summary) => void cart.removeOne(summary)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2 pb-4">
+              {pagedItems.map((catalogItem) => (
+                <ItemBrick
+                  key={catalogItem.id}
+                  catalogItem={catalogItem}
+                  summaries={summaries}
+                  locale={locale}
+                  onAdd={() => void cart.addOne(catalogItem)}
+                  onAddQuantity={(quantity) =>
+                    void cart.addQuantity(catalogItem, quantity)
+                  }
+                  onRemove={(summary) => void cart.removeOne(summary)}
+                />
+              ))}
+            </div>
+            {hasMoreItems && (
+              <>
+                {isLoadingMoreItems && <ItemBrickGridSkeleton />}
+                <div ref={itemsSentinelRef} aria-hidden className="h-1" />
+              </>
+            )}
+          </>
         )}
       </section>
 

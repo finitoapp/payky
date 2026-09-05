@@ -1,26 +1,19 @@
 import { Link } from "@tanstack/react-router"
-import { PlusIcon, Table2Icon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 
-import { useMemo, useState } from "react"
-
+import { Suspense, useState } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { VerticalNav } from "@/components/vertical-nav.tsx"
-import { tablesQuery } from "@/core/modules/table/table-queries.ts"
+import { tablesExistQuery } from "@/core/modules/table/table-queries.ts"
+import { TablesList } from "@/features/settings/tables/tables-list.tsx"
+import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export function TablesSettingsPage() {
   const { t } = useTranslation()
-  const { data: tables } = useEvoluQuery(tablesQuery)
-  const [search, setSearch] = useState("")
-  const filteredTables = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return query === ""
-      ? tables
-      : tables.filter((table) => table.name.toLowerCase().includes(query))
-  }, [tables, search])
 
   return (
     <div className={"flex flex-col gap-2"}>
@@ -43,7 +36,24 @@ export function TablesSettingsPage() {
         }
       />
 
-      {tables.length > 0 && (
+      <Suspense fallback={<ListSkeleton />}>
+        <TablesSettingsBody />
+      </Suspense>
+    </div>
+  )
+}
+
+function TablesSettingsBody() {
+  const { t } = useTranslation()
+  const { data: existRows } = useEvoluQuery(tablesExistQuery)
+  const hasAnyTables = existRows.length > 0
+
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
+
+  return (
+    <>
+      {hasAnyTables && (
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -52,37 +62,9 @@ export function TablesSettingsPage() {
         />
       )}
 
-      <VerticalNav
-        empty={
-          tables.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <p className="text-lg font-semibold">
-                {t("settings.tables.empty.title")}
-              </p>
-              <p className="text-balance text-sm text-muted-foreground">
-                {t("settings.tables.empty.description")}
-              </p>
-            </div>
-          ) : (
-            <p className="py-10 text-center text-muted-foreground">
-              {t("settings.tables.emptySearch")}
-            </p>
-          )
-        }
-        items={filteredTables.map((table) => ({
-          id: table.id,
-          kind: "link" as const,
-          to: "/settings/tables/$tableId",
-          params: { tableId: table.id },
-          icon: <Table2Icon className="text-muted-foreground" />,
-          label: table.name,
-          action: (
-            <span className="text-sm font-medium text-muted-foreground">
-              {t("settings.tables.seatCount", { value: table.seatCount })}
-            </span>
-          ),
-        }))}
-      />
-    </div>
+      <Suspense fallback={<ListSkeleton />}>
+        <TablesList search={debouncedSearch} hasAnyTables={hasAnyTables} />
+      </Suspense>
+    </>
   )
 }

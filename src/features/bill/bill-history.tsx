@@ -6,7 +6,8 @@ import {
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
-import { type ReactNode, useMemo } from "react"
+import { type ReactNode, useCallback, useMemo } from "react"
+import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { latestBillsQuery } from "@/core/modules/bill/bill-queries.ts"
 import {
@@ -18,13 +19,14 @@ import type { ItemRow } from "@/core/modules/item/item.ts"
 import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
+import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { groupByDay } from "@/lib/group-by-day.ts"
 import { cn } from "@/lib/utils.ts"
 
-type BillHistoryRow = InferRow<typeof latestBillsQuery>
+type BillHistoryRow = InferRow<ReturnType<typeof latestBillsQuery>>
 
 const billStatusIconData = {
   open: ["bg-warning/10 text-warning", <RotateCwIcon key="open" />],
@@ -166,7 +168,16 @@ function BillHistoryItemContent({
 export const BillHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
-  const { data: items } = useEvoluQuery(latestBillsQuery)
+  const createPageQuery = useCallback(
+    (limit: number) => latestBillsQuery({ limit }),
+    []
+  )
+  const {
+    rows: items,
+    hasMore,
+    isPending,
+    sentinelRef,
+  } = useInfiniteEvoluQuery("", createPageQuery)
   const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   const empty = (
@@ -205,6 +216,12 @@ export const BillHistory = () => {
           }))}
         />
       ))}
+      {hasMore && (
+        <>
+          {isPending && <ActivityHistorySkeleton rows={5} />}
+          <div ref={sentinelRef} aria-hidden className="h-1" />
+        </>
+      )}
     </div>
   )
 }

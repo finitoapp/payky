@@ -73,6 +73,7 @@
     "commander": "15.0.0",
     "date-fns": "4.4.0",
     "jotai": "2.20.2",
+    "kysely": "0.29.5",
     "lucide-react": "1.33.0",
     "motion": "13.1.1",
     "qrcode.react": "4.2.0",

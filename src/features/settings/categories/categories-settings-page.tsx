@@ -1,28 +1,19 @@
 import { Link } from "@tanstack/react-router"
-import { FolderIcon, PlusIcon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 
-import { useMemo, useState } from "react"
-
+import { Suspense, useState } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { VerticalNav } from "@/components/vertical-nav.tsx"
-import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
+import { catalogCategoriesExistQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
+import { CategoriesList } from "@/features/settings/categories/categories-list.tsx"
+import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export function CategoriesSettingsPage() {
   const { t } = useTranslation()
-  const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
-  const [search, setSearch] = useState("")
-  const filteredCategories = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return query === ""
-      ? categories
-      : categories.filter((category) =>
-          category.name.toLowerCase().includes(query)
-        )
-  }, [categories, search])
 
   return (
     <div className={"flex flex-col gap-2"}>
@@ -45,7 +36,24 @@ export function CategoriesSettingsPage() {
         }
       />
 
-      {categories.length > 0 && (
+      <Suspense fallback={<ListSkeleton />}>
+        <CategoriesSettingsBody />
+      </Suspense>
+    </div>
+  )
+}
+
+function CategoriesSettingsBody() {
+  const { t } = useTranslation()
+  const { data: existRows } = useEvoluQuery(catalogCategoriesExistQuery)
+  const hasAnyCategories = existRows.length > 0
+
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
+
+  return (
+    <>
+      {hasAnyCategories && (
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -54,32 +62,12 @@ export function CategoriesSettingsPage() {
         />
       )}
 
-      <VerticalNav
-        empty={
-          categories.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <p className="text-lg font-semibold">
-                {t("settings.categories.empty.title")}
-              </p>
-              <p className="text-balance text-sm text-muted-foreground">
-                {t("settings.categories.empty.description")}
-              </p>
-            </div>
-          ) : (
-            <p className="py-10 text-center text-muted-foreground">
-              {t("settings.categories.emptySearch")}
-            </p>
-          )
-        }
-        items={filteredCategories.map((category) => ({
-          id: category.id,
-          kind: "link" as const,
-          to: "/settings/categories/$catalogCategoryId",
-          params: { catalogCategoryId: category.id },
-          icon: <FolderIcon className="text-muted-foreground" />,
-          label: category.name,
-        }))}
-      />
-    </div>
+      <Suspense fallback={<ListSkeleton />}>
+        <CategoriesList
+          search={debouncedSearch}
+          hasAnyCategories={hasAnyCategories}
+        />
+      </Suspense>
+    </>
   )
 }

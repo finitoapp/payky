@@ -24,10 +24,7 @@ import {
   parseTipFixedAmounts,
   parseTipPercentages,
 } from "@/core/modules/app-settings/app-settings-tips.ts"
-import {
-  decimalAmountToMinorUnits,
-  minorUnitsToDecimalString,
-} from "@/core/modules/shared/money.ts"
+import { decimalAmountToMinorUnits } from "@/core/modules/shared/money.ts"
 import {
   Integer,
   PositiveIntegerFromStringSchema,
@@ -36,7 +33,9 @@ import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { formatMoney } from "@/lib/format-utils.ts"
 
 type TipPresetError =
   | "settings.tips.fixedAmounts.duplicate"
@@ -76,6 +75,7 @@ export function TipsSettingsPage() {
 function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
+  const locale = useLocale()
   const enabledInputId = useId()
   const percentageInputId = useId()
   const fixedAmountInputId = useId()
@@ -247,13 +247,10 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
           placeholder={t("settings.tips.fixedAmounts.placeholder")}
           presets={fixedAmounts}
           renderPreset={(value) =>
-            t("settings.tips.fixedAmounts.value", {
-              amount: minorUnitsToDecimalString({
-                currency: settings.fiatCurrency,
-                value: Integer(value),
-              }),
-              currency: settings.fiatCurrency,
-            })
+            formatMoney(
+              { value: Integer(value), currency: settings.fiatCurrency },
+              locale
+            )
           }
         />
 

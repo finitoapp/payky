@@ -994,7 +994,6 @@ export const cs = {
   "settings.tips.fixedAmounts.maximum":
     "Můžete přidat nejvýše čtyři předvolené pevné částky.",
   "settings.tips.fixedAmounts.placeholder": "např. 20,00",
-  "settings.tips.fixedAmounts.value": "{amount} {currency}",
   "settings.tips.form.description":
     "Nastavte rychlé volby dýška zobrazované při placení.",
   "settings.tips.form.title": "Možnosti dýška",

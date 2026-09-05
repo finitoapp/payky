@@ -992,7 +992,6 @@ export const en = {
   "settings.tips.fixedAmounts.maximum":
     "You can add up to four fixed amount presets.",
   "settings.tips.fixedAmounts.placeholder": "e.g. 20.00",
-  "settings.tips.fixedAmounts.value": "{amount} {currency}",
   "settings.tips.form.description":
     "Configure the quick-select tip options shown when paying a bill.",
   "settings.tips.form.title": "Tip options",

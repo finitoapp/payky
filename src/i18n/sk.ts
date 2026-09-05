@@ -998,7 +998,6 @@ export const sk = {
   "settings.tips.fixedAmounts.maximum":
     "Môžete pridať najviac štyri predvolené pevné sumy.",
   "settings.tips.fixedAmounts.placeholder": "napr. 20,00",
-  "settings.tips.fixedAmounts.value": "{amount} {currency}",
   "settings.tips.form.description":
     "Nastavte rýchle voľby tringeltu zobrazované pri platení.",
   "settings.tips.form.title": "Možnosti tringeltu",

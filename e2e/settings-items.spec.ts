@@ -31,6 +31,7 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
     await page
       .getByRole("textbox", {
         name: translate("en", "settings.items.form.name.label"),
+        exact: true,
       })
       .fill("Coffee")
     await page
@@ -70,6 +71,7 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
 
     const nameInput = page.getByRole("textbox", {
       name: translate("en", "settings.items.form.name.label"),
+      exact: true,
     })
     await expect(nameInput).toHaveValue("Coffee")
 
@@ -94,6 +96,7 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
     await expect(
       page.getByRole("textbox", {
         name: translate("en", "settings.items.form.name.label"),
+        exact: true,
       })
     ).toHaveValue("Espresso")
     await expect(
@@ -124,6 +127,43 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
   })
 })
 
+test("search filters the items list", async ({ seededPage: page }) => {
+  await test.step("add two items", async () => {
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+    await addCatalogItem(page, "en", { name: "Tea", price: "3" })
+  })
+
+  const searchInput = page.getByRole("textbox", {
+    name: translate("en", "settings.items.search"),
+  })
+  const coffeeRow = page.getByRole("link", { name: "Coffee" })
+  const teaRow = page.getByRole("link", { name: "Tea" })
+
+  await test.step("typing filters the list to matching items", async () => {
+    await searchInput.fill("Cof")
+    await expect(coffeeRow).toBeVisible()
+    await expect(teaRow).not.toBeVisible()
+  })
+
+  await test.step("no match shows the empty-search message", async () => {
+    await searchInput.fill("nonexistent")
+    await expect(
+      page.getByText(translate("en", "settings.items.emptySearch"))
+    ).toBeVisible()
+  })
+
+  await test.step("clearing the search restores the full list", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.search.clear.aria"),
+      })
+      .click()
+    await expect(searchInput).toHaveValue("")
+    await expect(coffeeRow).toBeVisible()
+    await expect(teaRow).toBeVisible()
+  })
+})
+
 test("shows a non-blocking warning for a duplicate scan code but still saves", async ({
   seededPage: page,
 }) => {
@@ -150,6 +190,7 @@ test("shows a non-blocking warning for a duplicate scan code but still saves", a
     await page
       .getByRole("textbox", {
         name: translate("en", "settings.items.form.name.label"),
+        exact: true,
       })
       .fill("Cocoa")
     await page

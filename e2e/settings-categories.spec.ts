@@ -112,6 +112,43 @@ test("create, edit and delete a catalog category", async ({
   })
 })
 
+test("search filters the categories list", async ({ seededPage: page }) => {
+  await test.step("add two categories", async () => {
+    await addCatalogCategory(page, "en", "Drinks")
+    await addCatalogCategory(page, "en", "Snacks")
+  })
+
+  const searchInput = page.getByRole("textbox", {
+    name: translate("en", "settings.categories.search"),
+  })
+  const drinksRow = page.getByRole("link", { name: "Drinks" })
+  const snacksRow = page.getByRole("link", { name: "Snacks" })
+
+  await test.step("typing filters the list to matching categories", async () => {
+    await searchInput.fill("Dri")
+    await expect(drinksRow).toBeVisible()
+    await expect(snacksRow).not.toBeVisible()
+  })
+
+  await test.step("no match shows the empty-search message", async () => {
+    await searchInput.fill("nonexistent")
+    await expect(
+      page.getByText(translate("en", "settings.categories.emptySearch"))
+    ).toBeVisible()
+  })
+
+  await test.step("clearing the search restores the full list", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.categories.search.clear.aria"),
+      })
+      .click()
+    await expect(searchInput).toHaveValue("")
+    await expect(drinksRow).toBeVisible()
+    await expect(snacksRow).toBeVisible()
+  })
+})
+
 test("assign a category to an item from the item form", async ({
   seededPage: page,
 }) => {
@@ -126,6 +163,7 @@ test("assign a category to an item from the item form", async ({
     await page
       .getByRole("textbox", {
         name: translate("en", "settings.items.form.name.label"),
+        exact: true,
       })
       .fill("Coffee")
     await page

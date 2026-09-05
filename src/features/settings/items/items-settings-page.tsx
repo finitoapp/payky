@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import { PlusIcon, TagIcon } from "lucide-react"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { SearchInput } from "@/components/search-input.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
@@ -22,6 +23,15 @@ export function ItemsSettingsPage() {
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories]
   )
+  const [search, setSearch] = useState("")
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return query === ""
+      ? items
+      : items.filter((item) =>
+          getStaffDisplayName(item).toLowerCase().includes(query)
+        )
+  }, [items, search])
 
   return (
     <>
@@ -44,18 +54,33 @@ export function ItemsSettingsPage() {
         }
       />
 
+      {items.length > 0 && (
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={t("settings.items.search")}
+          clearAriaLabel={t("settings.items.search.clear.aria")}
+        />
+      )}
+
       <VerticalNav
         empty={
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <p className="text-lg font-semibold">
-              {t("settings.items.empty.title")}
+          items.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <p className="text-lg font-semibold">
+                {t("settings.items.empty.title")}
+              </p>
+              <p className="text-balance text-sm text-muted-foreground">
+                {t("settings.items.empty.description")}
+              </p>
+            </div>
+          ) : (
+            <p className="py-10 text-center text-muted-foreground">
+              {t("settings.items.emptySearch")}
             </p>
-            <p className="text-balance text-sm text-muted-foreground">
-              {t("settings.items.empty.description")}
-            </p>
-          </div>
+          )
         }
-        items={items.map((item) => ({
+        items={filteredItems.map((item) => ({
           id: item.id,
           kind: "link" as const,
           to: "/settings/items/$catalogItemId",

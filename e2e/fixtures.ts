@@ -369,6 +369,7 @@ export async function addCatalogItem(
   await page
     .getByRole("textbox", {
       name: translate(language, "settings.items.form.name.label"),
+      exact: true,
     })
     .fill(input.name)
   await page

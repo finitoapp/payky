@@ -713,6 +713,7 @@ export const en = {
   "settings.categories.empty.description":
     "Add categories to group your products and services, then assign them from the item form.",
   "settings.categories.empty.title": "No categories yet",
+  "settings.categories.emptySearch": "No categories match your search.",
   "settings.categories.form.card.description":
     "Name shown when grouping items and filtering on the bill screen.",
   "settings.categories.form.card.title": "Details",
@@ -727,6 +728,8 @@ export const en = {
   "settings.categories.form.saved.edit": "Category updated.",
   "settings.categories.form.title.create": "Add category",
   "settings.categories.form.title.edit": "Edit category",
+  "settings.categories.search": "Search categories...",
+  "settings.categories.search.clear.aria": "Clear search",
   "settings.categories.title": "Categories",
   "settings.general": "GENERAL",
   "settings.tables.add": "Add table",
@@ -740,6 +743,7 @@ export const en = {
   "settings.tables.empty.description":
     "Add the tables in your venue so you can assign carts to them.",
   "settings.tables.empty.title": "No tables yet",
+  "settings.tables.emptySearch": "No tables match your search.",
   "settings.tables.form.card.description":
     "Name and seat count shown when assigning this table to a cart.",
   "settings.tables.form.card.title": "Details",
@@ -760,6 +764,8 @@ export const en = {
   "settings.tables.form.seatCount.placeholder": "e.g. 4",
   "settings.tables.form.title.create": "Add table",
   "settings.tables.form.title.edit": "Edit table",
+  "settings.tables.search": "Search tables...",
+  "settings.tables.search.clear.aria": "Clear search",
   "settings.tables.seatCount": "{value} seats",
   "settings.tables.title": "Tables",
   "settings.items.add": "Add item",
@@ -770,6 +776,7 @@ export const en = {
     "Bills and payments that already used {name} keep their own copy, but it will no longer be available to add to new ones.",
   "settings.items.delete.confirm.title": "Delete {name}?",
   "settings.items.description": "Manage products and services you sell",
+  "settings.items.emptySearch": "No items match your search.",
   "settings.items.form.card.description":
     "Name, price and optional description shown when adding this item to a bill.",
   "settings.items.form.card.title": "Details",
@@ -816,6 +823,8 @@ export const en = {
   "settings.items.form.sku.placeholder": "Optional",
   "settings.items.form.title.create": "Add item",
   "settings.items.form.title.edit": "Edit item",
+  "settings.items.search": "Search items...",
+  "settings.items.search.clear.aria": "Clear search",
   "settings.items.title": "Items",
   "settings.language.czech.description": "Use Czech translations",
   "settings.language.czech.title": "Czech",

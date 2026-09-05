@@ -1,4 +1,11 @@
-import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
+import {
+  addTable,
+  expect,
+  gotoPage,
+  reloadPage,
+  test,
+  translate,
+} from "./fixtures.ts"
 
 test("create, edit and delete a table", async ({ seededPage: page }) => {
   await test.step("open table settings and see the empty state", () =>
@@ -116,5 +123,42 @@ test("create, edit and delete a table", async ({ seededPage: page }) => {
     await expect(
       page.getByText(translate("en", "settings.tables.empty.title"))
     ).toBeVisible()
+  })
+})
+
+test("search filters the tables list", async ({ seededPage: page }) => {
+  await test.step("add two tables", async () => {
+    await addTable(page, "en", { name: "Patio 1", seatCount: "4" })
+    await addTable(page, "en", { name: "Patio 2", seatCount: "2" })
+  })
+
+  const searchInput = page.getByRole("textbox", {
+    name: translate("en", "settings.tables.search"),
+  })
+  const patio1Row = page.getByRole("link", { name: /Patio 1/ })
+  const patio2Row = page.getByRole("link", { name: /Patio 2/ })
+
+  await test.step("typing filters the list to matching tables", async () => {
+    await searchInput.fill("Patio 1")
+    await expect(patio1Row).toBeVisible()
+    await expect(patio2Row).not.toBeVisible()
+  })
+
+  await test.step("no match shows the empty-search message", async () => {
+    await searchInput.fill("nonexistent")
+    await expect(
+      page.getByText(translate("en", "settings.tables.emptySearch"))
+    ).toBeVisible()
+  })
+
+  await test.step("clearing the search restores the full list", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.tables.search.clear.aria"),
+      })
+      .click()
+    await expect(searchInput).toHaveValue("")
+    await expect(patio1Row).toBeVisible()
+    await expect(patio2Row).toBeVisible()
   })
 })

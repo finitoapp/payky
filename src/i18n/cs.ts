@@ -714,6 +714,7 @@ export const cs = {
   "settings.categories.empty.description":
     "Přidejte kategorie pro seskupení produktů a služeb, poté je přiřaďte ve formuláři položky.",
   "settings.categories.empty.title": "Zatím žádné kategorie",
+  "settings.categories.emptySearch": "Hledání nenašlo žádné kategorie.",
   "settings.categories.form.card.description":
     "Název zobrazený při seskupování položek a filtrování na účtu.",
   "settings.categories.form.card.title": "Detaily",
@@ -728,6 +729,8 @@ export const cs = {
   "settings.categories.form.saved.edit": "Kategorie upravena.",
   "settings.categories.form.title.create": "Přidat kategorii",
   "settings.categories.form.title.edit": "Upravit kategorii",
+  "settings.categories.search": "Hledat kategorie...",
+  "settings.categories.search.clear.aria": "Vymazat hledání",
   "settings.categories.title": "Kategorie",
   "settings.general": "OBECNÉ",
   "settings.tables.add": "Přidat stůl",
@@ -741,6 +744,7 @@ export const cs = {
   "settings.tables.empty.description":
     "Přidejte stoly ve svém podniku, abyste k nim mohli přiřazovat účty.",
   "settings.tables.empty.title": "Zatím žádné stoly",
+  "settings.tables.emptySearch": "Hledání nenašlo žádné stoly.",
   "settings.tables.form.card.description":
     "Název a počet míst zobrazené při přiřazování stolu k účtu.",
   "settings.tables.form.card.title": "Detaily",
@@ -761,6 +765,8 @@ export const cs = {
   "settings.tables.form.seatCount.placeholder": "např. 4",
   "settings.tables.form.title.create": "Přidat stůl",
   "settings.tables.form.title.edit": "Upravit stůl",
+  "settings.tables.search": "Hledat stoly...",
+  "settings.tables.search.clear.aria": "Vymazat hledání",
   "settings.tables.seatCount": "{value} míst",
   "settings.tables.title": "Stoly",
   "settings.items.add": "Přidat položku",
@@ -771,6 +777,7 @@ export const cs = {
     "Účty a platby, ve kterých byla položka {name} už použita, si ponechají vlastní kopii, ale nebude ji možné přidat do nových.",
   "settings.items.delete.confirm.title": "Smazat položku {name}?",
   "settings.items.description": "Správa prodávaných produktů a služeb",
+  "settings.items.emptySearch": "Hledání nenašlo žádné položky.",
   "settings.items.form.card.description":
     "Název, cena a nepovinný popis zobrazený při přidávání položky do účtu.",
   "settings.items.form.card.title": "Detaily",
@@ -817,6 +824,8 @@ export const cs = {
   "settings.items.form.sku.placeholder": "Nepovinné",
   "settings.items.form.title.create": "Přidat položku",
   "settings.items.form.title.edit": "Upravit položku",
+  "settings.items.search": "Hledat položky...",
+  "settings.items.search.clear.aria": "Vymazat hledání",
   "settings.items.title": "Položky",
   "settings.language.czech.description": "Používat české překlady",
   "settings.language.czech.title": "Čeština",

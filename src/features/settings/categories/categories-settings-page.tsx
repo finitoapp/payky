@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import { FolderIcon, PlusIcon } from "lucide-react"
 
+import { useMemo, useState } from "react"
+
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { SearchInput } from "@/components/search-input.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
@@ -11,6 +14,15 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export function CategoriesSettingsPage() {
   const { t } = useTranslation()
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
+  const [search, setSearch] = useState("")
+  const filteredCategories = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return query === ""
+      ? categories
+      : categories.filter((category) =>
+          category.name.toLowerCase().includes(query)
+        )
+  }, [categories, search])
 
   return (
     <>
@@ -33,18 +45,33 @@ export function CategoriesSettingsPage() {
         }
       />
 
+      {categories.length > 0 && (
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={t("settings.categories.search")}
+          clearAriaLabel={t("settings.categories.search.clear.aria")}
+        />
+      )}
+
       <VerticalNav
         empty={
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <p className="text-lg font-semibold">
-              {t("settings.categories.empty.title")}
+          categories.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <p className="text-lg font-semibold">
+                {t("settings.categories.empty.title")}
+              </p>
+              <p className="text-balance text-sm text-muted-foreground">
+                {t("settings.categories.empty.description")}
+              </p>
+            </div>
+          ) : (
+            <p className="py-10 text-center text-muted-foreground">
+              {t("settings.categories.emptySearch")}
             </p>
-            <p className="text-balance text-sm text-muted-foreground">
-              {t("settings.categories.empty.description")}
-            </p>
-          </div>
+          )
         }
-        items={categories.map((category) => ({
+        items={filteredCategories.map((category) => ({
           id: category.id,
           kind: "link" as const,
           to: "/settings/categories/$catalogCategoryId",

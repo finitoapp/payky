@@ -1,5 +1,5 @@
 import { useStore } from "jotai"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
@@ -96,6 +96,20 @@ export function useCartBill({
   )
   const [pending, setPending] = useState(false)
 
+  // Guards `ensureBillId` against creating more than one bill when several
+  // adds are triggered before `billId` prop flips from undefined to the
+  // created id (re-render lag, or two rapid scans in scan mode) — without
+  // it, each call sees `billId === undefined` and starts its own
+  // `createBillAtEnd`. Reset whenever the caller's `billId` prop goes back
+  // to undefined (e.g. after discarding this cart), so a later add starts a
+  // fresh bill instead of reusing a stale resolved promise.
+  const pendingBillCreationRef = useRef<Promise<BillId> | null>(null)
+  useEffect(() => {
+    if (billId === undefined) {
+      pendingBillCreationRef.current = null
+    }
+  }, [billId])
+
   const record = useCallback((entry: CartHistoryEntry) => {
     setUndoStack((stack) => [...stack, entry])
     setRedoStack([])
@@ -103,38 +117,52 @@ export function useCartBill({
 
   const ensureBillId = useCallback(async (): Promise<BillId> => {
     if (billId !== undefined) return billId
+    if (pendingBillCreationRef.current !== null) {
+      return pendingBillCreationRef.current
+    }
 
-    const { device } = await jotaiStore.get(accountAtom)
-    await using run = appRun()
-    const created = await run.ok(
-      createBillAtEnd({
-        deviceId: device.id,
-        label: null,
-        tableId,
-        currency,
-      })
-    )
+    const creation = (async () => {
+      const { device } = await jotaiStore.get(accountAtom)
+      await using run = appRun()
+      const created = await run.ok(
+        createBillAtEnd({
+          deviceId: device.id,
+          label: null,
+          tableId,
+          currency,
+        })
+      )
 
-    // Warm the read-side queries the newly mounted bill view will run
-    // before flipping `billId`, so they're already resolved and `use()`
-    // doesn't suspend — an uncached suspend here bubbled up to the route's
-    // Suspense boundary and blanked the whole page for a beat. Keep this in
-    // sync with every query the bill view's `use()` reads unconditionally
-    // once `billId` is set, including `usePendingPayments`'s and
-    // `useBillStatus`'s — the latter also reads `billLinesByBillIdQuery`/
-    // `itemsQuery` (already listed here for line summaries), so a brand-new
-    // bill's derived status is never computed from an unresolved query.
-    await Promise.all([
-      evolu.loadQuery(billByIdQuery(created)),
-      evolu.loadQuery(billLinesByBillIdQuery(created)),
-      evolu.loadQuery(itemsQuery),
-      evolu.loadQuery(paymentsByBillIdQuery(created)),
-      evolu.loadQuery(claimedPaymentsByBillIdQuery(created)),
-      evolu.loadQuery(claimedTransactionsByBillIdQuery(created)),
-    ])
+      // Warm the read-side queries the newly mounted bill view will run
+      // before flipping `billId`, so they're already resolved and `use()`
+      // doesn't suspend — an uncached suspend here bubbled up to the route's
+      // Suspense boundary and blanked the whole page for a beat. Keep this
+      // in sync with every query the bill view's `use()` reads
+      // unconditionally once `billId` is set, including
+      // `usePendingPayments`'s and `useBillStatus`'s — the latter also
+      // reads `billLinesByBillIdQuery`/`itemsQuery` (already listed here
+      // for line summaries), so a brand-new bill's derived status is never
+      // computed from an unresolved query.
+      await Promise.all([
+        evolu.loadQuery(billByIdQuery(created)),
+        evolu.loadQuery(billLinesByBillIdQuery(created)),
+        evolu.loadQuery(itemsQuery),
+        evolu.loadQuery(paymentsByBillIdQuery(created)),
+        evolu.loadQuery(claimedPaymentsByBillIdQuery(created)),
+        evolu.loadQuery(claimedTransactionsByBillIdQuery(created)),
+      ])
 
-    onBillCreated(created)
-    return created
+      onBillCreated(created)
+      return created
+    })()
+    pendingBillCreationRef.current = creation
+
+    try {
+      return await creation
+    } catch (error) {
+      pendingBillCreationRef.current = null
+      throw error
+    }
   }, [appRun, billId, currency, evolu, jotaiStore, onBillCreated, tableId])
 
   const addQuantity = useCallback(

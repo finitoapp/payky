@@ -326,6 +326,7 @@ describe("bill actions", () => {
         currency: "CZK",
         unitAmount: NonNegativeInteger(5_900),
         sortOrder: NonNegativeInteger(10),
+        scanCode: null,
       })
     )
 

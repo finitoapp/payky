@@ -71,6 +71,19 @@ export const en = {
   "bill.discard.confirm.title": "Discard this cart?",
   "bill.emptySearch": "No items match your search.",
   "bill.itemsCount": "Items: {value}",
+  "bill.scan.collision.description":
+    "This code is assigned to more than one item. Choose the one you meant to add.",
+  "bill.scan.collision.title": "Multiple items match",
+  "bill.scan.create.description":
+    "No item is assigned to the code {code}. Add it now to keep scanning.",
+  "bill.scan.create.save": "Add item",
+  "bill.scan.create.title": "Add scanned item",
+  "bill.scan.lastScanned.empty": "Scan an item to add it to the cart.",
+  "bill.scan.toggle.aria": "Scan items",
+  "bill.scan.unknown.cancel": "Keep scanning",
+  "bill.scan.unknown.create": "Add item",
+  "bill.scan.unknown.description": "No item is assigned to the code {code}.",
+  "bill.scan.unknown.title": "Unknown code",
   "bill.search": "Search items...",
   "bill.search.clear.aria": "Clear search",
   "bill.summary.clear": "Clear",
@@ -413,6 +426,15 @@ export const en = {
   "paymentDetail.transaction.sparkTransferId": "Spark transfer",
   "paymentDetail.transaction.variableSymbol": "Variable symbol",
   "paymentDetail.updatedAt": "Updated at",
+  "scanner.dialog.title": "Scan code",
+  "scanner.error.generic":
+    "Couldn't access the camera. Enter the code manually.",
+  "scanner.error.insecureContext":
+    "Camera access requires a secure connection. Enter the code manually.",
+  "scanner.error.noCamera": "No camera was found on this device.",
+  "scanner.error.permissionDenied":
+    "Camera access was denied. Allow camera access to scan, or enter the code manually.",
+  "scanner.error.unsupported": "Scanning isn't supported on this device.",
   "settings.about.app.title": "Payky",
   "settings.about.github.description":
     "Join the development and follow the project",
@@ -772,6 +794,11 @@ export const en = {
   "settings.items.form.save.edit": "Save changes",
   "settings.items.form.saved.create": "Item added.",
   "settings.items.form.saved.edit": "Item updated.",
+  "settings.items.form.scanCode.duplicate": "Already assigned to {name}.",
+  "settings.items.form.scanCode.invalid": "Enter a valid code.",
+  "settings.items.form.scanCode.label": "Scan code",
+  "settings.items.form.scanCode.placeholder": "e.g. 8594001234567",
+  "settings.items.form.scanCode.scan.aria": "Scan code",
   "settings.items.form.title.create": "Add item",
   "settings.items.form.title.edit": "Edit item",
   "settings.items.title": "Items",

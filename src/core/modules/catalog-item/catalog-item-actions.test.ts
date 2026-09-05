@@ -37,6 +37,7 @@ describe("catalog item actions", () => {
         currency: "CZK",
         unitAmount: NonNegativeInteger(5900),
         sortOrder: NonNegativeInteger(10),
+        scanCode: null,
       })
     )
 
@@ -51,6 +52,7 @@ describe("catalog item actions", () => {
           currency: "CZK",
           unitAmount: 5900,
           sortOrder: 10,
+          scanCode: null,
         },
       ])
 
@@ -78,8 +80,53 @@ describe("catalog item actions", () => {
           currency: "CZK",
           unitAmount: 6900,
           sortOrder: 10,
+          scanCode: null,
         },
       ])
+  }, 15_000)
+
+  test("persists and clears a scan code", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    const id = await run.ok(
+      createCatalogItem({
+        deviceId: null,
+        categoryId: null,
+        name: NonEmptyString255("Coffee"),
+        description: null,
+        currency: "CZK",
+        unitAmount: NonNegativeInteger(5900),
+        sortOrder: NonNegativeInteger(0),
+        scanCode: NonEmptyString255("8594001234567"),
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(catalogItemByIdQuery(id)))
+      .toMatchObject([{ id, scanCode: "8594001234567" }])
+
+    await run.ok(
+      updateCatalogItem({
+        id,
+        scanCode: NonEmptyString255("8594007654321"),
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(catalogItemByIdQuery(id)))
+      .toMatchObject([{ id, scanCode: "8594007654321" }])
+
+    await run.ok(updateCatalogItem({ id, scanCode: null }))
+
+    await expect
+      .poll(() => evolu.loadQuery(catalogItemByIdQuery(id)))
+      .toMatchObject([{ id, scanCode: null }])
   }, 15_000)
 
   test("appends catalog items with an increasing sortOrder", async () => {
@@ -99,6 +146,7 @@ describe("catalog item actions", () => {
         description: null,
         currency: "CZK",
         unitAmount: NonNegativeInteger(5900),
+        scanCode: null,
       })
     )
     const secondId = await run.ok(
@@ -109,6 +157,7 @@ describe("catalog item actions", () => {
         description: null,
         currency: "CZK",
         unitAmount: NonNegativeInteger(4900),
+        scanCode: null,
       })
     )
 
@@ -138,6 +187,7 @@ describe("catalog item actions", () => {
         currency: "CZK",
         unitAmount: NonNegativeInteger(5900),
         sortOrder: NonNegativeInteger(0),
+        scanCode: null,
       })
     )
 

@@ -17,6 +17,7 @@ export const catalogItem = {
   currency: FiatCurrencySchema,
   unitAmount: NonNegativeIntegerSchema,
   sortOrder: NonNegativeIntegerSchema,
+  scanCode: NonEmptyString255Schema.nullable(),
 } as const
 
 export type CatalogItem = typeof catalogItem

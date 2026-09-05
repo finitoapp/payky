@@ -1,4 +1,12 @@
-import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
+import {
+  addCatalogItem,
+  expect,
+  gotoPage,
+  nameParam,
+  reloadPage,
+  test,
+  translate,
+} from "./fixtures.ts"
 
 test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
   await test.step("open item settings and see the empty state", () =>
@@ -30,6 +38,11 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
         name: translate("en", "settings.items.form.price.label"),
       })
       .fill("59")
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.scanCode.label"),
+      })
+      .fill("8594001234567")
     await page
       .getByRole("button", {
         name: translate("en", "settings.items.form.save.create"),
@@ -83,6 +96,11 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
         name: translate("en", "settings.items.form.name.label"),
       })
     ).toHaveValue("Espresso")
+    await expect(
+      page.getByRole("textbox", {
+        name: translate("en", "settings.items.form.scanCode.label"),
+      })
+    ).toHaveValue("8594001234567")
   })
 
   await test.step("delete the item and confirm", async () => {
@@ -103,5 +121,68 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
     await expect(
       page.getByText(translate("en", "settings.items.empty.title"))
     ).toBeVisible()
+  })
+})
+
+test("shows a non-blocking warning for a duplicate scan code but still saves", async ({
+  seededPage: page,
+}) => {
+  // `scanCode` uniqueness can't be enforced (CRDT/multi-device), so a
+  // collision is a heads-up next to the field, not a validation error that
+  // blocks saving — see `findCatalogItemsByScanCode`.
+  await test.step("seed an item with a scan code", async () => {
+    await addCatalogItem(page, "en", {
+      name: "Coffee",
+      price: "5",
+      scanCode: "8594001234567",
+    })
+  })
+
+  await test.step("start a second item with the same scan code", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "settings.items.add") })
+      .click()
+    await page
+      .getByRole("heading", {
+        name: translate("en", "settings.items.form.title.create"),
+      })
+      .waitFor()
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.name.label"),
+      })
+      .fill("Cocoa")
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.price.label"),
+      })
+      .fill("4")
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.scanCode.label"),
+      })
+      .fill("8594001234567")
+  })
+
+  await test.step("the warning names the other item, and saving still succeeds", async () => {
+    await expect(
+      page.getByText(
+        nameParam("settings.items.form.scanCode.duplicate", "Coffee")
+      )
+    ).toBeVisible()
+
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.items.form.save.create"),
+      })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "settings.items.title") })
+      .waitFor()
+  })
+
+  await test.step("both items exist in the list", async () => {
+    await expect(page.getByRole("link", { name: "Coffee" })).toBeVisible()
+    await expect(page.getByRole("link", { name: "Cocoa" })).toBeVisible()
   })
 })

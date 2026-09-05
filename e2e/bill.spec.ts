@@ -781,3 +781,71 @@ test("the bill page's own collision message resolves directly, without going thr
     fullPage: true,
   })
 })
+
+test("adding two different items in quick succession lazily creates only one bill", async ({
+  seededPage: page,
+}) => {
+  // Regression test for a race in `useCartBill`'s `ensureBillId`: before a
+  // fresh cart's first add resolves, `billId` is still undefined on the
+  // client, so a second add fired before that first one's `createBillAtEnd`
+  // and route navigation land used to see `billId === undefined` too and
+  // create its own separate bill — silently losing one of the two items on
+  // an orphaned bill. Firing both adds without awaiting either in between
+  // reproduces that race window.
+  await test.step("seed two catalog items", async () => {
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+    await addCatalogItem(page, "en", { name: "Tea", price: "3" })
+  })
+
+  await test.step("open a fresh cart", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+  })
+
+  await test.step("add both items without waiting for the first to settle", async () => {
+    await Promise.all([
+      page
+        .getByRole("button", {
+          name: nameParam("bill.brick.add.aria", "Coffee"),
+        })
+        .click(),
+      page
+        .getByRole("button", { name: nameParam("bill.brick.add.aria", "Tea") })
+        .click(),
+    ])
+  })
+
+  await test.step("both items end up on the same, single bill", async () => {
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("billId"))
+      .not.toBeNull()
+
+    const summaryTrigger = page.getByTestId("bill-summary-trigger")
+    await expect(summaryTrigger).toContainText(
+      translateValue("en", "bill.itemsCount", 2)
+    )
+
+    await summaryTrigger.click()
+    const summaryPanel = page.getByTestId("bill-summary-panel")
+    await expect(summaryPanel.getByText("Coffee")).toBeVisible()
+    await expect(summaryPanel.getByText("Tea")).toBeVisible()
+  })
+
+  await test.step("discarding it leaves no other draft bill behind", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "bill.discard") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "bill.discard.confirm.confirm"),
+      })
+      .click()
+    await page.getByTestId("no-table-tile").waitFor()
+    await expect(page.getByTestId("no-table-tile")).toContainText(
+      translate("en", "tables.tile.free")
+    )
+    await expect(
+      page.getByTestId("no-table-tile").getByRole("link", { name: /^Bill #/ })
+    ).toHaveCount(0)
+  })
+})

@@ -354,6 +354,7 @@ export async function addCatalogItem(
     readonly name: string
     readonly price: string
     readonly categoryName?: string
+    readonly scanCode?: string
   }
 ): Promise<void> {
   await gotoPage(page, "/settings/items", language, "settings.items.title")
@@ -383,6 +384,13 @@ export async function addCatalogItem(
       .click()
     await page.getByRole("option", { name: input.categoryName }).click()
   }
+  if (input.scanCode !== undefined) {
+    await page
+      .getByRole("textbox", {
+        name: translate(language, "settings.items.form.scanCode.label"),
+      })
+      .fill(input.scanCode)
+  }
   await page
     .getByRole("button", {
       name: translate(language, "settings.items.form.save.create"),
@@ -391,6 +399,32 @@ export async function addCatalogItem(
   await page
     .getByRole("heading", { name: translate(language, "settings.items.title") })
     .waitFor()
+}
+
+/** Toggles bill scan mode on via its icon next to the search input. Assumes the page is already on the bill cart view. */
+export async function enterBillScanMode(
+  page: Page,
+  language: Language
+): Promise<void> {
+  await page
+    .getByRole("button", { name: translate(language, "bill.scan.toggle.aria") })
+    .click()
+}
+
+/**
+ * Simulates the camera decoding `rawValue` via `window.__e2eInjectScanCode`
+ * (see src/components/scan-code-scanner.tsx) — there is no real camera or
+ * barcode to scan in a test run. Assumes a `ScanCodeScanner` is currently
+ * mounted (e.g. bill scan mode is on, via `enterBillScanMode`).
+ */
+export async function injectScanCode(
+  page: Page,
+  rawValue: string
+): Promise<void> {
+  await page.waitForFunction(
+    () => typeof window.__e2eInjectScanCode === "function"
+  )
+  await page.evaluate((value) => window.__e2eInjectScanCode?.(value), rawValue)
 }
 
 /** Adds a catalog category through the real settings UI (used to seed categories for bill filter specs). */

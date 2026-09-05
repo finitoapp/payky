@@ -73,6 +73,20 @@ export const sk = {
   "bill.discard.confirm.title": "Zahodiť tento košík?",
   "bill.emptySearch": "Vyhľadávanie nenašlo žiadne položky.",
   "bill.itemsCount": "Položky: {value}",
+  "bill.scan.collision.description":
+    "Tomuto kódu zodpovedá viac položiek. Vyberte tú, ktorú ste chceli pridať.",
+  "bill.scan.collision.title": "Zodpovedá viac položiek",
+  "bill.scan.create.description":
+    "Kódu {code} nie je priradená žiadna položka. Pridajte ju a pokračujte v skenovaní.",
+  "bill.scan.create.save": "Pridať položku",
+  "bill.scan.create.title": "Pridať naskenovanú položku",
+  "bill.scan.lastScanned.empty": "Naskenujte položku a pridajte ju do účtu.",
+  "bill.scan.toggle.aria": "Skenovať položky",
+  "bill.scan.unknown.cancel": "Pokračovať v skenovaní",
+  "bill.scan.unknown.create": "Pridať položku",
+  "bill.scan.unknown.description":
+    "Kódu {code} nie je priradená žiadna položka.",
+  "bill.scan.unknown.title": "Neznámy kód",
   "bill.search": "Hľadať položky...",
   "bill.search.clear.aria": "Vymazať hľadanie",
   "bill.summary.clear": "Vyprázdniť",
@@ -415,6 +429,16 @@ export const sk = {
   "paymentDetail.transaction.sparkTransferId": "Spark transfer",
   "paymentDetail.transaction.variableSymbol": "Variabilný symbol",
   "paymentDetail.updatedAt": "Upravené",
+  "scanner.dialog.title": "Naskenovať kód",
+  "scanner.error.generic":
+    "Nepodarilo sa získať prístup ku kamere. Zadajte kód ručne.",
+  "scanner.error.insecureContext":
+    "Prístup ku kamere vyžaduje zabezpečené pripojenie. Zadajte kód ručne.",
+  "scanner.error.noCamera": "Na tomto zariadení nebola nájdená žiadna kamera.",
+  "scanner.error.permissionDenied":
+    "Prístup ku kamere bol zamietnutý. Povoľte prístup ku kamere, alebo zadajte kód ručne.",
+  "scanner.error.unsupported":
+    "Skenovanie nie je na tomto zariadení podporované.",
   "settings.about.app.title": "Payky",
   "settings.about.github.description": "Zapojte sa do vývoja aplikácie",
   "settings.about.github.title": "Zdrojový kód na GitHube",
@@ -774,6 +798,11 @@ export const sk = {
   "settings.items.form.save.edit": "Uložiť zmeny",
   "settings.items.form.saved.create": "Položka bola pridaná.",
   "settings.items.form.saved.edit": "Položka bola aktualizovaná.",
+  "settings.items.form.scanCode.duplicate": "Už je priradený položke {name}.",
+  "settings.items.form.scanCode.invalid": "Zadajte platný kód.",
+  "settings.items.form.scanCode.label": "Kód na skenovanie",
+  "settings.items.form.scanCode.placeholder": "napr. 8594001234567",
+  "settings.items.form.scanCode.scan.aria": "Naskenovať kód",
   "settings.items.form.title.create": "Pridať položku",
   "settings.items.form.title.edit": "Upraviť položku",
   "settings.items.title": "Položky",

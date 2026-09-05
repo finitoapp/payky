@@ -1,9 +1,10 @@
 import { useRouter } from "@tanstack/react-router"
-import { Trash2Icon } from "lucide-react"
-import { useId, useState } from "react"
+import { ScanLineIcon, Trash2Icon } from "lucide-react"
+import { useId, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { ScanCodeScannerDialog } from "@/components/scan-code-scanner-dialog.tsx"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button.tsx"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -40,11 +42,15 @@ import {
   deleteCatalogItem,
   updateCatalogItem,
 } from "@/core/modules/catalog-item/catalog-item-actions.ts"
-import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import {
+  catalogItemByIdQuery,
+  catalogItemsQuery,
+} from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import {
   CatalogItemId,
   type CatalogItemId as CatalogItemIdType,
 } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { findCatalogItemsByScanCode } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import {
   decimalAmountToMinorUnits,
   minorUnitsToDecimalString,
@@ -158,7 +164,9 @@ function CatalogItemForm({
   const priceInputId = useId()
   const currencyInputId = useId()
   const categoryInputId = useId()
+  const scanCodeInputId = useId()
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
+  const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const [name, setName] = useState(item?.name ?? "")
   const [description, setDescription] = useState(item?.description ?? "")
   const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
@@ -175,11 +183,27 @@ function CatalogItemForm({
           currency: item.currency,
         })
   )
+  const [scanCode, setScanCode] = useState(item?.scanCode ?? "")
+  const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
   const [priceError, setPriceError] = useState<TranslationKey | null>(null)
   const [descriptionError, setDescriptionError] =
     useState<TranslationKey | null>(null)
+  const [scanCodeError, setScanCodeError] = useState<TranslationKey | null>(
+    null
+  )
   const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  // Uniqueness can't be enforced (multiple devices can assign the same code
+  // before syncing), so this is a heads-up shown next to the field, not a
+  // blocking validation error.
+  const scanCodeCollisions = useMemo(
+    () =>
+      findCatalogItemsByScanCode(catalogItems, scanCode).filter(
+        (match) => match.id !== item?.id
+      ),
+    [catalogItems, scanCode, item?.id]
+  )
 
   return (
     <div className="flex flex-col gap-5">
@@ -206,6 +230,7 @@ function CatalogItemForm({
           setNameError(null)
           setPriceError(null)
           setDescriptionError(null)
+          setScanCodeError(null)
           resetSaved()
 
           const trimmedName = name.trim()
@@ -234,6 +259,15 @@ function CatalogItemForm({
             return
           }
 
+          const trimmedScanCode = scanCode.trim()
+          const scanCodeResult = trimmedScanCode
+            ? NonEmptyString255Schema.safeParse(trimmedScanCode)
+            : null
+          if (scanCodeResult?.success === false) {
+            setScanCodeError("settings.items.form.scanCode.invalid")
+            return
+          }
+
           void submit(async () => {
             await using run = appRun()
 
@@ -246,6 +280,7 @@ function CatalogItemForm({
                   description: descriptionResult?.data ?? null,
                   currency,
                   unitAmount,
+                  scanCode: scanCodeResult?.data ?? null,
                 })
               )
               router.history.back()
@@ -262,6 +297,7 @@ function CatalogItemForm({
                 description: descriptionResult?.data ?? null,
                 currency,
                 unitAmount,
+                scanCode: scanCodeResult?.data ?? null,
               })
             )
           })
@@ -397,8 +433,61 @@ function CatalogItemForm({
               </SelectContent>
             </Select>
           </Field>
+
+          <Field data-invalid={scanCodeError !== null}>
+            <FieldLabel htmlFor={scanCodeInputId}>
+              {t("settings.items.form.scanCode.label")}
+            </FieldLabel>
+            <div className="relative">
+              <Input
+                id={scanCodeInputId}
+                value={scanCode}
+                disabled={pending}
+                aria-invalid={scanCodeError !== null}
+                autoComplete="off"
+                className="pr-12"
+                placeholder={t("settings.items.form.scanCode.placeholder")}
+                onChange={(event) => {
+                  setScanCode(event.currentTarget.value)
+                  setScanCodeError(null)
+                  resetSaved()
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full"
+                aria-label={t("settings.items.form.scanCode.scan.aria")}
+                disabled={pending}
+                onClick={() => setScannerDialogOpen(true)}
+              >
+                <ScanLineIcon />
+              </Button>
+            </div>
+            {scanCodeError === null && scanCodeCollisions.length > 0 && (
+              <FieldDescription>
+                {t("settings.items.form.scanCode.duplicate", {
+                  name: scanCodeCollisions
+                    .map((match) => match.name)
+                    .join(", "),
+                })}
+              </FieldDescription>
+            )}
+            <FieldError>{scanCodeError ? t(scanCodeError) : null}</FieldError>
+          </Field>
         </FieldGroup>
       </SettingsFormCard>
+
+      <ScanCodeScannerDialog
+        open={scannerDialogOpen}
+        onOpenChange={setScannerDialogOpen}
+        onScan={(rawValue) => {
+          setScanCode(rawValue)
+          setScanCodeError(null)
+          resetSaved()
+        }}
+      />
 
       {mode === "edit" && item !== undefined && (
         <AlertDialog>

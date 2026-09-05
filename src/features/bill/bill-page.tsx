@@ -3,10 +3,9 @@ import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import {
   AlertTriangleIcon,
   ChevronDown,
-  Minus,
   Package,
-  Plus,
   Redo2,
+  ScanLineIcon,
   Search,
   ShoppingBag,
   Table2,
@@ -40,15 +39,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
@@ -71,13 +61,15 @@ import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
   NonNegativeInteger,
-  PositiveNumber,
+  type PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
+import { BillScanView } from "@/features/bill/bill-scan-view.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
+import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
@@ -137,6 +129,7 @@ export function BillPage({
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [scanMode, setScanMode] = useState(false)
 
   const sharedProps = {
     cart,
@@ -147,6 +140,8 @@ export function BillPage({
     onPendingTableIdChange: setPendingTableId,
     summaryOpen,
     onSummaryOpenChange: setSummaryOpen,
+    scanMode,
+    onScanModeChange: setScanMode,
   }
 
   return billId === undefined ? (
@@ -391,6 +386,8 @@ interface SharedCartViewProps {
   readonly onPendingTableIdChange: (tableId: TableId | null) => void
   readonly summaryOpen: boolean
   readonly onSummaryOpenChange: (open: boolean) => void
+  readonly scanMode: boolean
+  readonly onScanModeChange: (value: boolean) => void
 }
 
 function BillCartView({
@@ -406,6 +403,8 @@ function BillCartView({
   onPendingTableIdChange,
   summaryOpen,
   onSummaryOpenChange,
+  scanMode,
+  onScanModeChange,
 }: {
   readonly billId: BillId | undefined
   readonly currency: FiatCurrencyType
@@ -551,29 +550,42 @@ function BillCartView({
           onAssign={(nextTableId) => void handleAssignTable(nextTableId)}
         />
 
-        <div className="relative mt-2">
-          <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            aria-label={t("bill.search")}
-            placeholder={t("bill.search")}
-            value={search}
-            autoComplete="off"
-            className="h-12 border-none bg-card pl-12 text-base"
-            onChange={(event) => onSearchChange(event.currentTarget.value)}
-          />
-          {search !== "" && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full"
-              aria-label={t("bill.search.clear.aria")}
-              onClick={() => onSearchChange("")}
-            >
-              <X />
-            </Button>
-          )}
+        <div className="mt-2 flex gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label={t("bill.search")}
+              placeholder={t("bill.search")}
+              value={search}
+              autoComplete="off"
+              className="h-12 bg-card pl-12 text-base"
+              onChange={(event) => onSearchChange(event.currentTarget.value)}
+            />
+            {search !== "" && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full"
+                aria-label={t("bill.search.clear.aria")}
+                onClick={() => onSearchChange("")}
+              >
+                <X />
+              </Button>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant={scanMode ? "default" : "outline"}
+            size="icon"
+            className="size-12 shrink-0"
+            aria-pressed={scanMode}
+            aria-label={t("bill.scan.toggle.aria")}
+            onClick={() => onScanModeChange(!scanMode)}
+          >
+            <ScanLineIcon />
+          </Button>
         </div>
-        {availableCategories.length > 0 && (
+        {!scanMode && availableCategories.length > 0 && (
           <div className="mt-2 overflow-x-auto">
             <ToggleGroup<CategoryFilter>
               value={[categoryFilter]}
@@ -603,15 +615,29 @@ function BillCartView({
           </div>
         )}
       </div>
-      <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {currencyItems.length === 0 ? (
+      <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain mt-2">
+        {scanMode ? (
+          <BillScanView
+            currencyItems={currencyItems}
+            categories={categories}
+            currency={currency}
+            summaries={summaries}
+            disabled={cart.pending}
+            locale={locale}
+            onAdd={(catalogItem) => void cart.addOne(catalogItem)}
+            onAddQuantity={(catalogItem, quantity) =>
+              void cart.addQuantity(catalogItem, quantity)
+            }
+            onRemove={(summary) => void cart.removeOne(summary)}
+          />
+        ) : currencyItems.length === 0 ? (
           <BillEmptyCatalog />
         ) : filteredItems.length === 0 ? (
           <p className="mt-10 text-center text-muted-foreground">
             {t("bill.emptySearch")}
           </p>
         ) : (
-          <div className="mt-2 grid grid-cols-2 gap-2 pb-4">
+          <div className="grid grid-cols-2 gap-2 pb-4">
             {filteredItems.map((catalogItem) => (
               <ItemBrick
                 key={catalogItem.id}
@@ -798,7 +824,7 @@ function BillEmptyCatalog() {
   const { t } = useTranslation()
 
   return (
-    <div className="mt-10 flex flex-col items-center gap-3 text-center">
+    <div className="flex flex-col items-center gap-3 text-center">
       <p className="text-lg font-semibold">{t("settings.items.empty.title")}</p>
       <p className="max-w-72 text-balance text-sm text-muted-foreground">
         {t("settings.items.empty.description")}
@@ -880,9 +906,6 @@ function ItemBrick({
   readonly onAddQuantity: (quantity: PositiveNumber) => void
   readonly onRemove: (summary: BillLineSummary) => void
 }) {
-  const { t } = useTranslation()
-  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
-  const [quantityInput, setQuantityInput] = useState("")
   const matchingSummaries = useMemo(
     () =>
       summaries.filter((summary) => summary.catalogItemId === catalogItem.id),
@@ -896,20 +919,8 @@ function ItemBrick({
     () => getLatestCatalogItemSummary(matchingSummaries, catalogItem.id),
     [catalogItem.id, matchingSummaries]
   )
-  const quantityPulseControls = useChangePulse(quantity)
 
   const inCart = quantity > 0
-
-  const parsedQuantityInput = Number(quantityInput)
-  const canConfirmQuantity =
-    Number.isInteger(parsedQuantityInput) && parsedQuantityInput > 0
-
-  const handleConfirmQuantity = () => {
-    if (!canConfirmQuantity) return
-
-    onAddQuantity(PositiveNumber(parsedQuantityInput))
-    setQuantityDialogOpen(false)
-  }
 
   return (
     <Card
@@ -940,98 +951,18 @@ function ItemBrick({
           )}
         </p>
       </div>
-      <div
-        className={cn(
-          "flex items-center justify-end gap-1 self-end rounded-md bg-muted p-1",
-          inCart && "bg-primary-foreground/15"
-        )}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-10 rounded-full"
-          aria-label={t("bill.brick.remove.aria", {
-            name: catalogItem.name,
-          })}
-          disabled={disabled || quantity === 0}
-          onClick={() => {
-            if (latestSummary === undefined) return
-
-            vibrateOnButtonPress()
-            onRemove(latestSummary)
-          }}
-        >
-          <Minus />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-10 min-w-10 rounded-full px-2 font-semibold tabular-nums"
-          aria-label={t("bill.brick.quantity.trigger.aria", {
-            name: catalogItem.name,
-          })}
-          disabled={disabled}
-          onClick={() => {
-            setQuantityInput(quantity > 0 ? String(quantity) : "")
-            setQuantityDialogOpen(true)
-          }}
-        >
-          <motion.span animate={quantityPulseControls}>{quantity}</motion.span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-10 rounded-full"
-          aria-label={t("bill.brick.add.aria", { name: catalogItem.name })}
-          disabled={disabled}
-          onClick={() => {
-            vibrateOnButtonPress()
-            onAdd()
-          }}
-        >
-          <Plus />
-        </Button>
-      </div>
-
-      <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{catalogItem.name}</DialogTitle>
-            <DialogDescription>
-              {t("bill.brick.quantity.description")}
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            aria-label={t("bill.brick.quantity.input.aria")}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            value={quantityInput}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              if (/^\d*$/.test(nextValue)) setQuantityInput(nextValue)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") handleConfirmQuantity()
-            }}
-          />
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" />}
-              onClick={() => setQuantityInput("")}
-            >
-              {t("bill.brick.quantity.cancel")}
-            </DialogClose>
-            <Button
-              disabled={!canConfirmQuantity}
-              onClick={handleConfirmQuantity}
-            >
-              {t("bill.brick.quantity.confirm")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ItemQuantityControls
+        name={catalogItem.name}
+        quantity={quantity}
+        disabled={disabled}
+        inCart={inCart}
+        onAdd={onAdd}
+        onAddQuantity={onAddQuantity}
+        onRemove={() => {
+          if (latestSummary === undefined) return
+          onRemove(latestSummary)
+        }}
+      />
     </Card>
   )
 }

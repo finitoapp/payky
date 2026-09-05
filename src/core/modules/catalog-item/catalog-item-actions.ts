@@ -34,6 +34,7 @@ export const createCatalogItem =
           currency: input.currency,
           unitAmount: input.unitAmount,
           sortOrder: input.sortOrder,
+          scanCode: input.scanCode,
         },
         { ...options, ownerId: evoluOwnerId }
       )

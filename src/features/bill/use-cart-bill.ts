@@ -96,6 +96,40 @@ export function useCartBill({
   )
   const [pending, setPending] = useState(false)
 
+  // Every cart mutation runs through this promise chain, so taps are queued
+  // and applied in tap order instead of racing each other. The item grid
+  // must therefore never disable its "+"/"-" controls while a mutation is in
+  // flight: a button that turns `disabled` between a tap's press and the
+  // browser dispatching its click event swallows that click entirely, so the
+  // second of two rapid taps was silently lost. Ordering matters here beyond
+  // safety — the bill-line ledger is append-only and undo/redo replays it in
+  // reverse, so out-of-order appends would make undo pop the wrong entry.
+  const queueRef = useRef<Promise<void>>(Promise.resolve())
+  const pendingCountRef = useRef(0)
+
+  const runQueued = useCallback(
+    async (operation: () => Promise<void>): Promise<void> => {
+      pendingCountRef.current += 1
+      setPending(true)
+
+      // Both handlers run `operation`: a failed predecessor must not cancel
+      // the taps queued behind it.
+      const queued = queueRef.current.then(operation, operation)
+      queueRef.current = queued.then(
+        () => undefined,
+        () => undefined
+      )
+
+      try {
+        await queued
+      } finally {
+        pendingCountRef.current -= 1
+        if (pendingCountRef.current === 0) setPending(false)
+      }
+    },
+    []
+  )
+
   // Guards `ensureBillId` against creating more than one bill when several
   // adds are triggered before `billId` prop flips from undefined to the
   // created id (re-render lag, or two rapid scans in scan mode) — without
@@ -166,9 +200,8 @@ export function useCartBill({
   }, [appRun, billId, currency, evolu, jotaiStore, onBillCreated, tableId])
 
   const addQuantity = useCallback(
-    async (catalogItem: CatalogItemRow, quantity: PositiveNumber) => {
-      setPending(true)
-      try {
+    (catalogItem: CatalogItemRow, quantity: PositiveNumber) =>
+      runQueued(async () => {
         const targetBillId = await ensureBillId()
         const { device } = await jotaiStore.get(accountAtom)
         await using run = appRun()
@@ -199,11 +232,8 @@ export function useCartBill({
             totalAmount: NonNegativeInteger(catalogItem.unitAmount * quantity),
           },
         ])
-      } finally {
-        setPending(false)
-      }
-    },
-    [appRun, console, ensureBillId, jotaiStore, record, t]
+      }),
+    [appRun, console, ensureBillId, jotaiStore, record, runQueued, t]
   )
 
   const addOne = useCallback(
@@ -216,8 +246,7 @@ export function useCartBill({
     async (summary: BillLineSummary) => {
       if (billId === undefined) return
 
-      setPending(true)
-      try {
+      await runQueued(async () => {
         const { device } = await jotaiStore.get(accountAtom)
         const quantity = PositiveNumber(1)
         const totalAmount = getBillLineSummaryUnitAmount(summary)
@@ -250,19 +279,16 @@ export function useCartBill({
             totalAmount,
           },
         ])
-      } finally {
-        setPending(false)
-      }
+      })
     },
-    [appRun, console, billId, jotaiStore, record, t]
+    [appRun, console, billId, jotaiStore, record, runQueued, t]
   )
 
   const removeLine = useCallback(
     async (summary: BillLineSummary) => {
       if (billId === undefined) return
 
-      setPending(true)
-      try {
+      await runQueued(async () => {
         const { device } = await jotaiStore.get(accountAtom)
         await using run = appRun()
         const result = await run(
@@ -292,19 +318,16 @@ export function useCartBill({
             totalAmount: summary.totalAmount,
           },
         ])
-      } finally {
-        setPending(false)
-      }
+      })
     },
-    [appRun, console, billId, jotaiStore, record, t]
+    [appRun, console, billId, jotaiStore, record, runQueued, t]
   )
 
   const clear = useCallback(
     async (summaries: ReadonlyArray<BillLineSummary>) => {
       if (billId === undefined || summaries.length === 0) return
 
-      setPending(true)
-      try {
+      await runQueued(async () => {
         const { device } = await jotaiStore.get(accountAtom)
         const lines: CartHistoryEntry = summaries.map((summary) => ({
           billId,
@@ -326,19 +349,16 @@ export function useCartBill({
         }
 
         record(lines)
-      } finally {
-        setPending(false)
-      }
+      })
     },
-    [appRun, console, billId, jotaiStore, record, t]
+    [appRun, console, billId, jotaiStore, record, runQueued, t]
   )
 
   const undo = useCallback(async () => {
     const entry = undoStack.at(-1)
     if (billId === undefined || entry === undefined) return
 
-    setPending(true)
-    try {
+    await runQueued(async () => {
       await using run = appRun()
       const result = await run(
         appendGuardedBillLines(billId, entry.map(invertLine))
@@ -351,17 +371,14 @@ export function useCartBill({
 
       setUndoStack((stack) => stack.slice(0, -1))
       setRedoStack((stack) => [...stack, entry])
-    } finally {
-      setPending(false)
-    }
-  }, [appRun, console, billId, undoStack, t])
+    })
+  }, [appRun, console, billId, runQueued, undoStack, t])
 
   const redo = useCallback(async () => {
     const entry = redoStack.at(-1)
     if (billId === undefined || entry === undefined) return
 
-    setPending(true)
-    try {
+    await runQueued(async () => {
       await using run = appRun()
       const result = await run(appendGuardedBillLines(billId, entry))
       if (!result.ok) {
@@ -372,10 +389,8 @@ export function useCartBill({
 
       setRedoStack((stack) => stack.slice(0, -1))
       setUndoStack((stack) => [...stack, entry])
-    } finally {
-      setPending(false)
-    }
-  }, [appRun, console, billId, redoStack, t])
+    })
+  }, [appRun, console, billId, redoStack, runQueued, t])
 
   return {
     pending,

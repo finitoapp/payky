@@ -287,6 +287,35 @@ export async function startNewBill(
 }
 
 /**
+ * The viewport center of a catalog brick's "+" button, for specs that drive
+ * `page.mouse` directly instead of using `locator.click()`.
+ */
+export async function addBrickCenter(
+  page: Page,
+  name: string
+): Promise<{ readonly x: number; readonly y: number }> {
+  const box = await page
+    .getByRole("button", { name: nameParam("bill.brick.add.aria", name) })
+    .boundingBox()
+  if (box === null) throw new Error(`No bounding box for the "${name}" brick`)
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+}
+
+/**
+ * Taps a catalog brick's "+" button with a raw mouse click at its center,
+ * the way a finger lands on a real terminal. Unlike `locator.click()` this
+ * does not wait for the button to be enabled and does not re-resolve the
+ * target, so a tap the app drops — by disabling the control between the
+ * press and the release, or by remounting the grid under it — is genuinely
+ * lost instead of being papered over by Playwright's actionability waiting.
+ * Use it wherever a spec fires taps faster than the cart can settle.
+ */
+export async function tapAddBrick(page: Page, name: string): Promise<void> {
+  const { x, y } = await addBrickCenter(page, name)
+  await page.mouse.click(x, y)
+}
+
+/**
  * Starts a fresh bill and adds one "Coffee" ($5) brick to it (assumes a
  * catalog item named "Coffee" was already seeded via `addCatalogItem`),
  * returning its bill id read off the URL. Leaves the page on the bill's own

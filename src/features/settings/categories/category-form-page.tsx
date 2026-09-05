@@ -1,20 +1,8 @@
 import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Field,
@@ -38,6 +26,7 @@ import { NonEmptyString255Schema } from "@/core/modules/shared/schema.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -122,6 +111,7 @@ function CatalogCategoryForm({
   readonly category?: CatalogCategoryRow
 }) {
   const appRun = useAppRun()
+  const confirmedRun = useConfirmedRun()
   const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
@@ -210,51 +200,32 @@ function CatalogCategoryForm({
       </SettingsFormCard>
 
       {mode === "edit" && category !== undefined && (
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button variant="destructive">
-                <Trash2Icon data-icon="inline-start" />
-                {t("settings.categories.delete")}
-              </Button>
-            }
-          />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("settings.categories.delete.confirm.title", {
-                  name: category.name,
-                })}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("settings.categories.delete.confirm.description", {
-                  name: category.name,
-                })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>
-                {t("settings.categories.delete.confirm.cancel")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      await using run = appRun()
-                      await run(deleteCatalogCategory(category.id))
-                      router.history.back()
-                    } catch {
-                      toast.error(t("settings.saveFailed"))
-                    }
-                  })()
-                }}
-              >
-                {t("settings.categories.delete.confirm.confirm")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            void (async () => {
+              const deleted = await confirmedRun(
+                {
+                  title: t("settings.categories.delete.confirm.title", {
+                    name: category.name,
+                  }),
+                  description: t(
+                    "settings.categories.delete.confirm.description",
+                    { name: category.name }
+                  ),
+                  confirmLabel: t("settings.categories.delete.confirm.confirm"),
+                  cancelLabel: t("settings.categories.delete.confirm.cancel"),
+                  variant: "destructive",
+                },
+                deleteCatalogCategory(category.id)
+              )
+              if (deleted) router.history.back()
+            })()
+          }}
+        >
+          <Trash2Icon data-icon="inline-start" />
+          {t("settings.categories.delete")}
+        </Button>
       )}
     </div>
   )

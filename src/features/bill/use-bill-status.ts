@@ -11,7 +11,7 @@ import {
 } from "@/core/modules/bill/bill-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 export interface BillStatusInfo {
   readonly status: BillStatus
@@ -29,16 +29,24 @@ export interface BillStatusInfo {
  * status, recomputed live from `canceledAt`/`confirmedClosedAt` and
  * coverage every time the underlying line/payment/claim rows change. Never
  * reads the best-effort `closedAt` cache — see `bill.ts`'s doc comment and
- * docs/bill-payment-states.md. `undefined` until the bill row has loaded.
+ * docs/bill-payment-states.md. `undefined` until the bill row has loaded,
+ * and for an `undefined` `billId` — a cart whose bill hasn't been lazily
+ * created yet.
  */
-export function useBillStatus(billId: BillId): BillStatusInfo | undefined {
-  const billQuery = useMemo(() => billByIdQuery(billId), [billId])
-  const claimedQuery = useMemo(
-    () => claimedTransactionsByBillIdQuery(billId),
+export function useBillStatus(
+  billId: BillId | undefined
+): BillStatusInfo | undefined {
+  const billQuery = useMemo(
+    () => (billId === undefined ? null : billByIdQuery(billId)),
     [billId]
   )
-  const { data: billRows } = useEvoluQuery(billQuery)
-  const { data: claimedTransactions } = useEvoluQuery(claimedQuery)
+  const claimedQuery = useMemo(
+    () =>
+      billId === undefined ? null : claimedTransactionsByBillIdQuery(billId),
+    [billId]
+  )
+  const { data: billRows } = useOptionalEvoluQuery(billQuery)
+  const { data: claimedTransactions } = useOptionalEvoluQuery(claimedQuery)
   const summaries = useBillLineSummaries(billId)
   const bill = billRows[0]
 

@@ -24,11 +24,16 @@ import { cn } from "@/lib/utils.ts"
  * the bill item grid (`ItemBrick`) and the scan-mode last-scanned panel.
  * Confirming the dialog adds `quantity` on top of the current cart quantity
  * — it is not a "set to N" control, matching the "+" button's semantics.
+ *
+ * These controls deliberately have no "busy" disabled state: a button that
+ * turns `disabled` between a tap's press and the browser dispatching its
+ * click event receives no click at all, so gating them on the cart's pending
+ * flag silently dropped the second of two rapid taps. `useCartBill` queues
+ * the taps instead.
  */
 export function ItemQuantityControls({
   name,
   quantity,
-  disabled,
   inCart,
   onAdd,
   onAddQuantity,
@@ -36,7 +41,6 @@ export function ItemQuantityControls({
 }: {
   readonly name: string
   readonly quantity: number
-  readonly disabled: boolean
   readonly inCart: boolean
   readonly onAdd: () => void
   readonly onAddQuantity: (quantity: PositiveNumber) => void
@@ -71,7 +75,7 @@ export function ItemQuantityControls({
           size="icon"
           className="size-10 rounded-full"
           aria-label={t("bill.brick.remove.aria", { name })}
-          disabled={disabled || quantity === 0}
+          disabled={quantity === 0}
           onClick={() => {
             vibrateOnButtonPress()
             onRemove()
@@ -84,7 +88,6 @@ export function ItemQuantityControls({
           variant="ghost"
           className="h-10 min-w-10 rounded-full px-2 font-semibold tabular-nums"
           aria-label={t("bill.brick.quantity.trigger.aria", { name })}
-          disabled={disabled}
           onClick={() => {
             setQuantityInput(quantity > 0 ? String(quantity) : "")
             setQuantityDialogOpen(true)
@@ -97,7 +100,6 @@ export function ItemQuantityControls({
           size="icon"
           className="size-10 rounded-full"
           aria-label={t("bill.brick.add.aria", { name })}
-          disabled={disabled}
           onClick={() => {
             vibrateOnButtonPress()
             onAdd()

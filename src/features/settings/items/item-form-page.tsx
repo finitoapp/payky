@@ -1,21 +1,9 @@
 import { useRouter } from "@tanstack/react-router"
 import { ScanLineIcon, Trash2Icon } from "lucide-react"
 import { useId, useMemo, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { ScanCodeScannerDialog } from "@/components/scan-code-scanner-dialog.tsx"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Field,
@@ -75,6 +63,7 @@ import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.t
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -166,6 +155,7 @@ function CatalogItemForm({
   readonly defaultCurrency?: FiatCurrencyType
 }) {
   const appRun = useAppRun()
+  const confirmedRun = useConfirmedRun()
   const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
@@ -683,51 +673,31 @@ function CatalogItemForm({
       />
 
       {mode === "edit" && item !== undefined && (
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button variant="destructive">
-                <Trash2Icon data-icon="inline-start" />
-                {t("settings.items.delete")}
-              </Button>
-            }
-          />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("settings.items.delete.confirm.title", {
-                  name: getStaffDisplayName(item),
-                })}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("settings.items.delete.confirm.description", {
-                  name: getStaffDisplayName(item),
-                })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>
-                {t("settings.items.delete.confirm.cancel")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      await using run = appRun()
-                      await run(deleteCatalogItem(item.id))
-                      router.history.back()
-                    } catch {
-                      toast.error(t("settings.saveFailed"))
-                    }
-                  })()
-                }}
-              >
-                {t("settings.items.delete.confirm.confirm")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            void (async () => {
+              const deleted = await confirmedRun(
+                {
+                  title: t("settings.items.delete.confirm.title", {
+                    name: getStaffDisplayName(item),
+                  }),
+                  description: t("settings.items.delete.confirm.description", {
+                    name: getStaffDisplayName(item),
+                  }),
+                  confirmLabel: t("settings.items.delete.confirm.confirm"),
+                  cancelLabel: t("settings.items.delete.confirm.cancel"),
+                  variant: "destructive",
+                },
+                deleteCatalogItem(item.id)
+              )
+              if (deleted) router.history.back()
+            })()
+          }}
+        >
+          <Trash2Icon data-icon="inline-start" />
+          {t("settings.items.delete")}
+        </Button>
       )}
     </div>
   )

@@ -1,20 +1,8 @@
 import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Field,
@@ -42,6 +30,7 @@ import {
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -114,6 +103,7 @@ function TableForm({
   readonly table?: TableRow
 }) {
   const appRun = useAppRun()
+  const confirmedRun = useConfirmedRun()
   const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
@@ -256,51 +246,31 @@ function TableForm({
       </SettingsFormCard>
 
       {mode === "edit" && table !== undefined && (
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button variant="destructive">
-                <Trash2Icon data-icon="inline-start" />
-                {t("settings.tables.delete")}
-              </Button>
-            }
-          />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("settings.tables.delete.confirm.title", {
-                  name: table.name,
-                })}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("settings.tables.delete.confirm.description", {
-                  name: table.name,
-                })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>
-                {t("settings.tables.delete.confirm.cancel")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      await using run = appRun()
-                      await run(deleteTable(table.id))
-                      router.history.back()
-                    } catch {
-                      toast.error(t("settings.saveFailed"))
-                    }
-                  })()
-                }}
-              >
-                {t("settings.tables.delete.confirm.confirm")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            void (async () => {
+              const deleted = await confirmedRun(
+                {
+                  title: t("settings.tables.delete.confirm.title", {
+                    name: table.name,
+                  }),
+                  description: t("settings.tables.delete.confirm.description", {
+                    name: table.name,
+                  }),
+                  confirmLabel: t("settings.tables.delete.confirm.confirm"),
+                  cancelLabel: t("settings.tables.delete.confirm.cancel"),
+                  variant: "destructive",
+                },
+                deleteTable(table.id)
+              )
+              if (deleted) router.history.back()
+            })()
+          }}
+        >
+          <Trash2Icon data-icon="inline-start" />
+          {t("settings.tables.delete")}
+        </Button>
       )}
     </div>
   )

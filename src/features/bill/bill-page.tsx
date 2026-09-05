@@ -22,16 +22,6 @@ import {
   AlertTitle,
 } from "@/components/reui/alert.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import {
@@ -81,14 +71,31 @@ import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useBillInsertMode } from "@/hooks/use-bill-insert-mode.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import {
+  useEvoluQuery,
+  useOptionalEvoluQuery,
+} from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
+/**
+ * The whole bill screen — the cart before its bill exists, the cart of an
+ * existing bill, and the not-found/closed/locked messages — lives in this
+ * one component on purpose. Lazily creating the bill on the first added item
+ * flips `billId` from absent to present mid-tap; if that swapped one body
+ * component for another, React would tear down and rebuild every DOM node
+ * under it, and a second tap whose press and release straddle the swap is
+ * silently dropped by the browser (its click event lands on the two nodes'
+ * common ancestor, never on the button). Keeping one component — and one
+ * `BillCartView` element position — means the transition only updates props.
+ * The bill-scoped hooks below all accept an `undefined` `billId` for the
+ * same reason.
+ */
 export function BillPage({
   billId,
   initialTableId,
@@ -98,6 +105,7 @@ export function BillPage({
 }) {
   useScreenWakeLock(true)
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const fallbackCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
@@ -135,52 +143,23 @@ export function BillPage({
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [scanMode, setScanMode] = useBillInsertMode()
 
-  const sharedProps = {
-    cart,
-    search,
-    onSearchChange: setSearch,
-    categoryFilter,
-    onCategoryFilterChange: setCategoryFilter,
-    onPendingTableIdChange: setPendingTableId,
-    summaryOpen,
-    onSummaryOpenChange: setSummaryOpen,
-    scanMode,
-    onScanModeChange: setScanMode,
-  }
-
-  return billId === undefined ? (
-    <BillPageLayout>
-      <BillCartView
-        billId={undefined}
-        currency={fallbackCurrency}
-        summaries={EMPTY_SUMMARIES}
-        tableId={pendingTableId}
-        {...sharedProps}
-      />
-    </BillPageLayout>
-  ) : (
-    <BillExistingBody billId={billId} {...sharedProps} />
+  const billQuery = useMemo(
+    () => (billId === undefined ? null : billByIdQuery(billId)),
+    [billId]
   )
-}
-
-function BillExistingBody({
-  billId,
-  ...sharedProps
-}: { readonly billId: BillId } & SharedCartViewProps) {
-  const { t } = useTranslation()
-  const { data: billRows } = useEvoluQuery(billByIdQuery(billId))
+  const { data: billRows } = useOptionalEvoluQuery(billQuery)
   const bill = billRows[0]
   const summaries = useBillLineSummaries(billId)
   const pendingPaymentIds = usePendingPayments(billId)
   const billStatus = useBillStatus(billId)
 
   let content: ReactNode
-  if (bill === undefined) {
+  if (billId !== undefined && bill === undefined) {
     content = <BillMessage message={t("bill.notFound")} />
-  } else if (billStatus?.status !== "open") {
+  } else if (bill !== undefined && billStatus?.status !== "open") {
     content = billStatus?.hasCancellationCollision ? (
       <BillCancellationCollisionMessage
-        billId={billId}
+        billId={bill.id}
         currency={bill.currency}
       />
     ) : (
@@ -192,10 +171,24 @@ function BillExistingBody({
     content = (
       <BillCartView
         billId={billId}
-        currency={bill.currency}
+        currency={bill?.currency ?? fallbackCurrency}
         summaries={summaries}
-        tableId={bill.tableId}
-        {...sharedProps}
+        // `pendingTableId` only seeds the bill that's about to be created;
+        // once one exists its own `tableId` is the source of truth, so a
+        // table cleared on the bill isn't overwritten by the stale seed.
+        tableId={
+          billId === undefined ? pendingTableId : (bill?.tableId ?? null)
+        }
+        cart={cart}
+        search={search}
+        onSearchChange={setSearch}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        onPendingTableIdChange={setPendingTableId}
+        summaryOpen={summaryOpen}
+        onSummaryOpenChange={setSummaryOpen}
+        scanMode={scanMode}
+        onScanModeChange={setScanMode}
       />
     )
   }
@@ -361,8 +354,6 @@ function BillLockedMessage({
   )
 }
 
-const EMPTY_SUMMARIES: ReadonlyArray<BillLineSummary> = []
-
 interface CartApi {
   readonly pending: boolean
   readonly canUndo: boolean
@@ -420,6 +411,7 @@ function BillCartView({
   const navigate = useNavigate()
   const router = useRouter()
   const appRun = useAppRun()
+  const confirm = useConfirmDialog()
   const console = useConsole()
   const createTerminalPayment = useCreateTerminalPayment()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
@@ -428,7 +420,6 @@ function BillCartView({
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const { data: tables } = useEvoluQuery(tablesQuery)
   const [chargePending, setChargePending] = useState(false)
-  const [discardDialogOpen, setDiscardDialogOpen] = useState(false)
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
 
   const currentTable = tables.find((table) => table.id === tableId)
@@ -531,6 +522,15 @@ function BillCartView({
   const handleDiscard = async () => {
     if (billId === undefined) return
 
+    const confirmed = await confirm({
+      title: t("bill.discard.confirm.title"),
+      description: t("bill.discard.confirm.description"),
+      confirmLabel: t("bill.discard.confirm.confirm"),
+      cancelLabel: t("bill.discard.confirm.cancel"),
+      variant: "destructive",
+    })
+    if (!confirmed) return
+
     await using run = appRun()
     const result = await run(cancelBill(billId))
     if (!result.ok) {
@@ -610,7 +610,6 @@ function BillCartView({
             categories={categories}
             currency={currency}
             summaries={summaries}
-            disabled={cart.pending}
             locale={locale}
             onAdd={(catalogItem) => void cart.addOne(catalogItem)}
             onAddQuantity={(catalogItem, quantity) =>
@@ -631,7 +630,6 @@ function BillCartView({
                 key={catalogItem.id}
                 catalogItem={catalogItem}
                 summaries={summaries}
-                disabled={cart.pending}
                 locale={locale}
                 onAdd={() => void cart.addOne(catalogItem)}
                 onAddQuantity={(quantity) =>
@@ -748,7 +746,7 @@ function BillCartView({
               className="h-12 w-12 shrink-0 text-destructive"
               disabled={billId === undefined}
               aria-label={t("bill.discard")}
-              onClick={() => setDiscardDialogOpen(true)}
+              onClick={() => void handleDiscard()}
             >
               <Trash2Icon />
             </Button>
@@ -776,33 +774,6 @@ function BillCartView({
             </Button>
           </div>
         </CardContent>
-
-        <AlertDialog
-          open={discardDialogOpen}
-          onOpenChange={setDiscardDialogOpen}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("bill.discard.confirm.title")}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("bill.discard.confirm.description")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>
-                {t("bill.discard.confirm.cancel")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => void handleDiscard()}
-              >
-                {t("bill.discard.confirm.confirm")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </Card>
     </>
   )
@@ -880,7 +851,6 @@ function SummaryRow({
 function ItemBrick({
   catalogItem,
   summaries,
-  disabled,
   locale,
   onAdd,
   onAddQuantity,
@@ -888,7 +858,6 @@ function ItemBrick({
 }: {
   readonly catalogItem: CatalogItemRow
   readonly summaries: ReadonlyArray<BillLineSummary>
-  readonly disabled: boolean
   readonly locale: string
   readonly onAdd: () => void
   readonly onAddQuantity: (quantity: PositiveNumber) => void
@@ -942,7 +911,6 @@ function ItemBrick({
       <ItemQuantityControls
         name={getStaffDisplayName(catalogItem)}
         quantity={quantity}
-        disabled={disabled}
         inCart={inCart}
         onAdd={onAdd}
         onAddQuantity={onAddQuantity}

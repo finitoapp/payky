@@ -5,6 +5,7 @@ import { LoaderCircleIcon } from "lucide-react"
 import { Suspense } from "react"
 import { AppBackgroundJobs } from "@/components/app-background-jobs.tsx"
 import { AppLoaderCleanup } from "@/components/app-loader-cleanup.tsx"
+import { ConfirmDialogHost } from "@/components/confirm-dialog-host.tsx"
 import { E2eTestBridge } from "@/components/e2e-test-bridge.tsx"
 import { NativeBackButtonHandler } from "@/components/native-back-button-handler.tsx"
 import { PwaUpdateToast } from "@/components/pwa-update-toast.tsx"
@@ -47,6 +48,7 @@ export function App() {
             <RouterProvider router={router} />
             <PwaUpdateToast />
             <Toaster />
+            <ConfirmDialogHost />
           </ThemeProvider>
         </Suspense>
       </Provider>

@@ -1,16 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 
 import { ScanCodeScanner } from "@/components/scan-code-scanner.tsx"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog.tsx"
 import { Card } from "@/components/ui/card.tsx"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { CatalogCategoryRow } from "@/core/modules/catalog-category/catalog-category.ts"
@@ -27,6 +17,10 @@ import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { CreateCatalogItemDialog } from "@/features/bill/create-catalog-item-dialog.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import { ScanCodeCollisionDialog } from "@/features/bill/scan-code-collision-dialog.tsx"
+import {
+  useConfirmDialog,
+  useIsConfirmDialogOpen,
+} from "@/hooks/use-confirm-dialog.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
@@ -43,7 +37,6 @@ export function BillScanView({
   categories,
   currency,
   summaries,
-  disabled,
   locale,
   onAdd,
   onAddQuantity,
@@ -53,7 +46,6 @@ export function BillScanView({
   readonly categories: ReadonlyArray<CatalogCategoryRow>
   readonly currency: FiatCurrencyType
   readonly summaries: ReadonlyArray<BillLineSummary>
-  readonly disabled: boolean
   readonly locale: string
   readonly onAdd: (catalogItem: CatalogItemRow) => void
   readonly onAddQuantity: (
@@ -63,8 +55,9 @@ export function BillScanView({
   readonly onRemove: (summary: BillLineSummary) => void
 }) {
   const { t } = useTranslation()
+  const confirm = useConfirmDialog()
+  const isConfirmDialogOpen = useIsConfirmDialogOpen()
   const [lastScanned, setLastScanned] = useState<CatalogItemRow | null>(null)
-  const [unknownCode, setUnknownCode] = useState<string | null>(null)
   const [collisionCandidates, setCollisionCandidates] = useState<
     ReadonlyArray<CatalogItemRow>
   >([])
@@ -75,7 +68,17 @@ export function BillScanView({
       const matches = findCatalogItemsByScanCode(currencyItems, rawValue)
 
       if (matches.length === 0) {
-        setUnknownCode(rawValue)
+        void (async () => {
+          const confirmed = await confirm({
+            title: t("bill.scan.unknown.title"),
+            description: t("bill.scan.unknown.description", {
+              code: rawValue,
+            }),
+            confirmLabel: t("bill.scan.unknown.create"),
+            cancelLabel: t("bill.scan.unknown.cancel"),
+          })
+          if (confirmed) setCreateDialogCode(rawValue)
+        })()
         return
       }
 
@@ -89,7 +92,7 @@ export function BillScanView({
       setLastScanned(item)
       onAdd(item)
     },
-    [currencyItems, onAdd]
+    [currencyItems, onAdd, confirm, t]
   )
 
   const matchingSummaries = useMemo(
@@ -111,7 +114,7 @@ export function BillScanView({
       : getLatestCatalogItemSummary(matchingSummaries, lastScanned.id)
 
   const dialogsOpen =
-    unknownCode !== null ||
+    isConfirmDialogOpen ||
     collisionCandidates.length > 0 ||
     createDialogCode !== null
 
@@ -153,7 +156,6 @@ export function BillScanView({
             <ItemQuantityControls
               name={getStaffDisplayName(lastScanned)}
               quantity={quantity}
-              disabled={disabled}
               inCart={quantity > 0}
               onAdd={() => onAdd(lastScanned)}
               onAddQuantity={(nextQuantity) =>
@@ -167,37 +169,6 @@ export function BillScanView({
           </Card>
         )}
       </div>
-
-      <AlertDialog
-        open={unknownCode !== null}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) setUnknownCode(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("bill.scan.unknown.title")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("bill.scan.unknown.description", {
-                code: unknownCode ?? "",
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              {t("bill.scan.unknown.cancel")}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (unknownCode === null) return
-                setCreateDialogCode(unknownCode)
-              }}
-            >
-              {t("bill.scan.unknown.create")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <ScanCodeCollisionDialog
         open={collisionCandidates.length > 0}

@@ -8,17 +8,6 @@ import {
 import { useId, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx"
 import {
@@ -44,6 +33,7 @@ import {
   taxRatePercentageToDecimalString,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -108,6 +98,7 @@ export function TaxRatesSettingsPage() {
 
 function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
   const appRun = useAppRun()
+  const confirm = useConfirmDialog()
   const { t } = useTranslation()
   const nameInputId = useId()
   const isArchived = taxRate.deactivatedAt !== null
@@ -237,112 +228,78 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
           </Button>
         )}
         {isArchived ? (
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={pending}
-                  aria-label={t("settings.taxRates.activate", {
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={pending}
+            aria-label={t("settings.taxRates.activate", {
+              name: taxRate.name,
+            })}
+            onClick={() => {
+              void (async () => {
+                const confirmed = await confirm({
+                  title: t("settings.taxRates.activate.confirm.title", {
                     name: taxRate.name,
-                  })}
-                >
-                  <ArchiveRestoreIcon />
-                </Button>
-              }
-            />
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {t("settings.taxRates.activate.confirm.title", {
-                    name: taxRate.name,
-                  })}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("settings.taxRates.activate.confirm.description", {
-                    name: taxRate.name,
-                  })}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  {t("settings.taxRates.activate.confirm.cancel")}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  disabled={pending}
-                  onClick={() => {
-                    void (async () => {
-                      setPending(true)
-                      try {
-                        await using run = appRun()
-                        await run(activateTaxRate(taxRate.id))
-                      } finally {
-                        setPending(false)
-                      }
-                    })()
-                  }}
-                >
-                  {t("settings.taxRates.activate.confirm.confirm")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  }),
+                  description: t(
+                    "settings.taxRates.activate.confirm.description",
+                    { name: taxRate.name }
+                  ),
+                  confirmLabel: t("settings.taxRates.activate.confirm.confirm"),
+                  cancelLabel: t("settings.taxRates.activate.confirm.cancel"),
+                })
+                if (!confirmed) return
+
+                setPending(true)
+                try {
+                  await using run = appRun()
+                  await run(activateTaxRate(taxRate.id))
+                } finally {
+                  setPending(false)
+                }
+              })()
+            }}
+          >
+            <ArchiveRestoreIcon />
+          </Button>
         ) : (
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={pending}
-                  aria-label={t("settings.taxRates.archive", {
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={pending}
+            aria-label={t("settings.taxRates.archive", {
+              name: taxRate.name,
+            })}
+            onClick={() => {
+              void (async () => {
+                const confirmed = await confirm({
+                  title: t("settings.taxRates.archive.confirm.title", {
                     name: taxRate.name,
-                  })}
-                >
-                  <ArchiveIcon />
-                </Button>
-              }
-            />
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {t("settings.taxRates.archive.confirm.title", {
-                    name: taxRate.name,
-                  })}
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("settings.taxRates.archive.confirm.description", {
-                    name: taxRate.name,
-                  })}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>
-                  {t("settings.taxRates.archive.confirm.cancel")}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={pending}
-                  onClick={() => {
-                    void (async () => {
-                      setPending(true)
-                      try {
-                        await using run = appRun()
-                        await run(archiveTaxRate(taxRate.id))
-                      } finally {
-                        setPending(false)
-                      }
-                    })()
-                  }}
-                >
-                  {t("settings.taxRates.archive.confirm.confirm")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  }),
+                  description: t(
+                    "settings.taxRates.archive.confirm.description",
+                    { name: taxRate.name }
+                  ),
+                  confirmLabel: t("settings.taxRates.archive.confirm.confirm"),
+                  cancelLabel: t("settings.taxRates.archive.confirm.cancel"),
+                  variant: "destructive",
+                })
+                if (!confirmed) return
+
+                setPending(true)
+                try {
+                  await using run = appRun()
+                  await run(archiveTaxRate(taxRate.id))
+                } finally {
+                  setPending(false)
+                }
+              })()
+            }}
+          >
+            <ArchiveIcon />
+          </Button>
         )}
       </div>
     </div>

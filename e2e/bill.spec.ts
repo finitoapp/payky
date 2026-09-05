@@ -1,4 +1,5 @@
 import {
+  addBrickCenter,
   addCatalogCategory,
   addCatalogItem,
   addTable,
@@ -11,6 +12,7 @@ import {
   startBillAndBeginCashPayment,
   startCollisionBill,
   startNewBill,
+  tapAddBrick,
   test,
   translate,
   translateValue,
@@ -846,6 +848,16 @@ test("adding two different items in quick succession lazily creates only one bil
   // create its own separate bill — silently losing one of the two items on
   // an orphaned bill. Firing both adds without awaiting either in between
   // reproduces that race window.
+  //
+  // The two taps are fired as raw mouse clicks, one after the other, rather
+  // than as two concurrent `locator.click()`s in a `Promise.all`: Playwright
+  // does not support concurrent actions on one page — both clicks drive the
+  // same virtual mouse, so they interleave and one of the two is dropped by
+  // the driver (measured at roughly 2-3% of attempts, even on a settled bill
+  // with nothing racing in the app). Sequential mouse clicks still fire the
+  // second tap milliseconds after the first, long before it settles, and
+  // unlike `locator.click()` they don't wait for the target to be enabled,
+  // so they reproduce the app-side race harder rather than more softly.
   await test.step("seed two catalog items", async () => {
     await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
     await addCatalogItem(page, "en", { name: "Tea", price: "3" })
@@ -857,16 +869,8 @@ test("adding two different items in quick succession lazily creates only one bil
   })
 
   await test.step("add both items without waiting for the first to settle", async () => {
-    await Promise.all([
-      page
-        .getByRole("button", {
-          name: nameParam("bill.brick.add.aria", "Coffee"),
-        })
-        .click(),
-      page
-        .getByRole("button", { name: nameParam("bill.brick.add.aria", "Tea") })
-        .click(),
-    ])
+    await tapAddBrick(page, "Coffee")
+    await tapAddBrick(page, "Tea")
   })
 
   await test.step("both items end up on the same, single bill", async () => {
@@ -901,5 +905,54 @@ test("adding two different items in quick succession lazily creates only one bil
     await expect(
       page.getByTestId("no-table-tile").getByRole("link", { name: /^Bill #/ })
     ).toHaveCount(0)
+  })
+})
+
+test("rapid taps on the item grid are never dropped", async ({
+  seededPage: page,
+}) => {
+  // Deterministic companion to the test above, which only reproduces the
+  // two ways a tap gets swallowed as a rare flake: locator `.click()` waits
+  // for the target to be enabled and fires press and release back to back,
+  // so it papers over both a cart that disables its "+" buttons while a
+  // mutation is in flight and a bill page that remounts (replacing every
+  // node in the grid) the moment the first added item lazily creates the
+  // bill. Raw mouse input reproduces both on purpose: it lands wherever the
+  // finger lands, and its press and release can straddle the moment the
+  // bill appears.
+  await test.step("seed two catalog items", async () => {
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+    await addCatalogItem(page, "en", { name: "Tea", price: "3" })
+  })
+
+  await test.step("open a fresh cart", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+  })
+
+  await test.step("hold a second tap across the moment the bill is created", async () => {
+    const tea = await addBrickCenter(page, "Tea")
+
+    await tapAddBrick(page, "Coffee")
+    await page.mouse.move(tea.x, tea.y)
+    await page.mouse.down()
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("billId"))
+      .not.toBeNull()
+    await page.mouse.up()
+  })
+
+  await test.step("tap the first brick twice more, back to back", async () => {
+    await tapAddBrick(page, "Coffee")
+    await tapAddBrick(page, "Coffee")
+  })
+
+  await test.step("every tap ended up on the one bill", async () => {
+    await expect(page.getByTestId("bill-summary-trigger")).toContainText(
+      translateValue("en", "bill.itemsCount", 4)
+    )
+    await expect(page.getByTestId("bill-summary-trigger")).toContainText(
+      "$18.00"
+    )
   })
 })

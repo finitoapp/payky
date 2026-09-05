@@ -5,20 +5,26 @@ import { billLinesByBillIdQuery } from "@/core/modules/bill-line/bill-line-queri
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { itemsQuery } from "@/core/modules/item/item-queries.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import {
+  useEvoluQuery,
+  useOptionalEvoluQuery,
+} from "@/hooks/use-evolu-query.ts"
 
 /**
  * Reactive equivalent of `loadCalculatedBillLineSummaries`: subscribes to
  * the bill's line ledger and the item snapshot table, then reduces them
- * through the same pure `calculateBillLineSummaries` on every change. Only
- * call this once `billId` is known — an empty cart with no bill yet has
- * nothing to subscribe to.
+ * through the same pure `calculateBillLineSummaries` on every change. An
+ * `undefined` `billId` — a cart whose bill hasn't been lazily created yet —
+ * has nothing to subscribe to and yields no summaries.
  */
 export function useBillLineSummaries(
-  billId: BillId
+  billId: BillId | undefined
 ): ReadonlyArray<BillLineSummary> {
-  const lineQuery = useMemo(() => billLinesByBillIdQuery(billId), [billId])
-  const { data: lineRows } = useEvoluQuery(lineQuery)
+  const lineQuery = useMemo(
+    () => (billId === undefined ? null : billLinesByBillIdQuery(billId)),
+    [billId]
+  )
+  const { data: lineRows } = useOptionalEvoluQuery(lineQuery)
   const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   return useMemo(

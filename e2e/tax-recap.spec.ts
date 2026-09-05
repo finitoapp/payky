@@ -56,6 +56,12 @@ test("shows a VAT breakdown by tax rate on the bill and payment detail", async (
       .poll(() => new URL(page.url()).searchParams.get("billId"))
       .not.toBeNull()
     billId = new URL(page.url()).searchParams.get("billId") ?? ""
+    // The URL flips to the new billId as soon as the bill itself is
+    // created, before either brick's own add-line write has necessarily
+    // finished — the immediate hard navigation below can otherwise race
+    // ahead of the second click's write and load a bill with only one line.
+    await waitForLocalWriteToSettle(page)
+    await waitForLocalWriteToSettle(page)
   })
 
   await test.step("the bill detail shows the VAT breakdown by rate", async () => {

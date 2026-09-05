@@ -32,7 +32,7 @@ export function TablesList({
     hasMore,
     isPending,
     sentinelRef,
-  } = useInfiniteEvoluQuery(search, createPageQuery)
+  } = useInfiniteEvoluQuery([search], createPageQuery)
 
   return (
     <>

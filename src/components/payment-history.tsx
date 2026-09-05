@@ -364,7 +364,7 @@ export const PaymentHistory = () => {
     hasMore,
     isPending,
     sentinelRef,
-  } = useInfiniteEvoluQuery("", createPageQuery)
+  } = useInfiniteEvoluQuery([], createPageQuery)
   const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   const empty = (

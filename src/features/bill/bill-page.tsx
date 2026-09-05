@@ -16,6 +16,7 @@ import { motion } from "motion/react"
 import {
   type ReactNode,
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useState,
@@ -471,19 +472,19 @@ function BillCartView({
   // The grid's own SQL-filtered, paginated read: `currencyItems` above stays
   // the full per-currency list (needed by scan mode's barcode lookup, which
   // must match against every item, not just the currently loaded page).
-  // Every value feeding the grid's query goes through `useDebouncedValue`
-  // with `transition: true` — including `categoryFilter` and `currency`,
-  // which aren't otherwise "debounced" but still must not drive the query
-  // outside a transition — so a search keystroke or a category tap never
+  // `search` is genuinely debounced (typing shouldn't requery on every
+  // keystroke) and additionally deferred via `transition: true` so it can't
+  // drive the query outside a transition; `categoryFilter`/`currency` don't
+  // need time-based debouncing, just that same "defer into a transition"
+  // treatment, which `useDeferredValue` gives natively — no timer needed.
+  // Both are required so a search keystroke or a category tap never
   // re-suspends this component: `BillPage`'s doc comment explains why a
   // remount here would drop a tap mid-press. `search`/`categoryFilter`
   // themselves stay plain, immediate state so the input text and the
   // selected chip highlight update without any lag.
   const searchForQuery = useDebouncedValue(search, 250, { transition: true })
-  const categoryFilterForQuery = useDebouncedValue(categoryFilter, 0, {
-    transition: true,
-  })
-  const currencyForQuery = useDebouncedValue(currency, 0, { transition: true })
+  const categoryFilterForQuery = useDeferredValue(categoryFilter)
+  const currencyForQuery = useDeferredValue(currency)
   const createGridPageQuery = useCallback(
     (limit: number) =>
       catalogItemsPageQuery({
@@ -500,7 +501,7 @@ function BillCartView({
     isPending: isLoadingMoreItems,
     sentinelRef: itemsSentinelRef,
   } = useInfiniteEvoluQuery(
-    `${searchForQuery}::${categoryFilterForQuery}::${currencyForQuery}`,
+    [searchForQuery, categoryFilterForQuery, currencyForQuery],
     createGridPageQuery
   )
 

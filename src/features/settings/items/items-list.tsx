@@ -53,7 +53,7 @@ export function ItemsList({
     hasMore,
     isPending,
     sentinelRef,
-  } = useInfiniteEvoluQuery(`${search}::${categoryFilter}`, createPageQuery)
+  } = useInfiniteEvoluQuery([search, categoryFilter], createPageQuery)
 
   return (
     <>

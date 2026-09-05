@@ -10,11 +10,12 @@ import { useEffect, useState, useTransition } from "react"
  * query (for example `useInfiniteEvoluQuery`) whose already-rendered content
  * must stay on screen while new content loads, instead of the nearest
  * `<Suspense>` boundary swapping to its fallback — see `BillCartView`'s cart
- * grid, where that fallback would otherwise unmount the grid mid-tap. A
- * `delayMs` of `0` still defers the value by a tick and wraps it in
- * `startTransition`, decoupling a query-driving value from one that must
- * update immediately (for example a selected filter chip's own highlight)
- * without adding a perceptible delay.
+ * grid, where that fallback would otherwise unmount the grid mid-tap. For a
+ * value that isn't otherwise time-debounced but still needs that same
+ * "defer into a transition" treatment (for example a filter that changes
+ * immediately, like a category tap), prefer React's own `useDeferredValue`
+ * instead of this hook with `delayMs: 0` — it does the same thing natively,
+ * with no timer.
  */
 export function useDebouncedValue<T>(
   value: T,

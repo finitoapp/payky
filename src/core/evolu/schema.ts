@@ -34,6 +34,7 @@ import {
   fioPluginToken,
 } from "@/core/modules/fio-plugin/fio-plugin.ts"
 import { item, itemIndexes } from "@/core/modules/item/item.ts"
+import { legalEntity } from "@/core/modules/legal-entity/legal-entity.ts"
 import {
   payment,
   paymentBtc,
@@ -57,6 +58,7 @@ import {
   reconciliationClaimIndexes,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim.ts"
 import { table } from "@/core/modules/table/table.ts"
+import { taxRate, taxRateIndexes } from "@/core/modules/tax-rate/tax-rate.ts"
 
 export const AppSchema = {
   device,
@@ -74,6 +76,8 @@ export const AppSchema = {
   catalogCategory,
   catalogItem,
   item,
+  legalEntity,
+  taxRate,
   table,
   bill,
   billLine,
@@ -100,6 +104,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...accountIndexes(create),
   ...accountTransactionIndexes(create),
   ...itemIndexes(create),
+  ...taxRateIndexes(create),
   ...billIndexes(create),
   ...billLineIndexes(create),
   ...paymentIndexes(create),

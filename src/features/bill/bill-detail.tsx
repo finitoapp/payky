@@ -16,6 +16,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/reui/alert.tsx"
+import { TaxRecap } from "@/components/tax-recap.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -30,10 +31,15 @@ import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-a
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
+import {
+  calculateTaxRecap,
+  hasTaxableLines,
+} from "@/core/modules/bill-line/bill-line-tax-utils.ts"
 import { paymentsWithClaimsByBillIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
+import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
@@ -133,6 +139,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
   const query = useMemo(() => billByIdQuery(billId), [billId])
   const { data: bills } = useEvoluQuery(query)
   const { data: tables } = useEvoluQuery(tablesQuery)
+  const { data: taxRates } = useEvoluQuery(taxRatesQuery)
   const summaries = useBillLineSummaries(billId)
   const billStatus = useBillStatus(billId)
   const { claimedSum, coverage } = useBillCoverage(billId)
@@ -152,6 +159,8 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
     summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
   )
   const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
+  const taxRecapRows = calculateTaxRecap(summaries, taxRates)
+  const hasTaxRecap = hasTaxableLines(taxRecapRows)
 
   const handleConfirmClosedDespiteCancellation = async () => {
     setResolvePending(true)
@@ -302,6 +311,17 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
               ))}
             </div>
           )}
+
+          {hasTaxRecap ? (
+            <>
+              <Separator />
+              <TaxRecap
+                rows={taxRecapRows}
+                currency={bill.currency}
+                locale={locale}
+              />
+            </>
+          ) : null}
 
           {coverage === "paid" ? null : (
             <>

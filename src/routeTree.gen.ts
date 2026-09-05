@@ -35,11 +35,13 @@ import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.set
 import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
+import { Route as TerminalSettingsLegalEntityRouteImport } from './routes/_terminal.settings.legal-entity'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
 import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.settings.tables'
+import { Route as TerminalSettingsTaxRatesRouteImport } from './routes/_terminal.settings.tax-rates'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsTipsRouteImport } from './routes/_terminal.settings.tips'
 import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
@@ -197,6 +199,12 @@ const TerminalSettingsLanguageRoute =
     path: '/language',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalSettingsLegalEntityRoute =
+  TerminalSettingsLegalEntityRouteImport.update({
+    id: '/legal-entity',
+    path: '/legal-entity',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsPaymentAccountsRoute =
   TerminalSettingsPaymentAccountsRouteImport.update({
     id: '/payment-accounts',
@@ -225,6 +233,12 @@ const TerminalSettingsTablesRoute = TerminalSettingsTablesRouteImport.update({
   path: '/tables',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsTaxRatesRoute =
+  TerminalSettingsTaxRatesRouteImport.update({
+    id: '/tax-rates',
+    path: '/tax-rates',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsThemeRoute = TerminalSettingsThemeRouteImport.update({
   id: '/theme',
   path: '/theme',
@@ -345,11 +359,13 @@ export interface FileRoutesByFullPath {
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
+  '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
+  '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/tips': typeof TerminalSettingsTipsRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -389,10 +405,12 @@ export interface FileRoutesByTo {
   '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
+  '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
+  '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/tips': typeof TerminalSettingsTipsRoute
   '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -438,11 +456,13 @@ export interface FileRoutesById {
   '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
+  '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
+  '/_terminal/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/tips': typeof TerminalSettingsTipsRoute
   '/_terminal/settings/withdraw': typeof TerminalSettingsWithdrawRoute
@@ -488,11 +508,13 @@ export interface FileRouteTypes {
     | '/settings/fio-plugin'
     | '/settings/items'
     | '/settings/language'
+    | '/settings/legal-entity'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
     | '/settings/security'
     | '/settings/tables'
+    | '/settings/tax-rates'
     | '/settings/theme'
     | '/settings/tips'
     | '/settings/withdraw'
@@ -532,10 +554,12 @@ export interface FileRouteTypes {
     | '/settings/fiat'
     | '/settings/fio-plugin'
     | '/settings/language'
+    | '/settings/legal-entity'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
     | '/settings/security'
+    | '/settings/tax-rates'
     | '/settings/theme'
     | '/settings/tips'
     | '/settings/withdraw'
@@ -580,11 +604,13 @@ export interface FileRouteTypes {
     | '/_terminal/settings/fio-plugin'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
+    | '/_terminal/settings/legal-entity'
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
     | '/_terminal/settings/privacy'
     | '/_terminal/settings/security'
     | '/_terminal/settings/tables'
+    | '/_terminal/settings/tax-rates'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/tips'
     | '/_terminal/settings/withdraw'
@@ -796,6 +822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsLanguageRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/legal-entity': {
+      id: '/_terminal/settings/legal-entity'
+      path: '/legal-entity'
+      fullPath: '/settings/legal-entity'
+      preLoaderRoute: typeof TerminalSettingsLegalEntityRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/payment-accounts': {
       id: '/_terminal/settings/payment-accounts'
       path: '/payment-accounts'
@@ -829,6 +862,13 @@ declare module '@tanstack/react-router' {
       path: '/tables'
       fullPath: '/settings/tables'
       preLoaderRoute: typeof TerminalSettingsTablesRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/tax-rates': {
+      id: '/_terminal/settings/tax-rates'
+      path: '/tax-rates'
+      fullPath: '/settings/tax-rates'
+      preLoaderRoute: typeof TerminalSettingsTaxRatesRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/theme': {
@@ -1031,11 +1071,13 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsFioPluginRoute: typeof TerminalSettingsFioPluginRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
+  TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
   TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsTablesRoute: typeof TerminalSettingsTablesRouteWithChildren
+  TerminalSettingsTaxRatesRoute: typeof TerminalSettingsTaxRatesRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsTipsRoute: typeof TerminalSettingsTipsRoute
   TerminalSettingsWithdrawRoute: typeof TerminalSettingsWithdrawRoute
@@ -1056,12 +1098,14 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsFioPluginRoute: TerminalSettingsFioPluginRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
+  TerminalSettingsLegalEntityRoute: TerminalSettingsLegalEntityRoute,
   TerminalSettingsPaymentAccountsRoute: TerminalSettingsPaymentAccountsRoute,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
   TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsTablesRoute: TerminalSettingsTablesRouteWithChildren,
+  TerminalSettingsTaxRatesRoute: TerminalSettingsTaxRatesRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsTipsRoute: TerminalSettingsTipsRoute,
   TerminalSettingsWithdrawRoute: TerminalSettingsWithdrawRoute,

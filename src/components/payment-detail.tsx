@@ -18,6 +18,7 @@ import {
   TimelineSeparator,
   TimelineTitle,
 } from "@/components/reui/timeline.tsx"
+import { TaxRecap } from "@/components/tax-recap.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -35,6 +36,10 @@ import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
 import {
+  calculateTaxRecap,
+  hasTaxableLines,
+} from "@/core/modules/bill-line/bill-line-tax-utils.ts"
+import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
 } from "@/core/modules/payment/payment-actions.ts"
@@ -47,6 +52,7 @@ import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
+import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"
@@ -656,6 +662,7 @@ function PaymentDetailBillCard({
   const query = useMemo(() => billByIdQuery(billId), [billId])
   const { data: bills } = useEvoluQuery(query)
   const { data: tables } = useEvoluQuery(tablesQuery)
+  const { data: taxRates } = useEvoluQuery(taxRatesQuery)
   const summaries = useBillLineSummaries(billId)
   const billStatus = useBillStatus(billId)
   const { claimedSum, coverage } = useBillCoverage(billId)
@@ -703,6 +710,8 @@ function PaymentDetailBillCard({
         ? "multiplePayments"
         : null
   const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
+  const taxRecapRows = calculateTaxRecap(summaries, taxRates)
+  const hasTaxRecap = hasTaxableLines(taxRecapRows)
 
   const handleConfirmClosedDespiteCancellation = async () => {
     setResolvePending(true)
@@ -833,6 +842,17 @@ function PaymentDetailBillCard({
             ) : null}
           </div>
         )}
+
+        {hasTaxRecap ? (
+          <>
+            <Separator />
+            <TaxRecap
+              rows={taxRecapRows}
+              currency={bill.currency}
+              locale={locale}
+            />
+          </>
+        ) : null}
 
         <Separator />
 

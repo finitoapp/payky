@@ -7,6 +7,7 @@ describe("getOnboardingSteps", () => {
     expect(getOnboardingSteps("new")).toEqual([
       "language",
       "accountChoice",
+      "country",
       "currency",
       "payments",
       "account",

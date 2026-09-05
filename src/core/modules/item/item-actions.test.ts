@@ -92,6 +92,7 @@ describe("item actions", () => {
       currency: "CZK",
       unitAmount: 4200,
       sortOrder: 0,
+      taxRateId: null,
     } as CatalogItemRow
 
     const returned = await run.ok(createOrReuseCatalogItemSnapshot(catalogItem))

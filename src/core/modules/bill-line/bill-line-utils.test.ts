@@ -31,6 +31,7 @@ const makeSummary = (
   currency: "CZK",
   quantity: PositiveNumber(1),
   totalAmount: NonNegativeInteger(500),
+  taxRateId: null,
   ...overrides,
 })
 
@@ -43,6 +44,7 @@ describe("bill line summaries", () => {
       description: null,
       currency: "CZK",
       unitAmount: NonNegativeInteger(5900),
+      taxRateId: null,
     }
     const lines: ReadonlyArray<BillLineRow> = [
       {

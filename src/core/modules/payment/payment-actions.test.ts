@@ -405,6 +405,7 @@ describe("payment actions", () => {
       description: null,
       currency: "CZK",
       unitAmount: NonNegativeInteger(300),
+      taxRateId: null,
     })
     await runMutationWithCompletion((options) => {
       upsertItemSnapshot(evolu, extraSnapshot, {

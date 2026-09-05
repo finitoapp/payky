@@ -14,6 +14,7 @@ export const createItemIdFromSnapshot = (
       description: snapshot.description,
       currency: snapshot.currency,
       unitAmount: snapshot.unitAmount,
+      taxRateId: snapshot.taxRateId,
     })
   )
 
@@ -26,6 +27,7 @@ export const createCatalogItemSnapshot = (
     description: catalogItem.description,
     currency: catalogItem.currency,
     unitAmount: catalogItem.unitAmount,
+    taxRateId: catalogItem.taxRateId,
   }
 
   return {

@@ -26,6 +26,7 @@ const makeItem = (
   unitAmount: NonNegativeInteger(5900),
   sortOrder: NonNegativeInteger(0),
   scanCode: null,
+  taxRateId: null,
   ...overrides,
 })
 

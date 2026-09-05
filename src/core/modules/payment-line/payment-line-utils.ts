@@ -56,6 +56,7 @@ export const paymentLinesToBillLineSummaries = (
         currency: item.currency,
         quantity: line.quantity,
         totalAmount: line.totalAmount,
+        taxRateId: item.taxRateId,
       },
     ]
   })

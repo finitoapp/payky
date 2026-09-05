@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Globe,
   KeyRound,
   Landmark,
   Languages,
@@ -54,17 +55,22 @@ import {
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
+import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
+import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import { seedTaxRatesForCountry } from "@/core/modules/tax-rate/tax-rate-actions.ts"
+import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
   type OnboardingAccountType,
+  type OnboardingCountryChoice,
   type OnboardingPaymentMethod,
   type OnboardingStep,
   onboardingFormAtom,
@@ -118,6 +124,17 @@ const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
     description: "onboarding.payments.iban.description",
     icon: Landmark,
   },
+]
+
+interface CountryOption {
+  readonly value: OnboardingCountryChoice
+  readonly label: TranslationKey
+}
+
+const countryOptions: ReadonlyArray<CountryOption> = [
+  { value: "CZ", label: "country.cz" },
+  { value: "SK", label: "country.sk" },
+  { value: "OTHER", label: "country.other" },
 ]
 
 const accountTypeOptions: ReadonlyArray<AccountTypeOption> = [
@@ -178,6 +195,8 @@ function OnboardingPage() {
     step,
     accountType,
     iban,
+    country,
+    vatPayer,
     paymentMethods: selectedPaymentMethods,
   } = form
   const onboardingSteps = getOnboardingSteps(accountType)
@@ -250,6 +269,24 @@ function OnboardingPage() {
 
       await using run = appRun()
 
+      // A restored account whose first sync hasn't finished yet can briefly
+      // land back in onboarding (see the TODO in `_terminal.tsx`). Guard
+      // these two against that race: unlike the singleton account upserts
+      // below, `setLegalEntity` would overwrite an already-synced row via
+      // last-write-wins, and `seedTaxRatesForCountry` has no upsert
+      // semantics at all — it would insert a duplicate set of rates.
+      const [existingLegalEntity, existingTaxRates] = await Promise.all([
+        run.deps.evolu.loadQuery(legalEntityQuery),
+        run.deps.evolu.loadQuery(taxRatesQuery),
+      ])
+
+      const persistedCountry = country === "OTHER" ? null : country
+      if (existingLegalEntity.length === 0) {
+        await run(setLegalEntity({ country: persistedCountry, vatPayer }))
+      }
+      if (existingTaxRates.length === 0) {
+        await run(seedTaxRatesForCountry(persistedCountry))
+      }
       await run(
         saveCashRegisterAccount({
           enabled: selectedPaymentMethods.has("cash"),
@@ -361,6 +398,23 @@ function OnboardingPage() {
               />
             ) : null}
 
+            {step === "country" ? (
+              <CountryStep
+                country={country}
+                vatPayer={vatPayer}
+                pending={pending}
+                onSelectCountry={(nextCountry) => {
+                  setForm((current) => ({ ...current, country: nextCountry }))
+                }}
+                onChangeVatPayer={(nextVatPayer) => {
+                  setForm((current) => ({
+                    ...current,
+                    vatPayer: nextVatPayer,
+                  }))
+                }}
+              />
+            ) : null}
+
             {step === "currency" ? (
               <CurrencyStep
                 currency={selectedCurrency}
@@ -424,7 +478,8 @@ function OnboardingPage() {
                     type="button"
                     disabled={
                       pending ||
-                      (step === "accountChoice" && accountType === null)
+                      (step === "accountChoice" && accountType === null) ||
+                      (step === "country" && country === null)
                     }
                     onClick={goNext}
                   >
@@ -589,6 +644,65 @@ function RestoreAccountStep({
           {t("onboarding.back")}
         </Button>
       </CardFooter>
+    </>
+  )
+}
+
+function CountryStep({
+  country,
+  vatPayer,
+  pending,
+  onSelectCountry,
+  onChangeVatPayer,
+}: {
+  readonly country: OnboardingCountryChoice | null
+  readonly vatPayer: boolean | null
+  readonly pending: boolean
+  readonly onSelectCountry: (country: OnboardingCountryChoice) => void
+  readonly onChangeVatPayer: (vatPayer: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const vatPayerInputId = useId()
+
+  return (
+    <>
+      <CardHeader>
+        <CardTitle>{t("onboarding.country.title")}</CardTitle>
+        <CardDescription>{t("onboarding.country.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <OptionToggleGroup
+            value={country}
+            options={countryOptions.map((option) => ({
+              value: option.value,
+              icon: Globe,
+              title: t(option.label),
+            }))}
+            disabled={pending}
+            onChange={onSelectCountry}
+          />
+
+          <Field orientation="horizontal">
+            <Checkbox
+              id={vatPayerInputId}
+              checked={vatPayer === true}
+              disabled={pending}
+              onCheckedChange={(checked) => {
+                onChangeVatPayer(checked)
+              }}
+            />
+            <FieldContent>
+              <FieldLabel htmlFor={vatPayerInputId}>
+                {t("onboarding.country.vatPayer.label")}
+              </FieldLabel>
+              <FieldDescription>
+                {t("onboarding.country.vatPayer.description")}
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </FieldGroup>
+      </CardContent>
     </>
   )
 }

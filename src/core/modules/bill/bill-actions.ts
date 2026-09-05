@@ -642,6 +642,7 @@ export const addManualAmountToBill =
       description: null,
       currency: input.currency,
       unitAmount: input.totalAmount,
+      taxRateId: null,
     })
 
     return run(
@@ -680,6 +681,7 @@ export const addTipToBill =
       description: null,
       currency: input.currency,
       unitAmount: input.totalAmount,
+      taxRateId: null,
     })
 
     return run(

@@ -158,6 +158,12 @@ export async function completeOnboarding(
     .getByRole("button", { name: translate(language, "onboarding.next") })
     .click()
   await page
+    .getByRole("button", { name: translate(language, "country.cz") })
+    .click()
+  await page
+    .getByRole("button", { name: translate(language, "onboarding.next") })
+    .click()
+  await page
     .getByRole("button", { name: translate(language, "onboarding.next") })
     .click()
   await page
@@ -213,6 +219,12 @@ export async function completeOnboardingDefaults(
     .getByRole("button", {
       name: translate(language, "onboarding.accountChoice.new.title"),
     })
+    .click()
+  await page
+    .getByRole("button", { name: translate(language, "onboarding.next") })
+    .click()
+  await page
+    .getByRole("button", { name: translate(language, "country.cz") })
     .click()
   await page
     .getByRole("button", { name: translate(language, "onboarding.next") })
@@ -357,6 +369,7 @@ export async function addCatalogItem(
     readonly scanCode?: string
     readonly internalName?: string
     readonly sku?: string
+    readonly taxRateName?: string
   }
 ): Promise<void> {
   await gotoPage(page, "/settings/items", language, "settings.items.title")
@@ -407,6 +420,16 @@ export async function addCatalogItem(
         name: translate(language, "settings.items.form.scanCode.label"),
       })
       .fill(input.scanCode)
+  }
+  if (input.taxRateName !== undefined) {
+    await page
+      .getByRole("combobox", {
+        name: translate(language, "settings.items.form.taxRate.label"),
+      })
+      .click()
+    await page
+      .getByRole("option", { name: new RegExp(input.taxRateName) })
+      .click()
   }
   await page
     .getByRole("button", {
@@ -481,6 +504,34 @@ export async function addCatalogCategory(
       name: translate(language, "settings.categories.title"),
     })
     .waitFor()
+}
+
+/** Adds a tax rate through the real settings UI (used to seed tax rates for bill/payment recap specs). */
+export async function addTaxRate(
+  page: Page,
+  language: Language,
+  input: { readonly name: string; readonly rate: string }
+): Promise<void> {
+  await gotoPage(
+    page,
+    "/settings/tax-rates",
+    language,
+    "settings.taxRates.title"
+  )
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.taxRates.name.label"),
+      exact: true,
+    })
+    .fill(input.name)
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "settings.taxRates.rate.label"),
+    })
+    .fill(input.rate)
+  await page
+    .getByRole("button", { name: translate(language, "settings.taxRates.add") })
+    .click()
 }
 
 /** Adds a table through the real settings UI (used to seed tables for bill/floor-view specs). */

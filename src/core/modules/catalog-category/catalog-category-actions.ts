@@ -10,8 +10,8 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { CatalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
+  getNextSortOrder,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
@@ -65,13 +65,12 @@ export const createCatalogCategoryAtEnd =
   ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const existing = await run.deps.evolu.loadQuery(catalogCategoriesQuery)
-    const lastSortOrder = existing.at(-1)?.sortOrder ?? -1
 
     return ok(
       await run.ok(
         createCatalogCategory({
           ...input,
-          sortOrder: NonNegativeInteger(lastSortOrder + 1),
+          sortOrder: getNextSortOrder(existing),
         })
       )
     )

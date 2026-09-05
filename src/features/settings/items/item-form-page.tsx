@@ -65,6 +65,12 @@ import {
   NonEmptyString255Schema,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
+import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
+import {
+  filterSelectableTaxRates,
+  taxRatePercentageToDecimalString,
+} from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
@@ -170,9 +176,11 @@ function CatalogItemForm({
   const priceInputId = useId()
   const currencyInputId = useId()
   const categoryInputId = useId()
+  const taxRateInputId = useId()
   const scanCodeInputId = useId()
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
+  const { data: taxRates } = useEvoluQuery(taxRatesQuery)
   const [name, setName] = useState(item?.name ?? "")
   const [description, setDescription] = useState(item?.description ?? "")
   const [internalName, setInternalName] = useState(item?.internalName ?? "")
@@ -182,6 +190,15 @@ function CatalogItemForm({
   const [sku, setSku] = useState(item?.sku ?? "")
   const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
     item?.categoryId ?? "none"
+  )
+  const defaultTaxRate = taxRates.find(
+    (rate) => rate.isDefault === 1 && rate.deactivatedAt === null
+  )
+  const selectableTaxRates = filterSelectableTaxRates(taxRates, item?.taxRateId)
+  const [taxRateId, setTaxRateId] = useState<TaxRateId | "none">(
+    item === undefined
+      ? (defaultTaxRate?.id ?? "none")
+      : (item.taxRateId ?? "none")
   )
   const [currency, setCurrency] = useState<FiatCurrencyType>(
     item?.currency ?? defaultCurrency ?? FiatCurrency.CZK
@@ -332,6 +349,7 @@ function CatalogItemForm({
                   currency,
                   unitAmount,
                   scanCode: scanCodeResult?.data ?? null,
+                  taxRateId: taxRateId === "none" ? null : taxRateId,
                 })
               )
               router.history.back()
@@ -352,6 +370,7 @@ function CatalogItemForm({
                 currency,
                 unitAmount,
                 scanCode: scanCodeResult?.data ?? null,
+                taxRateId: taxRateId === "none" ? null : taxRateId,
               })
             )
           })
@@ -555,6 +574,57 @@ function CatalogItemForm({
                 </SelectGroup>
               </SelectContent>
             </Select>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor={taxRateInputId}>
+              {t("settings.items.form.taxRate.label")}
+            </FieldLabel>
+            <Select<TaxRateId | "none">
+              items={{
+                none: t("settings.items.form.taxRate.none"),
+                ...Object.fromEntries(
+                  selectableTaxRates.map((taxRate) => [
+                    taxRate.id,
+                    `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)${
+                      taxRate.deactivatedAt !== null
+                        ? ` — ${t("settings.taxRates.archived.title")}`
+                        : ""
+                    }`,
+                  ])
+                ),
+              }}
+              value={taxRateId}
+              onValueChange={(nextTaxRateId) => {
+                if (nextTaxRateId === null) return
+                setTaxRateId(nextTaxRateId)
+                resetSaved()
+              }}
+            >
+              <SelectTrigger id={taxRateInputId} disabled={pending}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="none">
+                    {t("settings.items.form.taxRate.none")}
+                  </SelectItem>
+                  {selectableTaxRates.map((taxRate) => (
+                    <SelectItem key={taxRate.id} value={taxRate.id}>
+                      {taxRate.name} (
+                      {taxRatePercentageToDecimalString(taxRate.rate)}
+                      %)
+                      {taxRate.deactivatedAt !== null
+                        ? ` — ${t("settings.taxRates.archived.title")}`
+                        : ""}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <FieldDescription>
+              {t("settings.items.form.taxRate.description")}
+            </FieldDescription>
           </Field>
 
           <Field data-invalid={scanCodeError !== null}>

@@ -9,6 +9,7 @@ import type {
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
+import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
 
 export interface BillLineSummary {
   readonly id: BillLineSummaryId
@@ -21,4 +22,6 @@ export interface BillLineSummary {
   readonly currency: FiatCurrency
   readonly quantity: PositiveNumber
   readonly totalAmount: NonNegativeInteger
+  /** Frozen at the moment the underlying `item` snapshot was created. */
+  readonly taxRateId: TaxRateId | null
 }

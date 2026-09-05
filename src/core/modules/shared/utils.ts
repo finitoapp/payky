@@ -7,6 +7,10 @@ import {
   type TypeName,
 } from "@evolu/common"
 import type { ConditionalExcept } from "type-fest"
+import {
+  NonNegativeInteger,
+  type NonNegativeInteger as NonNegativeIntegerType,
+} from "@/core/modules/shared/schema.ts"
 
 interface MutationCompletion {
   readonly options: MutationOptions
@@ -46,6 +50,17 @@ export const removeUndefinedValues = <const TData extends object>(
   }
   return values as ConditionalExcept<TData, undefined>
 }
+
+/**
+ * Derives the `sortOrder` for a row appended after the current last one, for
+ * modules with no reorder UI yet (catalog items, catalog categories, tables,
+ * tax rates). Rows are expected sorted by `sortOrder` ascending, as the
+ * `*Query`s these callers load already do via their `sortOrder` index.
+ */
+export const getNextSortOrder = (
+  existing: ReadonlyArray<{ readonly sortOrder: NonNegativeIntegerType }>
+): NonNegativeIntegerType =>
+  NonNegativeInteger((existing.at(-1)?.sortOrder ?? -1) + 1)
 
 const randomBytes = createRandomBytes()
 

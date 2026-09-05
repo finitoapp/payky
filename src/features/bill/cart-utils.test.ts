@@ -28,6 +28,7 @@ const summary = (input: {
   currency: "USD",
   quantity: PositiveNumber(input.quantity),
   totalAmount: NonNegativeInteger(input.totalAmount),
+  taxRateId: null,
 })
 
 describe("cart utilities", () => {

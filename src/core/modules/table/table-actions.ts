@@ -8,8 +8,8 @@ import {
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
+  getNextSortOrder,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
@@ -45,13 +45,12 @@ export const createTableAtEnd =
   ): Task<TableId, never, EvoluOwnerIdDep & EvoluDep> =>
   async (run) => {
     const existing = await run.deps.evolu.loadQuery(tablesQuery)
-    const lastSortOrder = existing.at(-1)?.sortOrder ?? -1
 
     return ok(
       await run.ok(
         createTable({
           ...input,
-          sortOrder: NonNegativeInteger(lastSortOrder + 1),
+          sortOrder: getNextSortOrder(existing),
           code: generateTableCode(),
         })
       )

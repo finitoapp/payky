@@ -38,6 +38,24 @@ test("complete onboarding as a new account", async ({ page }) => {
   })
 })
 
+test("choosing a country during onboarding seeds its tax rates", async ({
+  page,
+}) => {
+  await test.step("complete onboarding, choosing the Czech Republic", async () => {
+    await completeOnboarding(page, "en")
+  })
+
+  await test.step("the Czech preset tax rates were seeded", async () => {
+    await gotoPage(page, "/settings/tax-rates", "en", "settings.taxRates.title")
+    await expect(page.getByText("Základní sazba")).toBeVisible()
+    await expect(page.getByText("Snížená sazba")).toBeVisible()
+    await expect(page.getByText("Osvobozeno od DPH")).toBeVisible()
+    await expect(page.getByText("21%")).toBeVisible()
+    await expect(page.getByText("12%")).toBeVisible()
+    await expect(page.getByText("0%")).toBeVisible()
+  })
+})
+
 test("onboarding restore account starts the sync-wait screen", async ({
   page,
 }) => {

@@ -344,6 +344,7 @@ export function E2eTestBridge() {
           description: null,
           currency: billRow.currency,
           unitAmount: NonNegativeInteger(300),
+          taxRateId: null,
         })
 
         await runMutationWithCompletion((options) => {

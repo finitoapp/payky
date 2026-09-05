@@ -7,6 +7,7 @@ import {
   NonEmptyString255Schema,
   NonNegativeIntegerSchema,
 } from "@/core/modules/shared/schema.ts"
+import { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
 
 export const catalogItem = {
   id: CatalogItemId,
@@ -21,6 +22,8 @@ export const catalogItem = {
   unitAmount: NonNegativeIntegerSchema,
   sortOrder: NonNegativeIntegerSchema,
   scanCode: NonEmptyString255Schema.nullable(),
+  /** `null` supports non-VAT-payer tenants and items with no tax assigned yet. */
+  taxRateId: TaxRateId.nullable(),
 } as const
 
 export type CatalogItem = typeof catalogItem

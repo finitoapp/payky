@@ -36,8 +36,15 @@ import {
   NonEmptyString255Schema,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
+import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
+import {
+  filterSelectableTaxRates,
+  taxRatePercentageToDecimalString,
+} from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -68,10 +75,19 @@ export function CreateCatalogItemDialog({
   const nameInputId = useId()
   const priceInputId = useId()
   const categoryInputId = useId()
+  const taxRateInputId = useId()
+  const { data: taxRates } = useEvoluQuery(taxRatesQuery)
+  const defaultTaxRate = taxRates.find(
+    (rate) => rate.isDefault === 1 && rate.deactivatedAt === null
+  )
+  const selectableTaxRates = filterSelectableTaxRates(taxRates, undefined)
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
   const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
     "none"
+  )
+  const [taxRateId, setTaxRateId] = useState<TaxRateId | "none">(
+    defaultTaxRate?.id ?? "none"
   )
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
   const [priceError, setPriceError] = useState<TranslationKey | null>(null)
@@ -81,6 +97,7 @@ export function CreateCatalogItemDialog({
     setName("")
     setPrice("")
     setCategoryId("none")
+    setTaxRateId(defaultTaxRate?.id ?? "none")
     setNameError(null)
     setPriceError(null)
   }
@@ -141,6 +158,7 @@ export function CreateCatalogItemDialog({
                     currency,
                     unitAmount,
                     scanCode: scanCodeResult?.data ?? null,
+                    taxRateId: taxRateId === "none" ? null : taxRateId,
                   })
                 )
                 const [created] = await evolu.loadQuery(
@@ -230,6 +248,46 @@ export function CreateCatalogItemDialog({
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor={taxRateInputId}>
+                {t("settings.items.form.taxRate.label")}
+              </FieldLabel>
+              <Select<TaxRateId | "none">
+                items={{
+                  none: t("settings.items.form.taxRate.none"),
+                  ...Object.fromEntries(
+                    selectableTaxRates.map((taxRate) => [
+                      taxRate.id,
+                      `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)`,
+                    ])
+                  ),
+                }}
+                value={taxRateId}
+                onValueChange={(nextTaxRateId) => {
+                  if (nextTaxRateId === null) return
+                  setTaxRateId(nextTaxRateId)
+                }}
+              >
+                <SelectTrigger id={taxRateInputId} disabled={pending}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="none">
+                      {t("settings.items.form.taxRate.none")}
+                    </SelectItem>
+                    {selectableTaxRates.map((taxRate) => (
+                      <SelectItem key={taxRate.id} value={taxRate.id}>
+                        {taxRate.name} (
+                        {taxRatePercentageToDecimalString(taxRate.rate)}
+                        %)
                       </SelectItem>
                     ))}
                   </SelectGroup>

@@ -71,6 +71,7 @@ export const calculateBillLineSummaries = (
       currency: item.currency,
       quantity: PositiveNumber(nextQuantity),
       totalAmount: NonNegativeInteger(Math.max(0, nextTotalAmount)),
+      taxRateId: item.taxRateId,
     })
   }
 

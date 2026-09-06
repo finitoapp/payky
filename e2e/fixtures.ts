@@ -395,9 +395,6 @@ export async function startBillAndBeginCashPayment(
   await skipTipButton.or(cashPaidButton).first().waitFor()
   if (await skipTipButton.isVisible()) {
     await skipTipButton.click()
-    await page
-      .getByRole("button", { name: translate(language, "paymentTip.continue") })
-      .click()
     await cashPaidButton.waitFor()
   }
 
@@ -649,11 +646,6 @@ export async function createPayment(
 
   if (await skipTipButton.isVisible()) {
     await skipTipButton.click()
-    await page
-      .getByRole("button", {
-        name: translate(language, "paymentTip.continue"),
-      })
-      .click()
     await ibanTab.waitFor()
   }
 }

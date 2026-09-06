@@ -79,9 +79,6 @@ test("the payment detail's bill items list includes the tip so its total matches
       name: translateValue("en", "settings.tips.percentages.value", 10),
     })
     .click()
-  await page
-    .getByRole("button", { name: translate("en", "paymentTip.continue") })
-    .click()
   await markCashPaid(page, "en")
 
   await page

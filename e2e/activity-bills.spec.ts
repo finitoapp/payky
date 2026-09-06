@@ -201,9 +201,6 @@ test("the bill detail page shows the total, items, table, and linked payment", a
   await page
     .getByRole("button", { name: translate("en", "paymentTip.none") })
     .click()
-  await page
-    .getByRole("button", { name: translate("en", "paymentTip.continue") })
-    .click()
   await markCashPaidAndSettle(page, "en")
 
   await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")

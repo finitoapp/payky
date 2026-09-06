@@ -91,9 +91,6 @@ test("shows a VAT breakdown by tax rate on the bill and payment detail", async (
     await skipTipButton.or(cashPaidButton).first().waitFor()
     if (await skipTipButton.isVisible()) {
       await skipTipButton.click()
-      await page
-        .getByRole("button", { name: translate("en", "paymentTip.continue") })
-        .click()
       await cashPaidButton.waitFor()
     }
     await markCashPaid(page, "en")

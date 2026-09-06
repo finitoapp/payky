@@ -265,9 +265,6 @@ test("shows the right message for a closed or missing bill", async ({
     await page
       .getByRole("button", { name: translate("en", "paymentTip.none") })
       .click()
-    await page
-      .getByRole("button", { name: translate("en", "paymentTip.continue") })
-      .click()
     await markCashPaid(page, "en")
 
     // Return to the terminal through the in-app link (client-side route,
@@ -397,9 +394,6 @@ test("charges a cart and closes it once cash is paid", async ({
     await page
       .getByRole("button", { name: translate("en", "paymentTip.none") })
       .click()
-    await page
-      .getByRole("button", { name: translate("en", "paymentTip.continue") })
-      .click()
     await markCashPaid(page, "en")
 
     // Return to the terminal through the in-app link (client-side route,
@@ -455,9 +449,6 @@ test("the assign-table dialog shows a table as free again once its bill is settl
       .click()
     await page
       .getByRole("button", { name: translate("en", "paymentTip.none") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "paymentTip.continue") })
       .click()
     await markCashPaid(page, "en")
     await page

@@ -129,16 +129,13 @@ function PaymentTipForm({
     if (customTipFocusRequest > 0) customTipInputRef.current?.focus()
   }, [customTipFocusRequest])
 
-  const handleConfirm = async () => {
-    if (selectedTipAmount === null || confirmPendingRef.current) return
+  const handleConfirm = async (tipAmount: NonNegativeIntegerValue) => {
+    if (confirmPendingRef.current) return
 
     confirmPendingRef.current = true
     setPending(true)
     try {
-      const paymentAmounts = calculatePaymentAmounts({
-        amount,
-        tipAmount: selectedTipAmount,
-      })
+      const paymentAmounts = calculatePaymentAmounts({ amount, tipAmount })
       const created = await createTerminalPayment({
         ...paymentAmounts,
         currency,
@@ -179,6 +176,7 @@ function PaymentTipForm({
                   <ToggleGroup
                     aria-label={t("paymentTip.percentages")}
                     className="grid w-full grid-cols-2 gap-3"
+                    disabled={pending}
                     value={
                       selection?.kind === "percentage"
                         ? [String(selection.percentage)]
@@ -192,14 +190,12 @@ function PaymentTipForm({
                         return
                       }
 
-                      selectTip({
-                        kind: "percentage",
+                      const tipAmount = calculatePercentageTipAmount({
+                        amount,
                         percentage,
-                        tipAmount: calculatePercentageTipAmount({
-                          amount,
-                          percentage,
-                        }),
                       })
+                      selectTip({ kind: "percentage", percentage, tipAmount })
+                      void handleConfirm(tipAmount)
                     }}
                   >
                     {percentages.map((percentage) => {
@@ -237,6 +233,7 @@ function PaymentTipForm({
                   <ToggleGroup
                     aria-label={t("paymentTip.fixedAmounts")}
                     className="grid w-full grid-cols-2 gap-3"
+                    disabled={pending}
                     value={
                       selection?.kind === "fixed"
                         ? [String(selection.tipAmount)]
@@ -247,14 +244,14 @@ function PaymentTipForm({
                       const fixedAmount = fixedAmounts.find(
                         (preset) => preset === Number(value)
                       )
-                      selectTip(
-                        fixedAmount === undefined
-                          ? null
-                          : {
-                              kind: "fixed",
-                              tipAmount: NonNegativeInteger(fixedAmount),
-                            }
-                      )
+                      if (fixedAmount === undefined) {
+                        selectTip(null)
+                        return
+                      }
+
+                      const tipAmount = NonNegativeInteger(fixedAmount)
+                      selectTip({ kind: "fixed", tipAmount })
+                      void handleConfirm(tipAmount)
                     }}
                   >
                     {fixedAmounts.map((fixedAmount) => {
@@ -288,6 +285,7 @@ function PaymentTipForm({
             <ToggleGroup
               aria-label={t("paymentTip.title")}
               className="grid w-full grid-cols-2 gap-3"
+              disabled={pending}
               value={
                 selection?.kind === "custom"
                   ? ["custom"]
@@ -303,10 +301,9 @@ function PaymentTipForm({
                   return
                 }
                 if (value === "none") {
-                  selectTip({
-                    kind: "none",
-                    tipAmount: NonNegativeInteger(0),
-                  })
+                  const tipAmount = NonNegativeInteger(0)
+                  selectTip({ kind: "none", tipAmount })
+                  void handleConfirm(tipAmount)
                   return
                 }
 
@@ -367,18 +364,21 @@ function PaymentTipForm({
           </div>
         </section>
 
-        <footer className="shrink-0 pt-4">
-          <Button
-            size="lg"
-            className="h-14 w-full"
-            disabled={selectedTipAmount === null || pending}
-            onClick={() => {
-              void handleConfirm()
-            }}
-          >
-            {pending ? t("paymentTip.creating") : t("paymentTip.continue")}
-          </Button>
-        </footer>
+        {selection?.kind === "custom" ? (
+          <footer className="shrink-0 pt-4">
+            <Button
+              size="lg"
+              className="h-14 w-full"
+              disabled={selectedTipAmount === null || pending}
+              onClick={() => {
+                if (selectedTipAmount !== null)
+                  void handleConfirm(selectedTipAmount)
+              }}
+            >
+              {pending ? t("paymentTip.creating") : t("paymentTip.continue")}
+            </Button>
+          </footer>
+        ) : null}
       </div>
     </>
   )

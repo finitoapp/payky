@@ -17,7 +17,6 @@ import {
   type ReactNode,
   useCallback,
   useDeferredValue,
-  useEffect,
   useMemo,
   useState,
 } from "react"
@@ -46,10 +45,7 @@ import {
 } from "@/core/modules/bill/bill-actions.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
-import {
-  type BillId,
-  createRandomBillId,
-} from "@/core/modules/bill/bill-types.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
@@ -104,42 +100,24 @@ import { cn } from "@/lib/utils.ts"
  * silently dropped by the browser (its click event lands on the two nodes'
  * common ancestor, never on the button). `billId` itself is stable from the
  * first render — generated client-side and put in the URL by whatever
- * linked here (see `pos-overview-page.tsx`'s `NewBillLink`) — only its row's
- * existence changes mid-session, which is why the bill-scoped hooks below
- * all tolerate a `billId` whose row hasn't been created yet.
+ * linked here (see `pos-overview-page.tsx`'s `NewBillLink`, and
+ * `_terminal.bill.tsx`'s `beforeLoad` for a direct navigation with none) —
+ * only its row's existence changes mid-session, which is why the
+ * bill-scoped hooks below all tolerate a `billId` whose row hasn't been
+ * created yet.
  */
 export function BillPage({
-  billId: billIdFromRoute,
+  billId,
   initialTableId,
 }: {
-  readonly billId: BillId | undefined
+  readonly billId: BillId
   readonly initialTableId?: TableId
 }) {
   useScreenWakeLock(true)
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const fallbackCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
-
-  // A stable fallback for the rare direct navigation to `/bill` with no
-  // `billId` search param at all — every in-app link already includes one
-  // (see `pos-overview-page.tsx`'s `NewBillLink`). Keeps `billId`
-  // unconditionally defined from the very first render, so the rest of this
-  // component and `useCartBill` never need an `undefined` branch. The effect
-  // below corrects the URL to match, once.
-  const [generatedBillId] = useState(createRandomBillId)
-  const billId = billIdFromRoute ?? generatedBillId
-
-  useEffect(() => {
-    if (billIdFromRoute === undefined) {
-      void navigate({
-        to: "/bill",
-        search: { billId: generatedBillId, tableId: initialTableId },
-        replace: true,
-      })
-    }
-  }, [billIdFromRoute, generatedBillId, initialTableId, navigate])
 
   // Only meaningful before the bill row exists: it seeds the table the
   // lazily created row is assigned to. Once the row exists, `bill.tableId`

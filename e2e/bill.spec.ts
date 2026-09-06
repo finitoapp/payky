@@ -3,6 +3,7 @@ import {
   addCatalogCategory,
   addCatalogItem,
   addTable,
+  createPayment,
   expect,
   gotoPage,
   gotoPosOverview,
@@ -554,6 +555,31 @@ test("locks a bill while its payment is pending, and unlocks it once that paymen
     // ranks `canceled` above `paid` even though a claim could in principle
     // still exist. See docs/bill-payment-states.md.
     await expect(page.getByTestId("payment-paid-panel")).toHaveCount(0)
+  })
+})
+
+test("canceling a bill-less keypad payment lands on a fresh, usable bill screen", async ({
+  seededPage: page,
+}) => {
+  await test.step("start a keypad payment with no bill behind it", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await createPayment(page, "en")
+  })
+
+  await test.step("cancel the payment", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "paymentWait.cancel") })
+      .click()
+  })
+
+  await test.step("lands on a fresh bill screen instead of a blank page", async () => {
+    await expect(page).toHaveURL(/\/bill\?billId=/)
+    await expect(
+      page.getByRole("heading", { name: translate("en", "bill.title") })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: translate("en", "settings.items.add") })
+    ).toBeVisible()
   })
 })
 

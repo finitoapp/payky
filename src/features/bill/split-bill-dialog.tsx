@@ -1,6 +1,6 @@
 import { MinusIcon, PlusIcon } from "lucide-react"
 import { motion } from "motion/react"
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -12,34 +12,57 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import type { BillRow } from "@/core/modules/bill/bill.ts"
+import { openBillsQuery } from "@/core/modules/bill/bill-queries.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import {
   type FiatCurrency,
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
+import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { getBillLineSummaryUnitAmount } from "@/features/bill/cart-utils.ts"
+import { useBillSummaryStats } from "@/features/bill/use-bill-line-summaries.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
+import { cn } from "@/lib/utils.ts"
 
 /** How many units of each line, keyed by `BillLineSummary["id"]`, are picked to move. */
 type SplitSelection = Readonly<Record<string, number>>
 
+type SplitDestination = "new" | "existing"
+
+export type SplitBillConfirmInput =
+  | {
+      readonly destination: "new"
+      readonly items: ReadonlyArray<BillLineSummary>
+    }
+  | {
+      readonly destination: "existing"
+      readonly targetBillId: BillId
+      readonly items: ReadonlyArray<BillLineSummary>
+    }
+
 /**
  * The `/bill` page's "split bill" entry point: lets staff pick how many
- * units of each line item move to a brand-new bill, then hands the picked
- * items (with quantity/totalAmount already reduced to the moved portion) to
- * `onConfirm` — the caller composes those into `splitBillIntoNewBill`.
+ * units of each line item move either to a brand-new bill or to another
+ * already-open one, then hands the picked items (with quantity/totalAmount
+ * already reduced to the moved portion) to `onConfirm` — the caller
+ * composes those into `splitBillIntoNewBill`/`splitBill`.
  *
- * Selection is local dialog state, reset every time it opens, so a
- * previous split's picks never leak into the next one.
+ * Selection and destination are local dialog state, reset every time it
+ * opens, so a previous split's picks never leak into the next one.
  */
 export function SplitBillDialog({
   open,
   onOpenChange,
+  billId,
   summaries,
   currency,
   pending,
@@ -47,17 +70,38 @@ export function SplitBillDialog({
 }: {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
+  /** The current (source) bill — excluded from the "existing bill" picker. */
+  readonly billId: BillId
   readonly summaries: ReadonlyArray<BillLineSummary>
   readonly currency: FiatCurrency
   readonly pending: boolean
-  readonly onConfirm: (items: ReadonlyArray<BillLineSummary>) => void
+  readonly onConfirm: (input: SplitBillConfirmInput) => void
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const [selected, setSelected] = useState<SplitSelection>({})
+  const [destination, setDestination] = useState<SplitDestination>("new")
+  const [targetBillId, setTargetBillId] = useState<BillId | null>(null)
+
+  const { data: openBills } = useEvoluQuery(openBillsQuery)
+  const { data: tables } = useEvoluQuery(tablesQuery)
+  // Only bills in the same currency are offered: a bill's line items are
+  // always priced in its own `currency`, and mixing two into one total
+  // would misrender every amount on the merged bill.
+  const otherOpenBills = useMemo(
+    () =>
+      openBills.filter(
+        (candidate) =>
+          candidate.id !== billId && candidate.currency === currency
+      ),
+    [openBills, billId, currency]
+  )
 
   useEffect(() => {
-    if (open) setSelected({})
+    if (!open) return
+    setSelected({})
+    setDestination("new")
+    setTargetBillId(null)
   }, [open])
 
   const setQuantity = (summary: BillLineSummary, quantity: number) => {
@@ -66,6 +110,15 @@ export function SplitBillDialog({
       [summary.id]: Math.min(Math.max(quantity, 0), summary.quantity),
     }))
   }
+
+  const selectAll = () => {
+    setSelected(
+      Object.fromEntries(
+        summaries.map((summary) => [summary.id, summary.quantity])
+      )
+    )
+  }
+  const clearSelection = () => setSelected({})
 
   const items = useMemo(
     () =>
@@ -91,6 +144,20 @@ export function SplitBillDialog({
   const totalQuantityPulseControls = useChangePulse(totalQuantity)
   const totalAmountPulseControls = useChangePulse(totalAmount)
 
+  const canConfirm =
+    items.length > 0 &&
+    !pending &&
+    (destination === "new" || targetBillId !== null)
+
+  const handleConfirm = () => {
+    if (destination === "new") {
+      onConfirm({ destination: "new", items })
+      return
+    }
+    if (targetBillId === null) return
+    onConfirm({ destination: "existing", targetBillId, items })
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] flex-col">
@@ -98,6 +165,74 @@ export function SplitBillDialog({
           <DialogTitle>{t("bill.split.title")}</DialogTitle>
           <DialogDescription>{t("bill.split.description")}</DialogDescription>
         </DialogHeader>
+
+        <div className="flex flex-col gap-2">
+          <ToggleGroup<SplitDestination>
+            value={[destination]}
+            onValueChange={(next) => {
+              const [nextDestination] = next
+              if (nextDestination === undefined) return
+              setDestination(nextDestination)
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <ToggleGroupItem value="new" className="flex-1">
+              {t("bill.split.destination.new")}
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="existing"
+              className="flex-1"
+              disabled={otherOpenBills.length === 0}
+            >
+              {t("bill.split.destination.existing")}
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          {destination === "existing" && (
+            <div className="flex max-h-32 flex-col gap-1 overflow-y-auto rounded-md border p-1">
+              {otherOpenBills.length === 0 ? (
+                <p className="p-2 text-sm text-muted-foreground">
+                  {t("bill.split.destination.existing.empty")}
+                </p>
+              ) : (
+                // Each row's own `useBillSummaryStats` reads a bill-line
+                // query that's very likely never been loaded anywhere else
+                // in this session (an arbitrary other open bill). A local
+                // Suspense boundary keeps a first-time load from bubbling up
+                // to the route's own boundary — which would tear down and
+                // remount this whole dialog (and its selection/destination
+                // state) rather than just this list, the exact hazard
+                // `useOptionalEvoluQuery`'s doc comment describes.
+                <Suspense fallback={null}>
+                  {otherOpenBills.map((bill) => (
+                    <ExistingBillOption
+                      key={bill.id}
+                      bill={bill}
+                      tableName={
+                        tables.find((table) => table.id === bill.tableId)
+                          ?.name ?? null
+                      }
+                      selected={bill.id === targetBillId}
+                      onSelect={() => setTargetBillId(bill.id)}
+                    />
+                  ))}
+                </Suspense>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-1">
+            <Button variant="ghost" size="xs" onClick={selectAll}>
+              {t("bill.split.selectAll")}
+            </Button>
+            <Button variant="ghost" size="xs" onClick={clearSelection}>
+              {t("bill.split.clearSelection")}
+            </Button>
+          </div>
+        </div>
+
         <div className="flex min-h-0 flex-1 flex-col divide-y overflow-y-auto">
           {summaries.map((summary) => (
             <SplitBillRow
@@ -108,6 +243,7 @@ export function SplitBillDialog({
             />
           ))}
         </div>
+
         <DialogFooter className="flex-col sm:flex-col">
           <div className="flex w-full items-center justify-between text-sm font-medium">
             <span>
@@ -129,8 +265,8 @@ export function SplitBillDialog({
             <Button
               size="lg"
               className="flex-1"
-              disabled={items.length === 0 || pending}
-              onClick={() => onConfirm(items)}
+              disabled={!canConfirm}
+              onClick={handleConfirm}
             >
               {t("bill.split.confirm")}
             </Button>
@@ -138,6 +274,50 @@ export function SplitBillDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function ExistingBillOption({
+  bill,
+  tableName,
+  selected,
+  onSelect,
+}: {
+  readonly bill: BillRow
+  readonly tableName: string | null
+  readonly selected: boolean
+  readonly onSelect: () => void
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const { itemCount, totalAmount } = useBillSummaryStats(bill.id)
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "flex items-center justify-between gap-2 rounded-md p-2 text-left hover:bg-muted",
+        selected && "bg-primary/10 ring-1 ring-primary"
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">
+          {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
+        </p>
+        {tableName !== null && (
+          <p className="truncate text-xs text-muted-foreground">{tableName}</p>
+        )}
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        <p className="text-xs text-muted-foreground">
+          {t("bill.itemsCount", { value: itemCount })}
+        </p>
+        <p className="text-sm font-semibold">
+          {formatMoney({ value: totalAmount, currency: bill.currency }, locale)}
+        </p>
+      </div>
+    </button>
   )
 }
 

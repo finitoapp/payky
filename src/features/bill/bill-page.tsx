@@ -45,6 +45,7 @@ import {
   cancelBill,
   confirmBillClosedDespiteCancellation,
   removeTableFromBill,
+  splitBill,
   splitBillIntoNewBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
@@ -79,7 +80,10 @@ import { BillScanView } from "@/features/bill/bill-scan-view.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { ItemBrickGridSkeleton } from "@/features/bill/item-brick-grid-skeleton.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
-import { SplitBillDialog } from "@/features/bill/split-bill-dialog.tsx"
+import {
+  type SplitBillConfirmInput,
+  SplitBillDialog,
+} from "@/features/bill/split-bill-dialog.tsx"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
@@ -563,35 +567,74 @@ function BillCartView({
     router.history.back()
   }
 
-  const handleConfirmSplit = async (items: ReadonlyArray<BillLineSummary>) => {
+  const handleSplitError = (error: { readonly type: string }) => {
+    console.error("Failed to split bill", error)
+    toast.error(
+      error.type === "BillLocked" ? t("bill.locked") : t("bill.split.error")
+    )
+  }
+
+  const handleConfirmSplit = async (input: SplitBillConfirmInput) => {
     setSplitPending(true)
     try {
-      const { device } = await jotaiStore.get(accountAtom)
-      const targetBillId = createRandomBillId()
-
       await using run = appRun()
+
+      if (input.destination === "new") {
+        const { device } = await jotaiStore.get(accountAtom)
+        const newBillId = createRandomBillId()
+        const result = await run(
+          splitBillIntoNewBill({
+            sourceBillId: billId,
+            targetBillId: newBillId,
+            deviceId: device.id,
+            tableId,
+            currency,
+            items: input.items,
+          })
+        )
+        if (!result.ok) {
+          handleSplitError(result.error)
+          return
+        }
+
+        setSplitDialogOpen(false)
+        // A brand-new bill always needs setup (table, charge), so jump there
+        // regardless of whether this bill kept any items of its own.
+        // `replace` so the back button returns to the floor view rather than
+        // this bill (which may no longer even be open).
+        await navigate({
+          to: "/bill",
+          search: { billId: newBillId },
+          replace: true,
+        })
+        return
+      }
+
       const result = await run(
-        splitBillIntoNewBill({
+        splitBill({
           sourceBillId: billId,
-          targetBillId,
-          deviceId: device.id,
-          tableId,
-          currency,
-          items,
+          targetBillId: input.targetBillId,
+          items: input.items,
         })
       )
       if (!result.ok) {
-        console.error("Failed to split bill", result.error)
-        toast.error(
-          result.error.type === "BillLocked"
-            ? t("bill.locked")
-            : t("bill.split.error")
-        )
+        handleSplitError(result.error)
         return
       }
 
       setSplitDialogOpen(false)
-      await navigate({ to: "/bill", search: { billId: targetBillId } })
+      // Unlike splitting into a new bill, an existing target isn't something
+      // that needs setup — only follow it there if this bill emptied out and
+      // got auto-canceled, so there's nothing left here to keep working on.
+      // `replace` so the back button returns to the floor view rather than
+      // this now-canceled bill.
+      if (result.value.sourceCanceled) {
+        await navigate({
+          to: "/bill",
+          search: { billId: input.targetBillId },
+          replace: true,
+        })
+      }
     } finally {
       setSplitPending(false)
     }
@@ -602,10 +645,11 @@ function BillCartView({
       <SplitBillDialog
         open={splitDialogOpen}
         onOpenChange={setSplitDialogOpen}
+        billId={billId}
         summaries={summaries}
         currency={currency}
         pending={splitPending}
-        onConfirm={(items) => void handleConfirmSplit(items)}
+        onConfirm={(input) => void handleConfirmSplit(input)}
       />
 
       <div className="shrink-0">

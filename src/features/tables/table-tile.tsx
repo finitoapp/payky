@@ -3,8 +3,7 @@ import type { ReactNode } from "react"
 
 import { Card } from "@/components/ui/card.tsx"
 import type { BillRow } from "@/core/modules/bill/bill.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
-import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillSummaryStats } from "@/features/bill/use-bill-line-summaries.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -67,14 +66,7 @@ export function TableTileShell({
 export function OccupiedTableSummary({ bill }: { readonly bill: BillRow }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const summaries = useBillLineSummaries(bill.id)
-  const totalAmount = NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  )
-  const itemCount = summaries.reduce(
-    (sum, summary) => sum + summary.quantity,
-    0
-  )
+  const { itemCount, totalAmount } = useBillSummaryStats(bill.id)
 
   return (
     <div className="flex flex-col gap-0.5 text-primary-foreground/80">

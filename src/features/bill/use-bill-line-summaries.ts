@@ -5,6 +5,7 @@ import { billLinesByBillIdQuery } from "@/core/modules/bill-line/bill-line-queri
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { itemsQuery } from "@/core/modules/item/item-queries.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
   useEvoluQuery,
   useOptionalEvoluQuery,
@@ -30,5 +31,28 @@ export function useBillLineSummaries(
   return useMemo(
     () => calculateBillLineSummaries(lineRows, itemRows),
     [lineRows, itemRows]
+  )
+}
+
+/**
+ * A bill's total item count and amount, derived from `useBillLineSummaries` —
+ * shared by every occupancy-style tile/row that shows just those two numbers
+ * for a bill (the floor view's `OccupiedTableSummary`, the split dialog's
+ * existing-bill picker) instead of each re-deriving its own reduce.
+ */
+export function useBillSummaryStats(billId: BillId): {
+  readonly itemCount: number
+  readonly totalAmount: NonNegativeInteger
+} {
+  const summaries = useBillLineSummaries(billId)
+
+  return useMemo(
+    () => ({
+      itemCount: summaries.reduce((sum, summary) => sum + summary.quantity, 0),
+      totalAmount: NonNegativeInteger(
+        summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+      ),
+    }),
+    [summaries]
   )
 }

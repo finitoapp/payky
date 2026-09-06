@@ -545,10 +545,16 @@ describe("bill actions", () => {
           totalAmount: 12_000,
         },
       ],
+      // Moving the source's only line fully empties it, so it's
+      // auto-canceled in the same batch — see `willEmptySourceBill`.
+      sourceCanceled: true,
     })
     await expect
       .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
       .toMatchObject([])
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
+      .toMatchObject([{ id: sourceBillId, canceledAt: expect.any(Number) }])
     await expect
       .poll(() => run.ok(loadCalculatedBillLineSummaries(targetBillId)))
       .toMatchObject([
@@ -557,6 +563,53 @@ describe("bill actions", () => {
           name: "Shared dish",
         },
       ])
+  }, 15_000)
+
+  test("splitBill leaves the source bill open when items remain on it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const targetBillId = await createOpenBill(deps, { displayNumber: 2 })
+    const movedLine = await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Coffee"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Tea"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(400),
+      })
+    )
+
+    const result = await run.orThrow(
+      splitBill({
+        sourceBillId,
+        targetBillId,
+        items: [movedLine],
+      })
+    )
+
+    expect(result.sourceCanceled).toBe(false)
+    await expect
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
+      .toMatchObject([{ name: "Tea" }])
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
+      .toMatchObject([{ id: sourceBillId, canceledAt: null }])
   }, 15_000)
 
   test("returns an error when splitting into a missing target bill", async () => {
@@ -628,6 +681,11 @@ describe("bill actions", () => {
     await expect
       .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
       .toMatchObject([])
+    // Moving the source's only line fully empties it, so it's auto-canceled
+    // in the same batch — see `willEmptySourceBill`.
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
+      .toMatchObject([{ id: sourceBillId, canceledAt: expect.any(Number) }])
     await expect
       .poll(() => run.ok(loadCalculatedBillLineSummaries(targetBillId)))
       .toMatchObject([
@@ -638,6 +696,55 @@ describe("bill actions", () => {
           totalAmount: 12_000,
         },
       ])
+  }, 15_000)
+
+  test("splitBillIntoNewBill leaves the source bill open when items remain on it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const movedLine = await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Coffee"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Tea"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(400),
+      })
+    )
+    const targetBillId = createRandomBillId()
+
+    await run.orThrow(
+      splitBillIntoNewBill({
+        sourceBillId,
+        targetBillId,
+        deviceId: null,
+        tableId: null,
+        currency: "CZK",
+        items: [movedLine],
+      })
+    )
+
+    await expect
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
+      .toMatchObject([{ name: "Tea" }])
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
+      .toMatchObject([{ id: sourceBillId, canceledAt: null }])
   }, 15_000)
 
   test("rejects splitting into a new bill when the source bill is locked by a pending payment", async () => {

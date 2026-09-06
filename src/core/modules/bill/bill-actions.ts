@@ -811,21 +811,55 @@ const buildSplitLines = (
   return lines
 }
 
+/**
+ * Checks whether moving `movedItems` off `currentSummaries` would leave the
+ * bill with no line items at all (matched by `BillLineSummary["id"]`, stable
+ * per bill/catalogItemId/itemId/type — see `createBillLineSummaryId`) and, if
+ * so, writes the same `canceledAt` field `cancelBill` does, folded into the
+ * caller's own mutation batch instead of opening a second one. Returns
+ * whether it canceled, so a caller that needs to know (e.g. to decide
+ * whether the UI should navigate away) can read it off the result.
+ */
+const cancelSourceBillIfEmptied = (
+  evolu: EvoluDep["evolu"],
+  sourceBillId: BillId,
+  currentSummaries: ReadonlyArray<BillLineSummary>,
+  movedItems: ReadonlyArray<BillLineSummary>,
+  now: TimestampMs,
+  options: MutationOptions
+): boolean => {
+  const movedQuantityById = new Map(
+    movedItems.map((item) => [item.id, item.quantity])
+  )
+  const sourceCanceled = currentSummaries.every(
+    (summary) => (movedQuantityById.get(summary.id) ?? 0) >= summary.quantity
+  )
+  if (sourceCanceled) {
+    evolu.update("bill", { id: sourceBillId, canceledAt: now }, options)
+  }
+  return sourceCanceled
+}
+
 export const splitBill =
   (input: {
     readonly sourceBillId: BillId
     readonly targetBillId: BillId
     readonly items: ReadonlyArray<BillLineSummary>
   }): Task<
-    BillWithItems,
+    BillWithItems & { readonly sourceCanceled: boolean },
     SplitBillError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const sourceBillResult = await run(requireEditableBill(input.sourceBillId))
+    // Independent reads run concurrently: the edit guards on both bills
+    // don't depend on the source's current summaries and vice versa.
+    const [sourceBillResult, targetBillResult, currentSourceSummaries] =
+      await Promise.all([
+        run(requireEditableBill(input.sourceBillId)),
+        run(requireEditableBill(input.targetBillId)),
+        run.ok(loadCalculatedBillLineSummaries(input.sourceBillId)),
+      ])
     if (!sourceBillResult.ok) return sourceBillResult
-
-    const targetBillResult = await run(requireEditableBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
     const lines = buildSplitLines(
@@ -833,11 +867,31 @@ export const splitBill =
       input.targetBillId,
       input.items
     )
-    const targetItems = await run.ok(appendBillLines(lines, input.targetBillId))
+    const { evoluOwnerId } = run.deps
+
+    const sourceCanceled = await runMutationWithCompletion((options) => {
+      insertBillLineRows(run.deps.evolu, lines, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+      return cancelSourceBillIfEmptied(
+        run.deps.evolu,
+        input.sourceBillId,
+        currentSourceSummaries,
+        input.items,
+        TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    const targetItems = await run.ok(
+      loadCalculatedBillLineSummaries(input.targetBillId)
+    )
 
     return ok({
       bill: targetBillResult.value,
       items: targetItems,
+      sourceCanceled,
     })
   }
 
@@ -855,6 +909,12 @@ export const splitBill =
  * other cart-editing action, checked immediately before the write within
  * this same function. See docs/bill-payment-states.md. The new bill needs no
  * such check: it does not exist yet, so it is trivially open.
+ *
+ * Also auto-cancels `sourceBillId` in the same batch if this move empties it
+ * out entirely (e.g. every line fully selected) — same cleanup `splitBill`
+ * does, so a full split never leaves a dangling empty open bill behind
+ * regardless of which action moved it. The caller always navigates to the
+ * new bill either way, so this isn't surfaced in the return value.
  */
 export const splitBillIntoNewBill =
   (
@@ -868,13 +928,13 @@ export const splitBillIntoNewBill =
     }
   ): Task<BillId, SplitBillError, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
-    // Independent reads — the edit guard doesn't need the display number and
-    // vice versa — so they run concurrently instead of as two sequential
-    // round trips before the mutation batch even starts.
-    const [sourceBillResult, displayNumber] = await Promise.all([
-      run(requireEditableBill(input.sourceBillId)),
-      run.ok(loadNextBillDisplayNumber()),
-    ])
+    // Independent reads run concurrently before the mutation batch starts.
+    const [sourceBillResult, displayNumber, currentSourceSummaries] =
+      await Promise.all([
+        run(requireEditableBill(input.sourceBillId)),
+        run.ok(loadNextBillDisplayNumber()),
+        run.ok(loadCalculatedBillLineSummaries(input.sourceBillId)),
+      ])
     if (!sourceBillResult.ok) return sourceBillResult
 
     const { evoluOwnerId } = run.deps
@@ -901,6 +961,14 @@ export const splitBillIntoNewBill =
         ...options,
         ownerId: evoluOwnerId,
       })
+      cancelSourceBillIfEmptied(
+        run.deps.evolu,
+        input.sourceBillId,
+        currentSourceSummaries,
+        input.items,
+        TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        { ...options, ownerId: evoluOwnerId }
+      )
     })
 
     return ok(input.targetBillId)

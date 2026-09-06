@@ -34,7 +34,7 @@ export const en = {
   "appUpdate.available": "A new version is available",
   "appUpdate.description": "Update Payky to use the latest version.",
   "bill.list.label": "Bill #{number}",
-  "bill.closed": "This cart has already been settled.",
+  "bill.closed": "This bill has already been settled.",
   "bill.locked": "This bill is awaiting payment and can't be edited right now.",
   "bill.locked.viewPayment": "View payment",
   "bill.locked.viewPayment.numbered": "View payment {number}",
@@ -42,7 +42,7 @@ export const en = {
   "bill.brick.quantity.cancel": "Cancel",
   "bill.brick.quantity.confirm": "Add",
   "bill.brick.quantity.description":
-    "How many would you like to add to the cart?",
+    "How many would you like to add to the bill?",
   "bill.brick.quantity.input.aria": "Quantity",
   "bill.brick.quantity.trigger.aria": "Enter quantity for {name}",
   "bill.brick.remove.aria": "Remove {name}",
@@ -58,16 +58,16 @@ export const en = {
   "bill.collision.title": "Canceled, but payments cover it",
   "bill.collision.viewPayment": "View payment",
   "bill.collision.viewPayment.numbered": "View payment {number}",
-  "bill.discard": "Discard cart",
+  "bill.discard": "Discard bill",
   "bill.table.aria": "Assign table",
   "bill.table.assign": "Assign table",
   "bill.table.dialog.none": "No table",
   "bill.table.dialog.title": "Select table",
-  "bill.discard.confirm.cancel": "Keep cart",
+  "bill.discard.confirm.cancel": "Keep bill",
   "bill.discard.confirm.confirm": "Discard",
   "bill.discard.confirm.description":
-    "All items in this cart will be removed. This can't be undone.",
-  "bill.discard.confirm.title": "Discard this cart?",
+    "All items in this bill will be removed. This can't be undone.",
+  "bill.discard.confirm.title": "Discard this bill?",
   "bill.emptySearch": "No items match your search.",
   "bill.itemsCount": "Items: {value}",
   "bill.scan.collision.description":
@@ -77,7 +77,7 @@ export const en = {
     "No item is assigned to the code {code}. Add it now to keep scanning.",
   "bill.scan.create.save": "Add item",
   "bill.scan.create.title": "Add scanned item",
-  "bill.scan.lastScanned.empty": "Scan an item to add it to the cart.",
+  "bill.scan.lastScanned.empty": "Scan an item to add it to the bill.",
   "bill.scan.toggle.aria": "Scan items",
   "bill.scan.unknown.cancel": "Keep scanning",
   "bill.scan.unknown.create": "Add item",
@@ -86,9 +86,9 @@ export const en = {
   "bill.search": "Search items...",
   "bill.search.clear.aria": "Clear search",
   "bill.summary.clear": "Clear",
-  "bill.summary.clear.toast": "Cart cleared",
+  "bill.summary.clear.toast": "Bill cleared",
   "bill.summary.redo": "Redo",
-  "bill.summary.removeLine.aria": "Remove {name} from cart",
+  "bill.summary.removeLine.aria": "Remove {name} from bill",
   "bill.summary.removeLine.toast": "{name} removed",
   "bill.summary.undo": "Undo",
   "bill.title": "Bill",
@@ -186,10 +186,10 @@ export const en = {
   "landing.methods.cash.title": "Cash",
   "landing.methods.lightning.body":
     "Instant bitcoin payments directly to your own wallet. Self-custody — the keys and sats stay yours.",
-  "landing.methods.lightning.title": "Bitcoin Lightning",
+  "landing.methods.lightning.title": "Bitcoin",
   "landing.methods.qr.body":
     "The customer scans a QR code and pays with a regular bank transfer — straight to your account. Supports Czech and Slovak QR payment formats.",
-  "landing.methods.qr.title": "QR bank transfer",
+  "landing.methods.qr.title": "Bank transfer",
   "landing.methods.title": "Three ways to pay, one app",
   "landing.mockup.home.alt": "Payky terminal home screen",
   "landing.mockup.paid.alt": "Payky payment received screen",
@@ -287,7 +287,7 @@ export const en = {
   "onboarding.next": "Next",
   "onboarding.payments.btc.description":
     "Accept Bitcoin payments through the Spark Lightning account.",
-  "onboarding.payments.btc.title": "BTC",
+  "onboarding.payments.btc.title": "Bitcoin",
   "onboarding.payments.cash.description":
     "Record in-person cash payments in the terminal.",
   "onboarding.payments.cash.title": "Cash",
@@ -295,7 +295,7 @@ export const en = {
     "Select the payment methods this terminal should accept.",
   "onboarding.payments.iban.description":
     "Show bank transfer QR codes for fiat payments.",
-  "onboarding.payments.iban.title": "IBAN",
+  "onboarding.payments.iban.title": "Bank transfer",
   "onboarding.payments.title": "Payment methods",
   "onboarding.progress": "Step",
   "onboarding.restore.action": "Restore account",
@@ -343,8 +343,8 @@ export const en = {
   "paymentWait.detail": "Payment detail",
   "paymentWait.invalidId": "Invalid payment id.",
   "paymentWait.method.cash": "Cash",
-  "paymentWait.method.iban": "IBAN",
-  "paymentWait.method.lightning": "Lightning",
+  "paymentWait.method.iban": "Bank transfer",
+  "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest":
     "This payment does not have a scannable request.",
   "paymentWait.notFound": "Payment was not found.",
@@ -525,7 +525,7 @@ export const en = {
   "settings.appearance": "APPEARANCE & LANGUAGE",
   "settings.defaultPaymentMethod.cashRegister.description":
     "Open new payments with the cash tab selected.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Cash payment",
+  "settings.defaultPaymentMethod.cashRegister.title": "Cash",
   "settings.defaultPaymentMethod.description":
     "Choose which enabled method is selected first when starting a bill",
   "settings.defaultPaymentMethod.empty":
@@ -533,7 +533,7 @@ export const en = {
   "settings.defaultPaymentMethod.empty.action": "Manage payment accounts",
   "settings.defaultPaymentMethod.iban.description":
     "Open new payments with the bank QR tab selected.",
-  "settings.defaultPaymentMethod.iban.title": "Bank QR payment",
+  "settings.defaultPaymentMethod.iban.title": "Bank transfer",
   "settings.defaultPaymentMethod.mode.description":
     "Only enabled methods compatible with the selected fiat currency are shown.",
   "settings.defaultPaymentMethod.mode.disabledDescription":
@@ -542,7 +542,7 @@ export const en = {
   "settings.defaultPaymentMethod.saved": "Default payment method saved.",
   "settings.defaultPaymentMethod.spark.description":
     "Open new payments with the Bitcoin / Spark tab selected.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin / Spark payment",
+  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
   "settings.defaultPaymentMethod.title": "Default Payment Method",
   "settings.debugConsole.clear": "Clear",
   "settings.debugConsole.description": "Inspect captured app console output",
@@ -765,11 +765,11 @@ export const en = {
   "settings.tables.delete.confirm.title": "Delete {name}?",
   "settings.tables.description": "Manage tables and seating",
   "settings.tables.empty.description":
-    "Add the tables in your venue so you can assign carts to them.",
+    "Add the tables in your venue so you can assign bills to them.",
   "settings.tables.empty.title": "No tables yet",
   "settings.tables.emptySearch": "No tables match your search.",
   "settings.tables.form.card.description":
-    "Name and seat count shown when assigning this table to a cart.",
+    "Name and seat count shown when assigning this table to a bill.",
   "settings.tables.form.card.title": "Details",
   "settings.tables.form.code.description":
     "Not used yet — reserved for a future QR code that will identify this table.",
@@ -1096,7 +1096,7 @@ export const en = {
   "settings.withdrawals.title": "Withdrawals",
   "tables.seatCount": "{value} seats",
   "tables.tile.free": "Free",
-  "tables.tile.multipleBills": "{value} open carts",
+  "tables.tile.multipleBills": "{value} open bills",
   "tables.tile.newBill": "New bill",
   "taxRecap.base": "Base",
   "taxRecap.noTax": "No VAT",

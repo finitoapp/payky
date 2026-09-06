@@ -36,14 +36,14 @@ export const sk = {
   "appUpdate.available": "Je dostupná nová verzia",
   "appUpdate.description": "Aktualizujte Payky na najnovšiu verziu.",
   "bill.list.label": "Účet č. {number}",
-  "bill.closed": "Tento košík je už vyriadený.",
+  "bill.closed": "Tento účet je už vyriadený.",
   "bill.locked": "Tento účet čaká na platbu, teraz ho nemožno upravovať.",
   "bill.locked.viewPayment": "Zobraziť platbu",
   "bill.locked.viewPayment.numbered": "Zobraziť platbu {number}",
   "bill.brick.add.aria": "Pridať {name}",
   "bill.brick.quantity.cancel": "Zrušiť",
   "bill.brick.quantity.confirm": "Pridať",
-  "bill.brick.quantity.description": "Koľko kusov chcete pridať do košíka?",
+  "bill.brick.quantity.description": "Koľko kusov chcete pridať do účtu?",
   "bill.brick.quantity.input.aria": "Počet kusov",
   "bill.brick.quantity.trigger.aria": "Zadať počet kusov {name}",
   "bill.brick.remove.aria": "Odobrať {name}",
@@ -64,12 +64,12 @@ export const sk = {
   "bill.table.assign": "Priradiť stôl",
   "bill.table.dialog.none": "Bez stola",
   "bill.table.dialog.title": "Vybrať stôl",
-  "bill.discard": "Zahodiť košík",
-  "bill.discard.confirm.cancel": "Zachovať košík",
+  "bill.discard": "Zahodiť účet",
+  "bill.discard.confirm.cancel": "Zachovať účet",
   "bill.discard.confirm.confirm": "Zahodiť",
   "bill.discard.confirm.description":
-    "Všetky položky v tomto košíku budú odstránené. Túto akciu nemožno vrátiť.",
-  "bill.discard.confirm.title": "Zahodiť tento košík?",
+    "Všetky položky v tomto účte budú odstránené. Túto akciu nemožno vrátiť.",
+  "bill.discard.confirm.title": "Zahodiť tento účet?",
   "bill.emptySearch": "Vyhľadávanie nenašlo žiadne položky.",
   "bill.itemsCount": "Položky: {value}",
   "bill.scan.collision.description":
@@ -89,9 +89,9 @@ export const sk = {
   "bill.search": "Hľadať položky...",
   "bill.search.clear.aria": "Vymazať hľadanie",
   "bill.summary.clear": "Vyprázdniť",
-  "bill.summary.clear.toast": "Košík vyprázdnený",
+  "bill.summary.clear.toast": "Účet vyprázdnený",
   "bill.summary.redo": "Znova",
-  "bill.summary.removeLine.aria": "Odobrať {name} z košíka",
+  "bill.summary.removeLine.aria": "Odobrať {name} z účtu",
   "bill.summary.removeLine.toast": "{name} odobraté",
   "bill.summary.undo": "Späť",
   "bill.title": "Účet",
@@ -189,10 +189,10 @@ export const sk = {
   "landing.methods.cash.title": "Hotovosť",
   "landing.methods.lightning.body":
     "Okamžité bitcoinové platby priamo do vašej vlastnej peňaženky. Self-custody — kľúče aj saty zostávajú vaše.",
-  "landing.methods.lightning.title": "Bitcoin Lightning",
+  "landing.methods.lightning.title": "Bitcoin",
   "landing.methods.qr.body":
     "Zákazník naskenuje QR kód a zaplatí bežným bankovým prevodom — rovno na váš účet. Podporuje české aj slovenské formáty QR platieb.",
-  "landing.methods.qr.title": "QR prevod",
+  "landing.methods.qr.title": "Bankový prevod",
   "landing.methods.title": "Tri spôsoby platby, jedna aplikácia",
   "landing.mockup.home.alt": "Domovská obrazovka terminálu Payky",
   "landing.mockup.paid.alt": "Obrazovka prijatej platby Payky",
@@ -291,7 +291,7 @@ export const sk = {
   "onboarding.next": "Ďalej",
   "onboarding.payments.btc.description":
     "Prijímajte bitcoinové platby cez Spark Lightning účet.",
-  "onboarding.payments.btc.title": "BTC",
+  "onboarding.payments.btc.title": "Bitcoin",
   "onboarding.payments.cash.description":
     "Evidujte hotovostné platby priamo v termináli.",
   "onboarding.payments.cash.title": "Hotovosť",
@@ -299,7 +299,7 @@ export const sk = {
     "Vyberte platobné metódy, ktoré má terminál prijímať.",
   "onboarding.payments.iban.description":
     "Zobrazujte QR kódy pre bankové prevody.",
-  "onboarding.payments.iban.title": "IBAN",
+  "onboarding.payments.iban.title": "Bankový prevod",
   "onboarding.payments.title": "Platobné metódy",
   "onboarding.progress": "Krok",
   "onboarding.restore.action": "Obnoviť účet",
@@ -346,8 +346,8 @@ export const sk = {
   "paymentWait.detail": "Detail platby",
   "paymentWait.invalidId": "Neplatné ID platby.",
   "paymentWait.method.cash": "Hotovosť",
-  "paymentWait.method.iban": "IBAN",
-  "paymentWait.method.lightning": "Lightning",
+  "paymentWait.method.iban": "Bankový prevod",
+  "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest": "Táto platba nemá žiadosť na skenovanie.",
   "paymentWait.notFound": "Platba sa nenašla.",
   "paymentWait.paid": "Platba prijatá",
@@ -528,7 +528,7 @@ export const sk = {
   "settings.appearance": "VZHĽAD A JAZYK",
   "settings.defaultPaymentMethod.cashRegister.description":
     "Nové platby otvoriť s vybranou záložkou hotovosti.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Hotovostná platba",
+  "settings.defaultPaymentMethod.cashRegister.title": "Hotovosť",
   "settings.defaultPaymentMethod.description":
     "Vyberte, ktorá povolená metóda sa vyberie ako prvá pri vytváraní účtu",
   "settings.defaultPaymentMethod.empty":
@@ -536,7 +536,7 @@ export const sk = {
   "settings.defaultPaymentMethod.empty.action": "Spravovať platobné účty",
   "settings.defaultPaymentMethod.iban.description":
     "Nové platby otvoriť s vybranou záložkou bankového QR.",
-  "settings.defaultPaymentMethod.iban.title": "Banková QR platba",
+  "settings.defaultPaymentMethod.iban.title": "Bankový prevod",
   "settings.defaultPaymentMethod.mode.description":
     "Zobrazujú sa len povolené metódy kompatibilné s vybranou fiat menou.",
   "settings.defaultPaymentMethod.mode.disabledDescription":
@@ -545,7 +545,7 @@ export const sk = {
   "settings.defaultPaymentMethod.saved": "Predvolená platobná metóda uložená.",
   "settings.defaultPaymentMethod.spark.description":
     "Nové platby otvoriť s vybranou záložkou Bitcoin / Spark.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin / Spark platba",
+  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
   "settings.defaultPaymentMethod.title": "Predvolená platobná metóda",
   "settings.debugConsole.clear": "Vymazať",
   "settings.debugConsole.description":

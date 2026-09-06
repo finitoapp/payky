@@ -36,14 +36,14 @@ export const cs = {
   "appUpdate.available": "Je dostupná nová verze",
   "appUpdate.description": "Aktualizujte Payky na nejnovější verzi.",
   "bill.list.label": "Účet č. {number}",
-  "bill.closed": "Tento košík je již vyřízený.",
+  "bill.closed": "Tento účet je již vyřízený.",
   "bill.locked": "Tento účet čeká na platbu, teď ho nelze upravovat.",
   "bill.locked.viewPayment": "Zobrazit platbu",
   "bill.locked.viewPayment.numbered": "Zobrazit platbu {number}",
   "bill.brick.add.aria": "Přidat {name}",
   "bill.brick.quantity.cancel": "Zrušit",
   "bill.brick.quantity.confirm": "Přidat",
-  "bill.brick.quantity.description": "Kolik kusů chcete přidat do košíku?",
+  "bill.brick.quantity.description": "Kolik kusů chcete přidat do účtu?",
   "bill.brick.quantity.input.aria": "Počet kusů",
   "bill.brick.quantity.trigger.aria": "Zadat počet kusů {name}",
   "bill.brick.remove.aria": "Odebrat {name}",
@@ -63,12 +63,12 @@ export const cs = {
   "bill.table.assign": "Přiřadit stůl",
   "bill.table.dialog.none": "Bez stolu",
   "bill.table.dialog.title": "Vybrat stůl",
-  "bill.discard": "Zahodit košík",
-  "bill.discard.confirm.cancel": "Zachovat košík",
+  "bill.discard": "Zahodit účet",
+  "bill.discard.confirm.cancel": "Zachovat účet",
   "bill.discard.confirm.confirm": "Zahodit",
   "bill.discard.confirm.description":
-    "Všechny položky v tomto košíku budou odstraněny. Tuto akci nelze vrátit.",
-  "bill.discard.confirm.title": "Zahodit tento košík?",
+    "Všechny položky v tomto účtu budou odstraněny. Tuto akci nelze vrátit.",
+  "bill.discard.confirm.title": "Zahodit tento účet?",
   "bill.emptySearch": "Hledání nenašlo žádné položky.",
   "bill.itemsCount": "Položky: {value}",
   "bill.scan.collision.description":
@@ -87,9 +87,9 @@ export const cs = {
   "bill.search": "Hledat položky...",
   "bill.search.clear.aria": "Vymazat hledání",
   "bill.summary.clear": "Vyprázdnit",
-  "bill.summary.clear.toast": "Košík vyprázdněn",
+  "bill.summary.clear.toast": "Účet vyprázdněn",
   "bill.summary.redo": "Znovu",
-  "bill.summary.removeLine.aria": "Odebrat {name} z košíku",
+  "bill.summary.removeLine.aria": "Odebrat {name} z účtu",
   "bill.summary.removeLine.toast": "{name} odebráno",
   "bill.summary.undo": "Zpět",
   "bill.title": "Účet",
@@ -187,10 +187,10 @@ export const cs = {
   "landing.methods.cash.title": "Hotovost",
   "landing.methods.lightning.body":
     "Okamžité bitcoinové platby přímo do vaší vlastní peněženky. Self-custody — klíče i sats zůstávají vaše.",
-  "landing.methods.lightning.title": "Bitcoin Lightning",
+  "landing.methods.lightning.title": "Bitcoin",
   "landing.methods.qr.body":
     "Zákazník naskenuje QR kód a zaplatí běžným bankovním převodem — rovnou na váš účet. Podporuje české i slovenské formáty QR plateb.",
-  "landing.methods.qr.title": "QR převod",
+  "landing.methods.qr.title": "Bankovní převod",
   "landing.methods.title": "Tři způsoby platby, jedna appka",
   "landing.mockup.home.alt": "Domovská obrazovka terminálu Payky",
   "landing.mockup.paid.alt": "Obrazovka přijaté platby Payky",
@@ -288,7 +288,7 @@ export const cs = {
   "onboarding.next": "Další",
   "onboarding.payments.btc.description":
     "Přijímejte bitcoinové platby přes Spark Lightning účet.",
-  "onboarding.payments.btc.title": "BTC",
+  "onboarding.payments.btc.title": "Bitcoin",
   "onboarding.payments.cash.description":
     "Evidujte hotovostní platby přímo v terminálu.",
   "onboarding.payments.cash.title": "Hotovost",
@@ -296,7 +296,7 @@ export const cs = {
     "Vyberte platební metody, které má terminál přijímat.",
   "onboarding.payments.iban.description":
     "Zobrazujte QR kódy pro bankovní převody.",
-  "onboarding.payments.iban.title": "IBAN",
+  "onboarding.payments.iban.title": "Bankovní převod",
   "onboarding.payments.title": "Platební metody",
   "onboarding.progress": "Krok",
   "onboarding.restore.action": "Obnovit účet",
@@ -342,9 +342,9 @@ export const cs = {
   "paymentWait.copyQr": "Zkopírovat obsah QR kódu",
   "paymentWait.detail": "Detail platby",
   "paymentWait.invalidId": "Neplatné id platby.",
-  "paymentWait.method.cash": "Hotově",
-  "paymentWait.method.iban": "IBAN",
-  "paymentWait.method.lightning": "Lightning",
+  "paymentWait.method.cash": "Hotovost",
+  "paymentWait.method.iban": "Bankovní převod",
+  "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest": "Tato platba nemá žádost ke skenování.",
   "paymentWait.notFound": "Platba nebyla nalezena.",
   "paymentWait.paid": "Platba přijata",
@@ -524,7 +524,7 @@ export const cs = {
   "settings.appearance": "VZHLED A JAZYK",
   "settings.defaultPaymentMethod.cashRegister.description":
     "Nové platby otevřít s vybranou záložkou hotovosti.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Hotovostní platba",
+  "settings.defaultPaymentMethod.cashRegister.title": "Hotovost",
   "settings.defaultPaymentMethod.description":
     "Vyberte, která povolená metoda se vybere jako první při založení účtu",
   "settings.defaultPaymentMethod.empty":
@@ -532,7 +532,7 @@ export const cs = {
   "settings.defaultPaymentMethod.empty.action": "Spravovat platební účty",
   "settings.defaultPaymentMethod.iban.description":
     "Nové platby otevřít s vybranou záložkou bankovního QR.",
-  "settings.defaultPaymentMethod.iban.title": "Bankovní QR platba",
+  "settings.defaultPaymentMethod.iban.title": "Bankovní převod",
   "settings.defaultPaymentMethod.mode.description":
     "Zobrazují se jen povolené metody kompatibilní s vybranou fiat měnou.",
   "settings.defaultPaymentMethod.mode.disabledDescription":
@@ -541,7 +541,7 @@ export const cs = {
   "settings.defaultPaymentMethod.saved": "Výchozí platební metoda uložena.",
   "settings.defaultPaymentMethod.spark.description":
     "Nové platby otevřít s vybranou záložkou Bitcoin / Spark.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin / Spark platba",
+  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
   "settings.defaultPaymentMethod.title": "Výchozí platební metoda",
   "settings.debugConsole.clear": "Vymazat",
   "settings.debugConsole.description":

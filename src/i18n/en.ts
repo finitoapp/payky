@@ -264,6 +264,12 @@ export const en = {
     "Turn on sync to back up this account and use it on other devices.",
   "onboarding.account.transport.title": "Sync",
   "onboarding.back": "Back",
+  "onboarding.cancelSetup": "Cancel account creation",
+  "onboarding.cancelSetup.confirm.cancel": "Keep setting up",
+  "onboarding.cancelSetup.confirm.confirm": "Cancel account creation",
+  "onboarding.cancelSetup.confirm.description":
+    "This new account will be discarded and you'll switch back to {name}.",
+  "onboarding.cancelSetup.confirm.title": "Cancel account creation?",
   "country.cz": "Czech Republic",
   "onboarding.country.description":
     "This sets sensible tax rate defaults for your catalog.",
@@ -470,6 +476,11 @@ export const en = {
   "settings.about.title": "About",
   "settings.accountAndSync": "ACCOUNT & SYNC",
   "settings.accounts.create.action": "Create account",
+  "settings.accounts.create.confirm.cancel": "Cancel",
+  "settings.accounts.create.confirm.confirm": "Create account",
+  "settings.accounts.create.confirm.description":
+    "You'll switch away from {name} and set up a brand new account with its own recovery phrase.",
+  "settings.accounts.create.confirm.title": "Create a new account?",
   "settings.accounts.create.description":
     "Generate a new recovery phrase and switch to that account.",
   "settings.accounts.create.title": "New account",

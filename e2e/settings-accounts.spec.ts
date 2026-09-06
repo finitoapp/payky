@@ -22,6 +22,11 @@ test("create, switch, and remove a device account", async ({
         name: translate("en", "settings.accounts.create.action"),
       })
       .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.accounts.create.confirm.confirm"),
+      })
+      .click()
   })
 
   await test.step("complete onboarding for the new account", () =>
@@ -75,5 +80,83 @@ test("create, switch, and remove a device account", async ({
       })
       .click()
     await expect(accountRows).toHaveCount(1)
+  })
+})
+
+test("canceling the create-account confirmation stays on the current account", async ({
+  seededPage: page,
+}) => {
+  await test.step("open device accounts settings", () =>
+    gotoPage(page, "/settings/accounts", "en", "settings.accounts.title"))
+
+  await test.step("start creating a new account, then cancel the confirmation", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.accounts.create.action"),
+      })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.accounts.create.confirm.cancel"),
+      })
+      .click()
+  })
+
+  await test.step("no second account was created and no switch happened", async () => {
+    await expect(
+      page.getByRole("heading", {
+        name: translate("en", "settings.accounts.title"),
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByTestId("account-list").getByRole("listitem")
+    ).toHaveCount(1)
+  })
+})
+
+test("canceling setup from onboarding discards the new account and switches back", async ({
+  seededPage: page,
+}) => {
+  test.setTimeout(60_000)
+
+  await test.step("create a second account", async () => {
+    await gotoPage(page, "/settings/accounts", "en", "settings.accounts.title")
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.accounts.create.action"),
+      })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.accounts.create.confirm.confirm"),
+      })
+      .click()
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+  })
+
+  await test.step("cancel setup instead of completing onboarding", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.cancelSetup") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "onboarding.cancelSetup.confirm.confirm"),
+      })
+      .click()
+  })
+
+  await test.step("lands back on the terminal home screen for the original account", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "settings.title") })
+      .waitFor()
+  })
+
+  await test.step("the discarded account no longer appears in the account list", async () => {
+    await gotoPage(page, "/settings/accounts", "en", "settings.accounts.title")
+    await expect(
+      page.getByTestId("account-list").getByRole("listitem")
+    ).toHaveCount(1)
   })
 })

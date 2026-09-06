@@ -33,6 +33,7 @@ import {
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -52,6 +53,7 @@ function AccountsSettingsPage() {
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const activeAccount = useAtomValue(accountAtom)
   const reloadAppEvolu = useReloadAppEvolu()
+  const confirm = useConfirmDialog()
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
     null
@@ -103,6 +105,16 @@ function AccountsSettingsPage() {
   }
 
   const createNewAccount = async () => {
+    const confirmed = await confirm({
+      title: t("settings.accounts.create.confirm.title"),
+      description: t("settings.accounts.create.confirm.description", {
+        name: activeAccount.name,
+      }),
+      confirmLabel: t("settings.accounts.create.confirm.confirm"),
+      cancelLabel: t("settings.accounts.create.confirm.cancel"),
+    })
+    if (!confirmed) return
+
     clearError()
     setCreating(true)
     try {

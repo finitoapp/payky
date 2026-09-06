@@ -267,6 +267,12 @@ export const sk = {
     "Zapnutím synchronizácie tento účet zálohujete a môžete ho použiť na ďalších zariadeniach.",
   "onboarding.account.transport.title": "Synchronizácia",
   "onboarding.back": "Späť",
+  "onboarding.cancelSetup": "Zrušiť vytváranie účtu",
+  "onboarding.cancelSetup.confirm.cancel": "Pokračovať v nastavení",
+  "onboarding.cancelSetup.confirm.confirm": "Zrušiť vytváranie účtu",
+  "onboarding.cancelSetup.confirm.description":
+    "Tento nový účet bude zahodený a prepnete sa späť na {name}.",
+  "onboarding.cancelSetup.confirm.title": "Zrušiť vytváranie účtu?",
   "country.cz": "Česká republika",
   "onboarding.country.description":
     "Podľa toho nastavíme predvolené daňové sadzby v katalógu.",
@@ -473,6 +479,11 @@ export const sk = {
   "settings.about.title": "O aplikácii",
   "settings.accountAndSync": "ÚČET A SYNCHRONIZÁCIA",
   "settings.accounts.create.action": "Vytvoriť účet",
+  "settings.accounts.create.confirm.cancel": "Zrušiť",
+  "settings.accounts.create.confirm.confirm": "Vytvoriť účet",
+  "settings.accounts.create.confirm.description":
+    "Prepnete sa z účtu {name} a založíte úplne nový účet s vlastnou recovery phrase.",
+  "settings.accounts.create.confirm.title": "Vytvoriť nový účet?",
   "settings.accounts.create.description":
     "Vygenerovať novú recovery phrase a prepnúť sa na tento účet.",
   "settings.accounts.create.title": "Nový účet",

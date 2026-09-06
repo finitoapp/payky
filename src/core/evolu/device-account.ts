@@ -112,15 +112,22 @@ export const accountByMasterKeyQuery = (masterKey: MasterKey) =>
 export const accountListQuery = createDeviceQuery((db) =>
   db
     .selectFrom("account")
-    .select(["account.id", "account.name", "account.createdAt"])
+    .select([
+      "account.id",
+      "account.name",
+      "account.createdAt",
+      "account.lastUseAt",
+    ])
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
     .where("account.masterKey", "is not", null)
     .where("account.createdAt", "is not", null)
+    .where("account.lastUseAt", "is not", null)
     .orderBy("account.createdAt", "asc")
     .$narrowType<{
       name: KyselyNotNull
       createdAt: KyselyNotNull
+      lastUseAt: KyselyNotNull
     }>()
 )
 

@@ -45,7 +45,12 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { updateAccountName } from "@/core/evolu/device-account.ts"
+import {
+  accountListQuery,
+  removeDeviceAccount,
+  selectAccount,
+  updateAccountName,
+} from "@/core/evolu/device-account.ts"
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
 import {
   saveCashRegisterAccount,
@@ -81,6 +86,8 @@ import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
 import { TransportToggleList } from "@/features/settings/security/transport-toggle-list.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
+import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
@@ -181,6 +188,7 @@ function OnboardingPage() {
   const [settings] = settingsData
   const [form, setForm] = useAtom(onboardingFormAtom)
   const [finishing, setFinishing] = useState(false)
+  const [cancelingSetup, setCancelingSetup] = useState(false)
   const {
     mnemonic,
     pending: restoring,
@@ -189,6 +197,19 @@ function OnboardingPage() {
     restore,
   } = useRestoreAccount()
   const ibanInputId = useId()
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const activeAccount = useAtomValue(accountAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
+  const confirm = useConfirmDialog()
+  const { data: deviceAccounts } = useDeviceEvoluQuery(accountListQuery)
+
+  // Set when this account was created from Settings > App Account > Create
+  // account (not this device's very first account): lets onboarding offer a
+  // way back to it instead of being a one-way trap. `undefined` on a
+  // genuinely first-run device, where there is nothing to fall back to.
+  const fallbackAccount = deviceAccounts
+    .filter((account) => account.id !== activeAccount.id)
+    .sort((a, b) => b.lastUseAt - a.lastUseAt)[0]
 
   const {
     step,
@@ -199,7 +220,7 @@ function OnboardingPage() {
     paymentMethods: selectedPaymentMethods,
   } = form
   const onboardingSteps = getOnboardingSteps(accountType)
-  const pending = finishing || restoring
+  const pending = finishing || restoring || cancelingSetup
   const selectedCurrency =
     form.currency ?? getDefaultCurrencyForLanguage(language)
 
@@ -328,6 +349,36 @@ function OnboardingPage() {
     await navigate({ to: "/restore-account" })
   }
 
+  const cancelSetup = async () => {
+    if (fallbackAccount === undefined) return
+
+    setCancelingSetup(true)
+    try {
+      const confirmed = await confirm({
+        title: t("onboarding.cancelSetup.confirm.title"),
+        description: t("onboarding.cancelSetup.confirm.description", {
+          name: fallbackAccount.name,
+        }),
+        confirmLabel: t("onboarding.cancelSetup.confirm.confirm"),
+        cancelLabel: t("onboarding.cancelSetup.confirm.cancel"),
+      })
+      if (!confirmed) return
+
+      // The account being onboarded here has no data of its own yet, so
+      // discarding it loses nothing — unlike `finishOnboarding`'s
+      // `navigate`, no explicit redirect is needed: reloading the app Evolu
+      // client re-derives `settings` for the now-active fallback account,
+      // and the effect above navigates away from /onboarding once it sees
+      // that account is already onboarded.
+      removeDeviceAccount(deviceEvolu, activeAccount.id)
+      selectAccount(deviceEvolu, fallbackAccount.id)
+      setForm(initialOnboardingFormState)
+      reloadAppEvolu()
+    } finally {
+      setCancelingSetup(false)
+    }
+  }
+
   return (
     <main className="min-h-svh bg-background text-foreground">
       <PhoneViewport className="justify-center px-5 py-6">
@@ -360,6 +411,19 @@ function OnboardingPage() {
               </StepperNav>
             </Stepper>
           </div>
+
+          {fallbackAccount ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="-ml-2.5 self-start text-muted-foreground"
+              disabled={pending}
+              onClick={() => void cancelSetup()}
+            >
+              {t("onboarding.cancelSetup")}
+            </Button>
+          ) : null}
 
           <Card>
             {step === "language" ? (

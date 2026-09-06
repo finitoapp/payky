@@ -36,6 +36,7 @@ import {
   loadBillStatus,
   removeTableFromBill,
   splitBill,
+  splitBillIntoNewBill,
 } from "./bill-actions.ts"
 import { billByIdQuery } from "./bill-queries.ts"
 import { type BillId, createRandomBillId } from "./bill-types.ts"
@@ -583,6 +584,135 @@ describe("bill actions", () => {
         id: "bill-missing",
       },
     })
+  }, 15_000)
+
+  test("splits selected items from a source bill into a newly created bill in one call", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, {
+      displayNumber: 1,
+      label: "Source",
+    })
+    const lineSummary = await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Shared dish"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(12_000),
+      })
+    )
+    const targetBillId = createRandomBillId()
+
+    const result = await run.orThrow(
+      splitBillIntoNewBill({
+        sourceBillId,
+        targetBillId,
+        deviceId: null,
+        tableId: null,
+        currency: "CZK",
+        items: [lineSummary],
+      })
+    )
+
+    expect(result).toBe(targetBillId)
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(targetBillId)))
+      .toMatchObject([{ id: targetBillId, currency: "CZK" }])
+    await expect
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
+      .toMatchObject([])
+    await expect
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(targetBillId)))
+      .toMatchObject([
+        {
+          billId: targetBillId,
+          name: "Shared dish",
+          quantity: 1,
+          totalAmount: 12_000,
+        },
+      ])
+  }, 15_000)
+
+  test("rejects splitting into a new bill when the source bill is locked by a pending payment", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: sourceBillId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+
+    await expect(
+      run(
+        splitBillIntoNewBill({
+          sourceBillId,
+          targetBillId: createRandomBillId(),
+          deviceId: null,
+          tableId: null,
+          currency: "CZK",
+          items: [],
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+  }, 15_000)
+
+  test("rejects splitting into a new bill when the source bill is canceled or closed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
+    await run.orThrow(cancelBill(canceledBillId))
+    const closedBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await closeBillWithCashPayment(deps, closedBillId, 1_000)
+
+    for (const billId of [canceledBillId, closedBillId]) {
+      await expect(
+        run(
+          splitBillIntoNewBill({
+            sourceBillId: billId,
+            targetBillId: createRandomBillId(),
+            deviceId: null,
+            tableId: null,
+            currency: "CZK",
+            items: [],
+          })
+        )
+      ).resolves.toMatchObject({ ok: false, error: { type: "BillNotOpen" } })
+    }
   }, 15_000)
 
   test("rejects adding or removing lines on a canceled or closed bill", async () => {

@@ -465,15 +465,41 @@ export const createBill =
   }
 
 /**
+ * Loads the highest existing bill display number (across every bill ever
+ * created, not just currently-open ones, so numbers are never reused) and
+ * computes the next one, without writing it. Exported so callers that need
+ * to fold the bill upsert into a larger mutation batch (e.g.
+ * `splitBillIntoNewBill`) can reuse this instead of duplicating it — mirrors
+ * `payment-number-actions.ts`'s `loadNextPaymentNumber`.
+ */
+const loadNextBillDisplayNumber =
+  (): Task<PositiveInteger, never, EvoluDep> => async (run) => {
+    const existing = await run.deps.evolu.loadQuery(allBillDisplayNumbersQuery)
+    const lastDisplayNumber = existing.at(-1)?.displayNumber ?? 0
+
+    return ok(PositiveInteger(lastDisplayNumber + 1))
+  }
+
+/**
+ * Upserts a bill row for an already-computed display number. Takes the
+ * caller's own `MutationOptions` so the write can join an existing mutation
+ * batch instead of always opening a new one — mirrors
+ * `payment-number-actions.ts`'s `upsertPaymentNumberRows`.
+ */
+const upsertBillRow = (
+  evolu: EvoluDep["evolu"],
+  row: UpsertValues<typeof bill>,
+  options: MutationOptions
+): void => {
+  evolu.upsert("bill", removeUndefinedValues(row), options)
+}
+
+/**
  * Creates a bill at an `id` the caller already chose — the cart UI generates
  * it client-side and puts it in the `/bill` URL before this ever runs, so the
  * URL stays stable across the lazy-creation moment (see `use-cart-bill.ts`'s
  * `ensureBillExists`). Upserts rather than inserts for that reason: `id` is
  * known ahead of time instead of coming back from the write.
- *
- * `displayNumber` is derived from the highest existing one (across every
- * bill ever created, not just currently-open ones, so numbers are never
- * reused) instead of taking it as input.
  */
 export const createBillAtEnd =
   (
@@ -484,21 +510,17 @@ export const createBillAtEnd =
   ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const existing = await run.deps.evolu.loadQuery(allBillDisplayNumbersQuery)
-    const lastDisplayNumber = existing.at(-1)?.displayNumber ?? 0
+    const displayNumber = await run.ok(loadNextBillDisplayNumber())
 
-    const { id } = await runMutationWithCompletion((options) =>
-      run.deps.evolu.upsert(
-        "bill",
-        removeUndefinedValues({
-          ...input,
-          displayNumber: PositiveInteger(lastDisplayNumber + 1),
-        }),
+    await runMutationWithCompletion((options) =>
+      upsertBillRow(
+        run.deps.evolu,
+        { ...input, displayNumber },
         { ...options, ownerId: evoluOwnerId }
       )
     )
 
-    return ok(id)
+    return ok(input.id)
   }
 
 export const assignBillToTable =
@@ -753,6 +775,42 @@ export const listOpenBills =
     )
   }
 
+/**
+ * Pairs each item with a "remove" row on `sourceBillId` and an "add" row on
+ * `targetBillId` — the move itself, shared by `splitBill` and
+ * `splitBillIntoNewBill`, which differ only in how they guard/write it.
+ */
+const buildSplitLines = (
+  sourceBillId: BillId,
+  targetBillId: BillId,
+  items: ReadonlyArray<BillLineSummary>
+): Omit<BillLineRow, "id">[] => {
+  const lines: Omit<BillLineRow, "id">[] = []
+  for (const item of items) {
+    lines.push({
+      billId: sourceBillId,
+      deviceId: null,
+      catalogItemId: item.catalogItemId,
+      itemId: item.itemId,
+      type: item.type,
+      kind: "remove",
+      quantity: item.quantity,
+      totalAmount: item.totalAmount,
+    })
+    lines.push({
+      billId: targetBillId,
+      deviceId: null,
+      catalogItemId: item.catalogItemId,
+      itemId: item.itemId,
+      type: item.type,
+      kind: "add",
+      quantity: item.quantity,
+      totalAmount: item.totalAmount,
+    })
+  }
+  return lines
+}
+
 export const splitBill =
   (input: {
     readonly sourceBillId: BillId
@@ -770,35 +828,82 @@ export const splitBill =
     const targetBillResult = await run(requireEditableBill(input.targetBillId))
     if (!targetBillResult.ok) return targetBillResult
 
-    const lines: Omit<BillLineRow, "id">[] = []
-    for (const item of input.items) {
-      lines.push({
-        billId: input.sourceBillId,
-        deviceId: null,
-        catalogItemId: item.catalogItemId,
-        itemId: item.itemId,
-        type: item.type,
-        kind: "remove",
-        quantity: item.quantity,
-        totalAmount: item.totalAmount,
-      })
-      lines.push({
-        billId: input.targetBillId,
-        deviceId: null,
-        catalogItemId: item.catalogItemId,
-        itemId: item.itemId,
-        type: item.type,
-        kind: "add",
-        quantity: item.quantity,
-        totalAmount: item.totalAmount,
-      })
-    }
+    const lines = buildSplitLines(
+      input.sourceBillId,
+      input.targetBillId,
+      input.items
+    )
     const targetItems = await run.ok(appendBillLines(lines, input.targetBillId))
 
     return ok({
       bill: targetBillResult.value,
       items: targetItems,
     })
+  }
+
+/**
+ * Creates a brand-new bill and, in the same mutation batch, moves the
+ * selected `items` off `sourceBillId` onto it — the "split bill" entry point
+ * used by the `/bill` UI. One batch instead of `createBillAtEnd` followed by
+ * `splitBill`'s own separate one: the target bill's `id` is chosen by the
+ * caller (same client-generated-id convention as `createBillAtEnd`), so
+ * nothing needs to be read back before the line moves can be written
+ * alongside it.
+ *
+ * `sourceBillId` must still be open and unlocked at the moment this actually
+ * runs, not just when the UI opened the split screen — same guard as every
+ * other cart-editing action, checked immediately before the write within
+ * this same function. See docs/bill-payment-states.md. The new bill needs no
+ * such check: it does not exist yet, so it is trivially open.
+ */
+export const splitBillIntoNewBill =
+  (
+    input: Pick<
+      UpsertValues<typeof bill>,
+      "deviceId" | "tableId" | "currency"
+    > & {
+      readonly sourceBillId: BillId
+      readonly targetBillId: BillId
+      readonly items: ReadonlyArray<BillLineSummary>
+    }
+  ): Task<BillId, SplitBillError, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  async (run) => {
+    // Independent reads — the edit guard doesn't need the display number and
+    // vice versa — so they run concurrently instead of as two sequential
+    // round trips before the mutation batch even starts.
+    const [sourceBillResult, displayNumber] = await Promise.all([
+      run(requireEditableBill(input.sourceBillId)),
+      run.ok(loadNextBillDisplayNumber()),
+    ])
+    if (!sourceBillResult.ok) return sourceBillResult
+
+    const { evoluOwnerId } = run.deps
+    const lines = buildSplitLines(
+      input.sourceBillId,
+      input.targetBillId,
+      input.items
+    )
+
+    await runMutationWithCompletion((options) => {
+      upsertBillRow(
+        run.deps.evolu,
+        {
+          id: input.targetBillId,
+          deviceId: input.deviceId,
+          label: null,
+          tableId: input.tableId,
+          currency: input.currency,
+          displayNumber,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+      insertBillLineRows(run.deps.evolu, lines, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    })
+
+    return ok(input.targetBillId)
   }
 
 export const cancelBill =

@@ -1,5 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
+import { useStore } from "jotai"
 import {
   AlertTriangleIcon,
   ChevronDown,
@@ -7,6 +8,7 @@ import {
   Redo2,
   ScanLineIcon,
   ShoppingBag,
+  Split,
   Table2,
   Trash2Icon,
   Undo2,
@@ -21,6 +23,7 @@ import {
   useState,
 } from "react"
 import { toast } from "sonner"
+import { accountAtom } from "@/atoms/account.ts"
 import { CategoryFilterBar } from "@/components/category-filter-bar.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
@@ -42,10 +45,14 @@ import {
   cancelBill,
   confirmBillClosedDespiteCancellation,
   removeTableFromBill,
+  splitBillIntoNewBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
-import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import {
+  type BillId,
+  createRandomBillId,
+} from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
@@ -72,6 +79,7 @@ import { BillScanView } from "@/features/bill/bill-scan-view.tsx"
 import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { ItemBrickGridSkeleton } from "@/features/bill/item-brick-grid-skeleton.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
+import { SplitBillDialog } from "@/features/bill/split-bill-dialog.tsx"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
@@ -404,6 +412,7 @@ function BillCartView({
   const navigate = useNavigate()
   const router = useRouter()
   const appRun = useAppRun()
+  const jotaiStore = useStore()
   const confirm = useConfirmDialog()
   const console = useConsole()
   const createTerminalPayment = useCreateTerminalPayment()
@@ -414,6 +423,8 @@ function BillCartView({
   const { data: tables } = useEvoluQuery(tablesQuery)
   const [chargePending, setChargePending] = useState(false)
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
+  const [splitDialogOpen, setSplitDialogOpen] = useState(false)
+  const [splitPending, setSplitPending] = useState(false)
 
   const currentTable = tables.find((table) => table.id === tableId)
 
@@ -552,8 +563,51 @@ function BillCartView({
     router.history.back()
   }
 
+  const handleConfirmSplit = async (items: ReadonlyArray<BillLineSummary>) => {
+    setSplitPending(true)
+    try {
+      const { device } = await jotaiStore.get(accountAtom)
+      const targetBillId = createRandomBillId()
+
+      await using run = appRun()
+      const result = await run(
+        splitBillIntoNewBill({
+          sourceBillId: billId,
+          targetBillId,
+          deviceId: device.id,
+          tableId,
+          currency,
+          items,
+        })
+      )
+      if (!result.ok) {
+        console.error("Failed to split bill", result.error)
+        toast.error(
+          result.error.type === "BillLocked"
+            ? t("bill.locked")
+            : t("bill.split.error")
+        )
+        return
+      }
+
+      setSplitDialogOpen(false)
+      await navigate({ to: "/bill", search: { billId: targetBillId } })
+    } finally {
+      setSplitPending(false)
+    }
+  }
+
   return (
     <>
+      <SplitBillDialog
+        open={splitDialogOpen}
+        onOpenChange={setSplitDialogOpen}
+        summaries={summaries}
+        currency={currency}
+        pending={splitPending}
+        onConfirm={(items) => void handleConfirmSplit(items)}
+      />
+
       <div className="shrink-0">
         <AssignTableDialog
           open={tablePickerOpen}
@@ -749,6 +803,16 @@ function BillCartView({
               onClick={() => void handleDiscard()}
             >
               <Trash2Icon />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 shrink-0"
+              disabled={summaries.length === 0 || splitPending}
+              aria-label={t("bill.split.button.aria")}
+              onClick={() => setSplitDialogOpen(true)}
+            >
+              <Split />
             </Button>
             <Button
               variant="outline"

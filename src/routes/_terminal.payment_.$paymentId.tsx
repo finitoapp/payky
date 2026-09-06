@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   BanknoteIcon,
   CheckIcon,
+  CopyIcon,
   LandmarkIcon,
   LoaderCircleIcon,
   ZapIcon,
@@ -39,6 +40,7 @@ import {
 import {
   cancelPayment,
   markPaymentPaidCash,
+  markPaymentPaidIban,
   preparePaymentMethod,
 } from "@/core/modules/payment/payment-actions.ts"
 import {
@@ -87,6 +89,7 @@ type PaymentMethodOption = PaymentMethodOptionBase &
         readonly qrPayload: string | null
         readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
         readonly defaultQrFormat: BankQrFormat
+        readonly iban: string | null
       }
     | { readonly id: "cash"; readonly qrPayload: null }
   )
@@ -99,6 +102,14 @@ interface CashPaymentTabProps {
   readonly cashPaymentPending: boolean
   readonly cashRegisterAccountId: AccountId | null | undefined
   readonly onMarkCashPaid: () => void
+}
+
+interface IbanPaidTabProps {
+  readonly canMarkIbanPaid: boolean
+  readonly ibanPaymentErrorKey: TranslationKey | null
+  readonly ibanPaymentPending: boolean
+  readonly ibanVariableSymbol: string | null
+  readonly onMarkIbanPaid: () => void
 }
 
 const preparingPaymentMethodKeys = {
@@ -265,6 +276,9 @@ function PaymentWaitingRequest({
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
+  const [ibanPaymentPending, setIbanPaymentPending] = useState(false)
+  const [ibanPaymentErrorKey, setIbanPaymentErrorKey] =
+    useState<TranslationKey | null>(null)
   const [cancelPending, setCancelPending] = useState(false)
   const [paymentMethodPreparationState, setPaymentMethodPreparationState] =
     useState<PaymentMethodPreparationState>({})
@@ -370,6 +384,7 @@ function PaymentWaitingRequest({
         qrPayload: activeQrPayload,
         qrPayloads: availableIbanQrPayloads,
         defaultQrFormat,
+        iban: enabledIbanAccount.iban,
         icon: <LandmarkIcon />,
       })
     }
@@ -584,6 +599,13 @@ function PaymentWaitingRequest({
     cashRegisterAccountId !== null &&
     cashRegisterAccountId !== undefined &&
     !isPaid
+  const ibanAccountId = payment.ibanAccountId
+  const isIbanPaymentMethod = activePaymentMethod?.id === "iban"
+  const canMarkIbanPaid =
+    isIbanPaymentMethod &&
+    ibanAccountId !== null &&
+    ibanAccountId !== undefined &&
+    !isPaid
   const canCancelPayment = payment.canceledAt === null && !isPaid
 
   const handleMarkCashPaid = async () => {
@@ -607,6 +629,30 @@ function PaymentWaitingRequest({
       }
     } finally {
       setCashPaymentPending(false)
+    }
+  }
+
+  const handleMarkIbanPaid = async () => {
+    if (!canMarkIbanPaid) return
+
+    setIbanPaymentErrorKey(null)
+    setIbanPaymentPending(true)
+    try {
+      await using run = appRun()
+
+      const result = await run(
+        markPaymentPaidIban({
+          paymentId,
+          accountId: ibanAccountId,
+        })
+      )
+
+      if (!result.ok) {
+        console.error("Failed to mark bank transfer paid", result.error)
+        setIbanPaymentErrorKey("paymentWait.ibanPaid.error")
+      }
+    } finally {
+      setIbanPaymentPending(false)
     }
   }
 
@@ -742,10 +788,15 @@ function PaymentWaitingRequest({
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}
               cashRegisterAccountId={cashRegisterAccountId}
+              canMarkIbanPaid={canMarkIbanPaid}
+              ibanPaymentErrorKey={ibanPaymentErrorKey}
+              ibanPaymentPending={ibanPaymentPending}
+              ibanVariableSymbol={payment.variableSymbol}
               preparingMessageKey={activePreparingPaymentMethodKey}
               selectedIbanQrFormat={selectedIbanQrFormat}
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}
+              onMarkIbanPaid={() => void handleMarkIbanPaid()}
             />
           ) : null}
 
@@ -835,16 +886,22 @@ function PaymentMethodTabContent({
   cashPaymentErrorKey,
   cashPaymentPending,
   cashRegisterAccountId,
+  canMarkIbanPaid,
+  ibanPaymentErrorKey,
+  ibanPaymentPending,
+  ibanVariableSymbol,
   preparingMessageKey,
   selectedIbanQrFormat,
   onSelectIbanQrFormat,
   onMarkCashPaid,
+  onMarkIbanPaid,
 }: {
   readonly method: PaymentMethodOption
   readonly preparingMessageKey: TranslationKey | null
   readonly selectedIbanQrFormat: BankQrFormat | null
   readonly onSelectIbanQrFormat: (format: BankQrFormat) => void
-} & CashPaymentTabProps) {
+} & CashPaymentTabProps &
+  IbanPaidTabProps) {
   switch (method.id) {
     case "spark":
       return (
@@ -859,9 +916,15 @@ function PaymentMethodTabContent({
           defaultQrFormat={method.defaultQrFormat}
           qrPayload={method.qrPayload}
           qrPayloads={method.qrPayloads}
+          iban={method.iban}
           preparingMessageKey={preparingMessageKey}
           selectedQrFormat={selectedIbanQrFormat}
           onSelectQrFormat={onSelectIbanQrFormat}
+          canMarkIbanPaid={canMarkIbanPaid}
+          ibanPaymentErrorKey={ibanPaymentErrorKey}
+          ibanPaymentPending={ibanPaymentPending}
+          ibanVariableSymbol={ibanVariableSymbol}
+          onMarkIbanPaid={onMarkIbanPaid}
         />
       )
     case "cash":
@@ -896,17 +959,24 @@ function IbanPaymentTab({
   defaultQrFormat,
   qrPayload,
   qrPayloads,
+  iban,
   preparingMessageKey,
   selectedQrFormat,
   onSelectQrFormat,
+  canMarkIbanPaid,
+  ibanPaymentErrorKey,
+  ibanPaymentPending,
+  ibanVariableSymbol,
+  onMarkIbanPaid,
 }: {
   readonly defaultQrFormat: BankQrFormat
   readonly qrPayload: string | null
   readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
+  readonly iban: string | null
   readonly preparingMessageKey: TranslationKey | null
   readonly selectedQrFormat: BankQrFormat | null
   readonly onSelectQrFormat: (format: BankQrFormat) => void
-}) {
+} & IbanPaidTabProps) {
   const { t } = useTranslation()
   const activeQrFormat = selectedQrFormat ?? defaultQrFormat
 
@@ -940,6 +1010,92 @@ function IbanPaymentTab({
           ))}
         </ToggleGroup>
       ) : null}
+      {iban !== null || ibanVariableSymbol !== null ? (
+        <div className="flex w-full max-w-xs flex-col gap-2">
+          {iban !== null ? (
+            <CopyableDetailRow
+              label={t("paymentWait.ibanDetails.iban.label")}
+              value={iban}
+              copyAriaLabel={t("paymentWait.ibanDetails.iban.copy")}
+              copiedMessage={t("paymentWait.ibanDetails.iban.copied")}
+              copyFailedMessage={t("paymentWait.ibanDetails.iban.copyError")}
+            />
+          ) : null}
+          {ibanVariableSymbol !== null ? (
+            <CopyableDetailRow
+              label={t("paymentWait.ibanDetails.variableSymbol.label")}
+              value={ibanVariableSymbol}
+              copyAriaLabel={t("paymentWait.ibanDetails.variableSymbol.copy")}
+              copiedMessage={t("paymentWait.ibanDetails.variableSymbol.copied")}
+              copyFailedMessage={t(
+                "paymentWait.ibanDetails.variableSymbol.copyError"
+              )}
+            />
+          ) : null}
+        </div>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        disabled={!canMarkIbanPaid || ibanPaymentPending}
+        onClick={onMarkIbanPaid}
+      >
+        {ibanPaymentPending ? (
+          <LoaderCircleIcon className="animate-spin" />
+        ) : (
+          <CheckIcon />
+        )}
+        {ibanPaymentPending
+          ? t("paymentWait.ibanPaid.pending")
+          : t("paymentWait.ibanPaid.action")}
+      </Button>
+      {ibanPaymentErrorKey ? (
+        <p className="text-sm font-medium text-destructive">
+          {t(ibanPaymentErrorKey)}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function CopyableDetailRow({
+  label,
+  value,
+  copyAriaLabel,
+  copiedMessage,
+  copyFailedMessage,
+}: {
+  readonly label: string
+  readonly value: string
+  readonly copyAriaLabel: string
+  readonly copiedMessage: string
+  readonly copyFailedMessage: string
+}) {
+  const copyValue = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success(copiedMessage)
+    } catch {
+      toast.error(copyFailedMessage)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-black/15 px-3 py-2 dark:border-white/15">
+      <span className="flex min-w-0 flex-col items-start text-left">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="truncate font-mono text-sm">{value}</span>
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={copyAriaLabel}
+        onClick={() => void copyValue()}
+      >
+        <CopyIcon />
+      </Button>
     </div>
   )
 }

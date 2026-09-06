@@ -186,6 +186,11 @@ export type MarkPaymentPaidCashError =
   | CashRegisterAccountNotFoundError
   | AccountCurrencyMismatchError
 
+export type MarkPaymentPaidIbanError =
+  | PaymentNotFoundError
+  | IbanAccountNotFoundError
+  | AccountCurrencyMismatchError
+
 export type PreparePaymentMethodError =
   | PaymentNotFoundError
   | CashRegisterAccountNotFoundError
@@ -998,6 +1003,73 @@ export const markPaymentPaidCash =
       createAccountTransaction({
         id: createIdFromString<"AccountTransaction">(
           `accountTransaction:cashRegister:payment:${paymentId}:${accountId}`
+        ),
+        accountId,
+        amount: payment.amount,
+        currency: payment.currency,
+        occurredAt:
+          occurredAt ?? TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        note: note ?? null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: deviceId ?? null,
+          source: "manual",
+        },
+      })
+    )
+    if (!accountTransactionResult.ok) return accountTransactionResult
+
+    return await run(
+      claimManualReconciliation({
+        paymentId,
+        accountTransactionId: accountTransactionResult.value,
+        deviceId: deviceId ?? null,
+      })
+    )
+  }
+
+/**
+ * Manual counterpart to the Fio-plugin auto-settlement: staff confirming
+ * they've checked their bank and the transfer for this payment arrived,
+ * since the auto-detection sync job only runs in the native app. Mirrors
+ * `markPaymentPaidCash` exactly, against the IBAN account instead.
+ */
+export const markPaymentPaidIban =
+  ({
+    paymentId,
+    accountId,
+    deviceId,
+    occurredAt,
+    note,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly deviceId?: DeviceId | null
+    readonly occurredAt?: TimestampMs
+    readonly note?: NonEmptyString | null
+  }): Task<
+    PaymentId,
+    MarkPaymentPaidIbanError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    const payment = paymentResult.value
+    const ibanAccountResult = loadAccountWithCurrencyCheck(
+      await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
+      ibanAccountNotFound(accountId),
+      "iban",
+      accountId,
+      payment.currency
+    )
+    if (!ibanAccountResult.ok) return ibanAccountResult
+
+    const accountTransactionResult = await run(
+      createAccountTransaction({
+        id: createIdFromString<"AccountTransaction">(
+          `accountTransaction:iban:manual:payment:${paymentId}:${accountId}`
         ),
         accountId,
         amount: payment.amount,

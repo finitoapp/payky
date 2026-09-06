@@ -164,14 +164,21 @@ const getStepIndex = (
   onboardingSteps: ReadonlyArray<OnboardingStep>
 ) => onboardingSteps.indexOf(step)
 
-const getDefaultCurrencyForLanguage = (
-  languageValue: Language
+/**
+ * The currency step's default: derived from the country chosen on the
+ * previous step, not the UI language, so a Czech merchant who reads the
+ * wizard in English still lands on CZK. See `finishOnboarding` for the
+ * device locale (number/money formatting), which is derived from language
+ * instead — the two are deliberately independent.
+ */
+const getDefaultCurrencyForCountry = (
+  country: OnboardingCountryChoice | null
 ): FiatCurrencyType => {
-  if (languageValue === "cs") {
+  if (country === "CZ") {
     return FiatCurrency.CZK
   }
 
-  if (languageValue === "sk") {
+  if (country === "SK") {
     return FiatCurrency.EUR
   }
 
@@ -222,7 +229,7 @@ function OnboardingPage() {
   const onboardingSteps = getOnboardingSteps(accountType)
   const pending = finishing || restoring || cancelingSetup
   const selectedCurrency =
-    form.currency ?? getDefaultCurrencyForLanguage(language)
+    form.currency ?? getDefaultCurrencyForCountry(country)
 
   const ibanEnabled = selectedPaymentMethods.has("iban")
   const ibanParseResult =
@@ -431,13 +438,13 @@ function OnboardingPage() {
                 language={language}
                 pending={pending}
                 onSelect={(nextLanguage) => {
-                  const nextLocale = getDeviceLocaleForLanguage(nextLanguage)
+                  // Only previews the wizard's own text live. The device
+                  // locale (number/money formatting) is derived from the
+                  // final language choice once, in finishOnboarding — not
+                  // on every intermediate click here — so switching languages
+                  // back and forth while deciding never leaves the wrong
+                  // regional format applied.
                   setLanguage(nextLanguage)
-                  setLocale(nextLocale)
-                  setForm((current) => ({
-                    ...current,
-                    currency: getDefaultCurrencyForLanguage(nextLanguage),
-                  }))
                 }}
               />
             ) : null}

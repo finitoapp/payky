@@ -247,3 +247,117 @@ test("finish is blocked until the recovery phrase is confirmed, and it can be co
       .waitFor()
   })
 })
+
+test("the currency step defaults to the chosen country's currency, not the UI language", async ({
+  page,
+}) => {
+  await test.step("walk onboarding in English, choosing the Czech Republic", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.language.english.title"),
+      })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "onboarding.accountChoice.new.title"),
+      })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "country.cz") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+  })
+
+  await test.step("Czech koruna is preselected, not the US dollar", async () => {
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "settings.fiat.czk.title"),
+      })
+    ).toHaveAttribute("aria-pressed", "true")
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "settings.fiat.usd.title"),
+      })
+    ).toHaveAttribute("aria-pressed", "false")
+  })
+})
+
+test("changing the language after picking a currency does not reset that choice", async ({
+  page,
+}) => {
+  const backButton = page.getByRole("button", {
+    name: translate("en", "onboarding.back"),
+  })
+  const nextButton = page.getByRole("button", {
+    name: translate("en", "onboarding.next"),
+  })
+  const usdOption = page.getByRole("button", {
+    name: translate("en", "settings.fiat.usd.title"),
+  })
+
+  await test.step("walk to the currency step and explicitly pick US dollar", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.language.english.title"),
+      })
+      .click()
+    await nextButton.click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "onboarding.accountChoice.new.title"),
+      })
+      .click()
+    await nextButton.click()
+    await page
+      .getByRole("button", { name: translate("en", "country.cz") })
+      .click()
+    await nextButton.click()
+    await usdOption.click()
+    await expect(usdOption).toHaveAttribute("aria-pressed", "true")
+  })
+
+  await test.step("go back to the language step and switch to Czech", async () => {
+    await backButton.click()
+    await backButton.click()
+    await backButton.click()
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.language.czech.title"),
+      })
+      .click()
+  })
+
+  await test.step("walking back to the currency step still shows the explicit US dollar choice", async () => {
+    // The UI itself previews the newly picked language immediately, so
+    // accessible names switch to Czech from here on.
+    const czechNextButton = page.getByRole("button", {
+      name: translate("cs", "onboarding.next"),
+    })
+    const usdOptionCzech = page.getByRole("button", {
+      name: translate("cs", "settings.fiat.usd.title"),
+    })
+    await czechNextButton.click()
+    await czechNextButton.click()
+    await czechNextButton.click()
+    await expect(usdOptionCzech).toHaveAttribute("aria-pressed", "true")
+  })
+})

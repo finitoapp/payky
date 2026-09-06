@@ -341,10 +341,12 @@ export const cs = {
   "paymentWait.cashPaid.unavailable": "K této platbě není připojená pokladna.",
   "paymentWait.copyQr": "Zkopírovat obsah QR kódu",
   "paymentWait.detail": "Detail platby",
+  "paymentWait.ibanDetails.hide": "Skrýt bankovní údaje",
   "paymentWait.ibanDetails.iban.copied": "IBAN zkopírován.",
   "paymentWait.ibanDetails.iban.copy": "Kopírovat IBAN",
   "paymentWait.ibanDetails.iban.copyError": "IBAN se nepodařilo zkopírovat.",
   "paymentWait.ibanDetails.iban.label": "IBAN",
+  "paymentWait.ibanDetails.show": "Zobrazit bankovní údaje",
   "paymentWait.ibanDetails.variableSymbol.copied":
     "Variabilní symbol zkopírován.",
   "paymentWait.ibanDetails.variableSymbol.copy": "Kopírovat variabilní symbol",

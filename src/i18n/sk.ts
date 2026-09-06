@@ -344,10 +344,12 @@ export const sk = {
     "K tejto platbe nie je pripojená pokladnica.",
   "paymentWait.copyQr": "Skopírovať obsah QR kódu",
   "paymentWait.detail": "Detail platby",
+  "paymentWait.ibanDetails.hide": "Skryť bankové údaje",
   "paymentWait.ibanDetails.iban.copied": "IBAN skopírovaný.",
   "paymentWait.ibanDetails.iban.copy": "Kopírovať IBAN",
   "paymentWait.ibanDetails.iban.copyError": "IBAN sa nepodarilo skopírovať.",
   "paymentWait.ibanDetails.iban.label": "IBAN",
+  "paymentWait.ibanDetails.show": "Zobraziť bankové údaje",
   "paymentWait.ibanDetails.variableSymbol.copied":
     "Variabilný symbol skopírovaný.",
   "paymentWait.ibanDetails.variableSymbol.copy": "Kopírovať variabilný symbol",

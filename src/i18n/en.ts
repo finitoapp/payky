@@ -341,10 +341,12 @@ export const en = {
     "Cash register is not attached to this payment.",
   "paymentWait.copyQr": "Copy QR code content",
   "paymentWait.detail": "Payment detail",
+  "paymentWait.ibanDetails.hide": "Hide bank details",
   "paymentWait.ibanDetails.iban.copied": "IBAN copied.",
   "paymentWait.ibanDetails.iban.copy": "Copy IBAN",
   "paymentWait.ibanDetails.iban.copyError": "Could not copy the IBAN.",
   "paymentWait.ibanDetails.iban.label": "IBAN",
+  "paymentWait.ibanDetails.show": "Show bank details",
   "paymentWait.ibanDetails.variableSymbol.copied": "Variable symbol copied.",
   "paymentWait.ibanDetails.variableSymbol.copy": "Copy variable symbol",
   "paymentWait.ibanDetails.variableSymbol.copyError":

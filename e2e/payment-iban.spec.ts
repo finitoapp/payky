@@ -44,13 +44,20 @@ test("pay with IBAN: renders a scannable bank QR in either format, then simulate
   })
 })
 
-test("pay with IBAN: the IBAN and variable symbol can be copied, and the transfer can be confirmed manually", async ({
+test("pay with IBAN: bank details stay hidden until toggled, show the IBAN grouped in fours, and let the IBAN/VS be copied and the transfer confirmed manually", async ({
   seededPage: page,
 }) => {
   // navigator.clipboard.writeText() otherwise silently hangs in Chromium
   // without an explicit permission grant, and the copy buttons' toasts never
   // fire either way.
   await page.context().grantPermissions(["clipboard-write"])
+
+  const detailsToggle = page.getByRole("button", {
+    name: translate("en", "paymentWait.ibanDetails.show"),
+  })
+  const ibanCopyButton = page.getByRole("button", {
+    name: translate("en", "paymentWait.ibanDetails.iban.copy"),
+  })
 
   await test.step("create a payment and switch to the IBAN tab", async () => {
     await createPayment(page, "en")
@@ -63,12 +70,19 @@ test("pay with IBAN: the IBAN and variable symbol can be copied, and the transfe
       .waitFor()
   })
 
-  await test.step("the IBAN can be copied", async () => {
-    await page
-      .getByRole("button", {
-        name: translate("en", "paymentWait.ibanDetails.iban.copy"),
-      })
-      .click()
+  await test.step("bank details are hidden until the toggle is pressed", async () => {
+    await expect(ibanCopyButton).not.toBeVisible()
+    await expect(detailsToggle).toHaveAttribute("aria-pressed", "false")
+    await detailsToggle.click()
+    await expect(ibanCopyButton).toBeVisible()
+  })
+
+  await test.step("the IBAN is shown grouped in fours", async () => {
+    await expect(page.getByText("CZ65 0800 0000 1920 0014 5399")).toBeVisible()
+  })
+
+  await test.step("the IBAN can be copied (in full, not the grouped display)", async () => {
+    await ibanCopyButton.click()
     await expect(
       page.getByText(translate("en", "paymentWait.ibanDetails.iban.copied"))
     ).toBeVisible()
@@ -85,6 +99,14 @@ test("pay with IBAN: the IBAN and variable symbol can be copied, and the transfe
         translate("en", "paymentWait.ibanDetails.variableSymbol.copied")
       )
     ).toBeVisible()
+  })
+
+  await test.step("toggling again hides the bank details", async () => {
+    const hideToggle = page.getByRole("button", {
+      name: translate("en", "paymentWait.ibanDetails.hide"),
+    })
+    await hideToggle.click()
+    await expect(ibanCopyButton).not.toBeVisible()
   })
 
   await test.step("manually confirm the transfer was received", async () => {

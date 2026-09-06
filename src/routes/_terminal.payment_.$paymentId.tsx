@@ -4,6 +4,8 @@ import {
   BanknoteIcon,
   CheckIcon,
   CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
   LandmarkIcon,
   LoaderCircleIcon,
   ZapIcon,
@@ -62,6 +64,7 @@ import {
   requestPaymentMethodPreparation,
   retryPaymentMethodPreparation,
 } from "@/features/payment-wait/payment-method-preparation.ts"
+import { formatAddressGroups } from "@/features/withdraw/withdraw-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -979,6 +982,8 @@ function IbanPaymentTab({
 } & IbanPaidTabProps) {
   const { t } = useTranslation()
   const activeQrFormat = selectedQrFormat ?? defaultQrFormat
+  const [detailsVisible, setDetailsVisible] = useState(false)
+  const hasDetails = iban !== null || ibanVariableSymbol !== null
 
   return (
     <div className="flex w-full flex-col items-center gap-3">
@@ -1010,12 +1015,13 @@ function IbanPaymentTab({
           ))}
         </ToggleGroup>
       ) : null}
-      {iban !== null || ibanVariableSymbol !== null ? (
+      {detailsVisible && hasDetails ? (
         <div className="flex w-full max-w-xs flex-col gap-2">
           {iban !== null ? (
             <CopyableDetailRow
               label={t("paymentWait.ibanDetails.iban.label")}
               value={iban}
+              displayValue={formatAddressGroups(iban)}
               copyAriaLabel={t("paymentWait.ibanDetails.iban.copy")}
               copiedMessage={t("paymentWait.ibanDetails.iban.copied")}
               copyFailedMessage={t("paymentWait.ibanDetails.iban.copyError")}
@@ -1034,22 +1040,42 @@ function IbanPaymentTab({
           ) : null}
         </div>
       ) : null}
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        disabled={!canMarkIbanPaid || ibanPaymentPending}
-        onClick={onMarkIbanPaid}
-      >
-        {ibanPaymentPending ? (
-          <LoaderCircleIcon className="animate-spin" />
-        ) : (
-          <CheckIcon />
-        )}
-        {ibanPaymentPending
-          ? t("paymentWait.ibanPaid.pending")
-          : t("paymentWait.ibanPaid.action")}
-      </Button>
+      <div className="flex items-center gap-2">
+        {hasDetails ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={
+              detailsVisible
+                ? t("paymentWait.ibanDetails.hide")
+                : t("paymentWait.ibanDetails.show")
+            }
+            aria-pressed={detailsVisible}
+            onClick={() => {
+              setDetailsVisible((current) => !current)
+            }}
+          >
+            {detailsVisible ? <EyeOffIcon /> : <EyeIcon />}
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={!canMarkIbanPaid || ibanPaymentPending}
+          onClick={onMarkIbanPaid}
+        >
+          {ibanPaymentPending ? (
+            <LoaderCircleIcon className="animate-spin" />
+          ) : (
+            <CheckIcon />
+          )}
+          {ibanPaymentPending
+            ? t("paymentWait.ibanPaid.pending")
+            : t("paymentWait.ibanPaid.action")}
+        </Button>
+      </div>
       {ibanPaymentErrorKey ? (
         <p className="text-sm font-medium text-destructive">
           {t(ibanPaymentErrorKey)}
@@ -1062,12 +1088,14 @@ function IbanPaymentTab({
 function CopyableDetailRow({
   label,
   value,
+  displayValue,
   copyAriaLabel,
   copiedMessage,
   copyFailedMessage,
 }: {
   readonly label: string
   readonly value: string
+  readonly displayValue?: string
   readonly copyAriaLabel: string
   readonly copiedMessage: string
   readonly copyFailedMessage: string
@@ -1085,7 +1113,9 @@ function CopyableDetailRow({
     <div className="flex items-center justify-between gap-3 rounded-lg border border-black/15 px-3 py-2 dark:border-white/15">
       <span className="flex min-w-0 flex-col items-start text-left">
         <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="truncate font-mono text-sm">{value}</span>
+        <span className="truncate font-mono text-sm">
+          {displayValue ?? value}
+        </span>
       </span>
       <Button
         type="button"

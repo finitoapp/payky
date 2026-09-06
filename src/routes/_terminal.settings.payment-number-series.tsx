@@ -13,10 +13,7 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { updatePaymentLastNumber } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentLastNumberQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
-import {
-  getPaymentNumberSeries,
-  updatePaymentNumberSeries,
-} from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
+import { updatePaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import { paymentNumberSeriesQuery } from "@/core/modules/payment-number-series/payment-number-series-queries.ts"
 import { createDefaultPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-utils.ts"
 import {
@@ -150,24 +147,6 @@ function PaymentNumberSeriesPage() {
     )
     setLastNumberDate(paymentLastNumber?.date ?? "")
   }, [paymentLastNumber])
-
-  useEffect(() => {
-    if (storedSeries !== undefined) return
-
-    let cancelled = false
-
-    const ensurePaymentNumberSeries = async () => {
-      await using run = appRun()
-
-      if (!cancelled) await run(getPaymentNumberSeries())
-    }
-
-    void ensurePaymentNumberSeries()
-
-    return () => {
-      cancelled = true
-    }
-  }, [appRun, storedSeries])
 
   return (
     <>

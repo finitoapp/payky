@@ -180,7 +180,6 @@ function OnboardingPage() {
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const [form, setForm] = useAtom(onboardingFormAtom)
-  const [ibanError, setIbanError] = useState<TranslationKey | null>(null)
   const [finishing, setFinishing] = useState(false)
   const {
     mnemonic,
@@ -203,6 +202,17 @@ function OnboardingPage() {
   const pending = finishing || restoring
   const selectedCurrency =
     form.currency ?? getDefaultCurrencyForLanguage(language)
+
+  const ibanEnabled = selectedPaymentMethods.has("iban")
+  const ibanParseResult =
+    ibanEnabled && iban !== ""
+      ? BankAccountInputIbanSchema.safeParse(iban)
+      : null
+  const ibanMissing = ibanEnabled && iban === ""
+  const ibanInvalid = ibanParseResult !== null && !ibanParseResult.success
+  const ibanError: TranslationKey | null = ibanInvalid
+    ? "settings.fiatBankAccount.iban.invalid"
+    : null
 
   useEffect(() => {
     // The appSettings row's existence marks the account as onboarded. The row
@@ -243,26 +253,9 @@ function OnboardingPage() {
       }
       return { ...current, paymentMethods: nextMethods }
     })
-    setIbanError(null)
   }
 
   const finishOnboarding = async () => {
-    setIbanError(null)
-
-    const ibanEnabled = selectedPaymentMethods.has("iban")
-    const ibanResult =
-      iban === "" ? null : BankAccountInputIbanSchema.safeParse(iban)
-
-    if (ibanEnabled && !ibanResult) {
-      setIbanError("settings.fiatBankAccount.iban.required")
-      return
-    }
-
-    if (ibanResult?.success === false) {
-      setIbanError("settings.fiatBankAccount.iban.invalid")
-      return
-    }
-
     setFinishing(true)
     try {
       setLocale(getDeviceLocaleForLanguage(language))
@@ -301,7 +294,7 @@ function OnboardingPage() {
       await run(
         saveFiatBankAccount({
           enabled: ibanEnabled,
-          iban: ibanResult?.data,
+          iban: ibanParseResult?.success ? ibanParseResult.data : undefined,
           currency: selectedCurrency,
         })
       )
@@ -434,7 +427,6 @@ function OnboardingPage() {
                 pending={pending}
                 onIbanChange={(nextIban) => {
                   setForm((current) => ({ ...current, iban: nextIban }))
-                  setIbanError(null)
                 }}
                 onTogglePaymentMethod={togglePaymentMethod}
               />
@@ -479,7 +471,8 @@ function OnboardingPage() {
                     disabled={
                       pending ||
                       (step === "accountChoice" && accountType === null) ||
-                      (step === "country" && country === null)
+                      (step === "country" && country === null) ||
+                      (step === "payments" && (ibanMissing || ibanInvalid))
                     }
                     onClick={goNext}
                   >

@@ -56,6 +56,70 @@ test("choosing a country during onboarding seeds its tax rates", async ({
   })
 })
 
+test("an invalid IBAN blocks advancing past the payment methods step", async ({
+  page,
+}) => {
+  const nextButton = page.getByRole("button", {
+    name: translate("en", "onboarding.next"),
+  })
+  const ibanInput = page.getByRole("textbox", {
+    name: translate("en", "settings.fiatBankAccount.iban.label"),
+  })
+
+  await test.step("walk onboarding up to the payment methods step", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.language.english.title"),
+      })
+      .click()
+    await nextButton.click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "onboarding.accountChoice.new.title"),
+      })
+      .click()
+    await nextButton.click()
+    await page
+      .getByRole("button", { name: translate("en", "country.cz") })
+      .click()
+    await nextButton.click()
+    await nextButton.click()
+  })
+
+  await test.step("enabling IBAN with no value yet keeps Next disabled", async () => {
+    await page
+      .getByRole("checkbox", {
+        name: translate("en", "onboarding.payments.iban.title"),
+      })
+      .click()
+    await expect(nextButton).toBeDisabled()
+  })
+
+  await test.step("typing an invalid IBAN keeps Next disabled and shows the error", async () => {
+    await ibanInput.fill("12345")
+    await expect(nextButton).toBeDisabled()
+    await expect(
+      page.getByText(translate("en", "settings.fiatBankAccount.iban.invalid"))
+    ).toBeVisible()
+  })
+
+  await test.step("fixing the IBAN re-enables Next and lets onboarding complete", async () => {
+    await ibanInput.fill("CZ6508000000192000145399")
+    await expect(nextButton).toBeEnabled()
+    await nextButton.click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.finish") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "settings.title") })
+      .waitFor()
+  })
+})
+
 test("onboarding restore account starts the sync-wait screen", async ({
   page,
 }) => {

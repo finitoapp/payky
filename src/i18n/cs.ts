@@ -246,6 +246,8 @@ export const cs = {
   "nav.settings": "Nastavení",
   "onboarding.account.description":
     "Zkontrolujte identitu, kterou Payky pro toto zařízení vygeneroval. Můžete ji přejmenovat a zapnout synchronizaci teď, nebo později v Nastavení.",
+  "onboarding.account.mnemonic.confirm":
+    "Uložil(a) jsem si recovery phrase na bezpečné místo",
   "onboarding.accountChoice.description":
     "Vytvořte nový účet pro toto zařízení nebo obnovte účet, který už používáte.",
   "onboarding.accountChoice.new.description":
@@ -995,12 +997,18 @@ export const cs = {
   "settings.security": "BEZPEČNOST A SOUKROMÍ",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.title": "Bezpečnost a synchronizace",
+  "settings.security.mnemonic.copy": "Kopírovat",
+  "settings.security.mnemonic.copied": "Recovery phrase zkopírována.",
+  "settings.security.mnemonic.copyError":
+    "Recovery phrase se nepodařilo zkopírovat.",
   "settings.security.mnemonic.description":
     "Zobrazení recovery phrase pro aktivní lokální účet.",
   "settings.security.mnemonic.help":
     "Udržujte tuto frázi v soukromí. Kdo ji zná, může účet obnovit.",
   "settings.security.mnemonic.label": "Recovery phrase",
   "settings.security.mnemonic.title": "Obnova účtu",
+  "settings.security.mnemonic.warning":
+    "Pokud tuto frázi ztratíte, tento účet a jeho data už nikdy nepůjde obnovit – ani nám se to nepodaří.",
   "settings.security.transports.active": "Aktivní",
   "settings.security.transports.activate": "Aktivovat",
   "settings.security.transports.add": "Přidat transport",

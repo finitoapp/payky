@@ -496,7 +496,17 @@ function OnboardingPage() {
               />
             ) : null}
 
-            {step === "account" ? <AccountStep /> : null}
+            {step === "account" ? (
+              <AccountStep
+                recoveryPhraseConfirmed={form.recoveryPhraseConfirmed}
+                onRecoveryPhraseConfirmedChange={(confirmed) => {
+                  setForm((current) => ({
+                    ...current,
+                    recoveryPhraseConfirmed: confirmed,
+                  }))
+                }}
+              />
+            ) : null}
 
             {step === "restore" ? (
               <RestoreAccountStep
@@ -523,7 +533,7 @@ function OnboardingPage() {
                 {step === "account" ? (
                   <Button
                     type="button"
-                    disabled={pending}
+                    disabled={pending || !form.recoveryPhraseConfirmed}
                     onClick={finishOnboarding}
                   >
                     <Check data-icon="inline-start" />
@@ -882,7 +892,13 @@ function PaymentsStep({
   )
 }
 
-function AccountStep() {
+function AccountStep({
+  recoveryPhraseConfirmed,
+  onRecoveryPhraseConfirmedChange,
+}: {
+  readonly recoveryPhraseConfirmed: boolean
+  readonly onRecoveryPhraseConfirmedChange: (confirmed: boolean) => void
+}) {
   const { t } = useTranslation()
   const account = useAtomValue(accountAtom)
   const recoveryMnemonic = useAtomValue(recoveryMnemonicAtom)
@@ -891,6 +907,7 @@ function AccountStep() {
   const [name, setName] = useState(account.name)
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
   const nameInputId = useId()
+  const recoveryPhraseConfirmInputId = useId()
 
   const saveName = async () => {
     const trimmedName = name.trim()
@@ -947,6 +964,19 @@ function AccountStep() {
           </FieldGroup>
 
           <RecoveryPhraseCard mnemonic={recoveryMnemonic} />
+
+          <Field orientation="horizontal">
+            <Checkbox
+              id={recoveryPhraseConfirmInputId}
+              checked={recoveryPhraseConfirmed}
+              onCheckedChange={onRecoveryPhraseConfirmedChange}
+            />
+            <FieldContent>
+              <FieldLabel htmlFor={recoveryPhraseConfirmInputId}>
+                {t("onboarding.account.mnemonic.confirm")}
+              </FieldLabel>
+            </FieldContent>
+          </Field>
 
           <Card>
             <CardHeader>

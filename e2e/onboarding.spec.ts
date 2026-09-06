@@ -112,6 +112,11 @@ test("an invalid IBAN blocks advancing past the payment methods step", async ({
     await expect(nextButton).toBeEnabled()
     await nextButton.click()
     await page
+      .getByRole("checkbox", {
+        name: translate("en", "onboarding.account.mnemonic.confirm"),
+      })
+      .click()
+    await page
       .getByRole("button", { name: translate("en", "onboarding.finish") })
       .click()
     await page
@@ -164,5 +169,81 @@ test("onboarding restore account starts the sync-wait screen", async ({
         name: translate("en", "accountRestore.title"),
       })
     ).toBeVisible()
+  })
+})
+
+test("finish is blocked until the recovery phrase is confirmed, and it can be copied", async ({
+  page,
+}) => {
+  const finishButton = page.getByRole("button", {
+    name: translate("en", "onboarding.finish"),
+  })
+  const confirmCheckbox = page.getByRole("checkbox", {
+    name: translate("en", "onboarding.account.mnemonic.confirm"),
+  })
+
+  // navigator.clipboard.writeText() otherwise silently hangs in Chromium
+  // without an explicit permission grant, and the copy button's toast never
+  // fires either way.
+  await page.context().grantPermissions(["clipboard-write"])
+
+  await test.step("walk onboarding up to the account step", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.language.english.title"),
+      })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "onboarding.accountChoice.new.title"),
+      })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "country.cz") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await finishButton.waitFor()
+  })
+
+  await test.step("finish is disabled before confirming the recovery phrase", async () => {
+    await expect(finishButton).toBeDisabled()
+  })
+
+  await test.step("the recovery phrase can be copied", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.security.mnemonic.copy"),
+      })
+      .click()
+    await expect(
+      page.getByText(translate("en", "settings.security.mnemonic.copied"))
+    ).toBeVisible()
+  })
+
+  await test.step("confirming the checkbox enables finish and completes onboarding", async () => {
+    await confirmCheckbox.click()
+    await expect(finishButton).toBeEnabled()
+    await finishButton.click()
+    await page
+      .getByRole("button", { name: translate("en", "settings.title") })
+      .waitFor()
   })
 })

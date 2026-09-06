@@ -186,6 +186,11 @@ export async function completeOnboarding(
     })
     .inputValue()
   await page
+    .getByRole("checkbox", {
+      name: translate(language, "onboarding.account.mnemonic.confirm"),
+    })
+    .click()
+  await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })
     .click()
   await page
@@ -234,6 +239,11 @@ export async function completeOnboardingDefaults(
     .click()
   await page
     .getByRole("button", { name: translate(language, "onboarding.next") })
+    .click()
+  await page
+    .getByRole("checkbox", {
+      name: translate(language, "onboarding.account.mnemonic.confirm"),
+    })
     .click()
   await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })

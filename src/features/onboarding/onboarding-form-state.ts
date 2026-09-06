@@ -56,6 +56,12 @@ export interface OnboardingFormState {
   readonly country: OnboardingCountryChoice | null
   /** `null` until the user answers the VAT-payer question; treated as "not a VAT payer". */
   readonly vatPayer: boolean | null
+  /**
+   * Whether the user has checked the "I've saved my recovery phrase" box on
+   * the account step. Gates `onboarding.finish` so the wizard can't be
+   * completed without at least acknowledging the phrase is the only backup.
+   */
+  readonly recoveryPhraseConfirmed: boolean
 }
 
 export const initialOnboardingFormState: OnboardingFormState = {
@@ -66,6 +72,7 @@ export const initialOnboardingFormState: OnboardingFormState = {
   iban: "",
   country: null,
   vatPayer: null,
+  recoveryPhraseConfirmed: false,
 }
 
 export const onboardingFormAtom = atom<OnboardingFormState>(

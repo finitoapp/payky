@@ -249,6 +249,8 @@ export const sk = {
   "nav.settings": "Nastavenia",
   "onboarding.account.description":
     "Skontrolujte identitu, ktorú Payky pre toto zariadenie vygeneroval. Môžete ju premenovať a zapnúť synchronizáciu teraz, alebo neskôr v Nastaveniach.",
+  "onboarding.account.mnemonic.confirm":
+    "Uložil(a) som si recovery phrase na bezpečné miesto",
   "onboarding.accountChoice.description":
     "Vytvorte nový účet pre toto zariadenie alebo obnovte účet, ktorý už používate.",
   "onboarding.accountChoice.new.description":
@@ -998,11 +1000,17 @@ export const sk = {
   "settings.security": "BEZPEČNOSŤ A SÚKROMIE",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.title": "Bezpečnosť a synchronizácia",
+  "settings.security.mnemonic.copy": "Kopírovať",
+  "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",
+  "settings.security.mnemonic.copyError":
+    "Recovery phrase sa nepodarilo skopírovať.",
   "settings.security.mnemonic.description":
     "Zobrazenie recovery phrase pre aktívny lokálny účet.",
   "settings.security.mnemonic.help":
     "Udržiavajte túto frázu v súkromí. Kto ju pozná, môže účet obnoviť.",
   "settings.security.mnemonic.label": "Recovery phrase",
+  "settings.security.mnemonic.warning":
+    "Ak túto frázu stratíte, tento účet a jeho dáta už nikdy nepôjde obnoviť – nepodarí sa to ani nám.",
   "settings.security.mnemonic.title": "Obnova účtu",
   "settings.security.transports.active": "Aktívny",
   "settings.security.transports.activate": "Aktivovať",

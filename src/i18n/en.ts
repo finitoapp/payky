@@ -246,6 +246,8 @@ export const en = {
   "nav.settings": "Settings",
   "onboarding.account.description":
     "Review the identity Payky generated for this device. You can rename it and turn on sync now or later in Settings.",
+  "onboarding.account.mnemonic.confirm":
+    "I've saved my recovery phrase somewhere safe",
   "onboarding.accountChoice.description":
     "Create a new account for this device or restore one you already use.",
   "onboarding.accountChoice.new.description":
@@ -993,12 +995,17 @@ export const en = {
   "settings.security": "SECURITY & PRIVACY",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.title": "Security & Sync",
+  "settings.security.mnemonic.copy": "Copy",
+  "settings.security.mnemonic.copied": "Recovery phrase copied.",
+  "settings.security.mnemonic.copyError": "Could not copy the recovery phrase.",
   "settings.security.mnemonic.description":
     "Read the recovery phrase for the active local account.",
   "settings.security.mnemonic.help":
     "Keep this phrase private. Anyone with it can restore the account.",
   "settings.security.mnemonic.label": "Recovery phrase",
   "settings.security.mnemonic.title": "Account recovery",
+  "settings.security.mnemonic.warning":
+    "If you lose this phrase, this account and its data can never be recovered — not even by us.",
   "settings.security.transports.active": "Active",
   "settings.security.transports.activate": "Activate",
   "settings.security.transports.add": "Add transport",

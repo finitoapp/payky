@@ -97,6 +97,29 @@ const deriveAccountTransactionId = (
   return undefined
 }
 
+/**
+ * Which kind of movement a write describes, from the one detail payload it
+ * carries, or `undefined` when it carries none. Both callers take
+ * `RequireOneOrNone`, so at most one key is present and the order matters no
+ * more than it does for the id above.
+ *
+ * The `undefined` case is where the two callers part ways, which is why this
+ * returns it rather than defaulting: a create with no detail row *is* a
+ * cash-drawer movement, but an update with no detail payload must leave the
+ * stored kind alone — reclassifying an existing IBAN or Spark transaction
+ * because someone edited its note would be wrong.
+ */
+const deriveAccountTransactionKind = (detail: {
+  readonly iban?: unknown
+  readonly spark?: unknown
+  readonly onchain?: unknown
+}): AccountTransactionRow["kind"] | undefined => {
+  if (detail.iban) return "iban"
+  if (detail.spark) return "spark"
+  if (detail.onchain) return "onchain"
+  return undefined
+}
+
 export const createAccountTransaction =
   ({
     id: providedId,
@@ -143,11 +166,12 @@ export const createAccountTransaction =
       `accountTransactionSource:${id}:${source.source}`
     )
 
-    await runMutationWithCompletion((options) => {
-      let kind: AccountTransactionRow["kind"] = "cashRegister"
+    // No detail row means a cash-drawer movement.
+    const kind =
+      deriveAccountTransactionKind({ iban, spark, onchain }) ?? "cashRegister"
 
+    await runMutationWithCompletion((options) => {
       if (iban) {
-        kind = "iban"
         run.deps.evolu.upsert(
           "accountTransactionIban",
           removeUndefinedValues({
@@ -160,7 +184,6 @@ export const createAccountTransaction =
       }
 
       if (spark) {
-        kind = "spark"
         run.deps.evolu.upsert(
           "accountTransactionSpark",
           removeUndefinedValues({
@@ -192,7 +215,6 @@ export const createAccountTransaction =
       }
 
       if (onchain) {
-        kind = "onchain"
         run.deps.evolu.upsert(
           "accountTransactionOnchain",
           removeUndefinedValues({
@@ -253,14 +275,12 @@ export const updateAccountTransaction =
   >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
+    // Left `undefined` without a detail payload, so a partial update does not
+    // reclassify an existing iban/spark transaction — see the helper.
+    const kind = deriveAccountTransactionKind({ iban, spark })
 
     await runMutationWithCompletion((options) => {
-      // Without a detail payload, keep the stored kind untouched — a partial
-      // update must not reclassify an existing iban/spark transaction.
-      let kind: AccountTransactionRow["kind"] | undefined
-
       if (iban) {
-        kind = "iban"
         run.deps.evolu.update(
           "accountTransactionIban",
           removeUndefinedValues({
@@ -272,7 +292,6 @@ export const updateAccountTransaction =
       }
 
       if (spark) {
-        kind = "spark"
         run.deps.evolu.update(
           "accountTransactionSpark",
           removeUndefinedValues({

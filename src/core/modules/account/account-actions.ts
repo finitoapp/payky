@@ -71,6 +71,23 @@ export const loadAccount =
       accountNotFound(idValue)
     )
 
+/**
+ * Which kind of account a write describes, from the one detail payload it
+ * carries. Both `createAccount` and `updateAccount` take
+ * `RequireExactlyOne`, so exactly one key is present and the order these are
+ * checked in cannot matter; it is a plain function of the input rather than
+ * something to accumulate while writing rows.
+ */
+const deriveAccountKind = (detail: {
+  readonly iban?: unknown
+  readonly spark?: unknown
+  readonly cashRegister?: unknown
+}): AccountRow["kind"] => {
+  if (detail.iban) return "iban"
+  if (detail.spark) return "spark"
+  return "cashRegister"
+}
+
 export const createAccount =
   ({
     iban,
@@ -89,11 +106,10 @@ export const createAccount =
     const { evoluOwnerId } = run.deps
     const id = createTableId<"Account">()
 
-    await runMutationWithCompletion((options) => {
-      let kind: AccountRow["kind"] = "cashRegister"
+    const kind = deriveAccountKind({ iban, spark, cashRegister })
 
+    await runMutationWithCompletion((options) => {
       if (iban) {
-        kind = "iban"
         run.deps.evolu.upsert(
           "accountIban",
           removeUndefinedValues({
@@ -106,7 +122,6 @@ export const createAccount =
       }
 
       if (spark) {
-        kind = "spark"
         run.deps.evolu.upsert(
           "accountSpark",
           removeUndefinedValues({
@@ -118,7 +133,6 @@ export const createAccount =
       }
 
       if (cashRegister) {
-        kind = "cashRegister"
         run.deps.evolu.upsert(
           "accountCashRegister",
           removeUndefinedValues({
@@ -160,11 +174,10 @@ export const updateAccount =
   async (run) => {
     const { evoluOwnerId } = run.deps
 
-    await runMutationWithCompletion((options) => {
-      let kind: AccountRow["kind"] = "cashRegister"
+    const kind = deriveAccountKind({ iban, spark, cashRegister })
 
+    await runMutationWithCompletion((options) => {
       if (iban) {
-        kind = "iban"
         run.deps.evolu.update(
           "accountIban",
           removeUndefinedValues({
@@ -177,7 +190,6 @@ export const updateAccount =
       }
 
       if (spark) {
-        kind = "spark"
         run.deps.evolu.update(
           "accountSpark",
           removeUndefinedValues({
@@ -189,7 +201,6 @@ export const updateAccount =
       }
 
       if (cashRegister) {
-        kind = "cashRegister"
         run.deps.evolu.update(
           "accountCashRegister",
           removeUndefinedValues({

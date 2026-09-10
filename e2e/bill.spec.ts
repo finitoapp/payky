@@ -52,7 +52,15 @@ test("build a cart, save it, resume it, and discard it", async ({
   })
 
   await test.step("adding and removing items updates the summary", async () => {
+    // Each tap's effect is asserted before the next one, so this stays a
+    // flow test. Firing two and checking only the total made it depend on
+    // back-to-back taps landing — which is a real question, but one the
+    // "taps that land while the cart is still settling" test below owns, with
+    // raw mouse input rather than `locator.click()`'s actionability waiting.
     await addCoffee.click()
+    await expect(summaryTrigger).toContainText(
+      translateValue("en", "bill.itemsCount", 1)
+    )
     await addCoffee.click()
     await expect(summaryTrigger).toContainText(
       translateValue("en", "bill.itemsCount", 2)

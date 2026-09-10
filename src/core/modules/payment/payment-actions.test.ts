@@ -1,4 +1,9 @@
-import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
+import {
+  createIdFromString,
+  evoluJsonObjectFrom,
+  sqliteTrue,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
@@ -36,6 +41,7 @@ import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import { paymentLinesByPaymentIdQuery } from "@/core/modules/payment-line/payment-line-queries.ts"
 import { paymentLinesToBillLineSummaries } from "@/core/modules/payment-line/payment-line-utils.ts"
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import { activeReconciliationClaimsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
@@ -64,6 +70,7 @@ import {
   deletePayment,
   loadPayment,
   markPaymentPaidCash,
+  markPaymentPaidIban,
   preparePaymentMethod,
   updatePayment,
 } from "./payment-actions.ts"
@@ -1921,6 +1928,218 @@ describe("payment actions", () => {
     ).resolves.toMatchObject({ ok: true })
 
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+  }, 15_000)
+
+  test("marks a payment paid against a cash register or an IBAN account, each under its own deterministic transaction id", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    const createCzkPayment = () =>
+      run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(1_000),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+        })
+      )
+    const cashPaymentId = await createCzkPayment()
+    const ibanPaymentId = await createCzkPayment()
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: cashPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: cashPaymentId })
+    // `markPaymentPaidIban` had no coverage at all before this.
+    await expect(
+      run(
+        markPaymentPaidIban({
+          paymentId: ibanPaymentId,
+          accountId: ibanAccountId,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: ibanPaymentId })
+
+    // The transaction ids are content-derived so a retried confirmation
+    // re-uses the row instead of recording the money twice. The two prefixes
+    // are *not* symmetrical — the IBAN one carries a `manual` segment and the
+    // cash one does not — so they are pinned verbatim: changing either would
+    // silently duplicate a settlement for every payment already confirmed.
+    // Looked up by id rather than compared as an ordered list: account ids are
+    // random base64url, and SQLite's binary collation does not agree with
+    // JS string ordering on them.
+    const transactionById = (id: string) =>
+      evolu.loadQuery(
+        createQuery((db) =>
+          db
+            .selectFrom("accountTransaction")
+            .select(["id", "accountId", "amount"])
+            .where("id", "=", id as never)
+        )
+      )
+
+    await expect
+      .poll(() =>
+        transactionById(
+          createIdFromString<"AccountTransaction">(
+            `accountTransaction:cashRegister:payment:${cashPaymentId}:${cashRegisterAccountId}`
+          )
+        )
+      )
+      .toMatchObject([{ accountId: cashRegisterAccountId, amount: 1_000 }])
+    await expect
+      .poll(() =>
+        transactionById(
+          createIdFromString<"AccountTransaction">(
+            `accountTransaction:iban:manual:payment:${ibanPaymentId}:${ibanAccountId}`
+          )
+        )
+      )
+      .toMatchObject([{ accountId: ibanAccountId, amount: 1_000 }])
+
+    // And exactly those two rows — no stray settlement under another id.
+    await expect(
+      evolu.loadQuery(
+        createQuery((db) => db.selectFrom("accountTransaction").select(["id"]))
+      )
+    ).resolves.toHaveLength(2)
+
+    // Each path also claims its transaction against the payment — that claim
+    // is what makes the payment read as paid.
+    await expect
+      .poll(() =>
+        evolu.loadQuery(
+          activeReconciliationClaimsByPaymentIdQuery(cashPaymentId)
+        )
+      )
+      .toHaveLength(1)
+    await expect
+      .poll(() =>
+        evolu.loadQuery(
+          activeReconciliationClaimsByPaymentIdQuery(ibanPaymentId)
+        )
+      )
+      .toHaveLength(1)
+  }, 15_000)
+
+  test("refuses to mark a payment paid against a missing or wrong-currency account", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    // Both accounts above hold CZK, so a EUR payment mismatches each of them.
+    const eurPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "EUR",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: eurPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: {
+        type: "AccountCurrencyMismatch",
+        accountKind: "cashRegister",
+        accountCurrency: "CZK",
+        paymentCurrency: "EUR",
+      },
+    })
+    await expect(
+      run(
+        markPaymentPaidIban({
+          paymentId: eurPaymentId,
+          accountId: ibanAccountId,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: {
+        type: "AccountCurrencyMismatch",
+        accountKind: "iban",
+        accountCurrency: "CZK",
+        paymentCurrency: "EUR",
+      },
+    })
+
+    // A cash register is not an IBAN account and vice versa: each path only
+    // accepts its own kind, and reports its own not-found error.
+    const czkPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+    await expect(
+      run(
+        markPaymentPaidCash({
+          paymentId: czkPaymentId,
+          accountId: ibanAccountId,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "CashRegisterAccountNotFound", id: ibanAccountId },
+    })
+    await expect(
+      run(
+        markPaymentPaidIban({
+          paymentId: czkPaymentId,
+          accountId: cashRegisterAccountId,
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "IbanAccountNotFound", id: cashRegisterAccountId },
+    })
+
+    // Nothing was recorded for any of the refusals.
+    await expect(
+      evolu.loadQuery(
+        createQuery((db) => db.selectFrom("accountTransaction").select(["id"]))
+      )
+    ).resolves.toEqual([])
   }, 15_000)
 
   test("confirming a payment that only partially covers the bill leaves it open and unlocked", async () => {

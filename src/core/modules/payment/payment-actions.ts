@@ -1,3 +1,4 @@
+import type { Query } from "@evolu/common"
 import {
   createIdFromString,
   err,
@@ -15,6 +16,7 @@ import type {
   FetchError,
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import type { EvoluSchema } from "@/core/evolu/schema.ts"
 import {
   fetchYadioBtcExchangeRate,
   type YadioApiDep,
@@ -998,22 +1000,46 @@ export const deletePayment =
     return ok(paymentId)
   }
 
-export const markPaymentPaidCash =
-  ({
+interface MarkPaymentPaidInput {
+  readonly paymentId: PaymentId
+  readonly accountId: AccountId
+  readonly deviceId?: DeviceId | null
+  readonly occurredAt?: TimestampMs
+  readonly note?: NonEmptyString | null
+}
+
+/**
+ * Records staff confirming that money for a payment arrived on one of their
+ * own accounts, as an `accountTransaction` claimed against that payment.
+ *
+ * The account kind is the only thing that varies: which query finds it, which
+ * not-found error it reports, and the prefix of the transaction's id. That id
+ * is content-derived so a retried confirmation re-uses the row instead of
+ * recording the money twice — the two prefixes are deliberately passed in
+ * verbatim rather than assembled from `accountKind`, because they are *not*
+ * symmetrical (the IBAN one carries a `manual` segment, the cash one does
+ * not) and changing either would duplicate a settlement for every payment
+ * already confirmed.
+ */
+const markPaymentPaid =
+  <TRow extends { readonly currency: FiatCurrency }, TNotFoundError>({
+    accountKind,
+    accountQuery,
+    notFoundError,
+    transactionIdPrefix,
     paymentId,
     accountId,
     deviceId,
     occurredAt,
     note,
-  }: {
-    readonly paymentId: PaymentId
-    readonly accountId: AccountId
-    readonly deviceId?: DeviceId | null
-    readonly occurredAt?: TimestampMs
-    readonly note?: NonEmptyString | null
+  }: MarkPaymentPaidInput & {
+    readonly accountKind: "cashRegister" | "iban"
+    readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
+    readonly notFoundError: TNotFoundError
+    readonly transactionIdPrefix: string
   }): Task<
     PaymentId,
-    MarkPaymentPaidCashError,
+    PaymentNotFoundError | TNotFoundError | AccountCurrencyMismatchError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
@@ -1021,19 +1047,19 @@ export const markPaymentPaidCash =
     if (!paymentResult.ok) return paymentResult
 
     const payment = paymentResult.value
-    const cashRegisterAccountResult = loadAccountWithCurrencyCheck(
-      await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
-      cashRegisterAccountNotFound(accountId),
-      "cashRegister",
+    const accountResult = loadAccountWithCurrencyCheck(
+      await run.deps.evolu.loadQuery(accountQuery(accountId)),
+      notFoundError,
+      accountKind,
       accountId,
       payment.currency
     )
-    if (!cashRegisterAccountResult.ok) return cashRegisterAccountResult
+    if (!accountResult.ok) return accountResult
 
-    const accountTransactionResult = await run(
+    const accountTransactionId = await run.ok(
       createAccountTransaction({
         id: createIdFromString<"AccountTransaction">(
-          `accountTransaction:cashRegister:payment:${paymentId}:${accountId}`
+          `${transactionIdPrefix}${paymentId}:${accountId}`
         ),
         accountId,
         amount: payment.amount,
@@ -1048,83 +1074,50 @@ export const markPaymentPaidCash =
         },
       })
     )
-    if (!accountTransactionResult.ok) return accountTransactionResult
 
     return await run(
       claimManualReconciliation({
         paymentId,
-        accountTransactionId: accountTransactionResult.value,
+        accountTransactionId,
         deviceId: deviceId ?? null,
       })
     )
   }
+
+export const markPaymentPaidCash = (
+  input: MarkPaymentPaidInput
+): Task<
+  PaymentId,
+  MarkPaymentPaidCashError,
+  EvoluDep & EvoluOwnerIdDep & DateDep
+> =>
+  markPaymentPaid({
+    ...input,
+    accountKind: "cashRegister",
+    accountQuery: cashRegisterAccountByIdQuery,
+    notFoundError: cashRegisterAccountNotFound(input.accountId),
+    transactionIdPrefix: "accountTransaction:cashRegister:payment:",
+  })
 
 /**
  * Manual counterpart to the Fio-plugin auto-settlement: staff confirming
  * they've checked their bank and the transfer for this payment arrived,
- * since the auto-detection sync job only runs in the native app. Mirrors
- * `markPaymentPaidCash` exactly, against the IBAN account instead.
+ * since the auto-detection sync job only runs in the native app.
  */
-export const markPaymentPaidIban =
-  ({
-    paymentId,
-    accountId,
-    deviceId,
-    occurredAt,
-    note,
-  }: {
-    readonly paymentId: PaymentId
-    readonly accountId: AccountId
-    readonly deviceId?: DeviceId | null
-    readonly occurredAt?: TimestampMs
-    readonly note?: NonEmptyString | null
-  }): Task<
-    PaymentId,
-    MarkPaymentPaidIbanError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
-  > =>
-  async (run) => {
-    const paymentResult = await run(loadPayment(paymentId))
-    if (!paymentResult.ok) return paymentResult
-
-    const payment = paymentResult.value
-    const ibanAccountResult = loadAccountWithCurrencyCheck(
-      await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
-      ibanAccountNotFound(accountId),
-      "iban",
-      accountId,
-      payment.currency
-    )
-    if (!ibanAccountResult.ok) return ibanAccountResult
-
-    const accountTransactionResult = await run(
-      createAccountTransaction({
-        id: createIdFromString<"AccountTransaction">(
-          `accountTransaction:iban:manual:payment:${paymentId}:${accountId}`
-        ),
-        accountId,
-        amount: payment.amount,
-        currency: payment.currency,
-        occurredAt:
-          occurredAt ?? TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        note: note ?? null,
-        internalTransferGroupId: null,
-        source: {
-          deviceId: deviceId ?? null,
-          source: "manual",
-        },
-      })
-    )
-    if (!accountTransactionResult.ok) return accountTransactionResult
-
-    return await run(
-      claimManualReconciliation({
-        paymentId,
-        accountTransactionId: accountTransactionResult.value,
-        deviceId: deviceId ?? null,
-      })
-    )
-  }
+export const markPaymentPaidIban = (
+  input: MarkPaymentPaidInput
+): Task<
+  PaymentId,
+  MarkPaymentPaidIbanError,
+  EvoluDep & EvoluOwnerIdDep & DateDep
+> =>
+  markPaymentPaid({
+    ...input,
+    accountKind: "iban",
+    accountQuery: ibanAccountByIdQuery,
+    notFoundError: ibanAccountNotFound(input.accountId),
+    transactionIdPrefix: "accountTransaction:iban:manual:payment:",
+  })
 
 export const cancelPayment =
   (

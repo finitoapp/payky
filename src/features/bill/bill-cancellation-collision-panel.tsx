@@ -1,6 +1,6 @@
-import { AlertTriangleIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { CollisionAlert } from "@/components/collision-alert.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-actions.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -17,8 +17,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
  * `bill-page.tsx`'s `BillCancellationCollisionMessage` deliberately doesn't
  * use this. It's the whole screen rather than one section of a card, so it
  * wraps the same two actions in a different layout — the bill's total and
- * links to the payments that funded it — and states the warning through
- * `Alert` instead.
+ * links to the payments that funded it — around the same warning.
  */
 export function BillCancellationCollisionPanel({
   billId,
@@ -44,34 +43,24 @@ export function BillCancellationCollisionPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
-      <div className="flex items-start gap-3">
-        <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-warning" />
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold text-warning">
-            {t("bill.collision.title")}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t("bill.collision.description")}
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button
-          className="h-12 flex-1"
-          disabled={resolvePending}
-          onClick={() => void handleConfirmClosedDespiteCancellation()}
-        >
-          {t("bill.collision.markClosed")}
-        </Button>
-        <Button
-          variant="outline"
-          className="h-12 flex-1"
-          onClick={() => toast.info(t("bill.collision.refund.comingSoon"))}
-        >
-          {t("bill.collision.refund")}
-        </Button>
-      </div>
-    </div>
+    <CollisionAlert
+      title={t("bill.collision.title")}
+      description={t("bill.collision.description")}
+    >
+      <Button
+        className="h-12 flex-1"
+        disabled={resolvePending}
+        onClick={() => void handleConfirmClosedDespiteCancellation()}
+      >
+        {t("bill.collision.markClosed")}
+      </Button>
+      <Button
+        variant="outline"
+        className="h-12 flex-1"
+        onClick={() => toast.info(t("bill.collision.refund.comingSoon"))}
+      >
+        {t("bill.collision.refund")}
+      </Button>
+    </CollisionAlert>
   )
 }

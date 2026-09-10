@@ -1,8 +1,8 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
-import { AlertTriangleIcon } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { CollisionAlert } from "@/components/collision-alert.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import {
   Timeline,
@@ -384,67 +384,47 @@ function PaymentDetailContent({
           </div>
 
           {hasCancellationCollision ? (
-            <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-warning" />
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-semibold text-warning">
-                    {t("paymentDetail.collision.title")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("paymentDetail.collision.description")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button
-                  className="h-12 flex-1"
-                  disabled={resolvePending}
-                  onClick={() => void handleConfirmPaidDespiteCancellation()}
-                >
-                  {t("paymentDetail.collision.markPaid")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 flex-1"
-                  onClick={handleRefund}
-                >
-                  {t("paymentDetail.collision.refund")}
-                </Button>
-              </div>
-            </div>
+            <CollisionAlert
+              title={t("paymentDetail.collision.title")}
+              description={t("paymentDetail.collision.description")}
+            >
+              <Button
+                className="h-12 flex-1"
+                disabled={resolvePending}
+                onClick={() => void handleConfirmPaidDespiteCancellation()}
+              >
+                {t("paymentDetail.collision.markPaid")}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 flex-1"
+                onClick={handleRefund}
+              >
+                {t("paymentDetail.collision.refund")}
+              </Button>
+            </CollisionAlert>
           ) : null}
 
           {hasExcessSettlementCollision ? (
-            <div className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-warning" />
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-semibold text-warning">
-                    {t("paymentDetail.excessCollision.title")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("paymentDetail.excessCollision.description")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button
-                  className="h-12 flex-1"
-                  disabled={excessResolvePending}
-                  onClick={() => void handleAcknowledgeExcessSettlement()}
-                >
-                  {t("paymentDetail.excessCollision.acknowledge")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-12 flex-1"
-                  onClick={handleRefund}
-                >
-                  {t("paymentDetail.collision.refund")}
-                </Button>
-              </div>
-            </div>
+            <CollisionAlert
+              title={t("paymentDetail.excessCollision.title")}
+              description={t("paymentDetail.excessCollision.description")}
+            >
+              <Button
+                className="h-12 flex-1"
+                disabled={excessResolvePending}
+                onClick={() => void handleAcknowledgeExcessSettlement()}
+              >
+                {t("paymentDetail.excessCollision.acknowledge")}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 flex-1"
+                onClick={handleRefund}
+              >
+                {t("paymentDetail.collision.refund")}
+              </Button>
+            </CollisionAlert>
           ) : null}
 
           <Separator />

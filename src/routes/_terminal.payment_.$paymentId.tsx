@@ -88,14 +88,12 @@ type PaymentMethodOption = PaymentMethodOptionBase &
     | {
         readonly id: "iban"
         readonly qrPayload: string | null
-        readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
+        readonly qrPayloads: ReadonlyArray<BankQrPayload>
         readonly defaultQrFormat: BankQrFormat
         readonly iban: string | null
       }
     | { readonly id: "cash"; readonly qrPayload: null }
   )
-
-type IbanQrPayloadOption = BankQrPayload
 
 interface CashPaymentTabProps {
   readonly canMarkCashPaid: boolean
@@ -375,7 +373,7 @@ function PaymentWaitingRequest({
         payment.ibanAccountId !== null &&
         enabledIbanAccount.iban !== null &&
         enabledIbanAccount.name !== null
-      const availableIbanQrPayloads: ReadonlyArray<IbanQrPayloadOption> =
+      const availableIbanQrPayloads: ReadonlyArray<BankQrPayload> =
         canCreateIbanQrPayloads
           ? createBankQrPayloads({
               beneficiaryName: enabledIbanAccount.name,
@@ -926,7 +924,7 @@ function PaymentMethodTabContent({
   switch (method.id) {
     case "spark":
       return (
-        <SparkPaymentTab
+        <QrPaymentRequest
           qrPayload={method.qrPayload}
           preparingMessageKey={preparingMessageKey}
         />
@@ -961,21 +959,6 @@ function PaymentMethodTabContent({
   }
 }
 
-function SparkPaymentTab({
-  qrPayload,
-  preparingMessageKey,
-}: {
-  readonly qrPayload: string | null
-  readonly preparingMessageKey: TranslationKey | null
-}) {
-  return (
-    <QrPaymentRequest
-      qrPayload={qrPayload}
-      preparingMessageKey={preparingMessageKey}
-    />
-  )
-}
-
 function IbanPaymentTab({
   defaultQrFormat,
   qrPayload,
@@ -992,7 +975,7 @@ function IbanPaymentTab({
 }: {
   readonly defaultQrFormat: BankQrFormat
   readonly qrPayload: string | null
-  readonly qrPayloads: ReadonlyArray<IbanQrPayloadOption>
+  readonly qrPayloads: ReadonlyArray<BankQrPayload>
   readonly iban: string | null
   readonly preparingMessageKey: TranslationKey | null
   readonly selectedQrFormat: BankQrFormat | null

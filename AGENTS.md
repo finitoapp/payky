@@ -6,6 +6,7 @@
 - Use Bun for dependency management and scripts. Keep `exact = true` in both Bun config files.
 - Keep the app TypeScript-first and preserve strict compiler settings.
 - Use shadcn-style local UI components in `src/components/ui`; primitives must come from Base UI.
+- `src/components/ui` (shadcn) and `src/components/reui` (ReUI) are vendored third-party code, not ours. Never edit, refactor, shrink, or delete anything in them — not to remove an export nothing imports, not to trim an unused variant, not to fix a lint or style nit. They are kept byte-for-byte as upstream ships them so a registry re-add or upgrade stays a clean overwrite. Update them only by re-adding the component from its registry (`shadcn` CLI, ReUI MCP). An audit or dead-code scan flagging something in these two directories is a false positive; adapt the call site instead.
 - Use Zod for form, domain, and Evolu schema validation.
 - Store persistent application data through Evolu. Avoid direct `localStorage` except for non-critical UI preferences such as language.
 - Use Biome for linting and formatting.
@@ -25,7 +26,8 @@
 - `src/atoms` contains Jotai atoms that bootstrap app singletons: the device Evolu client, the app Evolu client, the active account, console, run, and the global confirm-dialog queue. Evolu clients are created here, not in `main.tsx`.
 - `src/hooks` contains the React bindings for those singletons (`useEvolu`, `useEvoluQuery`, `useDeviceEvoluQuery`, `useConsole`, `useTranslation`, `useAppRun`, ...). Access Evolu from React through these hooks.
 - `src/features` contains feature modules: page-level UI (forms, hooks, presentational components) for one feature, composed from domain modules and `src/components/ui` primitives. `src/features/settings` is the first tenant. Substantial page UI extracted from routes belongs here, not in `src/routes` or `src/components`.
-- `src/components/ui` contains shadcn-style reusable UI primitives built on Base UI, such as `button.tsx`. Keep generic UI here; avoid feature or domain logic in this directory.
+- `src/components/ui` contains shadcn-style reusable UI primitives built on Base UI, such as `button.tsx`. Keep generic UI here; avoid feature or domain logic in this directory. Vendored — see the project rule above.
+- `src/components/reui` contains components vendored from the ReUI registry (`alert.tsx`, `stepper.tsx`, `timeline.tsx`). Vendored — see the project rule above.
 - `src/components/theme-provider.tsx` contains theme-level UI infrastructure.
 - `src/core/evolu` contains Evolu client setup, the app schema composition, and the device database (`device-client.ts`, `device-account.ts`). Register new Evolu tables and indexes in `src/core/evolu/schema.ts`.
 - `src/core/modules` contains domain modules. Each module owns its schema, branded ids/types, actions, queries, and tests for one domain concept.

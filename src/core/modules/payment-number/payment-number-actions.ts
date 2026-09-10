@@ -9,7 +9,7 @@ import type {
 import { paymentLastNumberQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import { paymentLastNumberId } from "@/core/modules/payment-number/payment-number-utils.ts"
 import type { PaymentNumberSeriesRow } from "@/core/modules/payment-number-series/payment-number-series.ts"
-import { getPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
+import { loadPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   type DateString,
@@ -96,10 +96,13 @@ export const loadNextPaymentNumber =
   }: {
     readonly id: PaymentId
     readonly date: DateString
-  }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<PaymentNumberRow, never, EvoluDep> =>
   async (run) => {
-    const series = await run.ok(getPaymentNumberSeries())
-    const [previous] = await run.deps.evolu.loadQuery(paymentLastNumberQuery)
+    // Neither read depends on the other, and neither writes.
+    const [series, [previous]] = await Promise.all([
+      run.ok(loadPaymentNumberSeries()),
+      run.deps.evolu.loadQuery(paymentLastNumberQuery),
+    ])
 
     return ok(
       createNextPaymentNumberValues({

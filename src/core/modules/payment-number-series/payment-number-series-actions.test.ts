@@ -9,7 +9,7 @@ import {
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import {
-  getPaymentNumberSeries,
+  loadPaymentNumberSeries,
   updatePaymentNumberSeries,
 } from "./payment-number-series-actions.ts"
 import { paymentNumberSeriesQuery } from "./payment-number-series-queries.ts"
@@ -22,13 +22,13 @@ const createDeps = (evolu: EvoluDep["evolu"]) =>
   }) satisfies EvoluDep & EvoluOwnerIdDep
 
 describe("payment number series actions", () => {
-  test("creates and returns the deterministic default series", async () => {
+  test("returns the default series without storing it", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = createDeps(evolu)
     await using run = testCreateRun(deps)
 
-    const series = await run.ok(getPaymentNumberSeries())
+    const series = await run.ok(loadPaymentNumberSeries())
 
     expect(series).toEqual({
       id: paymentNumberSeriesId,
@@ -39,9 +39,13 @@ describe("payment number series actions", () => {
       prefix: null,
     })
 
+    // Reading the series no longer writes it. A missing row means nobody has
+    // changed the numbering, and the settings page renders the same defaults
+    // for it — so the row appears when settings are saved, not because a
+    // payment happened to be numbered.
     await expect
       .poll(() => evolu.loadQuery(paymentNumberSeriesQuery))
-      .toMatchObject([series])
+      .toEqual([])
   }, 15_000)
 
   test("returns the existing deterministic series without overwriting it", async () => {
@@ -60,7 +64,7 @@ describe("payment number series actions", () => {
       })
     )
 
-    const series = await run.ok(getPaymentNumberSeries())
+    const series = await run.ok(loadPaymentNumberSeries())
 
     expect(series).toMatchObject({
       id: paymentNumberSeriesId,

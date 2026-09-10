@@ -17,23 +17,26 @@ import {
   paymentNumberSeriesId,
 } from "./payment-number-series-utils.ts"
 
-export const getPaymentNumberSeries =
-  (): Task<PaymentNumberSeriesRow, never, EvoluDep & EvoluOwnerIdDep> =>
-  async (run) => {
-    const { evoluOwnerId } = run.deps
-    const existing = (
-      await run.deps.evolu.loadQuery(paymentNumberSeriesQuery)
-    )[0]
-    if (existing !== undefined) return ok(existing)
+/**
+ * The stored numbering series, or the defaults when there is none.
+ *
+ * A missing row means "nobody has changed the numbering", not "the series is
+ * unknown": the id is fixed (`paymentNumberSeriesId`) and the defaults are a
+ * pure function, so the row only has to exist once someone saves settings —
+ * which is how the settings page already reads it
+ * (`storedSeries ?? createDefaultPaymentNumberSeries()`).
+ *
+ * This used to seed that row on first read, inside a mutation batch of its
+ * own. Every payment's numbering runs through here, so the first payment ever
+ * created on a device paid a second awaited round trip to write a row nothing
+ * reads — and a read that writes is a trap for callers folding their own
+ * writes into one batch (see AGENTS.md).
+ */
+export const loadPaymentNumberSeries =
+  (): Task<PaymentNumberSeriesRow, never, EvoluDep> => async (run) => {
+    const [existing] = await run.deps.evolu.loadQuery(paymentNumberSeriesQuery)
 
-    const defaults = createDefaultPaymentNumberSeries()
-    await runMutationWithCompletion((options) =>
-      run.deps.evolu.upsert("paymentNumberSeries", defaults, {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-    )
-    return ok(defaults)
+    return ok(existing ?? createDefaultPaymentNumberSeries())
   }
 
 export const updatePaymentNumberSeries =

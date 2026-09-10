@@ -5,7 +5,7 @@ import { zodCommand } from "zod-commander/zod4"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  getPaymentNumberSeries,
+  loadPaymentNumberSeries,
   updatePaymentNumberSeries,
 } from "../src/core/modules/payment-number-series/payment-number-series-actions"
 import {
@@ -44,11 +44,11 @@ export const registerPaymentNumberSeriesCommand =
         zodCommand({
           name: "get",
           description:
-            "Show payment number series settings, creating defaults if missing.",
+            "Show payment number series settings, falling back to the defaults when none are saved.",
           args: {},
           opts: {},
           async action() {
-            const series = await run.ok(getPaymentNumberSeries())
+            const series = await run.ok(loadPaymentNumberSeries())
             run.deps.console.table([series])
           },
         })

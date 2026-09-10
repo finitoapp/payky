@@ -827,10 +827,6 @@ function PaymentWaitingRequest({
                   : t("paymentWait.scanOrTap")}
               </p>
             </div>
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <LoaderCircleIcon className="animate-spin" />
-              <span>{t("paymentWait.waiting")}</span>
-            </p>
             {wakeLockEnabled && !wakeLockSupported ? (
               <p className="max-w-80 text-balance text-xs text-muted-foreground">
                 {t("paymentWait.wakeLockUnsupported")}

@@ -388,7 +388,6 @@ export const cs = {
   "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
   "paymentWait.wakeLockUnsupported":
     "Tento prohlížeč neumí automaticky udržet obrazovku zapnutou.",
-  "paymentWait.waiting": "Čeká se na platbu...",
   "paymentDetail.amount": "Částka",
   "paymentDetail.backToPayment": "Zpět na platbu",
   "paymentDetail.bill.coverage.changesTitle": "Změny od vzniku platby",

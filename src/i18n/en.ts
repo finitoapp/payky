@@ -388,7 +388,6 @@ export const en = {
   "paymentWait.scanOrTap": "Scan and pay",
   "paymentWait.wakeLockUnsupported":
     "This browser cannot keep the screen awake automatically.",
-  "paymentWait.waiting": "Waiting for payment...",
   "paymentDetail.amount": "Amount",
   "paymentDetail.backToPayment": "Back to payment",
   "paymentDetail.bill.coverage.changesTitle": "Changes since this payment",

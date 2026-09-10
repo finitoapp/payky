@@ -1,7 +1,6 @@
 import type { AbortError } from "@evolu/common"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import assertNever from "assert-never"
 import { useStore } from "jotai"
 import { useReducer } from "react"
 
@@ -33,20 +32,12 @@ import { WithdrawReviewStep } from "./withdraw-review-step.tsx"
 
 type ConfirmWithdrawalError = ExecuteWithdrawalError | AbortError
 
-const confirmErrorKey = (error: ConfirmWithdrawalError): TranslationKey => {
-  switch (error.type) {
-    case "AbortError":
-      return "withdraw.review.error.interrupted"
-    case "WithdrawalAccountNotFound":
-      return "withdraw.error.accountNotFound"
-    case "WithdrawalRequestFailed":
-      return "withdraw.review.error.sparkFailed"
-    case "WithdrawalRecordingFailed":
-      return "withdraw.review.error.recordFailed"
-  }
-
-  return assertNever(error)
-}
+const confirmErrorKeys = {
+  AbortError: "withdraw.review.error.interrupted",
+  WithdrawalAccountNotFound: "withdraw.error.accountNotFound",
+  WithdrawalRequestFailed: "withdraw.review.error.sparkFailed",
+  WithdrawalRecordingFailed: "withdraw.review.error.recordFailed",
+} satisfies Record<ConfirmWithdrawalError["type"], TranslationKey>
 
 export function WithdrawPage() {
   const appRun = useAppRun()
@@ -117,7 +108,7 @@ export function WithdrawPage() {
       if (!executeResult.ok) {
         dispatch({
           type: "CONFIRM_FAILED",
-          error: confirmErrorKey(executeResult.error),
+          error: confirmErrorKeys[executeResult.error.type],
         })
         return
       }

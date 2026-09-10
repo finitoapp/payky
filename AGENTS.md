@@ -93,6 +93,10 @@
     - Use `const` unless reassignment is required.
     - Prefer `readonly` fields and `Readonly<...>`/`ReadonlyArray<...>` for read-only data.
     - Return new objects/arrays instead of mutating existing values unless mutation is required by a local API.
+- Map a union to a value with a lookup object, not a `switch`:
+    - When every branch just returns a value for a union member — an error type to a translation key, a status to a label — declare `const xKeys = { ... } satisfies Record<TheUnion["type"], Value>` and index it (`xKeys[error.type]`). See `confirmErrorKeys` in `withdraw-page.tsx`.
+    - `satisfies Record<...>` is what makes this exhaustive, and it checks *both* directions: a missing member fails to satisfy the type, and a stale key for a member that no longer exists is rejected as an unknown property. A `switch` with a trailing `assertNever` only catches the first, which is why the `assert-never` dependency is gone — don't reintroduce it.
+    - Keep a `switch` when branches do more than produce a value (side effects, early returns, differing control flow) or when a case needs the narrowed member rather than just its tag.
 - Use Result-based error handling for expected failures:
     - Import `Result`, `ok`, and `err` from the `@evolu/common` module.
     - Reserve thrown exceptions for programmer errors, unexpected infrastructure failures, framework boundaries, and established local patterns.

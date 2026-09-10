@@ -1,5 +1,4 @@
 import type { AbortError } from "@evolu/common"
-import assertNever from "assert-never"
 import {
   ClipboardPasteIcon,
   LoaderCircleIcon,
@@ -49,24 +48,13 @@ import {
   type ScannedBitcoinAddress,
 } from "./withdraw-utils.ts"
 
-const quoteErrorKey = (
-  error: QuoteWithdrawalError | AbortError
-): TranslationKey => {
-  switch (error.type) {
-    case "AbortError":
-      return "withdraw.quoteError.generic"
-    case "WithdrawalAccountNotFound":
-      return "withdraw.error.accountNotFound"
-    case "InvalidBitcoinAddress":
-      return "withdraw.address.invalid"
-    case "InsufficientWithdrawalBalance":
-      return "withdraw.error.insufficientBalance"
-    case "WithdrawalQuoteFailed":
-      return "withdraw.quoteError.generic"
-  }
-
-  return assertNever(error)
-}
+const quoteErrorKeys = {
+  AbortError: "withdraw.quoteError.generic",
+  WithdrawalAccountNotFound: "withdraw.error.accountNotFound",
+  InvalidBitcoinAddress: "withdraw.address.invalid",
+  InsufficientWithdrawalBalance: "withdraw.error.insufficientBalance",
+  WithdrawalQuoteFailed: "withdraw.quoteError.generic",
+} satisfies Record<(QuoteWithdrawalError | AbortError)["type"], TranslationKey>
 
 export function WithdrawFormStep({
   accountId,
@@ -142,7 +130,7 @@ export function WithdrawFormStep({
       )
 
       if (!quoteResult.ok) {
-        setQuoteError(quoteErrorKey(quoteResult.error))
+        setQuoteError(quoteErrorKeys[quoteResult.error.type])
         return false
       }
 

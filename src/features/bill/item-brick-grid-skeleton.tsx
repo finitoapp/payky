@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card.tsx"
 import { Skeleton } from "@/components/ui/skeleton.tsx"
+import { placeholderFadeOpacity } from "@/lib/utils.ts"
 
 /**
  * Loading placeholder for the `/bill` cart grid — mirrors `ItemBrick`'s
@@ -18,7 +19,7 @@ export function ItemBrickGridSkeleton({
         <ItemBrickSkeletonCard
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder cards, never reordered or filtered
           key={index}
-          opacity={count > 1 ? 1 - (index * 0.8) / (count - 1) : 1}
+          opacity={placeholderFadeOpacity(index, count)}
         />
       ))}
     </div>

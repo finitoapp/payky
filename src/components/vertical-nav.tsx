@@ -8,6 +8,15 @@ import { cn } from "@/lib/utils.ts"
 
 export type NavLinkTo = LinkProps["to"]
 
+/**
+ * The card shell a `VerticalNav` draws. Exported because the loading
+ * placeholders that stand in for one (`ListSkeleton`,
+ * `ActivityHistorySkeleton`) have to match it exactly — copying the classes
+ * lets the real list and its placeholder drift apart unnoticed.
+ */
+export const verticalNavShellClassName =
+  "bg-card flex flex-col rounded-md overflow-hidden shadow"
+
 type NavItemTarget =
   | {
       readonly kind: "link"
@@ -47,12 +56,7 @@ export function VerticalNav({
   title,
 }: VerticalNavProps) {
   return (
-    <div
-      className={cn(
-        "bg-card flex flex-col rounded-md overflow-hidden shadow",
-        className
-      )}
-    >
+    <div className={cn(verticalNavShellClassName, className)}>
       {title && (
         <div className={"p-4 font-bold text-xs text-muted-foreground"}>
           {title}

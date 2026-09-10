@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx"
+import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
 import { cn } from "@/lib/utils.ts"
 
 /**
@@ -15,12 +16,7 @@ export function ActivityHistorySkeleton({
   readonly className?: string
 }) {
   return (
-    <div
-      className={cn(
-        "bg-card flex flex-col rounded-md overflow-hidden shadow",
-        className
-      )}
-    >
+    <div className={cn(verticalNavShellClassName, className)}>
       <div className="p-4">
         <Skeleton className="h-3 w-24" />
       </div>

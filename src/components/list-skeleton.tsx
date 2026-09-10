@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx"
-import { cn } from "@/lib/utils.ts"
+import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
+import { cn, placeholderFadeOpacity } from "@/lib/utils.ts"
 
 /**
  * Loading placeholder for a `VerticalNav`-shaped list (see
@@ -18,17 +19,12 @@ export function ListSkeleton({
   readonly className?: string
 }) {
   return (
-    <div
-      className={cn(
-        "bg-card flex flex-col rounded-md overflow-hidden shadow divide-y",
-        className
-      )}
-    >
+    <div className={cn(verticalNavShellClassName, "divide-y", className)}>
       {Array.from({ length: rows }, (_, index) => (
         <ListSkeletonRow
           // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, never reordered or filtered
           key={index}
-          opacity={rows > 1 ? 1 - (index * 0.8) / (rows - 1) : 1}
+          opacity={placeholderFadeOpacity(index, rows)}
         />
       ))}
     </div>

@@ -312,6 +312,48 @@ describe("bill actions", () => {
       .toMatchObject([{ bill: { id: billId } }])
   }, 15_000)
 
+  test("returns the tip line, not a manual-amount line sharing its item snapshot", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const billId = await createOpenBill(deps)
+
+    // `item` ids are content-addressed over name/description/currency/
+    // unitAmount/taxRateId — *not* over the line's `type` (see
+    // `createItemIdFromSnapshot`). So a manual amount and a tip with the same
+    // name and amount share one `item` row, while staying two distinct
+    // `BillLineSummary`s, whose ids do include `type`. Each action has to
+    // return its own line.
+    const manualLineSummary = await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Tip"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+    const tipLineSummary = await run.orThrow(
+      addTipToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Tip"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+
+    expect(manualLineSummary.itemId).toBe(tipLineSummary.itemId)
+    expect(manualLineSummary.type).toBe("manualAmount")
+    expect(tipLineSummary.type).toBe("tip")
+    expect(tipLineSummary.id).not.toBe(manualLineSummary.id)
+  }, 15_000)
+
   test("adds catalog, manual amount, and tip lines to a bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

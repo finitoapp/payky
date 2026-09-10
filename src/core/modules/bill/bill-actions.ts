@@ -23,7 +23,10 @@ import {
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
-import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  calculateBillLineSummaries,
+  createBillLineSummaryId,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { ItemRow, item } from "@/core/modules/item/item.ts"
@@ -595,8 +598,24 @@ const addBillLine =
       )
     })
 
+    // Matched on the summary's full identity, not on `itemId` alone: `item`
+    // ids are content-addressed over name/description/currency/unitAmount/
+    // taxRateId and deliberately exclude the line's `type` (see
+    // `createItemIdFromSnapshot`), so a tip and a manual amount with the same
+    // name and amount share one `item` row while staying two separate
+    // summaries. Finding by `itemId` returned whichever of them the fold
+    // happened to project first — `addTipToBill` handing back the bill's
+    // manual-amount line. `createBillLineSummaryId` is the same identity the
+    // fold keys those summaries by, and what `appendRemoveBillLine` already
+    // matches on.
+    const summaryId = createBillLineSummaryId({
+      billId: line.billId,
+      catalogItemId: line.catalogItemId,
+      itemId: snapshot.id,
+      type,
+    })
     const projected = await run.ok(loadCalculatedBillLineSummaries(line.billId))
-    const lineSummary = projected.find((row) => row.itemId === snapshot.id)
+    const lineSummary = projected.find((row) => row.id === summaryId)
 
     return lineSummary === undefined
       ? err(

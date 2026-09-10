@@ -1,7 +1,8 @@
 import type { ErrorComponentProps } from "@tanstack/react-router"
-import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
+import { useSetAtom } from "jotai"
+import { AlertTriangleIcon, ChevronDownIcon, CopyIcon } from "lucide-react"
 import * as React from "react"
-
+import { reloadAppEvoluAtom } from "@/atoms/evolu-counter.ts"
 import { AppLoaderCleanup } from "@/components/app-loader-cleanup.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -37,12 +38,23 @@ function t(key: TranslationKey): string {
   }
 }
 
+type CopyState = "idle" | "copied" | "failed"
+
+const copyLabelKeys = {
+  idle: "appError.copy",
+  copied: "appError.copied",
+  failed: "appError.copyFailed",
+} satisfies Record<CopyState, TranslationKey>
+
 export function AppErrorBoundary({
   error,
   info,
   reset,
 }: ErrorComponentProps<unknown>) {
   const detail = formatErrorDetail(error, info?.componentStack)
+  const reloadAppEvolu = useSetAtom(reloadAppEvoluAtom)
+  const [copyState, setCopyState] = React.useState<CopyState>("idle")
+  const [repairing, setRepairing] = React.useState(false)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: report once per caught error, not on every componentStack identity change
   React.useEffect(() => {
@@ -51,6 +63,51 @@ export function AppErrorBoundary({
   const errorName = error instanceof Error ? error.name : t("appError.unknown")
   const errorMessage =
     error instanceof Error ? error.message : t("appError.nonError")
+
+  const tryAgain = () => {
+    // Recreates the app Evolu client on the way out. Jotai caches the
+    // rejected promise of an async atom, so a bare `reset` would re-read the
+    // same failure; bumping the counter invalidates `activeAccountRowAtom`
+    // and with it `accountAtom`/`evoluAtom`, which is what makes a retry
+    // able to succeed at all. `deviceEvoluAtom` does not depend on the
+    // counter, so a device-database failure still needs a full reload.
+    reloadAppEvolu()
+    reset()
+  }
+
+  const copyDetail = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        `Payky ${__APP_VERSION__}\n${errorName}: ${errorMessage}\n\n${detail}`
+      )
+      setCopyState("copied")
+    } catch {
+      setCopyState("failed")
+    }
+  }
+
+  /**
+   * The failure mode this exists for: a released build whose index.html is
+   * served from the service worker's cache while the hashed chunk or worker
+   * it asks for is already gone, so the app cannot boot at all and every
+   * plain reload hits the same cache. Only rendered where there is a cache
+   * to clear — a Capacitor WebView has neither.
+   */
+  const repairAndReload = async () => {
+    setRepairing(true)
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(
+        registrations.map((registration) => registration.unregister())
+      )
+      const cacheKeys = await caches.keys()
+      await Promise.all(cacheKeys.map((key) => caches.delete(key)))
+    } finally {
+      window.location.reload()
+    }
+  }
+
+  const canRepair = "serviceWorker" in navigator && "caches" in window
 
   return (
     <main className="flex min-h-svh items-center justify-center px-4 py-8">
@@ -79,6 +136,10 @@ export function AppErrorBoundary({
               {t("appError.message")}
             </dt>
             <dd className="break-words font-mono">{errorMessage}</dd>
+            <dt className="font-medium text-muted-foreground">
+              {t("appError.version")}
+            </dt>
+            <dd className="break-words font-mono">{__APP_VERSION__}</dd>
           </dl>
           <Collapsible className="flex flex-col gap-2">
             <CollapsibleTrigger
@@ -102,11 +163,33 @@ export function AppErrorBoundary({
               </pre>
             </CollapsibleContent>
           </Collapsible>
+          <Button
+            className="self-start"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              void copyDetail()
+            }}
+          >
+            <CopyIcon data-icon="inline-start" aria-hidden="true" />
+            {t(copyLabelKeys[copyState])}
+          </Button>
         </CardContent>
         <CardFooter className="flex flex-wrap justify-end gap-2">
-          <Button variant="outline" onClick={reset}>
+          <Button variant="outline" onClick={tryAgain}>
             {t("appError.tryAgain")}
           </Button>
+          {canRepair ? (
+            <Button
+              variant="outline"
+              disabled={repairing}
+              onClick={() => {
+                void repairAndReload()
+              }}
+            >
+              {t("appError.repair")}
+            </Button>
+          ) : null}
           <Button onClick={() => window.location.reload()}>
             {t("appError.reload")}
           </Button>

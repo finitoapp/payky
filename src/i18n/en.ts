@@ -517,6 +517,11 @@ export const en = {
   "settings.accounts.list.remove": "Remove",
   "settings.accounts.list.switch": "Switch",
   "settings.accounts.list.title": "Device accounts",
+  "settings.accounts.remove.confirm.cancel": "Keep account",
+  "settings.accounts.remove.confirm.confirm": "Remove account",
+  "settings.accounts.remove.confirm.description":
+    "This device forgets the account and its data. Only its recovery phrase can bring it back — without it, everything in the account is gone for good.",
+  "settings.accounts.remove.confirm.title": "Remove {name}?",
   "settings.accounts.restore.action": "Use recovery phrase",
   "settings.accounts.restore.description":
     "Paste an existing recovery phrase to open its app data on this device.",

@@ -73,10 +73,27 @@ test("create, switch, and remove a device account", async ({
     ).toBeVisible()
   })
 
-  await test.step("remove the now non-active second account", async () => {
-    await secondCreatedRow
+  const removeButton = secondCreatedRow.getByRole("button", {
+    name: translate("en", "settings.accounts.list.remove"),
+  })
+
+  await test.step("canceling the remove confirmation keeps the account", async () => {
+    await removeButton.click()
+    await page
       .getByRole("button", {
-        name: translate("en", "settings.accounts.list.remove"),
+        name: translate("en", "settings.accounts.remove.confirm.cancel"),
+      })
+      .click()
+    await expect(accountRows).toHaveCount(2)
+  })
+
+  await test.step("remove the now non-active second account", async () => {
+    // Confirmed, not one-tap: removal is a soft delete no query ever shows
+    // again, and an account created here has never synced anywhere.
+    await removeButton.click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.accounts.remove.confirm.confirm"),
       })
       .click()
     await expect(accountRows).toHaveCount(1)

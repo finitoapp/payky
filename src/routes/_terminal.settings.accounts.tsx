@@ -91,10 +91,24 @@ function AccountsSettingsPage() {
     }
   }
 
-  const removeAccount = (accountId: AccountId) => {
+  const removeAccount = async (accountId: AccountId, name: string) => {
     if (accountId === activeAccount.id) {
       return
     }
+
+    // Confirmed because there is no undo and, for an account created here,
+    // no copy anywhere else: `insertAccount` leaves its relay transport
+    // inactive, so its data has never left this device, and the row is only
+    // soft-deleted — every query filters it out with no way back except
+    // re-entering the recovery phrase.
+    const confirmed = await confirm({
+      title: t("settings.accounts.remove.confirm.title", { name }),
+      description: t("settings.accounts.remove.confirm.description"),
+      confirmLabel: t("settings.accounts.remove.confirm.confirm"),
+      cancelLabel: t("settings.accounts.remove.confirm.cancel"),
+      variant: "destructive",
+    })
+    if (!confirmed) return
 
     setRemovingAccountId(accountId)
     try {
@@ -207,7 +221,7 @@ function AccountsSettingsPage() {
                           size="sm"
                           disabled={pending}
                           onClick={() => {
-                            removeAccount(account.id)
+                            void removeAccount(account.id, account.name)
                           }}
                         >
                           <Trash2 data-icon="inline-start" />

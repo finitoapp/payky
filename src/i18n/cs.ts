@@ -517,6 +517,11 @@ export const cs = {
   "settings.accounts.list.remove": "Odebrat",
   "settings.accounts.list.switch": "Přepnout",
   "settings.accounts.list.title": "Účty v zařízení",
+  "settings.accounts.remove.confirm.cancel": "Ponechat účet",
+  "settings.accounts.remove.confirm.confirm": "Odebrat účet",
+  "settings.accounts.remove.confirm.description":
+    "Zařízení tento účet i jeho data zapomene. Vrátit ho zpět jde jen pomocí jeho recovery phrase — bez ní je vše v účtu nadobro ztracené.",
+  "settings.accounts.remove.confirm.title": "Odebrat účet {name}?",
   "settings.accounts.restore.action": "Použít recovery phrase",
   "settings.accounts.restore.description":
     "Vložte existující recovery phrase pro otevření jejích aplikačních dat na tomto zařízení.",

@@ -521,6 +521,11 @@ export const sk = {
   "settings.accounts.list.remove": "Odobrať",
   "settings.accounts.list.switch": "Prepnúť",
   "settings.accounts.list.title": "Účty v zariadení",
+  "settings.accounts.remove.confirm.cancel": "Ponechať účet",
+  "settings.accounts.remove.confirm.confirm": "Odobrať účet",
+  "settings.accounts.remove.confirm.description":
+    "Zariadenie tento účet aj jeho údaje zabudne. Vrátiť ho späť ide len pomocou jeho recovery phrase — bez nej je všetko v účte nadobro stratené.",
+  "settings.accounts.remove.confirm.title": "Odobrať účet {name}?",
   "settings.accounts.restore.action": "Použiť recovery phrase",
   "settings.accounts.restore.description":
     "Vložte existujúcu recovery phrase na otvorenie jej aplikačných dát na tomto zariadení.",

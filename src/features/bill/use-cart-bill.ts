@@ -1,5 +1,5 @@
 import { useStore } from "jotai"
-import { useCallback, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
@@ -118,18 +118,15 @@ export function useCartBill({
   const [canRedo, setCanRedo] = useState(false)
   const [pending, setPending] = useState(false)
 
-  const setStacks = useCallback(
-    (
-      undoStack: ReadonlyArray<CartHistoryEntry>,
-      redoStack: ReadonlyArray<CartHistoryEntry>
-    ) => {
-      undoStackRef.current = undoStack
-      redoStackRef.current = redoStack
-      setCanUndo(undoStack.length > 0)
-      setCanRedo(redoStack.length > 0)
-    },
-    []
-  )
+  const setStacks = (
+    undoStack: ReadonlyArray<CartHistoryEntry>,
+    redoStack: ReadonlyArray<CartHistoryEntry>
+  ) => {
+    undoStackRef.current = undoStack
+    redoStackRef.current = redoStack
+    setCanUndo(undoStack.length > 0)
+    setCanRedo(redoStack.length > 0)
+  }
 
   // Every cart mutation runs through this promise chain, so taps are queued
   // and applied in tap order instead of racing each other. The item grid
@@ -142,40 +139,37 @@ export function useCartBill({
   const queueRef = useRef<Promise<void>>(Promise.resolve())
   const pendingCountRef = useRef(0)
 
-  const runQueued = useCallback(
-    async (operation: () => Promise<void>): Promise<void> => {
-      pendingCountRef.current += 1
-      setPending(true)
+  const runQueued = async (operation: () => Promise<void>): Promise<void> => {
+    pendingCountRef.current += 1
+    setPending(true)
 
-      // A throw in here is a defect rather than an expected domain failure
-      // — realistically only `ensureBillExists` below, which rethrows when
-      // the bill row can't be created. Report it the way every Result
-      // failure in this hook is reported instead of letting it escape:
-      // every call site is `void cart.addOne(...)`, so a rejection produced
-      // no log, no toast and a tap that silently did nothing.
-      const guarded = async () => {
-        try {
-          await operation()
-        } catch (error) {
-          console.error("Cart mutation failed", error)
-          toast.error(t("settings.saveFailed"))
-        }
-      }
-
-      // Both handlers run `guarded`: a failed predecessor must not cancel
-      // the taps queued behind it.
-      const queued = queueRef.current.then(guarded, guarded)
-      queueRef.current = queued
-
+    // A throw in here is a defect rather than an expected domain failure
+    // — realistically only `ensureBillExists` below, which rethrows when
+    // the bill row can't be created. Report it the way every Result
+    // failure in this hook is reported instead of letting it escape:
+    // every call site is `void cart.addOne(...)`, so a rejection produced
+    // no log, no toast and a tap that silently did nothing.
+    const guarded = async () => {
       try {
-        await queued
-      } finally {
-        pendingCountRef.current -= 1
-        if (pendingCountRef.current === 0) setPending(false)
+        await operation()
+      } catch (error) {
+        console.error("Cart mutation failed", error)
+        toast.error(t("settings.saveFailed"))
       }
-    },
-    [console, t]
-  )
+    }
+
+    // Both handlers run `guarded`: a failed predecessor must not cancel
+    // the taps queued behind it.
+    const queued = queueRef.current.then(guarded, guarded)
+    queueRef.current = queued
+
+    try {
+      await queued
+    } finally {
+      pendingCountRef.current -= 1
+      if (pendingCountRef.current === 0) setPending(false)
+    }
+  }
 
   // Guards `ensureBillExists` against creating the bill row twice when
   // several adds are triggered before `billExists` (derived from the bill
@@ -186,14 +180,11 @@ export function useCartBill({
   // so there's no "later add should start a fresh bill" case to guard for.
   const pendingBillCreationRef = useRef<Promise<void> | null>(null)
 
-  const record = useCallback(
-    (entry: CartHistoryEntry) => {
-      setStacks([...undoStackRef.current, entry], [])
-    },
-    [setStacks]
-  )
+  const record = (entry: CartHistoryEntry) => {
+    setStacks([...undoStackRef.current, entry], [])
+  }
 
-  const ensureBillExists = useCallback(async (): Promise<void> => {
+  const ensureBillExists = async (): Promise<void> => {
     if (billExists) return
     if (pendingBillCreationRef.current !== null) {
       await pendingBillCreationRef.current
@@ -239,167 +230,143 @@ export function useCartBill({
       pendingBillCreationRef.current = null
       throw error
     }
-  }, [appRun, billExists, billId, currency, evolu, jotaiStore, tableId])
+  }
 
-  const addQuantity = useCallback(
-    (catalogItem: CatalogItemRow, quantity: PositiveNumber) =>
-      runQueued(async () => {
-        await ensureBillExists()
-        const { device } = await jotaiStore.get(accountAtom)
-        await using run = appRun()
+  const addQuantity = (catalogItem: CatalogItemRow, quantity: PositiveNumber) =>
+    runQueued(async () => {
+      await ensureBillExists()
+      const { device } = await jotaiStore.get(accountAtom)
+      await using run = appRun()
 
-        const result = await run(
-          addCatalogItemToBill({
-            billId,
-            deviceId: device.id,
-            catalogItemId: catalogItem.id,
-            quantity,
-          })
-        )
-        if (!result.ok) {
-          console.error("Failed to add catalog item to cart", result.error)
-          showCartMutationErrorToast(t, result.error)
-          return
-        }
+      const result = await run(
+        addCatalogItemToBill({
+          billId,
+          deviceId: device.id,
+          catalogItemId: catalogItem.id,
+          quantity,
+        })
+      )
+      if (!result.ok) {
+        console.error("Failed to add catalog item to cart", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
 
-        record([
-          {
-            billId,
-            deviceId: device.id,
-            catalogItemId: catalogItem.id,
-            itemId: result.value.itemId,
-            type: "catalogItem",
-            kind: "add",
-            quantity,
-            totalAmount: NonNegativeInteger(catalogItem.unitAmount * quantity),
-          },
-        ])
-      }),
-    [
-      appRun,
-      billId,
-      console,
-      ensureBillExists,
-      jotaiStore,
-      record,
-      runQueued,
-      t,
-    ]
-  )
+      record([
+        {
+          billId,
+          deviceId: device.id,
+          catalogItemId: catalogItem.id,
+          itemId: result.value.itemId,
+          type: "catalogItem",
+          kind: "add",
+          quantity,
+          totalAmount: NonNegativeInteger(catalogItem.unitAmount * quantity),
+        },
+      ])
+    })
 
-  const addOne = useCallback(
-    (catalogItem: CatalogItemRow) =>
-      addQuantity(catalogItem, PositiveNumber(1)),
-    [addQuantity]
-  )
+  const addOne = (catalogItem: CatalogItemRow) =>
+    addQuantity(catalogItem, PositiveNumber(1))
 
-  const removeOne = useCallback(
-    async (summary: BillLineSummary) => {
-      await runQueued(async () => {
-        const { device } = await jotaiStore.get(accountAtom)
-        const quantity = PositiveNumber(1)
-        const totalAmount = getBillLineSummaryUnitAmount(summary)
+  const removeOne = async (summary: BillLineSummary) => {
+    await runQueued(async () => {
+      const { device } = await jotaiStore.get(accountAtom)
+      const quantity = PositiveNumber(1)
+      const totalAmount = getBillLineSummaryUnitAmount(summary)
 
-        await using run = appRun()
-        const result = await run(
-          appendRemoveBillLine({
-            billId,
-            deviceId: device.id,
-            quantity,
-            totalAmount,
-            lineSummary: summary,
-          })
-        )
-        if (!result.ok) {
-          console.error("Failed to remove item from cart", result.error)
-          showCartMutationErrorToast(t, result.error)
-          return
-        }
+      await using run = appRun()
+      const result = await run(
+        appendRemoveBillLine({
+          billId,
+          deviceId: device.id,
+          quantity,
+          totalAmount,
+          lineSummary: summary,
+        })
+      )
+      if (!result.ok) {
+        console.error("Failed to remove item from cart", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
 
-        record([
-          {
-            billId,
-            deviceId: device.id,
-            catalogItemId: summary.catalogItemId,
-            itemId: summary.itemId,
-            type: summary.type,
-            kind: "remove",
-            quantity,
-            totalAmount,
-          },
-        ])
-      })
-    },
-    [appRun, console, billId, jotaiStore, record, runQueued, t]
-  )
-
-  const removeLine = useCallback(
-    async (summary: BillLineSummary) => {
-      await runQueued(async () => {
-        const { device } = await jotaiStore.get(accountAtom)
-        await using run = appRun()
-        const result = await run(
-          appendRemoveBillLine({
-            billId,
-            deviceId: device.id,
-            quantity: summary.quantity,
-            totalAmount: summary.totalAmount,
-            lineSummary: summary,
-          })
-        )
-        if (!result.ok) {
-          console.error("Failed to remove line from cart", result.error)
-          showCartMutationErrorToast(t, result.error)
-          return
-        }
-
-        record([
-          {
-            billId,
-            deviceId: device.id,
-            catalogItemId: summary.catalogItemId,
-            itemId: summary.itemId,
-            type: summary.type,
-            kind: "remove",
-            quantity: summary.quantity,
-            totalAmount: summary.totalAmount,
-          },
-        ])
-      })
-    },
-    [appRun, console, billId, jotaiStore, record, runQueued, t]
-  )
-
-  const clear = useCallback(
-    async (summaries: ReadonlyArray<BillLineSummary>) => {
-      if (summaries.length === 0) return
-
-      await runQueued(async () => {
-        const { device } = await jotaiStore.get(accountAtom)
-        const lines: CartHistoryEntry = summaries.map((summary) => ({
+      record([
+        {
           billId,
           deviceId: device.id,
           catalogItemId: summary.catalogItemId,
           itemId: summary.itemId,
           type: summary.type,
-          kind: "remove" as const,
+          kind: "remove",
+          quantity,
+          totalAmount,
+        },
+      ])
+    })
+  }
+
+  const removeLine = async (summary: BillLineSummary) => {
+    await runQueued(async () => {
+      const { device } = await jotaiStore.get(accountAtom)
+      await using run = appRun()
+      const result = await run(
+        appendRemoveBillLine({
+          billId,
+          deviceId: device.id,
           quantity: summary.quantity,
           totalAmount: summary.totalAmount,
-        }))
+          lineSummary: summary,
+        })
+      )
+      if (!result.ok) {
+        console.error("Failed to remove line from cart", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
 
-        await using run = appRun()
-        const result = await run(appendGuardedBillLines(billId, lines))
-        if (!result.ok) {
-          console.error("Failed to clear cart", result.error)
-          showCartMutationErrorToast(t, result.error)
-          return
-        }
+      record([
+        {
+          billId,
+          deviceId: device.id,
+          catalogItemId: summary.catalogItemId,
+          itemId: summary.itemId,
+          type: summary.type,
+          kind: "remove",
+          quantity: summary.quantity,
+          totalAmount: summary.totalAmount,
+        },
+      ])
+    })
+  }
 
-        record(lines)
-      })
-    },
-    [appRun, console, billId, jotaiStore, record, runQueued, t]
-  )
+  const clear = async (summaries: ReadonlyArray<BillLineSummary>) => {
+    if (summaries.length === 0) return
+
+    await runQueued(async () => {
+      const { device } = await jotaiStore.get(accountAtom)
+      const lines: CartHistoryEntry = summaries.map((summary) => ({
+        billId,
+        deviceId: device.id,
+        catalogItemId: summary.catalogItemId,
+        itemId: summary.itemId,
+        type: summary.type,
+        kind: "remove" as const,
+        quantity: summary.quantity,
+        totalAmount: summary.totalAmount,
+      }))
+
+      await using run = appRun()
+      const result = await run(appendGuardedBillLines(billId, lines))
+      if (!result.ok) {
+        console.error("Failed to clear cart", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
+
+      record(lines)
+    })
+  }
 
   /**
    * Assigns (or clears) the bill's table, on the same queue as every other
@@ -410,73 +377,64 @@ export function useCartBill({
    * only reached `onTableSeedChange` — which nothing reads once the row
    * exists — and was silently dropped.
    */
-  const assignTable = useCallback(
-    (nextTableId: TableId | null) =>
-      runQueued(async () => {
-        const rows = await evolu.loadQuery(billByIdQuery(billId))
-        if (rows.length === 0) {
-          onTableSeedChange(nextTableId)
-          return
-        }
+  const assignTable = (nextTableId: TableId | null) =>
+    runQueued(async () => {
+      const rows = await evolu.loadQuery(billByIdQuery(billId))
+      if (rows.length === 0) {
+        onTableSeedChange(nextTableId)
+        return
+      }
 
-        await using run = appRun()
-        await run.ok(
-          nextTableId === null
-            ? removeTableFromBill(billId)
-            : assignBillToTable({ id: billId, tableId: nextTableId })
-        )
-      }),
-    [appRun, billId, evolu, onTableSeedChange, runQueued]
-  )
+      await using run = appRun()
+      await run.ok(
+        nextTableId === null
+          ? removeTableFromBill(billId)
+          : assignBillToTable({ id: billId, tableId: nextTableId })
+      )
+    })
 
   // The top of the stack is read inside `runQueued`, not before it, so two
   // rapid undo taps pop two different entries instead of replaying the same
   // one twice.
-  const undo = useCallback(
-    () =>
-      runQueued(async () => {
-        const entry = undoStackRef.current.at(-1)
-        if (entry === undefined) return
+  const undo = () =>
+    runQueued(async () => {
+      const entry = undoStackRef.current.at(-1)
+      if (entry === undefined) return
 
-        await using run = appRun()
-        const result = await run(
-          appendGuardedBillLines(billId, entry.map(invertLine))
-        )
-        if (!result.ok) {
-          console.error("Failed to undo cart change", result.error)
-          showCartMutationErrorToast(t, result.error)
-          return
-        }
+      await using run = appRun()
+      const result = await run(
+        appendGuardedBillLines(billId, entry.map(invertLine))
+      )
+      if (!result.ok) {
+        console.error("Failed to undo cart change", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
 
-        setStacks(undoStackRef.current.slice(0, -1), [
-          ...redoStackRef.current,
-          entry,
-        ])
-      }),
-    [appRun, console, billId, runQueued, setStacks, t]
-  )
+      setStacks(undoStackRef.current.slice(0, -1), [
+        ...redoStackRef.current,
+        entry,
+      ])
+    })
 
-  const redo = useCallback(
-    () =>
-      runQueued(async () => {
-        const entry = redoStackRef.current.at(-1)
-        if (entry === undefined) return
+  const redo = () =>
+    runQueued(async () => {
+      const entry = redoStackRef.current.at(-1)
+      if (entry === undefined) return
 
-        await using run = appRun()
-        const result = await run(appendGuardedBillLines(billId, entry))
-        if (!result.ok) {
-          console.error("Failed to redo cart change", result.error)
-          showCartMutationErrorToast(t, result.error)
-          return
-        }
+      await using run = appRun()
+      const result = await run(appendGuardedBillLines(billId, entry))
+      if (!result.ok) {
+        console.error("Failed to redo cart change", result.error)
+        showCartMutationErrorToast(t, result.error)
+        return
+      }
 
-        setStacks(
-          [...undoStackRef.current, entry],
-          redoStackRef.current.slice(0, -1)
-        )
-      }),
-    [appRun, console, billId, runQueued, setStacks, t]
-  )
+      setStacks(
+        [...undoStackRef.current, entry],
+        redoStackRef.current.slice(0, -1)
+      )
+    })
 
   return {
     pending,

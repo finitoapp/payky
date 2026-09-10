@@ -1020,6 +1020,95 @@ describe("payment actions", () => {
       ])
   }, 15_000)
 
+  test("preparing Lightning after cash leaves the payment unexpiring", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            BTC: 1_500_000,
+            timestamp: 1_700_000_000_000,
+          })
+        ),
+      sparkWallet: {
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => ({
+              id: "lightning-request-1",
+              invoice: {
+                encodedInvoice: "lnbc8600n1alongside",
+                paymentHash: "payment-hash-1",
+              },
+              paymentPreimage: "payment-preimage-1",
+              sparkInvoice: "spark-invoice-1",
+            }),
+          }),
+      },
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, sparkAccountId } =
+      await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          cashRegister: { accountId: cashRegisterAccountId },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    // The other direction from "preparing cash after Lightning": the cash
+    // drawer is already persisted and this call does not mention it, so the
+    // invoice's window is the only one in this call's hands — and it must
+    // still not become the payment's, because the drawer stays payable after
+    // the invoice dies. This is the one branch where the answer comes purely
+    // from `paymentNonExpiringMethodsByIdQuery`, the already-stored methods,
+    // rather than from what the caller just prepared.
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: { accountId: sparkAccountId, expirySeconds: 900 },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          expiresAt: null,
+          cashRegister: { id, accountId: cashRegisterAccountId },
+          spark: { id, lnInvoice: "lnbc8600n1alongside" },
+        },
+      ])
+  }, 15_000)
+
   test("prepares Spark payment method when optional Spark SDK fields are null", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

@@ -861,7 +861,15 @@ export const preparePaymentMethod =
   > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const paymentResult = await run(loadPayment(paymentId))
+    // Both reads need nothing but `paymentId`, so they go together — see
+    // `hasNonExpiringMethod` below for what the second one answers. Reading
+    // the stored methods here rather than just before the write is safe
+    // because the three `prepare*Method`s only read: every write in this
+    // action happens in the one mutation batch at the end.
+    const [paymentResult, nonExpiringMethods] = await Promise.all([
+      run(loadPayment(paymentId)),
+      run.deps.evolu.loadQuery(paymentNonExpiringMethodsByIdQuery(paymentId)),
+    ])
     if (!paymentResult.ok) return paymentResult
 
     const payment = paymentResult.value
@@ -931,9 +939,6 @@ export const preparePaymentMethod =
     // minutes later `derivePaymentStatus` reported a perfectly live cash
     // payment as `expired` — silently releasing the bill's editing lock.
     // See docs/bill-payment-states.md.
-    const nonExpiringMethods = await run.deps.evolu.loadQuery(
-      paymentNonExpiringMethodsByIdQuery(paymentId)
-    )
     const hasNonExpiringMethod =
       cashRegisterValues !== null ||
       ibanValues !== null ||

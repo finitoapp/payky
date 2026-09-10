@@ -22,7 +22,6 @@ type NavItemTarget =
       readonly kind: "link"
       readonly to: NavLinkTo
       readonly params?: LinkProps["params"]
-      readonly component?: typeof Link
     }
   | { readonly kind: "href"; readonly href: string }
   | { readonly kind: "button"; readonly onClick?: () => void }
@@ -33,7 +32,6 @@ type NavItem = NavItemTarget & {
   readonly label: React.ReactNode
   readonly action?: React.ReactNode
   readonly icon?: React.ReactNode
-  readonly active?: boolean
   readonly className?: string
   readonly disableAction?: boolean
 }
@@ -81,13 +79,10 @@ function NavItemComponent({ item }: { item: NavItem }) {
   const className = cn(
     "text-left",
     "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
-    "data-[variant=outline]:border-t-0 data-[variant=outline]:first:border-t",
     "hover:bg-accent/50",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-    "data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
     item.className
   )
-  const dataState = item.active ? "on" : "off"
 
   switch (item.kind) {
     case "href":
@@ -97,32 +92,19 @@ function NavItemComponent({ item }: { item: NavItem }) {
           target="_blank"
           rel="noreferrer"
           className={className}
-          data-state={dataState}
         >
           <NavItemContent item={item} />
         </a>
       )
-    case "link": {
-      const Component = item.component ?? Link
+    case "link":
       return (
-        <Component
-          to={item.to}
-          params={item.params}
-          className={className}
-          data-state={dataState}
-        >
+        <Link to={item.to} params={item.params} className={className}>
           <NavItemContent item={item} />
-        </Component>
+        </Link>
       )
-    }
     case "button":
       return (
-        <button
-          type="button"
-          onClick={item.onClick}
-          className={className}
-          data-state={dataState}
-        >
+        <button type="button" onClick={item.onClick} className={className}>
           <NavItemContent item={item} />
         </button>
       )

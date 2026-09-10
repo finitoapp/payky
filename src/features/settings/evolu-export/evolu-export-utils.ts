@@ -119,19 +119,25 @@ async function saveWithCapacitor(
   }
 }
 
-function uint8ArrayToBase64(bytes: Uint8Array): string {
+/**
+ * `btoa` wants a binary string, so the bytes go through `String.fromCharCode`
+ * one spread at a time. The chunking is the point: spreading a whole database
+ * export in one call would blow the argument limit, and 0x8000 is the usual
+ * safe width. Exported for its test — the chunk boundary is the only thing
+ * here that can break, and nothing else reaches this from outside.
+ *
+ * `Uint8Array.prototype.toBase64` would replace all of it, but it doesn't
+ * exist in this TypeScript target (ES2024) and isn't in the runtimes this app
+ * still supports.
+ */
+export function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunkSize = 0x8000
   const chunks: string[] = []
 
   for (let index = 0; index < bytes.length; index += chunkSize) {
-    const chunk = bytes.subarray(index, index + chunkSize)
-    let value = ""
-
-    for (const byte of chunk) {
-      value += String.fromCharCode(byte)
-    }
-
-    chunks.push(value)
+    chunks.push(
+      String.fromCharCode(...bytes.subarray(index, index + chunkSize))
+    )
   }
 
   return btoa(chunks.join(""))

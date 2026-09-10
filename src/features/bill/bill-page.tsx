@@ -43,6 +43,7 @@ import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.
 import {
   cancelBill,
   confirmBillClosedDespiteCancellation,
+  type SplitBillError,
   splitBill,
   splitBillIntoNewBill,
 } from "@/core/modules/bill/bill-actions.ts"
@@ -102,8 +103,18 @@ import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
+
+const splitBillErrorKeys = {
+  BillNotFound: "bill.split.error",
+  BillStatusNotAllowed: "bill.split.error",
+  BillLocked: "bill.locked",
+  // The selection no longer matches the bill, so retrying the same one
+  // cannot work — say so, rather than the generic "try again".
+  BillSplitSelectionStale: "bill.split.staleSelection",
+} satisfies Record<SplitBillError["type"], TranslationKey>
 
 /**
  * The whole bill screen — the cart before its bill row exists and the cart
@@ -546,18 +557,9 @@ function BillCartView({
     router.history.back()
   }
 
-  const splitErrorMessageKey = (type: string) => {
-    if (type === "BillLocked") return "bill.locked" as const
-    // The selection no longer matches the bill, so retrying the same one
-    // cannot work — say so, rather than the generic "try again".
-    if (type === "BillSplitSelectionStale")
-      return "bill.split.staleSelection" as const
-    return "bill.split.error" as const
-  }
-
-  const handleSplitError = (error: { readonly type: string }) => {
+  const handleSplitError = (error: SplitBillError) => {
     console.error("Failed to split bill", error)
-    toast.error(t(splitErrorMessageKey(error.type)))
+    toast.error(t(splitBillErrorKeys[error.type]))
   }
 
   const handleConfirmSplit = async (input: SplitBillConfirmInput) => {

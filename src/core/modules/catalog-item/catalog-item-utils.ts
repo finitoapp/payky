@@ -37,38 +37,3 @@ export const findCatalogItemsByScanCode = (
 
   return items.filter((item) => item.scanCode === trimmed)
 }
-
-/**
- * Matches a catalog item against a free-text search query. Checks `name`,
- * `internalName`, `sku`, and `scanCode` so staff can find an item by whatever
- * identifier they have on hand, regardless of which name variant is shown.
- */
-/**
- * Filters items by category for the "all" / a specific category / "no
- * category" toggle used on both the bill cart grid and the settings item
- * list.
- */
-export const filterCatalogItemsByCategory = <
-  T extends { readonly categoryId: CatalogCategoryId | null },
->(
-  items: ReadonlyArray<T>,
-  filter: CategoryFilter
-): ReadonlyArray<T> => {
-  if (filter === "all") return items
-  if (filter === "uncategorized") {
-    return items.filter((item) => item.categoryId === null)
-  }
-  return items.filter((item) => item.categoryId === filter)
-}
-
-export const matchesCatalogItemSearch = (
-  item: CatalogItemRow,
-  query: string
-): boolean => {
-  const normalizedQuery = query.trim().toLowerCase()
-  if (normalizedQuery === "") return true
-
-  return [item.name, item.internalName, item.sku, item.scanCode].some((field) =>
-    field?.toLowerCase().includes(normalizedQuery)
-  )
-}

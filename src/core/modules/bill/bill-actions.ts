@@ -544,8 +544,6 @@ export const assignBillToTable =
     return ok(input.id)
   }
 
-export const moveBillToTable = assignBillToTable
-
 export const removeTableFromBill =
   (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {

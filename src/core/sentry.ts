@@ -89,10 +89,6 @@ export function isErrorReportingAvailable(): boolean {
   return typeof dsn === "string" && dsn.length > 0
 }
 
-export function isErrorReportingEnabled(): boolean {
-  return enabled
-}
-
 export function enableErrorReporting(): void {
   if (enabled || !isErrorReportingAvailable()) {
     return

@@ -5,7 +5,7 @@ import {
   type BillLineSummaryDiff,
   deriveBillLineSummaryDiff,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
-import { itemsQuery } from "@/core/modules/item/item-queries.ts"
+import { itemsByPaymentIdQuery } from "@/core/modules/item/item-queries.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentLinesByPaymentIdQuery } from "@/core/modules/payment-line/payment-line-queries.ts"
 import { paymentLinesToBillLineSummaries } from "@/core/modules/payment-line/payment-line-utils.ts"
@@ -29,7 +29,11 @@ export function useBillLineSummaryDiff(
     [paymentId]
   )
   const { data: paymentLineRows } = useEvoluQuery(paymentLineQuery)
-  const { data: itemRows } = useEvoluQuery(itemsQuery)
+  // Scoped to the payment, not the bill: a frozen `paymentLine` can point at
+  // an item the bill no longer carries, which is exactly what this diff is
+  // here to report.
+  const itemQuery = useMemo(() => itemsByPaymentIdQuery(paymentId), [paymentId])
+  const { data: itemRows } = useEvoluQuery(itemQuery)
 
   return useMemo(() => {
     if (paymentLineRows.length === 0) return null

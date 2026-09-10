@@ -22,7 +22,7 @@ import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import { billLinesByBillIdQuery } from "@/core/modules/bill-line/bill-line-queries.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
-import { itemsQuery } from "@/core/modules/item/item-queries.ts"
+import { itemsByBillIdQuery } from "@/core/modules/item/item-queries.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   NonNegativeInteger,
@@ -219,13 +219,13 @@ export function useCartBill({
       // blanked the whole page for a beat. Keep this in sync with every
       // query the bill view's `use()` reads, including `usePendingPayments`'s
       // and `useBillStatus`'s — the latter also reads
-      // `billLinesByBillIdQuery`/`itemsQuery` (already listed here for line
-      // summaries), so a brand-new bill's derived status is never computed
+      // `billLinesByBillIdQuery`/`itemsByBillIdQuery` (already listed here for
+      // line summaries), so a brand-new bill's derived status is never computed
       // from an unresolved query.
       await Promise.all([
         evolu.loadQuery(billByIdQuery(billId)),
         evolu.loadQuery(billLinesByBillIdQuery(billId)),
-        evolu.loadQuery(itemsQuery),
+        evolu.loadQuery(itemsByBillIdQuery(billId)),
         evolu.loadQuery(paymentsByBillIdQuery(billId)),
         evolu.loadQuery(claimedPaymentsByBillIdQuery(billId)),
         evolu.loadQuery(claimedTransactionsByBillIdQuery(billId)),

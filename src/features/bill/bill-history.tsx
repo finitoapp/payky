@@ -15,10 +15,7 @@ import {
   deriveBillHistoryItemSummary,
 } from "@/core/modules/bill/bill-utils.ts"
 import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
-import type { ItemRow } from "@/core/modules/item/item.ts"
-import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -98,24 +95,18 @@ function BillHistoryIssues({
  * Reproduces the icon/label/action layout `NavItemContent` (`vertical-nav.tsx`)
  * and `PaymentHistory` build from separate `item` slots — bill rows can't use
  * those slots directly since every piece (icon, amount, status text) needs
- * `bill.lines`/`bill.claimedTransactions`, already loaded by `latestBillsQuery`
- * for every row in one round trip, reduced here through the same pure
+ * `bill.lines`/`bill.items`/`bill.claimedTransactions`, already loaded by
+ * `latestBillsQuery` for every row in one round trip, reduced here through the same pure
  * `calculateBillLineSummaries`/`deriveBillHistoryItemSummary` the detail page
  * uses — not a plain `.map()` callback. Assembling the equivalent DOM by hand
  * here, instead, is what keeps a bill row visually identical to a payment row.
  */
-function BillHistoryItemContent({
-  bill,
-  itemRows,
-}: {
-  readonly bill: BillHistoryRow
-  readonly itemRows: ReadonlyArray<ItemRow>
-}) {
+function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
   const { t } = useTranslation()
   const locale = useLocale()
 
   const summary = useMemo(() => {
-    const summaries = calculateBillLineSummaries(bill.lines, itemRows)
+    const summaries = calculateBillLineSummaries(bill.lines, bill.items)
     const billTotal = NonNegativeInteger(
       summaries.reduce((sum, item) => sum + item.totalAmount, 0)
     )
@@ -126,7 +117,7 @@ function BillHistoryItemContent({
       billTotal,
       claimedTransactions: bill.claimedTransactions,
     })
-  }, [bill, itemRows])
+  }, [bill])
 
   return (
     <div className={"flex items-center gap-3 w-full"}>
@@ -178,7 +169,6 @@ export const BillHistory = () => {
     isPending,
     sentinelRef,
   } = useInfiniteEvoluQuery([], createPageQuery)
-  const { data: itemRows } = useEvoluQuery(itemsQuery)
 
   const empty = (
     <div className={"flex flex-col justify-center items-center gap-8 py-10"}>
@@ -212,7 +202,7 @@ export const BillHistory = () => {
             to: "/activity/bills/$billId",
             params: { billId: bill.id },
             disableAction: true,
-            label: <BillHistoryItemContent bill={bill} itemRows={itemRows} />,
+            label: <BillHistoryItemContent bill={bill} />,
           }))}
         />
       ))}

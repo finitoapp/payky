@@ -2,6 +2,7 @@ import type { KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 
 export const itemsQuery = createQuery((db) =>
   db
@@ -38,6 +39,34 @@ export const itemsByBillIdQuery = (billId: BillId) =>
       .selectAll("item")
       .distinct()
       .where("billLine.billId", "=", billId)
+      .where("item.name", "is not", null)
+      .where("item.currency", "is not", null)
+      .where("item.unitAmount", "is not", null)
+      .$narrowType<{
+        name: KyselyNotNull
+        currency: KyselyNotNull
+        unitAmount: KyselyNotNull
+      }>()
+  )
+
+/**
+ * Only the item snapshots referenced by one payment's frozen `paymentLine`
+ * rows — the payment-side counterpart to `itemsByBillIdQuery`.
+ *
+ * Deliberately not scoped through the bill: a `paymentLine` snapshot outlives
+ * the bill line it was taken from (see `snapshotBillLinesForPayment`), so the
+ * item a payment was made for may no longer be on the bill at all. That case
+ * is the whole point of `deriveBillLineSummaryDiff` — scoping this by `billId`
+ * would drop exactly the rows it needs to report as removed.
+ */
+export const itemsByPaymentIdQuery = (paymentId: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("item")
+      .innerJoin("paymentLine", "paymentLine.itemId", "item.id")
+      .selectAll("item")
+      .distinct()
+      .where("paymentLine.paymentId", "=", paymentId)
       .where("item.name", "is not", null)
       .where("item.currency", "is not", null)
       .where("item.unitAmount", "is not", null)

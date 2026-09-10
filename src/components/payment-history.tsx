@@ -22,8 +22,6 @@ import {
   deriveBillCoverage,
 } from "@/core/modules/bill/bill-utils.ts"
 import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
-import type { ItemRow } from "@/core/modules/item/item.ts"
-import { itemsQuery } from "@/core/modules/item/item-queries.ts"
 import {
   calculatePaymentClaimedSum,
   derivePaymentHasExcessSettlement,
@@ -31,7 +29,6 @@ import {
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -157,6 +154,34 @@ const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
               totalAmount: KyselyNotNull
             }>()
         ).as("billLines"),
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("item")
+            .innerJoin("billLine as itemLine", "itemLine.itemId", "item.id")
+            .select([
+              "item.id",
+              "item.catalogItemId",
+              "item.name",
+              "item.description",
+              "item.currency",
+              "item.unitAmount",
+              "item.taxRateId",
+              "item.createdAt",
+              "item.updatedAt",
+              "item.isDeleted",
+              "item.ownerId",
+            ])
+            .distinct()
+            .whereRef("itemLine.billId", "=", "payment.billId")
+            .where("item.name", "is not", null)
+            .where("item.currency", "is not", null)
+            .where("item.unitAmount", "is not", null)
+            .$narrowType<{
+              name: KyselyNotNull
+              currency: KyselyNotNull
+              unitAmount: KyselyNotNull
+            }>()
+        ).as("billItems"),
         evoluJsonArrayFrom(
           eb
             .selectFrom("payment as billPayment")
@@ -305,10 +330,12 @@ interface PaymentHistoryIssueFlags {
  */
 const resolvePaymentHistoryIssueFlags = (
   item: PaymentHistoryRow,
-  itemRows: ReadonlyArray<ItemRow>,
   hasCancellationCollision: boolean
 ): PaymentHistoryIssueFlags => {
-  const billSummaries = calculateBillLineSummaries(item.billLines, itemRows)
+  const billSummaries = calculateBillLineSummaries(
+    item.billLines,
+    item.billItems
+  )
   const billTotal = NonNegativeInteger(
     billSummaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
   )
@@ -376,7 +403,6 @@ export const PaymentHistory = () => {
     isPending,
     sentinelRef,
   } = useInfiniteEvoluQuery([], createPageQuery)
-  const { data: itemRows } = useEvoluQuery(itemsQuery)
   // Nothing writes a row when a payment expires, so the clock has to tick on
   // its own or a listed pending payment never becomes Expired.
   const now = useNow(items.map((item) => item.expiresAt))
@@ -425,7 +451,6 @@ export const PaymentHistory = () => {
             })
             const issueFlags = resolvePaymentHistoryIssueFlags(
               item,
-              itemRows,
               hasCancellationCollision
             )
 

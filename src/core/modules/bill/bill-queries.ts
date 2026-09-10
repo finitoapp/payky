@@ -71,7 +71,8 @@ export const openBillsByTableIdQuery = (tableId: TableId) =>
  * in `payment-history.tsx`: a flat, paginated list for a history view, not a
  * lock/coverage computation.
  *
- * Embeds each bill's line ledger (`lines`) and claimed-transaction rows
+ * Embeds each bill's line ledger (`lines`), the item snapshots those lines
+ * reference (`items`), and its claimed-transaction rows
  * (`claimedTransactions`) as `evoluJsonArrayFrom` subqueries instead of
  * making `BillHistory` load them per row via separate `billId`-scoped
  * queries (as `useBillLineSummaries`/`useBillCoverage`/`useBillStatus` do
@@ -124,6 +125,34 @@ export const latestBillsQuery = ({ limit }: { readonly limit: number }) =>
               totalAmount: KyselyNotNull
             }>()
         ).as("lines"),
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("item")
+            .innerJoin("billLine as itemLine", "itemLine.itemId", "item.id")
+            .select([
+              "item.id",
+              "item.catalogItemId",
+              "item.name",
+              "item.description",
+              "item.currency",
+              "item.unitAmount",
+              "item.taxRateId",
+              "item.createdAt",
+              "item.updatedAt",
+              "item.isDeleted",
+              "item.ownerId",
+            ])
+            .distinct()
+            .whereRef("itemLine.billId", "=", "bill.id")
+            .where("item.name", "is not", null)
+            .where("item.currency", "is not", null)
+            .where("item.unitAmount", "is not", null)
+            .$narrowType<{
+              name: KyselyNotNull
+              currency: KyselyNotNull
+              unitAmount: KyselyNotNull
+            }>()
+        ).as("items"),
         evoluJsonArrayFrom(
           eb
             .selectFrom("payment")

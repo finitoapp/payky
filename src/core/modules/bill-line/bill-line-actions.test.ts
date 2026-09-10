@@ -217,12 +217,19 @@ describe("bill line actions", () => {
     ).resolves.toMatchObject([
       { billId: coffeeBillId, itemId: coffee.id, name: "Coffee" },
     ])
-    await expect(
-      run.ok(loadCalculatedBillLineSummaries(teaBillId))
-    ).resolves.toMatchObject([
-      { billId: teaBillId, itemId: coffee.id, name: "Coffee" },
-      { billId: teaBillId, itemId: tea.id, name: "Tea" },
+    // Sorted, not positional: every line in the batch above shares one
+    // `createdAt`, so `billLinesByBillIdQuery`'s `orderBy createdAt` leaves
+    // the order among them unspecified.
+    const teaBillSummaries = await run.ok(
+      loadCalculatedBillLineSummaries(teaBillId)
+    )
+    expect(teaBillSummaries.map((summary) => summary.name).sort()).toEqual([
+      "Coffee",
+      "Tea",
     ])
+    expect(
+      teaBillSummaries.every((summary) => summary.billId === teaBillId)
+    ).toBe(true)
   }, 15_000)
 
   test("drops a line whose item snapshot has not arrived yet", async () => {

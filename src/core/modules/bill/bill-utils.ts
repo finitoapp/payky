@@ -90,18 +90,27 @@ export const calculateClaimedSum = (
   // Gross and tip travel together per payment rather than in two parallel
   // maps: the tip is only meaningful against the gross it is subtracted from,
   // and keeping them apart made it possible to look one up without the other.
-  // Every row of a payment carries that payment's own `tipAmount` (it comes
-  // from the same joined `payment` row — see
-  // `claimedTransactionsByBillIdQuery`), so assigning it per row is not a
-  // choice between differing values.
+  //
+  // Every row of a payment carries that payment's own `tipAmount`, joined from
+  // the same `payment` row, so through either current query these values
+  // always agree and the `max` below is whichever one they all are. Nothing
+  // enforces that though — a widened join would break it silently — and
+  // taking whichever row was read last would then be a coin flip in one of
+  // two directions. Too small a tip inflates the claimed sum, and an inflated
+  // sum can read a bill as covered while money is still missing. The largest
+  // tip can only leave a bill looking *less* covered, which staff notice.
   const claimedByPayment = new Map<
     PaymentId,
     { readonly gross: number; readonly tip: NonNegativeInteger }
   >()
   for (const { paymentId, amount, tipAmount } of uniqueTransactions.values()) {
+    const claimed = claimedByPayment.get(paymentId)
     claimedByPayment.set(paymentId, {
-      gross: (claimedByPayment.get(paymentId)?.gross ?? 0) + amount,
-      tip: tipAmount,
+      gross: (claimed?.gross ?? 0) + amount,
+      tip:
+        claimed === undefined
+          ? tipAmount
+          : NonNegativeInteger(Math.max(claimed.tip, tipAmount)),
     })
   }
 

@@ -249,6 +249,33 @@ describe("calculateClaimedSum", () => {
     ).toBe(1_000)
   })
 
+  test("subtracts the largest tip when a payment's rows disagree about it", () => {
+    // Every row of a payment carries that payment's own `tipAmount`, joined
+    // from the same `payment` row, so this cannot happen through either
+    // current query. Nothing enforces it though, and picking whichever row
+    // happened to be read last is a coin flip in one of two directions: too
+    // small a tip inflates the claimed sum, and an inflated sum can read a
+    // bill as covered while money is still missing. The larger tip is the
+    // conservative choice — it can only leave a bill looking *less* covered,
+    // which staff notice, rather than closing one that was not paid.
+    expect(
+      calculateClaimedSum([
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-a" as AccountTransactionId,
+          amount: 600,
+          tipAmount: NonNegativeInteger(300),
+        },
+        {
+          paymentId: "payment-1" as PaymentId,
+          accountTransactionId: "tx-b" as AccountTransactionId,
+          amount: 400,
+          tipAmount: NonNegativeInteger(100),
+        },
+      ])
+    ).toBe(700)
+  })
+
   test("returns zero for no claimed transactions", () => {
     expect(calculateClaimedSum([])).toBe(0)
   })

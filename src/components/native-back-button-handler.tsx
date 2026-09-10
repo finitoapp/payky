@@ -2,7 +2,6 @@ import { App as CapacitorApp } from "@capacitor/app"
 import { Capacitor } from "@capacitor/core"
 import { useEffect } from "react"
 
-import { getNativeRuntime } from "@/core/native/runtime.ts"
 import { router } from "@/router.tsx"
 
 const rootPathnames = new Set(["/", "/onboarding"])
@@ -49,12 +48,7 @@ function hasMeaningfulFallbackRoute() {
 
 export function NativeBackButtonHandler() {
   useEffect(() => {
-    if (
-      getNativeRuntime() !== "capacitor" ||
-      Capacitor.getPlatform() !== "android"
-    ) {
-      return undefined
-    }
+    if (Capacitor.getPlatform() !== "android") return undefined
 
     let disposed = false
     const listener = CapacitorApp.addListener("backButton", async () => {

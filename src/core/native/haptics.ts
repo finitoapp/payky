@@ -1,4 +1,4 @@
-import { getNativeRuntime } from "@/core/native/runtime.ts"
+import { Capacitor } from "@capacitor/core"
 
 let capacitorHapticsPromise:
   | Promise<{
@@ -15,9 +15,7 @@ const getCapacitorHaptics = async () => {
 }
 
 export async function vibrateDevice(duration: number): Promise<void> {
-  const runtime = getNativeRuntime()
-
-  if (runtime === "capacitor") {
+  if (Capacitor.isNativePlatform()) {
     const { Haptics } = await getCapacitorHaptics()
     await Haptics.vibrate({ duration })
     return

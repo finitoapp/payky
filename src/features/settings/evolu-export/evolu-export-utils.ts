@@ -1,4 +1,4 @@
-import { getNativeRuntime } from "@/core/native/runtime.ts"
+import { Capacitor } from "@capacitor/core"
 
 export type EvoluExportDatabase = "app" | "device"
 
@@ -58,7 +58,7 @@ export function formatExportCreatedAt(date: Date): string {
 export async function saveEvoluExportFile(
   file: EvoluExportFile
 ): Promise<SavedEvoluExportFile> {
-  if (getNativeRuntime() === "capacitor") {
+  if (Capacitor.isNativePlatform()) {
     return {
       ...file,
       destination: await saveWithCapacitor(file),

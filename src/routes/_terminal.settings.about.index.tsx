@@ -6,7 +6,6 @@ import { GitFork, type Info, ScrollText, ShieldCheck } from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
-import { getNativeRuntime } from "@/core/native/runtime.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -78,8 +77,7 @@ function createAboutNavItems(
 function AboutPage() {
   const { t } = useTranslation()
   const aboutItems = useMemo(() => createAboutNavItems(aboutRows, t), [t])
-  const isCapacitorAndroid =
-    getNativeRuntime() === "capacitor" && Capacitor.getPlatform() === "android"
+  const isCapacitorAndroid = Capacitor.getPlatform() === "android"
   const androidVersionCodeQuery = useQuery({
     queryKey: ["native", "android-version-code"],
     queryFn: async () => {

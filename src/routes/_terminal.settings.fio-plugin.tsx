@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core"
 import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import { format, subDays } from "date-fns"
@@ -50,7 +51,6 @@ import {
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
-import { isPluginNativeRuntime } from "@/core/native/runtime.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -76,7 +76,7 @@ const normalizeToken = (value: string) => value.trim()
 
 function FioPluginSettingsPage() {
   const { t } = useTranslation()
-  const isNativeRuntime = isPluginNativeRuntime()
+  const isNativeRuntime = Capacitor.isNativePlatform()
   const { data } = useEvoluQuery(fiatBankAccountFioPluginQuery)
   const [plugin] = data
 

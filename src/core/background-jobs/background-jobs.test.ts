@@ -6,13 +6,13 @@ import { startSparkAccountTransactionSyncJob } from "./jobs/spark-account-transa
 
 describe("getBackgroundJobsForRuntime", () => {
   test("does not schedule the Fio job in a regular web runtime", () => {
-    expect(getBackgroundJobsForRuntime("web")).toEqual([
+    expect(getBackgroundJobsForRuntime(false)).toEqual([
       startSparkAccountTransactionSyncJob,
     ])
   })
 
   test("schedules the Fio job in supported native runtimes", () => {
-    expect(getBackgroundJobsForRuntime("capacitor")).toEqual([
+    expect(getBackgroundJobsForRuntime(true)).toEqual([
       startFioAccountTransactionSyncJob,
       startSparkAccountTransactionSyncJob,
     ])

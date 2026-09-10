@@ -1,7 +1,5 @@
-import {
-  isAndroidWebView,
-  isPluginNativeRuntime,
-} from "@/core/native/runtime.ts"
+import { Capacitor } from "@capacitor/core"
+import { isAndroidWebView } from "@/core/native/runtime.ts"
 
 const evoluOneTabSharedWorkerPolyfillLock =
   "evolu-one-tab-sharedworker-polyfill"
@@ -48,7 +46,7 @@ const createOneTabLockManager = (nativeLockManager: LockManager) => ({
 })
 
 export const installAndroidWebViewLocksPolyfill = () => {
-  if (!isPluginNativeRuntime() || !isAndroidWebView()) return
+  if (!Capacitor.isNativePlatform() || !isAndroidWebView()) return
 
   const nativeLockManager = globalThis.navigator.locks
   if (nativeLockManager === undefined) return

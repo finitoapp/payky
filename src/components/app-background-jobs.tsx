@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core"
 import { createRun } from "@evolu/web"
 import { useAtomValue } from "jotai"
 import { useEffect } from "react"
@@ -6,7 +7,6 @@ import { evoluAtom } from "@/atoms/evolu.ts"
 import { getBackgroundJobsForRuntime } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
 import { createDateDep, createFetchDep } from "@/core/deps.ts"
-import { getNativeRuntime } from "@/core/native/runtime.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
@@ -39,7 +39,9 @@ export function AppBackgroundJobs() {
     void (async () => {
       try {
         const startedJobsDisposable = await run.ok(
-          runBackgroundJobs(getBackgroundJobsForRuntime(getNativeRuntime()))
+          runBackgroundJobs(
+            getBackgroundJobsForRuntime(Capacitor.isNativePlatform())
+          )
         )
         if (isDisposed) {
           disposeJobs(startedJobsDisposable)

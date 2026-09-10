@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core"
 import { useAtomValue } from "jotai"
 import { AlertTriangle, Database, Download, Smartphone } from "lucide-react"
 import { useState } from "react"
@@ -24,7 +25,6 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field.tsx"
-import { getNativeRuntime } from "@/core/native/runtime.ts"
 import {
   createEvoluExportFilename,
   type EvoluExportDatabase,
@@ -68,7 +68,6 @@ export function EvoluExportPage() {
   const [acceptedWarning, setAcceptedWarning] = useState(false)
   const [status, setStatus] = useState<ExportStatus>({ kind: "idle" })
   const [lastExport, setLastExport] = useState<ExportState | null>(null)
-  const runtime = getNativeRuntime()
   const selectedDatabases = getSelectedDatabases(selection)
   const canExport =
     acceptedWarning && selectedDatabases.length > 0 && status.kind !== "pending"
@@ -219,7 +218,7 @@ export function EvoluExportPage() {
         </CardContent>
         <CardFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground" aria-live="polite">
-            {runtime === "capacitor"
+            {Capacitor.isNativePlatform()
               ? t("settings.evoluExport.destination.capacitor")
               : t("settings.evoluExport.destination.web")}
           </p>

@@ -44,6 +44,17 @@ type AccountTransactionOnchainInput = Omit<
   "id"
 >
 
+/**
+ * Deliberately separate from `AccountTransactionSparkInput`, which is why
+ * `createAccountTransaction` and `updateAccountTransaction` write these three
+ * tables in two near-identical blocks instead of sharing a helper.
+ * `UpsertValues` requires every non-nullable column where `UpdateValues` is
+ * all-optional, and a helper taking the mode resolves `evolu[mode]` to the
+ * *intersection* of the two signatures — so it would only compile against
+ * upsert-strength values, dropping the guarantee that a created transaction
+ * has a complete Spark row. Same reason `upsertPaymentSparkDetails` covers
+ * only the upsert side; see its comment.
+ */
 type AccountTransactionSparkUpdateInput = WithSparkDetails<
   Omit<UpdateValues<typeof accountTransactionSpark>, "id">,
   Omit<UpdateValues<typeof accountTransactionLightning>, "id">,

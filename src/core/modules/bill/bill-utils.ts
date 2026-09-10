@@ -191,6 +191,11 @@ export const deriveBillHistoryItemSummary = ({
  * lock can never answer this differently. That sharing is the point; see
  * `hasPendingPayment` below.
  *
+ * The `paymentId` parameter is load-bearing, not incidental: payment rows key
+ * their own id as `id`, so handing this the payments that merely *have* a
+ * claim — the drift it exists to prevent — is a type error rather than a
+ * plausible-looking set.
+ *
  * Built from `claimedTransactionsByBillIdQuery` rather than
  * `claimedPaymentsByBillIdQuery`, i.e. from claims whose account transaction
  * is actually present. A claim on its own is not evidence that money arrived:

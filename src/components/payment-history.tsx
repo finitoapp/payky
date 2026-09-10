@@ -34,6 +34,7 @@ import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { groupByDay } from "@/lib/group-by-day.ts"
@@ -244,18 +245,21 @@ const PaymentStatusIcon: FC<{
   )
 }
 
-const resolvePaymentStatus = (payment: {
-  readonly canceledAt: PaymentHistoryRow["canceledAt"]
-  readonly confirmedPaidAt: PaymentHistoryRow["confirmedPaidAt"]
-  readonly expiresAt: PaymentHistoryRow["expiresAt"]
-  readonly claimCount: number
-}): PaymentStatus =>
+const resolvePaymentStatus = (
+  payment: {
+    readonly canceledAt: PaymentHistoryRow["canceledAt"]
+    readonly confirmedPaidAt: PaymentHistoryRow["confirmedPaidAt"]
+    readonly expiresAt: PaymentHistoryRow["expiresAt"]
+    readonly claimCount: number
+  },
+  now: Date
+): PaymentStatus =>
   derivePaymentStatus({
     canceledAt: payment.canceledAt,
     confirmedPaidAt: payment.confirmedPaidAt,
     expiresAt: payment.expiresAt,
     hasActiveClaim: payment.claimCount > 0,
-    now: new Date(),
+    now,
   })
 
 /**
@@ -373,6 +377,9 @@ export const PaymentHistory = () => {
     sentinelRef,
   } = useInfiniteEvoluQuery([], createPageQuery)
   const { data: itemRows } = useEvoluQuery(itemsQuery)
+  // Nothing writes a row when a payment expires, so the clock has to tick on
+  // its own or a listed pending payment never becomes Expired.
+  const now = useNow(items.map((item) => item.expiresAt))
 
   const empty = (
     <div className={"flex flex-col justify-center items-center gap-8 py-10"}>
@@ -402,12 +409,15 @@ export const PaymentHistory = () => {
           title={formatDate(group.date, locale)}
           items={group.items.map((item) => {
             const claimCount = toClaimCount(item.claimCount)
-            const paymentStatus = resolvePaymentStatus({
-              canceledAt: item.canceledAt,
-              confirmedPaidAt: item.confirmedPaidAt,
-              expiresAt: item.expiresAt,
-              claimCount,
-            })
+            const paymentStatus = resolvePaymentStatus(
+              {
+                canceledAt: item.canceledAt,
+                confirmedPaidAt: item.confirmedPaidAt,
+                expiresAt: item.expiresAt,
+                claimCount,
+              },
+              now
+            )
             const hasCancellationCollision = resolveHasCancellationCollision({
               canceledAt: item.canceledAt,
               confirmedPaidAt: item.confirmedPaidAt,

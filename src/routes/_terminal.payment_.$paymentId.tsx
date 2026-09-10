@@ -69,6 +69,7 @@ import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useNow } from "@/hooks/use-now.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -303,6 +304,12 @@ function PaymentWaitingRequest({
   )
   const payment = payments[0]
   const [settings] = settingsData
+  // Spark/Lightning payments always carry an `expiresAt`, and nothing writes
+  // a row when that moment arrives — so without a ticking clock the expired
+  // QR stayed on screen, `wakeLockEnabled` stayed true and Cancel kept
+  // treating the payment as live until some unrelated query update forced a
+  // re-render.
+  const now = useNow([payment?.expiresAt ?? null])
   const paymentStatus =
     payment === undefined
       ? null
@@ -311,7 +318,7 @@ function PaymentWaitingRequest({
           confirmedPaidAt: payment.confirmedPaidAt,
           expiresAt: payment.expiresAt,
           hasActiveClaim: claims.length > 0,
-          now: new Date(),
+          now,
         })
   // `derivePaymentStatus` ranks `canceled` above `paid` (see
   // docs/bill-payment-states.md), so `isPaid` here can never be true for a

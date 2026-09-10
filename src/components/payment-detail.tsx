@@ -60,6 +60,7 @@ import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
@@ -243,6 +244,9 @@ function PaymentDetailContent({
   const { data: paymentNumbers } = useEvoluQuery(paymentNumberQuery)
   const payment = payments[0]
   const paymentNumber = paymentNumbers[0]
+  // Read before the early return below, so the hook order stays stable.
+  // Nothing writes a row when a payment expires; see `useNow`.
+  const now = useNow([payment?.expiresAt ?? null])
 
   if (!payment) {
     return <PaymentDetailEmptyState messageKey="paymentDetail.notFound" />
@@ -253,7 +257,7 @@ function PaymentDetailContent({
     confirmedPaidAt: payment.confirmedPaidAt,
     expiresAt: payment.expiresAt,
     hasActiveClaim: reconciliations.length > 0,
-    now: new Date(),
+    now,
   })
   const isPending = paymentStatus === "pending"
   // The collision docs/bill-payment-states.md calls out: a multi-device

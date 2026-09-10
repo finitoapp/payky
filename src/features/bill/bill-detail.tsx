@@ -46,6 +46,7 @@ import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
@@ -418,12 +419,13 @@ function BillDetailPaymentRow({
 }) {
   const { t } = useTranslation()
   const claimCount = toClaimCount(payment.claimCount)
+  const now = useNow([payment.expiresAt])
   const status = derivePaymentStatus({
     canceledAt: payment.canceledAt,
     confirmedPaidAt: payment.confirmedPaidAt,
     expiresAt: payment.expiresAt,
     hasActiveClaim: claimCount > 0,
-    now: new Date(),
+    now,
   })
   // The collision docs/bill-payment-states.md calls out: a multi-device
   // merge can leave this payment canceled with an active claim (real money)

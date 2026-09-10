@@ -6,6 +6,7 @@ import {
 } from "@evolu/common"
 import { installPolyfills } from "@evolu/common/polyfills"
 import { type Command, createCommand } from "commander"
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
   createDateDep,
   type DateDep,
@@ -43,6 +44,16 @@ const commands: ((
 
 const main = async () => {
   installPolyfills()
+
+  // Bun ships a partial `navigator` that has no `locks`, so Evolu's own
+  // polyfill sees a navigator and leaves it alone - then Evolu creation
+  // dereferences `navigator.locks.request` and the CLI dies before parsing
+  // a single argument. Web Locks in a single-process runtime is exactly
+  // what `createInProcessLockManager` was written for.
+  const navigatorWithLocks = globalThis.navigator as Navigator & {
+    locks?: LockManager
+  }
+  navigatorWithLocks.locks ??= createInProcessLockManager()
 
   await using evoluCli = await createEvoluCli()
   const { evolu } = evoluCli

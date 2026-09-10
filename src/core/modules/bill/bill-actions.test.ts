@@ -612,6 +612,51 @@ describe("bill actions", () => {
       .toMatchObject([{ id: sourceBillId, canceledAt: null }])
   }, 15_000)
 
+  test("splitBill leaves an already-emptied source bill open", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const targetBillId = await createOpenBill(deps, { displayNumber: 2 })
+    const movedLine = await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Coffee"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+
+    // The line is gone from the source before the split lands — the shape a
+    // concurrent edit (or a summary load racing `splitBill`'s own guard
+    // reads) leaves behind. Nothing was emptied out of the source here, so
+    // the vacuously-true `every` over zero summaries must not cancel it.
+    await run.orThrow(
+      appendRemoveBillLine({
+        billId: sourceBillId,
+        deviceId: null,
+        quantity: movedLine.quantity,
+        totalAmount: movedLine.totalAmount,
+        lineSummary: movedLine,
+      })
+    )
+
+    const result = await run.orThrow(
+      splitBill({ sourceBillId, targetBillId, items: [movedLine] })
+    )
+
+    expect(result.sourceCanceled).toBe(false)
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
+      .toMatchObject([{ id: sourceBillId, canceledAt: null }])
+  }, 15_000)
+
   test("returns an error when splitting into a missing target bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

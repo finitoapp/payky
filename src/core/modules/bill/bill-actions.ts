@@ -831,9 +831,16 @@ const cancelSourceBillIfEmptied = (
   const movedQuantityById = new Map(
     movedItems.map((item) => [item.id, item.quantity])
   )
-  const sourceCanceled = currentSummaries.every(
-    (summary) => (movedQuantityById.get(summary.id) ?? 0) >= summary.quantity
-  )
+  // `every` is vacuously true on an empty list, so the length check is what
+  // keeps "nothing was there to move" from reading as "everything moved
+  // out": a bill with no lines, or a summary load that came back empty
+  // (it runs concurrently with the guard reads in `splitBill`), would
+  // otherwise be canceled without anything actually being emptied out of it.
+  const sourceCanceled =
+    currentSummaries.length > 0 &&
+    currentSummaries.every(
+      (summary) => (movedQuantityById.get(summary.id) ?? 0) >= summary.quantity
+    )
   if (sourceCanceled) {
     evolu.update("bill", { id: sourceBillId, canceledAt: now }, options)
   }

@@ -78,7 +78,7 @@ export function WithdrawFormStep({
     error: quoteError,
     setError: setQuoteError,
     submit,
-  } = useSettingsForm<TranslationKey>()
+  } = useSettingsForm()
 
   const applyScannedAddress = (scanned: ScannedBitcoinAddress) => {
     setAddress(scanned.address)

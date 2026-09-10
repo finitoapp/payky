@@ -8,11 +8,11 @@ type SettingsFormSubmitAction = () =>
   | SettingsFormSubmitResult
   | Promise<SettingsFormSubmitResult>
 
-export interface SettingsForm<FormError> {
+export interface SettingsForm {
   readonly pending: boolean
   readonly saved: boolean
-  readonly error: FormError | null
-  readonly setError: (error: FormError | null) => void
+  readonly error: TranslationKey | null
+  readonly setError: (error: TranslationKey | null) => void
   /** Clears the saved message, typically when an input changes. */
   readonly resetSaved: () => void
   /**
@@ -31,12 +31,10 @@ export interface SettingsForm<FormError> {
  * form. `error` covers forms with a single validation error; forms with
  * several field errors keep the extra ones as local state.
  */
-export const useSettingsForm = <
-  FormError = TranslationKey,
->(): SettingsForm<FormError> => {
+export const useSettingsForm = (): SettingsForm => {
   const [pending, setPending] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<FormError | null>(null)
+  const [error, setError] = useState<TranslationKey | null>(null)
 
   const resetSaved = useCallback(() => {
     setSaved(false)

@@ -8,84 +8,27 @@ import type {
 
 /**
  * Every diacritic-bearing Latin letter (both cases) this app searches
- * across — Czech/Slovak plus common Western European accents — mapped to
- * its plain-ASCII base form. The single source of truth for
- * `foldDiacritics` (JS side) and `foldDiacriticsSql` (SQL side), so a search
- * term and a stored column always fold to the same value.
+ * across — Czech/Slovak plus common Western European accents. The single
+ * source of truth for `foldDiacritics` (JS side) and `foldDiacriticsSql`
+ * (SQL side), so a search term and a stored column always fold to the same
+ * value.
+ *
+ * Kept as an explicit list rather than derived at the call site from
+ * `String.prototype.normalize`: SQLite has no `unaccent`, so the SQL side can
+ * only fold letters it enumerates one `replace()` at a time. Letting the JS
+ * side strip every Unicode diacritic instead would make it fold strictly more
+ * than the column does, and a term containing an unlisted accent (`ő`, `ā`,
+ * `ę`, ...) would then stop matching the row it came from. Add a letter here
+ * and both sides learn it together.
  */
+const ACCENTED_LETTERS =
+  "áÁàÀâÂäÄãÃåÅčČçÇďĎéÉèÈêÊëËěĚíÍìÌîÎïÏňŇñÑóÓòÒôÔöÖõÕřŘšŠťŤúÚùÙûÛüÜůŮýÝÿžŽ"
+
 const DIACRITICS_FOLD_MAP: ReadonlyArray<readonly [string, string]> = [
-  ["á", "a"],
-  ["Á", "a"],
-  ["à", "a"],
-  ["À", "a"],
-  ["â", "a"],
-  ["Â", "a"],
-  ["ä", "a"],
-  ["Ä", "a"],
-  ["ã", "a"],
-  ["Ã", "a"],
-  ["å", "a"],
-  ["Å", "a"],
-  ["č", "c"],
-  ["Č", "c"],
-  ["ç", "c"],
-  ["Ç", "c"],
-  ["ď", "d"],
-  ["Ď", "d"],
-  ["é", "e"],
-  ["É", "e"],
-  ["è", "e"],
-  ["È", "e"],
-  ["ê", "e"],
-  ["Ê", "e"],
-  ["ë", "e"],
-  ["Ë", "e"],
-  ["ě", "e"],
-  ["Ě", "e"],
-  ["í", "i"],
-  ["Í", "i"],
-  ["ì", "i"],
-  ["Ì", "i"],
-  ["î", "i"],
-  ["Î", "i"],
-  ["ï", "i"],
-  ["Ï", "i"],
-  ["ň", "n"],
-  ["Ň", "n"],
-  ["ñ", "n"],
-  ["Ñ", "n"],
-  ["ó", "o"],
-  ["Ó", "o"],
-  ["ò", "o"],
-  ["Ò", "o"],
-  ["ô", "o"],
-  ["Ô", "o"],
-  ["ö", "o"],
-  ["Ö", "o"],
-  ["õ", "o"],
-  ["Õ", "o"],
-  ["ř", "r"],
-  ["Ř", "r"],
-  ["š", "s"],
-  ["Š", "s"],
-  ["ť", "t"],
-  ["Ť", "t"],
-  ["ú", "u"],
-  ["Ú", "u"],
-  ["ù", "u"],
-  ["Ù", "u"],
-  ["û", "u"],
-  ["Û", "u"],
-  ["ü", "u"],
-  ["Ü", "u"],
-  ["ů", "u"],
-  ["Ů", "u"],
-  ["ý", "y"],
-  ["Ý", "y"],
-  ["ÿ", "y"],
-  ["ž", "z"],
-  ["Ž", "z"],
-]
+  ...ACCENTED_LETTERS,
+].map(
+  (letter) => [letter, letter.normalize("NFD").charAt(0).toLowerCase()] as const
+)
 
 /**
  * Lowercases and strips diacritics from user-facing text the same way

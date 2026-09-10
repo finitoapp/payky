@@ -45,7 +45,7 @@ export const getOnboardingSteps = (
     ? restoreAccountOnboardingSteps
     : newAccountOnboardingSteps
 
-export interface OnboardingFormState {
+interface OnboardingFormState {
   readonly step: OnboardingStep
   readonly accountType: OnboardingAccountType | null
   /** `null` until the user picks one; the UI derives a default from the language. */

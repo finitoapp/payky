@@ -61,7 +61,7 @@ const createCatalogItemFormSchema = (currency: FiatCurrency) =>
     scanCode: OptionalTextSchema,
   })
 
-export type CatalogItemFormValues = z.output<
+type CatalogItemFormValues = z.output<
   ReturnType<typeof createCatalogItemFormSchema>
 >
 

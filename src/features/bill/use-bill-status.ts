@@ -12,7 +12,7 @@ import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
-export interface BillStatusInfo {
+interface BillStatusInfo {
   readonly status: BillStatus
   /**
    * The canceled+funded collision from docs/bill-payment-states.md: the

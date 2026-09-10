@@ -16,7 +16,7 @@ import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
-export const accountTransportsQuery = (accountId: AccountId) =>
+const accountTransportsQuery = (accountId: AccountId) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("accountEvoluTransport")
@@ -43,7 +43,7 @@ export const accountTransportsQuery = (accountId: AccountId) =>
       }>()
   )
 
-export interface TransportToggleListProps {
+interface TransportToggleListProps {
   readonly accountId: AccountId
 }
 

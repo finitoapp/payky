@@ -12,7 +12,7 @@ import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export interface RestoreAccount {
+interface RestoreAccount {
   readonly mnemonic: string
   readonly pending: boolean
   readonly error: TranslationKey | null

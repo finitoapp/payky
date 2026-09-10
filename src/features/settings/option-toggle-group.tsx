@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 
-export interface OptionToggleGroupOption<Value extends string> {
+interface OptionToggleGroupOption<Value extends string> {
   readonly value: Value
   readonly icon?: LucideIcon
   readonly title: ReactNode

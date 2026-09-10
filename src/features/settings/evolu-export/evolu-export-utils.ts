@@ -3,7 +3,7 @@ import { format } from "date-fns"
 
 export type EvoluExportDatabase = "app" | "device"
 
-export interface EvoluExportFile {
+interface EvoluExportFile {
   readonly database: EvoluExportDatabase
   readonly filename: string
   readonly bytes: Uint8Array<ArrayBuffer>
@@ -13,7 +13,7 @@ export interface SavedEvoluExportFile extends EvoluExportFile {
   readonly destination: EvoluExportDestination
 }
 
-export type EvoluExportDestination =
+type EvoluExportDestination =
   | {
       readonly type: "web"
     }
@@ -23,7 +23,7 @@ export type EvoluExportDestination =
       readonly uri: string
     }
 
-export const evoluExportMimeType = "application/vnd.sqlite3"
+const evoluExportMimeType = "application/vnd.sqlite3"
 
 export function createEvoluExportFilename({
   createdAt,

@@ -11,7 +11,7 @@ export interface WithdrawResult {
   readonly status: SparkWithdrawalStatus
 }
 
-export type WithdrawState =
+type WithdrawState =
   | { readonly step: "form" }
   | {
       readonly step: "review"
@@ -23,7 +23,7 @@ export type WithdrawState =
     }
   | { readonly step: "result"; readonly result: WithdrawResult }
 
-export type WithdrawAction =
+type WithdrawAction =
   | {
       readonly type: "OPEN_REVIEW"
       readonly address: BitcoinAddress

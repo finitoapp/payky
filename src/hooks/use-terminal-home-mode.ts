@@ -4,7 +4,7 @@ import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
 const TERMINAL_HOME_MODE_STORAGE_KEY = "payky.terminalHomeMode"
 
 const TerminalHomeModeSchema = z.enum(["numpad", "pos"])
-export type TerminalHomeMode = z.output<typeof TerminalHomeModeSchema>
+type TerminalHomeMode = z.output<typeof TerminalHomeModeSchema>
 
 /**
  * Which view the terminal home screen shows: view state, not application

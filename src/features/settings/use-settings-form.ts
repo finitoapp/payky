@@ -8,7 +8,7 @@ type SettingsFormSubmitAction = () =>
   | SettingsFormSubmitResult
   | Promise<SettingsFormSubmitResult>
 
-export interface SettingsForm {
+interface SettingsForm {
   readonly pending: boolean
   readonly saved: boolean
   readonly error: TranslationKey | null

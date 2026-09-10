@@ -12,7 +12,7 @@ import {
 import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 
-export function getDefaultDeviceSettings(): DeviceSettings {
+function getDefaultDeviceSettings(): DeviceSettings {
   return createDefaultDeviceSettings(
     getPreferredDeviceLanguage(navigator.language)
   )

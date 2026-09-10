@@ -33,7 +33,7 @@ import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
-export interface EvoluTransportCardProps {
+interface EvoluTransportCardProps {
   readonly accountId: AccountId
 }
 

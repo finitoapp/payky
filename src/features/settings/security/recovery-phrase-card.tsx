@@ -18,7 +18,7 @@ import {
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
 
-export interface RecoveryPhraseCardProps {
+interface RecoveryPhraseCardProps {
   readonly mnemonic: string
 }
 

@@ -1,4 +1,4 @@
-export type PaymentMethodPreparationStatus =
+type PaymentMethodPreparationStatus =
   | { readonly status: "preparing" }
   | { readonly status: "failed"; readonly error: unknown }
 

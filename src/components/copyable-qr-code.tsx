@@ -7,7 +7,7 @@ type CopyableQrCodeState =
   | { readonly state: "pending"; readonly pendingLabel: string }
   | { readonly state: "empty" }
 
-export type CopyableQrCodeProps = CopyableQrCodeState & {
+type CopyableQrCodeProps = CopyableQrCodeState & {
   readonly ariaLabel: string
   readonly copiedMessage: string
   readonly copyFailedMessage: string

@@ -4,7 +4,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export interface FiatCurrencyOption {
+interface FiatCurrencyOption {
   readonly value: FiatCurrencyType
   readonly label: TranslationKey
   readonly description: TranslationKey

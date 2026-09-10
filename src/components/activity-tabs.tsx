@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
-export type ActivityTab = "payments" | "bills"
+type ActivityTab = "payments" | "bills"
 
 /**
  * Navigates between `/activity` (payments) and `/activity/bills` — each tab

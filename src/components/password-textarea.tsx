@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils.ts"
 
-export type PasswordTextareaProps = React.ComponentProps<typeof Textarea> & {
+type PasswordTextareaProps = React.ComponentProps<typeof Textarea> & {
   readonly hideLabel: string
   readonly showLabel: string
 }

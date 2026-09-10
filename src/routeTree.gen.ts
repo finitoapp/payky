@@ -13,6 +13,7 @@ import { Route as TerminalRouteImport } from './routes/_terminal'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as RecoveryRouteImport } from './routes/recovery'
 import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
@@ -76,6 +77,11 @@ const LandingRoute = LandingRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecoveryRoute = RecoveryRouteImport.update({
+  id: '/recovery',
+  path: '/recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RestoreAccountRoute = RestoreAccountRouteImport.update({
@@ -339,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/error': typeof ErrorRoute
   '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
+  '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/bill': typeof TerminalBillRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
   '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
+  '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/bill': typeof TerminalBillRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/error': typeof ErrorRoute
   '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
+  '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/bill': typeof TerminalBillRoute
@@ -488,6 +497,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/landing'
     | '/onboarding'
+    | '/recovery'
     | '/restore-account'
     | '/activity'
     | '/bill'
@@ -537,6 +547,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/landing'
     | '/onboarding'
+    | '/recovery'
     | '/restore-account'
     | '/activity'
     | '/bill'
@@ -583,6 +594,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/landing'
     | '/onboarding'
+    | '/recovery'
     | '/restore-account'
     | '/_terminal/activity'
     | '/_terminal/bill'
@@ -635,6 +647,7 @@ export interface RootRouteChildren {
   ErrorRoute: typeof ErrorRoute
   LandingRoute: typeof LandingRoute
   OnboardingRoute: typeof OnboardingRoute
+  RecoveryRoute: typeof RecoveryRoute
   RestoreAccountRoute: typeof RestoreAccountRoute
 }
 
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recovery': {
+      id: '/recovery'
+      path: '/recovery'
+      fullPath: '/recovery'
+      preLoaderRoute: typeof RecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/restore-account': {
@@ -1148,6 +1168,7 @@ const rootRouteChildren: RootRouteChildren = {
   ErrorRoute: ErrorRoute,
   LandingRoute: LandingRoute,
   OnboardingRoute: OnboardingRoute,
+  RecoveryRoute: RecoveryRoute,
   RestoreAccountRoute: RestoreAccountRoute,
 }
 export const routeTree = rootRouteImport

@@ -21,6 +21,29 @@ const breakSharedWorker = `
   })()
 `
 
+/**
+ * The other half of the picture: each Evolu client spawns its own database
+ * worker, and the device client is created before the app one (ThemeProvider
+ * suspends on it ahead of AppBackgroundJobs). Failing the second worker
+ * therefore leaves the device database intact and breaks only the active
+ * account's app database — which is what /recovery exists for.
+ */
+const breakAppDbWorker = `
+  (() => {
+    const NativeWorker = window.Worker
+    let created = 0
+    window.Worker = class {
+      constructor(...args) {
+        created += 1
+        if (created === 2) {
+          throw new Error("Simulated app database failure")
+        }
+        return new NativeWorker(...args)
+      }
+    }
+  })()
+`
+
 test("a crash while booting the app singletons shows the error card, not a stuck spinner", async ({
   seededPage: page,
 }) => {
@@ -52,6 +75,14 @@ test("a crash while booting the app singletons shows the error card, not a stuck
     expect(clipboard).toContain("Simulated boot failure")
   })
 
+  // Not clicked here: this failure takes the shared worker down before
+  // either database client exists, so the device database the recovery page
+  // needs is broken too. The link is for the far more common case where
+  // only one account's app database is.
+  await expect(
+    page.getByRole("link", { name: translate("en", "appError.recovery") })
+  ).toBeVisible()
+
   await test.step("the cache-clearing repair reloads without throwing", async () => {
     await page
       .getByRole("button", { name: translate("en", "appError.repair") })
@@ -63,4 +94,27 @@ test("a crash while booting the app singletons shows the error card, not a stuck
       page.getByText(translate("en", "appError.title"))
     ).toBeVisible()
   })
+})
+
+test("the recovery page still works when the active account's app database does not", async ({
+  seededPage: page,
+}) => {
+  await page.addInitScript({ content: breakAppDbWorker })
+
+  await page.goto("/recovery", { waitUntil: "domcontentloaded" })
+
+  await expect(
+    page.getByRole("heading", { name: translate("en", "recovery.title") })
+  ).toBeVisible()
+  // The two things that get an account back: its recovery phrase, and the
+  // list to switch away from the broken one.
+  await expect(
+    page.getByText(translate("en", "settings.security.mnemonic.title"))
+  ).toBeVisible()
+  await expect(
+    page.getByTestId("account-list").getByRole("listitem")
+  ).toHaveCount(1)
+  await expect(
+    page.getByRole("button", { name: translate("en", "appError.title") })
+  ).toHaveCount(0)
 })

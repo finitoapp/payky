@@ -264,11 +264,19 @@ export async function restoreOrSelectAccount(
   return result
 }
 
-export function selectAccount(deviceEvolu: DeviceEvolu, accountId: AccountId) {
-  deviceEvolu.update("account", {
-    id: accountId,
-    lastUseAt: Date.now(),
-  })
+export function selectAccount(
+  deviceEvolu: DeviceEvolu,
+  accountId: AccountId,
+  options?: MutationOptions
+) {
+  deviceEvolu.update(
+    "account",
+    {
+      id: accountId,
+      lastUseAt: Date.now(),
+    },
+    options
+  )
 }
 
 export function updateAccountName(

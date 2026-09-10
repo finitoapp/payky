@@ -22,6 +22,7 @@ export const sk = {
   "appError.message": "Správa",
   "appError.name": "Názov",
   "appError.nonError": "Vyhodená hodnota nie je objekt Error.",
+  "appError.recovery": "Obnovenie prístupu",
   "appError.reload": "Načítať aplikáciu znova",
   "appError.repair": "Vymazať cache a načítať znova",
   "appError.title": "Niečo sa pokazilo",
@@ -506,6 +507,14 @@ export const sk = {
   "settings.about.terms.summary":
     "Prispôsobené pre lokálny bitcoinový platobný terminál.",
   "settings.about.terms.title": "Podmienky používania",
+  "recovery.accounts.description":
+    "Prepnutím sa aplikácia restartuje na danom účte.",
+  "recovery.description":
+    "Táto stránka funguje aj vtedy, keď sa aplikácia nedokáže spustiť. Číta len databázu tohto zariadenia, nikdy údaje účtu.",
+  "recovery.export.description":
+    "Kópia účtov a nastavení zariadenia uložených na tomto zariadení — nie účtenky alebo platby niektorého účtu.",
+  "recovery.switch.error": "Účet sa nepodarilo prepnúť.",
+  "recovery.title": "Obnovenie prístupu",
   "settings.about.title": "O aplikácii",
   "settings.accountAndSync": "ÚČET A SYNCHRONIZÁCIA",
   "settings.accounts.create.action": "Vytvoriť účet",

@@ -20,6 +20,7 @@ export const en = {
   "appError.message": "Message",
   "appError.name": "Name",
   "appError.nonError": "The thrown value is not an Error object.",
+  "appError.recovery": "Recover access",
   "appError.reload": "Reload app",
   "appError.repair": "Clear cache and reload",
   "appError.title": "Something went wrong",
@@ -502,6 +503,13 @@ export const en = {
   "settings.about.terms.summary":
     "Adapted for a local-first Bitcoin payment terminal.",
   "settings.about.terms.title": "Terms of Service",
+  "recovery.accounts.description": "Switching reboots the app on that account.",
+  "recovery.description":
+    "This page works even when the app itself cannot start. It reads only this device's own database, never an account's data.",
+  "recovery.export.description":
+    "A copy of the accounts and device settings stored on this device — not an account's bills or payments.",
+  "recovery.switch.error": "Could not switch the account.",
+  "recovery.title": "Recover access",
   "settings.about.title": "About",
   "settings.accountAndSync": "ACCOUNT & SYNC",
   "settings.accounts.create.action": "Create account",

@@ -227,6 +227,28 @@ describe("calculateClaimedSum", () => {
     ).toBe(900)
   })
 
+  test("floors a payment whose transactions fall short of its tip at zero", () => {
+    // A partial, incomplete split: 100 arrived against a payment carrying a
+    // 500 tip. Without the floor this payment would contribute -400 and eat
+    // into what other payments legitimately covered.
+    expect(
+      calculateClaimedSum([
+        {
+          paymentId: "payment-short" as PaymentId,
+          accountTransactionId: "tx-partial" as AccountTransactionId,
+          amount: 100,
+          tipAmount: NonNegativeInteger(500),
+        },
+        {
+          paymentId: "payment-full" as PaymentId,
+          accountTransactionId: "tx-full" as AccountTransactionId,
+          amount: 1_000,
+          tipAmount: NonNegativeInteger(0),
+        },
+      ])
+    ).toBe(1_000)
+  })
+
   test("returns zero for no claimed transactions", () => {
     expect(calculateClaimedSum([])).toBe(0)
   })

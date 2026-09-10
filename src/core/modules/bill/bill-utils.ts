@@ -87,22 +87,30 @@ export const calculateClaimedSum = (
     ])
   )
 
-  const grossByPayment = new Map<PaymentId, number>()
-  const tipByPayment = new Map<PaymentId, NonNegativeInteger>()
-  for (const transaction of uniqueTransactions.values()) {
-    grossByPayment.set(
-      transaction.paymentId,
-      (grossByPayment.get(transaction.paymentId) ?? 0) + transaction.amount
+  // Gross and tip travel together per payment rather than in two parallel
+  // maps: the tip is only meaningful against the gross it is subtracted from,
+  // and keeping them apart made it possible to look one up without the other.
+  // Every row of a payment carries that payment's own `tipAmount` (it comes
+  // from the same joined `payment` row — see
+  // `claimedTransactionsByBillIdQuery`), so assigning it per row is not a
+  // choice between differing values.
+  const claimedByPayment = new Map<
+    PaymentId,
+    { readonly gross: number; readonly tip: NonNegativeInteger }
+  >()
+  for (const { paymentId, amount, tipAmount } of uniqueTransactions.values()) {
+    claimedByPayment.set(paymentId, {
+      gross: (claimedByPayment.get(paymentId)?.gross ?? 0) + amount,
+      tip: tipAmount,
+    })
+  }
+
+  return NonNegativeInteger(
+    [...claimedByPayment.values()].reduce(
+      (sum, { gross, tip }) => sum + Math.max(0, gross - tip),
+      0
     )
-    tipByPayment.set(transaction.paymentId, transaction.tipAmount)
-  }
-
-  let sum = 0
-  for (const [paymentId, gross] of grossByPayment) {
-    sum += Math.max(0, gross - (tipByPayment.get(paymentId) ?? 0))
-  }
-
-  return NonNegativeInteger(sum)
+  )
 }
 
 export interface BillHistoryItemSummary {

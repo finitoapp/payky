@@ -4,29 +4,15 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 
-export const itemsQuery = createQuery((db) =>
-  db
-    .selectFrom("item")
-    .selectAll()
-    .where("name", "is not", null)
-    .where("currency", "is not", null)
-    .where("unitAmount", "is not", null)
-    .$narrowType<{
-      name: KyselyNotNull
-      currency: KyselyNotNull
-      unitAmount: KyselyNotNull
-    }>()
-)
-
 /**
- * Only the item snapshots referenced by one bill's lines — the scoped
- * counterpart to `itemsQuery`, for `loadCalculatedBillLineSummaries`.
+ * Only the item snapshots referenced by one bill's lines — what
+ * `loadCalculatedBillLineSummaries` and `useBillLineSummaries` read.
  *
- * `itemsQuery` is a whole-table read, and `item` rows are content-addressed
- * snapshots that are never deleted, so it grows with every distinct
- * name/price a POS has ever sold. Loading it per bill made every guard, every
- * added line, and every entry of a bill list scan that whole history. Same
- * `ItemRow` shape, so `calculateBillLineSummaries` takes either.
+ * There is deliberately no whole-table `item` query to reach for instead.
+ * `item` rows are content-addressed snapshots that are never deleted, so the
+ * table grows with every distinct name/price a POS has ever sold, and reading
+ * all of it per bill made every cart guard, every added line, and every entry
+ * of a bill list scan that entire history.
  *
  * `distinct` because one snapshot is normally shared by several lines (and by
  * several bills): the join would otherwise return it once per line.

@@ -378,7 +378,7 @@ export const sk = {
   "paymentWait.ibanPaid.pending": "Potvrdzujem...",
   "paymentWait.invalidId": "Neplatné ID platby.",
   "paymentWait.method.cash": "Hotovosť",
-  "paymentWait.method.iban": "Bankový prevod",
+  "paymentWait.method.iban": "Prevod",
   "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest": "Táto platba nemá žiadosť na skenovanie.",
   "paymentWait.notFound": "Platba sa nenašla.",

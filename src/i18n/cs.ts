@@ -375,7 +375,7 @@ export const cs = {
   "paymentWait.ibanPaid.pending": "Potvrzuji...",
   "paymentWait.invalidId": "Neplatné id platby.",
   "paymentWait.method.cash": "Hotovost",
-  "paymentWait.method.iban": "Bankovní převod",
+  "paymentWait.method.iban": "Převod",
   "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest": "Tato platba nemá žádost ke skenování.",
   "paymentWait.notFound": "Platba nebyla nalezena.",

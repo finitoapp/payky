@@ -374,7 +374,7 @@ export const en = {
   "paymentWait.ibanPaid.pending": "Confirming...",
   "paymentWait.invalidId": "Invalid payment id.",
   "paymentWait.method.cash": "Cash",
-  "paymentWait.method.iban": "Bank transfer",
+  "paymentWait.method.iban": "Transfer",
   "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest":
     "This payment does not have a scannable request.",

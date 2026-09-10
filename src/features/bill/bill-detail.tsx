@@ -109,10 +109,12 @@ function BillDetailPaymentStatusIcon({
 }
 
 /**
- * Never a real transaction count column — this query's `claimCount` is
- * always a plain SQLite `COUNT()`, but some drivers return it as `bigint` or
- * `string` at runtime rather than `number`. Coerce once here, mirroring
- * `payment-history.tsx`'s `toClaimCount`.
+ * `paymentsWithClaimsByBillIdQuery` selects `claimCount` through
+ * `eb.fn.count<number>(...)`, and that type argument is an assertion rather
+ * than a guarantee: SQLite drivers return `COUNT()` as `bigint` or `string`
+ * depending on the build. Coerce once, at the one place the repo still uses
+ * `COUNT` — `payment-history.tsx` dropped its own copy of this when it
+ * replaced the count with an embedded array it could take `.length` of.
  */
 const toClaimCount = (value: number | string | bigint): number =>
   typeof value === "number" ? value : Number(value)

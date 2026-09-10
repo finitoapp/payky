@@ -11,6 +11,7 @@ import {
 } from "@/core/modules/bill/bill-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useNow } from "@/hooks/use-now.ts"
 
 /**
  * Reactive equivalent of the `isBillLocked` check behind `requireEditableBill`:
@@ -18,6 +19,14 @@ import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"
  * edits regardless of `bill.status`. An empty array means the bill isn't
  * locked — including for an `undefined` `billId`, a cart whose bill hasn't
  * been lazily created yet. See docs/bill-payment-states.md.
+ *
+ * Pendingness is time-dependent through `expiresAt`, and nothing writes a
+ * row when a payment expires — so the clock comes from `useNow`, which
+ * re-renders when the earliest live payment's invoice runs out. Without it
+ * the bill page stayed on `BillLockedMessage` forever after a Lightning
+ * invoice expired, even though the server-side `isBillLocked` guard behind
+ * `requireEditableBill` (which reads a fresh `date.now()`) would already
+ * allow the edit.
  */
 export function usePendingPayments(
   billId: BillId | undefined
@@ -32,14 +41,15 @@ export function usePendingPayments(
   )
   const { data: payments } = useOptionalEvoluQuery(paymentsQuery)
   const { data: claimedPayments } = useOptionalEvoluQuery(claimedQuery)
+  const now = useNow(payments.map((payment) => payment.expiresAt))
 
   return useMemo(
     () =>
       derivePendingPaymentIds(
         payments,
         claimedPaymentIdSet(claimedPayments),
-        new Date()
+        now
       ),
-    [payments, claimedPayments]
+    [payments, claimedPayments, now]
   )
 }

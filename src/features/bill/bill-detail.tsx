@@ -7,7 +7,7 @@ import {
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
-import { type ReactNode, useMemo } from "react"
+import type { ReactNode } from "react"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { PaymentDetailRow } from "@/components/payment-detail.tsx"
 import { TaxRecap } from "@/components/tax-recap.tsx"
@@ -130,17 +130,14 @@ export function BillDetail({ billId }: { readonly billId: string }) {
 function BillDetailContent({ billId }: { readonly billId: BillId }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const query = useMemo(() => billByIdQuery(billId), [billId])
+  const query = billByIdQuery(billId)
   const { data: bills } = useEvoluQuery(query)
   const { data: tables } = useEvoluQuery(tablesQuery)
   const { data: taxRates } = useEvoluQuery(taxRatesQuery)
   const summaries = useBillLineSummaries(billId)
   const billStatus = useBillStatus(billId)
   const { claimedSum, coverage } = useBillCoverage(billId)
-  const paymentsQuery = useMemo(
-    () => paymentsWithClaimsByBillIdQuery(billId),
-    [billId]
-  )
+  const paymentsQuery = paymentsWithClaimsByBillIdQuery(billId)
   const { data: payments } = useEvoluQuery(paymentsQuery)
   const bill = bills[0]
 

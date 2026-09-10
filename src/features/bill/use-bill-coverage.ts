@@ -17,10 +17,7 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
  */
 export function useBillCoverage(billId: BillId): BillCoverageSummary {
   const summaries = useBillLineSummaries(billId)
-  const claimedQuery = useMemo(
-    () => claimedTransactionsByBillIdQuery(billId),
-    [billId]
-  )
+  const claimedQuery = claimedTransactionsByBillIdQuery(billId)
   const { data: claimedTransactions } = useEvoluQuery(claimedQuery)
 
   return useMemo(() => {

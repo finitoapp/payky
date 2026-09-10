@@ -140,7 +140,7 @@ export function BillPage({
     initialTableId ?? null
   )
 
-  const billQuery = useMemo(() => billByIdQuery(billId), [billId])
+  const billQuery = billByIdQuery(billId)
   const { data: billRows } = useEvoluQuery(billQuery)
   const bill = billRows[0]
 
@@ -263,10 +263,7 @@ function BillCancellationCollisionMessage({
   const appRun = useAppRun()
   const [resolvePending, setResolvePending] = useState(false)
   const summaries = useBillLineSummaries(billId)
-  const claimedQuery = useMemo(
-    () => claimedPaymentsByBillIdQuery(billId),
-    [billId]
-  )
+  const claimedQuery = claimedPaymentsByBillIdQuery(billId)
   const { data: claimedPayments } = useEvoluQuery(claimedQuery)
   const paymentIds = useMemo(
     () => [...new Set(claimedPayments.map((payment) => payment.id))],

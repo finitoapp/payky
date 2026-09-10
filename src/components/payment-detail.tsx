@@ -1,6 +1,6 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
@@ -231,15 +231,9 @@ function PaymentDetailContent({
   const appRun = useAppRun()
   const [resolvePending, setResolvePending] = useState(false)
   const [excessResolvePending, setExcessResolvePending] = useState(false)
-  const query = useMemo(() => paymentDetailQuery(paymentId), [paymentId])
-  const reconciliationsQuery = useMemo(
-    () => paymentReconciliationsQuery(paymentId),
-    [paymentId]
-  )
-  const paymentNumberQuery = useMemo(
-    () => paymentNumberByPaymentIdQuery(paymentId),
-    [paymentId]
-  )
+  const query = paymentDetailQuery(paymentId)
+  const reconciliationsQuery = paymentReconciliationsQuery(paymentId)
+  const paymentNumberQuery = paymentNumberByPaymentIdQuery(paymentId)
   const { data: payments } = useEvoluQuery(query)
   const { data: reconciliations } = useEvoluQuery(reconciliationsQuery)
   const { data: paymentNumbers } = useEvoluQuery(paymentNumberQuery)
@@ -642,7 +636,7 @@ function PaymentDetailBillCard({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const query = useMemo(() => billByIdQuery(billId), [billId])
+  const query = billByIdQuery(billId)
   const { data: bills } = useEvoluQuery(query)
   const { data: tables } = useEvoluQuery(tablesQuery)
   const { data: taxRates } = useEvoluQuery(taxRatesQuery)
@@ -650,10 +644,7 @@ function PaymentDetailBillCard({
   const billStatus = useBillStatus(billId)
   const { claimedSum, coverage } = useBillCoverage(billId)
   const lineDiff = useBillLineSummaryDiff(paymentId, billId)
-  const claimedPaymentsQuery = useMemo(
-    () => claimedPaymentsByBillIdQuery(billId),
-    [billId]
-  )
+  const claimedPaymentsQuery = claimedPaymentsByBillIdQuery(billId)
   const { data: claimedPayments } = useEvoluQuery(claimedPaymentsQuery)
   const bill = bills[0]
 

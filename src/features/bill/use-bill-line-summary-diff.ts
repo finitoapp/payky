@@ -24,15 +24,12 @@ export function useBillLineSummaryDiff(
   billId: BillId
 ): BillLineSummaryDiff | null {
   const current = useBillLineSummaries(billId)
-  const paymentLineQuery = useMemo(
-    () => paymentLinesByPaymentIdQuery(paymentId),
-    [paymentId]
-  )
+  const paymentLineQuery = paymentLinesByPaymentIdQuery(paymentId)
   const { data: paymentLineRows } = useEvoluQuery(paymentLineQuery)
   // Scoped to the payment, not the bill: a frozen `paymentLine` can point at
   // an item the bill no longer carries, which is exactly what this diff is
   // here to report.
-  const itemQuery = useMemo(() => itemsByPaymentIdQuery(paymentId), [paymentId])
+  const itemQuery = itemsByPaymentIdQuery(paymentId)
   const { data: itemRows } = useEvoluQuery(itemQuery)
 
   return useMemo(() => {

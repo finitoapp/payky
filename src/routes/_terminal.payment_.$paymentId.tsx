@@ -304,8 +304,8 @@ function PaymentWaitingRequest({
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
     useState<BankQrFormat | null>(null)
-  const query = useMemo(() => paymentRequestQuery(paymentId), [paymentId])
-  const claimsQuery = useMemo(() => paymentClaimsQuery(paymentId), [paymentId])
+  const query = paymentRequestQuery(paymentId)
+  const claimsQuery = paymentClaimsQuery(paymentId)
   const { data: payments } = useEvoluQuery(query)
   const { data: claims } = useEvoluQuery(claimsQuery)
   const { data: settingsData } = useEvoluQuery(settingsQuery)

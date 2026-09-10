@@ -56,28 +56,18 @@ export const appendBillLines =
       )
     }
 
+    // Only the requested bill's summaries are loaded. This used to compute
+    // them for every bill appearing in `lines` — into a map it then read a
+    // single entry out of — so a batch touching another bill paid for two
+    // extra queries whose result was discarded. No caller passes lines across
+    // bills anyway: `splitBill` writes those through `insertBillLineRows`
+    // directly.
     const targetBillId = returnBillId ?? lines.at(-1)?.billId
     if (targetBillId === undefined) {
       return ok([])
     }
 
-    const billIds = new Set<BillId>([targetBillId])
-    for (const line of lines) {
-      billIds.add(line.billId)
-    }
-    const summariesByBill = new Map(
-      await Promise.all(
-        [...billIds].map(
-          async (lineBillId) =>
-            [
-              lineBillId,
-              await run.ok(loadCalculatedBillLineSummaries(lineBillId)),
-            ] as const
-        )
-      )
-    )
-
-    return ok(summariesByBill.get(targetBillId) ?? [])
+    return await run(loadCalculatedBillLineSummaries(targetBillId))
   }
 
 export const appendBillLine =

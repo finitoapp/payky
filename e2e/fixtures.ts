@@ -86,13 +86,36 @@ export async function seedCurrentAccountOnboarding(
   language: Language,
   options?: { readonly spark?: boolean; readonly fiatCurrency?: FiatCurrency }
 ): Promise<void> {
-  await page.waitForFunction(
-    () => typeof window.__e2eSeedOnboarding === "function"
-  )
-  await page.evaluate(
-    (seedOptions) => window.__e2eSeedOnboarding?.(seedOptions),
-    options
-  )
+  // Retried, because the document can be replaced under this call — only a
+  // *document* navigation destroys an execution context, so a client-side
+  // route change is not the hazard here; a service-worker takeover or Evolu's
+  // own `reloadApp` is. Every spec goes through the `seededPage` fixture, so
+  // losing the context here surfaces as an unrelated spec failing in its
+  // first step, with an error that says nothing about the spec.
+  //
+  // Safe to repeat: the seed is four singleton upserts (the cash/Spark/bank
+  // account rows and the settings row), so a half-applied seed plus a full
+  // re-run converges on the same state.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await page.waitForFunction(
+        () => typeof window.__e2eSeedOnboarding === "function"
+      )
+      await page.evaluate(
+        (seedOptions) => window.__e2eSeedOnboarding?.(seedOptions),
+        options
+      )
+      break
+    } catch (error) {
+      // Narrow on purpose: anything else is a real failure and must not be
+      // retried into a timeout that hides it.
+      const lostContext =
+        error instanceof Error &&
+        error.message.includes("Execution context was destroyed")
+      if (attempt >= 2 || !lostContext) throw error
+      await page.waitForLoadState("domcontentloaded")
+    }
+  }
   await page
     .getByRole("button", { name: translate(language, "settings.title") })
     .waitFor()

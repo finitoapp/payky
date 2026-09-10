@@ -250,6 +250,17 @@ const convertFiatMinorUnitsToSats = (
   return Math.max(1, Math.round((fiatAmount / exchangeRate) * SATS_PER_BTC))
 }
 
+/**
+ * The two symbols a payer quotes on a bank transfer, derived from the
+ * payment's own number: the variable symbol is its serial, the specific symbol
+ * its date as `YYMMDD`.
+ *
+ * One call site each, and named anyway — these are the format
+ * `ibanReconciliationCandidateByAccountTransactionIdQuery` matches an incoming
+ * transaction against, so they are a contract with the bank rather than
+ * expression noise. Inline, the second is three `slice` calls that read as
+ * nothing in particular.
+ */
 const createVariableSymbolFromSerialNumber = (
   serialNumber: number
 ): VariableSymbol => VariableSymbol(String(serialNumber))
@@ -263,18 +274,6 @@ const optionalNonEmptyString = (
   value === null || value === undefined || value === ""
     ? undefined
     : NonEmptyStringSchema.decode(value)
-
-const optionalNonEmptySparkInvoice = (
-  sparkInvoice: string | null | undefined
-): { readonly sparkInvoice: NonEmptyString } | undefined => {
-  const parsedSparkInvoice = optionalNonEmptyString(sparkInvoice)
-
-  return parsedSparkInvoice === undefined
-    ? undefined
-    : {
-        sparkInvoice: parsedSparkInvoice,
-      }
-}
 
 type PaymentBtcInput = WithSparkDetails<
   Omit<InsertValues<typeof paymentBtc>, "id">,
@@ -355,6 +354,9 @@ const createSparkLightningInvoice =
           includeSparkInvoice: includeSparkInvoice ?? true,
         })
       )
+      // A `paymentBtcSpark` row only exists when the SDK actually returned an
+      // invoice — `includeSparkInvoice` is a request, not a guarantee.
+      const sparkInvoice = optionalNonEmptyString(lightningInvoice.sparkInvoice)
 
       return ok({
         accountId,
@@ -378,9 +380,7 @@ const createSparkLightningInvoice =
             ),
           }),
         },
-        sparkInvoice: optionalNonEmptySparkInvoice(
-          lightningInvoice.sparkInvoice
-        ),
+        sparkInvoice: sparkInvoice === undefined ? undefined : { sparkInvoice },
       })
     } catch (error) {
       return err(

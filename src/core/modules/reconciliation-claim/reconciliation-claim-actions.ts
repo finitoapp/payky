@@ -153,27 +153,28 @@ export const reconcileAccountTransaction =
     )
       return ok(existingClaim.paymentId)
 
-    const ibanCandidates = await run.deps.evolu.loadQuery(
-      ibanReconciliationCandidateByAccountTransactionIdQuery(
-        accountTransactionId
+    // Asked together rather than in sequence. Each candidate query filters on
+    // `accountTransaction.kind`, which is a single non-nullable enum, so at
+    // most one of the three can ever return a row: the kind decides, and the
+    // `??` order below is only a total function over that, not a tie-break
+    // (pinned by "picks the candidate matching the transaction's kind"). The
+    // short-circuit it replaces therefore skipped nothing the kind filter
+    // would not have — it only cost round trips, one per incoming transaction
+    // on the sync jobs' hot path.
+    const [ibanCandidates, sparkCandidates, cashRegisterCandidates] =
+      await Promise.all(
+        run.deps.evolu.loadQueries([
+          ibanReconciliationCandidateByAccountTransactionIdQuery(
+            accountTransactionId
+          ),
+          sparkReconciliationCandidateByAccountTransactionIdQuery(
+            accountTransactionId
+          ),
+          cashRegisterReconciliationCandidateByAccountTransactionIdQuery(
+            accountTransactionId
+          ),
+        ])
       )
-    )
-    const sparkCandidates =
-      ibanCandidates.length > 0
-        ? []
-        : await run.deps.evolu.loadQuery(
-            sparkReconciliationCandidateByAccountTransactionIdQuery(
-              accountTransactionId
-            )
-          )
-    const cashRegisterCandidates =
-      ibanCandidates.length > 0 || sparkCandidates.length > 0
-        ? []
-        : await run.deps.evolu.loadQuery(
-            cashRegisterReconciliationCandidateByAccountTransactionIdQuery(
-              accountTransactionId
-            )
-          )
     const candidate =
       ibanCandidates[0] ?? sparkCandidates[0] ?? cashRegisterCandidates[0]
     if (!candidate) return ok(null)

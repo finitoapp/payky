@@ -477,6 +477,95 @@ describe("reconciliation claim actions", () => {
       ])
   })
 
+  test("picks the candidate matching the transaction's kind, not the first query", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(run)
+
+    // Two payments on one account, same amount and currency, differing only in
+    // method. `reconcileAccountTransaction` asks all three candidate queries
+    // about the same transaction, so this is the case where the answer could
+    // come from the wrong one: only the query matching `accountTransaction.kind`
+    // may match, and nothing about the order the queries are asked in decides
+    // it. Nothing else covers a transaction with a competing candidate.
+    const cashRegisterPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(19_950),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: {
+          accountId,
+        },
+      })
+    )
+    const ibanPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(19_950),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        iban: {
+          accountId,
+          variableSymbol: VariableSymbol("123456"),
+          specificSymbol: null,
+        },
+      })
+    )
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(19_950),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        iban: {
+          variableSymbol: VariableSymbol("123456"),
+          constantSymbol: null,
+          specificSymbol: null,
+          bankReference: NonEmptyString255("123456789"),
+        },
+      })
+    )
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: ibanPaymentId,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([
+        {
+          paymentId: ibanPaymentId,
+          accountTransactionId,
+          source: "auto",
+        },
+      ])
+    expect(ibanPaymentId).not.toBe(cashRegisterPaymentId)
+  })
+
   test("automatically reconciling a payment's claim closes its fully covered bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

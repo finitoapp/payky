@@ -1,13 +1,10 @@
-import { Link } from "@tanstack/react-router"
-import { PlusIcon } from "lucide-react"
-
 import { Suspense, useState } from "react"
-import { FadeHeader } from "@/components/fade-header.tsx"
+
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
-import { Button } from "@/components/ui/button.tsx"
 import { catalogCategoriesExistQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import { CategoriesList } from "@/features/settings/categories/categories-list.tsx"
+import { SettingsListPage } from "@/features/settings/settings-list-page.tsx"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -16,44 +13,27 @@ export function CategoriesSettingsPage() {
   const { t } = useTranslation()
 
   return (
-    <div className={"flex flex-col gap-2"}>
-      <div className="h-6" />
-      <FadeHeader
-        title={t("settings.categories.title")}
-        endAddon={
-          <Button
-            variant="ghost"
-            nativeButton={false}
-            render={
-              <Link
-                aria-label={t("settings.categories.add")}
-                to="/settings/categories/new"
-              />
-            }
-          >
-            <PlusIcon className="text-primary size-5" strokeWidth={3} />
-          </Button>
-        }
-      />
-
-      <Suspense fallback={<ListSkeleton />}>
-        <CategoriesSettingsBody />
-      </Suspense>
-    </div>
+    <SettingsListPage
+      title={t("settings.categories.title")}
+      addAriaLabel={t("settings.categories.add")}
+      addTo="/settings/categories/new"
+    >
+      <CategoriesSettingsBody />
+    </SettingsListPage>
   )
 }
 
 function CategoriesSettingsBody() {
   const { t } = useTranslation()
   const { data: existRows } = useEvoluQuery(catalogCategoriesExistQuery)
-  const hasAnyCategories = existRows.length > 0
+  const hasAny = existRows.length > 0
 
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 250)
 
   return (
     <>
-      {hasAnyCategories && (
+      {hasAny && (
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -63,10 +43,7 @@ function CategoriesSettingsBody() {
       )}
 
       <Suspense fallback={<ListSkeleton />}>
-        <CategoriesList
-          search={debouncedSearch}
-          hasAnyCategories={hasAnyCategories}
-        />
+        <CategoriesList search={debouncedSearch} hasAny={hasAny} />
       </Suspense>
     </>
   )

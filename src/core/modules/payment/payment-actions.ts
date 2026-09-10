@@ -210,13 +210,19 @@ export type PreparePaymentMethodError =
 const loadAccountWithCurrencyCheck = <
   TRow extends { readonly currency: FiatCurrency },
   TNotFoundError,
->(
-  rows: ReadonlyArray<TRow>,
-  notFoundError: TNotFoundError,
-  accountKind: "cashRegister" | "iban",
-  accountId: AccountId,
-  expectedCurrency: FiatCurrency
-): Result<TRow, TNotFoundError | AccountCurrencyMismatchError> => {
+>({
+  rows,
+  notFoundError,
+  accountKind,
+  accountId,
+  expectedCurrency,
+}: {
+  readonly rows: ReadonlyArray<TRow>
+  readonly notFoundError: TNotFoundError
+  readonly accountKind: "cashRegister" | "iban"
+  readonly accountId: AccountId
+  readonly expectedCurrency: FiatCurrency
+}): Result<TRow, TNotFoundError | AccountCurrencyMismatchError> => {
   const accountResult = getFirstOr(rows, notFoundError)
   if (!accountResult.ok) return accountResult
 
@@ -641,13 +647,15 @@ const prepareCashRegisterMethod =
     EvoluDep
   > =>
   async (run) => {
-    const accountResult = loadAccountWithCurrencyCheck(
-      await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
-      cashRegisterAccountNotFound({ id: accountId }),
-      "cashRegister",
+    const accountResult = loadAccountWithCurrencyCheck({
+      rows: await run.deps.evolu.loadQuery(
+        cashRegisterAccountByIdQuery(accountId)
+      ),
+      notFoundError: cashRegisterAccountNotFound({ id: accountId }),
+      accountKind: "cashRegister",
       accountId,
-      paymentCurrency
-    )
+      expectedCurrency: paymentCurrency,
+    })
     if (!accountResult.ok) return accountResult
 
     return ok({ id: paymentId, accountId })
@@ -674,13 +682,13 @@ const prepareIbanMethod =
     EvoluDep
   > =>
   async (run) => {
-    const accountResult = loadAccountWithCurrencyCheck(
-      await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
-      ibanAccountNotFound({ id: accountId }),
-      "iban",
+    const accountResult = loadAccountWithCurrencyCheck({
+      rows: await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
+      notFoundError: ibanAccountNotFound({ id: accountId }),
+      accountKind: "iban",
       accountId,
-      paymentCurrency
-    )
+      expectedCurrency: paymentCurrency,
+    })
     if (!accountResult.ok) return accountResult
 
     const paymentNumberResult = getFirstOr(
@@ -1085,13 +1093,13 @@ const markPaymentPaid =
     if (!paymentResult.ok) return paymentResult
 
     const payment = paymentResult.value
-    const accountResult = loadAccountWithCurrencyCheck(
-      await run.deps.evolu.loadQuery(accountQuery(accountId)),
+    const accountResult = loadAccountWithCurrencyCheck({
+      rows: await run.deps.evolu.loadQuery(accountQuery(accountId)),
       notFoundError,
       accountKind,
       accountId,
-      payment.currency
-    )
+      expectedCurrency: payment.currency,
+    })
     if (!accountResult.ok) return accountResult
 
     const accountTransactionId = await run.ok(

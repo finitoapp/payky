@@ -169,14 +169,18 @@ function formatConsoleArgs(args: ReadonlyArray<unknown>): string {
   return args.map(formatConsoleArg).join(" ")
 }
 
-function formatConsoleEntryTime(createdAt: number): string {
-  const date = new Date(createdAt)
-  const hours = date.getHours().toString().padStart(2, "0")
-  const minutes = date.getMinutes().toString().padStart(2, "0")
-  const seconds = date.getSeconds().toString().padStart(2, "0")
-  const milliseconds = date.getMilliseconds().toString().padStart(3, "0")
+// `hourCycle: "h23"` rather than `hour12: false`: the latter has historically
+// resolved to h24 on some engines, printing midnight as `24:00:00`.
+const consoleEntryTimeFormat = new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  fractionalSecondDigits: 3,
+  hourCycle: "h23",
+})
 
-  return `${hours}:${minutes}:${seconds}.${milliseconds}`
+function formatConsoleEntryTime(createdAt: number): string {
+  return consoleEntryTimeFormat.format(createdAt)
 }
 
 function formatConsoleArg(arg: unknown): string {

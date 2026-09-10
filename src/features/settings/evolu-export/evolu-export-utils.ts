@@ -75,15 +75,13 @@ export async function saveEvoluExportFile(
   }
 }
 
-function formatFilenameTimestamp(date: Date): string {
-  const year = date.getFullYear().toString()
-  const month = (date.getMonth() + 1).toString().padStart(2, "0")
-  const day = date.getDate().toString().padStart(2, "0")
-  const hours = date.getHours().toString().padStart(2, "0")
-  const minutes = date.getMinutes().toString().padStart(2, "0")
-  const seconds = date.getSeconds().toString().padStart(2, "0")
+const pad = (value: number) => value.toString().padStart(2, "0")
 
-  return `${year}-${month}-${day}-${hours}${minutes}${seconds}`
+function formatFilenameTimestamp(date: Date): string {
+  const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+  const time = `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+
+  return `${day}-${time}`
 }
 
 function downloadWithBrowser(file: EvoluExportFile): void {

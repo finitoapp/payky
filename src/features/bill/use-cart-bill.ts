@@ -7,7 +7,9 @@ import {
   addCatalogItemToBill,
   appendGuardedBillLines,
   appendRemoveBillLine,
+  assignBillToTable,
   createBillAtEnd,
+  removeTableFromBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import {
   claimedPaymentsByBillIdQuery,
@@ -65,7 +67,8 @@ const invertLine = (line: CartLine): CartLine => ({
 /**
  * Owns the mutation side of a cart: lazily creating the bill row on the
  * first line, adding/removing catalog item taps and whole lines, clearing
- * the cart, and a local undo/redo stack over the lines actually appended.
+ * the cart, assigning its table, and a local undo/redo stack over the lines
+ * actually appended.
  *
  * The visible cart contents are never derived from this hook's state —
  * only from the live `useBillLineSummaries` query — this hook only issues
@@ -76,6 +79,7 @@ export function useCartBill({
   currency,
   tableId,
   billExists,
+  onTableSeedChange,
 }: {
   /**
    * Generated client-side and already in the `/bill` URL from the first
@@ -88,6 +92,12 @@ export function useCartBill({
   readonly tableId: TableId | null
   /** Whether `billId`'s row has been written to Evolu yet. */
   readonly billExists: boolean
+  /**
+   * Records a new value for `tableId` when `assignTable` finds there is no
+   * bill row to write to yet, so the choice still seeds the row that gets
+   * lazily created on the first line.
+   */
+  readonly onTableSeedChange: (tableId: TableId | null) => void
 }) {
   const appRun = useAppRun()
   const console = useConsole()
@@ -391,6 +401,34 @@ export function useCartBill({
     [appRun, console, billId, jotaiStore, record, runQueued, t]
   )
 
+  /**
+   * Assigns (or clears) the bill's table, on the same queue as every other
+   * cart mutation so it can never race the lazy bill creation. Whether the
+   * row exists is read here rather than taken from the `billExists` prop:
+   * that prop is derived from a live query and lags the write, so a table
+   * picked between the first tap creating the row and the query catching up
+   * only reached `onTableSeedChange` — which nothing reads once the row
+   * exists — and was silently dropped.
+   */
+  const assignTable = useCallback(
+    (nextTableId: TableId | null) =>
+      runQueued(async () => {
+        const rows = await evolu.loadQuery(billByIdQuery(billId))
+        if (rows.length === 0) {
+          onTableSeedChange(nextTableId)
+          return
+        }
+
+        await using run = appRun()
+        await run.ok(
+          nextTableId === null
+            ? removeTableFromBill(billId)
+            : assignBillToTable({ id: billId, tableId: nextTableId })
+        )
+      }),
+    [appRun, billId, evolu, onTableSeedChange, runQueued]
+  )
+
   // The top of the stack is read inside `runQueued`, not before it, so two
   // rapid undo taps pop two different entries instead of replaying the same
   // one twice.
@@ -449,6 +487,7 @@ export function useCartBill({
     removeOne,
     removeLine,
     clear,
+    assignTable,
     undo,
     redo,
   }

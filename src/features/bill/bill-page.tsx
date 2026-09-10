@@ -41,10 +41,8 @@ import {
 } from "@/components/ui/collapsible.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
-  assignBillToTable,
   cancelBill,
   confirmBillClosedDespiteCancellation,
-  removeTableFromBill,
   splitBill,
   splitBillIntoNewBill,
 } from "@/core/modules/bill/bill-actions.ts"
@@ -150,6 +148,7 @@ export function BillPage({
     currency: fallbackCurrency,
     tableId: pendingTableId,
     billExists: bill !== undefined,
+    onTableSeedChange: setPendingTableId,
   })
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
@@ -188,7 +187,6 @@ export function BillPage({
         onSearchChange={setSearch}
         categoryFilter={categoryFilter}
         onCategoryFilterChange={setCategoryFilter}
-        onPendingTableIdChange={setPendingTableId}
         summaryOpen={summaryOpen}
         onSummaryOpenChange={setSummaryOpen}
         scanMode={scanMode}
@@ -370,6 +368,7 @@ interface CartApi {
   readonly removeOne: (summary: BillLineSummary) => Promise<void>
   readonly removeLine: (summary: BillLineSummary) => Promise<void>
   readonly clear: (summaries: ReadonlyArray<BillLineSummary>) => Promise<void>
+  readonly assignTable: (tableId: TableId | null) => Promise<void>
   readonly undo: () => Promise<void>
   readonly redo: () => Promise<void>
 }
@@ -380,7 +379,6 @@ interface SharedCartViewProps {
   readonly onSearchChange: (value: string) => void
   readonly categoryFilter: CategoryFilter
   readonly onCategoryFilterChange: (value: CategoryFilter) => void
-  readonly onPendingTableIdChange: (tableId: TableId | null) => void
   readonly summaryOpen: boolean
   readonly onSummaryOpenChange: (open: boolean) => void
   readonly scanMode: boolean
@@ -398,7 +396,6 @@ function BillCartView({
   onSearchChange,
   categoryFilter,
   onCategoryFilterChange,
-  onPendingTableIdChange,
   summaryOpen,
   onSummaryOpenChange,
   scanMode,
@@ -432,25 +429,11 @@ function BillCartView({
 
   const currentTable = tables.find((table) => table.id === tableId)
 
-  const handleAssignTable = async (nextTableId: TableId | null) => {
+  // `cart.assignTable` runs on the cart's mutation queue, so it can't race
+  // the lazy bill creation, and reports its own failures.
+  const handleAssignTable = (nextTableId: TableId | null) => {
     setTablePickerOpen(false)
-
-    if (!billExists) {
-      onPendingTableIdChange(nextTableId)
-      return
-    }
-
-    try {
-      await using run = appRun()
-      if (nextTableId === null) {
-        await run(removeTableFromBill(billId))
-      } else {
-        await run(assignBillToTable({ id: billId, tableId: nextTableId }))
-      }
-    } catch (error) {
-      console.error("Failed to assign table to cart", error)
-      toast.error(t("settings.saveFailed"))
-    }
+    void cart.assignTable(nextTableId)
   }
 
   const currencyItems = useMemo(
@@ -662,7 +645,7 @@ function BillCartView({
           onOpenChange={setTablePickerOpen}
           billId={billId}
           currentTableId={tableId}
-          onAssign={(nextTableId) => void handleAssignTable(nextTableId)}
+          onAssign={handleAssignTable}
         />
 
         <div className="mt-2 flex gap-2">

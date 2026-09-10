@@ -155,19 +155,16 @@ export const createNextPaymentNumber =
   }
 
 export const updatePaymentLastNumber =
-  ({
-    serialNumber,
-    date,
-  }: {
+  (input: {
     readonly serialNumber: NonNegativeIntegerType
     readonly date: DateString | null
   }): Task<PaymentLastNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const paymentLastNumber = {
-      id: paymentLastNumberId,
-      serialNumber,
-      date,
-    } satisfies PaymentLastNumberRow
+    // Through `createPaymentLastNumberValues`, not a second copy of the same
+    // literal: the settings page's manual adjustment has to land on the very
+    // row `upsertPaymentNumberRows` writes, or numbering would carry on from
+    // a value nobody edited.
+    const paymentLastNumber = createPaymentLastNumberValues(input)
     const { evoluOwnerId } = run.deps
 
     await runMutationWithCompletion((options) =>

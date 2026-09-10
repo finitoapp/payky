@@ -32,10 +32,6 @@ export function isPluginNativeRuntime(runtime = getNativeRuntime()): boolean {
   return assertNever(runtime)
 }
 
-export function isNativeWebViewRuntime() {
-  return isPluginNativeRuntime()
-}
-
 export function isAndroidWebView() {
   const userAgent = globalThis.navigator.userAgent
 

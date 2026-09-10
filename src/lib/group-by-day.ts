@@ -1,3 +1,5 @@
+import { isSameDay } from "date-fns"
+
 export interface DayGroup<T> {
   readonly date: Date
   readonly items: ReadonlyArray<T>
@@ -19,13 +21,8 @@ export function groupByDay<T>(
   for (const item of items) {
     const date = getDate(item)
     const lastGroup = groups[groups.length - 1]
-    const isSameDay =
-      lastGroup !== undefined &&
-      lastGroup.date.getFullYear() === date.getFullYear() &&
-      lastGroup.date.getMonth() === date.getMonth() &&
-      lastGroup.date.getDate() === date.getDate()
 
-    if (lastGroup !== undefined && isSameDay) {
+    if (lastGroup !== undefined && isSameDay(lastGroup.date, date)) {
       lastGroup.items.push(item)
     } else {
       groups.push({ date, items: [item] })

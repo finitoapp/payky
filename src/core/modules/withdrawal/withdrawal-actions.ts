@@ -30,7 +30,7 @@ export interface WithdrawalQuote {
   readonly feeQuote: SparkWithdrawalFeeQuote
 }
 
-export const createWithdrawalAccountNotFoundError = defineError(
+const createWithdrawalAccountNotFoundError = defineError(
   "WithdrawalAccountNotFound"
 )<{
   readonly accountId: AccountId
@@ -39,16 +39,14 @@ export type WithdrawalAccountNotFoundError = ReturnType<
   typeof createWithdrawalAccountNotFoundError
 >
 
-export const createInvalidBitcoinAddressError = defineError(
-  "InvalidBitcoinAddress"
-)<{
+const createInvalidBitcoinAddressError = defineError("InvalidBitcoinAddress")<{
   readonly address: string
 }>()
 export type InvalidBitcoinAddressError = ReturnType<
   typeof createInvalidBitcoinAddressError
 >
 
-export const createInsufficientWithdrawalBalanceError = defineError(
+const createInsufficientWithdrawalBalanceError = defineError(
   "InsufficientWithdrawalBalance"
 )<{
   readonly availableSats: number
@@ -58,16 +56,14 @@ export type InsufficientWithdrawalBalanceError = ReturnType<
   typeof createInsufficientWithdrawalBalanceError
 >
 
-export const createWithdrawalQuoteFailedError = defineError(
-  "WithdrawalQuoteFailed"
-)<{
+const createWithdrawalQuoteFailedError = defineError("WithdrawalQuoteFailed")<{
   readonly message: string
 }>()
 export type WithdrawalQuoteFailedError = ReturnType<
   typeof createWithdrawalQuoteFailedError
 >
 
-export const createWithdrawalRequestFailedError = defineError(
+const createWithdrawalRequestFailedError = defineError(
   "WithdrawalRequestFailed"
 )<{
   readonly message: string
@@ -76,7 +72,7 @@ export type WithdrawalRequestFailedError = ReturnType<
   typeof createWithdrawalRequestFailedError
 >
 
-export const createWithdrawalRecordingFailedError = defineError(
+const createWithdrawalRecordingFailedError = defineError(
   "WithdrawalRecordingFailed"
 )<{
   readonly message: string

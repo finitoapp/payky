@@ -1,9 +1,12 @@
 import { Table2 } from "lucide-react"
-import type { ReactNode } from "react"
+import { type ReactNode, useMemo } from "react"
 
 import { Card } from "@/components/ui/card.tsx"
-import type { BillRow } from "@/core/modules/bill/bill.ts"
-import { useBillSummaryStats } from "@/features/bill/use-bill-line-summaries.ts"
+import type { OpenBillRow } from "@/core/modules/bill/bill-queries.ts"
+import {
+  calculateBillLineSummaries,
+  deriveBillSummaryStats,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -63,10 +66,18 @@ export function TableTileShell({
   )
 }
 
-export function OccupiedTableSummary({ bill }: { readonly bill: BillRow }) {
+export function OccupiedTableSummary({ bill }: { readonly bill: OpenBillRow }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const { itemCount, totalAmount } = useBillSummaryStats(bill.id)
+  // `lines`/`items` ride along on `openBillsQuery`, so a tile needs no query
+  // of its own — a floor view of N open bills used to open 2N of them.
+  const { itemCount, totalAmount } = useMemo(
+    () =>
+      deriveBillSummaryStats(
+        calculateBillLineSummaries(bill.lines, bill.items)
+      ),
+    [bill]
+  )
 
   return (
     <div className="flex flex-col gap-0.5 text-primary-foreground/80">

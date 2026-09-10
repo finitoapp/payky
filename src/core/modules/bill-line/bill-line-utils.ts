@@ -78,6 +78,24 @@ export const calculateBillLineSummaries = (
   return [...projected.values()]
 }
 
+/**
+ * A bill's item count and total, from its already-calculated summaries —
+ * shared by every occupancy-style tile/row that shows just those two numbers
+ * (the POS floor view's `OccupiedTableSummary`, the split dialog's
+ * existing-bill picker) so none of them re-derives its own reduce.
+ */
+export const deriveBillSummaryStats = (
+  summaries: ReadonlyArray<BillLineSummary>
+): {
+  readonly itemCount: number
+  readonly totalAmount: NonNegativeInteger
+} => ({
+  itemCount: summaries.reduce((sum, summary) => sum + summary.quantity, 0),
+  totalAmount: NonNegativeInteger(
+    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+  ),
+})
+
 export interface BillLineSummaryChange {
   readonly before: BillLineSummary
   readonly after: BillLineSummary

@@ -23,6 +23,7 @@ import {
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { ItemRow, item } from "@/core/modules/item/item.ts"
@@ -758,17 +759,23 @@ export const appendRemoveBillLine =
     return ok(projected.find((row) => row.id === input.lineSummary.id) ?? null)
   }
 
+/**
+ * Every open bill with its calculated line items, in one query — `lines` and
+ * `items` ride along on `openBillsQuery` (see its doc comment), so this no
+ * longer loads summaries per bill. `lines`/`items` are stripped off the
+ * returned `bill` so it stays a plain `BillRow`: `bin/cli-bills.ts` spreads it
+ * straight into `console.table`.
+ */
 export const listOpenBills =
   (): Task<ReadonlyArray<BillWithItems>, never, EvoluDep> => async (run) => {
     const bills = await run.deps.evolu.loadQuery(openBillsQuery)
+
     return ok(
-      await Promise.all(
-        bills.map(
-          async (bill): Promise<BillWithItems> => ({
-            bill,
-            items: await run.ok(loadCalculatedBillLineSummaries(bill.id)),
-          })
-        )
+      bills.map(
+        ({ lines, items, ...bill }): BillWithItems => ({
+          bill,
+          items: calculateBillLineSummaries(lines, items),
+        })
       )
     )
   }

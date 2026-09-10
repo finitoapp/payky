@@ -2,14 +2,18 @@ import { Link } from "@tanstack/react-router"
 import { PlusIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import type { BillRow } from "@/core/modules/bill/bill.ts"
-import { openBillsQuery } from "@/core/modules/bill/bill-queries.ts"
+import {
+  type OpenBillRow,
+  openBillsQuery,
+} from "@/core/modules/bill/bill-queries.ts"
 import { createRandomBillId } from "@/core/modules/bill/bill-types.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
+import {
+  calculateBillLineSummaries,
+  deriveBillSummaryStats,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import type { TableRow } from "@/core/modules/table/table.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
-import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { TableTileShell } from "@/features/tables/table-tile.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -30,7 +34,7 @@ export function PosOverviewPage() {
   const { data: openBills } = useEvoluQuery(openBillsQuery)
 
   const billsByTableId = useMemo(() => {
-    const map = new Map<TableId, ReadonlyArray<BillRow>>()
+    const map = new Map<TableId, ReadonlyArray<OpenBillRow>>()
     for (const bill of openBills) {
       if (bill.tableId === null) continue
       map.set(bill.tableId, [...(map.get(bill.tableId) ?? []), bill])
@@ -72,7 +76,7 @@ function TableTile({
   bills,
 }: {
   readonly table: TableRow
-  readonly bills: ReadonlyArray<BillRow>
+  readonly bills: ReadonlyArray<OpenBillRow>
 }) {
   const { t } = useTranslation()
   const occupied = bills.length > 0
@@ -106,7 +110,11 @@ function TableTile({
  * Bucket for every open bill without a table, shown as a tile identical in
  * shape to a real table tile so it fits visually into the same grid.
  */
-function NoTableTile({ bills }: { readonly bills: ReadonlyArray<BillRow> }) {
+function NoTableTile({
+  bills,
+}: {
+  readonly bills: ReadonlyArray<OpenBillRow>
+}) {
   const { t } = useTranslation()
   const occupied = bills.length > 0
 
@@ -167,12 +175,18 @@ function NewBillLink({
  * at the same table — can be jumped into directly, and several sit side
  * by side instead of always stacking one per line.
  */
-function TileBillCard({ bill }: { readonly bill: BillRow }) {
+function TileBillCard({ bill }: { readonly bill: OpenBillRow }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const summaries = useBillLineSummaries(bill.id)
-  const totalAmount = NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+  // Derived from the row's embedded `lines`/`items`, not a per-bill query:
+  // this card renders once per open bill, so a query here meant the floor
+  // view opened two more for every bill on screen.
+  const { totalAmount } = useMemo(
+    () =>
+      deriveBillSummaryStats(
+        calculateBillLineSummaries(bill.lines, bill.items)
+      ),
+    [bill]
   )
   const label =
     bill.label ?? t("bill.list.label", { number: bill.displayNumber })

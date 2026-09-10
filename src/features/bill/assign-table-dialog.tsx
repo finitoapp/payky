@@ -1,5 +1,5 @@
 import { Ban } from "lucide-react"
-import { Suspense, useMemo } from "react"
+import { useMemo } from "react"
 
 import { Card } from "@/components/ui/card.tsx"
 import {
@@ -8,8 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
-import type { BillRow } from "@/core/modules/bill/bill.ts"
-import { openBillsQuery } from "@/core/modules/bill/bill-queries.ts"
+import {
+  type OpenBillRow,
+  openBillsQuery,
+} from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { TableRow } from "@/core/modules/table/table.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
@@ -51,7 +53,7 @@ export function AssignTableDialog({
   // Excludes this bill's own row: its current table shouldn't read as
   // "occupied by someone else" while you're the one assigning it.
   const otherBillsByTableId = useMemo(() => {
-    const map = new Map<TableId, ReadonlyArray<BillRow>>()
+    const map = new Map<TableId, ReadonlyArray<OpenBillRow>>()
     for (const bill of openBills) {
       if (bill.tableId === null || bill.id === billId) continue
       map.set(bill.tableId, [...(map.get(bill.tableId) ?? []), bill])
@@ -106,7 +108,7 @@ function TableAssignmentTile({
   onSelect,
 }: {
   readonly table: TableRow
-  readonly bills: ReadonlyArray<BillRow>
+  readonly bills: ReadonlyArray<OpenBillRow>
   readonly selected: boolean
   readonly onSelect: () => void
 }) {
@@ -142,16 +144,15 @@ function TableAssignmentTile({
           selected={selected}
         >
           {/*
-           * `OccupiedTableSummary` reads another bill's line summaries with
-           * `use()`, and a first-time load suspends. Without a boundary here
-           * that bubbles up to the route's own one, remounting `BillPage`
-           * and `BillCartView` — so the picker closes itself and the search
-           * text, scan mode, summary sheet and undo/redo history all go with
-           * it. `split-bill-dialog.tsx` guards the same hazard.
+           * No Suspense boundary: `OccupiedTableSummary` derives its count
+           * and total from the `openBillsQuery` row this dialog already
+           * loaded, so it opens no query of its own and cannot suspend. It
+           * used to, and a first-time load bubbling to the route boundary
+           * remounted `BillPage`/`BillCartView` — closing the picker and
+           * taking the search text, scan mode, summary sheet and undo/redo
+           * history with it.
            */}
-          <Suspense fallback={null}>
-            <OccupiedTableSummary bill={bill} />
-          </Suspense>
+          <OccupiedTableSummary bill={bill} />
         </TableTileShell>
       </button>
     )

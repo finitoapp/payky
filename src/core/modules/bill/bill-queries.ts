@@ -1,5 +1,6 @@
 import {
   evoluJsonArrayFrom,
+  type InferRow,
   type KyselyNotNull,
   sqliteTrue,
 } from "@evolu/common"
@@ -24,18 +25,96 @@ export const billByIdQuery = (idValue: BillId) =>
 
 /**
  * A cheap, SQL-only approximation of "still open" for list views (the POS
- * floor overview, the assign-table dialog) — filters on the best-effort
+ * floor overview, the assign-table dialog, the split dialog's existing-bill
+ * picker, `listOpenBills`) — filters on the best-effort
  * `closedAt`/`canceledAt` cache fields instead of computing coverage for
  * every bill the account has ever had. See `bill.ts`'s doc comment and
  * docs/bill-payment-states.md: this can rarely under- or over-include a
  * bill for a moment after a multi-device race, which is why nothing that
  * needs to be *correct* (guards, the bill detail page) uses this — those
  * derive status live via `deriveBillStatus`/`loadBillStatus`.
+ *
+ * Embeds `lines`/`items` per row for the same reason `latestBillsQuery` does:
+ * every consumer needs each bill's item count and total, and loading those per
+ * bill turned a floor view of N open bills into 1 + 2N queries — as N live
+ * subscriptions in the React consumers, one set per tile. Folding them in
+ * keeps it to a single query however many bills are open, and
+ * `calculateBillLineSummaries` reduces `lines`/`items` with the same pure
+ * logic the bill detail page uses.
  */
 export const openBillsQuery = createQuery((db) =>
   db
     .selectFrom("bill")
     .selectAll()
+    .select((eb) => [
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("billLine")
+          .select([
+            "billLine.id",
+            "billLine.billId",
+            "billLine.deviceId",
+            "billLine.catalogItemId",
+            "billLine.itemId",
+            "billLine.type",
+            "billLine.kind",
+            "billLine.quantity",
+            "billLine.totalAmount",
+            "billLine.createdAt",
+            "billLine.updatedAt",
+            "billLine.isDeleted",
+            "billLine.ownerId",
+          ])
+          .whereRef("billLine.billId", "=", "bill.id")
+          .where("billLine.billId", "is not", null)
+          .where("billLine.itemId", "is not", null)
+          .where("billLine.type", "is not", null)
+          .where("billLine.kind", "is not", null)
+          .where("billLine.quantity", "is not", null)
+          .where("billLine.totalAmount", "is not", null)
+          // See `billLinesByBillIdQuery` for why the tie-break matters
+          // and why it is free in this exact shape.
+          .orderBy("billLine.createdAt", "asc")
+          .orderBy("billLine.ownerId", "asc")
+          .orderBy("billLine.id", "asc")
+          .$narrowType<{
+            billId: KyselyNotNull
+            itemId: KyselyNotNull
+            type: KyselyNotNull
+            kind: KyselyNotNull
+            quantity: KyselyNotNull
+            totalAmount: KyselyNotNull
+          }>()
+      ).as("lines"),
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("item")
+          .innerJoin("billLine as itemLine", "itemLine.itemId", "item.id")
+          .select([
+            "item.id",
+            "item.catalogItemId",
+            "item.name",
+            "item.description",
+            "item.currency",
+            "item.unitAmount",
+            "item.taxRateId",
+            "item.createdAt",
+            "item.updatedAt",
+            "item.isDeleted",
+            "item.ownerId",
+          ])
+          .distinct()
+          .whereRef("itemLine.billId", "=", "bill.id")
+          .where("item.name", "is not", null)
+          .where("item.currency", "is not", null)
+          .where("item.unitAmount", "is not", null)
+          .$narrowType<{
+            name: KyselyNotNull
+            currency: KyselyNotNull
+            unitAmount: KyselyNotNull
+          }>()
+      ).as("items"),
+    ])
     .where("canceledAt", "is", null)
     .where("closedAt", "is", null)
     .where("displayNumber", "is not", null)
@@ -216,3 +295,9 @@ export const allBillDisplayNumbersQuery = createQuery((db) =>
     }>()
     .orderBy("displayNumber", "asc")
 )
+
+/**
+ * An `openBillsQuery` row: a `BillRow` plus the embedded `lines`/`items` every
+ * consumer reduces through `calculateBillLineSummaries`.
+ */
+export type OpenBillRow = InferRow<typeof openBillsQuery>

@@ -1,6 +1,6 @@
 import { MinusIcon, PlusIcon } from "lucide-react"
 import { motion } from "motion/react"
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -13,10 +13,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import type { BillRow } from "@/core/modules/bill/bill.ts"
-import { openBillsQuery } from "@/core/modules/bill/bill-queries.ts"
+import {
+  type OpenBillRow,
+  openBillsQuery,
+} from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import {
+  calculateBillLineSummaries,
+  deriveBillSummaryStats,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import {
   type FiatCurrency,
   NonNegativeInteger,
@@ -25,7 +31,6 @@ import {
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { getBillLineSummaryUnitAmount } from "@/features/bill/cart-utils.ts"
-import { useBillSummaryStats } from "@/features/bill/use-bill-line-summaries.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -197,28 +202,23 @@ export function SplitBillDialog({
                   {t("bill.split.destination.existing.empty")}
                 </p>
               ) : (
-                // Each row's own `useBillSummaryStats` reads a bill-line
-                // query that's very likely never been loaded anywhere else
-                // in this session (an arbitrary other open bill). A local
-                // Suspense boundary keeps a first-time load from bubbling up
-                // to the route's own boundary — which would tear down and
-                // remount this whole dialog (and its selection/destination
-                // state) rather than just this list, the exact hazard
-                // `useOptionalEvoluQuery`'s doc comment describes.
-                <Suspense fallback={null}>
-                  {otherOpenBills.map((bill) => (
-                    <ExistingBillOption
-                      key={bill.id}
-                      bill={bill}
-                      tableName={
-                        tables.find((table) => table.id === bill.tableId)
-                          ?.name ?? null
-                      }
-                      selected={bill.id === targetBillId}
-                      onSelect={() => setTargetBillId(bill.id)}
-                    />
-                  ))}
-                </Suspense>
+                // No Suspense boundary needed here any more: each row's
+                // item count and total come off the `openBillsQuery` row the
+                // parent already loaded, so nothing in this list opens a
+                // query of its own that could suspend and tear this dialog
+                // (and its selection state) down mid-edit.
+                otherOpenBills.map((bill) => (
+                  <ExistingBillOption
+                    key={bill.id}
+                    bill={bill}
+                    tableName={
+                      tables.find((table) => table.id === bill.tableId)?.name ??
+                      null
+                    }
+                    selected={bill.id === targetBillId}
+                    onSelect={() => setTargetBillId(bill.id)}
+                  />
+                ))
               )}
             </div>
           )}
@@ -283,14 +283,22 @@ function ExistingBillOption({
   selected,
   onSelect,
 }: {
-  readonly bill: BillRow
+  readonly bill: OpenBillRow
   readonly tableName: string | null
   readonly selected: boolean
   readonly onSelect: () => void
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const { itemCount, totalAmount } = useBillSummaryStats(bill.id)
+  // From the row's own embedded `lines`/`items` — no per-bill query, so
+  // nothing in this list can suspend on first render any more.
+  const { itemCount, totalAmount } = useMemo(
+    () =>
+      deriveBillSummaryStats(
+        calculateBillLineSummaries(bill.lines, bill.items)
+      ),
+    [bill]
+  )
 
   return (
     <button

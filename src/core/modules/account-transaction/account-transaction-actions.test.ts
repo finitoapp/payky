@@ -8,6 +8,7 @@ import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
+  BitcoinAddress,
   IbanSchema,
   Integer,
   NonEmptyString255,
@@ -180,6 +181,95 @@ describe("account transaction actions", () => {
           kind: "spark",
         },
       ])
+  })
+
+  test("reuses the same Evolu id for the same on-chain coop exit request", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Spark account"),
+        spark: {
+          secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
+        },
+      })
+    )
+
+    // The withdrawal tests assert an on-chain transaction's fields, but not
+    // that recording the same coop exit twice collapses into one row — the
+    // only thing standing between a retried withdrawal record and the money
+    // being counted twice.
+    const onchainTransaction = () =>
+      run.ok(
+        createAccountTransaction({
+          accountId,
+          amount: Integer(-10_500),
+          currency: "BTC",
+          occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
+          note: null,
+          internalTransferGroupId: null,
+          source: { deviceId: null, source: "manual" },
+          onchain: {
+            onchainAddress: BitcoinAddress(
+              "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
+            ),
+            coopExitRequestId: NonEmptyStringSchema.decode("coop-exit-1"),
+            exitSpeed: "medium",
+            feeSats: Integer(500),
+            txid: null,
+          },
+        })
+      )
+
+    const firstId = await onchainTransaction()
+    const secondId = await onchainTransaction()
+
+    expect(secondId).toBe(firstId)
+    await expect
+      .poll(() => evolu.loadQuery(accountTransactionsQuery))
+      .toEqual([{ id: firstId, accountId, amount: -10_500, kind: "onchain" }])
+  })
+
+  test("gives a detail-less transaction a fresh id every time", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+
+    // A cash-drawer movement carries no detail row, so there is nothing to
+    // derive an id from — two identical ones are two separate movements, not
+    // a resync of the same one. Callers that *do* need idempotence here pass
+    // their own id (see `markPaymentPaidCash`).
+    const cashTransaction = () =>
+      run.ok(
+        createAccountTransaction({
+          accountId,
+          amount: Integer(1_000),
+          currency: "CZK",
+          occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
+          note: null,
+          internalTransferGroupId: null,
+          source: { deviceId: null, source: "manual" },
+        })
+      )
+
+    const firstId = await cashTransaction()
+    const secondId = await cashTransaction()
+
+    expect(secondId).not.toBe(firstId)
+    await expect
+      .poll(() => evolu.loadQuery(accountTransactionsQuery))
+      .toHaveLength(2)
   })
 
   test("reuses the same Evolu id for the same IBAN bank reference in one account", async () => {

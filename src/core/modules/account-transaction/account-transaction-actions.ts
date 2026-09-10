@@ -10,6 +10,7 @@ import type { RequireOneOrNone, Simplify } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  type NonEmptyString,
   type NonEmptyString255,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -48,6 +49,53 @@ type AccountTransactionSparkUpdateInput = WithSparkDetails<
   Omit<UpdateValues<typeof accountTransactionLightning>, "id">,
   Omit<UpdateValues<typeof accountTransactionSparkInvoice>, "id">
 >
+
+/**
+ * The id a money movement is recorded under — derived from whatever uniquely
+ * identifies it at its source, so re-recording the same movement (a retried
+ * write, a sync that replays a statement) lands on the row already there
+ * instead of counting the money twice.
+ *
+ * `undefined` means there is nothing to derive one from, and the caller gets a
+ * fresh random id: a cash-drawer movement has no detail row, so two identical
+ * ones really are two movements. Callers that need idempotence there pass
+ * their own id — `markPaymentPaidCash` derives one from the payment.
+ *
+ * An IBAN row without a `bankReference` is the same situation: only the bank's
+ * own reference makes a transfer identifiable, and a manually entered one has
+ * none.
+ */
+const deriveAccountTransactionId = (
+  accountId: AccountTransactionRow["accountId"],
+  detail: {
+    readonly iban?: { readonly bankReference?: NonEmptyString255 | null }
+    readonly spark?: { readonly sparkTransferId: NonEmptyString }
+    readonly onchain?: { readonly coopExitRequestId: NonEmptyString }
+  }
+): AccountTransactionId | undefined => {
+  const { iban, spark, onchain } = detail
+
+  if (iban) {
+    if (iban.bankReference === null || iban.bankReference === undefined) {
+      return undefined
+    }
+    return createIdFromString<"AccountTransaction">(
+      `accountTransaction:iban:${accountId}:${iban.bankReference}`
+    )
+  }
+  if (spark) {
+    return createIdFromString<"AccountTransaction">(
+      `accountTransaction:spark:${spark.sparkTransferId}`
+    )
+  }
+  if (onchain) {
+    return createIdFromString<"AccountTransaction">(
+      `accountTransaction:onchain:${onchain.coopExitRequestId}`
+    )
+  }
+
+  return undefined
+}
 
 export const createAccountTransaction =
   ({
@@ -88,21 +136,8 @@ export const createAccountTransaction =
     const { evoluOwnerId } = run.deps
     const id =
       providedId ??
-      (iban
-        ? iban.bankReference === null || iban.bankReference === undefined
-          ? createTableId<"AccountTransaction">()
-          : createIdFromString<"AccountTransaction">(
-              `accountTransaction:iban:${input.accountId}:${iban.bankReference}`
-            )
-        : spark
-          ? createIdFromString<"AccountTransaction">(
-              `accountTransaction:spark:${spark.sparkTransferId}`
-            )
-          : onchain
-            ? createIdFromString<"AccountTransaction">(
-                `accountTransaction:onchain:${onchain.coopExitRequestId}`
-              )
-            : createTableId<"AccountTransaction">())
+      deriveAccountTransactionId(input.accountId, { iban, spark, onchain }) ??
+      createTableId<"AccountTransaction">()
     const source = providedSource
     const sourceId = createIdFromString<"AccountTransactionSource">(
       `accountTransactionSource:${id}:${source.source}`

@@ -10,7 +10,6 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import type { BillLineRow } from "./bill-line.ts"
 import {
-  appendBillLine,
   appendBillLines,
   loadCalculatedBillLineSummaries,
 } from "./bill-line-actions.ts"
@@ -84,9 +83,9 @@ describe("bill line actions", () => {
     await run.ok(createOrReuseItemSnapshot(item))
 
     const summaries = await run.ok(
-      appendBillLine(
-        coffeeLine(billId, item, { quantity: 2, totalAmount: 11_800 })
-      )
+      appendBillLines([
+        coffeeLine(billId, item, { quantity: 2, totalAmount: 11_800 }),
+      ])
     )
 
     expect(summaries).toMatchObject([
@@ -125,18 +124,18 @@ describe("bill line actions", () => {
     await run.ok(createOrReuseItemSnapshot(item))
 
     await run.ok(
-      appendBillLine(
-        coffeeLine(billId, item, { quantity: 2, totalAmount: 11_800 })
-      )
+      appendBillLines([
+        coffeeLine(billId, item, { quantity: 2, totalAmount: 11_800 }),
+      ])
     )
     const summaries = await run.ok(
-      appendBillLine(
+      appendBillLines([
         coffeeLine(billId, item, {
           kind: "remove",
           quantity: 1,
           totalAmount: 5900,
-        })
-      )
+        }),
+      ])
     )
 
     expect(summaries).toMatchObject([

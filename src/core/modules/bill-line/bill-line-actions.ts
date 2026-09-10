@@ -69,10 +69,3 @@ export const appendBillLines =
 
     return await run(loadCalculatedBillLineSummaries(targetBillId))
   }
-
-export const appendBillLine =
-  (
-    line: Omit<BillLineRow, "id">
-  ): Task<ReadonlyArray<BillLineSummary>, never, EvoluDep & EvoluOwnerIdDep> =>
-  async (run) =>
-    ok(await run.ok(appendBillLines([line])))

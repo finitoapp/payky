@@ -18,7 +18,6 @@ import type {
   billLine,
 } from "@/core/modules/bill-line/bill-line.ts"
 import {
-  appendBillLine,
   appendBillLines,
   insertBillLineRows,
   loadCalculatedBillLineSummaries,
@@ -797,16 +796,18 @@ export const appendRemoveBillLine =
     if (!billResult.ok) return billResult
 
     const projected = await run.ok(
-      appendBillLine({
-        billId: input.billId,
-        deviceId: input.deviceId ?? null,
-        catalogItemId: input.lineSummary.catalogItemId,
-        itemId: input.lineSummary.itemId,
-        type: input.lineSummary.type,
-        kind: "remove",
-        quantity: input.quantity,
-        totalAmount: input.totalAmount,
-      })
+      appendBillLines([
+        {
+          billId: input.billId,
+          deviceId: input.deviceId ?? null,
+          catalogItemId: input.lineSummary.catalogItemId,
+          itemId: input.lineSummary.itemId,
+          type: input.lineSummary.type,
+          kind: "remove",
+          quantity: input.quantity,
+          totalAmount: input.totalAmount,
+        },
+      ])
     )
     return ok(projected.find((row) => row.id === input.lineSummary.id) ?? null)
   }

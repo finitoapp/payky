@@ -42,16 +42,11 @@ import {
   findCatalogItemsByScanCode,
   getStaffDisplayName,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
-import {
-  decimalAmountToMinorUnits,
-  minorUnitsToDecimalString,
-} from "@/core/modules/shared/money.ts"
+import { minorUnitsToDecimalString } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
   Integer,
-  NonEmptyString255Schema,
-  NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
@@ -60,6 +55,10 @@ import {
   taxRatePercentageToDecimalString,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
+import {
+  type CatalogItemFormErrors,
+  parseCatalogItemForm,
+} from "@/features/settings/items/catalog-item-form-schema.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
@@ -67,7 +66,6 @@ import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function NewCatalogItemPage() {
   const { t } = useTranslation()
@@ -190,19 +188,12 @@ function CatalogItemForm({
   )
   const [scanCode, setScanCode] = useState(item?.scanCode ?? "")
   const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
-  const [nameError, setNameError] = useState<TranslationKey | null>(null)
-  const [priceError, setPriceError] = useState<TranslationKey | null>(null)
-  const [descriptionError, setDescriptionError] =
-    useState<TranslationKey | null>(null)
-  const [internalNameError, setInternalNameError] =
-    useState<TranslationKey | null>(null)
-  const [internalDescriptionError, setInternalDescriptionError] =
-    useState<TranslationKey | null>(null)
-  const [skuError, setSkuError] = useState<TranslationKey | null>(null)
-  const [scanCodeError, setScanCodeError] = useState<TranslationKey | null>(
-    null
-  )
+  const [errors, setErrors] = useState<CatalogItemFormErrors>({})
   const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  const clearError = (field: keyof CatalogItemFormErrors) => {
+    setErrors((current) => ({ ...current, [field]: undefined }))
+  }
 
   // Uniqueness can't be enforced (multiple devices can assign the same code
   // before syncing), so this is a heads-up shown next to the field, not a
@@ -237,78 +228,26 @@ function CatalogItemForm({
         pending={pending}
         onSubmit={(event) => {
           event.preventDefault()
-          setNameError(null)
-          setPriceError(null)
-          setDescriptionError(null)
-          setInternalNameError(null)
-          setInternalDescriptionError(null)
-          setSkuError(null)
-          setScanCodeError(null)
+          setErrors({})
           resetSaved()
 
-          const trimmedName = name.trim()
-          const nameResult = NonEmptyString255Schema.safeParse(trimmedName)
-          if (!nameResult.success) {
-            setNameError("settings.items.form.name.invalid")
+          const parsed = parseCatalogItemForm(
+            {
+              name,
+              price,
+              description,
+              internalName,
+              internalDescription,
+              sku,
+              scanCode,
+            },
+            currency
+          )
+          if (!parsed.ok) {
+            setErrors(parsed.error)
             return
           }
-
-          const priceAmount = decimalAmountToMinorUnits({
-            currency,
-            value: price,
-          })
-          if (priceAmount === null) {
-            setPriceError("settings.items.form.price.invalid")
-            return
-          }
-          const unitAmount = NonNegativeInteger(priceAmount)
-
-          const trimmedDescription = description.trim()
-          const descriptionResult = trimmedDescription
-            ? NonEmptyString255Schema.safeParse(trimmedDescription)
-            : null
-          if (descriptionResult?.success === false) {
-            setDescriptionError("settings.items.form.description.invalid")
-            return
-          }
-
-          const trimmedInternalName = internalName.trim()
-          const internalNameResult = trimmedInternalName
-            ? NonEmptyString255Schema.safeParse(trimmedInternalName)
-            : null
-          if (internalNameResult?.success === false) {
-            setInternalNameError("settings.items.form.internalName.invalid")
-            return
-          }
-
-          const trimmedInternalDescription = internalDescription.trim()
-          const internalDescriptionResult = trimmedInternalDescription
-            ? NonEmptyString255Schema.safeParse(trimmedInternalDescription)
-            : null
-          if (internalDescriptionResult?.success === false) {
-            setInternalDescriptionError(
-              "settings.items.form.internalDescription.invalid"
-            )
-            return
-          }
-
-          const trimmedSku = sku.trim()
-          const skuResult = trimmedSku
-            ? NonEmptyString255Schema.safeParse(trimmedSku)
-            : null
-          if (skuResult?.success === false) {
-            setSkuError("settings.items.form.sku.invalid")
-            return
-          }
-
-          const trimmedScanCode = scanCode.trim()
-          const scanCodeResult = trimmedScanCode
-            ? NonEmptyString255Schema.safeParse(trimmedScanCode)
-            : null
-          if (scanCodeResult?.success === false) {
-            setScanCodeError("settings.items.form.scanCode.invalid")
-            return
-          }
+          const values = parsed.value
 
           void submit(async () => {
             await using run = appRun()
@@ -318,14 +257,14 @@ function CatalogItemForm({
                 createCatalogItemAtEnd({
                   deviceId: null,
                   categoryId: categoryId === "none" ? null : categoryId,
-                  name: nameResult.data,
-                  description: descriptionResult?.data ?? null,
-                  internalName: internalNameResult?.data ?? null,
-                  internalDescription: internalDescriptionResult?.data ?? null,
-                  sku: skuResult?.data ?? null,
+                  name: values.name,
+                  description: values.description,
+                  internalName: values.internalName,
+                  internalDescription: values.internalDescription,
+                  sku: values.sku,
                   currency,
-                  unitAmount,
-                  scanCode: scanCodeResult?.data ?? null,
+                  unitAmount: values.price,
+                  scanCode: values.scanCode,
                   taxRateId: taxRateId === "none" ? null : taxRateId,
                 })
               )
@@ -339,14 +278,14 @@ function CatalogItemForm({
               updateCatalogItem({
                 id: item.id,
                 categoryId: categoryId === "none" ? null : categoryId,
-                name: nameResult.data,
-                description: descriptionResult?.data ?? null,
-                internalName: internalNameResult?.data ?? null,
-                internalDescription: internalDescriptionResult?.data ?? null,
-                sku: skuResult?.data ?? null,
+                name: values.name,
+                description: values.description,
+                internalName: values.internalName,
+                internalDescription: values.internalDescription,
+                sku: values.sku,
                 currency,
-                unitAmount,
-                scanCode: scanCodeResult?.data ?? null,
+                unitAmount: values.price,
+                scanCode: values.scanCode,
                 taxRateId: taxRateId === "none" ? null : taxRateId,
               })
             )
@@ -354,7 +293,7 @@ function CatalogItemForm({
         }}
       >
         <FieldGroup>
-          <Field data-invalid={nameError !== null}>
+          <Field data-invalid={errors.name !== undefined}>
             <FieldLabel htmlFor={nameInputId}>
               {t("settings.items.form.name.label")}
             </FieldLabel>
@@ -362,19 +301,19 @@ function CatalogItemForm({
               id={nameInputId}
               value={name}
               disabled={pending}
-              aria-invalid={nameError !== null}
+              aria-invalid={errors.name !== undefined}
               autoComplete="off"
               placeholder={t("settings.items.form.name.placeholder")}
               onChange={(event) => {
                 setName(event.currentTarget.value)
-                setNameError(null)
+                clearError("name")
                 resetSaved()
               }}
             />
-            <FieldError>{nameError ? t(nameError) : null}</FieldError>
+            <FieldError>{errors.name ? t(errors.name) : null}</FieldError>
           </Field>
 
-          <Field data-invalid={internalNameError !== null}>
+          <Field data-invalid={errors.internalName !== undefined}>
             <FieldLabel htmlFor={internalNameInputId}>
               {t("settings.items.form.internalName.label")}
             </FieldLabel>
@@ -382,12 +321,12 @@ function CatalogItemForm({
               id={internalNameInputId}
               value={internalName}
               disabled={pending}
-              aria-invalid={internalNameError !== null}
+              aria-invalid={errors.internalName !== undefined}
               autoComplete="off"
               placeholder={t("settings.items.form.internalName.placeholder")}
               onChange={(event) => {
                 setInternalName(event.currentTarget.value)
-                setInternalNameError(null)
+                clearError("internalName")
                 resetSaved()
               }}
             />
@@ -395,11 +334,11 @@ function CatalogItemForm({
               {t("settings.items.form.internalName.hint")}
             </FieldDescription>
             <FieldError>
-              {internalNameError ? t(internalNameError) : null}
+              {errors.internalName ? t(errors.internalName) : null}
             </FieldError>
           </Field>
 
-          <Field data-invalid={priceError !== null}>
+          <Field data-invalid={errors.price !== undefined}>
             <FieldLabel htmlFor={priceInputId}>
               {t("settings.items.form.price.label")}
             </FieldLabel>
@@ -408,12 +347,12 @@ function CatalogItemForm({
                 id={priceInputId}
                 value={price}
                 disabled={pending}
-                aria-invalid={priceError !== null}
+                aria-invalid={errors.price !== undefined}
                 autoComplete="off"
                 inputMode="decimal"
                 onChange={(event) => {
                   setPrice(event.currentTarget.value)
-                  setPriceError(null)
+                  clearError("price")
                   resetSaved()
                 }}
               />
@@ -448,10 +387,10 @@ function CatalogItemForm({
                 </SelectContent>
               </Select>
             </div>
-            <FieldError>{priceError ? t(priceError) : null}</FieldError>
+            <FieldError>{errors.price ? t(errors.price) : null}</FieldError>
           </Field>
 
-          <Field data-invalid={descriptionError !== null}>
+          <Field data-invalid={errors.description !== undefined}>
             <FieldLabel htmlFor={descriptionInputId}>
               {t("settings.items.form.description.label")}
             </FieldLabel>
@@ -459,21 +398,21 @@ function CatalogItemForm({
               id={descriptionInputId}
               value={description}
               disabled={pending}
-              aria-invalid={descriptionError !== null}
+              aria-invalid={errors.description !== undefined}
               autoComplete="off"
               placeholder={t("settings.items.form.description.placeholder")}
               onChange={(event) => {
                 setDescription(event.currentTarget.value)
-                setDescriptionError(null)
+                clearError("description")
                 resetSaved()
               }}
             />
             <FieldError>
-              {descriptionError ? t(descriptionError) : null}
+              {errors.description ? t(errors.description) : null}
             </FieldError>
           </Field>
 
-          <Field data-invalid={internalDescriptionError !== null}>
+          <Field data-invalid={errors.internalDescription !== undefined}>
             <FieldLabel htmlFor={internalDescriptionInputId}>
               {t("settings.items.form.internalDescription.label")}
             </FieldLabel>
@@ -481,23 +420,25 @@ function CatalogItemForm({
               id={internalDescriptionInputId}
               value={internalDescription}
               disabled={pending}
-              aria-invalid={internalDescriptionError !== null}
+              aria-invalid={errors.internalDescription !== undefined}
               autoComplete="off"
               placeholder={t(
                 "settings.items.form.internalDescription.placeholder"
               )}
               onChange={(event) => {
                 setInternalDescription(event.currentTarget.value)
-                setInternalDescriptionError(null)
+                clearError("internalDescription")
                 resetSaved()
               }}
             />
             <FieldError>
-              {internalDescriptionError ? t(internalDescriptionError) : null}
+              {errors.internalDescription
+                ? t(errors.internalDescription)
+                : null}
             </FieldError>
           </Field>
 
-          <Field data-invalid={skuError !== null}>
+          <Field data-invalid={errors.sku !== undefined}>
             <FieldLabel htmlFor={skuInputId}>
               {t("settings.items.form.sku.label")}
             </FieldLabel>
@@ -505,16 +446,16 @@ function CatalogItemForm({
               id={skuInputId}
               value={sku}
               disabled={pending}
-              aria-invalid={skuError !== null}
+              aria-invalid={errors.sku !== undefined}
               autoComplete="off"
               placeholder={t("settings.items.form.sku.placeholder")}
               onChange={(event) => {
                 setSku(event.currentTarget.value)
-                setSkuError(null)
+                clearError("sku")
                 resetSaved()
               }}
             />
-            <FieldError>{skuError ? t(skuError) : null}</FieldError>
+            <FieldError>{errors.sku ? t(errors.sku) : null}</FieldError>
           </Field>
 
           <Field>
@@ -604,7 +545,7 @@ function CatalogItemForm({
             </FieldDescription>
           </Field>
 
-          <Field data-invalid={scanCodeError !== null}>
+          <Field data-invalid={errors.scanCode !== undefined}>
             <FieldLabel htmlFor={scanCodeInputId}>
               {t("settings.items.form.scanCode.label")}
             </FieldLabel>
@@ -613,13 +554,13 @@ function CatalogItemForm({
                 id={scanCodeInputId}
                 value={scanCode}
                 disabled={pending}
-                aria-invalid={scanCodeError !== null}
+                aria-invalid={errors.scanCode !== undefined}
                 autoComplete="off"
                 className="pr-12"
                 placeholder={t("settings.items.form.scanCode.placeholder")}
                 onChange={(event) => {
                   setScanCode(event.currentTarget.value)
-                  setScanCodeError(null)
+                  clearError("scanCode")
                   resetSaved()
                 }}
               />
@@ -635,7 +576,7 @@ function CatalogItemForm({
                 <ScanLineIcon />
               </Button>
             </div>
-            {scanCodeError === null && scanCodeCollisions.length > 0 && (
+            {errors.scanCode === undefined && scanCodeCollisions.length > 0 && (
               <FieldDescription>
                 {t("settings.items.form.scanCode.duplicate", {
                   name: scanCodeCollisions
@@ -644,7 +585,9 @@ function CatalogItemForm({
                 })}
               </FieldDescription>
             )}
-            <FieldError>{scanCodeError ? t(scanCodeError) : null}</FieldError>
+            <FieldError>
+              {errors.scanCode ? t(errors.scanCode) : null}
+            </FieldError>
           </Field>
         </FieldGroup>
       </SettingsFormCard>
@@ -654,7 +597,7 @@ function CatalogItemForm({
         onOpenChange={setScannerDialogOpen}
         onScan={(rawValue) => {
           setScanCode(rawValue)
-          setScanCodeError(null)
+          clearError("scanCode")
           resetSaved()
         }}
       />

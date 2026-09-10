@@ -7,17 +7,31 @@ test("save Fio settings and add a token, in either order", async ({
   // ones that used to be wrong: the token was written by the settings form
   // (so every save duplicated it), and everything was gated on whether the
   // `fioPlugin` row existed yet.
+
+  // Errors this page has nothing to do with. Both only get their turn to be
+  // logged when the run is slow, which is why they failed the full suite and
+  // never this spec on its own. Every other console error, and every
+  // pageerror, still fails the test below.
+  const unrelatedConsoleErrors = [
+    // Adding a token below arms the FIO sync job, which then calls the real
+    // API with this test's bogus token and logs the failure through
+    // `app-background-jobs.tsx`'s `onError` — this test's own doing.
+    "Background job failed.",
+    // Chromium itself, not the app: the e2e server is HTTPS with a
+    // self-signed certificate on purpose, and `ignoreHTTPSErrors` does not
+    // cover a worker script fetch (Evolu spawns a database worker and a
+    // shared worker per client). Cosmetic — the page works, as the
+    // assertions above it check.
+    "An SSL certificate error occurred when fetching the script.",
+  ]
   const consoleErrors: string[] = []
   page.on("console", (message) => {
     if (message.type() !== "error") return
-    // Adding a token below arms the FIO sync job, which then calls the real
-    // API with this test's bogus token and logs the failure through
-    // `app-background-jobs.tsx`'s `onError`. That is this test's own doing
-    // and says nothing about the page — under the full suite it is slow
-    // enough for that job to get its turn, which is why this used to fail
-    // there and pass on its own. Every other error still counts.
-    if (message.text().includes("Background job failed.")) return
-    consoleErrors.push(message.text())
+    const text = message.text()
+    if (unrelatedConsoleErrors.some((unrelated) => text.includes(unrelated))) {
+      return
+    }
+    consoleErrors.push(text)
   })
   page.on("pageerror", (error) => consoleErrors.push(String(error)))
 

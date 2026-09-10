@@ -8,8 +8,8 @@ import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   addFioPluginToken,
-  createFioPlugin,
   deleteFioPluginToken,
+  saveFioPlugin,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import {
@@ -118,7 +118,7 @@ describe("fio account transaction sync job", () => {
       })
     )
     const fioPluginId = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         syncLookbackDays: PositiveInteger(1),
@@ -198,7 +198,7 @@ describe("fio account transaction sync job", () => {
       })
     )
     const fioPluginId = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         syncLookbackDays: PositiveInteger(3),
@@ -277,7 +277,7 @@ describe("fio account transaction sync job", () => {
       })
     )
     const fioPluginId = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteTrue,
@@ -341,7 +341,7 @@ describe("fio account transaction sync job", () => {
       })
     )
     const fioPluginId = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(1),
         isActive: sqliteTrue,
@@ -407,7 +407,7 @@ describe("fio account transaction sync job", () => {
       })
     )
     const fioPluginId = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(1),
         isActive: sqliteTrue,
@@ -492,7 +492,7 @@ describe("fio account transaction sync job", () => {
       })
     )
     const fioPluginId = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteTrue,

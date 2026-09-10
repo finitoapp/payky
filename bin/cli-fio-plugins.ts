@@ -20,10 +20,9 @@ import {
 import { AccountId } from "../src/core/modules/account/account-types"
 import {
   addFioPluginToken,
-  createFioPlugin,
   deleteFioPlugin,
   loadFioPlugin,
-  updateFioPlugin,
+  saveFioPlugin,
 } from "../src/core/modules/fio-plugin/fio-plugin-actions"
 import { fioPluginTokensByPluginIdQuery } from "../src/core/modules/fio-plugin/fio-plugin-queries"
 import { FioPluginId } from "../src/core/modules/fio-plugin/fio-plugin-types"
@@ -156,7 +155,7 @@ export const registerFioPluginsCommand =
           },
           async action(_, options) {
             const fioPluginId = await run.ok(
-              createFioPlugin({
+              saveFioPlugin({
                 accountId: options.accountId,
                 numberOfSecondsBetweenChecks:
                   options.numberOfSecondsBetweenChecks,
@@ -198,34 +197,36 @@ export const registerFioPluginsCommand =
 
       .addCommand(
         zodCommand({
-          name: "update",
-          description: "Update a FIO plugin configuration.",
+          name: "save",
+          description:
+            "Create or update the Fio plugin configuration. There is one plugin, at a fixed id, and no row means it is off.",
           args: {},
           opts: {
-            id: FioPluginId.describe("FIO plugin id"),
-            accountId: AccountId.optional().describe("a;IBAN account id"),
+            accountId: AccountId.describe("a;IBAN account id"),
             numberOfSecondsBetweenChecks:
-              PositiveIntegerFromStringSchema.optional().describe(
+              PositiveIntegerFromStringSchema.describe(
                 "i;Polling interval seconds"
               ),
-            isActive: SqliteBooleanFromStringSchema.optional().describe(
+            syncLookbackDays:
+              PositiveIntegerFromStringSchema.optional().describe(
+                "l;Days of history to re-check each sync"
+              ),
+            isActive: SqliteBooleanFromStringSchema.describe(
               "x;Whether background sync is active"
             ),
           },
           async action(_, options) {
-            await run.orThrow(loadFioPlugin(options.id))
-
-            const fioPluginId = await run.ok(
-              updateFioPlugin({
-                id: options.id,
+            const savedId = await run.ok(
+              saveFioPlugin({
                 accountId: options.accountId,
                 numberOfSecondsBetweenChecks:
                   options.numberOfSecondsBetweenChecks,
+                syncLookbackDays: options.syncLookbackDays,
                 isActive: options.isActive,
               })
             )
 
-            run.deps.console.log(`Updated FIO plugin ${fioPluginId}`)
+            run.deps.console.log(`Saved FIO plugin ${savedId}`)
           },
         })
       )

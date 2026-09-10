@@ -5,7 +5,6 @@ import {
   sqliteFalse,
   sqliteTrue,
   type Task,
-  type UpdateValues,
 } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
@@ -23,12 +22,12 @@ import {
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import {
-  createTableId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
 import { fioPluginByIdQuery } from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
+import { fioPluginId } from "./fio-plugin-utils.ts"
 
 const createFioPluginNotFoundError = defineError("FioPluginNotFound")<{
   readonly id: FioPluginId
@@ -53,16 +52,23 @@ export const loadFioPlugin =
     )
 
 /**
- * Creates the plugin's configuration only. Tokens are added separately with
- * `addFioPluginToken`, so saving a setting can never write one as a
- * side effect. A plugin with no token yet is simply inactive — the sync job
- * filters it out (see `hasFioTokens`) until one is added.
+ * Upserts the singleton `fioPlugin` row — the one action behind both "create"
+ * and "save", since the id is fixed (`fioPluginId`) and a missing row just
+ * means the integration is off. Callers no longer branch on whether it exists,
+ * and nothing about the settings page is keyed to an id that only appears
+ * after the first write.
+ *
+ * Tokens are deliberately not part of this: they are managed through
+ * `addFioPluginToken`/`deleteFioPluginToken`, so saving a setting can never
+ * write one as a side effect. They can also be saved before this row exists —
+ * `activeFioPluginsQuery` inner-joins `fioPlugin`, so they sit unused until it
+ * does.
  */
-export const createFioPlugin =
+export const saveFioPlugin =
   ({
     syncLookbackDays = defaultFioPluginSyncLookbackDays,
     ...input
-  }: Omit<InsertValues<typeof fioPlugin>, "syncLookbackDays"> &
+  }: Omit<InsertValues<typeof fioPlugin>, "id" | "syncLookbackDays"> &
     Partial<Pick<InsertValues<typeof fioPlugin>, "syncLookbackDays">>): Task<
     FioPluginId,
     never,
@@ -70,34 +76,23 @@ export const createFioPlugin =
   > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const id = createTableId<"FioPlugin">()
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
         "fioPlugin",
         removeUndefinedValues({
           ...input,
-          id,
+          id: fioPluginId,
           syncLookbackDays,
+          isDeleted: sqliteFalse,
         }),
         { ...options, ownerId: evoluOwnerId }
       )
     )
 
-    return ok(id)
+    return ok(fioPluginId)
   }
 
-/**
- * Adds one token to a plugin's rotation set (the sync job cycles through all
- * of a plugin's tokens — see `fio-account-transaction-sync-job.ts`).
- *
- * The row id is derived from the plugin and the token value rather than
- * generated, so re-adding a token the plugin already has is an idempotent
- * no-op. It used to be random and written from `updateFioPlugin`, which meant
- * every save of the settings form appended another row: re-saving without
- * touching the token duplicated it, and *changing* it left the old one in the
- * rotation, so the job kept periodically retrying a revoked token.
- */
 export const addFioPluginToken =
   ({
     fioPluginId,
@@ -129,31 +124,6 @@ export const addFioPluginToken =
     )
 
     return ok(id)
-  }
-
-/** Configuration only; tokens are managed through `addFioPluginToken`. */
-export const updateFioPlugin =
-  (
-    input: Pick<
-      UpdateValues<typeof fioPlugin>,
-      | "id"
-      | "accountId"
-      | "numberOfSecondsBetweenChecks"
-      | "syncLookbackDays"
-      | "isActive"
-    >
-  ): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
-  async (run) => {
-    const { evoluOwnerId } = run.deps
-
-    await runMutationWithCompletion((options) =>
-      run.deps.evolu.update("fioPlugin", removeUndefinedValues(input), {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-    )
-
-    return ok(input.id)
   }
 
 export const updateFioPluginSyncPointer =

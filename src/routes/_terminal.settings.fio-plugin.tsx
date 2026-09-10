@@ -1,8 +1,8 @@
-import { createIdFromString, sqliteFalse, sqliteTrue } from "@evolu/common"
+import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import { format, subDays } from "date-fns"
 import { Plus, Trash2, TriangleAlert } from "lucide-react"
-import { Suspense, useEffect, useId, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
@@ -33,9 +33,8 @@ import { Input } from "@/components/ui/input.tsx"
 import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import {
   addFioPluginToken,
-  createFioPlugin,
   deleteFioPluginToken,
-  updateFioPlugin,
+  saveFioPlugin,
   updateFioPluginSyncPointer,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import {
@@ -44,6 +43,7 @@ import {
   fioPluginTokensByPluginIdQuery,
 } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import { fioPluginId } from "@/core/modules/fio-plugin/fio-plugin-utils.ts"
 import {
   type DateString,
   DateStringSchema,
@@ -69,10 +69,6 @@ export const Route = createFileRoute("/_terminal/settings/fio-plugin")({
 
 const defaultNumberOfSecondsBetweenChecks = "30"
 const defaultSyncLookbackDays = "1"
-const fioPluginFormPointerPlaceholderId = createIdFromString<"FioPlugin">(
-  "payky-fio-plugin-form-pointer-placeholder"
-)
-
 const getDefaultLastSyncedDate = (): DateString =>
   DateStringSchema.decode(format(subDays(new Date(), 1), "yyyy-MM-dd"))
 
@@ -91,26 +87,16 @@ function FioPluginSettingsPage() {
       <div className="flex flex-col gap-5">
         {!isNativeRuntime ? <FioPluginNativeRuntimeAlert /> : null}
         <FioPluginForm plugin={plugin} isNativeRuntime={isNativeRuntime} />
-        {plugin ? (
-          // The token list reads a plugin-scoped query that has never been
-          // seen before the plugin row appears, so its first render suspends.
-          // A local boundary keeps that off the route's own one, which would
-          // blank the whole settings page for a beat — the hazard
-          // `useOptionalEvoluQuery`'s doc comment describes.
-          <Suspense fallback={null}>
-            <FioPluginTokenForm fioPluginId={plugin.id} />
-            <FioPluginTokenList fioPluginId={plugin.id} />
-          </Suspense>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("settings.fioPlugin.tokens.title")}</CardTitle>
-              <CardDescription>
-                {t("settings.fioPlugin.tokens.createFirst")}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
+        {/*
+         * Tokens are reachable whether or not the `fioPlugin` row exists —
+         * they hang off the fixed `fioPluginId`, and `activeFioPluginsQuery`
+         * inner-joins the plugin, so tokens saved first simply sit unused
+         * until it is enabled. Keeping these mounted unconditionally also
+         * means no query key appears mid-session, which is what used to make
+         * their first render suspend on a promise React cannot cache.
+         */}
+        <FioPluginTokenForm fioPluginId={fioPluginId} />
+        <FioPluginTokenList fioPluginId={fioPluginId} />
       </div>
     </>
   )
@@ -148,11 +134,8 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const pointerQuery = useMemo(
-    () =>
-      fioPluginSyncPointerByPluginIdQuery(
-        plugin?.id ?? fioPluginFormPointerPlaceholderId
-      ),
-    [plugin?.id]
+    () => fioPluginSyncPointerByPluginIdQuery(fioPluginId),
+    []
   )
   const { data: pointers } = useEvoluQuery(pointerQuery)
   const [pointer] = pointers
@@ -199,9 +182,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
       submitLabel={
         <>
           <Plus data-icon="inline-start" />
-          {plugin
-            ? t("settings.fioPlugin.save")
-            : t("settings.fioPlugin.create")}
+          {t("settings.fioPlugin.save")}
         </>
       }
       pending={pending}
@@ -242,40 +223,23 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
         void submit(async () => {
           await using run = appRun()
 
-          if (plugin) {
-            await run.ok(
-              updateFioPlugin({
-                id: plugin.id,
-                accountId: fiatBankAccountId,
-                numberOfSecondsBetweenChecks: intervalResult.data,
-                syncLookbackDays: syncLookbackDaysResult.data,
-                isActive:
-                  isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
-              })
-            )
-            await run.ok(
-              updateFioPluginSyncPointer({
-                id: plugin.id,
-                lastSyncedDate: lastSyncedDateResult.data,
-              })
-            )
-          } else {
-            const fioPluginId = await run.ok(
-              createFioPlugin({
-                accountId: fiatBankAccountId,
-                numberOfSecondsBetweenChecks: intervalResult.data,
-                syncLookbackDays: syncLookbackDaysResult.data,
-                isActive:
-                  isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
-              })
-            )
-            await run.ok(
-              updateFioPluginSyncPointer({
-                id: fioPluginId,
-                lastSyncedDate: lastSyncedDateResult.data,
-              })
-            )
-          }
+          // One path whether or not the row exists yet: the plugin is a
+          // singleton at a fixed id, so `saveFioPlugin` upserts it and this
+          // form never has to know which case it is in.
+          await run.ok(
+            saveFioPlugin({
+              accountId: fiatBankAccountId,
+              numberOfSecondsBetweenChecks: intervalResult.data,
+              syncLookbackDays: syncLookbackDaysResult.data,
+              isActive: isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
+            })
+          )
+          await run.ok(
+            updateFioPluginSyncPointer({
+              id: fioPluginId,
+              lastSyncedDate: lastSyncedDateResult.data,
+            })
+          )
         })
       }}
     >

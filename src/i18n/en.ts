@@ -706,7 +706,6 @@ export const en = {
   "settings.fioPlugin.active.description":
     "When enabled, the plugin checks Fio Bank transactions for the fiat bank account.",
   "settings.fioPlugin.active.label": "Enable Fio plugin",
-  "settings.fioPlugin.create": "Create Fio plugin",
   "settings.fioPlugin.description":
     "Configure Fio Bank transaction sync tokens",
   "settings.fioPlugin.form.description":
@@ -735,8 +734,6 @@ export const en = {
     "This app is currently running in a regular browser/PWA environment, so automatic Fio payment checks will not run here.",
   "settings.fioPlugin.token.description":
     "Leave empty to update only basic settings.",
-  "settings.fioPlugin.token.firstDescription":
-    "Add the first Fio API token to create the plugin.",
   "settings.fioPlugin.token.invalid": "Enter a token up to 255 characters.",
   "settings.fioPlugin.token.label": "Fio API token",
   "settings.fioPlugin.token.required":
@@ -747,8 +744,6 @@ export const en = {
   "settings.fioPlugin.tokens.add.submit": "Add token",
   "settings.fioPlugin.tokens.add.saved": "Fio API token added.",
   "settings.fioPlugin.tokens.active": "Active",
-  "settings.fioPlugin.tokens.createFirst":
-    "Create the plugin with the first API token before managing tokens.",
   "settings.fioPlugin.tokens.description":
     "Stored tokens are used when checking account transactions.",
   "settings.fioPlugin.tokens.empty": "No tokens saved.",

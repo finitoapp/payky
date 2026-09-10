@@ -20,15 +20,19 @@ import {
 } from "../shared/schema.ts"
 import {
   addFioPluginToken,
-  createFioPlugin,
   deleteFioPlugin,
   deleteFioPluginToken,
   loadFioPlugin,
-  updateFioPlugin,
+  saveFioPlugin,
   updateFioPluginSyncPointer,
 } from "./fio-plugin-actions.ts"
-import { fioPluginTokensByPluginIdQuery } from "./fio-plugin-queries.ts"
+import {
+  activeFioPluginsQuery,
+  fioPluginByIdQuery,
+  fioPluginTokensByPluginIdQuery,
+} from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
+import { fioPluginId } from "./fio-plugin-utils.ts"
 
 const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
   createQuery((db) =>
@@ -93,7 +97,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -150,7 +154,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -169,8 +173,8 @@ describe("fio plugin actions", () => {
 
     const id = idResult.value
     const updateResult = await run(
-      updateFioPlugin({
-        id,
+      saveFioPlugin({
+        accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(600),
         isActive: sqliteFalse,
       })
@@ -229,7 +233,7 @@ describe("fio plugin actions", () => {
     )
 
     const idResult = await run(
-      createFioPlugin({
+      saveFioPlugin({
         accountId: cashRegisterAccountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -262,15 +266,94 @@ describe("fio plugin actions", () => {
       ])
     await expect(
       run(
-        updateFioPlugin({
-          id: idResult.value,
+        saveFioPlugin({
           accountId: cashRegisterAccountId,
+          numberOfSecondsBetweenChecks: PositiveInteger(300),
+          isActive: sqliteTrue,
         })
       )
     ).resolves.toEqual({
       ok: true,
       value: idResult.value,
     })
+  }, 15_000)
+
+  test("saves tokens before the plugin row exists, and stays off until it does", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(deps)
+
+    // No `fioPlugin` row at all — which is what "the integration is off"
+    // means. The id is fixed, so a token can still be saved against it.
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginTokensByPluginIdQuery(fioPluginId)))
+      .toMatchObject([{ token: "fio-token-1" }])
+
+    // The sync job inner-joins `fioPlugin`, so an orphan token syncs nothing.
+    await expect(evolu.loadQuery(activeFioPluginsQuery)).resolves.toEqual([])
+
+    // Enabling it is a plain save — no separate "create" step, and the token
+    // saved beforehand is picked up as-is.
+    await expect(
+      run(
+        saveFioPlugin({
+          accountId,
+          numberOfSecondsBetweenChecks: PositiveInteger(60),
+          isActive: sqliteTrue,
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: fioPluginId })
+    await expect
+      .poll(() => evolu.loadQuery(activeFioPluginsQuery))
+      .toMatchObject([{ id: fioPluginId, tokens: [{ token: "fio-token-1" }] }])
+  }, 15_000)
+
+  test("a save revives a deleted plugin instead of leaving it hidden", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(deps)
+
+    await run.ok(
+      saveFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        isActive: sqliteTrue,
+      })
+    )
+    await run.ok(deleteFioPlugin(fioPluginId))
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginByIdQuery(fioPluginId)))
+      .toEqual([])
+
+    // The id is fixed, so this upserts the tombstoned row rather than
+    // inserting a new one — it has to clear `isDeleted`, or saving would
+    // silently do nothing forever after one delete.
+    await run.ok(
+      saveFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(90),
+        isActive: sqliteTrue,
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginByIdQuery(fioPluginId)))
+      .toMatchObject([{ id: fioPluginId, numberOfSecondsBetweenChecks: 90 }])
   }, 15_000)
 
   test("adding the same token twice leaves one row, and a setting saved twice adds none", async () => {
@@ -284,7 +367,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const id = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -295,12 +378,17 @@ describe("fio plugin actions", () => {
     // another row for the same value and the sync job's rotation filled up
     // with duplicates. Saving a setting must now touch no token at all.
     await run.ok(
-      updateFioPlugin({ id, numberOfSecondsBetweenChecks: PositiveInteger(60) })
+      saveFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        isActive: sqliteTrue,
+      })
     )
     await run.ok(
-      updateFioPlugin({
-        id,
+      saveFioPlugin({
+        accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(120),
+        isActive: sqliteTrue,
       })
     )
     await expect
@@ -339,7 +427,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const id = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -381,7 +469,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -432,9 +520,10 @@ describe("fio plugin actions", () => {
     })
     await expect(
       run(
-        updateFioPlugin({
-          id,
+        saveFioPlugin({
+          accountId,
           numberOfSecondsBetweenChecks: PositiveInteger(900),
+          isActive: sqliteTrue,
         })
       )
     ).resolves.toEqual({
@@ -454,7 +543,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const idResult = await run(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
@@ -494,7 +583,7 @@ describe("fio plugin actions", () => {
       .toMatchObject([
         {
           id,
-          isDeleted: null,
+          isDeleted: sqliteFalse,
           tokens: [
             {
               token: "fio-token-1",
@@ -520,7 +609,7 @@ describe("fio plugin actions", () => {
     const accountId = await createIbanAccount(deps)
 
     const id = await run.ok(
-      createFioPlugin({
+      saveFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,

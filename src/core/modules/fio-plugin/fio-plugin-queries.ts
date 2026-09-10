@@ -16,7 +16,7 @@ export const fioPluginByIdQuery = (idValue: FioPluginId) =>
       .where("numberOfSecondsBetweenChecks", "is not", null)
       .where("syncLookbackDays", "is not", null)
       .where("isActive", "is not", null)
-      .where("isDeleted", "is", null)
+      .where("isDeleted", "is not", 1)
       .$narrowType<{
         accountId: KyselyNotNull
         numberOfSecondsBetweenChecks: KyselyNotNull
@@ -50,7 +50,7 @@ export const fiatBankAccountFioPluginQuery = createQuery((db) =>
     .where("accountId", "is not", null)
     .where("numberOfSecondsBetweenChecks", "is not", null)
     .where("isActive", "is not", null)
-    .where("isDeleted", "is", null)
+    .where("isDeleted", "is not", 1)
     .orderBy("createdAt", "desc")
     .limit(1)
     .$narrowType<{
@@ -67,7 +67,7 @@ export const fioPluginSyncPointerByPluginIdQuery = (fioPluginId: FioPluginId) =>
       .selectAll()
       .where("id", "=", fioPluginId)
       .where("lastSyncedDate", "is not", null)
-      .where("isDeleted", "is", null)
+      .where("isDeleted", "is not", 1)
       .$narrowType<{
         lastSyncedDate: KyselyNotNull
       }>()
@@ -106,7 +106,7 @@ export const activeFioPluginsQuery = createQuery((db) =>
       ).as("tokens"),
     ])
     .where("fioPlugin.isActive", "=", 1)
-    .where("fioPlugin.isDeleted", "is", null)
+    .where("fioPlugin.isDeleted", "is not", 1)
     .where("account.kind", "=", "iban")
     .where("account.isDeleted", "is not", 1)
     .where("accountIban.isDeleted", "is not", 1)

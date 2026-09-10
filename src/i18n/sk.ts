@@ -710,7 +710,6 @@ export const sk = {
   "settings.fioPlugin.active.description":
     "Keď je plugin zapnutý, kontroluje transakcie Fio banky pre fiat bankový účet.",
   "settings.fioPlugin.active.label": "Povoliť Fio plugin",
-  "settings.fioPlugin.create": "Vytvoriť Fio plugin",
   "settings.fioPlugin.description":
     "Nastavenie tokenov na synchronizáciu transakcií z Fio banky",
   "settings.fioPlugin.form.description":
@@ -738,8 +737,6 @@ export const sk = {
     "Táto aplikácia teraz beží v bežnom prehliadači/PWA prostredí, takže automatické kontroly platieb Fio sa tu nespustia.",
   "settings.fioPlugin.token.description":
     "Nechajte prázdne, ak chcete uložiť len základné nastavenia.",
-  "settings.fioPlugin.token.firstDescription":
-    "Pridajte prvý Fio API token na vytvorenie pluginu.",
   "settings.fioPlugin.token.invalid":
     "Zadajte token dlhý maximálne 255 znakov.",
   "settings.fioPlugin.token.label": "Fio API token",
@@ -751,8 +748,6 @@ export const sk = {
   "settings.fioPlugin.tokens.add.submit": "Pridať token",
   "settings.fioPlugin.tokens.add.saved": "Fio API token pridaný.",
   "settings.fioPlugin.tokens.active": "Aktívny",
-  "settings.fioPlugin.tokens.createFirst":
-    "Najprv vytvorte plugin s prvým API tokenom, potom môžete spravovať tokeny.",
   "settings.fioPlugin.tokens.description":
     "Uložené tokeny sa používajú pri kontrole transakcií účtu.",
   "settings.fioPlugin.tokens.empty": "Nie sú uložené žiadne tokeny.",

@@ -78,6 +78,7 @@ import {
   updatePayment,
 } from "./payment-actions.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
+import { DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS } from "./payment-status-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
@@ -735,6 +736,108 @@ describe("payment actions", () => {
           },
         },
       ])
+  }, 15_000)
+
+  test("keeps a Lightning payment's expiry in step with the invoice, even when the caller omits expirySeconds", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
+        ),
+      sparkWallet: {
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => ({
+              id: "lightning-request-1",
+              invoice: {
+                encodedInvoice: "lnbc8600n1expiry",
+                paymentHash: "payment-hash-1",
+              },
+              paymentPreimage: "payment-preimage-1",
+              sparkInvoice: "spark-invoice-1",
+            }),
+          }),
+      },
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { sparkAccountId } = await createPaymentAccounts(deps)
+
+    const expiresAtOf = async (paymentId: PaymentId) =>
+      (await evolu.loadQuery(paymentByIdQuery(paymentId)))[0]?.expiresAt
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    // An explicit, deliberately short window first.
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: { accountId: sparkAccountId, expirySeconds: 60 },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+    await expect.poll(() => expiresAtOf(id)).toBe(fixedDate.getTime() + 60_000)
+
+    // Re-prepared with no `expirySeconds`: the invoice gets a fresh window
+    // regardless, so leaving the old 60-second stamp behind would report a
+    // live payment as expired and release the bill's editing lock.
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: { accountId: sparkAccountId },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+    await expect
+      .poll(() => expiresAtOf(id))
+      .toBe(
+        fixedDate.getTime() + DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1_000
+      )
+
+    // Same for a payment created straight through `createPreparedPayment`
+    // without one — the shape `bin/cli-payments.ts` uses. A null `expiresAt`
+    // there means the payment never reads as expired and the bill stays
+    // locked for good.
+    const preparedId = await run.orThrow(
+      createPreparedPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        spark: { accountId: sparkAccountId },
+      })
+    )
+    await expect
+      .poll(() => expiresAtOf(preparedId))
+      .toBe(
+        fixedDate.getTime() + DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1_000
+      )
   }, 15_000)
 
   test("preparing cash after Lightning clears the payment's expiry", async () => {

@@ -9,12 +9,18 @@ export type PaymentStatus = "canceled" | "paid" | "expired" | "pending"
 
 /**
  * Default expiry window for a Lightning invoice prepared for a terminal
- * payment (15 minutes). Passed explicitly as `expirySeconds` whenever a
- * spark/Lightning payment method is prepared, so `payment.expiresAt` is
- * always populated for it — without an explicit value here, the invoice
- * would still expire (the Spark SDK applies its own default), but this
- * app's `expiresAt`/`derivePaymentStatus`/bill-lock machinery would never
- * find out, since `computePaymentExpiresAt` only stores what it's given.
+ * payment (15 minutes). Applied by `createPreparedPayment` and
+ * `preparePaymentMethod` whenever a caller does not choose one, so the window
+ * the invoice is created with and the `payment.expiresAt` recorded for it are
+ * always the same number.
+ *
+ * It used to be each caller's job to pass this, which two of them got wrong:
+ * `bin/cli-payments.ts` never did, leaving `expiresAt` null so the payment
+ * never read as expired and its bill stayed locked for good; and re-preparing
+ * Spark without it kept the *previous* stamp, reporting a live invoice as
+ * expired. Without any value the Spark SDK still expires the invoice on its
+ * own schedule — this app just never found out, since
+ * `computePaymentExpiresAt` only stores what it is given.
  */
 export const DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS = 900
 

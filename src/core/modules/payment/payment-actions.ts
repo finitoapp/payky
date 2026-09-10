@@ -51,6 +51,7 @@ import type {
 import {
   calculatePaymentClaimedSum,
   computePaymentExpiresAt,
+  DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
@@ -366,7 +367,16 @@ const createSparkLightningInvoice =
     readonly currency: FiatCurrency
     readonly amount: number
     readonly memo?: string
-    readonly expirySeconds?: number
+    /**
+     * Required, not optional: the SDK applies a default of its own when this
+     * is omitted, and the invoice then expires at a time nothing in this app
+     * knows — leaving `payment.expiresAt` either null or stale, so
+     * `derivePaymentStatus` never learns the invoice died and the bill's
+     * editing lock never releases. Callers resolve
+     * `DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS` so the stored expiry and the
+     * invoice's own always come from the same number.
+     */
+    readonly expirySeconds: number
     readonly includeSparkInvoice?: boolean
   }): Task<
     PaymentBtcInput,
@@ -634,6 +644,8 @@ export const createPreparedPayment =
       return err(accountSparkNotFound(spark.accountId))
     }
 
+    const expirySeconds =
+      spark.expirySeconds ?? DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS
     const sparkPaymentResult = await run(
       createSparkLightningInvoice({
         accountId: spark.accountId,
@@ -641,7 +653,7 @@ export const createPreparedPayment =
         currency: input.currency,
         amount: input.amount,
         memo: spark.memo,
-        expirySeconds: spark.expirySeconds,
+        expirySeconds,
         includeSparkInvoice: spark.includeSparkInvoice,
       })
     )
@@ -650,10 +662,7 @@ export const createPreparedPayment =
     return run(
       createPayment({
         ...input,
-        expiresAt: computePaymentExpiresAt(
-          run.deps.date.now(),
-          spark.expirySeconds
-        ),
+        expiresAt: computePaymentExpiresAt(run.deps.date.now(), expirySeconds),
         spark: sparkPaymentResult.value,
       })
     )
@@ -759,7 +768,10 @@ const prepareSparkMethod =
       readonly includeSparkInvoice?: boolean
     }
   }): Task<
-    { readonly id: PaymentId } & PaymentBtcInput,
+    {
+      readonly id: PaymentId
+      readonly expirySeconds: number
+    } & PaymentBtcInput,
     | AccountSparkNotFoundError
     | PaymentPreparationFailedError
     | YadioHttpError
@@ -776,6 +788,8 @@ const prepareSparkMethod =
     )
     if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
 
+    const expirySeconds =
+      spark.expirySeconds ?? DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS
     const sparkInvoiceResult = await run(
       createSparkLightningInvoice({
         accountId: spark.accountId,
@@ -783,13 +797,15 @@ const prepareSparkMethod =
         currency: paymentCurrency,
         amount,
         memo: spark.memo,
-        expirySeconds: spark.expirySeconds,
+        expirySeconds,
         includeSparkInvoice: spark.includeSparkInvoice,
       })
     )
     if (!sparkInvoiceResult.ok) return sparkInvoiceResult
 
-    return ok({ id: paymentId, ...sparkInvoiceResult.value })
+    // Returned so the caller stores the window this invoice was actually
+    // made with, rather than whatever it happened to pass in.
+    return ok({ id: paymentId, expirySeconds, ...sparkInvoiceResult.value })
   }
 
 export const preparePaymentMethod =
@@ -925,14 +941,19 @@ export const preparePaymentMethod =
           ...options,
           ownerId: evoluOwnerId,
         })
-        if (spark?.expirySeconds !== undefined && !hasNonExpiringMethod) {
+        // Unconditional for a Spark preparation: a new invoice always has a
+        // new expiry, so keeping the previous `expiresAt` would report a live
+        // payment as expired. It used to be skipped whenever the caller
+        // omitted `expirySeconds`, which is exactly when the old stamp was
+        // most likely to be wrong.
+        if (!hasNonExpiringMethod) {
           run.deps.evolu.update(
             "payment",
             {
               id: paymentId,
               expiresAt: computePaymentExpiresAt(
                 run.deps.date.now(),
-                spark.expirySeconds
+                sparkValues.expirySeconds
               ),
             },
             { ...options, ownerId: evoluOwnerId }

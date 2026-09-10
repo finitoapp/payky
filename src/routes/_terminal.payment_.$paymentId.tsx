@@ -50,10 +50,7 @@ import {
   createBankQrPayloads,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import {
-  DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
-  derivePaymentStatus,
-} from "@/core/modules/payment/payment-status-utils.ts"
+import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
 import {
@@ -488,10 +485,7 @@ function PaymentWaitingRequest({
               : {}),
             ...(method.kind === "spark"
               ? {
-                  spark: {
-                    accountId: method.accountId,
-                    expirySeconds: DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
-                  },
+                  spark: { accountId: method.accountId },
                 }
               : {}),
           })

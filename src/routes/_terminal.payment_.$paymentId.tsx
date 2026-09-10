@@ -8,6 +8,7 @@ import {
   EyeOffIcon,
   LandmarkIcon,
   LoaderCircleIcon,
+  XIcon,
   ZapIcon,
 } from "lucide-react"
 import {
@@ -843,7 +844,9 @@ function PaymentWaitingRequest({
                 >
                   {cancelPending ? (
                     <LoaderCircleIcon className="animate-spin" />
-                  ) : null}
+                  ) : (
+                    <XIcon />
+                  )}
                   {t("paymentWait.cancel")}
                 </Button>
               </div>

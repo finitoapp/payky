@@ -1080,7 +1080,10 @@ describe("bill actions", () => {
           totalAmount: NonNegativeInteger(500),
         })
       )
-    ).resolves.toMatchObject({ ok: false, error: { type: "BillNotOpen" } })
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillStatusNotAllowed" },
+    })
   }, 15_000)
 
   test("refuses a split selecting more of a line than the source holds", async () => {
@@ -1452,7 +1455,10 @@ describe("bill actions", () => {
             items: [],
           })
         )
-      ).resolves.toMatchObject({ ok: false, error: { type: "BillNotOpen" } })
+      ).resolves.toMatchObject({
+        ok: false,
+        error: { type: "BillStatusNotAllowed" },
+      })
     }
   }, 15_000)
 
@@ -1481,7 +1487,10 @@ describe("bill actions", () => {
             totalAmount: NonNegativeInteger(500),
           })
         )
-      ).resolves.toMatchObject({ ok: false, error: { type: "BillNotOpen" } })
+      ).resolves.toMatchObject({
+        ok: false,
+        error: { type: "BillStatusNotAllowed" },
+      })
     }
   }, 15_000)
 
@@ -1497,9 +1506,17 @@ describe("bill actions", () => {
     const closedBillId = await createOpenBill(deps, { displayNumber: 1 })
     await closeBillWithCashPayment(deps, closedBillId, 1_000)
 
+    // `allowedStatuses` is the part that carries the reason: a `canceled` bill
+    // is cancelable (re-canceling is a no-op) and a `closed` one never is, so
+    // "the status is not open" would have described both and explained
+    // neither. The CLI prints this payload verbatim.
     await expect(run(cancelBill(closedBillId))).resolves.toMatchObject({
       ok: false,
-      error: { type: "BillNotOpen", status: "closed" },
+      error: {
+        type: "BillStatusNotAllowed",
+        status: "closed",
+        allowedStatuses: ["open", "canceled"],
+      },
     })
 
     const canceledBillId = await createOpenBill(deps, { displayNumber: 2 })
@@ -1521,9 +1538,15 @@ describe("bill actions", () => {
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
     await run.orThrow(cancelBill(canceledBillId))
 
+    // The other direction: `closeBill` refreshes an already-settled bill's
+    // cache, so `closed` is allowed and only `canceled` is not.
     await expect(run(closeBill(canceledBillId))).resolves.toMatchObject({
       ok: false,
-      error: { type: "BillNotOpen", status: "canceled" },
+      error: {
+        type: "BillStatusNotAllowed",
+        status: "canceled",
+        allowedStatuses: ["open", "closed"],
+      },
     })
 
     // `closeBill` is a repair tool for the `closedAt` cache, not the normal

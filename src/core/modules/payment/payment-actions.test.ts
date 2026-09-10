@@ -2775,7 +2775,7 @@ describe("payment actions", () => {
       )
     ).resolves.toMatchObject({
       ok: false,
-      error: { type: "BillNotOpen", status: "canceled" },
+      error: { type: "BillStatusNotAllowed", status: "canceled" },
     })
   }, 15_000)
 
@@ -2841,7 +2841,7 @@ describe("payment actions", () => {
       )
     ).resolves.toMatchObject({
       ok: false,
-      error: { type: "BillNotOpen", status: "closed" },
+      error: { type: "BillStatusNotAllowed", status: "closed" },
     })
   }, 15_000)
 
@@ -2911,7 +2911,7 @@ describe("payment actions", () => {
       )
     ).resolves.toMatchObject({
       ok: false,
-      error: { type: "BillNotOpen", status: "closed" },
+      error: { type: "BillStatusNotAllowed", status: "closed" },
     })
   }, 15_000)
 

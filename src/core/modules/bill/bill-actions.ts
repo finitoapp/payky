@@ -51,12 +51,12 @@ import {
   type BillLockedError,
   type BillNotCanceledError,
   type BillNotFoundError,
-  type BillNotOpenError,
   type BillSplitSelectionStaleError,
+  type BillStatusNotAllowedError,
   type BillUnderpaidError,
   type BillWithItems,
   billNotCanceled,
-  billNotOpen,
+  billStatusNotAllowed,
   billUnderpaid,
   loadBillStatusSnapshot,
   requireCancelableBill,
@@ -83,11 +83,11 @@ export type AddBillLineError =
   | CatalogItemNotFoundError
   | BillLineSummaryMissingError
   | BillNotFoundError
-  | BillNotOpenError
+  | BillStatusNotAllowedError
   | BillLockedError
 export type SplitBillError =
   | BillNotFoundError
-  | BillNotOpenError
+  | BillStatusNotAllowedError
   | BillLockedError
   | BillSplitSelectionStaleError
 export const createBill =
@@ -307,7 +307,7 @@ export const addManualAmountToBill =
     BillLineSummary,
     | BillLineSummaryMissingError
     | BillNotFoundError
-    | BillNotOpenError
+    | BillStatusNotAllowedError
     | BillLockedError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
@@ -345,7 +345,7 @@ export const addTipToBill =
     BillLineSummary,
     | BillLineSummaryMissingError
     | BillNotFoundError
-    | BillNotOpenError
+    | BillStatusNotAllowedError
     | BillLockedError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
@@ -382,7 +382,7 @@ export const appendRemoveBillLine =
     }
   ): Task<
     BillLineSummary | null,
-    BillNotFoundError | BillNotOpenError | BillLockedError,
+    BillNotFoundError | BillStatusNotAllowedError | BillLockedError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
@@ -660,7 +660,7 @@ export const cancelBill =
     billId: BillId
   ): Task<
     BillId,
-    BillNotFoundError | BillNotOpenError,
+    BillNotFoundError | BillStatusNotAllowedError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
@@ -714,7 +714,7 @@ export const closeBill =
     billId: BillId
   ): Task<
     BillId,
-    BillNotFoundError | BillNotOpenError | BillUnderpaidError,
+    BillNotFoundError | BillStatusNotAllowedError | BillUnderpaidError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
@@ -731,7 +731,17 @@ export const closeBill =
     } = snapshotResult.value
 
     if (status === "canceled") {
-      return err(billNotOpen({ id: billId, status }))
+      return err(
+        billStatusNotAllowed({
+          id: billId,
+          status,
+          // A repair tool: it refreshes the `closedAt` cache of a bill that is
+          // already settled, so an already-`closed` one is fine and only a
+          // `canceled` one is not (see `confirmBillClosedDespiteCancellation`
+          // for that collision).
+          allowedStatuses: ["open", "closed"],
+        })
+      )
     }
     if (!hasActiveClaim || coverage === "underpaid") {
       return err(billUnderpaid({ id: billId, billTotal, claimedSum }))
@@ -824,7 +834,7 @@ export const appendGuardedBillLines =
     lines: ReadonlyArray<Omit<BillLineRow, "id">>
   ): Task<
     ReadonlyArray<BillLineSummary>,
-    BillNotFoundError | BillNotOpenError | BillLockedError,
+    BillNotFoundError | BillStatusNotAllowedError | BillLockedError,
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {

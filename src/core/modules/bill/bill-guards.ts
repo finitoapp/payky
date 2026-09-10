@@ -49,15 +49,27 @@ export interface BillWithItems {
   readonly bill: BillRow
   readonly items: ReadonlyArray<BillLineSummary>
 }
+
 export const billNotFound = defineError("BillNotFound")<{
   readonly id: BillId
 }>()
 export type BillNotFoundError = ReturnType<typeof billNotFound>
-export const billNotOpen = defineError("BillNotOpen")<{
+/**
+ * A bill whose derived status is not one the caller accepts.
+ *
+ * Carries `allowedStatuses` because the status alone does not explain the
+ * refusal: this used to be `BillNotOpen`, which was true every time it fired
+ * and still told the operator nothing — `requireCancelableBill` accepts a
+ * `canceled` bill and rejects a `closed` one, and `closeBill` accepts
+ * `closed`. Neither of those is about being open. `bin/cli-bills.ts` prints
+ * the error verbatim, so the payload is the message.
+ */
+export const billStatusNotAllowed = defineError("BillStatusNotAllowed")<{
   readonly id: BillId
   readonly status: BillStatus
+  readonly allowedStatuses: ReadonlyArray<BillStatus>
 }>()
-export type BillNotOpenError = ReturnType<typeof billNotOpen>
+export type BillStatusNotAllowedError = ReturnType<typeof billStatusNotAllowed>
 export const billLocked = defineError("BillLocked")<{
   readonly id: BillId
 }>()
@@ -95,6 +107,7 @@ export interface BillCoverageSummary {
   readonly claimedSum: NonNegativeInteger
   readonly coverage: BillCoverage
 }
+
 /**
  * Shared "bill's line-item total + its claimed transactions" load behind
  * `loadBillCoverage` and `loadBillClosedAtIfCovered`.
@@ -165,6 +178,7 @@ export interface BillStatusSnapshot {
   /** Whether at least one payment on this bill has an active claim. */
   readonly hasActiveClaim: boolean
 }
+
 /**
  * Loads a bill together with its live-derived status and coverage — the
  * one place that composes `deriveBillStatus` from the bill row's
@@ -230,14 +244,24 @@ const requireBillInStatus =
   (
     billId: BillId,
     allowedStatuses: ReadonlySet<BillStatus>
-  ): Task<BillWithItems, BillNotFoundError | BillNotOpenError, EvoluDep> =>
+  ): Task<
+    BillWithItems,
+    BillNotFoundError | BillStatusNotAllowedError,
+    EvoluDep
+  > =>
   async (run) => {
     const snapshotResult = await run(loadBillStatusSnapshot(billId))
     if (!snapshotResult.ok) return snapshotResult
 
     const { bill: billRow, items, status } = snapshotResult.value
     if (!allowedStatuses.has(status)) {
-      return err(billNotOpen({ id: billId, status }))
+      return err(
+        billStatusNotAllowed({
+          id: billId,
+          status,
+          allowedStatuses: [...allowedStatuses],
+        })
+      )
     }
 
     return ok({ bill: billRow, items })
@@ -280,7 +304,7 @@ export const requireEditableBill =
     billId: BillId
   ): Task<
     BillWithItems,
-    BillNotFoundError | BillNotOpenError | BillLockedError,
+    BillNotFoundError | BillStatusNotAllowedError | BillLockedError,
     EvoluDep & DateDep
   > =>
   async (run) => {
@@ -392,6 +416,7 @@ export interface SelectedLineTotals {
   readonly quantity: number
   readonly totalAmount: number
 }
+
 /**
  * Sums a split selection per line, keyed by `BillLineSummary["id"]` (stable
  * per bill/catalogItemId/itemId/type — see `createBillLineSummaryId`), and

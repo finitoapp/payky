@@ -34,7 +34,7 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type {
   BillNotFoundError,
-  BillNotOpenError,
+  BillStatusNotAllowedError,
 } from "@/core/modules/bill/bill-guards.ts"
 import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-guards.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
@@ -455,7 +455,7 @@ export const loadPayment =
       paymentNotFound({ id: idValue })
     )
 
-export type CreatePaymentError = BillNotFoundError | BillNotOpenError
+export type CreatePaymentError = BillNotFoundError | BillStatusNotAllowedError
 
 export const createPayment =
   ({

@@ -94,13 +94,32 @@ export function useCartBill({
   const evolu = useEvolu()
   const jotaiStore = useStore()
   const { t } = useTranslation()
-  const [undoStack, setUndoStack] = useState<ReadonlyArray<CartHistoryEntry>>(
-    []
-  )
-  const [redoStack, setRedoStack] = useState<ReadonlyArray<CartHistoryEntry>>(
-    []
-  )
+  // The stacks live in refs, with only the two derived booleans in state to
+  // drive re-renders. They're read from callbacks that outlive the render
+  // that created them — `bill-page.tsx`'s undo toast is clicked seconds
+  // after the change it offers to undo — and a state snapshot there is the
+  // snapshot from *before* `record` ran, so `undo` would pop the previous
+  // entry (or none at all) while `setUndoStack` dropped the newest one,
+  // desyncing the stack. Every write below runs inside `runQueued`, so the
+  // refs are only ever mutated one operation at a time.
+  const undoStackRef = useRef<ReadonlyArray<CartHistoryEntry>>([])
+  const redoStackRef = useRef<ReadonlyArray<CartHistoryEntry>>([])
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
   const [pending, setPending] = useState(false)
+
+  const setStacks = useCallback(
+    (
+      undoStack: ReadonlyArray<CartHistoryEntry>,
+      redoStack: ReadonlyArray<CartHistoryEntry>
+    ) => {
+      undoStackRef.current = undoStack
+      redoStackRef.current = redoStack
+      setCanUndo(undoStack.length > 0)
+      setCanRedo(redoStack.length > 0)
+    },
+    []
+  )
 
   // Every cart mutation runs through this promise chain, so taps are queued
   // and applied in tap order instead of racing each other. The item grid
@@ -145,10 +164,12 @@ export function useCartBill({
   // so there's no "later add should start a fresh bill" case to guard for.
   const pendingBillCreationRef = useRef<Promise<void> | null>(null)
 
-  const record = useCallback((entry: CartHistoryEntry) => {
-    setUndoStack((stack) => [...stack, entry])
-    setRedoStack([])
-  }, [])
+  const record = useCallback(
+    (entry: CartHistoryEntry) => {
+      setStacks([...undoStackRef.current, entry], [])
+    },
+    [setStacks]
+  )
 
   const ensureBillExists = useCallback(async (): Promise<void> => {
     if (billExists) return
@@ -358,48 +379,59 @@ export function useCartBill({
     [appRun, console, billId, jotaiStore, record, runQueued, t]
   )
 
-  const undo = useCallback(async () => {
-    const entry = undoStack.at(-1)
-    if (entry === undefined) return
+  // The top of the stack is read inside `runQueued`, not before it, so two
+  // rapid undo taps pop two different entries instead of replaying the same
+  // one twice.
+  const undo = useCallback(
+    () =>
+      runQueued(async () => {
+        const entry = undoStackRef.current.at(-1)
+        if (entry === undefined) return
 
-    await runQueued(async () => {
-      await using run = appRun()
-      const result = await run(
-        appendGuardedBillLines(billId, entry.map(invertLine))
-      )
-      if (!result.ok) {
-        console.error("Failed to undo cart change", result.error)
-        showCartMutationErrorToast(t, result.error)
-        return
-      }
+        await using run = appRun()
+        const result = await run(
+          appendGuardedBillLines(billId, entry.map(invertLine))
+        )
+        if (!result.ok) {
+          console.error("Failed to undo cart change", result.error)
+          showCartMutationErrorToast(t, result.error)
+          return
+        }
 
-      setUndoStack((stack) => stack.slice(0, -1))
-      setRedoStack((stack) => [...stack, entry])
-    })
-  }, [appRun, console, billId, runQueued, undoStack, t])
+        setStacks(undoStackRef.current.slice(0, -1), [
+          ...redoStackRef.current,
+          entry,
+        ])
+      }),
+    [appRun, console, billId, runQueued, setStacks, t]
+  )
 
-  const redo = useCallback(async () => {
-    const entry = redoStack.at(-1)
-    if (entry === undefined) return
+  const redo = useCallback(
+    () =>
+      runQueued(async () => {
+        const entry = redoStackRef.current.at(-1)
+        if (entry === undefined) return
 
-    await runQueued(async () => {
-      await using run = appRun()
-      const result = await run(appendGuardedBillLines(billId, entry))
-      if (!result.ok) {
-        console.error("Failed to redo cart change", result.error)
-        showCartMutationErrorToast(t, result.error)
-        return
-      }
+        await using run = appRun()
+        const result = await run(appendGuardedBillLines(billId, entry))
+        if (!result.ok) {
+          console.error("Failed to redo cart change", result.error)
+          showCartMutationErrorToast(t, result.error)
+          return
+        }
 
-      setRedoStack((stack) => stack.slice(0, -1))
-      setUndoStack((stack) => [...stack, entry])
-    })
-  }, [appRun, console, billId, redoStack, runQueued, t])
+        setStacks(
+          [...undoStackRef.current, entry],
+          redoStackRef.current.slice(0, -1)
+        )
+      }),
+    [appRun, console, billId, runQueued, setStacks, t]
+  )
 
   return {
     pending,
-    canUndo: undoStack.length > 0,
-    canRedo: redoStack.length > 0,
+    canUndo,
+    canRedo,
     addOne,
     addQuantity,
     removeOne,

@@ -536,6 +536,10 @@ function BillCartView({
     }
   }
 
+  // The action fires long after this render is gone, so it must not depend
+  // on anything the render captured: `cart.undo` reads the top of the undo
+  // stack from a ref at click time (see `use-cart-bill.ts`) rather than from
+  // the snapshot that was current when the toast was raised.
   const showUndoToast = (message: string) =>
     toast(message, {
       action: {

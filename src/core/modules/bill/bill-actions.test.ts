@@ -41,13 +41,11 @@ import {
   createBill,
   createBillAtEnd,
   listOpenBills,
-  loadBill,
-  loadBillCoverage,
-  loadBillStatus,
   removeTableFromBill,
   splitBill,
   splitBillIntoNewBill,
 } from "./bill-actions.ts"
+import { loadBill, loadBillCoverage, loadBillStatus } from "./bill-guards.ts"
 import { billByIdQuery } from "./bill-queries.ts"
 import { type BillId, createRandomBillId } from "./bill-types.ts"
 

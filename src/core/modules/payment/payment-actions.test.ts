@@ -27,10 +27,12 @@ import {
   cancelBill,
   confirmBillClosedDespiteCancellation,
   createBill,
-  loadBillCoverage,
-  loadBillStatus,
   splitBill,
 } from "@/core/modules/bill/bill-actions.ts"
+import {
+  loadBillCoverage,
+  loadBillStatus,
+} from "@/core/modules/bill/bill-guards.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import {
   insertBillLineRows,

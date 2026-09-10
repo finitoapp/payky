@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 
-import type { BillCoverageSummary } from "@/core/modules/bill/bill-actions.ts"
 import { claimedTransactionsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
+import type { BillCoverageSummary } from "@/core/modules/bill/bill-guards.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   calculateClaimedSum,

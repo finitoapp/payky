@@ -47,10 +47,16 @@
 - Use `*-actions.ts` for Evolu mutations and command-style domain operations. Expected domain failures should return `Result`.
 - Use `*-queries.ts` for reusable Evolu queries and read models.
 - Use `*-utils.ts` for pure domain helpers that are not tied to Evolu mutation execution.
+- Split a `*-guards.ts` out of a large `*-actions.ts` when the read-and-validate
+  layer has grown its own vocabulary — `bill-guards.ts` holds
+  `loadBillStatusSnapshot`/`requireBillInStatus`/`requireEditableBill` and the
+  errors they raise, leaving `bill-actions.ts` the mutations. Guards read and
+  return `Result`; they never write. Errors belong with the half that raises
+  them, which is also what keeps the two files from importing each other.
 - Keep tests beside the module they cover as `*.test.ts`.
 - For aggregate detail tables sharing the root id, keep root and detail table ownership in the same module unless another module clearly owns a separate lifecycle.
 - An actions file writes only to tables its own module owns. To write another module's table, compose that module's Task instead of upserting directly, as `bill-actions.ts` does with `bill-line` and `item` actions.
-- The intended bill/payment lifecycle — `bill.status` values and transitions, `payment` cancellation/expiry, and how the two combine into a derived paid/underpaid/overpaid coverage — is specified in `docs/bill-payment-states.md`. Read it before changing `bill-actions.ts`, `payment-actions.ts`, or any status/coverage derivation between them.
+- The intended bill/payment lifecycle — `bill.status` values and transitions, `payment` cancellation/expiry, and how the two combine into a derived paid/underpaid/overpaid coverage — is specified in `docs/bill-payment-states.md`. Read it before changing `bill-guards.ts`, `bill-actions.ts`, `payment-actions.ts`, or any status/coverage derivation between them.
 
 ## Domain Action Patterns
 

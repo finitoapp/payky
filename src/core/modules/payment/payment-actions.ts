@@ -35,8 +35,8 @@ import { createAccountTransaction } from "@/core/modules/account-transaction/acc
 import type {
   BillNotFoundError,
   BillNotOpenError,
-} from "@/core/modules/bill/bill-actions.ts"
-import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-actions.ts"
+} from "@/core/modules/bill/bill-guards.ts"
+import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-guards.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {

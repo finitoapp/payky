@@ -2,10 +2,8 @@ import { createIdFromString, ok, type Task } from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
-import {
-  loadBillClosedAtIfCovered,
-  upsertBillClosedAt,
-} from "@/core/modules/bill/bill-actions.ts"
+import { upsertBillClosedAt } from "@/core/modules/bill/bill-actions.ts"
+import { loadBillClosedAtIfCovered } from "@/core/modules/bill/bill-guards.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { paymentByIdQuery } from "@/core/modules/payment/payment-queries.ts"

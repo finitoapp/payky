@@ -15,10 +15,10 @@ import {
   closeBill,
   createBill,
   listOpenBills,
-  loadBill,
   removeTableFromBill,
   splitBill,
 } from "../src/core/modules/bill/bill-actions"
+import { loadBill } from "../src/core/modules/bill/bill-guards"
 import { BillId } from "../src/core/modules/bill/bill-types"
 import { loadCalculatedBillLineSummaries } from "../src/core/modules/bill-line/bill-line-actions"
 import type { BillLineSummary } from "../src/core/modules/bill-line/bill-line-summary"

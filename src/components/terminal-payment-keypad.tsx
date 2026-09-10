@@ -7,14 +7,7 @@ import {
 } from "jotai"
 import { LoaderCircle } from "lucide-react"
 import { motion, useAnimationControls, useReducedMotion } from "motion/react"
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import {
   currencyFractionDigits,
@@ -159,7 +152,11 @@ export function TerminalPaymentKeypad({
   readonly currency: FiatCurrency
   readonly onCharge: ChargeHandler
 }) {
-  const amountInputAtom = useMemo(() => atom(""), [])
+  // `useState`, not `useMemo`: the amount lives in this atom, and `useMemo`
+  // is a cache React is allowed to throw away. A discarded one would mint a
+  // fresh atom and silently clear a half-typed amount. A lazy `useState`
+  // initializer is the guaranteed-once one.
+  const [amountInputAtom] = useState(() => atom(""))
   const isChargePendingRef = useRef(false)
   const [isChargePending, setIsChargePending] = useState(false)
 

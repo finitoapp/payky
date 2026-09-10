@@ -277,10 +277,11 @@ an expiry.
 
 Nothing that decides money-correctness — the editing lock, `requireEditableBill`,
 `requireBillAcceptingPayment`, `requireCancelableBill`, the bill detail
-page's badge — reads `bill.closedAt`. They all call `loadBillStatus`/
-`deriveBillStatus`, which recomputes status live from `canceledAt`/
-`confirmedClosedAt` and a fresh coverage calculation every time. `closedAt`
-exists for exactly one consumer: `openBillsQuery`, the reactive list behind
+page's badge — reads `bill.closedAt`. They all go through
+`loadBillStatusSnapshot`/`useBillStatus`, and so through `deriveBillStatus`,
+which recomputes status live from `canceledAt`/`confirmedClosedAt` and a
+fresh coverage calculation every time. `closedAt` exists for exactly one
+consumer: `openBillsQuery`, the reactive list behind
 the POS floor overview and the assign-table dialog.
 
 That query needs to cheaply answer "which bills are still open" without

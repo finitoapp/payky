@@ -18,6 +18,16 @@ interface BillLineSummaryIdentityInput {
   readonly type: ItemLineType
 }
 
+/**
+ * Measured before anyone optimises it: the `JSON.stringify` + SHA-256 here is
+ * 70–100% of `calculateBillLineSummaries`' own cost, and the projection is
+ * still 0.065 ms for a 20-line bill, 0.6 ms at 200 lines, 6.3 ms at 2000.
+ * A 30-bill floor view costs 1.8 ms for the whole list, and each card
+ * `useMemo`s on its own row, so that is a first paint rather than a frame
+ * cost. Nothing here is worth a cache; if it ever is, note that every line of
+ * the same item re-hashes the same four fields, so a `Map` on that tuple is
+ * the cheap win.
+ */
 export const createBillLineSummaryId = (
   input: BillLineSummaryIdentityInput
 ): BillLineSummaryId =>

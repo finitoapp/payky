@@ -21,14 +21,16 @@ import {
   calculateClaimedSum,
   deriveBillCoverage,
 } from "@/core/modules/bill/bill-utils.ts"
-import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  calculateBillLineSummaries,
+  deriveBillSummaryTotal,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import {
   calculatePaymentClaimedSum,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -326,9 +328,7 @@ const resolvePaymentHistoryIssueFlags = (
     item.billLines,
     item.billItems
   )
-  const billTotal = NonNegativeInteger(
-    billSummaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  )
+  const billTotal = deriveBillSummaryTotal(billSummaries)
   const billClaimedSum = calculateClaimedSum(item.billClaimedTransactions)
   const coverage = deriveBillCoverage(billTotal, billClaimedSum)
 

@@ -53,6 +53,10 @@ import {
   createRandomBillId,
 } from "@/core/modules/bill/bill-types.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import {
+  deriveBillSummaryStats,
+  deriveBillSummaryTotal,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import {
@@ -268,9 +272,7 @@ function BillCancellationCollisionMessage({
     () => [...new Set(claimedPayments.map((payment) => payment.id))],
     [claimedPayments]
   )
-  const totalAmount = NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  )
+  const totalAmount = deriveBillSummaryTotal(summaries)
 
   const handleConfirmClosedDespiteCancellation = async () => {
     setResolvePending(true)
@@ -481,15 +483,8 @@ function BillCartView({
     createGridPageQuery
   )
 
-  const totalAmount = useMemo(
-    () =>
-      NonNegativeInteger(
-        summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-      ),
-    [summaries]
-  )
-  const itemCount = useMemo(
-    () => summaries.reduce((sum, summary) => sum + summary.quantity, 0),
+  const { totalAmount, itemCount } = useMemo(
+    () => deriveBillSummaryStats(summaries),
     [summaries]
   )
   const totalAmountPulseControls = useChangePulse(totalAmount)

@@ -35,6 +35,7 @@ import {
   calculateTaxRecap,
   hasTaxableLines,
 } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
+import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { paymentsWithClaimsByBillIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
@@ -156,9 +157,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
   }
 
   const table = tables.find((candidate) => candidate.id === bill.tableId)
-  const totalAmount = NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  )
+  const totalAmount = deriveBillSummaryTotal(summaries)
   const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
   const hasTaxRecap = hasTaxableLines(taxRecapRows)

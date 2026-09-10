@@ -142,10 +142,8 @@ export function SplitBillDialog({
       }),
     [summaries, selected]
   )
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalAmount = NonNegativeInteger(
-    items.reduce((sum, item) => sum + item.totalAmount, 0)
-  )
+  const { itemCount: totalQuantity, totalAmount } =
+    deriveBillSummaryStats(items)
   const totalQuantityPulseControls = useChangePulse(totalQuantity)
   const totalAmountPulseControls = useChangePulse(totalAmount)
 

@@ -1,5 +1,4 @@
 import { useEffect } from "react"
-
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
@@ -15,6 +14,7 @@ import {
   insertBillLineRows,
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
+import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import {
@@ -407,9 +407,7 @@ export function E2eTestBridge() {
       const summaries = await run.ok(
         loadCalculatedBillLineSummaries(parsedBillId)
       )
-      const totalAmount = NonNegativeInteger(
-        summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-      )
+      const totalAmount = deriveBillSummaryTotal(summaries)
 
       const paymentResult = await run(
         createPayment({

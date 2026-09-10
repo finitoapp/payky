@@ -14,8 +14,10 @@ import {
   type BillHistoryItemSummary,
   deriveBillHistoryItemSummary,
 } from "@/core/modules/bill/bill-utils.ts"
-import { calculateBillLineSummaries } from "@/core/modules/bill-line/bill-line-utils.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
+import {
+  calculateBillLineSummaries,
+  deriveBillSummaryTotal,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -107,9 +109,7 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
 
   const summary = useMemo(() => {
     const summaries = calculateBillLineSummaries(bill.lines, bill.items)
-    const billTotal = NonNegativeInteger(
-      summaries.reduce((sum, item) => sum + item.totalAmount, 0)
-    )
+    const billTotal = deriveBillSummaryTotal(summaries)
 
     return deriveBillHistoryItemSummary({
       canceledAt: bill.canceledAt,

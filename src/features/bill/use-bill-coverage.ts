@@ -1,5 +1,4 @@
 import { useMemo } from "react"
-
 import { claimedTransactionsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import type { BillCoverageSummary } from "@/core/modules/bill/bill-guards.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -7,7 +6,7 @@ import {
   calculateClaimedSum,
   deriveBillCoverage,
 } from "@/core/modules/bill/bill-utils.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
+import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
@@ -25,9 +24,7 @@ export function useBillCoverage(billId: BillId): BillCoverageSummary {
   const { data: claimedTransactions } = useEvoluQuery(claimedQuery)
 
   return useMemo(() => {
-    const billTotal = NonNegativeInteger(
-      summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-    )
+    const billTotal = deriveBillSummaryTotal(summaries)
     const claimedSum = calculateClaimedSum(claimedTransactions)
     return {
       billTotal,

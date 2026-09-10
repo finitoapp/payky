@@ -39,6 +39,7 @@ import {
   calculateTaxRecap,
   hasTaxableLines,
 } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
+import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
@@ -683,9 +684,7 @@ function PaymentDetailBillCard({
   }
 
   const table = tables.find((candidate) => candidate.id === bill.tableId)
-  const totalAmount = NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  )
+  const totalAmount = deriveBillSummaryTotal(summaries)
   // Bill total plus this payment's tip, so the items list's own total
   // reconciles with `payment.amount` (see `calculatePaymentAmounts`) — kept
   // separate from `totalAmount`, which the coverage math below compares

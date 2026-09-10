@@ -1,3 +1,4 @@
+import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 /**
  * The read-and-validate half of the bill module: everything that answers "what
  * state is this bill in, and may the caller do X to it" without writing
@@ -25,7 +26,7 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
-  NonNegativeInteger,
+  type NonNegativeInteger,
   type TimestampMs,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -137,9 +138,7 @@ const loadBillTotalAndClaimedSum =
 
     return ok({
       summaries,
-      billTotal: NonNegativeInteger(
-        summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-      ),
+      billTotal: deriveBillSummaryTotal(summaries),
       claimedTransactions,
     })
   }

@@ -101,10 +101,21 @@ export const deriveBillSummaryStats = (
   readonly totalAmount: NonNegativeInteger
 } => ({
   itemCount: summaries.reduce((sum, summary) => sum + summary.quantity, 0),
-  totalAmount: NonNegativeInteger(
-    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
-  ),
+  totalAmount: deriveBillSummaryTotal(summaries),
 })
+
+/**
+ * What a bill's lines add up to. Split out of {@link deriveBillSummaryStats}
+ * because most callers want only this half — a bill total feeds coverage
+ * (`deriveBillCoverage`), the payment amount, and every "is this bill paid"
+ * derivation, none of which care how many items produced it.
+ */
+export const deriveBillSummaryTotal = (
+  summaries: ReadonlyArray<BillLineSummary>
+): NonNegativeInteger =>
+  NonNegativeInteger(
+    summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
+  )
 
 export interface BillLineSummaryChange {
   readonly before: BillLineSummary

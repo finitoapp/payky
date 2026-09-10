@@ -1,5 +1,5 @@
 import { Ban } from "lucide-react"
-import { useMemo } from "react"
+import { Suspense, useMemo } from "react"
 
 import { Card } from "@/components/ui/card.tsx"
 import {
@@ -141,7 +141,17 @@ function TableAssignmentTile({
           occupied
           selected={selected}
         >
-          <OccupiedTableSummary bill={bill} />
+          {/*
+           * `OccupiedTableSummary` reads another bill's line summaries with
+           * `use()`, and a first-time load suspends. Without a boundary here
+           * that bubbles up to the route's own one, remounting `BillPage`
+           * and `BillCartView` — so the picker closes itself and the search
+           * text, scan mode, summary sheet and undo/redo history all go with
+           * it. `split-bill-dialog.tsx` guards the same hazard.
+           */}
+          <Suspense fallback={null}>
+            <OccupiedTableSummary bill={bill} />
+          </Suspense>
         </TableTileShell>
       </button>
     )

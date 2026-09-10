@@ -16,6 +16,13 @@
 - Declare environment variables in a `createEnv` block (`@t3-oss/env-core`) with a Zod schema, as `src/core/cli/cli-env.ts` does, rather than reading `process.env` / `import.meta.env` at the point of use. One variable does not justify skipping it — the point is that every variable is validated and defaulted in one place.
 - Do not create or use `index.ts` barrel files for re-exporting. Import directly from the owning module file.
 - For asynchronous reads from remote or native APIs in React, use TanStack Query's `useQuery` rather than `useEffect` with local state. Use a stable `queryKey` and `enabled` for runtime or input preconditions; keep Evolu subscriptions on `useEvoluQuery`.
+- To keep a frequently-changing value from re-rendering a whole subtree, hold it in a component-scoped Jotai atom, pass the **atom itself** down as a prop, and subscribe as deep as possible. `TerminalPaymentKeypad` in `src/components/terminal-payment-keypad.tsx` is the reference implementation for the entered amount:
+    - Create it once per mount with `const [valueAtom] = useState(() => atom(initial))`. Never `useMemo` — that is a cache React may throw away, and a discarded one mints a fresh atom, silently losing the value. `useState`'s lazy initializer is the guaranteed-once one.
+    - Pass `valueAtom` through as a plain prop. The components in between never read it, so they stay out of the update path entirely.
+    - Only the leaves that actually render the value call `useAtomValue` — in the keypad that is `AmountDisplay` and `ChargeButton`, not the twelve `KeypadButton`s.
+    - Write-only components take `useSetAtom`. A component that must read the current value inside an event handler but must not re-render for it uses `useStore()` and `store.get(valueAtom)` — that is why `Keypad`'s keydown handler reads it that way, and it is deliberate, not an oddity to clean up.
+    - This buys real time on the hardware this app ships to. Measured on the keypad (Chrome, CDP `TaskDuration`, 600 keypresses): 2.8 ms per keypress with the atom versus 4.95 ms with a plain `useState` in the parent, and a Capacitor WebView on low-end Android multiplies that gap several times against a 16 ms frame.
+    - Plain `useState` stays the default for state whose every consumer re-renders anyway. Reach for this pattern when a value changes on a per-keystroke/per-frame cadence and a measurably expensive subtree does not depend on it — and never remove an existing instance of it on the assumption that the re-render is free without measuring first.
 
 ## Project Structure
 

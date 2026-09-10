@@ -14,6 +14,7 @@ import {
   appendBillLines,
   loadCalculatedBillLineSummaries,
 } from "./bill-line-actions.ts"
+import { billLinesByBillIdQuery } from "./bill-line-queries.ts"
 
 const coffeeSnapshot = (): ItemRow =>
   createStandaloneItemSnapshot({
@@ -183,6 +184,42 @@ describe("bill line actions", () => {
     await expect(
       run.ok(loadCalculatedBillLineSummaries(sourceBillId))
     ).resolves.toEqual([])
+  }, 15_000)
+
+  test("orders lines written in one batch by id, not arbitrarily", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    const billId = "bill-1" as BillId
+    const coffee = coffeeSnapshot()
+    await run.ok(createOrReuseItemSnapshot(coffee))
+
+    // Every line in one batch shares a `createdAt`, so `createdAt` alone
+    // leaves their relative order to SQLite — and that order decides what the
+    // bill totals, since `calculateBillLineSummaries` folds add/remove
+    // sequentially and drops a summary the moment its running quantity hits
+    // zero. This pins the tie-break `billLinesByBillIdQuery` now states
+    // explicitly (see its doc comment for why the shape is what it is).
+    await run.ok(
+      appendBillLines([
+        coffeeLine(billId, coffee),
+        coffeeLine(billId, coffee, { kind: "remove" }),
+        coffeeLine(billId, coffee),
+        coffeeLine(billId, coffee, { kind: "remove" }),
+      ])
+    )
+
+    const lineRows = await evolu.loadQuery(billLinesByBillIdQuery(billId))
+    expect(lineRows).toHaveLength(4)
+    expect(new Set(lineRows.map((row) => row.createdAt)).size).toBe(1)
+    expect(lineRows.map((row) => row.id)).toEqual(
+      [...lineRows.map((row) => row.id)].sort()
+    )
   }, 15_000)
 
   test("resolves each bill's own item snapshots, including one shared by both", async () => {

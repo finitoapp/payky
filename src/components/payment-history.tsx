@@ -144,7 +144,11 @@ const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
             .where("billLine.kind", "is not", null)
             .where("billLine.quantity", "is not", null)
             .where("billLine.totalAmount", "is not", null)
+            // See `billLinesByBillIdQuery` for why the tie-break matters
+            // and why it is free in this exact shape.
             .orderBy("billLine.createdAt", "asc")
+            .orderBy("billLine.ownerId", "asc")
+            .orderBy("billLine.id", "asc")
             .$narrowType<{
               billId: KyselyNotNull
               itemId: KyselyNotNull

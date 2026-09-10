@@ -24,6 +24,7 @@ import {
 } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import { NonEmptyString255Schema } from "@/core/modules/shared/schema.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
+import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
@@ -52,7 +53,10 @@ export function EditCatalogCategoryPage({
 
   if (!parsedId.success) {
     return (
-      <CatalogCategoryFormEmptyState messageKey="settings.categories.form.invalidId" />
+      <SettingsFormEmptyState
+        titleKey="settings.categories.form.title.edit"
+        messageKey="settings.categories.form.invalidId"
+      />
     )
   }
 
@@ -70,7 +74,10 @@ function EditCatalogCategoryPageContent({
 
   if (category === undefined) {
     return (
-      <CatalogCategoryFormEmptyState messageKey="settings.categories.form.notFound" />
+      <SettingsFormEmptyState
+        titleKey="settings.categories.form.title.edit"
+        messageKey="settings.categories.form.notFound"
+      />
     )
   }
 
@@ -79,26 +86,6 @@ function EditCatalogCategoryPageContent({
       <div className="h-6" />
       <FadeHeader title={t("settings.categories.form.title.edit")} />
       <CatalogCategoryForm mode="edit" category={category} />
-    </>
-  )
-}
-
-function CatalogCategoryFormEmptyState({
-  messageKey,
-}: {
-  readonly messageKey:
-    | "settings.categories.form.invalidId"
-    | "settings.categories.form.notFound"
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <>
-      <div className="h-6" />
-      <FadeHeader title={t("settings.categories.form.title.edit")} />
-      <p className="mt-16 px-6 text-center text-muted-foreground">
-        {t(messageKey)}
-      </p>
     </>
   )
 }

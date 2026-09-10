@@ -61,6 +61,7 @@ import {
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
+import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
@@ -94,7 +95,10 @@ export function EditCatalogItemPage({
 
   if (!parsedId.success) {
     return (
-      <CatalogItemFormEmptyState messageKey="settings.items.form.invalidId" />
+      <SettingsFormEmptyState
+        titleKey="settings.items.form.title.edit"
+        messageKey="settings.items.form.invalidId"
+      />
     )
   }
 
@@ -112,7 +116,10 @@ function EditCatalogItemPageContent({
 
   if (item === undefined) {
     return (
-      <CatalogItemFormEmptyState messageKey="settings.items.form.notFound" />
+      <SettingsFormEmptyState
+        titleKey="settings.items.form.title.edit"
+        messageKey="settings.items.form.notFound"
+      />
     )
   }
 
@@ -121,26 +128,6 @@ function EditCatalogItemPageContent({
       <div className="h-6" />
       <FadeHeader title={t("settings.items.form.title.edit")} />
       <CatalogItemForm mode="edit" item={item} />
-    </>
-  )
-}
-
-function CatalogItemFormEmptyState({
-  messageKey,
-}: {
-  readonly messageKey:
-    | "settings.items.form.invalidId"
-    | "settings.items.form.notFound"
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <>
-      <div className="h-6" />
-      <FadeHeader title={t("settings.items.form.title.edit")} />
-      <p className="mt-16 px-6 text-center text-muted-foreground">
-        {t(messageKey)}
-      </p>
     </>
   )
 }

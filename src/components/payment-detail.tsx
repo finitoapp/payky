@@ -1,8 +1,9 @@
 import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
-import { AlertTriangleIcon, ReceiptIcon } from "lucide-react"
+import { AlertTriangleIcon } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { NotFoundCard } from "@/components/not-found-card.tsx"
 import {
   Alert,
   AlertDescription,
@@ -215,7 +216,7 @@ export function PaymentDetail({ paymentId }: { readonly paymentId: string }) {
   const parsedPaymentId = PaymentId.safeParse(paymentId)
 
   if (!parsedPaymentId.success) {
-    return <PaymentDetailEmptyState messageKey="paymentDetail.invalidId" />
+    return <NotFoundCard messageKey="paymentDetail.invalidId" />
   }
 
   return <PaymentDetailContent paymentId={parsedPaymentId.data} />
@@ -250,7 +251,7 @@ function PaymentDetailContent({
   const now = useNow([payment?.expiresAt ?? null])
 
   if (!payment) {
-    return <PaymentDetailEmptyState messageKey="paymentDetail.notFound" />
+    return <NotFoundCard messageKey="paymentDetail.notFound" />
   }
 
   const paymentStatus = derivePaymentStatus({
@@ -1076,22 +1077,5 @@ export function PaymentDetailRow({
         {children ?? value}
       </span>
     </div>
-  )
-}
-
-function PaymentDetailEmptyState({
-  messageKey,
-}: {
-  readonly messageKey: "paymentDetail.invalidId" | "paymentDetail.notFound"
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
-        <ReceiptIcon className="size-10 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">{t(messageKey)}</p>
-      </CardContent>
-    </Card>
   )
 }

@@ -4,12 +4,12 @@ import {
   AlertTriangleIcon,
   CheckIcon,
   ClockIcon,
-  ReceiptIcon,
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { PaymentDetailRow } from "@/components/payment-detail.tsx"
 import {
   Alert,
@@ -127,7 +127,7 @@ export function BillDetail({ billId }: { readonly billId: string }) {
   const parsedBillId = BillId.safeParse(billId)
 
   if (!parsedBillId.success) {
-    return <BillDetailEmptyState messageKey="billDetail.invalidId" />
+    return <NotFoundCard messageKey="billDetail.invalidId" />
   }
 
   return <BillDetailContent billId={parsedBillId.data} />
@@ -153,7 +153,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
-    return <BillDetailEmptyState messageKey="billDetail.notFound" />
+    return <NotFoundCard messageKey="billDetail.notFound" />
   }
 
   const table = tables.find((candidate) => candidate.id === bill.tableId)
@@ -463,22 +463,5 @@ function BillDetailPaymentRow({
         {t(`paymentDetail.status.${status}`)}
       </Badge>
     </Link>
-  )
-}
-
-function BillDetailEmptyState({
-  messageKey,
-}: {
-  readonly messageKey: "billDetail.invalidId" | "billDetail.notFound"
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
-        <ReceiptIcon className="size-10 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">{t(messageKey)}</p>
-      </CardContent>
-    </Card>
   )
 }

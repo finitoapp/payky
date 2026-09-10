@@ -29,6 +29,7 @@ import {
   type TableId as TableIdType,
 } from "@/core/modules/table/table-types.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
+import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
@@ -52,7 +53,12 @@ export function EditTablePage({ tableId }: { readonly tableId: string }) {
   const parsedId = TableId.safeParse(tableId)
 
   if (!parsedId.success) {
-    return <TableFormEmptyState messageKey="settings.tables.form.invalidId" />
+    return (
+      <SettingsFormEmptyState
+        titleKey="settings.tables.form.title.edit"
+        messageKey="settings.tables.form.invalidId"
+      />
+    )
   }
 
   return <EditTablePageContent tableId={parsedId.data} />
@@ -64,7 +70,12 @@ function EditTablePageContent({ tableId }: { readonly tableId: TableIdType }) {
   const [table] = data
 
   if (table === undefined) {
-    return <TableFormEmptyState messageKey="settings.tables.form.notFound" />
+    return (
+      <SettingsFormEmptyState
+        titleKey="settings.tables.form.title.edit"
+        messageKey="settings.tables.form.notFound"
+      />
+    )
   }
 
   return (
@@ -72,26 +83,6 @@ function EditTablePageContent({ tableId }: { readonly tableId: TableIdType }) {
       <div className="h-6" />
       <FadeHeader title={t("settings.tables.form.title.edit")} />
       <TableForm mode="edit" table={table} />
-    </>
-  )
-}
-
-function TableFormEmptyState({
-  messageKey,
-}: {
-  readonly messageKey:
-    | "settings.tables.form.invalidId"
-    | "settings.tables.form.notFound"
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <>
-      <div className="h-6" />
-      <FadeHeader title={t("settings.tables.form.title.edit")} />
-      <p className="mt-16 px-6 text-center text-muted-foreground">
-        {t(messageKey)}
-      </p>
     </>
   )
 }

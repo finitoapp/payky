@@ -622,13 +622,29 @@ test("adds a bulk quantity through the quantity dialog", async ({
     )
   })
 
-  await test.step("reopening the dialog is prefilled with the current quantity", async () => {
+  await test.step("reopening the dialog starts empty, since confirming adds", async () => {
     await quantityTrigger.click()
     await expect(
       page.getByRole("dialog", { name: "Coffee" }).getByRole("textbox", {
         name: translate("en", "bill.brick.quantity.input.aria"),
       })
-    ).toHaveValue("12")
+    ).toHaveValue("")
+  })
+
+  await test.step("confirming again adds on top instead of setting", async () => {
+    const dialog = page.getByRole("dialog", { name: "Coffee" })
+    await dialog
+      .getByRole("textbox", {
+        name: translate("en", "bill.brick.quantity.input.aria"),
+      })
+      .fill("3")
+    await dialog
+      .getByRole("button", {
+        name: translate("en", "bill.brick.quantity.confirm"),
+      })
+      .click()
+    await expect(dialog).not.toBeVisible()
+    await expect(quantityTrigger).toContainText("15")
   })
 })
 

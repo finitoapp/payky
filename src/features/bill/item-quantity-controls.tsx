@@ -24,6 +24,9 @@ import { cn } from "@/lib/utils.ts"
  * the bill item grid (`ItemBrick`) and the scan-mode last-scanned panel.
  * Confirming the dialog adds `quantity` on top of the current cart quantity
  * — it is not a "set to N" control, matching the "+" button's semantics.
+ * The input therefore opens empty rather than pre-filled with what's already
+ * in the cart: pre-filling read as "set to N" but behaved as "add N", so
+ * confirming an item already at 2 doubled it to 4.
  *
  * These controls deliberately have no "busy" disabled state: a button that
  * turns `disabled` between a tap's press and the browser dispatching its
@@ -89,7 +92,7 @@ export function ItemQuantityControls({
           className="h-10 min-w-10 rounded-full px-2 font-semibold tabular-nums"
           aria-label={t("bill.brick.quantity.trigger.aria", { name })}
           onClick={() => {
-            setQuantityInput(quantity > 0 ? String(quantity) : "")
+            setQuantityInput("")
             setQuantityDialogOpen(true)
           }}
         >
@@ -133,10 +136,7 @@ export function ItemQuantityControls({
             }}
           />
           <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" />}
-              onClick={() => setQuantityInput("")}
-            >
+            <DialogClose render={<Button variant="outline" />}>
               {t("bill.brick.quantity.cancel")}
             </DialogClose>
             <Button

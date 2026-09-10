@@ -9,6 +9,10 @@
 - Use Zod for form, domain, and Evolu schema validation.
 - Store persistent application data through Evolu. Avoid direct `localStorage` except for non-critical UI preferences such as language.
 - Use Biome for linting and formatting.
+- Dates split two ways, and both sides are deliberate — don't hand-roll either with `padStart` and `getMonth() + 1`:
+    - **Locale-aware display** the user reads goes through `Intl`/`toLocale*`, usually one of the `format*` helpers in `src/lib/format-utils.ts`.
+    - **Date arithmetic and fixed machine formats** go through `date-fns`: `subDays`, `subMonths`, `isSameDay`, and `format(date, "yyyy-MM-dd")`. Its format tokens are locale-independent, which is exactly what a filename, an API parameter, or a stored `DateString` needs.
+- Declare environment variables in a `createEnv` block (`@t3-oss/env-core`) with a Zod schema, as `src/core/cli/cli-env.ts` does, rather than reading `process.env` / `import.meta.env` at the point of use. One variable does not justify skipping it — the point is that every variable is validated and defaulted in one place.
 - Do not create or use `index.ts` barrel files for re-exporting. Import directly from the owning module file.
 - For asynchronous reads from remote or native APIs in React, use TanStack Query's `useQuery` rather than `useEffect` with local state. Use a stable `queryKey` and `enabled` for runtime or input preconditions; keep Evolu subscriptions on `useEvoluQuery`.
 

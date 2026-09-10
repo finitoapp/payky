@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import { format } from "date-fns"
 
 export type EvoluExportDatabase = "app" | "device"
 
@@ -75,14 +76,8 @@ export async function saveEvoluExportFile(
   }
 }
 
-const pad = (value: number) => value.toString().padStart(2, "0")
-
-function formatFilenameTimestamp(date: Date): string {
-  const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-  const time = `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
-
-  return `${day}-${time}`
-}
+const formatFilenameTimestamp = (date: Date) =>
+  format(date, "yyyy-MM-dd-HHmmss")
 
 function downloadWithBrowser(file: EvoluExportFile): void {
   const blob = new Blob([file.bytes], { type: evoluExportMimeType })

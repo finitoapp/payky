@@ -1,4 +1,5 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
+import { format } from "date-fns"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -34,13 +35,7 @@ const getNumberingPeriod = (
 }
 
 export const createPaymentNumberDate = (date: Date): DateString =>
-  DateStringSchema.decode(
-    [
-      String(date.getFullYear()),
-      String(date.getMonth() + 1).padStart(2, "0"),
-      String(date.getDate()).padStart(2, "0"),
-    ].join("-")
-  )
+  DateStringSchema.decode(format(date, "yyyy-MM-dd"))
 
 export const createNextPaymentNumberValues = ({
   id,

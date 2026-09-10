@@ -5,11 +5,6 @@ import { type ReactNode, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/reui/alert.tsx"
-import {
   Timeline,
   TimelineContent,
   TimelineDate,
@@ -55,6 +50,10 @@ import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { BillCancellationCollisionPanel } from "@/features/bill/bill-cancellation-collision-panel.tsx"
+import {
+  type BillCoverageMismatchReason,
+  BillCoverageWarning,
+} from "@/features/bill/bill-coverage-warning.tsx"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"
@@ -705,13 +704,11 @@ function PaymentDetailBillCard({
   const otherClaimedPaymentIds = [
     ...new Set(claimedPayments.map((payment) => payment.id)),
   ].filter((id) => id !== paymentId)
-  const coverageMismatchReason: "billLinesChanged" | "multiplePayments" | null =
-    hasLineDiff
-      ? "billLinesChanged"
-      : otherClaimedPaymentIds.length > 0
-        ? "multiplePayments"
-        : null
-  const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
+  const coverageMismatchReason: BillCoverageMismatchReason | null = hasLineDiff
+    ? "billLinesChanged"
+    : otherClaimedPaymentIds.length > 0
+      ? "multiplePayments"
+      : null
   // An open bill with nothing claimed against it yet is also "underpaid" by
   // `deriveBillCoverage`'s definition, so warning on `coverage !== "paid"`
   // alone put "Bill underpaid — Expected 500,00 / Paid 0,00" on every
@@ -720,8 +717,12 @@ function PaymentDetailBillCard({
   // the same gate `BillHistoryIssues` and `resolvePaymentHistoryIssueFlags`
   // use for the list rows. Overpaid needs no gate: an unpaid bill is never
   // overpaid.
-  const showCoverageWarning =
-    coverage === "overpaid" || (coverage === "underpaid" && claimedSum > 0)
+  const coverageWarning: "underpaid" | "overpaid" | null =
+    coverage === "overpaid"
+      ? "overpaid"
+      : coverage === "underpaid" && claimedSum > 0
+        ? "underpaid"
+        : null
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
   const hasTaxRecap = hasTaxableLines(taxRecapRows)
 
@@ -831,156 +832,110 @@ function PaymentDetailBillCard({
           emphasize
         />
 
-        {showCoverageWarning ? (
-          <Alert variant="warning">
-            <AlertTriangleIcon />
-            <AlertTitle>
-              {t(
-                coverage === "underpaid"
-                  ? "paymentDetail.bill.coverage.underpaid.title"
-                  : "paymentDetail.bill.coverage.overpaid.title"
-              )}
-            </AlertTitle>
-            <AlertDescription>
-              <p className="text-sm font-semibold text-foreground">
-                {t(
-                  coverage === "underpaid"
-                    ? "paymentDetail.bill.coverage.delta.underpaid"
-                    : "paymentDetail.bill.coverage.delta.overpaid",
-                  {
-                    amount: formatMoney(
-                      { value: coverageDelta, currency: bill.currency },
-                      locale
-                    ),
-                  }
-                )}
-              </p>
-              <p>
-                {t(
-                  coverage === "underpaid"
-                    ? "paymentDetail.bill.coverage.underpaid.fact"
-                    : "paymentDetail.bill.coverage.overpaid.fact"
-                )}
-                {coverageMismatchReason === null
-                  ? null
-                  : ` ${t(`paymentDetail.bill.coverage.reason.${coverageMismatchReason}`)}`}
-              </p>
-              <div className="flex w-full items-center justify-between gap-4">
-                <span>{t("paymentDetail.bill.coverage.expectedAmount")}</span>
-                <span className="font-medium text-foreground">
-                  {formatMoney(
-                    { value: totalAmount, currency: bill.currency },
-                    locale
-                  )}
-                </span>
+        {coverageWarning === null ? null : (
+          <BillCoverageWarning
+            coverage={coverageWarning}
+            expectedAmount={totalAmount}
+            claimedSum={claimedSum}
+            currency={bill.currency}
+            reason={coverageMismatchReason}
+          >
+            {coverageMismatchReason === "multiplePayments" ? (
+              <div className="flex w-full flex-col gap-2 border-t border-warning/30 pt-2">
+                {otherClaimedPaymentIds.map((otherPaymentId, index) => (
+                  <Button
+                    key={otherPaymentId}
+                    variant="outline"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        to="/activity/$paymentId"
+                        params={{ paymentId: otherPaymentId }}
+                      />
+                    }
+                  >
+                    {otherClaimedPaymentIds.length > 1
+                      ? t("bill.collision.viewPayment.numbered", {
+                          number: index + 1,
+                        })
+                      : t("bill.collision.viewPayment")}
+                  </Button>
+                ))}
               </div>
-              <div className="flex w-full items-center justify-between gap-4">
-                <span>{t("paymentDetail.bill.coverage.paidAmount")}</span>
+            ) : null}
+
+            {hasLineDiff ? (
+              <div className="flex w-full flex-col gap-1 border-t border-warning/30 pt-2">
                 <span className="font-medium text-foreground">
-                  {formatMoney(
-                    { value: claimedSum, currency: bill.currency },
-                    locale
-                  )}
+                  {t("paymentDetail.bill.coverage.changesTitle")}
                 </span>
+                {lineDiff?.removed.map((summary) => (
+                  <div
+                    key={summary.id}
+                    className="flex w-full items-center justify-between gap-4"
+                  >
+                    <span>
+                      − {summary.quantity} × {summary.name}
+                    </span>
+                    <span>
+                      {formatMoney(
+                        {
+                          value: summary.totalAmount,
+                          currency: summary.currency,
+                        },
+                        locale
+                      )}
+                    </span>
+                  </div>
+                ))}
+                {lineDiff?.added.map((summary) => (
+                  <div
+                    key={summary.id}
+                    className="flex w-full items-center justify-between gap-4"
+                  >
+                    <span>
+                      + {summary.quantity} × {summary.name}
+                    </span>
+                    <span>
+                      {formatMoney(
+                        {
+                          value: summary.totalAmount,
+                          currency: summary.currency,
+                        },
+                        locale
+                      )}
+                    </span>
+                  </div>
+                ))}
+                {lineDiff?.changed.map(({ before, after }) => (
+                  <div
+                    key={after.id}
+                    className="flex w-full items-center justify-between gap-4"
+                  >
+                    <span>{after.name}</span>
+                    <span>
+                      {formatMoney(
+                        {
+                          value: before.totalAmount,
+                          currency: before.currency,
+                        },
+                        locale
+                      )}
+                      {" → "}
+                      {formatMoney(
+                        {
+                          value: after.totalAmount,
+                          currency: after.currency,
+                        },
+                        locale
+                      )}
+                    </span>
+                  </div>
+                ))}
               </div>
-
-              {coverageMismatchReason === "multiplePayments" ? (
-                <div className="flex w-full flex-col gap-2 border-t border-warning/30 pt-2">
-                  {otherClaimedPaymentIds.map((otherPaymentId, index) => (
-                    <Button
-                      key={otherPaymentId}
-                      variant="outline"
-                      nativeButton={false}
-                      render={
-                        <Link
-                          to="/activity/$paymentId"
-                          params={{ paymentId: otherPaymentId }}
-                        />
-                      }
-                    >
-                      {otherClaimedPaymentIds.length > 1
-                        ? t("bill.collision.viewPayment.numbered", {
-                            number: index + 1,
-                          })
-                        : t("bill.collision.viewPayment")}
-                    </Button>
-                  ))}
-                </div>
-              ) : null}
-
-              {hasLineDiff ? (
-                <div className="flex w-full flex-col gap-1 border-t border-warning/30 pt-2">
-                  <span className="font-medium text-foreground">
-                    {t("paymentDetail.bill.coverage.changesTitle")}
-                  </span>
-                  {lineDiff?.removed.map((summary) => (
-                    <div
-                      key={summary.id}
-                      className="flex w-full items-center justify-between gap-4"
-                    >
-                      <span>
-                        − {summary.quantity} × {summary.name}
-                      </span>
-                      <span>
-                        {formatMoney(
-                          {
-                            value: summary.totalAmount,
-                            currency: summary.currency,
-                          },
-                          locale
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                  {lineDiff?.added.map((summary) => (
-                    <div
-                      key={summary.id}
-                      className="flex w-full items-center justify-between gap-4"
-                    >
-                      <span>
-                        + {summary.quantity} × {summary.name}
-                      </span>
-                      <span>
-                        {formatMoney(
-                          {
-                            value: summary.totalAmount,
-                            currency: summary.currency,
-                          },
-                          locale
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                  {lineDiff?.changed.map(({ before, after }) => (
-                    <div
-                      key={after.id}
-                      className="flex w-full items-center justify-between gap-4"
-                    >
-                      <span>{after.name}</span>
-                      <span>
-                        {formatMoney(
-                          {
-                            value: before.totalAmount,
-                            currency: before.currency,
-                          },
-                          locale
-                        )}
-                        {" → "}
-                        {formatMoney(
-                          {
-                            value: after.totalAmount,
-                            currency: after.currency,
-                          },
-                          locale
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+            ) : null}
+          </BillCoverageWarning>
+        )}
       </CardContent>
     </Card>
   )

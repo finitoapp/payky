@@ -10,11 +10,6 @@ import {
 import { type ReactNode, useMemo } from "react"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { PaymentDetailRow } from "@/components/payment-detail.tsx"
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/reui/alert.tsx"
 import { TaxRecap } from "@/components/tax-recap.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -40,6 +35,7 @@ import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { BillCancellationCollisionPanel } from "@/features/bill/bill-cancellation-collision-panel.tsx"
+import { BillCoverageWarning } from "@/features/bill/bill-coverage-warning.tsx"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
@@ -154,7 +150,6 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
 
   const table = tables.find((candidate) => candidate.id === bill.tableId)
   const totalAmount = deriveBillSummaryTotal(summaries)
-  const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
   const hasTaxRecap = hasTaxableLines(taxRecapRows)
 
@@ -276,58 +271,12 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
           {coverage === "paid" ? null : (
             <>
               <Separator />
-              <Alert variant="warning">
-                <AlertTriangleIcon />
-                <AlertTitle>
-                  {t(
-                    coverage === "underpaid"
-                      ? "paymentDetail.bill.coverage.underpaid.title"
-                      : "paymentDetail.bill.coverage.overpaid.title"
-                  )}
-                </AlertTitle>
-                <AlertDescription>
-                  <p className="text-sm font-semibold text-foreground">
-                    {t(
-                      coverage === "underpaid"
-                        ? "paymentDetail.bill.coverage.delta.underpaid"
-                        : "paymentDetail.bill.coverage.delta.overpaid",
-                      {
-                        amount: formatMoney(
-                          { value: coverageDelta, currency: bill.currency },
-                          locale
-                        ),
-                      }
-                    )}
-                  </p>
-                  <p>
-                    {t(
-                      coverage === "underpaid"
-                        ? "paymentDetail.bill.coverage.underpaid.fact"
-                        : "paymentDetail.bill.coverage.overpaid.fact"
-                    )}
-                  </p>
-                  <div className="flex w-full items-center justify-between gap-4">
-                    <span>
-                      {t("paymentDetail.bill.coverage.expectedAmount")}
-                    </span>
-                    <span className="font-medium text-foreground">
-                      {formatMoney(
-                        { value: totalAmount, currency: bill.currency },
-                        locale
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex w-full items-center justify-between gap-4">
-                    <span>{t("paymentDetail.bill.coverage.paidAmount")}</span>
-                    <span className="font-medium text-foreground">
-                      {formatMoney(
-                        { value: claimedSum, currency: bill.currency },
-                        locale
-                      )}
-                    </span>
-                  </div>
-                </AlertDescription>
-              </Alert>
+              <BillCoverageWarning
+                coverage={coverage}
+                expectedAmount={totalAmount}
+                claimedSum={claimedSum}
+                currency={bill.currency}
+              />
             </>
           )}
         </CardContent>

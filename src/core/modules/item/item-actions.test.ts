@@ -7,10 +7,7 @@ import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import type { ItemRow } from "./item.ts"
-import {
-  createOrReuseCatalogItemSnapshot,
-  createOrReuseItemSnapshot,
-} from "./item-actions.ts"
+import { createOrReuseItemSnapshot } from "./item-actions.ts"
 import {
   createCatalogItemSnapshot,
   createStandaloneItemSnapshot,
@@ -95,9 +92,10 @@ describe("item actions", () => {
       taxRateId: null,
     } as CatalogItemRow
 
-    const returned = await run.ok(createOrReuseCatalogItemSnapshot(catalogItem))
+    const snapshot = createCatalogItemSnapshot(catalogItem)
+    const returned = await run.ok(createOrReuseItemSnapshot(snapshot))
 
-    expect(returned).toEqual(createCatalogItemSnapshot(catalogItem))
+    expect(returned).toEqual(snapshot)
     expect(returned.catalogItemId).toBe(catalogItem.id)
     await expect
       .poll(() => evolu.loadQuery(itemByIdQuery(returned.id)))

@@ -1,11 +1,9 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
-import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import type { ItemRow } from "./item.ts"
-import { createCatalogItemSnapshot } from "./item-utils.ts"
 
 /**
  * Upserts an already-computed item snapshot.
@@ -38,14 +36,3 @@ export const createOrReuseItemSnapshot =
     )
     return ok(snapshot)
   }
-
-export const createOrReuseCatalogItemSnapshot =
-  (
-    catalogItem: CatalogItemRow
-  ): Task<ItemRow, never, EvoluDep & EvoluOwnerIdDep> =>
-  async (run) =>
-    ok(
-      await run.ok(
-        createOrReuseItemSnapshot(createCatalogItemSnapshot(catalogItem))
-      )
-    )

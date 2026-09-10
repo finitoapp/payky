@@ -54,4 +54,40 @@ describe("cart utilities", () => {
     expect(selected).toBe(newSnapshot)
     expect(getBillLineSummaryUnitAmount(newSnapshot)).toBe(600)
   })
+
+  test("survives a fractional quantity whose division does not land on an integer", () => {
+    // `bin/cli-bills.ts add-item --quantity 0.7` is accepted
+    // (`PositiveNumberFromStringSchema`), and `addCatalogItemToBill` takes a
+    // `PositiveNumber` too, so a line of 0.7 x 2000 is a real row: its total
+    // of 1400 is a clean integer. Dividing back is not — `1400 / 0.7` is
+    // `2000.0000000000002` in IEEE 754 — and this used to decode that
+    // straight through `NonNegativeInteger`, throwing while the operator
+    // simply tapped "remove" on that line in the cart.
+    expect(
+      getBillLineSummaryUnitAmount(
+        summary({
+          id: "fractional",
+          catalogItemId: "catalog-item-1",
+          quantity: 0.7,
+          totalAmount: 1_400,
+        })
+      )
+    ).toBe(2_000)
+  })
+
+  test("rounds to the nearest minor unit when a total genuinely does not divide", () => {
+    // Not reachable from any current writer — every line's total is
+    // `unitAmount x quantity` — but money has no fractional minor unit, so
+    // the nearest one is the only answer available.
+    expect(
+      getBillLineSummaryUnitAmount(
+        summary({
+          id: "indivisible",
+          catalogItemId: "catalog-item-1",
+          quantity: 3,
+          totalAmount: 100,
+        })
+      )
+    ).toBe(33)
+  })
 })

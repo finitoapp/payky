@@ -612,6 +612,44 @@ describe("bill actions", () => {
       .toMatchObject([{ id: sourceBillId, canceledAt: null }])
   }, 15_000)
 
+  test("splitBill with nothing selected is a no-op instead of hanging", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const targetBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Coffee"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+
+    // Writing nothing has to skip the mutation batch entirely: the
+    // `onComplete` behind `runMutationWithCompletion` only fires once Evolu
+    // applies a mutation, so an empty batch never resolves.
+    const result = await run.orThrow(
+      splitBill({ sourceBillId, targetBillId, items: [] })
+    )
+
+    expect(result.sourceCanceled).toBe(false)
+    expect(result.items).toEqual([])
+    await expect
+      .poll(() => run.ok(loadCalculatedBillLineSummaries(sourceBillId)))
+      .toMatchObject([{ name: "Coffee" }])
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
+      .toMatchObject([{ id: sourceBillId, canceledAt: null }])
+  }, 15_000)
+
   test("splitBill leaves an already-emptied source bill open", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

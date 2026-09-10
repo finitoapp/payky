@@ -876,20 +876,27 @@ export const splitBill =
     )
     const { evoluOwnerId } = run.deps
 
-    const sourceCanceled = await runMutationWithCompletion((options) => {
-      insertBillLineRows(run.deps.evolu, lines, {
-        ...options,
-        ownerId: evoluOwnerId,
-      })
-      return cancelSourceBillIfEmptied(
-        run.deps.evolu,
-        input.sourceBillId,
-        currentSourceSummaries,
-        input.items,
-        TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        { ...options, ownerId: evoluOwnerId }
-      )
-    })
+    // An empty selection has nothing to write, and an empty batch would
+    // never resolve — see `runMutationWithCompletion`. `appendBillLines`
+    // guards its own batch the same way. With no line moved off the source,
+    // `cancelSourceBillIfEmptied` could only ever answer `false` anyway.
+    const sourceCanceled =
+      lines.length === 0
+        ? false
+        : await runMutationWithCompletion((options) => {
+            insertBillLineRows(run.deps.evolu, lines, {
+              ...options,
+              ownerId: evoluOwnerId,
+            })
+            return cancelSourceBillIfEmptied(
+              run.deps.evolu,
+              input.sourceBillId,
+              currentSourceSummaries,
+              input.items,
+              TimestampMsSchema.decode(run.deps.date.now().getTime()),
+              { ...options, ownerId: evoluOwnerId }
+            )
+          })
 
     const targetItems = await run.ok(
       loadCalculatedBillLineSummaries(input.targetBillId)

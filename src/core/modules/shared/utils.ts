@@ -28,6 +28,16 @@ const createMutationCompletion = (): MutationCompletion => {
   }
 }
 
+/**
+ * Runs `mutate` as one Evolu mutation batch and resolves once that batch has
+ * actually been applied, so follow-up work can read the written rows back.
+ *
+ * `mutate` must perform at least one mutation: the `onComplete` it is handed
+ * is only ever invoked by Evolu applying a mutation, so a callback that ends
+ * up writing nothing leaves the returned promise pending forever. Callers
+ * whose batch can legitimately be empty must skip it themselves — see
+ * `appendBillLines` and `splitBill`.
+ */
 export const runMutationWithCompletion = async <TResult>(
   mutate: (options: MutationOptions) => TResult
 ): Promise<TResult> => {

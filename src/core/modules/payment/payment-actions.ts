@@ -29,7 +29,7 @@ import {
   cashRegisterAccountByIdQuery,
   ibanAccountByIdQuery,
 } from "@/core/modules/account/account-queries.ts"
-import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
+import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type {
@@ -660,11 +660,8 @@ export const createPreparedPayment =
       return run(createPayment({ ...input, expiresAt: null }))
     }
 
-    const sparkAccounts = await run.deps.evolu.loadQuery(
-      activeSparkAccountsQuery
-    )
-    const sparkAccount = sparkAccounts.find(
-      (account) => account.id === spark.accountId
+    const [sparkAccount] = await run.deps.evolu.loadQuery(
+      activeSparkAccountByIdQuery(spark.accountId)
     )
     if (!sparkAccount) {
       return err(accountSparkNotFound(spark.accountId))
@@ -807,11 +804,8 @@ const prepareSparkMethod =
     EvoluDep & SparkWalletDep & FetchDep & YadioApiDep
   > =>
   async (run) => {
-    const sparkAccounts = await run.deps.evolu.loadQuery(
-      activeSparkAccountsQuery
-    )
-    const sparkAccount = sparkAccounts.find(
-      (account) => account.id === spark.accountId
+    const [sparkAccount] = await run.deps.evolu.loadQuery(
+      activeSparkAccountByIdQuery(spark.accountId)
     )
     if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
 

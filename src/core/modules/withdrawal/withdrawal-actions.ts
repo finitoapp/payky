@@ -1,7 +1,7 @@
 import { err, ok, type Task } from "@evolu/common"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
-import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
+import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
@@ -95,14 +95,6 @@ export type ExecuteWithdrawalError =
   | WithdrawalAccountNotFoundError
   | ExecuteWithdrawalFailureError
 
-const findSparkAccount = async (
-  run: { readonly deps: EvoluDep & SparkWalletDep },
-  accountId: AccountId
-) => {
-  const sparkAccounts = await run.deps.evolu.loadQuery(activeSparkAccountsQuery)
-  return sparkAccounts.find((account) => account.id === accountId)
-}
-
 export const quoteWithdrawal =
   ({
     accountId,
@@ -118,7 +110,9 @@ export const quoteWithdrawal =
       return err(createInvalidBitcoinAddressError({ address: onchainAddress }))
     }
 
-    const sparkAccount = await findSparkAccount(run, accountId)
+    const [sparkAccount] = await run.deps.evolu.loadQuery(
+      activeSparkAccountByIdQuery(accountId)
+    )
     if (!sparkAccount) {
       return err(createWithdrawalAccountNotFoundError({ accountId }))
     }
@@ -193,7 +187,9 @@ export const executeWithdrawal =
     EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
   > =>
   async (run) => {
-    const sparkAccount = await findSparkAccount(run, accountId)
+    const [sparkAccount] = await run.deps.evolu.loadQuery(
+      activeSparkAccountByIdQuery(accountId)
+    )
     if (!sparkAccount) {
       return err(createWithdrawalAccountNotFoundError({ accountId }))
     }

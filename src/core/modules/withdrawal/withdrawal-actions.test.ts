@@ -42,16 +42,15 @@ const feeQuote: SparkWithdrawalFeeQuote = {
 }
 
 const createSparkAccount = async (
-  deps: EvoluDep & EvoluOwnerIdDep
+  deps: EvoluDep & EvoluOwnerIdDep,
+  secret = SparkSecret("42373a7543db65ae0228ead6c9cbffcc")
 ): Promise<AccountId> => {
   await using run = testCreateRun(deps)
   const accountId = await run.ok(
     createAccount({
       deviceId: null,
       name: NonEmptyString255("Spark wallet"),
-      spark: {
-        secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
-      },
+      spark: { secret },
     })
   )
 
@@ -228,6 +227,47 @@ describe("quoteWithdrawal", () => {
       ok: false,
       error: { type: "InsufficientWithdrawalBalance" },
     })
+  })
+
+  test("opens the wallet of the requested account, not of another one", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const evoluDeps = { evolu, evoluOwnerId: evolu.appOwner.id }
+    // Two Spark accounts, so which secret reaches `sparkWallet.create` is a
+    // real question. Nothing else covers it: every other test here has one
+    // account, where selecting the wrong row is indistinguishable from
+    // selecting the right one.
+    const otherSecret = SparkSecret("0f9b1c2d3e4f50617283949a5b6c7d8e")
+    await createSparkAccount(evoluDeps, otherSecret)
+    const accountId = await createSparkAccount(evoluDeps)
+
+    const openedSecrets: string[] = []
+    const deps = {
+      evolu,
+      sparkWallet: {
+        create: async (secret: SparkSecret) => {
+          openedSecrets.push(secret)
+          return createFakeSparkWallet({
+            getBalance: async () => ({ availableSats: 100_000 }),
+            getWithdrawalFeeQuote: async () => feeQuote,
+          })
+        },
+      },
+    } satisfies EvoluDep & SparkWalletDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(
+        quoteWithdrawal({
+          accountId,
+          onchainAddress: validAddress,
+          amountSats: PositiveInteger(10_000),
+        })
+      )
+    ).resolves.toMatchObject({ ok: true })
+
+    expect(openedSecrets).toEqual(["42373a7543db65ae0228ead6c9cbffcc"])
+    expect(otherSecret).not.toBe("42373a7543db65ae0228ead6c9cbffcc")
   })
 
   test("fails for an unknown account", async () => {

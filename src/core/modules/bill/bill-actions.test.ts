@@ -872,6 +872,56 @@ describe("bill actions", () => {
       .toMatchObject([{ id: sourceBillId, canceledAt: null }])
   }, 15_000)
 
+  test("reports a canceled bill as not open even while a pending payment locks it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+    // `cancelBill` has no lock check of its own, so this bill ends up both
+    // canceled *and* locked by a live payment.
+    await run.orThrow(cancelBill(billId))
+
+    // `requireEditableBill` runs the status guard and the lock check
+    // concurrently; this pins which of the two errors wins, so the reads can
+    // be reordered without silently changing what a caller sees.
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Dinner"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillNotOpen" } })
+  }, 15_000)
+
   test("rejects splitting into a new bill when the source bill is locked by a pending payment", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

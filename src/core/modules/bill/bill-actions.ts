@@ -347,10 +347,17 @@ const requireEditableBill =
     EvoluDep & DateDep
   > =>
   async (run) => {
-    const billResult = await run(requireBillInStatus(billId, openBillStatuses))
+    // Independent reads, so they run concurrently rather than one after the
+    // other: the status guard does not depend on the lock check and vice
+    // versa. This guard sits on every cart tap, and awaiting them in sequence
+    // cost a second round trip per tap. Errors are still reported in the same
+    // order — status before lock, pinned by a test — the same
+    // concurrently-read-then-check-in-order shape `splitBill` uses.
+    const [billResult, locked] = await Promise.all([
+      run(requireBillInStatus(billId, openBillStatuses)),
+      run.ok(isBillLocked(billId)),
+    ])
     if (!billResult.ok) return billResult
-
-    const locked = await run.ok(isBillLocked(billId))
     if (locked) return err(billLocked(billId))
 
     return billResult

@@ -199,12 +199,12 @@ describe("bill line actions", () => {
     const coffee = coffeeSnapshot()
     await run.ok(createOrReuseItemSnapshot(coffee))
 
-    // Every line in one batch shares a `createdAt`, so `createdAt` alone
-    // leaves their relative order to SQLite — and that order decides what the
-    // bill totals, since `calculateBillLineSummaries` folds add/remove
-    // sequentially and drops a summary the moment its running quantity hits
-    // zero. This pins the tie-break `billLinesByBillIdQuery` now states
-    // explicitly (see its doc comment for why the shape is what it is).
+    // Lines written in one batch normally share a `createdAt`, leaving their
+    // relative order to SQLite — and that order decides what the bill totals,
+    // since `calculateBillLineSummaries` folds add/remove sequentially and
+    // drops a summary the moment its running quantity hits zero. This pins
+    // the ordering `billLinesByBillIdQuery` now states explicitly (see its
+    // doc comment for why the shape is what it is).
     await run.ok(
       appendBillLines([
         coffeeLine(billId, coffee),
@@ -214,12 +214,17 @@ describe("bill line actions", () => {
       ])
     )
 
+    // Asserted against the full `(createdAt, ownerId, id)` key rather than
+    // against ascending ids alone: a batch can straddle a millisecond, and
+    // then ids only ascend *within* each `createdAt` group. Keying the
+    // expectation on the same composite the query orders by holds either way
+    // and still fails if the tie-break is dropped.
     const lineRows = await evolu.loadQuery(billLinesByBillIdQuery(billId))
+    const orderKey = (row: (typeof lineRows)[number]) =>
+      `${row.createdAt}\u0000${row.ownerId}\u0000${row.id}`
+
     expect(lineRows).toHaveLength(4)
-    expect(new Set(lineRows.map((row) => row.createdAt)).size).toBe(1)
-    expect(lineRows.map((row) => row.id)).toEqual(
-      [...lineRows.map((row) => row.id)].sort()
-    )
+    expect(lineRows.map(orderKey)).toEqual([...lineRows].map(orderKey).sort())
   }, 15_000)
 
   test("resolves each bill's own item snapshots, including one shared by both", async () => {

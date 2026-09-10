@@ -8,9 +8,14 @@ import type { ItemRow } from "./item.ts"
 import { createCatalogItemSnapshot } from "./item-utils.ts"
 
 /**
- * Upserts an already-computed item snapshot. Takes the caller's own
- * `MutationOptions` so the write can join an existing mutation batch instead
- * of always opening a new one.
+ * Upserts an already-computed item snapshot.
+ *
+ * Thin on purpose, and not inlinable: an actions file writes only its own
+ * module's tables (AGENTS.md), so this is how `bill-actions.ts` puts an `item`
+ * row in the same batch as the bill lines pointing at it — the alternative
+ * being either `evolu.upsert("item", ...)` from another module, or a Task that
+ * opens a batch of its own. Same load/compute-plus-plain-upsert split as
+ * `payment-number-actions.ts`'s `upsertPaymentNumberRows`.
  */
 export const upsertItemSnapshot = (
   evolu: EvoluDep["evolu"],

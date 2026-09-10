@@ -522,20 +522,6 @@ const loadNextBillDisplayNumber =
   }
 
 /**
- * Upserts a bill row for an already-computed display number. Takes the
- * caller's own `MutationOptions` so the write can join an existing mutation
- * batch instead of always opening a new one — mirrors
- * `payment-number-actions.ts`'s `upsertPaymentNumberRows`.
- */
-const upsertBillRow = (
-  evolu: EvoluDep["evolu"],
-  row: UpsertValues<typeof bill>,
-  options: MutationOptions
-): void => {
-  evolu.upsert("bill", removeUndefinedValues(row), options)
-}
-
-/**
  * Creates a bill at an `id` the caller already chose — the cart UI generates
  * it client-side and puts it in the `/bill` URL before this ever runs, so the
  * URL stays stable across the lazy-creation moment (see `use-cart-bill.ts`'s
@@ -554,9 +540,9 @@ export const createBillAtEnd =
     const displayNumber = await run.ok(loadNextBillDisplayNumber())
 
     await runMutationWithCompletion((options) =>
-      upsertBillRow(
-        run.deps.evolu,
-        { ...input, displayNumber },
+      run.deps.evolu.upsert(
+        "bill",
+        removeUndefinedValues({ ...input, displayNumber }),
         { ...options, ownerId: evoluOwnerId }
       )
     )
@@ -1131,16 +1117,16 @@ export const splitBillIntoNewBill =
     )
 
     await runMutationWithCompletion((options) => {
-      upsertBillRow(
-        run.deps.evolu,
-        {
+      run.deps.evolu.upsert(
+        "bill",
+        removeUndefinedValues({
           id: input.targetBillId,
           deviceId: input.deviceId,
           label: null,
           tableId: input.tableId,
           currency: input.currency,
           displayNumber,
-        },
+        }),
         { ...options, ownerId: evoluOwnerId }
       )
       insertBillLineRows(run.deps.evolu, lines, {
@@ -1190,11 +1176,12 @@ export const cancelBill =
 
 /**
  * Writes the `closedAt` best-effort cache (see `bill.ts`'s doc comment).
- * Takes the caller's own `MutationOptions` so the write can join an
- * existing mutation batch — `reconciliation-claim-actions.ts` folds this in
- * via `loadBillClosedAtIfCovered` so it lands in the same batch as the
- * reconciliation claim confirming it, instead of opening a second round
- * trip that could fail independently. See docs/bill-payment-states.md.
+ *
+ * Thin on purpose, and not inlinable: an actions file writes only its own
+ * module's tables (AGENTS.md), and `reconciliation-claim-actions.ts` folds
+ * this in via `loadBillClosedAtIfCovered` so the cache lands in the same batch
+ * as the claim that closes the bill, rather than a second round trip that
+ * could fail on its own. See docs/bill-payment-states.md.
  */
 export const upsertBillClosedAt = (
   evolu: EvoluDep["evolu"],

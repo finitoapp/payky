@@ -137,13 +137,25 @@ export function useCartBill({
       pendingCountRef.current += 1
       setPending(true)
 
-      // Both handlers run `operation`: a failed predecessor must not cancel
+      // A throw in here is a defect rather than an expected domain failure
+      // — realistically only `ensureBillExists` below, which rethrows when
+      // the bill row can't be created. Report it the way every Result
+      // failure in this hook is reported instead of letting it escape:
+      // every call site is `void cart.addOne(...)`, so a rejection produced
+      // no log, no toast and a tap that silently did nothing.
+      const guarded = async () => {
+        try {
+          await operation()
+        } catch (error) {
+          console.error("Cart mutation failed", error)
+          toast.error(t("settings.saveFailed"))
+        }
+      }
+
+      // Both handlers run `guarded`: a failed predecessor must not cancel
       // the taps queued behind it.
-      const queued = queueRef.current.then(operation, operation)
-      queueRef.current = queued.then(
-        () => undefined,
-        () => undefined
-      )
+      const queued = queueRef.current.then(guarded, guarded)
+      queueRef.current = queued
 
       try {
         await queued
@@ -152,7 +164,7 @@ export function useCartBill({
         if (pendingCountRef.current === 0) setPending(false)
       }
     },
-    []
+    [console, t]
   )
 
   // Guards `ensureBillExists` against creating the bill row twice when

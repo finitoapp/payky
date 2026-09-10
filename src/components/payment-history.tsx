@@ -285,13 +285,19 @@ interface PaymentHistoryIssueFlags {
  * Every issue a payment's row should flag — the canceled+claimed collision,
  * this payment's own duplicate-settlement collision, and/or its bill's
  * coverage being off (see docs/bill-payment-states.md's "Bill payment
- * coverage" section). `billOverpaid` is deliberately suppressed when it's
- * fully explained by this same payment's own excess settlement (this is the
- * only claimed payment on the bill) — "Paid more than once" already says
- * that, and flagging both would restate the identical fact from the bill's
- * point of view instead of a second, independent one. It still shows when
- * *another* payment is also claimed against the bill, since that's a
- * genuinely different cause.
+ * coverage" section). `billUnderpaid` is only flagged once a partial payment
+ * has actually landed on the bill (`billClaimedSum > 0`), exactly as
+ * `BillHistoryIssues` does it — an ordinary open bill with nothing paid yet
+ * is also "underpaid" by definition, so flagging it would put the warning on
+ * every pending bill payment row. `billOverpaid` needs no such gate: an
+ * unpaid bill is never overpaid.
+ *
+ * `billOverpaid` is deliberately suppressed when it's fully explained by this
+ * same payment's own excess settlement (this is the only claimed payment on
+ * the bill) — "Paid more than once" already says that, and flagging both
+ * would restate the identical fact from the bill's point of view instead of a
+ * second, independent one. It still shows when *another* payment is also
+ * claimed against the bill, since that's a genuinely different cause.
  */
 const resolvePaymentHistoryIssueFlags = (
   item: PaymentHistoryRow,
@@ -317,7 +323,8 @@ const resolvePaymentHistoryIssueFlags = (
   return {
     hasCancellationCollision,
     hasExcessSettlement,
-    billUnderpaid: item.billId !== null && coverage === "underpaid",
+    billUnderpaid:
+      item.billId !== null && coverage === "underpaid" && billClaimedSum > 0,
     billOverpaid:
       item.billId !== null &&
       coverage === "overpaid" &&

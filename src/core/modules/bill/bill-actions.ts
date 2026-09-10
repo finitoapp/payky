@@ -75,50 +75,46 @@ export interface BillWithItems {
   readonly items: ReadonlyArray<BillLineSummary>
 }
 
-const createBillNotFoundError = defineError("BillNotFound")<{
+export const billNotFound = defineError("BillNotFound")<{
   readonly id: BillId
 }>()
-export type BillNotFoundError = ReturnType<typeof createBillNotFoundError>
+export type BillNotFoundError = ReturnType<typeof billNotFound>
 
-const createBillNotOpenError = defineError("BillNotOpen")<{
+export const billNotOpen = defineError("BillNotOpen")<{
   readonly id: BillId
   readonly status: BillStatus
 }>()
-export type BillNotOpenError = ReturnType<typeof createBillNotOpenError>
+export type BillNotOpenError = ReturnType<typeof billNotOpen>
 
-const createBillLockedError = defineError("BillLocked")<{
+export const billLocked = defineError("BillLocked")<{
   readonly id: BillId
 }>()
-export type BillLockedError = ReturnType<typeof createBillLockedError>
+export type BillLockedError = ReturnType<typeof billLocked>
 
-const createBillUnderpaidError = defineError("BillUnderpaid")<{
+export const billUnderpaid = defineError("BillUnderpaid")<{
   readonly id: BillId
   readonly billTotal: NonNegativeInteger
   readonly claimedSum: NonNegativeInteger
 }>()
-export type BillUnderpaidError = ReturnType<typeof createBillUnderpaidError>
+export type BillUnderpaidError = ReturnType<typeof billUnderpaid>
 
-const createBillNotCanceledError = defineError("BillNotCanceled")<{
+export const billNotCanceled = defineError("BillNotCanceled")<{
   readonly id: BillId
 }>()
-export type BillNotCanceledError = ReturnType<typeof createBillNotCanceledError>
+export type BillNotCanceledError = ReturnType<typeof billNotCanceled>
 
-const createCatalogItemNotFoundError = defineError("CatalogItemNotFound")<{
+export const catalogItemNotFound = defineError("CatalogItemNotFound")<{
   readonly id: CatalogItemId
 }>()
-export type CatalogItemNotFoundError = ReturnType<
-  typeof createCatalogItemNotFoundError
->
+export type CatalogItemNotFoundError = ReturnType<typeof catalogItemNotFound>
 
-const createBillLineSummaryMissingError = defineError(
-  "BillLineSummaryMissing"
-)<{
+const billLineSummaryMissing = defineError("BillLineSummaryMissing")<{
   readonly billId: BillId
   readonly itemId: BillLineSummary["itemId"]
   readonly lineType: BillLineSummary["type"]
 }>()
 export type BillLineSummaryMissingError = ReturnType<
-  typeof createBillLineSummaryMissingError
+  typeof billLineSummaryMissing
 >
 
 export type AddBillLineError =
@@ -128,9 +124,7 @@ export type AddBillLineError =
   | BillNotOpenError
   | BillLockedError
 
-const createBillSplitSelectionStaleError = defineError(
-  "BillSplitSelectionStale"
-)<{
+const billSplitSelectionStale = defineError("BillSplitSelectionStale")<{
   readonly billId: BillId
   readonly summaryId: BillLineSummary["id"]
   readonly selectedQuantity: number
@@ -139,7 +133,7 @@ const createBillSplitSelectionStaleError = defineError(
   readonly availableTotalAmount: number
 }>()
 export type BillSplitSelectionStaleError = ReturnType<
-  typeof createBillSplitSelectionStaleError
+  typeof billSplitSelectionStale
 >
 
 export type SplitBillError =
@@ -148,40 +142,12 @@ export type SplitBillError =
   | BillLockedError
   | BillSplitSelectionStaleError
 
-export const billNotFound = (id: BillId): BillNotFoundError =>
-  createBillNotFoundError({ id })
-
-export const billNotOpen = (id: BillId, status: BillStatus): BillNotOpenError =>
-  createBillNotOpenError({ id, status })
-
-export const billLocked = (id: BillId): BillLockedError =>
-  createBillLockedError({ id })
-
-export const billUnderpaid = (
-  id: BillId,
-  billTotal: NonNegativeInteger,
-  claimedSum: NonNegativeInteger
-): BillUnderpaidError => createBillUnderpaidError({ id, billTotal, claimedSum })
-
-export const billNotCanceled = (id: BillId): BillNotCanceledError =>
-  createBillNotCanceledError({ id })
-
-export const catalogItemNotFound = (
-  id: CatalogItemId
-): CatalogItemNotFoundError => createCatalogItemNotFoundError({ id })
-
-const billLineSummaryMissing = (input: {
-  readonly billId: BillId
-  readonly itemId: BillLineSummary["itemId"]
-  readonly lineType: BillLineSummary["type"]
-}): BillLineSummaryMissingError => createBillLineSummaryMissingError(input)
-
 export const loadBill =
   (idValue: BillId): Task<BillRow, BillNotFoundError, EvoluDep> =>
   async (run) =>
     getFirstOr(
       await run.deps.evolu.loadQuery(billByIdQuery(idValue)),
-      billNotFound(idValue)
+      billNotFound({ id: idValue })
     )
 
 export interface BillCoverageSummary {
@@ -327,7 +293,7 @@ const requireBillInStatus =
 
     const { bill: billRow, items, status } = snapshotResult.value
     if (!allowedStatuses.has(status)) {
-      return err(billNotOpen(billId, status))
+      return err(billNotOpen({ id: billId, status }))
     }
 
     return ok({ bill: billRow, items })
@@ -388,7 +354,7 @@ const requireEditableBill =
       run.ok(isBillLocked(billId)),
     ])
     if (!billResult.ok) return billResult
-    if (locked) return err(billLocked(billId))
+    if (locked) return err(billLocked({ id: billId }))
 
     return billResult
   }
@@ -680,7 +646,7 @@ export const addCatalogItemToBill =
 
     const catalogItemResult = getFirstOr(
       catalogItemRows,
-      catalogItemNotFound(input.catalogItemId)
+      catalogItemNotFound({ id: input.catalogItemId })
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
@@ -933,7 +899,7 @@ const requireSelectionOnSourceBill = (
       selected.totalAmount > available.totalAmount
     ) {
       return err(
-        createBillSplitSelectionStaleError({
+        billSplitSelectionStale({
           billId: sourceBillId,
           summaryId,
           selectedQuantity: selected.quantity,
@@ -1224,10 +1190,10 @@ export const closeBill =
     } = snapshotResult.value
 
     if (status === "canceled") {
-      return err(billNotOpen(billId, status))
+      return err(billNotOpen({ id: billId, status }))
     }
     if (!hasActiveClaim || coverage === "underpaid") {
-      return err(billUnderpaid(billId, billTotal, claimedSum))
+      return err(billUnderpaid({ id: billId, billTotal, claimedSum }))
     }
 
     const { evoluOwnerId } = run.deps
@@ -1283,10 +1249,10 @@ export const confirmBillClosedDespiteCancellation =
     } = snapshotResult.value
 
     if (billRow.canceledAt === null) {
-      return err(billNotCanceled(billId))
+      return err(billNotCanceled({ id: billId }))
     }
     if (!hasActiveClaim || coverage === "underpaid") {
-      return err(billUnderpaid(billId, billTotal, claimedSum))
+      return err(billUnderpaid({ id: billId, billTotal, claimedSum }))
     }
 
     const { evoluOwnerId } = run.deps

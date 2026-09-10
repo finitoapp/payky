@@ -29,15 +29,10 @@ import { fioPluginByIdQuery } from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 import { fioPluginId } from "./fio-plugin-utils.ts"
 
-const createFioPluginNotFoundError = defineError("FioPluginNotFound")<{
+export const fioPluginNotFound = defineError("FioPluginNotFound")<{
   readonly id: FioPluginId
 }>()
-export type FioPluginNotFoundError = ReturnType<
-  typeof createFioPluginNotFoundError
->
-
-export const fioPluginNotFound = (id: FioPluginId): FioPluginNotFoundError =>
-  createFioPluginNotFoundError({ id })
+export type FioPluginNotFoundError = ReturnType<typeof fioPluginNotFound>
 
 export const defaultFioPluginSyncLookbackDays = PositiveInteger(1)
 
@@ -48,7 +43,7 @@ export const loadFioPlugin =
   async (run) =>
     getFirstOr(
       await run.deps.evolu.loadQuery(fioPluginByIdQuery(idValue)),
-      fioPluginNotFound(idValue)
+      fioPluginNotFound({ id: idValue })
     )
 
 /**

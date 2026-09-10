@@ -97,95 +97,77 @@ import type { PaymentId } from "./payment-types.ts"
 const SATS_PER_BTC = 100_000_000
 const FIAT_MINOR_UNITS = 100
 
-const createPaymentNotFoundError = defineError("PaymentNotFound")<{
+export const paymentNotFound = defineError("PaymentNotFound")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>
+export type PaymentNotFoundError = ReturnType<typeof paymentNotFound>
 
-const createPaymentAlreadyPaidError = defineError("PaymentAlreadyPaid")<{
+export const paymentAlreadyPaid = defineError("PaymentAlreadyPaid")<{
   readonly id: PaymentId
 }>()
-export type PaymentAlreadyPaidError = ReturnType<
-  typeof createPaymentAlreadyPaidError
->
+export type PaymentAlreadyPaidError = ReturnType<typeof paymentAlreadyPaid>
 
-const createPaymentNotCanceledError = defineError("PaymentNotCanceled")<{
+export const paymentNotCanceled = defineError("PaymentNotCanceled")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotCanceledError = ReturnType<
-  typeof createPaymentNotCanceledError
->
+export type PaymentNotCanceledError = ReturnType<typeof paymentNotCanceled>
 
-const createPaymentNotClaimedError = defineError("PaymentNotClaimed")<{
+export const paymentNotClaimed = defineError("PaymentNotClaimed")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotClaimedError = ReturnType<
-  typeof createPaymentNotClaimedError
->
+export type PaymentNotClaimedError = ReturnType<typeof paymentNotClaimed>
 
-const createPaymentNotOverpaidError = defineError("PaymentNotOverpaid")<{
+export const paymentNotOverpaid = defineError("PaymentNotOverpaid")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotOverpaidError = ReturnType<
-  typeof createPaymentNotOverpaidError
->
+export type PaymentNotOverpaidError = ReturnType<typeof paymentNotOverpaid>
 
-const createAccountSparkNotFoundError = defineError("AccountSparkNotFound")<{
+export const accountSparkNotFound = defineError("AccountSparkNotFound")<{
   readonly id: AccountId
 }>()
-export type AccountSparkNotFoundError = ReturnType<
-  typeof createAccountSparkNotFoundError
->
+export type AccountSparkNotFoundError = ReturnType<typeof accountSparkNotFound>
 
-const createPaymentPreparationFailedError = defineError(
-  "PaymentPreparationFailed"
-)<{
+const paymentPreparationFailed = defineError("PaymentPreparationFailed")<{
   readonly message: string
 }>()
 export type PaymentPreparationFailedError = ReturnType<
-  typeof createPaymentPreparationFailedError
+  typeof paymentPreparationFailed
 >
 
-const createZeroAmountNotPayableError = defineError("ZeroAmountNotPayable")<{
+const zeroAmountNotPayable = defineError("ZeroAmountNotPayable")<{
   readonly amount: number
 }>()
-export type ZeroAmountNotPayableError = ReturnType<
-  typeof createZeroAmountNotPayableError
->
+export type ZeroAmountNotPayableError = ReturnType<typeof zeroAmountNotPayable>
 
-const createPaymentNumberNotFoundError = defineError("PaymentNumberNotFound")<{
+const paymentNumberNotFound = defineError("PaymentNumberNotFound")<{
   readonly paymentId: PaymentId
 }>()
 export type PaymentNumberNotFoundError = ReturnType<
-  typeof createPaymentNumberNotFoundError
+  typeof paymentNumberNotFound
 >
 
-const createCashRegisterAccountNotFoundError = defineError(
+export const cashRegisterAccountNotFound = defineError(
   "CashRegisterAccountNotFound"
 )<{
   readonly id: AccountId
 }>()
 export type CashRegisterAccountNotFoundError = ReturnType<
-  typeof createCashRegisterAccountNotFoundError
+  typeof cashRegisterAccountNotFound
 >
 
-const createIbanAccountNotFoundError = defineError("IbanAccountNotFound")<{
+export const ibanAccountNotFound = defineError("IbanAccountNotFound")<{
   readonly id: AccountId
 }>()
-export type IbanAccountNotFoundError = ReturnType<
-  typeof createIbanAccountNotFoundError
->
+export type IbanAccountNotFoundError = ReturnType<typeof ibanAccountNotFound>
 
-const createAccountCurrencyMismatchError = defineError(
-  "AccountCurrencyMismatch"
-)<{
+export const accountCurrencyMismatch = defineError("AccountCurrencyMismatch")<{
   readonly accountKind: "cashRegister" | "iban"
   readonly id: AccountId
   readonly accountCurrency: FiatCurrency
   readonly paymentCurrency: FiatCurrency
 }>()
 export type AccountCurrencyMismatchError = ReturnType<
-  typeof createAccountCurrencyMismatchError
+  typeof accountCurrencyMismatch
 >
 
 export type CreatePreparedPaymentError =
@@ -219,60 +201,6 @@ export type PreparePaymentMethodError =
   | YadioHttpError
   | YadioApiError
   | FetchError
-
-export const paymentNotFound = (id: PaymentId): PaymentNotFoundError =>
-  createPaymentNotFoundError({ id })
-
-export const paymentAlreadyPaid = (id: PaymentId): PaymentAlreadyPaidError =>
-  createPaymentAlreadyPaidError({ id })
-
-export const paymentNotCanceled = (id: PaymentId): PaymentNotCanceledError =>
-  createPaymentNotCanceledError({ id })
-
-export const paymentNotClaimed = (id: PaymentId): PaymentNotClaimedError =>
-  createPaymentNotClaimedError({ id })
-
-export const paymentNotOverpaid = (id: PaymentId): PaymentNotOverpaidError =>
-  createPaymentNotOverpaidError({ id })
-
-export const accountSparkNotFound = (
-  id: AccountId
-): AccountSparkNotFoundError => createAccountSparkNotFoundError({ id })
-
-export const cashRegisterAccountNotFound = (
-  id: AccountId
-): CashRegisterAccountNotFoundError =>
-  createCashRegisterAccountNotFoundError({ id })
-
-export const ibanAccountNotFound = (id: AccountId): IbanAccountNotFoundError =>
-  createIbanAccountNotFoundError({ id })
-
-export const accountCurrencyMismatch = ({
-  accountKind,
-  id,
-  accountCurrency,
-  paymentCurrency,
-}: {
-  readonly accountKind: "cashRegister" | "iban"
-  readonly id: AccountId
-  readonly accountCurrency: FiatCurrency
-  readonly paymentCurrency: FiatCurrency
-}): AccountCurrencyMismatchError =>
-  createAccountCurrencyMismatchError({
-    accountKind,
-    id,
-    accountCurrency,
-    paymentCurrency,
-  })
-
-const paymentPreparationFailed = (
-  message: string
-): PaymentPreparationFailedError =>
-  createPaymentPreparationFailedError({ message })
-
-const paymentNumberNotFound = (
-  paymentId: PaymentId
-): PaymentNumberNotFoundError => createPaymentNumberNotFoundError({ paymentId })
 
 /**
  * Shared "load the first row or fail, then check its currency matches" step
@@ -408,7 +336,7 @@ const createSparkLightningInvoice =
     // nothing, so refuse before the quote is even fetched. The keypad does
     // let "0" through — it only checks that the amount parses — which is how
     // this is reachable at all.
-    if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
+    if (amount <= 0) return err(zeroAmountNotPayable({ amount }))
 
     const quote = await run(fetchYadioBtcExchangeRate(currency))
     if (!quote.ok) return quote
@@ -456,11 +384,12 @@ const createSparkLightningInvoice =
       })
     } catch (error) {
       return err(
-        paymentPreparationFailed(
-          error instanceof Error
-            ? error.message
-            : "Failed to prepare payment details"
-        )
+        paymentPreparationFailed({
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to prepare payment details",
+        })
       )
     }
   }
@@ -517,7 +446,7 @@ export const loadPayment =
   async (run) =>
     getFirstOr(
       await run.deps.evolu.loadQuery(paymentByIdQuery(idValue)),
-      paymentNotFound(idValue)
+      paymentNotFound({ id: idValue })
     )
 
 export type CreatePaymentError = BillNotFoundError | BillNotOpenError
@@ -664,7 +593,7 @@ export const createPreparedPayment =
       activeSparkAccountByIdQuery(spark.accountId)
     )
     if (!sparkAccount) {
-      return err(accountSparkNotFound(spark.accountId))
+      return err(accountSparkNotFound({ id: spark.accountId }))
     }
 
     const expirySeconds =
@@ -714,7 +643,7 @@ const prepareCashRegisterMethod =
   async (run) => {
     const accountResult = loadAccountWithCurrencyCheck(
       await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
-      cashRegisterAccountNotFound(accountId),
+      cashRegisterAccountNotFound({ id: accountId }),
       "cashRegister",
       accountId,
       paymentCurrency
@@ -747,7 +676,7 @@ const prepareIbanMethod =
   async (run) => {
     const accountResult = loadAccountWithCurrencyCheck(
       await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
-      ibanAccountNotFound(accountId),
+      ibanAccountNotFound({ id: accountId }),
       "iban",
       accountId,
       paymentCurrency
@@ -756,7 +685,7 @@ const prepareIbanMethod =
 
     const paymentNumberResult = getFirstOr(
       await run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
-      paymentNumberNotFound(paymentId)
+      paymentNumberNotFound({ paymentId })
     )
     if (!paymentNumberResult.ok) return paymentNumberResult
 
@@ -807,7 +736,7 @@ const prepareSparkMethod =
     const [sparkAccount] = await run.deps.evolu.loadQuery(
       activeSparkAccountByIdQuery(spark.accountId)
     )
-    if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
+    if (!sparkAccount) return err(accountSparkNotFound({ id: spark.accountId }))
 
     const expirySeconds =
       spark.expirySeconds ?? DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS
@@ -1204,7 +1133,7 @@ export const markPaymentPaidCash = (
     ...input,
     accountKind: "cashRegister",
     accountQuery: cashRegisterAccountByIdQuery,
-    notFoundError: cashRegisterAccountNotFound(input.accountId),
+    notFoundError: cashRegisterAccountNotFound({ id: input.accountId }),
     transactionIdPrefix: "accountTransaction:cashRegister:payment:",
   })
 
@@ -1224,7 +1153,7 @@ export const markPaymentPaidIban = (
     ...input,
     accountKind: "iban",
     accountQuery: ibanAccountByIdQuery,
-    notFoundError: ibanAccountNotFound(input.accountId),
+    notFoundError: ibanAccountNotFound({ id: input.accountId }),
     transactionIdPrefix: "accountTransaction:iban:manual:payment:",
   })
 
@@ -1247,7 +1176,7 @@ export const cancelPayment =
       activeReconciliationClaimsByPaymentIdQuery(paymentId)
     )
     if (activeClaims.length > 0) {
-      return err(paymentAlreadyPaid(paymentId))
+      return err(paymentAlreadyPaid({ id: paymentId }))
     }
 
     const { evoluOwnerId } = run.deps
@@ -1297,14 +1226,14 @@ export const confirmPaymentPaidDespiteCancellation =
     const paymentResult = await run(loadPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
     if (paymentResult.value.canceledAt === null) {
-      return err(paymentNotCanceled(paymentId))
+      return err(paymentNotCanceled({ id: paymentId }))
     }
 
     const activeClaims = await run.deps.evolu.loadQuery(
       activeReconciliationClaimsByPaymentIdQuery(paymentId)
     )
     if (activeClaims.length === 0) {
-      return err(paymentNotClaimed(paymentId))
+      return err(paymentNotClaimed({ id: paymentId }))
     }
 
     const { evoluOwnerId } = run.deps
@@ -1361,7 +1290,7 @@ export const acknowledgePaymentExcessSettlement =
     )
     const claimedSum = calculatePaymentClaimedSum(claimedTransactions)
     if (claimedSum <= paymentResult.value.amount) {
-      return err(paymentNotOverpaid(paymentId))
+      return err(paymentNotOverpaid({ id: paymentId }))
     }
 
     const { evoluOwnerId } = run.deps

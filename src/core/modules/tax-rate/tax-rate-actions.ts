@@ -13,7 +13,11 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
-import { taxRatesQuery } from "./tax-rate-queries.ts"
+import {
+  defaultTaxRatesQuery,
+  lastTaxRateSortOrderQuery,
+  taxRatesQuery,
+} from "./tax-rate-queries.ts"
 import { getTaxRateSeedForCountry } from "./tax-rate-seed-data.ts"
 import type { TaxRateId, TaxRatePercentage } from "./tax-rate-types.ts"
 
@@ -25,22 +29,31 @@ export const createTaxRate =
   }): Task<TaxRateId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const existing = await run.deps.evolu.loadQuery(taxRatesQuery)
-    const nextSortOrder = getNextSortOrder(existing.at(-1))
+    // The two things this write needs to know, in one round trip: where the
+    // list ends, and which rate is default today. Neither wants the rates in
+    // between, which is all `taxRatesQuery` would add. `currentDefaults` is
+    // loaded even when the new rate is not becoming the default — it is at
+    // most a row or two, and asking for it conditionally would cost a second
+    // round trip in the branch that does need it.
+    const [[last], currentDefaults] = await Promise.all(
+      run.deps.evolu.loadQueries([
+        lastTaxRateSortOrderQuery,
+        defaultTaxRatesQuery,
+      ])
+    )
+    const nextSortOrder = getNextSortOrder(last)
     const mutationOptions = { ownerId: evoluOwnerId }
 
     const { id } = await runMutationWithCompletion((options) => {
       const combinedOptions = { ...options, ...mutationOptions }
 
       if (input.isDefault) {
-        for (const rate of existing) {
-          if (rate.isDefault === sqliteTrue) {
-            run.deps.evolu.update(
-              "taxRate",
-              { id: rate.id, isDefault: sqliteFalse },
-              combinedOptions
-            )
-          }
+        for (const rate of currentDefaults) {
+          run.deps.evolu.update(
+            "taxRate",
+            { id: rate.id, isDefault: sqliteFalse },
+            combinedOptions
+          )
         }
       }
 

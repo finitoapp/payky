@@ -51,6 +51,44 @@ describe("tax rate actions", () => {
       ])
   }, 15_000)
 
+  test("counts an archived rate when appending the next one", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({
+      ...createDeps(evolu),
+      ...createDateDep(),
+    })
+
+    // Rates are archived rather than edited or deleted (see
+    // `TaxRatePercentageSchema`), and an archived one keeps its `sortOrder`.
+    // So the next rate has to be appended after it, not on top of it —
+    // `taxRatesQuery` deliberately does not filter `deactivatedAt`, and
+    // anything deriving the next `sortOrder` has to match that.
+    const archivedId = await run.ok(
+      createTaxRate({
+        name: NonEmptyString255("Osvobozeno od DPH"),
+        rate: TaxRatePercentage(0),
+        isDefault: false,
+      })
+    )
+    await run.ok(archiveTaxRate(archivedId))
+
+    const appendedId = await run.ok(
+      createTaxRate({
+        name: NonEmptyString255("Základní sazba"),
+        rate: TaxRatePercentage(2100),
+        isDefault: false,
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(taxRatesQuery))
+      .toMatchObject([
+        { id: archivedId, sortOrder: 0 },
+        { id: appendedId, sortOrder: 1 },
+      ])
+  }, 15_000)
+
   test("renaming a tax rate never touches its rate", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

@@ -33,7 +33,7 @@ import type {
   BillNotOpenError,
 } from "@/core/modules/bill/bill-actions.ts"
 import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-actions.ts"
-import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
+import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
@@ -460,20 +460,20 @@ export const createPayment =
     // not check for an already-pending payment on it: split payments mean
     // more than one payment can legitimately be in flight for the same bill
     // at once. See docs/bill-payment-states.md.
-    const billId = input.billId ?? null
-    if (billId !== null) {
-      const openResult = await run(requireBillAcceptingPayment(billId))
-      if (!openResult.ok) return openResult
-    }
-
     // Frozen for `snapshotBillLinesForPayment` below — captured from this
     // device's own local view, before the mutation batch, since it can't be
     // reliably reconstructed later from `billLine.createdAt` (see that
-    // function's doc comment).
-    const billLineSnapshot =
-      billId !== null
-        ? await run.ok(loadCalculatedBillLineSummaries(billId))
-        : null
+    // function's doc comment). Taken off the guard's own result rather than
+    // reloaded after it: the guard derives the bill's status from exactly
+    // this projection, so this both saves a second sequential round trip and
+    // freezes the same read the guard just accepted.
+    const billId = input.billId ?? null
+    let billLineSnapshot: ReadonlyArray<BillLineSummary> | null = null
+    if (billId !== null) {
+      const openResult = await run(requireBillAcceptingPayment(billId))
+      if (!openResult.ok) return openResult
+      billLineSnapshot = openResult.value.items
+    }
 
     const id = createTableId<"Payment">()
     const { evoluOwnerId } = run.deps

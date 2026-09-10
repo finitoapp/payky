@@ -185,6 +185,7 @@ const loadBillTotalAndClaimedSum =
     billId: BillId
   ): Task<
     {
+      readonly summaries: ReadonlyArray<BillLineSummary>
       readonly billTotal: NonNegativeInteger
       readonly claimedTransactions: ReadonlyArray<{
         readonly paymentId: PaymentId
@@ -203,6 +204,7 @@ const loadBillTotalAndClaimedSum =
     ])
 
     return ok({
+      summaries,
       billTotal: NonNegativeInteger(
         summaries.reduce((sum, summary) => sum + summary.totalAmount, 0)
       ),
@@ -232,6 +234,13 @@ export const loadBillCoverage =
 
 interface BillStatusSnapshot {
   readonly bill: BillRow
+  /**
+   * The line summaries the status and coverage above were derived from —
+   * handed back so a caller that needs the bill's items too (`splitBill`)
+   * reads the same projection this guard just judged, instead of loading a
+   * second, independent one alongside it.
+   */
+  readonly items: ReadonlyArray<BillLineSummary>
   readonly status: BillStatus
   readonly coverage: BillCoverage
   readonly billTotal: NonNegativeInteger
@@ -254,7 +263,7 @@ const loadBillStatusSnapshot =
     const billResult = await run(loadBill(billId))
     if (!billResult.ok) return billResult
 
-    const { billTotal, claimedTransactions } = await run.ok(
+    const { summaries, billTotal, claimedTransactions } = await run.ok(
       loadBillTotalAndClaimedSum(billId)
     )
     const claimedSum = calculateClaimedSum(claimedTransactions)
@@ -269,6 +278,7 @@ const loadBillStatusSnapshot =
 
     return ok({
       bill: billResult.value,
+      items: summaries,
       status,
       coverage,
       billTotal,
@@ -296,17 +306,17 @@ const requireBillInStatus =
   (
     billId: BillId,
     allowedStatuses: ReadonlySet<BillStatus>
-  ): Task<BillRow, BillNotFoundError | BillNotOpenError, EvoluDep> =>
+  ): Task<BillWithItems, BillNotFoundError | BillNotOpenError, EvoluDep> =>
   async (run) => {
     const snapshotResult = await run(loadBillStatusSnapshot(billId))
     if (!snapshotResult.ok) return snapshotResult
 
-    const { bill: billRow, status } = snapshotResult.value
+    const { bill: billRow, items, status } = snapshotResult.value
     if (!allowedStatuses.has(status)) {
       return err(billNotOpen(billId, status))
     }
 
-    return ok(billRow)
+    return ok({ bill: billRow, items })
   }
 
 const openBillStatuses: ReadonlySet<BillStatus> = new Set(["open"])
@@ -342,7 +352,7 @@ const requireEditableBill =
   (
     billId: BillId
   ): Task<
-    BillRow,
+    BillWithItems,
     BillNotFoundError | BillNotOpenError | BillLockedError,
     EvoluDep & DateDep
   > =>
@@ -889,16 +899,20 @@ export const splitBill =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    // Independent reads run concurrently: the edit guards on both bills
-    // don't depend on the source's current summaries and vice versa.
-    const [sourceBillResult, targetBillResult, currentSourceSummaries] =
-      await Promise.all([
-        run(requireEditableBill(input.sourceBillId)),
-        run(requireEditableBill(input.targetBillId)),
-        run.ok(loadCalculatedBillLineSummaries(input.sourceBillId)),
-      ])
+    // Both guards run concurrently; neither depends on the other. The
+    // source's current summaries are not loaded separately alongside them —
+    // `requireEditableBill` derives the bill's status from that exact
+    // projection and hands it back, so `cancelSourceBillIfEmptied` below
+    // judges emptiness against the same read the guard just approved rather
+    // than a second, concurrent one that could disagree with it.
+    const [sourceBillResult, targetBillResult] = await Promise.all([
+      run(requireEditableBill(input.sourceBillId)),
+      run(requireEditableBill(input.targetBillId)),
+    ])
     if (!sourceBillResult.ok) return sourceBillResult
     if (!targetBillResult.ok) return targetBillResult
+
+    const currentSourceSummaries = sourceBillResult.value.items
 
     const lines = buildSplitLines(
       input.sourceBillId,
@@ -934,7 +948,7 @@ export const splitBill =
     )
 
     return ok({
-      bill: targetBillResult.value,
+      bill: targetBillResult.value.bill,
       items: targetItems,
       sourceCanceled,
     })
@@ -974,13 +988,14 @@ export const splitBillIntoNewBill =
   ): Task<BillId, SplitBillError, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     // Independent reads run concurrently before the mutation batch starts.
-    const [sourceBillResult, displayNumber, currentSourceSummaries] =
-      await Promise.all([
-        run(requireEditableBill(input.sourceBillId)),
-        run.ok(loadNextBillDisplayNumber()),
-        run.ok(loadCalculatedBillLineSummaries(input.sourceBillId)),
-      ])
+    // The source's summaries come off its own guard result — see `splitBill`.
+    const [sourceBillResult, displayNumber] = await Promise.all([
+      run(requireEditableBill(input.sourceBillId)),
+      run.ok(loadNextBillDisplayNumber()),
+    ])
     if (!sourceBillResult.ok) return sourceBillResult
+
+    const currentSourceSummaries = sourceBillResult.value.items
 
     const { evoluOwnerId } = run.deps
     const lines = buildSplitLines(

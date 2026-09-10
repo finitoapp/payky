@@ -9,7 +9,15 @@ test("save Fio settings and add a token, in either order", async ({
   // `fioPlugin` row existed yet.
   const consoleErrors: string[] = []
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text())
+    if (message.type() !== "error") return
+    // Adding a token below arms the FIO sync job, which then calls the real
+    // API with this test's bogus token and logs the failure through
+    // `app-background-jobs.tsx`'s `onError`. That is this test's own doing
+    // and says nothing about the page — under the full suite it is slow
+    // enough for that job to get its turn, which is why this used to fail
+    // there and pass on its own. Every other error still counts.
+    if (message.text().includes("Background job failed.")) return
+    consoleErrors.push(message.text())
   })
   page.on("pageerror", (error) => consoleErrors.push(String(error)))
 

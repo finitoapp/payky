@@ -14,6 +14,12 @@ import {
 test("shows a VAT breakdown by tax rate on the bill and payment detail", async ({
   seededPage: page,
 }) => {
+  // Setup-heavy even before the payment: two tax rates and two items
+  // through the real settings forms, each on its own page load. That alone
+  // runs ~40s on an idle machine, and the whole suite in parallel is
+  // slower still — this test used to fail at whichever step the default
+  // 30s budget happened to run out on.
+  test.slow()
   await test.step("create two tax rates", async () => {
     await addTaxRate(page, "en", { name: "Standard rate", rate: "21" })
     await addTaxRate(page, "en", { name: "Reduced rate", rate: "12" })
@@ -118,6 +124,12 @@ test("shows a VAT breakdown by tax rate on the bill and payment detail", async (
 test("changing a catalog item's tax rate does not retroactively change an already-added bill line", async ({
   seededPage: page,
 }) => {
+  // Setup-heavy even before the payment: two tax rates and two items
+  // through the real settings forms, each on its own page load. That alone
+  // runs ~40s on an idle machine, and the whole suite in parallel is
+  // slower still — this test used to fail at whichever step the default
+  // 30s budget happened to run out on.
+  test.slow()
   await test.step("create two tax rates and an item using the first", async () => {
     await addTaxRate(page, "en", { name: "Standard rate", rate: "21" })
     await addTaxRate(page, "en", { name: "Reduced rate", rate: "12" })

@@ -598,6 +598,13 @@ export async function addTaxRate(
   await page
     .getByRole("button", { name: translate(language, "settings.taxRates.add") })
     .click()
+  // Unlike the item/table/category forms, adding a rate stays on the page,
+  // so there is no navigation to wait on — and every caller's next step is a
+  // hard `page.goto`, which reads a stale snapshot if it overtakes the
+  // write. The rendered row is that signal: it comes from Evolu's own query
+  // subscription, so the write has reached the database by then. Cheaper and
+  // firmer than `waitForLocalWriteToSettle`'s fixed wait.
+  await expect(page.getByText(input.name, { exact: true })).toBeVisible()
 }
 
 /** Adds a table through the real settings UI (used to seed tables for bill/floor-view specs). */

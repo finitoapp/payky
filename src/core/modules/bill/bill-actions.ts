@@ -681,11 +681,19 @@ export const addCatalogItemToBill =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const billResult = await run(requireEditableBill(input.billId))
+    // The catalog lookup depends on nothing the guard reads, so it no longer
+    // waits behind it: this whole action is one tap on a menu button, and the
+    // guard was already the slower half. The bill's own refusal still wins
+    // when both fail — pinned by a test, since concurrency is exactly where
+    // that order could invert unnoticed.
+    const [billResult, catalogItemRows] = await Promise.all([
+      run(requireEditableBill(input.billId)),
+      run.deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
+    ])
     if (!billResult.ok) return billResult
 
     const catalogItemResult = getFirstOr(
-      await run.deps.evolu.loadQuery(catalogItemByIdQuery(input.catalogItemId)),
+      catalogItemRows,
       catalogItemNotFound(input.catalogItemId)
     )
     if (!catalogItemResult.ok) return catalogItemResult

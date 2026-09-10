@@ -1230,6 +1230,79 @@ describe("bill actions", () => {
     })
   }, 15_000)
 
+  test("reports the bill's own refusal ahead of a missing catalog item", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+
+    // Both checks fail: the bill is locked by a pending payment *and* the
+    // catalog item does not exist. The guard's answer is the one that
+    // matters to the operator, and it stays that way now the two reads run
+    // concurrently rather than one gating the other.
+    await expect(
+      run(
+        addCatalogItemToBill({
+          billId,
+          deviceId: null,
+          catalogItemId: "catalog-missing" as CatalogItemId,
+          quantity: PositiveNumber(1),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
+  }, 15_000)
+
+  test("reports a missing catalog item on an otherwise editable bill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+
+    await expect(
+      run(
+        addCatalogItemToBill({
+          billId,
+          deviceId: null,
+          catalogItemId: "catalog-missing" as CatalogItemId,
+          quantity: PositiveNumber(1),
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "CatalogItemNotFound", id: "catalog-missing" },
+    })
+  }, 15_000)
+
   test("locks a bill whose only claim lost the transaction behind it", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

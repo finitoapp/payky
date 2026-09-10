@@ -146,6 +146,13 @@ export type PaymentPreparationFailedError = ReturnType<
   typeof createPaymentPreparationFailedError
 >
 
+const createZeroAmountNotPayableError = defineError("ZeroAmountNotPayable")<{
+  readonly amount: number
+}>()
+export type ZeroAmountNotPayableError = ReturnType<
+  typeof createZeroAmountNotPayableError
+>
+
 const createPaymentNumberNotFoundError = defineError("PaymentNumberNotFound")<{
   readonly paymentId: PaymentId
 }>()
@@ -183,6 +190,7 @@ export type AccountCurrencyMismatchError = ReturnType<
 
 export type CreatePreparedPaymentError =
   | AccountSparkNotFoundError
+  | ZeroAmountNotPayableError
   | PaymentPreparationFailedError
   | YadioHttpError
   | YadioApiError
@@ -201,6 +209,7 @@ export type MarkPaymentPaidIbanError =
 
 export type PreparePaymentMethodError =
   | PaymentNotFoundError
+  | ZeroAmountNotPayableError
   | CashRegisterAccountNotFoundError
   | AccountCurrencyMismatchError
   | AccountSparkNotFoundError
@@ -298,12 +307,17 @@ const loadAccountWithCurrencyCheck = <
   return ok(account)
 }
 
+/**
+ * A positive `amount` is the caller's precondition — see
+ * `createSparkLightningInvoice`, which refuses zero before reaching here. One
+ * minor unit is worth a fraction of a sat at any realistic rate, so the floor
+ * of one sat is what keeps the smallest chargeable amount from rounding down
+ * to an amountless invoice.
+ */
 const convertFiatMinorUnitsToSats = (
   amount: number,
   exchangeRate: number
 ): number => {
-  if (amount === 0) return 0
-
   const fiatAmount = amount / FIAT_MINOR_UNITS
   return Math.max(1, Math.round((fiatAmount / exchangeRate) * SATS_PER_BTC))
 }
@@ -380,10 +394,22 @@ const createSparkLightningInvoice =
     readonly includeSparkInvoice?: boolean
   }): Task<
     PaymentBtcInput,
-    PaymentPreparationFailedError | YadioHttpError | YadioApiError | FetchError,
+    | ZeroAmountNotPayableError
+    | PaymentPreparationFailedError
+    | YadioHttpError
+    | YadioApiError
+    | FetchError,
     EvoluDep & SparkWalletDep & FetchDep & YadioApiDep
   > =>
   async (run) => {
+    // A zero-sat Lightning invoice is an *amountless* invoice: the payer
+    // chooses what to send. Handing one out from a terminal displaying a zero
+    // charge would take whatever arrived and claim it against a payment worth
+    // nothing, so refuse before the quote is even fetched. The keypad does
+    // let "0" through — it only checks that the amount parses — which is how
+    // this is reachable at all.
+    if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
+
     const quote = await run(fetchYadioBtcExchangeRate(currency))
     if (!quote.ok) return quote
 
@@ -773,6 +799,7 @@ const prepareSparkMethod =
       readonly expirySeconds: number
     } & PaymentBtcInput,
     | AccountSparkNotFoundError
+    | ZeroAmountNotPayableError
     | PaymentPreparationFailedError
     | YadioHttpError
     | YadioApiError

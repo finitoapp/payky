@@ -738,6 +738,92 @@ describe("payment actions", () => {
       ])
   }, 15_000)
 
+  test("refuses a Lightning invoice for a zero amount, and rounds the smallest chargeable one up to a sat", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const requestedAmountsSats: Array<number | undefined> = []
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
+        ),
+      sparkWallet: {
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async (input: {
+              readonly amountSats?: number
+            }) => {
+              requestedAmountsSats.push(input.amountSats)
+              return {
+                id: "lightning-request-1",
+                invoice: {
+                  encodedInvoice: "lnbc1zero",
+                  paymentHash: "payment-hash-1",
+                },
+                paymentPreimage: "payment-preimage-1",
+                sparkInvoice: "spark-invoice-1",
+              }
+            },
+          }),
+      },
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { sparkAccountId } = await createPaymentAccounts(deps)
+
+    const paymentFor = (amount: number) =>
+      run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(amount),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+        })
+      )
+
+    // The keypad only checks that the entered amount parses, so "0" charges.
+    // A zero-sat Lightning invoice is an *amountless* one — the payer picks
+    // the sum — which on a terminal showing 0 is not something to hand out.
+    const zeroPaymentId = await paymentFor(0)
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: zeroPaymentId,
+          spark: { accountId: sparkAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "ZeroAmountNotPayable", amount: 0 },
+    })
+    expect(requestedAmountsSats).toEqual([])
+
+    // One minor unit converts to a fraction of a sat at this rate, and is
+    // charged as one sat rather than rounded away to an amountless invoice.
+    const smallestPaymentId = await paymentFor(1)
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: smallestPaymentId,
+          spark: { accountId: sparkAccountId },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: smallestPaymentId })
+    expect(requestedAmountsSats).toEqual([1])
+  }, 15_000)
+
   test("keeps a Lightning payment's expiry in step with the invoice, even when the caller omits expirySeconds", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

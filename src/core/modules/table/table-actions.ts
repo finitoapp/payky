@@ -1,4 +1,5 @@
 import {
+  err,
   type InsertValues,
   ok,
   sqliteTrue,
@@ -7,6 +8,8 @@ import {
 } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
+import { openBillsByTableIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   getNextSortOrder,
@@ -73,10 +76,36 @@ export const updateTable =
     return ok(input.id)
   }
 
+const createTableHasOpenBillsError = defineError("TableHasOpenBills")<{
+  readonly id: TableId
+  readonly openBillCount: number
+}>()
+export type TableHasOpenBillsError = ReturnType<
+  typeof createTableHasOpenBillsError
+>
+
+/**
+ * Soft-deletes a table, refusing while an open bill is still assigned to it.
+ * The POS floor view lists non-deleted tables plus the bills with no table
+ * at all, so deleting an occupied table would strand its bill with no tile
+ * to reach it from. Staff has to close the bill or move it to another table
+ * first — the bill is money, the table is only where it sits.
+ */
 export const deleteTable =
-  (id: TableId): Task<TableId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (
+    id: TableId
+  ): Task<TableId, TableHasOpenBillsError, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
+
+    const openBills = await run.deps.evolu.loadQuery(
+      openBillsByTableIdQuery(id)
+    )
+    if (openBills.length > 0) {
+      return err(
+        createTableHasOpenBillsError({ id, openBillCount: openBills.length })
+      )
+    }
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(

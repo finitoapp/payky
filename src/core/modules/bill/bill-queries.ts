@@ -1,6 +1,11 @@
-import { evoluJsonArrayFrom, type KyselyNotNull } from "@evolu/common"
+import {
+  evoluJsonArrayFrom,
+  type KyselyNotNull,
+  sqliteTrue,
+} from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
+import type { TableId } from "@/core/modules/table/table-types.ts"
 import type { BillId } from "./bill-types.ts"
 
 export const billByIdQuery = (idValue: BillId) =>
@@ -40,6 +45,23 @@ export const openBillsQuery = createQuery((db) =>
       currency: KyselyNotNull
     }>()
 )
+
+/**
+ * Every open bill currently assigned to one table. Read by `deleteTable`:
+ * the POS floor view only renders non-deleted tables plus the bills with no
+ * table at all, so deleting an occupied table would leave its bill with no
+ * tile to reach it from.
+ */
+export const openBillsByTableIdQuery = (tableId: TableId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("bill")
+      .select(["id"])
+      .where("tableId", "=", tableId)
+      .where("canceledAt", "is", null)
+      .where("closedAt", "is", null)
+      .where("isDeleted", "is not", sqliteTrue)
+  )
 
 /**
  * A page of the most recent bills, newest first, regardless of status — the

@@ -790,8 +790,10 @@ export const en = {
   "settings.tables.delete.confirm.cancel": "Cancel",
   "settings.tables.delete.confirm.confirm": "Delete",
   "settings.tables.delete.confirm.description":
-    "Carts already assigned to {name} keep it, but it will no longer be available to assign to new ones.",
+    "Closed bills keep {name} on record, but it will no longer be available to assign to new ones.",
   "settings.tables.delete.confirm.title": "Delete {name}?",
+  "settings.tables.delete.hasOpenBills":
+    "{name} still has an open bill. Close it or move it to another table first.",
   "settings.tables.description": "Manage tables and seating",
   "settings.tables.empty.description":
     "Add the tables in your venue so you can assign bills to them.",

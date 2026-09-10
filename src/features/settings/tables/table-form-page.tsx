@@ -1,6 +1,7 @@
 import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
+import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -30,7 +31,7 @@ import {
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
-import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -103,7 +104,7 @@ function TableForm({
   readonly table?: TableRow
 }) {
   const appRun = useAppRun()
-  const confirmedRun = useConfirmedRun()
+  const confirm = useConfirmDialog()
   const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
@@ -118,6 +119,36 @@ function TableForm({
     null
   )
   const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  // Not `useConfirmedRun`: `deleteTable` returns a domain Result (it refuses
+  // while an open bill still sits on the table, which would strand that bill
+  // with no tile in the POS floor view), and that hook only accepts a
+  // `never`-error Task.
+  const handleDelete = async (tableToDelete: TableRow) => {
+    const confirmed = await confirm({
+      title: t("settings.tables.delete.confirm.title", {
+        name: tableToDelete.name,
+      }),
+      description: t("settings.tables.delete.confirm.description", {
+        name: tableToDelete.name,
+      }),
+      confirmLabel: t("settings.tables.delete.confirm.confirm"),
+      cancelLabel: t("settings.tables.delete.confirm.cancel"),
+      variant: "destructive",
+    })
+    if (!confirmed) return
+
+    await using run = appRun()
+    const result = await run(deleteTable(tableToDelete.id))
+    if (!result.ok) {
+      toast.error(
+        t("settings.tables.delete.hasOpenBills", { name: tableToDelete.name })
+      )
+      return
+    }
+
+    router.history.back()
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -249,23 +280,7 @@ function TableForm({
         <Button
           variant="destructive"
           onClick={() => {
-            void (async () => {
-              const deleted = await confirmedRun(
-                {
-                  title: t("settings.tables.delete.confirm.title", {
-                    name: table.name,
-                  }),
-                  description: t("settings.tables.delete.confirm.description", {
-                    name: table.name,
-                  }),
-                  confirmLabel: t("settings.tables.delete.confirm.confirm"),
-                  cancelLabel: t("settings.tables.delete.confirm.cancel"),
-                  variant: "destructive",
-                },
-                deleteTable(table.id)
-              )
-              if (deleted) router.history.back()
-            })()
+            void handleDelete(table)
           }}
         >
           <Trash2Icon data-icon="inline-start" />

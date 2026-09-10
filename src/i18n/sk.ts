@@ -795,8 +795,10 @@ export const sk = {
   "settings.tables.delete.confirm.cancel": "Zrušiť",
   "settings.tables.delete.confirm.confirm": "Vymazať",
   "settings.tables.delete.confirm.description":
-    "Účty, ktoré sú už priradené k stolu {name}, si ho ponechajú, ale nebude ho možné priradiť k novým.",
+    "Uzavreté účty si stôl {name} ponechajú, ale nebude ho možné priradiť k novým.",
   "settings.tables.delete.confirm.title": "Vymazať stôl {name}?",
+  "settings.tables.delete.hasOpenBills":
+    "Stôl {name} má otvorený účet. Najprv ho zaplaťte alebo presuňte na iný stôl.",
   "settings.tables.description": "Správa stolov a miest na sedenie",
   "settings.tables.empty.description":
     "Pridajte stoly vo svojej prevádzke, aby ste k nim mohli priraďovať účty.",

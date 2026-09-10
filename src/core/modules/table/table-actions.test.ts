@@ -1,8 +1,13 @@
 import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  cancelBill,
+  createBillAtEnd,
+} from "@/core/modules/bill/bill-actions.ts"
+import { createRandomBillId } from "@/core/modules/bill/bill-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255,
@@ -18,6 +23,12 @@ import {
   updateTable,
 } from "./table-actions.ts"
 import type { TableId } from "./table-types.ts"
+
+const createDateDeps = (): DateDep => ({
+  date: {
+    now: () => new Date("2026-06-05T12:00:00.000Z"),
+  },
+})
 
 const tableRecordByIdQuery = (id: TableId) =>
   createQuery((db) =>
@@ -101,7 +112,7 @@ describe("table actions", () => {
         },
       ])
 
-    expect(await run.ok(deleteTable(id))).toBe(id)
+    expect(await run.orThrow(deleteTable(id))).toBe(id)
 
     await expect
       .poll(() => evolu.loadQuery(tableRecordByIdQuery(id)))
@@ -113,6 +124,51 @@ describe("table actions", () => {
           isDeleted: sqliteTrue,
         },
       ])
+  }, 15_000)
+
+  test("refuses to delete a table while an open bill sits on it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const tableId = await run.ok(
+      createTable({
+        deviceId: null,
+        name: NonEmptyString255("Terrace"),
+        seatCount: PositiveInteger(2),
+        code: NonEmptyString255("TERRACE1"),
+        sortOrder: NonNegativeInteger(10),
+      })
+    )
+    const billId = await run.ok(
+      createBillAtEnd({
+        id: createRandomBillId(),
+        deviceId: null,
+        label: null,
+        tableId,
+        currency: "CZK",
+      })
+    )
+
+    // The POS floor view renders non-deleted tables plus the bills with no
+    // table at all, so deleting an occupied table would leave this bill with
+    // no tile to reach it from.
+    await expect(run(deleteTable(tableId))).resolves.toEqual({
+      ok: false,
+      error: { type: "TableHasOpenBills", id: tableId, openBillCount: 1 },
+    })
+
+    await run.orThrow(cancelBill(billId))
+
+    await expect(run(deleteTable(tableId))).resolves.toEqual({
+      ok: true,
+      value: tableId,
+    })
   }, 15_000)
 
   test("lists only active complete tables ordered by sort order", async () => {
@@ -151,7 +207,7 @@ describe("table actions", () => {
         sortOrder: NonNegativeInteger(5),
       })
     )
-    await run.ok(deleteTable(deletedId))
+    await run.orThrow(deleteTable(deletedId))
 
     await expect
       .poll(() => run.ok(listTables()))

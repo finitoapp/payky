@@ -131,7 +131,7 @@ export const registerTablesCommand =
             id: TableId.describe("Table id"),
           },
           async action(_, options) {
-            await run.ok(deleteTable(options.id))
+            await run.orThrow(deleteTable(options.id))
             run.deps.console.log(`Deleted table ${options.id}`)
           },
         })

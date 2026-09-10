@@ -64,13 +64,16 @@ export const removeUndefinedValues = <const TData extends object>(
 /**
  * Derives the `sortOrder` for a row appended after the current last one, for
  * modules with no reorder UI yet (catalog items, catalog categories, tables,
- * tax rates). Rows are expected sorted by `sortOrder` ascending, as the
- * `*Query`s these callers load already do via their `sortOrder` index.
+ * tax rates).
+ *
+ * Takes the highest existing row, or `undefined` for an empty table — callers
+ * ask for exactly that row (`last*SortOrderQuery`) rather than reading every
+ * row to keep the last. `createTaxRate` is the exception: it needs the full
+ * list anyway to unset the previous default, so it passes `existing.at(-1)`.
  */
 export const getNextSortOrder = (
-  existing: ReadonlyArray<{ readonly sortOrder: NonNegativeIntegerType }>
-): NonNegativeIntegerType =>
-  NonNegativeInteger((existing.at(-1)?.sortOrder ?? -1) + 1)
+  last: { readonly sortOrder: NonNegativeIntegerType } | undefined
+): NonNegativeIntegerType => NonNegativeInteger((last?.sortOrder ?? -1) + 1)
 
 const randomBytes = createRandomBytes()
 

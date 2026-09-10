@@ -44,6 +44,28 @@ export const catalogItemsQuery = createQuery((db) =>
 )
 
 /**
+ * The highest `sortOrder` in use, for appending an item after the last one —
+ * see `getNextSortOrder`. Same predicates as `catalogItemsQuery` so it names
+ * the same row that query's last entry did, but one row instead of the whole
+ * catalog with every column. Served by the `catalogItem_sortOrder` index.
+ */
+export const lastCatalogItemSortOrderQuery = createQuery((db) =>
+  db
+    .selectFrom("catalogItem")
+    .select("sortOrder")
+    .where("name", "is not", null)
+    .where("currency", "is not", null)
+    .where("unitAmount", "is not", null)
+    .where("sortOrder", "is not", null)
+    .where("isDeleted", "is", null)
+    .$narrowType<{
+      sortOrder: KyselyNotNull
+    }>()
+    .orderBy("sortOrder", "desc")
+    .limit(1)
+)
+
+/**
  * The distinct `categoryId` values used by any (non-deleted) catalog item,
  * for driving a category filter's chip list. A non-empty result also means
  * at least one catalog item exists at all, independent of any text/category

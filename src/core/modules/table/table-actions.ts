@@ -17,7 +17,7 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
 import type { Table, TableRow } from "./table.ts"
-import { tablesQuery } from "./table-queries.ts"
+import { lastTableSortOrderQuery, tablesQuery } from "./table-queries.ts"
 import type { TableId } from "./table-types.ts"
 import { generateTableCode } from "./table-utils.ts"
 
@@ -47,13 +47,13 @@ export const createTableAtEnd =
     input: Omit<InsertValues<Table>, "sortOrder" | "code">
   ): Task<TableId, never, EvoluOwnerIdDep & EvoluDep> =>
   async (run) => {
-    const existing = await run.deps.evolu.loadQuery(tablesQuery)
+    const [last] = await run.deps.evolu.loadQuery(lastTableSortOrderQuery)
 
     return ok(
       await run.ok(
         createTable({
           ...input,
-          sortOrder: getNextSortOrder(existing),
+          sortOrder: getNextSortOrder(last),
           code: generateTableCode(),
         })
       )

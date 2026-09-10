@@ -34,6 +34,27 @@ export const catalogCategoriesQuery = createQuery((db) =>
 )
 
 /**
+ * The highest `sortOrder` in use, for appending a category after the last one
+ * — see `getNextSortOrder`. Same predicates as `catalogCategoriesQuery` so it
+ * names the same row that query's last entry did, but one row instead of every
+ * category with every column. Unindexed: categories are counted in dozens, and
+ * an index on them would cost every write to earn a scan nobody notices.
+ */
+export const lastCatalogCategorySortOrderQuery = createQuery((db) =>
+  db
+    .selectFrom("catalogCategory")
+    .select("sortOrder")
+    .where("name", "is not", null)
+    .where("sortOrder", "is not", null)
+    .where("isDeleted", "is", null)
+    .$narrowType<{
+      sortOrder: KyselyNotNull
+    }>()
+    .orderBy("sortOrder", "desc")
+    .limit(1)
+)
+
+/**
  * Whether at least one (non-deleted) catalog category exists, independent
  * of any search filter — cheaper than loading full rows just to check.
  */

@@ -8,7 +8,7 @@ import {
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { CatalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
-import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
+import { lastCatalogCategorySortOrderQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   getNextSortOrder,
@@ -64,13 +64,15 @@ export const createCatalogCategoryAtEnd =
     input: Omit<InsertValues<CatalogCategory>, "sortOrder">
   ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
-    const existing = await run.deps.evolu.loadQuery(catalogCategoriesQuery)
+    const [last] = await run.deps.evolu.loadQuery(
+      lastCatalogCategorySortOrderQuery
+    )
 
     return ok(
       await run.ok(
         createCatalogCategory({
           ...input,
-          sortOrder: getNextSortOrder(existing),
+          sortOrder: getNextSortOrder(last),
         })
       )
     )

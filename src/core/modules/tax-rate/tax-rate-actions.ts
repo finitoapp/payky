@@ -26,7 +26,7 @@ export const createTaxRate =
   async (run) => {
     const { evoluOwnerId } = run.deps
     const existing = await run.deps.evolu.loadQuery(taxRatesQuery)
-    const nextSortOrder = getNextSortOrder(existing)
+    const nextSortOrder = getNextSortOrder(existing.at(-1))
     const mutationOptions = { ownerId: evoluOwnerId }
 
     const { id } = await runMutationWithCompletion((options) => {

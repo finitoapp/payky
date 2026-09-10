@@ -25,7 +25,10 @@ import {
   billLineIndexes,
 } from "@/core/modules/bill-line/bill-line.ts"
 import { catalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
-import { catalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
+import {
+  catalogItem,
+  catalogItemIndexes,
+} from "@/core/modules/catalog-item/catalog-item.ts"
 import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
   fioPlugin,
@@ -104,6 +107,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...accountIndexes(create),
   ...accountTransactionIndexes(create),
   ...itemIndexes(create),
+  ...catalogItemIndexes(create),
   ...taxRateIndexes(create),
   ...billIndexes(create),
   ...billLineIndexes(create),

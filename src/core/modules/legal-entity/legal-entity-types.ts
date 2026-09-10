@@ -2,7 +2,7 @@ import { id } from "@evolu/common"
 import { z } from "zod"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-export const LegalEntityIdRaw = id("LegalEntity")
+const LegalEntityIdRaw = id("LegalEntity")
 export const LegalEntityId = standardSchemaToZod(LegalEntityIdRaw)
 export type LegalEntityId = typeof LegalEntityIdRaw.Output
 

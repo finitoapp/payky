@@ -1,7 +1,7 @@
 import type { Typed, TypeName } from "@evolu/common"
 import type { EmptyObject } from "type-fest"
 
-export type ErrorFactory<
+type ErrorFactory<
   TType extends TypeName,
   TShape extends object,
 > = keyof TShape extends never

@@ -47,12 +47,11 @@ export function foldDiacritics(text: string): string {
 /**
  * Wraps a SQL expression in `lower()` plus one `replace()` per mapped
  * diacritic, so it can be compared with a `foldDiacritics`-normalized search
- * term using plain `LIKE`. Generic over any Kysely `Expression` — reusable
- * by any Evolu query that needs accent- and case-insensitive text matching.
+ * term using plain `LIKE`. The reusable entry point is
+ * {@link buildDiacriticInsensitiveSearchCondition}, which is what callers
+ * outside this file want.
  */
-export function foldDiacriticsSql(
-  expr: Expression<unknown>
-): RawBuilder<string> {
+function foldDiacriticsSql(expr: Expression<unknown>): RawBuilder<string> {
   let folded = kyselySql<string>`lower(${expr})`
   for (const [accented, base] of DIACRITICS_FOLD_MAP) {
     folded = kyselySql<string>`replace(${folded}, ${accented}, ${base})`

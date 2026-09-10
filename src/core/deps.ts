@@ -22,7 +22,7 @@ const createFetchError = defineError("FetchError")<{
 }>()
 export type FetchError = ReturnType<typeof createFetchError>
 
-export const appFetchAsText =
+const appFetchAsText =
   (
     url: string | URL,
     init?: RequestInit

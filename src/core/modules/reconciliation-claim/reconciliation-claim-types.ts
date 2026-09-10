@@ -1,7 +1,7 @@
 import { id } from "@evolu/common"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-export const ReconciliationClaimIdRaw = id("ReconciliationClaim")
+const ReconciliationClaimIdRaw = id("ReconciliationClaim")
 export const ReconciliationClaimId = standardSchemaToZod(
   ReconciliationClaimIdRaw
 )

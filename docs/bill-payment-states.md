@@ -67,7 +67,12 @@ query performance.
   payment method's own expiry (e.g. a Lightning invoice's `expirySeconds`).
   `null` means the payment never expires on its own (cash, IBAN transfer —
   there is no natural "too late" for those; staff waits as long as it takes,
-  or explicitly cancels — see ["Editing lock"](#editing-lock)).
+  or explicitly cancels — see ["Editing lock"](#editing-lock)). It describes
+  the payment as a whole, and payment methods are not mutually exclusive, so
+  it is only non-`null` while *every* prepared method has an expiry window:
+  preparing cash or IBAN alongside (or after) a Lightning invoice clears it,
+  since the payment stays payable through that method no matter how long the
+  invoice has been dead. `preparePaymentMethod` maintains this.
 
 Beyond these, no other payment status field exists. "Paid" is still normally
 read off the `reconciliationClaim` table (see below) rather than stored

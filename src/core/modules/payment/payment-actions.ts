@@ -83,7 +83,10 @@ import {
   TimestampMsSchema,
   VariableSymbol,
 } from "../shared/schema.ts"
-import { paymentByIdQuery } from "./payment-queries.ts"
+import {
+  paymentByIdQuery,
+  paymentNonExpiringMethodsByIdQuery,
+} from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 const SATS_PER_BTC = 100_000_000
@@ -776,6 +779,26 @@ export const preparePaymentMethod =
       return ok(paymentId)
     }
 
+    // `payment.expiresAt` describes the payment as a whole, but only some
+    // methods expire: a Lightning invoice does, a cash drawer or a bank
+    // transfer never does. The methods can coexist on one payment, so the
+    // payment expires only while *every* prepared method has an expiry
+    // window. Without this, preparing Lightning and then switching the same
+    // payment to cash or IBAN left the old `expiresAt` behind, and 15
+    // minutes later `derivePaymentStatus` reported a perfectly live cash
+    // payment as `expired` — silently releasing the bill's editing lock.
+    // See docs/bill-payment-states.md.
+    const nonExpiringMethods = await run.deps.evolu.loadQuery(
+      paymentNonExpiringMethodsByIdQuery(paymentId)
+    )
+    const hasNonExpiringMethod =
+      cashRegisterPayment?.ok === true ||
+      bankPayment?.ok === true ||
+      nonExpiringMethods.some(
+        (row) =>
+          row.cashRegisterAccountId !== null || row.ibanAccountId !== null
+      )
+
     await runMutationWithCompletion((options) => {
       if (cashRegisterPayment?.ok) {
         run.deps.evolu.upsert(
@@ -838,7 +861,7 @@ export const preparePaymentMethod =
             }
           )
         }
-        if (spark?.expirySeconds !== undefined) {
+        if (spark?.expirySeconds !== undefined && !hasNonExpiringMethod) {
           run.deps.evolu.update(
             "payment",
             {
@@ -851,6 +874,14 @@ export const preparePaymentMethod =
             { ...options, ownerId: evoluOwnerId }
           )
         }
+      }
+
+      if (hasNonExpiringMethod && payment.expiresAt !== null) {
+        run.deps.evolu.update(
+          "payment",
+          { id: paymentId, expiresAt: null },
+          { ...options, ownerId: evoluOwnerId }
+        )
       }
     })
 

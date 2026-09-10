@@ -109,6 +109,36 @@ export const paymentSparkDetailsByIdQuery = (idValue: PaymentId) =>
   )
 
 /**
+ * The account ids of a payment's prepared methods that never expire on
+ * their own — a cash register drawer or a bank transfer. Read by
+ * `preparePaymentMethod`: `payment.expiresAt` describes the payment as a
+ * whole, but the methods are not mutually exclusive (a payment can offer
+ * Lightning *and* cash), so the payment only expires while every prepared
+ * method has an expiry window of its own. See docs/bill-payment-states.md.
+ */
+export const paymentNonExpiringMethodsByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("payment")
+      .leftJoin("paymentIban", (join) =>
+        join
+          .onRef("paymentIban.id", "=", "payment.id")
+          .on("paymentIban.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentCashRegister", (join) =>
+        join
+          .onRef("paymentCashRegister.id", "=", "payment.id")
+          .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "paymentIban.accountId as ibanAccountId",
+        "paymentCashRegister.accountId as cashRegisterAccountId",
+      ])
+      .where("payment.id", "=", idValue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+  )
+
+/**
  * The account, amount, and symbol identifiers an IBAN payment was prepared
  * with, for matching an incoming bank transaction the same way
  * `ibanReconciliationCandidateByAccountTransactionIdQuery` does.

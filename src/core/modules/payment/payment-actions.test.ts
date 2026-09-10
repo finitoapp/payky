@@ -615,7 +615,11 @@ describe("payment actions", () => {
       .toMatchObject([
         {
           id,
-          expiresAt: fixedDate.getTime() + 1_800_000,
+          // Cash and IBAN never expire, so a payment offering them stays
+          // payable however long the Lightning invoice has been dead —
+          // `expiresAt` describes the whole payment, not one method of it.
+          // See docs/bill-payment-states.md.
+          expiresAt: null,
           cashRegister: {
             id,
             accountId: cashRegisterAccountId,
@@ -636,6 +640,94 @@ describe("payment actions", () => {
             lnInvoice: "lnbc8600n1lazy",
             sparkInvoice: "spark-invoice-1",
           },
+        },
+      ])
+  }, 15_000)
+
+  test("preparing cash after Lightning clears the payment's expiry", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            BTC: 1_500_000,
+            timestamp: 1_700_000_000_000,
+          })
+        ),
+      sparkWallet: {
+        create: async () =>
+          createFakeSparkWallet({
+            createLightningInvoice: async () => ({
+              id: "lightning-request-1",
+              invoice: {
+                encodedInvoice: "lnbc8600n1switch",
+                paymentHash: "payment-hash-1",
+              },
+              paymentPreimage: "payment-preimage-1",
+              sparkInvoice: "spark-invoice-1",
+            }),
+          }),
+      },
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, sparkAccountId } =
+      await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: { accountId: sparkAccountId, expirySeconds: 900 },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([{ id, expiresAt: fixedDate.getTime() + 900_000 }])
+
+    // Switching the same payment to cash must not leave the dead invoice's
+    // expiry behind: `derivePaymentStatus` would call this live cash payment
+    // Expired 15 minutes later and silently release its bill's editing lock.
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: id,
+          cashRegister: { accountId: cashRegisterAccountId },
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
+      .toMatchObject([
+        {
+          id,
+          expiresAt: null,
+          cashRegister: { id, accountId: cashRegisterAccountId },
         },
       ])
   }, 15_000)

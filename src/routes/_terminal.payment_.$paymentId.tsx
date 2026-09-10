@@ -192,13 +192,26 @@ const paymentRequestQuery = (paymentId: PaymentId) =>
       }>()
   )
 
+/**
+ * Whether this payment has money against it, as one row or none. Joined
+ * through `accountTransaction` rather than counting claims outright: a claim
+ * whose transaction was deleted is not money that arrived, and the bill's
+ * coverage already ignores it — see `paymentsWithClaimsByBillIdQuery` and
+ * `claimedPaymentIdSet` for the same reading elsewhere.
+ */
 const paymentClaimsQuery = (paymentId: PaymentId) =>
   createQuery((db) =>
     db
       .selectFrom("reconciliationClaim")
-      .select(["id", "claimedAt"])
-      .where("paymentId", "=", paymentId)
-      .where("isDeleted", "is not", sqliteTrue)
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "reconciliationClaim.accountTransactionId"
+      )
+      .select(["reconciliationClaim.id", "reconciliationClaim.claimedAt"])
+      .where("reconciliationClaim.paymentId", "=", paymentId)
+      .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .limit(1)
   )
 

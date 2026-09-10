@@ -38,15 +38,6 @@ import { groupByDay } from "@/lib/group-by-day.ts"
 import { cn } from "@/lib/utils.ts"
 
 /**
- * `eb.fn.count<number>(...)` below only asserts the output type to
- * TypeScript — some SQLite drivers actually return COUNT() as a `bigint` or
- * `string` at runtime. Coerce once here, at the query boundary, instead of
- * letting the driver-dependent union leak into `PaymentHistoryStatusInput`.
- */
-const toClaimCount = (value: number | string | bigint): number =>
-  typeof value === "number" ? value : Number(value)
-
-/**
  * The most recent payments, newest first — the read model behind the
  * `/activity` list. Mirrors `latestBillsQuery` in `bill-queries.ts`: embeds
  * everything `PaymentHistoryIssues` used to load per row via separate
@@ -81,11 +72,6 @@ const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
-      .leftJoin("reconciliationClaim", (join) =>
-        join
-          .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-          .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
-      )
       .select([
         "payment.id",
         "payment.billId",
@@ -99,7 +85,6 @@ const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
         "payment.createdAt",
       ])
       .select((eb) => [
-        eb.fn.count<number>("reconciliationClaim.id").as("claimCount"),
         evoluJsonArrayFrom(
           eb
             .selectFrom("reconciliationClaim as ownClaim")
@@ -223,18 +208,6 @@ const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
       .where("payment.currency", "is not", null)
       .where("payment.tipAmount", "is not", null)
       .where("payment.createdAt", "is not", null)
-      .groupBy([
-        "payment.id",
-        "payment.billId",
-        "payment.amount",
-        "payment.currency",
-        "payment.tipAmount",
-        "payment.canceledAt",
-        "payment.confirmedPaidAt",
-        "payment.excessAcknowledgedAt",
-        "payment.expiresAt",
-        "payment.createdAt",
-      ])
       .orderBy("payment.createdAt", "desc")
       .limit(limit)
       .$narrowType<{
@@ -290,6 +263,19 @@ const resolvePaymentStatus = (
     hasActiveClaim: payment.claimCount > 0,
     now,
   })
+
+/**
+ * Claims whose `accountTransaction` is still there, which is what
+ * `hasActiveClaim` and the cancellation collision both mean by "claimed" —
+ * a claim pointing at a deleted transaction is not money that arrived, and
+ * the bill's coverage already ignores it. `ownClaimedTransactions` is
+ * already embedded for `derivePaymentHasExcessSettlement`, so this needs no
+ * extra query — which let the outer `reconciliationClaim` join, its `COUNT`
+ * and the `groupBy` that count forced all come out of the query, along with
+ * the `bigint`/`string` coercion that `COUNT` needed at the boundary.
+ */
+const toSettledClaimCount = (payment: PaymentHistoryRow): number =>
+  payment.ownClaimedTransactions.length
 
 /**
  * The canceled+claimed collision described in docs/bill-payment-states.md:
@@ -438,7 +424,7 @@ export const PaymentHistory = () => {
           key={group.date.toDateString()}
           title={formatDate(group.date, locale)}
           items={group.items.map((item) => {
-            const claimCount = toClaimCount(item.claimCount)
+            const claimCount = toSettledClaimCount(item)
             const paymentStatus = resolvePaymentStatus(
               {
                 canceledAt: item.canceledAt,

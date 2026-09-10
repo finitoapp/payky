@@ -14,7 +14,10 @@ import {
 } from "@/core/integrations/yadio/yadio-client.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  createAccountTransaction,
+  deleteAccountTransaction,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import {
   addCatalogItemToBill,
   addManualAmountToBill,
@@ -77,7 +80,10 @@ import {
   preparePaymentMethod,
   updatePayment,
 } from "./payment-actions.ts"
-import { paymentByIdQuery } from "./payment-queries.ts"
+import {
+  paymentByIdQuery,
+  paymentsWithClaimsByBillIdQuery,
+} from "./payment-queries.ts"
 import { DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS } from "./payment-status-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 
@@ -2308,6 +2314,62 @@ describe("payment actions", () => {
     ).resolves.toMatchObject({ ok: true })
 
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+  }, 15_000)
+
+  test("stops counting a claim once the transaction behind it is deleted", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    await run.orThrow(
+      markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentsWithClaimsByBillIdQuery(billId)))
+      .toMatchObject([{ id: paymentId, claimCount: 1 }])
+
+    const [transaction] = await evolu.loadQuery(
+      createQuery((db) => db.selectFrom("accountTransaction").select(["id"]))
+    )
+    if (transaction === undefined) throw new Error("no account transaction")
+    await run.ok(deleteAccountTransaction(transaction.id))
+
+    // `claimCount` feeds `derivePaymentStatus`'s `hasActiveClaim` on the bill
+    // detail page. A claim whose transaction is gone is not money that
+    // arrived — the bill's own coverage already ignores it — so counting it
+    // would keep displaying the payment as paid while it funds nothing.
+    await expect
+      .poll(() => evolu.loadQuery(paymentsWithClaimsByBillIdQuery(billId)))
+      .toMatchObject([{ id: paymentId, claimCount: 0 }])
   }, 15_000)
 
   test("marks a payment paid against a cash register or an IBAN account, each under its own deterministic transaction id", async () => {

@@ -25,6 +25,13 @@ export const paymentByIdQuery = (idValue: PaymentId) =>
  * section. Mirrors `latestPaymentsQuery` in `payment-history.tsx` (same
  * shape, filtered by `billId` instead of capped globally), so
  * `derivePaymentStatus` can be computed the same way for each row.
+ *
+ * `claimCount` counts claims whose `accountTransaction` is still there, not
+ * claims outright: it feeds `derivePaymentStatus`'s `hasActiveClaim`, and a
+ * claim pointing at a deleted transaction is not money that arrived — the
+ * bill's own coverage (`calculateClaimedSum`) already ignores it, so counting
+ * it here displayed a payment as paid while it funded nothing. Same reading
+ * the editing lock settled on; see `claimedPaymentIdSet`.
  */
 export const paymentsWithClaimsByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
@@ -34,6 +41,15 @@ export const paymentsWithClaimsByBillIdQuery = (billId: BillId) =>
         join
           .onRef("reconciliationClaim.paymentId", "=", "payment.id")
           .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("accountTransaction", (join) =>
+        join
+          .onRef(
+            "accountTransaction.id",
+            "=",
+            "reconciliationClaim.accountTransactionId"
+          )
+          .on("accountTransaction.isDeleted", "is not", sqliteTrue)
       )
       .select([
         "payment.id",
@@ -46,7 +62,7 @@ export const paymentsWithClaimsByBillIdQuery = (billId: BillId) =>
         "payment.createdAt",
       ])
       .select((eb) =>
-        eb.fn.count<number>("reconciliationClaim.id").as("claimCount")
+        eb.fn.count<number>("accountTransaction.id").as("claimCount")
       )
       .where("payment.billId", "=", billId)
       .where("payment.isDeleted", "is not", sqliteTrue)

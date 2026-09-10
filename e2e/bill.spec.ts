@@ -555,6 +555,77 @@ test("locks a bill while its payment is pending, and unlocks it once that paymen
     // still exist. See docs/bill-payment-states.md.
     await expect(page.getByTestId("payment-paid-panel")).toHaveCount(0)
   })
+
+  await test.step("the canceled payment page is not a dead end: its header's back arrow goes home", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "nav.back") })
+      .click()
+
+    // Home, not the bill page that sits behind this one in history: the
+    // dead-end states use their own handler instead of the header's default
+    // `router.history.back()`, since a cold load of a stale payment link
+    // lands here with no history entry to go back to.
+    await expect(
+      page.getByRole("button", { name: translate("en", "nav.activity") })
+    ).toBeVisible()
+
+    // Navigated with `replace`, so the browser's back button can't drop the
+    // user into the dead end again.
+    await page.goBack()
+    await expect(page).not.toHaveURL(/\/payment\//)
+  })
+})
+
+test("a link with an id that can't be parsed shows an invalid-id page with a way home, not the error boundary", async ({
+  seededPage: page,
+}) => {
+  const backButton = page.getByRole("button", {
+    name: translate("en", "nav.back"),
+  })
+  const homeButton = page.getByRole("button", {
+    name: translate("en", "nav.activity"),
+  })
+
+  await test.step("a malformed bill link", async () => {
+    await page.goto("/bill?billId=not-a-bill-id", {
+      waitUntil: "domcontentloaded",
+    })
+    await expect(
+      page.getByText(translate("en", "bill.invalidId"))
+    ).toBeVisible()
+    // The whole point: this used to throw out of `validateSearch` and land
+    // in the global error boundary.
+    await expect(page.getByText(translate("en", "appError.title"))).toHaveCount(
+      0
+    )
+
+    await backButton.click()
+    await expect(homeButton).toBeVisible()
+  })
+
+  await test.step("a malformed payment link", async () => {
+    await page.goto("/payment/not-a-payment-id", {
+      waitUntil: "domcontentloaded",
+    })
+    await expect(
+      page.getByText(translate("en", "paymentWait.invalidId"))
+    ).toBeVisible()
+
+    await backButton.click()
+    await expect(homeButton).toBeVisible()
+  })
+
+  await test.step("a malformed tableId only costs the table preselection", async () => {
+    await page.goto("/bill?tableId=not-a-table-id", {
+      waitUntil: "domcontentloaded",
+    })
+    await expect(
+      page.getByRole("heading", { name: translate("en", "bill.title") })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: translate("en", "bill.table.assign") })
+    ).toBeVisible()
+  })
 })
 
 test("canceling a bill-less keypad payment lands back on the keypad", async ({

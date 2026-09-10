@@ -62,6 +62,7 @@ export const sk = {
     "Všetky položky v tomto účte budú odstránené. Túto akciu nemožno vrátiť.",
   "bill.discard.confirm.title": "Zahodiť tento účet?",
   "bill.emptySearch": "Vyhľadávanie nenašlo žiadne položky.",
+  "bill.invalidId": "Neplatné ID účtu.",
   "bill.itemsCount": "Položky: {value}",
   "bill.scan.collision.description":
     "Tomuto kódu zodpovedá viac položiek. Vyberte tú, ktorú ste chceli pridať.",

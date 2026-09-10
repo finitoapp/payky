@@ -60,6 +60,7 @@ export const en = {
     "All items in this bill will be removed. This can't be undone.",
   "bill.discard.confirm.title": "Discard this bill?",
   "bill.emptySearch": "No items match your search.",
+  "bill.invalidId": "Invalid bill id.",
   "bill.itemsCount": "Items: {value}",
   "bill.scan.collision.description":
     "This code is assigned to more than one item. Choose the one you meant to add.",

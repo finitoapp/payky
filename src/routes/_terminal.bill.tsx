@@ -1,13 +1,20 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { z } from "zod"
+import { RouteMessage } from "@/components/route-message.tsx"
 import { BillId, createRandomBillId } from "@/core/modules/bill/bill-types.ts"
 import { TableId } from "@/core/modules/table/table-types.ts"
 import { BillPage } from "@/features/bill/bill-page.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
+// `billId` is parsed in the component, not here: a `validateSearch` throw
+// on a hand-typed or stale link escapes to the global error boundary, and a
+// bad id deserves the same "invalid id" page a bad /payment/<id> gets. A
+// broken `tableId` is only a lost table preselection, so it just falls back
+// to none.
 const BillSearchSchema = z.object({
-  billId: BillId.optional(),
-  tableId: TableId.optional(),
+  billId: z.string().optional(),
+  tableId: TableId.optional().catch(undefined),
 })
 
 export const Route = createFileRoute("/_terminal/bill")({
@@ -40,16 +47,20 @@ export const Route = createFileRoute("/_terminal/bill")({
 })
 
 function BillRoute() {
+  const { t } = useTranslation()
   const { billId, tableId } = Route.useSearch()
+  // A well-formed id that has no bill row yet is *not* an error: that is
+  // exactly how a new cart starts (see `beforeLoad`). Only an unparseable
+  // one is.
+  const parsedBillId = BillId.safeParse(billId)
 
-  // Unreachable in practice: `beforeLoad` above always redirects to a URL
-  // with `billId` set before this ever renders. Only here to satisfy the
-  // type of `BillPage`'s required `billId` prop.
-  if (billId === undefined) return null
+  if (!parsedBillId.success) {
+    return <RouteMessage>{t("bill.invalidId")}</RouteMessage>
+  }
 
   return (
     <Suspense fallback={null}>
-      <BillPage billId={billId} initialTableId={tableId} />
+      <BillPage billId={parsedBillId.data} initialTableId={tableId} />
     </Suspense>
   )
 }

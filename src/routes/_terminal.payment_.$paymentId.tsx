@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner"
 import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { RouteMessage } from "@/components/route-message.tsx"
 import { SuccessPanel } from "@/components/success-panel.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -266,11 +267,7 @@ function PaymentWaitingContent({ paymentId }: { readonly paymentId: string }) {
   const parsedPaymentId = PaymentId.safeParse(paymentId)
 
   if (!parsedPaymentId.success) {
-    return (
-      <PaymentWaitingMessage>
-        {t("paymentWait.invalidId")}
-      </PaymentWaitingMessage>
-    )
+    return <RouteMessage>{t("paymentWait.invalidId")}</RouteMessage>
   }
 
   return <PaymentWaitingRequest paymentId={parsedPaymentId.data} />
@@ -597,15 +594,11 @@ function PaymentWaitingRequest({
   }
 
   if (!payment) {
-    return (
-      <PaymentWaitingMessage>{t("paymentWait.notFound")}</PaymentWaitingMessage>
-    )
+    return <RouteMessage>{t("paymentWait.notFound")}</RouteMessage>
   }
 
   if (payment.canceledAt !== null) {
-    return (
-      <PaymentWaitingMessage>{t("paymentWait.canceled")}</PaymentWaitingMessage>
-    )
+    return <RouteMessage>{t("paymentWait.canceled")}</RouteMessage>
   }
 
   const cashRegisterAccountId = payment.cashRegisterAccountId
@@ -1191,13 +1184,5 @@ function QrPaymentRequest({
       copiedMessage={t("paymentWait.qrCopied")}
       copyFailedMessage={t("paymentWait.qrCopyFailed")}
     />
-  )
-}
-
-function PaymentWaitingMessage({ children }: { readonly children: string }) {
-  return (
-    <div className="flex min-h-full items-center justify-center px-8 text-center text-lg text-muted-foreground">
-      {children}
-    </div>
   )
 }

@@ -2,7 +2,7 @@ import { id } from "@evolu/common"
 import { z } from "zod"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-const AppSettingsIdRaw = id("AppSettings")
+export const AppSettingsIdRaw = id("AppSettings")
 export const AppSettingsId = standardSchemaToZod(AppSettingsIdRaw)
 export type AppSettingsId = typeof AppSettingsIdRaw.Output
 

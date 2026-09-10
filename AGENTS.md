@@ -43,6 +43,7 @@
 ## Domain Module Structure
 
 - Use `*-types.ts` for branded ids, domain enums/unions, and exported domain types.
+- Export every part of an id definition, including the raw `id(...)` schema: `export const ItemIdRaw = id("Item")`, `export const ItemId = standardSchemaToZod(ItemIdRaw)`, `export type ItemId = typeof ItemIdRaw.Output`. `*IdRaw` usually has no importer outside its own file — export it anyway. Id definitions are uniform on purpose, so a dead-export scan flagging `*IdRaw` is a false positive; prefer the zod-wrapped `XId` at call sites and in table schemas.
 - Use the module root file, for example `payment.ts`, for Evolu table schemas, detail/extension table schemas, indexes, and `InferTable` row exports.
 - Use `*-actions.ts` for Evolu mutations and command-style domain operations. Expected domain failures should return `Result`.
 - Use `*-queries.ts` for reusable Evolu queries and read models.

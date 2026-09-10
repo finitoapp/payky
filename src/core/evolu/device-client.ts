@@ -25,17 +25,17 @@ import {
 } from "@/core/modules/shared/schema"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-const AccountIdRaw = id("DeviceAccountId")
+export const AccountIdRaw = id("DeviceAccountId")
 export const AccountId = standardSchemaToZod(AccountIdRaw)
 export type AccountId = typeof AccountIdRaw.Output
 
-const AccountEvoluTransportIdRaw = id("DeviceAccountEvoluTransportId")
+export const AccountEvoluTransportIdRaw = id("DeviceAccountEvoluTransportId")
 export const AccountEvoluTransportId = standardSchemaToZod(
   AccountEvoluTransportIdRaw
 )
 export type AccountEvoluTransportId = typeof AccountEvoluTransportIdRaw.Output
 
-const DeviceSettingsIdRaw = id("DeviceSettings")
+export const DeviceSettingsIdRaw = id("DeviceSettings")
 export const DeviceSettingsId = standardSchemaToZod(DeviceSettingsIdRaw)
 export type DeviceSettingsId = typeof DeviceSettingsIdRaw.Output
 

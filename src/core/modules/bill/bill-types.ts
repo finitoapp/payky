@@ -2,7 +2,7 @@ import { id } from "@evolu/common"
 import { createTableId } from "@/core/modules/shared/utils.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-const BillIdRaw = id("Bill")
+export const BillIdRaw = id("Bill")
 export const BillId = standardSchemaToZod(BillIdRaw)
 export type BillId = typeof BillIdRaw.Output
 

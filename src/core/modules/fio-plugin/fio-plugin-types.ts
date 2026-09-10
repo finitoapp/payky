@@ -1,10 +1,10 @@
 import { id } from "@evolu/common"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-const FioPluginIdRaw = id("FioPlugin")
+export const FioPluginIdRaw = id("FioPlugin")
 export const FioPluginId = standardSchemaToZod(FioPluginIdRaw)
 export type FioPluginId = typeof FioPluginIdRaw.Output
 
-const FioPluginTokenIdRaw = id("FioPluginToken")
+export const FioPluginTokenIdRaw = id("FioPluginToken")
 export const FioPluginTokenId = standardSchemaToZod(FioPluginTokenIdRaw)
 export type FioPluginTokenId = typeof FioPluginTokenIdRaw.Output

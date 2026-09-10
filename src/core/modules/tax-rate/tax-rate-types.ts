@@ -2,7 +2,7 @@ import { id } from "@evolu/common"
 import { z } from "zod"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-const TaxRateIdRaw = id("TaxRate")
+export const TaxRateIdRaw = id("TaxRate")
 export const TaxRateId = standardSchemaToZod(TaxRateIdRaw)
 export type TaxRateId = typeof TaxRateIdRaw.Output
 

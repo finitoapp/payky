@@ -1,7 +1,7 @@
 import { type Brand, type Id, id } from "@evolu/common"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-const BillLineIdRaw = id("BillLine")
+export const BillLineIdRaw = id("BillLine")
 export const BillLineId = standardSchemaToZod(BillLineIdRaw)
 export type BillLineId = typeof BillLineIdRaw.Output
 

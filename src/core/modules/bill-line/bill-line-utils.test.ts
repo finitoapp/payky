@@ -193,4 +193,79 @@ describe("deriveBillLineSummaryDiff", () => {
     expect(diff.removed).toEqual([coffee])
     expect(diff.changed).toEqual([])
   })
+
+  // `item` ids are content-addressed over name/description/currency/
+  // unitAmount/taxRateId and exclude the line's `type`, so a tip and a manual
+  // amount with the same name and amount share one `itemId` while staying two
+  // separate summaries. Only the summary id tells them apart.
+  const sharedItemId = "item-shared" as ItemId
+  const manualAmount = (totalAmount: number): BillLineSummary =>
+    makeSummary({
+      id: "summary-manual" as BillLineSummaryId,
+      itemId: sharedItemId,
+      type: "manualAmount",
+      name: NonEmptyString255("Tip"),
+      totalAmount: NonNegativeInteger(totalAmount),
+    })
+  const tip = (totalAmount: number): BillLineSummary =>
+    makeSummary({
+      id: "summary-tip" as BillLineSummaryId,
+      itemId: sharedItemId,
+      type: "tip",
+      name: NonEmptyString255("Tip"),
+      totalAmount: NonNegativeInteger(totalAmount),
+    })
+
+  test("tells apart a tip and a manual amount sharing one item snapshot", () => {
+    const diff = deriveBillLineSummaryDiff(
+      [manualAmount(500), tip(500)],
+      [manualAmount(500), tip(900)]
+    )
+
+    // Only the tip's amount moved; the manual amount is identical on both
+    // sides and must not be reported at all, let alone as having turned into
+    // the tip line.
+    expect(diff.changed).toEqual([{ before: tip(500), after: tip(900) }])
+    expect(diff.added).toEqual([])
+    expect(diff.removed).toEqual([])
+  })
+
+  test("reports a tip replaced by an equal manual amount as a swap", () => {
+    const diff = deriveBillLineSummaryDiff([tip(500)], [manualAmount(500)])
+
+    // Same name, same amount, same `itemId` — but a tip line became a manual
+    // amount, which is a real change to the bill, not "nothing happened".
+    expect(diff.removed).toEqual([tip(500)])
+    expect(diff.added).toEqual([manualAmount(500)])
+    expect(diff.changed).toEqual([])
+  })
+
+  test("pairs every repriced line of one catalog item, not just the last", () => {
+    const coffeeId = "catalog-coffee" as CatalogItemId
+    const coffeeAt = (price: number): BillLineSummary =>
+      makeSummary({
+        id: `summary-coffee-${price}` as BillLineSummaryId,
+        itemId: `item-coffee-${price}` as ItemId,
+        catalogItemId: coffeeId,
+        name: NonEmptyString255("Coffee"),
+        totalAmount: NonNegativeInteger(price),
+      })
+
+    // Coffee was repriced twice while this payment was outstanding, so the
+    // bill carries two snapshots of it and the payment froze two others.
+    // Correlating by catalog item should pair both, not pair one and leave
+    // the rest as an unrelated-looking add + remove — the exact confusion
+    // this pass exists to prevent.
+    const diff = deriveBillLineSummaryDiff(
+      [coffeeAt(5900), coffeeAt(6200)],
+      [coffeeAt(7000), coffeeAt(7500)]
+    )
+
+    expect(diff.changed).toEqual([
+      { before: coffeeAt(5900), after: coffeeAt(7000) },
+      { before: coffeeAt(6200), after: coffeeAt(7500) },
+    ])
+    expect(diff.added).toEqual([])
+    expect(diff.removed).toEqual([])
+  })
 })

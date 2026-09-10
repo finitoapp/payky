@@ -28,10 +28,13 @@ import {
   insertBillLineRows,
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
+import { deriveBillLineSummaryDiff } from "@/core/modules/bill-line/bill-line-utils.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
+import { itemsByPaymentIdQuery } from "@/core/modules/item/item-queries.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import { paymentLinesByPaymentIdQuery } from "@/core/modules/payment-line/payment-line-queries.ts"
+import { paymentLinesToBillLineSummaries } from "@/core/modules/payment-line/payment-line-utils.ts"
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -332,6 +335,86 @@ describe("payment actions", () => {
     await expect(
       evolu.loadQuery(paymentLinesByPaymentIdQuery(id))
     ).resolves.toEqual([])
+  }, 15_000)
+
+  test("diffs a payment's frozen snapshot against the live bill through the real producers", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    // A manual amount and a tip with the same name and amount: one shared
+    // `item` snapshot, two separate lines — the collision that made the diff
+    // key on something unique.
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Tip"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+    await run.orThrow(
+      addTipToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Tip"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    const loadDiff = async () => {
+      const [paymentLines, itemRows, current] = await Promise.all([
+        evolu.loadQuery(paymentLinesByPaymentIdQuery(paymentId)),
+        evolu.loadQuery(itemsByPaymentIdQuery(paymentId)),
+        run.ok(loadCalculatedBillLineSummaries(billId)),
+      ])
+
+      return deriveBillLineSummaryDiff(
+        paymentLinesToBillLineSummaries(paymentLines, itemRows),
+        current
+      )
+    }
+
+    // Nothing has moved yet. This is the property the diff's whole first pass
+    // rests on: `paymentLinesToBillLineSummaries` and
+    // `calculateBillLineSummaries` must derive the *same* summary ids for the
+    // same line, or an untouched bill would read as every line removed and
+    // re-added. The unit tests around `deriveBillLineSummaryDiff` build both
+    // sides by hand and cannot catch that.
+    await expect.poll(loadDiff).toEqual({
+      added: [],
+      removed: [],
+      changed: [],
+    })
   }, 15_000)
 
   test("snapshots the bill's line-item summaries as paymentLine rows when the payment is tied to a bill", async () => {

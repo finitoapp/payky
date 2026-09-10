@@ -2,6 +2,7 @@ import type { ErrorComponentProps } from "@tanstack/react-router"
 import { AlertTriangleIcon, ChevronDownIcon } from "lucide-react"
 import * as React from "react"
 
+import { AppLoaderCleanup } from "@/components/app-loader-cleanup.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -53,6 +54,13 @@ export function AppErrorBoundary({
 
   return (
     <main className="flex min-h-svh items-center justify-center px-4 py-8">
+      {/*
+       * index.html's boot spinner covers the whole viewport at the top of
+       * the stacking order, and it is only removed once the real app
+       * mounts — which never happened if this card is standing in for a
+       * crash during boot. Idempotent when the spinner is already gone.
+       */}
+      <AppLoaderCleanup />
       <Card className="w-full max-w-2xl border-destructive/30 bg-card/95 shadow-xl">
         <CardHeader>
           <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">

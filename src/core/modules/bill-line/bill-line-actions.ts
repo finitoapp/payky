@@ -2,7 +2,7 @@ import { type MutationOptions, ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import { itemsQuery } from "@/core/modules/item/item-queries.ts"
+import { itemsByBillIdQuery } from "@/core/modules/item/item-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
@@ -33,7 +33,7 @@ export const loadCalculatedBillLineSummaries =
   async (run) => {
     const [lineRows, itemRows] = await Promise.all([
       run.deps.evolu.loadQuery(billLinesByBillIdQuery(billId)),
-      run.deps.evolu.loadQuery(itemsQuery),
+      run.deps.evolu.loadQuery(itemsByBillIdQuery(billId)),
     ])
 
     return ok(calculateBillLineSummaries(lineRows, itemRows))

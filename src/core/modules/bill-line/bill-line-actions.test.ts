@@ -24,6 +24,15 @@ const coffeeSnapshot = (): ItemRow =>
     unitAmount: 5900,
   } as Omit<ItemRow, "id">)
 
+const teaSnapshot = (): ItemRow =>
+  createStandaloneItemSnapshot({
+    catalogItemId: null,
+    name: "Tea",
+    description: null,
+    currency: "CZK",
+    unitAmount: 4200,
+  } as Omit<ItemRow, "id">)
+
 const coffeeLine = (
   billId: BillId,
   item: ItemRow,
@@ -174,5 +183,71 @@ describe("bill line actions", () => {
     await expect(
       run.ok(loadCalculatedBillLineSummaries(sourceBillId))
     ).resolves.toEqual([])
+  }, 15_000)
+
+  test("resolves each bill's own item snapshots, including one shared by both", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    const coffeeBillId = "bill-coffee" as BillId
+    const teaBillId = "bill-tea" as BillId
+    const coffee = coffeeSnapshot()
+    const tea = teaSnapshot()
+    await run.ok(createOrReuseItemSnapshot(coffee))
+    await run.ok(createOrReuseItemSnapshot(tea))
+
+    // `coffee` is on both bills — content-addressed `item` ids mean one
+    // snapshot row is normally shared across every bill selling it, so the
+    // per-bill load must resolve it for each of them, not just the first.
+    await run.ok(
+      appendBillLines([
+        coffeeLine(coffeeBillId, coffee),
+        coffeeLine(teaBillId, coffee),
+        coffeeLine(teaBillId, tea, { totalAmount: 4200 }),
+      ])
+    )
+
+    await expect(
+      run.ok(loadCalculatedBillLineSummaries(coffeeBillId))
+    ).resolves.toMatchObject([
+      { billId: coffeeBillId, itemId: coffee.id, name: "Coffee" },
+    ])
+    await expect(
+      run.ok(loadCalculatedBillLineSummaries(teaBillId))
+    ).resolves.toMatchObject([
+      { billId: teaBillId, itemId: coffee.id, name: "Coffee" },
+      { billId: teaBillId, itemId: tea.id, name: "Tea" },
+    ])
+  }, 15_000)
+
+  test("drops a line whose item snapshot has not arrived yet", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    const billId = "bill-1" as BillId
+    const coffee = coffeeSnapshot()
+    const unsynced = teaSnapshot()
+    // Only `coffee`'s snapshot is written: under multi-device sync a
+    // `billLine` can arrive before the `item` row it points at.
+    await run.ok(createOrReuseItemSnapshot(coffee))
+
+    await expect(
+      run.ok(
+        appendBillLines([
+          coffeeLine(billId, coffee),
+          coffeeLine(billId, unsynced, { totalAmount: 4200 }),
+        ])
+      )
+    ).resolves.toMatchObject([{ billId, itemId: coffee.id, name: "Coffee" }])
   }, 15_000)
 })

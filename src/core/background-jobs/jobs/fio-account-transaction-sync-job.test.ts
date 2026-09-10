@@ -235,14 +235,17 @@ describe("fio account transaction sync job", () => {
     expect(requestedUrls).toEqual([
       "https://fioapi.fio.cz/v1/rest/periods/fio-token-1/2026-05-17/2026-05-31/transactions.json",
     ])
-    expect(
-      await evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId))
-    ).toEqual([
-      {
-        id: fioPluginId,
-        lastSyncedDate: "2026-05-31",
-      },
-    ])
+    // Polled, like the same assertion earlier in this file: the job advances
+    // the sync pointer in a mutation of its own, so waiting for the imported
+    // transaction says nothing about the pointer having landed yet.
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId)))
+      .toEqual([
+        {
+          id: fioPluginId,
+          lastSyncedDate: "2026-05-31",
+        },
+      ])
     expect(errors).toEqual([])
   })
 

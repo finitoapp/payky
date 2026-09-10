@@ -1,6 +1,6 @@
 import { LoaderCircleIcon } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
-import { toast } from "sonner"
+import { copyToClipboard } from "@/lib/clipboard.ts"
 
 type CopyableQrCodeState =
   | { readonly state: "ready"; readonly value: string }
@@ -16,15 +16,13 @@ export type CopyableQrCodeProps = CopyableQrCodeState & {
 export function CopyableQrCode(props: CopyableQrCodeProps) {
   const { ariaLabel, copiedMessage, copyFailedMessage } = props
 
-  const copyValue = async () => {
+  const copyValue = () => {
     if (props.state !== "ready") return
 
-    try {
-      await navigator.clipboard.writeText(props.value)
-      toast.success(copiedMessage)
-    } catch {
-      toast.error(copyFailedMessage)
-    }
+    void copyToClipboard(props.value, {
+      copied: copiedMessage,
+      failed: copyFailedMessage,
+    })
   }
 
   return (
@@ -33,7 +31,7 @@ export function CopyableQrCode(props: CopyableQrCodeProps) {
         type="button"
         disabled={props.state !== "ready"}
         className="aspect-square w-full rounded-xl bg-white p-4 text-black ring-1 ring-foreground/10 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default"
-        onClick={() => void copyValue()}
+        onClick={copyValue}
         aria-label={ariaLabel}
       >
         <span className="flex size-full flex-col items-center justify-center">

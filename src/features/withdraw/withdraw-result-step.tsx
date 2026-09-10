@@ -1,10 +1,9 @@
 import { Link } from "@tanstack/react-router"
 import { CopyIcon, ExternalLinkIcon } from "lucide-react"
-import { toast } from "sonner"
-
 import { SuccessPanel } from "@/components/success-panel.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { copyToClipboard } from "@/lib/clipboard.ts"
 import type { WithdrawResult } from "./withdraw-flow.ts"
 
 export function WithdrawResultStep({
@@ -13,17 +12,7 @@ export function WithdrawResultStep({
   readonly result: WithdrawResult
 }) {
   const { t } = useTranslation()
-
-  const copyTxid = async () => {
-    if (!result.txid) return
-
-    try {
-      await navigator.clipboard.writeText(result.txid)
-      toast.success(t("withdraw.result.copied"))
-    } catch {
-      toast.error(t("withdraw.result.copyError"))
-    }
-  }
+  const { txid } = result
 
   return (
     <SuccessPanel
@@ -36,24 +25,27 @@ export function WithdrawResultStep({
               {t("withdraw.result.status")}
             </span>
             <span className="font-medium">{result.status}</span>
-            {result.txid ? (
+            {txid ? (
               <>
                 <span className="mt-2 text-muted-foreground">
                   {t("withdraw.result.txid")}
                 </span>
-                <span className="break-all font-mono text-xs">
-                  {result.txid}
-                </span>
+                <span className="break-all font-mono text-xs">{txid}</span>
               </>
             ) : null}
           </div>
-          {result.txid ? (
+          {txid ? (
             <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
                 className="flex-1"
-                onClick={() => void copyTxid()}
+                onClick={() =>
+                  void copyToClipboard(txid, {
+                    copied: t("withdraw.result.copied"),
+                    failed: t("withdraw.result.copyError"),
+                  })
+                }
               >
                 <CopyIcon />
                 {t("withdraw.result.copyTxid")}
@@ -65,7 +57,7 @@ export function WithdrawResultStep({
                 nativeButton={false}
                 render={
                   <a
-                    href={`https://mempool.space/tx/${result.txid}`}
+                    href={`https://mempool.space/tx/${txid}`}
                     target="_blank"
                     rel="noreferrer"
                   />

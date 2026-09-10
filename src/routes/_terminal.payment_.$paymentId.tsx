@@ -19,7 +19,6 @@ import {
   useState,
 } from "react"
 import { toast } from "sonner"
-
 import { CopyableQrCode } from "@/components/copyable-qr-code.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { SuccessPanel } from "@/components/success-panel.tsx"
@@ -70,6 +69,7 @@ import { useNow } from "@/hooks/use-now.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
+import { copyToClipboard } from "@/lib/clipboard.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -1118,13 +1118,11 @@ function CopyableDetailRow({
   readonly copiedMessage: string
   readonly copyFailedMessage: string
 }) {
-  const copyValue = async () => {
-    try {
-      await navigator.clipboard.writeText(value)
-      toast.success(copiedMessage)
-    } catch {
-      toast.error(copyFailedMessage)
-    }
+  const copyValue = () => {
+    void copyToClipboard(value, {
+      copied: copiedMessage,
+      failed: copyFailedMessage,
+    })
   }
 
   return (
@@ -1140,7 +1138,7 @@ function CopyableDetailRow({
         variant="ghost"
         size="icon"
         aria-label={copyAriaLabel}
-        onClick={() => void copyValue()}
+        onClick={copyValue}
       >
         <CopyIcon />
       </Button>

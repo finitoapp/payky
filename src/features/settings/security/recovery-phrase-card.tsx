@@ -1,7 +1,5 @@
 import { CopyIcon } from "lucide-react"
 import { useId } from "react"
-import { toast } from "sonner"
-
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -18,6 +16,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { copyToClipboard } from "@/lib/clipboard.ts"
 
 export interface RecoveryPhraseCardProps {
   readonly mnemonic: string
@@ -27,13 +26,11 @@ export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
   const { t } = useTranslation()
   const mnemonicInputId = useId()
 
-  const copyMnemonic = async () => {
-    try {
-      await navigator.clipboard.writeText(mnemonic)
-      toast.success(t("settings.security.mnemonic.copied"))
-    } catch {
-      toast.error(t("settings.security.mnemonic.copyError"))
-    }
+  const copyMnemonic = () => {
+    void copyToClipboard(mnemonic, {
+      copied: t("settings.security.mnemonic.copied"),
+      failed: t("settings.security.mnemonic.copyError"),
+    })
   }
 
   return (
@@ -72,7 +69,7 @@ export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => void copyMnemonic()}
+            onClick={copyMnemonic}
           >
             <CopyIcon data-icon="inline-start" />
             {t("settings.security.mnemonic.copy")}

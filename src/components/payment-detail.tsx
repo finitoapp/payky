@@ -710,6 +710,16 @@ function PaymentDetailBillCard({
         ? "multiplePayments"
         : null
   const coverageDelta = NonNegativeInteger(Math.abs(totalAmount - claimedSum))
+  // An open bill with nothing claimed against it yet is also "underpaid" by
+  // `deriveBillCoverage`'s definition, so warning on `coverage !== "paid"`
+  // alone put "Bill underpaid — Expected 500,00 / Paid 0,00" on every
+  // not-yet-settled bill payment, with no `coverageMismatchReason` to explain
+  // it. Only flag underpayment once a partial payment has actually landed,
+  // the same gate `BillHistoryIssues` and `resolvePaymentHistoryIssueFlags`
+  // use for the list rows. Overpaid needs no gate: an unpaid bill is never
+  // overpaid.
+  const showCoverageWarning =
+    coverage === "overpaid" || (coverage === "underpaid" && claimedSum > 0)
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
   const hasTaxRecap = hasTaxableLines(taxRecapRows)
 
@@ -865,7 +875,7 @@ function PaymentDetailBillCard({
           emphasize
         />
 
-        {coverage === "paid" ? null : (
+        {showCoverageWarning ? (
           <Alert variant="warning">
             <AlertTriangleIcon />
             <AlertTitle>
@@ -1014,7 +1024,7 @@ function PaymentDetailBillCard({
               ) : null}
             </AlertDescription>
           </Alert>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   )

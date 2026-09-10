@@ -13,11 +13,6 @@ type ThemeProviderProps = {
   readonly disableTransitionOnChange?: boolean
 }
 
-type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
-
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
 
 /**
@@ -26,10 +21,6 @@ const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
  * Keep this key in sync with the one read in index.html.
  */
 const THEME_HINT_STORAGE_KEY = "payky.themeHint"
-
-const ThemeProviderContext = React.createContext<
-  ThemeProviderState | undefined
->(undefined)
 
 function getSystemTheme(): ResolvedTheme {
   if (window.matchMedia(COLOR_SCHEME_QUERY).matches) {
@@ -77,10 +68,19 @@ function isEditableTarget(target: EventTarget | null) {
   return false
 }
 
-export function ThemeProvider({
-  children,
-  disableTransitionOnChange = true,
-}: ThemeProviderProps) {
+/**
+ * The active theme and a setter for it.
+ *
+ * No context behind it: both halves already come from device settings,
+ * which every screen subscribes to anyway through `useTranslation`. A
+ * provider would only add a layer that can be forgotten — and one that
+ * `ThemeProvider` itself would have to sit above, which is exactly the
+ * failure the old "must be used within a ThemeProvider" throw guarded.
+ */
+export function useTheme(): {
+  readonly theme: Theme
+  readonly setTheme: (theme: Theme) => void
+} {
   const { theme } = useDeviceSettings()
   const updateDeviceSettings = useUpdateDeviceSettings()
 
@@ -90,6 +90,20 @@ export function ThemeProvider({
     },
     [updateDeviceSettings]
   )
+
+  return { theme, setTheme }
+}
+
+/**
+ * Applies the active theme to `document.documentElement` and owns the "d"
+ * hotkey. Renders `children` untouched — it is an effect host, not a
+ * provider.
+ */
+export function ThemeProvider({
+  children,
+  disableTransitionOnChange = true,
+}: ThemeProviderProps) {
+  const { theme, setTheme } = useTheme()
 
   const applyTheme = React.useCallback(
     (nextTheme: Theme) => {
@@ -167,27 +181,5 @@ export function ThemeProvider({
     }
   }, [setTheme, theme])
 
-  const value = React.useMemo(
-    () => ({
-      theme,
-      setTheme,
-    }),
-    [theme, setTheme]
-  )
-
-  return (
-    <ThemeProviderContext.Provider value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  )
-}
-
-export const useTheme = () => {
-  const context = React.useContext(ThemeProviderContext)
-
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider")
-  }
-
-  return context
+  return children
 }

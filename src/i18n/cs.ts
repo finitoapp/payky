@@ -9,17 +9,8 @@ export const cs = {
   "accountRestore.timeout.setup": "Nastavit jako nový účet",
   "accountRestore.timeout.title": "Obnova účtu stále probíhá",
   "accountRestore.title": "Obnovování účtu",
-  "activity.amount.btc": "฿145",
-  "activity.amount.usd": "$9.00",
-  "activity.balance.label": "Celková bilance",
-  "activity.feed.approved": "Platba schválena",
-  "activity.feed.paid": "Platba zaplacena",
-  "activity.feed.synced": "Terminál synchronizován",
-  "activity.first.date": "19. května, 13:02",
-  "activity.second.date": "19. května, 12:45",
   "activity.tabs.bills": "Účty",
   "activity.tabs.payments": "Platby",
-  "activity.third.date": "19. května, 12:36",
   "activity.title": "Aktivita",
   "app.name": "Payky",
   "appError.description":
@@ -523,7 +514,6 @@ export const cs = {
   "settings.accounts.list.description":
     "Tyto účty jsou uložené jen v profilu tohoto zařízení.",
   "settings.accounts.list.empty": "Na tomto zařízení nejsou uložené účty.",
-  "settings.accounts.list.lastUsed": "Naposledy použito",
   "settings.accounts.list.remove": "Odebrat",
   "settings.accounts.list.switch": "Přepnout",
   "settings.accounts.list.title": "Účty v zařízení",
@@ -675,8 +665,6 @@ export const cs = {
   "settings.fiat.description": "Vyberte výchozí fiat měnu",
   "settings.fiat.eur.description": "Používat euro pro částky v terminálu",
   "settings.fiat.eur.title": "Euro",
-  "settings.fiatBankAccount.description":
-    "Nastavení bankovního účtu pro fiat platby",
   "settings.fiatBankAccount.currency.description":
     "Platby v této měně mohou použít tento bankovní účet.",
   "settings.fiatBankAccount.currency.label": "Měna bankovního účtu",
@@ -703,7 +691,6 @@ export const cs = {
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
   "settings.fiatBankAccount.save": "Uložit bankovní účet",
   "settings.fiatBankAccount.saved": "Bankovní účet uložen.",
-  "settings.fiatBankAccount.title": "Fiat bankovní účet",
   "settings.fioPlugin.active.description":
     "Když je plugin zapnutý, kontroluje transakce Fio banky pro fiat bankovní účet.",
   "settings.fioPlugin.active.label": "Povolit Fio plugin",
@@ -788,7 +775,6 @@ export const cs = {
   "settings.categories.search": "Hledat kategorie...",
   "settings.categories.search.clear.aria": "Vymazat hledání",
   "settings.categories.title": "Kategorie",
-  "settings.general": "OBECNÉ",
   "settings.tables.add": "Přidat stůl",
   "settings.tables.delete": "Smazat stůl",
   "settings.tables.delete.confirm.cancel": "Zrušit",
@@ -955,8 +941,6 @@ export const cs = {
   "settings.language.slovak.description": "Používat slovenské překlady",
   "settings.language.slovak.title": "Slovenština",
   "settings.language.title": "Jazyk a region",
-  "settings.mints.description": "Správa Cashu mintů a Lightning nastavení",
-  "settings.mints.title": "Minty",
   "settings.paymentAccounts.description":
     "Nastavení bankovního, Spark a pokladního účtu",
   "settings.paymentAccounts.title": "Platební účty",
@@ -1028,7 +1012,6 @@ export const cs = {
   "settings.privacy.title": "Soukromí",
   "settings.privacyGroup": "SOUKROMÍ",
   "settings.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
-  "settings.security": "BEZPEČNOST A SOUKROMÍ",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.title": "Bezpečnost a synchronizace",
   "settings.security.mnemonic.copy": "Kopírovat",
@@ -1124,9 +1107,6 @@ export const cs = {
   "settings.tips.saved": "Nastavení spropitného uloženo.",
   "settings.tips.title": "Spropitné",
   "settings.title": "Nastavení",
-  "settings.webhooks.description":
-    "Odesílat prodejní data do externích administrací",
-  "settings.webhooks.title": "Webhooky",
   "settings.withdrawals.description":
     "Odeslat Bitcoin ze Spark účtu na on-chain adresu",
   "settings.withdrawals.title": "Výběry",
@@ -1179,7 +1159,6 @@ export const cs = {
   "withdraw.review.confirm": "Potvrdit výběr",
   "withdraw.review.confirming": "Odesílám...",
   "withdraw.review.destination": "Cíl",
-  "withdraw.review.error": "Výběr se nepodařilo dokončit. Zkuste to znovu.",
   "withdraw.review.error.interrupted":
     "Výběr byl přerušen před dokončením. Zkuste to znovu.",
   "withdraw.review.error.recordFailed":

@@ -7,17 +7,8 @@ export const en = {
   "accountRestore.timeout.setup": "Set up as a new account",
   "accountRestore.timeout.title": "Still restoring account",
   "accountRestore.title": "Restoring account",
-  "activity.amount.btc": "฿145",
-  "activity.amount.usd": "$9.00",
-  "activity.balance.label": "Total Balance",
-  "activity.feed.approved": "Payment approved",
-  "activity.feed.paid": "Payment paid",
-  "activity.feed.synced": "Terminal synced",
-  "activity.first.date": "May 19, 13:02",
-  "activity.second.date": "May 19, 12:45",
   "activity.tabs.bills": "Bills",
   "activity.tabs.payments": "Payments",
-  "activity.third.date": "May 19, 12:36",
   "activity.title": "Activity",
   "app.name": "Payky",
   "appError.description":
@@ -523,7 +514,6 @@ export const en = {
   "settings.accounts.list.description":
     "These accounts are stored only in this device profile.",
   "settings.accounts.list.empty": "No accounts saved on this device.",
-  "settings.accounts.list.lastUsed": "Last used",
   "settings.accounts.list.remove": "Remove",
   "settings.accounts.list.switch": "Switch",
   "settings.accounts.list.title": "Device accounts",
@@ -674,8 +664,6 @@ export const en = {
   "settings.fiat.description": "Choose your default fiat currency",
   "settings.fiat.eur.description": "Use euro for terminal amounts",
   "settings.fiat.eur.title": "Euro",
-  "settings.fiatBankAccount.description":
-    "Configure the bank account used for fiat payments",
   "settings.fiatBankAccount.currency.description":
     "Payments in this currency can use this bank account.",
   "settings.fiatBankAccount.currency.label": "Bank account currency",
@@ -702,7 +690,6 @@ export const en = {
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Czechia)",
   "settings.fiatBankAccount.save": "Save bank account",
   "settings.fiatBankAccount.saved": "Bank account saved.",
-  "settings.fiatBankAccount.title": "Fiat Bank Account",
   "settings.fioPlugin.active.description":
     "When enabled, the plugin checks Fio Bank transactions for the fiat bank account.",
   "settings.fioPlugin.active.label": "Enable Fio plugin",
@@ -786,7 +773,6 @@ export const en = {
   "settings.categories.search": "Search categories...",
   "settings.categories.search.clear.aria": "Clear search",
   "settings.categories.title": "Categories",
-  "settings.general": "GENERAL",
   "settings.tables.add": "Add table",
   "settings.tables.delete": "Delete table",
   "settings.tables.delete.confirm.cancel": "Cancel",
@@ -953,8 +939,6 @@ export const en = {
   "settings.language.slovak.description": "Use Slovak translations",
   "settings.language.slovak.title": "Slovak",
   "settings.language.title": "Language & Region",
-  "settings.mints.description": "Manage Cashu mints and Lightning settings",
-  "settings.mints.title": "Mints",
   "settings.paymentAccounts.description":
     "Configure bank, Spark, and cash register accounts",
   "settings.paymentAccounts.title": "Payment Accounts",
@@ -1025,7 +1009,6 @@ export const en = {
   "settings.privacy.title": "Privacy",
   "settings.privacyGroup": "PRIVACY",
   "settings.saveFailed": "Could not save the change. Please try again.",
-  "settings.security": "SECURITY & PRIVACY",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.title": "Security & Sync",
   "settings.security.mnemonic.copy": "Copy",
@@ -1121,9 +1104,6 @@ export const en = {
   "settings.tips.saved": "Tip settings saved.",
   "settings.tips.title": "Tips",
   "settings.title": "Settings",
-  "settings.webhooks.description":
-    "Feed sales data to external admin dashboards",
-  "settings.webhooks.title": "Webhooks",
   "settings.withdrawals.description":
     "Send Bitcoin from a Spark account to an on-chain address",
   "settings.withdrawals.title": "Withdrawals",
@@ -1176,7 +1156,6 @@ export const en = {
   "withdraw.review.confirm": "Confirm withdrawal",
   "withdraw.review.confirming": "Sending...",
   "withdraw.review.destination": "Destination",
-  "withdraw.review.error": "The withdrawal could not be completed. Try again.",
   "withdraw.review.error.interrupted":
     "The withdrawal was interrupted before it completed. Try again.",
   "withdraw.review.error.recordFailed":

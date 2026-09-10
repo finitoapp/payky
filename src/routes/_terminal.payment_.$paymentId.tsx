@@ -833,18 +833,20 @@ function PaymentWaitingRequest({
               </p>
             ) : null}
             {canCancelPayment ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={cancelPending}
-                onClick={() => void handleCancelPayment()}
-              >
-                {cancelPending ? (
-                  <LoaderCircleIcon className="animate-spin" />
-                ) : null}
-                {t("paymentWait.cancel")}
-              </Button>
+              <div className={"pt-2"}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  disabled={cancelPending}
+                  onClick={() => void handleCancelPayment()}
+                >
+                  {cancelPending ? (
+                    <LoaderCircleIcon className="animate-spin" />
+                  ) : null}
+                  {t("paymentWait.cancel")}
+                </Button>
+              </div>
             ) : null}
           </div>
         </section>
@@ -1135,7 +1137,7 @@ function CashPaymentTab({
   const { t } = useTranslation()
 
   return (
-    <div className="flex w-full flex-col items-center py-24">
+    <div className="flex w-full flex-col items-center py-4">
       <Button
         type="button"
         size="lg"

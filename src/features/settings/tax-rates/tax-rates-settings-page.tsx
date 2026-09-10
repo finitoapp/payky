@@ -309,8 +309,7 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
 function NewTaxRateCard() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const nameInputId = useId()
-  const rateInputId = useId()
+  const formId = useId()
   const [name, setName] = useState("")
   const [rateInput, setRateInput] = useState("")
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
@@ -365,11 +364,11 @@ function NewTaxRateCard() {
         >
           <FieldGroup>
             <Field data-invalid={nameError !== null}>
-              <FieldLabel htmlFor={nameInputId}>
+              <FieldLabel htmlFor={`${formId}-name`}>
                 {t("settings.taxRates.name.label")}
               </FieldLabel>
               <Input
-                id={nameInputId}
+                id={`${formId}-name`}
                 value={name}
                 disabled={pending}
                 aria-invalid={nameError !== null}
@@ -384,11 +383,11 @@ function NewTaxRateCard() {
             </Field>
 
             <Field data-invalid={rateError !== null}>
-              <FieldLabel htmlFor={rateInputId}>
+              <FieldLabel htmlFor={`${formId}-rate`}>
                 {t("settings.taxRates.rate.label")}
               </FieldLabel>
               <Input
-                id={rateInputId}
+                id={`${formId}-rate`}
                 value={rateInput}
                 disabled={pending}
                 aria-invalid={rateError !== null}

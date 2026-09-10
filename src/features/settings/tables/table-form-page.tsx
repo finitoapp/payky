@@ -98,9 +98,7 @@ function TableForm({
   const confirm = useConfirmDialog()
   const router = useRouter()
   const { t } = useTranslation()
-  const nameInputId = useId()
-  const seatCountInputId = useId()
-  const codeInputId = useId()
+  const formId = useId()
   const [name, setName] = useState(table?.name ?? "")
   const [seatCount, setSeatCount] = useState(
     table === undefined ? "" : String(table.seatCount)
@@ -210,11 +208,11 @@ function TableForm({
       >
         <FieldGroup>
           <Field data-invalid={nameError !== null}>
-            <FieldLabel htmlFor={nameInputId}>
+            <FieldLabel htmlFor={`${formId}-name`}>
               {t("settings.tables.form.name.label")}
             </FieldLabel>
             <Input
-              id={nameInputId}
+              id={`${formId}-name`}
               value={name}
               disabled={pending}
               aria-invalid={nameError !== null}
@@ -230,11 +228,11 @@ function TableForm({
           </Field>
 
           <Field data-invalid={seatCountError !== null}>
-            <FieldLabel htmlFor={seatCountInputId}>
+            <FieldLabel htmlFor={`${formId}-seatCount`}>
               {t("settings.tables.form.seatCount.label")}
             </FieldLabel>
             <Input
-              id={seatCountInputId}
+              id={`${formId}-seatCount`}
               value={seatCount}
               disabled={pending}
               aria-invalid={seatCountError !== null}
@@ -255,10 +253,15 @@ function TableForm({
 
           {mode === "edit" && table !== undefined && (
             <Field>
-              <FieldLabel htmlFor={codeInputId}>
+              <FieldLabel htmlFor={`${formId}-code`}>
                 {t("settings.tables.form.code.label")}
               </FieldLabel>
-              <Input id={codeInputId} value={table.code} disabled readOnly />
+              <Input
+                id={`${formId}-code`}
+                value={table.code}
+                disabled
+                readOnly
+              />
               <FieldDescription>
                 {t("settings.tables.form.code.description")}
               </FieldDescription>

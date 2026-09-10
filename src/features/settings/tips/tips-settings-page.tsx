@@ -76,9 +76,7 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const locale = useLocale()
-  const enabledInputId = useId()
-  const percentageInputId = useId()
-  const fixedAmountInputId = useId()
+  const formId = useId()
   const [enabled, setEnabled] = useState(settings.tipsEnabled === sqliteTrue)
   const [percentages, setPercentages] = useState(() =>
     parseTipPercentages(settings.presetTipPercentagesJson)
@@ -179,7 +177,7 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
       <FieldGroup>
         <Field orientation="horizontal">
           <Checkbox
-            id={enabledInputId}
+            id={`${formId}-enabled`}
             checked={enabled}
             disabled={pending}
             onCheckedChange={(checked) => {
@@ -188,7 +186,7 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
             }}
           />
           <FieldContent>
-            <FieldLabel htmlFor={enabledInputId}>
+            <FieldLabel htmlFor={`${formId}-enabled`}>
               {t("settings.tips.enabled.label")}
             </FieldLabel>
             <FieldDescription>
@@ -202,7 +200,7 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
           description={t("settings.tips.percentages.description")}
           disabled={pending}
           error={percentageError}
-          inputId={percentageInputId}
+          inputId={`${formId}-percentage`}
           inputMode="numeric"
           inputValue={percentageInput}
           label={t("settings.tips.percentages.label")}
@@ -231,7 +229,7 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
           })}
           disabled={pending}
           error={fixedAmountError}
-          inputId={fixedAmountInputId}
+          inputId={`${formId}-fixedAmount`}
           inputMode="decimal"
           inputValue={fixedAmountInput}
           label={t("settings.tips.fixedAmounts.label")}

@@ -91,10 +91,7 @@ function PaymentAccountsPage() {
 function FiatBankAccountForm() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const ibanInputId = useId()
-  const enabledInputId = useId()
-  const currencyInputId = useId()
-  const qrFormatInputId = useId()
+  const formId = useId()
   const { data: accountData } = useEvoluQuery(fiatBankAccountQuery)
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [account] = accountData
@@ -157,13 +154,13 @@ function FiatBankAccountForm() {
       <FieldGroup>
         <Field orientation="horizontal">
           <Checkbox
-            id={enabledInputId}
+            id={`${formId}-enabled`}
             checked={enabled}
             disabled={pending}
             onCheckedChange={setEnabled}
           />
           <FieldContent>
-            <FieldLabel htmlFor={enabledInputId}>
+            <FieldLabel htmlFor={`${formId}-enabled`}>
               {t("settings.fiatBankAccount.enabled.label")}
             </FieldLabel>
             <FieldDescription>
@@ -173,11 +170,11 @@ function FiatBankAccountForm() {
         </Field>
 
         <Field data-invalid={error !== null}>
-          <FieldLabel htmlFor={ibanInputId}>
+          <FieldLabel htmlFor={`${formId}-iban`}>
             {t("settings.fiatBankAccount.iban.label")}
           </FieldLabel>
           <Input
-            id={ibanInputId}
+            id={`${formId}-iban`}
             value={iban}
             disabled={pending}
             aria-invalid={error !== null}
@@ -196,7 +193,7 @@ function FiatBankAccountForm() {
         </Field>
 
         <Field>
-          <FieldLabel htmlFor={currencyInputId}>
+          <FieldLabel htmlFor={`${formId}-currency`}>
             {t("settings.fiatBankAccount.currency.label")}
           </FieldLabel>
           <Select<FiatCurrencyType>
@@ -213,7 +210,7 @@ function FiatBankAccountForm() {
             }}
           >
             <SelectTrigger
-              id={currencyInputId}
+              id={`${formId}-currency`}
               disabled={pending}
               className="w-full"
             >
@@ -235,7 +232,7 @@ function FiatBankAccountForm() {
         </Field>
 
         <Field>
-          <FieldLabel htmlFor={qrFormatInputId}>
+          <FieldLabel htmlFor={`${formId}-qrFormat`}>
             {t("settings.fiatBankAccount.qrFormat.label")}
           </FieldLabel>
           <Select<BankQrFormat>
@@ -248,7 +245,7 @@ function FiatBankAccountForm() {
             }}
           >
             <SelectTrigger
-              id={qrFormatInputId}
+              id={`${formId}-qrFormat`}
               disabled={pending}
               className="w-full"
             >
@@ -276,9 +273,7 @@ function FiatBankAccountForm() {
 function SparkAccountForm() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const enabledInputId = useId()
-  const mnemonicInputId = useId()
-  const privacyModeInputId = useId()
+  const formId = useId()
   const { data: accountData } = useEvoluQuery(sparkAccountQuery)
   const [account] = accountData
   const [enabled, setEnabled] = useState(false)
@@ -375,13 +370,13 @@ function SparkAccountForm() {
       <FieldGroup>
         <Field orientation="horizontal">
           <Checkbox
-            id={enabledInputId}
+            id={`${formId}-enabled`}
             checked={enabled}
             disabled={pending}
             onCheckedChange={setEnabled}
           />
           <FieldContent>
-            <FieldLabel htmlFor={enabledInputId}>
+            <FieldLabel htmlFor={`${formId}-enabled`}>
               {t("settings.sparkAccount.enabled.label")}
             </FieldLabel>
             <FieldDescription>
@@ -392,11 +387,11 @@ function SparkAccountForm() {
 
         {account?.secret != null && (
           <Field>
-            <FieldLabel htmlFor={mnemonicInputId}>
+            <FieldLabel htmlFor={`${formId}-mnemonic`}>
               {t("settings.sparkAccount.mnemonic.label")}
             </FieldLabel>
             <PasswordTextarea
-              id={mnemonicInputId}
+              id={`${formId}-mnemonic`}
               value={sparkSecretToMnemonic(account.secret)}
               hideLabel={t("passwordTextarea.hide")}
               showLabel={t("passwordTextarea.show")}
@@ -415,7 +410,7 @@ function SparkAccountForm() {
           data-invalid={privacyModeError !== null}
         >
           <Checkbox
-            id={privacyModeInputId}
+            id={`${formId}-privacyMode`}
             checked={privacyMode}
             disabled={pending || privacyModePending}
             aria-invalid={privacyModeError !== null}
@@ -426,7 +421,7 @@ function SparkAccountForm() {
             }}
           />
           <FieldContent>
-            <FieldLabel htmlFor={privacyModeInputId}>
+            <FieldLabel htmlFor={`${formId}-privacyMode`}>
               {t("settings.sparkAccount.privacyMode.label")}
             </FieldLabel>
             <FieldDescription>

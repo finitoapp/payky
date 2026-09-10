@@ -92,10 +92,7 @@ const dayFormatOptions: ReadonlyArray<ToggleOption<DatePartFormat>> = [
 function PaymentNumberSeriesPage() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const prefixInputId = useId()
-  const serialNumberDigitsInputId = useId()
-  const lastSerialNumberInputId = useId()
-  const lastNumberDateInputId = useId()
+  const formId = useId()
   const { data } = useEvoluQuery(paymentNumberSeriesQuery)
   const { data: paymentLastNumbers } = useEvoluQuery(paymentLastNumberQuery)
   const [storedSeries] = data
@@ -207,13 +204,13 @@ function PaymentNumberSeriesPage() {
         >
           <FieldGroup>
             <Field data-invalid={lastSerialNumberError !== null}>
-              <FieldLabel htmlFor={lastSerialNumberInputId}>
+              <FieldLabel htmlFor={`${formId}-lastSerialNumber`}>
                 {t(
                   "settings.paymentNumberSeries.lastNumber.serialNumber.label"
                 )}
               </FieldLabel>
               <Input
-                id={lastSerialNumberInputId}
+                id={`${formId}-lastSerialNumber`}
                 value={lastSerialNumber}
                 disabled={lastNumberForm.pending}
                 aria-invalid={lastSerialNumberError !== null}
@@ -236,11 +233,11 @@ function PaymentNumberSeriesPage() {
             </Field>
 
             <Field data-invalid={lastNumberDateError !== null}>
-              <FieldLabel htmlFor={lastNumberDateInputId}>
+              <FieldLabel htmlFor={`${formId}-lastNumberDate`}>
                 {t("settings.paymentNumberSeries.lastNumber.date.label")}
               </FieldLabel>
               <Input
-                id={lastNumberDateInputId}
+                id={`${formId}-lastNumberDate`}
                 type="date"
                 value={lastNumberDate}
                 disabled={lastNumberForm.pending}
@@ -313,11 +310,11 @@ function PaymentNumberSeriesPage() {
         >
           <FieldGroup>
             <Field data-invalid={serialNumberDigitsError !== null}>
-              <FieldLabel htmlFor={serialNumberDigitsInputId}>
+              <FieldLabel htmlFor={`${formId}-serialNumberDigits`}>
                 {t("settings.paymentNumberSeries.serialNumberDigits.label")}
               </FieldLabel>
               <Input
-                id={serialNumberDigitsInputId}
+                id={`${formId}-serialNumberDigits`}
                 value={serialNumberDigits}
                 disabled={seriesForm.pending}
                 aria-invalid={serialNumberDigitsError !== null}
@@ -340,11 +337,11 @@ function PaymentNumberSeriesPage() {
             </Field>
 
             <Field data-invalid={prefixError !== null}>
-              <FieldLabel htmlFor={prefixInputId}>
+              <FieldLabel htmlFor={`${formId}-prefix`}>
                 {t("settings.paymentNumberSeries.prefix.label")}
               </FieldLabel>
               <Input
-                id={prefixInputId}
+                id={`${formId}-prefix`}
                 value={prefix}
                 disabled={seriesForm.pending}
                 aria-invalid={prefixError !== null}

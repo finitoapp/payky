@@ -913,8 +913,7 @@ function AccountStep({
   const reloadAppEvolu = useReloadAppEvolu()
   const [name, setName] = useState(account.name)
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
-  const nameInputId = useId()
-  const recoveryPhraseConfirmInputId = useId()
+  const formId = useId()
 
   const saveName = async () => {
     const trimmedName = name.trim()
@@ -947,11 +946,11 @@ function AccountStep({
         <div className="flex flex-col gap-5">
           <FieldGroup>
             <Field data-invalid={nameError !== null}>
-              <FieldLabel htmlFor={nameInputId}>
+              <FieldLabel htmlFor={`${formId}-name`}>
                 {t("onboarding.account.name.label")}
               </FieldLabel>
               <Input
-                id={nameInputId}
+                id={`${formId}-name`}
                 value={name}
                 aria-invalid={nameError !== null}
                 autoComplete="off"
@@ -974,12 +973,12 @@ function AccountStep({
 
           <Field orientation="horizontal">
             <Checkbox
-              id={recoveryPhraseConfirmInputId}
+              id={`${formId}-recoveryPhraseConfirm`}
               checked={recoveryPhraseConfirmed}
               onCheckedChange={onRecoveryPhraseConfirmedChange}
             />
             <FieldContent>
-              <FieldLabel htmlFor={recoveryPhraseConfirmInputId}>
+              <FieldLabel htmlFor={`${formId}-recoveryPhraseConfirm`}>
                 {t("onboarding.account.mnemonic.confirm")}
               </FieldLabel>
             </FieldContent>

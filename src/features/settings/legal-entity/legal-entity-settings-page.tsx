@@ -60,8 +60,7 @@ function LegalEntitySettingsForm({
 }) {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const countryInputId = useId()
-  const vatPayerInputId = useId()
+  const formId = useId()
   const [country, setCountry] = useState<CountrySelection | null>(
     initialCountry === undefined ? null : (initialCountry ?? "OTHER")
   )
@@ -111,7 +110,7 @@ function LegalEntitySettingsForm({
     >
       <FieldGroup>
         <Field data-invalid={countryError !== null}>
-          <FieldLabel htmlFor={countryInputId}>
+          <FieldLabel htmlFor={`${formId}-country`}>
             {t("settings.legalEntity.country.label")}
           </FieldLabel>
           <Select<CountrySelection>
@@ -131,7 +130,7 @@ function LegalEntitySettingsForm({
             }}
           >
             <SelectTrigger
-              id={countryInputId}
+              id={`${formId}-country`}
               disabled={pending}
               aria-invalid={countryError !== null}
             >
@@ -156,7 +155,7 @@ function LegalEntitySettingsForm({
 
         <Field orientation="horizontal">
           <Checkbox
-            id={vatPayerInputId}
+            id={`${formId}-vatPayer`}
             checked={vatPayer}
             disabled={pending}
             onCheckedChange={(checked) => {
@@ -166,7 +165,7 @@ function LegalEntitySettingsForm({
             }}
           />
           <FieldContent>
-            <FieldLabel htmlFor={vatPayerInputId}>
+            <FieldLabel htmlFor={`${formId}-vatPayer`}>
               {t("settings.legalEntity.vatPayer.label")}
             </FieldLabel>
             <FieldDescription>

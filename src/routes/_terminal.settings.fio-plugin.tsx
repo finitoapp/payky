@@ -140,10 +140,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const { data: pointers } = useEvoluQuery(pointerQuery)
   const [pointer] = pointers
   const lastSyncedDate = pointer?.lastSyncedDate ?? getDefaultLastSyncedDate()
-  const activeInputId = useId()
-  const intervalInputId = useId()
-  const syncLookbackDaysInputId = useId()
-  const lastSyncedDateInputId = useId()
+  const formId = useId()
   const [isActive, setIsActive] = useState(false)
   const [numberOfSecondsBetweenChecks, setNumberOfSecondsBetweenChecks] =
     useState(defaultNumberOfSecondsBetweenChecks)
@@ -246,7 +243,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
       <FieldGroup>
         <Field orientation="horizontal">
           <Checkbox
-            id={activeInputId}
+            id={`${formId}-active`}
             checked={isNativeRuntime && isActive}
             disabled={pending || !isNativeRuntime}
             onCheckedChange={(checked) => {
@@ -255,7 +252,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
             }}
           />
           <FieldContent>
-            <FieldLabel htmlFor={activeInputId}>
+            <FieldLabel htmlFor={`${formId}-active`}>
               {t("settings.fioPlugin.active.label")}
             </FieldLabel>
             <FieldDescription>
@@ -265,11 +262,11 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
         </Field>
 
         <Field data-invalid={intervalError !== null}>
-          <FieldLabel htmlFor={intervalInputId}>
+          <FieldLabel htmlFor={`${formId}-interval`}>
             {t("settings.fioPlugin.interval.label")}
           </FieldLabel>
           <Input
-            id={intervalInputId}
+            id={`${formId}-interval`}
             value={numberOfSecondsBetweenChecks}
             disabled={pending}
             aria-invalid={intervalError !== null}
@@ -289,11 +286,11 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
         </Field>
 
         <Field data-invalid={syncLookbackDaysError !== null}>
-          <FieldLabel htmlFor={syncLookbackDaysInputId}>
+          <FieldLabel htmlFor={`${formId}-syncLookbackDays`}>
             {t("settings.fioPlugin.syncLookbackDays.label")}
           </FieldLabel>
           <Input
-            id={syncLookbackDaysInputId}
+            id={`${formId}-syncLookbackDays`}
             value={syncLookbackDays}
             disabled={pending}
             aria-invalid={syncLookbackDaysError !== null}
@@ -315,11 +312,11 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
         </Field>
 
         <Field data-invalid={lastSyncedDateError !== null}>
-          <FieldLabel htmlFor={lastSyncedDateInputId}>
+          <FieldLabel htmlFor={`${formId}-lastSyncedDate`}>
             {t("settings.fioPlugin.lastSyncedDate.label")}
           </FieldLabel>
           <Input
-            id={lastSyncedDateInputId}
+            id={`${formId}-lastSyncedDate`}
             value={editableLastSyncedDate}
             disabled={pending}
             aria-invalid={lastSyncedDateError !== null}

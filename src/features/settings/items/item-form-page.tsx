@@ -143,16 +143,7 @@ function CatalogItemForm({
   const confirmedRun = useConfirmedRun()
   const router = useRouter()
   const { t } = useTranslation()
-  const nameInputId = useId()
-  const descriptionInputId = useId()
-  const internalNameInputId = useId()
-  const internalDescriptionInputId = useId()
-  const skuInputId = useId()
-  const priceInputId = useId()
-  const currencyInputId = useId()
-  const categoryInputId = useId()
-  const taxRateInputId = useId()
-  const scanCodeInputId = useId()
+  const formId = useId()
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const { data: taxRates } = useEvoluQuery(taxRatesQuery)
@@ -294,11 +285,11 @@ function CatalogItemForm({
       >
         <FieldGroup>
           <Field data-invalid={errors.name !== undefined}>
-            <FieldLabel htmlFor={nameInputId}>
+            <FieldLabel htmlFor={`${formId}-name`}>
               {t("settings.items.form.name.label")}
             </FieldLabel>
             <Input
-              id={nameInputId}
+              id={`${formId}-name`}
               value={name}
               disabled={pending}
               aria-invalid={errors.name !== undefined}
@@ -314,11 +305,11 @@ function CatalogItemForm({
           </Field>
 
           <Field data-invalid={errors.internalName !== undefined}>
-            <FieldLabel htmlFor={internalNameInputId}>
+            <FieldLabel htmlFor={`${formId}-internalName`}>
               {t("settings.items.form.internalName.label")}
             </FieldLabel>
             <Input
-              id={internalNameInputId}
+              id={`${formId}-internalName`}
               value={internalName}
               disabled={pending}
               aria-invalid={errors.internalName !== undefined}
@@ -339,12 +330,12 @@ function CatalogItemForm({
           </Field>
 
           <Field data-invalid={errors.price !== undefined}>
-            <FieldLabel htmlFor={priceInputId}>
+            <FieldLabel htmlFor={`${formId}-price`}>
               {t("settings.items.form.price.label")}
             </FieldLabel>
             <div className="flex gap-2">
               <Input
-                id={priceInputId}
+                id={`${formId}-price`}
                 value={price}
                 disabled={pending}
                 aria-invalid={errors.price !== undefined}
@@ -370,7 +361,7 @@ function CatalogItemForm({
                 }}
               >
                 <SelectTrigger
-                  id={currencyInputId}
+                  id={`${formId}-currency`}
                   disabled={pending}
                   aria-label={t("settings.items.form.currency.label")}
                 >
@@ -391,11 +382,11 @@ function CatalogItemForm({
           </Field>
 
           <Field data-invalid={errors.description !== undefined}>
-            <FieldLabel htmlFor={descriptionInputId}>
+            <FieldLabel htmlFor={`${formId}-description`}>
               {t("settings.items.form.description.label")}
             </FieldLabel>
             <Input
-              id={descriptionInputId}
+              id={`${formId}-description`}
               value={description}
               disabled={pending}
               aria-invalid={errors.description !== undefined}
@@ -413,11 +404,11 @@ function CatalogItemForm({
           </Field>
 
           <Field data-invalid={errors.internalDescription !== undefined}>
-            <FieldLabel htmlFor={internalDescriptionInputId}>
+            <FieldLabel htmlFor={`${formId}-internalDescription`}>
               {t("settings.items.form.internalDescription.label")}
             </FieldLabel>
             <Input
-              id={internalDescriptionInputId}
+              id={`${formId}-internalDescription`}
               value={internalDescription}
               disabled={pending}
               aria-invalid={errors.internalDescription !== undefined}
@@ -439,11 +430,11 @@ function CatalogItemForm({
           </Field>
 
           <Field data-invalid={errors.sku !== undefined}>
-            <FieldLabel htmlFor={skuInputId}>
+            <FieldLabel htmlFor={`${formId}-sku`}>
               {t("settings.items.form.sku.label")}
             </FieldLabel>
             <Input
-              id={skuInputId}
+              id={`${formId}-sku`}
               value={sku}
               disabled={pending}
               aria-invalid={errors.sku !== undefined}
@@ -459,7 +450,7 @@ function CatalogItemForm({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor={categoryInputId}>
+            <FieldLabel htmlFor={`${formId}-category`}>
               {t("settings.items.form.category.label")}
             </FieldLabel>
             <Select<CatalogCategoryId | "none">
@@ -476,7 +467,7 @@ function CatalogItemForm({
                 resetSaved()
               }}
             >
-              <SelectTrigger id={categoryInputId} disabled={pending}>
+              <SelectTrigger id={`${formId}-category`} disabled={pending}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -495,7 +486,7 @@ function CatalogItemForm({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor={taxRateInputId}>
+            <FieldLabel htmlFor={`${formId}-taxRate`}>
               {t("settings.items.form.taxRate.label")}
             </FieldLabel>
             <Select<TaxRateId | "none">
@@ -519,7 +510,7 @@ function CatalogItemForm({
                 resetSaved()
               }}
             >
-              <SelectTrigger id={taxRateInputId} disabled={pending}>
+              <SelectTrigger id={`${formId}-taxRate`} disabled={pending}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -546,12 +537,12 @@ function CatalogItemForm({
           </Field>
 
           <Field data-invalid={errors.scanCode !== undefined}>
-            <FieldLabel htmlFor={scanCodeInputId}>
+            <FieldLabel htmlFor={`${formId}-scanCode`}>
               {t("settings.items.form.scanCode.label")}
             </FieldLabel>
             <div className="relative">
               <Input
-                id={scanCodeInputId}
+                id={`${formId}-scanCode`}
                 value={scanCode}
                 disabled={pending}
                 aria-invalid={errors.scanCode !== undefined}

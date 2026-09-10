@@ -72,10 +72,7 @@ export function CreateCatalogItemDialog({
   const appRun = useAppRun()
   const evolu = useEvolu()
   const { t } = useTranslation()
-  const nameInputId = useId()
-  const priceInputId = useId()
-  const categoryInputId = useId()
-  const taxRateInputId = useId()
+  const formId = useId()
   const { data: taxRates } = useEvoluQuery(taxRatesQuery)
   const defaultTaxRate = taxRates.find(
     (rate) => rate.isDefault === 1 && rate.deactivatedAt === null
@@ -182,11 +179,11 @@ export function CreateCatalogItemDialog({
         >
           <FieldGroup>
             <Field data-invalid={nameError !== null}>
-              <FieldLabel htmlFor={nameInputId}>
+              <FieldLabel htmlFor={`${formId}-name`}>
                 {t("settings.items.form.name.label")}
               </FieldLabel>
               <Input
-                id={nameInputId}
+                id={`${formId}-name`}
                 value={name}
                 disabled={pending}
                 aria-invalid={nameError !== null}
@@ -202,11 +199,11 @@ export function CreateCatalogItemDialog({
             </Field>
 
             <Field data-invalid={priceError !== null}>
-              <FieldLabel htmlFor={priceInputId}>
+              <FieldLabel htmlFor={`${formId}-price`}>
                 {t("settings.items.form.price.label")}
               </FieldLabel>
               <Input
-                id={priceInputId}
+                id={`${formId}-price`}
                 value={price}
                 disabled={pending}
                 aria-invalid={priceError !== null}
@@ -221,7 +218,7 @@ export function CreateCatalogItemDialog({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor={categoryInputId}>
+              <FieldLabel htmlFor={`${formId}-category`}>
                 {t("settings.items.form.category.label")}
               </FieldLabel>
               <Select<CatalogCategoryId | "none">
@@ -237,7 +234,7 @@ export function CreateCatalogItemDialog({
                   setCategoryId(nextCategoryId)
                 }}
               >
-                <SelectTrigger id={categoryInputId} disabled={pending}>
+                <SelectTrigger id={`${formId}-category`} disabled={pending}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -256,7 +253,7 @@ export function CreateCatalogItemDialog({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor={taxRateInputId}>
+              <FieldLabel htmlFor={`${formId}-taxRate`}>
                 {t("settings.items.form.taxRate.label")}
               </FieldLabel>
               <Select<TaxRateId | "none">
@@ -275,7 +272,7 @@ export function CreateCatalogItemDialog({
                   setTaxRateId(nextTaxRateId)
                 }}
               >
-                <SelectTrigger id={taxRateInputId} disabled={pending}>
+                <SelectTrigger id={`${formId}-taxRate`} disabled={pending}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

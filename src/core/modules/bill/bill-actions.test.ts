@@ -3,9 +3,14 @@ import { describe, expect, test } from "vitest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
-import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
+import {
+  appendBillLines,
+  loadCalculatedBillLineSummaries,
+} from "@/core/modules/bill-line/bill-line-actions.ts"
 import { createCatalogItem } from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { createOrReuseItemSnapshot } from "@/core/modules/item/item-actions.ts"
+import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import {
   createPayment,
   markPaymentPaidCash,
@@ -17,6 +22,10 @@ import {
   PositiveInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
+import {
+  createTableId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/utils.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
@@ -280,6 +289,117 @@ describe("bill actions", () => {
         },
       ])
     await expect(run.orThrow(loadBillStatus(openId))).resolves.toBe("open")
+  }, 15_000)
+
+  test("closeBill repairs a closedAt the automatic write could not know about", async () => {
+    // The cause behind the limitation the next test covers, rather than a
+    // hand-nulled cache. `loadBillClosedAtIfCovered` gives up when the
+    // payment's bill row does not resolve, which under multi-device sync is a
+    // real ordering: the payment and its claim arrive from the device that
+    // took the money before the bill they belong to does. Nothing is wrong
+    // with that — `closedAt` is only a cache — but it does mean `closeBill`
+    // is the only thing that can ever fill it in afterwards.
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    const billId = createRandomBillId()
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        cashRegister: { currency: "CZK" },
+      })
+    )
+
+    // Written directly: `createPayment` would refuse, since it requires the
+    // bill to be open — which is exactly the situation being simulated, a
+    // payment row that exists here before its bill does.
+    const paymentId = createTableId<"Payment">()
+    await runMutationWithCompletion((options) =>
+      evolu.upsert(
+        "payment",
+        {
+          id: paymentId,
+          deviceId: null,
+          billId,
+          tableId: null,
+          amount: NonNegativeInteger(1_000),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          confirmedPaidAt: null,
+          excessAcknowledgedAt: null,
+          expiresAt: null,
+        },
+        { ...options, ownerId: evolu.appOwner.id }
+      )
+    )
+    await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+
+    // Now the bill and its line catch up. Appended unguarded on purpose: by
+    // this point the bill's live coverage already reads `closed`, so the
+    // ordinary editing actions would (correctly) refuse to touch it.
+    await run.ok(
+      createBillAtEnd({
+        id: billId,
+        deviceId: null,
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    const dinner = await run.ok(
+      createOrReuseItemSnapshot(
+        createStandaloneItemSnapshot({
+          catalogItemId: null,
+          name: NonEmptyString255("Dinner"),
+          description: null,
+          currency: "CZK",
+          unitAmount: NonNegativeInteger(1_000),
+          taxRateId: null,
+        })
+      )
+    )
+    await run.ok(
+      appendBillLines([
+        {
+          billId,
+          deviceId: null,
+          catalogItemId: null,
+          itemId: dinner.id,
+          type: "manualAmount",
+          kind: "add",
+          quantity: PositiveNumber(1),
+          totalAmount: NonNegativeInteger(1_000),
+        },
+      ])
+    )
+
+    // Live coverage says closed, the cache says nothing, and the cheap list
+    // view believes the cache.
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, closedAt: null }])
+    await expect
+      .poll(() => run.ok(listOpenBills()))
+      .toMatchObject([{ bill: { id: billId } }])
+
+    // Which is what `closeBill` exists for.
+    await expect(run(closeBill(billId))).resolves.toEqual({
+      ok: true,
+      value: billId,
+    })
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(billId)))
+      .toMatchObject([{ id: billId, closedAt: fixedDate.getTime() }])
+    await expect.poll(() => run.ok(listOpenBills())).toEqual([])
   }, 15_000)
 
   test("a bill can linger in listOpenBills after it's already closed, if its closedAt cache never got written", async () => {

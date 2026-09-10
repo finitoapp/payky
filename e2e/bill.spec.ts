@@ -549,7 +549,7 @@ test("locks a bill while its payment is pending, and unlocks it once that paymen
   })
 })
 
-test("canceling a bill-less keypad payment lands on a fresh, usable bill screen", async ({
+test("canceling a bill-less keypad payment lands back on the keypad", async ({
   seededPage: page,
 }) => {
   await test.step("start a keypad payment with no bill behind it", async () => {
@@ -563,13 +563,10 @@ test("canceling a bill-less keypad payment lands on a fresh, usable bill screen"
       .click()
   })
 
-  await test.step("lands on a fresh bill screen instead of a blank page", async () => {
-    await expect(page).toHaveURL(/\/bill\?billId=/)
+  await test.step("lands back on the keypad, not in a brand-new bill", async () => {
+    await expect(page).not.toHaveURL(/\/bill/)
     await expect(
-      page.getByRole("heading", { name: translate("en", "bill.title") })
-    ).toBeVisible()
-    await expect(
-      page.getByRole("button", { name: translate("en", "settings.items.add") })
+      page.getByRole("button", { name: translate("en", "home.pay") })
     ).toBeVisible()
   })
 })

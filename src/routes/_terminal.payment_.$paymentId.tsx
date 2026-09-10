@@ -680,10 +680,14 @@ function PaymentWaitingRequest({
         return
       }
 
-      await navigate({
-        to: "/bill",
-        search: { billId: payment.billId ?? undefined },
-      })
+      // Only a bill payment has a cart to go back to. Sending a keypad
+      // payment to `/bill` without a `billId` made the route's `beforeLoad`
+      // mint a fresh `createRandomBillId()` and redirect, so cancelling a
+      // plain amount payment dropped the user into a brand-new empty bill
+      // editor instead of the keypad.
+      await (payment.billId === null
+        ? navigate({ to: "/" })
+        : navigate({ to: "/bill", search: { billId: payment.billId } }))
     } finally {
       setCancelPending(false)
     }

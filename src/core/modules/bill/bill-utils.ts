@@ -185,15 +185,30 @@ export const deriveBillHistoryItemSummary = ({
 }
 
 /**
- * Turns a list of claimed-payment rows into a `Set` of their ids — shared by
- * `isBillLocked` (`bill-actions.ts`) and `usePendingPayments` (the reactive
- * equivalent) so the "which payments are claimed" adaptation step isn't
- * duplicated between the Task and hook versions.
+ * Which of a bill's payments count as settled, from its claimed *transaction*
+ * rows — shared by `isBillLocked` (`bill-actions.ts`) and
+ * `usePendingPayments` (the reactive equivalent) so the Task guard and the UI
+ * lock can never answer this differently. That sharing is the point; see
+ * `hasPendingPayment` below.
+ *
+ * Built from `claimedTransactionsByBillIdQuery` rather than
+ * `claimedPaymentsByBillIdQuery`, i.e. from claims whose account transaction
+ * is actually present. A claim on its own is not evidence that money arrived:
+ * `calculateClaimedSum` cannot count a transaction that is not there, so
+ * feeding the lock the looser "has any claim at all" reading let a bill read
+ * `open` with coverage 0 while its payment still displayed as paid — and the
+ * cart stayed editable underneath an outstanding payment, which is the one
+ * thing the lock exists to prevent.
+ *
+ * The cost is a transient false lock during the sync window where a claim has
+ * arrived from another device and its transaction has not. That resolves
+ * itself, and errs towards keeping a cart still rather than letting it move
+ * under a customer who is mid-payment.
  */
 export const claimedPaymentIdSet = (
-  claimedPayments: ReadonlyArray<{ readonly id: PaymentId }>
+  claimedTransactions: ReadonlyArray<{ readonly paymentId: PaymentId }>
 ): ReadonlySet<PaymentId> =>
-  new Set(claimedPayments.map((payment) => payment.id))
+  new Set(claimedTransactions.map((transaction) => transaction.paymentId))
 
 /**
  * The ids of every *live* payment attempt on a bill — one whose derived

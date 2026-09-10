@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 
 import {
-  claimedPaymentsByBillIdQuery,
+  claimedTransactionsByBillIdQuery,
   paymentsByBillIdQuery,
 } from "@/core/modules/bill/bill-coverage-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -35,21 +35,24 @@ export function usePendingPayments(
     () => (billId === undefined ? null : paymentsByBillIdQuery(billId)),
     [billId]
   )
+  // Must stay the same query `isBillLocked` reads, or this lock and the
+  // server-side guard disagree — see `claimedPaymentIdSet`.
   const claimedQuery = useMemo(
-    () => (billId === undefined ? null : claimedPaymentsByBillIdQuery(billId)),
+    () =>
+      billId === undefined ? null : claimedTransactionsByBillIdQuery(billId),
     [billId]
   )
   const { data: payments } = useOptionalEvoluQuery(paymentsQuery)
-  const { data: claimedPayments } = useOptionalEvoluQuery(claimedQuery)
+  const { data: claimedTransactions } = useOptionalEvoluQuery(claimedQuery)
   const now = useNow(payments.map((payment) => payment.expiresAt))
 
   return useMemo(
     () =>
       derivePendingPaymentIds(
         payments,
-        claimedPaymentIdSet(claimedPayments),
+        claimedPaymentIdSet(claimedTransactions),
         now
       ),
-    [payments, claimedPayments, now]
+    [payments, claimedTransactions, now]
   )
 }

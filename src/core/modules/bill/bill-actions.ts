@@ -51,7 +51,6 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/utils.ts"
 import {
-  claimedPaymentsByBillIdQuery,
   claimedTransactionsByBillIdQuery,
   paymentsByBillIdQuery,
 } from "./bill-coverage-queries.ts"
@@ -343,15 +342,21 @@ const openBillStatuses: ReadonlySet<BillStatus> = new Set(["open"])
 const isBillLocked =
   (billId: BillId): Task<boolean, never, EvoluDep & DateDep> =>
   async (run) => {
-    const [payments, claimedPayments] = await Promise.all([
+    // `claimedTransactions`, not `claimedPayments` — see
+    // `claimedPaymentIdSet`. `loadBillStatusSnapshot` loads the same rows for
+    // its coverage, but this runs concurrently with it (see
+    // `requireEditableBill`), so sharing them would cost the round trip that
+    // concurrency just saved. Two concurrent reads of one query is the
+    // cheaper half of that trade.
+    const [payments, claimedTransactions] = await Promise.all([
       run.deps.evolu.loadQuery(paymentsByBillIdQuery(billId)),
-      run.deps.evolu.loadQuery(claimedPaymentsByBillIdQuery(billId)),
+      run.deps.evolu.loadQuery(claimedTransactionsByBillIdQuery(billId)),
     ])
 
     return ok(
       hasPendingPayment(
         payments,
-        claimedPaymentIdSet(claimedPayments),
+        claimedPaymentIdSet(claimedTransactions),
         run.deps.date.now()
       )
     )

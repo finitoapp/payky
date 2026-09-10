@@ -441,10 +441,12 @@ describe("deriveBillHistoryItemSummary", () => {
 
 describe("claimedPaymentIdSet", () => {
   test("returns the set of claimed payment ids, deduplicated", () => {
+    // Keyed on `paymentId`: these are claimed *transaction* rows, and one
+    // payment can carry several of them.
     const set = claimedPaymentIdSet([
-      { id: "payment-1" as PaymentId },
-      { id: "payment-2" as PaymentId },
-      { id: "payment-1" as PaymentId },
+      { paymentId: "payment-1" as PaymentId },
+      { paymentId: "payment-2" as PaymentId },
+      { paymentId: "payment-1" as PaymentId },
     ])
 
     expect(set.has("payment-1" as PaymentId)).toBe(true)

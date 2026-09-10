@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
+import { deleteAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import {
   appendBillLines,
   loadCalculatedBillLineSummaries,
@@ -1227,6 +1228,51 @@ describe("bill actions", () => {
       ok: false,
       error: { type: "BillSplitSelectionStale", selectedQuantity: 5 },
     })
+  }, 15_000)
+
+  test("locks a bill whose only claim lost the transaction behind it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const billId = await createOpenBill(deps, { displayNumber: 1 })
+    await closeBillWithCashPayment(deps, billId, 1_000)
+
+    // Settled, so nothing is outstanding and the cart is closed to edits.
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+
+    const [transaction] = await evolu.loadQuery(
+      createQuery((db) => db.selectFrom("accountTransaction").select(["id"]))
+    )
+    if (transaction === undefined) throw new Error("no account transaction")
+    await run.ok(deleteAccountTransaction(transaction.id))
+
+    // The claim outlives the transaction it pointed at. Coverage already
+    // reads that correctly — `calculateClaimedSum` cannot count a
+    // transaction that is not there — so the bill is `open` again and its
+    // payment is once more unresolved. The editing lock has to agree: a
+    // claim on its own is not evidence that money arrived, and letting the
+    // cart be edited under an outstanding payment is the thing the lock
+    // exists to prevent.
+    await expect
+      .poll(() => run.ok(loadBillCoverage(billId)))
+      .toMatchObject({ claimedSum: 0, coverage: "underpaid" })
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("open")
+    await expect(
+      run(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Extra"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(500),
+        })
+      )
+    ).resolves.toMatchObject({ ok: false, error: { type: "BillLocked" } })
   }, 15_000)
 
   test("rejects splitting into a new bill when the source bill is locked by a pending payment", async () => {

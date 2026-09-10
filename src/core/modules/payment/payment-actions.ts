@@ -3,6 +3,7 @@ import {
   createIdFromString,
   err,
   type InsertValues,
+  type MutationOptions,
   ok,
   type Result,
   sqliteTrue,
@@ -427,6 +428,53 @@ const createSparkLightningInvoice =
     }
   }
 
+/**
+ * Writes a payment's Spark detail rows: the `paymentBtc` base row plus
+ * whichever of `paymentBtcLightning`/`paymentBtcSpark` the quote produced.
+ * Shared by `createPayment` and `preparePaymentMethod`, which must agree on
+ * exactly this field set — a payment prepared through one path would
+ * otherwise carry different Spark details than through the other.
+ *
+ * Upsert only. `updatePayment` writes the same three tables with `update`,
+ * whose values are all-optional where `UpsertValues` requires every
+ * non-nullable column, so folding both modes in here would mean widening this
+ * to accept a partial `paymentBtc` — losing the guarantee that a created
+ * payment has a complete Spark row.
+ */
+const upsertPaymentSparkDetails = (
+  evolu: EvoluDep["evolu"],
+  id: PaymentId,
+  spark: PaymentBtcInput,
+  options: MutationOptions
+): void => {
+  evolu.upsert(
+    "paymentBtc",
+    removeUndefinedValues({
+      accountId: spark.accountId,
+      amountSats: spark.amountSats,
+      exchangeRate: spark.exchangeRate,
+      exchangeRateSource: spark.exchangeRateSource,
+      exchangeRateFetchedAt: spark.exchangeRateFetchedAt,
+      id,
+    }),
+    options
+  )
+  if (spark.lightning) {
+    evolu.upsert(
+      "paymentBtcLightning",
+      removeUndefinedValues({ ...spark.lightning, id }),
+      options
+    )
+  }
+  if (spark.sparkInvoice) {
+    evolu.upsert(
+      "paymentBtcSpark",
+      removeUndefinedValues({ ...spark.sparkInvoice, id }),
+      options
+    )
+  }
+}
+
 export const loadPayment =
   (idValue: PaymentId): Task<PaymentRow, PaymentNotFoundError, EvoluDep> =>
   async (run) =>
@@ -504,38 +552,10 @@ export const createPayment =
       }
 
       if (spark) {
-        run.deps.evolu.upsert(
-          "paymentBtc",
-          removeUndefinedValues({
-            accountId: spark.accountId,
-            amountSats: spark.amountSats,
-            exchangeRate: spark.exchangeRate,
-            exchangeRateSource: spark.exchangeRateSource,
-            exchangeRateFetchedAt: spark.exchangeRateFetchedAt,
-            id,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-        if (spark.lightning) {
-          run.deps.evolu.upsert(
-            "paymentBtcLightning",
-            removeUndefinedValues({
-              ...spark.lightning,
-              id,
-            }),
-            { ...options, ownerId: evoluOwnerId }
-          )
-        }
-        if (spark.sparkInvoice) {
-          run.deps.evolu.upsert(
-            "paymentBtcSpark",
-            removeUndefinedValues({
-              ...spark.sparkInvoice,
-              id,
-            }),
-            { ...options, ownerId: evoluOwnerId }
-          )
-        }
+        upsertPaymentSparkDetails(run.deps.evolu, id, spark, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
       }
 
       if (iban) {
@@ -821,48 +841,12 @@ export const preparePaymentMethod =
       }
 
       if (sparkPaymentResult?.ok) {
-        run.deps.evolu.upsert(
-          "paymentBtc",
-          removeUndefinedValues({
-            id: sparkPaymentResult.value.id,
-            accountId: sparkPaymentResult.value.accountId,
-            amountSats: sparkPaymentResult.value.amountSats,
-            exchangeRate: sparkPaymentResult.value.exchangeRate,
-            exchangeRateSource: sparkPaymentResult.value.exchangeRateSource,
-            exchangeRateFetchedAt:
-              sparkPaymentResult.value.exchangeRateFetchedAt,
-          }),
-          {
-            ...options,
-            ownerId: evoluOwnerId,
-          }
+        upsertPaymentSparkDetails(
+          run.deps.evolu,
+          sparkPaymentResult.value.id,
+          sparkPaymentResult.value,
+          { ...options, ownerId: evoluOwnerId }
         )
-        if (sparkPaymentResult.value.lightning) {
-          run.deps.evolu.upsert(
-            "paymentBtcLightning",
-            removeUndefinedValues({
-              ...sparkPaymentResult.value.lightning,
-              id: sparkPaymentResult.value.id,
-            }),
-            {
-              ...options,
-              ownerId: evoluOwnerId,
-            }
-          )
-        }
-        if (sparkPaymentResult.value.sparkInvoice) {
-          run.deps.evolu.upsert(
-            "paymentBtcSpark",
-            removeUndefinedValues({
-              ...sparkPaymentResult.value.sparkInvoice,
-              id: sparkPaymentResult.value.id,
-            }),
-            {
-              ...options,
-              ownerId: evoluOwnerId,
-            }
-          )
-        }
         if (spark?.expirySeconds !== undefined && !hasNonExpiringMethod) {
           run.deps.evolu.update(
             "payment",

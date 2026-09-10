@@ -554,11 +554,18 @@ function BillCartView({
     router.history.back()
   }
 
+  const splitErrorMessageKey = (type: string) => {
+    if (type === "BillLocked") return "bill.locked" as const
+    // The selection no longer matches the bill, so retrying the same one
+    // cannot work — say so, rather than the generic "try again".
+    if (type === "BillSplitSelectionStale")
+      return "bill.split.staleSelection" as const
+    return "bill.split.error" as const
+  }
+
   const handleSplitError = (error: { readonly type: string }) => {
     console.error("Failed to split bill", error)
-    toast.error(
-      error.type === "BillLocked" ? t("bill.locked") : t("bill.split.error")
-    )
+    toast.error(t(splitErrorMessageKey(error.type)))
   }
 
   const handleConfirmSplit = async (input: SplitBillConfirmInput) => {

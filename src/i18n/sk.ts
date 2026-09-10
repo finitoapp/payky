@@ -100,6 +100,8 @@ export const sk = {
   "bill.split.destination.new": "Nový účet",
   "bill.split.error": "Rozdelenie účtu sa nepodarilo. Skús to prosím znova.",
   "bill.split.increase.aria": "Pridať jeden kus {name} do rozdelenia",
+  "bill.split.staleSelection":
+    "Účet sa počas výberu zmenil. Skontroluj výber a rozdeľ ho znova.",
   "bill.split.selectAll": "Vybrať všetko",
   "bill.split.selectedCount": "Vybrané:",
   "bill.split.title": "Rozdeliť účet",

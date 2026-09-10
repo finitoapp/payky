@@ -97,6 +97,8 @@ export const en = {
   "bill.split.destination.new": "New bill",
   "bill.split.error": "Couldn't split the bill. Please try again.",
   "bill.split.increase.aria": "Add one {name} to the split",
+  "bill.split.staleSelection":
+    "The bill changed while you were choosing. Check your selection and split again.",
   "bill.split.selectAll": "Select all",
   "bill.split.selectedCount": "Selected:",
   "bill.split.title": "Split bill",

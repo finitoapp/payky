@@ -3,6 +3,7 @@ import {
   type InsertValues,
   type MutationOptions,
   ok,
+  type Result,
   type Task,
   type UpdateValues,
   type UpsertValues,
@@ -129,10 +130,25 @@ export type AddBillLineError =
   | BillNotOpenError
   | BillLockedError
 
+const createBillSplitSelectionStaleError = defineError(
+  "BillSplitSelectionStale"
+)<{
+  readonly billId: BillId
+  readonly summaryId: BillLineSummary["id"]
+  readonly selectedQuantity: number
+  readonly availableQuantity: number
+  readonly selectedTotalAmount: number
+  readonly availableTotalAmount: number
+}>()
+export type BillSplitSelectionStaleError = ReturnType<
+  typeof createBillSplitSelectionStaleError
+>
+
 export type SplitBillError =
   | BillNotFoundError
   | BillNotOpenError
   | BillLockedError
+  | BillSplitSelectionStaleError
 
 export const billNotFound = (id: BillId): BillNotFoundError =>
   createBillNotFoundError({ id })
@@ -852,35 +868,119 @@ const buildSplitLines = (
   return lines
 }
 
+interface SelectedLineTotals {
+  readonly quantity: number
+  readonly totalAmount: number
+}
+
 /**
- * Checks whether moving `movedItems` off `currentSummaries` would leave the
- * bill with no line items at all (matched by `BillLineSummary["id"]`, stable
- * per bill/catalogItemId/itemId/type — see `createBillLineSummaryId`) and, if
- * so, writes the same `canceledAt` field `cancelBill` does, folded into the
- * caller's own mutation batch instead of opening a second one. Returns
- * whether it canceled, so a caller that needs to know (e.g. to decide
- * whether the UI should navigate away) can read it off the result.
+ * Sums a split selection per line, keyed by `BillLineSummary["id"]` (stable
+ * per bill/catalogItemId/itemId/type — see `createBillLineSummaryId`), and
+ * rejects it unless the source bill actually still holds at least that much
+ * of every selected line.
+ *
+ * Without this check `buildSplitLines` wrote a `remove` on the source and an
+ * `add` on the target for whatever the caller passed. A stale selection —
+ * the split screen was opened, then the line was reduced or removed, here or
+ * on another device — therefore *invented money*: the source's own summaries
+ * clamp at zero (`calculateBillLineSummaries` drops a line once its running
+ * quantity does, and floors its amount at 0), so the source looked fine while
+ * the target gained an `add` for an amount the source never carried. Selecting
+ * 3x1000 of a line the source had once over meant 1000 on one bill before the
+ * split and 3000 across two bills after it, reported as success.
+ *
+ * Summing per id matters as much as the comparison: a caller may legitimately
+ * pass the same line twice (two partial quantities of one line), and taking
+ * only the last entry would both wave through an over-selection and misjudge
+ * the emptiness check in `cancelSourceBillIfEmptied`.
+ *
+ * Deliberately an error rather than a clamp. Each selected line carries its
+ * own `totalAmount`, and trimming a quantity gives no sound way to recompute
+ * it — a net summary does not expose a unit price for manual amounts — so
+ * "move as much as is there" cannot be answered exactly. Refusing leaves the
+ * money untouched and sends the operator back to a selection that reflects
+ * the bill. Best-effort against concurrent writes, like every other guard
+ * here; see docs/bill-payment-states.md.
+ */
+const requireSelectionOnSourceBill = (
+  sourceBillId: BillId,
+  currentSummaries: ReadonlyArray<BillLineSummary>,
+  items: ReadonlyArray<BillLineSummary>
+): Result<
+  ReadonlyMap<BillLineSummary["id"], SelectedLineTotals>,
+  BillSplitSelectionStaleError
+> => {
+  const selectedById = new Map<BillLineSummary["id"], SelectedLineTotals>()
+  for (const item of items) {
+    const selected = selectedById.get(item.id)
+    selectedById.set(item.id, {
+      quantity: (selected?.quantity ?? 0) + item.quantity,
+      totalAmount: (selected?.totalAmount ?? 0) + item.totalAmount,
+    })
+  }
+
+  const availableById = new Map(
+    currentSummaries.map((summary) => [summary.id, summary])
+  )
+  for (const [summaryId, selected] of selectedById) {
+    // A missing id covers more than "the line is gone": the id is derived
+    // from the bill too, so a selection belonging to another bill, or to a
+    // since-repriced item snapshot, lands here as well.
+    const available = availableById.get(summaryId)
+    if (
+      available === undefined ||
+      selected.quantity > available.quantity ||
+      selected.totalAmount > available.totalAmount
+    ) {
+      return err(
+        createBillSplitSelectionStaleError({
+          billId: sourceBillId,
+          summaryId,
+          selectedQuantity: selected.quantity,
+          availableQuantity: available?.quantity ?? 0,
+          selectedTotalAmount: selected.totalAmount,
+          availableTotalAmount: available?.totalAmount ?? 0,
+        })
+      )
+    }
+  }
+
+  return ok(selectedById)
+}
+
+/**
+ * Checks whether moving the selection off `currentSummaries` would leave the
+ * bill with no line items at all and, if so, writes the same `canceledAt`
+ * field `cancelBill` does, folded into the caller's own mutation batch
+ * instead of opening a second one. Returns whether it canceled, so a caller
+ * that needs to know (e.g. to decide whether the UI should navigate away) can
+ * read it off the result.
+ *
+ * Takes the already-summed selection from `requireSelectionOnSourceBill` —
+ * building its own map keyed by id used to keep only the *last* entry per
+ * line, so two partial quantities of one line (2 + 3 of a five-quantity
+ * line) compared as 3 >= 5 and left a fully emptied bill open.
  */
 const cancelSourceBillIfEmptied = (
   evolu: EvoluDep["evolu"],
   sourceBillId: BillId,
   currentSummaries: ReadonlyArray<BillLineSummary>,
-  movedItems: ReadonlyArray<BillLineSummary>,
+  selectedById: ReadonlyMap<BillLineSummary["id"], SelectedLineTotals>,
   now: TimestampMs,
   options: MutationOptions
 ): boolean => {
-  const movedQuantityById = new Map(
-    movedItems.map((item) => [item.id, item.quantity])
-  )
   // `every` is vacuously true on an empty list, so the length check is what
   // keeps "nothing was there to move" from reading as "everything moved
-  // out": a bill with no lines, or a summary load that came back empty
-  // (it runs concurrently with the guard reads in `splitBill`), would
-  // otherwise be canceled without anything actually being emptied out of it.
+  // out": a bill with no lines would otherwise be canceled without anything
+  // actually being emptied out of it. `requireSelectionOnSourceBill` now
+  // rejects a non-empty selection against an empty bill before this runs, so
+  // no caller can reach that state — kept because this decision should hold
+  // on its own terms rather than on its caller having validated first.
   const sourceCanceled =
     currentSummaries.length > 0 &&
     currentSummaries.every(
-      (summary) => (movedQuantityById.get(summary.id) ?? 0) >= summary.quantity
+      (summary) =>
+        (selectedById.get(summary.id)?.quantity ?? 0) >= summary.quantity
     )
   if (sourceCanceled) {
     evolu.update("bill", { id: sourceBillId, canceledAt: now }, options)
@@ -913,6 +1013,12 @@ export const splitBill =
     if (!targetBillResult.ok) return targetBillResult
 
     const currentSourceSummaries = sourceBillResult.value.items
+    const selectionResult = requireSelectionOnSourceBill(
+      input.sourceBillId,
+      currentSourceSummaries,
+      input.items
+    )
+    if (!selectionResult.ok) return selectionResult
 
     const lines = buildSplitLines(
       input.sourceBillId,
@@ -937,7 +1043,7 @@ export const splitBill =
               run.deps.evolu,
               input.sourceBillId,
               currentSourceSummaries,
-              input.items,
+              selectionResult.value,
               TimestampMsSchema.decode(run.deps.date.now().getTime()),
               { ...options, ownerId: evoluOwnerId }
             )
@@ -996,6 +1102,12 @@ export const splitBillIntoNewBill =
     if (!sourceBillResult.ok) return sourceBillResult
 
     const currentSourceSummaries = sourceBillResult.value.items
+    const selectionResult = requireSelectionOnSourceBill(
+      input.sourceBillId,
+      currentSourceSummaries,
+      input.items
+    )
+    if (!selectionResult.ok) return selectionResult
 
     const { evoluOwnerId } = run.deps
     const lines = buildSplitLines(
@@ -1025,7 +1137,7 @@ export const splitBillIntoNewBill =
         run.deps.evolu,
         input.sourceBillId,
         currentSourceSummaries,
-        input.items,
+        selectionResult.value,
         TimestampMsSchema.decode(run.deps.date.now().getTime()),
         { ...options, ownerId: evoluOwnerId }
       )

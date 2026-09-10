@@ -692,7 +692,7 @@ describe("bill actions", () => {
       .toMatchObject([{ id: sourceBillId, canceledAt: null }])
   }, 15_000)
 
-  test("splitBill leaves an already-emptied source bill open", async () => {
+  test("splitBill refuses a line already removed from the source, leaving it open", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
@@ -714,9 +714,7 @@ describe("bill actions", () => {
     )
 
     // The line is gone from the source before the split lands — the shape a
-    // concurrent edit (or a summary load racing `splitBill`'s own guard
-    // reads) leaves behind. Nothing was emptied out of the source here, so
-    // the vacuously-true `every` over zero summaries must not cancel it.
+    // concurrent edit (or a stale split screen) leaves behind.
     await run.orThrow(
       appendRemoveBillLine({
         billId: sourceBillId,
@@ -727,11 +725,20 @@ describe("bill actions", () => {
       })
     )
 
-    const result = await run.orThrow(
-      splitBill({ sourceBillId, targetBillId, items: [movedLine] })
-    )
-
-    expect(result.sourceCanceled).toBe(false)
+    // This used to go through and assert only that the source stayed open.
+    // It did — but the target gained an `add` for 500 the source no longer
+    // held, so 0 across the two bills became 500. The move is refused now,
+    // which keeps the source open for the same reason and without inventing
+    // the money.
+    await expect(
+      run(splitBill({ sourceBillId, targetBillId, items: [movedLine] }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillSplitSelectionStale", availableQuantity: 0 },
+    })
+    await expect(
+      run.ok(loadCalculatedBillLineSummaries(targetBillId))
+    ).resolves.toEqual([])
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(sourceBillId)))
       .toMatchObject([{ id: sourceBillId, canceledAt: null }])
@@ -920,6 +927,186 @@ describe("bill actions", () => {
         })
       )
     ).resolves.toMatchObject({ ok: false, error: { type: "BillNotOpen" } })
+  }, 15_000)
+
+  test("refuses a split selecting more of a line than the source holds", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const targetBillId = await createOpenBill(deps, { displayNumber: 2 })
+    const lineSummary = await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Dish"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+
+    // What a stale split screen sends: the line was reduced (here or on
+    // another device) after it was opened. Left unchecked this wrote a
+    // `remove` for 3x1000 on a source holding 1x1000 — whose own summaries
+    // clamp at zero — and an `add` for 3000 on the target, turning 1000
+    // across the two bills into 3000 and reporting success.
+    const total = async (billId: BillId) =>
+      (await run.ok(loadCalculatedBillLineSummaries(billId))).reduce(
+        (sum, summary) => sum + summary.totalAmount,
+        0
+      )
+
+    await expect(
+      run(
+        splitBill({
+          sourceBillId,
+          targetBillId,
+          items: [
+            {
+              ...lineSummary,
+              quantity: PositiveNumber(3),
+              totalAmount: NonNegativeInteger(3_000),
+            },
+          ],
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: {
+        type: "BillSplitSelectionStale",
+        selectedQuantity: 3,
+        availableQuantity: 1,
+        selectedTotalAmount: 3_000,
+        availableTotalAmount: 1_000,
+      },
+    })
+    await expect(total(sourceBillId)).resolves.toBe(1_000)
+    await expect(total(targetBillId)).resolves.toBe(0)
+  }, 15_000)
+
+  test("refuses a split selecting a line the source bill does not hold", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const targetBillId = await createOpenBill(deps, { displayNumber: 2 })
+    await run.orThrow(
+      addManualAmountToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        name: NonEmptyString255("Dish"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    // A line from the *target* bill: the summary id is derived from the bill
+    // too, so a selection belonging to another bill is caught by the same
+    // check as a vanished one.
+    const otherBillLine = await run.orThrow(
+      addManualAmountToBill({
+        billId: targetBillId,
+        deviceId: null,
+        name: NonEmptyString255("Elsewhere"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(500),
+      })
+    )
+
+    await expect(
+      run(splitBill({ sourceBillId, targetBillId, items: [otherBillLine] }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillSplitSelectionStale", availableQuantity: 0 },
+    })
+  }, 15_000)
+
+  test("sums a line selected twice instead of taking the last entry", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
+    const targetBillId = await createOpenBill(deps, { displayNumber: 2 })
+    const catalogItemId = await run.ok(
+      createCatalogItem({
+        deviceId: null,
+        categoryId: null,
+        name: NonEmptyString255("Coffee"),
+        description: null,
+        currency: "CZK",
+        unitAmount: NonNegativeInteger(1_000),
+        sortOrder: NonNegativeInteger(0),
+        scanCode: null,
+      })
+    )
+    const lineSummary = await run.orThrow(
+      addCatalogItemToBill({
+        billId: sourceBillId,
+        deviceId: null,
+        catalogItemId,
+        quantity: PositiveNumber(5),
+      })
+    )
+
+    // Two partial selections of the same line, together exactly the whole
+    // line. Keyed by id while keeping only the last entry, this compared
+    // 3 >= 5 and left a fully emptied source bill open.
+    const partial = (quantity: number, totalAmount: number) => ({
+      ...lineSummary,
+      quantity: PositiveNumber(quantity),
+      totalAmount: NonNegativeInteger(totalAmount),
+    })
+
+    await expect(
+      run(
+        splitBill({
+          sourceBillId,
+          targetBillId,
+          items: [partial(2, 2_000), partial(3, 3_000)],
+        })
+      )
+    ).resolves.toMatchObject({ ok: true, value: { sourceCanceled: true } })
+
+    // And the same two selections over-reaching by one are refused, rather
+    // than passing because the last entry alone happened to fit.
+    const overSourceBillId = await createOpenBill(deps, { displayNumber: 3 })
+    const overLine = await run.orThrow(
+      addCatalogItemToBill({
+        billId: overSourceBillId,
+        deviceId: null,
+        catalogItemId,
+        quantity: PositiveNumber(4),
+      })
+    )
+    await expect(
+      run(
+        splitBill({
+          sourceBillId: overSourceBillId,
+          targetBillId,
+          items: [
+            { ...overLine, quantity: PositiveNumber(2) },
+            { ...overLine, quantity: PositiveNumber(3) },
+          ],
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "BillSplitSelectionStale", selectedQuantity: 5 },
+    })
   }, 15_000)
 
   test("rejects splitting into a new bill when the source bill is locked by a pending payment", async () => {

@@ -216,6 +216,11 @@ export const executeWithdrawal =
         )
       }
 
+      // A second boundary, not a redundant one: past `wallet.withdraw` the
+      // sats have left the wallet, so anything that fails from here on is
+      // "the withdrawal happened and we failed to record it", which is not
+      // what `WithdrawalRequestFailed` tells the operator. One `catch` cannot
+      // separate the two without a flag, so the nesting stays.
       try {
         const totalDebitedSats = computeTotalDebitedSats({
           amountSats,
@@ -224,7 +229,7 @@ export const executeWithdrawal =
           feeSats: feeEstimate.totalFeeSats,
         })
 
-        const accountTransactionResult = await run(
+        const accountTransactionId = await run.ok(
           createAccountTransaction({
             accountId,
             amount: Integer(-totalDebitedSats),
@@ -248,16 +253,9 @@ export const executeWithdrawal =
             },
           })
         )
-        if (!accountTransactionResult.ok) {
-          return err(
-            createWithdrawalRecordingFailedError({
-              message: "Failed to record the withdrawal transaction",
-            })
-          )
-        }
 
         return ok({
-          accountTransactionId: accountTransactionResult.value,
+          accountTransactionId,
           txid: result.txid,
           status: result.status,
         })

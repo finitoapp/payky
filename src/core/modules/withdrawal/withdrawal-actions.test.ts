@@ -466,6 +466,61 @@ describe("executeWithdrawal", () => {
     })
   })
 
+  test("reports a throwing withdraw as a request failure, not a recording one", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const accountId = await createSparkAccount({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+      sparkWallet: {
+        create: async () =>
+          createFakeSparkWallet({
+            withdraw: async () => {
+              throw new Error("spark node unreachable")
+            },
+          }),
+      },
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SparkWalletDep
+    await using run = testCreateRun(deps)
+
+    // The sats never left, so the operator has to be told the request failed —
+    // the other test in this pair covers a throw *after* `withdraw` returned,
+    // which is the opposite fact and a different error. The existing
+    // request-failure case goes through `withdraw` returning null rather than
+    // throwing, so this is the only cover for the outer boundary.
+    const result = await run(
+      executeWithdrawal({
+        accountId,
+        onchainAddress: validAddress,
+        quote: {
+          amountSats: 10_000,
+          withdrawAll: false,
+          availableSats: 100_000,
+          feeQuote,
+        },
+        exitSpeed: "medium",
+      })
+    )
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        type: "WithdrawalRequestFailed",
+        message: "spark node unreachable",
+      },
+    })
+    await expect
+      .poll(() =>
+        evolu.loadQuery(accountTransactionsWithOnchainQuery(accountId))
+      )
+      .toEqual([])
+  })
+
   test("fails separately when the withdrawal transaction cannot be recorded", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

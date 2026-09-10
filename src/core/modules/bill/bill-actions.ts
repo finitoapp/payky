@@ -55,8 +55,8 @@ import {
   paymentsByBillIdQuery,
 } from "./bill-coverage-queries.ts"
 import {
-  allBillDisplayNumbersQuery,
   billByIdQuery,
+  lastBillDisplayNumberQuery,
   openBillsQuery,
 } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
@@ -515,8 +515,8 @@ export const createBill =
  */
 const loadNextBillDisplayNumber =
   (): Task<PositiveInteger, never, EvoluDep> => async (run) => {
-    const existing = await run.deps.evolu.loadQuery(allBillDisplayNumbersQuery)
-    const lastDisplayNumber = existing.at(-1)?.displayNumber ?? 0
+    const [last] = await run.deps.evolu.loadQuery(lastBillDisplayNumberQuery)
+    const lastDisplayNumber = last?.displayNumber ?? 0
 
     return ok(PositiveInteger(lastDisplayNumber + 1))
   }

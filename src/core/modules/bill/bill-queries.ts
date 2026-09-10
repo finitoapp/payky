@@ -285,7 +285,18 @@ export const latestBillsQuery = ({ limit }: { readonly limit: number }) =>
  * source `createBillAtEnd` derives the next sequential number from. Must
  * include closed/canceled bills too so numbers are never reused.
  */
-export const allBillDisplayNumbersQuery = createQuery((db) =>
+/**
+ * The highest bill display number ever issued, over every bill including
+ * canceled and closed ones so numbers are never reused — see
+ * `loadNextBillDisplayNumber`.
+ *
+ * `desc limit 1` off the `bill_displayNumber` index, rather than reading every
+ * number and keeping the last: this runs on every bill creation, and the
+ * numbers grow for the lifetime of the install. At 50k bills SQLite goes from
+ * `SCAN bill` + a temp b-tree for the sort to a `SEARCH ... USING COVERING
+ * INDEX`, and 50k rows stop crossing the worker boundary.
+ */
+export const lastBillDisplayNumberQuery = createQuery((db) =>
   db
     .selectFrom("bill")
     .select(["displayNumber"])
@@ -293,7 +304,8 @@ export const allBillDisplayNumbersQuery = createQuery((db) =>
     .$narrowType<{
       displayNumber: KyselyNotNull
     }>()
-    .orderBy("displayNumber", "asc")
+    .orderBy("displayNumber", "desc")
+    .limit(1)
 )
 
 /**

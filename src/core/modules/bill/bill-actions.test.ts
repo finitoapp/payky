@@ -238,6 +238,41 @@ describe("bill actions", () => {
       .toMatchObject([{ id: secondId, displayNumber: 2 }])
   }, 15_000)
 
+  test("continues from the highest displayNumber, not the last-written one", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createDateDeps(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+
+    // 10 written after 9, so the highest number is not the newest row, and the
+    // two disagree under a lexical comparison ("9" > "10") — which would hand
+    // out 10 a second time and collide with an existing bill. `displayNumber`
+    // lives in an `any` column, so nothing about the storage type settles
+    // which comparison SQLite applies; only a case with a two-digit number
+    // does. The rest of this file never gets past single digits.
+    await createOpenBill(deps, { displayNumber: 9 })
+    await createOpenBill(deps, { displayNumber: 10 })
+
+    const nextId = createRandomBillId()
+    await run.ok(
+      createBillAtEnd({
+        id: nextId,
+        deviceId: null,
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+
+    await expect
+      .poll(() => evolu.loadQuery(billByIdQuery(nextId)))
+      .toMatchObject([{ id: nextId, displayNumber: 11 }])
+  }, 15_000)
+
   test("lists only open bills with calculated items", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

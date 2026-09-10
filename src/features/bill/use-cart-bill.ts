@@ -269,12 +269,19 @@ export function useCartBill({
   const addOne = (catalogItem: CatalogItemRow) =>
     addQuantity(catalogItem, PositiveNumber(1))
 
-  const removeOne = async (summary: BillLineSummary) => {
+  /**
+   * Appends a remove line covering part or all of `summary`: `removeOne`
+   * takes a single unit off (a "−" tap on an item brick), `removeLine` takes
+   * the whole line (the X on a summary row). Both are the same append with
+   * different amounts — the ledger has no notion of "one" versus "all".
+   */
+  const removeFromCart = async (
+    summary: BillLineSummary,
+    quantity: PositiveNumber,
+    totalAmount: NonNegativeInteger
+  ) => {
     await runQueued(async () => {
       const { device } = await jotaiStore.get(accountAtom)
-      const quantity = PositiveNumber(1)
-      const totalAmount = getBillLineSummaryUnitAmount(summary)
-
       await using run = appRun()
       const result = await run(
         appendRemoveBillLine({
@@ -286,7 +293,7 @@ export function useCartBill({
         })
       )
       if (!result.ok) {
-        console.error("Failed to remove item from cart", result.error)
+        console.error("Failed to remove from cart", result.error)
         showCartMutationErrorToast(t, result.error)
         return
       }
@@ -306,39 +313,15 @@ export function useCartBill({
     })
   }
 
-  const removeLine = async (summary: BillLineSummary) => {
-    await runQueued(async () => {
-      const { device } = await jotaiStore.get(accountAtom)
-      await using run = appRun()
-      const result = await run(
-        appendRemoveBillLine({
-          billId,
-          deviceId: device.id,
-          quantity: summary.quantity,
-          totalAmount: summary.totalAmount,
-          lineSummary: summary,
-        })
-      )
-      if (!result.ok) {
-        console.error("Failed to remove line from cart", result.error)
-        showCartMutationErrorToast(t, result.error)
-        return
-      }
+  const removeOne = (summary: BillLineSummary) =>
+    removeFromCart(
+      summary,
+      PositiveNumber(1),
+      getBillLineSummaryUnitAmount(summary)
+    )
 
-      record([
-        {
-          billId,
-          deviceId: device.id,
-          catalogItemId: summary.catalogItemId,
-          itemId: summary.itemId,
-          type: summary.type,
-          kind: "remove",
-          quantity: summary.quantity,
-          totalAmount: summary.totalAmount,
-        },
-      ])
-    })
-  }
+  const removeLine = (summary: BillLineSummary) =>
+    removeFromCart(summary, summary.quantity, summary.totalAmount)
 
   const clear = async (summaries: ReadonlyArray<BillLineSummary>) => {
     if (summaries.length === 0) return

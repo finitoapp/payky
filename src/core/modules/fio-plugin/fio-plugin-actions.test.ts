@@ -19,6 +19,7 @@ import {
   PositiveInteger,
 } from "../shared/schema.ts"
 import {
+  addFioPluginToken,
   createFioPlugin,
   deleteFioPlugin,
   deleteFioPluginToken,
@@ -26,6 +27,7 @@ import {
   updateFioPlugin,
   updateFioPluginSyncPointer,
 } from "./fio-plugin-actions.ts"
+import { fioPluginTokensByPluginIdQuery } from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 
 const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
@@ -95,12 +97,18 @@ describe("fio plugin actions", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: NonEmptyString255("fio-token-1"),
       })
     )
 
     expect(idResult.ok).toBe(true)
     if (!idResult.ok) return
+
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: idResult.value,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
 
     const id = idResult.value
     await expect
@@ -116,7 +124,7 @@ describe("fio plugin actions", () => {
             {
               fioPluginId: id,
               token: "fio-token-1",
-              isDeleted: null,
+              isDeleted: sqliteFalse,
             },
           ],
         },
@@ -146,11 +154,18 @@ describe("fio plugin actions", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
+      })
+    )
+
+    expect(idResult.ok).toBe(true)
+    if (!idResult.ok) return
+
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: idResult.value,
         token: NonEmptyString255("fio-token-1"),
       })
     )
-    expect(idResult.ok).toBe(true)
-    if (!idResult.ok) return
 
     const id = idResult.value
     const updateResult = await run(
@@ -158,6 +173,11 @@ describe("fio plugin actions", () => {
         id,
         numberOfSecondsBetweenChecks: PositiveInteger(600),
         isActive: sqliteFalse,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: id,
         token: NonEmptyString255("fio-token-2"),
       })
     )
@@ -178,12 +198,12 @@ describe("fio plugin actions", () => {
             {
               fioPluginId: id,
               token: "fio-token-1",
-              isDeleted: null,
+              isDeleted: sqliteFalse,
             },
             {
               fioPluginId: id,
               token: "fio-token-2",
-              isDeleted: null,
+              isDeleted: sqliteFalse,
             },
           ],
         },
@@ -213,12 +233,18 @@ describe("fio plugin actions", () => {
         accountId: cashRegisterAccountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: NonEmptyString255("fio-token-1"),
       })
     )
 
     expect(idResult.ok).toBe(true)
     if (!idResult.ok) return
+
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: idResult.value,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
 
     await expect
       .poll(() => evolu.loadQuery(fioPluginWithTokensByIdQuery(idResult.value)))
@@ -247,6 +273,103 @@ describe("fio plugin actions", () => {
     })
   }, 15_000)
 
+  test("adding the same token twice leaves one row, and a setting saved twice adds none", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(deps)
+
+    const id = await run.ok(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
+        isActive: sqliteTrue,
+      })
+    )
+
+    // The settings form used to carry the token, so every save appended
+    // another row for the same value and the sync job's rotation filled up
+    // with duplicates. Saving a setting must now touch no token at all.
+    await run.ok(
+      updateFioPlugin({ id, numberOfSecondsBetweenChecks: PositiveInteger(60) })
+    )
+    await run.ok(
+      updateFioPlugin({
+        id,
+        numberOfSecondsBetweenChecks: PositiveInteger(120),
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginTokensByPluginIdQuery(id)))
+      .toEqual([])
+
+    // And the token id is derived from the value, so re-adding one the plugin
+    // already has is a no-op rather than a second entry in the rotation.
+    const firstTokenId = await run.ok(
+      addFioPluginToken({
+        fioPluginId: id,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+    const repeatTokenId = await run.ok(
+      addFioPluginToken({
+        fioPluginId: id,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+
+    expect(repeatTokenId).toBe(firstTokenId)
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginTokensByPluginIdQuery(id)))
+      .toMatchObject([{ token: "fio-token-1" }])
+  }, 15_000)
+
+  test("re-adding a removed token revives it instead of staying hidden", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(deps)
+
+    const id = await run.ok(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(300),
+        isActive: sqliteTrue,
+      })
+    )
+    const tokenId = await run.ok(
+      addFioPluginToken({
+        fioPluginId: id,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+    await run.ok(deleteFioPluginToken(tokenId))
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginTokensByPluginIdQuery(id)))
+      .toEqual([])
+
+    // The deterministic id means this upserts the tombstoned row rather than
+    // inserting a new one, so it has to clear `isDeleted` — otherwise adding
+    // a token back would silently do nothing.
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: id,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginTokensByPluginIdQuery(id)))
+      .toMatchObject([{ id: tokenId, token: "fio-token-1" }])
+  }, 15_000)
+
   test("soft deletes only the plugin root row", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -262,11 +385,18 @@ describe("fio plugin actions", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
+      })
+    )
+
+    expect(idResult.ok).toBe(true)
+    if (!idResult.ok) return
+
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: idResult.value,
         token: NonEmptyString255("fio-token-1"),
       })
     )
-    expect(idResult.ok).toBe(true)
-    if (!idResult.ok) return
 
     const id = idResult.value
     await expect(run(deleteFioPlugin(id))).resolves.toEqual({
@@ -288,7 +418,7 @@ describe("fio plugin actions", () => {
             {
               fioPluginId: id,
               token: "fio-token-1",
-              isDeleted: null,
+              isDeleted: sqliteFalse,
             },
           ],
         },
@@ -328,16 +458,23 @@ describe("fio plugin actions", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
-        token: NonEmptyString255("fio-token-1"),
       })
     )
+
     expect(idResult.ok).toBe(true)
     if (!idResult.ok) return
 
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: idResult.value,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+
     const id = idResult.value
     await run.ok(
-      updateFioPlugin({
-        id,
+      addFioPluginToken({
+        fioPluginId: id,
         token: NonEmptyString255("fio-token-2"),
       })
     )
@@ -365,7 +502,7 @@ describe("fio plugin actions", () => {
             },
             {
               token: "fio-token-2",
-              isDeleted: null,
+              isDeleted: sqliteFalse,
             },
           ],
         },
@@ -387,6 +524,11 @@ describe("fio plugin actions", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(300),
         isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId: id,
         token: NonEmptyString255("fio-token-1"),
       })
     )

@@ -19,6 +19,7 @@ import {
 } from "../src/core/integrations/fio/fio-client"
 import { AccountId } from "../src/core/modules/account/account-types"
 import {
+  addFioPluginToken,
   createFioPlugin,
   deleteFioPlugin,
   loadFioPlugin,
@@ -152,7 +153,6 @@ export const registerFioPluginsCommand =
             isActive: SqliteBooleanFromStringSchema.describe(
               "x;Whether background sync is active"
             ),
-            token: NonEmptyString255Schema.describe("t;FIO API token"),
           },
           async action(_, options) {
             const fioPluginId = await run.ok(
@@ -161,11 +161,37 @@ export const registerFioPluginsCommand =
                 numberOfSecondsBetweenChecks:
                   options.numberOfSecondsBetweenChecks,
                 isActive: options.isActive,
+              })
+            )
+
+            run.deps.console.log(
+              `Inserted FIO plugin ${fioPluginId}. Add a token with \`add-token\` before it will sync.`
+            )
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "add-token",
+          description:
+            "Add a FIO API token to a plugin's rotation set. Re-adding the same token changes nothing.",
+          args: {},
+          opts: {
+            id: FioPluginId.describe("FIO plugin id"),
+            token: NonEmptyString255Schema.describe("t;FIO API token"),
+          },
+          async action(_, options) {
+            await run.orThrow(loadFioPlugin(options.id))
+
+            const tokenId = await run.ok(
+              addFioPluginToken({
+                fioPluginId: options.id,
                 token: options.token,
               })
             )
 
-            run.deps.console.log(`Inserted FIO plugin ${fioPluginId}`)
+            run.deps.console.log(`Added FIO plugin token ${tokenId}`)
           },
         })
       )
@@ -185,8 +211,6 @@ export const registerFioPluginsCommand =
             isActive: SqliteBooleanFromStringSchema.optional().describe(
               "x;Whether background sync is active"
             ),
-            token:
-              NonEmptyString255Schema.optional().describe("t;FIO API token"),
           },
           async action(_, options) {
             await run.orThrow(loadFioPlugin(options.id))
@@ -198,7 +222,6 @@ export const registerFioPluginsCommand =
                 numberOfSecondsBetweenChecks:
                   options.numberOfSecondsBetweenChecks,
                 isActive: options.isActive,
-                token: options.token,
               })
             )
 

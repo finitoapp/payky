@@ -741,6 +741,11 @@ export const en = {
   "settings.fioPlugin.token.label": "Fio API token",
   "settings.fioPlugin.token.required":
     "The first token is required when creating the plugin.",
+  "settings.fioPlugin.tokens.add.title": "Add a token",
+  "settings.fioPlugin.tokens.add.description":
+    "Saved on its own, so the settings above can be changed without rewriting it. The sync job rotates through every saved token.",
+  "settings.fioPlugin.tokens.add.submit": "Add token",
+  "settings.fioPlugin.tokens.add.saved": "Fio API token added.",
   "settings.fioPlugin.tokens.active": "Active",
   "settings.fioPlugin.tokens.createFirst":
     "Create the plugin with the first API token before managing tokens.",

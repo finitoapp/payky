@@ -2,7 +2,7 @@ import { createIdFromString, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import { format, subDays } from "date-fns"
 import { Plus, Trash2, TriangleAlert } from "lucide-react"
-import { useEffect, useId, useMemo, useState } from "react"
+import { Suspense, useEffect, useId, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
@@ -32,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import {
+  addFioPluginToken,
   createFioPlugin,
   deleteFioPluginToken,
   updateFioPlugin,
@@ -91,7 +92,15 @@ function FioPluginSettingsPage() {
         {!isNativeRuntime ? <FioPluginNativeRuntimeAlert /> : null}
         <FioPluginForm plugin={plugin} isNativeRuntime={isNativeRuntime} />
         {plugin ? (
-          <FioPluginTokenList fioPluginId={plugin.id} />
+          // The token list reads a plugin-scoped query that has never been
+          // seen before the plugin row appears, so its first render suspends.
+          // A local boundary keeps that off the route's own one, which would
+          // blank the whole settings page for a beat — the hazard
+          // `useOptionalEvoluQuery`'s doc comment describes.
+          <Suspense fallback={null}>
+            <FioPluginTokenForm fioPluginId={plugin.id} />
+            <FioPluginTokenList fioPluginId={plugin.id} />
+          </Suspense>
         ) : (
           <Card>
             <CardHeader>
@@ -152,7 +161,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const intervalInputId = useId()
   const syncLookbackDaysInputId = useId()
   const lastSyncedDateInputId = useId()
-  const tokenInputId = useId()
   const [isActive, setIsActive] = useState(false)
   const [numberOfSecondsBetweenChecks, setNumberOfSecondsBetweenChecks] =
     useState(defaultNumberOfSecondsBetweenChecks)
@@ -162,7 +170,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const [editableLastSyncedDate, setEditableLastSyncedDate] = useState<string>(
     getDefaultLastSyncedDate
   )
-  const [token, setToken] = useState("")
   const [intervalError, setIntervalError] = useState<TranslationKey | null>(
     null
   )
@@ -170,7 +177,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
     useState<TranslationKey | null>(null)
   const [lastSyncedDateError, setLastSyncedDateError] =
     useState<TranslationKey | null>(null)
-  const [tokenError, setTokenError] = useState<TranslationKey | null>(null)
   const { pending, saved, resetSaved, submit } = useSettingsForm()
 
   useEffect(() => {
@@ -204,7 +210,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
         setIntervalError(null)
         setSyncLookbackDaysError(null)
         setLastSyncedDateError(null)
-        setTokenError(null)
         resetSaved()
 
         const intervalResult = PositiveIntegerFromStringSchema.safeParse(
@@ -212,10 +217,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
         )
         const syncLookbackDaysResult =
           PositiveIntegerFromStringSchema.safeParse(syncLookbackDays.trim())
-        const normalizedToken = normalizeToken(token)
-        const tokenResult = normalizedToken
-          ? NonEmptyString255Schema.safeParse(normalizedToken)
-          : null
         const normalizedLastSyncedDate = editableLastSyncedDate.trim()
         const lastSyncedDateResult = DateStringSchema.safeParse(
           normalizedLastSyncedDate
@@ -230,16 +231,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
           setSyncLookbackDaysError(
             "settings.fioPlugin.syncLookbackDays.invalid"
           )
-          return
-        }
-
-        if (!plugin && !tokenResult) {
-          setTokenError("settings.fioPlugin.token.required")
-          return
-        }
-
-        if (tokenResult?.success === false) {
-          setTokenError("settings.fioPlugin.token.invalid")
           return
         }
 
@@ -260,7 +251,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
                 syncLookbackDays: syncLookbackDaysResult.data,
                 isActive:
                   isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
-                token: tokenResult?.data,
               })
             )
             await run.ok(
@@ -269,7 +259,7 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
                 lastSyncedDate: lastSyncedDateResult.data,
               })
             )
-          } else if (tokenResult) {
+          } else {
             const fioPluginId = await run.ok(
               createFioPlugin({
                 accountId: fiatBankAccountId,
@@ -277,7 +267,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
                 syncLookbackDays: syncLookbackDaysResult.data,
                 isActive:
                   isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
-                token: tokenResult.data,
               })
             )
             await run.ok(
@@ -287,8 +276,6 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
               })
             )
           }
-
-          setToken("")
         })
       }}
     >
@@ -386,7 +373,69 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
             {lastSyncedDateError ? t(lastSyncedDateError) : null}
           </FieldError>
         </Field>
+      </FieldGroup>
+    </SettingsFormCard>
+  )
+}
 
+interface FioPluginTokenListProps {
+  readonly fioPluginId: FioPluginId
+}
+
+/**
+ * Adding a token is its own form on purpose. It used to be a field on the
+ * basic-settings form, which meant every save wrote the token again: saving
+ * without touching it appended a duplicate row, and changing it left the old
+ * one in the sync job's rotation set, so the job kept retrying a revoked
+ * token. See `addFioPluginToken`.
+ */
+function FioPluginTokenForm({ fioPluginId }: FioPluginTokenListProps) {
+  const appRun = useAppRun()
+  const { t } = useTranslation()
+  const tokenInputId = useId()
+  const [token, setToken] = useState("")
+  const [tokenError, setTokenError] = useState<TranslationKey | null>(null)
+  const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  return (
+    <SettingsFormCard
+      title={t("settings.fioPlugin.tokens.add.title")}
+      description={t("settings.fioPlugin.tokens.add.description")}
+      savedMessage={saved ? t("settings.fioPlugin.tokens.add.saved") : null}
+      submitLabel={
+        <>
+          <Plus data-icon="inline-start" />
+          {t("settings.fioPlugin.tokens.add.submit")}
+        </>
+      }
+      pending={pending}
+      onSubmit={(event) => {
+        event.preventDefault()
+        setTokenError(null)
+        resetSaved()
+
+        const normalizedToken = normalizeToken(token)
+        if (!normalizedToken) {
+          setTokenError("settings.fioPlugin.token.required")
+          return
+        }
+
+        const tokenResult = NonEmptyString255Schema.safeParse(normalizedToken)
+        if (!tokenResult.success) {
+          setTokenError("settings.fioPlugin.token.invalid")
+          return
+        }
+
+        void submit(async () => {
+          await using run = appRun()
+          await run.ok(
+            addFioPluginToken({ fioPluginId, token: tokenResult.data })
+          )
+          setToken("")
+        })
+      }}
+    >
+      <FieldGroup>
         <Field data-invalid={tokenError !== null}>
           <FieldLabel htmlFor={tokenInputId}>
             {t("settings.fioPlugin.token.label")}
@@ -406,19 +455,13 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
             }}
           />
           <FieldDescription>
-            {plugin
-              ? t("settings.fioPlugin.token.description")
-              : t("settings.fioPlugin.token.firstDescription")}
+            {t("settings.fioPlugin.token.description")}
           </FieldDescription>
           <FieldError>{tokenError ? t(tokenError) : null}</FieldError>
         </Field>
       </FieldGroup>
     </SettingsFormCard>
   )
-}
-
-interface FioPluginTokenListProps {
-  readonly fioPluginId: FioPluginId
 }
 
 function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {

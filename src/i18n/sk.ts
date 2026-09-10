@@ -745,6 +745,11 @@ export const sk = {
   "settings.fioPlugin.token.label": "Fio API token",
   "settings.fioPlugin.token.required":
     "Pri vytváraní pluginu je prvý token povinný.",
+  "settings.fioPlugin.tokens.add.title": "Pridať token",
+  "settings.fioPlugin.tokens.add.description":
+    "Ukladá sa samostatne, takže nastavenia vyššie sa dajú meniť bez prepísania tokenu. Sync job prechádza všetky uložené tokeny.",
+  "settings.fioPlugin.tokens.add.submit": "Pridať token",
+  "settings.fioPlugin.tokens.add.saved": "Fio API token pridaný.",
   "settings.fioPlugin.tokens.active": "Aktívny",
   "settings.fioPlugin.tokens.createFirst":
     "Najprv vytvorte plugin s prvým API tokenom, potom môžete spravovať tokeny.",

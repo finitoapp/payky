@@ -1,4 +1,5 @@
 import {
+  createIdFromString,
   type InsertValues,
   ok,
   sqliteFalse,
@@ -51,32 +52,28 @@ export const loadFioPlugin =
       fioPluginNotFound(idValue)
     )
 
+/**
+ * Creates the plugin's configuration only. Tokens are added separately with
+ * `addFioPluginToken`, so saving a setting can never write one as a
+ * side effect. A plugin with no token yet is simply inactive — the sync job
+ * filters it out (see `hasFioTokens`) until one is added.
+ */
 export const createFioPlugin =
   ({
-    token,
     syncLookbackDays = defaultFioPluginSyncLookbackDays,
     ...input
   }: Omit<InsertValues<typeof fioPlugin>, "syncLookbackDays"> &
-    Partial<Pick<InsertValues<typeof fioPlugin>, "syncLookbackDays">> & {
-      readonly token: InsertValues<typeof fioPluginToken>["token"]
-    }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+    Partial<Pick<InsertValues<typeof fioPlugin>, "syncLookbackDays">>): Task<
+    FioPluginId,
+    never,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const id = createTableId<"FioPlugin">()
-    const tokenId = createTableId<"FioPluginToken">()
 
-    await runMutationWithCompletion((options) => {
+    await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
-        "fioPluginToken",
-        removeUndefinedValues({
-          id: tokenId,
-          fioPluginId: id,
-          token,
-        }),
-        { ...options, ownerId: evoluOwnerId }
-      )
-
-      return run.deps.evolu.upsert(
         "fioPlugin",
         removeUndefinedValues({
           ...input,
@@ -85,47 +82,76 @@ export const createFioPlugin =
         }),
         { ...options, ownerId: evoluOwnerId }
       )
-    })
+    )
 
     return ok(id)
   }
 
-export const updateFioPlugin =
+/**
+ * Adds one token to a plugin's rotation set (the sync job cycles through all
+ * of a plugin's tokens — see `fio-account-transaction-sync-job.ts`).
+ *
+ * The row id is derived from the plugin and the token value rather than
+ * generated, so re-adding a token the plugin already has is an idempotent
+ * no-op. It used to be random and written from `updateFioPlugin`, which meant
+ * every save of the settings form appended another row: re-saving without
+ * touching the token duplicated it, and *changing* it left the old one in the
+ * rotation, so the job kept periodically retrying a revoked token.
+ */
+export const addFioPluginToken =
   ({
+    fioPluginId,
     token,
-    ...input
-  }: Pick<
-    UpdateValues<typeof fioPlugin>,
-    | "id"
-    | "accountId"
-    | "numberOfSecondsBetweenChecks"
-    | "syncLookbackDays"
-    | "isActive"
-  > & {
-    readonly token?: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }: {
+    readonly fioPluginId: FioPluginId
+    readonly token: InsertValues<typeof fioPluginToken>["token"]
+  }): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const tokenId = createTableId<"FioPluginToken">()
+    const id = createIdFromString<"FioPluginToken">(
+      `fioPluginToken:${fioPluginId}:${token}`
+    )
 
-    await runMutationWithCompletion((options) => {
-      if (token !== undefined) {
-        run.deps.evolu.upsert(
-          "fioPluginToken",
-          removeUndefinedValues({
-            id: tokenId,
-            fioPluginId: input.id,
-            token,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-      }
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.upsert(
+        "fioPluginToken",
+        {
+          id,
+          fioPluginId,
+          token,
+          // Explicitly un-deleted so re-adding a token the staff removed
+          // earlier revives that row instead of staying invisible; the token
+          // queries match on `isDeleted is not 1` for the same reason.
+          isDeleted: sqliteFalse,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
 
-      return run.deps.evolu.update("fioPlugin", removeUndefinedValues(input), {
+    return ok(id)
+  }
+
+/** Configuration only; tokens are managed through `addFioPluginToken`. */
+export const updateFioPlugin =
+  (
+    input: Pick<
+      UpdateValues<typeof fioPlugin>,
+      | "id"
+      | "accountId"
+      | "numberOfSecondsBetweenChecks"
+      | "syncLookbackDays"
+      | "isActive"
+    >
+  ): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update("fioPlugin", removeUndefinedValues(input), {
         ...options,
         ownerId: evoluOwnerId,
       })
-    })
+    )
 
     return ok(input.id)
   }

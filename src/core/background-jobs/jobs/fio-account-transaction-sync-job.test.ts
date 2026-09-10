@@ -7,8 +7,9 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
+  addFioPluginToken,
   createFioPlugin,
-  updateFioPlugin,
+  deleteFioPluginToken,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import {
@@ -122,6 +123,11 @@ describe("fio account transaction sync job", () => {
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         syncLookbackDays: PositiveInteger(1),
         isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
         token: NonEmptyString255("fio-token-1"),
       })
     )
@@ -197,6 +203,11 @@ describe("fio account transaction sync job", () => {
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         syncLookbackDays: PositiveInteger(3),
         isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
         token: NonEmptyString255("fio-token-1"),
       })
     )
@@ -270,6 +281,11 @@ describe("fio account transaction sync job", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
         token: NonEmptyString255("fio-token-1"),
       })
     )
@@ -329,12 +345,17 @@ describe("fio account transaction sync job", () => {
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(1),
         isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
         token: NonEmptyString255("fio-token-1"),
       })
     )
     await run.ok(
-      updateFioPlugin({
-        id: fioPluginId,
+      addFioPluginToken({
+        fioPluginId,
         token: NonEmptyString255("fio-token-2"),
       })
     )
@@ -369,6 +390,92 @@ describe("fio account transaction sync job", () => {
     expect(errors).toEqual([])
   })
 
+  test("switches to a replacement token set without restarting the job", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    const errors: unknown[] = []
+    const requestedUrls: string[] = []
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Bank account"),
+        iban: {
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
+          currency: "CZK",
+        },
+      })
+    )
+    const fioPluginId = await run.ok(
+      createFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(1),
+        isActive: sqliteTrue,
+      })
+    )
+    const staleTokenId = await run.ok(
+      addFioPluginToken({
+        fioPluginId,
+        token: NonEmptyString255("fio-token-stale"),
+      })
+    )
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
+      onError: (error: unknown) => {
+        errors.push(error)
+      },
+      fetch: async (input: RequestInfo | URL) => {
+        requestedUrls.push(inputToString(input))
+        return statementResponse({ transactions: [] })
+      },
+      date: {
+        now: () => new Date("2026-05-31T10:00:00.000Z"),
+      },
+    })
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
+
+    await expect
+      .poll(() => requestedUrls.length, { timeout: 3_000 })
+      .toBeGreaterThanOrEqual(1)
+    expect(requestedUrls[0]).toContain("fio-token-stale")
+
+    // The token is rotated the way the settings UI does it: add the new one,
+    // remove the old. The job subscribes to `activeFioPluginsQuery` and
+    // `FioPluginSync.matches` compares the token set, so its session — and
+    // with it the `createFioApiDep` rotation — must be rebuilt around the
+    // replacement. Before tokens were managed separately, the old one stayed
+    // in the set and the job kept retrying a revoked token forever.
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
+        token: NonEmptyString255("fio-token-fresh"),
+      })
+    )
+    await run.ok(deleteFioPluginToken(staleTokenId))
+
+    const staleRequestsAtRotation = requestedUrls.filter((url) =>
+      url.includes("fio-token-stale")
+    ).length
+
+    await expect
+      .poll(
+        () => requestedUrls.some((url) => url.includes("fio-token-fresh")),
+        {
+          timeout: 5_000,
+        }
+      )
+      .toBe(true)
+
+    // And nothing went back to the revoked token after it was removed.
+    expect(
+      requestedUrls.filter((url) => url.includes("fio-token-stale")).length
+    ).toBe(staleRequestsAtRotation)
+    expect(errors).toEqual([])
+  }, 20_000)
+
   test("skips statements for a different IBAN", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -384,11 +491,16 @@ describe("fio account transaction sync job", () => {
         },
       })
     )
-    await run.ok(
+    const fioPluginId = await run.ok(
       createFioPlugin({
         accountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
         token: NonEmptyString255("fio-token-1"),
       })
     )

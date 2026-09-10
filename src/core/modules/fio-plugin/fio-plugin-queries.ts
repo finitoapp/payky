@@ -32,11 +32,14 @@ export const fioPluginTokensByPluginIdQuery = (fioPluginId: FioPluginId) =>
       .selectAll()
       .where("fioPluginId", "=", fioPluginId)
       .where("token", "is not", null)
-      .where("isDeleted", "is", null)
+      .where("isDeleted", "is not", 1)
       .$narrowType<{
         fioPluginId: KyselyNotNull
         token: KyselyNotNull
       }>()
+      .orderBy("createdAt")
+      .orderBy("ownerId")
+      .orderBy("id")
   )
 
 export const fiatBankAccountFioPluginQuery = createQuery((db) =>
@@ -87,8 +90,16 @@ export const activeFioPluginsQuery = createQuery((db) =>
           .select(["fioPluginToken.token"])
           .whereRef("fioPluginToken.fioPluginId", "=", "fioPlugin.id")
           .where("fioPluginToken.token", "is not", null)
-          .where("fioPluginToken.isDeleted", "is", null)
+          .where("fioPluginToken.isDeleted", "is not", 1)
+          // `(ownerId, id)` after `createdAt` for the same reason
+          // `billLinesByBillIdQuery` needs it: tokens written in one batch
+          // share a `createdAt`, and the sync job compares token *order* to
+          // decide whether its session still matches (`areTokensEqual`). An
+          // unstable order would restart the session — and so fire an extra
+          // FIO request, against a rate-limited API — for no reason.
           .orderBy("fioPluginToken.createdAt")
+          .orderBy("fioPluginToken.ownerId")
+          .orderBy("fioPluginToken.id")
           .$narrowType<{
             token: KyselyNotNull
           }>()

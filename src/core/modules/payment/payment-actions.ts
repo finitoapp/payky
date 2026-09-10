@@ -9,6 +9,7 @@ import {
   sqliteTrue,
   type Task,
   type UpdateValues,
+  type UpsertValues,
 } from "@evolu/common"
 import type {
   DateDep,
@@ -658,6 +659,139 @@ export const createPreparedPayment =
     )
   }
 
+/**
+ * Resolves one requested payment method into the row it should write, or the
+ * reason it cannot. Each is its own Task so `preparePaymentMethod` composes
+ * them with the ordinary `await run(...)` shape instead of inline async IIFEs
+ * whose `Result`s it then has to unwrap by hand.
+ */
+const prepareCashRegisterMethod =
+  ({
+    paymentId,
+    accountId,
+    paymentCurrency,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly paymentCurrency: FiatCurrency
+  }): Task<
+    UpsertValues<typeof paymentCashRegister>,
+    CashRegisterAccountNotFoundError | AccountCurrencyMismatchError,
+    EvoluDep
+  > =>
+  async (run) => {
+    const accountResult = loadAccountWithCurrencyCheck(
+      await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
+      cashRegisterAccountNotFound(accountId),
+      "cashRegister",
+      accountId,
+      paymentCurrency
+    )
+    if (!accountResult.ok) return accountResult
+
+    return ok({ id: paymentId, accountId })
+  }
+
+/**
+ * Unlike the other methods, a bank transfer needs the payment's number: its
+ * serial and date become the variable and specific symbols the payer quotes.
+ */
+const prepareIbanMethod =
+  ({
+    paymentId,
+    accountId,
+    paymentCurrency,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly paymentCurrency: FiatCurrency
+  }): Task<
+    UpsertValues<typeof paymentIban>,
+    | IbanAccountNotFoundError
+    | AccountCurrencyMismatchError
+    | PaymentNumberNotFoundError,
+    EvoluDep
+  > =>
+  async (run) => {
+    const accountResult = loadAccountWithCurrencyCheck(
+      await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
+      ibanAccountNotFound(accountId),
+      "iban",
+      accountId,
+      paymentCurrency
+    )
+    if (!accountResult.ok) return accountResult
+
+    const paymentNumberResult = getFirstOr(
+      await run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
+      paymentNumberNotFound(paymentId)
+    )
+    if (!paymentNumberResult.ok) return paymentNumberResult
+
+    const paymentNumber = paymentNumberResult.value
+
+    return ok(
+      removeUndefinedValues({
+        id: paymentId,
+        accountId,
+        variableSymbol: createVariableSymbolFromSerialNumber(
+          paymentNumber.serialNumber
+        ),
+        specificSymbol: createSpecificSymbolFromDate(paymentNumber.date),
+      })
+    )
+  }
+
+const prepareSparkMethod =
+  ({
+    paymentId,
+    paymentCurrency,
+    amount,
+    spark,
+  }: {
+    readonly paymentId: PaymentId
+    readonly paymentCurrency: FiatCurrency
+    readonly amount: number
+    readonly spark: {
+      readonly accountId: AccountId
+      readonly memo?: string
+      readonly expirySeconds?: number
+      readonly includeSparkInvoice?: boolean
+    }
+  }): Task<
+    { readonly id: PaymentId } & PaymentBtcInput,
+    | AccountSparkNotFoundError
+    | PaymentPreparationFailedError
+    | YadioHttpError
+    | YadioApiError
+    | FetchError,
+    EvoluDep & SparkWalletDep & FetchDep & YadioApiDep
+  > =>
+  async (run) => {
+    const sparkAccounts = await run.deps.evolu.loadQuery(
+      activeSparkAccountsQuery
+    )
+    const sparkAccount = sparkAccounts.find(
+      (account) => account.id === spark.accountId
+    )
+    if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
+
+    const sparkInvoiceResult = await run(
+      createSparkLightningInvoice({
+        accountId: spark.accountId,
+        secret: sparkAccount.secret,
+        currency: paymentCurrency,
+        amount,
+        memo: spark.memo,
+        expirySeconds: spark.expirySeconds,
+        includeSparkInvoice: spark.includeSparkInvoice,
+      })
+    )
+    if (!sparkInvoiceResult.ok) return sparkInvoiceResult
+
+    return ok({ id: paymentId, ...sparkInvoiceResult.value })
+  }
+
 export const preparePaymentMethod =
   ({
     paymentId,
@@ -695,108 +829,58 @@ export const preparePaymentMethod =
 
     const payment = paymentResult.value
 
-    const [cashRegisterPayment, bankPayment] = await Promise.all([
+    // `null` means the method wasn't requested, which is not the same as
+    // failing to prepare it — hence one nullable `Result` each, collapsed to
+    // plain nullable values below. The cash and bank preparations are
+    // independent reads, so they run together.
+    const [cashRegisterResult, ibanResult] = await Promise.all([
       cashRegister === undefined
-        ? Promise.resolve(null)
-        : (async () => {
-            const accountResult = loadAccountWithCurrencyCheck(
-              await run.deps.evolu.loadQuery(
-                cashRegisterAccountByIdQuery(cashRegister.accountId)
-              ),
-              cashRegisterAccountNotFound(cashRegister.accountId),
-              "cashRegister",
-              cashRegister.accountId,
-              payment.currency
-            )
-            if (!accountResult.ok) return accountResult
-
-            return ok({
-              id: paymentId,
+        ? null
+        : run(
+            prepareCashRegisterMethod({
+              paymentId,
               accountId: cashRegister.accountId,
+              paymentCurrency: payment.currency,
             })
-          })(),
+          ),
       bank === undefined
-        ? Promise.resolve(null)
-        : (async () => {
-            const accountResult = loadAccountWithCurrencyCheck(
-              await run.deps.evolu.loadQuery(
-                ibanAccountByIdQuery(bank.accountId)
-              ),
-              ibanAccountNotFound(bank.accountId),
-              "iban",
-              bank.accountId,
-              payment.currency
-            )
-            if (!accountResult.ok) return accountResult
-
-            const paymentNumberResult = getFirstOr(
-              await run.deps.evolu.loadQuery(
-                paymentNumberByPaymentIdQuery(paymentId)
-              ),
-              paymentNumberNotFound(paymentId)
-            )
-            if (!paymentNumberResult.ok) return paymentNumberResult
-
-            const paymentNumber = paymentNumberResult.value
-            const variableSymbol = createVariableSymbolFromSerialNumber(
-              paymentNumber.serialNumber
-            )
-            const specificSymbol = createSpecificSymbolFromDate(
-              paymentNumber.date
-            )
-
-            const paymentIbanValue = removeUndefinedValues({
-              id: paymentId,
+        ? null
+        : run(
+            prepareIbanMethod({
+              paymentId,
               accountId: bank.accountId,
-              variableSymbol,
-              specificSymbol,
+              paymentCurrency: payment.currency,
             })
-
-            return ok(paymentIbanValue)
-          })(),
+          ),
     ])
-    if (cashRegisterPayment !== null && !cashRegisterPayment.ok) {
-      return cashRegisterPayment
+    if (cashRegisterResult !== null && !cashRegisterResult.ok) {
+      return cashRegisterResult
     }
-    if (bankPayment !== null && !bankPayment.ok) {
-      return bankPayment
-    }
+    if (ibanResult !== null && !ibanResult.ok) return ibanResult
 
-    const sparkPaymentResult =
+    // Spark waits its turn: it calls out to Yadio and the Spark SDK, so
+    // there is no point starting that before the cheap account checks pass.
+    const sparkResult =
       spark === undefined
         ? null
-        : await (async () => {
-            const sparkAccounts = await run.deps.evolu.loadQuery(
-              activeSparkAccountsQuery
-            )
-            const sparkAccount = sparkAccounts.find(
-              (account) => account.id === spark.accountId
-            )
-            if (!sparkAccount) return err(accountSparkNotFound(spark.accountId))
+        : await run(
+            prepareSparkMethod({
+              paymentId,
+              paymentCurrency: payment.currency,
+              amount: payment.amount,
+              spark,
+            })
+          )
+    if (sparkResult !== null && !sparkResult.ok) return sparkResult
 
-            const sparkInvoiceResult = await run(
-              createSparkLightningInvoice({
-                accountId: spark.accountId,
-                secret: sparkAccount.secret,
-                currency: payment.currency,
-                amount: payment.amount,
-                memo: spark.memo,
-                expirySeconds: spark.expirySeconds,
-                includeSparkInvoice: spark.includeSparkInvoice,
-              })
-            )
-            if (!sparkInvoiceResult.ok) return sparkInvoiceResult
-
-            return ok({ id: paymentId, ...sparkInvoiceResult.value })
-          })()
-    if (sparkPaymentResult !== null && !sparkPaymentResult.ok) {
-      return sparkPaymentResult
-    }
+    const cashRegisterValues = cashRegisterResult?.value ?? null
+    const ibanValues = ibanResult?.value ?? null
+    const sparkValues = sparkResult?.value ?? null
 
     if (
-      cashRegisterPayment === null &&
-      bankPayment === null &&
-      sparkPaymentResult === null
+      cashRegisterValues === null &&
+      ibanValues === null &&
+      sparkValues === null
     ) {
       return ok(paymentId)
     }
@@ -814,39 +898,33 @@ export const preparePaymentMethod =
       paymentNonExpiringMethodsByIdQuery(paymentId)
     )
     const hasNonExpiringMethod =
-      cashRegisterPayment?.ok === true ||
-      bankPayment?.ok === true ||
+      cashRegisterValues !== null ||
+      ibanValues !== null ||
       nonExpiringMethods.some(
         (row) =>
           row.cashRegisterAccountId !== null || row.ibanAccountId !== null
       )
 
     await runMutationWithCompletion((options) => {
-      if (cashRegisterPayment?.ok) {
-        run.deps.evolu.upsert(
-          "paymentCashRegister",
-          cashRegisterPayment.value,
-          {
-            ...options,
-            ownerId: evoluOwnerId,
-          }
-        )
-      }
-
-      if (bankPayment?.ok) {
-        run.deps.evolu.upsert("paymentIban", bankPayment.value, {
+      if (cashRegisterValues !== null) {
+        run.deps.evolu.upsert("paymentCashRegister", cashRegisterValues, {
           ...options,
           ownerId: evoluOwnerId,
         })
       }
 
-      if (sparkPaymentResult?.ok) {
-        upsertPaymentSparkDetails(
-          run.deps.evolu,
-          sparkPaymentResult.value.id,
-          sparkPaymentResult.value,
-          { ...options, ownerId: evoluOwnerId }
-        )
+      if (ibanValues !== null) {
+        run.deps.evolu.upsert("paymentIban", ibanValues, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
+      }
+
+      if (sparkValues !== null) {
+        upsertPaymentSparkDetails(run.deps.evolu, sparkValues.id, sparkValues, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
         if (spark?.expirySeconds !== undefined && !hasNonExpiringMethod) {
           run.deps.evolu.update(
             "payment",

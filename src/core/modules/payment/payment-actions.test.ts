@@ -57,7 +57,10 @@ import {
   TimestampMsSchema,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import {
+  createTableId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/utils.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
@@ -899,6 +902,194 @@ describe("payment actions", () => {
           },
         },
       ])
+  }, 15_000)
+
+  test("preparePaymentMethod refuses each method against a missing or wrong-currency account", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      // Spark and Yadio are wired up but never reached: every case below
+      // fails its account check first.
+      fetch: async () =>
+        new Response(
+          JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
+        ),
+      sparkWallet: { create: async () => createFakeSparkWallet({}) },
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      SparkWalletDep &
+      FetchDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId, sparkAccountId } =
+      await createPaymentAccounts(deps)
+
+    const czkPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+    const eurPaymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "EUR",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    // Each method reports its own not-found error for an account of the wrong
+    // kind, and its own `accountKind` on a currency mismatch. These are the
+    // branches `preparePaymentMethod` propagates out of three concurrent
+    // preparations, so they are worth pinning before that plumbing moves.
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: czkPaymentId,
+          bank: { accountId: cashRegisterAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "IbanAccountNotFound", id: cashRegisterAccountId },
+    })
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: czkPaymentId,
+          cashRegister: { accountId: ibanAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "CashRegisterAccountNotFound", id: ibanAccountId },
+    })
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: eurPaymentId,
+          bank: { accountId: ibanAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "AccountCurrencyMismatch", accountKind: "iban" },
+    })
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: eurPaymentId,
+          cashRegister: { accountId: cashRegisterAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "AccountCurrencyMismatch", accountKind: "cashRegister" },
+    })
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: czkPaymentId,
+          spark: { accountId: cashRegisterAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "AccountSparkNotFound", id: cashRegisterAccountId },
+    })
+
+    // Requesting no method at all is a no-op success, not a failure.
+    await expect(
+      run(preparePaymentMethod({ paymentId: czkPaymentId }))
+    ).resolves.toEqual({ ok: true, value: czkPaymentId })
+
+    // A refusal writes nothing: the spark account is real, so this proves the
+    // failures above short-circuited before the mutation batch.
+    expect(sparkAccountId).toBeDefined()
+    await expect(
+      evolu.loadQuery(
+        createQuery((db) => db.selectFrom("paymentIban").select(["id"]))
+      )
+    ).resolves.toEqual([])
+    await expect(
+      evolu.loadQuery(
+        createQuery((db) => db.selectFrom("paymentCashRegister").select(["id"]))
+      )
+    ).resolves.toEqual([])
+  }, 15_000)
+
+  test("preparePaymentMethod refuses a bank method for a payment whose number hasn't synced", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      // `preparePaymentMethod` declares these even for a bank-only call.
+      fetch: async () => new Response("{}"),
+      sparkWallet: { create: async () => createFakeSparkWallet({}) },
+      ...createDateDeps(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      SparkWalletDep &
+      FetchDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const { ibanAccountId } = await createPaymentAccounts(deps)
+
+    // Written directly rather than through `createPayment`, which always
+    // writes the `paymentNumber` in the same batch: this is the CRDT shape
+    // where the payment row arrived from another device before its number
+    // did. The IBAN method needs that number for the variable symbol.
+    const orphanPaymentId = createTableId<"Payment">()
+    await runMutationWithCompletion((options) =>
+      evolu.upsert(
+        "payment",
+        {
+          id: orphanPaymentId,
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(1_000),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          confirmedPaidAt: null,
+          excessAcknowledgedAt: null,
+          expiresAt: null,
+        },
+        { ...options, ownerId: evolu.appOwner.id }
+      )
+    )
+
+    await expect(
+      run(
+        preparePaymentMethod({
+          paymentId: orphanPaymentId,
+          bank: { accountId: ibanAccountId },
+        })
+      )
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "PaymentNumberNotFound", paymentId: orphanPaymentId },
+    })
   }, 15_000)
 
   test("marks a payment paid in cash by creating a cash account transaction", async () => {

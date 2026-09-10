@@ -163,7 +163,7 @@ export const openBillsByTableIdQuery = (tableId: TableId) =>
  * `bill-utils.ts` then re-derives status/coverage from `lines`/
  * `claimedTransactions` with the same pure logic the detail page uses.
  */
-export const latestBillsQuery = ({ limit }: { readonly limit: number }) =>
+export const latestBillsQuery = (limit: number) =>
   createQuery((db) =>
     db
       .selectFrom("bill")

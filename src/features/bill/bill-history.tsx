@@ -6,7 +6,7 @@ import {
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
-import { type ReactNode, useCallback, useMemo } from "react"
+import { type ReactNode, useMemo } from "react"
 import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { latestBillsQuery } from "@/core/modules/bill/bill-queries.ts"
@@ -159,16 +159,12 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
 export const BillHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
-  const createPageQuery = useCallback(
-    (limit: number) => latestBillsQuery({ limit }),
-    []
-  )
   const {
     rows: items,
     hasMore,
     isPending,
     sentinelRef,
-  } = useInfiniteEvoluQuery([], createPageQuery)
+  } = useInfiniteEvoluQuery([], latestBillsQuery)
 
   const empty = (
     <div className={"flex flex-col justify-center items-center gap-8 py-10"}>

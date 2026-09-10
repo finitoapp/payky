@@ -13,7 +13,6 @@ import {
   XIcon,
 } from "lucide-react"
 import type { FC, ReactNode } from "react"
-import { useCallback } from "react"
 import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { createQuery } from "@/core/evolu/schema.ts"
@@ -70,7 +69,7 @@ import { cn } from "@/lib/utils.ts"
  * `limit: pageSize + 1` and slice off the extra row to detect whether more
  * payments remain without a separate count query.
  */
-const latestPaymentsQuery = ({ limit }: { readonly limit: number }) =>
+const latestPaymentsQuery = (limit: number) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
@@ -383,16 +382,12 @@ function PaymentHistoryIssues({
 export const PaymentHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
-  const createPageQuery = useCallback(
-    (limit: number) => latestPaymentsQuery({ limit }),
-    []
-  )
   const {
     rows: items,
     hasMore,
     isPending,
     sentinelRef,
-  } = useInfiniteEvoluQuery([], createPageQuery)
+  } = useInfiniteEvoluQuery([], latestPaymentsQuery)
   // Nothing writes a row when a payment expires, so the clock has to tick on
   // its own or a listed pending payment never becomes Expired.
   const now = useNow(items.map((item) => item.expiresAt))

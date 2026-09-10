@@ -176,7 +176,7 @@ describe("scoped item queries", () => {
       })
     )
 
-    const [billRow] = await evolu.loadQuery(latestBillsQuery({ limit: 10 }))
+    const [billRow] = await evolu.loadQuery(latestBillsQuery(10))
     expect(billRow?.items.map((item) => item.name).sort()).toEqual([
       "Coffee",
       "Tea",

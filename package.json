@@ -49,7 +49,7 @@
     "@capacitor/haptics": "8.0.2",
     "@capacitor/ios": "8.5.0",
     "@dedalik/use-react": "1.1.2",
-    "@evolu/common": "8.5.0",
+    "@evolu/common": "8.6.1",
     "@evolu/nodejs": "3.0.1",
     "@evolu/react-web": "3.0.1",
     "@evolu/sqlite-wasm": "2.2.4",

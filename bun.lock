@@ -14,7 +14,7 @@
         "@capacitor/haptics": "8.0.2",
         "@capacitor/ios": "8.5.0",
         "@dedalik/use-react": "1.1.2",
-        "@evolu/common": "8.5.0",
+        "@evolu/common": "8.6.1",
         "@evolu/nodejs": "3.0.1",
         "@evolu/react-web": "3.0.1",
         "@evolu/sqlite-wasm": "2.2.4",
@@ -389,7 +389,7 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.28.1", "", { "os": "win32", "cpu": "x64" }, "sha512-bm4Mowrv+GXMlpWX++EcXw/iLyd1o3+bJkC2DkWXYVvgZCqD/bSj9ctZeAMC3cIxgjRVR2Dufaiu4YPxr5gW1A=="],
 
-    "@evolu/common": ["@evolu/common@8.5.0", "", { "dependencies": { "@noble/ciphers": "^2.3.0", "@noble/hashes": "^2.3.0", "@scure/bip39": "^2.3.0", "@standard-schema/spec": "^1.1.0", "kysely": "^0.29.5", "msgpackr": "^2.0.5", "random": "5.5.1" } }, "sha512-Okc+OhSI//NZrSCLP+4i1l8cveYyYGFWqZ/PiSSibkoabszhG0c78j5hUNIoKGDa2mIfOFPFdwDCS1hHg95Wkg=="],
+    "@evolu/common": ["@evolu/common@8.6.1", "", { "dependencies": { "@noble/ciphers": "^2.3.0", "@noble/hashes": "^2.3.0", "@scure/bip39": "^2.3.0", "@standard-schema/spec": "^1.1.0", "kysely": "^0.29.5", "msgpackr": "^2.0.5", "random": "5.5.1" } }, "sha512-dxjhALf9VN+FO36aDGwjuZ0Dt9T6miORLXlX9pI2YjnWvpZ4W7GnB25bNk3sPpJNBy3bDY6fRf+Hl6JXKVnotQ=="],
 
     "@evolu/nodejs": ["@evolu/nodejs@3.0.1", "", { "dependencies": { "better-sqlite3": "^12.11.1", "ws": "^8.19.0" }, "peerDependencies": { "@evolu/common": "^8.0.0", "vite": ">=8.0.0", "webpack": ">=5.108.4" }, "optionalPeers": ["vite", "webpack"] }, "sha512-tCTTRKpJ4BFKpF2TeIoYydVvIGHBsW3DepulYwZPIeBGGACvkZ1wV/BT8skde0TOTYmR5yoPhEi3WrCD8fThwg=="],
 

@@ -51,7 +51,7 @@
 - `src/core/cli` contains CLI-runtime helpers (`cli-env.ts`, the in-process lock manager); CLI entry points live in `bin/`.
 - `api` contains Vercel serverless functions (see `vercel.json` for routing) backing the donation feature: `api/donations.ts` and `api/lnurlp/donate.ts`, both built on `src/core/server/donate-wallet.ts`.
 - `src/core/native` contains Capacitor/WebView runtime detection and platform plumbing.
-- `src/i18n` contains translation resources and the translation hook. `src/i18n/en.ts` is the source of truth for translation keys; `cs.ts` and `sk.ts` must cover every key via `satisfies Record<TranslationKey, string>`, and `resources.ts` only composes the languages.
+- `src/i18n` contains translation resources and the translation hook. Keys are grouped into seven files per language — `<lang>/settings.ts`, `landing.ts`, `bill.ts`, `payment.ts`, `withdraw.ts`, `onboarding.ts`, `common.ts` — and `<lang>.ts` only spreads them together. Add a key to the file whose group its namespace belongs to; `common.ts` takes the small app-wide namespaces (`app`, `appError`, `nav`, `country`, ...). `src/i18n/en.ts` remains the source of truth for `TranslationKey`. Coverage is checked twice: each `cs`/`sk` group file `satisfies Record<keyof typeof en<Group>, string>` so a missing key names the file it is missing from, and `cs.ts`/`sk.ts` still `satisfies Record<TranslationKey, string>` so a key filed under the wrong group is caught too. `resources.ts` only composes the languages.
 - `src/lib` contains app-level generic utilities such as `cn`; keep domain code in `src/core/modules` instead.
 - `src/assets` contains static frontend assets.
 - `src/index.css` contains global Tailwind and theme styles.

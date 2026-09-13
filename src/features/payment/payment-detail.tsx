@@ -26,7 +26,6 @@ import { Separator } from "@/components/ui/separator.tsx"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
 import {
   calculateTaxRecap,
   hasTaxableLines,
@@ -55,11 +54,19 @@ import {
   type BillCoverageMismatchReason,
   BillCoverageWarning,
 } from "@/features/bill/bill-coverage-warning.tsx"
+import {
+  billStatusBadgeClassName,
+  billStatusLabelKey,
+} from "@/features/bill/bill-status-display.ts"
 import { TaxRecap } from "@/features/bill/tax-recap.tsx"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
+import {
+  paymentStatusBadgeClassName,
+  paymentStatusLabelKey,
+} from "@/features/payment/payment-status-display.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -72,13 +79,6 @@ import { cn } from "@/lib/utils.ts"
 type PaymentDetailPaymentMethod = "cashRegister" | "iban" | "onchain" | "spark"
 type PaymentDetailClaimSource = "auto" | "manual"
 
-const paymentDetailStatusBadgeClassName = {
-  canceled: null,
-  paid: "bg-success/10 text-success",
-  expired: "bg-muted text-muted-foreground",
-  pending: "bg-warning/10 text-warning",
-} satisfies Record<ReturnType<typeof derivePaymentStatus>, string | null>
-
 const paymentMethodLabelKey = {
   cashRegister: "paymentDetail.paymentMethod.cash",
   iban: "paymentDetail.paymentMethod.iban",
@@ -90,18 +90,6 @@ const claimSourceLabelKey = {
   auto: "paymentDetail.reconciliation.source.auto",
   manual: "paymentDetail.reconciliation.source.manual",
 } satisfies Record<PaymentDetailClaimSource, TranslationKey>
-
-const billStatusBadgeClassName = {
-  open: "bg-warning/10 text-warning",
-  closed: "bg-success/10 text-success",
-  canceled: null,
-} satisfies Record<BillStatus, string | null>
-
-const billStatusLabelKey = {
-  open: "paymentDetail.bill.status.open",
-  closed: "paymentDetail.bill.status.closed",
-  canceled: "paymentDetail.bill.status.canceled",
-} satisfies Record<BillStatus, TranslationKey>
 
 export function PaymentDetail({ paymentId }: { readonly paymentId: string }) {
   const parsedPaymentId = PaymentId.safeParse(paymentId)
@@ -263,9 +251,9 @@ function PaymentDetailContent({
               variant={
                 paymentStatus === "canceled" ? "destructive" : "secondary"
               }
-              className={cn(paymentDetailStatusBadgeClassName[paymentStatus])}
+              className={cn(paymentStatusBadgeClassName[paymentStatus])}
             >
-              {t(`paymentDetail.status.${paymentStatus}`)}
+              {t(paymentStatusLabelKey[paymentStatus])}
             </Badge>
           </div>
 

@@ -16,6 +16,8 @@ import {
   calculateBillLineSummaries,
   createBillLineSummaryId,
   deriveBillLineSummaryDiff,
+  getBillLineSummaryUnitAmount,
+  getLatestCatalogItemSummary,
 } from "./bill-line-utils.ts"
 
 const billId = "bill-1" as BillId
@@ -267,5 +269,94 @@ describe("deriveBillLineSummaryDiff", () => {
     ])
     expect(diff.added).toEqual([])
     expect(diff.removed).toEqual([])
+  })
+})
+
+describe("getLatestCatalogItemSummary", () => {
+  test("picks the latest persisted snapshot after a catalog item changes", () => {
+    const catalogItemId = "catalog-item-1" as CatalogItemId
+    const oldSnapshot = makeSummary({
+      itemId: "item-old" as ItemId,
+      name: NonEmptyString255("Coffee"),
+      catalogItemId,
+      quantity: PositiveNumber(1),
+      totalAmount: NonNegativeInteger(500),
+    })
+    const newSnapshot = makeSummary({
+      itemId: "item-new" as ItemId,
+      name: NonEmptyString255("Coffee"),
+      catalogItemId,
+      quantity: PositiveNumber(2),
+      totalAmount: NonNegativeInteger(1_200),
+    })
+
+    expect(
+      getLatestCatalogItemSummary([oldSnapshot, newSnapshot], catalogItemId)
+    ).toBe(newSnapshot)
+  })
+
+  test("returns undefined when no summary carries that catalog item", () => {
+    expect(
+      getLatestCatalogItemSummary(
+        [
+          makeSummary({
+            itemId: "item-1" as ItemId,
+            name: NonEmptyString255("Tea"),
+          }),
+        ],
+        "catalog-item-1" as CatalogItemId
+      )
+    ).toBeUndefined()
+  })
+})
+
+describe("getBillLineSummaryUnitAmount", () => {
+  test("divides the line total by its quantity", () => {
+    expect(
+      getBillLineSummaryUnitAmount(
+        makeSummary({
+          itemId: "item-1" as ItemId,
+          name: NonEmptyString255("Coffee"),
+          quantity: PositiveNumber(2),
+          totalAmount: NonNegativeInteger(1_200),
+        })
+      )
+    ).toBe(600)
+  })
+
+  test("survives a fractional quantity whose division does not land on an integer", () => {
+    // `bin/cli-bills.ts add-item --quantity 0.7` is accepted
+    // (`PositiveNumberFromStringSchema`), and `addCatalogItemToBill` takes a
+    // `PositiveNumber` too, so a line of 0.7 x 2000 is a real row: its total
+    // of 1400 is a clean integer. Dividing back is not — `1400 / 0.7` is
+    // `2000.0000000000002` in IEEE 754 — and this used to decode that
+    // straight through `NonNegativeInteger`, throwing while the operator
+    // simply tapped "remove" on that line in the cart.
+    expect(
+      getBillLineSummaryUnitAmount(
+        makeSummary({
+          itemId: "item-fractional" as ItemId,
+          name: NonEmptyString255("Coffee"),
+          quantity: PositiveNumber(0.7),
+          totalAmount: NonNegativeInteger(1_400),
+        })
+      )
+    ).toBe(2_000)
+  })
+
+  test("rounds to the nearest minor unit when a total genuinely does not divide", () => {
+    // Not reachable from any current writer — every line's total is
+    // `unitAmount x quantity` — but money has no fractional minor unit, so
+    // the nearest one is the only answer available.
+    expect(
+      getBillLineSummaryUnitAmount(
+        makeSummary({
+          itemId: "item-indivisible" as ItemId,
+          name: NonEmptyString255("Coffee"),
+          quantity: PositiveNumber(3),
+          totalAmount: NonNegativeInteger(100),
+        })
+      )
+    ).toBe(33)
   })
 })

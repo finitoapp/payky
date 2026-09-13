@@ -56,6 +56,7 @@ import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary
 import {
   deriveBillSummaryStats,
   deriveBillSummaryTotal,
+  getLatestCatalogItemSummary,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
@@ -79,7 +80,6 @@ import type { TableId } from "@/core/modules/table/table-types.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { BillScanView } from "@/features/bill/bill-scan-view.tsx"
-import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { ItemBrickGridSkeleton } from "@/features/bill/item-brick-grid-skeleton.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import {

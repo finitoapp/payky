@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { Card } from "@/components/ui/card.tsx"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import { getLatestCatalogItemSummary } from "@/core/modules/bill-line/bill-line-utils.ts"
 import type { CatalogCategoryRow } from "@/core/modules/catalog-category/catalog-category.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import {
@@ -11,7 +12,6 @@ import type {
   FiatCurrency as FiatCurrencyType,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
-import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { CreateCatalogItemDialog } from "@/features/bill/create-catalog-item-dialog.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import { ScanCodeCollisionDialog } from "@/features/bill/scan-code-collision-dialog.tsx"

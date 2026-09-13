@@ -1,5 +1,6 @@
 import {
   type Currency,
+  type FiatCurrency,
   Integer,
   NumberString,
 } from "@/core/modules/shared/schema.ts"
@@ -85,3 +86,64 @@ export const decimalAmountToMinorUnits = ({
 
   return Integer(amount)
 }
+
+export const SATS_PER_BTC = 100_000_000
+
+/**
+ * Whole BTC to satoshis, for a value that already arrived denominated in BTC
+ * — a BIP21 URI's `amount` parameter, say. No exchange rate and no floor: the
+ * caller asked for a specific amount of bitcoin, so an amount that rounds to
+ * zero sats really is zero.
+ */
+export const btcToSats = (amountBtc: number): number =>
+  Math.round(amountBtc * SATS_PER_BTC)
+
+/**
+ * A fiat amount in minor units to satoshis at `exchangeRate` (fiat per BTC).
+ *
+ * Floored at one sat. One minor unit is worth a fraction of a sat at any
+ * realistic rate, so without the floor the smallest chargeable amount rounds
+ * down to zero and produces an amountless invoice — which a wallet reads as
+ * "payer picks the amount", not as the price. A positive `amount` is the
+ * caller's precondition; `createSparkLightningInvoice` refuses zero before
+ * reaching here.
+ */
+export const fiatMinorUnitsToSats = ({
+  amount,
+  exchangeRate,
+  currency,
+}: {
+  readonly amount: number
+  readonly exchangeRate: number
+  readonly currency: FiatCurrency
+}): number =>
+  fiatToSats({
+    fiatAmount: amount / 10 ** currencyFractionDigits[currency],
+    exchangeRate,
+  })
+
+/**
+ * A fiat amount in whole units to satoshis at `exchangeRate` (fiat per BTC).
+ * Same floor, and the same reason, as `fiatMinorUnitsToSats`.
+ */
+export const fiatToSats = ({
+  fiatAmount,
+  exchangeRate,
+}: {
+  readonly fiatAmount: number
+  readonly exchangeRate: number
+}): number =>
+  Math.max(1, Math.round((fiatAmount / exchangeRate) * SATS_PER_BTC))
+
+/**
+ * Satoshis back to a fiat amount in whole units at `exchangeRate`. The
+ * inverse of `fiatToSats` up to its rounding, so round-tripping a small
+ * amount does not land back on the value it started from.
+ */
+export const satsToFiat = ({
+  sats,
+  exchangeRate,
+}: {
+  readonly sats: number
+  readonly exchangeRate: number
+}): number => (sats / SATS_PER_BTC) * exchangeRate

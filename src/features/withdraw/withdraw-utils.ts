@@ -1,3 +1,5 @@
+import { btcToSats } from "@/core/modules/shared/money.ts"
+
 export interface ScannedBitcoinAddress {
   readonly address: string
   readonly amountSats?: number
@@ -23,7 +25,7 @@ export const parseScannedBitcoinAddress = (
     const amountBtc = amountParam === null ? null : Number(amountParam)
     const amountSats =
       amountBtc !== null && Number.isFinite(amountBtc) && amountBtc > 0
-        ? Math.round(amountBtc * 100_000_000)
+        ? btcToSats(amountBtc)
         : undefined
 
     return { address: uri.pathname, amountSats }

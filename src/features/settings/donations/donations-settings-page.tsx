@@ -27,7 +27,11 @@ import {
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import { fetchYadioBtcExchangeRate } from "@/core/integrations/yadio/yadio-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
-import { currencyFractionDigits } from "@/core/modules/shared/money.ts"
+import {
+  currencyFractionDigits,
+  fiatToSats,
+  satsToFiat,
+} from "@/core/modules/shared/money.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
@@ -39,7 +43,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-const SATS_PER_BTC = 100_000_000
 const DEFAULT_DONATE_LUD16_ADDRESS = "donate@payky.me"
 
 const DonationAmountSchema = z.number().int().positive().safe()
@@ -69,12 +72,6 @@ const parseSatsInput = (value: string): number | null => {
 
   return parsed.success ? parsed.data : null
 }
-
-const convertFiatToSats = (fiatAmount: number, exchangeRate: number): number =>
-  Math.max(1, Math.round((fiatAmount / exchangeRate) * SATS_PER_BTC))
-
-const convertSatsToFiat = (sats: number, exchangeRate: number): number =>
-  (sats / SATS_PER_BTC) * exchangeRate
 
 const formatFiatInput = (
   fiatAmount: number,
@@ -191,7 +188,7 @@ export function DonationsSettingsPage() {
         return
       }
 
-      setSatsInput(String(convertFiatToSats(fiatAmount, exchangeRate)))
+      setSatsInput(String(fiatToSats({ fiatAmount, exchangeRate })))
       return
     }
 
@@ -202,7 +199,7 @@ export function DonationsSettingsPage() {
     }
 
     setFiatInput(
-      formatFiatInput(convertSatsToFiat(satsAmount, exchangeRate), currency)
+      formatFiatInput(satsToFiat({ sats: satsAmount, exchangeRate }), currency)
     )
   }, [currency, editedAmount, exchangeRate, fiatInput, satsInput])
 

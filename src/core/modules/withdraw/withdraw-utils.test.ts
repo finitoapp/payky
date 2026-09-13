@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { computeTotalDebitedSats } from "./withdrawal-utils.ts"
+import { computeTotalDebitedSats } from "./withdraw-utils.ts"
 
 describe("computeTotalDebitedSats", () => {
   test("returns the full available balance when withdrawing all", () => {

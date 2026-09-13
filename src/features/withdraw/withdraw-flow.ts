@@ -1,5 +1,5 @@
 import type { BitcoinAddress } from "@/core/modules/shared/schema.ts"
-import type { WithdrawalQuote } from "@/core/modules/withdrawal/withdrawal-actions.ts"
+import type { WithdrawalQuote } from "@/core/modules/withdraw/withdraw-actions.ts"
 import type {
   SparkExitSpeed,
   SparkWithdrawalStatus,

@@ -18,7 +18,7 @@ import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-q
 import {
   type ExecuteWithdrawalError,
   executeWithdrawal,
-} from "@/core/modules/withdrawal/withdrawal-actions.ts"
+} from "@/core/modules/withdraw/withdraw-actions.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

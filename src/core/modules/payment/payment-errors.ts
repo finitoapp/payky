@@ -14,79 +14,103 @@ import type { PaymentId } from "./payment-types.ts"
 
 export type CreatePaymentError = BillNotFoundError | BillStatusNotAllowedError
 
-export const paymentNotFound = defineError("PaymentNotFound")<{
+export const createPaymentNotFoundError = defineError("PaymentNotFound")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotFoundError = ReturnType<typeof paymentNotFound>
+export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>
 
-export const paymentAlreadyPaid = defineError("PaymentAlreadyPaid")<{
+export const createPaymentAlreadyPaidError = defineError("PaymentAlreadyPaid")<{
   readonly id: PaymentId
 }>()
-export type PaymentAlreadyPaidError = ReturnType<typeof paymentAlreadyPaid>
+export type PaymentAlreadyPaidError = ReturnType<
+  typeof createPaymentAlreadyPaidError
+>
 
-export const paymentNotCanceled = defineError("PaymentNotCanceled")<{
+export const createPaymentNotCanceledError = defineError("PaymentNotCanceled")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotCanceledError = ReturnType<typeof paymentNotCanceled>
+export type PaymentNotCanceledError = ReturnType<
+  typeof createPaymentNotCanceledError
+>
 
-export const paymentNotClaimed = defineError("PaymentNotClaimed")<{
+export const createPaymentNotClaimedError = defineError("PaymentNotClaimed")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotClaimedError = ReturnType<typeof paymentNotClaimed>
+export type PaymentNotClaimedError = ReturnType<
+  typeof createPaymentNotClaimedError
+>
 
-export const paymentNotOverpaid = defineError("PaymentNotOverpaid")<{
+export const createPaymentNotOverpaidError = defineError("PaymentNotOverpaid")<{
   readonly id: PaymentId
 }>()
-export type PaymentNotOverpaidError = ReturnType<typeof paymentNotOverpaid>
+export type PaymentNotOverpaidError = ReturnType<
+  typeof createPaymentNotOverpaidError
+>
 
-export const accountSparkNotFound = defineError("AccountSparkNotFound")<{
+export const createAccountSparkNotFoundError = defineError(
+  "AccountSparkNotFound"
+)<{
   readonly id: AccountId
 }>()
-export type AccountSparkNotFoundError = ReturnType<typeof accountSparkNotFound>
+export type AccountSparkNotFoundError = ReturnType<
+  typeof createAccountSparkNotFoundError
+>
 
-export const paymentPreparationFailed = defineError(
+export const createPaymentPreparationFailedError = defineError(
   "PaymentPreparationFailed"
 )<{
   readonly message: string
 }>()
 export type PaymentPreparationFailedError = ReturnType<
-  typeof paymentPreparationFailed
+  typeof createPaymentPreparationFailedError
 >
 
-export const zeroAmountNotPayable = defineError("ZeroAmountNotPayable")<{
+export const createZeroAmountNotPayableError = defineError(
+  "ZeroAmountNotPayable"
+)<{
   readonly amount: number
 }>()
-export type ZeroAmountNotPayableError = ReturnType<typeof zeroAmountNotPayable>
+export type ZeroAmountNotPayableError = ReturnType<
+  typeof createZeroAmountNotPayableError
+>
 
-export const paymentNumberNotFound = defineError("PaymentNumberNotFound")<{
+export const createPaymentNumberNotFoundError = defineError(
+  "PaymentNumberNotFound"
+)<{
   readonly paymentId: PaymentId
 }>()
 export type PaymentNumberNotFoundError = ReturnType<
-  typeof paymentNumberNotFound
+  typeof createPaymentNumberNotFoundError
 >
 
-export const cashRegisterAccountNotFound = defineError(
+export const createCashRegisterAccountNotFoundError = defineError(
   "CashRegisterAccountNotFound"
 )<{
   readonly id: AccountId
 }>()
 export type CashRegisterAccountNotFoundError = ReturnType<
-  typeof cashRegisterAccountNotFound
+  typeof createCashRegisterAccountNotFoundError
 >
 
-export const ibanAccountNotFound = defineError("IbanAccountNotFound")<{
+export const createIbanAccountNotFoundError = defineError(
+  "IbanAccountNotFound"
+)<{
   readonly id: AccountId
 }>()
-export type IbanAccountNotFoundError = ReturnType<typeof ibanAccountNotFound>
+export type IbanAccountNotFoundError = ReturnType<
+  typeof createIbanAccountNotFoundError
+>
 
-export const accountCurrencyMismatch = defineError("AccountCurrencyMismatch")<{
+export const createAccountCurrencyMismatchError = defineError(
+  "AccountCurrencyMismatch"
+)<{
   readonly accountKind: "cashRegister" | "iban"
   readonly id: AccountId
   readonly accountCurrency: FiatCurrency
   readonly paymentCurrency: FiatCurrency
 }>()
 export type AccountCurrencyMismatchError = ReturnType<
-  typeof accountCurrencyMismatch
+  typeof createAccountCurrencyMismatchError
 >
 
 export type CreatePreparedPaymentError =

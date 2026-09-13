@@ -55,17 +55,17 @@ type AccountIbanUpdateInput = Omit<
   readonly defaultQrFormat?: BankQrFormat
 }
 
-export const accountNotFound = defineError("AccountNotFound")<{
+export const createAccountNotFoundError = defineError("AccountNotFound")<{
   readonly id: AccountId
 }>()
-export type AccountNotFoundError = ReturnType<typeof accountNotFound>
+export type AccountNotFoundError = ReturnType<typeof createAccountNotFoundError>
 
 export const loadAccount =
   (idValue: AccountId): Task<AccountRow, AccountNotFoundError, EvoluDep> =>
   async (run) =>
     getFirstOr(
       await run.deps.evolu.loadQuery(accountByIdQuery(idValue)),
-      accountNotFound({ id: idValue })
+      createAccountNotFoundError({ id: idValue })
     )
 
 /**

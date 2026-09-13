@@ -3,8 +3,6 @@ import { useNavigate } from "@tanstack/react-router"
 import { HeartHandshakeIcon, LoaderCircleIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { z } from "zod"
-
-import { DonationHistory } from "@/components/donation-history.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -34,6 +32,7 @@ import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
+import { DonationHistory } from "@/features/settings/donations/donation-history.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

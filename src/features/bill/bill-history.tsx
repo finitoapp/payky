@@ -7,7 +7,6 @@ import {
   XIcon,
 } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
-import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { latestBillsQuery } from "@/core/modules/bill/bill-queries.ts"
 import {
@@ -18,6 +17,7 @@ import {
   calculateBillLineSummaries,
   deriveBillSummaryTotal,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
+import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

@@ -1,11 +1,10 @@
 import { Suspense, useMemo, useState } from "react"
-
-import { CategoryFilterBar } from "@/components/category-filter-bar.tsx"
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import { catalogItemUsedCategoryIdsQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import { CategoryFilterBar } from "@/features/catalog/category-filter-bar.tsx"
 import { ItemsList } from "@/features/settings/items/items-list.tsx"
 import { SettingsListPage } from "@/features/settings/settings-list-page.tsx"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"

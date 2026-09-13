@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
-import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
-import { ActivityTabs } from "@/components/activity-tabs.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PaymentHistory } from "@/components/payment-history.tsx"
+import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
+import { ActivityTabs } from "@/features/activity/activity-tabs.tsx"
+import { PaymentHistory } from "@/features/activity/payment-history.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/activity")({

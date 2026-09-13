@@ -13,7 +13,6 @@ import {
   TimelineSeparator,
   TimelineTitle,
 } from "@/components/reui/timeline.tsx"
-import { TaxRecap } from "@/components/tax-recap.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -56,6 +55,7 @@ import {
   type BillCoverageMismatchReason,
   BillCoverageWarning,
 } from "@/features/bill/bill-coverage-warning.tsx"
+import { TaxRecap } from "@/features/bill/tax-recap.tsx"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"

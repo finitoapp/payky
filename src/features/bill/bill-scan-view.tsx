@@ -1,6 +1,4 @@
 import { useCallback, useMemo, useState } from "react"
-
-import { ScanCodeScanner } from "@/components/scan-code-scanner.tsx"
 import { Card } from "@/components/ui/card.tsx"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { CatalogCategoryRow } from "@/core/modules/catalog-category/catalog-category.ts"
@@ -17,6 +15,7 @@ import { getLatestCatalogItemSummary } from "@/features/bill/cart-utils.ts"
 import { CreateCatalogItemDialog } from "@/features/bill/create-catalog-item-dialog.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import { ScanCodeCollisionDialog } from "@/features/bill/scan-code-collision-dialog.tsx"
+import { ScanCodeScanner } from "@/features/scanner/scan-code-scanner.tsx"
 import {
   useConfirmDialog,
   useIsConfirmDialogOpen,

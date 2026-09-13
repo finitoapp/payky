@@ -6,9 +6,8 @@ import {
 } from "@yudiel/react-qr-scanner"
 import type { BarcodeFormat } from "barcode-detector"
 import { useCallback, useEffect, useRef, useState } from "react"
-
-import { ScannerTorchButton } from "@/components/scanner-torch-button.tsx"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
+import { ScannerTorchButton } from "@/features/scanner/scanner-torch-button.tsx"
 import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"

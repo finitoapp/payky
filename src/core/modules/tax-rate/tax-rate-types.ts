@@ -1,5 +1,6 @@
 import { id } from "@evolu/common"
-import { z } from "zod"
+import type { z } from "zod"
+import { FiniteNumberSchema } from "@/core/modules/shared/schema.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const TaxRateIdRaw = id("TaxRate")
@@ -14,9 +15,7 @@ export type TaxRateId = typeof TaxRateIdRaw.Output
  * legislation) is a new `taxRate` row plus archiving the old one, not an
  * edit, so anything referencing a `taxRateId` stays frozen forever.
  */
-export const TaxRatePercentageSchema = z
-  .number()
-  .int()
+export const TaxRatePercentageSchema = FiniteNumberSchema.int()
   .min(0)
   .max(10000)
   .brand<"TaxRatePercentage">()

@@ -1,0 +1,297 @@
+import { useNavigate } from "@tanstack/react-router"
+import { useAtomValue } from "jotai"
+import { Check, KeyRound, Plus, Trash2, UserRound } from "lucide-react"
+import { useId, useState } from "react"
+
+import { accountAtom } from "@/atoms/account.ts"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
+import { FadeHeader } from "@/components/fade-header.tsx"
+import { PasswordTextarea } from "@/components/password-textarea.tsx"
+import { Badge } from "@/components/ui/badge.tsx"
+import { Button } from "@/components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field.tsx"
+import {
+  accountListQuery,
+  createAccountMasterKey,
+  createOrSelectAccount,
+  removeDeviceAccount,
+  selectAccount,
+} from "@/core/evolu/device-account.ts"
+import type { AccountId } from "@/core/evolu/device-client.ts"
+import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
+import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
+import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
+
+export function AccountsSettingsPage() {
+  const { language, t } = useTranslation()
+  const navigate = useNavigate()
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const activeAccount = useAtomValue(accountAtom)
+  const reloadAppEvolu = useReloadAppEvolu()
+  const confirm = useConfirmDialog()
+  const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
+  const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
+    null
+  )
+  const [removingAccountId, setRemovingAccountId] = useState<AccountId | null>(
+    null
+  )
+  const [creating, setCreating] = useState(false)
+  const {
+    mnemonic,
+    pending: restoring,
+    error,
+    clearError,
+    setMnemonic,
+    restore,
+  } = useRestoreAccount()
+  const mnemonicInputId = useId()
+
+  const dateFormatter = new Intl.DateTimeFormat(language, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
+
+  const activateAccount = (accountId: AccountId) => {
+    if (accountId === activeAccount.id) {
+      return
+    }
+
+    setPendingAccountId(accountId)
+    try {
+      selectAccount(deviceEvolu, accountId)
+      reloadAppEvolu()
+    } finally {
+      setPendingAccountId(null)
+    }
+  }
+
+  const removeAccount = async (accountId: AccountId, name: string) => {
+    if (accountId === activeAccount.id) {
+      return
+    }
+
+    // Confirmed because there is no undo and, for an account created here,
+    // no copy anywhere else: `insertAccount` leaves its relay transport
+    // inactive, so its data has never left this device, and the row is only
+    // soft-deleted — every query filters it out with no way back except
+    // re-entering the recovery phrase.
+    const confirmed = await confirm({
+      title: t("settings.accounts.remove.confirm.title", { name }),
+      description: t("settings.accounts.remove.confirm.description"),
+      confirmLabel: t("settings.accounts.remove.confirm.confirm"),
+      cancelLabel: t("settings.accounts.remove.confirm.cancel"),
+      variant: "destructive",
+    })
+    if (!confirmed) return
+
+    setRemovingAccountId(accountId)
+    try {
+      removeDeviceAccount(deviceEvolu, accountId)
+    } finally {
+      setRemovingAccountId(null)
+    }
+  }
+
+  const createNewAccount = async () => {
+    const confirmed = await confirm({
+      title: t("settings.accounts.create.confirm.title"),
+      description: t("settings.accounts.create.confirm.description", {
+        name: activeAccount.name,
+      }),
+      confirmLabel: t("settings.accounts.create.confirm.confirm"),
+      cancelLabel: t("settings.accounts.create.confirm.cancel"),
+    })
+    if (!confirmed) return
+
+    clearError()
+    setCreating(true)
+    try {
+      await createOrSelectAccount(deviceEvolu, createAccountMasterKey())
+      reloadAppEvolu()
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const restoreAccount = async () => {
+    const restored = await restore()
+
+    if (restored) {
+      await navigate({ to: "/restore-account" })
+    }
+  }
+
+  const pending =
+    pendingAccountId !== null ||
+    removingAccountId !== null ||
+    creating ||
+    restoring
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.accounts.title")} />
+      <div className="flex flex-col gap-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.accounts.list.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.accounts.list.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {accounts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t("settings.accounts.list.empty")}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3" data-testid="account-list">
+                {accounts.map((account) => (
+                  <li
+                    key={account.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  >
+                    <span className="flex min-w-0 flex-col gap-1">
+                      <span className="truncate text-sm font-medium">
+                        {account.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t("settings.accounts.list.createdAt")}{" "}
+                        {dateFormatter.format(new Date(account.createdAt))}
+                      </span>
+                    </span>
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                      {account.id === activeAccount.id ? (
+                        <Badge variant="secondary">
+                          {t("settings.accounts.list.active")}
+                        </Badge>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant={
+                          account.id === activeAccount.id
+                            ? "secondary"
+                            : "outline"
+                        }
+                        size="sm"
+                        disabled={pending || account.id === activeAccount.id}
+                        onClick={() => {
+                          activateAccount(account.id)
+                        }}
+                      >
+                        {account.id === activeAccount.id ? (
+                          <Check data-icon="inline-start" />
+                        ) : (
+                          <UserRound data-icon="inline-start" />
+                        )}
+                        {account.id === activeAccount.id
+                          ? t("settings.accounts.list.current")
+                          : t("settings.accounts.list.switch")}
+                      </Button>
+                      {account.id !== activeAccount.id ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={pending}
+                          onClick={() => {
+                            void removeAccount(account.id, account.name)
+                          }}
+                        >
+                          <Trash2 data-icon="inline-start" />
+                          {t("settings.accounts.list.remove")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.accounts.create.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.accounts.create.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-end">
+            <Button type="button" disabled={pending} onClick={createNewAccount}>
+              <Plus data-icon="inline-start" />
+              {t("settings.accounts.create.action")}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.accounts.restore.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.accounts.restore.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                void restoreAccount()
+              }}
+            >
+              <FieldGroup>
+                <Field data-invalid={error !== null}>
+                  <FieldLabel htmlFor={mnemonicInputId}>
+                    {t("settings.accounts.restore.mnemonic.label")}
+                  </FieldLabel>
+                  <PasswordTextarea
+                    id={mnemonicInputId}
+                    value={mnemonic}
+                    hideLabel={t("passwordTextarea.hide")}
+                    showLabel={t("passwordTextarea.show")}
+                    disabled={pending}
+                    aria-invalid={error !== null}
+                    autoComplete="off"
+                    placeholder={t(
+                      "settings.accounts.restore.mnemonic.placeholder"
+                    )}
+                    onChange={(event) => {
+                      setMnemonic(event.currentTarget.value)
+                    }}
+                  />
+                  <FieldDescription>
+                    {t("settings.accounts.restore.mnemonic.description")}
+                  </FieldDescription>
+                  <FieldError>{error ? t(error) : null}</FieldError>
+                </Field>
+              </FieldGroup>
+              <div className="mt-4 flex justify-end">
+                <Button type="submit" disabled={pending}>
+                  <KeyRound data-icon="inline-start" />
+                  {t("settings.accounts.restore.action")}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  )
+}

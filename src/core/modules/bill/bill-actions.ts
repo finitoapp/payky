@@ -34,6 +34,10 @@ import {
   createStandaloneItemSnapshot,
 } from "@/core/modules/item/item-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   type ItemLineType,
@@ -43,10 +47,6 @@ import {
   type TimestampMs,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-import {
-  removeUndefinedValues,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 import {
   type BillLockedError,
   type BillNotCanceledError,

@@ -20,7 +20,7 @@ import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { insertPaymentLineRows } from "@/core/modules/payment-line/payment-line-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 
 const snapshot = (name: string, unitAmount: number): ItemRow =>

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { updateAccountName } from "@/core/evolu/device-account.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
 import { TransportToggleList } from "@/features/settings/security/transport-toggle-list.tsx"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"

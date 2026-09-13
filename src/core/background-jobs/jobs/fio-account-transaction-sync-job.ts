@@ -24,6 +24,10 @@ import {
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
   type DateString,
   DateStringSchema,
   IntegerSchema,
@@ -31,10 +35,6 @@ import {
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-import {
-  removeUndefinedValues,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 
 type Context = BackgroundJobContext & FetchDep & DateDep
 

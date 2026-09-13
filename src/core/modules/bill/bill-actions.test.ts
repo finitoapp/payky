@@ -18,15 +18,15 @@ import {
 } from "@/core/modules/payment/payment-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  createTableId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
   NonEmptyString255,
   NonNegativeInteger,
   PositiveInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
-import {
-  createTableId,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {

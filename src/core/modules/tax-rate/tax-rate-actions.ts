@@ -3,16 +3,16 @@ import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  getNextSortOrder,
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
   NonEmptyString255,
   type NonEmptyString255 as NonEmptyString255Type,
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
-import {
-  getNextSortOrder,
-  removeUndefinedValues,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 import {
   defaultTaxRatesQuery,
   lastTaxRateSortOrderQuery,

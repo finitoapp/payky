@@ -7,7 +7,7 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/modules/shared/evolu-utils.ts"
 import type { BillLineRow } from "./bill-line.ts"
 import { billLinesByBillIdQuery } from "./bill-line-queries.ts"
 import type { BillLineSummary } from "./bill-line-summary.ts"

@@ -12,13 +12,13 @@ import { paymentLastNumberId } from "@/core/modules/payment-number/payment-numbe
 import type { PaymentNumberSeriesRow } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import { loadPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import {
   type DateString,
   DateStringSchema,
   NonNegativeInteger,
   type NonNegativeInteger as NonNegativeIntegerType,
 } from "@/core/modules/shared/schema.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 
 interface PreviousPaymentNumber {
   readonly date: DateString | null

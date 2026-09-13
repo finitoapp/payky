@@ -75,16 +75,13 @@ import {
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { fiatMinorUnitsToSats } from "../shared/money.ts"
 import {
-  type DateString,
   type FiatCurrency,
   type NonEmptyString,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
-  SpecificSymbol,
   type TimestampMs,
   TimestampMsSchema,
-  VariableSymbol,
 } from "../shared/schema.ts"
 import {
   type AccountCurrencyMismatchError,
@@ -121,6 +118,10 @@ import {
   paymentByIdQuery,
   paymentNonExpiringMethodsByIdQuery,
 } from "./payment-queries.ts"
+import {
+  createSpecificSymbolFromDate,
+  createVariableSymbolFromSerialNumber,
+} from "./payment-symbol-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**
@@ -161,24 +162,6 @@ const loadAccountWithCurrencyCheck = <
 
   return ok(account)
 }
-
-/**
- * The two symbols a payer quotes on a bank transfer, derived from the
- * payment's own number: the variable symbol is its serial, the specific symbol
- * its date as `YYMMDD`.
- *
- * One call site each, and named anyway — these are the format
- * `ibanReconciliationCandidateByAccountTransactionIdQuery` matches an incoming
- * transaction against, so they are a contract with the bank rather than
- * expression noise. Inline, the second is three `slice` calls that read as
- * nothing in particular.
- */
-const createVariableSymbolFromSerialNumber = (
-  serialNumber: number
-): VariableSymbol => VariableSymbol(String(serialNumber))
-
-const createSpecificSymbolFromDate = (date: DateString): SpecificSymbol =>
-  SpecificSymbol(`${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`)
 
 const optionalNonEmptyString = (
   value: string | null | undefined

@@ -1,4 +1,3 @@
-import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import {
   BanknoteIcon,
@@ -32,7 +31,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import { createQuery } from "@/core/evolu/schema.ts"
+import { enabledPaymentMethodAccountsQuery } from "@/core/modules/account/account-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
@@ -51,6 +50,10 @@ import {
   createBankQrPayloads,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import {
+  paymentClaimsQuery,
+  paymentRequestQuery,
+} from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
@@ -133,124 +136,6 @@ export const Route = createFileRoute("/_terminal/payment_/$paymentId")({
     },
   },
 })
-
-const paymentRequestQuery = (paymentId: PaymentId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("payment")
-      .leftJoin("paymentBtc", (join) =>
-        join
-          .onRef("paymentBtc.id", "=", "payment.id")
-          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("paymentBtcLightning", (join) =>
-        join
-          .onRef("paymentBtcLightning.id", "=", "payment.id")
-          .on("paymentBtcLightning.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("paymentBtcSpark", (join) =>
-        join
-          .onRef("paymentBtcSpark.id", "=", "payment.id")
-          .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("paymentIban", (join) =>
-        join
-          .onRef("paymentIban.id", "=", "payment.id")
-          .on("paymentIban.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("paymentCashRegister", (join) =>
-        join
-          .onRef("paymentCashRegister.id", "=", "payment.id")
-          .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
-      )
-      .select([
-        "payment.id",
-        "payment.billId",
-        "payment.amount",
-        "payment.currency",
-        "payment.tipAmount",
-        "payment.canceledAt",
-        "payment.confirmedPaidAt",
-        "payment.expiresAt",
-        "paymentBtc.amountSats",
-        "paymentBtcLightning.lnInvoice",
-        "paymentBtcSpark.sparkInvoice",
-        "paymentIban.accountId as ibanAccountId",
-        "paymentIban.variableSymbol",
-        "paymentIban.specificSymbol",
-        "paymentCashRegister.accountId as cashRegisterAccountId",
-      ])
-      .where("payment.id", "=", paymentId)
-      .where("payment.isDeleted", "is not", sqliteTrue)
-      .where("payment.amount", "is not", null)
-      .where("payment.currency", "is not", null)
-      .where("payment.tipAmount", "is not", null)
-      .$narrowType<{
-        amount: KyselyNotNull
-        currency: KyselyNotNull
-        tipAmount: KyselyNotNull
-      }>()
-  )
-
-/**
- * Whether this payment has money against it, as one row or none. Joined
- * through `accountTransaction` rather than counting claims outright: a claim
- * whose transaction was deleted is not money that arrived, and the bill's
- * coverage already ignores it — see `paymentsWithClaimsByBillIdQuery` and
- * `claimedPaymentIdSet` for the same reading elsewhere.
- */
-const paymentClaimsQuery = (paymentId: PaymentId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("reconciliationClaim")
-      .innerJoin(
-        "accountTransaction",
-        "accountTransaction.id",
-        "reconciliationClaim.accountTransactionId"
-      )
-      .select(["reconciliationClaim.id", "reconciliationClaim.claimedAt"])
-      .where("reconciliationClaim.paymentId", "=", paymentId)
-      .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
-      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
-      .limit(1)
-  )
-
-const enabledPaymentMethodAccountsQuery = createQuery((db) =>
-  db
-    .selectFrom("account")
-    .leftJoin("accountSpark", (join) =>
-      join
-        .onRef("accountSpark.id", "=", "account.id")
-        .on("accountSpark.isDeleted", "is not", sqliteTrue)
-    )
-    .leftJoin("accountIban", (join) =>
-      join
-        .onRef("accountIban.id", "=", "account.id")
-        .on("accountIban.isDeleted", "is not", sqliteTrue)
-    )
-    .leftJoin("accountCashRegister", (join) =>
-      join
-        .onRef("accountCashRegister.id", "=", "account.id")
-        .on("accountCashRegister.isDeleted", "is not", sqliteTrue)
-    )
-    .select([
-      "account.id",
-      "account.kind",
-      "accountSpark.secret as sparkSecret",
-      "account.name",
-      "accountIban.iban",
-      "accountIban.currency as ibanCurrency",
-      "accountIban.defaultQrFormat as ibanDefaultQrFormat",
-      "accountCashRegister.currency as cashRegisterCurrency",
-    ])
-    .where("account.isDeleted", "is not", sqliteTrue)
-    .where("account.id", "is not", null)
-    .where("account.kind", "is not", null)
-    .$narrowType<{
-      id: KyselyNotNull
-      kind: KyselyNotNull
-    }>()
-)
 
 function PaymentWaitingPage() {
   const { paymentId } = Route.useParams()

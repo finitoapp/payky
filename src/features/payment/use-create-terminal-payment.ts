@@ -4,7 +4,7 @@ import { useCallback } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import { createPreparedPayment } from "@/core/modules/payment/payment-actions.ts"
+import { createPreparedPayment } from "@/core/modules/payment/payment-preparation-actions.ts"
 import type {
   FiatCurrency,
   NonNegativeInteger,

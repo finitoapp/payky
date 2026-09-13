@@ -29,12 +29,12 @@ import {
   cancelPayment,
   markPaymentPaidCash,
   markPaymentPaidIban,
-  preparePaymentMethod,
 } from "@/core/modules/payment/payment-actions.ts"
 import {
   type BankQrPayload,
   createBankQrPayloads,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import { preparePaymentMethod } from "@/core/modules/payment/payment-preparation-actions.ts"
 import {
   paymentClaimsQuery,
   paymentRequestQuery,

@@ -16,11 +16,11 @@ import { AccountId } from "../src/core/modules/account/account-types"
 import { BillId } from "../src/core/modules/bill/bill-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import {
-  createPreparedPayment,
   deletePayment,
   loadPayment,
   updatePayment,
 } from "../src/core/modules/payment/payment-actions"
+import { createPreparedPayment } from "../src/core/modules/payment/payment-preparation-actions"
 import { PaymentId } from "../src/core/modules/payment/payment-types"
 import {
   FiatCurrencySchema,

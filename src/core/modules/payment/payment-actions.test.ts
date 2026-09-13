@@ -74,14 +74,16 @@ import {
   cancelPayment,
   confirmPaymentPaidDespiteCancellation,
   createPayment,
-  createPreparedPayment,
   deletePayment,
   loadPayment,
   markPaymentPaidCash,
   markPaymentPaidIban,
-  preparePaymentMethod,
   updatePayment,
 } from "./payment-actions.ts"
+import {
+  createPreparedPayment,
+  preparePaymentMethod,
+} from "./payment-preparation-actions.ts"
 import {
   paymentByIdQuery,
   paymentsWithClaimsByBillIdQuery,

@@ -76,6 +76,7 @@ import {
   type WithSparkDetails,
 } from "@/core/modules/shared/utils.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { fiatMinorUnitsToSats } from "../shared/money.ts"
 import {
   type DateString,
   type FiatCurrency,
@@ -93,9 +94,6 @@ import {
   paymentNonExpiringMethodsByIdQuery,
 } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
-
-const SATS_PER_BTC = 100_000_000
-const FIAT_MINOR_UNITS = 100
 
 export const paymentNotFound = defineError("PaymentNotFound")<{
   readonly id: PaymentId
@@ -242,21 +240,6 @@ const loadAccountWithCurrencyCheck = <
 }
 
 /**
- * A positive `amount` is the caller's precondition — see
- * `createSparkLightningInvoice`, which refuses zero before reaching here. One
- * minor unit is worth a fraction of a sat at any realistic rate, so the floor
- * of one sat is what keeps the smallest chargeable amount from rounding down
- * to an amountless invoice.
- */
-const convertFiatMinorUnitsToSats = (
-  amount: number,
-  exchangeRate: number
-): number => {
-  const fiatAmount = amount / FIAT_MINOR_UNITS
-  return Math.max(1, Math.round((fiatAmount / exchangeRate) * SATS_PER_BTC))
-}
-
-/**
  * The two symbols a payer quotes on a bank transfer, derived from the
  * payment's own number: the variable symbol is its serial, the specific symbol
  * its date as `YYMMDD`.
@@ -347,7 +330,11 @@ const createSparkLightningInvoice =
     if (!quote.ok) return quote
 
     const amountSats = NonNegativeIntegerSchema.decode(
-      convertFiatMinorUnitsToSats(amount, quote.value.exchangeRate)
+      fiatMinorUnitsToSats({
+        amount,
+        currency,
+        exchangeRate: quote.value.exchangeRate,
+      })
     )
 
     try {

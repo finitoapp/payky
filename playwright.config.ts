@@ -1,5 +1,5 @@
 import { defineConfig, devices } from "@playwright/test"
-import { pageHeight, pageWidth } from "./e2e/fixtures.ts"
+import { pageHeight, pageWidth } from "./e2e/support/viewport.ts"
 
 const e2ePort = 5174
 const baseURL = `https://127.0.0.1:${e2ePort}`

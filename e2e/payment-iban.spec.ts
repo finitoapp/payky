@@ -1,10 +1,6 @@
-import {
-  createPayment,
-  expect,
-  markIbanPaid,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { createPayment, markIbanPaid } from "./support/payment.ts"
 
 test("pay with IBAN: renders a scannable bank QR in either format, then simulate the incoming payment", async ({
   seededPage: page,

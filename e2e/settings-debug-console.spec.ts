@@ -1,4 +1,6 @@
-import { expect, gotoPage, test, translate } from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage } from "./support/navigation.ts"
 
 test("view, pause, and clear captured console output", async ({
   seededPage: page,

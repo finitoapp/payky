@@ -1,4 +1,5 @@
-import { expect, test, translate } from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
 
 /**
  * The terminal keypad accepts physical-keyboard input as well as taps — a

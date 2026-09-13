@@ -1,12 +1,7 @@
-import {
-  addTaxRate,
-  expect,
-  gotoPage,
-  nameParam,
-  reloadPage,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { addTaxRate } from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { nameParam, translate } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, set default, rename, archive and reactivate a tax rate", async ({
   seededPage: page,

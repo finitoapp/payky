@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test"
-import { mockDonationApis } from "./donation-mocks.ts"
-import { expect, test, translate } from "./fixtures.ts"
+import { mockDonationApis } from "./support/donation-mocks.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
 
 // Not gotoPage(): the donations page's heading ("Donations") is a substring
 // match of the donation-history empty state's heading ("No donations yet"),

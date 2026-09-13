@@ -1,14 +1,12 @@
 import {
   addCatalogItem,
   enterBillScanMode,
-  expect,
-  gotoPage,
   injectScanCode,
   startNewBill,
-  test,
-  translate,
-  translateValue,
-} from "./fixtures.ts"
+} from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate, translateValue } from "./support/i18n.ts"
+import { gotoPage } from "./support/navigation.ts"
 
 test("scan mode adds a known item, flags a code collision, and reports an unknown code", async ({
   seededPage: page,

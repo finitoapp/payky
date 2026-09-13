@@ -1,4 +1,5 @@
-import { expect, test, translate } from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
 
 /**
  * Stands in for the real boot failures that *throw* — workers unavailable in

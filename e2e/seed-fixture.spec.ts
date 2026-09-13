@@ -1,9 +1,6 @@
-import {
-  expect,
-  seedCurrentAccountOnboarding,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { seedCurrentAccountOnboarding } from "./support/onboarding.ts"
 
 test("seeding survives the document being replaced mid-call", async ({
   page,

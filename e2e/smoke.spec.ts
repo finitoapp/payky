@@ -1,10 +1,7 @@
 import { expect, test } from "@playwright/test"
-import {
-  completeOnboarding,
-  createPayment,
-  markCashPaid,
-  translate,
-} from "./fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { completeOnboarding } from "./support/onboarding.ts"
+import { createPayment, markCashPaid } from "./support/payment.ts"
 
 // This is the one full end-to-end canary that exercises real onboarding
 // through the UI (other specs use seedOnboarding() instead) end to end

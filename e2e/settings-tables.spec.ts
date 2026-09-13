@@ -1,11 +1,7 @@
-import {
-  addTable,
-  expect,
-  gotoPage,
-  reloadPage,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { addTable } from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, edit and delete a table", async ({ seededPage: page }) => {
   await test.step("open table settings and see the empty state", () =>

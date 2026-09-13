@@ -1,22 +1,19 @@
+import { addCatalogItem, startBillWithCoffee } from "./support/bill.ts"
 import {
-  addCatalogItem,
   createAndPaySecondPayment,
-  createPayment,
-  expect,
-  gotoPage,
-  markCashPaid,
-  prepareIbanPayment,
-  screenshotDir,
   simulateBillModifiedDuringPayment,
   simulateCancelAfterClaim,
   simulateDuplicateSettlement,
+} from "./support/collisions.ts"
+import { expect, screenshotDir, test } from "./support/fixtures.ts"
+import { translate, translateValue } from "./support/i18n.ts"
+import { gotoPage, waitForLocalWriteToSettle } from "./support/navigation.ts"
+import {
+  createPayment,
+  markCashPaid,
+  prepareIbanPayment,
   startBillAndBeginCashPayment,
-  startBillWithCoffee,
-  test,
-  translate,
-  translateValue,
-  waitForLocalWriteToSettle,
-} from "./fixtures.ts"
+} from "./support/payment.ts"
 
 test("a paid payment shows up in activity list and detail", async ({
   seededPage: page,

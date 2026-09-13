@@ -1,11 +1,7 @@
-import {
-  addCatalogCategory,
-  expect,
-  gotoPage,
-  reloadPage,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { addCatalogCategory } from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, edit and delete a catalog category", async ({
   seededPage: page,

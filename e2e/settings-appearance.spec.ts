@@ -1,4 +1,6 @@
-import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("switch the theme", async ({ seededPage: page }) => {
   await test.step("open theme settings", () =>

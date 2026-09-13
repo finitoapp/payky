@@ -23,7 +23,7 @@ import {
 } from "../bin/phone-frame-geometry.ts"
 import type { CaptionTimelineFile } from "../bin/video/captions.ts"
 import phoneFrame from "../docs/mockup/phone-frame.svg"
-import { pageHeight, pageWidth } from "../e2e/viewport.ts"
+import { pageHeight, pageWidth } from "../e2e/support/viewport.ts"
 
 // A real zod schema (rather than a plain interface) is what lets
 // <Composition>'s generics resolve to this exact prop shape — see Root.tsx.

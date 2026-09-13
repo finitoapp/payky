@@ -12,8 +12,8 @@ import {
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
-import { PosOverviewPage } from "@/features/pos/pos-overview-page.tsx"
-import { TerminalPaymentKeypad } from "@/features/pos/terminal-payment-keypad.tsx"
+import { PosOverviewPage } from "@/features/terminal-home/pos-overview-page.tsx"
+import { TerminalPaymentKeypad } from "@/features/terminal-home/terminal-payment-keypad.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"

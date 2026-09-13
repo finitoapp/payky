@@ -1,4 +1,4 @@
-import type { KyselyNotNull } from "@evolu/common"
+import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "./account-types.ts"
@@ -154,5 +154,46 @@ export const cashRegisterAccountQuery = createQuery((db) =>
       name: KyselyNotNull
       kind: KyselyNotNull
       currency: KyselyNotNull
+    }>()
+)
+
+/**
+ * Every non-deleted account with the method-specific columns the payment
+ * waiting screen needs to offer a Spark, IBAN, or cash-register tab.
+ */
+export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .leftJoin("accountSpark", (join) =>
+      join
+        .onRef("accountSpark.id", "=", "account.id")
+        .on("accountSpark.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("accountIban", (join) =>
+      join
+        .onRef("accountIban.id", "=", "account.id")
+        .on("accountIban.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("accountCashRegister", (join) =>
+      join
+        .onRef("accountCashRegister.id", "=", "account.id")
+        .on("accountCashRegister.isDeleted", "is not", sqliteTrue)
+    )
+    .select([
+      "account.id",
+      "account.kind",
+      "accountSpark.secret as sparkSecret",
+      "account.name",
+      "accountIban.iban",
+      "accountIban.currency as ibanCurrency",
+      "accountIban.defaultQrFormat as ibanDefaultQrFormat",
+      "accountCashRegister.currency as cashRegisterCurrency",
+    ])
+    .where("account.isDeleted", "is not", sqliteTrue)
+    .where("account.id", "is not", null)
+    .where("account.kind", "is not", null)
+    .$narrowType<{
+      id: KyselyNotNull
+      kind: KyselyNotNull
     }>()
 )

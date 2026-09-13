@@ -1,4 +1,3 @@
-import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
 import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
@@ -25,7 +24,6 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
-import { createQuery } from "@/core/evolu/schema.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -39,6 +37,10 @@ import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
 } from "@/core/modules/payment/payment-actions.ts"
+import {
+  paymentDetailQuery,
+  paymentReconciliationsQuery,
+} from "@/core/modules/payment/payment-queries.ts"
 import {
   calculatePaymentClaimedSum,
   derivePaymentHasExcessSettlement,
@@ -100,116 +102,6 @@ const billStatusLabelKey = {
   closed: "paymentDetail.bill.status.closed",
   canceled: "paymentDetail.bill.status.canceled",
 } satisfies Record<BillStatus, TranslationKey>
-
-const paymentDetailQuery = (paymentId: PaymentId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("payment")
-      .select([
-        "id",
-        "deviceId",
-        "billId",
-        "tableId",
-        "amount",
-        "currency",
-        "tipAmount",
-        "canceledAt",
-        "confirmedPaidAt",
-        "excessAcknowledgedAt",
-        "expiresAt",
-        "createdAt",
-        "updatedAt",
-      ])
-      .where("id", "=", paymentId)
-      .where("isDeleted", "is not", sqliteTrue)
-      .where("amount", "is not", null)
-      .where("currency", "is not", null)
-      .where("tipAmount", "is not", null)
-      .where("createdAt", "is not", null)
-      .$narrowType<{
-        amount: KyselyNotNull
-        currency: KyselyNotNull
-        tipAmount: KyselyNotNull
-        createdAt: KyselyNotNull
-      }>()
-  )
-
-const paymentReconciliationsQuery = (paymentId: PaymentId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("reconciliationClaim")
-      .innerJoin(
-        "accountTransaction",
-        "accountTransaction.id",
-        "reconciliationClaim.accountTransactionId"
-      )
-      .leftJoin("account", (join) =>
-        join
-          .onRef("account.id", "=", "accountTransaction.accountId")
-          .on("account.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("accountTransactionSource", (join) =>
-        join
-          .onRef(
-            "accountTransactionSource.accountTransactionId",
-            "=",
-            "accountTransaction.id"
-          )
-          .on("accountTransactionSource.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("accountTransactionIban", (join) =>
-        join
-          .onRef("accountTransactionIban.id", "=", "accountTransaction.id")
-          .on("accountTransactionIban.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("accountTransactionSpark", (join) =>
-        join
-          .onRef("accountTransactionSpark.id", "=", "accountTransaction.id")
-          .on("accountTransactionSpark.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("accountTransactionLightning", (join) =>
-        join
-          .onRef("accountTransactionLightning.id", "=", "accountTransaction.id")
-          .on("accountTransactionLightning.isDeleted", "is not", sqliteTrue)
-      )
-      .select([
-        "reconciliationClaim.id",
-        "reconciliationClaim.source",
-        "reconciliationClaim.claimedAt",
-        "reconciliationClaim.accountTransactionId",
-        "accountTransaction.accountId",
-        "accountTransaction.kind as transactionKind",
-        "accountTransaction.amount as transactionAmount",
-        "accountTransaction.currency as transactionCurrency",
-        "accountTransaction.occurredAt as transactionOccurredAt",
-        "accountTransaction.note as transactionNote",
-        "account.name as accountName",
-        "accountTransactionSource.source as transactionSource",
-        "accountTransactionSource.recordedAt as transactionRecordedAt",
-        "accountTransactionIban.variableSymbol",
-        "accountTransactionIban.bankReference",
-        "accountTransactionSpark.sparkTransferId",
-        "accountTransactionLightning.paymentHash",
-      ])
-      .where("reconciliationClaim.paymentId", "=", paymentId)
-      .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
-      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
-      .where("reconciliationClaim.source", "is not", null)
-      .where("reconciliationClaim.claimedAt", "is not", null)
-      .where("accountTransaction.kind", "is not", null)
-      .where("accountTransaction.amount", "is not", null)
-      .where("accountTransaction.currency", "is not", null)
-      .where("accountTransaction.occurredAt", "is not", null)
-      .orderBy("reconciliationClaim.claimedAt", "desc")
-      .$narrowType<{
-        source: KyselyNotNull
-        claimedAt: KyselyNotNull
-        transactionKind: KyselyNotNull
-        transactionAmount: KyselyNotNull
-        transactionCurrency: KyselyNotNull
-        transactionOccurredAt: KyselyNotNull
-      }>()
-  )
 
 export function PaymentDetail({ paymentId }: { readonly paymentId: string }) {
   const parsedPaymentId = PaymentId.safeParse(paymentId)

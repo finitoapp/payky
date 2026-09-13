@@ -21,7 +21,7 @@ import {
  *
  * The identical vector table lives in both repos:
  *   linky: packages/core/src/identity/crossAppDerivation.test.ts
- *   payky: src/core/modules/shared/cross-app-derivation.test.ts
+ *   payky: src/core/modules/shared/key-derivation-cross-app.test.ts
  *
  * Both apps derive everything from a 16-byte master secret carried by a
  * 20-word SLIP-39 share (empty passphrase) via BIP-32 plus BIP-85-style
@@ -31,6 +31,11 @@ import {
  *
  * If a change here is intentional, update BOTH copies in the same way —
  * a mismatch means one app broke seed compatibility with the other.
+ *
+ * Named for `key-derivation.ts` rather than for the vectors so it sorts
+ * beside the module it exercises, next to that module's own unit tests in
+ * `key-derivation.test.ts`. The two suites stay separate: this one is a
+ * compatibility contract with another repository, not a unit test.
  */
 const MASTER_SECRET_HEX = "000102030405060708090a0b0c0d0e0f"
 const SLIP39_SHARE =

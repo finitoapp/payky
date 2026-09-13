@@ -1,4 +1,4 @@
-import type { StandardSchemaV1 } from "@evolu/common"
+import type { FiniteNumber, StandardSchemaV1 } from "@evolu/common"
 import type { ValueOf } from "type-fest"
 import { z } from "zod"
 
@@ -14,9 +14,13 @@ export type InferTable<T extends Readonly<Record<string, StandardSchemaV1>>> =
     [K in keyof T]: StandardSchemaV1.InferOutput<T[K]>
   }>
 
-export const TimestampMsSchema = z
-  .number()
-  .int()
+const addCustomBrand =
+  <B>() =>
+  <T extends z.ZodType>(schema: T) =>
+    schema as z.core.$ZodNarrow<T, z.output<T> & B>
+
+export const FiniteNumberSchema = addCustomBrand<FiniteNumber>()(z.number())
+export const TimestampMsSchema = FiniteNumberSchema.int()
   .nonnegative()
   .brand<"TimestampMs">()
 export type TimestampMs = z.output<typeof TimestampMsSchema>
@@ -48,7 +52,7 @@ export type WssUrl = z.output<typeof WssUrlSchema>
 export const WssUrl = <T extends string>(value: T): WssUrl =>
   WssUrlSchema.parse(value)
 
-export const IntegerSchema = z.number().int().brand<"Int">()
+export const IntegerSchema = FiniteNumberSchema.int().brand<"Int">()
 export const Integer = IntegerSchema.decode
 export const NonNegativeIntegerSchema =
   IntegerSchema.nonnegative().brand<"NonNegative">()
@@ -60,14 +64,13 @@ export const PositiveIntegerSchema =
 export type PositiveInteger = z.output<typeof PositiveIntegerSchema>
 export const PositiveInteger = PositiveIntegerSchema.decode
 
-export const NonNegativeNumberSchema = z
-  .number()
-  .nonnegative()
-  .brand<"NonNegative">()
+export const NonNegativeNumberSchema =
+  FiniteNumberSchema.nonnegative().brand<"NonNegative">()
 export type NonNegativeNumber = z.output<typeof NonNegativeNumberSchema>
 export const NonNegativeNumber = NonNegativeNumberSchema.decode
 
-export const PositiveNumberSchema = z.number().positive().brand<"Positive">()
+export const PositiveNumberSchema =
+  FiniteNumberSchema.positive().brand<"Positive">()
 export type PositiveNumber = z.output<typeof PositiveNumberSchema>
 export const PositiveNumber = PositiveNumberSchema.decode
 

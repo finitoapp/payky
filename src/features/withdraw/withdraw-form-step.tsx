@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import type { ScannedBitcoinAddress } from "@/core/modules/shared/bitcoin-uri-utils.ts"
 import {
   type BitcoinAddress,
   BitcoinAddressSchema,
@@ -42,11 +43,8 @@ import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
+import { formatSatsAmount } from "@/lib/format-utils.ts"
 import { WithdrawQrScanner } from "./withdraw-qr-scanner.tsx"
-import {
-  formatSatsAmount,
-  type ScannedBitcoinAddress,
-} from "./withdraw-utils.ts"
 
 const quoteErrorKeys = {
   AbortError: "withdraw.quoteError.generic",

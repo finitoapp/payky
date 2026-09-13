@@ -9,6 +9,11 @@ export interface ScannedBitcoinAddress {
  * Accepts either a bare address or a BIP21 `bitcoin:` URI (as produced by
  * most wallet "receive" QR codes) and extracts the address and, if present,
  * the requested amount.
+ *
+ * Separate from `bitcoin-address-utils.ts` on purpose: `schema.ts` imports
+ * that file for its address refinement, so anything reaching back into
+ * `money.ts` — as this does for `btcToSats` — would close a cycle through
+ * `money.ts` -> `schema.ts`.
  */
 export const parseScannedBitcoinAddress = (
   rawValue: string
@@ -33,9 +38,3 @@ export const parseScannedBitcoinAddress = (
     return { address: trimmed }
   }
 }
-
-export const formatSatsAmount = (sats: number, locale: string): string =>
-  new Intl.NumberFormat(locale).format(sats)
-
-export const formatAddressGroups = (address: string): string =>
-  address.replaceAll(/\s+/gu, "").replaceAll(/(.{4})(?=.)/gu, "$1 ")

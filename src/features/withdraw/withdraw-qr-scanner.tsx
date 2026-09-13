@@ -6,13 +6,13 @@ import {
 import { XIcon } from "lucide-react"
 import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
-import { ScannerTorchButton } from "@/features/scanner/scanner-torch-button.tsx"
-import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
-import { useTranslation } from "@/hooks/use-translation.ts"
 import {
   parseScannedBitcoinAddress,
   type ScannedBitcoinAddress,
-} from "./withdraw-utils.ts"
+} from "@/core/modules/shared/bitcoin-uri-utils.ts"
+import { ScannerTorchButton } from "@/features/scanner/scanner-torch-button.tsx"
+import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 export function WithdrawQrScanner({
   onScan,

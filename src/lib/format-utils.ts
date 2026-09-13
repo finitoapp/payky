@@ -1,6 +1,7 @@
 import {
   type Money,
   minorUnitsToDecimalString,
+  SATS_PER_BTC,
 } from "@/core/modules/shared/money.ts"
 import type { Currency } from "@/core/modules/shared/schema.ts"
 
@@ -17,7 +18,7 @@ export function formatAmount(
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     })
-      .format(amount * 100000000)
+      .format(amount * SATS_PER_BTC)
       .replace("USD", "Sats")
   }
 
@@ -52,3 +53,16 @@ export const formatTime = (value: Date, locale: string = "en-US") =>
   value.toLocaleTimeString(locale, {
     timeStyle: "short",
   })
+
+/** A satoshi amount with the locale's digit grouping, and no currency label. */
+export const formatSatsAmount = (sats: number, locale: string): string =>
+  new Intl.NumberFormat(locale).format(sats)
+
+/**
+ * Groups a long identifier into blocks of four for review — a bitcoin
+ * address or an IBAN. Casing is preserved: Base58 addresses are
+ * case-sensitive, so lowercasing here would show the user a string that is
+ * not the one being paid.
+ */
+export const formatAddressGroups = (address: string): string =>
+  address.replaceAll(/\s+/gu, "").replaceAll(/(.{4})(?=.)/gu, "$1 ")

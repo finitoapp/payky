@@ -15,7 +15,7 @@ import type { SparkExitSpeed } from "@/core/spark/spark-wallet.ts"
 import { PaymentDetailRow } from "@/features/payment/payment-detail.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatAddressGroups, formatSatsAmount } from "./withdraw-utils.ts"
+import { formatAddressGroups, formatSatsAmount } from "@/lib/format-utils.ts"
 
 const exitSpeedOptions: ReadonlyArray<{
   readonly value: SparkExitSpeed

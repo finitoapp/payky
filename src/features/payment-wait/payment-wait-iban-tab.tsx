@@ -16,10 +16,10 @@ import {
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type { IbanPaidTabProps } from "@/features/payment-wait/payment-wait-types.ts"
-import { formatAddressGroups } from "@/features/withdraw/withdraw-utils.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
+import { formatAddressGroups } from "@/lib/format-utils.ts"
 
 const paymentWaitQrFormatShortLabelKeys = {
   payBySquare1_0_0: "paymentWait.qrFormatShort.payBySquare1_0_0",

@@ -30,6 +30,7 @@ import {
   claimManualReconciliation,
   reconcileAccountTransaction,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
@@ -39,7 +40,6 @@ import {
   PositiveNumber,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 
 declare global {

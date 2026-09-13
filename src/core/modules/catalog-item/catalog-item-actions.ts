@@ -14,7 +14,7 @@ import {
   getNextSortOrder,
   removeUndefinedValues,
   runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/modules/shared/evolu-utils.ts"
 import type { CatalogItemId } from "./catalog-item-types.ts"
 
 export const createCatalogItem =

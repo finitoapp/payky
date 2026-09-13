@@ -13,11 +13,11 @@ import type {
   DefaultPaymentMethod,
 } from "@/core/modules/app-settings/app-settings-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/modules/shared/evolu-utils.ts"
+import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   stringifyTipFixedAmounts,
   stringifyTipPercentages,

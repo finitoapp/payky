@@ -4,12 +4,12 @@ import { zodCommand } from "zod-commander/zod4"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { DeviceId } from "../src/core/modules/device/device-types"
+import { removeUndefinedValues } from "../src/core/modules/shared/evolu-utils.ts"
 import {
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
   PositiveIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
-import { removeUndefinedValues } from "../src/core/modules/shared/utils"
 import {
   createTable,
   deleteTable,

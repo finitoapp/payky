@@ -26,8 +26,8 @@ import {
   upsertAccountEvoluWebsocketTransport,
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
 import { TransportToggleList } from "@/features/settings/security/transport-toggle-list.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"

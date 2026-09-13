@@ -48,6 +48,10 @@ import { paymentLinesToBillLineSummaries } from "@/core/modules/payment-line/pay
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import { activeReconciliationClaimsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createTableId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
   IbanSchema,
@@ -62,10 +66,6 @@ import {
   TimestampMsSchema,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
-import {
-  createTableId,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createEvoluTest } from "../../evolu/cli-client"

@@ -12,12 +12,12 @@ import {
   catalogItemByIdQuery,
   catalogItemsQuery,
 } from "../src/core/modules/catalog-item/catalog-item-queries"
+import { removeUndefinedValues } from "../src/core/modules/shared/evolu-utils.ts"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
 } from "../src/core/modules/shared/schema"
-import { removeUndefinedValues } from "../src/core/modules/shared/utils"
 
 export const registerCatalogItemsCommand =
   (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>

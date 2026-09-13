@@ -2,7 +2,7 @@ import { ok, sqliteFalse, sqliteTrue, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import type { CountryCode } from "./legal-entity-types.ts"
 import {
   createDefaultLegalEntity,

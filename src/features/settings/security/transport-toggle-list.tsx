@@ -11,7 +11,7 @@ import {
   type AccountId,
   createDeviceQuery,
 } from "@/core/evolu/device-client.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/utils.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

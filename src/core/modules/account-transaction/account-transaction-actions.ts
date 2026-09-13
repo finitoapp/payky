@@ -10,17 +10,19 @@ import type { RequireOneOrNone, Simplify } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  createTableId,
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
   type NonEmptyString,
   type NonEmptyString255,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import {
   assertHasSparkIdentifier,
-  createTableId,
-  removeUndefinedValues,
-  runMutationWithCompletion,
   type WithSparkDetails,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/spark/spark-details.ts"
 import type {
   AccountTransactionRow,
   accountTransaction,

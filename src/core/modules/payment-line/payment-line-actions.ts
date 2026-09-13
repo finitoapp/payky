@@ -5,8 +5,8 @@ import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-typ
 import type { ItemId } from "@/core/modules/item/item-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { removeUndefinedValues } from "@/core/modules/shared/evolu-utils.ts"
 import type { ItemLineType } from "@/core/modules/shared/schema.ts"
-import { removeUndefinedValues } from "@/core/modules/shared/utils.ts"
 import type { PaymentLineRow } from "./payment-line.ts"
 import type { PaymentLineId } from "./payment-line-types.ts"
 

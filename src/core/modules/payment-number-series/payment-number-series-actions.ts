@@ -10,7 +10,7 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/modules/shared/evolu-utils.ts"
 import { paymentNumberSeriesQuery } from "./payment-number-series-queries.ts"
 import {
   createDefaultPaymentNumberSeries,

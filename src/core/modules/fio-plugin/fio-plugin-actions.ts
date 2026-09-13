@@ -16,15 +16,15 @@ import type {
 } from "@/core/modules/fio-plugin/fio-plugin.ts"
 import type { FioPluginTokenId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   type DateString,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
-import {
-  removeUndefinedValues,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 import { fioPluginByIdQuery } from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 import { fioPluginId } from "./fio-plugin-utils.ts"

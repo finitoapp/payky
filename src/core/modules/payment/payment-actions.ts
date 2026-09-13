@@ -66,15 +66,17 @@ import {
   activeReconciliationClaimsByPaymentIdQuery,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createTableId,
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   assertHasSparkIdentifier,
-  createTableId,
-  removeUndefinedValues,
-  runMutationWithCompletion,
   type WithSparkDetails,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/spark/spark-details.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { fiatMinorUnitsToSats } from "../shared/money.ts"
 import {

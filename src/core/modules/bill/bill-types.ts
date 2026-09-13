@@ -1,5 +1,5 @@
 import { id } from "@evolu/common"
-import { createTableId } from "@/core/modules/shared/utils.ts"
+import { createTableId } from "@/core/modules/shared/evolu-utils.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const BillIdRaw = id("Bill")

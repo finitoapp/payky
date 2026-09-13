@@ -15,7 +15,7 @@ import {
   getNextSortOrder,
   removeUndefinedValues,
   runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
+} from "@/core/modules/shared/evolu-utils.ts"
 import type { Table, TableRow } from "./table.ts"
 import { lastTableSortOrderQuery, tablesQuery } from "./table-queries.ts"
 import type { TableId } from "./table-types.ts"

@@ -11,6 +11,11 @@ import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
+  createTableId,
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
   deriveDefaultSparkWalletSecret,
   type SparkSecret,
 } from "@/core/modules/shared/key-derivation.ts"
@@ -21,11 +26,6 @@ import type {
   Iban,
 } from "@/core/modules/shared/schema.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
-import {
-  createTableId,
-  removeUndefinedValues,
-  runMutationWithCompletion,
-} from "@/core/modules/shared/utils.ts"
 import type {
   AccountRow,
   account,

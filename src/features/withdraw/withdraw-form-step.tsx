@@ -37,7 +37,7 @@ import {
   type QuoteWithdrawalError,
   quoteWithdrawal,
   type WithdrawalQuote,
-} from "@/core/modules/withdrawal/withdrawal-actions.ts"
+} from "@/core/modules/withdraw/withdraw-actions.ts"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"

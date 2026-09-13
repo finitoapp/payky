@@ -21,7 +21,7 @@ import type {
   SparkWithdrawalFeeQuote,
   SparkWithdrawalStatus,
 } from "@/core/spark/spark-wallet.ts"
-import { computeTotalDebitedSats } from "./withdrawal-utils.ts"
+import { computeTotalDebitedSats } from "./withdraw-utils.ts"
 
 export interface WithdrawalQuote {
   readonly availableSats: number

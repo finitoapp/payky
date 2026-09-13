@@ -20,7 +20,7 @@ import type {
   SparkWithdrawalStatus,
 } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
-import { executeWithdrawal, quoteWithdrawal } from "./withdrawal-actions.ts"
+import { executeWithdrawal, quoteWithdrawal } from "./withdraw-actions.ts"
 
 const fixedDate = new Date("2026-06-05T12:00:00.000Z")
 const validAddress = BitcoinAddress(

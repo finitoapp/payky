@@ -1,13 +1,5 @@
 import type { InferRow } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
-import {
-  AlertTriangleIcon,
-  CheckIcon,
-  ClockIcon,
-  RotateCwIcon,
-  XIcon,
-} from "lucide-react"
-import type { ReactNode } from "react"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -21,7 +13,6 @@ import {
 import { Separator } from "@/components/ui/separator.tsx"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
-import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
 import {
   calculateTaxRecap,
   hasTaxableLines,
@@ -34,79 +25,30 @@ import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { BillCancellationCollisionPanel } from "@/features/bill/bill-cancellation-collision-panel.tsx"
 import { BillCoverageWarning } from "@/features/bill/bill-coverage-warning.tsx"
+import {
+  billStatusBadgeClassName,
+  billStatusLabelKey,
+} from "@/features/bill/bill-status-display.ts"
 import { TaxRecap } from "@/features/bill/tax-recap.tsx"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { PaymentDetailRow } from "@/features/payment/payment-detail.tsx"
+import {
+  PaymentStatusIcon,
+  paymentStatusBadgeClassName,
+  paymentStatusLabelKey,
+} from "@/features/payment/payment-status-display.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
-
-const billDetailStatusBadgeClassName = {
-  open: "bg-warning/10 text-warning",
-  closed: "bg-success/10 text-success",
-  canceled: null,
-} satisfies Record<BillStatus, string | null>
-
-const billDetailStatusLabelKey = {
-  open: "paymentDetail.bill.status.open",
-  closed: "paymentDetail.bill.status.closed",
-  canceled: "paymentDetail.bill.status.canceled",
-} satisfies Record<BillStatus, TranslationKey>
 
 type BillDetailPaymentRowData = InferRow<
   ReturnType<typeof paymentsWithClaimsByBillIdQuery>
 >
-
-type BillDetailPaymentStatus = ReturnType<typeof derivePaymentStatus>
-
-const billDetailPaymentStatusBadgeClassName = {
-  canceled: null,
-  paid: "bg-success/10 text-success",
-  expired: "bg-muted text-muted-foreground",
-  pending: "bg-warning/10 text-warning",
-} satisfies Record<BillDetailPaymentStatus, string | null>
-
-/**
- * Mirrors `payment-history.tsx`'s `paymentStatusData`/`PaymentStatusIcon`: a
- * payment linked to this bill gets the same warning-triangle treatment there
- * when it's individually caught in the canceled+claimed collision from
- * docs/bill-payment-states.md, regardless of the bill's own collision status.
- */
-const billDetailPaymentStatusIconData = {
-  canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
-  paid: ["bg-success/10 text-success", <CheckIcon key="paid" />],
-  expired: ["bg-muted text-muted-foreground", <ClockIcon key="expired" />],
-  pending: ["bg-warning/10 text-warning", <RotateCwIcon key="pending" />],
-} satisfies Record<BillDetailPaymentStatus, readonly [string, ReactNode]>
-
-function BillDetailPaymentStatusIcon({
-  status,
-  hasCancellationCollision,
-}: {
-  readonly status: BillDetailPaymentStatus
-  readonly hasCancellationCollision: boolean
-}) {
-  const [className, icon] = hasCancellationCollision
-    ? ["bg-warning/10 text-warning", <AlertTriangleIcon key="collision" />]
-    : billDetailPaymentStatusIconData[status]
-
-  return (
-    <div
-      className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-full",
-        className
-      )}
-    >
-      {icon}
-    </div>
-  )
-}
 
 /**
  * `paymentsWithClaimsByBillIdQuery` selects `claimCount` through
@@ -178,9 +120,9 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
               variant={
                 billStatus.status === "canceled" ? "destructive" : "secondary"
               }
-              className={cn(billDetailStatusBadgeClassName[billStatus.status])}
+              className={cn(billStatusBadgeClassName[billStatus.status])}
             >
-              {t(billDetailStatusLabelKey[billStatus.status])}
+              {t(billStatusLabelKey[billStatus.status])}
             </Badge>
           </div>
 
@@ -339,7 +281,7 @@ function BillDetailPaymentRow({
       params={{ paymentId: payment.id }}
       className="-mx-1 flex items-center gap-3 rounded-md px-1 py-2 hover:bg-accent/50"
     >
-      <BillDetailPaymentStatusIcon
+      <PaymentStatusIcon
         status={status}
         hasCancellationCollision={hasCancellationCollision}
       />
@@ -356,9 +298,9 @@ function BillDetailPaymentRow({
       </div>
       <Badge
         variant={status === "canceled" ? "destructive" : "secondary"}
-        className={cn(billDetailPaymentStatusBadgeClassName[status])}
+        className={cn(paymentStatusBadgeClassName[status])}
       >
-        {t(`paymentDetail.status.${status}`)}
+        {t(paymentStatusLabelKey[status])}
       </Badge>
     </Link>
   )

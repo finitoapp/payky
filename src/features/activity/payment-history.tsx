@@ -1,13 +1,5 @@
 import type { InferRow } from "@evolu/common"
-import {
-  AlertTriangleIcon,
-  CheckIcon,
-  ClockIcon,
-  ReceiptIcon,
-  RotateCwIcon,
-  XIcon,
-} from "lucide-react"
-import type { FC, ReactNode } from "react"
+import { ReceiptIcon } from "lucide-react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import {
   calculateClaimedSum,
@@ -25,42 +17,18 @@ import {
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
+import {
+  PaymentStatusIcon,
+  paymentStatusLabelKey,
+} from "@/features/payment/payment-status-display.tsx"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { groupByDay } from "@/lib/group-by-day.ts"
-import { cn } from "@/lib/utils.ts"
 
 type PaymentHistoryRow = InferRow<ReturnType<typeof latestPaymentsQuery>>
-
-const paymentStatusData = {
-  canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],
-  paid: ["bg-success/10 text-success", <CheckIcon key="paid" />],
-  expired: ["bg-muted text-muted-foreground", <ClockIcon key="expired" />],
-  pending: ["bg-warning/10 text-warning", <RotateCwIcon key="pending" />],
-} satisfies Record<PaymentStatus, readonly [string, ReactNode]>
-
-const PaymentStatusIcon: FC<{
-  readonly paymentStatus: PaymentStatus
-  readonly hasCancellationCollision: boolean
-}> = (props) => {
-  const [className, icon] = props.hasCancellationCollision
-    ? ["bg-warning/10 text-warning", <AlertTriangleIcon key="collision" />]
-    : paymentStatusData[props.paymentStatus]
-
-  return (
-    <div
-      className={cn(
-        "flex size-8 items-center justify-center rounded-full",
-        className
-      )}
-    >
-      {icon}
-    </div>
-  )
-}
 
 const resolvePaymentStatus = (
   payment: {
@@ -286,14 +254,14 @@ export const PaymentHistory = () => {
               icon: (
                 <div className={"p-2"}>
                   <PaymentStatusIcon
-                    paymentStatus={paymentStatus}
+                    status={paymentStatus}
                     hasCancellationCollision={hasCancellationCollision}
                   />
                 </div>
               ),
               action: (
                 <span className="text-xs font-medium text-muted-foreground">
-                  {t(`paymentHistory.status.${paymentStatus}`)}
+                  {t(paymentStatusLabelKey[paymentStatus])}
                 </span>
               ),
             }

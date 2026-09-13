@@ -36,7 +36,7 @@ test("a paid payment shows up in activity list and detail", async ({
 
   await test.step("verify the payment detail shows paid status", async () => {
     await expect(
-      page.getByText(translate("en", "paymentDetail.status.paid"), {
+      page.getByText(translate("en", "payment.status.paid"), {
         exact: true,
       })
     ).toBeVisible()
@@ -49,7 +49,7 @@ test("a paid payment shows up in activity list and detail", async ({
     await page
       .locator("nav")
       .getByRole("link", {
-        name: translate("en", "paymentHistory.status.paid"),
+        name: translate("en", "payment.status.paid"),
       })
       .first()
       .click()
@@ -57,7 +57,7 @@ test("a paid payment shows up in activity list and detail", async ({
       .getByRole("heading", { name: translate("en", "paymentDetail.title") })
       .waitFor()
     await expect(
-      page.getByText(translate("en", "paymentDetail.status.paid"), {
+      page.getByText(translate("en", "payment.status.paid"), {
         exact: true,
       })
     ).toBeVisible()
@@ -154,7 +154,7 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
       page.getByText(translate("en", "paymentDetail.collision.title"))
     ).toBeHidden()
     await expect(
-      page.getByText(translate("en", "paymentDetail.status.paid"), {
+      page.getByText(translate("en", "payment.status.paid"), {
         exact: true,
       })
     ).toBeVisible()
@@ -173,7 +173,7 @@ test("a canceled+claimed payment collision is flagged in the activity list and d
       page
         .locator("nav")
         .getByRole("link", {
-          name: translate("en", "paymentHistory.status.paid"),
+          name: translate("en", "payment.status.paid"),
         })
         .first()
     ).toBeVisible()
@@ -230,7 +230,7 @@ test("a duplicate-settlement payment collision is flagged in the payment detail 
       page.getByText(translate("en", "paymentDetail.excessCollision.title"))
     ).toBeHidden()
     await expect(
-      page.getByText(translate("en", "paymentDetail.status.paid"), {
+      page.getByText(translate("en", "payment.status.paid"), {
         exact: true,
       })
     ).toBeVisible()

@@ -9,15 +9,10 @@ import {
   type Page,
   type Video,
 } from "@playwright/test"
-import {
-  addCatalogItem,
-  addTable,
-  pageHeight,
-  pageWidth,
-  seedOnboarding,
-  translate,
-  translateValue,
-} from "../e2e/fixtures.ts"
+import { addCatalogItem, addTable } from "../e2e/support/bill.ts"
+import { translate, translateValue } from "../e2e/support/i18n.ts"
+import { seedOnboarding } from "../e2e/support/onboarding.ts"
+import { pageHeight, pageWidth } from "../e2e/support/viewport.ts"
 import type { TranslationKey } from "../src/i18n/resources.ts"
 import type { CaptionTimelineFile } from "./video/captions.ts"
 import {

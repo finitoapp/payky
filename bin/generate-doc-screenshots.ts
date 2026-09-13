@@ -4,19 +4,16 @@ import { mkdir, rm } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import { chromium, expect, type Page } from "@playwright/test"
 import sharp from "sharp"
+import { addCatalogItem, addTable, startNewBill } from "../e2e/support/bill.ts"
+import { translate } from "../e2e/support/i18n.ts"
+import { gotoPosOverview } from "../e2e/support/navigation.ts"
+import { completeOnboarding } from "../e2e/support/onboarding.ts"
 import {
-  addCatalogItem,
-  addTable,
-  completeOnboarding,
   createPayment,
   enterAmount,
-  gotoPosOverview,
   markCashPaid,
-  pageHeight,
-  pageWidth,
-  startNewBill,
-  translate,
-} from "../e2e/fixtures.ts"
+} from "../e2e/support/payment.ts"
+import { pageHeight, pageWidth } from "../e2e/support/viewport.ts"
 import {
   type Language,
   resources,

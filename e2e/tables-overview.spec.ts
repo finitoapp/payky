@@ -1,13 +1,10 @@
+import { addCatalogItem, addTable } from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { nameParam, translate } from "./support/i18n.ts"
 import {
-  addCatalogItem,
-  addTable,
-  expect,
   gotoPosOverview,
-  nameParam,
-  test,
-  translate,
   waitForLocalWriteToSettle,
-} from "./fixtures.ts"
+} from "./support/navigation.ts"
 
 test("shows a free table, starts a cart from it, then shows it occupied", async ({
   seededPage: page,

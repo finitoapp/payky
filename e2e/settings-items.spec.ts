@@ -1,13 +1,7 @@
-import {
-  addCatalogCategory,
-  addCatalogItem,
-  expect,
-  gotoPage,
-  nameParam,
-  reloadPage,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { addCatalogCategory, addCatalogItem } from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { nameParam, translate } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
   await test.step("open item settings and see the empty state", () =>

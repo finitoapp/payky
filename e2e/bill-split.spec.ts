@@ -2,16 +2,15 @@ import type { Page } from "@playwright/test"
 import {
   addCatalogItem,
   addTable,
-  expect,
-  gotoPosOverview,
-  nameParam,
   startBillWithCoffee,
   startNewBill,
-  test,
-  translate,
-  translateValue,
+} from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { nameParam, translate, translateValue } from "./support/i18n.ts"
+import {
+  gotoPosOverview,
   waitForLocalWriteToSettle,
-} from "./fixtures.ts"
+} from "./support/navigation.ts"
 
 /**
  * Starts a bill assigned to `tableName` (an already-added table) and adds

@@ -1,12 +1,11 @@
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { seedOnboarding } from "./support/onboarding.ts"
 import {
   createPayment,
-  expect,
   markSparkPaid,
   prepareSparkPayment,
-  seedOnboarding,
-  test,
-  translate,
-} from "./fixtures.ts"
+} from "./support/payment.ts"
 
 test("pay with Spark then simulate the incoming payment", async ({ page }) => {
   // Preparing a real Spark Lightning invoice is a network round trip to the

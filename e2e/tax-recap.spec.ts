@@ -1,15 +1,12 @@
+import { addCatalogItem, addTaxRate } from "./support/bill.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { nameParam, translate } from "./support/i18n.ts"
 import {
-  addCatalogItem,
-  addTaxRate,
-  expect,
   gotoPage,
   gotoPosOverview,
-  markCashPaid,
-  nameParam,
-  test,
-  translate,
   waitForLocalWriteToSettle,
-} from "./fixtures.ts"
+} from "./support/navigation.ts"
+import { markCashPaid } from "./support/payment.ts"
 
 test("shows a VAT breakdown by tax rate on the bill and payment detail", async ({
   seededPage: page,

@@ -1,10 +1,7 @@
-import {
-  completeOnboardingDefaults,
-  expect,
-  gotoPage,
-  test,
-  translate,
-} from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage } from "./support/navigation.ts"
+import { completeOnboardingDefaults } from "./support/onboarding.ts"
 
 test("create, switch, and remove a device account", async ({
   seededPage: page,

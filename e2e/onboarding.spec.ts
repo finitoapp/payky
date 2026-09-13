@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test"
-import { completeOnboarding, gotoPage, translate } from "./fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage } from "./support/navigation.ts"
+import { completeOnboarding } from "./support/onboarding.ts"
 
 // A fixed, valid SLIP-39 recovery mnemonic (derived from an arbitrary test
 // master key: ffeeddccbbaa99887766554433221100). Never onboarded against

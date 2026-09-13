@@ -1,4 +1,6 @@
-import { expect, gotoPage, reloadPage, test, translate } from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("edit the fiat bank account and cash register settings", async ({
   seededPage: page,

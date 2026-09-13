@@ -1,21 +1,22 @@
 import {
   addCatalogItem,
   addTable,
-  expect,
-  gotoPage,
-  markCashPaid,
-  markCashPaidAndSettle,
-  nameParam,
-  screenshotDir,
+  startBillWithCoffee,
+  startNewBill,
+} from "./support/bill.ts"
+import {
   simulateBillModifiedDuringPayment,
   simulateCancelAfterClaim,
-  startBillAndBeginCashPayment,
-  startBillWithCoffee,
   startCollisionBill,
-  startNewBill,
-  test,
-  translate,
-} from "./fixtures.ts"
+} from "./support/collisions.ts"
+import { expect, screenshotDir, test } from "./support/fixtures.ts"
+import { nameParam, translate } from "./support/i18n.ts"
+import { gotoPage } from "./support/navigation.ts"
+import {
+  markCashPaid,
+  markCashPaidAndSettle,
+  startBillAndBeginCashPayment,
+} from "./support/payment.ts"
 
 /** Locates a bill's row in the `/activity/bills` list by its id. */
 const billRow = (page: Parameters<typeof markCashPaid>[0], billId: string) =>

@@ -1,11 +1,6 @@
-import {
-  expect,
-  gotoPage,
-  reloadPage,
-  test,
-  translate,
-  translateValue,
-} from "./fixtures.ts"
+import { expect, test } from "./support/fixtures.ts"
+import { translate, translateValue } from "./support/i18n.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("configure tip presets", async ({ seededPage: page }) => {
   await test.step("open tips settings", () =>

@@ -3,22 +3,22 @@ import {
   addCatalogCategory,
   addCatalogItem,
   addTable,
-  createPayment,
-  expect,
-  gotoPage,
-  gotoPosOverview,
-  markCashPaid,
-  nameParam,
-  screenshotDir,
-  startBillAndBeginCashPayment,
-  startCollisionBill,
   startNewBill,
   tapAddBrick,
-  test,
-  translate,
-  translateValue,
+} from "./support/bill.ts"
+import { startCollisionBill } from "./support/collisions.ts"
+import { expect, screenshotDir, test } from "./support/fixtures.ts"
+import { nameParam, translate, translateValue } from "./support/i18n.ts"
+import {
+  gotoPage,
+  gotoPosOverview,
   waitForLocalWriteToSettle,
-} from "./fixtures.ts"
+} from "./support/navigation.ts"
+import {
+  createPayment,
+  markCashPaid,
+  startBillAndBeginCashPayment,
+} from "./support/payment.ts"
 
 test("build a cart, save it, resume it, and discard it", async ({
   seededPage: page,

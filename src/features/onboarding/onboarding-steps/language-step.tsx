@@ -1,13 +1,12 @@
 import { Languages } from "lucide-react"
-
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { languageOptions } from "@/features/settings/language-options.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { languageOptions } from "@/features/shared/language-options.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { Language } from "@/i18n/resources.ts"
 

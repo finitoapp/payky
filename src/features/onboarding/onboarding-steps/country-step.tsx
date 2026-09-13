@@ -1,6 +1,6 @@
 import { Globe } from "lucide-react"
 import { useId } from "react"
-
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   CardContent,
   CardDescription,
@@ -16,7 +16,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import type { OnboardingCountryChoice } from "@/features/onboarding/onboarding-form-state.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 

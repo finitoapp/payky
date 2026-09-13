@@ -1,5 +1,5 @@
 import { KeyRound, Plus } from "lucide-react"
-
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   CardContent,
   CardDescription,
@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import type { OnboardingAccountType } from "@/features/onboarding/onboarding-form-state.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 

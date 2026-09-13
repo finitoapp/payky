@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { BadgeDollarSign } from "lucide-react"
 import { toast } from "sonner"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   Card,
   CardContent,
@@ -12,8 +13,7 @@ import {
 import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
-import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

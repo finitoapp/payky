@@ -54,7 +54,6 @@ import {
   taxRatePercentageToDecimalString,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
-import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import {
   type CatalogItemFormErrors,
   parseCatalogItemForm,
@@ -62,6 +61,7 @@ import {
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

@@ -7,6 +7,7 @@ import {
 } from "lucide-react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -25,7 +26,6 @@ import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import { getDefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

@@ -34,7 +34,11 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx"
 import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
-import { resources, type TranslationKey } from "@/i18n/resources.ts"
+import {
+  type Language,
+  resources,
+  type TranslationKey,
+} from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 import czechHomeMockup from "../../../docs/mockup/cs/home.webp"
 import czechPaidMockup from "../../../docs/mockup/cs/paid.webp"
@@ -46,18 +50,16 @@ import slovakHomeMockup from "../../../docs/mockup/sk/home.webp"
 import slovakPaidMockup from "../../../docs/mockup/sk/paid.webp"
 import slovakPaymentMockup from "../../../docs/mockup/sk/payment.webp"
 
-type LandingLanguage = "cs" | "en" | "sk"
-
 const landingLanguageStorageKey = "payky.landingLanguage"
 
-function isLandingLanguage(value: string | null): value is LandingLanguage {
+function isLanguage(value: string | null): value is Language {
   return value === "cs" || value === "en" || value === "sk"
 }
 
-function getInitialLandingLanguage(): LandingLanguage {
+function getInitialLanguage(): Language {
   const stored = localStorage.getItem(landingLanguageStorageKey)
 
-  if (isLandingLanguage(stored)) {
+  if (isLanguage(stored)) {
     return stored
   }
 
@@ -88,7 +90,7 @@ interface LandingBenefitProps {
 }
 
 interface LanguageOption {
-  readonly value: LandingLanguage
+  readonly value: Language
   readonly label: TranslationKey
 }
 
@@ -104,13 +106,13 @@ const languageOptions: ReadonlyArray<LanguageOption> = [
   { value: "sk", label: "landing.language.slovak" },
 ]
 
-const languageShortLabelKeys: Record<LandingLanguage, TranslationKey> = {
+const languageShortLabelKeys: Record<Language, TranslationKey> = {
   cs: "landing.language.czech.short",
   en: "landing.language.english.short",
   sk: "landing.language.slovak.short",
 }
 
-const mockupsByLanguage: Record<LandingLanguage, LandingMockups> = {
+const mockupsByLanguage: Record<Language, LandingMockups> = {
   cs: {
     home: czechHomeMockup,
     paid: czechPaidMockup,
@@ -221,15 +223,13 @@ const faqItems: ReadonlyArray<FaqItem> = [
 const headerFadeDistance = 120
 
 export function LandingPage() {
-  const [language, setLanguage] = useState<LandingLanguage>(
-    getInitialLandingLanguage
-  )
+  const [language, setLanguage] = useState<Language>(getInitialLanguage)
   const [openFaq, setOpenFaq] = useState<TranslationKey | null>(null)
   const t = (key: TranslationKey) => resources[language][key]
   const mockups = mockupsByLanguage[language]
   const headerBackdropRef = useRef<HTMLDivElement>(null)
 
-  const handleLanguageChange = (nextLanguage: LandingLanguage | null) => {
+  const handleLanguageChange = (nextLanguage: Language | null) => {
     if (nextLanguage !== null) {
       setLanguage(nextLanguage)
       localStorage.setItem(landingLanguageStorageKey, nextLanguage)
@@ -336,7 +336,7 @@ export function LandingPage() {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
-            <Select<LandingLanguage>
+            <Select<Language>
               value={language}
               onValueChange={handleLanguageChange}
             >
@@ -347,7 +347,7 @@ export function LandingPage() {
               >
                 <LanguagesIcon aria-hidden="true" className="size-4" />
                 <SelectValue>
-                  {(value: LandingLanguage) => t(languageShortLabelKeys[value])}
+                  {(value: Language) => t(languageShortLabelKeys[value])}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent align="end">

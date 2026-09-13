@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Laptop, Moon, Sun } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import { type Theme, useTheme } from "@/components/theme-provider.tsx"
 import {
   Card,
@@ -9,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 

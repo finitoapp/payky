@@ -1,5 +1,5 @@
 import { BadgeDollarSign } from "lucide-react"
-
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   CardContent,
   CardDescription,
@@ -7,8 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import type { FiatCurrency as FiatCurrencyType } from "@/core/modules/shared/schema.ts"
-import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export function CurrencyStep({

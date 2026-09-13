@@ -2,6 +2,7 @@ import { ReceiptText } from "lucide-react"
 import { useEffect, useId, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   Field,
   FieldDescription,
@@ -21,7 +22,6 @@ import {
   NonNegativeIntegerFromStringSchema,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"

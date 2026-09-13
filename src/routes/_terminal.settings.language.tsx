@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Globe2, Languages } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   Card,
   CardContent,
@@ -9,8 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import type { DeviceLocale } from "@/core/evolu/device-client.ts"
-import { languageOptions } from "@/features/settings/language-options.ts"
-import { OptionToggleGroup } from "@/features/settings/option-toggle-group.tsx"
+import { languageOptions } from "@/features/shared/language-options.ts"
 import { useLocale, useSetLocale } from "@/hooks/use-locale.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"

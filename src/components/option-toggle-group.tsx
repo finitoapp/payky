@@ -3,7 +3,13 @@ import type { ReactNode } from "react"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 
-interface OptionToggleGroupOption<Value extends string> {
+/**
+ * The *rendered* shape: `title`/`description` are ReactNodes, already
+ * translated. Call sites keep their own `{ label: TranslationKey }` tables
+ * and map into this at the point of render, so a stale key stays a compile
+ * error instead of decaying into a plain string here.
+ */
+export interface OptionToggleGroupOption<Value extends string> {
   readonly value: Value
   readonly icon?: LucideIcon
   readonly title: ReactNode

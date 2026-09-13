@@ -22,6 +22,7 @@ import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary
 import {
   calculateBillLineSummaries,
   deriveBillSummaryStats,
+  getBillLineSummaryUnitAmount,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import {
   type FiatCurrency,
@@ -30,7 +31,6 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
-import { getBillLineSummaryUnitAmount } from "@/features/bill/cart-utils.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"

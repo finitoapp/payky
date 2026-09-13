@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router"
 
-import { AppErrorBoundary } from "@/components/error-boundary.tsx"
+import { AppErrorBoundary } from "@/components/app/error-boundary.tsx"
 
 export const Route = createRootRoute({
   component: RootLayout,

@@ -8,7 +8,7 @@ import {
 } from "lucide-react"
 import * as React from "react"
 import { reloadAppEvoluAtom } from "@/atoms/evolu-counter.ts"
-import { AppLoaderCleanup } from "@/components/app-loader-cleanup.tsx"
+import { AppLoaderCleanup } from "@/components/app/app-loader-cleanup.tsx"
 import { Button, buttonVariants } from "@/components/ui/button.tsx"
 import {
   Card,

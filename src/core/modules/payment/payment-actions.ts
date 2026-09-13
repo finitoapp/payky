@@ -61,10 +61,15 @@ import {
 } from "../shared/schema.ts"
 import {
   type AccountCurrencyMismatchError,
-  accountCurrencyMismatch,
   type CreatePaymentError,
-  cashRegisterAccountNotFound,
-  ibanAccountNotFound,
+  createAccountCurrencyMismatchError,
+  createCashRegisterAccountNotFoundError,
+  createIbanAccountNotFoundError,
+  createPaymentAlreadyPaidError,
+  createPaymentNotCanceledError,
+  createPaymentNotClaimedError,
+  createPaymentNotFoundError,
+  createPaymentNotOverpaidError,
   type MarkPaymentPaidCashError,
   type MarkPaymentPaidIbanError,
   type PaymentAlreadyPaidError,
@@ -72,11 +77,6 @@ import {
   type PaymentNotClaimedError,
   type PaymentNotFoundError,
   type PaymentNotOverpaidError,
-  paymentAlreadyPaid,
-  paymentNotCanceled,
-  paymentNotClaimed,
-  paymentNotFound,
-  paymentNotOverpaid,
 } from "./payment-errors.ts"
 import { paymentByIdQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -107,7 +107,7 @@ export const loadAccountWithCurrencyCheck = <
   const account = accountResult.value
   if (account.currency !== expectedCurrency) {
     return err(
-      accountCurrencyMismatch({
+      createAccountCurrencyMismatchError({
         accountKind,
         id: accountId,
         accountCurrency: account.currency,
@@ -183,7 +183,7 @@ export const loadPayment =
   async (run) =>
     getFirstOr(
       await run.deps.evolu.loadQuery(paymentByIdQuery(idValue)),
-      paymentNotFound({ id: idValue })
+      createPaymentNotFoundError({ id: idValue })
     )
 
 export const createPayment =
@@ -495,7 +495,9 @@ export const markPaymentPaidCash = (
     ...input,
     accountKind: "cashRegister",
     accountQuery: cashRegisterAccountByIdQuery,
-    notFoundError: cashRegisterAccountNotFound({ id: input.accountId }),
+    notFoundError: createCashRegisterAccountNotFoundError({
+      id: input.accountId,
+    }),
     transactionIdPrefix: "accountTransaction:cashRegister:payment:",
   })
 
@@ -515,7 +517,7 @@ export const markPaymentPaidIban = (
     ...input,
     accountKind: "iban",
     accountQuery: ibanAccountByIdQuery,
-    notFoundError: ibanAccountNotFound({ id: input.accountId }),
+    notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
     transactionIdPrefix: "accountTransaction:iban:manual:payment:",
   })
 
@@ -538,7 +540,7 @@ export const cancelPayment =
       activeReconciliationClaimsByPaymentIdQuery(paymentId)
     )
     if (activeClaims.length > 0) {
-      return err(paymentAlreadyPaid({ id: paymentId }))
+      return err(createPaymentAlreadyPaidError({ id: paymentId }))
     }
 
     const { evoluOwnerId } = run.deps
@@ -588,14 +590,14 @@ export const confirmPaymentPaidDespiteCancellation =
     const paymentResult = await run(loadPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
     if (paymentResult.value.canceledAt === null) {
-      return err(paymentNotCanceled({ id: paymentId }))
+      return err(createPaymentNotCanceledError({ id: paymentId }))
     }
 
     const activeClaims = await run.deps.evolu.loadQuery(
       activeReconciliationClaimsByPaymentIdQuery(paymentId)
     )
     if (activeClaims.length === 0) {
-      return err(paymentNotClaimed({ id: paymentId }))
+      return err(createPaymentNotClaimedError({ id: paymentId }))
     }
 
     const { evoluOwnerId } = run.deps
@@ -652,7 +654,7 @@ export const acknowledgePaymentExcessSettlement =
     )
     const claimedSum = calculatePaymentClaimedSum(claimedTransactions)
     if (claimedSum <= paymentResult.value.amount) {
-      return err(paymentNotOverpaid({ id: paymentId }))
+      return err(createPaymentNotOverpaidError({ id: paymentId }))
     }
 
     const { evoluOwnerId } = run.deps

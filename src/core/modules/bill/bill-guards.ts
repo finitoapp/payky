@@ -51,10 +51,10 @@ export interface BillWithItems {
   readonly items: ReadonlyArray<BillLineSummary>
 }
 
-export const billNotFound = defineError("BillNotFound")<{
+export const createBillNotFoundError = defineError("BillNotFound")<{
   readonly id: BillId
 }>()
-export type BillNotFoundError = ReturnType<typeof billNotFound>
+export type BillNotFoundError = ReturnType<typeof createBillNotFoundError>
 /**
  * A bill whose derived status is not one the caller accepts.
  *
@@ -65,27 +65,33 @@ export type BillNotFoundError = ReturnType<typeof billNotFound>
  * `closed`. Neither of those is about being open. `bin/cli-bills.ts` prints
  * the error verbatim, so the payload is the message.
  */
-export const billStatusNotAllowed = defineError("BillStatusNotAllowed")<{
+export const createBillStatusNotAllowedError = defineError(
+  "BillStatusNotAllowed"
+)<{
   readonly id: BillId
   readonly status: BillStatus
   readonly allowedStatuses: ReadonlyArray<BillStatus>
 }>()
-export type BillStatusNotAllowedError = ReturnType<typeof billStatusNotAllowed>
-export const billLocked = defineError("BillLocked")<{
+export type BillStatusNotAllowedError = ReturnType<
+  typeof createBillStatusNotAllowedError
+>
+export const createBillLockedError = defineError("BillLocked")<{
   readonly id: BillId
 }>()
-export type BillLockedError = ReturnType<typeof billLocked>
-export const billUnderpaid = defineError("BillUnderpaid")<{
+export type BillLockedError = ReturnType<typeof createBillLockedError>
+export const createBillUnderpaidError = defineError("BillUnderpaid")<{
   readonly id: BillId
   readonly billTotal: NonNegativeInteger
   readonly claimedSum: NonNegativeInteger
 }>()
-export type BillUnderpaidError = ReturnType<typeof billUnderpaid>
-export const billNotCanceled = defineError("BillNotCanceled")<{
+export type BillUnderpaidError = ReturnType<typeof createBillUnderpaidError>
+export const createBillNotCanceledError = defineError("BillNotCanceled")<{
   readonly id: BillId
 }>()
-export type BillNotCanceledError = ReturnType<typeof billNotCanceled>
-const billSplitSelectionStale = defineError("BillSplitSelectionStale")<{
+export type BillNotCanceledError = ReturnType<typeof createBillNotCanceledError>
+const createBillSplitSelectionStaleError = defineError(
+  "BillSplitSelectionStale"
+)<{
   readonly billId: BillId
   readonly summaryId: BillLineSummary["id"]
   readonly selectedQuantity: number
@@ -94,14 +100,14 @@ const billSplitSelectionStale = defineError("BillSplitSelectionStale")<{
   readonly availableTotalAmount: number
 }>()
 export type BillSplitSelectionStaleError = ReturnType<
-  typeof billSplitSelectionStale
+  typeof createBillSplitSelectionStaleError
 >
 export const loadBill =
   (idValue: BillId): Task<BillRow, BillNotFoundError, EvoluDep> =>
   async (run) =>
     getFirstOr(
       await run.deps.evolu.loadQuery(billByIdQuery(idValue)),
-      billNotFound({ id: idValue })
+      createBillNotFoundError({ id: idValue })
     )
 export interface BillCoverageSummary {
   readonly billTotal: NonNegativeInteger
@@ -255,7 +261,7 @@ const requireBillInStatus =
     const { bill: billRow, items, status } = snapshotResult.value
     if (!allowedStatuses.has(status)) {
       return err(
-        billStatusNotAllowed({
+        createBillStatusNotAllowedError({
           id: billId,
           status,
           allowedStatuses: [...allowedStatuses],
@@ -318,7 +324,7 @@ export const requireEditableBill =
       run.ok(isBillLocked(billId)),
     ])
     if (!billResult.ok) return billResult
-    if (locked) return err(billLocked({ id: billId }))
+    if (locked) return err(createBillLockedError({ id: billId }))
 
     return billResult
   }
@@ -476,7 +482,7 @@ export const requireSelectionOnSourceBill = (
       selected.totalAmount > available.totalAmount
     ) {
       return err(
-        billSplitSelectionStale({
+        createBillSplitSelectionStaleError({
           billId: sourceBillId,
           summaryId,
           selectedQuantity: selected.quantity,

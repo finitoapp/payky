@@ -55,9 +55,9 @@ import {
   type BillStatusNotAllowedError,
   type BillUnderpaidError,
   type BillWithItems,
-  billNotCanceled,
-  billStatusNotAllowed,
-  billUnderpaid,
+  createBillNotCanceledError,
+  createBillStatusNotAllowedError,
+  createBillUnderpaidError,
   loadBillStatusSnapshot,
   requireCancelableBill,
   requireEditableBill,
@@ -67,17 +67,23 @@ import {
 import { lastBillDisplayNumberQuery, openBillsQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 
-export const catalogItemNotFound = defineError("CatalogItemNotFound")<{
+export const createCatalogItemNotFoundError = defineError(
+  "CatalogItemNotFound"
+)<{
   readonly id: CatalogItemId
 }>()
-export type CatalogItemNotFoundError = ReturnType<typeof catalogItemNotFound>
-const billLineSummaryMissing = defineError("BillLineSummaryMissing")<{
+export type CatalogItemNotFoundError = ReturnType<
+  typeof createCatalogItemNotFoundError
+>
+const createBillLineSummaryMissingError = defineError(
+  "BillLineSummaryMissing"
+)<{
   readonly billId: BillId
   readonly itemId: BillLineSummary["itemId"]
   readonly lineType: BillLineSummary["type"]
 }>()
 export type BillLineSummaryMissingError = ReturnType<
-  typeof billLineSummaryMissing
+  typeof createBillLineSummaryMissingError
 >
 export type AddBillLineError =
   | CatalogItemNotFoundError
@@ -241,7 +247,7 @@ const addBillLine =
 
     return lineSummary === undefined
       ? err(
-          billLineSummaryMissing({
+          createBillLineSummaryMissingError({
             billId: line.billId,
             itemId: snapshot.id,
             lineType: type,
@@ -278,7 +284,7 @@ export const addCatalogItemToBill =
 
     const catalogItemResult = getFirstOr(
       catalogItemRows,
-      catalogItemNotFound({ id: input.catalogItemId })
+      createCatalogItemNotFoundError({ id: input.catalogItemId })
     )
     if (!catalogItemResult.ok) return catalogItemResult
 
@@ -732,7 +738,7 @@ export const closeBill =
 
     if (status === "canceled") {
       return err(
-        billStatusNotAllowed({
+        createBillStatusNotAllowedError({
           id: billId,
           status,
           // A repair tool: it refreshes the `closedAt` cache of a bill that is
@@ -744,7 +750,9 @@ export const closeBill =
       )
     }
     if (!hasActiveClaim || coverage === "underpaid") {
-      return err(billUnderpaid({ id: billId, billTotal, claimedSum }))
+      return err(
+        createBillUnderpaidError({ id: billId, billTotal, claimedSum })
+      )
     }
 
     const { evoluOwnerId } = run.deps
@@ -798,10 +806,12 @@ export const confirmBillClosedDespiteCancellation =
     } = snapshotResult.value
 
     if (billRow.canceledAt === null) {
-      return err(billNotCanceled({ id: billId }))
+      return err(createBillNotCanceledError({ id: billId }))
     }
     if (!hasActiveClaim || coverage === "underpaid") {
-      return err(billUnderpaid({ id: billId, billTotal, claimedSum }))
+      return err(
+        createBillUnderpaidError({ id: billId, billTotal, claimedSum })
+      )
     }
 
     const { evoluOwnerId } = run.deps

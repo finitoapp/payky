@@ -61,19 +61,19 @@ import {
 import {
   type AccountCurrencyMismatchError,
   type AccountSparkNotFoundError,
-  accountSparkNotFound,
   type CashRegisterAccountNotFoundError,
   type CreatePreparedPaymentError,
-  cashRegisterAccountNotFound,
+  createAccountSparkNotFoundError,
+  createCashRegisterAccountNotFoundError,
+  createIbanAccountNotFoundError,
+  createPaymentNumberNotFoundError,
+  createPaymentPreparationFailedError,
+  createZeroAmountNotPayableError,
   type IbanAccountNotFoundError,
-  ibanAccountNotFound,
   type PaymentNumberNotFoundError,
   type PaymentPreparationFailedError,
   type PreparePaymentMethodError,
-  paymentNumberNotFound,
-  paymentPreparationFailed,
   type ZeroAmountNotPayableError,
-  zeroAmountNotPayable,
 } from "./payment-errors.ts"
 import { paymentNonExpiringMethodsByIdQuery } from "./payment-queries.ts"
 import {
@@ -137,7 +137,7 @@ const createSparkLightningInvoice =
     // nothing, so refuse before the quote is even fetched. The keypad does
     // let "0" through — it only checks that the amount parses — which is how
     // this is reachable at all.
-    if (amount <= 0) return err(zeroAmountNotPayable({ amount }))
+    if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
 
     const quote = await run(fetchYadioBtcExchangeRate(currency))
     if (!quote.ok) return quote
@@ -190,7 +190,7 @@ const createSparkLightningInvoice =
       })
     } catch (error) {
       return err(
-        paymentPreparationFailed({
+        createPaymentPreparationFailedError({
           message:
             error instanceof Error
               ? error.message
@@ -238,7 +238,7 @@ export const createPreparedPayment =
       activeSparkAccountByIdQuery(spark.accountId)
     )
     if (!sparkAccount) {
-      return err(accountSparkNotFound({ id: spark.accountId }))
+      return err(createAccountSparkNotFoundError({ id: spark.accountId }))
     }
 
     const expirySeconds =
@@ -290,7 +290,7 @@ const prepareCashRegisterMethod =
       rows: await run.deps.evolu.loadQuery(
         cashRegisterAccountByIdQuery(accountId)
       ),
-      notFoundError: cashRegisterAccountNotFound({ id: accountId }),
+      notFoundError: createCashRegisterAccountNotFoundError({ id: accountId }),
       accountKind: "cashRegister",
       accountId,
       expectedCurrency: paymentCurrency,
@@ -323,7 +323,7 @@ const prepareIbanMethod =
   async (run) => {
     const accountResult = loadAccountWithCurrencyCheck({
       rows: await run.deps.evolu.loadQuery(ibanAccountByIdQuery(accountId)),
-      notFoundError: ibanAccountNotFound({ id: accountId }),
+      notFoundError: createIbanAccountNotFoundError({ id: accountId }),
       accountKind: "iban",
       accountId,
       expectedCurrency: paymentCurrency,
@@ -332,7 +332,7 @@ const prepareIbanMethod =
 
     const paymentNumberResult = getFirstOr(
       await run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
-      paymentNumberNotFound({ paymentId })
+      createPaymentNumberNotFoundError({ paymentId })
     )
     if (!paymentNumberResult.ok) return paymentNumberResult
 
@@ -383,7 +383,8 @@ const prepareSparkMethod =
     const [sparkAccount] = await run.deps.evolu.loadQuery(
       activeSparkAccountByIdQuery(spark.accountId)
     )
-    if (!sparkAccount) return err(accountSparkNotFound({ id: spark.accountId }))
+    if (!sparkAccount)
+      return err(createAccountSparkNotFoundError({ id: spark.accountId }))
 
     const expirySeconds =
       spark.expirySeconds ?? DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS

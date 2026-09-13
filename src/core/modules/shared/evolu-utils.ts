@@ -77,5 +77,14 @@ export const getNextSortOrder = (
 
 const randomBytes = createRandomBytes()
 
-export const createTableId = <Table extends TypeName>(): Id & Brand<Table> =>
-  createId<never>({ randomBytes }) as Id & Brand<Table>
+/**
+ * Mints a branded Evolu row id for any table — pass the row's type name,
+ * as in `createRowId<"Payment">()`.
+ *
+ * Named for the row, not the table, because this app has a `table` domain
+ * module (restaurant tables) with its own `TableId`. A `createRowId` here
+ * would read as "make a TableId", which is the one thing every caller of
+ * this does *not* do.
+ */
+export const createRowId = <Entity extends TypeName>(): Id & Brand<Entity> =>
+  createId<never>({ randomBytes }) as Id & Brand<Entity>

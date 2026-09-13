@@ -18,7 +18,7 @@ import {
 } from "@/core/modules/payment/payment-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  createTableId,
+  createRowId,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import {
@@ -354,7 +354,7 @@ describe("bill actions", () => {
     // Written directly: `createPayment` would refuse, since it requires the
     // bill to be open — which is exactly the situation being simulated, a
     // payment row that exists here before its bill does.
-    const paymentId = createTableId<"Payment">()
+    const paymentId = createRowId<"Payment">()
     await runMutationWithCompletion((options) =>
       evolu.upsert(
         "payment",

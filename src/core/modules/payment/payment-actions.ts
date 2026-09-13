@@ -44,7 +44,7 @@ import {
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  createTableId,
+  createRowId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
@@ -226,7 +226,7 @@ export const createPayment =
       billLineSnapshot = openResult.value.items
     }
 
-    const id = createTableId<"Payment">()
+    const id = createRowId<"Payment">()
     const { evoluOwnerId } = run.deps
     const paymentNumber = await run.ok(
       loadNextPaymentNumber({

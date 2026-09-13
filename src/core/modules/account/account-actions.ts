@@ -11,7 +11,7 @@ import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  createTableId,
+  createRowId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
@@ -101,7 +101,7 @@ export const createAccount =
   >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const id = createTableId<"Account">()
+    const id = createRowId<"Account">()
 
     const kind = deriveAccountKind({ iban, spark, cashRegister })
 

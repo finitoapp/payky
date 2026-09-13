@@ -8,7 +8,7 @@ import {
 } from "@/core/integrations/yadio/yadio-client.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  createTableId,
+  createRowId,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import {
@@ -840,7 +840,7 @@ describe("payment preparation actions", () => {
     // writes the `paymentNumber` in the same batch: this is the CRDT shape
     // where the payment row arrived from another device before its number
     // did. The IBAN method needs that number for the variable symbol.
-    const orphanPaymentId = createTableId<"Payment">()
+    const orphanPaymentId = createRowId<"Payment">()
     await runMutationWithCompletion((options) =>
       evolu.upsert(
         "payment",

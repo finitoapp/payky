@@ -1,5 +1,5 @@
 import { id } from "@evolu/common"
-import { createTableId } from "@/core/modules/shared/evolu-utils.ts"
+import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const BillIdRaw = id("Bill")
@@ -12,4 +12,4 @@ export type BillId = typeof BillIdRaw.Output
  * row is lazily created on the first added line (see `use-cart-bill.ts`'s
  * `ensureBillExists`).
  */
-export const createRandomBillId = (): BillId => createTableId<"Bill">()
+export const createRandomBillId = (): BillId => createRowId<"Bill">()

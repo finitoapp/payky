@@ -10,7 +10,7 @@ import type { RequireOneOrNone, Simplify } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  createTableId,
+  createRowId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
@@ -173,7 +173,7 @@ export const createAccountTransaction =
     const id =
       providedId ??
       deriveAccountTransactionId(input.accountId, { iban, spark, onchain }) ??
-      createTableId<"AccountTransaction">()
+      createRowId<"AccountTransaction">()
     const source = providedSource
     const sourceId = createIdFromString<"AccountTransactionSource">(
       `accountTransactionSource:${id}:${source.source}`

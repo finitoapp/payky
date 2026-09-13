@@ -8,7 +8,6 @@ import {
   XIcon,
 } from "lucide-react"
 import type { FC, ReactNode } from "react"
-import { ActivityHistorySkeleton } from "@/components/activity-history-skeleton.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import {
   calculateClaimedSum,
@@ -25,6 +24,7 @@ import {
   derivePaymentStatus,
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
+import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"

@@ -519,7 +519,7 @@ export async function enterBillScanMode(
 
 /**
  * Simulates the camera decoding `rawValue` via `window.__e2eInjectScanCode`
- * (see src/components/scan-code-scanner.tsx) — there is no real camera or
+ * (see src/features/scanner/scan-code-scanner.tsx) — there is no real camera or
  * barcode to scan in a test run. Assumes a `ScanCodeScanner` is currently
  * mounted (e.g. bill scan mode is on, via `enterBillScanMode`).
  */

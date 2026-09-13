@@ -24,7 +24,6 @@ import {
 } from "react"
 import { toast } from "sonner"
 import { accountAtom } from "@/atoms/account.ts"
-import { CategoryFilterBar } from "@/components/category-filter-bar.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
   Alert,
@@ -91,6 +90,7 @@ import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { usePendingPayments } from "@/features/bill/use-pending-payments.ts"
+import { CategoryFilterBar } from "@/features/catalog/category-filter-bar.tsx"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useBillInsertMode } from "@/hooks/use-bill-insert-mode.ts"

@@ -3,7 +3,6 @@ import { ScanLineIcon, Trash2Icon } from "lucide-react"
 import { useId, useMemo, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { ScanCodeScannerDialog } from "@/components/scan-code-scanner-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Field,
@@ -54,6 +53,7 @@ import {
   filterSelectableTaxRates,
   taxRatePercentageToDecimalString,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
+import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import { fiatCurrencyOptions } from "@/features/settings/fiat-currency-options.ts"
 import {
   type CatalogItemFormErrors,

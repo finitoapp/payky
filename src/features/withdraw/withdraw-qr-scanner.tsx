@@ -5,9 +5,8 @@ import {
 } from "@yudiel/react-qr-scanner"
 import { XIcon } from "lucide-react"
 import { useRef, useState } from "react"
-
-import { ScannerTorchButton } from "@/components/scanner-torch-button.tsx"
 import { Button } from "@/components/ui/button.tsx"
+import { ScannerTorchButton } from "@/features/scanner/scanner-torch-button.tsx"
 import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import {

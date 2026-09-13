@@ -1,6 +1,4 @@
 import { ArrowLeftIcon, LoaderCircleIcon } from "lucide-react"
-
-import { PaymentDetailRow } from "@/components/payment-detail.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -14,6 +12,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { WithdrawalQuote } from "@/core/modules/withdrawal/withdrawal-actions.ts"
 import { computeTotalDebitedSats } from "@/core/modules/withdrawal/withdrawal-utils.ts"
 import type { SparkExitSpeed } from "@/core/spark/spark-wallet.ts"
+import { PaymentDetailRow } from "@/features/payment/payment-detail.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatAddressGroups, formatSatsAmount } from "./withdraw-utils.ts"

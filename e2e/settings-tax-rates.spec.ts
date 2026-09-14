@@ -1,6 +1,7 @@
 import { addTaxRate } from "./support/bill.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { nameParam, translate } from "./support/i18n.ts"
+import { pickInlineOption } from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, set default, rename, archive and reactivate a tax rate", async ({
@@ -344,24 +345,11 @@ test("clearing an item's tax rate assignment", async ({ seededPage: page }) => {
 
   await test.step("clear the assignment back to no tax rate", async () => {
     await page.getByRole("link", { name: /Coffee/ }).click()
-    await page
-      .getByRole("combobox", {
-        name: translate("en", "settings.items.form.taxRate.label"),
-      })
-      .click()
-    await page
-      .getByRole("option", {
-        name: translate("en", "settings.items.form.taxRate.none"),
-      })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.items.form.save.edit"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.items.form.saved.edit"))
-      .waitFor()
+    await pickInlineOption(
+      page,
+      "settings.items.form.taxRate.label",
+      translate("en", "settings.items.form.taxRate.none")
+    )
   })
 
   await test.step("the cleared assignment survives reopening the item", async () => {

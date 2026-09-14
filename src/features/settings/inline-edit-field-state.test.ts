@@ -5,12 +5,24 @@ import {
   type InlineEditState,
   inlineEditInitialState,
   inlineEditReducer,
+  inlineEditStartedState,
 } from "./inline-edit-field-state.ts"
 
 const run = (
   actions: ReadonlyArray<InlineEditAction>,
   from: InlineEditState = inlineEditInitialState
 ): InlineEditState => actions.reduce(inlineEditReducer, from)
+
+describe("inlineEditStartedState", () => {
+  it("opens in edit mode so the focus is held before the first keystroke", () => {
+    expect(inlineEditStartedState("Reduced rate")).toEqual({
+      status: "editing",
+      draft: "Reduced rate",
+      invalid: false,
+      blinking: false,
+    })
+  })
+})
 
 describe("inlineEditReducer", () => {
   it("starts editing on the first keystroke", () => {

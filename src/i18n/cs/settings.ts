@@ -275,8 +275,6 @@ export const csSettings = {
     "Tato aplikace teď běží v běžném prohlížeči/PWA prostředí, takže automatické kontroly plateb Fio se tady nespustí.",
   "settings.fioPlugin.nativeRuntimeWarning.title":
     "Fio plugin je dostupný jen v nativní aplikaci.",
-  "settings.fioPlugin.save": "Uložit Fio plugin",
-  "settings.fioPlugin.saved": "Nastavení Fio pluginu uloženo.",
   "settings.fioPlugin.syncLookbackDays.description":
     "Kolik dní před poslední lokální zarážkou se má znovu kontrolovat.",
   "settings.fioPlugin.syncLookbackDays.invalid":
@@ -389,11 +387,8 @@ export const csSettings = {
   "settings.language.title": "Jazyk a region",
   "settings.legalEntity.country.label": "Země",
   "settings.legalEntity.country.placeholder": "Vyberte zemi",
-  "settings.legalEntity.country.required": "Vyberte zemi.",
   "settings.legalEntity.description":
     "Určuje zemi pro výchozí daňové sazby a to, zda se sazby uplatňují u položek katalogu.",
-  "settings.legalEntity.save": "Uložit",
-  "settings.legalEntity.saved": "Uloženo.",
   "settings.legalEntity.title": "Země a DPH",
   "settings.legalEntity.vatPayer.label": "Jsem plátce DPH",
   "settings.paymentAccounts.description":
@@ -418,8 +413,6 @@ export const csSettings = {
   "settings.paymentNumberSeries.lastNumber.date.label": "Kotevní datum",
   "settings.paymentNumberSeries.lastNumber.description":
     "Přenastavení posledního použitého pořadového čísla. Další vygenerované číslo platby bude pokračovat od této hodnoty.",
-  "settings.paymentNumberSeries.lastNumber.save": "Uložit poslední číslo",
-  "settings.paymentNumberSeries.lastNumber.saved": "Poslední číslo uloženo.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.description":
     "Poslední použité pořadové číslo. Například zadejte 499, pokud další platba má použít 500.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.invalid":
@@ -439,8 +432,6 @@ export const csSettings = {
   "settings.paymentNumberSeries.prefix.invalid":
     "Zadejte předponu dlouhou maximálně 255 znaků.",
   "settings.paymentNumberSeries.prefix.label": "Předpona",
-  "settings.paymentNumberSeries.save": "Uložit číselnou řadu",
-  "settings.paymentNumberSeries.saved": "Číselná řada uložena.",
   "settings.paymentNumberSeries.serialNumberDigits.description":
     "Minimální počet číslic pro rostoucí pořadovou část.",
   "settings.paymentNumberSeries.serialNumberDigits.invalid":
@@ -582,9 +573,7 @@ export const csSettings = {
   "settings.taxRates.rate.invalid": "Zadejte procento mezi 0 a 100.",
   "settings.taxRates.rate.label": "Sazba (%)",
   "settings.taxRates.rename": "Přejmenovat {name}",
-  "settings.taxRates.rename.cancel": "Zrušit",
   "settings.taxRates.rename.input": "Nový název pro {name}",
-  "settings.taxRates.rename.save": "Uložit",
   "settings.taxRates.title": "Daňové sazby",
   "settings.theme.dark.description": "Vždy použít tmavé rozhraní",
   "settings.theme.dark.title": "Tmavý",

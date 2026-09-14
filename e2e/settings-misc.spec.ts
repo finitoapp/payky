@@ -1,5 +1,6 @@
 import { expect, test } from "./support/fixtures.ts"
 import { translate, translateValue } from "./support/i18n.ts"
+import { fillInlineField, pickInlineToggle } from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("configure tip presets", async ({ seededPage: page }) => {
@@ -106,41 +107,34 @@ test("edit the payment number series", async ({ seededPage: page }) => {
       "settings.paymentNumberSeries.title"
     ))
 
-  await test.step("set a prefix and save the series format", async () => {
-    await page
-      .getByRole("textbox", {
+  await test.step("set a prefix in the series format", async () => {
+    await fillInlineField(
+      page,
+      page.getByRole("textbox", {
         name: translate("en", "settings.paymentNumberSeries.prefix.label"),
-      })
-      .fill("INV-")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.paymentNumberSeries.save"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.paymentNumberSeries.saved"))
-      .waitFor()
+      }),
+      "INV-"
+    )
   })
 
-  await test.step("update the last used number and save", async () => {
-    await page
-      .getByRole("textbox", {
+  await test.step("update the last used number", async () => {
+    await fillInlineField(
+      page,
+      page.getByRole("textbox", {
         name: translate(
           "en",
           "settings.paymentNumberSeries.lastNumber.serialNumber.label"
         ),
-      })
-      .fill("42")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.paymentNumberSeries.lastNumber.save"),
-      })
-      .click()
-    await page
-      .getByText(
-        translate("en", "settings.paymentNumberSeries.lastNumber.saved")
-      )
-      .waitFor()
+      }),
+      "42"
+    )
+  })
+
+  await test.step("a format toggle saves as soon as it is picked", async () => {
+    await pickInlineToggle(
+      page,
+      translate("en", "settings.paymentNumberSeries.year.short.title")
+    )
   })
 
   await test.step("verify both changes persist after reload", async () => {

@@ -1,5 +1,6 @@
 import { useTimeoutFn } from "@dedalik/use-react"
 import { CheckIcon } from "lucide-react"
+import { useState } from "react"
 import { toast } from "sonner"
 
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -43,6 +44,38 @@ export const useInlineSave = <T,>(
   }
 
   return { justSaved, save }
+}
+
+/**
+ * The save half of a control that commits the moment it is touched — a
+ * select, a checkbox, a toggle group. Picking is the confirmation, so there
+ * is no draft to keep; the only state is the value in flight, which stays on
+ * screen until the save lands so the control never flashes the stored one
+ * back while Evolu catches up.
+ */
+export const useInlineChoice = <T,>(
+  defaultValue: T,
+  onSave: (value: T) => Promise<void>
+) => {
+  const { justSaved, save } = useInlineSave(onSave)
+  // Boxed, because `null` and `false` are values a control can legitimately
+  // be saving and "nothing in flight" has to stay distinguishable from them.
+  const [inFlight, setInFlight] = useState<readonly [T] | null>(null)
+
+  const choose = async (next: T) => {
+    if (next === defaultValue) return
+
+    setInFlight([next])
+    await save(next)
+    setInFlight(null)
+  }
+
+  return {
+    value: inFlight === null ? defaultValue : inFlight[0],
+    saving: inFlight !== null,
+    justSaved,
+    choose,
+  }
 }
 
 /**

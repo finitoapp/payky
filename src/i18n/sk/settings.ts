@@ -274,8 +274,6 @@ export const skSettings = {
     "Táto aplikácia teraz beží v bežnom prehliadači/PWA prostredí, takže automatické kontroly platieb Fio sa tu nespustia.",
   "settings.fioPlugin.nativeRuntimeWarning.title":
     "Fio plugin je dostupný iba v natívnej aplikácii.",
-  "settings.fioPlugin.save": "Uložiť Fio plugin",
-  "settings.fioPlugin.saved": "Nastavenia Fio pluginu uložené.",
   "settings.fioPlugin.syncLookbackDays.description":
     "Koľko dní pred poslednou lokálnou zarážkou sa má znovu kontrolovať.",
   "settings.fioPlugin.syncLookbackDays.invalid":
@@ -388,11 +386,8 @@ export const skSettings = {
   "settings.language.title": "Jazyk a región",
   "settings.legalEntity.country.label": "Krajina",
   "settings.legalEntity.country.placeholder": "Vyberte krajinu",
-  "settings.legalEntity.country.required": "Vyberte krajinu.",
   "settings.legalEntity.description":
     "Určuje krajinu pre predvolené daňové sadzby a to, či sa sadzby uplatňujú na položky katalógu.",
-  "settings.legalEntity.save": "Uložiť",
-  "settings.legalEntity.saved": "Uložené.",
   "settings.legalEntity.title": "Krajina a DPH",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.paymentAccounts.description":
@@ -417,8 +412,6 @@ export const skSettings = {
   "settings.paymentNumberSeries.lastNumber.date.label": "Kotviaci dátum",
   "settings.paymentNumberSeries.lastNumber.description":
     "Prestavenie posledného použitého poradového čísla. Ďalšie vygenerované číslo platby bude pokračovať od tejto hodnoty.",
-  "settings.paymentNumberSeries.lastNumber.save": "Uložiť posledné číslo",
-  "settings.paymentNumberSeries.lastNumber.saved": "Posledné číslo uložené.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.description":
     "Posledné použité poradové číslo. Napríklad zadajte 499, ak ďalšia platba má použiť 500.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.invalid":
@@ -438,8 +431,6 @@ export const skSettings = {
   "settings.paymentNumberSeries.prefix.invalid":
     "Zadajte predponu dlhú maximálne 255 znakov.",
   "settings.paymentNumberSeries.prefix.label": "Predpona",
-  "settings.paymentNumberSeries.save": "Uložiť číselný rad",
-  "settings.paymentNumberSeries.saved": "Číselný rad uložený.",
   "settings.paymentNumberSeries.serialNumberDigits.description":
     "Minimálny počet číslic pre rastúcu poradovú časť.",
   "settings.paymentNumberSeries.serialNumberDigits.invalid":
@@ -581,9 +572,7 @@ export const skSettings = {
   "settings.taxRates.rate.invalid": "Zadajte percento medzi 0 a 100.",
   "settings.taxRates.rate.label": "Sadzba (%)",
   "settings.taxRates.rename": "Premenovať {name}",
-  "settings.taxRates.rename.cancel": "Zrušiť",
   "settings.taxRates.rename.input": "Nový názov pre {name}",
-  "settings.taxRates.rename.save": "Uložiť",
   "settings.taxRates.title": "Daňové sadzby",
   "settings.theme.dark.description": "Vždy použiť tmavé rozhranie",
   "settings.theme.dark.title": "Tmavý",

@@ -1,6 +1,11 @@
 import { z } from "zod"
 
-import { NonEmptyString255Schema } from "@/core/modules/shared/schema.ts"
+import {
+  DateStringSchema,
+  NonEmptyString255Schema,
+  NonNegativeIntegerSchema,
+  PositiveIntegerSchema,
+} from "@/core/modules/shared/schema.ts"
 
 /**
  * The codecs inline-edit fields bridge their text through. Each one reads
@@ -37,8 +42,43 @@ export const NO_OPTION = "none"
  * the row not being set at all. The id itself is not re-validated — every
  * option value comes from a row the page already loaded, not from the user.
  */
-export const optionalIdCodec = <T extends string>() =>
+export const optionalIdCodec = <T extends string>(noneValue = NO_OPTION) =>
   z.codec(z.string(), z.custom<T | null>(), {
-    decode: (value) => (value === NO_OPTION ? null : (value as T)),
-    encode: (value) => value ?? NO_OPTION,
+    decode: (value) => (value === noneValue ? null : (value as T)),
+    encode: (value) => value ?? noneValue,
   })
+
+/**
+ * Digits only, so the loose corners of `Number` ("1e3", "0x10", " 12 ", "")
+ * stay rejected the way the `*FromStringSchema` regexes reject them. `NaN`
+ * is what the integer schema turns into the issue.
+ */
+const wholeNumberFromText = (value: string): number =>
+  /^\d+$/u.test(value.trim()) ? Number(value.trim()) : Number.NaN
+
+export const nonNegativeIntegerCodec = z.codec(
+  z.string(),
+  NonNegativeIntegerSchema,
+  { decode: wholeNumberFromText, encode: String }
+)
+
+export const positiveIntegerCodec = z.codec(z.string(), PositiveIntegerSchema, {
+  decode: wholeNumberFromText,
+  encode: String,
+})
+
+/** For `<Input type="date">`, whose value is already `yyyy-MM-dd`. */
+export const dateCodec = z.codec(z.string(), DateStringSchema, {
+  decode: (value) => value.trim(),
+  encode: (value) => value,
+})
+
+/** The same, except blank means "not set". */
+export const optionalDateCodec = z.codec(
+  z.string(),
+  DateStringSchema.nullable(),
+  {
+    decode: (value) => (value.trim() === "" ? null : value.trim()),
+    encode: (value) => value ?? "",
+  }
+)

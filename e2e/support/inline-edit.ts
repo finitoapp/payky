@@ -54,3 +54,32 @@ export async function pickInlineOption(
   await page.getByRole("option", { name: optionName }).click()
   await savedTickFor(page, trigger).waitFor()
 }
+
+/**
+ * Toggles an inline-edit checkbox, which saves straight away. As above, this
+ * has to actually change the value to produce the tick it waits for.
+ */
+export async function toggleInlineCheckbox(
+  page: Page,
+  labelKey: TranslationKey
+): Promise<void> {
+  const checkbox = page.getByRole("checkbox", {
+    name: translate("en", labelKey),
+  })
+
+  await checkbox.click()
+  await savedTickFor(page, checkbox).waitFor()
+}
+
+/**
+ * Picks an option in an inline-edit toggle group, which saves straight away.
+ */
+export async function pickInlineToggle(
+  page: Page,
+  optionName: string | RegExp
+): Promise<void> {
+  const option = page.getByRole("button", { name: optionName })
+
+  await option.click()
+  await savedTickFor(page, option).waitFor()
+}

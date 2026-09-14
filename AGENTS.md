@@ -1,9 +1,18 @@
 # Agent Guide
 
+## Commands
+
+- `bun run check` before handing work back. It is `check:lint` (Biome) + `check:ts` (`tsc -b`, tests included) + `check:tests` (Vitest); run those individually while narrowing a failure.
+- `bun run format` applies Biome's fixes; `bun run test:watch` reruns Vitest on change; `bun run check:coverage` writes a report to `coverage/`.
+- `bun run dev` starts Vite over HTTPS with a self-signed cert (`PAYKY_DISABLE_BASIC_SSL=1` turns that off for Android live-reload).
+- End-to-end tests are not part of `check` and need their own run — see "E2E Testing" below.
+
 ## Project Rules
 
 - Write all code, comments, commit messages, and documentation in English.
-- Use Bun for dependency management and scripts. Keep `exact = true` in both Bun config files.
+- Commit messages follow Conventional Commits: `type(scope): imperative summary`, lowercase, no trailing period. Types in use are `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`; the scope names the module or feature touched (`refactor(payment):`). The subject says what changed and the body says why — put the reasoning there, not in the subject.
+- Error reporting goes through `src/core/sentry.ts` and is opt-in per device (`errorReportingEnabled`, driven by `SentryController`). Report unexpected crashes only: `captureReportedError` has exactly two sanctioned call sites, the root error handler in `src/App.tsx` and `src/components/app/error-boundary.tsx`. Never pair it with a `toast.error` or any other handled failure — an expected `Result` the UI already shows the user is not a crash. Events are scrubbed of recovery phrases and IBAN-shaped strings, but keep secrets out of error payloads rather than relying on that.
+- Use Bun for dependency management and scripts. Keep `exact = true` in `bunfig.toml`.
 - Keep the app TypeScript-first and preserve strict compiler settings.
 - Use shadcn-style local UI components in `src/components/ui`; primitives must come from Base UI.
 - `src/components/ui` (shadcn) and `src/components/reui` (ReUI) are vendored third-party code, not ours. Never edit, refactor, shrink, or delete anything in them — not to remove an export nothing imports, not to trim an unused variant, not to fix a lint or style nit. They are kept byte-for-byte as upstream ships them so a registry re-add or upgrade stays a clean overwrite. Update them only by re-adding the component from its registry (`shadcn` CLI, ReUI MCP). An audit or dead-code scan flagging something in these two directories is a false positive; adapt the call site instead.
@@ -18,8 +27,8 @@
 - For asynchronous reads from remote or native APIs in React, use TanStack Query's `useQuery` rather than `useEffect` with local state. Use a stable `queryKey` and `enabled` for runtime or input preconditions; keep Evolu subscriptions on `useEvoluQuery`.
 - `@dedalik/use-react` is a deliberate dependency and stays. It is a ~180-hook VueUse-style collection, and we intend to draw on more of it, so reach for it before hand-rolling a hook over a browser API — and do not propose dropping it on the grounds that only one hook is imported today.
     - Wrap it where its shape does not fit rather than re-implementing it. `useScreenWakeLock` wraps the library's imperative `useWakeLock` (`request`/`release`) in the declarative `enabled` lifecycle every caller here actually wants.
-    - A local hook sharing a name with a library one is usually **not** a duplicate, and swapping it in would be a regression. Each diverges on purpose: `useNow` schedules one timeout for the next known deadline where the library's polls on an interval; `useDebouncedValue` carries the `transition` option that keeps a Suspense boundary from unmounting the cart grid mid-tap; `useIntersectionObserver` returns a React 19 ref callback with cleanup instead of taking a `RefObject`; `useLocalStorageState` validates through a Zod schema and shares one listener set per key so every call site observes the same write; `useConfirmDialog` is an app-wide queue behind `ConfirmDialogHost`, not per-component state. Check the local doc comment before assuming the library version is equivalent.
-- To keep a frequently-changing value from re-rendering a whole subtree, hold it in a component-scoped Jotai atom, pass the **atom itself** down as a prop, and subscribe as deep as possible. `TerminalPaymentKeypad` in `src/features/pos/terminal-payment-keypad.tsx` is the reference implementation for the entered amount:
+    - A local hook sharing a name with a library one is usually **not** a duplicate, and swapping it in would be a regression. `useNow`, `useDebouncedValue`, `useIntersectionObserver`, `useLocalStorageState` and `useConfirmDialog` each diverge from their namesake on purpose — scheduling, Suspense behaviour, ref shape, Zod validation, app-wide queueing. Read the local doc comment before assuming the library version is equivalent.
+- To keep a frequently-changing value from re-rendering a whole subtree, hold it in a component-scoped Jotai atom, pass the **atom itself** down as a prop, and subscribe as deep as possible. `TerminalPaymentKeypad` in `src/features/terminal-home/terminal-payment-keypad.tsx` is the reference implementation for the entered amount:
     - Create it once per mount with `const [valueAtom] = useState(() => atom(initial))`. Never `useMemo` — that is a cache React may throw away, and a discarded one mints a fresh atom, silently losing the value. `useState`'s lazy initializer is the guaranteed-once one.
     - Pass `valueAtom` through as a plain prop. The components in between never read it, so they stay out of the update path entirely.
     - Only the leaves that actually render the value call `useAtomValue` — in the keypad that is `AmountDisplay` and `ChargeButton`, not the twelve `KeypadButton`s.
@@ -30,6 +39,7 @@
 ## Project Structure
 
 - `src/main.tsx` is the browser entry point. It installs polyfills and renders the React app.
+- `src/polyfills.ts` is what `main.tsx` imports first: it installs Evolu's own polyfills and `src/polyfills/android-webview-locks.ts`, which fakes the `evolu-one-tab-sharedworker-polyfill` lock that Android WebView's `navigator.locks` cannot grant. `src/test/setup.ts` installs the Evolu polyfills for Vitest, which is configured in `vite.config.ts` (`test.exclude` keeps `e2e/**` out of the unit run).
 - `src/App.tsx` wires top-level providers (Jotai store, theme, background jobs, toaster) and the TanStack Router provider.
 - `src/router.tsx` creates the TanStack Router from `src/routeTree.gen.ts`; route files live in `src/routes`.
 - `src/routes/__root.tsx` defines the root layout and error boundary; `src/routes/_terminal.tsx` is the layout route for the terminal pages. Keep route files thin and move substantial page UI into page or feature modules.
@@ -48,16 +58,19 @@
 - `src/core/deps.ts` declares small injectable dependency objects (`FetchDep`, `DateDep`, `EvoluOwnerIdDep`); `src/core/error.ts` provides the `defineError` factory.
 - `src/core/background-jobs` contains the background job framework (`BackgroundJobContext`, keyed task queue) and the sync jobs under `jobs/`. Jobs receive all effects — including `lockManager` — through their context; never use ambient globals such as `navigator.locks`.
 - `src/core/integrations` contains HTTP clients for external services (FIO, Yadio, LNURL). Clients follow the fio convention: a `createXApiDep` factory, HTTP through `appFetchAsJson` from `src/core/deps.ts`, zod-validated responses, and `defineError` errors carrying `status` and `responseBody`.
-- `src/core/spark` wraps the Spark wallet SDK behind `SparkWalletDep`. Do not call `SparkWallet.initialize`/`getOrCreateWallet` directly outside this wrapper; extend the wrapper when a consumer needs more of the SDK surface. Instances are shared per mnemonic and ref-counted (via the internal `createRefCountedResourcePool` in `src/lib/ref-counted-resource-pool.ts`, exposed through `createSharedSparkSyncWallet` and `createDefaultSparkPaymentWallet`): each caller still owns cleanup of its own `sparkWallet.create()` result exactly like any other disposable, but the underlying SDK instance is only actually torn down once every concurrent holder — including the Spark account sync job's long-held reference — has released it, so a warm instance survives back-to-back calls for the same account. `src/core/server/donate-wallet.ts` is the one sanctioned exception: it calls `SparkWallet.initialize` directly because it's stateless per-request server code with no long-lived process to pool instances for.
+- `src/core/spark` wraps the Spark wallet SDK behind `SparkWalletDep`. Do not call `SparkWallet.initialize`/`getOrCreateWallet` directly outside this wrapper; extend the wrapper when a consumer needs more of the SDK surface. Instances are pooled per mnemonic and ref-counted (`createRefCountedResourcePool` in `src/lib/ref-counted-resource-pool.ts`, behind `createSharedSparkSyncWallet`/`createDefaultSparkPaymentWallet`): dispose your own `sparkWallet.create()` result as usual, but the SDK instance itself is torn down only once every holder — the Spark sync job's long-held reference included — has released it, so a warm instance survives back-to-back calls for the same account. `src/core/server/donate-wallet.ts` is the one sanctioned exception: stateless per-request server code with no long-lived process to pool for.
 - `src/core/cli` contains CLI-runtime helpers (`cli-env.ts`, the in-process lock manager); CLI entry points live in `bin/`.
 - `api` contains Vercel serverless functions (see `vercel.json` for routing) backing the donation feature: `api/donations.ts` and `api/lnurlp/donate.ts`, both built on `src/core/server/donate-wallet.ts`.
 - `src/core/native` contains Capacitor/WebView runtime detection and platform plumbing.
+- `src/core/sentry.ts` wraps `@sentry/react`: enable/disable, the event and breadcrumb scrubbers, and `captureReportedError`. See the project rule above before adding a call site.
+- `src/core/query-client.ts` exports the one TanStack `queryClient` the app provides; create no others.
 - `src/i18n` contains translation resources and the translation hook. Keys are grouped into seven files per language — `<lang>/settings.ts`, `landing.ts`, `bill.ts`, `payment.ts`, `withdraw.ts`, `onboarding.ts`, `common.ts` — and `<lang>.ts` only spreads them together. Add a key to the file whose group its namespace belongs to; `common.ts` takes the small app-wide namespaces (`app`, `appError`, `nav`, `country`, ...). `src/i18n/en.ts` remains the source of truth for `TranslationKey`. Coverage is checked twice: each `cs`/`sk` group file `satisfies Record<keyof typeof en<Group>, string>` so a missing key names the file it is missing from, and `cs.ts`/`sk.ts` still `satisfies Record<TranslationKey, string>` so a key filed under the wrong group is caught too. `resources.ts` only composes the languages.
 - `src/lib` contains app-level generic utilities such as `cn`; keep domain code in `src/core/modules` instead.
 - `src/assets` contains static frontend assets.
 - `src/index.css` contains global Tailwind and theme styles.
 - `src/zod-utils.ts` contains app-level Zod helpers that are not specific to one domain module.
 - `e2e` contains Playwright end-to-end tests (`playwright.config.ts` at the repo root). See "E2E Testing" below for conventions.
+- Outside `src`: `docs` holds `bill-payment-states.md` plus the generated screenshots and videos; `remotion` holds the Remotion compositions `bun run docs:videos` renders from the captures `bin/generate-doc-videos.ts` makes; `android` and `ios` are Capacitor native projects regenerated by `bun run cap:sync`, so change them only where Capacitor does not overwrite; `skills` is vendored agent skills pinned by hash in `skills-lock.json` — re-fetch them, do not hand-edit.
 
 ## Domain Module Structure
 
@@ -74,7 +87,7 @@
   return `Result`; they never write. Errors belong with the half that raises
   them, which is also what keeps the two files from importing each other.
 - Keep tests beside the module they cover as `*.test.ts`.
-- For aggregate detail tables sharing the root id, keep root and detail table ownership in the same module unless another module clearly owns a separate lifecycle.
+- For aggregate detail/extension tables sharing the root id, keep root and detail table ownership in the same module, and soft delete only the root row — unless the detail clearly owns a separate lifecycle.
 - An actions file writes only to tables its own module owns. To write another module's table, compose that module's Task instead of upserting directly, as `bill-actions.ts` does with `bill-line` and `item` actions.
 - The intended bill/payment lifecycle — `bill.status` values and transitions, `payment` cancellation/expiry, and how the two combine into a derived paid/underpaid/overpaid coverage — is specified in `docs/bill-payment-states.md`. Read it before changing `bill-guards.ts`, `bill-actions.ts`, `payment-actions.ts`, or any status/coverage derivation between them.
 
@@ -87,13 +100,15 @@
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.
 - Keep direct dependency calls for non-Task services, for example `run.deps.evolu.loadQuery(...)` or `run.deps.sparkWallet.create(...)`.
+- Define action input object types inline in function parameters; avoid separate `CreateXInput` or `UpdateXInput` aliases.
+- For CRDT actions, write tombstones and updates directly without preloading rows, unless current data is required for a domain invariant.
+- Pass Evolu mutation payloads through `removeUndefinedValues` to avoid extra or undefined fields.
 - When code must wait for an Evolu mutation to complete before running follow-up work, use `runMutationWithCompletion` from `src/core/modules/shared/evolu-utils.ts` instead of hand-rolled `onComplete` promises.
 - Minimize the number of `runMutationWithCompletion` batches a Task performs where possible: prefer folding related upserts into one shared batch over several sequential ones, since each batch is an extra awaited round trip and a window where a partial write could be observed. When composing another module's write logic into your own batch, split that module's exports into a load/compute Task (no upsert) and a plain upsert function taking the caller's `MutationOptions`, as `payment-number-actions.ts`'s `loadNextPaymentNumber`/`upsertPaymentNumberRows` do for `createPayment`, instead of calling a Task that always opens its own separate batch.
 - In Task code, use `run.deps.console` for all logging. Do not call global `console.log`, `console.warn`, `console.error`, or related console methods directly.
 - Clean up disposable resources acquired inside Task actions with `await using`, as with wallet cleanup in `createPreparedPayment`.
 - Define domain errors with `defineError` from `src/core/error.ts` and export their types via `ReturnType`, for example `const createPaymentNotFoundError = defineError("PaymentNotFound")<{ readonly id: PaymentId }>()` with `export type PaymentNotFoundError = ReturnType<typeof createPaymentNotFoundError>`. Type each Task's `E` as the union of its expected errors.
 - Return `err(createXNotFoundError({ id }))` for missing domain rows or required related records instead of throwing. Use `getFirstOr(rows, error)` from `src/core/modules/shared/result.ts` to turn a load-first query into a `Result`.
-- Keep thrown exceptions for programmer errors, schema decode failures, framework boundaries, or established local patterns.
 - For a React call site invoking a Task whose error type is `never` (its only realistic failure is an unexpected infra error, not a domain `Result`), don't build bespoke pending/error UI: call it in a plain `try`/`catch` and show `toast.error(t("settings.saveFailed"))` on failure, letting the surrounding UI (button, dialog) act optimistically — close/navigate immediately rather than waiting on the mutation. See `saveFiatCurrency` in `_terminal.settings.fiat.tsx` and the catalog-item delete confirmation in `item-form-page.tsx` for this pattern.
 
 ## Translation Key Rules
@@ -105,7 +120,7 @@
 - Do not rename existing translation keys without updating every usage.
 - Prefer stable semantic keys over text-derived keys; key names should describe purpose, not exact copy.
 
-## TypeScript Rules:
+## TypeScript Rules
 
 
 - Prefer immutability by default:
@@ -118,7 +133,7 @@
     - Keep a `switch` when branches do more than produce a value (side effects, early returns, differing control flow) or when a case needs the narrowed member rather than just its tag.
 - Use Result-based error handling for expected failures:
     - Import `Result`, `ok`, and `err` from the `@evolu/common` module.
-    - Reserve thrown exceptions for programmer errors, unexpected infrastructure failures, framework boundaries, and established local patterns.
+    - Reserve thrown exceptions for programmer errors, schema decode failures, unexpected infrastructure failures, framework boundaries, and established local patterns.
 - Prefer `unknown` over `any`:
     - Use `unknown` at untrusted boundaries, then narrow with zod, type guards, or explicit checks.
     - Avoid introducing new `any`. If legacy generic helpers force `any`, keep it local and do not widen public types.
@@ -151,29 +166,12 @@
     - Keep `Promise.all([...])` tuples reasonably short; if the list grows past 10 items, split it into coherent groups or use another typed pattern.
 - Represent money as `BigInt` minor units, never floating-point `Number`; use the conversion helpers in `src/core/modules/shared/money.ts` (`decimalAmountToMinorUnits`, `minorUnitsToDecimalString`) instead of ad hoc parsing.
 - Preserve exhaustive typing for finite variants.
-    - Use `assert-never` or the established nearby exhaustive-check pattern for switches or branches over unions/enums.
+    - Use the established nearby exhaustive-check pattern for switches or branches over unions/enums.
     - Use `satisfies Record<EnumOrUnion, ...>` for enum/union-keyed maps when completeness should be enforced while preserving literal value types.
 - Prefer named exports.
     - Avoid new default exports unless the nearby module family already uses them or a framework requires them, such as Storybook stories or existing framework interop helpers.
 
-## Architecture Rules
-
-- Define action input object types inline in function parameters; avoid separate `CreateXInput` or `UpdateXInput` aliases.
-- For aggregate extension/detail tables sharing the root id, soft delete only the root row unless the detail has its own lifecycle.
-- For CRDT actions, write tombstones and updates directly without preloading rows, unless current data is required for a domain invariant.
-- Pass Evolu mutation payloads through `removeUndefinedValues` to avoid extra or undefined fields.
-
 ## E2E Testing
 
-- Run tests with `bun run test:e2e` (headless, dev server) or `test:e2e:ui` (interactive). `bun run test:e2e:preview` runs the same suite against a one-off production build instead: `PAYKY_E2E_BUILD=1 vite build` once, then Playwright's `webServer` runs `vite preview` (set via `PAYKY_E2E_SERVER=preview`, read in `playwright.config.ts`) rather than `bun run dev`. Tests live in `e2e/*.spec.ts`; `playwright.config.ts` at the repo root configures a single `chromium` project.
-- The Playwright `webServer` boots the real Vite dev server (or, for `test:e2e:preview`, `vite preview` serving a real build) with basic-SSL left enabled (never set `PAYKY_DISABLE_BASIC_SSL` for e2e) so tests run over HTTPS with a self-signed cert (`ignoreHTTPSErrors` in the config), the same way production TLS behaves — `@vitejs/plugin-basic-ssl` applies to both `server.https` and `preview.https`. Some browser features (for example `navigator.clipboard`) are unavailable under plain HTTP, so testing over HTTP would hide regressions in those code paths.
-- Evolu/SQLite persists through OPFS (Origin Private File System) in Chromium, not IndexedDB — Playwright's `storageState({ indexedDB: true })` snapshot/restore does **not** capture it, so pre-seeding an onboarded account via storageState does not work here. Don't reintroduce that approach.
-- `src/components/e2e-test-bridge.tsx` (mounted in `App.tsx`) exposes `window.__e2eSeedOnboarding`, which calls the same production Task actions the onboarding UI does (`saveCashRegisterAccount`, `saveSparkAccount`, `saveFiatBankAccount`, `completeOnboarding`) directly, skipping the onboarding UI. It's gated on `import.meta.env.DEV || __E2E_TEST_BUILD__`, **not** `import.meta.env.DEV` alone — that define is `false` in every `vite build` output regardless of how it's later served, so DEV alone would make the bridge dead code in the `test:e2e:preview` build too. `__E2E_TEST_BUILD__` is a `vite.config.ts` `define` wired to `PAYKY_E2E_BUILD=1`, set only by `test:e2e:preview`'s build step — a real production build never sets it, so the bridge stays dead code (removed) there. `e2e/support/onboarding.ts`'s `seedOnboarding`/`seedCurrentAccountOnboarding` call the bridge via `page.evaluate` and wait for the app's own reactive redirect off `/onboarding`. Use this in specs that don't test onboarding itself; `completeOnboarding()` (real UI clicks) remains for specs that do (`e2e/onboarding.spec.ts`, `e2e/smoke.spec.ts`) and for a second device account created mid-test (see below).
-- Switching the active device account recreates the app's Evolu client, and `E2eTestBridge`'s effect doesn't reliably reattach `window.__e2eSeedOnboarding` to the new client in time — use `completeOnboardingDefaults()` (real UI clicks) for a second account instead of the seed bridge, as `e2e/settings-accounts.spec.ts` does.
-- `e2e/support/` holds the reusable flow helpers, split by concern: `i18n.ts` (`translate`, `translateValue`, `nameParam`), `navigation.ts` (`gotoPage`, `reloadPage`, `gotoPosOverview`, `waitForLocalWriteToSettle`), `onboarding.ts` (`completeOnboarding`, `completeOnboardingDefaults`, `seedOnboarding`, `seedCurrentAccountOnboarding`), `bill.ts` (cart, catalog and settings seeding), `payment.ts` (`enterAmount`, `createPayment`, `markCashPaid`, the Spark/IBAN flows), `collisions.ts` (the canceled+claimed and duplicate-settlement scenarios), `viewport.ts`, `donation-mocks.ts`, and `fixtures.ts`, which owns only the `test`/`expect` export and the `seededPage` fixture. Import from the owning module, not through `fixtures.ts` — there is no barrel here. The modules import one another in one direction only: i18n <- navigation <- bill <- payment <- collisions. They are imported both by `*.spec.ts` files and by `bin/generate-doc-screenshots.ts` and `bin/generate-doc-videos.ts`, which drive a manually launched `chromium.launch()` browser outside the Playwright test runner. Because of those consumers, nothing under `e2e/support/` may call `test.step(...)` (or other APIs that require an active test) — they throw `test.step() can only be called from a test` outside a real test run. Extend these modules instead of duplicating flow steps in a spec file or in the screenshot script, but keep them runner-agnostic.
-- Import `test`/`expect` from `./support/fixtures.ts`, not `@playwright/test`, in every spec except `e2e/onboarding.spec.ts` and `e2e/smoke.spec.ts` (which test onboarding itself and must not auto-seed). Destructure the `seededPage` fixture instead of `page` — it seeds onboarding before the test body runs, so specs don't repeat a manual "seed onboarding" step. `settings-accounts.spec.ts` still seeds the *first* account this way but falls back to `completeOnboardingDefaults()` for the second (see the account-switch caveat above).
-- Use `gotoPage(page, path, language, headingKey)`/`reloadPage(page, language, headingKey)` from `./support/navigation.ts` instead of hand-rolling `page.goto(path, { waitUntil: "domcontentloaded" }) + getByRole("heading", ...).waitFor()` — nearly every spec starts with this pattern and every reload-persistence check repeats it. Use `translateValue(language, key, value)` instead of hardcoding a rendered `{value}`-templated string (for example `"10%"` or `"Remove 20%"`) — it substitutes into the real translation key so the test tracks copy changes instead of silently drifting from it.
-- Prefer `getByRole` with the translated accessible name (via `translate(language, key)`) as the default locator — it doubles as an accessibility check and tracks markup changes for free. Reserve `data-testid` for elements without a stable accessible name/role, or for elements that stay mounted in the DOM regardless of visibility (for example the payment-paid success overlay, which is toggled via `aria-hidden`/opacity rather than conditionally rendered — matched via `data-testid="payment-paid-panel"`, not a generic `[aria-hidden="false"]` attribute selector). Most local UI primitives (`Button`, `TabsTrigger`, `ToggleGroupItem`, ...) spread `...props` through to the native element, so `data-testid` can be passed directly as a prop without changing the component.
-- Never drive one page with concurrent actions — no `Promise.all([locator.click(), locator.click()])`. Playwright does not support it: both clicks steer the same virtual mouse, so they interleave and one of the two is silently dropped by the driver in roughly 2-3% of attempts, which reads as a rare app flake. To fire taps faster than the UI can settle, use sequential raw mouse input (`e2e/support/bill.ts`'s `tapAddBrick`/`addBrickCenter` for cart bricks): still milliseconds apart, but delivered in order. Raw mouse input is also the only way to catch a dropped tap at all — `locator.click()` waits for the target to be enabled and re-resolves it, so it papers over a control that disables itself mid-mutation or a subtree that remounts between press and release (see `BillPage`'s doc comment).
-- Wrap each logical phase of a test — not each individual click — in `test.step(...)` inside the `*.spec.ts` file, typically one step per fixture-helper call (`completeOnboarding`, `createPayment`, `markCashPaid`, final assertion). This keeps the HTML report/trace readable without requiring step support inside the shared fixtures.
-- There is no network mocking yet for Spark/FIO/Yadio/LNURL (planned for a later phase in `e2e.md`) — payment flows that hit those integrations are not yet deterministic in e2e.
+- Playwright end-to-end tests live in `e2e/`. Their conventions — how the dev server, seeding, fixtures, locators and steps work — are in `e2e/AGENTS.md`. Read it before touching anything under `e2e/`.
+- `bun run test:e2e` (headless, dev server), `test:e2e:ui` (interactive), `test:e2e:preview` (against a one-off production build). E2E is not part of `bun run check`.

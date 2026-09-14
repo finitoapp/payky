@@ -94,9 +94,7 @@ export const enSettings = {
   "settings.categories.form.name.placeholder": "e.g. Drinks",
   "settings.categories.form.notFound": "This category no longer exists.",
   "settings.categories.form.save.create": "Add category",
-  "settings.categories.form.save.edit": "Save changes",
   "settings.categories.form.saved.create": "Category added.",
-  "settings.categories.form.saved.edit": "Category updated.",
   "settings.categories.form.title.create": "Add category",
   "settings.categories.form.title.edit": "Edit category",
   "settings.categories.search": "Search categories...",
@@ -275,8 +273,6 @@ export const enSettings = {
     "This app is currently running in a regular browser/PWA environment, so automatic Fio payment checks will not run here.",
   "settings.fioPlugin.nativeRuntimeWarning.title":
     "Fio plugin is available only in the native app.",
-  "settings.fioPlugin.save": "Save Fio plugin",
-  "settings.fioPlugin.saved": "Fio plugin settings saved.",
   "settings.fioPlugin.syncLookbackDays.description":
     "How many days before the last local sync pointer should be checked again.",
   "settings.fioPlugin.syncLookbackDays.invalid":
@@ -345,9 +341,7 @@ export const enSettings = {
   "settings.items.form.price.invalid": "Enter a valid price.",
   "settings.items.form.price.label": "Price",
   "settings.items.form.save.create": "Add item",
-  "settings.items.form.save.edit": "Save changes",
   "settings.items.form.saved.create": "Item added.",
-  "settings.items.form.saved.edit": "Item updated.",
   "settings.items.form.scanCode.duplicate": "Already assigned to {name}.",
   "settings.items.form.scanCode.invalid": "Enter a valid code.",
   "settings.items.form.scanCode.label": "Scan code",
@@ -390,11 +384,8 @@ export const enSettings = {
   "settings.language.title": "Language & Region",
   "settings.legalEntity.country.label": "Country",
   "settings.legalEntity.country.placeholder": "Select a country",
-  "settings.legalEntity.country.required": "Choose a country.",
   "settings.legalEntity.description":
     "Sets the country used for default tax rates and whether tax rates apply to catalog items.",
-  "settings.legalEntity.save": "Save",
-  "settings.legalEntity.saved": "Saved.",
   "settings.legalEntity.title": "Country & VAT",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
   "settings.paymentAccounts.description":
@@ -418,8 +409,6 @@ export const enSettings = {
   "settings.paymentNumberSeries.lastNumber.date.label": "Anchor date",
   "settings.paymentNumberSeries.lastNumber.description":
     "Override the last used serial number. The next generated payment number will continue from this value.",
-  "settings.paymentNumberSeries.lastNumber.save": "Save last number",
-  "settings.paymentNumberSeries.lastNumber.saved": "Last number saved.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.description":
     "Last used serial number. For example, enter 499 if the next payment should use 500.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.invalid":
@@ -439,8 +428,6 @@ export const enSettings = {
   "settings.paymentNumberSeries.prefix.invalid":
     "Enter a prefix up to 255 characters.",
   "settings.paymentNumberSeries.prefix.label": "Prefix",
-  "settings.paymentNumberSeries.save": "Save number series",
-  "settings.paymentNumberSeries.saved": "Number series saved.",
   "settings.paymentNumberSeries.serialNumberDigits.description":
     "Minimum number of digits for the increasing serial part.",
   "settings.paymentNumberSeries.serialNumberDigits.invalid":
@@ -543,9 +530,7 @@ export const enSettings = {
   "settings.tables.form.name.placeholder": "e.g. Table 5",
   "settings.tables.form.notFound": "This table no longer exists.",
   "settings.tables.form.save.create": "Add table",
-  "settings.tables.form.save.edit": "Save changes",
   "settings.tables.form.saved.create": "Table added.",
-  "settings.tables.form.saved.edit": "Table updated.",
   "settings.tables.form.seatCount.invalid": "Enter a valid seat count.",
   "settings.tables.form.seatCount.label": "Seat count",
   "settings.tables.form.seatCount.placeholder": "e.g. 4",
@@ -583,9 +568,7 @@ export const enSettings = {
   "settings.taxRates.rate.invalid": "Enter a percentage between 0 and 100.",
   "settings.taxRates.rate.label": "Rate (%)",
   "settings.taxRates.rename": "Rename {name}",
-  "settings.taxRates.rename.cancel": "Cancel",
   "settings.taxRates.rename.input": "New name for {name}",
-  "settings.taxRates.rename.save": "Save",
   "settings.taxRates.title": "Tax rates",
   "settings.theme.dark.description": "Always use the dark interface",
   "settings.theme.dark.title": "Dark",

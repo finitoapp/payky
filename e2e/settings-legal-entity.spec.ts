@@ -1,5 +1,9 @@
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
+import {
+  pickInlineOption,
+  toggleInlineCheckbox,
+} from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("requires a country before saving, and shows a placeholder for an account that never configured it", async ({
@@ -22,15 +26,15 @@ test("requires a country before saving, and shows a placeholder for an account t
     ).toContainText(translate("en", "settings.legalEntity.country.placeholder"))
   })
 
-  await test.step("saving without a country shows a validation error", async () => {
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.legalEntity.save"),
-      })
-      .click()
+  await test.step("the VAT-payer choice waits for a country", async () => {
+    // Saving it first would write country "other" on the user's behalf, so
+    // the checkbox stays disabled until the country is chosen — which is
+    // what the old form's "country required" error existed to prevent.
     await expect(
-      page.getByText(translate("en", "settings.legalEntity.country.required"))
-    ).toBeVisible()
+      page.getByRole("checkbox", {
+        name: translate("en", "settings.legalEntity.vatPayer.label"),
+      })
+    ).toBeDisabled()
   })
 })
 
@@ -46,27 +50,12 @@ test("saves country and VAT-payer status, and persists after reload", async ({
     ))
 
   await test.step("choose a country and enable VAT payer", async () => {
-    await page
-      .getByRole("combobox", {
-        name: translate("en", "settings.legalEntity.country.label"),
-      })
-      .click()
-    await page
-      .getByRole("option", { name: translate("en", "country.sk") })
-      .click()
-    await page
-      .getByRole("checkbox", {
-        name: translate("en", "settings.legalEntity.vatPayer.label"),
-      })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.legalEntity.save"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.legalEntity.saved"))
-      .waitFor()
+    await pickInlineOption(
+      page,
+      "settings.legalEntity.country.label",
+      translate("en", "country.sk")
+    )
+    await toggleInlineCheckbox(page, "settings.legalEntity.vatPayer.label")
   })
 
   await test.step("both choices persist after a reload", async () => {
@@ -94,22 +83,11 @@ test('choosing "Other" is distinct from never having configured a country', asyn
       "en",
       "settings.legalEntity.title"
     )
-    await page
-      .getByRole("combobox", {
-        name: translate("en", "settings.legalEntity.country.label"),
-      })
-      .click()
-    await page
-      .getByRole("option", { name: translate("en", "country.other") })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.legalEntity.save"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.legalEntity.saved"))
-      .waitFor()
+    await pickInlineOption(
+      page,
+      "settings.legalEntity.country.label",
+      translate("en", "country.other")
+    )
   })
 
   await test.step("after reload it shows Other, not the empty placeholder", async () => {

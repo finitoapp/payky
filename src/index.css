@@ -155,6 +155,9 @@
 
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  --animate-input-blink: input-blink 0.5s ease-in-out;
+  /* `InlineEditSavedTick` overrides the duration from SAVED_INDICATOR_MS. */
+  --animate-saved-tick: saved-tick 1.6s ease-in-out;
   --color-invert-foreground: var(--invert-foreground);
   --color-invert: var(--invert);
   --color-warning-foreground: var(--warning-foreground);
@@ -163,6 +166,32 @@
   --color-info: var(--info);
   --color-success-foreground: var(--success-foreground);
   --color-success: var(--success);
+
+  /* Fades in, holds, and fades out again before the element is unmounted. */
+  @keyframes saved-tick {
+    0% {
+      opacity: 0;
+    }
+    10%,
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* An input that refuses to lose focus flashes this to say it is unfinished. */
+  @keyframes input-blink {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+    25%,
+    75% {
+      box-shadow: 0 0 0 3px var(--destructive);
+    }
+  }
 
   @keyframes marquee {
     from {

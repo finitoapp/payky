@@ -5,6 +5,13 @@ import { useId, useState } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -23,6 +30,8 @@ import {
   type CatalogCategoryId as CatalogCategoryIdType,
 } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import { NonEmptyString255Schema } from "@/core/modules/shared/schema.ts"
+import { requiredTextCodec } from "@/features/settings/inline-edit-codecs.ts"
+import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
@@ -39,7 +48,7 @@ export function NewCatalogCategoryPage() {
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.categories.form.title.create")} />
-      <CatalogCategoryForm mode="create" />
+      <CreateCatalogCategoryForm />
     </>
   )
 }
@@ -85,135 +94,144 @@ function EditCatalogCategoryPageContent({
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.categories.form.title.edit")} />
-      <CatalogCategoryForm mode="edit" category={category} />
+      <EditCatalogCategoryForm category={category} />
     </>
   )
 }
 
-function CatalogCategoryForm({
-  mode,
+/**
+ * The create form stays a submit-and-navigate form: there is no row to edit
+ * in place yet.
+ */
+function CreateCatalogCategoryForm() {
+  const appRun = useAppRun()
+  const router = useRouter()
+  const { t } = useTranslation()
+  const nameInputId = useId()
+  const [name, setName] = useState("")
+  const [nameError, setNameError] = useState<TranslationKey | null>(null)
+  const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  return (
+    <SettingsFormCard
+      title={t("settings.categories.form.card.title")}
+      description={t("settings.categories.form.card.description")}
+      savedMessage={saved ? t("settings.categories.form.saved.create") : null}
+      submitLabel={t("settings.categories.form.save.create")}
+      pending={pending}
+      onSubmit={(event) => {
+        event.preventDefault()
+        setNameError(null)
+        resetSaved()
+
+        const nameResult = NonEmptyString255Schema.safeParse(name.trim())
+        if (!nameResult.success) {
+          setNameError("settings.categories.form.name.invalid")
+          return
+        }
+
+        void submit(async () => {
+          await using run = appRun()
+          await run(
+            createCatalogCategoryAtEnd({
+              deviceId: null,
+              name: nameResult.data,
+            })
+          )
+          router.history.back()
+        })
+      }}
+    >
+      <FieldGroup>
+        <Field data-invalid={nameError !== null}>
+          <FieldLabel htmlFor={nameInputId}>
+            {t("settings.categories.form.name.label")}
+          </FieldLabel>
+          <Input
+            id={nameInputId}
+            value={name}
+            disabled={pending}
+            aria-invalid={nameError !== null}
+            autoComplete="off"
+            placeholder={t("settings.categories.form.name.placeholder")}
+            onChange={(event) => {
+              setName(event.currentTarget.value)
+              setNameError(null)
+              resetSaved()
+            }}
+          />
+          <FieldError>{nameError ? t(nameError) : null}</FieldError>
+        </Field>
+      </FieldGroup>
+    </SettingsFormCard>
+  )
+}
+
+/**
+ * The edit form has no submit button: the name saves itself.
+ */
+function EditCatalogCategoryForm({
   category,
 }: {
-  readonly mode: "create" | "edit"
-  readonly category?: CatalogCategoryRow
+  readonly category: CatalogCategoryRow
 }) {
   const appRun = useAppRun()
   const confirmedRun = useConfirmedRun()
   const router = useRouter()
   const { t } = useTranslation()
-  const nameInputId = useId()
-  const [name, setName] = useState(category?.name ?? "")
-  const [nameError, setNameError] = useState<TranslationKey | null>(null)
-  const { pending, saved, resetSaved, submit } = useSettingsForm()
 
   return (
     <div className="flex flex-col gap-5">
-      <SettingsFormCard
-        title={t("settings.categories.form.card.title")}
-        description={t("settings.categories.form.card.description")}
-        savedMessage={
-          saved
-            ? t(
-                mode === "create"
-                  ? "settings.categories.form.saved.create"
-                  : "settings.categories.form.saved.edit"
-              )
-            : null
-        }
-        submitLabel={t(
-          mode === "create"
-            ? "settings.categories.form.save.create"
-            : "settings.categories.form.save.edit"
-        )}
-        pending={pending}
-        onSubmit={(event) => {
-          event.preventDefault()
-          setNameError(null)
-          resetSaved()
-
-          const trimmedName = name.trim()
-          const nameResult = NonEmptyString255Schema.safeParse(trimmedName)
-          if (!nameResult.success) {
-            setNameError("settings.categories.form.name.invalid")
-            return
-          }
-
-          void submit(async () => {
-            await using run = appRun()
-
-            if (mode === "create") {
-              await run(
-                createCatalogCategoryAtEnd({
-                  deviceId: null,
-                  name: nameResult.data,
-                })
-              )
-              router.history.back()
-              return
-            }
-
-            if (category === undefined) return
-
-            await run(
-              updateCatalogCategory({
-                id: category.id,
-                name: nameResult.data,
-              })
-            )
-          })
-        }}
-      >
-        <FieldGroup>
-          <Field data-invalid={nameError !== null}>
-            <FieldLabel htmlFor={nameInputId}>
-              {t("settings.categories.form.name.label")}
-            </FieldLabel>
-            <Input
-              id={nameInputId}
-              value={name}
-              disabled={pending}
-              aria-invalid={nameError !== null}
-              autoComplete="off"
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.categories.form.card.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.categories.form.card.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <InlineEditField
+              label={t("settings.categories.form.name.label")}
               placeholder={t("settings.categories.form.name.placeholder")}
-              onChange={(event) => {
-                setName(event.currentTarget.value)
-                setNameError(null)
-                resetSaved()
+              defaultValue={category.name}
+              codec={requiredTextCodec}
+              errorKey="settings.categories.form.name.invalid"
+              onSave={async (name) => {
+                await using run = appRun()
+                await run(updateCatalogCategory({ id: category.id, name }))
               }}
             />
-            <FieldError>{nameError ? t(nameError) : null}</FieldError>
-          </Field>
-        </FieldGroup>
-      </SettingsFormCard>
+          </FieldGroup>
+        </CardContent>
+      </Card>
 
-      {mode === "edit" && category !== undefined && (
-        <Button
-          variant="destructive"
-          onClick={() => {
-            void (async () => {
-              const deleted = await confirmedRun(
-                {
-                  title: t("settings.categories.delete.confirm.title", {
-                    name: category.name,
-                  }),
-                  description: t(
-                    "settings.categories.delete.confirm.description",
-                    { name: category.name }
-                  ),
-                  confirmLabel: t("settings.categories.delete.confirm.confirm"),
-                  cancelLabel: t("settings.categories.delete.confirm.cancel"),
-                  variant: "destructive",
-                },
-                deleteCatalogCategory(category.id)
-              )
-              if (deleted) router.history.back()
-            })()
-          }}
-        >
-          <Trash2Icon data-icon="inline-start" />
-          {t("settings.categories.delete")}
-        </Button>
-      )}
+      <Button
+        variant="destructive"
+        onClick={() => {
+          void (async () => {
+            const deleted = await confirmedRun(
+              {
+                title: t("settings.categories.delete.confirm.title", {
+                  name: category.name,
+                }),
+                description: t(
+                  "settings.categories.delete.confirm.description",
+                  { name: category.name }
+                ),
+                confirmLabel: t("settings.categories.delete.confirm.confirm"),
+                cancelLabel: t("settings.categories.delete.confirm.cancel"),
+                variant: "destructive",
+              },
+              deleteCatalogCategory(category.id)
+            )
+            if (deleted) router.history.back()
+          })()
+        }}
+      >
+        <Trash2Icon data-icon="inline-start" />
+        {t("settings.categories.delete")}
+      </Button>
     </div>
   )
 }

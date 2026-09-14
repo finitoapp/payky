@@ -95,9 +95,7 @@ export const skSettings = {
   "settings.categories.form.name.placeholder": "napr. Nápoje",
   "settings.categories.form.notFound": "Táto kategória už neexistuje.",
   "settings.categories.form.save.create": "Pridať kategóriu",
-  "settings.categories.form.save.edit": "Uložiť zmeny",
   "settings.categories.form.saved.create": "Kategória pridaná.",
-  "settings.categories.form.saved.edit": "Kategória upravená.",
   "settings.categories.form.title.create": "Pridať kategóriu",
   "settings.categories.form.title.edit": "Upraviť kategóriu",
   "settings.categories.search": "Hľadať kategórie...",
@@ -276,8 +274,6 @@ export const skSettings = {
     "Táto aplikácia teraz beží v bežnom prehliadači/PWA prostredí, takže automatické kontroly platieb Fio sa tu nespustia.",
   "settings.fioPlugin.nativeRuntimeWarning.title":
     "Fio plugin je dostupný iba v natívnej aplikácii.",
-  "settings.fioPlugin.save": "Uložiť Fio plugin",
-  "settings.fioPlugin.saved": "Nastavenia Fio pluginu uložené.",
   "settings.fioPlugin.syncLookbackDays.description":
     "Koľko dní pred poslednou lokálnou zarážkou sa má znovu kontrolovať.",
   "settings.fioPlugin.syncLookbackDays.invalid":
@@ -347,9 +343,7 @@ export const skSettings = {
   "settings.items.form.price.invalid": "Zadajte platnú cenu.",
   "settings.items.form.price.label": "Cena",
   "settings.items.form.save.create": "Pridať položku",
-  "settings.items.form.save.edit": "Uložiť zmeny",
   "settings.items.form.saved.create": "Položka bola pridaná.",
-  "settings.items.form.saved.edit": "Položka bola aktualizovaná.",
   "settings.items.form.scanCode.duplicate": "Už je priradený položke {name}.",
   "settings.items.form.scanCode.invalid": "Zadajte platný kód.",
   "settings.items.form.scanCode.label": "Kód na skenovanie",
@@ -392,11 +386,8 @@ export const skSettings = {
   "settings.language.title": "Jazyk a región",
   "settings.legalEntity.country.label": "Krajina",
   "settings.legalEntity.country.placeholder": "Vyberte krajinu",
-  "settings.legalEntity.country.required": "Vyberte krajinu.",
   "settings.legalEntity.description":
     "Určuje krajinu pre predvolené daňové sadzby a to, či sa sadzby uplatňujú na položky katalógu.",
-  "settings.legalEntity.save": "Uložiť",
-  "settings.legalEntity.saved": "Uložené.",
   "settings.legalEntity.title": "Krajina a DPH",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.paymentAccounts.description":
@@ -421,8 +412,6 @@ export const skSettings = {
   "settings.paymentNumberSeries.lastNumber.date.label": "Kotviaci dátum",
   "settings.paymentNumberSeries.lastNumber.description":
     "Prestavenie posledného použitého poradového čísla. Ďalšie vygenerované číslo platby bude pokračovať od tejto hodnoty.",
-  "settings.paymentNumberSeries.lastNumber.save": "Uložiť posledné číslo",
-  "settings.paymentNumberSeries.lastNumber.saved": "Posledné číslo uložené.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.description":
     "Posledné použité poradové číslo. Napríklad zadajte 499, ak ďalšia platba má použiť 500.",
   "settings.paymentNumberSeries.lastNumber.serialNumber.invalid":
@@ -442,8 +431,6 @@ export const skSettings = {
   "settings.paymentNumberSeries.prefix.invalid":
     "Zadajte predponu dlhú maximálne 255 znakov.",
   "settings.paymentNumberSeries.prefix.label": "Predpona",
-  "settings.paymentNumberSeries.save": "Uložiť číselný rad",
-  "settings.paymentNumberSeries.saved": "Číselný rad uložený.",
   "settings.paymentNumberSeries.serialNumberDigits.description":
     "Minimálny počet číslic pre rastúcu poradovú časť.",
   "settings.paymentNumberSeries.serialNumberDigits.invalid":
@@ -547,9 +534,7 @@ export const skSettings = {
   "settings.tables.form.name.placeholder": "napr. Stôl 5",
   "settings.tables.form.notFound": "Tento stôl už neexistuje.",
   "settings.tables.form.save.create": "Pridať stôl",
-  "settings.tables.form.save.edit": "Uložiť zmeny",
   "settings.tables.form.saved.create": "Stôl pridaný.",
-  "settings.tables.form.saved.edit": "Stôl upravený.",
   "settings.tables.form.seatCount.invalid": "Zadajte platný počet miest.",
   "settings.tables.form.seatCount.label": "Počet miest",
   "settings.tables.form.seatCount.placeholder": "napr. 4",
@@ -587,9 +572,7 @@ export const skSettings = {
   "settings.taxRates.rate.invalid": "Zadajte percento medzi 0 a 100.",
   "settings.taxRates.rate.label": "Sadzba (%)",
   "settings.taxRates.rename": "Premenovať {name}",
-  "settings.taxRates.rename.cancel": "Zrušiť",
   "settings.taxRates.rename.input": "Nový názov pre {name}",
-  "settings.taxRates.rename.save": "Uložiť",
   "settings.taxRates.title": "Daňové sadzby",
   "settings.theme.dark.description": "Vždy použiť tmavé rozhranie",
   "settings.theme.dark.title": "Tmavý",

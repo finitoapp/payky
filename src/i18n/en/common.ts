@@ -28,6 +28,9 @@ export const enCommon = {
   "home.keypad.backspace": "Delete last digit",
   "home.keypad.decimal": "Decimal separator",
   "home.pay": "Pay",
+  "inlineEdit.discard": "Discard change",
+  "inlineEdit.save": "Save change",
+  "inlineEdit.saved": "Saved",
   "migration.close": "Close",
   "migration.failed.description":
     "Your data could not be updated. Restart the app to try again; your data has not been damaged.",

@@ -1,6 +1,7 @@
 import { addCatalogCategory, addCatalogItem } from "./support/bill.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { nameParam, translate } from "./support/i18n.ts"
+import { fillInlineField, pickInlineOption } from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
@@ -70,23 +71,37 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
     })
     await expect(nameInput).toHaveValue("Coffee")
 
-    await nameInput.fill("Espresso")
-    await page
-      .getByRole("textbox", {
+    await fillInlineField(page, nameInput, "Espresso")
+    await fillInlineField(
+      page,
+      page.getByRole("textbox", {
         name: translate("en", "settings.items.form.price.label"),
-      })
-      .fill("69")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.items.form.save.edit"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.items.form.saved.edit"))
-      .waitFor()
+      }),
+      "69"
+    )
   })
 
-  await test.step("verify the edit persists after reload", async () => {
+  await test.step("an optional field round-trips through set and not set", async () => {
+    const skuInput = page.getByRole("textbox", {
+      name: translate("en", "settings.items.form.sku.label"),
+    })
+    await fillInlineField(page, skuInput, "COF-001")
+    await fillInlineField(page, skuInput, "")
+  })
+
+  await test.step("the currency select saves as soon as it is picked", async () => {
+    await pickInlineOption(page, "settings.items.form.currency.label", "EUR")
+  })
+
+  await test.step("the scan button is still reachable next to the field", async () => {
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "settings.items.form.scanCode.scan.aria"),
+      })
+    ).toBeVisible()
+  })
+
+  await test.step("verify the edits persist after reload", async () => {
     await reloadPage(page, "en", "settings.items.form.title.edit")
     await expect(
       page.getByRole("textbox", {
@@ -94,6 +109,16 @@ test("create, edit and delete a catalog item", async ({ seededPage: page }) => {
         exact: true,
       })
     ).toHaveValue("Espresso")
+    await expect(
+      page.getByRole("textbox", {
+        name: translate("en", "settings.items.form.sku.label"),
+      })
+    ).toHaveValue("")
+    await expect(
+      page.getByRole("combobox", {
+        name: translate("en", "settings.items.form.currency.label"),
+      })
+    ).toContainText("EUR")
     await expect(
       page.getByRole("textbox", {
         name: translate("en", "settings.items.form.scanCode.label"),

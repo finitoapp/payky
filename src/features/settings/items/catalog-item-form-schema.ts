@@ -1,11 +1,16 @@
 import { err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
 
-import { decimalAmountToMinorUnits } from "@/core/modules/shared/money.ts"
+import {
+  decimalAmountToMinorUnits,
+  minorUnitsToDecimalString,
+} from "@/core/modules/shared/money.ts"
 import {
   type FiatCurrency,
+  Integer,
   NonEmptyString255Schema,
   NonNegativeInteger,
+  NonNegativeIntegerSchema,
 } from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -48,6 +53,24 @@ const createPriceSchema = (currency: FiatCurrency) =>
     }
 
     return NonNegativeInteger(minorUnits)
+  })
+
+/**
+ * The same price rule as a codec, for the inline-edit field: minor units in
+ * the row, the decimal string the input shows. Built per currency for the
+ * same reason `createPriceSchema` is.
+ *
+ * The output side is the plain integer schema rather than
+ * `createPriceSchema`, because `z.encode` runs the output schema backwards
+ * and a `.transform()` has no backwards. `NaN` stands in for an amount
+ * `decimalAmountToMinorUnits` rejected; the schema turns it into the issue.
+ */
+export const createPriceCodec = (currency: FiatCurrency) =>
+  z.codec(z.string(), NonNegativeIntegerSchema, {
+    decode: (value) =>
+      decimalAmountToMinorUnits({ currency, value }) ?? Number.NaN,
+    encode: (value) =>
+      minorUnitsToDecimalString({ value: Integer(value), currency }),
   })
 
 const createCatalogItemFormSchema = (currency: FiatCurrency) =>

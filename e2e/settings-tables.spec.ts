@@ -50,6 +50,16 @@ test("create, edit and delete a table", async ({ seededPage: page }) => {
     await expect(tableRow).toContainText("4")
   })
 
+  const nameInput = page.getByRole("textbox", {
+    name: translate("en", "settings.tables.form.name.label"),
+  })
+  const seatCountInput = page.getByRole("textbox", {
+    name: translate("en", "settings.tables.form.seatCount.label"),
+  })
+  const saveButton = page.getByRole("button", {
+    name: translate("en", "inlineEdit.save"),
+  })
+
   await test.step("edit the table and see a generated code", async () => {
     await tableRow.click()
     await page
@@ -58,9 +68,6 @@ test("create, edit and delete a table", async ({ seededPage: page }) => {
       })
       .waitFor()
 
-    const nameInput = page.getByRole("textbox", {
-      name: translate("en", "settings.tables.form.name.label"),
-    })
     await expect(nameInput).toHaveValue("Patio 1")
 
     const codeInput = page.getByRole("textbox", {
@@ -71,20 +78,44 @@ test("create, edit and delete a table", async ({ seededPage: page }) => {
     )
     await expect(codeInput).toBeDisabled()
 
+    // Each field saves itself; there is no submit button.
     await nameInput.fill("Patio 2")
-    await page
-      .getByRole("textbox", {
-        name: translate("en", "settings.tables.form.seatCount.label"),
-      })
-      .fill("6")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.tables.form.save.edit"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.tables.form.saved.edit"))
-      .waitFor()
+    await nameInput.press("Enter")
+  })
+
+  await test.step("an edit holds focus until it is finished", async () => {
+    await seatCountInput.fill("6")
+
+    // Clicking away is refused: focus stays put and nothing is saved yet.
+    await nameInput.click()
+    await expect(seatCountInput).toBeFocused()
+
+    await saveButton.click()
+    await expect(saveButton).toBeHidden()
+
+    const savedTick = page.getByLabel(translate("en", "inlineEdit.saved"))
+    await expect(savedTick).toBeVisible()
+    // It fades back out on its own.
+    await expect(savedTick).toHaveCount(0, { timeout: 5_000 })
+  })
+
+  await test.step("an invalid value is rejected and can be discarded", async () => {
+    const seatCountError = page.getByText(
+      translate("en", "settings.tables.form.seatCount.invalid")
+    )
+    await seatCountInput.fill("0")
+
+    // A refused click away says why, rather than only blinking.
+    await nameInput.click()
+    await expect(seatCountError).toBeVisible()
+    await expect(seatCountInput).toBeFocused()
+
+    await saveButton.click()
+    await expect(seatCountError).toBeVisible()
+
+    // Escape drops the draft and the field falls back to the stored value.
+    await seatCountInput.press("Escape")
+    await expect(seatCountInput).toHaveValue("6")
   })
 
   await test.step("verify the edit persists after reload", async () => {

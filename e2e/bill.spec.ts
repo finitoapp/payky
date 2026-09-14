@@ -9,6 +9,7 @@ import {
 import { startCollisionBill } from "./support/collisions.ts"
 import { expect, screenshotDir, test } from "./support/fixtures.ts"
 import { nameParam, translate, translateValue } from "./support/i18n.ts"
+import { fillInlineField } from "./support/inline-edit.ts"
 import {
   gotoPage,
   gotoPosOverview,
@@ -341,19 +342,13 @@ test("decrements a saved item after its catalog snapshot changes", async ({
   await test.step("edit the catalog price", async () => {
     await gotoPage(page, "/settings/items", "en", "settings.items.title")
     await page.getByRole("link", { name: "Coffee" }).click()
-    await page
-      .getByRole("textbox", {
+    await fillInlineField(
+      page,
+      page.getByRole("textbox", {
         name: translate("en", "settings.items.form.price.label"),
-      })
-      .fill("6")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.items.form.save.edit"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.items.form.saved.edit"))
-      .waitFor()
+      }),
+      "6"
+    )
   })
 
   await test.step("resume the cart and remove its old snapshot", async () => {

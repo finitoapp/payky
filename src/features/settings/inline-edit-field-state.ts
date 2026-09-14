@@ -37,6 +37,18 @@ export type InlineEditAction =
 export const inlineEditInitialState: InlineEditState = { status: "idle" }
 
 /**
+ * Edit mode entered before the user typed anything, for a field a caller
+ * mounts *as* an editor. Being in edit mode is that field's premise, so it
+ * holds the focus from the start rather than from the first keystroke.
+ */
+export const inlineEditStartedState = (draft: string): InlineEditState => ({
+  status: "editing",
+  draft,
+  invalid: false,
+  blinking: false,
+})
+
+/**
  * Actions that do not apply to the current status are ignored rather than
  * throwing: a late `blinkEnd` from an animation whose element has already
  * been re-rendered is normal, not a bug.

@@ -32,6 +32,8 @@ import {
   decimalStringToTaxRatePercentage,
   taxRatePercentageToDecimalString,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
+import { requiredTextCodec } from "@/features/settings/inline-edit-codecs.ts"
+import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -100,74 +102,30 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
   const appRun = useAppRun()
   const confirm = useConfirmDialog()
   const { t } = useTranslation()
-  const nameInputId = useId()
   const isArchived = taxRate.deactivatedAt !== null
   const [editing, setEditing] = useState(false)
-  const [name, setName] = useState<string>(taxRate.name)
-  const [nameError, setNameError] = useState<TranslationKey | null>(null)
   const [pending, setPending] = useState(false)
 
-  const saveName = async () => {
-    const trimmed = name.trim()
-    const result = NonEmptyString255Schema.safeParse(trimmed)
-    if (!result.success) {
-      setNameError("settings.taxRates.name.invalid")
-      return
-    }
-
-    setPending(true)
-    try {
-      await using run = appRun()
-      await run(renameTaxRate({ id: taxRate.id, name: result.data }))
-      setEditing(false)
-    } finally {
-      setPending(false)
-    }
-  }
-
   if (editing) {
+    // The label is the field's accessible name only: the row around it
+    // already says which rate this is.
     return (
-      <div className="flex items-center gap-2 px-3 py-2">
-        <Field className="flex-1" data-invalid={nameError !== null}>
-          <Input
-            id={nameInputId}
-            value={name}
-            disabled={pending}
-            aria-invalid={nameError !== null}
-            aria-label={t("settings.taxRates.rename.input", {
-              name: taxRate.name,
-            })}
-            autoComplete="off"
-            onChange={(event) => {
-              setName(event.currentTarget.value)
-              setNameError(null)
-            }}
-          />
-          <FieldError>{nameError ? t(nameError) : null}</FieldError>
-        </Field>
-        <Button
-          type="button"
-          size="sm"
-          disabled={pending}
-          onClick={() => {
-            void saveName()
+      <div className="px-3 py-2">
+        <InlineEditField
+          hideLabel
+          startEditing
+          label={t("settings.taxRates.rename.input", { name: taxRate.name })}
+          defaultValue={taxRate.name}
+          codec={requiredTextCodec}
+          errorKey="settings.taxRates.name.invalid"
+          onSave={async (name) => {
+            await using run = appRun()
+            await run(renameTaxRate({ id: taxRate.id, name }))
           }}
-        >
-          {t("settings.taxRates.rename.save")}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={pending}
-          onClick={() => {
-            setName(taxRate.name)
-            setNameError(null)
+          onEditFinished={() => {
             setEditing(false)
           }}
-        >
-          {t("settings.taxRates.rename.cancel")}
-        </Button>
+        />
       </div>
     )
   }

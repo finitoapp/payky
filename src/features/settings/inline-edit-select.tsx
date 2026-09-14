@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { useId, useState } from "react"
+import { useId } from "react"
 import { z } from "zod"
 
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field.tsx"
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select.tsx"
 import {
   InlineEditSavedTick,
-  useInlineSave,
+  useInlineChoice,
 } from "@/features/settings/inline-edit-save.tsx"
 
 interface InlineEditSelectOption {
@@ -24,8 +24,12 @@ interface InlineEditSelectOption {
 interface InlineEditSelectProps<T extends string | number | null> {
   readonly label: string
   readonly description?: ReactNode
-  /** Current stored value. Re-renders flow straight through while idle. */
-  readonly defaultValue: T
+  /**
+   * Current stored value, or `undefined` when the row does not exist yet —
+   * the select then shows `placeholder` instead of an option.
+   */
+  readonly defaultValue: T | undefined
+  readonly placeholder?: string
   /** See `InlineEditField`; the option values are this codec's input side. */
   readonly codec: z.core.$ZodType<T, string>
   readonly options: ReadonlyArray<InlineEditSelectOption>
@@ -45,29 +49,28 @@ export function InlineEditSelect<T extends string | number | null>({
   label,
   description,
   defaultValue,
+  placeholder,
   codec,
   options,
   onSave,
 }: InlineEditSelectProps<T>) {
   const id = useId()
-  const { justSaved, save } = useInlineSave(onSave)
-  // Holds the picked option until the save lands, so the select never flashes
-  // the stored value back between choosing and Evolu catching up — and, being
-  // set for exactly that window, it is also what "a save is in flight" means.
-  const [picked, setPicked] = useState<string | null>(null)
-  const saving = picked !== null
+  // The unset case is only ever a starting point: `choose` is called with a
+  // decoded option, so `undefined` never reaches `onSave`.
+  const { value, saving, justSaved, choose } = useInlineChoice<T | undefined>(
+    defaultValue,
+    async (next) => {
+      if (next !== undefined) await onSave(next)
+    }
+  )
 
-  const handleValueChange = async (next: string | null) => {
+  const handleValueChange = (next: string | null) => {
     if (next === null) return
 
     // Every option value comes from `options`, so this cannot realistically
     // fail; a decode error here is a wrong codec, not bad user input.
     const parsed = z.safeDecode(codec, next)
-    if (!parsed.success || parsed.data === defaultValue) return
-
-    setPicked(next)
-    await save(parsed.data)
-    setPicked(null)
+    if (parsed.success) void choose(parsed.data)
   }
 
   return (
@@ -78,10 +81,8 @@ export function InlineEditSelect<T extends string | number | null>({
           items={Object.fromEntries(
             options.map((option) => [option.value, option.label])
           )}
-          value={picked ?? z.encode(codec, defaultValue)}
-          onValueChange={(next) => {
-            void handleValueChange(next)
-          }}
+          value={value === undefined ? null : z.encode(codec, value)}
+          onValueChange={handleValueChange}
         >
           <SelectTrigger
             id={id}
@@ -90,7 +91,7 @@ export function InlineEditSelect<T extends string | number | null>({
             // wrapper the tick is positioned against, not the trigger.
             className="w-full"
           >
-            <SelectValue />
+            <SelectValue placeholder={placeholder} />
             {/* Room for the tick between the value and the trigger's own
                 chevron. Padding would move the chevron along with it. */}
             {justSaved && <span aria-hidden className="w-6 shrink-0" />}

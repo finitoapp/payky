@@ -1,6 +1,7 @@
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
-import { gotoPage } from "./support/navigation.ts"
+import { fillInlineField } from "./support/inline-edit.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("save Fio settings and add a token, in either order", async ({
   seededPage: page,
@@ -37,8 +38,8 @@ test("save Fio settings and add a token, in either order", async ({
   })
   page.on("pageerror", (error) => consoleErrors.push(String(error)))
 
-  const save = page.getByRole("button", {
-    name: translate("en", "settings.fioPlugin.save"),
+  const intervalField = page.getByRole("textbox", {
+    name: translate("en", "settings.fioPlugin.interval.label"),
   })
   const tokenField = page.getByLabel(
     translate("en", "settings.fioPlugin.token.label")
@@ -55,9 +56,9 @@ test("save Fio settings and add a token, in either order", async ({
       "settings.fioPlugin.title"
     )
 
-    // The plugin id is fixed, so there is one Save button rather than a
-    // create-then-edit flow, and tokens are reachable straight away.
-    await expect(save).toBeVisible()
+    // The plugin id is fixed, so the settings are editable straight away
+    // rather than through a create-then-edit flow, and so are the tokens.
+    await expect(intervalField).toBeVisible()
     await expect(tokenField).toBeVisible()
   })
 
@@ -71,13 +72,15 @@ test("save Fio settings and add a token, in either order", async ({
     await expect(tokenRows).toHaveCount(1)
   })
 
-  await test.step("save the settings without touching the token", async () => {
-    await save.click()
-    await expect(
-      page.getByText(translate("en", "settings.fioPlugin.saved"))
-    ).toBeVisible()
+  await test.step("save a setting without touching the token", async () => {
+    await fillInlineField(page, intervalField, "45")
     // The token is neither duplicated nor rewritten by an unrelated save.
     await expect(tokenRows).toHaveCount(1)
+  })
+
+  await test.step("the setting survives a reload", async () => {
+    await reloadPage(page, "en", "settings.fioPlugin.title")
+    await expect(intervalField).toHaveValue("45")
   })
 
   expect(consoleErrors).toEqual([])

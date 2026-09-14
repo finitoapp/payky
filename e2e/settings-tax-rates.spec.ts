@@ -80,16 +80,24 @@ test("create, set default, rename, archive and reactivate a tax rate", async ({
         name: nameParam("settings.taxRates.rename", "Reduced rate"),
       })
       .click()
+    const nameInput = page.getByRole("textbox", {
+      name: nameParam("settings.taxRates.rename.input", "Reduced rate"),
+    })
+
+    // The row opened the editor, so the field holds the focus from the
+    // start rather than from the first keystroke.
+    await expect(nameInput).toBeFocused()
     await page
-      .getByRole("textbox", {
-        name: nameParam("settings.taxRates.rename.input", "Reduced rate"),
-      })
-      .fill("Reduced VAT rate")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.taxRates.rename.save"),
+      .getByRole("heading", {
+        name: translate("en", "settings.taxRates.title"),
       })
       .click()
+    await expect(nameInput).toBeFocused()
+
+    // The row closes itself once the field saves, so the renamed row text is
+    // the signal rather than the field's own tick.
+    await nameInput.fill("Reduced VAT rate")
+    await nameInput.press("Enter")
     await expect(page.getByText("Reduced VAT rate")).toBeVisible()
   })
 
@@ -405,16 +413,11 @@ test("renaming a tax rate updates its already-assigned item", async ({
         name: nameParam("settings.taxRates.rename", "Standard rate"),
       })
       .click()
-    await page
-      .getByRole("textbox", {
-        name: nameParam("settings.taxRates.rename.input", "Standard rate"),
-      })
-      .fill("Basic rate")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.taxRates.rename.save"),
-      })
-      .click()
+    const nameInput = page.getByRole("textbox", {
+      name: nameParam("settings.taxRates.rename.input", "Standard rate"),
+    })
+    await nameInput.fill("Basic rate")
+    await nameInput.press("Enter")
     await expect(page.getByText("Basic rate")).toBeVisible()
   })
 

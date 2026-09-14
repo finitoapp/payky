@@ -2,7 +2,7 @@ import { Capacitor } from "@capacitor/core"
 import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { format, subDays } from "date-fns"
 import { Plus, Trash2, TriangleAlert } from "lucide-react"
-import { useEffect, useId, useState } from "react"
+import { useId, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
@@ -20,16 +20,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { Checkbox } from "@/components/ui/checkbox.tsx"
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { Input } from "@/components/ui/input.tsx"
 import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import {
   addFioPluginToken,
@@ -48,8 +45,14 @@ import {
   type DateString,
   DateStringSchema,
   NonEmptyString255Schema,
-  PositiveIntegerFromStringSchema,
+  PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
+import {
+  dateCodec,
+  positiveIntegerCodec,
+} from "@/features/settings/inline-edit-codecs.ts"
+import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -57,8 +60,8 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-const defaultNumberOfSecondsBetweenChecks = "30"
-const defaultSyncLookbackDays = "1"
+const defaultNumberOfSecondsBetweenChecks = 30
+const defaultSyncLookbackDays = 1
 const getDefaultLastSyncedDate = (): DateString =>
   DateStringSchema.decode(format(subDays(new Date(), 1), "yyyy-MM-dd"))
 
@@ -127,202 +130,97 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const { data: pointers } = useEvoluQuery(pointerQuery)
   const [pointer] = pointers
   const lastSyncedDate = pointer?.lastSyncedDate ?? getDefaultLastSyncedDate()
-  const formId = useId()
-  const [isActive, setIsActive] = useState(false)
-  const [numberOfSecondsBetweenChecks, setNumberOfSecondsBetweenChecks] =
-    useState(defaultNumberOfSecondsBetweenChecks)
-  const [syncLookbackDays, setSyncLookbackDays] = useState(
-    defaultSyncLookbackDays
-  )
-  const [editableLastSyncedDate, setEditableLastSyncedDate] = useState<string>(
-    getDefaultLastSyncedDate
-  )
-  const [intervalError, setIntervalError] = useState<TranslationKey | null>(
-    null
-  )
-  const [syncLookbackDaysError, setSyncLookbackDaysError] =
-    useState<TranslationKey | null>(null)
-  const [lastSyncedDateError, setLastSyncedDateError] =
-    useState<TranslationKey | null>(null)
-  const { pending, saved, resetSaved, submit } = useSettingsForm()
 
-  useEffect(() => {
-    setIsActive(plugin?.isActive === sqliteTrue)
-    setNumberOfSecondsBetweenChecks(
-      plugin?.numberOfSecondsBetweenChecks.toString() ??
-        defaultNumberOfSecondsBetweenChecks
+  const isActive = isNativeRuntime && plugin?.isActive === sqliteTrue
+  const numberOfSecondsBetweenChecks = PositiveInteger(
+    plugin?.numberOfSecondsBetweenChecks ?? defaultNumberOfSecondsBetweenChecks
+  )
+  const syncLookbackDays = PositiveInteger(
+    plugin?.syncLookbackDays ?? defaultSyncLookbackDays
+  )
+
+  /**
+   * `saveFioPlugin` upserts the whole row, so a partial save would reset the
+   * fields it leaves out. Each control sends the current settings with its
+   * own field replaced.
+   */
+  const savePlugin = async (changed: {
+    readonly isActive?: boolean
+    readonly numberOfSecondsBetweenChecks?: PositiveInteger
+    readonly syncLookbackDays?: PositiveInteger
+  }) => {
+    await using run = appRun()
+    await run.ok(
+      saveFioPlugin({
+        accountId: fiatBankAccountId,
+        numberOfSecondsBetweenChecks:
+          changed.numberOfSecondsBetweenChecks ?? numberOfSecondsBetweenChecks,
+        syncLookbackDays: changed.syncLookbackDays ?? syncLookbackDays,
+        isActive: (changed.isActive ?? isActive) ? sqliteTrue : sqliteFalse,
+      })
     )
-    setSyncLookbackDays(
-      plugin?.syncLookbackDays?.toString() ?? defaultSyncLookbackDays
-    )
-    setEditableLastSyncedDate(lastSyncedDate)
-  }, [plugin, lastSyncedDate])
+  }
 
   return (
-    <SettingsFormCard
-      title={t("settings.fioPlugin.form.title")}
-      description={t("settings.fioPlugin.form.description")}
-      savedMessage={saved ? t("settings.fioPlugin.saved") : null}
-      submitLabel={
-        <>
-          <Plus data-icon="inline-start" />
-          {t("settings.fioPlugin.save")}
-        </>
-      }
-      pending={pending}
-      onSubmit={(event) => {
-        event.preventDefault()
-        setIntervalError(null)
-        setSyncLookbackDaysError(null)
-        setLastSyncedDateError(null)
-        resetSaved()
-
-        const intervalResult = PositiveIntegerFromStringSchema.safeParse(
-          numberOfSecondsBetweenChecks.trim()
-        )
-        const syncLookbackDaysResult =
-          PositiveIntegerFromStringSchema.safeParse(syncLookbackDays.trim())
-        const normalizedLastSyncedDate = editableLastSyncedDate.trim()
-        const lastSyncedDateResult = DateStringSchema.safeParse(
-          normalizedLastSyncedDate
-        )
-
-        if (!intervalResult.success) {
-          setIntervalError("settings.fioPlugin.interval.invalid")
-          return
-        }
-
-        if (!syncLookbackDaysResult.success) {
-          setSyncLookbackDaysError(
-            "settings.fioPlugin.syncLookbackDays.invalid"
-          )
-          return
-        }
-
-        if (!lastSyncedDateResult.success) {
-          setLastSyncedDateError("settings.fioPlugin.lastSyncedDate.invalid")
-          return
-        }
-
-        void submit(async () => {
-          await using run = appRun()
-
-          // One path whether or not the row exists yet: the plugin is a
-          // singleton at a fixed id, so `saveFioPlugin` upserts it and this
-          // form never has to know which case it is in.
-          await run.ok(
-            saveFioPlugin({
-              accountId: fiatBankAccountId,
-              numberOfSecondsBetweenChecks: intervalResult.data,
-              syncLookbackDays: syncLookbackDaysResult.data,
-              isActive: isNativeRuntime && isActive ? sqliteTrue : sqliteFalse,
-            })
-          )
-          await run.ok(
-            updateFioPluginSyncPointer({
-              id: fioPluginId,
-              lastSyncedDate: lastSyncedDateResult.data,
-            })
-          )
-        })
-      }}
-    >
-      <FieldGroup>
-        <Field orientation="horizontal">
-          <Checkbox
-            id={`${formId}-active`}
-            checked={isNativeRuntime && isActive}
-            disabled={pending || !isNativeRuntime}
-            onCheckedChange={(checked) => {
-              setIsActive(checked)
-              resetSaved()
-            }}
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.fioPlugin.form.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.fioPlugin.form.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditCheckbox
+            label={t("settings.fioPlugin.active.label")}
+            description={t("settings.fioPlugin.active.description")}
+            defaultValue={isActive}
+            disabled={!isNativeRuntime}
+            onSave={(nextIsActive) => savePlugin({ isActive: nextIsActive })}
           />
-          <FieldContent>
-            <FieldLabel htmlFor={`${formId}-active`}>
-              {t("settings.fioPlugin.active.label")}
-            </FieldLabel>
-            <FieldDescription>
-              {t("settings.fioPlugin.active.description")}
-            </FieldDescription>
-          </FieldContent>
-        </Field>
 
-        <Field data-invalid={intervalError !== null}>
-          <FieldLabel htmlFor={`${formId}-interval`}>
-            {t("settings.fioPlugin.interval.label")}
-          </FieldLabel>
-          <Input
-            id={`${formId}-interval`}
-            value={numberOfSecondsBetweenChecks}
-            disabled={pending}
-            aria-invalid={intervalError !== null}
+          <InlineEditField
+            label={t("settings.fioPlugin.interval.label")}
+            description={t("settings.fioPlugin.interval.description")}
             inputMode="numeric"
-            min={1}
-            type="number"
-            onChange={(event) => {
-              setNumberOfSecondsBetweenChecks(event.currentTarget.value)
-              setIntervalError(null)
-              resetSaved()
-            }}
+            defaultValue={numberOfSecondsBetweenChecks}
+            codec={positiveIntegerCodec}
+            errorKey="settings.fioPlugin.interval.invalid"
+            onSave={(next) =>
+              savePlugin({ numberOfSecondsBetweenChecks: next })
+            }
           />
-          <FieldDescription>
-            {t("settings.fioPlugin.interval.description")}
-          </FieldDescription>
-          <FieldError>{intervalError ? t(intervalError) : null}</FieldError>
-        </Field>
 
-        <Field data-invalid={syncLookbackDaysError !== null}>
-          <FieldLabel htmlFor={`${formId}-syncLookbackDays`}>
-            {t("settings.fioPlugin.syncLookbackDays.label")}
-          </FieldLabel>
-          <Input
-            id={`${formId}-syncLookbackDays`}
-            value={syncLookbackDays}
-            disabled={pending}
-            aria-invalid={syncLookbackDaysError !== null}
+          <InlineEditField
+            label={t("settings.fioPlugin.syncLookbackDays.label")}
+            description={t("settings.fioPlugin.syncLookbackDays.description")}
             inputMode="numeric"
-            min={1}
-            type="number"
-            onChange={(event) => {
-              setSyncLookbackDays(event.currentTarget.value)
-              setSyncLookbackDaysError(null)
-              resetSaved()
-            }}
+            defaultValue={syncLookbackDays}
+            codec={positiveIntegerCodec}
+            errorKey="settings.fioPlugin.syncLookbackDays.invalid"
+            onSave={(next) => savePlugin({ syncLookbackDays: next })}
           />
-          <FieldDescription>
-            {t("settings.fioPlugin.syncLookbackDays.description")}
-          </FieldDescription>
-          <FieldError>
-            {syncLookbackDaysError ? t(syncLookbackDaysError) : null}
-          </FieldError>
-        </Field>
 
-        <Field data-invalid={lastSyncedDateError !== null}>
-          <FieldLabel htmlFor={`${formId}-lastSyncedDate`}>
-            {t("settings.fioPlugin.lastSyncedDate.label")}
-          </FieldLabel>
-          <Input
-            id={`${formId}-lastSyncedDate`}
-            value={editableLastSyncedDate}
-            disabled={pending}
-            aria-invalid={lastSyncedDateError !== null}
+          <InlineEditField
+            label={t("settings.fioPlugin.lastSyncedDate.label")}
+            description={t("settings.fioPlugin.lastSyncedDate.description")}
             type="date"
-            onChange={(event) => {
-              setEditableLastSyncedDate(event.currentTarget.value)
-              setLastSyncedDateError(null)
-              resetSaved()
+            defaultValue={lastSyncedDate}
+            codec={dateCodec}
+            errorKey="settings.fioPlugin.lastSyncedDate.invalid"
+            onSave={async (nextLastSyncedDate) => {
+              await using run = appRun()
+              await run.ok(
+                updateFioPluginSyncPointer({
+                  id: fioPluginId,
+                  lastSyncedDate: nextLastSyncedDate,
+                })
+              )
             }}
           />
-          <FieldDescription>
-            {t("settings.fioPlugin.lastSyncedDate.description")}
-          </FieldDescription>
-          <FieldError>
-            {lastSyncedDateError ? t(lastSyncedDateError) : null}
-          </FieldError>
-        </Field>
-      </FieldGroup>
-    </SettingsFormCard>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }
 

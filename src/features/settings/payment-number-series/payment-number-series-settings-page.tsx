@@ -1,29 +1,31 @@
 import { ReceiptText } from "lucide-react"
-import { useEffect, useId, useMemo, useState } from "react"
+import { useMemo } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
+import type { OptionToggleGroupOption } from "@/components/option-toggle-group.tsx"
 import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field.tsx"
-import { Input } from "@/components/ui/input.tsx"
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
+import { FieldGroup } from "@/components/ui/field.tsx"
 import { updatePaymentLastNumber } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentLastNumberQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import type { PaymentNumberSeriesRow } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import { updatePaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import { paymentNumberSeriesQuery } from "@/core/modules/payment-number-series/payment-number-series-queries.ts"
 import { createDefaultPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-utils.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
-  DateStringSchema,
-  NonEmptyString255Schema,
-  NonNegativeIntegerFromStringSchema,
-  PositiveIntegerFromStringSchema,
-} from "@/core/modules/shared/schema.ts"
-import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+  nonNegativeIntegerCodec,
+  optionalDateCodec,
+  optionalTextCodec,
+  positiveIntegerCodec,
+} from "@/features/settings/inline-edit-codecs.ts"
+import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
+import { InlineEditToggleGroup } from "@/features/settings/inline-edit-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -78,60 +80,7 @@ const dayFormatOptions: ReadonlyArray<ToggleOption<DatePartFormat>> = [
 ]
 
 export function PaymentNumberSeriesSettingsPage() {
-  const appRun = useAppRun()
   const { t } = useTranslation()
-  const formId = useId()
-  const { data } = useEvoluQuery(paymentNumberSeriesQuery)
-  const { data: paymentLastNumbers } = useEvoluQuery(paymentLastNumberQuery)
-  const [storedSeries] = data
-  const [paymentLastNumber] = paymentLastNumbers
-  const series = useMemo(
-    () => storedSeries ?? createDefaultPaymentNumberSeries(),
-    [storedSeries]
-  )
-  const [prefix, setPrefix] = useState(series.prefix ?? "")
-  const [serialNumberDigits, setSerialNumberDigits] = useState(
-    String(series.serialNumberDigits)
-  )
-  const [lastSerialNumber, setLastSerialNumber] = useState(
-    paymentLastNumber === undefined
-      ? "0"
-      : String(paymentLastNumber.serialNumber)
-  )
-  const [lastNumberDate, setLastNumberDate] = useState(
-    paymentLastNumber?.date ?? ""
-  )
-  const [yearFormat, setYearFormat] = useState<YearFormat>(series.yearFormat)
-  const [monthFormat, setMonthFormat] = useState<DatePartFormat>(
-    series.monthFormat
-  )
-  const [dayFormat, setDayFormat] = useState<DatePartFormat>(series.dayFormat)
-  const [serialNumberDigitsError, setSerialNumberDigitsError] =
-    useState<TranslationKey | null>(null)
-  const [prefixError, setPrefixError] = useState<TranslationKey | null>(null)
-  const [lastSerialNumberError, setLastSerialNumberError] =
-    useState<TranslationKey | null>(null)
-  const [lastNumberDateError, setLastNumberDateError] =
-    useState<TranslationKey | null>(null)
-  const seriesForm = useSettingsForm()
-  const lastNumberForm = useSettingsForm()
-
-  useEffect(() => {
-    setPrefix(series.prefix ?? "")
-    setSerialNumberDigits(String(series.serialNumberDigits))
-    setYearFormat(series.yearFormat)
-    setMonthFormat(series.monthFormat)
-    setDayFormat(series.dayFormat)
-  }, [series])
-
-  useEffect(() => {
-    setLastSerialNumber(
-      paymentLastNumber === undefined
-        ? "0"
-        : String(paymentLastNumber.serialNumber)
-    )
-    setLastNumberDate(paymentLastNumber?.date ?? "")
-  }, [paymentLastNumber])
 
   return (
     <>
@@ -139,279 +88,169 @@ export function PaymentNumberSeriesSettingsPage() {
       <FadeHeader title={t("settings.paymentNumberSeries.title")} />
 
       <div className="flex flex-col gap-4">
-        <SettingsFormCard
-          title={t("settings.paymentNumberSeries.lastNumber.title")}
-          description={t("settings.paymentNumberSeries.lastNumber.description")}
-          savedMessage={
-            lastNumberForm.saved
-              ? t("settings.paymentNumberSeries.lastNumber.saved")
-              : null
-          }
-          submitLabel={t("settings.paymentNumberSeries.lastNumber.save")}
-          pending={lastNumberForm.pending}
-          onSubmit={(event) => {
-            event.preventDefault()
-            setLastSerialNumberError(null)
-            setLastNumberDateError(null)
-            lastNumberForm.resetSaved()
-
-            const serialNumberResult =
-              NonNegativeIntegerFromStringSchema.safeParse(lastSerialNumber)
-            const trimmedDate = lastNumberDate.trim()
-            const dateResult = trimmedDate
-              ? DateStringSchema.safeParse(trimmedDate)
-              : null
-
-            if (!serialNumberResult.success) {
-              setLastSerialNumberError(
-                "settings.paymentNumberSeries.lastNumber.serialNumber.invalid"
-              )
-              return
-            }
-
-            if (dateResult?.success === false) {
-              setLastNumberDateError(
-                "settings.paymentNumberSeries.lastNumber.date.invalid"
-              )
-              return
-            }
-
-            void lastNumberForm.submit(async () => {
-              await using run = appRun()
-
-              await run(
-                updatePaymentLastNumber({
-                  serialNumber: serialNumberResult.data,
-                  date: dateResult?.data ?? null,
-                })
-              )
-
-              setLastNumberDate(trimmedDate)
-            })
-          }}
-        >
-          <FieldGroup>
-            <Field data-invalid={lastSerialNumberError !== null}>
-              <FieldLabel htmlFor={`${formId}-lastSerialNumber`}>
-                {t(
-                  "settings.paymentNumberSeries.lastNumber.serialNumber.label"
-                )}
-              </FieldLabel>
-              <Input
-                id={`${formId}-lastSerialNumber`}
-                value={lastSerialNumber}
-                disabled={lastNumberForm.pending}
-                aria-invalid={lastSerialNumberError !== null}
-                autoComplete="off"
-                inputMode="numeric"
-                onChange={(event) => {
-                  setLastSerialNumber(event.currentTarget.value)
-                  setLastSerialNumberError(null)
-                  lastNumberForm.resetSaved()
-                }}
-              />
-              <FieldDescription>
-                {t(
-                  "settings.paymentNumberSeries.lastNumber.serialNumber.description"
-                )}
-              </FieldDescription>
-              <FieldError>
-                {lastSerialNumberError ? t(lastSerialNumberError) : null}
-              </FieldError>
-            </Field>
-
-            <Field data-invalid={lastNumberDateError !== null}>
-              <FieldLabel htmlFor={`${formId}-lastNumberDate`}>
-                {t("settings.paymentNumberSeries.lastNumber.date.label")}
-              </FieldLabel>
-              <Input
-                id={`${formId}-lastNumberDate`}
-                type="date"
-                value={lastNumberDate}
-                disabled={lastNumberForm.pending}
-                aria-invalid={lastNumberDateError !== null}
-                onChange={(event) => {
-                  setLastNumberDate(event.currentTarget.value)
-                  setLastNumberDateError(null)
-                  lastNumberForm.resetSaved()
-                }}
-              />
-              <FieldDescription>
-                {t("settings.paymentNumberSeries.lastNumber.date.description")}
-              </FieldDescription>
-              <FieldError>
-                {lastNumberDateError ? t(lastNumberDateError) : null}
-              </FieldError>
-            </Field>
-          </FieldGroup>
-        </SettingsFormCard>
-
-        <SettingsFormCard
-          title={t("settings.paymentNumberSeries.form.title")}
-          description={t("settings.paymentNumberSeries.form.description")}
-          savedMessage={
-            seriesForm.saved ? t("settings.paymentNumberSeries.saved") : null
-          }
-          submitLabel={t("settings.paymentNumberSeries.save")}
-          pending={seriesForm.pending}
-          onSubmit={(event) => {
-            event.preventDefault()
-            setSerialNumberDigitsError(null)
-            setPrefixError(null)
-            seriesForm.resetSaved()
-
-            const serialNumberDigitsResult =
-              PositiveIntegerFromStringSchema.safeParse(serialNumberDigits)
-            const trimmedPrefix = prefix.trim()
-            const prefixResult = trimmedPrefix
-              ? NonEmptyString255Schema.safeParse(trimmedPrefix)
-              : null
-
-            if (!serialNumberDigitsResult.success) {
-              setSerialNumberDigitsError(
-                "settings.paymentNumberSeries.serialNumberDigits.invalid"
-              )
-              return
-            }
-
-            if (prefixResult?.success === false) {
-              setPrefixError("settings.paymentNumberSeries.prefix.invalid")
-              return
-            }
-
-            void seriesForm.submit(async () => {
-              await using run = appRun()
-
-              await run(
-                updatePaymentNumberSeries({
-                  serialNumberDigits: serialNumberDigitsResult.data,
-                  yearFormat,
-                  monthFormat,
-                  dayFormat,
-                  prefix: prefixResult?.data ?? null,
-                })
-              )
-
-              setPrefix(trimmedPrefix)
-            })
-          }}
-        >
-          <FieldGroup>
-            <Field data-invalid={serialNumberDigitsError !== null}>
-              <FieldLabel htmlFor={`${formId}-serialNumberDigits`}>
-                {t("settings.paymentNumberSeries.serialNumberDigits.label")}
-              </FieldLabel>
-              <Input
-                id={`${formId}-serialNumberDigits`}
-                value={serialNumberDigits}
-                disabled={seriesForm.pending}
-                aria-invalid={serialNumberDigitsError !== null}
-                autoComplete="off"
-                inputMode="numeric"
-                onChange={(event) => {
-                  setSerialNumberDigits(event.currentTarget.value)
-                  setSerialNumberDigitsError(null)
-                  seriesForm.resetSaved()
-                }}
-              />
-              <FieldDescription>
-                {t(
-                  "settings.paymentNumberSeries.serialNumberDigits.description"
-                )}
-              </FieldDescription>
-              <FieldError>
-                {serialNumberDigitsError ? t(serialNumberDigitsError) : null}
-              </FieldError>
-            </Field>
-
-            <Field data-invalid={prefixError !== null}>
-              <FieldLabel htmlFor={`${formId}-prefix`}>
-                {t("settings.paymentNumberSeries.prefix.label")}
-              </FieldLabel>
-              <Input
-                id={`${formId}-prefix`}
-                value={prefix}
-                disabled={seriesForm.pending}
-                aria-invalid={prefixError !== null}
-                autoComplete="off"
-                onChange={(event) => {
-                  setPrefix(event.currentTarget.value)
-                  setPrefixError(null)
-                  seriesForm.resetSaved()
-                }}
-              />
-              <FieldDescription>
-                {t("settings.paymentNumberSeries.prefix.description")}
-              </FieldDescription>
-              <FieldError>{prefixError ? t(prefixError) : null}</FieldError>
-            </Field>
-
-            <DateFormatField
-              title={t("settings.paymentNumberSeries.year.label")}
-              value={yearFormat}
-              options={yearFormatOptions}
-              disabled={seriesForm.pending}
-              onValueChange={(value) => {
-                setYearFormat(value)
-                seriesForm.resetSaved()
-              }}
-            />
-            <DateFormatField
-              title={t("settings.paymentNumberSeries.month.label")}
-              value={monthFormat}
-              options={monthFormatOptions}
-              disabled={seriesForm.pending}
-              onValueChange={(value) => {
-                setMonthFormat(value)
-                seriesForm.resetSaved()
-              }}
-            />
-            <DateFormatField
-              title={t("settings.paymentNumberSeries.day.label")}
-              value={dayFormat}
-              options={dayFormatOptions}
-              disabled={seriesForm.pending}
-              onValueChange={(value) => {
-                setDayFormat(value)
-                seriesForm.resetSaved()
-              }}
-            />
-          </FieldGroup>
-        </SettingsFormCard>
+        <LastNumberCard />
+        <SeriesFormatCard />
       </div>
     </>
   )
 }
 
-function DateFormatField<Value extends string>({
-  title,
-  value,
-  options,
-  disabled,
-  onValueChange,
-}: {
-  readonly title: string
-  readonly value: Value
-  readonly options: ReadonlyArray<ToggleOption<Value>>
-  readonly disabled: boolean
-  readonly onValueChange: (value: Value) => void
-}) {
+function LastNumberCard() {
+  const appRun = useAppRun()
   const { t } = useTranslation()
+  const { data } = useEvoluQuery(paymentLastNumberQuery)
+  const [paymentLastNumber] = data
+
+  const serialNumber = paymentLastNumber?.serialNumber ?? NonNegativeInteger(0)
+  const date = paymentLastNumber?.date ?? null
+
+  // `updatePaymentLastNumber` writes the whole row, so each field carries the
+  // other one along unchanged.
+  const save = async (values: {
+    readonly serialNumber: typeof serialNumber
+    readonly date: typeof date
+  }) => {
+    await using run = appRun()
+    await run(updatePaymentLastNumber(values))
+  }
 
   return (
-    <Field>
-      <FieldLabel>{title}</FieldLabel>
-      <OptionToggleGroup
-        value={value}
-        options={options.map((option) => ({
-          value: option.value,
-          icon: ReceiptText,
-          title: t(option.label),
-          description: t(option.description),
-        }))}
-        disabled={disabled}
-        onChange={onValueChange}
-      />
-    </Field>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {t("settings.paymentNumberSeries.lastNumber.title")}
+        </CardTitle>
+        <CardDescription>
+          {t("settings.paymentNumberSeries.lastNumber.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditField
+            label={t(
+              "settings.paymentNumberSeries.lastNumber.serialNumber.label"
+            )}
+            description={t(
+              "settings.paymentNumberSeries.lastNumber.serialNumber.description"
+            )}
+            inputMode="numeric"
+            defaultValue={serialNumber}
+            codec={nonNegativeIntegerCodec}
+            errorKey="settings.paymentNumberSeries.lastNumber.serialNumber.invalid"
+            onSave={(nextSerialNumber) =>
+              save({ serialNumber: nextSerialNumber, date })
+            }
+          />
+
+          <InlineEditField
+            label={t("settings.paymentNumberSeries.lastNumber.date.label")}
+            description={t(
+              "settings.paymentNumberSeries.lastNumber.date.description"
+            )}
+            type="date"
+            defaultValue={date}
+            codec={optionalDateCodec}
+            errorKey="settings.paymentNumberSeries.lastNumber.date.invalid"
+            onSave={(nextDate) => save({ serialNumber, date: nextDate })}
+          />
+        </FieldGroup>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SeriesFormatCard() {
+  const appRun = useAppRun()
+  const { t } = useTranslation()
+  const { data } = useEvoluQuery(paymentNumberSeriesQuery)
+  const [storedSeries] = data
+  const series = useMemo(
+    () => storedSeries ?? createDefaultPaymentNumberSeries(),
+    [storedSeries]
+  )
+
+  /**
+   * `updatePaymentNumberSeries` upserts the whole row over the defaults, so
+   * a partial save would reset every field it leaves out. Each control sends
+   * the current series with its own field replaced.
+   */
+  const save = async (changed: Partial<PaymentNumberSeriesRow>) => {
+    await using run = appRun()
+    await run(
+      updatePaymentNumberSeries({
+        serialNumberDigits: series.serialNumberDigits,
+        prefix: series.prefix,
+        yearFormat: series.yearFormat,
+        monthFormat: series.monthFormat,
+        dayFormat: series.dayFormat,
+        ...changed,
+      })
+    )
+  }
+
+  const toggleOptions = <Value extends string>(
+    options: ReadonlyArray<ToggleOption<Value>>
+  ): ReadonlyArray<OptionToggleGroupOption<Value>> =>
+    options.map((option) => ({
+      value: option.value,
+      icon: ReceiptText,
+      title: t(option.label),
+      description: t(option.description),
+    }))
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.paymentNumberSeries.form.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.paymentNumberSeries.form.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditField
+            label={t("settings.paymentNumberSeries.serialNumberDigits.label")}
+            description={t(
+              "settings.paymentNumberSeries.serialNumberDigits.description"
+            )}
+            inputMode="numeric"
+            defaultValue={series.serialNumberDigits}
+            codec={positiveIntegerCodec}
+            errorKey="settings.paymentNumberSeries.serialNumberDigits.invalid"
+            onSave={(serialNumberDigits) => save({ serialNumberDigits })}
+          />
+
+          <InlineEditField
+            label={t("settings.paymentNumberSeries.prefix.label")}
+            description={t("settings.paymentNumberSeries.prefix.description")}
+            defaultValue={series.prefix}
+            codec={optionalTextCodec}
+            errorKey="settings.paymentNumberSeries.prefix.invalid"
+            onSave={(prefix) => save({ prefix })}
+          />
+
+          <InlineEditToggleGroup
+            label={t("settings.paymentNumberSeries.year.label")}
+            defaultValue={series.yearFormat}
+            options={toggleOptions(yearFormatOptions)}
+            onSave={(yearFormat) => save({ yearFormat })}
+          />
+
+          <InlineEditToggleGroup
+            label={t("settings.paymentNumberSeries.month.label")}
+            defaultValue={series.monthFormat}
+            options={toggleOptions(monthFormatOptions)}
+            onSave={(monthFormat) => save({ monthFormat })}
+          />
+
+          <InlineEditToggleGroup
+            label={t("settings.paymentNumberSeries.day.label")}
+            defaultValue={series.dayFormat}
+            options={toggleOptions(dayFormatOptions)}
+            onSave={(dayFormat) => save({ dayFormat })}
+          />
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }

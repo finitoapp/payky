@@ -16,6 +16,7 @@ import {
   type InlineEditAction,
   inlineEditInitialState,
   inlineEditReducer,
+  inlineEditStartedState,
 } from "@/features/settings/inline-edit-field-state.ts"
 import {
   InlineEditSavedTick,
@@ -41,8 +42,21 @@ const adornmentPadding = {
 
 interface InlineEditFieldProps<T extends string | number | null> {
   readonly label: string
+  /**
+   * Keeps `label` as the accessible name but takes it off screen, for a
+   * field whose surroundings already say what it is — a row in a list.
+   */
+  readonly hideLabel?: boolean
+  /**
+   * Mounts the field already in edit mode and focused, for a caller that
+   * renders it only in response to an explicit "edit this" action. The focus
+   * is then held from the start, not from the first keystroke.
+   */
+  readonly startEditing?: boolean
   readonly description?: ReactNode
   readonly placeholder?: string
+  /** Only the native pickers we actually use; the codec handles the value. */
+  readonly type?: "text" | "date"
   readonly inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"]
   /** Current stored value. Re-renders flow straight through while idle. */
   readonly defaultValue: T
@@ -64,6 +78,11 @@ interface InlineEditFieldProps<T extends string | number | null> {
   readonly trailing?: ReactNode
   /** Rejects to report a failed save; the field toasts and shows no tick. */
   readonly onSave: (value: T) => Promise<void>
+  /**
+   * Called once the field is back to idle, whether the edit was saved or
+   * discarded. For a caller that mounts the field only while editing.
+   */
+  readonly onEditFinished?: () => void
 }
 
 /**
@@ -83,14 +102,18 @@ interface InlineEditFieldProps<T extends string | number | null> {
  */
 export function InlineEditField<T extends string | number | null>({
   label,
+  hideLabel,
+  startEditing,
   description,
   placeholder,
+  type,
   inputMode,
   defaultValue,
   codec,
   errorKey,
   trailing,
   onSave,
+  onEditFinished,
 }: InlineEditFieldProps<T>) {
   const { t } = useTranslation()
   const id = useId()
@@ -98,9 +121,10 @@ export function InlineEditField<T extends string | number | null>({
   // Idle means the field follows `defaultValue`, so a row changed elsewhere
   // (another device syncing) shows up on its own without an effect re-seeding
   // local state — and without overwriting an edit in progress.
-  const [state, dispatch] = useReducer(
-    inlineEditReducer,
-    inlineEditInitialState
+  const [state, dispatch] = useReducer(inlineEditReducer, null, () =>
+    startEditing === true
+      ? inlineEditStartedState(z.encode(codec, defaultValue))
+      : inlineEditInitialState
   )
   const { justSaved, save } = useInlineSave(onSave)
 
@@ -126,6 +150,11 @@ export function InlineEditField<T extends string | number | null>({
     inputRef.current?.blur()
   }
 
+  const discard = () => {
+    closeAndBlur({ type: "discard" })
+    onEditFinished?.()
+  }
+
   const commit = async () => {
     if (state.status !== "editing") return
 
@@ -136,13 +165,16 @@ export function InlineEditField<T extends string | number | null>({
     }
 
     if (parsed.data === defaultValue) {
-      closeAndBlur({ type: "discard" })
+      discard()
       return
     }
 
+    // The draft stays on screen until the save lands, so `onEditFinished`
+    // waits with it rather than closing over a half-written row.
     closeAndBlur({ type: "commit" })
     await save(parsed.data)
     dispatch({ type: "settle" })
+    onEditFinished?.()
   }
 
   /** Keeps a click on the buttons from blurring the input at all. */
@@ -152,7 +184,9 @@ export function InlineEditField<T extends string | number | null>({
 
   return (
     <Field data-invalid={editing && state.invalid}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id} className={hideLabel === true ? "sr-only" : ""}>
+        {label}
+      </FieldLabel>
       <div className="relative">
         <Input
           ref={inputRef}
@@ -168,6 +202,8 @@ export function InlineEditField<T extends string | number | null>({
           }
           aria-invalid={editing && state.invalid}
           autoComplete="off"
+          autoFocus={startEditing}
+          type={type}
           inputMode={inputMode}
           placeholder={placeholder}
           readOnly={saving}
@@ -195,7 +231,7 @@ export function InlineEditField<T extends string | number | null>({
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter") void commit()
-            if (event.key === "Escape") closeAndBlur({ type: "discard" })
+            if (event.key === "Escape") discard()
           }}
         />
         {adornment === "actions" && (
@@ -217,7 +253,7 @@ export function InlineEditField<T extends string | number | null>({
               size="icon"
               aria-label={t("inlineEdit.discard")}
               onMouseDown={keepFocus}
-              onClick={() => closeAndBlur({ type: "discard" })}
+              onClick={discard}
             >
               <XIcon />
             </Button>

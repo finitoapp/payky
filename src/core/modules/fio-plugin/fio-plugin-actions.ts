@@ -9,6 +9,7 @@ import {
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type {
   FioPluginRow,
   fioPlugin,
@@ -21,11 +22,16 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
+import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import {
   type DateString,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
-import { fioPluginByIdQuery } from "./fio-plugin-queries.ts"
+import {
+  fioPluginByIdQuery,
+  fioPluginSyncPointerByPluginIdQuery,
+  legacyFioPluginsQuery,
+} from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 import { fioPluginId } from "./fio-plugin-utils.ts"
 
@@ -90,6 +96,21 @@ export const saveFioPlugin =
     return ok(fioPluginId)
   }
 
+/**
+ * Token rows are addressed by their value rather than a generated id, so
+ * adding a token the plugin already has is a no-op instead of a second entry
+ * in the sync job's rotation. `migrateLegacyFioPlugins` derives the same id to
+ * re-key a legacy plugin's tokens onto `fioPluginId`.
+ */
+export const createFioPluginTokenId = ({
+  fioPluginId,
+  token,
+}: {
+  readonly fioPluginId: FioPluginId
+  readonly token: NonEmptyString255
+}): FioPluginTokenId =>
+  createIdFromString<"FioPluginToken">(`fioPluginToken:${fioPluginId}:${token}`)
+
 export const addFioPluginToken =
   ({
     fioPluginId,
@@ -100,9 +121,7 @@ export const addFioPluginToken =
   }): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const id = createIdFromString<"FioPluginToken">(
-      `fioPluginToken:${fioPluginId}:${token}`
-    )
+    const id = createFioPluginTokenId({ fioPluginId, token })
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
@@ -200,4 +219,112 @@ export const deleteFioPluginToken =
     )
 
     return ok(idValue)
+  }
+
+/**
+ * Re-points a Fio plugin left at a generated id onto the fixed `fioPluginId`.
+ *
+ * Before the plugin became a singleton, `createFioPlugin` minted a random id
+ * per row. Installs that configured the integration back then still hold that
+ * row, and their tokens and sync pointer are keyed to it — so the settings
+ * page, which reads the fixed id, showed no tokens at all and a save wrote a
+ * second plugin the sync job then ignored for having none. Evolu row ids are
+ * the CRDT's primary key, so the rows are copied across and the originals
+ * tombstoned rather than renamed.
+ *
+ * What wins where the two overlap:
+ *
+ * - Settings already at the fixed id stay. Reaching this with both rows
+ *   present means the user saved the form after updating, and that save is
+ *   newer than anything the legacy row still holds.
+ * - Tokens are adopted from *every* legacy row, since dropping one silently
+ *   revokes a working token. Their ids derive from the value, so a token the
+ *   fixed id already has collapses into the same row.
+ * - The sync pointer is adopted only if the fixed id has none, so an already
+ *   synced position is never rewound.
+ *
+ * Idempotent: `legacyFioPluginsQuery` is empty once this has run, so callers
+ * can drive it straight off that query.
+ */
+export const migrateLegacyFioPlugins =
+  (): Task<ReadonlyArray<FioPluginId>, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const legacyPlugins = await evolu.loadQuery(legacyFioPluginsQuery)
+    const [newestLegacy] = legacyPlugins
+    if (newestLegacy === undefined) return ok([])
+
+    const [current] = await evolu.loadQuery(fioPluginByIdQuery(fioPluginId))
+    const [currentPointer] = await evolu.loadQuery(
+      fioPluginSyncPointerByPluginIdQuery(fioPluginId)
+    )
+    const [legacyPointer] = await evolu.loadQuery(
+      fioPluginSyncPointerByPluginIdQuery(newestLegacy.id)
+    )
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+      if (current === undefined) {
+        evolu.upsert(
+          "fioPlugin",
+          removeUndefinedValues({
+            id: fioPluginId,
+            accountId: fiatBankAccountId,
+            numberOfSecondsBetweenChecks:
+              newestLegacy.numberOfSecondsBetweenChecks,
+            syncLookbackDays:
+              newestLegacy.syncLookbackDays ?? defaultFioPluginSyncLookbackDays,
+            isActive: newestLegacy.isActive,
+            isDeleted: sqliteFalse,
+          }),
+          mutationOptions
+        )
+      }
+
+      if (currentPointer === undefined && legacyPointer !== undefined) {
+        evolu.upsert(
+          "fioPluginSyncPointer",
+          {
+            id: fioPluginId,
+            lastSyncedDate: legacyPointer.lastSyncedDate,
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+      }
+
+      for (const plugin of legacyPlugins) {
+        for (const legacyToken of plugin.tokens) {
+          evolu.upsert(
+            "fioPluginToken",
+            {
+              id: createFioPluginTokenId({
+                fioPluginId,
+                token: legacyToken.token,
+              }),
+              fioPluginId,
+              token: legacyToken.token,
+              isDeleted: sqliteFalse,
+            },
+            mutationOptions
+          )
+          evolu.update(
+            "fioPluginToken",
+            { id: legacyToken.id, isDeleted: sqliteTrue },
+            mutationOptions
+          )
+        }
+
+        // The legacy sync pointer is left where it is: it is addressed by the
+        // plugin id that is going away, so nothing can read it again.
+        evolu.update(
+          "fioPlugin",
+          { id: plugin.id, isDeleted: sqliteTrue },
+          mutationOptions
+        )
+      }
+    })
+
+    return ok(legacyPlugins.map((plugin) => plugin.id))
   }

@@ -5,6 +5,7 @@ import { LoaderCircleIcon } from "lucide-react"
 import { Suspense, useEffect } from "react"
 import { AppBackgroundJobs } from "@/components/app/app-background-jobs.tsx"
 import { AppLoaderCleanup } from "@/components/app/app-loader-cleanup.tsx"
+import { AppMigrations } from "@/components/app/app-migrations.tsx"
 import { ConfirmDialogHost } from "@/components/app/confirm-dialog-host.tsx"
 import { AppErrorBoundary } from "@/components/app/error-boundary.tsx"
 import { NativeBackButtonHandler } from "@/components/app/native-back-button-handler.tsx"
@@ -86,7 +87,15 @@ export function App() {
                 errorComponent={AppEvoluConsumersFailed}
               >
                 <Suspense fallback={null}>
-                  <AppBackgroundJobs />
+                  {/*
+                   * Background jobs start behind the migrations, so no job
+                   * ever reads a half-migrated database. The test bridge
+                   * stays outside: it is how a test seeds the database in
+                   * the first place.
+                   */}
+                  <AppMigrations>
+                    <AppBackgroundJobs />
+                  </AppMigrations>
                   <E2eTestBridge />
                 </Suspense>
               </CatchBoundary>

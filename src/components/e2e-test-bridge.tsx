@@ -1,10 +1,14 @@
+import { sqliteFalse } from "@evolu/common"
 import { useEffect } from "react"
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
-import { cashRegisterAccountId } from "@/core/modules/account/account-utils.ts"
+import {
+  cashRegisterAccountId,
+  fiatBankAccountId,
+} from "@/core/modules/account/account-utils.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
@@ -30,13 +34,17 @@ import {
   claimManualReconciliation,
   reconcileAccountTransaction,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
   NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeInteger,
+  PositiveInteger,
   PositiveNumber,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -58,6 +66,7 @@ declare global {
     ) => Promise<void>
     __e2eCreateAndPaySecondPayment?: (billId: string) => Promise<void>
     __e2eCancelBill?: (billId: string) => Promise<void>
+    __e2eSeedLegacyFioPlugin?: () => Promise<void>
   }
 }
 
@@ -132,7 +141,17 @@ declare global {
  * UI). Confirming that same payment afterward produces the canceled+funded
  * bill collision `confirmBillClosedDespiteCancellation` resolves.
  *
- * All eight are dead code in any real production build: kept alive only in
+ * Also exposes `window.__e2eSeedLegacyFioPlugin`, which writes the row shape
+ * the versions before the Fio plugin became a singleton left behind: a
+ * `fioPlugin` at a generated id (rather than the fixed `fioPluginId`), with a
+ * token keyed to that same id. Written directly rather than through
+ * `saveFioPlugin`/`addFioPluginToken`, because those two now only ever write
+ * the fixed id — reproducing the old shape is the whole point. Gives
+ * `migrateLegacyFioPlugins` something to migrate, which is what
+ * `e2e/migrations.spec.ts` needs before the migration popup will appear at
+ * all.
+ *
+ * All nine are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -172,6 +191,39 @@ export function E2eTestBridge() {
           ),
         })
       )
+    }
+
+    window.__e2eSeedLegacyFioPlugin = async () => {
+      await using run = appRun()
+      const { evoluOwnerId } = run.deps
+      const legacyPluginId = createRowId<"FioPlugin">()
+
+      await runMutationWithCompletion((options) => {
+        const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+        run.deps.evolu.upsert(
+          "fioPlugin",
+          {
+            id: legacyPluginId,
+            accountId: fiatBankAccountId,
+            numberOfSecondsBetweenChecks: PositiveInteger(300),
+            syncLookbackDays: PositiveInteger(3),
+            isActive: sqliteFalse,
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+        run.deps.evolu.upsert(
+          "fioPluginToken",
+          {
+            id: createRowId<"FioPluginToken">(),
+            fioPluginId: legacyPluginId,
+            token: NonEmptyString255Schema.decode("e2e-legacy-fio-token-1234"),
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+      })
     }
 
     window.__e2eMarkSparkPaid = async (paymentIdValue) => {

@@ -28,6 +28,16 @@ export const enCommon = {
   "home.keypad.backspace": "Delete last digit",
   "home.keypad.decimal": "Decimal separator",
   "home.pay": "Pay",
+  "migration.close": "Close",
+  "migration.failed.description":
+    "Your data could not be updated. Restart the app to try again; your data has not been damaged.",
+  "migration.failed.title": "Update failed",
+  "migration.running.description":
+    "Payky is updating data saved by an earlier version. Keep the app open.",
+  "migration.running.title": "Updating data",
+  "migration.success.description":
+    "Data saved by an earlier version was updated successfully.",
+  "migration.success.title": "Data updated",
   "nav.activity": "Activity",
   "nav.back": "Back",
   "nav.numpad": "Keypad",

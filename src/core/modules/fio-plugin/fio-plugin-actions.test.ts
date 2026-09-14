@@ -10,7 +10,12 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   DateStringSchema,
@@ -23,6 +28,7 @@ import {
   deleteFioPlugin,
   deleteFioPluginToken,
   loadFioPlugin,
+  migrateLegacyFioPlugins,
   saveFioPlugin,
   updateFioPluginSyncPointer,
 } from "./fio-plugin-actions.ts"
@@ -30,6 +36,8 @@ import {
   activeFioPluginsQuery,
   fioPluginByIdQuery,
   fioPluginTokensByPluginIdQuery,
+  hasLegacyFioPluginQuery,
+  legacyFioPluginsQuery,
 } from "./fio-plugin-queries.ts"
 import type { FioPluginId } from "./fio-plugin-types.ts"
 import { fioPluginId } from "./fio-plugin-utils.ts"
@@ -667,6 +675,157 @@ describe("fio plugin actions", () => {
           id,
           lastSyncedDate: "2026-06-01",
           isDeleted: sqliteFalse,
+        },
+      ])
+  }, 15_000)
+
+  /**
+   * The shape the versions before the singleton id left behind: a plugin at a
+   * generated id, with its tokens and sync pointer keyed to that same id.
+   */
+  const seedLegacyFioPlugin = async (evolu: EvoluDep["evolu"]) => {
+    const id = createRowId<"FioPlugin">()
+    const tokenId = createRowId<"FioPluginToken">()
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+
+      evolu.upsert(
+        "fioPlugin",
+        {
+          id,
+          accountId: fiatBankAccountId,
+          numberOfSecondsBetweenChecks: PositiveInteger(300),
+          syncLookbackDays: PositiveInteger(3),
+          isActive: sqliteTrue,
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+      evolu.upsert(
+        "fioPluginToken",
+        {
+          id: tokenId,
+          fioPluginId: id,
+          token: NonEmptyString255("fio-token-legacy"),
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+      evolu.upsert(
+        "fioPluginSyncPointer",
+        {
+          id,
+          lastSyncedDate: DateStringSchema.decode("2026-06-10"),
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+    })
+
+    return { id, tokenId }
+  }
+
+  test("re-points a plugin left at a generated id onto the fixed one", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+    const legacy = await seedLegacyFioPlugin(evolu)
+
+    // The migration's `hasWork` check has to agree with the query that does
+    // the work, or the migration popup reopens at every app start.
+    await expect
+      .poll(() => evolu.loadQuery(hasLegacyFioPluginQuery))
+      .toMatchObject([{ id: legacy.id }])
+
+    await expect(run(migrateLegacyFioPlugins())).resolves.toMatchObject({
+      ok: true,
+      value: [legacy.id],
+    })
+
+    // Settings, token and sync pointer all land on the fixed id.
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginWithTokensByIdQuery(fioPluginId)))
+      .toMatchObject([
+        {
+          id: fioPluginId,
+          accountId: fiatBankAccountId,
+          numberOfSecondsBetweenChecks: 300,
+          syncLookbackDays: 3,
+          isActive: sqliteTrue,
+          isDeleted: sqliteFalse,
+          tokens: [{ token: "fio-token-legacy", isDeleted: sqliteFalse }],
+        },
+      ])
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginSyncPointerByIdQuery(fioPluginId)))
+      .toEqual([
+        {
+          id: fioPluginId,
+          lastSyncedDate: "2026-06-10",
+          isDeleted: sqliteFalse,
+        },
+      ])
+
+    // Which is what the settings page reads — the symptom this fixes.
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginTokensByPluginIdQuery(fioPluginId)))
+      .toMatchObject([{ token: "fio-token-legacy" }])
+
+    // The legacy rows are retired, so nothing syncs off two plugins.
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginWithTokensByIdQuery(legacy.id)))
+      .toMatchObject([
+        {
+          isDeleted: sqliteTrue,
+          tokens: [{ id: legacy.tokenId, isDeleted: sqliteTrue }],
+        },
+      ])
+
+    // And a second pass finds nothing left to do.
+    await expect.poll(() => evolu.loadQuery(legacyFioPluginsQuery)).toEqual([])
+    await expect
+      .poll(() => evolu.loadQuery(hasLegacyFioPluginQuery))
+      .toEqual([])
+    await expect(run(migrateLegacyFioPlugins())).resolves.toMatchObject({
+      ok: true,
+      value: [],
+    })
+  }, 15_000)
+
+  test("keeps settings already saved at the fixed id, adopts the legacy token", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+    await seedLegacyFioPlugin(evolu)
+
+    // What a user hit after updating: the form saved a second plugin at the
+    // fixed id, tokenless, while the legacy row kept the tokens.
+    await run.ok(
+      saveFioPlugin({
+        accountId: fiatBankAccountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        isActive: sqliteFalse,
+      })
+    )
+    await run.ok(migrateLegacyFioPlugins())
+
+    // That save is the newer intent, so it survives — only the token moves.
+    await expect
+      .poll(() => evolu.loadQuery(fioPluginWithTokensByIdQuery(fioPluginId)))
+      .toMatchObject([
+        {
+          numberOfSecondsBetweenChecks: 60,
+          isActive: sqliteFalse,
+          tokens: [{ token: "fio-token-legacy", isDeleted: sqliteFalse }],
         },
       ])
   }, 15_000)

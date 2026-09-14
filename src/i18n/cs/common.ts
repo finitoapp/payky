@@ -30,6 +30,16 @@ export const csCommon = {
   "home.keypad.backspace": "Smazat poslední číslici",
   "home.keypad.decimal": "Desetinný oddělovač",
   "home.pay": "Zaplatit",
+  "migration.close": "Zavřít",
+  "migration.failed.description":
+    "Data se nepodařilo aktualizovat. Zkuste to znovu restartem aplikace, data nejsou poškozená.",
+  "migration.failed.title": "Aktualizace selhala",
+  "migration.running.description":
+    "Payky aktualizuje data uložená starší verzí. Nechte aplikaci otevřenou.",
+  "migration.running.title": "Aktualizace dat",
+  "migration.success.description":
+    "Data uložená starší verzí byla úspěšně aktualizována.",
+  "migration.success.title": "Data aktualizována",
   "nav.activity": "Aktivita",
   "nav.back": "Zpět",
   "nav.numpad": "Klávesnice",

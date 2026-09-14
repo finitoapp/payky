@@ -4,6 +4,7 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import { fioPluginId } from "@/core/modules/fio-plugin/fio-plugin-utils.ts"
 import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 
 export const fioPluginByIdQuery = (idValue: FioPluginId) =>
@@ -146,3 +147,69 @@ export const existingFioTransactionBankReferencesQuery = ({
         bankReference: KyselyNotNull
       }>()
   )
+
+/**
+ * Whether `legacyFioPluginsQuery` would return anything, without building the
+ * token arrays for rows nobody is going to read — this runs at every app
+ * start as the migration's `hasWork` check, while the full query runs only on
+ * the installs that actually have a legacy row.
+ *
+ * Its predicates must stay identical to `legacyFioPluginsQuery`'s. A row that
+ * passed here but not there would leave the migration with work it can never
+ * finish, so the popup would come back at every start.
+ */
+export const hasLegacyFioPluginQuery = createQuery((db) =>
+  db
+    .selectFrom("fioPlugin")
+    .select("id")
+    .where("accountId", "=", fiatBankAccountId)
+    .where("id", "!=", fioPluginId)
+    .where("id", "is not", null)
+    .where("numberOfSecondsBetweenChecks", "is not", null)
+    .where("isActive", "is not", null)
+    .where("isDeleted", "is not", 1)
+    .limit(1)
+)
+
+/**
+ * Plugins still sitting at a generated id, from before the plugin became a
+ * singleton at the fixed `fioPluginId`. Their tokens and sync pointer are
+ * keyed to that old id, so the settings page — which reads the fixed one —
+ * finds none of them.
+ *
+ * Newest first, because `migrateLegacyFioPlugins` takes the settings from the
+ * most recent row while adopting every row's tokens.
+ */
+export const legacyFioPluginsQuery = createQuery((db) =>
+  db
+    .selectFrom("fioPlugin")
+    .select((eb) => [
+      "fioPlugin.id",
+      "fioPlugin.numberOfSecondsBetweenChecks",
+      "fioPlugin.syncLookbackDays",
+      "fioPlugin.isActive",
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("fioPluginToken")
+          .select(["fioPluginToken.id", "fioPluginToken.token"])
+          .whereRef("fioPluginToken.fioPluginId", "=", "fioPlugin.id")
+          .where("fioPluginToken.token", "is not", null)
+          .where("fioPluginToken.isDeleted", "is not", 1)
+          .$narrowType<{
+            token: KyselyNotNull
+          }>()
+      ).as("tokens"),
+    ])
+    .where("fioPlugin.accountId", "=", fiatBankAccountId)
+    .where("fioPlugin.id", "!=", fioPluginId)
+    .where("fioPlugin.id", "is not", null)
+    .where("fioPlugin.numberOfSecondsBetweenChecks", "is not", null)
+    .where("fioPlugin.isActive", "is not", null)
+    .where("fioPlugin.isDeleted", "is not", 1)
+    .orderBy("fioPlugin.createdAt", "desc")
+    .$narrowType<{
+      id: KyselyNotNull
+      numberOfSecondsBetweenChecks: KyselyNotNull
+      isActive: KyselyNotNull
+    }>()
+)

@@ -1,9 +1,17 @@
 import { useRouter } from "@tanstack/react-router"
 import { ScanLineIcon, Trash2Icon } from "lucide-react"
 import { useId, useMemo, useState } from "react"
+import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
 import {
   Field,
   FieldDescription,
@@ -41,11 +49,10 @@ import {
   findCatalogItemsByScanCode,
   getStaffDisplayName,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
-import { minorUnitsToDecimalString } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrency,
+  FiatCurrencySchema,
   type FiatCurrency as FiatCurrencyType,
-  Integer,
 } from "@/core/modules/shared/schema.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
@@ -55,7 +62,16 @@ import {
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import {
+  NO_OPTION,
+  optionalIdCodec,
+  optionalTextCodec,
+  requiredTextCodec,
+} from "@/features/settings/inline-edit-codecs.ts"
+import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
+import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
+import {
   type CatalogItemFormErrors,
+  createPriceCodec,
   parseCatalogItemForm,
 } from "@/features/settings/items/catalog-item-form-schema.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
@@ -67,6 +83,10 @@ import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
+const categoryCodec = optionalIdCodec<CatalogCategoryId>()
+const taxRateCodec = optionalIdCodec<TaxRateId>()
+const currencyCodec = FiatCurrencySchema
+
 export function NewCatalogItemPage() {
   const { t } = useTranslation()
   const { data } = useEvoluQuery(settingsQuery)
@@ -76,8 +96,7 @@ export function NewCatalogItemPage() {
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.items.form.title.create")} />
-      <CatalogItemForm
-        mode="create"
+      <CreateCatalogItemForm
         defaultCurrency={settings?.fiatCurrency ?? FiatCurrency.CZK}
       />
     </>
@@ -125,59 +144,81 @@ function EditCatalogItemPageContent({
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.items.form.title.edit")} />
-      <CatalogItemForm mode="edit" item={item} />
+      <EditCatalogItemForm item={item} />
     </>
   )
 }
 
-function CatalogItemForm({
-  mode,
-  item,
-  defaultCurrency,
-}: {
-  readonly mode: "create" | "edit"
-  readonly item?: CatalogItemRow
-  readonly defaultCurrency?: FiatCurrencyType
-}) {
-  const appRun = useAppRun()
-  const confirmedRun = useConfirmedRun()
-  const router = useRouter()
+/**
+ * The category and tax-rate option lists, which both forms build the same
+ * way: the "not set" entry, then the rows that are still selectable.
+ */
+const useCatalogItemOptions = (currentTaxRateId?: TaxRateId | null) => {
   const { t } = useTranslation()
-  const formId = useId()
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
-  const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const { data: taxRates } = useEvoluQuery(taxRatesQuery)
-  const [name, setName] = useState(item?.name ?? "")
-  const [description, setDescription] = useState(item?.description ?? "")
-  const [internalName, setInternalName] = useState(item?.internalName ?? "")
-  const [internalDescription, setInternalDescription] = useState(
-    item?.internalDescription ?? ""
-  )
-  const [sku, setSku] = useState(item?.sku ?? "")
-  const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
-    item?.categoryId ?? "none"
-  )
+
   const defaultTaxRate = taxRates.find(
     (rate) => rate.isDefault === 1 && rate.deactivatedAt === null
   )
-  const selectableTaxRates = filterSelectableTaxRates(taxRates, item?.taxRateId)
+  const selectableTaxRates = filterSelectableTaxRates(
+    taxRates,
+    currentTaxRateId
+  )
+
+  return {
+    defaultTaxRate,
+    categoryOptions: [
+      { value: NO_OPTION, label: t("settings.items.form.category.none") },
+      ...categories.map((category) => ({
+        value: category.id,
+        label: category.name,
+      })),
+    ],
+    taxRateOptions: [
+      { value: NO_OPTION, label: t("settings.items.form.taxRate.none") },
+      ...selectableTaxRates.map((taxRate) => ({
+        value: taxRate.id,
+        label: `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)${
+          taxRate.deactivatedAt !== null
+            ? ` — ${t("settings.taxRates.archived.title")}`
+            : ""
+        }`,
+      })),
+    ],
+  }
+}
+
+/**
+ * The create form stays a submit-and-navigate form: there is no row to edit
+ * in place yet, so it validates every field at once and only then inserts.
+ */
+function CreateCatalogItemForm({
+  defaultCurrency,
+}: {
+  readonly defaultCurrency: FiatCurrencyType
+}) {
+  const appRun = useAppRun()
+  const router = useRouter()
+  const { t } = useTranslation()
+  const formId = useId()
+  const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
+  const { defaultTaxRate, categoryOptions, taxRateOptions } =
+    useCatalogItemOptions()
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [internalName, setInternalName] = useState("")
+  const [internalDescription, setInternalDescription] = useState("")
+  const [sku, setSku] = useState("")
+  const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
+    NO_OPTION
+  )
   const [taxRateId, setTaxRateId] = useState<TaxRateId | "none">(
-    item === undefined
-      ? (defaultTaxRate?.id ?? "none")
-      : (item.taxRateId ?? "none")
+    defaultTaxRate?.id ?? NO_OPTION
   )
-  const [currency, setCurrency] = useState<FiatCurrencyType>(
-    item?.currency ?? defaultCurrency ?? FiatCurrency.CZK
-  )
-  const [price, setPrice] = useState(() =>
-    item === undefined
-      ? ""
-      : minorUnitsToDecimalString({
-          value: Integer(item.unitAmount),
-          currency: item.currency,
-        })
-  )
-  const [scanCode, setScanCode] = useState(item?.scanCode ?? "")
+  const [currency, setCurrency] = useState<FiatCurrencyType>(defaultCurrency)
+  const [price, setPrice] = useState("")
+  const [scanCode, setScanCode] = useState("")
   const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
   const [errors, setErrors] = useState<CatalogItemFormErrors>({})
   const { pending, saved, resetSaved, submit } = useSettingsForm()
@@ -190,32 +231,17 @@ function CatalogItemForm({
   // before syncing), so this is a heads-up shown next to the field, not a
   // blocking validation error.
   const scanCodeCollisions = useMemo(
-    () =>
-      findCatalogItemsByScanCode(catalogItems, scanCode).filter(
-        (match) => match.id !== item?.id
-      ),
-    [catalogItems, scanCode, item?.id]
+    () => findCatalogItemsByScanCode(catalogItems, scanCode),
+    [catalogItems, scanCode]
   )
 
   return (
-    <div className="flex flex-col gap-5">
+    <>
       <SettingsFormCard
         title={t("settings.items.form.card.title")}
         description={t("settings.items.form.card.description")}
-        savedMessage={
-          saved
-            ? t(
-                mode === "create"
-                  ? "settings.items.form.saved.create"
-                  : "settings.items.form.saved.edit"
-              )
-            : null
-        }
-        submitLabel={t(
-          mode === "create"
-            ? "settings.items.form.save.create"
-            : "settings.items.form.save.edit"
-        )}
+        savedMessage={saved ? t("settings.items.form.saved.create") : null}
+        submitLabel={t("settings.items.form.save.create")}
         pending={pending}
         onSubmit={(event) => {
           event.preventDefault()
@@ -242,33 +268,10 @@ function CatalogItemForm({
 
           void submit(async () => {
             await using run = appRun()
-
-            if (mode === "create") {
-              await run(
-                createCatalogItemAtEnd({
-                  deviceId: null,
-                  categoryId: categoryId === "none" ? null : categoryId,
-                  name: values.name,
-                  description: values.description,
-                  internalName: values.internalName,
-                  internalDescription: values.internalDescription,
-                  sku: values.sku,
-                  currency,
-                  unitAmount: values.price,
-                  scanCode: values.scanCode,
-                  taxRateId: taxRateId === "none" ? null : taxRateId,
-                })
-              )
-              router.history.back()
-              return
-            }
-
-            if (item === undefined) return
-
             await run(
-              updateCatalogItem({
-                id: item.id,
-                categoryId: categoryId === "none" ? null : categoryId,
+              createCatalogItemAtEnd({
+                deviceId: null,
+                categoryId: categoryId === NO_OPTION ? null : categoryId,
                 name: values.name,
                 description: values.description,
                 internalName: values.internalName,
@@ -277,9 +280,10 @@ function CatalogItemForm({
                 currency,
                 unitAmount: values.price,
                 scanCode: values.scanCode,
-                taxRateId: taxRateId === "none" ? null : taxRateId,
+                taxRateId: taxRateId === NO_OPTION ? null : taxRateId,
               })
             )
+            router.history.back()
           })
         }}
       >
@@ -350,14 +354,9 @@ function CatalogItemForm({
               <Select<FiatCurrencyType>
                 value={currency}
                 onValueChange={(nextCurrency) => {
-                  if (
-                    nextCurrency === FiatCurrency.EUR ||
-                    nextCurrency === FiatCurrency.USD ||
-                    nextCurrency === FiatCurrency.CZK
-                  ) {
-                    setCurrency(nextCurrency)
-                    resetSaved()
-                  }
+                  if (nextCurrency === null) return
+                  setCurrency(nextCurrency)
+                  resetSaved()
                 }}
               >
                 <SelectTrigger
@@ -454,12 +453,9 @@ function CatalogItemForm({
               {t("settings.items.form.category.label")}
             </FieldLabel>
             <Select<CatalogCategoryId | "none">
-              items={{
-                none: t("settings.items.form.category.none"),
-                ...Object.fromEntries(
-                  categories.map((category) => [category.id, category.name])
-                ),
-              }}
+              items={Object.fromEntries(
+                categoryOptions.map((option) => [option.value, option.label])
+              )}
               value={categoryId}
               onValueChange={(nextCategoryId) => {
                 if (nextCategoryId === null) return
@@ -472,12 +468,9 @@ function CatalogItemForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="none">
-                    {t("settings.items.form.category.none")}
-                  </SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
+                  {categoryOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -490,19 +483,9 @@ function CatalogItemForm({
               {t("settings.items.form.taxRate.label")}
             </FieldLabel>
             <Select<TaxRateId | "none">
-              items={{
-                none: t("settings.items.form.taxRate.none"),
-                ...Object.fromEntries(
-                  selectableTaxRates.map((taxRate) => [
-                    taxRate.id,
-                    `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)${
-                      taxRate.deactivatedAt !== null
-                        ? ` — ${t("settings.taxRates.archived.title")}`
-                        : ""
-                    }`,
-                  ])
-                ),
-              }}
+              items={Object.fromEntries(
+                taxRateOptions.map((option) => [option.value, option.label])
+              )}
               value={taxRateId}
               onValueChange={(nextTaxRateId) => {
                 if (nextTaxRateId === null) return
@@ -515,17 +498,9 @@ function CatalogItemForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="none">
-                    {t("settings.items.form.taxRate.none")}
-                  </SelectItem>
-                  {selectableTaxRates.map((taxRate) => (
-                    <SelectItem key={taxRate.id} value={taxRate.id}>
-                      {taxRate.name} (
-                      {taxRatePercentageToDecimalString(taxRate.rate)}
-                      %)
-                      {taxRate.deactivatedAt !== null
-                        ? ` — ${t("settings.taxRates.archived.title")}`
-                        : ""}
+                  {taxRateOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -592,34 +567,222 @@ function CatalogItemForm({
           resetSaved()
         }}
       />
+    </>
+  )
+}
 
-      {mode === "edit" && item !== undefined && (
-        <Button
-          variant="destructive"
-          onClick={() => {
-            void (async () => {
-              const deleted = await confirmedRun(
-                {
-                  title: t("settings.items.delete.confirm.title", {
-                    name: getStaffDisplayName(item),
-                  }),
-                  description: t("settings.items.delete.confirm.description", {
-                    name: getStaffDisplayName(item),
-                  }),
-                  confirmLabel: t("settings.items.delete.confirm.confirm"),
-                  cancelLabel: t("settings.items.delete.confirm.cancel"),
-                  variant: "destructive",
-                },
-                deleteCatalogItem(item.id)
-              )
-              if (deleted) router.history.back()
-            })()
-          }}
-        >
-          <Trash2Icon data-icon="inline-start" />
-          {t("settings.items.delete")}
-        </Button>
-      )}
+/**
+ * The edit form has no submit button: every field saves itself. The row
+ * already exists, so each change is an independent update and there is
+ * nothing to validate across fields.
+ */
+function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
+  const appRun = useAppRun()
+  const confirmedRun = useConfirmedRun()
+  const router = useRouter()
+  const { t } = useTranslation()
+  const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
+  const { categoryOptions, taxRateOptions } = useCatalogItemOptions(
+    item.taxRateId
+  )
+  const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
+
+  // How many minor units the price means depends on the currency next to it,
+  // so the codec is rebuilt whenever that changes.
+  const priceCodec = useMemo(
+    () => createPriceCodec(item.currency),
+    [item.currency]
+  )
+
+  // `updateCatalogItem` is a `Task<_, never>`: its only realistic failure is
+  // unexpected infrastructure. Let it throw — the inline-edit controls turn
+  // that into the toast and withhold their saved tick.
+  const saveItem = async (
+    values: Omit<Parameters<typeof updateCatalogItem>[0], "id">
+  ) => {
+    await using run = appRun()
+    await run(updateCatalogItem({ id: item.id, ...values }))
+  }
+
+  // Uniqueness can't be enforced (multiple devices can assign the same code
+  // before syncing), so this is a heads-up shown next to the field, not a
+  // blocking validation error.
+  const scanCodeCollisions = useMemo(
+    () =>
+      findCatalogItemsByScanCode(catalogItems, item.scanCode ?? "").filter(
+        (match) => match.id !== item.id
+      ),
+    [catalogItems, item.scanCode, item.id]
+  )
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.items.form.card.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.items.form.card.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <InlineEditField
+              label={t("settings.items.form.name.label")}
+              placeholder={t("settings.items.form.name.placeholder")}
+              defaultValue={item.name}
+              codec={requiredTextCodec}
+              errorKey="settings.items.form.name.invalid"
+              onSave={(name) => saveItem({ name })}
+            />
+
+            <InlineEditField
+              label={t("settings.items.form.internalName.label")}
+              description={t("settings.items.form.internalName.hint")}
+              placeholder={t("settings.items.form.internalName.placeholder")}
+              defaultValue={item.internalName}
+              codec={optionalTextCodec}
+              errorKey="settings.items.form.internalName.invalid"
+              onSave={(internalName) => saveItem({ internalName })}
+            />
+
+            <InlineEditField
+              label={t("settings.items.form.price.label")}
+              inputMode="decimal"
+              defaultValue={item.unitAmount}
+              codec={priceCodec}
+              errorKey="settings.items.form.price.invalid"
+              onSave={(unitAmount) => saveItem({ unitAmount })}
+            />
+
+            <InlineEditSelect
+              label={t("settings.items.form.currency.label")}
+              defaultValue={item.currency}
+              codec={currencyCodec}
+              options={fiatCurrencyOptions.map((option) => ({
+                value: option.value,
+                label: option.value,
+              }))}
+              onSave={(currency) => saveItem({ currency })}
+            />
+
+            <InlineEditField
+              label={t("settings.items.form.description.label")}
+              placeholder={t("settings.items.form.description.placeholder")}
+              defaultValue={item.description}
+              codec={optionalTextCodec}
+              errorKey="settings.items.form.description.invalid"
+              onSave={(description) => saveItem({ description })}
+            />
+
+            <InlineEditField
+              label={t("settings.items.form.internalDescription.label")}
+              placeholder={t(
+                "settings.items.form.internalDescription.placeholder"
+              )}
+              defaultValue={item.internalDescription}
+              codec={optionalTextCodec}
+              errorKey="settings.items.form.internalDescription.invalid"
+              onSave={(internalDescription) =>
+                saveItem({ internalDescription })
+              }
+            />
+
+            <InlineEditField
+              label={t("settings.items.form.sku.label")}
+              placeholder={t("settings.items.form.sku.placeholder")}
+              defaultValue={item.sku}
+              codec={optionalTextCodec}
+              errorKey="settings.items.form.sku.invalid"
+              onSave={(sku) => saveItem({ sku })}
+            />
+
+            <InlineEditSelect
+              label={t("settings.items.form.category.label")}
+              defaultValue={item.categoryId}
+              codec={categoryCodec}
+              options={categoryOptions}
+              onSave={(categoryId) => saveItem({ categoryId })}
+            />
+
+            <InlineEditSelect
+              label={t("settings.items.form.taxRate.label")}
+              description={t("settings.items.form.taxRate.description")}
+              defaultValue={item.taxRateId}
+              codec={taxRateCodec}
+              options={taxRateOptions}
+              onSave={(taxRateId) => saveItem({ taxRateId })}
+            />
+
+            <InlineEditField
+              label={t("settings.items.form.scanCode.label")}
+              description={
+                scanCodeCollisions.length > 0
+                  ? t("settings.items.form.scanCode.duplicate", {
+                      name: scanCodeCollisions
+                        .map((match) => getStaffDisplayName(match))
+                        .join(", "),
+                    })
+                  : undefined
+              }
+              placeholder={t("settings.items.form.scanCode.placeholder")}
+              defaultValue={item.scanCode}
+              codec={optionalTextCodec}
+              errorKey="settings.items.form.scanCode.invalid"
+              // Scanning bypasses the edit mode entirely: the scanner already
+              // confirmed the value, so there is nothing left to confirm.
+              trailing={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="rounded-full"
+                  aria-label={t("settings.items.form.scanCode.scan.aria")}
+                  onClick={() => setScannerDialogOpen(true)}
+                >
+                  <ScanLineIcon />
+                </Button>
+              }
+              onSave={(scanCode) => saveItem({ scanCode })}
+            />
+          </FieldGroup>
+        </CardContent>
+      </Card>
+
+      <ScanCodeScannerDialog
+        open={scannerDialogOpen}
+        onOpenChange={setScannerDialogOpen}
+        onScan={(rawValue) => {
+          const parsed = z.safeDecode(optionalTextCodec, rawValue)
+          if (!parsed.success) return
+          void saveItem({ scanCode: parsed.data })
+        }}
+      />
+
+      <Button
+        variant="destructive"
+        onClick={() => {
+          void (async () => {
+            const deleted = await confirmedRun(
+              {
+                title: t("settings.items.delete.confirm.title", {
+                  name: getStaffDisplayName(item),
+                }),
+                description: t("settings.items.delete.confirm.description", {
+                  name: getStaffDisplayName(item),
+                }),
+                confirmLabel: t("settings.items.delete.confirm.confirm"),
+                cancelLabel: t("settings.items.delete.confirm.cancel"),
+                variant: "destructive",
+              },
+              deleteCatalogItem(item.id)
+            )
+            if (deleted) router.history.back()
+          })()
+        }}
+      >
+        <Trash2Icon data-icon="inline-start" />
+        {t("settings.items.delete")}
+      </Button>
     </div>
   )
 }

@@ -30,6 +30,9 @@ export const skCommon = {
   "home.keypad.backspace": "Vymazať poslednú číslicu",
   "home.keypad.decimal": "Desatinný oddeľovač",
   "home.pay": "Zaplatiť",
+  "inlineEdit.discard": "Zahodiť zmenu",
+  "inlineEdit.save": "Uložiť zmenu",
+  "inlineEdit.saved": "Uložené",
   "migration.close": "Zavrieť",
   "migration.failed.description":
     "Dáta sa nepodarilo aktualizovať. Skúste to znova reštartom aplikácie, dáta nie sú poškodené.",

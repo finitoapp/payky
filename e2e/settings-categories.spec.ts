@@ -1,6 +1,7 @@
 import { addCatalogCategory } from "./support/bill.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
+import { fillInlineField } from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("create, edit and delete a catalog category", async ({
@@ -63,15 +64,7 @@ test("create, edit and delete a catalog category", async ({
     })
     await expect(nameInput).toHaveValue("Drinks")
 
-    await nameInput.fill("Beverages")
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.categories.form.save.edit"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.categories.form.saved.edit"))
-      .waitFor()
+    await fillInlineField(page, nameInput, "Beverages")
   })
 
   await test.step("verify the edit persists after reload", async () => {

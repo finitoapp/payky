@@ -1,6 +1,7 @@
 import { addCatalogItem, addTaxRate } from "./support/bill.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { nameParam, translate } from "./support/i18n.ts"
+import { pickInlineOption } from "./support/inline-edit.ts"
 import {
   gotoPage,
   gotoPosOverview,
@@ -173,20 +174,11 @@ test("changing a catalog item's tax rate does not retroactively change an alread
   await test.step("change the item's tax rate in settings", async () => {
     await gotoPage(page, "/settings/items", "en", "settings.items.title")
     await page.getByRole("link", { name: /Coffee/ }).click()
-    await page
-      .getByRole("combobox", {
-        name: translate("en", "settings.items.form.taxRate.label"),
-      })
-      .click()
-    await page.getByRole("option", { name: /Reduced rate/ }).click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.items.form.save.edit"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.items.form.saved.edit"))
-      .waitFor()
+    await pickInlineOption(
+      page,
+      "settings.items.form.taxRate.label",
+      /Reduced rate/
+    )
   })
 
   await test.step("the already-added line still shows the original rate", async () => {

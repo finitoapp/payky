@@ -5,15 +5,15 @@ import {
   PaymentOptions,
 } from "bysquare/pay"
 
+import { currencyFractionDigits } from "@/core/modules/shared/money.ts"
 import {
   type BankQrFormat,
+  type Currency,
   type NonEmptyString,
   NonEmptyStringSchema,
   type SpecificSymbol,
   type VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
-
-const FIAT_MINOR_UNITS = 100
 
 export interface BankQrPayload {
   readonly format: BankQrFormat
@@ -32,9 +32,27 @@ export const isBankQrFormat = (
   value !== undefined &&
   (bankQrFormats as ReadonlyArray<string>).includes(value)
 
-const formatFiatMinorUnits = (amount: number): string => {
-  const major = Math.trunc(amount / FIAT_MINOR_UNITS)
-  const minor = String(amount % FIAT_MINOR_UNITS).padStart(2, "0")
+/**
+ * Minor units to the fixed-width decimal both QR formats carry, with the
+ * currency's own fraction digits rather than an assumed two — a zero-decimal
+ * currency would otherwise be encoded 100x too small in a real payment QR.
+ *
+ * Not `minorUnitsToDecimalString`: that one strips trailing zeros, which would
+ * turn every whole-crown bill's `AM:129.00` into `AM:129`. Both are valid
+ * SPAYD, but it is not a change worth making to a payload that is already in
+ * the field and read by other people's scanners.
+ */
+const formatMinorUnits = (amount: number, currency: Currency): string => {
+  const fractionDigits = currencyFractionDigits[currency]
+
+  if (fractionDigits === 0) {
+    return String(amount)
+  }
+
+  const minorUnits = 10 ** fractionDigits
+  const major = Math.trunc(amount / minorUnits)
+  const minor = String(amount % minorUnits).padStart(fractionDigits, "0")
+
   return `${major}.${minor}`
 }
 
@@ -47,7 +65,7 @@ const createSpaydQrPayload = ({
 }: {
   readonly iban: string
   readonly amount: number
-  readonly currency: string
+  readonly currency: Currency
   readonly specificSymbol: SpecificSymbol | null
   readonly variableSymbol: VariableSymbol | null
 }): NonEmptyString =>
@@ -56,7 +74,7 @@ const createSpaydQrPayload = ({
       "SPD",
       "1.0",
       `ACC:${iban}`,
-      `AM:${formatFiatMinorUnits(amount)}`,
+      `AM:${formatMinorUnits(amount, currency)}`,
       `CC:${currency}`,
       "PT:IP",
       variableSymbol ? `X-VS:${variableSymbol}` : null,
@@ -78,7 +96,7 @@ const createPayBySquareQrPayload = ({
   readonly beneficiaryName: string
   readonly iban: string
   readonly amount: number
-  readonly currency: string
+  readonly currency: Currency
   readonly specificSymbol: SpecificSymbol | null
   readonly variableSymbol: VariableSymbol | null
   readonly version: PayBySquareVersion
@@ -89,7 +107,7 @@ const createPayBySquareQrPayload = ({
         payments: [
           {
             type: PaymentOptions.PaymentOrder,
-            amount: Number(formatFiatMinorUnits(amount)),
+            amount: Number(formatMinorUnits(amount, currency)),
             currencyCode: currency,
             beneficiary: { name: beneficiaryName },
             bankAccounts: [{ iban }],
@@ -115,7 +133,7 @@ const createBankQrPayload = ({
   readonly format: BankQrFormat
   readonly iban: string
   readonly amount: number
-  readonly currency: string
+  readonly currency: Currency
   readonly specificSymbol: SpecificSymbol | null
   readonly variableSymbol: VariableSymbol | null
 }): NonEmptyString =>

@@ -50,6 +50,7 @@ import {
   TimestampMsSchema,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   acknowledgePaymentExcessSettlement,
@@ -68,7 +69,6 @@ import {
 } from "./payment-queries.ts"
 import {
   accountTransactionsByPaymentIdQuery,
-  createDateDeps,
   createPaymentAccounts,
   paymentWithDetailsByIdQuery,
   reconciliationClaimsByPaymentIdQuery,
@@ -81,7 +81,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
@@ -198,7 +198,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -278,7 +278,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -380,7 +380,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -451,7 +451,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -517,7 +517,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -587,7 +587,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
@@ -633,7 +633,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -679,7 +679,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -741,7 +741,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -783,7 +783,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
@@ -822,7 +822,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, ibanAccountId } =
@@ -915,7 +915,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -957,7 +957,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1035,7 +1035,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
@@ -1139,7 +1139,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { ibanAccountId } = await createPaymentAccounts(deps)
@@ -1180,7 +1180,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -1235,7 +1235,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -1291,11 +1291,11 @@ describe("payment actions", () => {
   test("a pending payment with an expiry unlocks its bill once that expiry passes, with no cancellation needed", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    let now = new Date("2026-06-05T12:00:00.000Z")
+    const clock = createTestDateDep()
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      date: { now: () => now },
+      ...clock,
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -1317,7 +1317,9 @@ describe("payment actions", () => {
         currency: "CZK",
         tipAmount: NonNegativeInteger(0),
         canceledAt: null,
-        expiresAt: TimestampMsSchema.decode(now.getTime() + 900_000),
+        expiresAt: TimestampMsSchema.decode(
+          deps.date.now().getTime() + 900_000
+        ),
       })
     )
 
@@ -1338,7 +1340,7 @@ describe("payment actions", () => {
     // Lightning has a natural resolution path via `expiresAt` (unlike cash
     // and IBAN, which need the manual "Cancel payment" escape hatch) — an
     // abandoned invoice recovers its bill purely from time passing.
-    now = new Date(now.getTime() + 900_001)
+    clock.advance(900_001)
 
     await expect(
       run(
@@ -1359,7 +1361,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1409,7 +1411,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1465,7 +1467,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, ibanAccountId } =
@@ -1573,7 +1575,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, ibanAccountId } =
@@ -1677,7 +1679,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1741,7 +1743,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -1781,7 +1783,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1847,7 +1849,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1917,7 +1919,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -1984,7 +1986,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -2055,7 +2057,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -2151,7 +2153,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -2211,7 +2213,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -2273,7 +2275,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -2328,7 +2330,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -2383,7 +2385,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -2470,11 +2472,11 @@ describe("payment actions", () => {
   test("preserves a bill's original closedAt across a later re-close instead of overwriting it", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    let now = new Date("2026-06-05T12:00:00.000Z")
+    const clock = createTestDateDep()
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      date: { now: () => now },
+      ...clock,
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -2542,7 +2544,7 @@ describe("payment actions", () => {
 
     // The clock advances, and the second (overpaying) payment is confirmed
     // afterward — re-closing the already-`closed` bill idempotently.
-    now = new Date(now.getTime() + 60_000)
+    clock.advance(60_000)
     await expect(
       run(
         markPaymentPaidCash({
@@ -2566,7 +2568,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
@@ -2655,7 +2657,7 @@ describe("payment actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)

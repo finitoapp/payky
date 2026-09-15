@@ -20,18 +20,12 @@ import type {
   SparkWithdrawalStatus,
 } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import { executeWithdrawal, quoteWithdrawal } from "./withdraw-actions.ts"
 
-const fixedDate = new Date("2026-06-05T12:00:00.000Z")
 const validAddress = BitcoinAddress(
   "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
 )
-
-const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => fixedDate,
-  },
-})
 
 const feeQuote: SparkWithdrawalFeeQuote = {
   id: "fee-quote-1",
@@ -311,7 +305,7 @@ describe("executeWithdrawal", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
@@ -381,7 +375,7 @@ describe("executeWithdrawal", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
@@ -435,7 +429,7 @@ describe("executeWithdrawal", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
@@ -476,7 +470,7 @@ describe("executeWithdrawal", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
@@ -531,7 +525,7 @@ describe("executeWithdrawal", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({

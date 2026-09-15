@@ -15,6 +15,7 @@ import {
   NonEmptyStringSchema,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import {
   createAccountTransaction,
   deleteAccountTransaction,
@@ -22,19 +23,11 @@ import {
 } from "./account-transaction-actions.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 
-const fixedDate = new Date("2026-06-05T12:00:00.000Z")
-
-const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => fixedDate,
-  },
-})
-
 const createDeps = (evolu: EvoluDep["evolu"]) =>
   ({
     evolu,
     evoluOwnerId: evolu.appOwner.id,
-    ...createDateDeps(),
+    ...createTestDateDep(),
   }) satisfies EvoluDep & EvoluOwnerIdDep & DateDep
 
 const accountTransactionsQuery = createQuery((db) =>

@@ -28,6 +28,7 @@ import {
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
+import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   addCatalogItemToBill,
@@ -48,14 +49,6 @@ import {
 import { loadBill, loadBillCoverage, loadBillStatus } from "./bill-guards.ts"
 import { billByIdQuery } from "./bill-queries.ts"
 import { type BillId, createRandomBillId } from "./bill-types.ts"
-
-const fixedDate = new Date("2026-06-05T12:00:00.000Z")
-
-const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => fixedDate,
-  },
-})
 
 const billLinesByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
@@ -141,7 +134,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -205,7 +198,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -245,7 +238,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -280,7 +273,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -341,7 +334,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -435,7 +428,7 @@ describe("bill actions", () => {
     })
     await expect
       .poll(() => evolu.loadQuery(billByIdQuery(billId)))
-      .toMatchObject([{ id: billId, closedAt: fixedDate.getTime() }])
+      .toMatchObject([{ id: billId, closedAt: testFixedDate.getTime() }])
     await expect.poll(() => run.ok(listOpenBills())).toEqual([])
   }, 15_000)
 
@@ -452,7 +445,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -475,7 +468,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
@@ -517,7 +510,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
@@ -617,7 +610,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
@@ -645,7 +638,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps)
@@ -702,7 +695,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, {
@@ -770,7 +763,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -817,7 +810,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -855,7 +848,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -907,7 +900,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps)
@@ -934,7 +927,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, {
@@ -993,7 +986,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1042,7 +1035,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1095,7 +1088,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1155,7 +1148,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1196,7 +1189,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1275,7 +1268,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1322,7 +1315,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1348,7 +1341,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const billId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1393,7 +1386,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const sourceBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1438,7 +1431,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1471,7 +1464,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1503,7 +1496,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const closedBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1535,7 +1528,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const canceledBillId = await createOpenBill(deps, { displayNumber: 1 })
@@ -1591,7 +1584,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -1657,7 +1650,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await run.ok(
@@ -1719,7 +1712,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await run.ok(
@@ -1775,7 +1768,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await run.ok(
@@ -1826,7 +1819,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 
@@ -1847,7 +1840,7 @@ describe("bill actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 

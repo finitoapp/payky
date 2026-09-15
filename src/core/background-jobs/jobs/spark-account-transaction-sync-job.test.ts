@@ -7,22 +7,15 @@ import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
-import type { DateDep, FetchDep } from "@/core/deps.ts"
+import type { FetchDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
-
-const fixedDate = new Date("2026-06-05T12:00:00.000Z")
-
-const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => fixedDate,
-  },
-})
 
 const unimplementedFetch: FetchDep["fetch"] = (() => {
   throw new Error("fetch is not implemented in this test.")
@@ -218,7 +211,7 @@ describe("spark account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
@@ -285,7 +278,7 @@ describe("spark account transaction sync job", () => {
         console: testCreateConsole(),
         evolu,
         evoluOwnerId: evolu.appOwner.id,
-        ...createDateDeps(),
+        ...createTestDateDep(),
         fetch: unimplementedFetch,
         lockManager: createInProcessLockManager(),
         onError: (error: unknown) => {
@@ -352,7 +345,7 @@ describe("spark account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
@@ -412,7 +405,7 @@ describe("spark account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
@@ -465,7 +458,7 @@ describe("spark account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
@@ -515,7 +508,7 @@ describe("spark account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
@@ -576,7 +569,7 @@ describe("spark account transaction sync job", () => {
       console: testCreateConsole(),
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {

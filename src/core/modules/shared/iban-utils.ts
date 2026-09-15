@@ -1,6 +1,8 @@
 import { err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
 
+import { defineError } from "@/core/error.ts"
+
 const ibanCountryLengths: Readonly<Record<string, number>> = {
   AD: 24,
   AE: 23,
@@ -83,15 +85,14 @@ const ibanCountryLengths: Readonly<Record<string, number>> = {
 
 const czechBbanPattern = /^(?:(\d{1,6})-)?(\d{1,10})\/(\d{4})$/u
 
-interface InvalidBankAccountInputError {
-  readonly type: "InvalidBankAccountInput"
-}
+export const createInvalidBankAccountInputError = defineError(
+  "InvalidBankAccountInput"
+)()
+export type InvalidBankAccountInputError = ReturnType<
+  typeof createInvalidBankAccountInputError
+>
 
 type BankAccountInputResult = Result<string, InvalidBankAccountInputError>
-
-const invalidBankAccountInput = (): InvalidBankAccountInputError => ({
-  type: "InvalidBankAccountInput",
-})
 
 export const normalizeIbanInput = (value: string) =>
   value.replaceAll(/\s/gu, "").toUpperCase()
@@ -189,5 +190,5 @@ export const normalizeBankAccountInputToIban = (
     return ok(czechIban)
   }
 
-  return err(invalidBankAccountInput())
+  return err(createInvalidBankAccountInputError())
 }

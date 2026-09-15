@@ -10,6 +10,15 @@ import { VitePWA } from "vite-plugin-pwa"
 import type { ViteUserConfigFnObject } from "vitest/config"
 import { defaultExclude } from "vitest/config"
 
+import packageJson from "./package.json" with { type: "json" }
+
+/**
+ * Sentry's `release`, which is what ties an event to its source maps. The
+ * commit is the precise answer, but it is unavailable in exactly the builds
+ * hardest to reproduce afterwards — a source tarball, a Docker build context,
+ * a shallow export — so fall back to the package version rather than to
+ * `"unknown"`, which groups every such build together.
+ */
 function getAppVersion(): string {
   try {
     return execSync("git rev-parse --short HEAD", {
@@ -17,7 +26,7 @@ function getAppVersion(): string {
       stdio: ["ignore", "pipe", "ignore"],
     }).trim()
   } catch {
-    return "unknown"
+    return packageJson.version
   }
 }
 

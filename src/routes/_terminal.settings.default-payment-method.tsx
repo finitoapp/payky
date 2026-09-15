@@ -89,26 +89,23 @@ function DefaultPaymentMethodPage() {
   const configuredDefaultMethod = getDefaultPaymentMethod(
     settings?.defaultPaymentMethod
   )
-  const enabledOptions = defaultPaymentMethodOptions.filter((option) => {
-    switch (option.value) {
-      case "iban":
-        return (
-          fiatBankAccount !== undefined &&
-          fiatBankAccount.isDeleted !== 1 &&
-          fiatBankAccount.currency === fiatCurrency
-        )
-      case "spark":
-        return sparkAccount !== undefined && sparkAccount.isDeleted !== 1
-      case "cashRegister":
-        return (
-          cashRegisterAccount !== undefined &&
-          cashRegisterAccount.isDeleted !== 1 &&
-          cashRegisterAccount.currency === fiatCurrency
-        )
-    }
-
-    return false
-  })
+  // A `satisfies Record`, not a switch: the trailing `return false` a switch
+  // needs is exactly what stops the compiler from demanding every member, so a
+  // fourth payment method would compile and silently never show up here.
+  const methodIsEnabled = {
+    iban:
+      fiatBankAccount !== undefined &&
+      fiatBankAccount.isDeleted !== 1 &&
+      fiatBankAccount.currency === fiatCurrency,
+    spark: sparkAccount !== undefined && sparkAccount.isDeleted !== 1,
+    cashRegister:
+      cashRegisterAccount !== undefined &&
+      cashRegisterAccount.isDeleted !== 1 &&
+      cashRegisterAccount.currency === fiatCurrency,
+  } satisfies Record<DefaultPaymentMethod, boolean>
+  const enabledOptions = defaultPaymentMethodOptions.filter(
+    (option) => methodIsEnabled[option.value]
+  )
   const selectedMethod = enabledOptions.some(
     (option) => option.value === configuredDefaultMethod
   )

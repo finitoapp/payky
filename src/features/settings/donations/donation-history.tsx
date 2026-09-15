@@ -10,7 +10,7 @@ import { fetchDonationHistory } from "@/core/integrations/donations/donations-cl
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatDateTime } from "@/lib/format-utils.ts"
+import { formatDateTime, formatSatsAmount } from "@/lib/format-utils.ts"
 
 export const DonationHistory = () => {
   const appRun = useAppRun()
@@ -83,7 +83,7 @@ export const DonationHistory = () => {
             action: (
               <span className="font-medium text-sm">
                 {t("settings.donations.history.amount", {
-                  amount: item.amountSats.toLocaleString(locale),
+                  amount: formatSatsAmount(item.amountSats, locale),
                 })}
               </span>
             ),

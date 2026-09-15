@@ -50,7 +50,11 @@
         "useImportType": "error"
       },
       "suspicious": {
-        "noExplicitAny": "error"
+        "noExplicitAny": "error",
+        "noDoubleEquals": {
+          "level": "error",
+          "options": { "ignoreNull": false }
+        }
       }
     }
   },

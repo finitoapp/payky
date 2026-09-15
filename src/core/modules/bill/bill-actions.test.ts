@@ -78,7 +78,10 @@ const createOpenBill = async (
     createBill({
       deviceId: null,
       displayNumber: PositiveInteger(input?.displayNumber ?? 1),
-      label: input?.label != null ? NonEmptyString255(input.label) : null,
+      label:
+        input?.label !== undefined && input.label !== null
+          ? NonEmptyString255(input.label)
+          : null,
       tableId: null,
       currency: "CZK",
     })

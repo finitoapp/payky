@@ -1,5 +1,5 @@
 import { createRun, ok } from "@evolu/common"
-import { format, subDays, subMonths } from "date-fns"
+import { format, parseISO, subDays, subMonths } from "date-fns"
 
 import type {
   BackgroundJob,
@@ -412,11 +412,16 @@ const getFioFirstSyncDate = (now: Date): DateString => {
   )
 }
 
-const dateToDateString = (date: Date): DateString =>
+/**
+ * Inverses, and they have to stay that way: `getSyncPeriod` round-trips a
+ * stored pointer through both to walk the window back. Both work on the local
+ * clock — `format` always did, and parsing as UTC used to shift the date a day
+ * in negative offsets, landing `from` a day early.
+ */
+export const dateToDateString = (date: Date): DateString =>
   DateStringSchema.decode(format(date, "yyyy-MM-dd"))
 
-const dateStringToDate = (date: DateString): Date =>
-  new Date(`${date}T00:00:00.000Z`)
+export const dateStringToDate = (date: DateString): Date => parseISO(date)
 
 const getUniqueBankReferences = (
   transactions: ReadonlyArray<FioTransaction>

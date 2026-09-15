@@ -1,7 +1,7 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
 import { useAtomValue } from "jotai"
 import { use, useMemo, useSyncExternalStore } from "react"
-import { deviceEvoluAtom } from "@/atoms/device-evolu"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import type { DeviceEvoluSchema } from "@/core/evolu/device-client.ts"
 
 export const useDeviceEvoluQuery = <R extends Row>(

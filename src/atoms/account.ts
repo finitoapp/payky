@@ -1,7 +1,7 @@
 import { createId, createRandomBytes } from "@evolu/common"
 import { atom } from "jotai"
 import { UAParser } from "ua-parser-js"
-import { deviceEvoluAtom } from "@/atoms/device-evolu"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import {
   createAccountMasterKey,

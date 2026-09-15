@@ -1,7 +1,7 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
 import { use, useMemo, useSyncExternalStore } from "react"
 import type { EvoluSchema } from "@/core/evolu/schema.ts"
-import { useEvolu } from "@/hooks/use-evolu"
+import { useEvolu } from "@/hooks/use-evolu.ts"
 
 const emptyRows: ReadonlyArray<never> = []
 const subscribeToNothing = (): (() => void) => () => {}

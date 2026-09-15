@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from "lucide-react"
 import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button.tsx"
+import { Textarea } from "@/components/ui/textarea.tsx"
 import { cn } from "@/lib/utils.ts"
 
 type PasswordTextareaProps = React.ComponentProps<typeof Textarea> & {

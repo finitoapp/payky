@@ -1,13 +1,29 @@
-import { ok, type Task, testCreateRun } from "@evolu/common"
+import {
+  ok,
+  sqliteFalse,
+  sqliteTrue,
+  type Task,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import {
   type AppMigration,
+  appMigrations,
   loadPendingMigrations,
   runMigrations,
 } from "@/core/migrations/migrations.ts"
+import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
+  NonEmptyString255,
+  PositiveInteger,
+} from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../evolu/cli-client"
 
 /**
@@ -121,4 +137,66 @@ describe("app migrations", () => {
       await dispose()
     }
   })
+
+  /**
+   * The tests above exercise the runner with synthetic migrations, and
+   * `fio-plugin-actions.test.ts` covers `migrateLegacyFioPlugins` on its own.
+   * Nothing tied the two together: the registry's one real entry could have
+   * been dropped from `appMigrations` and `bun run check` would have stayed
+   * green. This runs the real registry against the row shape the migration
+   * exists for.
+   */
+  test("the registry's real migration is reached, runs, and then reports done", async () => {
+    const { deps, dispose } = await createDeps()
+    try {
+      await using run = testCreateRun(deps)
+      const { evolu } = deps
+      const legacyId = createRowId<"FioPlugin">()
+
+      // The pre-singleton shape: a plugin at a generated id rather than the
+      // fixed `fioPluginId`, with its token keyed to that same id.
+      await runMutationWithCompletion((options) => {
+        const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+
+        evolu.upsert(
+          "fioPlugin",
+          {
+            id: legacyId,
+            accountId: fiatBankAccountId,
+            numberOfSecondsBetweenChecks: PositiveInteger(300),
+            syncLookbackDays: PositiveInteger(3),
+            isActive: sqliteTrue,
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+        evolu.upsert(
+          "fioPluginToken",
+          {
+            id: createRowId<"FioPluginToken">(),
+            fioPluginId: legacyId,
+            token: NonEmptyString255("fio-token-legacy"),
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+      })
+
+      const pending = await run.ok(loadPendingMigrations(appMigrations))
+      expect(pending.map((migration) => migration.name)).toEqual([
+        "2026-09-14-fio-plugin-fixed-id",
+      ])
+
+      await expect(run(runMigrations(pending))).resolves.toMatchObject({
+        ok: true,
+        value: 1,
+      })
+
+      await expect(
+        run(loadPendingMigrations(appMigrations))
+      ).resolves.toMatchObject({ ok: true, value: [] })
+    } finally {
+      await dispose()
+    }
+  }, 15_000)
 })

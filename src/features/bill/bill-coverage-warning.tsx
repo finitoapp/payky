@@ -73,14 +73,20 @@ export function BillCoverageWarning({
           )}
         </p>
         <p>
-          {t(
-            isUnderpaid
-              ? "paymentDetail.bill.coverage.underpaid.fact"
-              : "paymentDetail.bill.coverage.overpaid.fact"
-          )}
           {reason === null
-            ? null
-            : ` ${t(`paymentDetail.bill.coverage.reason.${reason}`)}`}
+            ? t(
+                isUnderpaid
+                  ? "paymentDetail.bill.coverage.underpaid.fact"
+                  : "paymentDetail.bill.coverage.overpaid.fact"
+              )
+            : t(
+                isUnderpaid
+                  ? "paymentDetail.bill.coverage.underpaid.factWithReason"
+                  : "paymentDetail.bill.coverage.overpaid.factWithReason",
+                {
+                  reason: t(`paymentDetail.bill.coverage.reason.${reason}`),
+                }
+              )}
         </p>
         <BillCoverageAmountRow
           label={t("paymentDetail.bill.coverage.expectedAmount")}

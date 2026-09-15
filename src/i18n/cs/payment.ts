@@ -15,6 +15,8 @@ export const csPayment = {
   "paymentDetail.bill.coverage.expectedAmount": "Očekáváno",
   "paymentDetail.bill.coverage.overpaid.fact":
     "Tento účet byl zaplacen za víc, než aktuálně stojí.",
+  "paymentDetail.bill.coverage.overpaid.factWithReason":
+    "Tento účet byl zaplacen za víc, než aktuálně stojí. {reason}",
   "paymentDetail.bill.coverage.overpaid.title": "Přeplaceno",
   "paymentDetail.bill.coverage.paidAmount": "Zaplaceno",
   "paymentDetail.bill.coverage.reason.billLinesChanged":
@@ -23,6 +25,8 @@ export const csPayment = {
     "Tento účet zahrnuje víc než jednu platbu — podívejte se na ty ostatní níže.",
   "paymentDetail.bill.coverage.underpaid.fact":
     "Tento účet zatím není plně pokrytý potvrzenými platbami.",
+  "paymentDetail.bill.coverage.underpaid.factWithReason":
+    "Tento účet zatím není plně pokrytý potvrzenými platbami. {reason}",
   "paymentDetail.bill.coverage.underpaid.title": "Není doplaceno",
   "paymentDetail.bill.empty": "Tento účet nemá žádné položky.",
   "paymentDetail.bill.table": "Stůl",

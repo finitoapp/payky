@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { parseISO } from "date-fns"
 import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
@@ -346,10 +347,7 @@ function PaymentDetailContent({
               label={t("paymentDetail.paymentNumber.date")}
               value={
                 paymentNumber
-                  ? formatDate(
-                      new Date(`${paymentNumber.date}T00:00:00`),
-                      locale
-                    )
+                  ? formatDate(parseISO(paymentNumber.date), locale)
                   : t("paymentDetail.emptyValue")
               }
             />

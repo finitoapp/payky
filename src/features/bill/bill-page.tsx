@@ -41,7 +41,6 @@ import {
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   cancelBill,
-  confirmBillClosedDespiteCancellation,
   type SplitBillError,
   splitBill,
   splitBillIntoNewBill,
@@ -86,6 +85,7 @@ import {
   type SplitBillConfirmInput,
   SplitBillDialog,
 } from "@/features/bill/split-bill-dialog.tsx"
+import { useBillCancellationCollisionActions } from "@/features/bill/use-bill-cancellation-collision-actions.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
@@ -271,8 +271,8 @@ function BillCancellationCollisionMessage({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const appRun = useAppRun()
-  const [resolvePending, setResolvePending] = useState(false)
+  const { pending, confirmClosed, refund } =
+    useBillCancellationCollisionActions(billId)
   const summaries = useBillLineSummaries(billId)
   const claimedQuery = claimedPaymentsByBillIdQuery(billId)
   const { data: claimedPayments } = useEvoluQuery(claimedQuery)
@@ -281,24 +281,6 @@ function BillCancellationCollisionMessage({
     [claimedPayments]
   )
   const totalAmount = deriveBillSummaryTotal(summaries)
-
-  const handleConfirmClosedDespiteCancellation = async () => {
-    setResolvePending(true)
-    try {
-      await using run = appRun()
-      const result = await run(confirmBillClosedDespiteCancellation(billId))
-
-      if (!result.ok) {
-        toast.error(t("bill.collision.markClosed.error"))
-      }
-    } finally {
-      setResolvePending(false)
-    }
-  }
-
-  const handleRefund = () => {
-    toast.info(t("bill.collision.refund.comingSoon"))
-  }
 
   return (
     <div className="mt-16 flex flex-col items-center gap-4 px-6 text-center">
@@ -325,12 +307,12 @@ function BillCancellationCollisionMessage({
         ))}
         <Button
           className="h-12"
-          disabled={resolvePending}
-          onClick={() => void handleConfirmClosedDespiteCancellation()}
+          disabled={pending}
+          onClick={() => void confirmClosed()}
         >
           {t("bill.collision.markClosed")}
         </Button>
-        <Button variant="outline" className="h-12" onClick={handleRefund}>
+        <Button variant="outline" className="h-12" onClick={refund}>
           {t("bill.collision.refund")}
         </Button>
       </div>

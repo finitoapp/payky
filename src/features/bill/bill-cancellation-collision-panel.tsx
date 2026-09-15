@@ -1,10 +1,7 @@
-import { useState } from "react"
-import { toast } from "sonner"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-actions.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useBillCancellationCollisionActions } from "@/features/bill/use-bill-cancellation-collision-actions.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
@@ -17,7 +14,8 @@ import { useTranslation } from "@/hooks/use-translation.ts"
  * `bill-page.tsx`'s `BillCancellationCollisionMessage` deliberately doesn't
  * use this. It's the whole screen rather than one section of a card, so it
  * wraps the same two actions in a different layout — the bill's total and
- * links to the payments that funded it — around the same warning.
+ * links to the payments that funded it — around the same warning. Only the
+ * layout differs: both drive `useBillCancellationCollisionActions`.
  */
 export function BillCancellationCollisionPanel({
   billId,
@@ -25,22 +23,8 @@ export function BillCancellationCollisionPanel({
   readonly billId: BillId
 }) {
   const { t } = useTranslation()
-  const appRun = useAppRun()
-  const [resolvePending, setResolvePending] = useState(false)
-
-  const handleConfirmClosedDespiteCancellation = async () => {
-    setResolvePending(true)
-    try {
-      await using run = appRun()
-      const result = await run(confirmBillClosedDespiteCancellation(billId))
-
-      if (!result.ok) {
-        toast.error(t("bill.collision.markClosed.error"))
-      }
-    } finally {
-      setResolvePending(false)
-    }
-  }
+  const { pending, confirmClosed, refund } =
+    useBillCancellationCollisionActions(billId)
 
   return (
     <CollisionAlert
@@ -49,16 +33,12 @@ export function BillCancellationCollisionPanel({
     >
       <Button
         className="h-12 flex-1"
-        disabled={resolvePending}
-        onClick={() => void handleConfirmClosedDespiteCancellation()}
+        disabled={pending}
+        onClick={() => void confirmClosed()}
       >
         {t("bill.collision.markClosed")}
       </Button>
-      <Button
-        variant="outline"
-        className="h-12 flex-1"
-        onClick={() => toast.info(t("bill.collision.refund.comingSoon"))}
-      >
+      <Button variant="outline" className="h-12 flex-1" onClick={refund}>
         {t("bill.collision.refund")}
       </Button>
     </CollisionAlert>

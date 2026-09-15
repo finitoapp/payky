@@ -39,15 +39,12 @@ const slovakTaxRateSeed: ReadonlyArray<TaxRateSeed> = [
 
 const otherCountryTaxRateSeed: ReadonlyArray<TaxRateSeed> = []
 
+const taxRateSeeds = {
+  CZ: czechTaxRateSeed,
+  SK: slovakTaxRateSeed,
+} satisfies Record<CountryCode, ReadonlyArray<TaxRateSeed>>
+
 export const getTaxRateSeedForCountry = (
   country: CountryCode | null
-): ReadonlyArray<TaxRateSeed> => {
-  switch (country) {
-    case "CZ":
-      return czechTaxRateSeed
-    case "SK":
-      return slovakTaxRateSeed
-    case null:
-      return otherCountryTaxRateSeed
-  }
-}
+): ReadonlyArray<TaxRateSeed> =>
+  country === null ? otherCountryTaxRateSeed : taxRateSeeds[country]

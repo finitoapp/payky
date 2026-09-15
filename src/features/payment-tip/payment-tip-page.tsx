@@ -1,7 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { useNavigate } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -136,12 +135,11 @@ function PaymentTipForm({
     setPending(true)
     try {
       const paymentAmounts = calculatePaymentAmounts({ amount, tipAmount })
-      const created = await createTerminalPayment({
+      await createTerminalPayment({
         ...paymentAmounts,
         currency,
         billId,
       })
-      if (!created) toast.error(t("payment.create.error"))
     } finally {
       confirmPendingRef.current = false
       setPending(false)

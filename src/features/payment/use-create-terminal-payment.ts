@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useStore } from "jotai"
 import { useCallback } from "react"
+import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -11,12 +12,20 @@ import type {
 } from "@/core/modules/shared/schema.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
+/**
+ * Prepares a payment and navigates to it. Failure is logged and toasted here
+ * rather than signalled back: all three callers wanted the same toast, so the
+ * boolean bought nothing and a fourth caller forgetting to check it would have
+ * failed silently.
+ */
 export function useCreateTerminalPayment() {
   const appRun = useAppRun()
   const console = useConsole()
   const navigate = useNavigate()
   const jotaiStore = useStore()
+  const { t } = useTranslation()
 
   return useCallback(
     async ({
@@ -29,7 +38,7 @@ export function useCreateTerminalPayment() {
       readonly currency: FiatCurrency
       readonly tipAmount: NonNegativeInteger
       readonly billId?: BillId | null
-    }): Promise<boolean> => {
+    }): Promise<void> => {
       const { device } = await jotaiStore.get(accountAtom)
 
       await using run = appRun()
@@ -48,7 +57,8 @@ export function useCreateTerminalPayment() {
 
       if (!result.ok) {
         console.error("Failed to create prepared payment", result.error)
-        return false
+        toast.error(t("payment.create.error"))
+        return
       }
 
       await navigate({
@@ -57,8 +67,7 @@ export function useCreateTerminalPayment() {
           paymentId: result.value,
         },
       })
-      return true
     },
-    [appRun, console, jotaiStore, navigate]
+    [appRun, console, jotaiStore, navigate, t]
   )
 }

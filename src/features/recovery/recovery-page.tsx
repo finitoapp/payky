@@ -25,6 +25,7 @@ import {
 import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { formatDateTime } from "@/lib/format-utils.ts"
 
 /**
  * The way back when the active account's app database won't open: every
@@ -44,11 +45,6 @@ export function RecoveryPage() {
   const recoveryMnemonic = useAtomValue(recoveryMnemonicAtom)
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [pending, setPending] = useState(false)
-
-  const dateFormatter = new Intl.DateTimeFormat(language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })
 
   const switchAccount = async (accountId: AccountId) => {
     setPending(true)
@@ -128,7 +124,7 @@ export function RecoveryPage() {
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {t("settings.accounts.list.createdAt")}{" "}
-                      {dateFormatter.format(new Date(account.createdAt))}
+                      {formatDateTime(new Date(account.createdAt), language)}
                     </span>
                   </span>
                   <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">

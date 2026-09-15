@@ -37,6 +37,7 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { formatDateTime } from "@/lib/format-utils.ts"
 
 export function AccountsSettingsPage() {
   const { language, t } = useTranslation()
@@ -62,11 +63,6 @@ export function AccountsSettingsPage() {
     restore,
   } = useRestoreAccount()
   const mnemonicInputId = useId()
-
-  const dateFormatter = new Intl.DateTimeFormat(language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })
 
   const activateAccount = (accountId: AccountId) => {
     if (accountId === activeAccount.id) {
@@ -174,7 +170,7 @@ export function AccountsSettingsPage() {
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {t("settings.accounts.list.createdAt")}{" "}
-                        {dateFormatter.format(new Date(account.createdAt))}
+                        {formatDateTime(new Date(account.createdAt), language)}
                       </span>
                     </span>
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">

@@ -99,4 +99,33 @@ describe("createInProcessLockManager", () => {
       lockManager.request("a", { steal: true }, () => undefined)
     ).rejects.toThrow(TypeError)
   })
+
+  test("query reports one held lock and the rest of the chain as pending", async () => {
+    const lockManager = createInProcessLockManager()
+    const releaseFirst = Promise.withResolvers<void>()
+
+    const first = lockManager.request("a", () => releaseFirst.promise)
+    const second = lockManager.request("a", () => undefined)
+    const third = lockManager.request("a", () => undefined)
+    const other = lockManager.request("b", () => releaseFirst.promise)
+
+    await expect(lockManager.query()).resolves.toEqual({
+      held: [
+        { name: "a", mode: "exclusive", clientId: "in-process" },
+        { name: "b", mode: "exclusive", clientId: "in-process" },
+      ],
+      pending: [
+        { name: "a", mode: "exclusive", clientId: "in-process" },
+        { name: "a", mode: "exclusive", clientId: "in-process" },
+      ],
+    })
+
+    releaseFirst.resolve()
+    await Promise.all([first, second, third, other])
+
+    await expect(lockManager.query()).resolves.toEqual({
+      held: [],
+      pending: [],
+    })
+  })
 })

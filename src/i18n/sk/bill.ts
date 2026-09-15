@@ -101,4 +101,9 @@ export const skBill = {
   "billHistory.status.open": "Otvorené",
   "billHistory.title": "História účtov",
   "billHistory.underpaid": "Nedoplatené",
+  "taxRecap.base": "Základ",
+  "taxRecap.noTax": "Bez DPH",
+  "taxRecap.rateLabel": "{name} ({rate}%)",
+  "taxRecap.tax": "DPH",
+  "taxRecap.title": "Rekapitulácia DPH",
 } satisfies Record<keyof typeof enBill, string>

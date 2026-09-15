@@ -307,3 +307,77 @@ html {
 .safe-area-b {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/**
+ * Android-style screen transition.
+ *
+ * This is the platform's activity open/close, not Material's shared-axis: the
+ * arriving screen slides the full width from the right and covers the one
+ * below, which drifts a quarter of the way left and dims. Going back the
+ * leaving screen slides off to the right and uncovers it again, so there it has
+ * to be lifted above its replacement — the pseudo-element for the new snapshot
+ * paints on top by default.
+ *
+ * The router only tags the home <-> /settings navigation (see router.tsx), so
+ * nothing else animates. Browsers without view-transition *types* (Chrome
+ * < 125) never match these selectors and keep the UA cross-fade.
+ */
+@keyframes payky-screen-slide {
+  from {
+    transform: translateX(var(--payky-screen-from));
+    filter: brightness(var(--payky-screen-dim-from, 1));
+  }
+  to {
+    transform: translateX(var(--payky-screen-to));
+    filter: brightness(var(--payky-screen-dim-to, 1));
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 350ms;
+  /* Emphasized decelerate, the M3 easing for an incoming surface. */
+  animation-timing-function: cubic-bezier(0.05, 0.7, 0.1, 1);
+  animation-fill-mode: both;
+  /* One screen covers the other rather than blending with it. */
+  mix-blend-mode: normal;
+}
+
+html:active-view-transition-type(forward, backward)::view-transition-old(root),
+html:active-view-transition-type(forward, backward)::view-transition-new(root) {
+  animation-name: payky-screen-slide;
+}
+
+/* The covering screen: full width, with an elevation edge to sell the overlap. */
+html:active-view-transition-type(forward)::view-transition-new(root) {
+  --payky-screen-from: 100%;
+  --payky-screen-to: 0%;
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.2);
+}
+
+html:active-view-transition-type(backward)::view-transition-old(root) {
+  --payky-screen-from: 0%;
+  --payky-screen-to: 100%;
+  box-shadow: -8px 0 24px rgb(0 0 0 / 0.2);
+  z-index: 1;
+}
+
+/* The covered screen: a quarter of the travel, dimmed while it is behind. */
+html:active-view-transition-type(forward)::view-transition-old(root) {
+  --payky-screen-from: 0%;
+  --payky-screen-to: -25%;
+  --payky-screen-dim-to: 0.7;
+}
+
+html:active-view-transition-type(backward)::view-transition-new(root) {
+  --payky-screen-from: -25%;
+  --payky-screen-to: 0%;
+  --payky-screen-dim-from: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

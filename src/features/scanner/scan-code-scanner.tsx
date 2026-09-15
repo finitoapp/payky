@@ -47,20 +47,20 @@ const SCAN_FORMATS: Array<BarcodeFormat> = [
 
 const DEFAULT_REPEAT_DELAY_MS = 2000
 
-const errorMessageKey = (kind: IScannerError["kind"]): TranslationKey => {
-  switch (kind) {
-    case "permission-denied":
-      return "scanner.error.permissionDenied"
-    case "insecure-context":
-      return "scanner.error.insecureContext"
-    case "no-camera":
-      return "scanner.error.noCamera"
-    case "unsupported":
-      return "scanner.error.unsupported"
-    default:
-      return "scanner.error.generic"
-  }
-}
+// Every kind is spelled out rather than defaulted, so a kind the library adds
+// fails the build here instead of silently degrading to the generic message.
+const scannerErrorKeys = {
+  "permission-denied": "scanner.error.permissionDenied",
+  "insecure-context": "scanner.error.insecureContext",
+  "no-camera": "scanner.error.noCamera",
+  unsupported: "scanner.error.unsupported",
+  "in-use": "scanner.error.generic",
+  overconstrained: "scanner.error.generic",
+  aborted: "scanner.error.generic",
+  security: "scanner.error.generic",
+  "type-error": "scanner.error.generic",
+  unknown: "scanner.error.generic",
+} satisfies Record<IScannerError["kind"], TranslationKey>
 
 /**
  * Camera-based scanner for `catalogItem.scanCode` values (barcodes or QR
@@ -142,7 +142,7 @@ export function ScanCodeScanner({
         ref={scannerRef}
         paused={paused}
         onScan={handleScan}
-        onError={(error) => setErrorKey(errorMessageKey(error.kind))}
+        onError={(error) => setErrorKey(scannerErrorKeys[error.kind])}
         constraints={{
           facingMode: "environment",
           width: { ideal: 1280 },

@@ -1,10 +1,7 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
-import { use, useMemo, useSyncExternalStore } from "react"
 import type { EvoluSchema } from "@/core/evolu/schema.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
-
-const emptyRows: ReadonlyArray<never> = []
-const subscribeToNothing = (): (() => void) => () => {}
+import { useEvoluQueryFor } from "@/hooks/use-evolu-query-for.ts"
 
 /**
  * `useEvoluQuery` for a query that only exists in some states, for example a
@@ -18,27 +15,7 @@ const subscribeToNothing = (): (() => void) => () => {}
  */
 export const useOptionalEvoluQuery = <R extends Row>(
   query: Query<EvoluSchema, R> | null
-): { data: QueryRows<R> } => {
-  const evolu = useEvolu()
-
-  // `use` is the one hook React allows to be called conditionally.
-  if (query !== null) use(evolu.loadQuery(query))
-
-  const data = useSyncExternalStore(
-    useMemo(
-      () => (query === null ? subscribeToNothing : evolu.subscribeQuery(query)),
-      [evolu, query]
-    ),
-    useMemo(
-      () => () => (query === null ? emptyRows : evolu.getQueryRows(query)),
-      [evolu, query]
-    )
-  )
-
-  return {
-    data: data as QueryRows<R>,
-  }
-}
+): { data: QueryRows<R> } => useEvoluQueryFor(useEvolu(), query)
 
 export const useEvoluQuery = <R extends Row>(
   query: Query<EvoluSchema, R>

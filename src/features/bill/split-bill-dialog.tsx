@@ -1,6 +1,6 @@
 import { MinusIcon, PlusIcon } from "lucide-react"
 import { motion } from "motion/react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -102,12 +102,22 @@ export function SplitBillDialog({
     [openBills, billId, currency]
   )
 
-  useEffect(() => {
-    if (!open) return
-    setSelected({})
-    setDestination("new")
-    setTargetBillId(null)
-  }, [open])
+  // Reset during render rather than in an effect: an effect runs after the
+  // browser has painted, so reopening the dialog showed the previous split's
+  // selection, totals and pulse animation for a frame first. React re-runs this
+  // component immediately with the new state, before anything reaches the
+  // screen.
+  const [openOnLastRender, setOpenOnLastRender] = useState(open)
+
+  if (open !== openOnLastRender) {
+    setOpenOnLastRender(open)
+
+    if (open) {
+      setSelected({})
+      setDestination("new")
+      setTargetBillId(null)
+    }
+  }
 
   const setQuantity = (summary: BillLineSummary, quantity: number) => {
     setSelected((current) => ({

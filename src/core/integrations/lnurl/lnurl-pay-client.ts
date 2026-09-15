@@ -172,8 +172,11 @@ export const fetchLnurlPayMetadata =
 
     return ok({
       callback: metadata.value.callback,
-      minSendableSats: metadata.value.minSendable / MSATS_PER_SAT,
-      maxSendableSats: metadata.value.maxSendable / MSATS_PER_SAT,
+      // LUD-06 allows any positive msat integer, so the bounds need not land
+      // on whole sats. Round inwards: a sat below the ceiled minimum or above
+      // the floored maximum is one the recipient would reject.
+      minSendableSats: Math.ceil(metadata.value.minSendable / MSATS_PER_SAT),
+      maxSendableSats: Math.floor(metadata.value.maxSendable / MSATS_PER_SAT),
     })
   }
 

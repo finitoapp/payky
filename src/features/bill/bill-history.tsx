@@ -18,6 +18,7 @@ import {
   deriveBillSummaryTotal,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
+import { billStatusLabelKey } from "@/features/bill/bill-status-display.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -149,7 +150,7 @@ function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
       </div>
       <div className={"pl-2"}>
         <span className="text-xs font-medium text-muted-foreground">
-          {t(`billHistory.status.${summary.status}`)}
+          {t(billStatusLabelKey[summary.status])}
         </span>
       </div>
     </div>

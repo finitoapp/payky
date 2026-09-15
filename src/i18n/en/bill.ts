@@ -98,4 +98,9 @@ export const enBill = {
   "billHistory.status.open": "Open",
   "billHistory.title": "Bill history",
   "billHistory.underpaid": "Underpaid",
+  "taxRecap.base": "Base",
+  "taxRecap.noTax": "No VAT",
+  "taxRecap.rateLabel": "{name} ({rate}%)",
+  "taxRecap.tax": "VAT",
+  "taxRecap.title": "VAT breakdown",
 } as const

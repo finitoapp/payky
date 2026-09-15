@@ -66,9 +66,4 @@ export const skCommon = {
   "tables.tile.free": "Voľný",
   "tables.tile.multipleBills": "{value} otvorených účtov",
   "tables.tile.newBill": "Nový účet",
-  "taxRecap.base": "Základ",
-  "taxRecap.noTax": "Bez DPH",
-  "taxRecap.rateLabel": "{name} ({rate}%)",
-  "taxRecap.tax": "DPH",
-  "taxRecap.title": "Rekapitulácia DPH",
 } satisfies Record<keyof typeof enCommon, string>

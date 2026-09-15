@@ -99,4 +99,9 @@ export const csBill = {
   "billHistory.status.open": "Otevřeno",
   "billHistory.title": "Historie účtů",
   "billHistory.underpaid": "Nedoplaceno",
+  "taxRecap.base": "Základ",
+  "taxRecap.noTax": "Bez DPH",
+  "taxRecap.rateLabel": "{name} ({rate}%)",
+  "taxRecap.tax": "DPH",
+  "taxRecap.title": "Rekapitulace DPH",
 } satisfies Record<keyof typeof enBill, string>

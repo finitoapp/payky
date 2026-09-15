@@ -164,7 +164,7 @@
 - Prefer `async`/`await` over `Promise.then(...)` chains.
     - Keep promise combinators such as `Promise.all` when they express concurrency clearly.
     - Keep `Promise.all([...])` tuples reasonably short; if the list grows past 10 items, split it into coherent groups or use another typed pattern.
-- Represent money as `BigInt` minor units, never floating-point `Number`; use the conversion helpers in `src/core/modules/shared/money.ts` (`decimalAmountToMinorUnits`, `minorUnitsToDecimalString`) instead of ad hoc parsing.
+- Represent money as integer minor units — the branded `Integer`/`NonNegativeInteger` numbers the Evolu schema stores (`payment.amount`, `billLine.totalAmount`) — never floating-point. Convert through the helpers in `src/core/modules/shared/money.ts` (`decimalAmountToMinorUnits`, `minorUnitsToDecimalString`) instead of ad hoc parsing, and take the number of fraction digits from `currencyFractionDigits` rather than assuming two.
 - Preserve exhaustive typing for finite variants.
     - Use the established nearby exhaustive-check pattern for switches or branches over unions/enums.
     - Use `satisfies Record<EnumOrUnion, ...>` for enum/union-keyed maps when completeness should be enforced while preserving literal value types.

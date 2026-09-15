@@ -6,8 +6,8 @@ import {
 } from "@/core/modules/shared/schema.ts"
 
 export type Money = {
-  value: Integer
-  currency: Currency
+  readonly value: Integer
+  readonly currency: Currency
 }
 
 export const currencyFractionDigits: Record<Currency, Integer> = {
@@ -19,7 +19,7 @@ export const currencyFractionDigits: Record<Currency, Integer> = {
 
 export const minorUnitsToDecimalString = (props: Money): NumberString => {
   const fractionDigits = currencyFractionDigits[props.currency]
-  const isNegative = props.value < BigInt(0)
+  const isNegative = props.value < 0
   const abs = isNegative ? -props.value : props.value
 
   if (fractionDigits === 0) {

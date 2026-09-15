@@ -492,13 +492,12 @@ function BillCartView({
         return
       }
 
-      const created = await createTerminalPayment({
+      await createTerminalPayment({
         amount: totalAmount,
         currency,
         tipAmount: NonNegativeInteger(0),
         billId,
       })
-      if (!created) toast.error(t("payment.create.error"))
     } finally {
       setChargePending(false)
     }

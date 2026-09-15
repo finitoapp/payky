@@ -48,11 +48,23 @@ describe("createEvoluExportFilename", () => {
 })
 
 describe("formatExportCreatedAt", () => {
-  test("formats a date using medium date and time styles", () => {
+  // The layout comes from the runtime locale, which the suite does not pin, so
+  // a literal expectation would be environment-dependent. Assert what the
+  // format options actually promise instead.
+  test("shows the calendar date", () => {
     const formatted = formatExportCreatedAt(new Date(2026, 0, 5, 9, 3, 7))
 
-    expect(typeof formatted).toBe("string")
-    expect(formatted.length).toBeGreaterThan(0)
+    expect(formatted).toContain("2026")
+    expect(formatted).toContain("5")
+  })
+
+  test("resolves down to the second, as `timeStyle: medium` promises", () => {
+    const at = new Date(2026, 0, 5, 9, 3, 7)
+    const aSecondLater = new Date(2026, 0, 5, 9, 3, 8)
+
+    expect(formatExportCreatedAt(at)).not.toBe(
+      formatExportCreatedAt(aSecondLater)
+    )
   })
 })
 

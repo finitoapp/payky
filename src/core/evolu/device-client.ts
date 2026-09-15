@@ -22,7 +22,7 @@ import {
   SqliteBoolSchema,
   TimestampMsSchema,
   WssUrlSchema,
-} from "@/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const AccountIdRaw = id("DeviceAccountId")

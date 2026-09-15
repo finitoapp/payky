@@ -1,6 +1,9 @@
 /// <reference types="vite-plugin-pwa/react" />
 
-import type { IntegerString, TimestampMs } from "@/core/modules/shared/schema"
+import type {
+  IntegerString,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
 
 declare global {
   const __APP_VERSION__: string

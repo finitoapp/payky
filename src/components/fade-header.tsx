@@ -1,7 +1,7 @@
 import { useRouter } from "@tanstack/react-router"
 import { ArrowLeftIcon } from "lucide-react"
 import { type FC, type ReactNode, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const FadeHeader: FC<{

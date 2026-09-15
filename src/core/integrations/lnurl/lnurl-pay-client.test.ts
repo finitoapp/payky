@@ -76,6 +76,30 @@ describe("lnurl pay client", () => {
     ])
   })
 
+  test("rounds msat bounds that do not land on whole sats inwards", async () => {
+    const deps = {
+      fetch: async () =>
+        Response.json({
+          tag: "payRequest",
+          callback: "https://pay.example.test/callback",
+          minSendable: 1_500,
+          maxSendable: 99_999_500,
+          metadata: '[["text/plain","Donate"]]',
+        }),
+    } satisfies FetchDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayMetadata({ address: "donate@payky.me" }))
+    ).resolves.toMatchObject({
+      ok: true,
+      value: {
+        minSendableSats: 2,
+        maxSendableSats: 99_999,
+      },
+    })
+  })
+
   test("returns the LNURL error reason from an ERROR body", async () => {
     const deps = {
       fetch: async () =>

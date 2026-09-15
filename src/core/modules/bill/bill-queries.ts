@@ -15,6 +15,7 @@ export const billByIdQuery = (idValue: BillId) =>
       .selectFrom("bill")
       .selectAll()
       .where("id", "=", idValue)
+      .where("isDeleted", "is not", sqliteTrue)
       .where("displayNumber", "is not", null)
       .where("currency", "is not", null)
       .$narrowType<{
@@ -117,6 +118,7 @@ export const openBillsQuery = createQuery((db) =>
     ])
     .where("canceledAt", "is", null)
     .where("closedAt", "is", null)
+    .where("isDeleted", "is not", sqliteTrue)
     .where("displayNumber", "is not", null)
     .where("currency", "is not", null)
     .$narrowType<{

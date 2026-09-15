@@ -18,7 +18,11 @@ import {
   NonEmptyString255,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
-import { createFioAccountTransactionSyncJob } from "./fio-account-transaction-sync-job.ts"
+import {
+  createFioAccountTransactionSyncJob,
+  dateStringToDate,
+  dateToDateString,
+} from "./fio-account-transaction-sync-job.ts"
 
 const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
   createQuery((db) =>
@@ -529,5 +533,24 @@ describe("fio account transaction sync job", () => {
       await evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId))
     ).toEqual([])
     expect(errors).toEqual([])
+  })
+})
+
+describe("FIO sync date helpers", () => {
+  // Both formatting and parsing read the local clock, so under TZ=UTC the old
+  // UTC-parsing version is indistinguishable from the fix. A negative offset is
+  // the only place the drift shows.
+  test("round-trip a date string unchanged west of UTC", () => {
+    const originalTimeZone = process.env.TZ
+
+    try {
+      process.env.TZ = "America/New_York"
+
+      const stored = DateStringSchema.decode("2026-05-20")
+
+      expect(dateToDateString(dateStringToDate(stored))).toBe(stored)
+    } finally {
+      process.env.TZ = originalTimeZone
+    }
   })
 })

@@ -59,7 +59,7 @@ interface FiatBankAccountQrFormatOption {
 const fiatBankAccountQrFormatOptions: ReadonlyArray<FiatBankAccountQrFormatOption> =
   bankQrFormats.map((format) => ({
     value: format,
-    label: `settings.fiatBankAccount.qrFormat.${format}` as TranslationKey,
+    label: `settings.fiatBankAccount.qrFormat.${format}`,
   }))
 
 export function PaymentAccountsSettingsPage() {

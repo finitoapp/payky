@@ -18,6 +18,7 @@ import {
   NonEmptyString255,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import {
   createFioAccountTransactionSyncJob,
   dateStringToDate,
@@ -149,9 +150,7 @@ describe("fio account transaction sync job", () => {
           transactions: [fioTransaction, fioTransaction],
         })
       },
-      date: {
-        now: () => new Date("2026-05-31T10:00:00.000Z"),
-      },
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
     })
     await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
@@ -237,9 +236,7 @@ describe("fio account transaction sync job", () => {
           transactions: [fioTransaction],
         })
       },
-      date: {
-        now: () => new Date("2026-05-31T10:00:00.000Z"),
-      },
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
     })
     await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
@@ -305,9 +302,7 @@ describe("fio account transaction sync job", () => {
         new Response("Interval between requests was not respected.", {
           status: 409,
         }),
-      date: {
-        now: () => new Date("2026-05-31T10:00:00.000Z"),
-      },
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
     })
     await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
@@ -377,9 +372,7 @@ describe("fio account transaction sync job", () => {
           transactions: [],
         })
       },
-      date: {
-        now: () => new Date("2026-05-31T10:00:00.000Z"),
-      },
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
     })
     await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
@@ -435,9 +428,7 @@ describe("fio account transaction sync job", () => {
         requestedUrls.push(inputToString(input))
         return statementResponse({ transactions: [] })
       },
-      date: {
-        now: () => new Date("2026-05-31T10:00:00.000Z"),
-      },
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
     })
     await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 
@@ -521,9 +512,7 @@ describe("fio account transaction sync job", () => {
           iban: "CZ5508000000001234567899",
           transactions: [fioTransaction],
         }),
-      date: {
-        now: () => new Date("2026-05-31T10:00:00.000Z"),
-      },
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
     })
     await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
 

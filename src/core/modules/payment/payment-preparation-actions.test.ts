@@ -17,6 +17,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
+import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import { createPayment } from "./payment-actions.ts"
 import {
@@ -26,9 +27,7 @@ import {
 import { paymentByIdQuery } from "./payment-queries.ts"
 import { DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS } from "./payment-status-utils.ts"
 import {
-  createDateDeps,
   createPaymentAccounts,
-  fixedDate,
   paymentWithDetailsByIdQuery,
 } from "./payment-test-fixtures.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -61,7 +60,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -110,7 +109,7 @@ describe("payment preparation actions", () => {
           amount: 12_900,
           currency: "CZK",
           tipAmount: 1_000,
-          expiresAt: fixedDate.getTime() + 900_000,
+          expiresAt: testFixedDate.getTime() + 900_000,
           cashRegister: {
             id,
             accountId: cashRegisterAccountId,
@@ -165,7 +164,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -272,7 +271,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -352,7 +351,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -388,7 +387,9 @@ describe("payment preparation actions", () => {
         })
       )
     ).resolves.toEqual({ ok: true, value: id })
-    await expect.poll(() => expiresAtOf(id)).toBe(fixedDate.getTime() + 60_000)
+    await expect
+      .poll(() => expiresAtOf(id))
+      .toBe(testFixedDate.getTime() + 60_000)
 
     // Re-prepared with no `expirySeconds`: the invoice gets a fresh window
     // regardless, so leaving the old 60-second stamp behind would report a
@@ -404,7 +405,8 @@ describe("payment preparation actions", () => {
     await expect
       .poll(() => expiresAtOf(id))
       .toBe(
-        fixedDate.getTime() + DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1_000
+        testFixedDate.getTime() +
+          DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1_000
       )
 
     // Same for a payment created straight through `createPreparedPayment`
@@ -426,7 +428,8 @@ describe("payment preparation actions", () => {
     await expect
       .poll(() => expiresAtOf(preparedId))
       .toBe(
-        fixedDate.getTime() + DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1_000
+        testFixedDate.getTime() +
+          DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1_000
       )
   }, 15_000)
 
@@ -457,7 +460,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -493,7 +496,7 @@ describe("payment preparation actions", () => {
 
     await expect
       .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(id)))
-      .toMatchObject([{ id, expiresAt: fixedDate.getTime() + 900_000 }])
+      .toMatchObject([{ id, expiresAt: testFixedDate.getTime() + 900_000 }])
 
     // Switching the same payment to cash must not leave the dead invoice's
     // expiry behind: `derivePaymentStatus` would call this live cash payment
@@ -545,7 +548,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -634,7 +637,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -699,7 +702,7 @@ describe("payment preparation actions", () => {
           JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
         ),
       sparkWallet: { create: async () => createFakeSparkWallet({}) },
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -825,7 +828,7 @@ describe("payment preparation actions", () => {
       // `preparePaymentMethod` declares these even for a bank-only call.
       fetch: async () => new Response("{}"),
       sparkWallet: { create: async () => createFakeSparkWallet({}) },
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &
@@ -895,7 +898,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
       EvoluOwnerIdDep &

@@ -14,6 +14,7 @@ import {
   NonNegativeInteger,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createTable,
@@ -23,12 +24,6 @@ import {
   updateTable,
 } from "./table-actions.ts"
 import type { TableId } from "./table-types.ts"
-
-const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => new Date("2026-06-05T12:00:00.000Z"),
-  },
-})
 
 const tableRecordByIdQuery = (id: TableId) =>
   createQuery((db) =>
@@ -132,7 +127,7 @@ describe("table actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
 

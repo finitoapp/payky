@@ -1,6 +1,6 @@
 import { evoluJsonObjectFrom, testCreateRun } from "@evolu/common"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -8,14 +8,6 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { IbanSchema, NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
-
-export const fixedDate = new Date("2026-06-05T12:00:00.000Z")
-
-export const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => fixedDate,
-  },
-})
 
 export const paymentWithDetailsByIdQuery = (id: PaymentId) =>
   createQuery((db) =>

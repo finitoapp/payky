@@ -28,13 +28,8 @@ import {
   TimestampMs,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import { reconcileAccountTransaction } from "./reconciliation-claim-actions.ts"
-
-const createDateDeps = (): DateDep => ({
-  date: {
-    now: () => new Date("2026-06-05T12:00:00.000Z"),
-  },
-})
 
 type TestRun = DisposableRun<TestRunDefaultDeps & EvoluDep & EvoluOwnerIdDep>
 
@@ -86,7 +81,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createCashRegisterAccount(run)
@@ -144,7 +139,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
@@ -216,7 +211,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
@@ -276,7 +271,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
@@ -336,7 +331,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createSparkAccount(run)
@@ -412,7 +407,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createSparkAccount(run)
@@ -483,7 +478,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(run)
@@ -572,7 +567,7 @@ describe("reconciliation claim actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDeps(),
+      ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const accountId = await createCashRegisterAccount(run)

@@ -375,7 +375,7 @@ function SparkAccountForm() {
           </FieldContent>
         </Field>
 
-        {account?.secret != null && (
+        {account?.secret !== undefined && account.secret !== null && (
           <Field>
             <FieldLabel htmlFor={`${formId}-mnemonic`}>
               {t("settings.sparkAccount.mnemonic.label")}

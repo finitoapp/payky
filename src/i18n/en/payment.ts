@@ -13,6 +13,8 @@ export const enPayment = {
   "paymentDetail.bill.coverage.expectedAmount": "Expected",
   "paymentDetail.bill.coverage.overpaid.fact":
     "This bill has been paid for more than it's currently worth.",
+  "paymentDetail.bill.coverage.overpaid.factWithReason":
+    "This bill has been paid for more than it's currently worth. {reason}",
   "paymentDetail.bill.coverage.overpaid.title": "Overpaid",
   "paymentDetail.bill.coverage.paidAmount": "Paid",
   "paymentDetail.bill.coverage.reason.billLinesChanged":
@@ -21,6 +23,8 @@ export const enPayment = {
     "This bill involves more than one payment — see the others below.",
   "paymentDetail.bill.coverage.underpaid.fact":
     "This bill isn't fully covered by confirmed payments yet.",
+  "paymentDetail.bill.coverage.underpaid.factWithReason":
+    "This bill isn't fully covered by confirmed payments yet. {reason}",
   "paymentDetail.bill.coverage.underpaid.title": "Not fully paid",
   "paymentDetail.bill.empty": "This bill has no items.",
   "paymentDetail.bill.table": "Table",

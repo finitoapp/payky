@@ -851,9 +851,7 @@ test("a bill canceled while its payment is pending, then confirmed anyway, is fl
   await test.step("the bills list flags the collision", async () => {
     await gotoPage(page, "/activity/bills", "en", "activity.title")
     const row = page.locator("nav").locator(`a[href$="/${billId}"]`)
-    await expect(row).toContainText(
-      translate("en", "billHistory.status.canceled")
-    )
+    await expect(row).toContainText(translate("en", "bill.status.canceled"))
     await expect(row).toContainText(translate("en", "bill.collision.title"))
     await page.screenshot({
       path: `${screenshotDir}/activity-bills-list-collision.png`,

@@ -30,7 +30,7 @@ test("the bills list shows an ordinary open bill with nothing paid yet", async (
 
   await gotoPage(page, "/activity/bills", "en", "activity.title")
   const row = billRow(page, billId)
-  await expect(row).toContainText(translate("en", "billHistory.status.open"))
+  await expect(row).toContainText(translate("en", "bill.status.open"))
   await expect(row).not.toContainText(translate("en", "billHistory.underpaid"))
   await expect(row).not.toContainText(translate("en", "billHistory.overpaid"))
   await expect(row).not.toContainText(translate("en", "bill.collision.title"))
@@ -57,9 +57,7 @@ test("the bills list shows an ordinary canceled bill, discarded before any payme
 
   await gotoPage(page, "/activity/bills", "en", "activity.title")
   const row = billRow(page, billId)
-  await expect(row).toContainText(
-    translate("en", "billHistory.status.canceled")
-  )
+  await expect(row).toContainText(translate("en", "bill.status.canceled"))
   await expect(row).not.toContainText(translate("en", "bill.collision.title"))
   await page.screenshot({
     path: `${screenshotDir}/activity-bills-list-canceled.png`,
@@ -76,7 +74,7 @@ test("the bills list shows an ordinary closed bill, fully paid", async ({
 
   await gotoPage(page, "/activity/bills", "en", "activity.title")
   const row = billRow(page, billId)
-  await expect(row).toContainText(translate("en", "billHistory.status.closed"))
+  await expect(row).toContainText(translate("en", "bill.status.closed"))
   await expect(row).not.toContainText(translate("en", "billHistory.underpaid"))
   await expect(row).not.toContainText(translate("en", "billHistory.overpaid"))
   await page.screenshot({
@@ -234,7 +232,7 @@ test("the bills list and detail page show an underpaid bill when another device 
   await test.step("the bills list flags it as underpaid", async () => {
     await gotoPage(page, "/activity/bills", "en", "activity.title")
     const row = billRow(page, billId)
-    await expect(row).toContainText(translate("en", "billHistory.status.open"))
+    await expect(row).toContainText(translate("en", "bill.status.open"))
     await expect(row).toContainText(translate("en", "billHistory.underpaid"))
     await page.screenshot({
       path: `${screenshotDir}/activity-bills-list-underpaid.png`,
@@ -267,9 +265,7 @@ test("the bills list and detail page show an overpaid bill when another device s
   await test.step("the bills list flags it as overpaid", async () => {
     await gotoPage(page, "/activity/bills", "en", "activity.title")
     const row = billRow(page, billId)
-    await expect(row).toContainText(
-      translate("en", "billHistory.status.closed")
-    )
+    await expect(row).toContainText(translate("en", "bill.status.closed"))
     await expect(row).toContainText(translate("en", "billHistory.overpaid"))
     await page.screenshot({
       path: `${screenshotDir}/activity-bills-list-overpaid.png`,

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 31+. Nothing this app stores may leave the device.
+
+    Both Evolu databases live in WebView OPFS under the app's data directory,
+    and the account master key is in them: a backup or a device-to-device
+    transfer would copy wallet seed material off the device.
+
+    `android:allowBackup="false"` alone is not enough here. On Android 12 and
+    later it stops Google cloud backup but NOT device-to-device transfer, so
+    both sections below are spelled out, every domain in each.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="device_root" />
+        <exclude domain="device_file" />
+        <exclude domain="device_database" />
+        <exclude domain="device_sharedpref" />
+    </device-transfer>
+</data-extraction-rules>

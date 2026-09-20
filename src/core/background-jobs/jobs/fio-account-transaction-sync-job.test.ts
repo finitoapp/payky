@@ -161,7 +161,9 @@ describe("fio account transaction sync job", () => {
           accountId,
           amount: 19950,
           currency: "CZK",
-          occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+          occurredAt: dateStringToDate(
+            DateStringSchema.decode("2026-05-26")
+          ).getTime(),
           note: "Customer Ltd. | Thanks | Terminal 1 | Bezhotovostní příjem",
           variableSymbol: "123456",
           constantSymbol: "0308",

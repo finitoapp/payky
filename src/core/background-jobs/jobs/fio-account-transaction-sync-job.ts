@@ -277,7 +277,7 @@ class FioPluginSync {
             amount: IntegerSchema.decode(transaction.amountMinor),
             currency: transaction.currency,
             occurredAt: TimestampMsSchema.decode(
-              Date.parse(`${transaction.bookedDate}T00:00:00.000Z`)
+              dateStringToDate(transaction.bookedDate).getTime()
             ),
             note: createTransactionNote(transaction),
             internalTransferGroupId: null,

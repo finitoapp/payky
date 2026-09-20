@@ -1,4 +1,9 @@
-import { createIdFromString, ok, type Task } from "@evolu/common"
+import {
+  createIdFromString,
+  type MutationOptions,
+  ok,
+  type Task,
+} from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
@@ -33,8 +38,14 @@ import type { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
  * through `payment-queries.ts` (not `payment-actions.ts`) to avoid a
  * circular dependency, since `payment-actions.ts` composes this module's
  * `claimManualReconciliation`.
+ *
+ * Exported so a caller that must write the claim in the same mutation batch
+ * as something else (the account transaction it claims, in
+ * `markPaymentPaid`) can run this read first and pass the result to
+ * {@link upsertReconciliationClaimRows} directly, instead of always opening
+ * a separate batch through {@link writeClaimAndCloseBillIfCovered}.
  */
-const loadBillClosedAtForPayment =
+export const loadBillClosedAtForPayment =
   (
     paymentId: PaymentId,
     accountTransactionId: AccountTransactionId
@@ -54,6 +65,38 @@ const loadBillClosedAtForPayment =
     )
   }
 
+export interface ReconciliationClaimWrite {
+  readonly id: ReconciliationClaimId
+  readonly deviceId: DeviceId | null
+  readonly paymentId: PaymentId
+  readonly accountTransactionId: AccountTransactionId
+  readonly source: SyncSource
+  readonly claimedAt: TimestampMs
+}
+
+/**
+ * Upserts a reconciliation claim and, if `billClosing` says it now fully
+ * covers the claimed payment's bill, that bill's `closedAt` cache — both in
+ * one call to the caller's own `MutationOptions`, so they land in whichever
+ * mutation batch the caller is building. Pass the result of
+ * {@link loadBillClosedAtForPayment} as `billClosing`.
+ */
+export const upsertReconciliationClaimRows = (
+  evolu: EvoluDep["evolu"],
+  claim: ReconciliationClaimWrite,
+  billClosing: {
+    readonly billId: BillId
+    readonly closedAt: TimestampMs
+  } | null,
+  options: MutationOptions
+): void => {
+  evolu.upsert("reconciliationClaim", removeUndefinedValues(claim), options)
+
+  if (billClosing !== null) {
+    upsertBillClosedAt(evolu, billClosing.billId, billClosing.closedAt, options)
+  }
+}
+
 /**
  * Writes a reconciliation claim and, if it now fully covers the claimed
  * payment's bill, refreshes that bill's `closedAt` cache in the same
@@ -70,39 +113,21 @@ const loadBillClosedAtForPayment =
  * docs/bill-payment-states.md.
  */
 const writeClaimAndCloseBillIfCovered =
-  (claim: {
-    readonly id: ReconciliationClaimId
-    readonly deviceId: DeviceId | null
-    readonly paymentId: PaymentId
-    readonly accountTransactionId: AccountTransactionId
-    readonly source: SyncSource
-    readonly claimedAt: TimestampMs
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  (
+    claim: ReconciliationClaimWrite
+  ): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
     const billClosing = await run.ok(
       loadBillClosedAtForPayment(claim.paymentId, claim.accountTransactionId)
     )
 
-    await runMutationWithCompletion((options) => {
-      run.deps.evolu.upsert(
-        "reconciliationClaim",
-        removeUndefinedValues(claim),
-        {
-          ...options,
-          ownerId: evoluOwnerId,
-        }
-      )
-
-      if (billClosing !== null) {
-        upsertBillClosedAt(
-          run.deps.evolu,
-          billClosing.billId,
-          billClosing.closedAt,
-          { ...options, ownerId: evoluOwnerId }
-        )
-      }
-    })
+    await runMutationWithCompletion((options) =>
+      upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    )
 
     return ok(undefined)
   }

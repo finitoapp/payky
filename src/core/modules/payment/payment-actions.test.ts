@@ -1,5 +1,5 @@
 import { createIdFromString, sqliteTrue, testCreateRun } from "@evolu/common"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
@@ -1403,6 +1403,72 @@ describe("payment actions", () => {
     ).resolves.toMatchObject({ ok: true })
 
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+  }, 15_000)
+
+  test("records the account transaction, claim, and bill closing in one mutation batch", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(1_000),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(1_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+
+    // Regression guard for the crash window this closed: recording the money
+    // and claiming it used to be two separately-awaited mutation batches, so
+    // a crash (or a failed second batch) between them could leave the account
+    // transaction committed with nothing claiming it. Every write
+    // `markPaymentPaidCash` makes below — the account transaction, its source
+    // row, the claim, and the bill's `closedAt` cache — must share one
+    // batch's `onComplete`, proving they commit together or not at all.
+    const upsertSpy = vi.spyOn(evolu, "upsert")
+    const updateSpy = vi.spyOn(evolu, "update")
+
+    await run.orThrow(
+      markPaymentPaidCash({ paymentId, accountId: cashRegisterAccountId })
+    )
+
+    const writeCalls = [...upsertSpy.mock.calls, ...updateSpy.mock.calls]
+    const completions = new Set(writeCalls.map((call) => call[2]?.onComplete))
+    upsertSpy.mockRestore()
+    updateSpy.mockRestore()
+
+    expect(writeCalls.length).toBeGreaterThanOrEqual(4)
+    expect(completions.size).toBe(1)
   }, 15_000)
 
   test("stops counting a claim once the transaction behind it is deleted", async () => {

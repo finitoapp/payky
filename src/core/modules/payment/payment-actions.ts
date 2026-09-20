@@ -17,7 +17,10 @@ import {
   ibanAccountByIdQuery,
 } from "@/core/modules/account/account-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  computeAccountTransactionRows,
+  upsertAccountTransactionRows,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-guards.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -37,7 +40,10 @@ import {
   loadNextPaymentNumber,
   upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
-import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import {
+  loadBillClosedAtForPayment,
+  upsertReconciliationClaimRows,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
   activeClaimedTransactionsByPaymentIdQuery,
   activeReconciliationClaimsByPaymentIdQuery,
@@ -456,8 +462,16 @@ const markPaymentPaid =
     })
     if (!accountResult.ok) return accountResult
 
-    const accountTransactionId = await run.ok(
-      createAccountTransaction({
+    // Computed up front rather than written through `createAccountTransaction`
+    // and `claimManualReconciliation` as two separate mutation batches: the
+    // account transaction's id is content-derived (no write needed to learn
+    // it), and `loadBillClosedAtForPayment` reads only already-committed data
+    // plus this not-yet-written claim's own values — so both writes can join
+    // one batch below instead of leaving a window where the money moved but
+    // nothing claims it (a crash or failed second batch used to strand it
+    // there permanently).
+    const accountTransaction = computeAccountTransactionRows(
+      {
         id: createIdFromString<"AccountTransaction">(
           `${transactionIdPrefix}${paymentId}:${accountId}`
         ),
@@ -472,16 +486,36 @@ const markPaymentPaid =
           deviceId: deviceId ?? null,
           source: "manual",
         },
-      })
+      },
+      run.deps.date.now()
+    )
+    const claim = {
+      id: createIdFromString<"ReconciliationClaim">(
+        `reconciliationClaim:manual:${paymentId}:${accountTransaction.id}`
+      ),
+      deviceId: deviceId ?? null,
+      paymentId,
+      accountTransactionId: accountTransaction.id,
+      source: "manual" as const,
+      claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+    }
+    const billClosing = await run.ok(
+      loadBillClosedAtForPayment(paymentId, accountTransaction.id)
     )
 
-    return await run(
-      claimManualReconciliation({
-        paymentId,
-        accountTransactionId,
-        deviceId: deviceId ?? null,
+    const { evoluOwnerId } = run.deps
+    await runMutationWithCompletion((options) => {
+      upsertAccountTransactionRows(run.deps.evolu, accountTransaction, {
+        ...options,
+        ownerId: evoluOwnerId,
       })
-    )
+      upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+    })
+
+    return ok(paymentId)
   }
 
 export const markPaymentPaidCash = (

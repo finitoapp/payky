@@ -1,6 +1,7 @@
 import {
   createIdFromString,
   type InsertValues,
+  type MutationOptions,
   ok,
   sqliteTrue,
   type Task,
@@ -133,136 +134,191 @@ const deriveAccountTransactionKind = (detail: {
   return undefined
 }
 
-export const createAccountTransaction =
-  ({
+export type CreateAccountTransactionInput = Simplify<
+  Omit<InsertValues<typeof accountTransaction>, "kind"> & {
+    readonly id?: AccountTransactionId
+    readonly source: Omit<
+      InsertValues<typeof accountTransactionSource>,
+      "id" | "accountTransactionId" | "recordedAt"
+    > & {
+      readonly recordedAt?: InsertValues<
+        typeof accountTransactionSource
+      >["recordedAt"]
+    }
+  } & RequireOneOrNone<{
+      iban: Omit<
+        InsertValues<typeof accountTransactionIban>,
+        "bankReference"
+      > & {
+        readonly bankReference?: NonEmptyString255 | null
+      }
+      spark: AccountTransactionSparkInput
+      onchain: AccountTransactionOnchainInput
+    }>
+>
+
+/**
+ * Derives the account transaction's id/kind and resolves its source's
+ * `recordedAt`, without writing anything. Exported so a caller that must
+ * write the transaction and something depending on it (a reconciliation
+ * claim, in `markPaymentPaid`) in one mutation batch can compute this first
+ * and pass the result to {@link upsertAccountTransactionRows} directly,
+ * instead of always opening a separate batch through
+ * {@link createAccountTransaction}.
+ */
+export const computeAccountTransactionRows = (
+  {
     id: providedId,
     iban,
     spark,
     onchain,
-    source: providedSource,
+    source,
     ...input
-  }: Simplify<
-    Omit<InsertValues<typeof accountTransaction>, "kind"> & {
-      readonly id?: AccountTransactionId
-      readonly source: Omit<
-        InsertValues<typeof accountTransactionSource>,
-        "id" | "accountTransactionId" | "recordedAt"
-      > & {
-        readonly recordedAt?: InsertValues<
-          typeof accountTransactionSource
-        >["recordedAt"]
-      }
-    } & RequireOneOrNone<{
-        iban: Omit<
-          InsertValues<typeof accountTransactionIban>,
-          "bankReference"
-        > & {
-          readonly bankReference?: NonEmptyString255 | null
-        }
-        spark: AccountTransactionSparkInput
-        onchain: AccountTransactionOnchainInput
-      }>
-  >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
-  async (run) => {
-    assertHasSparkIdentifier(
-      spark,
-      "Spark account transaction requires lnInvoice or sparkInvoice."
+  }: CreateAccountTransactionInput,
+  now: Date
+) => {
+  assertHasSparkIdentifier(
+    spark,
+    "Spark account transaction requires lnInvoice or sparkInvoice."
+  )
+
+  const id =
+    providedId ??
+    deriveAccountTransactionId(input.accountId, { iban, spark, onchain }) ??
+    createRowId<"AccountTransaction">()
+  const sourceId = createIdFromString<"AccountTransactionSource">(
+    `accountTransactionSource:${id}:${source.source}`
+  )
+  // No detail row means a cash-drawer movement.
+  const kind =
+    deriveAccountTransactionKind({ iban, spark, onchain }) ?? "cashRegister"
+
+  return {
+    id,
+    kind,
+    input,
+    sourceId,
+    source,
+    recordedAt: source.recordedAt ?? TimestampMsSchema.decode(now.getTime()),
+    iban,
+    spark,
+    onchain,
+  }
+}
+
+/**
+ * Upserts the rows {@link computeAccountTransactionRows} describes. Takes
+ * the caller's own `MutationOptions` so the writes can join an existing
+ * mutation batch instead of always opening a new one.
+ */
+export const upsertAccountTransactionRows = (
+  evolu: EvoluDep["evolu"],
+  computed: ReturnType<typeof computeAccountTransactionRows>,
+  options: MutationOptions
+): void => {
+  const {
+    id,
+    kind,
+    input,
+    sourceId,
+    source,
+    recordedAt,
+    iban,
+    spark,
+    onchain,
+  } = computed
+
+  if (iban) {
+    evolu.upsert(
+      "accountTransactionIban",
+      removeUndefinedValues({
+        ...iban,
+        bankReference: iban.bankReference ?? null,
+        id,
+      }),
+      options
     )
+  }
 
-    const { evoluOwnerId } = run.deps
-    const id =
-      providedId ??
-      deriveAccountTransactionId(input.accountId, { iban, spark, onchain }) ??
-      createRowId<"AccountTransaction">()
-    const source = providedSource
-    const sourceId = createIdFromString<"AccountTransactionSource">(
-      `accountTransactionSource:${id}:${source.source}`
+  if (spark) {
+    evolu.upsert(
+      "accountTransactionSpark",
+      removeUndefinedValues({
+        sparkTransferId: spark.sparkTransferId,
+        id,
+      }),
+      options
     )
-
-    // No detail row means a cash-drawer movement.
-    const kind =
-      deriveAccountTransactionKind({ iban, spark, onchain }) ?? "cashRegister"
-
-    await runMutationWithCompletion((options) => {
-      if (iban) {
-        run.deps.evolu.upsert(
-          "accountTransactionIban",
-          removeUndefinedValues({
-            ...iban,
-            bankReference: iban.bankReference ?? null,
-            id,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-      }
-
-      if (spark) {
-        run.deps.evolu.upsert(
-          "accountTransactionSpark",
-          removeUndefinedValues({
-            sparkTransferId: spark.sparkTransferId,
-            id,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-        if (spark.lightning) {
-          run.deps.evolu.upsert(
-            "accountTransactionLightning",
-            removeUndefinedValues({
-              ...spark.lightning,
-              id,
-            }),
-            { ...options, ownerId: evoluOwnerId }
-          )
-        }
-        if (spark.sparkInvoice) {
-          run.deps.evolu.upsert(
-            "accountTransactionSparkInvoice",
-            removeUndefinedValues({
-              ...spark.sparkInvoice,
-              id,
-            }),
-            { ...options, ownerId: evoluOwnerId }
-          )
-        }
-      }
-
-      if (onchain) {
-        run.deps.evolu.upsert(
-          "accountTransactionOnchain",
-          removeUndefinedValues({
-            ...onchain,
-            id,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
-      }
-
-      run.deps.evolu.upsert(
-        "accountTransactionSource",
+    if (spark.lightning) {
+      evolu.upsert(
+        "accountTransactionLightning",
         removeUndefinedValues({
-          ...source,
-          id: sourceId,
-          accountTransactionId: id,
-          recordedAt:
-            source.recordedAt ??
-            TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        }),
-        { ...options, ownerId: evoluOwnerId }
-      )
-
-      return run.deps.evolu.upsert(
-        "accountTransaction",
-        removeUndefinedValues({
-          ...input,
+          ...spark.lightning,
           id,
-          kind,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        options
       )
-    })
+    }
+    if (spark.sparkInvoice) {
+      evolu.upsert(
+        "accountTransactionSparkInvoice",
+        removeUndefinedValues({
+          ...spark.sparkInvoice,
+          id,
+        }),
+        options
+      )
+    }
+  }
 
-    return ok(id)
+  if (onchain) {
+    evolu.upsert(
+      "accountTransactionOnchain",
+      removeUndefinedValues({
+        ...onchain,
+        id,
+      }),
+      options
+    )
+  }
+
+  evolu.upsert(
+    "accountTransactionSource",
+    removeUndefinedValues({
+      ...source,
+      id: sourceId,
+      accountTransactionId: id,
+      recordedAt,
+    }),
+    options
+  )
+
+  evolu.upsert(
+    "accountTransaction",
+    removeUndefinedValues({
+      ...input,
+      id,
+      kind,
+    }),
+    options
+  )
+}
+
+export const createAccountTransaction =
+  (
+    input: CreateAccountTransactionInput
+  ): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  async (run) => {
+    const computed = computeAccountTransactionRows(input, run.deps.date.now())
+
+    await runMutationWithCompletion((options) =>
+      upsertAccountTransactionRows(run.deps.evolu, computed, {
+        ...options,
+        ownerId: run.deps.evoluOwnerId,
+      })
+    )
+
+    return ok(computed.id)
   }
 
 export const updateAccountTransaction =

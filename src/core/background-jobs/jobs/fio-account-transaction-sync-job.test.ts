@@ -6,17 +6,23 @@ import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import {
   addFioPluginToken,
   deleteFioPluginToken,
   saveFioPlugin,
 } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import {
   DateStringSchema,
   IbanSchema,
+  Integer,
   NonEmptyString255,
+  NonNegativeInteger,
   PositiveInteger,
+  SpecificSymbol,
+  VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
 import {
@@ -56,6 +62,20 @@ const fioPluginSyncPointerQuery = (fioPluginId: FioPluginId) =>
       .select(["id", "lastSyncedDate"])
       .where("id", "=", fioPluginId)
       .where("isDeleted", "is", null)
+  )
+
+const reconciliationClaimsByAccountIdQuery = (accountId: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "reconciliationClaim.accountTransactionId"
+      )
+      .select(["reconciliationClaim.paymentId"])
+      .where("accountTransaction.accountId", "=", accountId)
+      .where("reconciliationClaim.isDeleted", "is not", 1)
   )
 
 const fioTransaction = {
@@ -183,6 +203,123 @@ describe("fio account transaction sync job", () => {
           lastSyncedDate: "2026-05-31",
         },
       ])
+    expect(errors).toEqual([])
+  })
+
+  test("retries reconciliation for a bank reference already recorded but never claimed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    })
+    const errors: unknown[] = []
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Bank account"),
+        iban: {
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
+          currency: "CZK",
+        },
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(19_950),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        iban: {
+          accountId,
+          variableSymbol: VariableSymbol("123456"),
+          specificSymbol: SpecificSymbol("789"),
+        },
+      })
+    )
+    // Simulates a prior sync that recorded the transaction but crashed (or
+    // threw) before it got a chance to reconcile it — the FIO API is never
+    // asked about a statement line it already has by bank reference, so
+    // without a retry this claim would never be attempted again.
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(19_950),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        iban: {
+          variableSymbol: VariableSymbol("123456"),
+          constantSymbol: null,
+          specificSymbol: SpecificSymbol("789"),
+          bankReference: NonEmptyString255("123456789"),
+        },
+      })
+    )
+    const fioPluginId = await run.ok(
+      saveFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        syncLookbackDays: PositiveInteger(1),
+        isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      lockManager: createInProcessLockManager(),
+      onError: (error: unknown) => {
+        errors.push(error)
+      },
+      fetch: async () =>
+        statementResponse({
+          transactions: [fioTransaction],
+        }),
+      ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
+    })
+    await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
+
+    await expect
+      .poll(() =>
+        evolu.loadQuery(reconciliationClaimsByAccountIdQuery(accountId))
+      )
+      .toEqual([{ paymentId }])
+
+    // Still exactly one account transaction — the retry reconciled the
+    // existing row rather than recording a duplicate.
+    expect(
+      await evolu.loadQuery(ibanTransactionsByAccountIdQuery(accountId))
+    ).toEqual([
+      {
+        accountId,
+        amount: 19950,
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        variableSymbol: "123456",
+        constantSymbol: null,
+        specificSymbol: "789",
+        bankReference: "123456789",
+      },
+    ])
+    expect(accountTransactionId).toBeTruthy()
     expect(errors).toEqual([])
   })
 

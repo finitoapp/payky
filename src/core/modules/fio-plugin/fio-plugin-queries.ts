@@ -138,7 +138,10 @@ export const existingFioTransactionBankReferencesQuery = ({
         "accountTransaction.id",
         "accountTransactionIban.id"
       )
-      .select(["accountTransactionIban.bankReference"])
+      .select([
+        "accountTransactionIban.bankReference",
+        "accountTransactionIban.id as accountTransactionId",
+      ])
       .where("accountTransaction.accountId", "=", accountId)
       .where("accountTransaction.isDeleted", "is not", 1)
       .where("accountTransactionIban.bankReference", "in", bankReferences)

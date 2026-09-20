@@ -15,6 +15,7 @@ import {
   fetchFioTransactionsByPeriod,
 } from "@/core/integrations/fio/fio-client.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { defaultFioPluginSyncLookbackDays } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import {
   activeFioPluginsQuery,
@@ -229,28 +230,53 @@ class FioPluginSync {
       return
     }
 
-    const transactionsToRecord = await this.getTransactionsToRecord(
+    const { toRecord, toReconcile } = await this.getTransactionsToRecord(
       result.value.transactions
     )
     this.context.console.info("Selected FIO transactions to record.", {
       accountId: this.plugin.accountId,
       downloadedCount: result.value.transactions.length,
       pluginId: this.plugin.id,
-      selectedCount: transactionsToRecord.length,
-      skippedCount:
-        result.value.transactions.length - transactionsToRecord.length,
+      selectedCount: toRecord.length,
+      skippedCount: result.value.transactions.length - toRecord.length,
     })
-    for (const transaction of transactionsToRecord) {
+    for (const transaction of toRecord) {
       if (this.syncQueue.isDisposed) return
       await this.recordTransaction(transaction)
+    }
+    for (const accountTransactionId of toReconcile) {
+      if (this.syncQueue.isDisposed) return
+      await this.retryReconciliation(accountTransactionId)
     }
     await this.saveSyncPointer(period.to)
     this.context.console.info("Finished FIO transaction sync.", {
       accountId: this.plugin.accountId,
       from: period.from,
       pluginId: this.plugin.id,
-      recordedCount: transactionsToRecord.length,
+      recordedCount: toRecord.length,
       to: period.to,
+    })
+  }
+
+  /**
+   * Re-attempts reconciliation for a bank reference already recorded as an
+   * account transaction, in case a prior sync recorded it but crashed or
+   * failed before claiming it — `reconcileAccountTransaction` itself is the
+   * guard against redoing work for one already claimed, at the cost of one
+   * cheap read per already-recorded transaction in the sync window.
+   */
+  private async retryReconciliation(
+    accountTransactionId: AccountTransactionId
+  ): Promise<void> {
+    const run = createRun(this.context)
+    const paymentId = await run.ok(
+      reconcileAccountTransaction(accountTransactionId)
+    )
+    this.context.console.debug("Re-checked FIO transaction reconciliation.", {
+      accountId: this.plugin.accountId,
+      accountTransactionId,
+      paymentId,
+      pluginId: this.plugin.id,
     })
   }
 
@@ -344,7 +370,10 @@ class FioPluginSync {
 
   private async getTransactionsToRecord(
     transactions: ReadonlyArray<FioTransaction>
-  ): Promise<ReadonlyArray<FioTransaction>> {
+  ): Promise<{
+    readonly toRecord: ReadonlyArray<FioTransaction>
+    readonly toReconcile: ReadonlyArray<AccountTransactionId>
+  }> {
     const bankReferences = getUniqueBankReferences(transactions)
     if (bankReferences.length === 0) {
       this.context.console.debug("No FIO transactions have bank references.", {
@@ -352,7 +381,7 @@ class FioPluginSync {
         pluginId: this.plugin.id,
         transactionCount: transactions.length,
       })
-      return []
+      return { toRecord: [], toReconcile: [] }
     }
 
     const existing = await this.context.evolu.loadQuery(
@@ -361,15 +390,19 @@ class FioPluginSync {
         bankReferences,
       })
     )
-    const existingBankReferences = new Set(
-      existing.map((transaction) => transaction.bankReference)
+    const existingAccountTransactionIdByBankReference = new Map(
+      existing.map((transaction) => [
+        transaction.bankReference,
+        transaction.accountTransactionId,
+      ])
     )
     const selectedBankReferences = new Set<string>()
     const selectedTransactions: FioTransaction[] = []
 
     for (const transaction of transactions) {
       const bankReference = NonEmptyString255Schema.decode(transaction.id)
-      if (existingBankReferences.has(bankReference)) continue
+      if (existingAccountTransactionIdByBankReference.has(bankReference))
+        continue
       if (selectedBankReferences.has(bankReference)) continue
 
       selectedBankReferences.add(bankReference)
@@ -379,13 +412,16 @@ class FioPluginSync {
     this.context.console.debug("Filtered FIO transactions.", {
       accountId: this.plugin.accountId,
       downloadedCount: transactions.length,
-      existingCount: existingBankReferences.size,
+      existingCount: existingAccountTransactionIdByBankReference.size,
       pluginId: this.plugin.id,
       selectedCount: selectedTransactions.length,
       uniqueBankReferenceCount: bankReferences.length,
     })
 
-    return selectedTransactions
+    return {
+      toRecord: selectedTransactions,
+      toReconcile: [...existingAccountTransactionIdByBankReference.values()],
+    }
   }
 
   private async saveSyncPointer(lastSyncedDate: DateString): Promise<void> {

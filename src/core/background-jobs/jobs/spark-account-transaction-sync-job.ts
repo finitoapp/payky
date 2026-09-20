@@ -261,12 +261,22 @@ const createSparkAccountSyncSession = ({
         const existing = await context.evolu.loadQuery(
           accountTransactionSparkByTransferIdQuery(sparkTransferId)
         )
-        if (existing.length > 0) {
+        const existingAccountTransactionId = existing[0]?.id
+        if (existingAccountTransactionId !== undefined) {
           context.console.debug("Skipped already recorded Spark transfer.", {
             accountId: account.id,
             sparkTransferId,
             existingCount: existing.length,
           })
+          // A prior sync may have recorded the transaction but crashed or
+          // failed before claiming it, and this transfer would then never be
+          // downloaded again to give reconciliation another chance —
+          // `reconcileAccountTransaction` itself is the guard against
+          // redoing work for one already claimed.
+          const run = createRun(context)
+          await run.ok(
+            reconcileAccountTransaction(existingAccountTransactionId)
+          )
           return "duplicate"
         }
 

@@ -12,8 +12,17 @@ import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
-import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import {
+  Integer,
+  NonEmptyString255,
+  NonEmptyStringSchema,
+  NonNegativeInteger,
+  PositiveNumber,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
 
@@ -54,6 +63,20 @@ const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
       ])
       .where("accountTransaction.accountId", "=", accountId)
       .where("accountTransaction.isDeleted", "is not", 1)
+  )
+
+const reconciliationClaimsByAccountIdQuery = (accountId: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "reconciliationClaim.accountTransactionId"
+      )
+      .select(["reconciliationClaim.paymentId"])
+      .where("accountTransaction.accountId", "=", accountId)
+      .where("reconciliationClaim.isDeleted", "is not", 1)
   )
 
 interface FakeTransfer {
@@ -244,6 +267,114 @@ describe("spark account transaction sync job", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 30))
 
+    expect(
+      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
+    ).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+
+  test("retries reconciliation for a Spark transfer already recorded but never claimed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    })
+    const errors: unknown[] = []
+    const secret = createUniqueSecret()
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Spark account"),
+        spark: {
+          secret,
+        },
+      })
+    )
+    const transferId = `spark-transfer-${accountId}`
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        spark: {
+          accountId,
+          amountSats: NonNegativeInteger(1_234),
+          exchangeRate: PositiveNumber(1_500_000),
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc1invoice"),
+            lightningReceiveRequestId: null,
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
+            paymentPreimage: null,
+          },
+        },
+      })
+    )
+    // Simulates a prior sync that recorded the transfer but crashed (or
+    // threw) before it got a chance to reconcile it — the existing-row check
+    // in `recordTransfer` used to short-circuit on every later sync without
+    // ever retrying reconciliation for it.
+    await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(1_234),
+        currency: "BTC",
+        occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        spark: {
+          sparkTransferId: NonEmptyStringSchema.decode(transferId),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc1invoice"),
+            preImage: NonEmptyStringSchema.decode("preimage-1"),
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
+          },
+        },
+      })
+    )
+    const wallet = new FakeSparkWallet([
+      createCompletedTransfer({
+        id: transferId,
+      }),
+    ])
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+      fetch: unimplementedFetch,
+      lockManager: createInProcessLockManager(),
+      onError: (error: unknown) => {
+        errors.push(error)
+      },
+    })
+    await using _job = await jobRun.ok(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: createFakeWalletFactory(secret, wallet),
+        recheckIntervalMs: 10,
+      })
+    )
+
+    await expect
+      .poll(() =>
+        evolu.loadQuery(reconciliationClaimsByAccountIdQuery(accountId))
+      )
+      .toEqual([{ paymentId }])
+
+    // Still exactly one account transaction — the retry reconciled the
+    // existing row rather than recording a duplicate.
     expect(
       await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
     ).toHaveLength(1)

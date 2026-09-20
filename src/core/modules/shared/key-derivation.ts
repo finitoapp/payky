@@ -5,6 +5,7 @@ import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
 import { HDKey } from "@scure/bip32"
 import {
   entropyToMnemonic,
+  mnemonicToEntropy,
   mnemonicToSeedSync,
   validateMnemonic,
 } from "@scure/bip39"
@@ -277,3 +278,15 @@ export const cashuMnemonicToWalletSeed = (
  */
 export const sparkSecretToMnemonic = (secret: SparkSecret): SparkMnemonic =>
   SparkMnemonic(entropyToMnemonic(hexToBytes(secret), wordlist))
+
+/**
+ * The inverse, for importing the 12 words of a Spark wallet the user already
+ * runs elsewhere (Wallet of Satoshi, Bitlifi, ...): the mnemonic's entropy is
+ * exactly the 16-byte secret this app stores.
+ */
+export const sparkMnemonicToSecret = (mnemonic: SparkMnemonic): SparkSecret =>
+  SparkSecret(
+    bytesToHex(
+      mnemonicToEntropy(mnemonic.trim().split(/\s+/u).join(" "), wordlist)
+    )
+  )

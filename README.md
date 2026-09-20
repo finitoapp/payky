@@ -44,6 +44,22 @@ Start the Vite dev server:
 bun run dev
 ```
 
+The dev server runs over HTTPS with a self-signed certificate, so the browser
+shows a certificate warning (`ERR_CERT_AUTHORITY_INVALID`, issuer
+`example.org`) that embedded IDE browsers cannot bypass. To get rid of it,
+create a locally trusted certificate once with [mkcert](https://github.com/FiloSottile/mkcert):
+
+```bash
+brew install mkcert
+mkcert -install
+mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
+```
+
+`bun run dev` and `bun run preview` pick up `.certs/` automatically (it is
+gitignored) and fall back to the self-signed certificate when it is missing.
+Alternatively, `PAYKY_DISABLE_BASIC_SSL=1 bun run dev` serves plain
+`http://localhost:5173`, which browsers still treat as a secure context.
+
 Build the app:
 
 ```bash
@@ -253,11 +269,32 @@ Payky from the 20 words of their Linky account is the same user in both apps:
   **Restore from mint** (Settings › Payment Accounts › Cashu) recovers proofs
   neither app has stored. The default mint is Linky's main mint,
   `https://cashu.cz`; it is a per-account setting.
-- **One Nostr identity.** Settings shows, at the top, the account Linky shows:
-  the active nsec/npub (derived from the phrase, or the key the user pasted
-  into Linky — Linky syncs it in the identity shard, and Payky reads that row
-  first) and the published Nostr profile name and picture, with Linky's
-  generated placeholder when none is published. It is read-only in Payky.
+- **One Nostr identity and profile.** Settings shows, at the top, the account
+  Linky shows: the active npub (derived from the phrase, or the key the user
+  pasted into Linky — Linky syncs it in the identity shard, and Payky reads
+  that row first) and the published Nostr profile name and picture. Until a
+  profile is published the card shows the Payky icon and asks for a name.
+  Tapping the card opens Settings › Profile, where the name and picture (from
+  the gallery, scaled to a small JPEG data URL) are edited and republished as
+  the kind-0 event with the active key; every other field of the published
+  profile is kept.
+- **One bitcoin QR.** The payment screen has a single bitcoin tab. With Spark
+  and cashu both enabled it shows a BIP-321 `bitcoin:` uri whose `lightning`
+  parameter is the mint's invoice and whose `spark` parameter is the Spark
+  invoice, so a Lightning wallet settles into cashu and a Spark wallet over
+  Spark; with one method enabled it shows that method's bare invoice.
+- **Onboarding** is a start screen with two ways in — create a new account,
+  or restore one with its 20 words (from Payky or Linky) — followed by a
+  single question: the bank account, as a Czech or Slovak account number or
+  an IBAN, with the bank named from its code as a check, and skippable. The
+  language follows the device, the legal entity starts Czech (non-VAT) and
+  the currency CZK; bank transfer (once an account exists) and bitcoin over
+  cashu are on from the start, cash and Spark are enabled in Settings. Sync
+  is on for every account from its first launch (`wss://free.evoluhq.com`
+  for Payky's own Evolu 8 data; Linky's relay speaks Evolu 7 and carries only
+  the shared Linky store). The Spark account accepts the 12 words of a
+  wallet used elsewhere (Wallet of Satoshi, Bitlifi, …) so payments land
+  there.
 - Both apps mint under the same cashu seed with their own device-local
   counters, which the wallet library recovers from (NUT-09 reclaim).
 

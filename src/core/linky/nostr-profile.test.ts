@@ -1,7 +1,9 @@
-import { deriveDefaultProfile } from "@linky/profile-defaults"
 import { describe, expect, test } from "vitest"
 
-import { parseProfileMetadata } from "@/core/linky/nostr-profile.ts"
+import {
+  buildUpdatedProfileMetadata,
+  parseProfileMetadata,
+} from "@/core/linky/nostr-profile.ts"
 
 describe("parseProfileMetadata", () => {
   test("prefers display_name over name and keeps a renderable picture", () => {
@@ -11,11 +13,13 @@ describe("parseProfileMetadata", () => {
           name: "hynek",
           display_name: "  Hynek  Jína ",
           picture: "https://example.com/me.png",
+          lud16: "npub1x@linky.fit",
         })
       )
-    ).toEqual({
+    ).toMatchObject({
       name: "Hynek Jína",
       pictureUrl: "https://example.com/me.png",
+      metadata: { lud16: "npub1x@linky.fit" },
     })
   })
 
@@ -24,7 +28,7 @@ describe("parseProfileMetadata", () => {
       parseProfileMetadata(
         JSON.stringify({ name: "hynek", picture: "javascript:alert(1)" })
       )
-    ).toEqual({ name: "hynek", pictureUrl: null })
+    ).toMatchObject({ name: "hynek", pictureUrl: null })
   })
 
   test("returns null for content that is not a metadata object", () => {
@@ -33,13 +37,36 @@ describe("parseProfileMetadata", () => {
   })
 })
 
-describe("generated profile defaults", () => {
-  test("are deterministic for an npub, as in Linky", () => {
-    const npub =
-      "npub1emlla45qgkxa0n6yj243m0uygv6332atrxckg7z5c4226lg3ke2qxdfpgk"
-    const first = deriveDefaultProfile(npub, "cs")
-    expect(first).toEqual(deriveDefaultProfile(npub, "cs"))
-    expect(first.name.length).toBeGreaterThan(0)
-    expect(first.pictureUrl).toMatch(/^https:\/\/api\.dicebear\.com\//)
+describe("buildUpdatedProfileMetadata", () => {
+  test("replaces the name fields and picture but keeps every other field", () => {
+    expect(
+      buildUpdatedProfileMetadata({
+        current: {
+          name: "old",
+          display_name: "Old",
+          picture: "https://example.com/old.png",
+          lud16: "npub1x@linky.fit",
+          about: "hi",
+        },
+        name: "  New  Name ",
+        pictureUrl: "data:image/jpeg;base64,AAAA",
+      })
+    ).toEqual({
+      lud16: "npub1x@linky.fit",
+      about: "hi",
+      name: "New Name",
+      display_name: "New Name",
+      picture: "data:image/jpeg;base64,AAAA",
+    })
+  })
+
+  test("clears the name and picture when the user removed them", () => {
+    expect(
+      buildUpdatedProfileMetadata({
+        current: { name: "old", picture: "x", about: "hi" },
+        name: "",
+        pictureUrl: null,
+      })
+    ).toEqual({ about: "hi" })
   })
 })

@@ -1,27 +1,13 @@
 import { describe, expect, test } from "vitest"
 
-import { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
 import {
-  getDefaultCurrencyForCountry,
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
 
 const methods = (...values: ReadonlyArray<OnboardingPaymentMethod>) =>
   new Set(values)
-
-describe("getDefaultCurrencyForCountry", () => {
-  test("maps the two supported countries to their own currency", () => {
-    expect(getDefaultCurrencyForCountry("CZ")).toBe(FiatCurrency.CZK)
-    expect(getDefaultCurrencyForCountry("SK")).toBe(FiatCurrency.EUR)
-  })
-
-  test("falls back to USD for 'other' and for no choice yet", () => {
-    expect(getDefaultCurrencyForCountry("OTHER")).toBe(FiatCurrency.USD)
-    expect(getDefaultCurrencyForCountry(null)).toBe(FiatCurrency.USD)
-  })
-})
 
 describe("getPaymentMethodOrder", () => {
   test("orders enabled methods iban, cash, btc, cashu regardless of set order", () => {

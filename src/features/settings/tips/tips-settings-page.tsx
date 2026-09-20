@@ -1,10 +1,17 @@
 import { sqliteTrue } from "@evolu/common"
 import { PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
+import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { Checkbox } from "@/components/ui/checkbox.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
 import {
   Field,
   FieldContent,
@@ -14,6 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { Switch } from "@/components/ui/switch.tsx"
 import type { AppSettingsRow } from "@/core/modules/app-settings/app-settings.ts"
 import { updateTipSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
@@ -29,8 +37,6 @@ import {
   Integer,
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
-import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -44,6 +50,12 @@ type TipPresetError =
   | "settings.tips.percentages.duplicate"
   | "settings.tips.percentages.invalid"
   | "settings.tips.percentages.maximum"
+
+interface TipSettingsValues {
+  readonly enabled: boolean
+  readonly percentages: ReadonlyArray<number>
+  readonly fixedAmounts: ReadonlyArray<number>
+}
 
 interface TipsSettingsFormProps {
   readonly settings: Pick<
@@ -72,18 +84,22 @@ export function TipsSettingsPage() {
   )
 }
 
+/**
+ * Every change is written as it is made — a switch flip, a preset added or
+ * removed, the reset — so there is nothing to remember to save. The list is
+ * the form's own state and the write follows it; a failed write is reported
+ * and the list keeps what the user set, so the next change retries it.
+ */
 function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const locale = useLocale()
   const formId = useId()
-  const [enabled, setEnabled] = useState(settings.tipsEnabled === sqliteTrue)
-  const [percentages, setPercentages] = useState(() =>
-    parseTipPercentages(settings.presetTipPercentagesJson)
-  )
-  const [fixedAmounts, setFixedAmounts] = useState(() =>
-    parseTipFixedAmounts(settings.presetTipFixedAmountsJson)
-  )
+  const [values, setValues] = useState<TipSettingsValues>(() => ({
+    enabled: settings.tipsEnabled === sqliteTrue,
+    percentages: parseTipPercentages(settings.presetTipPercentagesJson),
+    fixedAmounts: parseTipFixedAmounts(settings.presetTipFixedAmountsJson),
+  }))
   const [percentageInput, setPercentageInput] = useState("")
   const [fixedAmountInput, setFixedAmountInput] = useState("")
   const [percentageError, setPercentageError] = useState<TipPresetError | null>(
@@ -91,7 +107,16 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
   )
   const [fixedAmountError, setFixedAmountError] =
     useState<TipPresetError | null>(null)
-  const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  const persist = async (next: TipSettingsValues) => {
+    setValues(next)
+    try {
+      await using run = appRun()
+      await run(updateTipSettings(next))
+    } catch {
+      toast.error(t("settings.saveFailed"))
+    }
+  }
 
   const addPercentage = () => {
     const parsed = PositiveIntegerFromStringSchema.safeParse(
@@ -101,19 +126,21 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
       setPercentageError("settings.tips.percentages.invalid")
       return
     }
-    if (percentages.includes(parsed.data)) {
+    if (values.percentages.includes(parsed.data)) {
       setPercentageError("settings.tips.percentages.duplicate")
       return
     }
-    if (percentages.length === maxTipPresetCount) {
+    if (values.percentages.length === maxTipPresetCount) {
       setPercentageError("settings.tips.percentages.maximum")
       return
     }
 
-    setPercentages([...percentages, parsed.data])
+    void persist({
+      ...values,
+      percentages: [...values.percentages, parsed.data],
+    })
     setPercentageInput("")
     setPercentageError(null)
-    resetSaved()
   }
 
   const addFixedAmount = () => {
@@ -125,151 +152,135 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
       setFixedAmountError("settings.tips.fixedAmounts.invalid")
       return
     }
-    if (fixedAmounts.includes(amount)) {
+    if (values.fixedAmounts.includes(amount)) {
       setFixedAmountError("settings.tips.fixedAmounts.duplicate")
       return
     }
-    if (fixedAmounts.length === maxTipPresetCount) {
+    if (values.fixedAmounts.length === maxTipPresetCount) {
       setFixedAmountError("settings.tips.fixedAmounts.maximum")
       return
     }
 
-    setFixedAmounts([...fixedAmounts, amount])
+    void persist({
+      ...values,
+      fixedAmounts: [...values.fixedAmounts, amount],
+    })
     setFixedAmountInput("")
     setFixedAmountError(null)
-    resetSaved()
   }
 
   const resetToDefaults = () => {
-    setEnabled(true)
-    setPercentages([...defaultTipPercentages])
-    setFixedAmounts([...defaultTipFixedAmounts])
+    void persist({
+      enabled: true,
+      percentages: [...defaultTipPercentages],
+      fixedAmounts: [...defaultTipFixedAmounts],
+    })
     setPercentageInput("")
     setFixedAmountInput("")
     setPercentageError(null)
     setFixedAmountError(null)
-    resetSaved()
   }
 
   return (
-    <SettingsFormCard
-      title={t("settings.tips.form.title")}
-      description={t("settings.tips.form.description")}
-      savedMessage={saved ? t("settings.tips.saved") : null}
-      submitLabel={t("settings.tips.save")}
-      pending={pending}
-      onSubmit={(event) => {
-        event.preventDefault()
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.tips.form.title")}</CardTitle>
+        <CardDescription>{t("settings.tips.form.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldLabel htmlFor={`${formId}-enabled`}>
+                {t("settings.tips.enabled.label")}
+              </FieldLabel>
+              <FieldDescription>
+                {t("settings.tips.enabled.description")}
+              </FieldDescription>
+            </FieldContent>
+            <Switch
+              id={`${formId}-enabled`}
+              checked={values.enabled}
+              onCheckedChange={(enabled) => {
+                void persist({ ...values, enabled })
+              }}
+            />
+          </Field>
 
-        void submit(async () => {
-          await using run = appRun()
-
-          await run(
-            updateTipSettings({
-              enabled,
-              fixedAmounts,
-              percentages,
-            })
-          )
-        })
-      }}
-    >
-      <FieldGroup>
-        <Field orientation="horizontal">
-          <Checkbox
-            id={`${formId}-enabled`}
-            checked={enabled}
-            disabled={pending}
-            onCheckedChange={(checked) => {
-              setEnabled(checked)
-              resetSaved()
+          <TipPresetField
+            addLabel={t("settings.tips.percentages.add")}
+            description={t("settings.tips.percentages.description")}
+            error={percentageError}
+            inputId={`${formId}-percentage`}
+            inputMode="numeric"
+            inputValue={percentageInput}
+            label={t("settings.tips.percentages.label")}
+            onAdd={addPercentage}
+            onInputChange={(value) => {
+              setPercentageInput(value)
+              setPercentageError(null)
             }}
+            onRemove={(value) => {
+              void persist({
+                ...values,
+                percentages: values.percentages.filter(
+                  (percentage) => percentage !== value
+                ),
+              })
+            }}
+            placeholder={t("settings.tips.percentages.placeholder")}
+            presets={values.percentages}
+            renderPreset={(value) =>
+              t("settings.tips.percentages.value", { value })
+            }
           />
-          <FieldContent>
-            <FieldLabel htmlFor={`${formId}-enabled`}>
-              {t("settings.tips.enabled.label")}
-            </FieldLabel>
-            <FieldDescription>
-              {t("settings.tips.enabled.description")}
-            </FieldDescription>
-          </FieldContent>
-        </Field>
 
-        <TipPresetField
-          addLabel={t("settings.tips.percentages.add")}
-          description={t("settings.tips.percentages.description")}
-          disabled={pending}
-          error={percentageError}
-          inputId={`${formId}-percentage`}
-          inputMode="numeric"
-          inputValue={percentageInput}
-          label={t("settings.tips.percentages.label")}
-          onAdd={addPercentage}
-          onInputChange={(value) => {
-            setPercentageInput(value)
-            setPercentageError(null)
-          }}
-          onRemove={(value) => {
-            setPercentages(
-              percentages.filter((percentage) => percentage !== value)
-            )
-            resetSaved()
-          }}
-          placeholder={t("settings.tips.percentages.placeholder")}
-          presets={percentages}
-          renderPreset={(value) =>
-            t("settings.tips.percentages.value", { value })
-          }
-        />
+          <TipPresetField
+            addLabel={t("settings.tips.fixedAmounts.add")}
+            description={t("settings.tips.fixedAmounts.description", {
+              currency: settings.fiatCurrency,
+            })}
+            error={fixedAmountError}
+            inputId={`${formId}-fixedAmount`}
+            inputMode="decimal"
+            inputValue={fixedAmountInput}
+            label={t("settings.tips.fixedAmounts.label")}
+            onAdd={addFixedAmount}
+            onInputChange={(value) => {
+              setFixedAmountInput(value)
+              setFixedAmountError(null)
+            }}
+            onRemove={(value) => {
+              void persist({
+                ...values,
+                fixedAmounts: values.fixedAmounts.filter(
+                  (amount) => amount !== value
+                ),
+              })
+            }}
+            placeholder={t("settings.tips.fixedAmounts.placeholder")}
+            presets={values.fixedAmounts}
+            renderPreset={(value) =>
+              formatMoney(
+                { value: Integer(value), currency: settings.fiatCurrency },
+                locale
+              )
+            }
+          />
 
-        <TipPresetField
-          addLabel={t("settings.tips.fixedAmounts.add")}
-          description={t("settings.tips.fixedAmounts.description", {
-            currency: settings.fiatCurrency,
-          })}
-          disabled={pending}
-          error={fixedAmountError}
-          inputId={`${formId}-fixedAmount`}
-          inputMode="decimal"
-          inputValue={fixedAmountInput}
-          label={t("settings.tips.fixedAmounts.label")}
-          onAdd={addFixedAmount}
-          onInputChange={(value) => {
-            setFixedAmountInput(value)
-            setFixedAmountError(null)
-          }}
-          onRemove={(value) => {
-            setFixedAmounts(fixedAmounts.filter((amount) => amount !== value))
-            resetSaved()
-          }}
-          placeholder={t("settings.tips.fixedAmounts.placeholder")}
-          presets={fixedAmounts}
-          renderPreset={(value) =>
-            formatMoney(
-              { value: Integer(value), currency: settings.fiatCurrency },
-              locale
-            )
-          }
-        />
-
-        <Button
-          type="button"
-          variant="outline"
-          disabled={pending}
-          onClick={resetToDefaults}
-        >
-          <RotateCcwIcon data-icon="inline-start" />
-          {t("settings.tips.reset")}
-        </Button>
-      </FieldGroup>
-    </SettingsFormCard>
+          <Button type="button" variant="outline" onClick={resetToDefaults}>
+            <RotateCcwIcon data-icon="inline-start" />
+            {t("settings.tips.reset")}
+          </Button>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }
 
 function TipPresetField({
   addLabel,
   description,
-  disabled,
   error,
   inputId,
   inputMode,
@@ -284,7 +295,6 @@ function TipPresetField({
 }: {
   readonly addLabel: string
   readonly description: string
-  readonly disabled: boolean
   readonly error: TipPresetError | null
   readonly inputId: string
   readonly inputMode: "decimal" | "numeric"
@@ -317,7 +327,6 @@ function TipPresetField({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                disabled={disabled}
                 aria-label={t("settings.tips.preset.remove", { value: label })}
                 onClick={() => {
                   onRemove(value)
@@ -332,7 +341,6 @@ function TipPresetField({
       <Input
         id={inputId}
         value={inputValue}
-        disabled={disabled}
         aria-invalid={error !== null}
         autoComplete="off"
         inputMode={inputMode}
@@ -340,13 +348,14 @@ function TipPresetField({
         onChange={(event) => {
           onInputChange(event.currentTarget.value)
         }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault()
+            onAdd()
+          }
+        }}
       />
-      <Button
-        type="button"
-        variant="outline"
-        disabled={disabled}
-        onClick={onAdd}
-      >
+      <Button type="button" variant="outline" onClick={onAdd}>
         <PlusIcon data-icon="inline-start" />
         {addLabel}
       </Button>

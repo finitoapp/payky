@@ -128,7 +128,6 @@ export const enPayment = {
   "paymentWait.ibanPaid.pending": "Confirming...",
   "paymentWait.invalidId": "Invalid payment id.",
   "paymentWait.method.cash": "Cash",
-  "paymentWait.method.cashu": "Cashu",
   "paymentWait.method.iban": "Transfer",
   "paymentWait.method.lightning": "Bitcoin",
   "paymentWait.missingRequest":
@@ -139,9 +138,8 @@ export const enPayment = {
   "paymentWait.prepareError": "Could not prepare this payment method.",
   "paymentWait.prepareRetry": "Retry payment method",
   "paymentWait.preparing.cash": "Preparing cash payment...",
-  "paymentWait.preparing.cashu": "Requesting a mint invoice...",
   "paymentWait.preparing.iban": "Preparing bank QR payment...",
-  "paymentWait.preparing.spark": "Preparing Lightning request...",
+  "paymentWait.preparing.spark": "Preparing bitcoin payment request...",
   "paymentWait.qrCopied": "QR code content copied.",
   "paymentWait.qrCopyFailed": "Could not copy QR code content.",
   "paymentWait.qrFormat.payBySquare1_0_0": "Pay by square 1.0 (Slovakia)",

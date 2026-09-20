@@ -1,33 +1,5 @@
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
-import {
-  FiatCurrency,
-  type FiatCurrency as FiatCurrencyType,
-} from "@/core/modules/shared/schema.ts"
-import type {
-  OnboardingCountryChoice,
-  OnboardingPaymentMethod,
-} from "@/features/onboarding/onboarding-form-state.ts"
-
-/**
- * The currency step's default: derived from the country chosen on the
- * previous step, not the UI language, so a Czech merchant who reads the
- * wizard in English still lands on CZK. See `finishOnboarding` for the
- * device locale (number/money formatting), which is derived from language
- * instead — the two are deliberately independent.
- */
-export const getDefaultCurrencyForCountry = (
-  country: OnboardingCountryChoice | null
-): FiatCurrencyType => {
-  if (country === "CZ") {
-    return FiatCurrency.CZK
-  }
-
-  if (country === "SK") {
-    return FiatCurrency.EUR
-  }
-
-  return FiatCurrency.USD
-}
+import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
 
 /**
  * The order the payment-method tabs appear in on the payment screen, derived

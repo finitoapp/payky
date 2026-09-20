@@ -1,54 +1,31 @@
 import { atom } from "jotai"
 
-import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types.ts"
-import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
-
-export type OnboardingStep =
-  | "language"
-  | "accountChoice"
-  | "country"
-  | "currency"
-  | "payments"
-  | "account"
-  | "restore"
+/**
+ * `start` chooses between a new and a restored account; `payments` asks the
+ * one question a terminal needs (the bank account); `restore` takes the 20
+ * words. Language follows the device, country and currency are Czech
+ * defaults changed later in Settings.
+ */
+export type OnboardingStep = "start" | "payments" | "restore"
 export type OnboardingAccountType = "new" | "restore"
 export type OnboardingPaymentMethod = "cash" | "btc" | "cashu" | "iban"
-/**
- * The onboarding country step's own 3-way choice. Unlike the persisted
- * `legalEntity.country` (`CountryCode | null`, where `null` means "other"),
- * this form-local type keeps "other" as an explicit value distinct from
- * "not chosen yet" (`OnboardingFormState.country: OnboardingCountryChoice |
- * null`) so the step's "Next" button can gate on an actual choice. Translate
- * `"OTHER"` to `null` only when calling `setLegalEntity`.
- */
-export type OnboardingCountryChoice = CountryCode | "OTHER"
 
 const newAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
-  "language",
-  "accountChoice",
-  "country",
-  "currency",
+  "start",
   "payments",
-  "account",
 ]
 
 const restoreAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
-  "language",
-  "accountChoice",
+  "start",
   "restore",
 ]
 
 /**
  * Setting up an account whose phrase was restored but never used in Payky:
- * the language was already chosen on the way here, the account itself exists
- * and its recovery phrase is the one the user typed, so there is nothing to
- * choose, generate or confirm — only the terminal's own settings remain.
+ * the account exists and its recovery phrase is the one the user typed, so
+ * only the terminal's own question remains.
  */
-const restoredAccountSetupSteps: ReadonlyArray<OnboardingStep> = [
-  "country",
-  "currency",
-  "payments",
-]
+const restoredAccountSetupSteps: ReadonlyArray<OnboardingStep> = ["payments"]
 
 export const getOnboardingSteps = ({
   accountType,
@@ -65,36 +42,22 @@ export const getOnboardingSteps = ({
 
 export const initialOnboardingStep = (
   restoredAccountSetup: boolean
-): OnboardingStep => (restoredAccountSetup ? "country" : "language")
+): OnboardingStep => (restoredAccountSetup ? "payments" : "start")
 
 interface OnboardingFormState {
   readonly step: OnboardingStep
   readonly accountType: OnboardingAccountType | null
-  /** `null` until the user picks one; the UI derives a default from the language. */
-  readonly currency: FiatCurrency | null
   readonly paymentMethods: ReadonlySet<OnboardingPaymentMethod>
   readonly iban: string
-  /** `null` until the user picks one on the country step. */
-  readonly country: OnboardingCountryChoice | null
-  /** `null` until the user answers the VAT-payer question; treated as "not a VAT payer". */
-  readonly vatPayer: boolean | null
-  /**
-   * Whether the user has checked the "I've saved my recovery phrase" box on
-   * the account step. Gates `onboarding.finish` so the wizard can't be
-   * completed without at least acknowledging the phrase is the only backup.
-   */
-  readonly recoveryPhraseConfirmed: boolean
 }
 
 export const initialOnboardingFormState: OnboardingFormState = {
-  step: "language",
+  step: "start",
   accountType: null,
-  currency: null,
-  paymentMethods: new Set(["cash", "btc"]),
+  // Bank transfer (once an account is entered) and bitcoin over cashu; cash
+  // and Spark are opt-in in Settings.
+  paymentMethods: new Set(["iban", "cashu"]),
   iban: "",
-  country: null,
-  vatPayer: null,
-  recoveryPhraseConfirmed: false,
 }
 
 export const onboardingFormAtom = atom<OnboardingFormState>(

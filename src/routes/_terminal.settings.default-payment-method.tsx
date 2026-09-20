@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   BanknoteIcon,
-  CoinsIcon,
   LandmarkIcon,
   type LucideIcon,
   ZapIcon,
@@ -67,9 +66,9 @@ const defaultPaymentMethodOptions: ReadonlyArray<DefaultPaymentMethodOption> = [
   },
   {
     value: "cashu",
-    label: "settings.defaultPaymentMethod.cashu.title",
-    description: "settings.defaultPaymentMethod.cashu.description",
-    icon: CoinsIcon,
+    label: "settings.defaultPaymentMethod.spark.title",
+    description: "settings.defaultPaymentMethod.spark.description",
+    icon: ZapIcon,
   },
   {
     value: "cashRegister",
@@ -114,8 +113,13 @@ function DefaultPaymentMethodPage() {
       cashRegisterAccount.isDeleted !== 1 &&
       cashRegisterAccount.currency === fiatCurrency,
   } satisfies Record<DefaultPaymentMethod, boolean>
+  // The payment screen shows one bitcoin tab however many bitcoin methods
+  // are on, so this offers one bitcoin choice too: Spark's entry stands for
+  // both when both are enabled.
   const enabledOptions = defaultPaymentMethodOptions.filter(
-    (option) => methodIsEnabled[option.value]
+    (option) =>
+      methodIsEnabled[option.value] &&
+      !(option.value === "cashu" && methodIsEnabled.spark)
   )
   const selectedMethod = enabledOptions.some(
     (option) => option.value === configuredDefaultMethod

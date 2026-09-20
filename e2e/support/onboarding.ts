@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test"
 
 import type { FiatCurrency } from "../../src/core/modules/shared/schema.ts"
-import type { Language, TranslationKey } from "../../src/i18n/resources.ts"
+import type { Language } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
 
 /**
@@ -17,12 +17,6 @@ import { translate } from "./i18n.ts"
  * reactive redirect off the onboarding page. Assumes the app has already
  * loaded on the current page (the bridge mounts for every route).
  */
-const languageOptionKeyByLanguage: Record<Language, TranslationKey> = {
-  en: "settings.language.english.title",
-  cs: "settings.language.czech.title",
-  sk: "settings.language.slovak.title",
-}
-
 export async function seedCurrentAccountOnboarding(
   page: Page,
   language: Language,
@@ -78,80 +72,43 @@ export async function seedOnboarding(
   await seedCurrentAccountOnboarding(page, language, options)
 }
 
-/** Completes onboarding as a new account and returns its recovery phrase. */
+/**
+ * Completes onboarding as a new account: the start screen's "create" button,
+ * the bank account, finish. Nothing else is asked any more — language follows
+ * the device and country/currency are Czech defaults.
+ */
 export async function completeOnboarding(
   page: Page,
   language: Language,
   options?: { readonly baseURL?: string }
-): Promise<string> {
+): Promise<void> {
   await page.goto(options?.baseURL ?? "/", { waitUntil: "domcontentloaded" })
   await page
     .getByRole("heading", { name: translate(language, "onboarding.title") })
     .waitFor()
   await page
     .getByRole("button", {
-      name: translate(language, languageOptionKeyByLanguage[language]),
+      name: translate(language, "onboarding.start.create"),
     })
     .click()
   await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", {
-      name: translate(language, "onboarding.accountChoice.new.title"),
-    })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "country.cz") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.payments.btc.title"),
-    })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.payments.iban.title"),
-    })
-    .click()
-  await page.getByRole("textbox").fill("CZ6508000000192000145399")
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  const mnemonic = await page
     .getByRole("textbox", {
-      name: translate(language, "settings.security.mnemonic.label"),
+      name: translate(language, "onboarding.payments.bankAccount.label"),
     })
-    .inputValue()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.account.mnemonic.confirm"),
-    })
-    .click()
+    .fill("CZ6508000000192000145399")
   await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })
     .click()
   await page
     .getByRole("button", { name: translate(language, "settings.title") })
     .waitFor()
-  return mnemonic
 }
 
 /**
  * Completes onboarding for an account that is already selected and already
  * on the onboarding flow (for example right after creating a new device
- * account from Settings > Accounts), accepting every default. Unlike
- * completeOnboarding, this does not navigate or pick a language/payment
- * methods.
+ * account from Settings > Accounts), accepting every default — here that
+ * means creating it and skipping the bank account.
  *
  * Used instead of the window.__e2eSeedOnboarding bridge for a second device
  * account: switching accounts recreates the app's Evolu client, and the
@@ -165,31 +122,8 @@ export async function completeOnboardingDefaults(
     .getByRole("heading", { name: translate(language, "onboarding.title") })
     .waitFor()
   await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
     .getByRole("button", {
-      name: translate(language, "onboarding.accountChoice.new.title"),
-    })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "country.cz") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.account.mnemonic.confirm"),
+      name: translate(language, "onboarding.start.create"),
     })
     .click()
   await page

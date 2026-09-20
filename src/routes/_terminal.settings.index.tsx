@@ -109,6 +109,12 @@ const catalogSettings: ReadonlyArray<SettingRow> = [
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
   {
+    icon: Landmark,
+    title: "settings.paymentAccounts.title",
+    description: "settings.paymentAccounts.description",
+    to: "/settings/payment-accounts",
+  },
+  {
     icon: CircleDollarSign,
     title: "settings.defaultPaymentMethod.title",
     description: "settings.defaultPaymentMethod.description",
@@ -119,12 +125,6 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     title: "settings.tips.title",
     description: "settings.tips.description",
     to: "/settings/tips",
-  },
-  {
-    icon: Landmark,
-    title: "settings.paymentAccounts.title",
-    description: "settings.paymentAccounts.description",
-    to: "/settings/payment-accounts",
   },
   {
     icon: ArrowDown,

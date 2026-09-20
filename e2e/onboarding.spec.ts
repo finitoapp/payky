@@ -11,13 +11,8 @@ const unregisteredTestMnemonic =
   "alto wisdom academic academic anxiety saver envy hour campus decision disease mason slush quantity pumps loyalty bracelet muscle western material"
 
 test("complete onboarding as a new account", async ({ page }) => {
-  let onboardingMnemonic = ""
-
   await test.step("complete onboarding", async () => {
-    onboardingMnemonic = await completeOnboarding(page, "en")
-    expect(
-      onboardingMnemonic.trim().split(/\s+/u).length
-    ).toBeGreaterThanOrEqual(12)
+    await completeOnboarding(page, "en")
   })
 
   await test.step("land on the terminal home screen", async () => {
@@ -27,23 +22,22 @@ test("complete onboarding as a new account", async ({ page }) => {
     ).toBeVisible()
   })
 
-  await test.step("verify security settings reveal the same recovery phrase", async () => {
+  await test.step("security settings reveal a 20-word recovery phrase", async () => {
     await gotoPage(page, "/settings/security", "en", "settings.security.title")
     await page
       .getByRole("button", { name: translate("en", "passwordTextarea.show") })
       .click()
-    await expect(
-      page.getByRole("textbox", {
+    const mnemonic = await page
+      .getByRole("textbox", {
         name: translate("en", "settings.security.mnemonic.label"),
       })
-    ).toHaveValue(onboardingMnemonic)
+      .inputValue()
+    expect(mnemonic.trim().split(/\s+/u)).toHaveLength(20)
   })
 })
 
-test("choosing a country during onboarding seeds its tax rates", async ({
-  page,
-}) => {
-  await test.step("complete onboarding, choosing the Czech Republic", async () => {
+test("a new account starts with Czech tax rates", async ({ page }) => {
+  await test.step("complete onboarding", async () => {
     await completeOnboarding(page, "en")
   })
 
@@ -58,69 +52,47 @@ test("choosing a country during onboarding seeds its tax rates", async ({
   })
 })
 
-test("an invalid IBAN blocks advancing past the payment methods step", async ({
+test("an invalid bank account blocks finishing, an empty one is skipped", async ({
   page,
 }) => {
-  const nextButton = page.getByRole("button", {
-    name: translate("en", "onboarding.next"),
+  const finishButton = page.getByRole("button", {
+    name: translate("en", "onboarding.finish"),
   })
   const ibanInput = page.getByRole("textbox", {
-    name: translate("en", "settings.fiatBankAccount.iban.label"),
+    name: translate("en", "onboarding.payments.bankAccount.label"),
   })
 
-  await test.step("walk onboarding up to the payment methods step", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+  await test.step("choose a new account", async () => {
+    await gotoPage(page, "/", "en", "onboarding.title")
     await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
+      .getByRole("button", { name: translate("en", "onboarding.start.create") })
       .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
-      })
-      .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await nextButton.click()
-    await nextButton.click()
   })
 
-  await test.step("enabling IBAN with no value yet keeps Next disabled", async () => {
-    await page
-      .getByRole("checkbox", {
-        name: translate("en", "onboarding.payments.iban.title"),
-      })
-      .click()
-    await expect(nextButton).toBeDisabled()
+  await test.step("an empty account can be skipped", async () => {
+    await expect(finishButton).toBeEnabled()
   })
 
-  await test.step("typing an invalid IBAN keeps Next disabled and shows the error", async () => {
+  await test.step("typing an invalid account keeps Finish disabled and shows the error", async () => {
     await ibanInput.fill("12345")
-    await expect(nextButton).toBeDisabled()
+    await expect(finishButton).toBeDisabled()
     await expect(
       page.getByText(translate("en", "settings.fiatBankAccount.iban.invalid"))
     ).toBeVisible()
   })
 
-  await test.step("fixing the IBAN re-enables Next and lets onboarding complete", async () => {
-    await ibanInput.fill("CZ6508000000192000145399")
-    await expect(nextButton).toBeEnabled()
-    await nextButton.click()
-    await page
-      .getByRole("checkbox", {
-        name: translate("en", "onboarding.account.mnemonic.confirm"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.finish") })
-      .click()
+  await test.step("an account number is accepted, its bank named, and onboarding completes", async () => {
+    await ibanInput.fill("19-2000145399/0800")
+    await expect(
+      page.getByText(
+        translate("en", "onboarding.payments.bankAccount.bankDetected").replace(
+          "{bank}",
+          "Česká spořitelna"
+        )
+      )
+    ).toBeVisible()
+    await expect(finishButton).toBeEnabled()
+    await finishButton.click()
     await page
       .getByRole("button", { name: translate("en", "settings.title") })
       .waitFor()
@@ -130,23 +102,12 @@ test("an invalid IBAN blocks advancing past the payment methods step", async ({
 test("onboarding restore account starts the sync-wait screen", async ({
   page,
 }) => {
-  await test.step("start onboarding and choose restore", async () => {
+  await test.step("choose restore on the start screen", async () => {
     await gotoPage(page, "/", "en", "onboarding.title")
     await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
       .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
+        name: translate("en", "onboarding.start.restore"),
       })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.restore.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
       .click()
   })
 
@@ -171,195 +132,5 @@ test("onboarding restore account starts the sync-wait screen", async ({
         name: translate("en", "accountRestore.title"),
       })
     ).toBeVisible()
-  })
-})
-
-test("finish is blocked until the recovery phrase is confirmed, and it can be copied", async ({
-  page,
-}) => {
-  const finishButton = page.getByRole("button", {
-    name: translate("en", "onboarding.finish"),
-  })
-  const confirmCheckbox = page.getByRole("checkbox", {
-    name: translate("en", "onboarding.account.mnemonic.confirm"),
-  })
-
-  // navigator.clipboard.writeText() otherwise silently hangs in Chromium
-  // without an explicit permission grant, and the copy button's toast never
-  // fires either way.
-  await page.context().grantPermissions(["clipboard-write"])
-
-  await test.step("walk onboarding up to the account step", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await finishButton.waitFor()
-  })
-
-  await test.step("finish is disabled before confirming the recovery phrase", async () => {
-    await expect(finishButton).toBeDisabled()
-  })
-
-  await test.step("the recovery phrase can be copied", async () => {
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.security.mnemonic.copy"),
-      })
-      .click()
-    await expect(
-      page.getByText(translate("en", "settings.security.mnemonic.copied"))
-    ).toBeVisible()
-  })
-
-  await test.step("confirming the checkbox enables finish and completes onboarding", async () => {
-    await confirmCheckbox.click()
-    await expect(finishButton).toBeEnabled()
-    await finishButton.click()
-    await page
-      .getByRole("button", { name: translate("en", "settings.title") })
-      .waitFor()
-  })
-})
-
-test("the currency step defaults to the chosen country's currency, not the UI language", async ({
-  page,
-}) => {
-  await test.step("walk onboarding in English, choosing the Czech Republic", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-  })
-
-  await test.step("Czech koruna is preselected, not the US dollar", async () => {
-    await expect(
-      page.getByRole("button", {
-        name: translate("en", "settings.fiat.czk.title"),
-      })
-    ).toHaveAttribute("aria-pressed", "true")
-    await expect(
-      page.getByRole("button", {
-        name: translate("en", "settings.fiat.usd.title"),
-      })
-    ).toHaveAttribute("aria-pressed", "false")
-  })
-})
-
-test("changing the language after picking a currency does not reset that choice", async ({
-  page,
-}) => {
-  const backButton = page.getByRole("button", {
-    name: translate("en", "onboarding.back"),
-  })
-  const nextButton = page.getByRole("button", {
-    name: translate("en", "onboarding.next"),
-  })
-  const usdOption = page.getByRole("button", {
-    name: translate("en", "settings.fiat.usd.title"),
-  })
-
-  await test.step("walk to the currency step and explicitly pick US dollar", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
-    await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
-      })
-      .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await nextButton.click()
-    await usdOption.click()
-    await expect(usdOption).toHaveAttribute("aria-pressed", "true")
-  })
-
-  await test.step("go back to the language step and switch to Czech", async () => {
-    await backButton.click()
-    await backButton.click()
-    await backButton.click()
-    await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.language.czech.title"),
-      })
-      .click()
-  })
-
-  await test.step("walking back to the currency step still shows the explicit US dollar choice", async () => {
-    // The UI itself previews the newly picked language immediately, so
-    // accessible names switch to Czech from here on.
-    const czechNextButton = page.getByRole("button", {
-      name: translate("cs", "onboarding.next"),
-    })
-    const usdOptionCzech = page.getByRole("button", {
-      name: translate("cs", "settings.fiat.usd.title"),
-    })
-    await czechNextButton.click()
-    await czechNextButton.click()
-    await czechNextButton.click()
-    await expect(usdOptionCzech).toHaveAttribute("aria-pressed", "true")
   })
 })

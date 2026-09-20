@@ -1,15 +1,26 @@
-import {
-  deriveDefaultProfile,
-  normalizeProfileName,
-} from "@linky/profile-defaults"
+import { decode } from "nostr-tools/nip19"
+import { finalizeEvent } from "nostr-tools/pure"
 import { z } from "zod"
 
-/** What the settings card shows about the account's Nostr profile. */
+import { normalizeProfileName } from "@/core/linky/profile-name.ts"
+
+/** What Payky shows and edits of the account's Nostr (kind-0) profile. */
 export interface NostrProfile {
-  readonly name: string
+  /** Published name, normalized; `null` until the user sets one. */
+  readonly name: string | null
+  /** A URL the browser can render; `null` when none is published. */
   readonly pictureUrl: string | null
-  /** `published`: kind-0 metadata found on a relay; `generated`: Linky's deterministic fallback. */
-  readonly source: "published" | "generated"
+  /**
+   * The published metadata as-is, so an edit republishes every field the
+   * user set elsewhere (lud16, nip05, about, ...) unchanged.
+   */
+  readonly metadata: Readonly<Record<string, unknown>>
+}
+
+const EMPTY_PROFILE: NostrProfile = {
+  name: null,
+  pictureUrl: null,
+  metadata: {},
 }
 
 const ProfileMetadataSchema = z.looseObject({
@@ -31,16 +42,11 @@ const isDisplayablePictureUrl = (value: string): boolean => {
 }
 
 /**
- * Name and picture from a kind-0 event's content, resolved as Linky does:
+ * The profile a kind-0 event's content describes, resolved as Linky does:
  * `display_name` before `name`, both normalized, and only a URL the browser
- * can render as a picture.
+ * can render as a picture. `null` when the content is not a metadata object.
  */
-export const parseProfileMetadata = (
-  content: string
-): {
-  readonly name: string | null
-  readonly pictureUrl: string | null
-} | null => {
+export const parseProfileMetadata = (content: string): NostrProfile | null => {
   let json: unknown
   try {
     json = JSON.parse(content)
@@ -59,57 +65,125 @@ export const parseProfileMetadata = (
   return {
     name: displayName || name || null,
     pictureUrl: isDisplayablePictureUrl(picture) ? picture.trim() : null,
+    metadata: parsed.data,
   }
 }
 
-export type ProfileLang = "cs" | "de" | "en"
-
-/**
- * The profile for `pubkey`: the newest kind-0 event any of `relays` holds,
- * else the generated defaults Linky shows for an account that never
- * published one — same name list, same avatar seed.
- */
-export const fetchNostrProfile = async ({
-  pubkey,
-  npub,
-  relays,
-  lang,
-  signal,
-}: {
-  readonly pubkey: string
-  readonly npub: string
-  readonly relays: ReadonlyArray<string>
-  readonly lang: ProfileLang
-  readonly signal?: AbortSignal
-}): Promise<NostrProfile> => {
-  const generated = deriveDefaultProfile(npub, lang === "de" ? "en" : lang)
-  const fallback: NostrProfile = {
-    name: generated.name,
-    pictureUrl: generated.pictureUrl,
-    source: "generated",
-  }
-
+const withRelays = async <T>(
+  relays: ReadonlyArray<string>,
+  use: (
+    pool: InstanceType<typeof import("nostr-tools/pool").SimplePool>
+  ) => Promise<T>
+): Promise<T> => {
   const { SimplePool } = await import("nostr-tools/pool")
   const pool = new SimplePool()
   try {
-    const event = await pool.get(
-      [...relays],
-      { kinds: [0], authors: [pubkey] },
-      { maxWait: 6_000 }
-    )
-    if (signal?.aborted || event === null) return fallback
-
-    const metadata = parseProfileMetadata(event.content)
-    if (metadata === null) return fallback
-
-    return {
-      name: metadata.name ?? fallback.name,
-      pictureUrl: metadata.pictureUrl ?? fallback.pictureUrl,
-      source: "published",
-    }
-  } catch {
-    return fallback
+    return await use(pool)
   } finally {
     pool.close([...relays])
   }
+}
+
+/** The newest kind-0 event any of `relays` holds for `pubkey`, or an empty profile. */
+export const fetchNostrProfile = async ({
+  pubkey,
+  relays,
+  signal,
+}: {
+  readonly pubkey: string
+  readonly relays: ReadonlyArray<string>
+  readonly signal?: AbortSignal
+}): Promise<NostrProfile> => {
+  try {
+    return await withRelays(relays, async (pool) => {
+      const event = await pool.get(
+        [...relays],
+        { kinds: [0], authors: [pubkey] },
+        { maxWait: 6_000 }
+      )
+      if (signal?.aborted || event === null) return EMPTY_PROFILE
+      return parseProfileMetadata(event.content) ?? EMPTY_PROFILE
+    })
+  } catch {
+    return EMPTY_PROFILE
+  }
+}
+
+/**
+ * The metadata to publish after the user edited `name` and/or the picture.
+ * Everything else the current event carries stays; Linky writes the name as
+ * both `name` and `display_name`, so both are set — or both cleared.
+ */
+export const buildUpdatedProfileMetadata = ({
+  current,
+  name,
+  pictureUrl,
+}: {
+  readonly current: Readonly<Record<string, unknown>>
+  readonly name: string
+  readonly pictureUrl: string | null
+}): Record<string, unknown> => {
+  const {
+    name: _name,
+    display_name: _displayName,
+    displayName: _camelDisplayName,
+    picture: _picture,
+    ...rest
+  } = current
+  const normalizedName = normalizeProfileName(name)
+
+  return {
+    ...rest,
+    ...(normalizedName
+      ? { name: normalizedName, display_name: normalizedName }
+      : {}),
+    ...(pictureUrl === null ? {} : { picture: pictureUrl }),
+  }
+}
+
+export class NostrPublishError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "NostrPublishError"
+  }
+}
+
+const secretKeyFromNsec = (nsec: string): Uint8Array => {
+  const decoded = decode(nsec.trim())
+  if (decoded.type !== "nsec") {
+    throw new NostrPublishError("The active key is not an nsec.")
+  }
+  return decoded.data
+}
+
+/**
+ * Signs `metadata` as a kind-0 event with the account's key and publishes
+ * it to `relays`; resolves once at least one relay accepted it.
+ */
+export const publishNostrProfile = async ({
+  nsec,
+  relays,
+  metadata,
+}: {
+  readonly nsec: string
+  readonly relays: ReadonlyArray<string>
+  readonly metadata: Readonly<Record<string, unknown>>
+}): Promise<void> => {
+  const event = finalizeEvent(
+    {
+      kind: 0,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: JSON.stringify(metadata),
+    },
+    secretKeyFromNsec(nsec)
+  )
+
+  await withRelays(relays, async (pool) => {
+    try {
+      await Promise.any(pool.publish([...relays], event))
+    } catch {
+      throw new NostrPublishError("No relay accepted the profile event.")
+    }
+  })
 }

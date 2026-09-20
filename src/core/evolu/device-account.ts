@@ -4,7 +4,7 @@ import {
   evoluJsonObjectFrom,
   type KyselyNotNull,
   type MutationOptions,
-  sqliteFalse,
+  type sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
 
@@ -136,6 +136,12 @@ export const createAccountMasterKey = (): MasterKey => createMasterKey()
 export const createRandomAccountName = () =>
   NonEmptyString255(createRandomDisplayName())
 
+/**
+ * Evolu's public relay, not Linky's (`wss://evolu.linky.fit`): Payky's own
+ * data is an Evolu 8 store and Linky's relay is pinned to Evolu 7, whose
+ * wire encoding differs, so the two cannot talk. The Linky store in
+ * `src/core/linky` is what syncs with Linky's relay.
+ */
 export const defaultEvoluTransportUrl = WssUrl("wss://free.evoluhq.com")
 
 const createAccountEvoluTransportId = ({
@@ -205,9 +211,11 @@ export const insertAccount = (
     masterKey,
     lastUseAt: Date.now(),
   })
+  // Sync is on from the first launch: the account's data reaches the relay
+  // as soon as it exists, so a second device or a reinstall restores it.
   upsertAccountEvoluWebsocketTransport(deviceEvolu, {
     accountId,
-    isActive: sqliteFalse,
+    isActive: sqliteTrue,
     url: defaultEvoluTransportUrl,
   })
 
@@ -216,7 +224,7 @@ export const insertAccount = (
     masterKey,
     name,
     device: null,
-    transports: [],
+    transports: [{ type: "WebSocket", url: defaultEvoluTransportUrl }],
   }
 }
 
@@ -244,25 +252,10 @@ export async function createOrSelectAccount(
 }
 
 /**
- * Selects an account from a recovery phrase. Newly imported accounts activate
- * the default relay so their remote application data can synchronize.
+ * Selects an account from a recovery phrase; a newly imported one gets the
+ * default relay like every account, so its remote data synchronizes.
  */
-export async function restoreOrSelectAccount(
-  deviceEvolu: DeviceEvolu,
-  masterKey: MasterKey
-): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
-  const result = await createOrSelectAccount(deviceEvolu, masterKey)
-
-  if (result.created) {
-    upsertAccountEvoluWebsocketTransport(deviceEvolu, {
-      accountId: result.accountId,
-      isActive: sqliteTrue,
-      url: defaultEvoluTransportUrl,
-    })
-  }
-
-  return result
-}
+export const restoreOrSelectAccount = createOrSelectAccount
 
 export function selectAccount(
   deviceEvolu: DeviceEvolu,

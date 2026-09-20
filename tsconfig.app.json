@@ -38,7 +38,6 @@
   ],
   "references": [
     { "path": "./packages/linkshu" },
-    { "path": "./packages/linksync" },
-    { "path": "./packages/profile-defaults" }
+    { "path": "./packages/linksync" }
   ]
 }

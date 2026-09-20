@@ -321,8 +321,15 @@ export const saveFiatBankAccount =
 export const saveSparkAccount =
   ({
     enabled,
+    secret: importedSecret,
   }: {
     readonly enabled: boolean
+    /**
+     * A wallet the user imported by its 12 words. Replaces the stored secret
+     * — the one deliberate way it ever changes; without it, a stored secret
+     * is never overwritten.
+     */
+    readonly secret?: SparkSecret
   }): Task<
     {
       readonly accountId: AccountId
@@ -341,6 +348,7 @@ export const saveSparkAccount =
       ? (await run.deps.evolu.loadQuery(sparkAccountSecretQuery))[0]?.secret
       : undefined
     const secret =
+      importedSecret ??
       existingSecret ??
       (enabled ? deriveDefaultSparkWalletSecret(masterKey) : undefined)
 

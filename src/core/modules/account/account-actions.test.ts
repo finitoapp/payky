@@ -405,6 +405,29 @@ describe("account actions", () => {
       ])
   })
 
+  test("replaces the Spark wallet secret with an imported one on request", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      masterKey,
+    })
+    await run.ok(saveSparkAccount({ enabled: true }))
+
+    const imported = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+    await expect(
+      run(saveSparkAccount({ enabled: true, secret: imported }))
+    ).resolves.toEqual({
+      ok: true,
+      value: { accountId: sparkAccountId, secret: imported },
+    })
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toMatchObject([{ isDeleted: sqliteFalse, secret: imported }])
+  })
+
   test("never overwrites an already-attached Spark wallet secret", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

@@ -6,36 +6,32 @@ import {
 } from "@/features/onboarding/onboarding-form-state.ts"
 
 describe("getOnboardingSteps", () => {
-  test("includes the setup steps for a new account", () => {
+  test("a new account only answers the bank account question", () => {
     expect(
       getOnboardingSteps({ accountType: "new", restoredAccountSetup: false })
-    ).toEqual([
-      "language",
-      "accountChoice",
-      "country",
-      "currency",
-      "payments",
-      "account",
-    ])
+    ).toEqual(["start", "payments"])
+    expect(
+      getOnboardingSteps({ accountType: null, restoredAccountSetup: false })
+    ).toEqual(["start", "payments"])
   })
 
-  test("goes directly from account choice to recovery for restoration", () => {
+  test("restoring goes from the start screen to the recovery phrase", () => {
     expect(
       getOnboardingSteps({
         accountType: "restore",
         restoredAccountSetup: false,
       })
-    ).toEqual(["language", "accountChoice", "restore"])
+    ).toEqual(["start", "restore"])
   })
 
-  test("configures a restored account without choosing or confirming one", () => {
+  test("a restored account without Payky data is asked for its bank account only", () => {
     expect(
       getOnboardingSteps({
         accountType: "restore",
         restoredAccountSetup: true,
       })
-    ).toEqual(["country", "currency", "payments"])
-    expect(initialOnboardingStep(true)).toBe("country")
-    expect(initialOnboardingStep(false)).toBe("language")
+    ).toEqual(["payments"])
+    expect(initialOnboardingStep(true)).toBe("payments")
+    expect(initialOnboardingStep(false)).toBe("start")
   })
 })

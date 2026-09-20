@@ -32,8 +32,7 @@ export function PaymentMethodTabContent({
 } & CashPaymentTabProps &
   IbanPaidTabProps) {
   switch (method.id) {
-    case "spark":
-    case "cashu":
+    case "bitcoin":
       return (
         <QrPaymentRequest
           qrPayload={method.qrPayload}

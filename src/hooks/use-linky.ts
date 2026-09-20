@@ -15,10 +15,7 @@ import type { LinkyStoreHandle } from "@/core/linky/linky-store.ts"
 import {
   fetchNostrProfile,
   type NostrProfile,
-  type ProfileLang,
 } from "@/core/linky/nostr-profile.ts"
-import { useTranslation } from "@/hooks/use-translation.ts"
-import type { Language } from "@/i18n/resources.ts"
 
 /** The account's Linky store; suspends until its Evolu client has answered. */
 export const useLinkyStore = (): LinkyStoreHandle =>
@@ -51,27 +48,18 @@ export const useLinkyIdentity = (): LinkyIdentity => {
   return useMemo(() => resolveLinkyIdentity(row, masterKey), [row, masterKey])
 }
 
-const profileLangs = {
-  cs: "cs",
-  en: "en",
-  // Linky has no Slovak name list; Czech is the closest.
-  sk: "cs",
-} satisfies Record<Language, ProfileLang>
+export const myNostrProfileQueryKey = (pubkey: string) =>
+  ["linky", "profile", pubkey] as const
 
-/** The kind-0 profile of the Linky identity, or Linky's generated defaults. */
-export const useMyNostrProfile = (identity: LinkyIdentity) => {
-  const { language } = useTranslation()
-
-  return useQuery<NostrProfile>({
-    queryKey: ["linky", "profile", identity.pubkey, language],
+/** The published kind-0 profile of the Linky identity; empty until one is published. */
+export const useMyNostrProfile = (identity: LinkyIdentity) =>
+  useQuery<NostrProfile>({
+    queryKey: myNostrProfileQueryKey(identity.pubkey),
     queryFn: ({ signal }) =>
       fetchNostrProfile({
         pubkey: identity.pubkey,
-        npub: identity.npub,
         relays: linkyEnv.VITE_LINKY_NOSTR_RELAYS,
-        lang: profileLangs[language],
         signal,
       }),
     staleTime: 5 * 60_000,
   })
-}

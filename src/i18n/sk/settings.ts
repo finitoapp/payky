@@ -65,39 +65,20 @@ export const skSettings = {
   "settings.appVersion": "Verzia aplikácie:",
   "settings.appVersionCode": "Kód verzie:",
   "settings.appearance": "VZHĽAD A JAZYK",
-  "settings.cashRegisterAccount.enabled.description":
-    "Keď je pokladnica povolená, hotovostné platby sa môžu pridať k pripraveným platbám.",
-  "settings.cashRegisterAccount.enabled.label": "Povoliť pokladnicu",
-  "settings.cashRegisterAccount.form.description":
-    "Hotovostné platby používajú aktuálne vybranú fiat menu.",
-  "settings.cashRegisterAccount.form.title": "Pokladna",
-  "settings.cashRegisterAccount.save": "Uložiť pokladnicu",
-  "settings.cashRegisterAccount.saved": "Pokladnica uložená.",
   "settings.cashuAccount.balance.error":
     "Zostatok peňaženky sa nepodarilo načítať.",
-  "settings.cashuAccount.balance.label": "Zostatok: {amount} sats",
-  "settings.cashuAccount.balance.loading": "Načítavam zostatok peňaženky...",
-  "settings.cashuAccount.enabled.description":
-    "Vypnuté Cashu účty zostávajú uložené, ale platobné toky ich ignorujú.",
-  "settings.cashuAccount.enabled.label": "Povoliť Cashu účet",
-  "settings.cashuAccount.form.description":
-    "Rovnaká ecash peňaženka ako v Linky: Payky číta aj zapisuje priamo synchronizované dáta peňaženky Linky pre túto recovery phrase, takže zostatok aj tokeny sú v oboch aplikáciách identické.",
-  "settings.cashuAccount.form.title": "Cashu účet",
   "settings.cashuAccount.mintUrl.description":
     "Zákazník platí Lightning faktúru vystavenú týmto mintom; ecash pristane v peňaženke.",
   "settings.cashuAccount.mintUrl.invalid":
     "Zadajte platnú http(s) adresu mintu.",
   "settings.cashuAccount.mintUrl.label": "Adresa mintu",
   "settings.cashuAccount.restore.action": "Obnoviť z mintu",
-  "settings.cashuAccount.restore.description":
-    "Opýta sa mintu na ecash vytvorený týmto seedom, ktorý nemá uloženú ani jedna aplikácia – napríklad z peňaženky so stratenými dátami – a všetko neminuté pridá do zdieľaného zostatku.",
   "settings.cashuAccount.restore.error": "Obnova z mintu sa nepodarila.",
   "settings.cashuAccount.restore.pending": "Obnovujem...",
   "settings.cashuAccount.restore.success":
     "Obnovených {amount} sats v {count} proofoch.",
   "settings.cashuAccount.restore.unavailable":
     "Mint sa nepodarilo prehľadať. Skúste to neskôr.",
-  "settings.cashuAccount.save": "Uložiť Cashu účet",
   "settings.cashuAccount.saved": "Cashu účet uložený.",
   "settings.catalog": "PONUKA",
   "settings.categories.add": "Pridať kategóriu",
@@ -139,9 +120,6 @@ export const skSettings = {
   "settings.defaultPaymentMethod.cashRegister.description":
     "Nové platby otvoriť s vybranou záložkou hotovosti.",
   "settings.defaultPaymentMethod.cashRegister.title": "Hotovosť",
-  "settings.defaultPaymentMethod.cashu.description":
-    "Nové platby otvárať s vybranou záložkou Cashu.",
-  "settings.defaultPaymentMethod.cashu.title": "Cashu",
   "settings.defaultPaymentMethod.description":
     "Vyberte, ktorá povolená metóda sa vyberie ako prvá pri vytváraní účtu",
   "settings.defaultPaymentMethod.empty":
@@ -257,32 +235,13 @@ export const skSettings = {
   "settings.fiat.usd.description":
     "Používať americký dolár pre sumy v termináli",
   "settings.fiat.usd.title": "Americký dolar",
-  "settings.fiatBankAccount.currency.description":
-    "Platby v tejto mene môžu použiť tento bankový účet.",
-  "settings.fiatBankAccount.currency.label": "Mena bankového účtu",
-  "settings.fiatBankAccount.enabled.description":
-    "Vypnutý účet zostane uložený, ale platobné toky ho budú ignorovať.",
-  "settings.fiatBankAccount.enabled.label": "Povoliť fiat bankový účet",
-  "settings.fiatBankAccount.form.description":
-    "Aplikácia teraz používa jeden deterministický fiat bankový účet.",
-  "settings.fiatBankAccount.form.title": "Údaje bankového účtu",
-  "settings.fiatBankAccount.iban.description":
-    "Zadajte IBAN alebo české číslo účtu, napríklad 123456789/0100. Uložená hodnota sa normalizuje na IBAN.",
   "settings.fiatBankAccount.iban.invalid":
     "Zadajte platný IBAN alebo české číslo účtu.",
-  "settings.fiatBankAccount.iban.label": "IBAN alebo číslo účtu",
-  "settings.fiatBankAccount.iban.required":
-    "IBAN alebo číslo účtu je povinné, keď je bankový účet povolený.",
-  "settings.fiatBankAccount.qrFormat.description":
-    "Tento formát sa pri bankových QR platbách zobrazí ako prvý.",
-  "settings.fiatBankAccount.qrFormat.label": "Predvolený formát QR",
   "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
     "Pay by square 1.0 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
     "Pay by square 1.2 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
-  "settings.fiatBankAccount.save": "Uložiť bankový účet",
-  "settings.fiatBankAccount.saved": "Bankový účet uložený.",
   "settings.fioPlugin.active.description":
     "Keď je plugin zapnutý, kontroluje transakcie Fio banky pre fiat bankový účet.",
   "settings.fioPlugin.active.label": "Povoliť Fio plugin",
@@ -420,18 +379,28 @@ export const skSettings = {
   "settings.legalEntity.title": "Krajina a DPH",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.myAccount.copyNpub": "Kopírovať npub",
-  "settings.myAccount.description":
-    "Nostr identita a profil tohto účtu, ako ich pre rovnakú recovery phrase zobrazuje Linky.",
-  "settings.myAccount.generatedProfile":
-    "Nostr profil zatiaľ nie je publikovaný; toto je rovnaký zástupný profil, ktorý ukazuje aj Linky.",
-  "settings.myAccount.loadingName": "Načítavam profil…",
+  "settings.myAccount.edit": "Upraviť profil",
+  "settings.myAccount.setName": "Zadať meno",
   "settings.myAccount.npubCopied": "npub skopírovaný.",
   "settings.myAccount.npubCopyFailed": "npub sa nepodarilo skopírovať.",
-  "settings.myAccount.source.custom": "Kľúč vložený v Linky",
-  "settings.myAccount.source.derived": "Kľúč z recovery phrase",
-  "settings.paymentAccounts.description":
-    "Nastavenie bankového, Spark, Cashu a pokladničného účtu",
-  "settings.paymentAccounts.title": "Platobné účty",
+  "settings.paymentAccounts.description": "Bankový prevod, bitcoin a hotovosť",
+  "settings.paymentAccounts.title": "Platobné metódy",
+  "settings.paymentMethods.balance": "Zostatok",
+  "settings.paymentMethods.balanceSats": "{amount} sats",
+  "settings.paymentMethods.bank.account.description":
+    "České alebo slovenské číslo účtu alebo IBAN. Mena a formát QR sa odvodia z neho.",
+  "settings.paymentMethods.bank.account.label": "Číslo účtu alebo IBAN",
+  "settings.paymentMethods.bank.derived": "{bank} · {currency} · QR {format}",
+  "settings.paymentMethods.bank.derivedUnknownBank": "{currency} · QR {format}",
+  "settings.paymentMethods.bank.enabled": "Prijímať bankové prevody",
+  "settings.paymentMethods.bank.saved": "Bankový účet uložený.",
+  "settings.paymentMethods.bank.title": "Bankový prevod",
+  "settings.paymentMethods.bitcoin.cashu": "Cashu",
+  "settings.paymentMethods.bitcoin.enabled": "Prijímať bitcoin",
+  "settings.paymentMethods.bitcoin.spark": "Spark",
+  "settings.paymentMethods.bitcoin.title": "Bitcoin",
+  "settings.paymentMethods.cash.enabled": "Prijímať hotovosť",
+  "settings.paymentMethods.cash.title": "Hotovosť",
   "settings.paymentNumberSeries.day.default.description":
     "Pridať do generovaných čísel platieb dvojciferný deň",
   "settings.paymentNumberSeries.day.default.title": "Zobraziť deň",
@@ -496,6 +465,18 @@ export const skSettings = {
   "settings.privacy.title": "Súkromie",
   "settings.privacyGroup": "SÚKROMIE",
   "settings.saveFailed": "Zmenu sa nepodarilo uložiť. Skúste to prosím znova.",
+  "settings.profile.name.label": "Meno",
+  "settings.profile.name.placeholder": "Vaše meno alebo podnik",
+  "settings.profile.picture.choose": "Vybrať z galérie",
+  "settings.profile.picture.invalid":
+    "Tento súbor nie je obrázok, ktorý by prehliadač prečítal.",
+  "settings.profile.picture.label": "Obrázok",
+  "settings.profile.picture.remove": "Odobrať obrázok",
+  "settings.profile.save": "Uložiť profil",
+  "settings.profile.saveFailed":
+    "Profil sa nepodarilo publikovať. Skontrolujte pripojenie a skúste to znova.",
+  "settings.profile.saved": "Profil publikovaný.",
+  "settings.profile.title": "Profil",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",
   "settings.security.mnemonic.copy": "Kopírovať",
@@ -527,24 +508,10 @@ export const skSettings = {
   "settings.security.transports.url.invalid": "Zadajte platnú wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
   "settings.security.transports.websocket": "WebSocket",
-  "settings.sparkAccount.enabled.description":
-    "Vypnutý Spark účet zostane uložený, ale platobné toky ho budú ignorovať.",
-  "settings.sparkAccount.enabled.label": "Povoliť Spark účet",
-  "settings.sparkAccount.form.description":
-    "Payky túto Spark peňaženku odvodí z kľúča na obnovu účtu.",
-  "settings.sparkAccount.form.title": "Spark účet",
   "settings.sparkAccount.mnemonic.description":
-    "Mnemonic uchovávajte v tajnosti. Ktokoľvek s ním má prístup k Spark peňaženke.",
+    "Slová tejto Spark peňaženky. Vložte 12 slov peňaženky, ktorú už používate inde (Wallet of Satoshi, Bitlifi, …), a platby budú chodiť do nej.",
+  "settings.sparkAccount.mnemonic.invalid": "Zadajte 12 slov Spark peňaženky.",
   "settings.sparkAccount.mnemonic.label": "Mnemonic peňaženky",
-  "settings.sparkAccount.privacyMode.description":
-    "Zapne režim súkromia Spark peňaženky pre Lightning platby.",
-  "settings.sparkAccount.privacyMode.label": "Zapnúť privacy mode",
-  "settings.sparkAccount.privacyMode.loadError":
-    "Nastavenie privacy mode v Sparku sa nepodarilo načítať.",
-  "settings.sparkAccount.privacyMode.loading": "Načítavam privacy mode...",
-  "settings.sparkAccount.privacyMode.saveError":
-    "Nastavenie privacy mode v Sparku sa nepodarilo uložiť.",
-  "settings.sparkAccount.save": "Uložiť Spark účet",
   "settings.sparkAccount.saved": "Spark účet uložený.",
   "settings.support": "PODPORA A INFORMÁCIE",
   "settings.tables.add": "Pridať stôl",
@@ -654,8 +621,6 @@ export const skSettings = {
   "settings.tips.percentages.value": "{value} %",
   "settings.tips.preset.remove": "Odstrániť {value}",
   "settings.tips.reset": "Obnoviť predvolené hodnoty",
-  "settings.tips.save": "Uložiť tringelty",
-  "settings.tips.saved": "Nastavenie tringeltu uložené.",
   "settings.tips.title": "Tringelty",
   "settings.title": "Nastavenia",
   "settings.withdrawals.description":

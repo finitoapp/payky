@@ -6,7 +6,7 @@ import type { BankQrPayload } from "@/core/modules/payment/payment-iban-qr-paylo
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export type PaymentMethodTab = "spark" | "cashu" | "iban" | "cash"
+export type PaymentMethodTab = "bitcoin" | "iban" | "cash"
 
 export interface PaymentMethodOptionBase {
   readonly kind: DefaultPaymentMethod
@@ -17,8 +17,17 @@ export interface PaymentMethodOptionBase {
 
 export type PaymentMethodOption = PaymentMethodOptionBase &
   (
-    | { readonly id: "spark"; readonly qrPayload: string | null }
-    | { readonly id: "cashu"; readonly qrPayload: string | null }
+    | {
+        /**
+         * One bitcoin tab whatever is enabled: Spark, cashu or both. With
+         * both, the QR is a BIP-321 uri carrying the mint's Lightning invoice
+         * and the Spark invoice; alone, each is shown as its bare invoice.
+         */
+        readonly id: "bitcoin"
+        readonly qrPayload: string | null
+        readonly sparkAccountId: AccountId | null
+        readonly cashuAccountId: AccountId | null
+      }
     | {
         readonly id: "iban"
         readonly qrPayload: string | null

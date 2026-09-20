@@ -9,27 +9,6 @@ export const skOnboarding = {
   "accountRestore.timeout.setup": "Nastaviť tento účet",
   "accountRestore.timeout.title": "Obnova účtu stále prebieha",
   "accountRestore.title": "Obnovovanie účtu",
-  "onboarding.account.description":
-    "Skontrolujte identitu, ktorú Payky pre toto zariadenie vygeneroval. Môžete ju premenovať a zapnúť synchronizáciu teraz, alebo neskôr v Nastaveniach.",
-  "onboarding.account.mnemonic.confirm":
-    "Uložil(a) som si recovery phrase na bezpečné miesto",
-  "onboarding.account.name.description":
-    "Zobrazuje sa v zozname účtov pri prepínaní identít.",
-  "onboarding.account.name.error.required": "Zadajte názov účtu.",
-  "onboarding.account.name.label": "Názov účtu",
-  "onboarding.account.title": "Váš účet",
-  "onboarding.account.transport.description":
-    "Zapnutím synchronizácie tento účet zálohujete a môžete ho použiť na ďalších zariadeniach.",
-  "onboarding.account.transport.title": "Synchronizácia",
-  "onboarding.accountChoice.description":
-    "Vytvorte nový účet pre toto zariadenie alebo obnovte účet, ktorý už používate.",
-  "onboarding.accountChoice.new.description":
-    "Vygenerujte novú recovery phrase a začnite s prázdnym účtom.",
-  "onboarding.accountChoice.new.title": "Vytvoriť nový účet",
-  "onboarding.accountChoice.restore.description":
-    "Pomocou recovery phrase otvorte dáta svojho existujúceho účtu.",
-  "onboarding.accountChoice.restore.title": "Obnoviť existujúci účet",
-  "onboarding.accountChoice.title": "Výber účtu",
   "onboarding.back": "Späť",
   "onboarding.cancelSetup": "Zrušiť vytváranie účtu",
   "onboarding.cancelSetup.confirm.cancel": "Pokračovať v nastavení",
@@ -44,31 +23,31 @@ export const skOnboarding = {
     "Zapne daňové sadzby pre položky katalógu. Neskôr to môžete zmeniť v Nastaveniach.",
   "onboarding.country.vatPayer.label": "Som platiteľ DPH",
   "onboarding.finish": "Dokončiť",
-  "onboarding.language.description":
-    "Vyberte jazyk, ktorý bude aplikácia používať.",
-  "onboarding.language.title": "Výber jazyka",
-  "onboarding.next": "Ďalej",
-  "onboarding.payments.btc.description":
-    "Prijímajte bitcoinové platby cez Spark Lightning účet.",
-  "onboarding.payments.btc.title": "Bitcoin",
-  "onboarding.payments.cash.description":
-    "Evidujte hotovostné platby priamo v termináli.",
-  "onboarding.payments.cash.title": "Hotovosť",
-  "onboarding.payments.cashu.description":
-    "Prijímajte Lightning platby ako Cashu ecash – rovnaká peňaženka, ktorú vaša recovery phrase otvorí v Linky.",
-  "onboarding.payments.cashu.title": "Bitcoin (Cashu)",
+  "onboarding.payments.bankAccount.bankDetected": "Účet v banke {bank}.",
+  "onboarding.payments.bankAccount.bankUnknown":
+    "Kód banky zatiaľ v zozname nemáme; účet je aj tak platný.",
+  "onboarding.payments.bankAccount.description":
+    "České alebo slovenské číslo účtu (napr. 19-2000145399/0800) alebo IBAN.",
+  "onboarding.payments.bankAccount.label": "Bankový účet pre prevody",
+  "onboarding.payments.bankAccount.placeholder":
+    "123456789/0800 alebo SK31 1200 …",
+  "onboarding.payments.skipHint":
+    "Nemáte účet poruke? Nechajte pole prázdne a doplňte ho neskôr v Nastaveniach. Bitcoinové platby cez cashu sú zapnuté od začiatku.",
   "onboarding.payments.description":
-    "Vyberte platobné metódy, ktoré má terminál prijímať.",
-  "onboarding.payments.iban.description":
-    "Zobrazujte QR kódy pre bankové prevody.",
-  "onboarding.payments.iban.title": "Bankový prevod",
-  "onboarding.payments.title": "Platobné metódy",
-  "onboarding.progress": "Krok",
+    "Kam majú chodiť bankové prevody. Neskôr to môžete zmeniť.",
+  "onboarding.payments.title": "Bankový účet",
   "onboarding.restore.action": "Obnoviť účet",
   "onboarding.restore.description":
     "Zadajte SLIP-39 recovery phrase účtu, ktorý chcete obnoviť.",
   "onboarding.restore.title": "Obnovenie existujúceho účtu",
-  "onboarding.title": "Nastavenie Payky",
+  "onboarding.start.create": "Vytvoriť nový účet",
+  "onboarding.start.createHint": "Nepotrebuješ telefón ani e-mail.",
+  "onboarding.start.restore": "Už mám účet",
+  "onboarding.start.restoreHint":
+    "Prihlásiš sa svojimi 20 slovami – z Payky alebo z Linky.",
+  "onboarding.start.subtitle":
+    "Platobný terminál pre bitcoin a bankové prevody.",
+  "onboarding.title": "Payky",
   "recovery.accounts.description":
     "Prepnutím sa aplikácia restartuje na danom účte.",
   "recovery.description":

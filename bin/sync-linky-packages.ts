@@ -14,7 +14,8 @@ import { z } from "zod"
 
 /**
  * Re-vendors the Linky packages Payky builds on from a Linky checkout into
- * `packages/`. They cannot be `file:`/`link:` dependencies: Bun resolves a
+ * `packages/` (`src/core/linky/profile-name.ts` is a plain copy of one Linky
+ * module and is kept in sync by hand). They cannot be `file:`/`link:` dependencies: Bun resolves a
  * linked package's `workspace:*` devDependencies (which only the Linky
  * monorepo can satisfy), and CI, Vercel and Codemagic build this repo on its
  * own, without a sibling checkout. So the sources are copied, minus tests,
@@ -29,9 +30,6 @@ import { z } from "zod"
  *   Linky runs Evolu 7 and its relay is pinned to it; Evolu 8 (Payky's own
  *   store) changed the wire encoding, so the copy imports the aliased
  *   `@evolu-v7/common` instead of `@evolu/common`.
- * - `@linky/profile-defaults` — the derived default name/avatar and profile
- *   name normalization from Linky's web app, so a user without a published
- *   Nostr profile sees the same generated identity in both apps.
  */
 
 const SourcePackageJson = z.object({
@@ -208,52 +206,3 @@ vendorPackage({
   peerDependencies: { react: "^19.2.3" },
   tsconfigExtra: { jsx: "react-jsx" },
 })
-
-// The web app's own-profile defaults are plain modules, not a package, so the
-// manifest is written here rather than copied. `derivedProfile.ts` imports
-// the app's `Lang` type; the copy carries the two-letter union directly.
-{
-  const targetDir = path.join(repoRoot, "packages", "profile-defaults")
-  const sourceDir = path.join(linkyRoot, "apps", "web-app", "src")
-  rmSync(targetDir, { recursive: true, force: true })
-  mkdirSync(path.join(targetDir, "src"), { recursive: true })
-  for (const file of ["derivedProfile.ts", "firstNames.ts"]) {
-    cpSync(path.join(sourceDir, file), path.join(targetDir, "src", file))
-  }
-  cpSync(
-    path.join(sourceDir, "utils", "profileName.ts"),
-    path.join(targetDir, "src", "profileName.ts")
-  )
-  rewriteSources(path.join(targetDir, "src"), (source) =>
-    source.replace(
-      'import type { Lang } from "./i18n";',
-      'type Lang = "cs" | "de" | "en";'
-    )
-  )
-  writeFileSync(
-    path.join(targetDir, "src", "index.ts"),
-    [
-      'export * from "./derivedProfile";',
-      'export * from "./firstNames";',
-      'export * from "./profileName";',
-      "",
-    ].join("\n")
-  )
-  writeJson(path.join(targetDir, "package.json"), {
-    name: "@linky/profile-defaults",
-    version: "0.1.0",
-    private: true,
-    license: "0BSD",
-    type: "module",
-    main: "./src/index.ts",
-    types: "./src/index.ts",
-    exports: { ".": "./src/index.ts" },
-    dependencies: {},
-  })
-  writeJson(path.join(targetDir, "tsconfig.json"), vendoredTsconfig())
-  writeSourceJson(
-    targetDir,
-    "apps/web-app/src (derivedProfile.ts, firstNames.ts, utils/profileName.ts)"
-  )
-  console.log(`Vendored @linky/profile-defaults from ${sourceCommit}`)
-}

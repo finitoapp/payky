@@ -1,10 +1,15 @@
 import { describe, expect, test } from "vitest"
 
-import { getOnboardingSteps } from "@/features/onboarding/onboarding-form-state.ts"
+import {
+  getOnboardingSteps,
+  initialOnboardingStep,
+} from "@/features/onboarding/onboarding-form-state.ts"
 
 describe("getOnboardingSteps", () => {
   test("includes the setup steps for a new account", () => {
-    expect(getOnboardingSteps("new")).toEqual([
+    expect(
+      getOnboardingSteps({ accountType: "new", restoredAccountSetup: false })
+    ).toEqual([
       "language",
       "accountChoice",
       "country",
@@ -15,10 +20,22 @@ describe("getOnboardingSteps", () => {
   })
 
   test("goes directly from account choice to recovery for restoration", () => {
-    expect(getOnboardingSteps("restore")).toEqual([
-      "language",
-      "accountChoice",
-      "restore",
-    ])
+    expect(
+      getOnboardingSteps({
+        accountType: "restore",
+        restoredAccountSetup: false,
+      })
+    ).toEqual(["language", "accountChoice", "restore"])
+  })
+
+  test("configures a restored account without choosing or confirming one", () => {
+    expect(
+      getOnboardingSteps({
+        accountType: "restore",
+        restoredAccountSetup: true,
+      })
+    ).toEqual(["country", "currency", "payments"])
+    expect(initialOnboardingStep(true)).toBe("country")
+    expect(initialOnboardingStep(false)).toBe("language")
   })
 })

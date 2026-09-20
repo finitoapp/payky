@@ -6,7 +6,7 @@ import type { BankQrPayload } from "@/core/modules/payment/payment-iban-qr-paylo
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export type PaymentMethodTab = "spark" | "iban" | "cash"
+export type PaymentMethodTab = "spark" | "cashu" | "iban" | "cash"
 
 export interface PaymentMethodOptionBase {
   readonly kind: DefaultPaymentMethod
@@ -18,6 +18,7 @@ export interface PaymentMethodOptionBase {
 export type PaymentMethodOption = PaymentMethodOptionBase &
   (
     | { readonly id: "spark"; readonly qrPayload: string | null }
+    | { readonly id: "cashu"; readonly qrPayload: string | null }
     | {
         readonly id: "iban"
         readonly qrPayload: string | null

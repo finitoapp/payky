@@ -21,6 +21,7 @@ export const defaultPaymentMethod: DefaultPaymentMethod = "spark"
 export const defaultPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> = [
   "cashRegister",
   "spark",
+  "cashu",
   "iban",
 ]
 

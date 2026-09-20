@@ -30,17 +30,22 @@ describe("parsePaymentMethodOrder", () => {
   })
 
   test("preserves a valid stored order", () => {
+    expect(
+      parsePaymentMethodOrder('["iban","spark","cashu","cashRegister"]')
+    ).toEqual(["iban", "spark", "cashu", "cashRegister"])
     expect(parsePaymentMethodOrder('["iban","spark","cashRegister"]')).toEqual([
       "iban",
       "spark",
       "cashRegister",
+      // A method the stored order predates joins at the end.
+      "cashu",
     ])
   })
 
   test("dedups repeated methods, keeping the first occurrence", () => {
     expect(
       parsePaymentMethodOrder('["iban","iban","spark","cashRegister"]')
-    ).toEqual(["iban", "spark", "cashRegister"])
+    ).toEqual(["iban", "spark", "cashRegister", "cashu"])
   })
 
   test("appends methods missing from a partial stored order", () => {
@@ -48,6 +53,7 @@ describe("parsePaymentMethodOrder", () => {
       "iban",
       "cashRegister",
       "spark",
+      "cashu",
     ])
   })
 })

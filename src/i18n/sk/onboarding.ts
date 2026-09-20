@@ -5,8 +5,8 @@ export const skOnboarding = {
     "Čakáme na synchronizáciu údajov účtu. Zvyčajne to trvá pár sekúnd.",
   "accountRestore.timeout.continue": "Čakať ďalej",
   "accountRestore.timeout.description":
-    "Nastavenia účtu zatiaľ nedorazili. Môžete ďalej čakať alebo tento účet výslovne nastaviť ako nový.",
-  "accountRestore.timeout.setup": "Nastaviť ako nový účet",
+    "Nastavenia účtu zatiaľ nedorazili. Fráza môže patriť účtu, ktorý v Payky ešte nebol použitý – napríklad založenému v Linky. Čakajte ďalej, alebo tento účet nastavte hneď; jeho recovery phrase zostane tá, ktorú ste zadali.",
+  "accountRestore.timeout.setup": "Nastaviť tento účet",
   "accountRestore.timeout.title": "Obnova účtu stále prebieha",
   "accountRestore.title": "Obnovovanie účtu",
   "onboarding.account.description":
@@ -54,6 +54,9 @@ export const skOnboarding = {
   "onboarding.payments.cash.description":
     "Evidujte hotovostné platby priamo v termináli.",
   "onboarding.payments.cash.title": "Hotovosť",
+  "onboarding.payments.cashu.description":
+    "Prijímajte Lightning platby ako Cashu ecash – rovnaká peňaženka, ktorú vaša recovery phrase otvorí v Linky.",
+  "onboarding.payments.cashu.title": "Bitcoin (Cashu)",
   "onboarding.payments.description":
     "Vyberte platobné metódy, ktoré má terminál prijímať.",
   "onboarding.payments.iban.description":

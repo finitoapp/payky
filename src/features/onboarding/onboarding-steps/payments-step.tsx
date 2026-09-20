@@ -1,4 +1,4 @@
-import { Banknote, Bitcoin, Landmark } from "lucide-react"
+import { Banknote, Bitcoin, Coins, Landmark } from "lucide-react"
 import { useId } from "react"
 
 import {
@@ -40,6 +40,12 @@ const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
     label: "onboarding.payments.btc.title",
     description: "onboarding.payments.btc.description",
     icon: Bitcoin,
+  },
+  {
+    value: "cashu",
+    label: "onboarding.payments.cashu.title",
+    description: "onboarding.payments.cashu.description",
+    icon: Coins,
   },
   {
     value: "iban",

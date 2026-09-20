@@ -72,6 +72,30 @@ export const enSettings = {
   "settings.cashRegisterAccount.form.title": "Cash register",
   "settings.cashRegisterAccount.save": "Save cash register",
   "settings.cashRegisterAccount.saved": "Cash register saved.",
+  "settings.cashuAccount.balance.error": "Could not read the wallet balance.",
+  "settings.cashuAccount.balance.label": "Balance: {amount} sats",
+  "settings.cashuAccount.balance.loading": "Reading the wallet balance...",
+  "settings.cashuAccount.enabled.description":
+    "Disabled Cashu accounts stay stored but are ignored by payment flows.",
+  "settings.cashuAccount.enabled.label": "Enable Cashu account",
+  "settings.cashuAccount.form.description":
+    "The same ecash wallet as in Linky: Payky reads and writes Linky's own synced wallet data for this recovery phrase, so the balance and the tokens are identical in both apps.",
+  "settings.cashuAccount.form.title": "Cashu account",
+  "settings.cashuAccount.mintUrl.description":
+    "Customers pay a Lightning invoice issued by this mint; the ecash lands in the wallet.",
+  "settings.cashuAccount.mintUrl.invalid": "Enter a valid http(s) mint URL.",
+  "settings.cashuAccount.mintUrl.label": "Mint URL",
+  "settings.cashuAccount.restore.action": "Restore from mint",
+  "settings.cashuAccount.restore.description":
+    "Asks the mint for ecash this seed created that neither app has stored — for example from a wallet whose data was lost — and adds anything unspent to the shared balance.",
+  "settings.cashuAccount.restore.error": "Could not restore from the mint.",
+  "settings.cashuAccount.restore.pending": "Restoring...",
+  "settings.cashuAccount.restore.success":
+    "Restored {amount} sats in {count} proofs.",
+  "settings.cashuAccount.restore.unavailable":
+    "The mint could not be scanned. Try again later.",
+  "settings.cashuAccount.save": "Save Cashu account",
+  "settings.cashuAccount.saved": "Cashu account saved.",
   "settings.catalog": "MENU",
   "settings.categories.add": "Add category",
   "settings.categories.delete": "Delete category",
@@ -110,6 +134,9 @@ export const enSettings = {
   "settings.defaultPaymentMethod.cashRegister.description":
     "Open new payments with the cash tab selected.",
   "settings.defaultPaymentMethod.cashRegister.title": "Cash",
+  "settings.defaultPaymentMethod.cashu.description":
+    "Open new payments with the Cashu tab selected.",
+  "settings.defaultPaymentMethod.cashu.title": "Cashu",
   "settings.defaultPaymentMethod.description":
     "Choose which enabled method is selected first when starting a bill",
   "settings.defaultPaymentMethod.empty":
@@ -388,8 +415,18 @@ export const enSettings = {
     "Sets the country used for default tax rates and whether tax rates apply to catalog items.",
   "settings.legalEntity.title": "Country & VAT",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
+  "settings.myAccount.copyNpub": "Copy npub",
+  "settings.myAccount.description":
+    "The Nostr identity and profile of this account, as Linky shows them for the same recovery phrase.",
+  "settings.myAccount.generatedProfile":
+    "No Nostr profile published yet; this is the placeholder Linky shows too.",
+  "settings.myAccount.loadingName": "Loading profile…",
+  "settings.myAccount.npubCopied": "npub copied.",
+  "settings.myAccount.npubCopyFailed": "Could not copy the npub.",
+  "settings.myAccount.source.custom": "Key pasted in Linky",
+  "settings.myAccount.source.derived": "Key from recovery phrase",
   "settings.paymentAccounts.description":
-    "Configure bank, Spark, and cash register accounts",
+    "Configure bank, Spark, Cashu, and cash register accounts",
   "settings.paymentAccounts.title": "Payment Accounts",
   "settings.paymentNumberSeries.day.default.description":
     "Include the two-digit day in generated payment numbers",

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   BanknoteIcon,
+  CoinsIcon,
   LandmarkIcon,
   type LucideIcon,
   ZapIcon,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/card.tsx"
 import {
   cashRegisterAccountQuery,
+  cashuAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
@@ -64,6 +66,12 @@ const defaultPaymentMethodOptions: ReadonlyArray<DefaultPaymentMethodOption> = [
     icon: ZapIcon,
   },
   {
+    value: "cashu",
+    label: "settings.defaultPaymentMethod.cashu.title",
+    description: "settings.defaultPaymentMethod.cashu.description",
+    icon: CoinsIcon,
+  },
+  {
     value: "cashRegister",
     label: "settings.defaultPaymentMethod.cashRegister.title",
     description: "settings.defaultPaymentMethod.cashRegister.description",
@@ -78,12 +86,14 @@ function DefaultPaymentMethodPage() {
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const { data: fiatBankAccountData } = useEvoluQuery(fiatBankAccountQuery)
   const { data: sparkAccountData } = useEvoluQuery(sparkAccountQuery)
+  const { data: cashuAccountData } = useEvoluQuery(cashuAccountQuery)
   const { data: cashRegisterAccountData } = useEvoluQuery(
     cashRegisterAccountQuery
   )
   const [settings] = settingsData
   const [fiatBankAccount] = fiatBankAccountData
   const [sparkAccount] = sparkAccountData
+  const [cashuAccount] = cashuAccountData
   const [cashRegisterAccount] = cashRegisterAccountData
   const fiatCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
   const configuredDefaultMethod = getDefaultPaymentMethod(
@@ -98,6 +108,7 @@ function DefaultPaymentMethodPage() {
       fiatBankAccount.isDeleted !== 1 &&
       fiatBankAccount.currency === fiatCurrency,
     spark: sparkAccount !== undefined && sparkAccount.isDeleted !== 1,
+    cashu: cashuAccount !== undefined && cashuAccount.isDeleted !== 1,
     cashRegister:
       cashRegisterAccount !== undefined &&
       cashRegisterAccount.isDeleted !== 1 &&

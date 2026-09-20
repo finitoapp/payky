@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router"
 import {
   BanknoteIcon,
+  CoinsIcon,
   LandmarkIcon,
   LoaderCircleIcon,
   XIcon,
@@ -68,6 +69,7 @@ import { cn } from "@/lib/utils.ts"
 
 const preparingPaymentMethodKeys = {
   spark: "paymentWait.preparing.spark",
+  cashu: "paymentWait.preparing.cashu",
   iban: "paymentWait.preparing.iban",
   cash: "paymentWait.preparing.cash",
 } satisfies Record<PaymentMethodTab, TranslationKey>
@@ -160,6 +162,20 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         label: t("paymentWait.method.lightning"),
         qrPayload: payment?.lnInvoice ?? payment?.sparkInvoice ?? null,
         icon: <ZapIcon />,
+      })
+    }
+
+    const enabledCashuAccount = enabledPaymentMethodAccounts.find(
+      (account) => account.kind === "cashu" && account.cashuMintUrl !== null
+    )
+    if (enabledCashuAccount) {
+      paymentMethods.push({
+        id: "cashu",
+        kind: "cashu",
+        accountId: enabledCashuAccount.id,
+        label: t("paymentWait.method.cashu"),
+        qrPayload: payment?.cashuLnInvoice ?? null,
+        icon: <CoinsIcon />,
       })
     }
 
@@ -276,6 +292,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     payment !== undefined &&
     ((activePaymentMethod.id === "spark" &&
       (payment.lnInvoice !== null || payment.sparkInvoice !== null)) ||
+      (activePaymentMethod.id === "cashu" && payment.cashuLnInvoice !== null) ||
       (activePaymentMethod.id === "iban" && payment.ibanAccountId !== null) ||
       (activePaymentMethod.id === "cash" &&
         payment.cashRegisterAccountId !== null &&
@@ -302,6 +319,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               ? {
                   spark: { accountId: method.accountId },
                 }
+              : {}),
+            ...(method.kind === "cashu"
+              ? { cashu: { accountId: method.accountId } }
               : {}),
           })
         )
@@ -422,6 +442,12 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     ibanAccountId !== undefined &&
     !isPaid
   const canCancelPayment = payment.canceledAt === null && !isPaid
+  // Spark and cashu each quote the fiat amount on their own; show the one
+  // behind the active tab, then whichever exists.
+  const displayedAmountSats =
+    activePaymentMethod?.id === "cashu"
+      ? (payment.cashuAmountSats ?? payment.amountSats)
+      : (payment.amountSats ?? payment.cashuAmountSats)
 
   const handleMarkCashPaid = async () => {
     if (!canMarkCashPaid) return
@@ -518,11 +544,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               )}
             </h1>
             <p className="text-md font-medium text-muted-foreground tabular-nums">
-              {payment.amountSats === null
+              {displayedAmountSats === null
                 ? "\u00A0"
                 : `${formatMoney(
                     {
-                      value: payment.amountSats,
+                      value: displayedAmountSats,
                       currency: Currency.BTC,
                     },
                     locale
@@ -537,6 +563,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 onValueChange={(value) => {
                   if (
                     value === "spark" ||
+                    value === "cashu" ||
                     value === "iban" ||
                     value === "cash"
                   ) {

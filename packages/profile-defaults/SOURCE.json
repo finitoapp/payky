@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/gorrdy/linky",
+  "path": "apps/web-app/src (derivedProfile.ts, firstNames.ts, utils/profileName.ts)",
+  "commit": "0de86899dcafa4a4cdf3fabade08d3b1164197e5",
+  "syncedAt": "2026-09-20T12:15:59.088Z",
+  "syncedWith": "bun run sync:linky"
+}

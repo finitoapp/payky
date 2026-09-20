@@ -24,12 +24,10 @@ describe("getDefaultCurrencyForCountry", () => {
 })
 
 describe("getPaymentMethodOrder", () => {
-  test("orders enabled methods iban, cash, btc regardless of set order", () => {
-    expect(getPaymentMethodOrder(methods("btc", "iban", "cash"))).toEqual([
-      "iban",
-      "cashRegister",
-      "spark",
-    ])
+  test("orders enabled methods iban, cash, btc, cashu regardless of set order", () => {
+    expect(
+      getPaymentMethodOrder(methods("cashu", "btc", "iban", "cash"))
+    ).toEqual(["iban", "cashRegister", "spark", "cashu"])
     expect(getPaymentMethodOrder(methods("cash", "btc"))).toEqual([
       "cashRegister",
       "spark",
@@ -43,10 +41,13 @@ describe("getPaymentMethodOrder", () => {
 })
 
 describe("getDefaultPaymentMethodForOnboarding", () => {
-  test("prefers btc, then cash, then iban", () => {
+  test("prefers btc, then cashu, then cash, then iban", () => {
     expect(
       getDefaultPaymentMethodForOnboarding(methods("btc", "cash", "iban"))
     ).toBe("spark")
+    expect(
+      getDefaultPaymentMethodForOnboarding(methods("cashu", "cash", "iban"))
+    ).toBe("cashu")
     expect(getDefaultPaymentMethodForOnboarding(methods("cash", "iban"))).toBe(
       "cashRegister"
     )

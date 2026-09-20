@@ -6,6 +6,7 @@ import { SparkSecretSchema } from "@/core/modules/shared/key-derivation.ts"
 import {
   AccountKindSchema,
   BankQrFormatSchema,
+  CashuMintUrlSchema,
   FiatCurrencySchema,
   IbanSchema,
   type InferTable,
@@ -31,6 +32,11 @@ export const accountSpark = {
   secret: SparkSecretSchema,
 } as const
 
+export const accountCashu = {
+  id: AccountId,
+  mintUrl: CashuMintUrlSchema,
+} as const
+
 export const accountCashRegister = {
   id: AccountId,
   currency: FiatCurrencySchema,
@@ -43,4 +49,5 @@ export const accountIndexes = ((create) => [
 export type AccountRow = InferTable<typeof account>
 export type AccountIbanRow = InferTable<typeof accountIban>
 export type AccountSparkRow = InferTable<typeof accountSpark>
+export type AccountCashuRow = InferTable<typeof accountCashu>
 export type AccountCashRegisterRow = InferTable<typeof accountCashRegister>

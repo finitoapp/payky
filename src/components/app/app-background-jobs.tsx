@@ -3,6 +3,7 @@ import { createRun } from "@evolu/web"
 import { useAtomValue } from "jotai"
 import { useEffect } from "react"
 
+import { cashuWalletAtom } from "@/atoms/cashu-wallet.ts"
 import { evoluAtom } from "@/atoms/evolu.ts"
 import { getBackgroundJobsForRuntime } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
@@ -11,6 +12,7 @@ import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
+  const cashuWallet = useAtomValue(cashuWalletAtom)
   const console = useConsole()
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function AppBackgroundJobs() {
       ...createDateDep(),
       ...createFetchDep(),
       lockManager: navigator.locks,
+      cashuWallet,
       console,
       onError: (error: unknown) => {
         console.error("Background job failed.", error)
@@ -61,7 +64,7 @@ export function AppBackgroundJobs() {
       if (jobsDisposable !== null) disposeJobs(jobsDisposable)
       void run[Symbol.asyncDispose]()
     }
-  }, [console, evolu])
+  }, [cashuWallet, console, evolu])
 
   return null
 }

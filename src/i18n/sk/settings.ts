@@ -73,6 +73,32 @@ export const skSettings = {
   "settings.cashRegisterAccount.form.title": "Pokladna",
   "settings.cashRegisterAccount.save": "Uložiť pokladnicu",
   "settings.cashRegisterAccount.saved": "Pokladnica uložená.",
+  "settings.cashuAccount.balance.error":
+    "Zostatok peňaženky sa nepodarilo načítať.",
+  "settings.cashuAccount.balance.label": "Zostatok: {amount} sats",
+  "settings.cashuAccount.balance.loading": "Načítavam zostatok peňaženky...",
+  "settings.cashuAccount.enabled.description":
+    "Vypnuté Cashu účty zostávajú uložené, ale platobné toky ich ignorujú.",
+  "settings.cashuAccount.enabled.label": "Povoliť Cashu účet",
+  "settings.cashuAccount.form.description":
+    "Rovnaká ecash peňaženka ako v Linky: Payky číta aj zapisuje priamo synchronizované dáta peňaženky Linky pre túto recovery phrase, takže zostatok aj tokeny sú v oboch aplikáciách identické.",
+  "settings.cashuAccount.form.title": "Cashu účet",
+  "settings.cashuAccount.mintUrl.description":
+    "Zákazník platí Lightning faktúru vystavenú týmto mintom; ecash pristane v peňaženke.",
+  "settings.cashuAccount.mintUrl.invalid":
+    "Zadajte platnú http(s) adresu mintu.",
+  "settings.cashuAccount.mintUrl.label": "Adresa mintu",
+  "settings.cashuAccount.restore.action": "Obnoviť z mintu",
+  "settings.cashuAccount.restore.description":
+    "Opýta sa mintu na ecash vytvorený týmto seedom, ktorý nemá uloženú ani jedna aplikácia – napríklad z peňaženky so stratenými dátami – a všetko neminuté pridá do zdieľaného zostatku.",
+  "settings.cashuAccount.restore.error": "Obnova z mintu sa nepodarila.",
+  "settings.cashuAccount.restore.pending": "Obnovujem...",
+  "settings.cashuAccount.restore.success":
+    "Obnovených {amount} sats v {count} proofoch.",
+  "settings.cashuAccount.restore.unavailable":
+    "Mint sa nepodarilo prehľadať. Skúste to neskôr.",
+  "settings.cashuAccount.save": "Uložiť Cashu účet",
+  "settings.cashuAccount.saved": "Cashu účet uložený.",
   "settings.catalog": "PONUKA",
   "settings.categories.add": "Pridať kategóriu",
   "settings.categories.delete": "Vymazať kategóriu",
@@ -113,6 +139,9 @@ export const skSettings = {
   "settings.defaultPaymentMethod.cashRegister.description":
     "Nové platby otvoriť s vybranou záložkou hotovosti.",
   "settings.defaultPaymentMethod.cashRegister.title": "Hotovosť",
+  "settings.defaultPaymentMethod.cashu.description":
+    "Nové platby otvárať s vybranou záložkou Cashu.",
+  "settings.defaultPaymentMethod.cashu.title": "Cashu",
   "settings.defaultPaymentMethod.description":
     "Vyberte, ktorá povolená metóda sa vyberie ako prvá pri vytváraní účtu",
   "settings.defaultPaymentMethod.empty":
@@ -390,8 +419,18 @@ export const skSettings = {
     "Určuje krajinu pre predvolené daňové sadzby a to, či sa sadzby uplatňujú na položky katalógu.",
   "settings.legalEntity.title": "Krajina a DPH",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
+  "settings.myAccount.copyNpub": "Kopírovať npub",
+  "settings.myAccount.description":
+    "Nostr identita a profil tohto účtu, ako ich pre rovnakú recovery phrase zobrazuje Linky.",
+  "settings.myAccount.generatedProfile":
+    "Nostr profil zatiaľ nie je publikovaný; toto je rovnaký zástupný profil, ktorý ukazuje aj Linky.",
+  "settings.myAccount.loadingName": "Načítavam profil…",
+  "settings.myAccount.npubCopied": "npub skopírovaný.",
+  "settings.myAccount.npubCopyFailed": "npub sa nepodarilo skopírovať.",
+  "settings.myAccount.source.custom": "Kľúč vložený v Linky",
+  "settings.myAccount.source.derived": "Kľúč z recovery phrase",
   "settings.paymentAccounts.description":
-    "Nastavenie bankového, Spark a pokladničného účtu",
+    "Nastavenie bankového, Spark, Cashu a pokladničného účtu",
   "settings.paymentAccounts.title": "Platobné účty",
   "settings.paymentNumberSeries.day.default.description":
     "Pridať do generovaných čísel platieb dvojciferný deň",

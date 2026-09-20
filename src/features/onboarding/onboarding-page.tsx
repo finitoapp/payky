@@ -23,9 +23,11 @@ import {
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
 import {
   saveCashRegisterAccount,
+  saveCashuAccount,
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
+import { defaultCashuMintUrl } from "@/core/modules/account/account-utils.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
@@ -37,6 +39,7 @@ import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
+  initialOnboardingStep,
   type OnboardingPaymentMethod,
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
@@ -61,7 +64,11 @@ import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export function OnboardingPage() {
+export function OnboardingPage({
+  restoredAccountSetup,
+}: {
+  readonly restoredAccountSetup: boolean
+}) {
   const appRun = useAppRun()
   const navigate = useNavigate()
   const setLanguage = useSetLanguage()
@@ -102,7 +109,10 @@ export function OnboardingPage() {
     vatPayer,
     paymentMethods: selectedPaymentMethods,
   } = form
-  const onboardingSteps = getOnboardingSteps(accountType)
+  const onboardingSteps = getOnboardingSteps({
+    accountType,
+    restoredAccountSetup,
+  })
   const pending = finishing || restoring || cancelingSetup
   const selectedCurrency =
     form.currency ?? getDefaultCurrencyForCountry(country)
@@ -127,8 +137,21 @@ export function OnboardingPage() {
     }
   }, [navigate, settings])
 
+  // The form atom starts every wizard at "language"; the restored-account
+  // flow has no such step, so land on its own first one instead.
+  useEffect(() => {
+    if (onboardingSteps.includes(step)) return
+    const firstStep = initialOnboardingStep(restoredAccountSetup)
+    setForm((current) => ({ ...current, step: firstStep }))
+  }, [onboardingSteps, restoredAccountSetup, setForm, step])
+
   const stepIndex = onboardingSteps.indexOf(step)
   const canGoBack = stepIndex > 0 && !pending
+  const isFinalStep =
+    step === "account" ||
+    (restoredAccountSetup && stepIndex === onboardingSteps.length - 1)
+  const canFinish =
+    !pending && (step !== "account" || form.recoveryPhraseConfirmed)
 
   const goNext = () => {
     const nextStep = onboardingSteps[stepIndex + 1]
@@ -193,6 +216,12 @@ export function OnboardingPage() {
       await run(
         saveSparkAccount({
           enabled: selectedPaymentMethods.has("btc"),
+        })
+      )
+      await run(
+        saveCashuAccount({
+          enabled: selectedPaymentMethods.has("cashu"),
+          mintUrl: defaultCashuMintUrl,
         })
       )
       await run(
@@ -413,10 +442,10 @@ export function OnboardingPage() {
                   <ChevronLeft data-icon="inline-start" />
                   {t("onboarding.back")}
                 </Button>
-                {step === "account" ? (
+                {isFinalStep ? (
                   <Button
                     type="button"
-                    disabled={pending || !form.recoveryPhraseConfirmed}
+                    disabled={!canFinish}
                     onClick={finishOnboarding}
                   >
                     <Check data-icon="inline-start" />

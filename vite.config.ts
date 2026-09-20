@@ -159,6 +159,8 @@ export default (({ command }: ConfigEnv) => {
         "@evolu/react-web",
         "@evolu/react",
         "@evolu/common",
+        "@evolu-v7/web",
+        "@evolu-v7/common",
       ],
     },
     test: {

@@ -141,6 +141,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -227,6 +228,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -295,6 +297,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -363,6 +366,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -421,6 +425,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -504,6 +509,7 @@ describe("fio account transaction sync job", () => {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
       onError: (error: unknown) => {
         errors.push(error)
       },

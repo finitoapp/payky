@@ -22,6 +22,7 @@ import {
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import type {
   BankQrFormat,
+  CashuMintUrl,
   FiatCurrency,
   Iban,
 } from "@/core/modules/shared/schema.ts"
@@ -30,6 +31,7 @@ import type {
   AccountRow,
   account,
   accountCashRegister,
+  accountCashu,
   accountIban,
   accountSpark,
 } from "./account.ts"
@@ -37,6 +39,7 @@ import { accountByIdQuery, sparkAccountSecretQuery } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
   cashRegisterAccountId,
+  cashuAccountId,
   fiatBankAccountId,
   sparkAccountId,
 } from "./account-utils.ts"
@@ -78,10 +81,12 @@ export const loadAccount =
 const deriveAccountKind = (detail: {
   readonly iban?: unknown
   readonly spark?: unknown
+  readonly cashu?: unknown
   readonly cashRegister?: unknown
 }): AccountRow["kind"] => {
   if (detail.iban) return "iban"
   if (detail.spark) return "spark"
+  if (detail.cashu) return "cashu"
   return "cashRegister"
 }
 
@@ -89,6 +94,7 @@ export const createAccount =
   ({
     iban,
     spark,
+    cashu,
     cashRegister,
     ...input
   }: Simplify<
@@ -96,6 +102,7 @@ export const createAccount =
       RequireExactlyOne<{
         iban: AccountIbanCreateInput
         spark: InsertValues<typeof accountSpark>
+        cashu: InsertValues<typeof accountCashu>
         cashRegister: InsertValues<typeof accountCashRegister>
       }>
   >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
@@ -103,7 +110,7 @@ export const createAccount =
     const { evoluOwnerId } = run.deps
     const id = createRowId<"Account">()
 
-    const kind = deriveAccountKind({ iban, spark, cashRegister })
+    const kind = deriveAccountKind({ iban, spark, cashu, cashRegister })
 
     await runMutationWithCompletion((options) => {
       if (iban) {
@@ -123,6 +130,17 @@ export const createAccount =
           "accountSpark",
           removeUndefinedValues({
             ...spark,
+            id,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
+      if (cashu) {
+        run.deps.evolu.upsert(
+          "accountCashu",
+          removeUndefinedValues({
+            ...cashu,
             id,
           }),
           { ...options, ownerId: evoluOwnerId }
@@ -158,6 +176,7 @@ export const updateAccount =
   ({
     iban,
     spark,
+    cashu,
     cashRegister,
     ...input
   }: Simplify<
@@ -165,13 +184,14 @@ export const updateAccount =
       RequireExactlyOne<{
         iban: AccountIbanUpdateInput
         spark: Omit<UpdateValues<typeof accountSpark>, "id">
+        cashu: Omit<UpdateValues<typeof accountCashu>, "id">
         cashRegister: Omit<UpdateValues<typeof accountCashRegister>, "id">
       }>
   >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
 
-    const kind = deriveAccountKind({ iban, spark, cashRegister })
+    const kind = deriveAccountKind({ iban, spark, cashu, cashRegister })
 
     await runMutationWithCompletion((options) => {
       if (iban) {
@@ -191,6 +211,17 @@ export const updateAccount =
           "accountSpark",
           removeUndefinedValues({
             ...spark,
+            id: input.id,
+          }),
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
+      if (cashu) {
+        run.deps.evolu.update(
+          "accountCashu",
+          removeUndefinedValues({
+            ...cashu,
             id: input.id,
           }),
           { ...options, ownerId: evoluOwnerId }
@@ -339,6 +370,48 @@ export const saveSparkAccount =
     })
 
     return ok({ accountId: sparkAccountId, secret })
+  }
+
+/**
+ * Unlike Spark, nothing secret is stored: the wallet seed is derived from the
+ * account master key on every device (`deriveDefaultCashuWalletMnemonic`), so
+ * the row only carries the mint this terminal quotes invoices from.
+ */
+export const saveCashuAccount =
+  ({
+    enabled,
+    mintUrl,
+  }: {
+    readonly enabled: boolean
+    readonly mintUrl: CashuMintUrl
+  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      run.deps.evolu.upsert(
+        "accountCashu",
+        {
+          id: cashuAccountId,
+          mintUrl,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+
+      return run.deps.evolu.upsert(
+        "account",
+        {
+          id: cashuAccountId,
+          deviceId: null,
+          name: NonEmptyString255("Cashu account"),
+          kind: "cashu",
+          isDeleted: enabled ? sqliteFalse : sqliteTrue,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(cashuAccountId)
   }
 
 export const saveCashRegisterAccount =

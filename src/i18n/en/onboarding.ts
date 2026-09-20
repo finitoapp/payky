@@ -3,8 +3,8 @@ export const enOnboarding = {
     "Waiting for the account data to sync. This usually takes a few seconds.",
   "accountRestore.timeout.continue": "Keep waiting",
   "accountRestore.timeout.description":
-    "No account settings have arrived yet. You can keep waiting or explicitly set up this account as new.",
-  "accountRestore.timeout.setup": "Set up as a new account",
+    "No account settings have arrived yet. The phrase may belong to an account never used in Payky before — for example one created in Linky. Keep waiting, or set this account up now; its recovery phrase stays the one you entered.",
+  "accountRestore.timeout.setup": "Set up this account",
   "accountRestore.timeout.title": "Still restoring account",
   "accountRestore.title": "Restoring account",
   "onboarding.account.description":
@@ -51,6 +51,9 @@ export const enOnboarding = {
   "onboarding.payments.cash.description":
     "Record in-person cash payments in the terminal.",
   "onboarding.payments.cash.title": "Cash",
+  "onboarding.payments.cashu.description":
+    "Receive Lightning payments as Cashu ecash — the same wallet your recovery phrase opens in Linky.",
+  "onboarding.payments.cashu.title": "Bitcoin (Cashu)",
   "onboarding.payments.description":
     "Select the payment methods this terminal should accept.",
   "onboarding.payments.iban.description":

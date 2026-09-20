@@ -3,7 +3,11 @@ import { hmac } from "@noble/hashes/hmac.js"
 import { sha512 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
 import { HDKey } from "@scure/bip32"
-import { entropyToMnemonic, validateMnemonic } from "@scure/bip39"
+import {
+  entropyToMnemonic,
+  mnemonicToSeedSync,
+  validateMnemonic,
+} from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { Slip39 } from "slip39-ts"
 import { z } from "zod"
@@ -32,6 +36,55 @@ export const SparkMnemonicSchema = z
 export type SparkMnemonic = z.output<typeof SparkMnemonicSchema>
 export const SparkMnemonic = SparkMnemonicSchema.decode
 
+export const CashuMnemonicSchema = z
+  .string()
+  .refine(
+    (value) =>
+      validateMnemonic(value, wordlist) &&
+      value.trim().split(/\s+/u).length === 24,
+    {
+      message: "Invalid 24-word BIP-39 mnemonic.",
+    }
+  )
+  .brand<"CashuMnemonic">()
+export type CashuMnemonic = z.output<typeof CashuMnemonicSchema>
+export const CashuMnemonic = CashuMnemonicSchema.decode
+
+/** The 64-byte BIP-39 seed a cashu wallet library derives its secrets from. */
+export const CashuWalletSeedSchema = z
+  .instanceof(Uint8Array)
+  .refine((bytes) => bytes.length === 64, {
+    message: "A cashu wallet seed is exactly 64 bytes.",
+  })
+  .brand<"CashuWalletSeed">()
+export type CashuWalletSeed = z.output<typeof CashuWalletSeedSchema>
+export const CashuWalletSeed = CashuWalletSeedSchema.decode
+
+/** The 12-word BIP-39 mnemonic Linky names its Evolu app owner with. */
+export const LinkyOwnerMnemonicSchema = z
+  .string()
+  .refine(
+    (value) =>
+      validateMnemonic(value, wordlist) &&
+      value.trim().split(/\s+/u).length === 12,
+    {
+      message: "Invalid 12-word BIP-39 mnemonic.",
+    }
+  )
+  .brand<"LinkyOwnerMnemonic">()
+export type LinkyOwnerMnemonic = z.output<typeof LinkyOwnerMnemonicSchema>
+export const LinkyOwnerMnemonic = LinkyOwnerMnemonicSchema.decode
+
+/** A 32-byte secp256k1 private key, the Nostr signing key. */
+export const NostrSigningKeySchema = z
+  .instanceof(Uint8Array)
+  .refine((bytes) => bytes.length === 32, {
+    message: "A Nostr signing key is exactly 32 bytes.",
+  })
+  .brand<"NostrSigningKey">()
+export type NostrSigningKey = z.output<typeof NostrSigningKeySchema>
+export const NostrSigningKey = NostrSigningKeySchema.decode
+
 export const DerivationPathSchema = z.string().brand<"DerivationPath">()
 export type DerivationPath = z.output<typeof DerivationPathSchema>
 export const DerivationPath = DerivationPathSchema.decode
@@ -57,8 +110,9 @@ export const RecoveryMnemonic = RecoveryMnemonicSchema.decode
  * 24 words = 32 bytes, 12 words = 16 bytes.
  */
 /**
- * Reserved for a future cashu wallet secret. Index `0'` is set aside
- * for this and never used by another path — nothing derives from it yet.
+ * Shared with Linky: both apps derive the cashu wallet from this path, so one
+ * SLIP-39 phrase opens the same ecash balance in either app. Pinned by the
+ * `sharedCashuWallet` vector in `key-derivation-cross-app.test.ts`.
  */
 export const defaultCashuDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/24'/0'"
@@ -66,6 +120,17 @@ export const defaultCashuDerivationPath = DerivationPath(
 export const evoluOwnerDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/24'/1'"
 )
+/**
+ * Linky's Evolu app owner ("meta" owner, lane 0): a child of Payky's own
+ * Evolu owner path, so the two apps never share a database by accident, yet
+ * Payky can open Linky's data on purpose. Pinned by the `linkyMetaOwner`
+ * vector in `key-derivation-cross-app.test.ts`.
+ */
+export const linkyMetaOwnerDerivationPath = DerivationPath(
+  "m/83696968'/39'/0'/24'/1'/0'"
+)
+/** NIP-06: plain BIP-32, not BIP-85 — the node's private key is the key. */
+export const nostrKeyDerivationPath = DerivationPath("m/44'/1237'/0'/0/0")
 export const defaultSparkWalletDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/12'/0'"
 )
@@ -142,6 +207,34 @@ export const mnemonicToMasterKey = async (
   return MasterKey(bytesToHex(new Uint8Array(secret)))
 }
 
+/**
+ * Linky derives 16 bytes of BIP-85 entropy per owner and spells them as a
+ * 12-word mnemonic; the mnemonic's entropy is the Evolu owner secret.
+ */
+export const deriveLinkyMetaOwnerMnemonic = (
+  masterKey: MasterKey
+): LinkyOwnerMnemonic =>
+  LinkyOwnerMnemonic(
+    entropyToMnemonic(
+      deriveEntropy(masterKey, linkyMetaOwnerDerivationPath).slice(0, 16),
+      wordlist
+    )
+  )
+
+export const deriveNostrSigningKey = (
+  masterKey: MasterKey
+): NostrSigningKey => {
+  const privateKey = HDKey.fromMasterSeed(hexToBytes(masterKey)).derive(
+    nostrKeyDerivationPath
+  ).privateKey
+
+  if (privateKey === null) {
+    throw new Error("The Nostr derivation path yielded no private key.")
+  }
+
+  return NostrSigningKey(new Uint8Array(privateKey))
+}
+
 export const deriveEvoluOwnerSecret = (masterKey: MasterKey): OwnerSecret =>
   deriveEntropy(masterKey, evoluOwnerDerivationPath) as OwnerSecret
 
@@ -153,6 +246,29 @@ export const deriveDefaultSparkWalletSecret = (
       deriveEntropy(masterKey, defaultSparkWalletDerivationPath).slice(0, 16)
     )
   )
+
+/**
+ * The full 32 bytes of entropy become a 24-word BIP-39 mnemonic, the form
+ * Linky shows as the cashu wallet backup and the one any BIP-39 cashu wallet
+ * can import.
+ */
+export const deriveDefaultCashuWalletMnemonic = (
+  masterKey: MasterKey
+): CashuMnemonic =>
+  CashuMnemonic(
+    entropyToMnemonic(
+      deriveEntropy(masterKey, defaultCashuDerivationPath),
+      wordlist
+    )
+  )
+
+/**
+ * BIP-39 seed with an empty passphrase — the bytes the cashu wallet library
+ * runs NUT-13 on. PBKDF2 work, so callers cache the result per account.
+ */
+export const cashuMnemonicToWalletSeed = (
+  mnemonic: CashuMnemonic
+): CashuWalletSeed => CashuWalletSeed(mnemonicToSeedSync(mnemonic))
 
 /**
  * The Spark secret is used as BIP-39 entropy. The Spark SDK consumes the

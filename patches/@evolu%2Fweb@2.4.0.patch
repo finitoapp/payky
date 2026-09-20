@@ -1,0 +1,150 @@
+diff --git a/dist/src/SharedWebWorker.d.ts b/dist/src/SharedWebWorker.d.ts
+index 300928adb20f3e79c0cfbb3b7d7e739564a32401..5f0d015d6abfd17040161c3a4536b1b14700f61a 100644
+--- a/dist/src/SharedWebWorker.d.ts
++++ b/dist/src/SharedWebWorker.d.ts
+@@ -19,7 +19,7 @@
+  *
+  * @module SharedWebWorker
+  */
+-import { SimpleName, Worker } from "@evolu/common";
++import { SimpleName, Worker } from "@evolu-v7/common";
+ /**
+  * Creates a shared Web Worker using BroadcastChannel and Web Locks. This allows
+  * multiple tabs to share a single Web Worker instance. The first tab to acquire
+diff --git a/dist/src/SharedWebWorker.js b/dist/src/SharedWebWorker.js
+index 21bd1bb91ded5cf988aee27f7c6f7bd6838b3601..dca956a1e9f2aaaddf61f4dcc97d44db8de39d04 100644
+--- a/dist/src/SharedWebWorker.js
++++ b/dist/src/SharedWebWorker.js
+@@ -19,7 +19,7 @@
+  *
+  * @module SharedWebWorker
+  */
+-import { constVoid } from "@evolu/common";
++import { constVoid } from "@evolu-v7/common";
+ /**
+  * Creates a shared Web Worker using BroadcastChannel and Web Locks. This allows
+  * multiple tabs to share a single Web Worker instance. The first tab to acquire
+diff --git a/dist/src/WasmSqliteDriver.d.ts b/dist/src/WasmSqliteDriver.d.ts
+index 00e3b74109d1329680565bc04763eba2bc0f6e47..b3bcbbf7ae938e0dc111e44f8801dea27925dca4 100644
+--- a/dist/src/WasmSqliteDriver.d.ts
++++ b/dist/src/WasmSqliteDriver.d.ts
+@@ -1,3 +1,3 @@
+-import { CreateSqliteDriver } from "@evolu/common";
++import { CreateSqliteDriver } from "@evolu-v7/common";
+ export declare const createWasmSqliteDriver: CreateSqliteDriver;
+ //# sourceMappingURL=WasmSqliteDriver.d.ts.map
+\ No newline at end of file
+diff --git a/dist/src/WasmSqliteDriver.js b/dist/src/WasmSqliteDriver.js
+index f920e0df72854d02501d6bd033755adc87cd74e6..f5faf84fae367dcbdfc813fcd6a6d7a6e3e21a11 100644
+--- a/dist/src/WasmSqliteDriver.js
++++ b/dist/src/WasmSqliteDriver.js
+@@ -1,4 +1,4 @@
+-import { bytesToHex, createPreparedStatementsCache, } from "@evolu/common";
++import { bytesToHex, createPreparedStatementsCache, } from "@evolu-v7/common";
+ import sqlite3InitModule from "@evolu/sqlite-wasm";
+ // @ts-expect-error Missing types.
+ globalThis.sqlite3ApiConfig = {
+diff --git a/dist/src/WebWorker.d.ts b/dist/src/WebWorker.d.ts
+index 20fa0ea86148fedf8108970906e52b108463632c..e22e7116ba8530389096a43a265d363943b2177c 100644
+--- a/dist/src/WebWorker.d.ts
++++ b/dist/src/WebWorker.d.ts
+@@ -7,7 +7,7 @@
+  *
+  * @module
+  */
+-import { Worker } from "@evolu/common";
++import { Worker } from "@evolu-v7/common";
+ /**
+  * Wraps a Web Worker to provide a typed interface for sending and receiving
+  * messages.
+diff --git a/dist/src/WebWorker.js b/dist/src/WebWorker.js
+index cc048de73583def03fc958c20d1b0bb56967820b..ded495089acb8927de0052a6729cac11f13426e5 100644
+--- a/dist/src/WebWorker.js
++++ b/dist/src/WebWorker.js
+@@ -7,7 +7,7 @@
+  *
+  * @module
+  */
+-import { constVoid } from "@evolu/common";
++import { constVoid } from "@evolu-v7/common";
+ /**
+  * Wraps a Web Worker to provide a typed interface for sending and receiving
+  * messages.
+diff --git a/dist/src/local-first/Db.worker.js b/dist/src/local-first/Db.worker.js
+index 00fbc678c3886a5a276532835b9dd85731190b3c..c7cbfd9f5654f1f63a154642aa5f5c2445925d8a 100644
+--- a/dist/src/local-first/Db.worker.js
++++ b/dist/src/local-first/Db.worker.js
+@@ -1,5 +1,5 @@
+-import { createConsole, createRandom, createRandomBytes, createTime, createWebSocket, } from "@evolu/common";
+-import { createDbWorkerForPlatform } from "@evolu/common/local-first";
++import { createConsole, createRandom, createRandomBytes, createTime, createWebSocket, } from "@evolu-v7/common";
++import { createDbWorkerForPlatform } from "@evolu-v7/common/local-first";
+ import { createWasmSqliteDriver } from "../WasmSqliteDriver.js";
+ import { wrapWebWorkerSelf } from "../WebWorker.js";
+ const dbWorker = createDbWorkerForPlatform({
+diff --git a/dist/src/local-first/LocalAuth.d.ts b/dist/src/local-first/LocalAuth.d.ts
+index 00eba96bbdb1e7ce8e888b1bcc76fd234b1917be..21ba21050893575fd55e7b2383d577292ca3a2ef 100644
+--- a/dist/src/local-first/LocalAuth.d.ts
++++ b/dist/src/local-first/LocalAuth.d.ts
+@@ -1,4 +1,4 @@
+-import type { SecureStorage, RandomBytesDep, SymmetricCryptoDep } from "@evolu/common";
++import type { SecureStorage, RandomBytesDep, SymmetricCryptoDep } from "@evolu-v7/common";
+ /** @experimental */
+ export declare const createWebAuthnStore: (deps: RandomBytesDep & SymmetricCryptoDep) => SecureStorage;
+ //# sourceMappingURL=LocalAuth.d.ts.map
+\ No newline at end of file
+diff --git a/dist/src/local-first/LocalAuth.js b/dist/src/local-first/LocalAuth.js
+index f5a2f05d9eeca723fed15e7a5f9c1b333f46e2a9..552e64060e75b5cc4bfaf8a25dcfe903875fabfb 100644
+--- a/dist/src/local-first/LocalAuth.js
++++ b/dist/src/local-first/LocalAuth.js
+@@ -1,5 +1,5 @@
+ import { set, get, del, keys, clear, createStore } from "idb-keyval";
+-import { createSlip21, utf8ToBytes, bytesToUtf8, base64UrlToUint8Array, uint8ArrayToBase64Url, EncryptionKey, Base64Url, } from "@evolu/common";
++import { createSlip21, utf8ToBytes, bytesToUtf8, base64UrlToUint8Array, uint8ArrayToBase64Url, EncryptionKey, Base64Url, } from "@evolu-v7/common";
+ /** @experimental */
+ export const createWebAuthnStore = (deps) => ({
+     setItem: async (key, value, options) => {
+diff --git a/dist/src/local-first/Platform.d.ts b/dist/src/local-first/Platform.d.ts
+index f8bbf63e684b365c248efc49345cef06de11aa0f..f0e01820555da302ddd07bf368fd67241fcc869d 100644
+--- a/dist/src/local-first/Platform.d.ts
++++ b/dist/src/local-first/Platform.d.ts
+@@ -1,3 +1,3 @@
+-import { ReloadApp } from "@evolu/common/local-first";
++import { ReloadApp } from "@evolu-v7/common/local-first";
+ export declare const reloadApp: ReloadApp;
+ //# sourceMappingURL=Platform.d.ts.map
+\ No newline at end of file
+diff --git a/dist/src/local-first/index.d.ts b/dist/src/local-first/index.d.ts
+index a2d673fc0b6b8cade09ac7a72c1a342b6b006763..45e3250932def2852f717d580e2e21b4766d4cd1 100644
+--- a/dist/src/local-first/index.d.ts
++++ b/dist/src/local-first/index.d.ts
+@@ -1,4 +1,4 @@
+-import { EvoluDeps } from "@evolu/common/local-first";
+-export declare const localAuth: import("@evolu/common").LocalAuth;
++import { EvoluDeps } from "@evolu-v7/common/local-first";
++export declare const localAuth: import("@evolu-v7/common").LocalAuth;
+ export declare const evoluWebDeps: EvoluDeps;
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/dist/src/local-first/index.js b/dist/src/local-first/index.js
+index 9af1dcfbf60bc6c18c859c014290dfcd0a32452b..b8115f8c49b82f239ec9bc78e8ed70a2696c4ad5 100644
+--- a/dist/src/local-first/index.js
++++ b/dist/src/local-first/index.js
+@@ -1,4 +1,4 @@
+-import { createConsole, createLocalAuth, createRandomBytes, createSymmetricCrypto, createTime, } from "@evolu/common";
++import { createConsole, createLocalAuth, createRandomBytes, createSymmetricCrypto, createTime, } from "@evolu-v7/common";
+ import { createSharedWebWorker } from "../SharedWebWorker.js";
+ import { createWebAuthnStore } from "./LocalAuth.js";
+ import { reloadApp } from "./Platform.js";
+diff --git a/dist/test/SharedWebWorker.test.js b/dist/test/SharedWebWorker.test.js
+index fef8d578466f8effd61bdf57f70a4b1ab42568a7..509e5831da5786767299600e9532e3da3f47db8a 100644
+--- a/dist/test/SharedWebWorker.test.js
++++ b/dist/test/SharedWebWorker.test.js
+@@ -1,6 +1,6 @@
+ import { expect, test, vi, beforeEach, afterEach } from "vitest";
+ import { createSharedWebWorker } from "../src/SharedWebWorker.js";
+-import { SimpleName, wait } from "@evolu/common";
++import { SimpleName, wait } from "@evolu-v7/common";
+ // Mock BroadcastChannel
+ class MockBroadcastChannel {
+     onmessage = null;

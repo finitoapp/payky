@@ -43,6 +43,7 @@ import {
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import { CashuAccountForm } from "@/features/settings/payment-accounts/cashu-account-form.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
@@ -72,6 +73,7 @@ export function PaymentAccountsSettingsPage() {
       <div className="flex flex-col gap-5">
         <FiatBankAccountForm />
         <SparkAccountForm />
+        <CashuAccountForm />
         <CashRegisterAccountForm />
       </div>
     </>

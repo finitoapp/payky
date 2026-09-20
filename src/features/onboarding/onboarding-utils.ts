@@ -51,6 +51,10 @@ export function getPaymentMethodOrder(
     order.push("spark")
   }
 
+  if (paymentMethods.has("cashu")) {
+    order.push("cashu")
+  }
+
   return order
 }
 
@@ -63,6 +67,7 @@ export function getDefaultPaymentMethodForOnboarding(
   paymentMethods: ReadonlySet<OnboardingPaymentMethod>
 ): DefaultPaymentMethod {
   if (paymentMethods.has("btc")) return "spark"
+  if (paymentMethods.has("cashu")) return "cashu"
   if (paymentMethods.has("cash")) return "cashRegister"
   return "iban"
 }

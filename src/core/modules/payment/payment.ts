@@ -6,6 +6,7 @@ import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
+  CashuMintUrlSchema,
   FiatCurrencySchema,
   type InferTable,
   NonEmptyStringSchema,
@@ -69,6 +70,24 @@ export const paymentBtcSpark = {
   sparkInvoice: NonEmptyStringSchema,
 } as const
 
+/**
+ * A payment quoted at a cashu mint: its own base columns rather than a row in
+ * `paymentBtc`/`paymentBtcLightning`, because those are one row per payment
+ * and Spark may be prepared for the same payment at the same time — two
+ * Lightning invoices, two rates, two account ids.
+ */
+export const paymentBtcCashu = {
+  id: PaymentId,
+  accountId: AccountId,
+  amountSats: NonNegativeIntegerSchema,
+  exchangeRate: PositiveNumberSchema,
+  exchangeRateSource: z.enum(["yadio"]),
+  exchangeRateFetchedAt: TimestampMsSchema,
+  mintUrl: CashuMintUrlSchema,
+  quoteId: NonEmptyStringSchema,
+  lnInvoice: NonEmptyStringSchema,
+} as const
+
 export const paymentIban = {
   id: PaymentId,
   accountId: AccountId,
@@ -90,6 +109,8 @@ export const paymentIndexes = ((create) => [
   create("paymentBtcSpark_sparkInvoice")
     .on("paymentBtcSpark")
     .column("sparkInvoice"),
+  create("paymentBtcCashu_accountId").on("paymentBtcCashu").column("accountId"),
+  create("paymentBtcCashu_quoteId").on("paymentBtcCashu").column("quoteId"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
   create("paymentIban_variableSymbol")
     .on("paymentIban")
@@ -101,4 +122,5 @@ export type PaymentCashRegisterRow = InferTable<typeof paymentCashRegister>
 export type PaymentBtcRow = InferTable<typeof paymentBtc>
 export type PaymentBtcLightningRow = InferTable<typeof paymentBtcLightning>
 export type PaymentBtcSparkRow = InferTable<typeof paymentBtcSpark>
+export type PaymentBtcCashuRow = InferTable<typeof paymentBtcCashu>
 export type PaymentIbanRow = InferTable<typeof paymentIban>

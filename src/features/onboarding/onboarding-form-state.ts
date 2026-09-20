@@ -12,7 +12,7 @@ export type OnboardingStep =
   | "account"
   | "restore"
 export type OnboardingAccountType = "new" | "restore"
-export type OnboardingPaymentMethod = "cash" | "btc" | "iban"
+export type OnboardingPaymentMethod = "cash" | "btc" | "cashu" | "iban"
 /**
  * The onboarding country step's own 3-way choice. Unlike the persisted
  * `legalEntity.country` (`CountryCode | null`, where `null` means "other"),
@@ -38,12 +38,34 @@ const restoreAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
   "restore",
 ]
 
-export const getOnboardingSteps = (
-  accountType: OnboardingAccountType | null
-): ReadonlyArray<OnboardingStep> =>
-  accountType === "restore"
+/**
+ * Setting up an account whose phrase was restored but never used in Payky:
+ * the language was already chosen on the way here, the account itself exists
+ * and its recovery phrase is the one the user typed, so there is nothing to
+ * choose, generate or confirm — only the terminal's own settings remain.
+ */
+const restoredAccountSetupSteps: ReadonlyArray<OnboardingStep> = [
+  "country",
+  "currency",
+  "payments",
+]
+
+export const getOnboardingSteps = ({
+  accountType,
+  restoredAccountSetup,
+}: {
+  readonly accountType: OnboardingAccountType | null
+  readonly restoredAccountSetup: boolean
+}): ReadonlyArray<OnboardingStep> => {
+  if (restoredAccountSetup) return restoredAccountSetupSteps
+  return accountType === "restore"
     ? restoreAccountOnboardingSteps
     : newAccountOnboardingSteps
+}
+
+export const initialOnboardingStep = (
+  restoredAccountSetup: boolean
+): OnboardingStep => (restoredAccountSetup ? "country" : "language")
 
 interface OnboardingFormState {
   readonly step: OnboardingStep

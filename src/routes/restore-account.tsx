@@ -73,7 +73,13 @@ function RestoreAccountPage() {
                 <Button
                   type="button"
                   onClick={() => {
-                    void navigate({ to: "/onboarding", replace: true })
+                    // The restored account stays active; `restored` makes
+                    // onboarding configure it rather than offer a new one.
+                    void navigate({
+                      to: "/onboarding",
+                      search: { restored: true },
+                      replace: true,
+                    })
                   }}
                 >
                   {t("accountRestore.timeout.setup")}

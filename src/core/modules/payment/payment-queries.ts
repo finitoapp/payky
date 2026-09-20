@@ -129,6 +129,38 @@ export const paymentSparkDetailsByIdQuery = (idValue: PaymentId) =>
   )
 
 /**
+ * The mint, quote and amount a cashu payment was prepared with, for matching
+ * a minted topup the same way
+ * `cashuReconciliationCandidateByAccountTransactionIdQuery` does.
+ */
+export const paymentCashuDetailsByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentBtcCashu")
+      .select([
+        "paymentBtcCashu.accountId",
+        "paymentBtcCashu.amountSats",
+        "paymentBtcCashu.mintUrl",
+        "paymentBtcCashu.quoteId",
+        "paymentBtcCashu.lnInvoice",
+      ])
+      .where("paymentBtcCashu.id", "=", idValue)
+      .where("paymentBtcCashu.isDeleted", "is not", sqliteTrue)
+      .where("paymentBtcCashu.accountId", "is not", null)
+      .where("paymentBtcCashu.amountSats", "is not", null)
+      .where("paymentBtcCashu.mintUrl", "is not", null)
+      .where("paymentBtcCashu.quoteId", "is not", null)
+      .where("paymentBtcCashu.lnInvoice", "is not", null)
+      .$narrowType<{
+        accountId: KyselyNotNull
+        amountSats: KyselyNotNull
+        mintUrl: KyselyNotNull
+        quoteId: KyselyNotNull
+        lnInvoice: KyselyNotNull
+      }>()
+  )
+
+/**
  * The account ids of a payment's prepared methods that never expire on
  * their own — a cash register drawer or a bank transfer. Read by
  * `preparePaymentMethod`: `payment.expiresAt` describes the payment as a
@@ -268,6 +300,11 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
           .onRef("accountTransactionLightning.id", "=", "accountTransaction.id")
           .on("accountTransactionLightning.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("accountTransactionCashu", (join) =>
+        join
+          .onRef("accountTransactionCashu.id", "=", "accountTransaction.id")
+          .on("accountTransactionCashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "reconciliationClaim.id",
         "reconciliationClaim.source",
@@ -286,6 +323,7 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
         "accountTransactionIban.bankReference",
         "accountTransactionSpark.sparkTransferId",
         "accountTransactionLightning.paymentHash",
+        "accountTransactionCashu.quoteId as cashuQuoteId",
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
@@ -507,6 +545,11 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
           .onRef("paymentBtcSpark.id", "=", "payment.id")
           .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentBtcCashu", (join) =>
+        join
+          .onRef("paymentBtcCashu.id", "=", "payment.id")
+          .on("paymentBtcCashu.isDeleted", "is not", sqliteTrue)
+      )
       .leftJoin("paymentIban", (join) =>
         join
           .onRef("paymentIban.id", "=", "payment.id")
@@ -529,6 +572,8 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentBtc.amountSats",
         "paymentBtcLightning.lnInvoice",
         "paymentBtcSpark.sparkInvoice",
+        "paymentBtcCashu.amountSats as cashuAmountSats",
+        "paymentBtcCashu.lnInvoice as cashuLnInvoice",
         "paymentIban.accountId as ibanAccountId",
         "paymentIban.variableSymbol",
         "paymentIban.specificSymbol",

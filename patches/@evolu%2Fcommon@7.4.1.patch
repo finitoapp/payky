@@ -1,0 +1,21 @@
+diff --git a/dist/src/Platform.js b/dist/src/Platform.js
+index dc70f4654518d1dac78a12396abbe7e66377d3e3..683ab261bf5163fca62b0480f9afe2f12fdf9584 100644
+--- a/dist/src/Platform.js
++++ b/dist/src/Platform.js
+@@ -14,4 +14,15 @@ export const isReactNative = typeof navigator !== "undefined" &&
+  *
+  * @see https://github.com/craftzdog/react-native-quick-base64#installation
+  */
+-export const hasNodeBuffer = !isReactNative && typeof globalThis.Buffer !== "undefined";
++// Payky patch: a browser `Buffer` polyfill (the `buffer` package the Spark SDK
++// installs globally) exists but rejects the "base64url" encoding the Buffer
++// code paths rely on, so only a Buffer that actually decodes it counts.
++const bufferSupportsBase64Url = () => {
++    try {
++        return globalThis.Buffer.from("AA", "base64url").length === 1;
++    }
++    catch {
++        return false;
++    }
++};
++export const hasNodeBuffer = !isReactNative && typeof globalThis.Buffer !== "undefined" && bufferSupportsBase64Url();

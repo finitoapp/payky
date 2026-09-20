@@ -27,6 +27,7 @@ import type { ComponentProps } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
+import { MyAccountCard } from "@/features/settings/my-account/my-account-card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -234,6 +235,8 @@ function SettingsPage() {
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.title")} />
+
+      <MyAccountCard />
 
       <VerticalNav title={t("settings.catalog")} items={catalogItems} />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />

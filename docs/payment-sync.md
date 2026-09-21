@@ -91,13 +91,11 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 | 1 | Create + reconcile aren't atomic | mitigated — retried next sync |
 | 2 | Lock-skipped item outside the lookback window | open — lost silently |
 | 3 | No backoff on FIO errors other than 409 | open |
-| 4 | Spark full-history rescan cost | **resolved** — 72h `createdAfter` window |
-| 5 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
-| 6 | Ambiguous candidate ties | open — `payment.id` order decides |
-| 7 | Canceled-payment collision | open — resolved at display time only |
-| 8 | Disposal doesn't await in-flight work | **partially resolved** |
-| 9 | One throwing queue key stalls its siblings | open — Spark's multi-key queue only |
-| 10 | Detached root `Run` per transaction | **resolved** |
+| 4 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
+| 5 | Ambiguous candidate ties | open — `payment.id` order decides |
+| 6 | Canceled-payment collision | open — resolved at display time only |
+| 7 | Disposal doesn't await in-flight work | **partially resolved** |
+| 8 | One throwing queue key stalls its siblings | open — Spark's multi-key queue only |
 
 1. **Create + reconcile aren't atomic.** A crash between them leaves a
    transaction recorded but unclaimed. Both jobs retry reconciliation for an
@@ -118,28 +116,18 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 3. **No backoff.** A `422` (FIO strong-auth required) or any other
    non-`409` failure retries at the plain check interval forever.
 
-4. **Resolved.** See the parameters table — `sparkAccountSyncPointer` +
-   72h lookback. 72h covers the same "device was offline" case as FIO's
-   overlap, plus a Spark-specific one: a transfer's `createdTime` (what
-   `createdAfter` filters on) can predate when it actually completes — an
-   on-chain deposit sits pending until `deposit:confirmed`, possibly hours
-   later. 72h is a hardcoded guess, not a measured SLA. The manual
-   pointer-edit UI/CLI has a narrow effective window: any successful sync —
-   including one seconds later from a real wallet event — overwrites it
-   with "now" again.
-
-5. **By design**, not a bug: `assertHasSparkIdentifier` is a domain
+4. **By design**, not a bug: `assertHasSparkIdentifier` is a domain
    invariant enforced inside `createAccountTransaction` itself.
 
-6. **Ties.** IBAN candidate: same VS/SS/amount on two open payments. Cash
+5. **Ties.** IBAN candidate: same VS/SS/amount on two open payments. Cash
    candidate: same amount (currently unreachable, see the table above).
 
-7. **Canceled-payment collision.** None of the three candidate queries
+6. **Canceled-payment collision.** None of the three candidate queries
    filter `canceledAt`. Same collision `bill-payment-states.md` documents
    for the manual path; resolved there by display precedence, not prevented
    here.
 
-8. **Partially resolved.** `createKeyedTaskQueue`'s dispose only flips a
+7. **Partially resolved.** `createKeyedTaskQueue`'s dispose only flips a
    flag — it can't interrupt in-flight work, and that's unchanged. What
    changed: `createAccountTransaction`/`reconcileAccountTransaction` calls
    used to run through a detached `createRun(...)` per call, invisible to
@@ -150,13 +138,9 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
    between calls; a call started after `jobRun` is disposed now throws
    (reported via `onError`) instead of silently writing.
 
-9. **Multi-key queue stall.** `createKeyedTaskQueue`'s drain loop wraps its
+8. **Multi-key queue stall.** `createKeyedTaskQueue`'s drain loop wraps its
    whole `while` in one `try`/`catch` — one throwing key aborts the loop,
    stranding sibling keys until something unrelated re-enqueues. FIO's
    queues only ever hold one key, so this doesn't bite there; Spark's
    per-account queue (`"history"` + `` `transfer:${id}` ``) can stall until
    the next recheck tick or event.
-
-10. **Resolved.** Per-transaction `createRun(...)` calls were detached roots
-    (see #8) — never disposed, invisible to the job's own teardown. Fixed by
-    the same `run.create()` change.

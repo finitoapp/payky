@@ -93,7 +93,7 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 |---|---|---|
 | 1 | Create + reconcile aren't atomic | resolved |
 | 2 | Lock-skipped item outside the lookback window | resolved |
-| 3 | No backoff on FIO errors other than 409 | open |
+| 3 | No backoff on FIO errors other than 409 | resolved |
 | 4 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
 | 5 | Ambiguous candidate ties | open — `payment.id` order decides |
 | 6 | Canceled-payment collision | open — resolved at display time only |
@@ -110,8 +110,9 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
    same window; already-recorded transactions remain deduplicated by bank
    reference.
 
-3. **No backoff.** A `422` (FIO strong-auth required) or any other
-   non-`409` failure retries at the plain check interval forever.
+3. **Resolved.** FIO applies exponential per-plugin backoff after each
+   non-`409` failure, capped at 15 minutes. A successful or rate-limited sync
+   resets the backoff.
 
 4. **By design**, not a bug: `assertHasSparkIdentifier` is a domain
    invariant enforced inside `createAccountTransaction` itself.

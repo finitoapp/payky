@@ -29,6 +29,7 @@ import {
   createFioAccountTransactionSyncJob,
   dateStringToDate,
   dateToDateString,
+  getFioRetryBackoffMs,
 } from "./fio-account-transaction-sync-job.ts"
 
 const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
@@ -800,5 +801,13 @@ describe("FIO sync date helpers", () => {
     } finally {
       process.env.TZ = originalTimeZone
     }
+  })
+})
+
+describe("FIO sync retry backoff", () => {
+  test("doubles retries up to 15 minutes", () => {
+    expect(getFioRetryBackoffMs(30, 1)).toBe(30_000)
+    expect(getFioRetryBackoffMs(30, 2)).toBe(60_000)
+    expect(getFioRetryBackoffMs(30, 10)).toBe(15 * 60 * 1000)
   })
 })

@@ -12,6 +12,8 @@ import {
   mnemonicToMasterKey,
   RecoveryMnemonicSchema,
   SparkMnemonicSchema,
+  SparkSecret,
+  sparkMnemonicToSecret,
   sparkSecretToMnemonic,
 } from "./key-derivation.ts"
 
@@ -93,5 +95,10 @@ describe("key derivation", () => {
     expect(
       RecoveryMnemonicSchema.safeParse("not a valid mnemonic").success
     ).toBe(false)
+  })
+
+  test("imports a Spark wallet's 12 words back into the stored secret", () => {
+    const secret = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+    expect(sparkMnemonicToSecret(sparkSecretToMnemonic(secret))).toBe(secret)
   })
 })

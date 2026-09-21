@@ -77,7 +77,12 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-type PaymentDetailPaymentMethod = "cashRegister" | "iban" | "onchain" | "spark"
+type PaymentDetailPaymentMethod =
+  | "cashRegister"
+  | "iban"
+  | "onchain"
+  | "spark"
+  | "cashu"
 type PaymentDetailClaimSource = "auto" | "manual"
 
 const paymentMethodLabelKey = {
@@ -85,6 +90,7 @@ const paymentMethodLabelKey = {
   iban: "paymentDetail.paymentMethod.iban",
   onchain: "paymentDetail.paymentMethod.onchain",
   spark: "paymentDetail.paymentMethod.spark",
+  cashu: "paymentDetail.paymentMethod.cashu",
 } satisfies Record<PaymentDetailPaymentMethod, TranslationKey>
 
 const claimSourceLabelKey = {
@@ -489,6 +495,10 @@ function PaymentDetailContent({
                         <PaymentDetailOptionalRow
                           label={t("paymentDetail.transaction.paymentHash")}
                           value={reconciliation.paymentHash}
+                        />
+                        <PaymentDetailOptionalRow
+                          label={t("paymentDetail.transaction.cashuQuoteId")}
+                          value={reconciliation.cashuQuoteId}
                         />
                       </div>
                     </div>

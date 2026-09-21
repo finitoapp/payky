@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { sentryVitePlugin } from "@sentry/vite-plugin"
 import tailwindcss from "@tailwindcss/vite"
@@ -27,6 +28,30 @@ function getAppVersion(): string {
     }).trim()
   } catch {
     return packageJson.version
+  }
+}
+
+/**
+ * A locally trusted development certificate (mkcert output, see "Development"
+ * in README.md). When present it replaces basic-ssl's self-signed one, so the
+ * browser opens https://localhost:5173 without a certificate interstitial —
+ * embedded browsers (IDE previews) cannot bypass that interstitial at all.
+ */
+const trustedDevCertPaths = {
+  cert: path.resolve(import.meta.dirname, ".certs/localhost.pem"),
+  key: path.resolve(import.meta.dirname, ".certs/localhost-key.pem"),
+}
+
+function readTrustedDevCert(): { cert: Buffer; key: Buffer } | undefined {
+  if (
+    !existsSync(trustedDevCertPaths.cert) ||
+    !existsSync(trustedDevCertPaths.key)
+  ) {
+    return undefined
+  }
+  return {
+    cert: readFileSync(trustedDevCertPaths.cert),
+    key: readFileSync(trustedDevCertPaths.key),
   }
 }
 
@@ -89,7 +114,9 @@ function isNativeAndroidWebViewBuild(command: string): boolean {
 export default (({ command }: ConfigEnv) => {
   const useAndroidWebViewWorkerLocksPlugin =
     isNativeAndroidWebViewBuild(command)
-  const useBasicSsl = process.env.PAYKY_DISABLE_BASIC_SSL !== "1"
+  const disableTls = process.env.PAYKY_DISABLE_BASIC_SSL === "1"
+  const trustedDevCert = disableTls ? undefined : readTrustedDevCert()
+  const useBasicSsl = !disableTls && trustedDevCert === undefined
   const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
   const useSentryVitePlugin = command === "build" && Boolean(sentryAuthToken)
 
@@ -107,6 +134,12 @@ export default (({ command }: ConfigEnv) => {
     build: {
       sourcemap: useSentryVitePlugin,
     },
+    ...(trustedDevCert
+      ? {
+          server: { https: trustedDevCert },
+          preview: { https: trustedDevCert },
+        }
+      : {}),
     plugins: [
       ...(useBasicSsl ? [basicSsl()] : []),
       ...(useAndroidWebViewWorkerLocksPlugin
@@ -159,6 +192,8 @@ export default (({ command }: ConfigEnv) => {
         "@evolu/react-web",
         "@evolu/react",
         "@evolu/common",
+        "@evolu-v7/web",
+        "@evolu-v7/common",
       ],
     },
     test: {

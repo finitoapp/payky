@@ -130,7 +130,12 @@ export type Currency = ValueOf<typeof Currency>
 
 export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))
-export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
+export const AccountKindSchema = z.enum([
+  "iban",
+  "spark",
+  "cashu",
+  "cashRegister",
+])
 export const AccountTransactionKindSchema = z.enum([
   ...AccountKindSchema.options,
   "onchain",
@@ -166,6 +171,31 @@ export const BankAccountInputIbanSchema = z
 
     return result.value as Iban
   })
+const isHttpUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value)
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") && url.host !== ""
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * A cashu mint's base url, normalized the way the wallet library keys mints:
+ * trimmed, no trailing slash — two spellings of one mint would otherwise fork
+ * the wallet's counters.
+ */
+export const CashuMintUrlSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(/\/+$/u, ""))
+  .refine(isHttpUrl, { message: "Expected an http(s) mint url." })
+  .brand<"CashuMintUrl">()
+export type CashuMintUrl = z.output<typeof CashuMintUrlSchema>
+export const CashuMintUrl = CashuMintUrlSchema.decode
+
 export const BitcoinAddressSchema = z
   .string()
   .refine(isValidBitcoinAddress)

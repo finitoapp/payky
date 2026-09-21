@@ -26,6 +26,8 @@ const createBackgroundJobContext = (
     throw new Error("fetch is not implemented in this test.")
   }) as unknown as FetchDep["fetch"],
   lockManager: createInProcessLockManager(),
+  cashuWallet: null,
+  nostrInbox: null,
   onError: (error) => {
     errors.push(error)
   },

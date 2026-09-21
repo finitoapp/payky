@@ -44,7 +44,11 @@ function TerminalLayout() {
 
   useEffect(() => {
     if (!onboarded) {
-      void navigate({ to: "/onboarding", replace: true })
+      void navigate({
+        to: "/onboarding",
+        search: { restored: false },
+        replace: true,
+      })
     }
   }, [navigate, onboarded])
 

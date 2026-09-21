@@ -64,14 +64,19 @@ export const enSettings = {
   "settings.appVersion": "App version:",
   "settings.appVersionCode": "Version code:",
   "settings.appearance": "APPEARANCE & LANGUAGE",
-  "settings.cashRegisterAccount.enabled.description":
-    "Cash payments can be attached to prepared payments when enabled.",
-  "settings.cashRegisterAccount.enabled.label": "Enable cash register",
-  "settings.cashRegisterAccount.form.description":
-    "Cash register payments use the currently selected fiat currency.",
-  "settings.cashRegisterAccount.form.title": "Cash register",
-  "settings.cashRegisterAccount.save": "Save cash register",
-  "settings.cashRegisterAccount.saved": "Cash register saved.",
+  "settings.cashuAccount.balance.error": "Could not read the wallet balance.",
+  "settings.cashuAccount.mintUrl.description":
+    "Customers pay a Lightning invoice issued by this mint; the ecash lands in the wallet.",
+  "settings.cashuAccount.mintUrl.invalid": "Enter a valid http(s) mint URL.",
+  "settings.cashuAccount.mintUrl.label": "Mint URL",
+  "settings.cashuAccount.restore.action": "Restore from mint",
+  "settings.cashuAccount.restore.error": "Could not restore from the mint.",
+  "settings.cashuAccount.restore.pending": "Restoring...",
+  "settings.cashuAccount.restore.success":
+    "Restored {amount} sats in {count} proofs.",
+  "settings.cashuAccount.restore.unavailable":
+    "The mint could not be scanned. Try again later.",
+  "settings.cashuAccount.saved": "Cashu account saved.",
   "settings.catalog": "MENU",
   "settings.categories.add": "Add category",
   "settings.categories.delete": "Delete category",
@@ -107,27 +112,6 @@ export const enSettings = {
   "settings.debugConsole.pause": "Pause",
   "settings.debugConsole.resume": "Resume",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Open new payments with the cash tab selected.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Cash",
-  "settings.defaultPaymentMethod.description":
-    "Choose which enabled method is selected first when starting a bill",
-  "settings.defaultPaymentMethod.empty":
-    "No payment method is currently available for the selected fiat currency.",
-  "settings.defaultPaymentMethod.empty.action": "Manage payment accounts",
-  "settings.defaultPaymentMethod.iban.description":
-    "Open new payments with the bank QR tab selected.",
-  "settings.defaultPaymentMethod.iban.title": "Bank transfer",
-  "settings.defaultPaymentMethod.mode.description":
-    "Only enabled methods compatible with the selected fiat currency are shown.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "The saved default is not available. Select a new enabled method.",
-  "settings.defaultPaymentMethod.mode.title": "Default bill payment method",
-  "settings.defaultPaymentMethod.saved": "Default payment method saved.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Open new payments with the Bitcoin / Spark tab selected.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Default Payment Method",
   "settings.developers": "DEVELOPERS",
   "settings.donations.amount.invalid": "Enter a positive whole number of sats.",
   "settings.donations.amount.range":
@@ -226,32 +210,13 @@ export const enSettings = {
   "settings.fiat.title": "Fiat Currency",
   "settings.fiat.usd.description": "Use US dollar for terminal amounts",
   "settings.fiat.usd.title": "US dollar",
-  "settings.fiatBankAccount.currency.description":
-    "Payments in this currency can use this bank account.",
-  "settings.fiatBankAccount.currency.label": "Bank account currency",
-  "settings.fiatBankAccount.enabled.description":
-    "Disabled accounts stay stored but are ignored by payment flows.",
-  "settings.fiatBankAccount.enabled.label": "Enable fiat bank account",
-  "settings.fiatBankAccount.form.description":
-    "This app currently uses one deterministic fiat bank account.",
-  "settings.fiatBankAccount.form.title": "Bank account details",
-  "settings.fiatBankAccount.iban.description":
-    "Enter an IBAN or a Czech account number such as 123456789/0100. The saved value is normalized to IBAN.",
   "settings.fiatBankAccount.iban.invalid":
     "Enter a valid IBAN or Czech account number.",
-  "settings.fiatBankAccount.iban.label": "IBAN or account number",
-  "settings.fiatBankAccount.iban.required":
-    "IBAN or account number is required when the bank account is enabled.",
-  "settings.fiatBankAccount.qrFormat.description":
-    "This format is shown first for bank QR payments.",
-  "settings.fiatBankAccount.qrFormat.label": "Default QR format",
   "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
     "Pay by square 1.0 (Slovakia)",
   "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
     "Pay by square 1.2 (Slovakia)",
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Czechia)",
-  "settings.fiatBankAccount.save": "Save bank account",
-  "settings.fiatBankAccount.saved": "Bank account saved.",
   "settings.fioPlugin.active.description":
     "When enabled, the plugin checks Fio Bank transactions for the fiat bank account.",
   "settings.fioPlugin.active.label": "Enable Fio plugin",
@@ -388,9 +353,29 @@ export const enSettings = {
     "Sets the country used for default tax rates and whether tax rates apply to catalog items.",
   "settings.legalEntity.title": "Country & VAT",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
-  "settings.paymentAccounts.description":
-    "Configure bank, Spark, and cash register accounts",
-  "settings.paymentAccounts.title": "Payment Accounts",
+  "settings.myAccount.copyNpub": "Copy npub",
+  "settings.myAccount.edit": "Edit profile",
+  "settings.myAccount.setName": "Set a name",
+  "settings.myAccount.npubCopied": "npub copied.",
+  "settings.myAccount.npubCopyFailed": "Could not copy the npub.",
+  "settings.paymentAccounts.description": "Bank transfer, bitcoin and cash",
+  "settings.paymentAccounts.title": "Payment methods",
+  "settings.paymentMethods.balance": "Balance",
+  "settings.paymentMethods.balanceSats": "{amount} sats",
+  "settings.paymentMethods.bank.account.description":
+    "Czech or Slovak account number or an IBAN. Currency and QR standard follow from it.",
+  "settings.paymentMethods.bank.account.label": "Account number or IBAN",
+  "settings.paymentMethods.bank.derived": "{bank} · {currency} · QR {format}",
+  "settings.paymentMethods.bank.derivedUnknownBank": "{currency} · QR {format}",
+  "settings.paymentMethods.bank.enabled": "Accept bank transfers",
+  "settings.paymentMethods.bank.saved": "Bank account saved.",
+  "settings.paymentMethods.bank.title": "Bank transfer",
+  "settings.paymentMethods.bitcoin.cashu": "Cashu",
+  "settings.paymentMethods.bitcoin.enabled": "Accept bitcoin",
+  "settings.paymentMethods.bitcoin.spark": "Spark",
+  "settings.paymentMethods.bitcoin.title": "Bitcoin",
+  "settings.paymentMethods.cash.enabled": "Accept cash",
+  "settings.paymentMethods.cash.title": "Cash",
   "settings.paymentNumberSeries.day.default.description":
     "Include the two-digit day in generated payment numbers",
   "settings.paymentNumberSeries.day.default.title": "Show day",
@@ -454,6 +439,18 @@ export const enSettings = {
   "settings.privacy.title": "Privacy",
   "settings.privacyGroup": "PRIVACY",
   "settings.saveFailed": "Could not save the change. Please try again.",
+  "settings.profile.name.label": "Name",
+  "settings.profile.name.placeholder": "Your name or business",
+  "settings.profile.picture.choose": "Choose from gallery",
+  "settings.profile.picture.invalid":
+    "That file is not an image this browser can read.",
+  "settings.profile.picture.label": "Picture",
+  "settings.profile.picture.remove": "Remove picture",
+  "settings.profile.save": "Save profile",
+  "settings.profile.saveFailed":
+    "The profile could not be published. Check the connection and try again.",
+  "settings.profile.saved": "Profile published.",
+  "settings.profile.title": "Profile",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.mnemonic.copied": "Recovery phrase copied.",
   "settings.security.mnemonic.copy": "Copy",
@@ -484,24 +481,11 @@ export const enSettings = {
   "settings.security.transports.url.invalid": "Enter a valid wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
   "settings.security.transports.websocket": "WebSocket",
-  "settings.sparkAccount.enabled.description":
-    "Disabled Spark accounts stay stored but are ignored by payment flows.",
-  "settings.sparkAccount.enabled.label": "Enable Spark account",
-  "settings.sparkAccount.form.description":
-    "Payky derives this Spark wallet from your account recovery key.",
-  "settings.sparkAccount.form.title": "Spark account",
   "settings.sparkAccount.mnemonic.description":
-    "Keep this mnemonic private. Anyone with it can access the Spark wallet.",
+    "The words of this Spark wallet. Paste the 12 words of a wallet you already use elsewhere (Wallet of Satoshi, Bitlifi, …) to receive into it instead.",
+  "settings.sparkAccount.mnemonic.invalid":
+    "Enter the 12 words of a Spark wallet.",
   "settings.sparkAccount.mnemonic.label": "Wallet mnemonic",
-  "settings.sparkAccount.privacyMode.description":
-    "Enables Spark wallet privacy mode for Lightning payments.",
-  "settings.sparkAccount.privacyMode.label": "Enable privacy mode",
-  "settings.sparkAccount.privacyMode.loadError":
-    "Could not load the Spark privacy mode setting.",
-  "settings.sparkAccount.privacyMode.loading": "Loading privacy mode...",
-  "settings.sparkAccount.privacyMode.saveError":
-    "Could not save the Spark privacy mode setting.",
-  "settings.sparkAccount.save": "Save Spark account",
   "settings.sparkAccount.saved": "Spark account saved.",
   "settings.support": "SUPPORT & INFO",
   "settings.tables.add": "Add table",
@@ -611,11 +595,66 @@ export const enSettings = {
   "settings.tips.percentages.value": "{value}%",
   "settings.tips.preset.remove": "Remove {value}",
   "settings.tips.reset": "Reset to defaults",
-  "settings.tips.save": "Save tips",
-  "settings.tips.saved": "Tip settings saved.",
   "settings.tips.title": "Tips",
   "settings.title": "Settings",
   "settings.withdrawals.description":
     "Send Bitcoin from a Spark account to an on-chain address",
   "settings.withdrawals.title": "Withdrawals",
+  "settings.nostrRelays.title": "Nostr relays",
+  "settings.nostrRelays.description": "Where your profile is published",
+  "settings.nostrRelays.card.description":
+    "Your profile is published to these relays. The list is stored under your key, so every app signed in with your recovery phrase uses the same relays.",
+  "settings.nostrRelays.defaults":
+    "No relay list has been published for this key yet; these are the default relays.",
+  "settings.nostrRelays.url.label": "Relay URL",
+  "settings.nostrRelays.url.description":
+    "A websocket address such as wss://relay.example.com.",
+  "settings.nostrRelays.url.invalid": "Enter a valid wss:// relay URL.",
+  "settings.nostrRelays.url.duplicate": "This relay is already in the list.",
+  "settings.nostrRelays.add": "Add relay",
+  "settings.nostrRelays.remove": "Remove {url}",
+  "settings.nostrRelays.remove.confirm.title": "Remove relay?",
+  "settings.nostrRelays.remove.confirm.description":
+    "Your profile will no longer be published to {url}.",
+  "settings.nostrRelays.remove.confirm.action": "Remove",
+  "settings.nostrRelays.remove.confirm.cancel": "Keep",
+  "settings.nostrRelays.published": "Relay list published.",
+  "settings.nostrRelays.publishFailed":
+    "Could not publish the relay list. Check the connection and try again.",
+  "settings.nostrRelays.footer":
+    "At least one relay stays in the list. Changes reach other devices once they connect to the relays.",
+  "settings.profile.key.title": "Nostr key",
+  "settings.profile.key.description":
+    "The key your profile is published with. Every app signed in with your recovery phrase uses the same key.",
+  "settings.profile.key.derived": "Derived from the recovery phrase",
+  "settings.profile.key.custom": "Custom key",
+  "settings.profile.key.useCustom": "Use a different key",
+  "settings.profile.key.useDerived": "Use the derived key",
+  "settings.profile.key.cancel": "Cancel",
+  "settings.profile.key.switch": "Switch key",
+  "settings.profile.key.nsec.label": "Secret key (nsec)",
+  "settings.profile.key.nsec.description":
+    "Paste the nsec of the key you want to use. It is stored encrypted and synced to your other devices.",
+  "settings.profile.key.nsec.invalid": "Enter a valid nsec.",
+  "settings.profile.key.nsec.same": "This key is already active.",
+  "settings.profile.key.switch.confirm.title": "Switch the Nostr key?",
+  "settings.profile.key.switch.confirm.description":
+    "Your profile is republished with the new key, and every app and device signed in with this recovery phrase switches to it.",
+  "settings.profile.key.switch.confirm.action": "Switch",
+  "settings.profile.key.switch.confirm.cancel": "Cancel",
+  "settings.profile.key.switchFailed":
+    "Could not switch the key. Check the connection and try again.",
+  "settings.paymentMethods.default": "Default",
+  "settings.paymentMethods.makeDefault": "Set as default",
+  "settings.profile.key.profileChoice.title":
+    "Which profile do you want to keep?",
+  "settings.profile.key.profileChoice.description":
+    "The key you are switching to already publishes a different name or picture. Keeping the current profile publishes it under the new key; using the key's profile leaves it as it is.",
+  "settings.profile.key.profileChoice.keepCurrent": "Keep current profile",
+  "settings.profile.key.profileChoice.useKeyProfile": "Use this key's profile",
+  "settings.profile.key.profileChoice.noName": "No name",
+  "settings.profile.key.switchedKeptProfile":
+    "Key switched and the current profile republished with it.",
+  "settings.profile.key.switchedKeyProfile":
+    "Key switched. Its profile is now shown.",
 } as const

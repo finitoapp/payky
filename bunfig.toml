@@ -1,2 +1,6 @@
 [install]
 exact = true
+# Hoisted like Bun without workspaces: the app imports a few transitive
+# packages (workbox-window through vite-plugin-pwa, for one) that the
+# isolated layout the workspace switched on would hide.
+linker = "hoisted"

@@ -214,6 +214,8 @@ describe("spark account transaction sync job", () => {
       ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -281,6 +283,8 @@ describe("spark account transaction sync job", () => {
         ...createTestDateDep(),
         fetch: unimplementedFetch,
         lockManager: createInProcessLockManager(),
+        cashuWallet: null,
+        nostrInbox: null,
         onError: (error: unknown) => {
           errors.push(error)
         },
@@ -348,6 +352,8 @@ describe("spark account transaction sync job", () => {
       ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -408,6 +414,8 @@ describe("spark account transaction sync job", () => {
       ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -461,6 +469,8 @@ describe("spark account transaction sync job", () => {
       ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -511,6 +521,8 @@ describe("spark account transaction sync job", () => {
       ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -572,6 +584,8 @@ describe("spark account transaction sync job", () => {
       ...createTestDateDep(),
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
+      cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },

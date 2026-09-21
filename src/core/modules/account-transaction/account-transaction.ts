@@ -10,6 +10,7 @@ import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   AccountTransactionKindSchema,
   BitcoinAddressSchema,
+  CashuMintUrlSchema,
   ConstantSymbolSchema,
   CurrencySchema,
   type InferTable,
@@ -57,6 +58,21 @@ export const accountTransactionSparkInvoice = {
   sparkInvoice: NonEmptyStringSchema,
 } as const
 
+/**
+ * Ecash that settled a cashu quote: minted after its Lightning invoice was
+ * paid, or received as a NUT-18 payment for the request carrying the quote
+ * id — then `receiveOperationId` names the wallet's `receive` operation, so
+ * the same token can never settle a second payment. `quoteId` is unique per
+ * mint.
+ */
+export const accountTransactionCashu = {
+  id: AccountTransactionId,
+  mintUrl: CashuMintUrlSchema,
+  quoteId: NonEmptyStringSchema,
+  lnInvoice: NonEmptyStringSchema,
+  receiveOperationId: NonEmptyStringSchema.nullable(),
+} as const
+
 export const accountTransactionLightning = {
   id: AccountTransactionId,
   lnInvoice: NonEmptyStringSchema,
@@ -94,6 +110,9 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionSpark_sparkTransferId")
     .on("accountTransactionSpark")
     .column("sparkTransferId"),
+  create("accountTransactionCashu_quoteId")
+    .on("accountTransactionCashu")
+    .column("quoteId"),
   create("accountTransactionLightning_lnInvoice")
     .on("accountTransactionLightning")
     .column("lnInvoice"),
@@ -123,6 +142,9 @@ export type AccountTransactionSparkRow = InferTable<
 >
 export type AccountTransactionSparkInvoiceRow = InferTable<
   typeof accountTransactionSparkInvoice
+>
+export type AccountTransactionCashuRow = InferTable<
+  typeof accountTransactionCashu
 >
 export type AccountTransactionLightningRow = InferTable<
   typeof accountTransactionLightning

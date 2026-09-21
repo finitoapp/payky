@@ -65,14 +65,21 @@ export const csSettings = {
   "settings.appVersion": "Verze aplikace:",
   "settings.appVersionCode": "Kód verze:",
   "settings.appearance": "VZHLED A JAZYK",
-  "settings.cashRegisterAccount.enabled.description":
-    "Když je pokladna povolená, hotovostní platby se mohou přidat k připraveným platbám.",
-  "settings.cashRegisterAccount.enabled.label": "Povolit pokladnu",
-  "settings.cashRegisterAccount.form.description":
-    "Hotovostní platby používají aktuálně vybranou fiat měnu.",
-  "settings.cashRegisterAccount.form.title": "Pokladna",
-  "settings.cashRegisterAccount.save": "Uložit pokladnu",
-  "settings.cashRegisterAccount.saved": "Pokladna uložena.",
+  "settings.cashuAccount.balance.error":
+    "Zůstatek peněženky se nepodařilo načíst.",
+  "settings.cashuAccount.mintUrl.description":
+    "Zákazník platí Lightning fakturu vystavenou tímto mintem; ecash přistane v peněžence.",
+  "settings.cashuAccount.mintUrl.invalid":
+    "Zadejte platnou http(s) adresu mintu.",
+  "settings.cashuAccount.mintUrl.label": "Adresa mintu",
+  "settings.cashuAccount.restore.action": "Obnovit z mintu",
+  "settings.cashuAccount.restore.error": "Obnova z mintu se nepodařila.",
+  "settings.cashuAccount.restore.pending": "Obnovuji...",
+  "settings.cashuAccount.restore.success":
+    "Obnoveno {amount} sats v {count} proofech.",
+  "settings.cashuAccount.restore.unavailable":
+    "Mint se nepodařilo prohledat. Zkuste to později.",
+  "settings.cashuAccount.saved": "Cashu účet uložen.",
   "settings.catalog": "NABÍDKA",
   "settings.categories.add": "Přidat kategorii",
   "settings.categories.delete": "Smazat kategorii",
@@ -110,27 +117,6 @@ export const csSettings = {
   "settings.debugConsole.pause": "Pauza",
   "settings.debugConsole.resume": "Pokračovat",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Nové platby otevřít s vybranou záložkou hotovosti.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Hotovost",
-  "settings.defaultPaymentMethod.description":
-    "Vyberte, která povolená metoda se vybere jako první při založení účtu",
-  "settings.defaultPaymentMethod.empty":
-    "Pro vybranou fiat měnu teď není dostupná žádná platební metoda.",
-  "settings.defaultPaymentMethod.empty.action": "Spravovat platební účty",
-  "settings.defaultPaymentMethod.iban.description":
-    "Nové platby otevřít s vybranou záložkou bankovního QR.",
-  "settings.defaultPaymentMethod.iban.title": "Bankovní převod",
-  "settings.defaultPaymentMethod.mode.description":
-    "Zobrazují se jen povolené metody kompatibilní s vybranou fiat měnou.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "Uložený default není dostupný. Vyberte novou povolenou metodu.",
-  "settings.defaultPaymentMethod.mode.title": "Výchozí platební metoda účtu",
-  "settings.defaultPaymentMethod.saved": "Výchozí platební metoda uložena.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Nové platby otevřít s vybranou záložkou Bitcoin / Spark.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Výchozí platební metoda",
   "settings.developers": "VÝVOJÁŘI",
   "settings.donations.amount.invalid": "Zadejte kladný celý počet sats.",
   "settings.donations.amount.range": "Částka je mimo povolený rozsah daru.",
@@ -229,32 +215,13 @@ export const csSettings = {
   "settings.fiat.usd.description":
     "Používat americký dolar pro částky v terminálu",
   "settings.fiat.usd.title": "Americký dolar",
-  "settings.fiatBankAccount.currency.description":
-    "Platby v této měně mohou použít tento bankovní účet.",
-  "settings.fiatBankAccount.currency.label": "Měna bankovního účtu",
-  "settings.fiatBankAccount.enabled.description":
-    "Vypnutý účet zůstane uložený, ale platební toky ho budou ignorovat.",
-  "settings.fiatBankAccount.enabled.label": "Povolit fiat bankovní účet",
-  "settings.fiatBankAccount.form.description":
-    "Aplikace teď používá jeden deterministický fiat bankovní účet.",
-  "settings.fiatBankAccount.form.title": "Údaje bankovního účtu",
-  "settings.fiatBankAccount.iban.description":
-    "Zadejte IBAN nebo české číslo účtu, například 123456789/0100. Uložená hodnota se normalizuje na IBAN.",
   "settings.fiatBankAccount.iban.invalid":
     "Zadejte platný IBAN nebo české číslo účtu.",
-  "settings.fiatBankAccount.iban.label": "IBAN nebo číslo účtu",
-  "settings.fiatBankAccount.iban.required":
-    "IBAN nebo číslo účtu je povinné, když je bankovní účet povolený.",
-  "settings.fiatBankAccount.qrFormat.description":
-    "Tento formát se u bankovních QR plateb zobrazí jako první.",
-  "settings.fiatBankAccount.qrFormat.label": "Výchozí formát QR",
   "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
     "Pay by square 1.0 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
     "Pay by square 1.2 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
-  "settings.fiatBankAccount.save": "Uložit bankovní účet",
-  "settings.fiatBankAccount.saved": "Bankovní účet uložen.",
   "settings.fioPlugin.active.description":
     "Když je plugin zapnutý, kontroluje transakce Fio banky pro fiat bankovní účet.",
   "settings.fioPlugin.active.label": "Povolit Fio plugin",
@@ -391,9 +358,29 @@ export const csSettings = {
     "Určuje zemi pro výchozí daňové sazby a to, zda se sazby uplatňují u položek katalogu.",
   "settings.legalEntity.title": "Země a DPH",
   "settings.legalEntity.vatPayer.label": "Jsem plátce DPH",
-  "settings.paymentAccounts.description":
-    "Nastavení bankovního, Spark a pokladního účtu",
-  "settings.paymentAccounts.title": "Platební účty",
+  "settings.myAccount.copyNpub": "Kopírovat npub",
+  "settings.myAccount.edit": "Upravit profil",
+  "settings.myAccount.setName": "Zadat jméno",
+  "settings.myAccount.npubCopied": "npub zkopírován.",
+  "settings.myAccount.npubCopyFailed": "npub se nepodařilo zkopírovat.",
+  "settings.paymentAccounts.description": "Bankovní převod, bitcoin a hotovost",
+  "settings.paymentAccounts.title": "Platební metody",
+  "settings.paymentMethods.balance": "Zůstatek",
+  "settings.paymentMethods.balanceSats": "{amount} sats",
+  "settings.paymentMethods.bank.account.description":
+    "České nebo slovenské číslo účtu nebo IBAN. Měna a formát QR se odvodí z něj.",
+  "settings.paymentMethods.bank.account.label": "Číslo účtu nebo IBAN",
+  "settings.paymentMethods.bank.derived": "{bank} · {currency} · QR {format}",
+  "settings.paymentMethods.bank.derivedUnknownBank": "{currency} · QR {format}",
+  "settings.paymentMethods.bank.enabled": "Přijímat bankovní převody",
+  "settings.paymentMethods.bank.saved": "Bankovní účet uložen.",
+  "settings.paymentMethods.bank.title": "Bankovní převod",
+  "settings.paymentMethods.bitcoin.cashu": "Cashu",
+  "settings.paymentMethods.bitcoin.enabled": "Přijímat bitcoin",
+  "settings.paymentMethods.bitcoin.spark": "Spark",
+  "settings.paymentMethods.bitcoin.title": "Bitcoin",
+  "settings.paymentMethods.cash.enabled": "Přijímat hotovost",
+  "settings.paymentMethods.cash.title": "Hotovost",
   "settings.paymentNumberSeries.day.default.description":
     "Přidat do generovaných čísel plateb dvouciferný den",
   "settings.paymentNumberSeries.day.default.title": "Zobrazit den",
@@ -458,6 +445,18 @@ export const csSettings = {
   "settings.privacy.title": "Soukromí",
   "settings.privacyGroup": "SOUKROMÍ",
   "settings.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
+  "settings.profile.name.label": "Jméno",
+  "settings.profile.name.placeholder": "Vaše jméno nebo podnik",
+  "settings.profile.picture.choose": "Vybrat z galerie",
+  "settings.profile.picture.invalid":
+    "Tento soubor není obrázek, který by prohlížeč přečetl.",
+  "settings.profile.picture.label": "Obrázek",
+  "settings.profile.picture.remove": "Odebrat obrázek",
+  "settings.profile.save": "Uložit profil",
+  "settings.profile.saveFailed":
+    "Profil se nepodařilo publikovat. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.profile.saved": "Profil publikován.",
+  "settings.profile.title": "Profil",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase zkopírována.",
   "settings.security.mnemonic.copy": "Kopírovat",
@@ -489,24 +488,10 @@ export const csSettings = {
   "settings.security.transports.url.invalid": "Zadejte platnou wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
   "settings.security.transports.websocket": "WebSocket",
-  "settings.sparkAccount.enabled.description":
-    "Vypnutý Spark účet zůstane uložený, ale platební toky ho budou ignorovat.",
-  "settings.sparkAccount.enabled.label": "Povolit Spark účet",
-  "settings.sparkAccount.form.description":
-    "Payky tuto Spark peněženku odvodí z klíče pro obnovu účtu.",
-  "settings.sparkAccount.form.title": "Spark účet",
   "settings.sparkAccount.mnemonic.description":
-    "Mnemonic uchovejte v tajnosti. Kdokoli s ním má přístup ke Spark peněžence.",
+    "Slova této Spark peněženky. Vložte 12 slov peněženky, kterou už používáte jinde (Wallet of Satoshi, Bitlifi, …), a platby budou chodit do ní.",
+  "settings.sparkAccount.mnemonic.invalid": "Zadejte 12 slov Spark peněženky.",
   "settings.sparkAccount.mnemonic.label": "Mnemonic peněženky",
-  "settings.sparkAccount.privacyMode.description":
-    "Zapne režim soukromí Spark peněženky pro Lightning platby.",
-  "settings.sparkAccount.privacyMode.label": "Zapnout privacy mode",
-  "settings.sparkAccount.privacyMode.loadError":
-    "Nastavení privacy mode ve Sparku se nepodařilo načíst.",
-  "settings.sparkAccount.privacyMode.loading": "Načítám privacy mode...",
-  "settings.sparkAccount.privacyMode.saveError":
-    "Nastavení privacy mode ve Sparku se nepodařilo uložit.",
-  "settings.sparkAccount.save": "Uložit Spark účet",
   "settings.sparkAccount.saved": "Spark účet uložen.",
   "settings.support": "PODPORA A INFORMACE",
   "settings.tables.add": "Přidat stůl",
@@ -615,11 +600,66 @@ export const csSettings = {
   "settings.tips.percentages.value": "{value} %",
   "settings.tips.preset.remove": "Odebrat {value}",
   "settings.tips.reset": "Obnovit výchozí hodnoty",
-  "settings.tips.save": "Uložit spropitné",
-  "settings.tips.saved": "Nastavení spropitného uloženo.",
   "settings.tips.title": "Spropitné",
   "settings.title": "Nastavení",
   "settings.withdrawals.description":
     "Odeslat Bitcoin ze Spark účtu na on-chain adresu",
   "settings.withdrawals.title": "Výběry",
+  "settings.nostrRelays.title": "Nostr relaye",
+  "settings.nostrRelays.description": "Kam se publikuje váš profil",
+  "settings.nostrRelays.card.description":
+    "Na tyto relaye se publikuje váš profil. Seznam je uložen pod vaším klíčem, takže každá aplikace přihlášená vaší recovery frází používá stejné relaye.",
+  "settings.nostrRelays.defaults":
+    "Pro tento klíč zatím nebyl publikován žádný seznam relayů; toto jsou výchozí relaye.",
+  "settings.nostrRelays.url.label": "Adresa relaye",
+  "settings.nostrRelays.url.description":
+    "Websocketová adresa, například wss://relay.example.com.",
+  "settings.nostrRelays.url.invalid": "Zadejte platnou adresu relaye wss://.",
+  "settings.nostrRelays.url.duplicate": "Tento relay už je v seznamu.",
+  "settings.nostrRelays.add": "Přidat relay",
+  "settings.nostrRelays.remove": "Odebrat {url}",
+  "settings.nostrRelays.remove.confirm.title": "Odebrat relay?",
+  "settings.nostrRelays.remove.confirm.description":
+    "Váš profil se už nebude publikovat na {url}.",
+  "settings.nostrRelays.remove.confirm.action": "Odebrat",
+  "settings.nostrRelays.remove.confirm.cancel": "Ponechat",
+  "settings.nostrRelays.published": "Seznam relayů publikován.",
+  "settings.nostrRelays.publishFailed":
+    "Seznam relayů se nepodařilo publikovat. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.nostrRelays.footer":
+    "V seznamu zůstává vždy alespoň jeden relay. Změny se do ostatních zařízení dostanou, jakmile se k relayům připojí.",
+  "settings.profile.key.title": "Nostr klíč",
+  "settings.profile.key.description":
+    "Klíč, kterým je publikován váš profil. Každá aplikace přihlášená vaší recovery frází používá stejný klíč.",
+  "settings.profile.key.derived": "Odvozený z recovery fráze",
+  "settings.profile.key.custom": "Vlastní klíč",
+  "settings.profile.key.useCustom": "Použít jiný klíč",
+  "settings.profile.key.useDerived": "Použít odvozený klíč",
+  "settings.profile.key.cancel": "Zrušit",
+  "settings.profile.key.switch": "Přepnout klíč",
+  "settings.profile.key.nsec.label": "Tajný klíč (nsec)",
+  "settings.profile.key.nsec.description":
+    "Vložte nsec klíče, který chcete používat. Ukládá se šifrovaně a synchronizuje do vašich dalších zařízení.",
+  "settings.profile.key.nsec.invalid": "Zadejte platný nsec.",
+  "settings.profile.key.nsec.same": "Tento klíč je už aktivní.",
+  "settings.profile.key.switch.confirm.title": "Přepnout Nostr klíč?",
+  "settings.profile.key.switch.confirm.description":
+    "Váš profil se znovu publikuje s novým klíčem a každá aplikace i zařízení přihlášené touto recovery frází na něj přejde.",
+  "settings.profile.key.switch.confirm.action": "Přepnout",
+  "settings.profile.key.switch.confirm.cancel": "Zrušit",
+  "settings.profile.key.switchFailed":
+    "Klíč se nepodařilo přepnout. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.paymentMethods.default": "Výchozí",
+  "settings.paymentMethods.makeDefault": "Nastavit jako výchozí",
+  "settings.profile.key.profileChoice.title": "Který profil chcete zachovat?",
+  "settings.profile.key.profileChoice.description":
+    "Klíč, na který přepínáte, už publikuje jiné jméno nebo fotku. Zachování současného profilu ho publikuje pod novým klíčem; převzetí profilu klíče ho ponechá tak, jak je.",
+  "settings.profile.key.profileChoice.keepCurrent": "Zachovat současný profil",
+  "settings.profile.key.profileChoice.useKeyProfile":
+    "Převzít profil tohoto klíče",
+  "settings.profile.key.profileChoice.noName": "Bez jména",
+  "settings.profile.key.switchedKeptProfile":
+    "Klíč přepnut a současný profil s ním znovu publikován.",
+  "settings.profile.key.switchedKeyProfile":
+    "Klíč přepnut. Zobrazuje se jeho profil.",
 } satisfies Record<keyof typeof enSettings, string>

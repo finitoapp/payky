@@ -5,6 +5,7 @@ import {
   type Task,
   type UpsertValues,
 } from "@evolu/common"
+import type { CashuWalletDep } from "@/core/cashu/cashu-wallet.ts"
 import type {
   DateDep,
   EvoluOwnerIdDep,
@@ -17,6 +18,7 @@ import {
   type YadioApiError,
   type YadioHttpError,
 } from "@/core/integrations/yadio/yadio-client.ts"
+import { activeCashuAccountByIdQuery } from "@/core/modules/account/account-cashu-queries.ts"
 import {
   cashRegisterAccountByIdQuery,
   ibanAccountByIdQuery,
@@ -55,14 +57,17 @@ import {
   createPayment,
   loadAccountWithCurrencyCheck,
   loadPayment,
+  type PaymentBtcCashuInput,
   type PaymentBtcInput,
   upsertPaymentSparkDetails,
 } from "./payment-actions.ts"
 import {
+  type AccountCashuNotFoundError,
   type AccountCurrencyMismatchError,
   type AccountSparkNotFoundError,
   type CashRegisterAccountNotFoundError,
   type CreatePreparedPaymentError,
+  createAccountCashuNotFoundError,
   createAccountSparkNotFoundError,
   createCashRegisterAccountNotFoundError,
   createIbanAccountNotFoundError,
@@ -406,12 +411,119 @@ const prepareSparkMethod =
     return ok({ id: paymentId, expirySeconds, ...sparkInvoiceResult.value })
   }
 
+/**
+ * Quotes the fiat amount in sats and asks the cashu wallet for a mint quote:
+ * the mint's Lightning invoice is what the customer pays, and the wallet
+ * itself watches the quote and mints the ecash once it settles. Only the
+ * invoice, quote id and mint are stored on the payment; the sync job matches
+ * the minted topup back to it by quote id.
+ */
+const prepareCashuMethod =
+  ({
+    paymentId,
+    paymentCurrency,
+    amount,
+    cashu,
+  }: {
+    readonly paymentId: PaymentId
+    readonly paymentCurrency: FiatCurrency
+    readonly amount: number
+    readonly cashu: {
+      readonly accountId: AccountId
+    }
+  }): Task<
+    {
+      readonly id: PaymentId
+      readonly expirySeconds: number
+    } & PaymentBtcCashuInput,
+    | AccountCashuNotFoundError
+    | ZeroAmountNotPayableError
+    | PaymentPreparationFailedError
+    | YadioHttpError
+    | YadioApiError
+    | FetchError,
+    EvoluDep & CashuWalletDep & DateDep & FetchDep & YadioApiDep
+  > =>
+  async (run) => {
+    const [cashuAccount] = await run.deps.evolu.loadQuery(
+      activeCashuAccountByIdQuery(cashu.accountId)
+    )
+    if (!cashuAccount)
+      return err(createAccountCashuNotFoundError({ id: cashu.accountId }))
+
+    // Same refusal as the Spark quote: a zero-sat mint quote is amountless.
+    if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
+
+    const wallet = run.deps.cashuWallet
+    if (wallet === null) {
+      return err(
+        createPaymentPreparationFailedError({
+          message: "No cashu wallet is available for this account.",
+        })
+      )
+    }
+
+    const quote = await run(fetchYadioBtcExchangeRate(paymentCurrency))
+    if (!quote.ok) return quote
+
+    const amountSats = fiatMinorUnitsToSats({
+      amount,
+      currency: paymentCurrency,
+      exchangeRate: quote.value.exchangeRate,
+    })
+    // Sub-sat fiat amounts round to nothing the mint can quote.
+    if (amountSats <= 0) return err(createZeroAmountNotPayableError({ amount }))
+
+    try {
+      const topup = await wallet.startTopup({
+        mintUrl: cashuAccount.mintUrl,
+        amountSats,
+      })
+      // The stored window never outlives the mint's own quote expiry, and is
+      // capped at the Lightning default so a stale QR leaves the screen on
+      // the same schedule as a Spark one.
+      const mintExpirySeconds =
+        topup.expiresAtMs === null
+          ? DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS
+          : Math.floor(
+              (topup.expiresAtMs - run.deps.date.now().getTime()) / 1000
+            )
+      const expirySeconds = Math.max(
+        1,
+        Math.min(DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS, mintExpirySeconds)
+      )
+
+      return ok({
+        id: paymentId,
+        expirySeconds,
+        accountId: cashu.accountId,
+        amountSats: NonNegativeIntegerSchema.decode(amountSats),
+        exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
+        exchangeRateSource: "yadio" as const,
+        exchangeRateFetchedAt: TimestampMsSchema.decode(quote.value.fetchedAt),
+        mintUrl: cashuAccount.mintUrl,
+        quoteId: NonEmptyStringSchema.decode(topup.quoteId),
+        lnInvoice: NonEmptyStringSchema.decode(topup.invoice),
+      })
+    } catch (error) {
+      return err(
+        createPaymentPreparationFailedError({
+          message:
+            error instanceof Error
+              ? error.message
+              : "Failed to prepare the cashu payment",
+        })
+      )
+    }
+  }
+
 export const preparePaymentMethod =
   ({
     paymentId,
     bank,
     cashRegister,
     spark,
+    cashu,
   }: {
     readonly paymentId: PaymentId
     readonly bank?: {
@@ -426,6 +538,9 @@ export const preparePaymentMethod =
       readonly expirySeconds?: number
       readonly includeSparkInvoice?: boolean
     }
+    readonly cashu?: {
+      readonly accountId: AccountId
+    }
   }): Task<
     PaymentId,
     PreparePaymentMethodError,
@@ -433,6 +548,7 @@ export const preparePaymentMethod =
       EvoluOwnerIdDep &
       DateDep &
       SparkWalletDep &
+      CashuWalletDep &
       FetchDep &
       YadioApiDep
   > =>
@@ -495,17 +611,41 @@ export const preparePaymentMethod =
           )
     if (sparkResult !== null && !sparkResult.ok) return sparkResult
 
+    // Cashu likewise: Yadio plus a round trip to the mint.
+    const cashuResult =
+      cashu === undefined
+        ? null
+        : await run(
+            prepareCashuMethod({
+              paymentId,
+              paymentCurrency: payment.currency,
+              amount: payment.amount,
+              cashu,
+            })
+          )
+    if (cashuResult !== null && !cashuResult.ok) return cashuResult
+
     const cashRegisterValues = cashRegisterResult?.value ?? null
     const ibanValues = ibanResult?.value ?? null
     const sparkValues = sparkResult?.value ?? null
+    const cashuValues = cashuResult?.value ?? null
 
     if (
       cashRegisterValues === null &&
       ibanValues === null &&
-      sparkValues === null
+      sparkValues === null &&
+      cashuValues === null
     ) {
       return ok(paymentId)
     }
+
+    // Each Lightning-style method brings its own window; the payment keeps
+    // the shorter one so no displayed invoice outlives `expiresAt`.
+    const expiringWindows = [sparkValues, cashuValues]
+      .filter((values) => values !== null)
+      .map((values) => values.expirySeconds)
+    const expiringWindowSeconds =
+      expiringWindows.length === 0 ? null : Math.min(...expiringWindows)
 
     // `payment.expiresAt` describes the payment as a whole, but only some
     // methods expire: a Lightning invoice does, a cash drawer or a bank
@@ -544,24 +684,33 @@ export const preparePaymentMethod =
           ...options,
           ownerId: evoluOwnerId,
         })
-        // Unconditional for a Spark preparation: a new invoice always has a
-        // new expiry, so keeping the previous `expiresAt` would report a live
-        // payment as expired. It used to be skipped whenever the caller
-        // omitted `expirySeconds`, which is exactly when the old stamp was
-        // most likely to be wrong.
-        if (!hasNonExpiringMethod) {
-          run.deps.evolu.update(
-            "payment",
-            {
-              id: paymentId,
-              expiresAt: computePaymentExpiresAt(
-                run.deps.date.now(),
-                sparkValues.expirySeconds
-              ),
-            },
-            { ...options, ownerId: evoluOwnerId }
-          )
-        }
+      }
+
+      if (cashuValues !== null) {
+        const { expirySeconds: _expirySeconds, ...cashuRow } = cashuValues
+        run.deps.evolu.upsert("paymentBtcCashu", cashuRow, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
+      }
+
+      // Unconditional for a Lightning-style preparation: a new invoice
+      // always has a new expiry, so keeping the previous `expiresAt` would
+      // report a live payment as expired. It used to be skipped whenever the
+      // caller omitted `expirySeconds`, which is exactly when the old stamp
+      // was most likely to be wrong.
+      if (expiringWindowSeconds !== null && !hasNonExpiringMethod) {
+        run.deps.evolu.update(
+          "payment",
+          {
+            id: paymentId,
+            expiresAt: computePaymentExpiresAt(
+              run.deps.date.now(),
+              expiringWindowSeconds
+            ),
+          },
+          { ...options, ownerId: evoluOwnerId }
+        )
       }
 
       if (hasNonExpiringMethod && payment.expiresAt !== null) {

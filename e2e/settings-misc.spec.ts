@@ -55,11 +55,6 @@ test("configure tip presets", async ({ seededPage: page }) => {
         name: translate("en", "settings.tips.fixedAmounts.add"),
       })
       .click()
-
-    await page
-      .getByRole("button", { name: translate("en", "settings.tips.save") })
-      .click()
-    await page.getByText(translate("en", "settings.tips.saved")).waitFor()
   })
 
   await test.step("verify the new presets persist after reload", async () => {

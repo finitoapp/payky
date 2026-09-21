@@ -2,13 +2,17 @@ import { hmac } from "@noble/hashes/hmac.js"
 import { sha512 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
 import { HDKey } from "@scure/bip32"
-import { entropyToMnemonic } from "@scure/bip39"
+import { entropyToMnemonic, mnemonicToSeedSync } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { Slip39 } from "slip39-ts"
 import { describe, expect, test } from "vitest"
 import {
+  cashuMnemonicToWalletSeed,
+  deriveDefaultCashuWalletMnemonic,
   deriveDefaultSparkWalletSecret,
   deriveEvoluOwnerSecret,
+  deriveLinkyMetaOwnerMnemonic,
+  deriveNostrSigningKey,
   MasterKey,
   masterKeyToMnemonic,
   mnemonicToMasterKey,
@@ -218,6 +222,30 @@ describe("Payky key-derivation API matches the cross-app vectors", () => {
     expect(sparkSecret).toBe(BIP85_VECTORS.paykySparkWallet?.entropyHex)
     expect(sparkSecretToMnemonic(sparkSecret)).toBe(
       BIP85_VECTORS.paykySparkWallet?.mnemonic
+    )
+  })
+
+  test("derives the cashu wallet mnemonic and seed Linky derives from the same share", () => {
+    const vector = BIP85_VECTORS.sharedCashuWallet
+    expect(vector?.mnemonic).toBeDefined()
+    if (!vector?.mnemonic) return
+
+    const cashuMnemonic = deriveDefaultCashuWalletMnemonic(masterKey)
+    expect(cashuMnemonic).toBe(vector.mnemonic)
+    expect(bytesToHex(cashuMnemonicToWalletSeed(cashuMnemonic))).toBe(
+      bytesToHex(mnemonicToSeedSync(vector.mnemonic))
+    )
+  })
+
+  test("derives the Evolu owner mnemonic Linky opens its data with", () => {
+    expect(deriveLinkyMetaOwnerMnemonic(masterKey)).toBe(
+      BIP85_VECTORS.linkyMetaOwner?.mnemonic
+    )
+  })
+
+  test("derives the Nostr signing key Linky derives from the same share", () => {
+    expect(bytesToHex(deriveNostrSigningKey(masterKey))).toBe(
+      NOSTR_VECTOR.privateKeyHex
     )
   })
 })

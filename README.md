@@ -44,6 +44,22 @@ Start the Vite dev server:
 bun run dev
 ```
 
+The dev server runs over HTTPS with a self-signed certificate, so the browser
+shows a certificate warning (`ERR_CERT_AUTHORITY_INVALID`, issuer
+`example.org`) that embedded IDE browsers cannot bypass. To get rid of it,
+create a locally trusted certificate once with [mkcert](https://github.com/FiloSottile/mkcert):
+
+```bash
+brew install mkcert
+mkcert -install
+mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1
+```
+
+`bun run dev` and `bun run preview` pick up `.certs/` automatically (it is
+gitignored) and fall back to the self-signed certificate when it is missing.
+Alternatively, `PAYKY_DISABLE_BASIC_SSL=1 bun run dev` serves plain
+`http://localhost:5173`, which browsers still treat as a secure context.
+
 Build the app:
 
 ```bash
@@ -226,15 +242,100 @@ after accounts exist.
 
 | Consumer | Path `P` | Result |
 | --- | --- | --- |
-| Cashu wallet (reserved, unused) | `m/83696968'/39'/0'/24'/0'` | index `0'` is set aside; nothing derives from it yet |
+| Cashu wallet (shared with Linky) | `m/83696968'/39'/0'/24'/0'` | `E` as BIP-39 entropy → 24-word mnemonic → `mnemonicToSeed` (empty passphrase) as the 64-byte wallet seed |
 | Evolu master owner | `m/83696968'/39'/0'/24'/1'` | `E` as the 32-byte Evolu owner secret |
+| Linky Evolu owner (shared with Linky) | `m/83696968'/39'/0'/24'/1'/0'` | `E[0:16]` as BIP-39 entropy → 12-word mnemonic → Linky's Evolu app owner |
+| Nostr key (shared with Linky) | `m/44'/1237'/0'/0/0` | NIP-06: the node's private key itself, no BIP-85 step |
 | Default Spark wallet | `m/83696968'/39'/0'/12'/0'` | `E[0:16]` as the 16-byte Spark wallet secret |
 
 The Spark wallet secret is stored as hex and used as BIP-39 entropy: wallet
 initialization and the settings UI encode it as a 12-word mnemonic (never the
 raw secret), so the wallet can also be restored in any BIP-39-compatible Spark
-client. There is no Cashu wallet yet — the path is reserved so that when one
-ships, its secret won't collide with an index already used by something else.
+client.
+
+### The Linky account
+
+The Cashu wallet path, the Linky owner path and the Nostr path are the ones
+[Linky](https://github.com/gorrdy/linky) uses, so a merchant who restores
+Payky from the 20 words of their Linky account is the same user in both apps:
+
+- **One ecash inventory.** Payky opens Linky's own synced data — the
+  `@linky/linksync` shard store over Linky's Evolu app owner, on Linky's relay
+  (`wss://evolu.linky.fit`) — and the cashu wallet reads and writes its proofs
+  there. The balance and the tokens are identical in both apps; nothing is
+  copied. Linky runs Evolu 7 and its relay is pinned to it, while Payky's own
+  data lives on Evolu 8 (a different wire encoding), so the Linky store runs a
+  second Evolu client from the `@evolu-v7/*` npm aliases (`src/core/linky/`).
+  **Restore from mint** (Settings › Payment Accounts › Cashu) recovers proofs
+  neither app has stored. The default mint is Linky's main mint,
+  `https://cashu.cz`; it is a per-account setting.
+- **One Nostr identity and profile.** Settings shows, at the top, the account
+  Linky shows: the active npub (derived from the phrase, or a custom key —
+  both apps keep it in the synced `nostrIdentity` row of the identity shard
+  and read that row before deriving) and the published Nostr profile name
+  and picture. Until a profile is published the card shows the Payky icon and
+  asks for a name. Tapping the card opens Settings › Profile, where the name
+  and picture (from the gallery, scaled to a small JPEG data URL) are edited
+  and republished as the kind-0 event with the active key; every other field
+  of the published profile is kept. The **Nostr key** card below it switches
+  the account to a pasted `nsec` or back to the derived key
+  (`src/core/linky/switch-linky-identity.ts`). The new key's own profile is
+  fetched first: when it has none, the current profile is republished under
+  the new key; when its name or picture differ, a dialog shows both and the
+  merchant keeps the current profile (republished) or adopts the key's. Then
+  the identity row is written, so
+  Linky and every other device adopt the switch the same way they adopt a
+  key pasted in Linky. A key switched in Linky shows up in Payky through the
+  same row.
+- **One relay list.** Settings › Nostr relays edits the relays the profile
+  is published to. The list is the account's own NIP-65 relay list (kind
+  10002; the NIP-17 DM relay list, kind 10050, is published alongside it with
+  the same relays), read from and published through the bootstrap relays in
+  `src/core/linky/linky-env.ts` — the same events Linky reads and writes, so
+  neither app needs a copy of the other's settings. The profile is read from
+  and published to the user's relays together with the bootstrap relays.
+  The user-facing copy never names Linky; it speaks of "every app signed in
+  with your recovery phrase".
+- **One bitcoin tab, three QRs.** The payment screen has a single bitcoin
+  tab. With cashu enabled a pill switch under the QR picks what it shows:
+  **Universal** (the default), a BIP-321 `bitcoin:` uri whose `lightning`
+  parameter is the mint's invoice and whose `creq` parameter is the NUT-18
+  request, so a Lightning wallet and a cashu wallet both settle into cashu;
+  **Cashu**, the bare NUT-18 request, addressed over NIP-17 to the account's
+  Nostr identity on its relays with the mint quote id as the request id — the
+  same request Linky's receive screen shows; and **Lightning**, the mint's
+  bare invoice. With Spark enabled too the uri also carries the Spark
+  invoice in `spark`; Spark alone shows its bare invoice and no switch.
+- **Ecash settles too.** While a cashu account is active, the Nostr cashu
+  inbox job (`src/core/background-jobs/jobs/nostr-cashu-inbox-job.ts`)
+  listens for gift wraps (kind 1059) to the account's Nostr identity on its
+  relays. A NIP-17 message carrying a NUT-18 payload (matched to the payment
+  by the request id) or a bare cashu token — which is what Linky sends when
+  it pays a request — matched by mint and amount against the unclaimed cashu
+  payments, is received into the shared wallet and recorded as the account
+  transaction that claims the payment, at the token's face value. If Linky on
+  another device received the same token first, the job settles from the
+  wallet's own finished `receive` once that record has synced; a token can
+  settle one payment only (`accountTransactionCashu.receiveOperationId`).
+- **Onboarding** is a start screen with two ways in — create a new account,
+  or restore one with its 20 words (from Payky or Linky) — followed by a
+  single question: the bank account, as a Czech or Slovak account number or
+  an IBAN, with the bank named from its code as a check, and skippable. The
+  language follows the device, the legal entity starts Czech (non-VAT) and
+  the currency CZK; bank transfer (once an account exists) and bitcoin over
+  cashu are on from the start, cash and Spark are enabled in Settings. One
+  method carries the **Default** pill in Settings › Payment methods — bank
+  transfer for a new account — and payments open on it; any other enabled
+  method can take the pill over, and when the default method is switched off
+  the pill (and the payment screen) fall to the first enabled method in tab
+  order without a write, so switching it back on restores it. Sync
+  is on for every account from its first launch (`wss://free.evoluhq.com`
+  for Payky's own Evolu 8 data; Linky's relay speaks Evolu 7 and carries only
+  the shared Linky store). The Spark account accepts the 12 words of a
+  wallet used elsewhere (Wallet of Satoshi, Bitlifi, …) so payments land
+  there.
+- Both apps mint under the same cashu seed with their own device-local
+  counters, which the wallet library recovers from (NUT-09 reclaim).
 
 `S` itself is backed up as a single [SLIP-39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md)
 20-word recovery mnemonic (`src/core/modules/shared/key-derivation.ts`, via

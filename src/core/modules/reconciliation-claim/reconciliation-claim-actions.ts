@@ -21,6 +21,7 @@ import {
 import {
   activeReconciliationClaimByAccountTransactionIdQuery,
   cashRegisterReconciliationCandidateByAccountTransactionIdQuery,
+  cashuReconciliationCandidateByAccountTransactionIdQuery,
   ibanReconciliationCandidateByAccountTransactionIdQuery,
   sparkReconciliationCandidateByAccountTransactionIdQuery,
 } from "./reconciliation-claim-queries.ts"
@@ -153,28 +154,38 @@ export const reconcileAccountTransaction =
 
     // Asked together rather than in sequence. Each candidate query filters on
     // `accountTransaction.kind`, which is a single non-nullable enum, so at
-    // most one of the three can ever return a row: the kind decides, and the
+    // most one of the four can ever return a row: the kind decides, and the
     // `??` order below is only a total function over that, not a tie-break
     // (pinned by "picks the candidate matching the transaction's kind"). The
     // short-circuit it replaces therefore skipped nothing the kind filter
     // would not have — it only cost round trips, one per incoming transaction
     // on the sync jobs' hot path.
-    const [ibanCandidates, sparkCandidates, cashRegisterCandidates] =
-      await Promise.all(
-        run.deps.evolu.loadQueries([
-          ibanReconciliationCandidateByAccountTransactionIdQuery(
-            accountTransactionId
-          ),
-          sparkReconciliationCandidateByAccountTransactionIdQuery(
-            accountTransactionId
-          ),
-          cashRegisterReconciliationCandidateByAccountTransactionIdQuery(
-            accountTransactionId
-          ),
-        ])
-      )
+    const [
+      ibanCandidates,
+      sparkCandidates,
+      cashuCandidates,
+      cashRegisterCandidates,
+    ] = await Promise.all(
+      run.deps.evolu.loadQueries([
+        ibanReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+        sparkReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+        cashuReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+        cashRegisterReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+      ])
+    )
     const candidate =
-      ibanCandidates[0] ?? sparkCandidates[0] ?? cashRegisterCandidates[0]
+      ibanCandidates[0] ??
+      sparkCandidates[0] ??
+      cashuCandidates[0] ??
+      cashRegisterCandidates[0]
     if (!candidate) return ok(null)
 
     const id = createIdFromString<"ReconciliationClaim">(

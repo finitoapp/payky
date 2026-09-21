@@ -1,17 +1,22 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
+import type { CashuWalletDep } from "@/core/cashu/cashu-wallet.ts"
+import { FakeCashuWallet } from "@/core/cashu/cashu-wallet-test-fixtures.ts"
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createYadioApiDep,
   type YadioApiDep,
 } from "@/core/integrations/yadio/yadio-client.ts"
+import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import {
+  CashuMintUrl,
+  NonEmptyString255,
   NonNegativeInteger,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
@@ -60,6 +65,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -67,6 +73,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
@@ -164,6 +171,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -171,6 +179,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId, ibanAccountId } =
@@ -271,6 +280,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -278,6 +288,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { sparkAccountId } = await createPaymentAccounts(deps)
@@ -351,6 +362,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -358,6 +370,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { sparkAccountId } = await createPaymentAccounts(deps)
@@ -460,6 +473,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -467,6 +481,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId } =
@@ -548,6 +563,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -555,6 +571,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, sparkAccountId } =
@@ -637,6 +654,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -644,6 +662,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { sparkAccountId } = await createPaymentAccounts(deps)
@@ -695,6 +714,7 @@ describe("payment preparation actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       // Spark and Yadio are wired up but never reached: every case below
       // fails its account check first.
       fetch: async () =>
@@ -708,6 +728,7 @@ describe("payment preparation actions", () => {
       EvoluOwnerIdDep &
       DateDep &
       SparkWalletDep &
+      CashuWalletDep &
       FetchDep &
       YadioApiDep
     await using run = testCreateRun(deps)
@@ -825,6 +846,7 @@ describe("payment preparation actions", () => {
     const deps = {
       evolu,
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       // `preparePaymentMethod` declares these even for a bank-only call.
       fetch: async () => new Response("{}"),
       sparkWallet: { create: async () => createFakeSparkWallet({}) },
@@ -834,6 +856,7 @@ describe("payment preparation actions", () => {
       EvoluOwnerIdDep &
       DateDep &
       SparkWalletDep &
+      CashuWalletDep &
       FetchDep &
       YadioApiDep
     await using run = testCreateRun(deps)
@@ -898,6 +921,7 @@ describe("payment preparation actions", () => {
           }),
       },
       evoluOwnerId: evolu.appOwner.id,
+      cashuWallet: null,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
@@ -905,6 +929,7 @@ describe("payment preparation actions", () => {
       DateDep &
       FetchDep &
       SparkWalletDep &
+      CashuWalletDep &
       YadioApiDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId, ibanAccountId } =
@@ -934,4 +959,154 @@ describe("payment preparation actions", () => {
       .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(idResult.value)))
       .toMatchObject([{ id: idResult.value, expiresAt: null }])
   }, 15_000)
+
+  test("prepares the cashu method from a mint quote and stores the shorter expiry", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const dateDep = createTestDateDep()
+    const cashuWallet = new FakeCashuWallet({
+      startTopup: async ({ mintUrl, amountSats }) => ({
+        quoteId: "quote-1",
+        mintUrl,
+        amountSats,
+        invoice: "lnbc8600n1cashu",
+        // Far beyond the Lightning default, so the default wins.
+        expiresAtMs: testFixedDate.getTime() + 3_600_000,
+      }),
+    })
+    const deps = {
+      evolu,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
+        ),
+      sparkWallet: {
+        create: async () => createFakeSparkWallet({}),
+      },
+      cashuWallet,
+      evoluOwnerId: evolu.appOwner.id,
+      ...dateDep,
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      CashuWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const cashuAccountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cashu wallet"),
+        cashu: { mintUrl: CashuMintUrl("https://mint.example") },
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    const result = await run(
+      preparePaymentMethod({
+        paymentId,
+        cashu: { accountId: cashuAccountId },
+      })
+    )
+    expect(result).toEqual({ ok: true, value: paymentId })
+
+    await expect
+      .poll(() =>
+        evolu.loadQuery(
+          createQuery((db) =>
+            db
+              .selectFrom("paymentBtcCashu")
+              .selectAll()
+              .where("id", "=", paymentId)
+          )
+        )
+      )
+      .toMatchObject([
+        {
+          accountId: cashuAccountId,
+          amountSats: 8600,
+          mintUrl: "https://mint.example",
+          quoteId: "quote-1",
+          lnInvoice: "lnbc8600n1cashu",
+          exchangeRate: 1_500_000,
+          exchangeRateSource: "yadio",
+        },
+      ])
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(paymentId)))
+      .toMatchObject([
+        {
+          expiresAt:
+            testFixedDate.getTime() +
+            DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1000,
+        },
+      ])
+  })
+
+  test("fails the cashu preparation without a wallet for the runtime", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      fetch: async () => new Response("{}"),
+      sparkWallet: {
+        create: async () => createFakeSparkWallet({}),
+      },
+      cashuWallet: null,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      CashuWalletDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    const cashuAccountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Cashu wallet"),
+        cashu: { mintUrl: CashuMintUrl("https://mint.example") },
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(100),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    const result = await run(
+      preparePaymentMethod({
+        paymentId,
+        cashu: { accountId: cashuAccountId },
+      })
+    )
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { type: "PaymentPreparationFailed" },
+    })
+  })
 })

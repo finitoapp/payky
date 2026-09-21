@@ -33,6 +33,9 @@ coverage
 .data
 .claude
 
+# Locally trusted dev certificate (mkcert, see README "Development")
+.certs
+
 # Playwright
 playwright-report
 test-results

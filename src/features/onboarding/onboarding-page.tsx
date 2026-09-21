@@ -1,18 +1,11 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
-import { Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { Check, ChevronLeft } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
-import {
-  Stepper,
-  StepperIndicator,
-  StepperItem,
-  StepperNav,
-  StepperSeparator,
-} from "@/components/reui/stepper.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardFooter } from "@/components/ui/card.tsx"
 import {
@@ -23,32 +16,34 @@ import {
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
 import {
   saveCashRegisterAccount,
+  saveCashuAccount,
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
+import { defaultCashuMintUrl } from "@/core/modules/account/account-utils.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
-import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
+import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types.ts"
+import { getBankNameForIban } from "@/core/modules/shared/bank-codes.ts"
+import {
+  BankAccountInputIbanSchema,
+  FiatCurrency,
+} from "@/core/modules/shared/schema.ts"
 import { seedTaxRatesForCountry } from "@/core/modules/tax-rate/tax-rate-actions.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
-  type OnboardingPaymentMethod,
+  initialOnboardingStep,
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
-import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/account-choice-step.tsx"
-import { AccountStep } from "@/features/onboarding/onboarding-steps/account-step.tsx"
-import { CountryStep } from "@/features/onboarding/onboarding-steps/country-step.tsx"
-import { CurrencyStep } from "@/features/onboarding/onboarding-steps/currency-step.tsx"
-import { LanguageStep } from "@/features/onboarding/onboarding-steps/language-step.tsx"
 import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-step.tsx"
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"
+import { StartStep } from "@/features/onboarding/onboarding-steps/start-step.tsx"
 import {
-  getDefaultCurrencyForCountry,
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
@@ -58,13 +53,24 @@ import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
-import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export function OnboardingPage() {
+/**
+ * Onboarding no longer asks: the language follows the device, the legal
+ * entity starts Czech (non-VAT) and the currency CZK. Settings has every one
+ * of them for merchants elsewhere.
+ */
+const onboardingCountry: CountryCode = "CZ"
+const onboardingCurrency = FiatCurrency.CZK
+
+export function OnboardingPage({
+  restoredAccountSetup,
+}: {
+  readonly restoredAccountSetup: boolean
+}) {
   const appRun = useAppRun()
   const navigate = useNavigate()
-  const setLanguage = useSetLanguage()
   const setLocale = useSetLocale()
   const { language, t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
@@ -94,29 +100,28 @@ export function OnboardingPage() {
     .filter((account) => account.id !== activeAccount.id)
     .sort((a, b) => b.lastUseAt - a.lastUseAt)[0]
 
-  const {
-    step,
+  const { step, accountType, iban, paymentMethods } = form
+  const onboardingSteps = getOnboardingSteps({
     accountType,
-    iban,
-    country,
-    vatPayer,
-    paymentMethods: selectedPaymentMethods,
-  } = form
-  const onboardingSteps = getOnboardingSteps(accountType)
+    restoredAccountSetup,
+  })
   const pending = finishing || restoring || cancelingSetup
-  const selectedCurrency =
-    form.currency ?? getDefaultCurrencyForCountry(country)
 
-  const ibanEnabled = selectedPaymentMethods.has("iban")
+  // An empty account is a skip, not an error: bank transfers stay off until
+  // the account is added in Settings.
   const ibanParseResult =
-    ibanEnabled && iban !== ""
-      ? BankAccountInputIbanSchema.safeParse(iban)
-      : null
-  const ibanMissing = ibanEnabled && iban === ""
+    iban.trim() === "" ? null : BankAccountInputIbanSchema.safeParse(iban)
+  const ibanEnabled = ibanParseResult?.success === true
   const ibanInvalid = ibanParseResult !== null && !ibanParseResult.success
   const ibanError: TranslationKey | null = ibanInvalid
     ? "settings.fiatBankAccount.iban.invalid"
     : null
+  const detectedBank = ibanParseResult?.success
+    ? getBankNameForIban(ibanParseResult.data)
+    : null
+  const enabledPaymentMethods = ibanEnabled
+    ? paymentMethods
+    : new Set([...paymentMethods].filter((method) => method !== "iban"))
 
   useEffect(() => {
     // The appSettings row's existence marks the account as onboarded. The row
@@ -127,36 +132,24 @@ export function OnboardingPage() {
     }
   }, [navigate, settings])
 
+  // The form atom starts every wizard at "start"; the restored-account flow
+  // has no such step, so land on its own first one instead.
+  useEffect(() => {
+    if (onboardingSteps.includes(step)) return
+    setForm((current) => ({
+      ...current,
+      step: initialOnboardingStep(restoredAccountSetup),
+    }))
+  }, [onboardingSteps, restoredAccountSetup, setForm, step])
+
   const stepIndex = onboardingSteps.indexOf(step)
   const canGoBack = stepIndex > 0 && !pending
-
-  const goNext = () => {
-    const nextStep = onboardingSteps[stepIndex + 1]
-    if (nextStep) {
-      setForm((current) => ({ ...current, step: nextStep }))
-    }
-  }
 
   const goBack = () => {
     const previousStep = onboardingSteps[stepIndex - 1]
     if (previousStep) {
       setForm((current) => ({ ...current, step: previousStep }))
     }
-  }
-
-  const togglePaymentMethod = (
-    method: OnboardingPaymentMethod,
-    checked: boolean
-  ) => {
-    setForm((current) => {
-      const nextMethods = new Set(current.paymentMethods)
-      if (checked) {
-        nextMethods.add(method)
-      } else {
-        nextMethods.delete(method)
-      }
-      return { ...current, paymentMethods: nextMethods }
-    })
   }
 
   const finishOnboarding = async () => {
@@ -177,39 +170,46 @@ export function OnboardingPage() {
         run.deps.evolu.loadQuery(taxRatesQuery),
       ])
 
-      const persistedCountry = country === "OTHER" ? null : country
       if (existingLegalEntity.length === 0) {
-        await run(setLegalEntity({ country: persistedCountry, vatPayer }))
+        await run(
+          setLegalEntity({ country: onboardingCountry, vatPayer: null })
+        )
       }
       if (existingTaxRates.length === 0) {
-        await run(seedTaxRatesForCountry(persistedCountry))
+        await run(seedTaxRatesForCountry(onboardingCountry))
       }
       await run(
         saveCashRegisterAccount({
-          enabled: selectedPaymentMethods.has("cash"),
-          currency: selectedCurrency,
+          enabled: enabledPaymentMethods.has("cash"),
+          currency: onboardingCurrency,
         })
       )
       await run(
         saveSparkAccount({
-          enabled: selectedPaymentMethods.has("btc"),
+          enabled: enabledPaymentMethods.has("btc"),
+        })
+      )
+      await run(
+        saveCashuAccount({
+          enabled: enabledPaymentMethods.has("cashu"),
+          mintUrl: defaultCashuMintUrl,
         })
       )
       await run(
         saveFiatBankAccount({
           enabled: ibanEnabled,
           iban: ibanParseResult?.success ? ibanParseResult.data : undefined,
-          currency: selectedCurrency,
+          currency: onboardingCurrency,
         })
       )
       await run(
         completeOnboarding({
-          fiatCurrency: selectedCurrency,
+          fiatCurrency: onboardingCurrency,
           defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
-            selectedPaymentMethods
+            enabledPaymentMethods
           ),
           paymentMethodOrderJson: JSON.stringify(
-            getPaymentMethodOrder(selectedPaymentMethods)
+            getPaymentMethodOrder(enabledPaymentMethods)
           ),
         })
       )
@@ -266,35 +266,6 @@ export function OnboardingPage() {
     <main className="min-h-svh bg-background text-foreground">
       <PhoneViewport className="justify-center px-5 py-6">
         <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                {t("onboarding.progress")} {stepIndex + 1}/
-                {onboardingSteps.length}
-              </p>
-              <h1 className="font-semibold text-2xl leading-tight">
-                {t("onboarding.title")}
-              </h1>
-            </div>
-            <Stepper
-              value={stepIndex + 1}
-              orientation="horizontal"
-              aria-hidden="true"
-              className="w-auto"
-            >
-              <StepperNav>
-                {onboardingSteps.map((onboardingStep, index) => (
-                  <StepperItem key={onboardingStep} step={index + 1}>
-                    <StepperIndicator className="size-2 bg-muted-foreground/30 data-[state=active]:bg-primary data-[state=completed]:bg-primary" />
-                    {index < onboardingSteps.length - 1 ? (
-                      <StepperSeparator className="w-4" />
-                    ) : null}
-                  </StepperItem>
-                ))}
-              </StepperNav>
-            </Stepper>
-          </div>
-
           {fallbackAccount ? (
             <Button
               type="button"
@@ -308,138 +279,84 @@ export function OnboardingPage() {
             </Button>
           ) : null}
 
-          <Card>
-            {step === "language" ? (
-              <LanguageStep
-                language={language}
-                pending={pending}
-                onSelect={(nextLanguage) => {
-                  // Only previews the wizard's own text live. The device
-                  // locale (number/money formatting) is derived from the
-                  // final language choice once, in finishOnboarding — not
-                  // on every intermediate click here — so switching languages
-                  // back and forth while deciding never leaves the wrong
-                  // regional format applied.
-                  setLanguage(nextLanguage)
-                }}
-              />
-            ) : null}
+          {step === "start" ? (
+            <StartStep
+              pending={pending}
+              onSelect={(nextAccountType) => {
+                setForm((current) => ({
+                  ...current,
+                  accountType: nextAccountType,
+                  step: nextAccountType === "restore" ? "restore" : "payments",
+                }))
+              }}
+            />
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/pwa-icon.svg"
+                  alt=""
+                  className="size-10 rounded-xl"
+                />
+                <h1 className="font-semibold text-2xl leading-tight">
+                  {t("onboarding.title")}
+                </h1>
+              </div>
 
-            {step === "accountChoice" ? (
-              <AccountChoiceStep
-                accountType={accountType}
-                pending={pending}
-                onSelect={(nextAccountType) => {
-                  setForm((current) => ({
-                    ...current,
-                    accountType: nextAccountType,
-                  }))
-                }}
-              />
-            ) : null}
+              <Card>
+                {step === "payments" ? (
+                  <>
+                    <PaymentsStep
+                      iban={iban}
+                      ibanError={ibanError}
+                      ibanInputId={ibanInputId}
+                      detectedBank={detectedBank}
+                      pending={pending}
+                      onIbanChange={(nextIban) => {
+                        setForm((current) => ({ ...current, iban: nextIban }))
+                      }}
+                    />
+                    <CardFooter className="flex items-center justify-between gap-3">
+                      {canGoBack ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={pending}
+                          onClick={goBack}
+                        >
+                          <ChevronLeft data-icon="inline-start" />
+                          {t("onboarding.back")}
+                        </Button>
+                      ) : (
+                        <span />
+                      )}
+                      <Button
+                        type="button"
+                        disabled={pending || ibanInvalid}
+                        onClick={finishOnboarding}
+                      >
+                        <Check data-icon="inline-start" />
+                        {t("onboarding.finish")}
+                      </Button>
+                    </CardFooter>
+                  </>
+                ) : null}
 
-            {step === "country" ? (
-              <CountryStep
-                country={country}
-                vatPayer={vatPayer}
-                pending={pending}
-                onSelectCountry={(nextCountry) => {
-                  setForm((current) => ({ ...current, country: nextCountry }))
-                }}
-                onChangeVatPayer={(nextVatPayer) => {
-                  setForm((current) => ({
-                    ...current,
-                    vatPayer: nextVatPayer,
-                  }))
-                }}
-              />
-            ) : null}
-
-            {step === "currency" ? (
-              <CurrencyStep
-                currency={selectedCurrency}
-                pending={pending}
-                onSelect={(nextCurrency) => {
-                  setForm((current) => ({ ...current, currency: nextCurrency }))
-                }}
-              />
-            ) : null}
-
-            {step === "payments" ? (
-              <PaymentsStep
-                iban={iban}
-                ibanError={ibanError}
-                ibanInputId={ibanInputId}
-                paymentMethods={selectedPaymentMethods}
-                pending={pending}
-                onIbanChange={(nextIban) => {
-                  setForm((current) => ({ ...current, iban: nextIban }))
-                }}
-                onTogglePaymentMethod={togglePaymentMethod}
-              />
-            ) : null}
-
-            {step === "account" ? (
-              <AccountStep
-                recoveryPhraseConfirmed={form.recoveryPhraseConfirmed}
-                onRecoveryPhraseConfirmedChange={(confirmed) => {
-                  setForm((current) => ({
-                    ...current,
-                    recoveryPhraseConfirmed: confirmed,
-                  }))
-                }}
-              />
-            ) : null}
-
-            {step === "restore" ? (
-              <RestoreAccountStep
-                error={restoreError}
-                mnemonic={mnemonic}
-                pending={pending}
-                onBack={goBack}
-                onMnemonicChange={setMnemonic}
-                onRestore={() => {
-                  void restoreExistingAccount()
-                }}
-              />
-            ) : (
-              <CardFooter className="flex items-center justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!canGoBack}
-                  onClick={goBack}
-                >
-                  <ChevronLeft data-icon="inline-start" />
-                  {t("onboarding.back")}
-                </Button>
-                {step === "account" ? (
-                  <Button
-                    type="button"
-                    disabled={pending || !form.recoveryPhraseConfirmed}
-                    onClick={finishOnboarding}
-                  >
-                    <Check data-icon="inline-start" />
-                    {t("onboarding.finish")}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    disabled={
-                      pending ||
-                      (step === "accountChoice" && accountType === null) ||
-                      (step === "country" && country === null) ||
-                      (step === "payments" && (ibanMissing || ibanInvalid))
-                    }
-                    onClick={goNext}
-                  >
-                    {t("onboarding.next")}
-                    <ChevronRight data-icon="inline-end" />
-                  </Button>
-                )}
-              </CardFooter>
-            )}
-          </Card>
+                {step === "restore" ? (
+                  <RestoreAccountStep
+                    error={restoreError}
+                    mnemonic={mnemonic}
+                    pending={pending}
+                    onBack={goBack}
+                    onMnemonicChange={setMnemonic}
+                    onRestore={() => {
+                      void restoreExistingAccount()
+                    }}
+                  />
+                ) : null}
+              </Card>
+            </>
+          )}
         </div>
       </PhoneViewport>
     </main>

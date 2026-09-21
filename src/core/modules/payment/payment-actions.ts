@@ -25,6 +25,7 @@ import type {
   PaymentRow,
   payment,
   paymentBtc,
+  paymentBtcCashu,
   paymentBtcLightning,
   paymentBtcSpark,
   paymentCashRegister,
@@ -125,6 +126,11 @@ export type PaymentBtcInput = WithSparkDetails<
   Omit<InsertValues<typeof paymentBtcSpark>, "id">
 >
 
+export type PaymentBtcCashuInput = Omit<
+  InsertValues<typeof paymentBtcCashu>,
+  "id"
+>
+
 type PaymentBtcUpdateInput = WithSparkDetails<
   Omit<UpdateValues<typeof paymentBtc>, "id">,
   Omit<UpdateValues<typeof paymentBtcLightning>, "id">,
@@ -190,11 +196,13 @@ export const createPayment =
   ({
     cashRegister,
     spark,
+    cashu,
     iban,
     ...input
   }: InsertValues<typeof payment> & {
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: PaymentBtcInput
+    readonly cashu?: PaymentBtcCashuInput
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
   }): Task<
     PaymentId,
@@ -257,6 +265,14 @@ export const createPayment =
           ...options,
           ownerId: evoluOwnerId,
         })
+      }
+
+      if (cashu) {
+        run.deps.evolu.upsert(
+          "paymentBtcCashu",
+          removeUndefinedValues({ ...cashu, id }),
+          { ...options, ownerId: evoluOwnerId }
+        )
       }
 
       if (iban) {

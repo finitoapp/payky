@@ -4,6 +4,7 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "./account-types.ts"
 import {
   cashRegisterAccountId,
+  cashuAccountId,
   fiatBankAccountId,
   sparkAccountId,
 } from "./account-utils.ts"
@@ -133,6 +134,30 @@ export const sparkAccountSecretQuery = createQuery((db) =>
     .$narrowType<{ secret: KyselyNotNull }>()
 )
 
+export const cashuAccountQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .innerJoin("accountCashu", "accountCashu.id", "account.id")
+    .select([
+      "account.id",
+      "account.name",
+      "account.kind",
+      "account.isDeleted",
+      "accountCashu.mintUrl",
+    ])
+    .where("account.id", "=", cashuAccountId)
+    .where("account.kind", "=", "cashu")
+    .where("accountCashu.isDeleted", "is not", 1)
+    .where("account.name", "is not", null)
+    .where("account.kind", "is not", null)
+    .where("accountCashu.mintUrl", "is not", null)
+    .$narrowType<{
+      name: KyselyNotNull
+      kind: KyselyNotNull
+      mintUrl: KyselyNotNull
+    }>()
+)
+
 export const cashRegisterAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")
@@ -159,7 +184,7 @@ export const cashRegisterAccountQuery = createQuery((db) =>
 
 /**
  * Every non-deleted account with the method-specific columns the payment
- * waiting screen needs to offer a Spark, IBAN, or cash-register tab.
+ * waiting screen needs to offer a Spark, cashu, IBAN, or cash-register tab.
  */
 export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
   db
@@ -168,6 +193,11 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
       join
         .onRef("accountSpark.id", "=", "account.id")
         .on("accountSpark.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("accountCashu", (join) =>
+      join
+        .onRef("accountCashu.id", "=", "account.id")
+        .on("accountCashu.isDeleted", "is not", sqliteTrue)
     )
     .leftJoin("accountIban", (join) =>
       join
@@ -183,6 +213,7 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
       "account.id",
       "account.kind",
       "accountSpark.secret as sparkSecret",
+      "accountCashu.mintUrl as cashuMintUrl",
       "account.name",
       "accountIban.iban",
       "accountIban.currency as ibanCurrency",

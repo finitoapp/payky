@@ -233,3 +233,57 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
         paymentId: KyselyNotNull
       }>()
   )
+
+/**
+ * A minted cashu topup matches the payment whose quote it settled: same
+ * account, same mint, same quote id, same sat amount — the quote id alone is
+ * unique per mint, the rest guards against a stale row.
+ */
+export const cashuReconciliationCandidateByAccountTransactionIdQuery = (
+  accountTransactionId: AccountTransactionId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransaction")
+      .innerJoin(
+        "accountTransactionCashu",
+        "accountTransactionCashu.id",
+        "accountTransaction.id"
+      )
+      .innerJoin("paymentBtcCashu", (join) =>
+        join
+          .onRef(
+            "paymentBtcCashu.accountId",
+            "=",
+            "accountTransaction.accountId"
+          )
+          .onRef(
+            "paymentBtcCashu.mintUrl",
+            "=",
+            "accountTransactionCashu.mintUrl"
+          )
+          .onRef(
+            "paymentBtcCashu.quoteId",
+            "=",
+            "accountTransactionCashu.quoteId"
+          )
+      )
+      .innerJoin("payment", "payment.id", "paymentBtcCashu.id")
+      .leftJoin(
+        "reconciliationClaim",
+        "reconciliationClaim.paymentId",
+        "payment.id"
+      )
+      .select(["payment.id as paymentId"])
+      .where("accountTransaction.id", "=", accountTransactionId)
+      .where("accountTransaction.kind", "=", "cashu")
+      .where("accountTransaction.currency", "=", "BTC")
+      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransactionCashu.isDeleted", "is not", 1)
+      .where("paymentBtcCashu.isDeleted", "is not", 1)
+      .where("payment.isDeleted", "is not", 1)
+      .whereRef("paymentBtcCashu.amountSats", "=", "accountTransaction.amount")
+      .where("reconciliationClaim.id", "is", null)
+      .orderBy("payment.id")
+      .limit(1)
+  )

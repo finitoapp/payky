@@ -65,14 +65,21 @@ export const skSettings = {
   "settings.appVersion": "Verzia aplikácie:",
   "settings.appVersionCode": "Kód verzie:",
   "settings.appearance": "VZHĽAD A JAZYK",
-  "settings.cashRegisterAccount.enabled.description":
-    "Keď je pokladnica povolená, hotovostné platby sa môžu pridať k pripraveným platbám.",
-  "settings.cashRegisterAccount.enabled.label": "Povoliť pokladnicu",
-  "settings.cashRegisterAccount.form.description":
-    "Hotovostné platby používajú aktuálne vybranú fiat menu.",
-  "settings.cashRegisterAccount.form.title": "Pokladna",
-  "settings.cashRegisterAccount.save": "Uložiť pokladnicu",
-  "settings.cashRegisterAccount.saved": "Pokladnica uložená.",
+  "settings.cashuAccount.balance.error":
+    "Zostatok peňaženky sa nepodarilo načítať.",
+  "settings.cashuAccount.mintUrl.description":
+    "Zákazník platí Lightning faktúru vystavenú týmto mintom; ecash pristane v peňaženke.",
+  "settings.cashuAccount.mintUrl.invalid":
+    "Zadajte platnú http(s) adresu mintu.",
+  "settings.cashuAccount.mintUrl.label": "Adresa mintu",
+  "settings.cashuAccount.restore.action": "Obnoviť z mintu",
+  "settings.cashuAccount.restore.error": "Obnova z mintu sa nepodarila.",
+  "settings.cashuAccount.restore.pending": "Obnovujem...",
+  "settings.cashuAccount.restore.success":
+    "Obnovených {amount} sats v {count} proofoch.",
+  "settings.cashuAccount.restore.unavailable":
+    "Mint sa nepodarilo prehľadať. Skúste to neskôr.",
+  "settings.cashuAccount.saved": "Cashu účet uložený.",
   "settings.catalog": "PONUKA",
   "settings.categories.add": "Pridať kategóriu",
   "settings.categories.delete": "Vymazať kategóriu",
@@ -110,27 +117,6 @@ export const skSettings = {
   "settings.debugConsole.pause": "Pozastaviť",
   "settings.debugConsole.resume": "Pokračovať",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Nové platby otvoriť s vybranou záložkou hotovosti.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Hotovosť",
-  "settings.defaultPaymentMethod.description":
-    "Vyberte, ktorá povolená metóda sa vyberie ako prvá pri vytváraní účtu",
-  "settings.defaultPaymentMethod.empty":
-    "Pre vybranú fiat menu teraz nie je dostupná žiadna platobná metóda.",
-  "settings.defaultPaymentMethod.empty.action": "Spravovať platobné účty",
-  "settings.defaultPaymentMethod.iban.description":
-    "Nové platby otvoriť s vybranou záložkou bankového QR.",
-  "settings.defaultPaymentMethod.iban.title": "Bankový prevod",
-  "settings.defaultPaymentMethod.mode.description":
-    "Zobrazujú sa len povolené metódy kompatibilné s vybranou fiat menou.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "Uložený default nie je dostupný. Vyberte novú povolenú metódu.",
-  "settings.defaultPaymentMethod.mode.title": "Predvolená platobná metóda účtu",
-  "settings.defaultPaymentMethod.saved": "Predvolená platobná metóda uložená.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Nové platby otvoriť s vybranou záložkou Bitcoin / Spark.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Predvolená platobná metóda",
   "settings.developers": "VÝVOJÁRI",
   "settings.donations.amount.invalid": "Zadajte kladný celý počet sats.",
   "settings.donations.amount.range": "Suma je mimo povolený rozsah daru.",
@@ -228,32 +214,13 @@ export const skSettings = {
   "settings.fiat.usd.description":
     "Používať americký dolár pre sumy v termináli",
   "settings.fiat.usd.title": "Americký dolar",
-  "settings.fiatBankAccount.currency.description":
-    "Platby v tejto mene môžu použiť tento bankový účet.",
-  "settings.fiatBankAccount.currency.label": "Mena bankového účtu",
-  "settings.fiatBankAccount.enabled.description":
-    "Vypnutý účet zostane uložený, ale platobné toky ho budú ignorovať.",
-  "settings.fiatBankAccount.enabled.label": "Povoliť fiat bankový účet",
-  "settings.fiatBankAccount.form.description":
-    "Aplikácia teraz používa jeden deterministický fiat bankový účet.",
-  "settings.fiatBankAccount.form.title": "Údaje bankového účtu",
-  "settings.fiatBankAccount.iban.description":
-    "Zadajte IBAN alebo české číslo účtu, napríklad 123456789/0100. Uložená hodnota sa normalizuje na IBAN.",
   "settings.fiatBankAccount.iban.invalid":
     "Zadajte platný IBAN alebo české číslo účtu.",
-  "settings.fiatBankAccount.iban.label": "IBAN alebo číslo účtu",
-  "settings.fiatBankAccount.iban.required":
-    "IBAN alebo číslo účtu je povinné, keď je bankový účet povolený.",
-  "settings.fiatBankAccount.qrFormat.description":
-    "Tento formát sa pri bankových QR platbách zobrazí ako prvý.",
-  "settings.fiatBankAccount.qrFormat.label": "Predvolený formát QR",
   "settings.fiatBankAccount.qrFormat.payBySquare1_0_0":
     "Pay by square 1.0 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
     "Pay by square 1.2 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
-  "settings.fiatBankAccount.save": "Uložiť bankový účet",
-  "settings.fiatBankAccount.saved": "Bankový účet uložený.",
   "settings.fioPlugin.active.description":
     "Keď je plugin zapnutý, kontroluje transakcie Fio banky pre fiat bankový účet.",
   "settings.fioPlugin.active.label": "Povoliť Fio plugin",
@@ -390,9 +357,29 @@ export const skSettings = {
     "Určuje krajinu pre predvolené daňové sadzby a to, či sa sadzby uplatňujú na položky katalógu.",
   "settings.legalEntity.title": "Krajina a DPH",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
-  "settings.paymentAccounts.description":
-    "Nastavenie bankového, Spark a pokladničného účtu",
-  "settings.paymentAccounts.title": "Platobné účty",
+  "settings.myAccount.copyNpub": "Kopírovať npub",
+  "settings.myAccount.edit": "Upraviť profil",
+  "settings.myAccount.setName": "Zadať meno",
+  "settings.myAccount.npubCopied": "npub skopírovaný.",
+  "settings.myAccount.npubCopyFailed": "npub sa nepodarilo skopírovať.",
+  "settings.paymentAccounts.description": "Bankový prevod, bitcoin a hotovosť",
+  "settings.paymentAccounts.title": "Platobné metódy",
+  "settings.paymentMethods.balance": "Zostatok",
+  "settings.paymentMethods.balanceSats": "{amount} sats",
+  "settings.paymentMethods.bank.account.description":
+    "České alebo slovenské číslo účtu alebo IBAN. Mena a formát QR sa odvodia z neho.",
+  "settings.paymentMethods.bank.account.label": "Číslo účtu alebo IBAN",
+  "settings.paymentMethods.bank.derived": "{bank} · {currency} · QR {format}",
+  "settings.paymentMethods.bank.derivedUnknownBank": "{currency} · QR {format}",
+  "settings.paymentMethods.bank.enabled": "Prijímať bankové prevody",
+  "settings.paymentMethods.bank.saved": "Bankový účet uložený.",
+  "settings.paymentMethods.bank.title": "Bankový prevod",
+  "settings.paymentMethods.bitcoin.cashu": "Cashu",
+  "settings.paymentMethods.bitcoin.enabled": "Prijímať bitcoin",
+  "settings.paymentMethods.bitcoin.spark": "Spark",
+  "settings.paymentMethods.bitcoin.title": "Bitcoin",
+  "settings.paymentMethods.cash.enabled": "Prijímať hotovosť",
+  "settings.paymentMethods.cash.title": "Hotovosť",
   "settings.paymentNumberSeries.day.default.description":
     "Pridať do generovaných čísel platieb dvojciferný deň",
   "settings.paymentNumberSeries.day.default.title": "Zobraziť deň",
@@ -457,6 +444,18 @@ export const skSettings = {
   "settings.privacy.title": "Súkromie",
   "settings.privacyGroup": "SÚKROMIE",
   "settings.saveFailed": "Zmenu sa nepodarilo uložiť. Skúste to prosím znova.",
+  "settings.profile.name.label": "Meno",
+  "settings.profile.name.placeholder": "Vaše meno alebo podnik",
+  "settings.profile.picture.choose": "Vybrať z galérie",
+  "settings.profile.picture.invalid":
+    "Tento súbor nie je obrázok, ktorý by prehliadač prečítal.",
+  "settings.profile.picture.label": "Obrázok",
+  "settings.profile.picture.remove": "Odobrať obrázok",
+  "settings.profile.save": "Uložiť profil",
+  "settings.profile.saveFailed":
+    "Profil sa nepodarilo publikovať. Skontrolujte pripojenie a skúste to znova.",
+  "settings.profile.saved": "Profil publikovaný.",
+  "settings.profile.title": "Profil",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",
   "settings.security.mnemonic.copy": "Kopírovať",
@@ -488,24 +487,10 @@ export const skSettings = {
   "settings.security.transports.url.invalid": "Zadajte platnú wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
   "settings.security.transports.websocket": "WebSocket",
-  "settings.sparkAccount.enabled.description":
-    "Vypnutý Spark účet zostane uložený, ale platobné toky ho budú ignorovať.",
-  "settings.sparkAccount.enabled.label": "Povoliť Spark účet",
-  "settings.sparkAccount.form.description":
-    "Payky túto Spark peňaženku odvodí z kľúča na obnovu účtu.",
-  "settings.sparkAccount.form.title": "Spark účet",
   "settings.sparkAccount.mnemonic.description":
-    "Mnemonic uchovávajte v tajnosti. Ktokoľvek s ním má prístup k Spark peňaženke.",
+    "Slová tejto Spark peňaženky. Vložte 12 slov peňaženky, ktorú už používate inde (Wallet of Satoshi, Bitlifi, …), a platby budú chodiť do nej.",
+  "settings.sparkAccount.mnemonic.invalid": "Zadajte 12 slov Spark peňaženky.",
   "settings.sparkAccount.mnemonic.label": "Mnemonic peňaženky",
-  "settings.sparkAccount.privacyMode.description":
-    "Zapne režim súkromia Spark peňaženky pre Lightning platby.",
-  "settings.sparkAccount.privacyMode.label": "Zapnúť privacy mode",
-  "settings.sparkAccount.privacyMode.loadError":
-    "Nastavenie privacy mode v Sparku sa nepodarilo načítať.",
-  "settings.sparkAccount.privacyMode.loading": "Načítavam privacy mode...",
-  "settings.sparkAccount.privacyMode.saveError":
-    "Nastavenie privacy mode v Sparku sa nepodarilo uložiť.",
-  "settings.sparkAccount.save": "Uložiť Spark účet",
   "settings.sparkAccount.saved": "Spark účet uložený.",
   "settings.support": "PODPORA A INFORMÁCIE",
   "settings.tables.add": "Pridať stôl",
@@ -615,11 +600,66 @@ export const skSettings = {
   "settings.tips.percentages.value": "{value} %",
   "settings.tips.preset.remove": "Odstrániť {value}",
   "settings.tips.reset": "Obnoviť predvolené hodnoty",
-  "settings.tips.save": "Uložiť tringelty",
-  "settings.tips.saved": "Nastavenie tringeltu uložené.",
   "settings.tips.title": "Tringelty",
   "settings.title": "Nastavenia",
   "settings.withdrawals.description":
     "Odoslať Bitcoin zo Spark účtu na on-chain adresu",
   "settings.withdrawals.title": "Výbery",
+  "settings.nostrRelays.title": "Nostr relaye",
+  "settings.nostrRelays.description": "Kam sa publikuje váš profil",
+  "settings.nostrRelays.card.description":
+    "Na tieto relaye sa publikuje váš profil. Zoznam je uložený pod vaším kľúčom, takže každá aplikácia prihlásená vašou recovery frázou používa rovnaké relaye.",
+  "settings.nostrRelays.defaults":
+    "Pre tento kľúč zatiaľ nebol publikovaný žiadny zoznam relayov; toto sú predvolené relaye.",
+  "settings.nostrRelays.url.label": "Adresa relaya",
+  "settings.nostrRelays.url.description":
+    "Websocketová adresa, napríklad wss://relay.example.com.",
+  "settings.nostrRelays.url.invalid": "Zadajte platnú adresu relaya wss://.",
+  "settings.nostrRelays.url.duplicate": "Tento relay už je v zozname.",
+  "settings.nostrRelays.add": "Pridať relay",
+  "settings.nostrRelays.remove": "Odobrať {url}",
+  "settings.nostrRelays.remove.confirm.title": "Odobrať relay?",
+  "settings.nostrRelays.remove.confirm.description":
+    "Váš profil sa už nebude publikovať na {url}.",
+  "settings.nostrRelays.remove.confirm.action": "Odobrať",
+  "settings.nostrRelays.remove.confirm.cancel": "Ponechať",
+  "settings.nostrRelays.published": "Zoznam relayov publikovaný.",
+  "settings.nostrRelays.publishFailed":
+    "Zoznam relayov sa nepodarilo publikovať. Skontrolujte pripojenie a skúste to znova.",
+  "settings.nostrRelays.footer":
+    "V zozname zostáva vždy aspoň jeden relay. Zmeny sa do ostatných zariadení dostanú, keď sa k relayom pripoja.",
+  "settings.profile.key.title": "Nostr kľúč",
+  "settings.profile.key.description":
+    "Kľúč, ktorým je publikovaný váš profil. Každá aplikácia prihlásená vašou recovery frázou používa rovnaký kľúč.",
+  "settings.profile.key.derived": "Odvodený z recovery frázy",
+  "settings.profile.key.custom": "Vlastný kľúč",
+  "settings.profile.key.useCustom": "Použiť iný kľúč",
+  "settings.profile.key.useDerived": "Použiť odvodený kľúč",
+  "settings.profile.key.cancel": "Zrušiť",
+  "settings.profile.key.switch": "Prepnúť kľúč",
+  "settings.profile.key.nsec.label": "Tajný kľúč (nsec)",
+  "settings.profile.key.nsec.description":
+    "Vložte nsec kľúča, ktorý chcete používať. Ukladá sa šifrovane a synchronizuje do vašich ďalších zariadení.",
+  "settings.profile.key.nsec.invalid": "Zadajte platný nsec.",
+  "settings.profile.key.nsec.same": "Tento kľúč je už aktívny.",
+  "settings.profile.key.switch.confirm.title": "Prepnúť Nostr kľúč?",
+  "settings.profile.key.switch.confirm.description":
+    "Váš profil sa znova publikuje s novým kľúčom a každá aplikácia aj zariadenie prihlásené touto recovery frázou naň prejde.",
+  "settings.profile.key.switch.confirm.action": "Prepnúť",
+  "settings.profile.key.switch.confirm.cancel": "Zrušiť",
+  "settings.profile.key.switchFailed":
+    "Kľúč sa nepodarilo prepnúť. Skontrolujte pripojenie a skúste to znova.",
+  "settings.paymentMethods.default": "Predvolená",
+  "settings.paymentMethods.makeDefault": "Nastaviť ako predvolenú",
+  "settings.profile.key.profileChoice.title": "Ktorý profil chcete zachovať?",
+  "settings.profile.key.profileChoice.description":
+    "Kľúč, na ktorý prepínate, už publikuje iné meno alebo fotku. Zachovanie súčasného profilu ho publikuje pod novým kľúčom; prevzatie profilu kľúča ho ponechá tak, ako je.",
+  "settings.profile.key.profileChoice.keepCurrent": "Zachovať súčasný profil",
+  "settings.profile.key.profileChoice.useKeyProfile":
+    "Prevziať profil tohto kľúča",
+  "settings.profile.key.profileChoice.noName": "Bez mena",
+  "settings.profile.key.switchedKeptProfile":
+    "Kľúč prepnutý a súčasný profil s ním znova publikovaný.",
+  "settings.profile.key.switchedKeyProfile":
+    "Kľúč prepnutý. Zobrazuje sa jeho profil.",
 } satisfies Record<keyof typeof enSettings, string>

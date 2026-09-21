@@ -8,7 +8,11 @@ import { describe, expect, test } from "vitest"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { IbanSchema, NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import {
+  CashuMintUrl,
+  IbanSchema,
+  NonEmptyString255,
+} from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   deriveDefaultSparkWalletSecret,
@@ -19,17 +23,23 @@ import {
   createAccount,
   deleteAccount,
   loadAccount,
+  saveCashuAccount,
   saveFiatBankAccount,
   saveSparkAccount,
   updateAccount,
 } from "./account-actions.ts"
 import {
   accountByIdQuery,
+  cashuAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
-import { fiatBankAccountId, sparkAccountId } from "./account-utils.ts"
+import {
+  cashuAccountId,
+  fiatBankAccountId,
+  sparkAccountId,
+} from "./account-utils.ts"
 
 const accountWithDetailsByIdQuery = (id: AccountId) =>
   createQuery((db) =>
@@ -395,6 +405,29 @@ describe("account actions", () => {
       ])
   })
 
+  test("replaces the Spark wallet secret with an imported one on request", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      masterKey,
+    })
+    await run.ok(saveSparkAccount({ enabled: true }))
+
+    const imported = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+    await expect(
+      run(saveSparkAccount({ enabled: true, secret: imported }))
+    ).resolves.toEqual({
+      ok: true,
+      value: { accountId: sparkAccountId, secret: imported },
+    })
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toMatchObject([{ isDeleted: sqliteFalse, secret: imported }])
+  })
+
   test("never overwrites an already-attached Spark wallet secret", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -423,5 +456,38 @@ describe("account actions", () => {
     await expect
       .poll(() => evolu.loadQuery(sparkAccountQuery))
       .toMatchObject([{ isDeleted: sqliteFalse, secret: attachedSecret }])
+  })
+
+  test("saves the cashu account with its mint and toggles it without losing the mint", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    })
+    const mintUrl = CashuMintUrl("https://mint.example/")
+
+    await expect(
+      run(saveCashuAccount({ enabled: true, mintUrl }))
+    ).resolves.toEqual({ ok: true, value: cashuAccountId })
+
+    await expect
+      .poll(() => evolu.loadQuery(cashuAccountQuery))
+      .toMatchObject([
+        {
+          id: cashuAccountId,
+          kind: "cashu",
+          isDeleted: sqliteFalse,
+          mintUrl: "https://mint.example",
+        },
+      ])
+
+    await run.ok(saveCashuAccount({ enabled: false, mintUrl }))
+
+    await expect
+      .poll(() => evolu.loadQuery(cashuAccountQuery))
+      .toMatchObject([
+        { isDeleted: sqliteTrue, mintUrl: "https://mint.example" },
+      ])
   })
 })

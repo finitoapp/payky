@@ -31,6 +31,10 @@ import {
   markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
 import {
+  type BitcoinQrMode,
+  buildBitcoinPaymentUri,
+} from "@/core/modules/payment/payment-bitcoin-uri-utils.ts"
+import {
   type BankQrPayload,
   createBankQrPayloads,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
@@ -67,7 +71,7 @@ import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 const preparingPaymentMethodKeys = {
-  spark: "paymentWait.preparing.spark",
+  bitcoin: "paymentWait.preparing.spark",
   iban: "paymentWait.preparing.iban",
   cash: "paymentWait.preparing.cash",
 } satisfies Record<PaymentMethodTab, TranslationKey>
@@ -106,6 +110,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
     useState<BankQrFormat | null>(null)
+  const [selectedBitcoinQrMode, setSelectedBitcoinQrMode] =
+    useState<BitcoinQrMode>("universal")
   const query = paymentRequestQuery(paymentId)
   const claimsQuery = paymentClaimsQuery(paymentId)
   const { data: payments } = useEvoluQuery(query)
@@ -152,13 +158,52 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     const enabledSparkAccount = enabledPaymentMethodAccounts.find(
       (account) => account.kind === "spark" && account.sparkSecret !== null
     )
-    if (enabledSparkAccount) {
+    const enabledCashuAccount = enabledPaymentMethodAccounts.find(
+      (account) => account.kind === "cashu" && account.cashuMintUrl !== null
+    )
+    const bitcoinAccount = enabledSparkAccount ?? enabledCashuAccount
+    if (bitcoinAccount) {
+      // With both methods the Spark invoice rides along in the uri and the
+      // Lightning slot goes to the mint's invoice, which any Lightning
+      // wallet can pay; Spark's own Lightning invoice is only shown when
+      // Spark is the sole method.
+      const cashuLnInvoice = enabledCashuAccount
+        ? (payment?.cashuLnInvoice ?? null)
+        : null
+      const sparkInvoice = enabledSparkAccount
+        ? (payment?.sparkInvoice ?? null)
+        : null
+      const qrPayload = enabledCashuAccount
+        ? buildBitcoinPaymentUri({
+            lightningInvoice: cashuLnInvoice,
+            sparkInvoice,
+          })
+        : (payment?.lnInvoice ?? payment?.sparkInvoice ?? null)
+      const cashuRequest =
+        payment !== undefined &&
+        cashuLnInvoice !== null &&
+        payment.cashuAmountSats !== null &&
+        payment.cashuMintUrl !== null &&
+        payment.cashuQuoteId !== null
+          ? {
+              amountSats: payment.cashuAmountSats,
+              mintUrl: payment.cashuMintUrl,
+              quoteId: payment.cashuQuoteId,
+              lightningInvoice: cashuLnInvoice,
+              sparkInvoice,
+            }
+          : null
+
       paymentMethods.push({
-        id: "spark",
-        kind: "spark",
-        accountId: enabledSparkAccount.id,
+        id: "bitcoin",
+        // Sorted and defaulted by whichever bitcoin method the settings name.
+        kind: enabledSparkAccount ? "spark" : "cashu",
+        accountId: bitcoinAccount.id,
+        sparkAccountId: enabledSparkAccount?.id ?? null,
+        cashuAccountId: enabledCashuAccount?.id ?? null,
+        cashuRequest,
         label: t("paymentWait.method.lightning"),
-        qrPayload: payment?.lnInvoice ?? payment?.sparkInvoice ?? null,
+        qrPayload,
         icon: <ZapIcon />,
       })
     }
@@ -247,7 +292,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         ) ?? null)
   const defaultPaymentMethodOption =
     orderedPaymentMethods.find(
-      (method) => method.kind === configuredDefaultPaymentMethod
+      (method) =>
+        method.kind === configuredDefaultPaymentMethod ||
+        (method.id === "bitcoin" &&
+          (configuredDefaultPaymentMethod === "spark" ||
+            configuredDefaultPaymentMethod === "cashu"))
     ) ?? null
   const activePaymentMethod =
     selectedPaymentMethodOption ??
@@ -274,34 +323,36 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const activePaymentMethodIsPrepared =
     activePaymentMethod !== null &&
     payment !== undefined &&
-    ((activePaymentMethod.id === "spark" &&
-      (payment.lnInvoice !== null || payment.sparkInvoice !== null)) ||
+    ((activePaymentMethod.id === "bitcoin" &&
+      (activePaymentMethod.sparkAccountId === null ||
+        payment.lnInvoice !== null ||
+        payment.sparkInvoice !== null) &&
+      (activePaymentMethod.cashuAccountId === null ||
+        payment.cashuLnInvoice !== null)) ||
       (activePaymentMethod.id === "iban" && payment.ibanAccountId !== null) ||
       (activePaymentMethod.id === "cash" &&
         payment.cashRegisterAccountId !== null &&
         payment.cashRegisterAccountId !== undefined))
 
   const runPaymentMethodPreparation = useCallback(
-    async (
-      method: Pick<PaymentMethodOption, "accountId" | "kind">,
-      preparationKey: string
-    ) => {
+    async (method: PaymentMethodOption, preparationKey: string) => {
       try {
         await using run = appRun()
 
         const result = await run(
           preparePaymentMethod({
             paymentId,
-            ...(method.kind === "cashRegister"
+            ...(method.id === "cash"
               ? { cashRegister: { accountId: method.accountId } }
               : {}),
-            ...(method.kind === "iban"
+            ...(method.id === "iban"
               ? { bank: { accountId: method.accountId } }
               : {}),
-            ...(method.kind === "spark"
-              ? {
-                  spark: { accountId: method.accountId },
-                }
+            ...(method.id === "bitcoin" && method.sparkAccountId !== null
+              ? { spark: { accountId: method.sparkAccountId } }
+              : {}),
+            ...(method.id === "bitcoin" && method.cashuAccountId !== null
+              ? { cashu: { accountId: method.cashuAccountId } }
               : {}),
           })
         )
@@ -422,6 +473,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     ibanAccountId !== undefined &&
     !isPaid
   const canCancelPayment = payment.canceledAt === null && !isPaid
+  // Spark and cashu each quote the fiat amount on their own; show the one
+  // behind the active tab, then whichever exists.
+  const displayedAmountSats = payment.cashuAmountSats ?? payment.amountSats
 
   const handleMarkCashPaid = async () => {
     if (!canMarkCashPaid) return
@@ -518,11 +572,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               )}
             </h1>
             <p className="text-md font-medium text-muted-foreground tabular-nums">
-              {payment.amountSats === null
+              {displayedAmountSats === null
                 ? "\u00A0"
                 : `${formatMoney(
                     {
-                      value: payment.amountSats,
+                      value: displayedAmountSats,
                       currency: Currency.BTC,
                     },
                     locale
@@ -536,7 +590,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 value={activePaymentMethod.id}
                 onValueChange={(value) => {
                   if (
-                    value === "spark" ||
+                    value === "bitcoin" ||
                     value === "iban" ||
                     value === "cash"
                   ) {
@@ -612,7 +666,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               ibanPaymentPending={ibanPaymentPending}
               ibanVariableSymbol={payment.variableSymbol}
               preparingMessageKey={activePreparingPaymentMethodKey}
+              selectedBitcoinQrMode={selectedBitcoinQrMode}
               selectedIbanQrFormat={selectedIbanQrFormat}
+              onSelectBitcoinQrMode={setSelectedBitcoinQrMode}
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}
               onMarkIbanPaid={() => void handleMarkIbanPaid()}

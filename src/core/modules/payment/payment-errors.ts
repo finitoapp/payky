@@ -56,6 +56,15 @@ export type AccountSparkNotFoundError = ReturnType<
   typeof createAccountSparkNotFoundError
 >
 
+export const createAccountCashuNotFoundError = defineError(
+  "AccountCashuNotFound"
+)<{
+  readonly id: AccountId
+}>()
+export type AccountCashuNotFoundError = ReturnType<
+  typeof createAccountCashuNotFoundError
+>
+
 export const createPaymentPreparationFailedError = defineError(
   "PaymentPreparationFailed"
 )<{
@@ -138,6 +147,7 @@ export type PreparePaymentMethodError =
   | CashRegisterAccountNotFoundError
   | AccountCurrencyMismatchError
   | AccountSparkNotFoundError
+  | AccountCashuNotFoundError
   | IbanAccountNotFoundError
   | PaymentNumberNotFoundError
   | PaymentPreparationFailedError

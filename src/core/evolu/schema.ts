@@ -4,12 +4,14 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 import {
   account,
   accountCashRegister,
+  accountCashu,
   accountIban,
   accountIndexes,
   accountSpark,
 } from "@/core/modules/account/account.ts"
 import {
   accountTransaction,
+  accountTransactionCashu,
   accountTransactionIban,
   accountTransactionIndexes,
   accountTransactionLightning,
@@ -41,6 +43,7 @@ import { legalEntity } from "@/core/modules/legal-entity/legal-entity.ts"
 import {
   payment,
   paymentBtc,
+  paymentBtcCashu,
   paymentBtcLightning,
   paymentBtcSpark,
   paymentCashRegister,
@@ -68,8 +71,10 @@ export const AppSchema = {
   account,
   accountIban,
   accountSpark,
+  accountCashu,
   accountCashRegister,
   accountTransaction,
+  accountTransactionCashu,
   accountTransactionIban,
   accountTransactionSpark,
   accountTransactionSparkInvoice,
@@ -89,6 +94,7 @@ export const AppSchema = {
   paymentBtc,
   paymentBtcLightning,
   paymentBtcSpark,
+  paymentBtcCashu,
   paymentIban,
   paymentLine,
   paymentNumber,

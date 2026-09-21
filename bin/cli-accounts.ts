@@ -23,6 +23,7 @@ import {
 } from "../src/core/modules/shared/key-derivation"
 import {
   AccountKindSchema,
+  CashuMintUrlSchema,
   FiatCurrencySchema,
   IbanSchema,
   NonEmptyString255Schema,
@@ -48,6 +49,12 @@ const accountsWithDetailsQuery = createQuery((db) =>
           .select(["accountSpark.secret"])
           .whereRef("accountSpark.id", "=", "account.id")
       ).as("spark"),
+      evoluJsonObjectFrom(
+        eb
+          .selectFrom("accountCashu")
+          .select(["accountCashu.mintUrl"])
+          .whereRef("accountCashu.id", "=", "account.id")
+      ).as("cashu"),
       evoluJsonObjectFrom(
         eb
           .selectFrom("accountCashRegister")
@@ -83,6 +90,12 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
             .select(["accountSpark.secret"])
             .whereRef("accountSpark.id", "=", "account.id")
         ).as("spark"),
+        evoluJsonObjectFrom(
+          eb
+            .selectFrom("accountCashu")
+            .select(["accountCashu.mintUrl"])
+            .whereRef("accountCashu.id", "=", "account.id")
+        ).as("cashu"),
         evoluJsonObjectFrom(
           eb
             .selectFrom("accountCashRegister")
@@ -160,6 +173,9 @@ export const registerAccountsCommand =
             secret: SparkSecretSchema.optional().describe(
               "s;Spark wallet secret as 16-byte hex"
             ),
+            mintUrl: CashuMintUrlSchema.optional().describe(
+              "m;Cashu mint url for cashu accounts"
+            ),
           },
           async action(_, options) {
             const root = {
@@ -206,6 +222,27 @@ export const registerAccountsCommand =
                   ...root,
                   spark: {
                     secret: options.secret,
+                  },
+                })
+              )
+              run.deps.console.log(`Inserted account ${id}`)
+              return
+            }
+
+            if (options.kind === "cashu") {
+              if (options.mintUrl === undefined) {
+                printCliError(
+                  run.deps.console,
+                  "Cashu account requires --mint-url."
+                )
+                return
+              }
+
+              const id = await run.ok(
+                createAccount({
+                  ...root,
+                  cashu: {
+                    mintUrl: options.mintUrl,
                   },
                 })
               )
@@ -304,6 +341,9 @@ export const registerAccountsCommand =
             secret: SparkSecretSchema.optional().describe(
               "s;Spark wallet secret as 16-byte hex"
             ),
+            mintUrl: CashuMintUrlSchema.optional().describe(
+              "m;Cashu mint url for cashu accounts"
+            ),
           },
           async action(_, options) {
             const account = await run.orThrow(loadAccount(options.id))
@@ -332,6 +372,21 @@ export const registerAccountsCommand =
                   name: options.name,
                   spark: {
                     secret: options.secret,
+                  },
+                })
+              )
+              run.deps.console.log(`Updated account ${options.id}`)
+              return
+            }
+
+            if (account.kind === "cashu") {
+              await run.ok(
+                updateAccount({
+                  id: options.id,
+                  deviceId: options.deviceId,
+                  name: options.name,
+                  cashu: {
+                    mintUrl: options.mintUrl,
                   },
                 })
               )

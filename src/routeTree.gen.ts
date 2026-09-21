@@ -28,7 +28,6 @@ import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.se
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
 import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_terminal.settings.categories'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
-import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
@@ -37,9 +36,11 @@ import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_termina
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsLegalEntityRouteImport } from './routes/_terminal.settings.legal-entity'
+import { Route as TerminalSettingsNostrRelaysRouteImport } from './routes/_terminal.settings.nostr-relays'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
+import { Route as TerminalSettingsProfileRouteImport } from './routes/_terminal.settings.profile'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
 import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.settings.tables'
 import { Route as TerminalSettingsTaxRatesRouteImport } from './routes/_terminal.settings.tax-rates'
@@ -159,12 +160,6 @@ const TerminalSettingsDebugConsoleRoute =
     path: '/debug-console',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
-const TerminalSettingsDefaultPaymentMethodRoute =
-  TerminalSettingsDefaultPaymentMethodRouteImport.update({
-    id: '/default-payment-method',
-    path: '/default-payment-method',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
 const TerminalSettingsDonationsRoute =
   TerminalSettingsDonationsRouteImport.update({
     id: '/donations',
@@ -211,6 +206,12 @@ const TerminalSettingsLegalEntityRoute =
     path: '/legal-entity',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalSettingsNostrRelaysRoute =
+  TerminalSettingsNostrRelaysRouteImport.update({
+    id: '/nostr-relays',
+    path: '/nostr-relays',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsPaymentAccountsRoute =
   TerminalSettingsPaymentAccountsRouteImport.update({
     id: '/payment-accounts',
@@ -226,6 +227,11 @@ const TerminalSettingsPaymentNumberSeriesRoute =
 const TerminalSettingsPrivacyRoute = TerminalSettingsPrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsProfileRoute = TerminalSettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
 const TerminalSettingsSecurityRoute =
@@ -358,7 +364,6 @@ export interface FileRoutesByFullPath {
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
-  '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
@@ -367,9 +372,11 @@ export interface FileRoutesByFullPath {
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
+  '/settings/nostr-relays': typeof TerminalSettingsNostrRelaysRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
+  '/settings/profile': typeof TerminalSettingsProfileRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -406,7 +413,6 @@ export interface FileRoutesByTo {
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
-  '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
@@ -414,9 +420,11 @@ export interface FileRoutesByTo {
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
+  '/settings/nostr-relays': typeof TerminalSettingsNostrRelaysRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
+  '/settings/profile': typeof TerminalSettingsProfileRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
@@ -457,7 +465,6 @@ export interface FileRoutesById {
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/_terminal/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
-  '/_terminal/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
@@ -466,9 +473,11 @@ export interface FileRoutesById {
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
+  '/_terminal/settings/nostr-relays': typeof TerminalSettingsNostrRelaysRoute
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
+  '/_terminal/settings/profile': typeof TerminalSettingsProfileRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/_terminal/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -510,7 +519,6 @@ export interface FileRouteTypes {
     | '/settings/accounts'
     | '/settings/categories'
     | '/settings/debug-console'
-    | '/settings/default-payment-method'
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
@@ -519,9 +527,11 @@ export interface FileRouteTypes {
     | '/settings/items'
     | '/settings/language'
     | '/settings/legal-entity'
+    | '/settings/nostr-relays'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
+    | '/settings/profile'
     | '/settings/security'
     | '/settings/tables'
     | '/settings/tax-rates'
@@ -558,7 +568,6 @@ export interface FileRouteTypes {
     | '/payment/$paymentId'
     | '/settings/accounts'
     | '/settings/debug-console'
-    | '/settings/default-payment-method'
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
@@ -566,9 +575,11 @@ export interface FileRouteTypes {
     | '/settings/fio-plugin'
     | '/settings/language'
     | '/settings/legal-entity'
+    | '/settings/nostr-relays'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
+    | '/settings/profile'
     | '/settings/security'
     | '/settings/tax-rates'
     | '/settings/theme'
@@ -608,7 +619,6 @@ export interface FileRouteTypes {
     | '/_terminal/settings/accounts'
     | '/_terminal/settings/categories'
     | '/_terminal/settings/debug-console'
-    | '/_terminal/settings/default-payment-method'
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/evolu-export'
@@ -617,9 +627,11 @@ export interface FileRouteTypes {
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
     | '/_terminal/settings/legal-entity'
+    | '/_terminal/settings/nostr-relays'
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
     | '/_terminal/settings/privacy'
+    | '/_terminal/settings/profile'
     | '/_terminal/settings/security'
     | '/_terminal/settings/tables'
     | '/_terminal/settings/tax-rates'
@@ -786,13 +798,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsDebugConsoleRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
-    '/_terminal/settings/default-payment-method': {
-      id: '/_terminal/settings/default-payment-method'
-      path: '/default-payment-method'
-      fullPath: '/settings/default-payment-method'
-      preLoaderRoute: typeof TerminalSettingsDefaultPaymentMethodRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
     '/_terminal/settings/donations': {
       id: '/_terminal/settings/donations'
       path: '/donations'
@@ -849,6 +854,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsLegalEntityRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/nostr-relays': {
+      id: '/_terminal/settings/nostr-relays'
+      path: '/nostr-relays'
+      fullPath: '/settings/nostr-relays'
+      preLoaderRoute: typeof TerminalSettingsNostrRelaysRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/payment-accounts': {
       id: '/_terminal/settings/payment-accounts'
       path: '/payment-accounts'
@@ -868,6 +880,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/settings/privacy'
       preLoaderRoute: typeof TerminalSettingsPrivacyRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/profile': {
+      id: '/_terminal/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof TerminalSettingsProfileRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/security': {
@@ -1083,7 +1102,6 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
   TerminalSettingsCategoriesRoute: typeof TerminalSettingsCategoriesRouteWithChildren
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
-  TerminalSettingsDefaultPaymentMethodRoute: typeof TerminalSettingsDefaultPaymentMethodRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
@@ -1092,9 +1110,11 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
+  TerminalSettingsNostrRelaysRoute: typeof TerminalSettingsNostrRelaysRoute
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
   TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
+  TerminalSettingsProfileRoute: typeof TerminalSettingsProfileRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsTablesRoute: typeof TerminalSettingsTablesRouteWithChildren
   TerminalSettingsTaxRatesRoute: typeof TerminalSettingsTaxRatesRoute
@@ -1109,8 +1129,6 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAccountsRoute: TerminalSettingsAccountsRoute,
   TerminalSettingsCategoriesRoute: TerminalSettingsCategoriesRouteWithChildren,
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
-  TerminalSettingsDefaultPaymentMethodRoute:
-    TerminalSettingsDefaultPaymentMethodRoute,
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
@@ -1119,10 +1137,12 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
   TerminalSettingsLegalEntityRoute: TerminalSettingsLegalEntityRoute,
+  TerminalSettingsNostrRelaysRoute: TerminalSettingsNostrRelaysRoute,
   TerminalSettingsPaymentAccountsRoute: TerminalSettingsPaymentAccountsRoute,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
   TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,
+  TerminalSettingsProfileRoute: TerminalSettingsProfileRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsTablesRoute: TerminalSettingsTablesRouteWithChildren,
   TerminalSettingsTaxRatesRoute: TerminalSettingsTaxRatesRoute,

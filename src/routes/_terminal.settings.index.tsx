@@ -4,7 +4,6 @@ import {
   ArrowUpFromLine,
   BadgeDollarSign,
   Bug,
-  CircleDollarSign,
   DatabaseBackup,
   FolderIcon,
   Globe,
@@ -16,6 +15,7 @@ import {
   Lock,
   Percent,
   Plug,
+  Radio,
   ReceiptText,
   ShieldCheck,
   ShoppingBag,
@@ -27,6 +27,7 @@ import type { ComponentProps } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
+import { MyAccountCard } from "@/features/settings/my-account/my-account-card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -108,22 +109,16 @@ const catalogSettings: ReadonlyArray<SettingRow> = [
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
   {
-    icon: CircleDollarSign,
-    title: "settings.defaultPaymentMethod.title",
-    description: "settings.defaultPaymentMethod.description",
-    to: "/settings/default-payment-method",
+    icon: Landmark,
+    title: "settings.paymentAccounts.title",
+    description: "settings.paymentAccounts.description",
+    to: "/settings/payment-accounts",
   },
   {
     icon: BadgeDollarSign,
     title: "settings.tips.title",
     description: "settings.tips.description",
     to: "/settings/tips",
-  },
-  {
-    icon: Landmark,
-    title: "settings.paymentAccounts.title",
-    description: "settings.paymentAccounts.description",
-    to: "/settings/payment-accounts",
   },
   {
     icon: ArrowDown,
@@ -217,6 +212,12 @@ const securitySettings: ReadonlyArray<SettingRow> = [
     description: "settings.security.description",
     to: "/settings/security",
   },
+  {
+    icon: Radio,
+    title: "settings.nostrRelays.title",
+    description: "settings.nostrRelays.description",
+    to: "/settings/nostr-relays",
+  },
 ]
 
 function SettingsPage() {
@@ -234,6 +235,8 @@ function SettingsPage() {
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.title")} />
+
+      <MyAccountCard />
 
       <VerticalNav title={t("settings.catalog")} items={catalogItems} />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />

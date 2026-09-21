@@ -35,5 +35,9 @@
     "remotion",
     "playwright.config.ts",
     "remotion.config.ts"
+  ],
+  "references": [
+    { "path": "./packages/linkshu" },
+    { "path": "./packages/linksync" }
   ]
 }

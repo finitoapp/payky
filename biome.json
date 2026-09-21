@@ -8,6 +8,8 @@
       "!.ai",
       "!skills",
       "!node_modules",
+      "!packages/linkshu",
+      "!packages/linksync",
       "!coverage",
       "!playwright-report",
       "!test-results",

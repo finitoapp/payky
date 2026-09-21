@@ -8,12 +8,9 @@ import {
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import {
-  type BankQrPayload,
-  isBankQrFormat,
-} from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import type { BankQrPayload } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
+import { QrModeToggle } from "@/features/payment-wait/payment-wait-qr-mode-toggle.tsx"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type { IbanPaidTabProps } from "@/features/payment-wait/payment-wait-types.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -61,28 +58,15 @@ export function IbanPaymentTab({
         preparingMessageKey={preparingMessageKey}
       />
       {qrPayloads.length > 1 ? (
-        <ToggleGroup<BankQrFormat>
-          value={[activeQrFormat]}
-          onValueChange={(value) => {
-            const [nextFormat] = value
-            if (isBankQrFormat(nextFormat)) {
-              onSelectQrFormat(nextFormat)
-            }
-          }}
-          variant="default"
-          className="h-11 rounded-full border border-black/15 bg-background p-1 px-1.5 text-muted-foreground dark:border-white/15"
-        >
-          {qrPayloads.map((payload) => (
-            <ToggleGroupItem
-              key={payload.format}
-              value={payload.format}
-              aria-label={t(`paymentWait.qrFormat.${payload.format}`)}
-              className="h-full min-w-12 -mx-0.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:bg-foreground data-[state=on]:text-background aria-pressed:bg-foreground aria-pressed:text-background dark:data-[state=on]:bg-white dark:data-[state=on]:text-black dark:aria-pressed:bg-white dark:aria-pressed:text-black"
-            >
-              {t(paymentWaitQrFormatShortLabelKeys[payload.format])}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        <QrModeToggle<BankQrFormat>
+          value={activeQrFormat}
+          onChange={onSelectQrFormat}
+          options={qrPayloads.map((payload) => ({
+            value: payload.format,
+            label: t(paymentWaitQrFormatShortLabelKeys[payload.format]),
+            ariaLabel: t(`paymentWait.qrFormat.${payload.format}`),
+          }))}
+        />
       ) : null}
       {detailsVisible && hasDetails ? (
         <div className="flex w-full max-w-xs flex-col gap-2">

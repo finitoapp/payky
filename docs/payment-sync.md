@@ -7,15 +7,18 @@ covers how one (and the `accountTransaction` behind it) gets created.
 
 ## Flow
 
-Both jobs do the same two things per item (FIO statement line / Spark
-transfer), as two **separately-awaited** writes, not one batch:
+Both jobs do the same two things per new item (FIO statement line / Spark
+transfer) in one mutation batch:
 
-1. **Record** → an `accountTransaction` row + kind detail row
+1. **Find candidate** → match an unclaimed `payment` by method identifiers
+   before writing, using the raw incoming item.
+2. **Record + reconcile** → an `accountTransaction` row + kind detail row
    (`accountTransactionIban` / `accountTransactionSpark`+`Lightning`/
-   `SparkInvoice`). The raw ledger fact, independent of any payment.
-2. **Reconcile** → match an unclaimed `payment` by method identifiers
-   (IBAN symbols / Spark invoice) and write a `reconciliationClaim`. This is
-   what makes a payment display **Paid**.
+   `SparkInvoice`) plus the optional `reconciliationClaim` and bill
+   `closedAt` cache. The claim makes a payment display **Paid**.
+
+Already-recorded transactions still run the standalone reconciliation step to
+repair rows created before this batching existed.
 
 ## Files
 
@@ -88,7 +91,7 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 
 | # | Issue | Status |
 |---|---|---|
-| 1 | Create + reconcile aren't atomic | mitigated — retried next sync |
+| 1 | Create + reconcile aren't atomic | resolved |
 | 2 | Lock-skipped item outside the lookback window | resolved |
 | 3 | No backoff on FIO errors other than 409 | open |
 | 4 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
@@ -97,15 +100,10 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 | 7 | Disposal doesn't await in-flight work | **partially resolved** |
 | 8 | One throwing queue key stalls its siblings | open — Spark's multi-key queue only |
 
-1. **Create + reconcile aren't atomic.** A crash between them leaves a
-   transaction recorded but unclaimed. Both jobs retry reconciliation for an
-   already-recorded row on the next sync (cheap: one already-claimed check),
-   so it self-heals instead of staying silently stuck — but the write itself
-   is still two batches. `markPaymentPaid` fixed the identical shape for its
-   own (search-free) case via `computeAccountTransactionRows`/
-   `upsertAccountTransactionRows` + `loadBillClosedAtForPayment`/
-   `upsertReconciliationClaimRows`; reusing that here would also need the
-   candidate *search* to run before the batch, not just the write.
+1. **Resolved.** The jobs compute the transaction id and find the candidate
+   before one mutation batch writes the transaction, optional claim, and bill
+   cache. The existing-row reconciliation retry remains for historical rows
+   created before this change.
 
 2. **Resolved.** If FIO skips a transaction because its advisory lock is
    held, it does not advance the sync pointer. The next interval retries the

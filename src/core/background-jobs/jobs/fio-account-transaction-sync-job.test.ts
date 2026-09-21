@@ -1,5 +1,5 @@
 import { sqliteTrue, testCreateConsole, testCreateRun } from "@evolu/common"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
@@ -129,7 +129,11 @@ describe("fio account transaction sync job", () => {
   test("downloads FIO transactions into IBAN account transactions without duplicates", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    })
     const errors: unknown[] = []
     const requestedUrls: string[] = []
     const accountId = await run.ok(
@@ -150,12 +154,30 @@ describe("fio account transaction sync job", () => {
         isActive: sqliteTrue,
       })
     )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(19_950),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        iban: {
+          accountId,
+          variableSymbol: VariableSymbol("123456"),
+          specificSymbol: SpecificSymbol("789"),
+        },
+      })
+    )
     await run.ok(
       addFioPluginToken({
         fioPluginId,
         token: NonEmptyString255("fio-token-1"),
       })
     )
+    const upsertSpy = vi.spyOn(evolu, "upsert")
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
@@ -203,6 +225,19 @@ describe("fio account transaction sync job", () => {
           lastSyncedDate: "2026-05-31",
         },
       ])
+    await expect
+      .poll(() =>
+        evolu.loadQuery(reconciliationClaimsByAccountIdQuery(accountId))
+      )
+      .toEqual([{ paymentId }])
+    const writeCalls = upsertSpy.mock.calls.filter(
+      (call) =>
+        call[0] === "accountTransaction" || call[0] === "reconciliationClaim"
+    )
+    const completions = new Set(writeCalls.map((call) => call[2]?.onComplete))
+    upsertSpy.mockRestore()
+    expect(writeCalls).toHaveLength(2)
+    expect(completions.size).toBe(1)
     expect(errors).toEqual([])
   })
 

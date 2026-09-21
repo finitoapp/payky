@@ -14,9 +14,18 @@ import {
   sparkAccountSyncPointerByAccountIdQuery,
 } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  type CreateAccountTransactionInput,
+  computeAccountTransactionRows,
+  upsertAccountTransactionRows,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionSparkByTransferIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
-import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import {
+  loadAutomaticReconciliationClaimForNewAccountTransaction,
+  loadBillClosedAtForPayment,
+  reconcileAccountTransaction,
+  upsertReconciliationClaimRows,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
@@ -90,7 +99,7 @@ type RecordTransferResult =
   | "ignored"
   | "lock-unavailable"
 
-type SparkTransactionInput = Parameters<typeof createAccountTransaction>[0]
+type SparkTransactionInput = CreateAccountTransactionInput
 type SparkTransactionInputError = "missing-spark-identifier"
 
 export const createSparkAccountTransactionSyncJob =
@@ -322,12 +331,40 @@ const createSparkAccountSyncSession = ({
           return "ignored"
         }
 
-        const accountTransactionId = await run.ok(
-          createAccountTransaction(input.value)
+        const accountTransaction = computeAccountTransactionRows(
+          input.value,
+          run.deps.date.now()
         )
-        const paymentId = await run.ok(
-          reconcileAccountTransaction(accountTransactionId)
+        const claim = await run.ok(
+          loadAutomaticReconciliationClaimForNewAccountTransaction(
+            input.value,
+            accountTransaction.id
+          )
         )
+        const billClosing =
+          claim === null
+            ? null
+            : await run.ok(
+                loadBillClosedAtForPayment(
+                  claim.paymentId,
+                  accountTransaction.id
+                )
+              )
+
+        await runMutationWithCompletion((options) => {
+          upsertAccountTransactionRows(run.deps.evolu, accountTransaction, {
+            ...options,
+            ownerId: run.deps.evoluOwnerId,
+          })
+          if (claim !== null) {
+            upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
+              ...options,
+              ownerId: run.deps.evoluOwnerId,
+            })
+          }
+        })
+        const accountTransactionId = accountTransaction.id
+        const paymentId = claim?.paymentId ?? null
         run.deps.console.info("Created Spark account transaction.", {
           accountId: account.id,
           accountTransactionId,

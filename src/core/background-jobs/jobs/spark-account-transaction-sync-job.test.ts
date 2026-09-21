@@ -5,7 +5,7 @@ import {
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { testCreateConsole, testCreateRun } from "@evolu/common"
 import { subHours } from "date-fns"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import type { FetchDep } from "@/core/deps.ts"
@@ -230,7 +230,11 @@ describe("spark account transaction sync job", () => {
   test("stores completed Spark transfers from the periodic history check without duplicates", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    })
     const errors: unknown[] = []
     const secret = createUniqueSecret()
     const accountId = await run.ok(
@@ -243,11 +247,37 @@ describe("spark account transaction sync job", () => {
       })
     )
     const transferId = `spark-transfer-${accountId}`
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        spark: {
+          accountId,
+          amountSats: NonNegativeInteger(1_234),
+          exchangeRate: PositiveNumber(1_500_000),
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc1invoice"),
+            lightningReceiveRequestId: null,
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
+            paymentPreimage: null,
+          },
+        },
+      })
+    )
     const wallet = new FakeSparkWallet([
       createCompletedTransfer({
         id: transferId,
       }),
     ])
+    const upsertSpy = vi.spyOn(evolu, "upsert")
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
       evolu,
@@ -262,7 +292,7 @@ describe("spark account transaction sync job", () => {
     await using _job = await jobRun.ok(
       createSparkAccountTransactionSyncJob({
         walletFactory: createFakeWalletFactory(secret, wallet),
-        recheckIntervalMs: 10,
+        recheckIntervalMs: 60_000,
       })
     )
 
@@ -283,11 +313,19 @@ describe("spark account transaction sync job", () => {
         },
       ])
 
-    await new Promise((resolve) => setTimeout(resolve, 30))
-
-    expect(
-      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
-    ).toHaveLength(1)
+    await expect
+      .poll(() =>
+        evolu.loadQuery(reconciliationClaimsByAccountIdQuery(accountId))
+      )
+      .toEqual([{ paymentId }])
+    const writeCalls = upsertSpy.mock.calls.filter(
+      (call) =>
+        call[0] === "accountTransaction" || call[0] === "reconciliationClaim"
+    )
+    const completions = new Set(writeCalls.map((call) => call[2]?.onComplete))
+    upsertSpy.mockRestore()
+    expect(writeCalls).toHaveLength(2)
+    expect(completions.size).toBe(1)
     expect(errors).toEqual([])
   })
 

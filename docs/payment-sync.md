@@ -5,7 +5,8 @@ IBAN statements) and Spark (Bitcoin/Lightning wallet transfers) — turn
 external activity into local data, and catalogs the edge cases that follow
 from that design. Read it before changing anything under
 `src/core/background-jobs/`, `fio-plugin-actions.ts`/`fio-plugin-queries.ts`,
-`account-transaction-actions.ts`, or `reconciliation-claim-actions.ts`.
+`account-transaction-actions.ts`, `reconciliation-claim-actions.ts`, or the
+Spark sync pointer in `account.ts`/`account-spark-queries.ts`.
 
 It complements `docs/bill-payment-states.md`: that document specifies what a
 `reconciliationClaim` means to a payment's status and a bill's coverage; this
@@ -46,6 +47,8 @@ below for what that implies.
 | `src/core/modules/reconciliation-claim/reconciliation-claim-actions.ts` | `reconcileAccountTransaction` — the "reconcile" step. |
 | `src/core/integrations/fio/fio-client.ts` | The FIO HTTP client (statement fetch, token handling, error types). |
 | `src/core/spark/spark-wallet.ts` | The pooled, ref-counted Spark SDK wrapper (`createSharedSparkSyncWallet`). |
+| `src/core/modules/account/account.ts` | The `sparkAccountSyncPointer` table (mirrors `fioPluginSyncPointer` in `fio-plugin.ts`). |
+| `src/core/modules/account/account-spark-queries.ts` / `account-actions.ts` | `sparkAccountSyncPointerByAccountIdQuery`, `updateSparkAccountSyncPointer` — the manual-override path (settings UI, CLI) for that pointer. |
 | `src/components/app/app-background-jobs.tsx` | Where the jobs actually get started/stopped, once per app mount. |
 
 ## Runtime & lifecycle
@@ -225,8 +228,8 @@ A `recheckTimer` (default 60s, `DEFAULT_RECHECK_INTERVAL_MS`, overridable
 through the job's own options but not exposed in any settings UI) queues a
 full history sync for **every** currently active session on a fixed cadence,
 independent of wallet events — a belt-and-braces net against a missed SDK
-event, at the cost described in ["Spark's full-history rescan never
-shrinks"](#sparks-full-history-rescan-never-shrinks).
+event. See ["Bounding the periodic
+rescan"](#bounding-the-periodic-rescan) for how big that sync actually is.
 
 Each account session (`createSparkAccountSyncSession`):
 
@@ -243,12 +246,16 @@ Each account session (`createSparkAccountSyncSession`):
   sync for just that transfer id (`syncTransferById` — fetches one transfer,
   records it); `balance:update` and `deposit:confirmed` both queue a **full**
   history sync.
-- **Full history sync** (`syncHistory`): pages through the wallet's entire
-  transfer list from `offset = 0` every time via `getTransfers(50, offset)`,
-  running every transfer through `recordTransfer`, until a page comes back
-  empty or the SDK stops advancing the offset. There is no persisted cursor —
-  see ["Spark's full-history rescan never
-  shrinks"](#sparks-full-history-rescan-never-shrinks).
+- **Full history sync** (`syncHistory`): pages through the wallet's transfer
+  list via `getTransfers(50, offset, createdAfter)`, running every transfer
+  through `recordTransfer`, until a page comes back empty or the SDK stops
+  advancing the offset. `createdAfter` bounds the sweep on every sync after
+  the first — see ["Bounding the periodic
+  rescan"](#bounding-the-periodic-rescan) for how, and for the one thing this
+  doesn't cover.
+- **Saves the sync pointer** (`sparkAccountSyncPointer.lastSyncedAt =`
+  the moment the sweep *started*, mirroring FIO's `saveSyncPointer`) once the
+  loop above finishes, unless the session was disposed mid-sweep.
 - **`recordTransfer`** is the Spark equivalent of FIO's `recordTransaction`:
   - Ignores anything that isn't `TRANSFER_STATUS_COMPLETED` with a positive
     value (`shouldRecordTransfer`) — pending, failed, and zero-value
@@ -361,9 +368,20 @@ permanently and silently unreconciled. Removing the window entirely would
 mean folding both writes into one batch, which would need the reconciliation
 candidate lookup restructured to run on the transaction's own values instead
 of an already-persisted row (the candidate queries currently join against
-`accountTransaction` by id) — a larger change shared with the same pattern
-in `markPaymentPaidCash`/`payment-actions.ts`, out of scope for either sync
-job alone.
+`accountTransaction` by id) — a larger change than either sync job alone
+warrants.
+
+`markPaymentPaid` (`payment-actions.ts`) had the identical shape and *was*
+fixed this way, since its claim is always for one already-known `paymentId`
+with no candidate search to restructure:
+`computeAccountTransactionRows`/`upsertAccountTransactionRows`
+(`account-transaction-actions.ts`) and
+`loadBillClosedAtForPayment`/`upsertReconciliationClaimRows`
+(`reconciliation-claim-actions.ts`) split each write into a compute/load step
+and a plain-upsert step, so the caller can run both computations up front and
+commit everything in one batch. Reusable in principle, but a genuine fix here
+would still need the *search* — not just the write — to run before that
+batch opens, which these two building blocks don't address by themselves.
 
 ### Lock-skipped transactions older than the lookback window are lost forever
 
@@ -389,18 +407,41 @@ retried at the plugin's ordinary fixed interval — every 30 seconds by
 default — with no backoff. A token stuck needing re-authorization produces a
 steady stream of reported errors until someone fixes it in FIO's portal.
 
-### Spark's full-history rescan never shrinks
+### Bounding the periodic rescan
 
-`syncHistory` always starts at `offset = 0` and walks the *entire* transfer
-list, for every full sync — triggered by the 60-second recheck timer for
-every active account, and by `balance:update`/`deposit:confirmed` events on
-top of that. The underlying wallet wrapper supports a `createdAfter`
-parameter (`SharedSparkSyncWallet.getTransfers`), but the job never passes
-it — there is no persisted high-water mark the way FIO has
-`fioPluginSyncPointer`. Each already-recorded transfer's `recordTransfer`
-call is cheap (a single indexed existence check, short-circuiting before any
-write), but the cost still grows linearly with the account's lifetime
-transfer count and repeats at least once a minute, forever.
+**Resolved.** `syncHistory` used to always start at `offset = 0` and walk the
+*entire* transfer list on every sync — triggered by the 60-second recheck
+timer for every active account, and by `balance:update`/`deposit:confirmed`
+events on top of that — with cost growing linearly with the account's
+lifetime transfer count, forever. It now reads a per-account high-water mark
+(`sparkAccountSyncPointer.lastSyncedAt`, a new table mirroring FIO's
+`fioPluginSyncPointer`) and passes `createdAfter = lastSyncedAt -
+SPARK_SYNC_LOOKBACK_HOURS` (72h) to `getTransfers`, so every sync after the
+first only walks a bounded recent window instead of the account's whole
+history. The pointer is only ever missing on a genuinely first-ever sync,
+which still scans unbounded — same trade-off FIO makes with its own
+`FIO_FIRST_SYNC_LOOKBACK_MONTHS`.
+
+The lookback window exists for the same reason FIO's does (a device offline
+for a while), plus one Spark-specific reason FIO doesn't have: a transfer's
+own `createdTime` — what the SDK's `createdAfter` filters on — can predate
+when it actually finishes. An on-chain deposit is created, then sits pending
+until `deposit:confirmed` fires, possibly hours later; a watermark built from
+*when it was last seen* rather than *the clock* would permanently exclude a
+transfer that was already old when it finally completed. 72 hours is a
+deliberately generous, hardcoded guess at how long that gap can be — there's
+no measured SLA behind it, so treat it as a starting point, not a verified
+bound.
+
+`sparkAccountSyncPointer.lastSyncedAt` is also editable through the Spark
+account settings card (`InlineEditField`, day granularity) and through
+`bin/cli-accounts.ts`'s `set-spark-sync-pointer`/`reset-spark-sync-pointer` —
+mainly to force a wider rescan for support/debugging. Its effective window is
+narrow while the account is actually active, though: every successful
+`syncHistory` run — including one triggered moments later by a real wallet
+event or the next 60-second tick — overwrites it with "now" again, so a
+manual edit only has a real chance to matter if it lands right before the
+one sweep it's meant to widen.
 
 ### Transfers with no Lightning or Spark invoice never enter the ledger
 
@@ -438,16 +479,40 @@ the bill's coverage), not prevented at reconciliation time.
 
 ### Disposal doesn't wait for in-flight work
 
-`createKeyedTaskQueue`'s `[Symbol.dispose]` only flips a flag and clears
-pending work — it cannot interrupt an `await currentWork()` already running.
-Both jobs' session disposers proceed to release resources (the Spark wallet
-lease, in particular) right after that, without waiting for whatever the
-queue was in the middle of. In practice this mostly matters for the
-same-device race described in ["The multi-device concurrency
-model"](#the-multi-device-concurrency-model): a session recreated by
-`reconcileAccountSyncSessions` (a FIO token added, a Spark account's secret
-rotated) can have its predecessor's in-flight write still landing after the
-new session has already started its own.
+**Partially resolved.** `createKeyedTaskQueue`'s `[Symbol.dispose]` still
+only flips a flag and clears pending work — it cannot interrupt an `await
+currentWork()` already running, and disposing a session still doesn't wait
+for the queue's own drain loop to actually stop. That half is unchanged.
+
+What changed: `createAccountTransaction`/`reconcileAccountTransaction` (and
+FIO's per-tick statement fetch) used to run through a `createRun(...)` call
+per invocation — a detached root outside any tracked tree, invisible to
+disposal no matter what was in flight, and never disposed itself (`createRun`
+is documented for composition roots only, one per app, not one per
+transaction). Both jobs now compose through one `run.create()` scope per job
+instead (held as `jobRun`, disposed via an `AsyncDisposableStack` alongside
+the job's own session teardown), and every one of those calls is a real
+child Task of it.
+Evolu's own disposal semantics for a `DisposableRun` say async disposal
+"aborts running Tasks... and waits for running Tasks to settle" — so
+disposing `jobRun` now does wait for whatever `createAccountTransaction`/
+`reconcileAccountTransaction` call happens to be in flight at that exact
+moment, where before there was nothing tying it to disposal at all.
+
+What this doesn't cover: disposal order still runs the queue's own
+`[Symbol.dispose]` first, which only flips its flag — the *outer*
+`syncTransactions`/`recordTransfer`/`syncHistory` function bodies (the loops,
+the logging, the lock acquisition between child-Task calls) aren't
+themselves Tasks `jobRun` tracks, so there's nothing for `jobRun`'s disposal
+to wait for during those stretches. If the queue's drain loop reaches a
+*new* child-Task call after `jobRun` is already disposed, that call now
+throws (`assertNotDisposed`) instead of silently writing — reported through
+`onError` rather than invisible, which is a real improvement in
+observability, but not the same as disposal blocking until the whole session
+is quiescent. The same-device race this section originally described — a
+session recreated by `reconcileAccountSyncSessions` (a FIO token added, a
+Spark account's secret rotated) racing its predecessor's in-flight write —
+is narrowed by this, not eliminated.
 
 ### One throwing key can stall a multi-keyed queue
 

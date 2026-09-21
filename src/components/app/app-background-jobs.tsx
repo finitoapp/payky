@@ -14,12 +14,8 @@ export function AppBackgroundJobs() {
   const console = useConsole()
 
   useEffect(() => {
-    const disposeJobs = (disposable: AsyncDisposable): void => {
-      void Promise.resolve(disposable[Symbol.asyncDispose]()).catch(
-        (error: unknown) => {
-          console.error("Failed to stop background jobs.", error)
-        }
-      )
+    const disposeJobs = async (disposable: AsyncDisposable): Promise<void> => {
+      await disposable[Symbol.asyncDispose]()
     }
 
     let isDisposed = false
@@ -36,7 +32,7 @@ export function AppBackgroundJobs() {
       },
     })
 
-    void (async () => {
+    const startJobs = async (): Promise<void> => {
       try {
         const startedJobsDisposable = await run.ok(
           runBackgroundJobs(
@@ -44,7 +40,7 @@ export function AppBackgroundJobs() {
           )
         )
         if (isDisposed) {
-          disposeJobs(startedJobsDisposable)
+          await disposeJobs(startedJobsDisposable)
           return
         }
 
@@ -54,12 +50,20 @@ export function AppBackgroundJobs() {
           console.error("Failed to start background jobs.", error)
         }
       }
-    })()
+    }
+    const startingJobs = startJobs()
 
     return () => {
       isDisposed = true
-      if (jobsDisposable !== null) disposeJobs(jobsDisposable)
-      void run[Symbol.asyncDispose]()
+      void (async () => {
+        try {
+          await startingJobs
+          if (jobsDisposable !== null) await disposeJobs(jobsDisposable)
+          await run[Symbol.asyncDispose]()
+        } catch (error) {
+          console.error("Failed to stop background jobs.", error)
+        }
+      })()
     }
   }, [console, evolu])
 

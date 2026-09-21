@@ -153,13 +153,12 @@ describe("createKeyedTaskQueue", () => {
   test("continues processing after error", async () => {
     const errors: unknown[] = []
     const queue = createKeyedTaskQueue({ onError: (e) => errors.push(e) })
+    const firstError = new Error("First error")
     let secondExecuted = false
 
     queue.enqueue("first", async () => {
-      throw new Error("First error")
+      throw firstError
     })
-
-    await delay(0)
 
     queue.enqueue("second", async () => {
       secondExecuted = true
@@ -167,6 +166,7 @@ describe("createKeyedTaskQueue", () => {
 
     await delay(0)
     expect(secondExecuted).toBe(true)
+    expect(errors).toEqual([firstError])
   })
 
   test("isDisposed is false initially", () => {

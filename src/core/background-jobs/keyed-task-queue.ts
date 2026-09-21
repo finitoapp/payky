@@ -36,10 +36,12 @@ export const createKeyedTaskQueue = <TKey extends string = string>(
           const currentWork = queue.get(currentKey)
           queue.delete(currentKey)
           if (currentWork === undefined) continue
-          await currentWork()
+          try {
+            await currentWork()
+          } catch (error) {
+            deps.onError(error)
+          }
         }
-      } catch (error) {
-        deps.onError(error)
       } finally {
         running = false
       }

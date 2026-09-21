@@ -91,45 +91,11 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 
 | # | Issue | Status |
 |---|---|---|
-| 1 | Create + reconcile aren't atomic | resolved |
-| 2 | Lock-skipped item outside the lookback window | resolved |
-| 3 | No backoff on FIO errors other than 409 | resolved |
-| 4 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
-| 5 | Ambiguous candidate ties | open — `payment.id` order decides |
-| 6 | Canceled-payment collision | open — resolved at display time only |
-| 7 | Disposal doesn't await in-flight work | resolved |
-| 8 | One throwing queue key stalls its siblings | resolved |
+| 1 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
+| 2 | Ambiguous candidate ties | open — `payment.id` order decides |
 
-1. **Resolved.** The jobs compute the transaction id and find the candidate
-   before one mutation batch writes the transaction, optional claim, and bill
-   cache. The existing-row reconciliation retry remains for historical rows
-   created before this change.
-
-2. **Resolved.** If FIO skips a transaction because its advisory lock is
-   held, it does not advance the sync pointer. The next interval retries the
-   same window; already-recorded transactions remain deduplicated by bank
-   reference.
-
-3. **Resolved.** FIO applies exponential per-plugin backoff after each
-   non-`409` failure, capped at 15 minutes. A successful or rate-limited sync
-   resets the backoff.
-
-4. **By design**, not a bug: `assertHasSparkIdentifier` is a domain
+1. **By design**, not a bug: `assertHasSparkIdentifier` is a domain
    invariant enforced inside `createAccountTransaction` itself.
 
-5. **Ties.** IBAN candidate: same VS/SS/amount on two open payments. Cash
+2. **Ties.** IBAN candidate: same VS/SS/amount on two open payments. Cash
    candidate: same amount (currently unreachable, see the table above).
-
-6. **Canceled-payment collision.** None of the three candidate queries
-   filter `canceledAt`. Same collision `bill-payment-states.md` documents
-   for the manual path; resolved there by display precedence, not prevented
-   here.
-
-7. **Resolved.** Async disposal clears each queue's pending work and awaits
-   the running item. FIO/Spark sessions propagate that wait, and the app
-   waits for jobs before disposing their parent `Run`. Disposal remains
-   graceful rather than interrupting an active network or database call.
-
-8. **Resolved.** `createKeyedTaskQueue` catches errors per item, reports
-   them, and continues draining sibling keys. This matters for Spark's
-   per-account `"history"` + `` `transfer:${id}` `` queue.

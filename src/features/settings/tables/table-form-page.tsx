@@ -46,6 +46,7 @@ import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -109,7 +110,7 @@ function EditTablePageContent({ tableId }: { readonly tableId: TableIdType }) {
  * in place yet, so it validates both fields at once and only then inserts.
  */
 function CreateTableForm() {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const router = useRouter()
   const { t } = useTranslation()
   const formId = useId()
@@ -146,9 +147,8 @@ function CreateTableForm() {
           return
         }
 
-        void submit(async () => {
-          try {
-            await using run = appRun()
+        void submit(() =>
+          runToast(async (run) => {
             await run.ok(
               createTableAtEnd({
                 deviceId: null,
@@ -156,12 +156,9 @@ function CreateTableForm() {
                 seatCount: PositiveInteger(parsedSeatCount),
               })
             )
-          } catch {
-            toast.error(t("settings.saveFailed"))
-            return false
-          }
-          router.history.back()
-        })
+            router.history.back()
+          })
+        )
       }}
     >
       <FieldGroup>

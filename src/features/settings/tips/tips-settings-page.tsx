@@ -1,7 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -32,9 +31,9 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
@@ -74,7 +73,7 @@ export function TipsSettingsPage() {
 }
 
 function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { t } = useTranslation()
   const locale = useLocale()
   const formId = useId()
@@ -162,9 +161,8 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
       onSubmit={(event) => {
         event.preventDefault()
 
-        void submit(async () => {
-          try {
-            await using run = appRun()
+        void submit(() =>
+          runToast(async (run) => {
             await run.ok(
               updateTipSettings({
                 enabled,
@@ -172,11 +170,8 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
                 percentages,
               })
             )
-          } catch {
-            toast.error(t("settings.saveFailed"))
-            return false
-          }
-        })
+          })
+        )
       }}
     >
       <FieldGroup>

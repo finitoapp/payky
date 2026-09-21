@@ -2,7 +2,6 @@ import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useId, useState } from "react"
-import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
@@ -53,17 +52,17 @@ import {
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function OnboardingPage() {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const navigate = useNavigate()
   const setLanguage = useSetLanguage()
   const setLocale = useSetLocale()
@@ -162,10 +161,9 @@ export function OnboardingPage() {
 
   const finishOnboarding = async () => {
     setFinishing(true)
-    try {
-      setLocale(getDeviceLocaleForLanguage(language))
 
-      await using run = appRun()
+    const succeeded = await runToast(async (run) => {
+      setLocale(getDeviceLocaleForLanguage(language))
 
       // A restored account whose first sync hasn't finished yet can briefly
       // land back in onboarding (see the TODO in `_terminal.tsx`). Guard
@@ -188,8 +186,9 @@ export function OnboardingPage() {
       // `saveCashRegisterAccount`/`saveSparkAccount`/`saveFiatBankAccount` can
       // return `DefaultPaymentMethodCannotBeDisabledError` (a restored account
       // landing back in onboarding, see the race note above, can already have
-      // one of these set as the default). `run.orThrow` turns that into the
-      // catch below instead of silently leaving the account half-updated.
+      // one of these set as the default). `run.orThrow` turns that into
+      // `runToast`'s fallback toast instead of silently leaving the account
+      // half-updated.
       await run.orThrow(
         saveCashRegisterAccount({
           enabled: selectedPaymentMethods.has("cash"),
@@ -219,14 +218,13 @@ export function OnboardingPage() {
           ),
         })
       )
+    })
 
-      setForm(initialOnboardingFormState)
-      await navigate({ to: "/", replace: true })
-    } catch {
-      toast.error(t("settings.saveFailed"))
-    } finally {
-      setFinishing(false)
-    }
+    setFinishing(false)
+    if (!succeeded) return
+
+    setForm(initialOnboardingFormState)
+    await navigate({ to: "/", replace: true })
   }
 
   const restoreExistingAccount = async () => {

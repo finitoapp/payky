@@ -1,6 +1,7 @@
 import { sqliteTrue } from "@evolu/common"
 import { PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
+import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -162,15 +163,19 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
         event.preventDefault()
 
         void submit(async () => {
-          await using run = appRun()
-
-          await run(
-            updateTipSettings({
-              enabled,
-              fixedAmounts,
-              percentages,
-            })
-          )
+          try {
+            await using run = appRun()
+            await run.ok(
+              updateTipSettings({
+                enabled,
+                fixedAmounts,
+                percentages,
+              })
+            )
+          } catch {
+            toast.error(t("settings.saveFailed"))
+            return false
+          }
         })
       }}
     >

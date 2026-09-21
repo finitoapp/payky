@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useId, useState } from "react"
+import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
@@ -179,30 +180,35 @@ export function OnboardingPage() {
 
       const persistedCountry = country === "OTHER" ? null : country
       if (existingLegalEntity.length === 0) {
-        await run(setLegalEntity({ country: persistedCountry, vatPayer }))
+        await run.ok(setLegalEntity({ country: persistedCountry, vatPayer }))
       }
       if (existingTaxRates.length === 0) {
-        await run(seedTaxRatesForCountry(persistedCountry))
+        await run.ok(seedTaxRatesForCountry(persistedCountry))
       }
-      await run(
+      // `saveCashRegisterAccount`/`saveSparkAccount`/`saveFiatBankAccount` can
+      // return `DefaultPaymentMethodCannotBeDisabledError` (a restored account
+      // landing back in onboarding, see the race note above, can already have
+      // one of these set as the default). `run.orThrow` turns that into the
+      // catch below instead of silently leaving the account half-updated.
+      await run.orThrow(
         saveCashRegisterAccount({
           enabled: selectedPaymentMethods.has("cash"),
           currency: selectedCurrency,
         })
       )
-      await run(
+      await run.orThrow(
         saveSparkAccount({
           enabled: selectedPaymentMethods.has("btc"),
         })
       )
-      await run(
+      await run.orThrow(
         saveFiatBankAccount({
           enabled: ibanEnabled,
           iban: ibanParseResult?.success ? ibanParseResult.data : undefined,
           currency: selectedCurrency,
         })
       )
-      await run(
+      await run.ok(
         completeOnboarding({
           fiatCurrency: selectedCurrency,
           defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
@@ -216,6 +222,8 @@ export function OnboardingPage() {
 
       setForm(initialOnboardingFormState)
       await navigate({ to: "/", replace: true })
+    } catch {
+      toast.error(t("settings.saveFailed"))
     } finally {
       setFinishing(false)
     }

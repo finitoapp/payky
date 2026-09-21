@@ -1,6 +1,7 @@
 import { useRouter } from "@tanstack/react-router"
 import { ScanLineIcon, Trash2Icon } from "lucide-react"
 import { useId, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -267,22 +268,27 @@ function CreateCatalogItemForm({
           const values = parsed.value
 
           void submit(async () => {
-            await using run = appRun()
-            await run(
-              createCatalogItemAtEnd({
-                deviceId: null,
-                categoryId: categoryId === NO_OPTION ? null : categoryId,
-                name: values.name,
-                description: values.description,
-                internalName: values.internalName,
-                internalDescription: values.internalDescription,
-                sku: values.sku,
-                currency,
-                unitAmount: values.price,
-                scanCode: values.scanCode,
-                taxRateId: taxRateId === NO_OPTION ? null : taxRateId,
-              })
-            )
+            try {
+              await using run = appRun()
+              await run.ok(
+                createCatalogItemAtEnd({
+                  deviceId: null,
+                  categoryId: categoryId === NO_OPTION ? null : categoryId,
+                  name: values.name,
+                  description: values.description,
+                  internalName: values.internalName,
+                  internalDescription: values.internalDescription,
+                  sku: values.sku,
+                  currency,
+                  unitAmount: values.price,
+                  scanCode: values.scanCode,
+                  taxRateId: taxRateId === NO_OPTION ? null : taxRateId,
+                })
+              )
+            } catch {
+              toast.error(t("settings.saveFailed"))
+              return false
+            }
             router.history.back()
           })
         }}

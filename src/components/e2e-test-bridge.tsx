@@ -169,18 +169,18 @@ export function E2eTestBridge() {
       const fiatCurrency = options?.fiatCurrency ?? FiatCurrency.USD
       await using run = appRun()
 
-      await run(
+      await run.orThrow(
         saveCashRegisterAccount({ enabled: true, currency: fiatCurrency })
       )
-      await run(saveSparkAccount({ enabled: sparkEnabled }))
-      await run(
+      await run.orThrow(saveSparkAccount({ enabled: sparkEnabled }))
+      await run.orThrow(
         saveFiatBankAccount({
           enabled: true,
           iban: BankAccountInputIbanSchema.parse("CZ6508000000192000145399"),
           currency: fiatCurrency,
         })
       )
-      await run(
+      await run.ok(
         completeOnboarding({
           fiatCurrency,
           defaultPaymentMethod: "cashRegister",

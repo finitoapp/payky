@@ -32,7 +32,7 @@ export function useConfirmedRun() {
 
       try {
         await using run = appRun()
-        await run(task)
+        await run.ok(task)
         return true
       } catch {
         toast.error(t("settings.saveFailed"))

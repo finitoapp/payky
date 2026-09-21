@@ -98,7 +98,7 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 | 5 | Ambiguous candidate ties | open — `payment.id` order decides |
 | 6 | Canceled-payment collision | open — resolved at display time only |
 | 7 | Disposal doesn't await in-flight work | resolved |
-| 8 | One throwing queue key stalls its siblings | open — Spark's multi-key queue only |
+| 8 | One throwing queue key stalls its siblings | resolved |
 
 1. **Resolved.** The jobs compute the transaction id and find the candidate
    before one mutation batch writes the transaction, optional claim, and bill
@@ -129,9 +129,6 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
    waits for jobs before disposing their parent `Run`. Disposal remains
    graceful rather than interrupting an active network or database call.
 
-8. **Multi-key queue stall.** `createKeyedTaskQueue`'s drain loop wraps its
-   whole `while` in one `try`/`catch` — one throwing key aborts the loop,
-   stranding sibling keys until something unrelated re-enqueues. FIO's
-   queues only ever hold one key, so this doesn't bite there; Spark's
-   per-account queue (`"history"` + `` `transfer:${id}` ``) can stall until
-   the next recheck tick or event.
+8. **Resolved.** `createKeyedTaskQueue` catches errors per item, reports
+   them, and continues draining sibling keys. This matters for Spark's
+   per-account `"history"` + `` `transfer:${id}` `` queue.

@@ -48,6 +48,16 @@ import {
 type Context = BackgroundJobContext & FetchDep & DateDep
 
 const FIO_FIRST_SYNC_LOOKBACK_MONTHS = 2
+const FIO_MAX_RETRY_BACKOFF_MS = 15 * 60 * 1000
+
+export const getFioRetryBackoffMs = (
+  checkIntervalSeconds: number,
+  failedSyncCount: number
+): number =>
+  Math.min(
+    checkIntervalSeconds * 1000 * 2 ** (failedSyncCount - 1),
+    FIO_MAX_RETRY_BACKOFF_MS
+  )
 
 const loadActiveFioPlugins = (deps: Context) =>
   deps.evolu.loadQuery(activeFioPluginsQuery)
@@ -166,6 +176,8 @@ class FioPluginSync {
   private readonly run: Run<Context>
   private readonly plugin: ActiveFioPluginWithTokens
   private readonly fioApiDep: FioApiDep
+  private failedSyncCount = 0
+  private nextRetryAt: number | null = null
   private readonly syncQueue = createKeyedTaskQueue<"sync">({
     onError: (error) => this.run.deps.onError(error),
   })
@@ -209,10 +221,37 @@ class FioPluginSync {
   }
 
   private queueSync(): void {
+    if (
+      this.nextRetryAt !== null &&
+      this.run.deps.date.now().getTime() < this.nextRetryAt
+    )
+      return
     this.syncQueue.enqueue("sync", () => this.syncTransactions())
   }
 
   private async syncTransactions(): Promise<void> {
+    try {
+      await this.syncTransactionsOnce()
+      this.failedSyncCount = 0
+      this.nextRetryAt = null
+    } catch (error) {
+      this.failedSyncCount += 1
+      const retryInMs = getFioRetryBackoffMs(
+        this.plugin.numberOfSecondsBetweenChecks,
+        this.failedSyncCount
+      )
+      this.nextRetryAt = this.run.deps.date.now().getTime() + retryInMs
+      this.run.deps.console.warn("Delayed FIO sync after a failed attempt.", {
+        accountId: this.plugin.accountId,
+        failedSyncCount: this.failedSyncCount,
+        pluginId: this.plugin.id,
+        retryInMs,
+      })
+      throw error
+    }
+  }
+
+  private async syncTransactionsOnce(): Promise<void> {
     const period = await this.getSyncPeriod()
     this.run.deps.console.info("Started FIO transaction sync.", {
       accountId: this.plugin.accountId,

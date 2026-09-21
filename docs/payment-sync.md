@@ -160,14 +160,3 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 10. **Resolved.** Per-transaction `createRun(...)` calls were detached roots
     (see #8) — never disposed, invisible to the job's own teardown. Fixed by
     the same `run.create()` change.
-
-## Tests
-
-- `jobs/fio-account-transaction-sync-job.test.ts` — token rotation, rate
-  limiting, IBAN mismatch, sync-pointer math, reconciliation retry.
-- `jobs/spark-account-transaction-sync-job.test.ts` — history sync,
-  live event-driven sync, dispose cleanup, reconciliation retry.
-- `keyed-task-queue.test.ts`, `reconcile-account-sync-sessions.test.ts` —
-  shared primitives in isolation.
-- `reconciliation-claim/reconciliation-claim-actions.test.ts` — candidate
-  matching for all three kinds, in isolation.

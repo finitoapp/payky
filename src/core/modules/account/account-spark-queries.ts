@@ -43,3 +43,16 @@ export const activeSparkAccountByIdQuery = (accountId: AccountId) =>
         secret: KyselyNotNull
       }>()
   )
+
+export const sparkAccountSyncPointerByAccountIdQuery = (accountId: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("sparkAccountSyncPointer")
+      .select(["id", "lastSyncedAt"])
+      .where("id", "=", accountId)
+      .where("lastSyncedAt", "is not", null)
+      .where("isDeleted", "is not", 1)
+      .$narrowType<{
+        lastSyncedAt: KyselyNotNull
+      }>()
+  )

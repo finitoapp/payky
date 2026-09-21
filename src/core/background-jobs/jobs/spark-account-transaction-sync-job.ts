@@ -1,5 +1,6 @@
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { err, ok, type Result, type Run } from "@evolu/common"
+import { subHours } from "date-fns"
 import { z } from "zod"
 
 import type {
@@ -8,11 +9,18 @@ import type {
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { reconcileAccountSyncSessions } from "@/core/background-jobs/reconcile-account-sync-sessions.ts"
-import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
+import {
+  activeSparkAccountsQuery,
+  sparkAccountSyncPointerByAccountIdQuery,
+} from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionSparkByTransferIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
   IntegerSchema,
@@ -27,6 +35,15 @@ import {
 
 const DEFAULT_RECHECK_INTERVAL_MS = 60_000
 const TRANSFER_PAGE_SIZE = 50
+// Bounds the periodic full rescan's `createdAfter` overlap: how long a
+// completed transfer's own `createdTime` may lag behind when the SDK first
+// reports it as done (an on-chain deposit can sit pending for a while after
+// creation before `deposit:confirmed` fires) — see docs/payment-sync.md and
+// issues.md #30. The event-driven paths (`transfer:claimed`, and this
+// account's own `balance:update`/`deposit:confirmed` triggering a full
+// rescan) are the primary way a transfer gets recorded promptly; this window
+// is only the safety net's reach when those are missed.
+const SPARK_SYNC_LOOKBACK_HOURS = 72
 const COMPLETED_TRANSFER_STATUS = "TRANSFER_STATUS_COMPLETED"
 const OUTGOING_TRANSFER_DIRECTION = "OUTGOING"
 
@@ -356,6 +373,19 @@ const createSparkAccountSyncSession = ({
       return
     }
 
+    // Captured before the sweep, like FIO's sync period `to`: the pointer
+    // advances with the clock regardless of what (if anything) this sweep
+    // finds, so a quiet account still narrows next time's window instead of
+    // getting stuck re-scanning from its first ever sync forever.
+    const startedAt = run.deps.date.now()
+    const pointer = await run.deps.evolu.loadQuery(
+      sparkAccountSyncPointerByAccountIdQuery(account.id)
+    )
+    const createdAfter =
+      pointer[0] === undefined
+        ? undefined
+        : subHours(pointer[0].lastSyncedAt, SPARK_SYNC_LOOKBACK_HOURS)
+
     let offset = 0
     let pageCount = 0
     let transferCount = 0
@@ -368,11 +398,16 @@ const createSparkAccountSyncSession = ({
 
     run.deps.console.info("Started Spark transfer history sync.", {
       accountId: account.id,
+      createdAfter: createdAfter ?? null,
       pageSize: TRANSFER_PAGE_SIZE,
     })
 
     while (!queue.isDisposed) {
-      const page = await currentWallet.getTransfers(TRANSFER_PAGE_SIZE, offset)
+      const page = await currentWallet.getTransfers(
+        TRANSFER_PAGE_SIZE,
+        offset,
+        createdAfter
+      )
       pageCount += 1
       transferCount += page.transfers.length
 
@@ -390,6 +425,12 @@ const createSparkAccountSyncSession = ({
 
       if (page.transfers.length === 0 || page.offset <= offset) break
       offset = page.offset
+    }
+
+    // Only once the sweep actually finished — a sweep cut short by disposal
+    // covered less than `[createdAfter, now)` and must not claim it did.
+    if (!queue.isDisposed) {
+      await saveSparkSyncPointer(run, account.id, startedAt)
     }
 
     run.deps.console.info("Finished Spark transfer history sync.", {
@@ -534,6 +575,27 @@ const createSparkAccountSyncSession = ({
       }
     },
   }
+}
+
+const saveSparkSyncPointer = async (
+  run: Run<BackgroundJobContext>,
+  accountId: AccountId,
+  lastSyncedAt: Date
+): Promise<void> => {
+  await runMutationWithCompletion((options) =>
+    run.deps.evolu.upsert(
+      "sparkAccountSyncPointer",
+      removeUndefinedValues({
+        id: accountId,
+        lastSyncedAt: TimestampMsSchema.decode(lastSyncedAt.getTime()),
+      }),
+      { ...options, ownerId: run.deps.evoluOwnerId }
+    )
+  )
+  run.deps.console.debug("Saved Spark sync pointer.", {
+    accountId,
+    lastSyncedAt,
+  })
 }
 
 const createSparkTransactionInput = (

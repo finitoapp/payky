@@ -7,6 +7,7 @@ import {
   accountIban,
   accountIndexes,
   accountSpark,
+  sparkAccountSyncPointer,
 } from "@/core/modules/account/account.ts"
 import {
   accountTransaction,
@@ -68,6 +69,7 @@ export const AppSchema = {
   account,
   accountIban,
   accountSpark,
+  sparkAccountSyncPointer,
   accountCashRegister,
   accountTransaction,
   accountTransactionIban,

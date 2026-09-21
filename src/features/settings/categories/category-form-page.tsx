@@ -1,7 +1,6 @@
 import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -39,6 +38,7 @@ import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -105,7 +105,7 @@ function EditCatalogCategoryPageContent({
  * in place yet.
  */
 function CreateCatalogCategoryForm() {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const router = useRouter()
   const { t } = useTranslation()
   const nameInputId = useId()
@@ -131,21 +131,17 @@ function CreateCatalogCategoryForm() {
           return
         }
 
-        void submit(async () => {
-          try {
-            await using run = appRun()
+        void submit(() =>
+          runToast(async (run) => {
             await run.ok(
               createCatalogCategoryAtEnd({
                 deviceId: null,
                 name: nameResult.data,
               })
             )
-          } catch {
-            toast.error(t("settings.saveFailed"))
-            return false
-          }
-          router.history.back()
-        })
+            router.history.back()
+          })
+        )
       }}
     >
       <FieldGroup>

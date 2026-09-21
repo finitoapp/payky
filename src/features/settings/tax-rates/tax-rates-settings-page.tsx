@@ -6,7 +6,6 @@ import {
   StarIcon,
 } from "lucide-react"
 import { useId, useState } from "react"
-import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -38,6 +37,7 @@ import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -102,6 +102,7 @@ export function TaxRatesSettingsPage() {
 function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
   const appRun = useAppRun()
   const confirm = useConfirmDialog()
+  const runToast = useRunToast()
   const { t } = useTranslation()
   const isArchived = taxRate.deactivatedAt !== null
   const [editing, setEditing] = useState(false)
@@ -154,18 +155,14 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
             onClick={() => {
               void (async () => {
                 setPending(true)
-                try {
-                  await using run = appRun()
+                await runToast(async (run) => {
                   await run.ok(
                     setDefaultTaxRate(
                       taxRate.isDefault === 1 ? null : taxRate.id
                     )
                   )
-                } catch {
-                  toast.error(t("settings.saveFailed"))
-                } finally {
-                  setPending(false)
-                }
+                })
+                setPending(false)
               })()
             }}
           >
@@ -213,14 +210,10 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
                 if (!confirmed) return
 
                 setPending(true)
-                try {
-                  await using run = appRun()
+                await runToast(async (run) => {
                   await run.ok(activateTaxRate(taxRate.id))
-                } catch {
-                  toast.error(t("settings.saveFailed"))
-                } finally {
-                  setPending(false)
-                }
+                })
+                setPending(false)
               })()
             }}
           >
@@ -252,14 +245,10 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
                 if (!confirmed) return
 
                 setPending(true)
-                try {
-                  await using run = appRun()
+                await runToast(async (run) => {
                   await run.ok(archiveTaxRate(taxRate.id))
-                } catch {
-                  toast.error(t("settings.saveFailed"))
-                } finally {
-                  setPending(false)
-                }
+                })
+                setPending(false)
               })()
             }}
           >
@@ -272,7 +261,7 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
 }
 
 function NewTaxRateCard() {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { t } = useTranslation()
   const formId = useId()
   const [name, setName] = useState("")
@@ -310,8 +299,7 @@ function NewTaxRateCard() {
 
             void (async () => {
               setPending(true)
-              try {
-                await using run = appRun()
+              const succeeded = await runToast(async (run) => {
                 await run.ok(
                   createTaxRate({
                     name: nameResult.data,
@@ -319,12 +307,11 @@ function NewTaxRateCard() {
                     isDefault: false,
                   })
                 )
+              })
+              setPending(false)
+              if (succeeded) {
                 setName("")
                 setRateInput("")
-              } catch {
-                toast.error(t("settings.saveFailed"))
-              } finally {
-                setPending(false)
               }
             })()
           }}

@@ -1,7 +1,6 @@
 import { useRouter } from "@tanstack/react-router"
 import { ScanLineIcon, Trash2Icon } from "lucide-react"
 import { useId, useMemo, useState } from "react"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -82,6 +81,7 @@ import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 const categoryCodec = optionalIdCodec<CatalogCategoryId>()
@@ -199,7 +199,7 @@ function CreateCatalogItemForm({
 }: {
   readonly defaultCurrency: FiatCurrencyType
 }) {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const router = useRouter()
   const { t } = useTranslation()
   const formId = useId()
@@ -267,9 +267,8 @@ function CreateCatalogItemForm({
           }
           const values = parsed.value
 
-          void submit(async () => {
-            try {
-              await using run = appRun()
+          void submit(() =>
+            runToast(async (run) => {
               await run.ok(
                 createCatalogItemAtEnd({
                   deviceId: null,
@@ -285,12 +284,9 @@ function CreateCatalogItemForm({
                   taxRateId: taxRateId === NO_OPTION ? null : taxRateId,
                 })
               )
-            } catch {
-              toast.error(t("settings.saveFailed"))
-              return false
-            }
-            router.history.back()
-          })
+              router.history.back()
+            })
+          )
         }}
       >
         <FieldGroup>

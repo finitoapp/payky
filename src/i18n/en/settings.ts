@@ -503,6 +503,10 @@ export const enSettings = {
     "Could not save the Spark privacy mode setting.",
   "settings.sparkAccount.save": "Save Spark account",
   "settings.sparkAccount.saved": "Spark account saved.",
+  "settings.sparkAccount.syncPointer.description":
+    "Local sync pointer for the periodic history rescan. If no pointer exists yet, today is used; the rescan only looks back 72 hours from it.",
+  "settings.sparkAccount.syncPointer.invalid": "Enter a valid date.",
+  "settings.sparkAccount.syncPointer.label": "Last synced date",
   "settings.support": "SUPPORT & INFO",
   "settings.tables.add": "Add table",
   "settings.tables.delete": "Delete table",

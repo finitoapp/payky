@@ -507,6 +507,10 @@ export const skSettings = {
     "Nastavenie privacy mode v Sparku sa nepodarilo uložiť.",
   "settings.sparkAccount.save": "Uložiť Spark účet",
   "settings.sparkAccount.saved": "Spark účet uložený.",
+  "settings.sparkAccount.syncPointer.description":
+    "Lokálny ukazovateľ synchronizácie pre periodické preskenovanie historie. Ak ukazovateľ ešte neexistuje, použije sa dnešný dátum; preskenovanie sa z neho pozerá len 72 hodín dozadu.",
+  "settings.sparkAccount.syncPointer.invalid": "Zadajte platný dátum.",
+  "settings.sparkAccount.syncPointer.label": "Posledný synchronizovaný dátum",
   "settings.support": "PODPORA A INFORMÁCIE",
   "settings.tables.add": "Pridať stôl",
   "settings.tables.delete": "Vymazať stôl",

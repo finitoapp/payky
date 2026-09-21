@@ -1,3 +1,4 @@
+import { format, parseISO } from "date-fns"
 import { z } from "zod"
 
 import {
@@ -5,6 +6,7 @@ import {
   NonEmptyString255Schema,
   NonNegativeIntegerSchema,
   PositiveIntegerSchema,
+  TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
 /**
@@ -82,3 +84,14 @@ export const optionalDateCodec = z.codec(
     encode: (value) => value ?? "",
   }
 )
+
+/**
+ * For `<Input type="date">` fields backing a precise `TimestampMs` instead of
+ * a `DateString` — decodes to local midnight of the chosen day, the same
+ * local-clock convention `dateToDateString`/`dateStringToDate`
+ * (`fio-account-transaction-sync-job.ts`) use for date-only values.
+ */
+export const timestampMsDateCodec = z.codec(z.string(), TimestampMsSchema, {
+  decode: (value) => parseISO(value.trim()).getTime(),
+  encode: (value) => format(new Date(value), "yyyy-MM-dd"),
+})

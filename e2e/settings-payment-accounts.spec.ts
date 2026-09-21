@@ -30,7 +30,9 @@ test("edit the fiat bank account and cash register settings", async ({
 
   await test.step("verify the new currency persists after reload", async () => {
     await reloadPage(page, "en", "settings.paymentAccounts.title")
-    await expect(currencySelect).toContainText("EUR")
+    await expect(currencySelect).toContainText(
+      translate("en", "settings.fiat.eur.title")
+    )
   })
 
   await test.step("disable the cash register", () =>

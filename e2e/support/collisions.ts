@@ -106,11 +106,9 @@ export async function simulateBillModifiedDuringPayment(
  * `window.__e2eCreateAndPaySecondPayment` (see
  * src/components/e2e-test-bridge.tsx) — the real `createPayment`/
  * `markPaymentPaidCash` actions, not a bypass. Split payments are an
- * intended capability, but the bill page's own "Charge" button disappears
- * once the bill's derived status is no longer `open` (e.g. once a first
- * payment already fully covers it), so this is the only way to reach "two
- * paid payments on one bill" without two real devices. Produces a genuine
- * overpaid bill once both are claimed.
+ * intended capability, but a second device is needed to start one
+ * concurrently with the current payment. Produces a genuine overpaid bill
+ * once both are claimed.
  */
 export async function createAndPaySecondPayment(
   page: Page,

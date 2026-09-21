@@ -345,16 +345,13 @@ test("a bill overpaid by two separately paid payments is flagged on the payment 
 }) => {
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
-  await test.step("pay the bill once, then create and pay a second, independent payment for it", async () => {
+  await test.step("create two independent payments before settling either", async () => {
     const billId = await startBillAndBeginCashPayment(page, "en")
-    await markCashPaid(page, "en")
 
-    // The bill page's own "Charge" button disappears once the bill isn't
-    // `open` anymore (which the first payment being claimed just caused),
-    // so a genuine second payment can't be started by clicking through the
-    // UI at this point — this goes through the real domain actions
-    // directly instead. See docs/bill-payment-states.md.
+    // A second payment is allowed while the first is still pending, as a
+    // concurrent device could create it before either claim arrives.
     await createAndPaySecondPayment(page, billId)
+    await markCashPaid(page, "en")
   })
 
   await test.step("the payment detail shows the bill as overpaid by the combined total", async () => {
@@ -420,8 +417,8 @@ test("the activity list flags a bill overpaid by two separate payments without f
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
 
   const billId = await startBillAndBeginCashPayment(page, "en")
-  await markCashPaid(page, "en")
   await createAndPaySecondPayment(page, billId)
+  await markCashPaid(page, "en")
   // Settle wait covers both fire-and-forget writes above before the hard
   // navigation below — see `waitForLocalWriteToSettle`.
   await waitForLocalWriteToSettle(page)

@@ -738,7 +738,7 @@ function BillCartView({
             </CollapsibleTrigger>
             <CollapsibleContent
               data-testid="bill-summary-panel"
-              className="grid grid-rows-[1fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-out data-ending-style:grid-rows-[0fr] data-starting-style:grid-rows-[0fr]"
+              className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-starting-style:h-0 data-ending-style:h-0"
             >
               {/*
                * `grid-template-rows: 0fr -> 1fr` (rather than animating a

@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 import { z } from "zod"
 
@@ -5,11 +6,17 @@ import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible.tsx"
 import {
   Field,
   FieldDescription,
@@ -48,6 +55,7 @@ import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx
 import { timestampMsDateCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
+import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -169,54 +177,80 @@ function FiatBankAccountCard() {
         <CardDescription>
           {t("settings.fiatBankAccount.form.description")}
         </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <FieldGroup>
-          <InlineEditCheckbox
+        <CardAction>
+          <InlineEditSwitch
             label={t("settings.fiatBankAccount.enabled.label")}
-            description={t("settings.fiatBankAccount.enabled.description")}
             defaultValue={enabled}
             disabled={!hasIban}
+            showText={false}
             onSave={(nextEnabled) => save({ enabled: nextEnabled })}
           />
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <fieldset disabled={!enabled && hasIban} className="contents">
+          <div className={!enabled && hasIban ? "opacity-50" : undefined}>
+            <FieldGroup>
+              <InlineEditField
+                label={t("settings.fiatBankAccount.iban.label")}
+                description={t("settings.fiatBankAccount.iban.description")}
+                defaultValue={iban}
+                codec={optionalIbanCodec}
+                errorKey="settings.fiatBankAccount.iban.invalid"
+                onSave={(nextIban) => save({ iban: nextIban ?? undefined })}
+              />
 
-          <InlineEditField
-            label={t("settings.fiatBankAccount.iban.label")}
-            description={t("settings.fiatBankAccount.iban.description")}
-            defaultValue={iban}
-            codec={optionalIbanCodec}
-            errorKey="settings.fiatBankAccount.iban.invalid"
-            onSave={(nextIban) => save({ iban: nextIban ?? undefined })}
-          />
+              <Collapsible>
+                <CollapsibleTrigger className="group/advanced-options flex w-full items-center justify-between text-left text-sm font-medium">
+                  {t("settings.fiatBankAccount.advanced")}
+                  <ChevronDown
+                    className="size-4 transition-transform group-data-[panel-open]/advanced-options:rotate-180"
+                    aria-hidden="true"
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-starting-style:h-0 data-ending-style:h-0">
+                  <div className="min-h-0 pt-5">
+                    <FieldGroup>
+                      <InlineEditSelect
+                        label={t("settings.fiatBankAccount.currency.label")}
+                        defaultValue={currency}
+                        codec={fiatCurrencyCodec}
+                        options={fiatCurrencyOptions.map((option) => ({
+                          value: option.value,
+                          label: t(option.label),
+                        }))}
+                        onSave={(nextCurrency) =>
+                          save({ currency: nextCurrency })
+                        }
+                      />
+                      <FieldDescription>
+                        {t("settings.fiatBankAccount.currency.description")}
+                      </FieldDescription>
 
-          <InlineEditSelect
-            label={t("settings.fiatBankAccount.currency.label")}
-            defaultValue={currency}
-            codec={fiatCurrencyCodec}
-            options={fiatCurrencyOptions.map((option) => ({
-              value: option.value,
-              label: t(option.label),
-            }))}
-            onSave={(nextCurrency) => save({ currency: nextCurrency })}
-          />
-          <FieldDescription>
-            {t("settings.fiatBankAccount.currency.description")}
-          </FieldDescription>
-
-          <InlineEditSelect
-            label={t("settings.fiatBankAccount.qrFormat.label")}
-            defaultValue={defaultQrFormat}
-            codec={bankQrFormatCodec}
-            options={fiatBankAccountQrFormatOptions.map((option) => ({
-              value: option.value,
-              label: t(option.label),
-            }))}
-            onSave={(nextFormat) => save({ defaultQrFormat: nextFormat })}
-          />
-          <FieldDescription>
-            {t("settings.fiatBankAccount.qrFormat.description")}
-          </FieldDescription>
-        </FieldGroup>
+                      <InlineEditSelect
+                        label={t("settings.fiatBankAccount.qrFormat.label")}
+                        defaultValue={defaultQrFormat}
+                        codec={bankQrFormatCodec}
+                        options={fiatBankAccountQrFormatOptions.map(
+                          (option) => ({
+                            value: option.value,
+                            label: t(option.label),
+                          })
+                        )}
+                        onSave={(nextFormat) =>
+                          save({ defaultQrFormat: nextFormat })
+                        }
+                      />
+                      <FieldDescription>
+                        {t("settings.fiatBankAccount.qrFormat.description")}
+                      </FieldDescription>
+                    </FieldGroup>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </FieldGroup>
+          </div>
+        </fieldset>
       </CardContent>
     </Card>
   )
@@ -286,85 +320,114 @@ function SparkAccountCard() {
         <CardDescription>
           {t("settings.sparkAccount.form.description")}
         </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <FieldGroup>
-          <InlineEditCheckbox
+        <CardAction>
+          <InlineEditSwitch
             label={t("settings.sparkAccount.enabled.label")}
-            description={t("settings.sparkAccount.enabled.description")}
             defaultValue={enabled}
+            showText={false}
             onSave={async (nextEnabled) => {
               await using run = appRun()
               await run.ok(saveSparkAccount({ enabled: nextEnabled }))
             }}
           />
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <fieldset disabled={!enabled} className="contents">
+          <div className={!enabled ? "opacity-50" : undefined}>
+            <FieldGroup>
+              {secret !== null && (
+                <Field>
+                  <FieldLabel htmlFor={mnemonicId}>
+                    {t("settings.sparkAccount.mnemonic.label")}
+                  </FieldLabel>
+                  <PasswordTextarea
+                    id={mnemonicId}
+                    value={sparkSecretToMnemonic(secret)}
+                    hideLabel={t("passwordTextarea.hide")}
+                    showLabel={t("passwordTextarea.show")}
+                    readOnly
+                    aria-readonly="true"
+                    autoComplete="off"
+                  />
+                  <FieldDescription>
+                    {t("settings.sparkAccount.mnemonic.description")}
+                  </FieldDescription>
+                </Field>
+              )}
 
-          {secret !== null && (
-            <Field>
-              <FieldLabel htmlFor={mnemonicId}>
-                {t("settings.sparkAccount.mnemonic.label")}
-              </FieldLabel>
-              <PasswordTextarea
-                id={mnemonicId}
-                value={sparkSecretToMnemonic(secret)}
-                hideLabel={t("passwordTextarea.hide")}
-                showLabel={t("passwordTextarea.show")}
-                readOnly
-                aria-readonly="true"
-                autoComplete="off"
-              />
-              <FieldDescription>
-                {t("settings.sparkAccount.mnemonic.description")}
-              </FieldDescription>
-            </Field>
-          )}
+              <Collapsible>
+                <CollapsibleTrigger className="group/advanced-options flex w-full items-center justify-between text-left text-sm font-medium">
+                  {t("settings.sparkAccount.advanced")}
+                  <ChevronDown
+                    className="size-4 transition-transform group-data-[panel-open]/advanced-options:rotate-180"
+                    aria-hidden="true"
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-starting-style:h-0 data-ending-style:h-0">
+                  <div className="min-h-0 pt-5">
+                    <FieldGroup>
+                      <InlineEditCheckbox
+                        label={t("settings.sparkAccount.privacyMode.label")}
+                        description={
+                          privacyModeError
+                            ? t(privacyModeError)
+                            : privacyModePending
+                              ? t("settings.sparkAccount.privacyMode.loading")
+                              : t(
+                                  "settings.sparkAccount.privacyMode.description"
+                                )
+                        }
+                        defaultValue={privacyMode}
+                        disabled={secret === null || privacyModePending}
+                        onSave={async (nextPrivacyMode) => {
+                          if (secret === null) return
 
-          <InlineEditCheckbox
-            label={t("settings.sparkAccount.privacyMode.label")}
-            description={
-              privacyModeError
-                ? t(privacyModeError)
-                : privacyModePending
-                  ? t("settings.sparkAccount.privacyMode.loading")
-                  : t("settings.sparkAccount.privacyMode.description")
-            }
-            defaultValue={privacyMode}
-            disabled={secret === null || privacyModePending}
-            onSave={async (nextPrivacyMode) => {
-              if (secret === null) return
+                          await using wallet =
+                            await createDefaultSparkPaymentWallet(secret)
+                          const walletSettings =
+                            await wallet.setPrivacyEnabled(nextPrivacyMode)
 
-              await using wallet = await createDefaultSparkPaymentWallet(secret)
-              const walletSettings =
-                await wallet.setPrivacyEnabled(nextPrivacyMode)
+                          if (!walletSettings) {
+                            throw new Error(
+                              "Failed to save Spark privacy mode."
+                            )
+                          }
 
-              if (!walletSettings) {
-                throw new Error("Failed to save Spark privacy mode.")
-              }
+                          setPrivacyMode(walletSettings.privateEnabled)
+                        }}
+                      />
 
-              setPrivacyMode(walletSettings.privateEnabled)
-            }}
-          />
-
-          {secret !== null && (
-            <InlineEditField
-              label={t("settings.sparkAccount.syncPointer.label")}
-              description={t("settings.sparkAccount.syncPointer.description")}
-              type="date"
-              defaultValue={pointer?.lastSyncedAt ?? TimestampMs(Date.now())}
-              codec={timestampMsDateCodec}
-              errorKey="settings.sparkAccount.syncPointer.invalid"
-              onSave={async (nextLastSyncedAt) => {
-                await using run = appRun()
-                await run.ok(
-                  updateSparkAccountSyncPointer({
-                    id: sparkAccountId,
-                    lastSyncedAt: nextLastSyncedAt,
-                  })
-                )
-              }}
-            />
-          )}
-        </FieldGroup>
+                      {secret !== null && (
+                        <InlineEditField
+                          label={t("settings.sparkAccount.syncPointer.label")}
+                          description={t(
+                            "settings.sparkAccount.syncPointer.description"
+                          )}
+                          type="date"
+                          defaultValue={
+                            pointer?.lastSyncedAt ?? TimestampMs(Date.now())
+                          }
+                          codec={timestampMsDateCodec}
+                          errorKey="settings.sparkAccount.syncPointer.invalid"
+                          onSave={async (nextLastSyncedAt) => {
+                            await using run = appRun()
+                            await run.ok(
+                              updateSparkAccountSyncPointer({
+                                id: sparkAccountId,
+                                lastSyncedAt: nextLastSyncedAt,
+                              })
+                            )
+                          }}
+                        />
+                      )}
+                    </FieldGroup>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </FieldGroup>
+          </div>
+        </fieldset>
       </CardContent>
     </Card>
   )
@@ -387,13 +450,11 @@ function CashRegisterAccountCard() {
         <CardDescription>
           {t("settings.cashRegisterAccount.form.description")}
         </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <FieldGroup>
-          <InlineEditCheckbox
+        <CardAction>
+          <InlineEditSwitch
             label={t("settings.cashRegisterAccount.enabled.label")}
-            description={t("settings.cashRegisterAccount.enabled.description")}
             defaultValue={enabled}
+            showText={false}
             onSave={async (nextEnabled) => {
               await using run = appRun()
               await run(
@@ -404,8 +465,8 @@ function CashRegisterAccountCard() {
               )
             }}
           />
-        </FieldGroup>
-      </CardContent>
+        </CardAction>
+      </CardHeader>
     </Card>
   )
 }

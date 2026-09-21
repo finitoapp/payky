@@ -72,6 +72,24 @@ export async function toggleInlineCheckbox(
 }
 
 /**
+ * Toggles an inline-edit switch, which saves straight away. Unlike
+ * `toggleInlineCheckbox`, a switch's underlying checkbox input is
+ * `aria-hidden` (Base UI keeps it only for native form semantics), so this
+ * targets the switch role instead.
+ */
+export async function toggleInlineSwitch(
+  page: Page,
+  labelKey: TranslationKey
+): Promise<void> {
+  const toggle = page.getByRole("switch", {
+    name: translate("en", labelKey),
+  })
+
+  await toggle.click()
+  await savedTickFor(page, toggle).waitFor()
+}
+
+/**
  * Picks an option in an inline-edit toggle group, which saves straight away.
  */
 export async function pickInlineToggle(
@@ -82,4 +100,23 @@ export async function pickInlineToggle(
 
   await option.click()
   await savedTickFor(page, option).waitFor()
+}
+
+/**
+ * Opens a collapsed "Advanced options" section so the inline-edit controls
+ * inside it become interactable. Collapsed by default and unmounted while
+ * closed (`Collapsible.Panel`'s `keepMounted` defaults to `false`), so this
+ * has to run again after every reload. Scoped to the card by its title,
+ * since every card's trigger shares the same "Advanced options" label.
+ */
+export async function expandAdvancedOptions(
+  page: Page,
+  cardTitleKey: TranslationKey,
+  triggerLabelKey: TranslationKey
+): Promise<void> {
+  await page
+    .locator('[data-slot="card"]')
+    .filter({ hasText: translate("en", cardTitleKey) })
+    .getByRole("button", { name: translate("en", triggerLabelKey) })
+    .click()
 }

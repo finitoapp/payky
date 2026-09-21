@@ -147,14 +147,19 @@ function CreateTableForm() {
         }
 
         void submit(async () => {
-          await using run = appRun()
-          await run(
-            createTableAtEnd({
-              deviceId: null,
-              name: nameResult.data,
-              seatCount: PositiveInteger(parsedSeatCount),
-            })
-          )
+          try {
+            await using run = appRun()
+            await run.ok(
+              createTableAtEnd({
+                deviceId: null,
+                name: nameResult.data,
+                seatCount: PositiveInteger(parsedSeatCount),
+              })
+            )
+          } catch {
+            toast.error(t("settings.saveFailed"))
+            return false
+          }
           router.history.back()
         })
       }}

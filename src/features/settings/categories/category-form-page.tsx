@@ -1,6 +1,7 @@
 import { useRouter } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
+import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -131,13 +132,18 @@ function CreateCatalogCategoryForm() {
         }
 
         void submit(async () => {
-          await using run = appRun()
-          await run(
-            createCatalogCategoryAtEnd({
-              deviceId: null,
-              name: nameResult.data,
-            })
-          )
+          try {
+            await using run = appRun()
+            await run.ok(
+              createCatalogCategoryAtEnd({
+                deviceId: null,
+                name: nameResult.data,
+              })
+            )
+          } catch {
+            toast.error(t("settings.saveFailed"))
+            return false
+          }
           router.history.back()
         })
       }}

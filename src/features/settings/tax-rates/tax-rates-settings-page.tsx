@@ -6,6 +6,7 @@ import {
   StarIcon,
 } from "lucide-react"
 import { useId, useState } from "react"
+import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -155,11 +156,13 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
                 setPending(true)
                 try {
                   await using run = appRun()
-                  await run(
+                  await run.ok(
                     setDefaultTaxRate(
                       taxRate.isDefault === 1 ? null : taxRate.id
                     )
                   )
+                } catch {
+                  toast.error(t("settings.saveFailed"))
                 } finally {
                   setPending(false)
                 }
@@ -212,7 +215,9 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
                 setPending(true)
                 try {
                   await using run = appRun()
-                  await run(activateTaxRate(taxRate.id))
+                  await run.ok(activateTaxRate(taxRate.id))
+                } catch {
+                  toast.error(t("settings.saveFailed"))
                 } finally {
                   setPending(false)
                 }
@@ -249,7 +254,9 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
                 setPending(true)
                 try {
                   await using run = appRun()
-                  await run(archiveTaxRate(taxRate.id))
+                  await run.ok(archiveTaxRate(taxRate.id))
+                } catch {
+                  toast.error(t("settings.saveFailed"))
                 } finally {
                   setPending(false)
                 }
@@ -305,7 +312,7 @@ function NewTaxRateCard() {
               setPending(true)
               try {
                 await using run = appRun()
-                await run(
+                await run.ok(
                   createTaxRate({
                     name: nameResult.data,
                     rate,
@@ -314,6 +321,8 @@ function NewTaxRateCard() {
                 )
                 setName("")
                 setRateInput("")
+              } catch {
+                toast.error(t("settings.saveFailed"))
               } finally {
                 setPending(false)
               }

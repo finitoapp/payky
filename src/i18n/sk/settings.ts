@@ -108,27 +108,6 @@ export const skSettings = {
   "settings.debugConsole.pause": "Pozastaviť",
   "settings.debugConsole.resume": "Pokračovať",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Nové platby otvoriť s vybranou záložkou hotovosti.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Hotovosť",
-  "settings.defaultPaymentMethod.description":
-    "Vyberte, ktorá povolená metóda sa vyberie ako prvá pri vytváraní účtu",
-  "settings.defaultPaymentMethod.empty":
-    "Pre vybranú fiat menu teraz nie je dostupná žiadna platobná metóda.",
-  "settings.defaultPaymentMethod.empty.action": "Spravovať platobné účty",
-  "settings.defaultPaymentMethod.iban.description":
-    "Nové platby otvoriť s vybranou záložkou bankového QR.",
-  "settings.defaultPaymentMethod.iban.title": "Bankový prevod",
-  "settings.defaultPaymentMethod.mode.description":
-    "Zobrazujú sa len povolené metódy kompatibilné s vybranou fiat menou.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "Uložený default nie je dostupný. Vyberte novú povolenú metódu.",
-  "settings.defaultPaymentMethod.mode.title": "Predvolená platobná metóda účtu",
-  "settings.defaultPaymentMethod.saved": "Predvolená platobná metóda uložená.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Nové platby otvoriť s vybranou záložkou Bitcoin / Spark.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Predvolená platobná metóda",
   "settings.developers": "VÝVOJÁRI",
   "settings.donations.amount.invalid": "Zadajte kladný celý počet sats.",
   "settings.donations.amount.range": "Suma je mimo povolený rozsah daru.",
@@ -387,6 +366,16 @@ export const skSettings = {
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.paymentAccounts.description":
     "Nastavenie bankového, Spark a pokladničného účtu",
+  "settings.paymentAccounts.default": "Predvolená",
+  "settings.paymentAccounts.default.disabled":
+    "Ako predvolenú možno nastaviť iba aktívnu platobnú metódu.",
+  "settings.paymentAccounts.default.deactivate":
+    "Pred vypnutím tejto metódy nastavte ako predvolenú inú platobnú metódu.",
+  "settings.paymentAccounts.default.set": "Nastaviť ako predvolenú",
+  "settings.paymentAccounts.default.set.aria": "Nastaviť {name} ako predvolenú",
+  "settings.paymentAccounts.method.cashRegister": "Hotovosť",
+  "settings.paymentAccounts.method.iban": "Bankový prevod",
+  "settings.paymentAccounts.method.spark": "Bitcoin",
   "settings.paymentAccounts.title": "Platobné účty",
   "settings.paymentNumberSeries.day.default.description":
     "Pridať do generovaných čísel platieb dvojciferný deň",

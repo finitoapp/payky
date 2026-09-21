@@ -105,27 +105,6 @@ export const enSettings = {
   "settings.debugConsole.pause": "Pause",
   "settings.debugConsole.resume": "Resume",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Open new payments with the cash tab selected.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Cash",
-  "settings.defaultPaymentMethod.description":
-    "Choose which enabled method is selected first when starting a bill",
-  "settings.defaultPaymentMethod.empty":
-    "No payment method is currently available for the selected fiat currency.",
-  "settings.defaultPaymentMethod.empty.action": "Manage payment accounts",
-  "settings.defaultPaymentMethod.iban.description":
-    "Open new payments with the bank QR tab selected.",
-  "settings.defaultPaymentMethod.iban.title": "Bank transfer",
-  "settings.defaultPaymentMethod.mode.description":
-    "Only enabled methods compatible with the selected fiat currency are shown.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "The saved default is not available. Select a new enabled method.",
-  "settings.defaultPaymentMethod.mode.title": "Default bill payment method",
-  "settings.defaultPaymentMethod.saved": "Default payment method saved.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Open new payments with the Bitcoin / Spark tab selected.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Default Payment Method",
   "settings.developers": "DEVELOPERS",
   "settings.donations.amount.invalid": "Enter a positive whole number of sats.",
   "settings.donations.amount.range":
@@ -385,6 +364,16 @@ export const enSettings = {
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
   "settings.paymentAccounts.description":
     "Configure bank, Spark, and cash register accounts",
+  "settings.paymentAccounts.default": "Default",
+  "settings.paymentAccounts.default.disabled":
+    "Only active payment methods can be set as default.",
+  "settings.paymentAccounts.default.deactivate":
+    "Set another payment method as default before disabling this one.",
+  "settings.paymentAccounts.default.set": "Set as default",
+  "settings.paymentAccounts.default.set.aria": "Set {name} as default",
+  "settings.paymentAccounts.method.cashRegister": "Cash",
+  "settings.paymentAccounts.method.iban": "Bank transfer",
+  "settings.paymentAccounts.method.spark": "Bitcoin",
   "settings.paymentAccounts.title": "Payment Accounts",
   "settings.paymentNumberSeries.day.default.description":
     "Include the two-digit day in generated payment numbers",

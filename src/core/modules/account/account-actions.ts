@@ -1,4 +1,5 @@
 import {
+  err,
   type InsertValues,
   ok,
   sqliteFalse,
@@ -9,6 +10,8 @@ import {
 import type { RequireExactlyOne, Simplify } from "type-fest"
 import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -60,6 +63,25 @@ export const createAccountNotFoundError = defineError("AccountNotFound")<{
   readonly id: AccountId
 }>()
 export type AccountNotFoundError = ReturnType<typeof createAccountNotFoundError>
+
+const defaultPaymentMethodCannotBeDisabledError = defineError(
+  "DefaultPaymentMethodCannotBeDisabled"
+)<{ readonly method: DefaultPaymentMethod }>()
+export type DefaultPaymentMethodCannotBeDisabledError = ReturnType<
+  typeof defaultPaymentMethodCannotBeDisabledError
+>
+
+const preventDefaultPaymentMethodDisable =
+  (
+    method: DefaultPaymentMethod
+  ): Task<void, DefaultPaymentMethodCannotBeDisabledError, EvoluDep> =>
+  async (run) => {
+    const [settings] = await run.deps.evolu.loadQuery(settingsQuery)
+
+    return settings?.defaultPaymentMethod === method
+      ? err(defaultPaymentMethodCannotBeDisabledError({ method }))
+      : ok(undefined)
+  }
 
 export const loadAccount =
   (idValue: AccountId): Task<AccountRow, AccountNotFoundError, EvoluDep> =>
@@ -254,9 +276,18 @@ export const saveFiatBankAccount =
     readonly iban?: Iban
     readonly currency: FiatCurrency
     readonly defaultQrFormat?: BankQrFormat
-  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<
+    AccountId,
+    DefaultPaymentMethodCannotBeDisabledError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
+
+    if (!enabled) {
+      const allowed = await run(preventDefaultPaymentMethodDisable("iban"))
+      if (!allowed.ok) return allowed
+    }
 
     await runMutationWithCompletion((options) => {
       if (iban !== undefined) {
@@ -298,11 +329,16 @@ export const saveSparkAccount =
       readonly accountId: AccountId
       readonly secret: SparkSecret | undefined
     },
-    never,
+    DefaultPaymentMethodCannotBeDisabledError,
     EvoluDep & EvoluOwnerIdDep & MasterKeyDep
   > =>
   async (run) => {
     const { evoluOwnerId, masterKey } = run.deps
+
+    if (!enabled) {
+      const allowed = await run(preventDefaultPaymentMethodDisable("spark"))
+      if (!allowed.ok) return allowed
+    }
 
     // Preload guards a domain invariant: an existing Spark wallet secret
     // must never be overwritten, so one is derived only when enabling Spark
@@ -349,9 +385,20 @@ export const saveCashRegisterAccount =
   }: {
     readonly enabled: boolean
     readonly currency: FiatCurrency
-  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<
+    AccountId,
+    DefaultPaymentMethodCannotBeDisabledError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
   async (run) => {
     const { evoluOwnerId } = run.deps
+
+    if (!enabled) {
+      const allowed = await run(
+        preventDefaultPaymentMethodDisable("cashRegister")
+      )
+      if (!allowed.ok) return allowed
+    }
 
     await runMutationWithCompletion((options) => {
       if (enabled) {

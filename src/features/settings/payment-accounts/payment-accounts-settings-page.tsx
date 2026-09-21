@@ -1,9 +1,11 @@
 import { ChevronDown } from "lucide-react"
 import { useEffect, useId, useState } from "react"
+import { toast } from "sonner"
 import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
+import { Badge } from "@/components/ui/badge.tsx"
 import {
   Card,
   CardAction,
@@ -24,6 +26,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import {
+  type DefaultPaymentMethodCannotBeDisabledError,
   saveCashRegisterAccount,
   saveFiatBankAccount,
   saveSparkAccount,
@@ -36,7 +39,12 @@ import {
 } from "@/core/modules/account/account-queries.ts"
 import { sparkAccountSyncPointerByAccountIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import { sparkAccountId } from "@/core/modules/account/account-utils.ts"
+import {
+  type DefaultPaymentMethodDisabledError,
+  setDefaultPaymentMethod,
+} from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import { isValidIban } from "@/core/modules/shared/iban-utils.ts"
 import { sparkSecretToMnemonic } from "@/core/modules/shared/key-derivation.ts"
@@ -149,6 +157,8 @@ function FiatBankAccountCard() {
   const currency =
     account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK
   const defaultQrFormat = account?.defaultQrFormat ?? "spayd"
+  const isDefault = settings?.defaultPaymentMethod === "iban"
+  const isAvailable = enabled && account?.currency === settings?.fiatCurrency
 
   // `saveFiatBankAccount` upserts the whole row, so a partial save would
   // reset the fields it leaves out. Each control sends the current settings
@@ -160,7 +170,7 @@ function FiatBankAccountCard() {
     readonly defaultQrFormat?: BankQrFormat
   }) => {
     await using run = appRun()
-    await run(
+    await run.orThrow(
       saveFiatBankAccount({
         enabled: changed.enabled ?? enabled,
         iban: changed.iban ?? iban ?? undefined,
@@ -170,10 +180,33 @@ function FiatBankAccountCard() {
     )
   }
 
+  const saveEnabled = async (nextEnabled: boolean) => {
+    await using run = appRun()
+    const result = await run(
+      saveFiatBankAccount({
+        enabled: nextEnabled,
+        iban: iban ?? undefined,
+        currency,
+        defaultQrFormat,
+      })
+    )
+
+    return result.ok
+      ? undefined
+      : defaultPaymentMethodDisableErrorKeys[result.error.type]
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("settings.fiatBankAccount.form.title")}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {t("settings.fiatBankAccount.form.title")}
+          <DefaultPaymentMethodBadge
+            method="iban"
+            enabled={isAvailable}
+            isDefault={isDefault}
+          />
+        </CardTitle>
         <CardDescription>
           {t("settings.fiatBankAccount.form.description")}
         </CardDescription>
@@ -183,7 +216,8 @@ function FiatBankAccountCard() {
             defaultValue={enabled}
             disabled={!hasIban}
             showText={false}
-            onSave={(nextEnabled) => save({ enabled: nextEnabled })}
+            showSaved={false}
+            onSave={saveEnabled}
           />
         </CardAction>
       </CardHeader>
@@ -262,6 +296,8 @@ function SparkAccountCard() {
   const mnemonicId = useId()
   const { data: accountData } = useEvoluQuery(sparkAccountQuery)
   const [account] = accountData
+  const { data: settingsData } = useEvoluQuery(settingsQuery)
+  const [settings] = settingsData
   const { data: pointers } = useEvoluQuery(
     sparkAccountSyncPointerByAccountIdQuery(sparkAccountId)
   )
@@ -273,6 +309,7 @@ function SparkAccountCard() {
 
   const enabled = account ? account.isDeleted !== 1 : false
   const secret = account?.secret ?? null
+  const isDefault = settings?.defaultPaymentMethod === "spark"
 
   useEffect(() => {
     let active = true
@@ -316,7 +353,14 @@ function SparkAccountCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("settings.sparkAccount.form.title")}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {t("settings.sparkAccount.form.title")}
+          <DefaultPaymentMethodBadge
+            method="spark"
+            enabled={enabled}
+            isDefault={isDefault}
+          />
+        </CardTitle>
         <CardDescription>
           {t("settings.sparkAccount.form.description")}
         </CardDescription>
@@ -325,9 +369,16 @@ function SparkAccountCard() {
             label={t("settings.sparkAccount.enabled.label")}
             defaultValue={enabled}
             showText={false}
+            showSaved={false}
             onSave={async (nextEnabled) => {
               await using run = appRun()
-              await run.ok(saveSparkAccount({ enabled: nextEnabled }))
+              const result = await run(
+                saveSparkAccount({ enabled: nextEnabled })
+              )
+
+              return result.ok
+                ? undefined
+                : defaultPaymentMethodDisableErrorKeys[result.error.type]
             }}
           />
         </CardAction>
@@ -442,11 +493,20 @@ function CashRegisterAccountCard() {
   const [settings] = settingsData
 
   const enabled = account ? account.isDeleted !== 1 : false
+  const isDefault = settings?.defaultPaymentMethod === "cashRegister"
+  const isAvailable = enabled && account?.currency === settings?.fiatCurrency
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("settings.cashRegisterAccount.form.title")}</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          {t("settings.cashRegisterAccount.form.title")}
+          <DefaultPaymentMethodBadge
+            method="cashRegister"
+            enabled={isAvailable}
+            isDefault={isDefault}
+          />
+        </CardTitle>
         <CardDescription>
           {t("settings.cashRegisterAccount.form.description")}
         </CardDescription>
@@ -455,14 +515,19 @@ function CashRegisterAccountCard() {
             label={t("settings.cashRegisterAccount.enabled.label")}
             defaultValue={enabled}
             showText={false}
+            showSaved={false}
             onSave={async (nextEnabled) => {
               await using run = appRun()
-              await run(
+              const result = await run(
                 saveCashRegisterAccount({
                   enabled: nextEnabled,
                   currency: settings?.fiatCurrency ?? FiatCurrency.CZK,
                 })
               )
+
+              return result.ok
+                ? undefined
+                : defaultPaymentMethodDisableErrorKeys[result.error.type]
             }}
           />
         </CardAction>
@@ -470,3 +535,66 @@ function CashRegisterAccountCard() {
     </Card>
   )
 }
+
+function DefaultPaymentMethodBadge({
+  method,
+  enabled,
+  isDefault,
+}: {
+  readonly method: DefaultPaymentMethod
+  readonly enabled: boolean
+  readonly isDefault: boolean
+}) {
+  const appRun = useAppRun()
+  const { t } = useTranslation()
+
+  if (isDefault) {
+    return (
+      <Badge variant="secondary">{t("settings.paymentAccounts.default")}</Badge>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={!enabled}
+      aria-label={t("settings.paymentAccounts.default.set.aria", {
+        name: t(defaultPaymentMethodTitleKeys[method]),
+      })}
+      className="rounded-4xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+      onClick={async () => {
+        try {
+          await using run = appRun()
+          const result = await run(setDefaultPaymentMethod(method))
+          if (!result.ok) {
+            toast.error(t(defaultPaymentMethodErrorKeys[result.error.type]))
+          }
+        } catch {
+          toast.error(t("settings.saveFailed"))
+        }
+      }}
+    >
+      <Badge variant="outline">
+        {t("settings.paymentAccounts.default.set")}
+      </Badge>
+    </button>
+  )
+}
+
+const defaultPaymentMethodTitleKeys = {
+  iban: "settings.paymentAccounts.method.iban",
+  spark: "settings.paymentAccounts.method.spark",
+  cashRegister: "settings.paymentAccounts.method.cashRegister",
+} satisfies Record<DefaultPaymentMethod, TranslationKey>
+
+const defaultPaymentMethodErrorKeys = {
+  DefaultPaymentMethodDisabled: "settings.paymentAccounts.default.disabled",
+} satisfies Record<DefaultPaymentMethodDisabledError["type"], TranslationKey>
+
+const defaultPaymentMethodDisableErrorKeys = {
+  DefaultPaymentMethodCannotBeDisabled:
+    "settings.paymentAccounts.default.deactivate",
+} satisfies Record<
+  DefaultPaymentMethodCannotBeDisabledError["type"],
+  TranslationKey
+>

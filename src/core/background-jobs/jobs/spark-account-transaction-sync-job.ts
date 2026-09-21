@@ -1,5 +1,5 @@
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
-import { createRun, err, ok, type Result } from "@evolu/common"
+import { err, ok, type Result, type Run } from "@evolu/common"
 import { z } from "zod"
 
 import type {
@@ -82,28 +82,39 @@ export const createSparkAccountTransactionSyncJob =
     recheckIntervalMs = DEFAULT_RECHECK_INTERVAL_MS,
   }: SparkAccountTransactionSyncJobOptions = {}): BackgroundJob =>
   (run) => {
-    const context: BackgroundJobContext = {
+    // A fresh `run.create()` scope, not the Task's own `run`: that one is
+    // disposed the instant this Task function returns, but the sessions
+    // below keep composing Tasks (via their stored `run`) for as long as the
+    // job itself runs. Explicitly disposed in the returned disposable below —
+    // see AGENTS.md and `createRun`'s doc comment on why a detached
+    // `createRun` call per transfer (the previous shape here) leaks a root
+    // Evolu never gets to dispose.
+    const jobRun = run.create({
       ...run.deps,
       console: run.deps.console.child("spark-account-transaction-sync-job"),
-    }
-    const manager = createSparkAccountSyncManager({
-      context,
-      recheckIntervalMs,
-      walletFactory,
     })
+    const disposer = new AsyncDisposableStack()
+    disposer.use(jobRun)
+    disposer.use(
+      createSparkAccountSyncManager({
+        run: jobRun,
+        recheckIntervalMs,
+        walletFactory,
+      })
+    )
 
-    return ok(manager)
+    return ok(disposer)
   }
 
 export const startSparkAccountTransactionSyncJob =
   createSparkAccountTransactionSyncJob()
 
 const createSparkAccountSyncManager = ({
-  context,
+  run,
   recheckIntervalMs,
   walletFactory,
 }: {
-  readonly context: BackgroundJobContext
+  readonly run: Run<BackgroundJobContext>
   readonly recheckIntervalMs: number
   readonly walletFactory: SparkWalletFactory
 }): AsyncDisposable => {
@@ -115,16 +126,16 @@ const createSparkAccountSyncManager = ({
     }
   >()
   const refreshQueue = createKeyedTaskQueue<"refresh">({
-    onError: (error) => context.onError(error),
+    onError: (error) => run.deps.onError(error),
   })
 
   const refreshAccounts = async (): Promise<void> => {
-    const rows = await context.evolu.loadQuery(activeSparkAccountsQuery)
+    const rows = await run.deps.evolu.loadQuery(activeSparkAccountsQuery)
     const accounts = rows.map(
       (row): SparkAccountRow => ({ id: row.id, secret: row.secret })
     )
 
-    context.console.debug("Refreshing Spark account syncs.", {
+    run.deps.console.debug("Refreshing Spark account syncs.", {
       activeAccountCount: accounts.length,
       runningAccountCount: sessions.size,
     })
@@ -135,13 +146,13 @@ const createSparkAccountSyncManager = ({
       getKey: (account) => account.id,
       matches: (session, account) => session.secret === account.secret,
       createSession: (account) =>
-        createSparkAccountSyncSession({ account, context, walletFactory }),
+        createSparkAccountSyncSession({ account, run, walletFactory }),
       disposeSession: (session) => session[Symbol.asyncDispose](),
       onSessionStopped: (accountId) => {
-        context.console.info("Stopped Spark account sync.", { accountId })
+        run.deps.console.info("Stopped Spark account sync.", { accountId })
       },
       onSessionStarted: (accountId, _account, replacedExistingSync) => {
-        context.console.info("Started Spark account sync.", {
+        run.deps.console.info("Started Spark account sync.", {
           accountId,
           replacedExistingSync,
         })
@@ -153,11 +164,11 @@ const createSparkAccountSyncManager = ({
     refreshQueue.enqueue("refresh", refreshAccounts)
   }
 
-  const unsubscribeAccounts = context.evolu.subscribeQuery(
+  const unsubscribeAccounts = run.deps.evolu.subscribeQuery(
     activeSparkAccountsQuery
   )(refreshSoon)
   const recheckTimer = setInterval(() => {
-    context.console.debug("Queueing Spark history sync for all accounts.", {
+    run.deps.console.debug("Queueing Spark history sync for all accounts.", {
       runningAccountCount: sessions.size,
     })
 
@@ -167,7 +178,7 @@ const createSparkAccountSyncManager = ({
   }, recheckIntervalMs)
   ;(recheckTimer as { readonly unref?: () => void }).unref?.()
 
-  context.console.info("Started Spark account transaction sync job.")
+  run.deps.console.info("Started Spark account transaction sync job.")
   refreshSoon()
 
   return {
@@ -182,18 +193,18 @@ const createSparkAccountSyncManager = ({
         await session[Symbol.asyncDispose]()
       }
       sessions.clear()
-      context.console.info("Stopped Spark account transaction sync job.")
+      run.deps.console.info("Stopped Spark account transaction sync job.")
     },
   }
 }
 
 const createSparkAccountSyncSession = ({
   account,
-  context,
+  run,
   walletFactory,
 }: {
   readonly account: SparkAccountRow
-  readonly context: BackgroundJobContext
+  readonly run: Run<BackgroundJobContext>
   readonly walletFactory: SparkWalletFactory
 }): AsyncDisposable & {
   readonly secret: SparkSecret
@@ -206,12 +217,12 @@ const createSparkAccountSyncSession = ({
   let pendingHistorySync = false
   const pendingTransferIds = new Set<string>()
   const queue = createKeyedTaskQueue<"history" | `transfer:${string}`>({
-    onError: (error) => context.onError(error),
+    onError: (error) => run.deps.onError(error),
   })
 
   const bufferTransferSync = (transferId: string, message: string): void => {
     pendingTransferIds.add(transferId)
-    context.console.debug(message, {
+    run.deps.console.debug(message, {
       accountId: account.id,
       pendingTransferCount: pendingTransferIds.size,
       sparkTransferId: transferId,
@@ -228,7 +239,7 @@ const createSparkAccountSyncSession = ({
 
   const bufferHistorySync = (message: string): void => {
     pendingHistorySync = true
-    context.console.debug(message, {
+    run.deps.console.debug(message, {
       accountId: account.id,
     })
   }
@@ -237,7 +248,7 @@ const createSparkAccountSyncSession = ({
     transfer: SparkTransfer
   ): Promise<RecordTransferResult> => {
     if (!shouldRecordTransfer(transfer)) {
-      context.console.debug("Ignored Spark transfer.", {
+      run.deps.console.debug("Ignored Spark transfer.", {
         accountId: account.id,
         sparkTransferId: transfer.id,
         transfer,
@@ -245,12 +256,12 @@ const createSparkAccountSyncSession = ({
       return "ignored"
     }
 
-    return await context.lockManager.request(
+    return await run.deps.lockManager.request(
       `spark-transfer-${transfer.id}`,
       { ifAvailable: true },
       async (lock) => {
         if (lock === null) {
-          context.console.debug("Skipped locked Spark transfer.", {
+          run.deps.console.debug("Skipped locked Spark transfer.", {
             accountId: account.id,
             sparkTransferId: transfer.id,
           })
@@ -258,12 +269,12 @@ const createSparkAccountSyncSession = ({
         }
 
         const sparkTransferId = NonEmptyStringSchema.decode(transfer.id)
-        const existing = await context.evolu.loadQuery(
+        const existing = await run.deps.evolu.loadQuery(
           accountTransactionSparkByTransferIdQuery(sparkTransferId)
         )
         const existingAccountTransactionId = existing[0]?.id
         if (existingAccountTransactionId !== undefined) {
-          context.console.debug("Skipped already recorded Spark transfer.", {
+          run.deps.console.debug("Skipped already recorded Spark transfer.", {
             accountId: account.id,
             sparkTransferId,
             existingCount: existing.length,
@@ -273,7 +284,6 @@ const createSparkAccountSyncSession = ({
           // downloaded again to give reconciliation another chance —
           // `reconcileAccountTransaction` itself is the guard against
           // redoing work for one already claimed.
-          const run = createRun(context)
           await run.ok(
             reconcileAccountTransaction(existingAccountTransactionId)
           )
@@ -284,10 +294,10 @@ const createSparkAccountSyncSession = ({
           account.id,
           sparkTransferId,
           transfer,
-          context.date.now()
+          run.deps.date.now()
         )
         if (!input.ok) {
-          context.console.debug("Ignored incomplete Spark transfer.", {
+          run.deps.console.debug("Ignored incomplete Spark transfer.", {
             accountId: account.id,
             reason: input.error,
             sparkTransferId,
@@ -295,14 +305,13 @@ const createSparkAccountSyncSession = ({
           return "ignored"
         }
 
-        const run = createRun(context)
         const accountTransactionId = await run.ok(
           createAccountTransaction(input.value)
         )
         const paymentId = await run.ok(
           reconcileAccountTransaction(accountTransactionId)
         )
-        context.console.info("Created Spark account transaction.", {
+        run.deps.console.info("Created Spark account transaction.", {
           accountId: account.id,
           accountTransactionId,
           amount: getTransferAmount(transfer),
@@ -326,7 +335,7 @@ const createSparkAccountSyncSession = ({
 
     const transfer = await currentWallet.getTransfer(transferId)
     if (transfer === undefined) {
-      context.console.warn(
+      run.deps.console.warn(
         "Spark transfer event referenced an unavailable transfer.",
         {
           accountId: account.id,
@@ -357,7 +366,7 @@ const createSparkAccountSyncSession = ({
       "lock-unavailable": 0,
     }
 
-    context.console.info("Started Spark transfer history sync.", {
+    run.deps.console.info("Started Spark transfer history sync.", {
       accountId: account.id,
       pageSize: TRANSFER_PAGE_SIZE,
     })
@@ -367,7 +376,7 @@ const createSparkAccountSyncSession = ({
       pageCount += 1
       transferCount += page.transfers.length
 
-      context.console.debug("Fetched Spark transfer page.", {
+      run.deps.console.debug("Fetched Spark transfer page.", {
         accountId: account.id,
         offset,
         nextOffset: page.offset,
@@ -383,7 +392,7 @@ const createSparkAccountSyncSession = ({
       offset = page.offset
     }
 
-    context.console.info("Finished Spark transfer history sync.", {
+    run.deps.console.info("Finished Spark transfer history sync.", {
       accountId: account.id,
       pageCount,
       transferCount,
@@ -434,7 +443,7 @@ const createSparkAccountSyncSession = ({
       return
     }
 
-    context.console.debug("Initializing Spark wallet.", {
+    run.deps.console.debug("Initializing Spark wallet.", {
       accountId: account.id,
     })
 
@@ -455,26 +464,26 @@ const createSparkAccountSyncSession = ({
       // main bundle — see spark-wallet.ts's sparkWalletPool comment.
       unsubscribeEvents = createdWallet.subscribe({
         "transfer:claimed": (transferId) => {
-          context.console.debug("Received Spark transfer claimed event.", {
+          run.deps.console.debug("Received Spark transfer claimed event.", {
             accountId: account.id,
             sparkTransferId: transferId,
           })
           syncTransferSoon(transferId)
         },
         "balance:update": () => {
-          context.console.debug("Received Spark balance update event.", {
+          run.deps.console.debug("Received Spark balance update event.", {
             accountId: account.id,
           })
           syncHistorySoon()
         },
         "deposit:confirmed": () => {
-          context.console.debug("Received Spark deposit confirmed event.", {
+          run.deps.console.debug("Received Spark deposit confirmed event.", {
             accountId: account.id,
           })
           syncHistorySoon()
         },
       })
-      context.console.info("Initialized Spark wallet.", {
+      run.deps.console.info("Initialized Spark wallet.", {
         accountId: account.id,
       })
       flushBufferedWork()
@@ -486,7 +495,7 @@ const createSparkAccountSyncSession = ({
 
   const initializeSoon = (): void => {
     void init().catch((error: unknown) => {
-      context.onError(error)
+      run.deps.onError(error)
     })
   }
 
@@ -512,7 +521,7 @@ const createSparkAccountSyncSession = ({
       wallet = undefined
 
       if (walletToCleanup === undefined) {
-        context.console.debug("Disposed Spark account sync before init.", {
+        run.deps.console.debug("Disposed Spark account sync before init.", {
           accountId: account.id,
         })
         return
@@ -521,7 +530,7 @@ const createSparkAccountSyncSession = ({
       try {
         await walletToCleanup[Symbol.asyncDispose]()
       } catch (error) {
-        context.onError(error)
+        run.deps.onError(error)
       }
     },
   }

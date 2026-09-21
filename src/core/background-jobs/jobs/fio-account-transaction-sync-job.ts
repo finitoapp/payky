@@ -256,13 +256,24 @@ class FioPluginSync {
       selectedCount: toRecord.length,
       skippedCount: result.value.transactions.length - toRecord.length,
     })
+    let skippedLockedTransaction = false
     for (const transaction of toRecord) {
       if (this.syncQueue.isDisposed) return
-      await this.recordTransaction(transaction)
+      skippedLockedTransaction ||= !(await this.recordTransaction(transaction))
     }
     for (const accountTransactionId of toReconcile) {
       if (this.syncQueue.isDisposed) return
       await this.retryReconciliation(accountTransactionId)
+    }
+    if (skippedLockedTransaction) {
+      this.run.deps.console.debug(
+        "Did not advance FIO sync pointer because a transaction was locked.",
+        {
+          accountId: this.plugin.accountId,
+          pluginId: this.plugin.id,
+        }
+      )
+      return
     }
     await this.saveSyncPointer(period.to)
     this.run.deps.console.info("Finished FIO transaction sync.", {
@@ -295,8 +306,10 @@ class FioPluginSync {
     })
   }
 
-  private async recordTransaction(transaction: FioTransaction): Promise<void> {
-    await this.run.deps.lockManager.request(
+  private async recordTransaction(
+    transaction: FioTransaction
+  ): Promise<boolean> {
+    return await this.run.deps.lockManager.request(
       `fio-transaction-${this.plugin.accountId}-${transaction.id}`,
       { ifAvailable: true },
       async (lock) => {
@@ -306,7 +319,7 @@ class FioPluginSync {
             bankReference: transaction.id,
             pluginId: this.plugin.id,
           })
-          return
+          return false
         }
 
         const bankReference = NonEmptyString255Schema.decode(transaction.id)
@@ -350,6 +363,7 @@ class FioPluginSync {
           paymentId,
           pluginId: this.plugin.id,
         })
+        return true
       }
     )
   }

@@ -89,7 +89,7 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 | # | Issue | Status |
 |---|---|---|
 | 1 | Create + reconcile aren't atomic | mitigated — retried next sync |
-| 2 | Lock-skipped item outside the lookback window | open — lost silently |
+| 2 | Lock-skipped item outside the lookback window | resolved |
 | 3 | No backoff on FIO errors other than 409 | open |
 | 4 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
 | 5 | Ambiguous candidate ties | open — `payment.id` order decides |
@@ -107,11 +107,10 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
    `upsertReconciliationClaimRows`; reusing that here would also need the
    candidate *search* to run before the batch, not just the write.
 
-2. **Lock-skipped item outside the lookback window.** FIO's pointer always
-   advances after a sync loop, regardless of skips. If the lookback window
-   (default 1 day) doesn't cover the gap since the skip — e.g. a device
-   offline for days — the skipped line is never retried, with no signal
-   beyond a debug log.
+2. **Resolved.** If FIO skips a transaction because its advisory lock is
+   held, it does not advance the sync pointer. The next interval retries the
+   same window; already-recorded transactions remain deduplicated by bank
+   reference.
 
 3. **No backoff.** A `422` (FIO strong-auth required) or any other
    non-`409` failure retries at the plain check interval forever.

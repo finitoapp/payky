@@ -1,5 +1,9 @@
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
+import {
+  pickInlineOption,
+  toggleInlineCheckbox,
+} from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("edit the fiat bank account and cash register settings", async ({
@@ -17,41 +21,20 @@ test("edit the fiat bank account and cash register settings", async ({
     name: translate("en", "settings.fiatBankAccount.currency.label"),
   })
 
-  await test.step("change the bank account currency and save", async () => {
-    await currencySelect.click()
-    await page
-      .getByRole("option", { name: translate("en", "settings.fiat.eur.title") })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.fiatBankAccount.save"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.fiatBankAccount.saved"))
-      .waitFor()
-  })
+  await test.step("change the bank account currency", () =>
+    pickInlineOption(
+      page,
+      "settings.fiatBankAccount.currency.label",
+      translate("en", "settings.fiat.eur.title")
+    ))
 
   await test.step("verify the new currency persists after reload", async () => {
     await reloadPage(page, "en", "settings.paymentAccounts.title")
     await expect(currencySelect).toContainText("EUR")
   })
 
-  await test.step("disable the cash register and save", async () => {
-    await page
-      .getByRole("checkbox", {
-        name: translate("en", "settings.cashRegisterAccount.enabled.label"),
-      })
-      .click()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.cashRegisterAccount.save"),
-      })
-      .click()
-    await page
-      .getByText(translate("en", "settings.cashRegisterAccount.saved"))
-      .waitFor()
-  })
+  await test.step("disable the cash register", () =>
+    toggleInlineCheckbox(page, "settings.cashRegisterAccount.enabled.label"))
 
   await test.step("verify the cash register stays disabled after reload", async () => {
     await reloadPage(page, "en", "settings.paymentAccounts.title")

@@ -71,8 +71,6 @@ export const csSettings = {
   "settings.cashRegisterAccount.form.description":
     "Hotovostní platby používají aktuálně vybranou fiat měnu.",
   "settings.cashRegisterAccount.form.title": "Pokladna",
-  "settings.cashRegisterAccount.save": "Uložit pokladnu",
-  "settings.cashRegisterAccount.saved": "Pokladna uložena.",
   "settings.catalog": "NABÍDKA",
   "settings.categories.add": "Přidat kategorii",
   "settings.categories.delete": "Smazat kategorii",
@@ -243,8 +241,6 @@ export const csSettings = {
   "settings.fiatBankAccount.iban.invalid":
     "Zadejte platný IBAN nebo české číslo účtu.",
   "settings.fiatBankAccount.iban.label": "IBAN nebo číslo účtu",
-  "settings.fiatBankAccount.iban.required":
-    "IBAN nebo číslo účtu je povinné, když je bankovní účet povolený.",
   "settings.fiatBankAccount.qrFormat.description":
     "Tento formát se u bankovních QR plateb zobrazí jako první.",
   "settings.fiatBankAccount.qrFormat.label": "Výchozí formát QR",
@@ -253,8 +249,6 @@ export const csSettings = {
   "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
     "Pay by square 1.2 (Slovensko)",
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Česko)",
-  "settings.fiatBankAccount.save": "Uložit bankovní účet",
-  "settings.fiatBankAccount.saved": "Bankovní účet uložen.",
   "settings.fioPlugin.active.description":
     "Když je plugin zapnutý, kontroluje transakce Fio banky pro fiat bankovní účet.",
   "settings.fioPlugin.active.label": "Povolit Fio plugin",
@@ -504,10 +498,6 @@ export const csSettings = {
   "settings.sparkAccount.privacyMode.loadError":
     "Nastavení privacy mode ve Sparku se nepodařilo načíst.",
   "settings.sparkAccount.privacyMode.loading": "Načítám privacy mode...",
-  "settings.sparkAccount.privacyMode.saveError":
-    "Nastavení privacy mode ve Sparku se nepodařilo uložit.",
-  "settings.sparkAccount.save": "Uložit Spark účet",
-  "settings.sparkAccount.saved": "Spark účet uložen.",
   "settings.sparkAccount.syncPointer.description":
     "Lokální ukazatel synchronizace pro periodické přeskenování historie. Pokud ukazatel ještě neexistuje, použije se dnešní datum; přeskenování se z něj dívá jen 72 hodin zpět.",
   "settings.sparkAccount.syncPointer.invalid": "Zadejte platné datum.",

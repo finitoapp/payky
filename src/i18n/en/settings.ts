@@ -70,8 +70,6 @@ export const enSettings = {
   "settings.cashRegisterAccount.form.description":
     "Cash register payments use the currently selected fiat currency.",
   "settings.cashRegisterAccount.form.title": "Cash register",
-  "settings.cashRegisterAccount.save": "Save cash register",
-  "settings.cashRegisterAccount.saved": "Cash register saved.",
   "settings.catalog": "MENU",
   "settings.categories.add": "Add category",
   "settings.categories.delete": "Delete category",
@@ -240,8 +238,6 @@ export const enSettings = {
   "settings.fiatBankAccount.iban.invalid":
     "Enter a valid IBAN or Czech account number.",
   "settings.fiatBankAccount.iban.label": "IBAN or account number",
-  "settings.fiatBankAccount.iban.required":
-    "IBAN or account number is required when the bank account is enabled.",
   "settings.fiatBankAccount.qrFormat.description":
     "This format is shown first for bank QR payments.",
   "settings.fiatBankAccount.qrFormat.label": "Default QR format",
@@ -250,8 +246,6 @@ export const enSettings = {
   "settings.fiatBankAccount.qrFormat.payBySquare1_2_0":
     "Pay by square 1.2 (Slovakia)",
   "settings.fiatBankAccount.qrFormat.spayd": "SPAYD (Czechia)",
-  "settings.fiatBankAccount.save": "Save bank account",
-  "settings.fiatBankAccount.saved": "Bank account saved.",
   "settings.fioPlugin.active.description":
     "When enabled, the plugin checks Fio Bank transactions for the fiat bank account.",
   "settings.fioPlugin.active.label": "Enable Fio plugin",
@@ -499,10 +493,6 @@ export const enSettings = {
   "settings.sparkAccount.privacyMode.loadError":
     "Could not load the Spark privacy mode setting.",
   "settings.sparkAccount.privacyMode.loading": "Loading privacy mode...",
-  "settings.sparkAccount.privacyMode.saveError":
-    "Could not save the Spark privacy mode setting.",
-  "settings.sparkAccount.save": "Save Spark account",
-  "settings.sparkAccount.saved": "Spark account saved.",
   "settings.sparkAccount.syncPointer.description":
     "Local sync pointer for the periodic history rescan. If no pointer exists yet, today is used; the rescan only looks back 72 hours from it.",
   "settings.sparkAccount.syncPointer.invalid": "Enter a valid date.",

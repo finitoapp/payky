@@ -1,25 +1,21 @@
 import { useEffect, useId, useState } from "react"
+import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
-import { Checkbox } from "@/components/ui/checkbox.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
 import {
   Field,
-  FieldContent,
   FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { Input } from "@/components/ui/input.tsx"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select.tsx"
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
@@ -34,28 +30,70 @@ import {
 import { sparkAccountSyncPointerByAccountIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import { sparkAccountId } from "@/core/modules/account/account-utils.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
-import {
-  bankQrFormats,
-  isBankQrFormat,
-} from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
+import { isValidIban } from "@/core/modules/shared/iban-utils.ts"
 import { sparkSecretToMnemonic } from "@/core/modules/shared/key-derivation.ts"
 import {
   BankAccountInputIbanSchema,
   type BankQrFormat,
+  BankQrFormatSchema,
   FiatCurrency,
+  FiatCurrencySchema,
   type FiatCurrency as FiatCurrencyType,
+  type Iban,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
 import { timestampMsDateCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
-import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
+
+/**
+ * A codec's output side can't be a `.transform()` schema (`z.encode` runs it
+ * backwards, and a transform has no backwards to run) — which rules out
+ * `IbanSchema` itself, since it normalizes on the way in. This validates the
+ * same way (`isValidIban`) without transforming; `decode` below does the
+ * actual normalizing before handing off to it.
+ */
+const ValidatedIbanSchema = z.string().refine(isValidIban).brand<"Iban">()
+
+/**
+ * Accepts any bank account input format (IBAN or a Czech account number) and
+ * normalizes to IBAN, same as the onboarding flow's validation — but as a
+ * codec, so it can drive an `InlineEditField` directly. Blank means "not set
+ * yet", matching `optionalDateCodec`'s shape. Decode never throws: an
+ * unparseable value passes through untouched so `ValidatedIbanSchema` is the
+ * one thing deciding valid vs. invalid, per this file's other codecs.
+ */
+const optionalIbanCodec = z.codec(z.string(), ValidatedIbanSchema.nullable(), {
+  decode: (value) => {
+    const trimmed = value.trim()
+    if (trimmed === "") return null
+
+    const parsed = BankAccountInputIbanSchema.safeParse(trimmed)
+    return parsed.success ? parsed.data : trimmed
+  },
+  encode: (value) => value ?? "",
+})
+
+// Every option value comes from a fixed, locally-built option list (never
+// user input), so this cannot realistically fail — a decode error here would
+// mean the codec and its options list disagree, not bad input.
+const fiatCurrencyCodec = z.codec(z.string(), FiatCurrencySchema, {
+  decode: (value) => value as FiatCurrencyType,
+  encode: (value) => value,
+})
+
+const bankQrFormatCodec = z.codec(z.string(), BankQrFormatSchema, {
+  decode: (value) => value as BankQrFormat,
+  encode: (value) => value,
+})
 
 interface FiatBankAccountQrFormatOption {
   readonly value: BankQrFormat
@@ -76,221 +114,138 @@ export function PaymentAccountsSettingsPage() {
       <div className="h-6" />
       <FadeHeader title={t("settings.paymentAccounts.title")} />
       <div className="flex flex-col gap-5">
-        <FiatBankAccountForm />
-        <SparkAccountForm />
-        <SparkAccountSyncPointerField />
-        <CashRegisterAccountForm />
+        <FiatBankAccountCard />
+        <SparkAccountCard />
+        <CashRegisterAccountCard />
       </div>
     </>
   )
 }
 
-function FiatBankAccountForm() {
+function FiatBankAccountCard() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const formId = useId()
   const { data: accountData } = useEvoluQuery(fiatBankAccountQuery)
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [account] = accountData
   const [settings] = settingsData
-  const [enabled, setEnabled] = useState(false)
-  const [iban, setIban] = useState("")
-  const [currency, setCurrency] = useState<FiatCurrencyType>(FiatCurrency.CZK)
-  const [defaultQrFormat, setDefaultQrFormat] = useState<BankQrFormat>("spayd")
-  const { pending, saved, error, setError, resetSaved, submit } =
-    useSettingsForm()
 
-  useEffect(() => {
-    setEnabled(account ? account.isDeleted !== 1 : false)
-    setIban(account?.iban ?? "")
-    setCurrency(account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK)
-    setDefaultQrFormat(account?.defaultQrFormat ?? "spayd")
-  }, [account, settings?.fiatCurrency])
+  // An IBAN row is what `fiatBankAccountQuery`'s inner join requires to
+  // return anything, so its presence is exactly "has a bank account ever
+  // been configured" — enabling one with nothing configured yet would leave
+  // an active-looking account with no actual IBAN, which is why the checkbox
+  // below stays disabled until this is true.
+  const hasIban = account !== undefined
+  const enabled = account ? account.isDeleted !== 1 : false
+  const iban = account?.iban ?? null
+  const currency =
+    account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK
+  const defaultQrFormat = account?.defaultQrFormat ?? "spayd"
+
+  // `saveFiatBankAccount` upserts the whole row, so a partial save would
+  // reset the fields it leaves out. Each control sends the current settings
+  // with its own field replaced — same pattern as the FIO plugin form.
+  const save = async (changed: {
+    readonly enabled?: boolean
+    readonly iban?: Iban
+    readonly currency?: FiatCurrencyType
+    readonly defaultQrFormat?: BankQrFormat
+  }) => {
+    await using run = appRun()
+    await run(
+      saveFiatBankAccount({
+        enabled: changed.enabled ?? enabled,
+        iban: changed.iban ?? iban ?? undefined,
+        currency: changed.currency ?? currency,
+        defaultQrFormat: changed.defaultQrFormat ?? defaultQrFormat,
+      })
+    )
+  }
 
   return (
-    <SettingsFormCard
-      title={t("settings.fiatBankAccount.form.title")}
-      description={t("settings.fiatBankAccount.form.description")}
-      savedMessage={saved ? t("settings.fiatBankAccount.saved") : null}
-      submitLabel={t("settings.fiatBankAccount.save")}
-      pending={pending}
-      onSubmit={(event) => {
-        event.preventDefault()
-        setError(null)
-        resetSaved()
-
-        const ibanResult =
-          iban === "" ? null : BankAccountInputIbanSchema.safeParse(iban)
-
-        if (enabled && !ibanResult) {
-          setError("settings.fiatBankAccount.iban.required")
-          return
-        }
-
-        if (ibanResult?.success === false) {
-          setError("settings.fiatBankAccount.iban.invalid")
-          return
-        }
-
-        void submit(async () => {
-          await using run = appRun()
-
-          await run(
-            saveFiatBankAccount({
-              enabled,
-              iban: ibanResult?.data,
-              currency,
-              defaultQrFormat,
-            })
-          )
-
-          setIban(ibanResult?.data ?? "")
-        })
-      }}
-    >
-      <FieldGroup>
-        <Field orientation="horizontal">
-          <Checkbox
-            id={`${formId}-enabled`}
-            checked={enabled}
-            disabled={pending}
-            onCheckedChange={setEnabled}
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.fiatBankAccount.form.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.fiatBankAccount.form.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditCheckbox
+            label={t("settings.fiatBankAccount.enabled.label")}
+            description={t("settings.fiatBankAccount.enabled.description")}
+            defaultValue={enabled}
+            disabled={!hasIban}
+            onSave={(nextEnabled) => save({ enabled: nextEnabled })}
           />
-          <FieldContent>
-            <FieldLabel htmlFor={`${formId}-enabled`}>
-              {t("settings.fiatBankAccount.enabled.label")}
-            </FieldLabel>
-            <FieldDescription>
-              {t("settings.fiatBankAccount.enabled.description")}
-            </FieldDescription>
-          </FieldContent>
-        </Field>
 
-        <Field data-invalid={error !== null}>
-          <FieldLabel htmlFor={`${formId}-iban`}>
-            {t("settings.fiatBankAccount.iban.label")}
-          </FieldLabel>
-          <Input
-            id={`${formId}-iban`}
-            value={iban}
-            disabled={pending}
-            aria-invalid={error !== null}
-            autoComplete="off"
-            inputMode="text"
-            onChange={(event) => {
-              setIban(event.currentTarget.value)
-              setError(null)
-              resetSaved()
-            }}
+          <InlineEditField
+            label={t("settings.fiatBankAccount.iban.label")}
+            description={t("settings.fiatBankAccount.iban.description")}
+            defaultValue={iban}
+            codec={optionalIbanCodec}
+            errorKey="settings.fiatBankAccount.iban.invalid"
+            onSave={(nextIban) => save({ iban: nextIban ?? undefined })}
           />
-          <FieldDescription>
-            {t("settings.fiatBankAccount.iban.description")}
-          </FieldDescription>
-          <FieldError>{error ? t(error) : null}</FieldError>
-        </Field>
 
-        <Field>
-          <FieldLabel htmlFor={`${formId}-currency`}>
-            {t("settings.fiatBankAccount.currency.label")}
-          </FieldLabel>
-          <Select<FiatCurrencyType>
-            value={currency}
-            onValueChange={(nextCurrency) => {
-              if (
-                nextCurrency === FiatCurrency.EUR ||
-                nextCurrency === FiatCurrency.USD ||
-                nextCurrency === FiatCurrency.CZK
-              ) {
-                setCurrency(nextCurrency)
-                resetSaved()
-              }
-            }}
-          >
-            <SelectTrigger
-              id={`${formId}-currency`}
-              disabled={pending}
-              className="w-full"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {fiatCurrencyOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {t(option.label)}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <InlineEditSelect
+            label={t("settings.fiatBankAccount.currency.label")}
+            defaultValue={currency}
+            codec={fiatCurrencyCodec}
+            options={fiatCurrencyOptions.map((option) => ({
+              value: option.value,
+              label: t(option.label),
+            }))}
+            onSave={(nextCurrency) => save({ currency: nextCurrency })}
+          />
           <FieldDescription>
             {t("settings.fiatBankAccount.currency.description")}
           </FieldDescription>
-        </Field>
 
-        <Field>
-          <FieldLabel htmlFor={`${formId}-qrFormat`}>
-            {t("settings.fiatBankAccount.qrFormat.label")}
-          </FieldLabel>
-          <Select<BankQrFormat>
-            value={defaultQrFormat}
-            onValueChange={(nextFormat) => {
-              if (nextFormat !== null && isBankQrFormat(nextFormat)) {
-                setDefaultQrFormat(nextFormat)
-                resetSaved()
-              }
-            }}
-          >
-            <SelectTrigger
-              id={`${formId}-qrFormat`}
-              disabled={pending}
-              className="w-full"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {fiatBankAccountQrFormatOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {t(option.label)}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <InlineEditSelect
+            label={t("settings.fiatBankAccount.qrFormat.label")}
+            defaultValue={defaultQrFormat}
+            codec={bankQrFormatCodec}
+            options={fiatBankAccountQrFormatOptions.map((option) => ({
+              value: option.value,
+              label: t(option.label),
+            }))}
+            onSave={(nextFormat) => save({ defaultQrFormat: nextFormat })}
+          />
           <FieldDescription>
             {t("settings.fiatBankAccount.qrFormat.description")}
           </FieldDescription>
-        </Field>
-      </FieldGroup>
-    </SettingsFormCard>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }
 
-function SparkAccountForm() {
+function SparkAccountCard() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const formId = useId()
+  const mnemonicId = useId()
   const { data: accountData } = useEvoluQuery(sparkAccountQuery)
   const [account] = accountData
-  const [enabled, setEnabled] = useState(false)
+  const { data: pointers } = useEvoluQuery(
+    sparkAccountSyncPointerByAccountIdQuery(sparkAccountId)
+  )
+  const [pointer] = pointers
   const [privacyMode, setPrivacyMode] = useState(false)
   const [privacyModeError, setPrivacyModeError] =
     useState<TranslationKey | null>(null)
   const [privacyModePending, setPrivacyModePending] = useState(false)
-  const { pending, saved, resetSaved, submit } = useSettingsForm()
+
+  const enabled = account ? account.isDeleted !== 1 : false
+  const secret = account?.secret ?? null
 
   useEffect(() => {
-    setEnabled(account ? account.isDeleted !== 1 : false)
-  }, [account])
-
-  useEffect(() => {
-    const secret = account?.secret
     let active = true
 
     setPrivacyModeError(null)
 
-    if (!secret) {
+    if (secret === null) {
       setPrivacyMode(false)
       setPrivacyModePending(false)
       return
@@ -301,10 +256,10 @@ function SparkAccountForm() {
 
       try {
         await using wallet = await createDefaultSparkPaymentWallet(secret)
-        const settings = await wallet.getWalletSettings()
+        const walletSettings = await wallet.getWalletSettings()
 
         if (active) {
-          setPrivacyMode(settings?.privateEnabled ?? false)
+          setPrivacyMode(walletSettings?.privateEnabled ?? false)
         }
       } catch {
         if (active) {
@@ -322,220 +277,135 @@ function SparkAccountForm() {
     return () => {
       active = false
     }
-  }, [account?.secret])
+  }, [secret])
 
   return (
-    <SettingsFormCard
-      title={t("settings.sparkAccount.form.title")}
-      description={t("settings.sparkAccount.form.description")}
-      savedMessage={saved ? t("settings.sparkAccount.saved") : null}
-      submitLabel={t("settings.sparkAccount.save")}
-      pending={pending}
-      onSubmit={(event) => {
-        event.preventDefault()
-        setPrivacyModeError(null)
-        resetSaved()
-
-        void submit(async () => {
-          await using run = appRun()
-
-          const { secret } = await run.ok(saveSparkAccount({ enabled }))
-
-          if (enabled && secret !== undefined) {
-            try {
-              await using wallet = await createDefaultSparkPaymentWallet(secret)
-              const settings = await wallet.setPrivacyEnabled(privacyMode)
-
-              if (!settings) {
-                setPrivacyModeError(
-                  "settings.sparkAccount.privacyMode.saveError"
-                )
-                return false
-              }
-
-              setPrivacyMode(settings.privateEnabled)
-            } catch {
-              setPrivacyModeError("settings.sparkAccount.privacyMode.saveError")
-              return false
-            }
-          }
-
-          return undefined
-        })
-      }}
-    >
-      <FieldGroup>
-        <Field orientation="horizontal">
-          <Checkbox
-            id={`${formId}-enabled`}
-            checked={enabled}
-            disabled={pending}
-            onCheckedChange={setEnabled}
-          />
-          <FieldContent>
-            <FieldLabel htmlFor={`${formId}-enabled`}>
-              {t("settings.sparkAccount.enabled.label")}
-            </FieldLabel>
-            <FieldDescription>
-              {t("settings.sparkAccount.enabled.description")}
-            </FieldDescription>
-          </FieldContent>
-        </Field>
-
-        {account?.secret !== undefined && account.secret !== null && (
-          <Field>
-            <FieldLabel htmlFor={`${formId}-mnemonic`}>
-              {t("settings.sparkAccount.mnemonic.label")}
-            </FieldLabel>
-            <PasswordTextarea
-              id={`${formId}-mnemonic`}
-              value={sparkSecretToMnemonic(account.secret)}
-              hideLabel={t("passwordTextarea.hide")}
-              showLabel={t("passwordTextarea.show")}
-              readOnly
-              aria-readonly="true"
-              autoComplete="off"
-            />
-            <FieldDescription>
-              {t("settings.sparkAccount.mnemonic.description")}
-            </FieldDescription>
-          </Field>
-        )}
-
-        <Field
-          orientation="horizontal"
-          data-invalid={privacyModeError !== null}
-        >
-          <Checkbox
-            id={`${formId}-privacyMode`}
-            checked={privacyMode}
-            disabled={pending || privacyModePending}
-            aria-invalid={privacyModeError !== null}
-            onCheckedChange={(checked) => {
-              setPrivacyMode(checked)
-              setPrivacyModeError(null)
-              resetSaved()
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.sparkAccount.form.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.sparkAccount.form.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditCheckbox
+            label={t("settings.sparkAccount.enabled.label")}
+            description={t("settings.sparkAccount.enabled.description")}
+            defaultValue={enabled}
+            onSave={async (nextEnabled) => {
+              await using run = appRun()
+              await run.ok(saveSparkAccount({ enabled: nextEnabled }))
             }}
           />
-          <FieldContent>
-            <FieldLabel htmlFor={`${formId}-privacyMode`}>
-              {t("settings.sparkAccount.privacyMode.label")}
-            </FieldLabel>
-            <FieldDescription>
-              {privacyModePending
-                ? t("settings.sparkAccount.privacyMode.loading")
-                : t("settings.sparkAccount.privacyMode.description")}
-            </FieldDescription>
-            <FieldError>
-              {privacyModeError ? t(privacyModeError) : null}
-            </FieldError>
-          </FieldContent>
-        </Field>
-      </FieldGroup>
-    </SettingsFormCard>
+
+          {secret !== null && (
+            <Field>
+              <FieldLabel htmlFor={mnemonicId}>
+                {t("settings.sparkAccount.mnemonic.label")}
+              </FieldLabel>
+              <PasswordTextarea
+                id={mnemonicId}
+                value={sparkSecretToMnemonic(secret)}
+                hideLabel={t("passwordTextarea.hide")}
+                showLabel={t("passwordTextarea.show")}
+                readOnly
+                aria-readonly="true"
+                autoComplete="off"
+              />
+              <FieldDescription>
+                {t("settings.sparkAccount.mnemonic.description")}
+              </FieldDescription>
+            </Field>
+          )}
+
+          <InlineEditCheckbox
+            label={t("settings.sparkAccount.privacyMode.label")}
+            description={
+              privacyModeError
+                ? t(privacyModeError)
+                : privacyModePending
+                  ? t("settings.sparkAccount.privacyMode.loading")
+                  : t("settings.sparkAccount.privacyMode.description")
+            }
+            defaultValue={privacyMode}
+            disabled={secret === null || privacyModePending}
+            onSave={async (nextPrivacyMode) => {
+              if (secret === null) return
+
+              await using wallet = await createDefaultSparkPaymentWallet(secret)
+              const walletSettings =
+                await wallet.setPrivacyEnabled(nextPrivacyMode)
+
+              if (!walletSettings) {
+                throw new Error("Failed to save Spark privacy mode.")
+              }
+
+              setPrivacyMode(walletSettings.privateEnabled)
+            }}
+          />
+
+          {secret !== null && (
+            <InlineEditField
+              label={t("settings.sparkAccount.syncPointer.label")}
+              description={t("settings.sparkAccount.syncPointer.description")}
+              type="date"
+              defaultValue={pointer?.lastSyncedAt ?? TimestampMs(Date.now())}
+              codec={timestampMsDateCodec}
+              errorKey="settings.sparkAccount.syncPointer.invalid"
+              onSave={async (nextLastSyncedAt) => {
+                await using run = appRun()
+                await run.ok(
+                  updateSparkAccountSyncPointer({
+                    id: sparkAccountId,
+                    lastSyncedAt: nextLastSyncedAt,
+                  })
+                )
+              }}
+            />
+          )}
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }
 
-/**
- * Kept outside `SparkAccountForm`'s `<form>` on purpose: `InlineEditField`
- * saves itself on Enter without calling `preventDefault`, so nesting it
- * inside that form's submit handler (which also drives the async privacy-mode
- * wallet call) would fire both on Enter. Rendered as its own bare field, not
- * a titled card, next to the Spark account section it belongs to — this is a
- * rarely-touched debug/support control, not a primary setting.
- */
-function SparkAccountSyncPointerField() {
+function CashRegisterAccountCard() {
   const appRun = useAppRun()
   const { t } = useTranslation()
-  const { data: accountData } = useEvoluQuery(sparkAccountQuery)
-  const [account] = accountData
-  const { data: pointers } = useEvoluQuery(
-    sparkAccountSyncPointerByAccountIdQuery(sparkAccountId)
-  )
-  const [pointer] = pointers
-
-  if (account?.secret === undefined || account.secret === null) return null
-
-  return (
-    <InlineEditField
-      label={t("settings.sparkAccount.syncPointer.label")}
-      description={t("settings.sparkAccount.syncPointer.description")}
-      type="date"
-      defaultValue={pointer?.lastSyncedAt ?? TimestampMs(Date.now())}
-      codec={timestampMsDateCodec}
-      errorKey="settings.sparkAccount.syncPointer.invalid"
-      onSave={async (nextLastSyncedAt) => {
-        await using run = appRun()
-        await run.ok(
-          updateSparkAccountSyncPointer({
-            id: sparkAccountId,
-            lastSyncedAt: nextLastSyncedAt,
-          })
-        )
-      }}
-    />
-  )
-}
-
-function CashRegisterAccountForm() {
-  const appRun = useAppRun()
-  const { t } = useTranslation()
-  const enabledInputId = useId()
   const { data: accountData } = useEvoluQuery(cashRegisterAccountQuery)
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [account] = accountData
   const [settings] = settingsData
-  const [enabled, setEnabled] = useState(false)
-  const { pending, saved, resetSaved, submit } = useSettingsForm()
 
-  useEffect(() => {
-    setEnabled(account ? account.isDeleted !== 1 : false)
-  }, [account])
+  const enabled = account ? account.isDeleted !== 1 : false
 
   return (
-    <SettingsFormCard
-      title={t("settings.cashRegisterAccount.form.title")}
-      description={t("settings.cashRegisterAccount.form.description")}
-      savedMessage={saved ? t("settings.cashRegisterAccount.saved") : null}
-      submitLabel={t("settings.cashRegisterAccount.save")}
-      pending={pending}
-      onSubmit={(event) => {
-        event.preventDefault()
-        resetSaved()
-
-        void submit(async () => {
-          await using run = appRun()
-
-          await run(
-            saveCashRegisterAccount({
-              enabled,
-              currency: settings?.fiatCurrency ?? FiatCurrency.CZK,
-            })
-          )
-        })
-      }}
-    >
-      <FieldGroup>
-        <Field orientation="horizontal">
-          <Checkbox
-            id={enabledInputId}
-            checked={enabled}
-            disabled={pending}
-            onCheckedChange={(checked) => {
-              setEnabled(checked)
-              resetSaved()
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.cashRegisterAccount.form.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.cashRegisterAccount.form.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditCheckbox
+            label={t("settings.cashRegisterAccount.enabled.label")}
+            description={t("settings.cashRegisterAccount.enabled.description")}
+            defaultValue={enabled}
+            onSave={async (nextEnabled) => {
+              await using run = appRun()
+              await run(
+                saveCashRegisterAccount({
+                  enabled: nextEnabled,
+                  currency: settings?.fiatCurrency ?? FiatCurrency.CZK,
+                })
+              )
             }}
           />
-          <FieldContent>
-            <FieldLabel htmlFor={enabledInputId}>
-              {t("settings.cashRegisterAccount.enabled.label")}
-            </FieldLabel>
-            <FieldDescription>
-              {t("settings.cashRegisterAccount.enabled.description")}
-            </FieldDescription>
-          </FieldContent>
-        </Field>
-      </FieldGroup>
-    </SettingsFormCard>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }

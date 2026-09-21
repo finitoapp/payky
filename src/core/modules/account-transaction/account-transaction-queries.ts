@@ -38,3 +38,21 @@ export const accountTransactionCashuByQuoteIdQuery = ({
         quoteId: KyselyNotNull
       }>()
   )
+
+/**
+ * The cashu transaction a wallet `receive` operation already settled, so a
+ * token replayed for another payment is recognized as the same money.
+ */
+export const accountTransactionCashuByReceiveOperationIdQuery = (
+  receiveOperationId: NonEmptyString
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransactionCashu")
+      .select(["id", "mintUrl", "quoteId", "receiveOperationId"])
+      .where("receiveOperationId", "=", receiveOperationId)
+      .where("receiveOperationId", "is not", null)
+      .$narrowType<{
+        receiveOperationId: KyselyNotNull
+      }>()
+  )

@@ -12,7 +12,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
 
 /**
- * The account as Linky shows it for the same recovery phrase: the active
+ * The account as every app on this recovery phrase shows it: the active
  * Nostr key and the profile published for it. Avatar, name and the chevron
  * open the profile editor; the chevron sits where the settings rows below
  * keep theirs, the copy button right after the npub it copies.

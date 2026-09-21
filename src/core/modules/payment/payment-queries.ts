@@ -3,8 +3,14 @@ import {
   type KyselyNotNull,
   sqliteTrue,
 } from "@evolu/common"
+import type { RequireExactlyOne } from "type-fest"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type {
+  CashuMintUrl,
+  NonEmptyString,
+  NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 export const paymentByIdQuery = (idValue: PaymentId) =>
@@ -574,6 +580,8 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentBtcSpark.sparkInvoice",
         "paymentBtcCashu.amountSats as cashuAmountSats",
         "paymentBtcCashu.lnInvoice as cashuLnInvoice",
+        "paymentBtcCashu.mintUrl as cashuMintUrl",
+        "paymentBtcCashu.quoteId as cashuQuoteId",
         "paymentIban.accountId as ibanAccountId",
         "paymentIban.variableSymbol",
         "paymentIban.specificSymbol",
@@ -613,3 +621,59 @@ export const paymentClaimsQuery = (paymentId: PaymentId) =>
       .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .limit(1)
   )
+
+/**
+ * The cashu payments an incoming NUT-18 payment could settle: prepared at
+ * `mintUrl`, not canceled, not yet claimed by any money, and either the one
+ * whose request carried `quoteId` or those quoted at exactly `amountSats`.
+ * Newest first, because the one on the terminal's screen is the likeliest
+ * match when several ask for the same amount.
+ */
+export const unclaimedCashuPaymentsQuery = ({
+  mintUrl,
+  quoteId,
+  amountSats,
+}: { readonly mintUrl: CashuMintUrl } & RequireExactlyOne<{
+  readonly quoteId: NonEmptyString
+  readonly amountSats: NonNegativeInteger
+}>) =>
+  createQuery((db) => {
+    let query = db
+      .selectFrom("paymentBtcCashu")
+      .innerJoin("payment", "payment.id", "paymentBtcCashu.id")
+      .leftJoin("reconciliationClaim", (join) =>
+        join
+          .onRef("reconciliationClaim.paymentId", "=", "payment.id")
+          .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "payment.id as paymentId",
+        "paymentBtcCashu.accountId",
+        "paymentBtcCashu.amountSats",
+        "paymentBtcCashu.mintUrl",
+        "paymentBtcCashu.quoteId",
+        "paymentBtcCashu.lnInvoice",
+      ])
+      .where("paymentBtcCashu.mintUrl", "=", mintUrl)
+      .where("paymentBtcCashu.isDeleted", "is not", sqliteTrue)
+      .where("paymentBtcCashu.accountId", "is not", null)
+      .where("paymentBtcCashu.amountSats", "is not", null)
+      .where("paymentBtcCashu.quoteId", "is not", null)
+      .where("paymentBtcCashu.lnInvoice", "is not", null)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where("payment.canceledAt", "is", null)
+      .where("reconciliationClaim.id", "is", null)
+    if (quoteId !== undefined) {
+      query = query.where("paymentBtcCashu.quoteId", "=", quoteId)
+    }
+    if (amountSats !== undefined) {
+      query = query.where("paymentBtcCashu.amountSats", "=", amountSats)
+    }
+    return query.orderBy("payment.createdAt", "desc").$narrowType<{
+      accountId: KyselyNotNull
+      amountSats: KyselyNotNull
+      mintUrl: KyselyNotNull
+      quoteId: KyselyNotNull
+      lnInvoice: KyselyNotNull
+    }>()
+  })

@@ -27,17 +27,17 @@ describe("getPaymentMethodOrder", () => {
 })
 
 describe("getDefaultPaymentMethodForOnboarding", () => {
-  test("prefers btc, then cashu, then cash, then iban", () => {
+  test("prefers iban, then cash, then btc, then cashu", () => {
     expect(
       getDefaultPaymentMethodForOnboarding(methods("btc", "cash", "iban"))
-    ).toBe("spark")
+    ).toBe("iban")
     expect(
-      getDefaultPaymentMethodForOnboarding(methods("cashu", "cash", "iban"))
-    ).toBe("cashu")
-    expect(getDefaultPaymentMethodForOnboarding(methods("cash", "iban"))).toBe(
-      "cashRegister"
+      getDefaultPaymentMethodForOnboarding(methods("cashu", "cash", "btc"))
+    ).toBe("cashRegister")
+    expect(getDefaultPaymentMethodForOnboarding(methods("btc", "cashu"))).toBe(
+      "spark"
     )
-    expect(getDefaultPaymentMethodForOnboarding(methods("iban"))).toBe("iban")
+    expect(getDefaultPaymentMethodForOnboarding(methods("cashu"))).toBe("cashu")
   })
 
   test("still decodes to a valid method when nothing is enabled", () => {

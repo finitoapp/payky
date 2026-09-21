@@ -58,12 +58,19 @@ export const accountTransactionSparkInvoice = {
   sparkInvoice: NonEmptyStringSchema,
 } as const
 
-/** A topup minted at a cashu mint; `quoteId` is unique per mint. */
+/**
+ * Ecash that settled a cashu quote: minted after its Lightning invoice was
+ * paid, or received as a NUT-18 payment for the request carrying the quote
+ * id — then `receiveOperationId` names the wallet's `receive` operation, so
+ * the same token can never settle a second payment. `quoteId` is unique per
+ * mint.
+ */
 export const accountTransactionCashu = {
   id: AccountTransactionId,
   mintUrl: CashuMintUrlSchema,
   quoteId: NonEmptyStringSchema,
   lnInvoice: NonEmptyStringSchema,
+  receiveOperationId: NonEmptyStringSchema.nullable(),
 } as const
 
 export const accountTransactionLightning = {

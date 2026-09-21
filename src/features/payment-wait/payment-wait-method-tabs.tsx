@@ -1,7 +1,8 @@
+import type { BitcoinQrMode } from "@/core/modules/payment/payment-bitcoin-uri-utils.ts"
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
+import { BitcoinPaymentTab } from "@/features/payment-wait/payment-wait-bitcoin-tab.tsx"
 import { CashPaymentTab } from "@/features/payment-wait/payment-wait-cash-tab.tsx"
 import { IbanPaymentTab } from "@/features/payment-wait/payment-wait-iban-tab.tsx"
-import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type {
   CashPaymentTabProps,
   IbanPaidTabProps,
@@ -20,23 +21,29 @@ export function PaymentMethodTabContent({
   ibanPaymentPending,
   ibanVariableSymbol,
   preparingMessageKey,
+  selectedBitcoinQrMode,
   selectedIbanQrFormat,
+  onSelectBitcoinQrMode,
   onSelectIbanQrFormat,
   onMarkCashPaid,
   onMarkIbanPaid,
 }: {
   readonly method: PaymentMethodOption
   readonly preparingMessageKey: TranslationKey | null
+  readonly selectedBitcoinQrMode: BitcoinQrMode
   readonly selectedIbanQrFormat: BankQrFormat | null
+  readonly onSelectBitcoinQrMode: (mode: BitcoinQrMode) => void
   readonly onSelectIbanQrFormat: (format: BankQrFormat) => void
 } & CashPaymentTabProps &
   IbanPaidTabProps) {
   switch (method.id) {
     case "bitcoin":
       return (
-        <QrPaymentRequest
-          qrPayload={method.qrPayload}
+        <BitcoinPaymentTab
+          method={method}
           preparingMessageKey={preparingMessageKey}
+          selectedQrMode={selectedBitcoinQrMode}
+          onSelectQrMode={onSelectBitcoinQrMode}
         />
       )
     case "iban":

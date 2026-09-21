@@ -31,15 +31,13 @@ export function getPaymentMethodOrder(
 }
 
 /**
- * Which tab opens first. Independent of `getPaymentMethodOrder`: the default
- * falls back to `iban` even when no method is enabled, so the setting always
- * decodes to a valid `DefaultPaymentMethod`.
+ * Which tab opens first: bank transfer when the merchant enabled it, else
+ * the first enabled method in tab order. Falls back to `iban` even when no
+ * method is enabled, so the setting always decodes to a valid
+ * `DefaultPaymentMethod`.
  */
 export function getDefaultPaymentMethodForOnboarding(
   paymentMethods: ReadonlySet<OnboardingPaymentMethod>
 ): DefaultPaymentMethod {
-  if (paymentMethods.has("btc")) return "spark"
-  if (paymentMethods.has("cashu")) return "cashu"
-  if (paymentMethods.has("cash")) return "cashRegister"
-  return "iban"
+  return getPaymentMethodOrder(paymentMethods)[0] ?? "iban"
 }

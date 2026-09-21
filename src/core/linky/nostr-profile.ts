@@ -1,7 +1,11 @@
-import { decode } from "nostr-tools/nip19"
 import { finalizeEvent } from "nostr-tools/pure"
 import { z } from "zod"
 
+import {
+  publishToRelays,
+  secretKeyFromNsec,
+  withRelays,
+} from "@/core/linky/nostr-pool.ts"
 import { normalizeProfileName } from "@/core/linky/profile-name.ts"
 
 /** What Payky shows and edits of the account's Nostr (kind-0) profile. */
@@ -69,21 +73,6 @@ export const parseProfileMetadata = (content: string): NostrProfile | null => {
   }
 }
 
-const withRelays = async <T>(
-  relays: ReadonlyArray<string>,
-  use: (
-    pool: InstanceType<typeof import("nostr-tools/pool").SimplePool>
-  ) => Promise<T>
-): Promise<T> => {
-  const { SimplePool } = await import("nostr-tools/pool")
-  const pool = new SimplePool()
-  try {
-    return await use(pool)
-  } finally {
-    pool.close([...relays])
-  }
-}
-
 /** The newest kind-0 event any of `relays` holds for `pubkey`, or an empty profile. */
 export const fetchNostrProfile = async ({
   pubkey,
@@ -141,21 +130,6 @@ export const buildUpdatedProfileMetadata = ({
   }
 }
 
-export class NostrPublishError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "NostrPublishError"
-  }
-}
-
-const secretKeyFromNsec = (nsec: string): Uint8Array => {
-  const decoded = decode(nsec.trim())
-  if (decoded.type !== "nsec") {
-    throw new NostrPublishError("The active key is not an nsec.")
-  }
-  return decoded.data
-}
-
 /**
  * Signs `metadata` as a kind-0 event with the account's key and publishes
  * it to `relays`; resolves once at least one relay accepted it.
@@ -179,11 +153,7 @@ export const publishNostrProfile = async ({
     secretKeyFromNsec(nsec)
   )
 
-  await withRelays(relays, async (pool) => {
-    try {
-      await Promise.any(pool.publish([...relays], event))
-    } catch {
-      throw new NostrPublishError("No relay accepted the profile event.")
-    }
-  })
+  await withRelays(relays, (pool) =>
+    publishToRelays(pool, relays, event, "No relay accepted the profile event.")
+  )
 }

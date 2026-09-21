@@ -13,6 +13,7 @@
         "@capacitor/filesystem": "8.1.3",
         "@capacitor/haptics": "8.0.2",
         "@capacitor/ios": "8.5.2",
+        "@cashu/cashu-ts": "4.10.2",
         "@dedalik/use-react": "1.1.2",
         "@evolu-v7/common": "npm:@evolu/common@7.4.1",
         "@evolu-v7/web": "npm:@evolu/web@2.4.0",

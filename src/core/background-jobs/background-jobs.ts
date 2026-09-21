@@ -1,6 +1,7 @@
 import type { BackgroundJob } from "@/core/background-jobs/background-job-types.ts"
 import { startCashuAccountTransactionSyncJob } from "@/core/background-jobs/jobs/cashu-account-transaction-sync-job.ts"
 import { startFioAccountTransactionSyncJob } from "@/core/background-jobs/jobs/fio-account-transaction-sync-job.ts"
+import { startNostrCashuInboxJob } from "@/core/background-jobs/jobs/nostr-cashu-inbox-job.ts"
 import { startSparkAccountTransactionSyncJob } from "@/core/background-jobs/jobs/spark-account-transaction-sync-job.ts"
 
 /**
@@ -11,6 +12,7 @@ export const allBackgroundJobs = [
   startFioAccountTransactionSyncJob,
   startSparkAccountTransactionSyncJob,
   startCashuAccountTransactionSyncJob,
+  startNostrCashuInboxJob,
 ] satisfies ReadonlyArray<BackgroundJob>
 
 /**
@@ -21,6 +23,7 @@ export const allBackgroundJobs = [
 const browserBackgroundJobs = [
   startSparkAccountTransactionSyncJob,
   startCashuAccountTransactionSyncJob,
+  startNostrCashuInboxJob,
 ] satisfies ReadonlyArray<BackgroundJob>
 
 export function getBackgroundJobsForRuntime(

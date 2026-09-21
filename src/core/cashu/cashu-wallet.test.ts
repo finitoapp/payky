@@ -63,3 +63,43 @@ describe("cashu wallet", () => {
     expect(report.unavailableMints).toEqual(["http://127.0.0.1:9"])
   }, 30_000)
 })
+
+describe("cashu wallet tokens", () => {
+  const proofs = [
+    { id: "00ad268c4d1f5826", amount: 8, secret: "secret-a", C: "02ab" },
+    { id: "00ad268c4d1f5826", amount: 2, secret: "secret-b", C: "02cd" },
+  ]
+
+  test("turns a NUT-18 payload's proofs into a token the wallet describes at face value", async () => {
+    const { linkyStore, wallet } = await createTestWallet()
+    await using _store = linkyStore
+    await using _wallet = wallet
+
+    const tokenText = await wallet.encodeToken({
+      mintUrl: "https://mint.example.com/",
+      unit: "sat",
+      proofs,
+    })
+
+    expect(tokenText?.startsWith("cashuB")).toBe(true)
+    await expect(wallet.describeToken(`cashu:${tokenText}`)).resolves.toEqual({
+      tokenText,
+      mintUrl: "https://mint.example.com",
+      amountSats: 10,
+    })
+    await expect(
+      wallet.findReceivedTransfer(tokenText ?? "")
+    ).resolves.toBeNull()
+  })
+
+  test("describes nothing in a chat line and refuses proofs without a mint", async () => {
+    const { linkyStore, wallet } = await createTestWallet()
+    await using _store = linkyStore
+    await using _wallet = wallet
+
+    await expect(wallet.describeToken("thanks!")).resolves.toBeNull()
+    await expect(
+      wallet.encodeToken({ mintUrl: "not a url", unit: "sat", proofs })
+    ).resolves.toBeNull()
+  })
+})

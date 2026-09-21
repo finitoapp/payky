@@ -107,6 +107,7 @@ describe("cashu account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: wallet,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -157,6 +158,7 @@ describe("cashu account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: () => undefined,
     })
 
@@ -179,6 +181,7 @@ describe("cashu account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: wallet,
+      nostrInbox: null,
       onError: () => undefined,
     })
     const job = await jobRun.ok(

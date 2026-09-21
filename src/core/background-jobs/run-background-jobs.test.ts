@@ -27,6 +27,7 @@ const createBackgroundJobContext = (
   }) as unknown as FetchDep["fetch"],
   lockManager: createInProcessLockManager(),
   cashuWallet: null,
+  nostrInbox: null,
   onError: (error) => {
     errors.push(error)
   },

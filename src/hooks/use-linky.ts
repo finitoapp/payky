@@ -12,18 +12,23 @@ import {
   resolveLinkyIdentity,
 } from "@/core/linky/linky-identity.ts"
 import type { LinkyStoreHandle } from "@/core/linky/linky-store.ts"
+import { uniqueRelayUrls } from "@/core/linky/nostr-pool.ts"
 import {
   fetchNostrProfile,
   type NostrProfile,
 } from "@/core/linky/nostr-profile.ts"
+import {
+  fetchNostrRelayList,
+  type NostrRelayList,
+} from "@/core/linky/nostr-relay-lists.ts"
 
-/** The account's Linky store; suspends until its Evolu client has answered. */
+/** The account's shared store; suspends until its Evolu client has answered. */
 export const useLinkyStore = (): LinkyStoreHandle =>
   useAtomValue(linkyStoreAtom)
 
 /**
- * The Nostr identity Linky uses for this account, kept current as the
- * identity shard syncs: a key pasted into Linky shows up here too.
+ * The account's Nostr identity, kept current as the identity shard syncs: a
+ * key switched in any app on this recovery phrase shows up here too.
  */
 export const useLinkyIdentity = (): LinkyIdentity => {
   const { identity } = useLinkyStore()
@@ -48,18 +53,58 @@ export const useLinkyIdentity = (): LinkyIdentity => {
   return useMemo(() => resolveLinkyIdentity(row, masterKey), [row, masterKey])
 }
 
-export const myNostrProfileQueryKey = (pubkey: string) =>
-  ["linky", "profile", pubkey] as const
+/**
+ * The relays every lookup starts from: they hold the relay lists, and a
+ * profile is read from and published to them as well as the user's own.
+ */
+export const bootstrapNostrRelays: ReadonlyArray<string> =
+  linkyEnv.VITE_LINKY_NOSTR_RELAYS
 
-/** The published kind-0 profile of the Linky identity; empty until one is published. */
-export const useMyNostrProfile = (identity: LinkyIdentity) =>
-  useQuery<NostrProfile>({
-    queryKey: myNostrProfileQueryKey(identity.pubkey),
+export const nostrRelayListQueryKey = (pubkey: string) =>
+  ["linky", "relays", pubkey] as const
+
+/** The relay list published under the key; `null` data when none is. */
+export const useNostrRelayList = (identity: LinkyIdentity) =>
+  useQuery<NostrRelayList | null>({
+    queryKey: nostrRelayListQueryKey(identity.pubkey),
     queryFn: ({ signal }) =>
-      fetchNostrProfile({
+      fetchNostrRelayList({
         pubkey: identity.pubkey,
-        relays: linkyEnv.VITE_LINKY_NOSTR_RELAYS,
+        relays: bootstrapNostrRelays,
         signal,
       }),
     staleTime: 5 * 60_000,
   })
+
+/**
+ * The relays the user's profile is read from and published to: the user's
+ * list once it is known, always together with the bootstrap relays.
+ */
+export const useNostrRelays = (
+  identity: LinkyIdentity
+): ReadonlyArray<string> => {
+  const relayList = useNostrRelayList(identity)
+  const published = relayList.data?.relayUrls
+  return useMemo(
+    () => uniqueRelayUrls([...bootstrapNostrRelays, ...(published ?? [])]),
+    [published]
+  )
+}
+
+export const myNostrProfileQueryKey = (pubkey: string) =>
+  ["linky", "profile", pubkey] as const
+
+/**
+ * The published kind-0 profile of the identity; empty until one is
+ * published. Read from the bootstrap relays at once and again from the
+ * user's own relays once their list has arrived.
+ */
+export const useMyNostrProfile = (identity: LinkyIdentity) => {
+  const relays = useNostrRelays(identity)
+  return useQuery<NostrProfile>({
+    queryKey: [...myNostrProfileQueryKey(identity.pubkey), relays],
+    queryFn: ({ signal }) =>
+      fetchNostrProfile({ pubkey: identity.pubkey, relays, signal }),
+    staleTime: 5 * 60_000,
+  })
+}

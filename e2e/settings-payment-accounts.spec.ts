@@ -41,6 +41,13 @@ test("edit the bank account and switch cash off", async ({
   })
 
   await test.step("switch bitcoin between cashu and spark", async () => {
+    // The seed enables cash and the bank account only; bitcoin comes on
+    // here, on cashu, as the switch does for a merchant.
+    const bitcoinSwitch = page.getByRole("switch", {
+      name: translate("en", "settings.paymentMethods.bitcoin.enabled"),
+    })
+    if (!(await bitcoinSwitch.isChecked())) await bitcoinSwitch.click()
+    await expect(bitcoinSwitch).toBeChecked()
     const mintInput = page.getByRole("textbox", {
       name: translate("en", "settings.cashuAccount.mintUrl.label"),
     })
@@ -73,6 +80,23 @@ test("edit the bank account and switch cash off", async ({
     ).toBeVisible()
   })
 
+  await test.step("the seeded default is cash; bank transfer takes it over", async () => {
+    await expect(page.getByTestId("payment-method-default-cash")).toBeVisible()
+    const makeDefaultButtons = page.getByRole("button", {
+      name: translate("en", "settings.paymentMethods.makeDefault"),
+    })
+    // Cards are laid out bank, bitcoin, cash, so the first "set as default"
+    // is the bank card's.
+    await makeDefaultButtons.first().click()
+    await expect(page.getByTestId("payment-method-default-bank")).toBeVisible()
+    await expect(page.getByTestId("payment-method-default-cash")).toBeHidden()
+  })
+
+  await test.step("the default persists after reload", async () => {
+    await reloadPage(page, "en", "settings.paymentAccounts.title")
+    await expect(page.getByTestId("payment-method-default-bank")).toBeVisible()
+  })
+
   await test.step("switch cash off", async () => {
     const cashSwitch = page.getByRole("switch", {
       name: translate("en", "settings.paymentMethods.cash.enabled"),
@@ -89,5 +113,17 @@ test("edit the bank account and switch cash off", async ({
         name: translate("en", "settings.paymentMethods.cash.enabled"),
       })
     ).not.toBeChecked()
+  })
+
+  await test.step("switching the default method off hands the pill to another enabled method", async () => {
+    const bankSwitch = page.getByRole("switch", {
+      name: translate("en", "settings.paymentMethods.bank.enabled"),
+    })
+    await bankSwitch.click()
+    await expect(bankSwitch).not.toBeChecked()
+    await expect(page.getByTestId("payment-method-default-bank")).toBeHidden()
+    await expect(
+      page.getByTestId("payment-method-default-bitcoin")
+    ).toBeVisible()
   })
 })

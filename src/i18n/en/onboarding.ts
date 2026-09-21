@@ -3,7 +3,7 @@ export const enOnboarding = {
     "Waiting for the account data to sync. This usually takes a few seconds.",
   "accountRestore.timeout.continue": "Keep waiting",
   "accountRestore.timeout.description":
-    "No account settings have arrived yet. The phrase may belong to an account never used in Payky before — for example one created in Linky. Keep waiting, or set this account up now; its recovery phrase stays the one you entered.",
+    "No account settings have arrived yet. The phrase may belong to an account that has never been used in Payky before. Keep waiting, or set this account up now; its recovery phrase stays the one you entered.",
   "accountRestore.timeout.setup": "Set up this account",
   "accountRestore.timeout.title": "Still restoring account",
   "accountRestore.title": "Restoring account",
@@ -41,8 +41,7 @@ export const enOnboarding = {
   "onboarding.start.create": "Create a new account",
   "onboarding.start.createHint": "No phone number or e-mail needed.",
   "onboarding.start.restore": "I already have an account",
-  "onboarding.start.restoreHint":
-    "Sign in with your 20 words — from Payky or Linky.",
+  "onboarding.start.restoreHint": "Sign in with your 20 words.",
   "onboarding.start.subtitle":
     "A payment terminal for bitcoin and bank transfers.",
   "onboarding.title": "Payky",

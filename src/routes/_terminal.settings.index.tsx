@@ -4,7 +4,6 @@ import {
   ArrowUpFromLine,
   BadgeDollarSign,
   Bug,
-  CircleDollarSign,
   DatabaseBackup,
   FolderIcon,
   Globe,
@@ -16,6 +15,7 @@ import {
   Lock,
   Percent,
   Plug,
+  Radio,
   ReceiptText,
   ShieldCheck,
   ShoppingBag,
@@ -115,12 +115,6 @@ const paymentSettings: ReadonlyArray<SettingRow> = [
     to: "/settings/payment-accounts",
   },
   {
-    icon: CircleDollarSign,
-    title: "settings.defaultPaymentMethod.title",
-    description: "settings.defaultPaymentMethod.description",
-    to: "/settings/default-payment-method",
-  },
-  {
     icon: BadgeDollarSign,
     title: "settings.tips.title",
     description: "settings.tips.description",
@@ -217,6 +211,12 @@ const securitySettings: ReadonlyArray<SettingRow> = [
     title: "settings.security.title",
     description: "settings.security.description",
     to: "/settings/security",
+  },
+  {
+    icon: Radio,
+    title: "settings.nostrRelays.title",
+    description: "settings.nostrRelays.description",
+    to: "/settings/nostr-relays",
   },
 ]
 

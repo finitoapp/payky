@@ -1,6 +1,7 @@
 import { atom } from "jotai"
 
 import { accountAtom } from "@/atoms/account.ts"
+import { consoleAtom } from "@/atoms/console.ts"
 import type { LinkyStoreHandle } from "@/core/linky/linky-store.ts"
 
 /**
@@ -20,13 +21,14 @@ export interface LinkyStoreProvider {
  */
 export const linkyStoreProviderAtom = atom<Promise<LinkyStoreProvider>>(
   async (get, { signal }) => {
+    const console = get(consoleAtom)
     const account = await get(accountAtom)
     let opened: Promise<LinkyStoreHandle> | undefined
 
     const open = (): Promise<LinkyStoreHandle> => {
       opened ??= import("@/core/linky/linky-browser-store.ts").then(
         ({ createBrowserLinkyStore }) =>
-          createBrowserLinkyStore(account.masterKey)
+          createBrowserLinkyStore(account.masterKey, { console })
       )
       return opened
     }

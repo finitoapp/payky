@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import {
   defaultPaymentMethodOrder,
   parsePaymentMethodOrder,
+  resolveDefaultPaymentMethod,
 } from "./app-settings-utils.ts"
 
 describe("parsePaymentMethodOrder", () => {
@@ -55,5 +56,49 @@ describe("parsePaymentMethodOrder", () => {
       "spark",
       "cashu",
     ])
+  })
+})
+
+describe("resolveDefaultPaymentMethod", () => {
+  const order = ["iban", "cashRegister", "spark", "cashu"] as const
+
+  test("keeps the configured method while it is enabled", () => {
+    expect(
+      resolveDefaultPaymentMethod({
+        configured: "spark",
+        enabledMethods: new Set(["iban", "spark"]),
+        order,
+      })
+    ).toBe("spark")
+  })
+
+  test("a new profile defaults to bank transfer", () => {
+    expect(
+      resolveDefaultPaymentMethod({
+        configured: undefined,
+        enabledMethods: new Set(["cashRegister", "iban"]),
+        order,
+      })
+    ).toBe("iban")
+  })
+
+  test("hands the default to the first enabled method once the configured one is off", () => {
+    expect(
+      resolveDefaultPaymentMethod({
+        configured: "iban",
+        enabledMethods: new Set(["spark", "cashRegister"]),
+        order,
+      })
+    ).toBe("cashRegister")
+  })
+
+  test("is null when no method is enabled", () => {
+    expect(
+      resolveDefaultPaymentMethod({
+        configured: "iban",
+        enabledMethods: new Set(),
+        order,
+      })
+    ).toBeNull()
   })
 })

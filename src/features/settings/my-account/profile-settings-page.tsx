@@ -13,11 +13,11 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { linkyEnv } from "@/core/linky/linky-env.ts"
 import {
   buildUpdatedProfileMetadata,
   publishNostrProfile,
 } from "@/core/linky/nostr-profile.ts"
+import { NostrKeyCard } from "@/features/settings/my-account/nostr-key-card.tsx"
 import { ProfileAvatar } from "@/features/settings/my-account/profile-avatar.tsx"
 import { readProfilePicture } from "@/features/settings/my-account/profile-picture.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
@@ -26,13 +26,14 @@ import {
   myNostrProfileQueryKey,
   useLinkyIdentity,
   useMyNostrProfile,
+  useNostrRelays,
 } from "@/hooks/use-linky.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
- * Edits the name and picture of the account's Nostr profile — the one Linky
- * shows too — and republishes it with the active key. Everything else the
- * published profile carries is kept as it is.
+ * Edits the name and picture of the account's Nostr profile — shared with
+ * every app on this recovery phrase — and republishes it with the active
+ * key. Everything else the published profile carries is kept as it is.
  */
 export function ProfileSettingsPage() {
   const { t } = useTranslation()
@@ -40,6 +41,7 @@ export function ProfileSettingsPage() {
   const queryClient = useQueryClient()
   const identity = useLinkyIdentity()
   const profile = useMyNostrProfile(identity)
+  const relays = useNostrRelays(identity)
   const formId = useId()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState("")
@@ -88,7 +90,7 @@ export function ProfileSettingsPage() {
             try {
               await publishNostrProfile({
                 nsec: identity.nsec,
-                relays: linkyEnv.VITE_LINKY_NOSTR_RELAYS,
+                relays,
                 metadata: buildUpdatedProfileMetadata({
                   current: profile.data?.metadata ?? {},
                   name,
@@ -179,6 +181,8 @@ export function ProfileSettingsPage() {
           </Field>
         </FieldGroup>
       </SettingsFormCard>
+      <div className="h-5" />
+      <NostrKeyCard identity={identity} />
     </>
   )
 }

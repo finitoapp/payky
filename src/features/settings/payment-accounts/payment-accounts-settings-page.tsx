@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
+import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx"
 import {
@@ -50,6 +51,10 @@ import {
   FiatCurrency,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import {
+  type PaymentMethodCardKind,
+  useDefaultPaymentMethod,
+} from "@/features/settings/payment-accounts/use-default-payment-method.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useCashuWallet } from "@/hooks/use-cashu-wallet.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
@@ -67,21 +72,63 @@ const AUTOSAVE_DELAY_MS = 700
  * turns it on; nothing needs saving by hand — a switch writes at once and a
  * field writes once it holds a valid value. Bank transfers need only the
  * account: currency and QR standard follow from it. Bitcoin runs on one
- * backend at a time, cashu or Spark, chosen by the segmented control.
+ * backend at a time, cashu or Spark, chosen by the segmented control. One
+ * enabled card carries the "default" pill: payments open on that method,
+ * and any other enabled card can take it over.
  */
 export function PaymentAccountsSettingsPage() {
   const { t } = useTranslation()
+  const defaultMethod = useDefaultPaymentMethod()
 
   return (
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.paymentAccounts.title")} />
       <div className="flex flex-col gap-5">
-        <BankTransferMethodCard />
-        <BitcoinMethodCard />
-        <CashMethodCard />
+        <BankTransferMethodCard defaultMethod={defaultMethod} />
+        <BitcoinMethodCard defaultMethod={defaultMethod} />
+        <CashMethodCard defaultMethod={defaultMethod} />
       </div>
     </>
+  )
+}
+
+type DefaultMethodState = ReturnType<typeof useDefaultPaymentMethod>
+
+/**
+ * The pill in a card header: "Default" on the card payments open on, and
+ * "Set as default" on every other enabled card.
+ */
+function DefaultPill({
+  card,
+  enabled,
+  pending,
+  defaultMethod,
+  onMakeDefault,
+}: {
+  readonly card: PaymentMethodCardKind
+  readonly enabled: boolean
+  readonly pending: boolean
+  readonly defaultMethod: DefaultMethodState
+  readonly onMakeDefault: () => void
+}) {
+  const { t } = useTranslation()
+  if (!enabled) return null
+  if (defaultMethod.defaultCard === card) {
+    return (
+      <Badge data-testid={`payment-method-default-${card}`}>
+        {t("settings.paymentMethods.default")}
+      </Badge>
+    )
+  }
+  return (
+    <Badge
+      variant="outline"
+      render={<button type="button" disabled={pending} />}
+      onClick={onMakeDefault}
+    >
+      {t("settings.paymentMethods.makeDefault")}
+    </Badge>
   )
 }
 
@@ -92,6 +139,7 @@ function MethodCard({
   enabled,
   pending,
   onEnabledChange,
+  pill,
   children,
 }: {
   readonly icon: LucideIcon
@@ -100,6 +148,7 @@ function MethodCard({
   readonly enabled: boolean
   readonly pending: boolean
   readonly onEnabledChange: (enabled: boolean) => void
+  readonly pill: ReactNode
   readonly children?: ReactNode
 }) {
   return (
@@ -107,6 +156,7 @@ function MethodCard({
       <CardHeader className="flex flex-row items-center gap-3">
         <Icon className="text-muted-foreground" />
         <span className="flex-1 font-semibold">{title}</span>
+        {pill}
         <Switch
           checked={enabled}
           disabled={pending}
@@ -146,7 +196,11 @@ const useSavedFlash = () => {
   return { visible, flash }
 }
 
-function BankTransferMethodCard() {
+function BankTransferMethodCard({
+  defaultMethod,
+}: {
+  readonly defaultMethod: DefaultMethodState
+}) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const formId = useId()
@@ -262,6 +316,15 @@ function BankTransferMethodCard() {
       enabled={accountEnabled || editing}
       pending={pending}
       onEnabledChange={(enabled) => void setEnabled(enabled)}
+      pill={
+        <DefaultPill
+          card="bank"
+          enabled={accountEnabled}
+          pending={pending}
+          defaultMethod={defaultMethod}
+          onMakeDefault={() => void defaultMethod.setDefault("iban")}
+        />
+      }
     >
       {accountEnabled || editing ? (
         <FieldGroup>
@@ -309,7 +372,11 @@ function BankTransferMethodCard() {
 
 type BitcoinBackend = "cashu" | "spark"
 
-function BitcoinMethodCard() {
+function BitcoinMethodCard({
+  defaultMethod,
+}: {
+  readonly defaultMethod: DefaultMethodState
+}) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const saveFailed = useSaveFailedToast()
@@ -366,6 +433,15 @@ function BitcoinMethodCard() {
       enabled={bitcoinEnabled}
       pending={pending}
       onEnabledChange={(enabled) => void applyBackend(enabled ? "cashu" : null)}
+      pill={
+        <DefaultPill
+          card="bitcoin"
+          enabled={bitcoinEnabled}
+          pending={pending}
+          defaultMethod={defaultMethod}
+          onMakeDefault={() => void defaultMethod.setDefault(backend)}
+        />
+      }
     >
       {bitcoinEnabled ? (
         <div className="flex flex-col gap-5">
@@ -687,7 +763,11 @@ function SparkBackend({
   )
 }
 
-function CashMethodCard() {
+function CashMethodCard({
+  defaultMethod,
+}: {
+  readonly defaultMethod: DefaultMethodState
+}) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const saveFailed = useSaveFailedToast()
@@ -723,6 +803,15 @@ function CashMethodCard() {
       enabled={enabled}
       pending={pending}
       onEnabledChange={(nextEnabled) => void setEnabled(nextEnabled)}
+      pill={
+        <DefaultPill
+          card="cash"
+          enabled={enabled}
+          pending={pending}
+          defaultMethod={defaultMethod}
+          onMakeDefault={() => void defaultMethod.setDefault("cashRegister")}
+        />
+      }
     />
   )
 }

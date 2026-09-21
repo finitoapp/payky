@@ -112,27 +112,6 @@ export const enSettings = {
   "settings.debugConsole.pause": "Pause",
   "settings.debugConsole.resume": "Resume",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Open new payments with the cash tab selected.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Cash",
-  "settings.defaultPaymentMethod.description":
-    "Choose which enabled method is selected first when starting a bill",
-  "settings.defaultPaymentMethod.empty":
-    "No payment method is currently available for the selected fiat currency.",
-  "settings.defaultPaymentMethod.empty.action": "Manage payment accounts",
-  "settings.defaultPaymentMethod.iban.description":
-    "Open new payments with the bank QR tab selected.",
-  "settings.defaultPaymentMethod.iban.title": "Bank transfer",
-  "settings.defaultPaymentMethod.mode.description":
-    "Only enabled methods compatible with the selected fiat currency are shown.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "The saved default is not available. Select a new enabled method.",
-  "settings.defaultPaymentMethod.mode.title": "Default bill payment method",
-  "settings.defaultPaymentMethod.saved": "Default payment method saved.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Open new payments with the Bitcoin / Spark tab selected.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Default Payment Method",
   "settings.developers": "DEVELOPERS",
   "settings.donations.amount.invalid": "Enter a positive whole number of sats.",
   "settings.donations.amount.range":
@@ -621,4 +600,61 @@ export const enSettings = {
   "settings.withdrawals.description":
     "Send Bitcoin from a Spark account to an on-chain address",
   "settings.withdrawals.title": "Withdrawals",
+  "settings.nostrRelays.title": "Nostr relays",
+  "settings.nostrRelays.description": "Where your profile is published",
+  "settings.nostrRelays.card.description":
+    "Your profile is published to these relays. The list is stored under your key, so every app signed in with your recovery phrase uses the same relays.",
+  "settings.nostrRelays.defaults":
+    "No relay list has been published for this key yet; these are the default relays.",
+  "settings.nostrRelays.url.label": "Relay URL",
+  "settings.nostrRelays.url.description":
+    "A websocket address such as wss://relay.example.com.",
+  "settings.nostrRelays.url.invalid": "Enter a valid wss:// relay URL.",
+  "settings.nostrRelays.url.duplicate": "This relay is already in the list.",
+  "settings.nostrRelays.add": "Add relay",
+  "settings.nostrRelays.remove": "Remove {url}",
+  "settings.nostrRelays.remove.confirm.title": "Remove relay?",
+  "settings.nostrRelays.remove.confirm.description":
+    "Your profile will no longer be published to {url}.",
+  "settings.nostrRelays.remove.confirm.action": "Remove",
+  "settings.nostrRelays.remove.confirm.cancel": "Keep",
+  "settings.nostrRelays.published": "Relay list published.",
+  "settings.nostrRelays.publishFailed":
+    "Could not publish the relay list. Check the connection and try again.",
+  "settings.nostrRelays.footer":
+    "At least one relay stays in the list. Changes reach other devices once they connect to the relays.",
+  "settings.profile.key.title": "Nostr key",
+  "settings.profile.key.description":
+    "The key your profile is published with. Every app signed in with your recovery phrase uses the same key.",
+  "settings.profile.key.derived": "Derived from the recovery phrase",
+  "settings.profile.key.custom": "Custom key",
+  "settings.profile.key.useCustom": "Use a different key",
+  "settings.profile.key.useDerived": "Use the derived key",
+  "settings.profile.key.cancel": "Cancel",
+  "settings.profile.key.switch": "Switch key",
+  "settings.profile.key.nsec.label": "Secret key (nsec)",
+  "settings.profile.key.nsec.description":
+    "Paste the nsec of the key you want to use. It is stored encrypted and synced to your other devices.",
+  "settings.profile.key.nsec.invalid": "Enter a valid nsec.",
+  "settings.profile.key.nsec.same": "This key is already active.",
+  "settings.profile.key.switch.confirm.title": "Switch the Nostr key?",
+  "settings.profile.key.switch.confirm.description":
+    "Your profile is republished with the new key, and every app and device signed in with this recovery phrase switches to it.",
+  "settings.profile.key.switch.confirm.action": "Switch",
+  "settings.profile.key.switch.confirm.cancel": "Cancel",
+  "settings.profile.key.switchFailed":
+    "Could not switch the key. Check the connection and try again.",
+  "settings.paymentMethods.default": "Default",
+  "settings.paymentMethods.makeDefault": "Set as default",
+  "settings.profile.key.profileChoice.title":
+    "Which profile do you want to keep?",
+  "settings.profile.key.profileChoice.description":
+    "The key you are switching to already publishes a different name or picture. Keeping the current profile publishes it under the new key; using the key's profile leaves it as it is.",
+  "settings.profile.key.profileChoice.keepCurrent": "Keep current profile",
+  "settings.profile.key.profileChoice.useKeyProfile": "Use this key's profile",
+  "settings.profile.key.profileChoice.noName": "No name",
+  "settings.profile.key.switchedKeptProfile":
+    "Key switched and the current profile republished with it.",
+  "settings.profile.key.switchedKeyProfile":
+    "Key switched. Its profile is now shown.",
 } as const

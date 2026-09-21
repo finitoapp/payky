@@ -48,6 +48,15 @@ const secretKeyFromNsec = (nsec: string): Uint8Array | null => {
   }
 }
 
+/** The identity a pasted `nsec` names, or `null` when it does not decode. */
+export const identityFromNsec = (
+  nsec: string,
+  source: LinkyIdentitySource
+): LinkyIdentity | null => {
+  const secretKey = secretKeyFromNsec(nsec)
+  return secretKey === null ? null : identityFromSecretKey(secretKey, source)
+}
+
 /**
  * The identity row wins when Linky wrote one — that is how a pasted nsec
  * reaches other devices — and the derived key is the answer otherwise, the

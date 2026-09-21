@@ -16,7 +16,8 @@ import {
 export const settingsId =
   createIdFromString<"AppSettings">("payky-app-settings")
 
-export const defaultPaymentMethod: DefaultPaymentMethod = "spark"
+/** A new profile opens payments on the bank transfer tab. */
+export const defaultPaymentMethod: DefaultPaymentMethod = "iban"
 
 export const defaultPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> = [
   "cashRegister",
@@ -39,6 +40,26 @@ export const createDefaultSettings = (): AppSettingsRow => ({
 export const getDefaultPaymentMethod = (
   value: DefaultPaymentMethod | undefined
 ): DefaultPaymentMethod => value ?? defaultPaymentMethod
+
+/**
+ * The method payments open on: the configured one while it is enabled,
+ * otherwise the first enabled method in the terminal's tab order. Switching
+ * the configured method off therefore hands the default to another method
+ * without a write, and switching it back on restores it.
+ */
+export const resolveDefaultPaymentMethod = ({
+  configured,
+  enabledMethods,
+  order,
+}: {
+  readonly configured: DefaultPaymentMethod | undefined
+  readonly enabledMethods: ReadonlySet<DefaultPaymentMethod>
+  readonly order: ReadonlyArray<DefaultPaymentMethod>
+}): DefaultPaymentMethod | null => {
+  const preferred = getDefaultPaymentMethod(configured)
+  if (enabledMethods.has(preferred)) return preferred
+  return order.find((method) => enabledMethods.has(method)) ?? null
+}
 
 export const parsePaymentMethodOrder = (
   value: string | null | undefined

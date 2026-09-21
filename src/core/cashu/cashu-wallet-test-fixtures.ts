@@ -14,6 +14,7 @@ const notImplemented = (): never => {
  */
 export class FakeCashuWallet implements CashuWallet {
   readonly watchCalls: number[] = []
+  readonly receivedTexts: string[] = []
   readonly disposals: unknown[] = []
   private readonly settledListeners = new Set<
     (receipt: CashuTopupReceipt) => void
@@ -47,6 +48,20 @@ export class FakeCashuWallet implements CashuWallet {
 
   restore: CashuWallet["restore"] = (params) =>
     (this.overrides.restore ?? notImplemented)(params)
+
+  describeToken: CashuWallet["describeToken"] = (text) =>
+    (this.overrides.describeToken ?? notImplemented)(text)
+
+  encodeToken: CashuWallet["encodeToken"] = (token) =>
+    (this.overrides.encodeToken ?? notImplemented)(token)
+
+  receiveToken: CashuWallet["receiveToken"] = (text) => {
+    this.receivedTexts.push(text)
+    return (this.overrides.receiveToken ?? notImplemented)(text)
+  }
+
+  findReceivedTransfer: CashuWallet["findReceivedTransfer"] = (tokenText) =>
+    (this.overrides.findReceivedTransfer ?? (async () => null))(tokenText)
 
   emitTopupSettled(receipt: CashuTopupReceipt): void {
     for (const listener of this.settledListeners) listener(receipt)

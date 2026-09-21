@@ -5,7 +5,7 @@ export const csOnboarding = {
     "Čekáme na synchronizaci dat účtu. Obvykle to trvá pár sekund.",
   "accountRestore.timeout.continue": "Čekat dál",
   "accountRestore.timeout.description":
-    "Nastavení účtu zatím nedorazilo. Fráze může patřit účtu, který v Payky ještě nebyl použit – třeba založenému v Linky. Čekejte dál, nebo tento účet nastavte hned; jeho recovery phrase zůstane ta, kterou jste zadali.",
+    "Nastavení účtu zatím nedorazilo. Fráze může patřit účtu, který v Payky ještě nebyl použit. Čekejte dál, nebo tento účet nastavte hned; jeho recovery phrase zůstane ta, kterou jste zadali.",
   "accountRestore.timeout.setup": "Nastavit tento účet",
   "accountRestore.timeout.title": "Obnova účtu stále probíhá",
   "accountRestore.title": "Obnovování účtu",
@@ -43,8 +43,7 @@ export const csOnboarding = {
   "onboarding.start.create": "Vytvořit nový účet",
   "onboarding.start.createHint": "Nepotřebuješ telefon ani e-mail.",
   "onboarding.start.restore": "Už mám účet",
-  "onboarding.start.restoreHint":
-    "Přihlásíš se svými 20 slovy – z Payky nebo z Linky.",
+  "onboarding.start.restoreHint": "Přihlásíš se svými 20 slovy.",
   "onboarding.start.subtitle":
     "Platební terminál pro bitcoin a bankovní převody.",
   "onboarding.title": "Payky",

@@ -15,28 +15,51 @@ export interface PaymentMethodOptionBase {
   readonly icon: ReactNode
 }
 
-export type PaymentMethodOption = PaymentMethodOptionBase &
-  (
-    | {
-        /**
-         * One bitcoin tab whatever is enabled: Spark, cashu or both. With
-         * both, the QR is a BIP-321 uri carrying the mint's Lightning invoice
-         * and the Spark invoice; alone, each is shown as its bare invoice.
-         */
-        readonly id: "bitcoin"
-        readonly qrPayload: string | null
-        readonly sparkAccountId: AccountId | null
-        readonly cashuAccountId: AccountId | null
-      }
-    | {
-        readonly id: "iban"
-        readonly qrPayload: string | null
-        readonly qrPayloads: ReadonlyArray<BankQrPayload>
-        readonly defaultQrFormat: BankQrFormat
-        readonly iban: string | null
-      }
-    | { readonly id: "cash"; readonly qrPayload: null }
-  )
+/**
+ * A prepared mint quote as the bitcoin tab shows it: the NUT-18 request is
+ * built from the amount, mint and quote id once the account's Nostr identity
+ * is known, and the invoices ride along in the universal QR next to it.
+ */
+export interface PreparedCashuRequest {
+  readonly amountSats: number
+  readonly mintUrl: string
+  readonly quoteId: string
+  readonly lightningInvoice: string
+  readonly sparkInvoice: string | null
+}
+
+export interface BitcoinPaymentMethodOption extends PaymentMethodOptionBase {
+  /**
+   * One bitcoin tab whatever is enabled: Spark, cashu or both. Spark alone is
+   * shown as its bare invoice. With cashu the tab offers three QRs — the
+   * cashu request, the mint's Lightning invoice and a BIP-321 uri carrying
+   * both (plus the Spark invoice when Spark is enabled too) — and
+   * `qrPayload` is what it shows before the request can be built.
+   */
+  readonly id: "bitcoin"
+  readonly qrPayload: string | null
+  readonly sparkAccountId: AccountId | null
+  readonly cashuAccountId: AccountId | null
+  readonly cashuRequest: PreparedCashuRequest | null
+}
+
+export interface IbanPaymentMethodOption extends PaymentMethodOptionBase {
+  readonly id: "iban"
+  readonly qrPayload: string | null
+  readonly qrPayloads: ReadonlyArray<BankQrPayload>
+  readonly defaultQrFormat: BankQrFormat
+  readonly iban: string | null
+}
+
+export interface CashPaymentMethodOption extends PaymentMethodOptionBase {
+  readonly id: "cash"
+  readonly qrPayload: null
+}
+
+export type PaymentMethodOption =
+  | BitcoinPaymentMethodOption
+  | IbanPaymentMethodOption
+  | CashPaymentMethodOption
 
 export interface CashPaymentTabProps {
   readonly canMarkCashPaid: boolean

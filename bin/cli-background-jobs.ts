@@ -35,6 +35,7 @@ export const registerBackgroundJobsCommand =
             // The CLI runs as Evolu's test owner and has no account master
             // key to derive a wallet seed from.
             cashuWallet: null,
+            nostrInbox: null,
             onError: (error: unknown) => {
               appConsole.error("Background job failed.", error)
             },

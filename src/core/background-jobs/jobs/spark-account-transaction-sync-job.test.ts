@@ -215,6 +215,7 @@ describe("spark account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -283,6 +284,7 @@ describe("spark account transaction sync job", () => {
         fetch: unimplementedFetch,
         lockManager: createInProcessLockManager(),
         cashuWallet: null,
+        nostrInbox: null,
         onError: (error: unknown) => {
           errors.push(error)
         },
@@ -351,6 +353,7 @@ describe("spark account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -412,6 +415,7 @@ describe("spark account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -466,6 +470,7 @@ describe("spark account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -517,6 +522,7 @@ describe("spark account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },
@@ -579,6 +585,7 @@ describe("spark account transaction sync job", () => {
       fetch: unimplementedFetch,
       lockManager: createInProcessLockManager(),
       cashuWallet: null,
+      nostrInbox: null,
       onError: (error: unknown) => {
         errors.push(error)
       },

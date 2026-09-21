@@ -1,9 +1,16 @@
+import type { Console } from "@evolu/common"
 import { createEvolu, SimpleName } from "@evolu-v7/common"
 import { evoluWebDeps } from "@evolu-v7/web"
-import { appOwnerFromMnemonic, LinkySchema } from "@linky/linksync"
+import {
+  appOwnerFromMnemonic,
+  LinkySchema,
+  type LinkyScope,
+  type LinkyStore,
+} from "@linky/linksync"
 import { createEvoluShardDb } from "@linky/linksync/evolu"
 import { sha256 } from "@noble/hashes/sha2.js"
 import { bytesToHex } from "@noble/hashes/utils.js"
+import { Effect } from "effect"
 import { z } from "zod"
 
 import { linkyEnv } from "@/core/linky/linky-env.ts"
@@ -44,6 +51,30 @@ const createLocalStorageRetention = (appOwnerId: string) => {
   }
 }
 
+const LOGGED_SCOPES = [
+  "contacts",
+  "messages",
+  "cashu",
+  "transactions",
+  "identity",
+] satisfies ReadonlyArray<LinkyScope>
+
+/**
+ * The active shard per scope, in the shape Linky's "Data → Shards" debug
+ * page shows, so a user can check both apps opened the same account data.
+ */
+const activeShardSummary = (store: LinkyStore) =>
+  Effect.forEach(LOGGED_SCOPES, (scope) =>
+    Effect.map(store.visibleShards(scope), (shards) => {
+      const active = shards.at(-1)
+      return {
+        scope,
+        index: active?.index ?? 0,
+        ownerId: active?.owner.id ?? null,
+      }
+    })
+  )
+
 /**
  * Opens the Linky data of the account behind `masterKey` in this browser:
  * an Evolu 7 client (Linky's relay speaks Evolu 7, and its wire encoding
@@ -52,7 +83,8 @@ const createLocalStorageRetention = (appOwnerId: string) => {
  * Payky's own — only the owner and the relay decide what data this is.
  */
 export const createBrowserLinkyStore = async (
-  masterKey: MasterKey
+  masterKey: MasterKey,
+  { console }: { readonly console?: Console } = {}
 ): Promise<LinkyStoreHandle> => {
   const appOwner = appOwnerFromMnemonic(deriveLinkyMetaOwnerMnemonic(masterKey))
   if (appOwner === null) {
@@ -81,7 +113,7 @@ export const createBrowserLinkyStore = async (
     )
   )
 
-  return composeLinkyStore({
+  const handle = await composeLinkyStore({
     db: createEvoluShardDb(evolu),
     appOwner,
     retention: createLocalStorageRetention(appOwner.id),
@@ -89,4 +121,11 @@ export const createBrowserLinkyStore = async (
       evolu[Symbol.dispose]()
     },
   })
+
+  console?.info("Opened the shared account data store.", {
+    appOwnerId: appOwner.id,
+    shards: await Effect.runPromise(activeShardSummary(handle.store)),
+  })
+
+  return handle
 }

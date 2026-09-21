@@ -117,27 +117,6 @@ export const csSettings = {
   "settings.debugConsole.pause": "Pauza",
   "settings.debugConsole.resume": "Pokračovat",
   "settings.debugConsole.title": "Debug Console",
-  "settings.defaultPaymentMethod.cashRegister.description":
-    "Nové platby otevřít s vybranou záložkou hotovosti.",
-  "settings.defaultPaymentMethod.cashRegister.title": "Hotovost",
-  "settings.defaultPaymentMethod.description":
-    "Vyberte, která povolená metoda se vybere jako první při založení účtu",
-  "settings.defaultPaymentMethod.empty":
-    "Pro vybranou fiat měnu teď není dostupná žádná platební metoda.",
-  "settings.defaultPaymentMethod.empty.action": "Spravovat platební účty",
-  "settings.defaultPaymentMethod.iban.description":
-    "Nové platby otevřít s vybranou záložkou bankovního QR.",
-  "settings.defaultPaymentMethod.iban.title": "Bankovní převod",
-  "settings.defaultPaymentMethod.mode.description":
-    "Zobrazují se jen povolené metody kompatibilní s vybranou fiat měnou.",
-  "settings.defaultPaymentMethod.mode.disabledDescription":
-    "Uložený default není dostupný. Vyberte novou povolenou metodu.",
-  "settings.defaultPaymentMethod.mode.title": "Výchozí platební metoda účtu",
-  "settings.defaultPaymentMethod.saved": "Výchozí platební metoda uložena.",
-  "settings.defaultPaymentMethod.spark.description":
-    "Nové platby otevřít s vybranou záložkou Bitcoin / Spark.",
-  "settings.defaultPaymentMethod.spark.title": "Bitcoin",
-  "settings.defaultPaymentMethod.title": "Výchozí platební metoda",
   "settings.developers": "VÝVOJÁŘI",
   "settings.donations.amount.invalid": "Zadejte kladný celý počet sats.",
   "settings.donations.amount.range": "Částka je mimo povolený rozsah daru.",
@@ -626,4 +605,61 @@ export const csSettings = {
   "settings.withdrawals.description":
     "Odeslat Bitcoin ze Spark účtu na on-chain adresu",
   "settings.withdrawals.title": "Výběry",
+  "settings.nostrRelays.title": "Nostr relaye",
+  "settings.nostrRelays.description": "Kam se publikuje váš profil",
+  "settings.nostrRelays.card.description":
+    "Na tyto relaye se publikuje váš profil. Seznam je uložen pod vaším klíčem, takže každá aplikace přihlášená vaší recovery frází používá stejné relaye.",
+  "settings.nostrRelays.defaults":
+    "Pro tento klíč zatím nebyl publikován žádný seznam relayů; toto jsou výchozí relaye.",
+  "settings.nostrRelays.url.label": "Adresa relaye",
+  "settings.nostrRelays.url.description":
+    "Websocketová adresa, například wss://relay.example.com.",
+  "settings.nostrRelays.url.invalid": "Zadejte platnou adresu relaye wss://.",
+  "settings.nostrRelays.url.duplicate": "Tento relay už je v seznamu.",
+  "settings.nostrRelays.add": "Přidat relay",
+  "settings.nostrRelays.remove": "Odebrat {url}",
+  "settings.nostrRelays.remove.confirm.title": "Odebrat relay?",
+  "settings.nostrRelays.remove.confirm.description":
+    "Váš profil se už nebude publikovat na {url}.",
+  "settings.nostrRelays.remove.confirm.action": "Odebrat",
+  "settings.nostrRelays.remove.confirm.cancel": "Ponechat",
+  "settings.nostrRelays.published": "Seznam relayů publikován.",
+  "settings.nostrRelays.publishFailed":
+    "Seznam relayů se nepodařilo publikovat. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.nostrRelays.footer":
+    "V seznamu zůstává vždy alespoň jeden relay. Změny se do ostatních zařízení dostanou, jakmile se k relayům připojí.",
+  "settings.profile.key.title": "Nostr klíč",
+  "settings.profile.key.description":
+    "Klíč, kterým je publikován váš profil. Každá aplikace přihlášená vaší recovery frází používá stejný klíč.",
+  "settings.profile.key.derived": "Odvozený z recovery fráze",
+  "settings.profile.key.custom": "Vlastní klíč",
+  "settings.profile.key.useCustom": "Použít jiný klíč",
+  "settings.profile.key.useDerived": "Použít odvozený klíč",
+  "settings.profile.key.cancel": "Zrušit",
+  "settings.profile.key.switch": "Přepnout klíč",
+  "settings.profile.key.nsec.label": "Tajný klíč (nsec)",
+  "settings.profile.key.nsec.description":
+    "Vložte nsec klíče, který chcete používat. Ukládá se šifrovaně a synchronizuje do vašich dalších zařízení.",
+  "settings.profile.key.nsec.invalid": "Zadejte platný nsec.",
+  "settings.profile.key.nsec.same": "Tento klíč je už aktivní.",
+  "settings.profile.key.switch.confirm.title": "Přepnout Nostr klíč?",
+  "settings.profile.key.switch.confirm.description":
+    "Váš profil se znovu publikuje s novým klíčem a každá aplikace i zařízení přihlášené touto recovery frází na něj přejde.",
+  "settings.profile.key.switch.confirm.action": "Přepnout",
+  "settings.profile.key.switch.confirm.cancel": "Zrušit",
+  "settings.profile.key.switchFailed":
+    "Klíč se nepodařilo přepnout. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.paymentMethods.default": "Výchozí",
+  "settings.paymentMethods.makeDefault": "Nastavit jako výchozí",
+  "settings.profile.key.profileChoice.title": "Který profil chcete zachovat?",
+  "settings.profile.key.profileChoice.description":
+    "Klíč, na který přepínáte, už publikuje jiné jméno nebo fotku. Zachování současného profilu ho publikuje pod novým klíčem; převzetí profilu klíče ho ponechá tak, jak je.",
+  "settings.profile.key.profileChoice.keepCurrent": "Zachovat současný profil",
+  "settings.profile.key.profileChoice.useKeyProfile":
+    "Převzít profil tohoto klíče",
+  "settings.profile.key.profileChoice.noName": "Bez jména",
+  "settings.profile.key.switchedKeptProfile":
+    "Klíč přepnut a současný profil s ním znovu publikován.",
+  "settings.profile.key.switchedKeyProfile":
+    "Klíč přepnut. Zobrazuje se jeho profil.",
 } satisfies Record<keyof typeof enSettings, string>

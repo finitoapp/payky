@@ -112,6 +112,61 @@ export interface CashuWallet extends AsyncDisposable {
   readonly restore: (params: {
     readonly mintUrls: ReadonlyArray<string>
   }) => Promise<CashuRestoreReport>
+  /**
+   * The token inside `text` (bare, `cashu:`-prefixed, or in a URL) and what
+   * it is worth, without touching the mint; `null` when there is none or the
+   * encoding does not say which mint.
+   */
+  readonly describeToken: (text: string) => Promise<CashuTokenSummary | null>
+  /** The proofs a NUT-18 payment payload carries, as token text; `null` when they do not form a token. */
+  readonly encodeToken: (token: CashuTokenDraft) => Promise<string | null>
+  /**
+   * Swaps the token's proofs at the mint into this wallet's inventory. The
+   * two expected refusals are outcomes, not errors: the wallet already holds
+   * the token (this app or Linky received it), or the mint reports its proofs
+   * spent (someone else did — maybe Linky, before its record synced).
+   */
+  readonly receiveToken: (text: string) => Promise<CashuReceiveOutcome>
+  /** The finished `receive` this wallet has for exactly `tokenText`, whichever app made it. */
+  readonly findReceivedTransfer: (
+    tokenText: string
+  ) => Promise<CashuReceivedTransfer | null>
+}
+
+export interface CashuTokenSummary {
+  /** The token as the wallet identifies it: extracted and normalized. */
+  readonly tokenText: string
+  readonly mintUrl: string
+  /** Face value, before any swap fee the mint takes on receipt. */
+  readonly amountSats: number
+}
+
+export interface CashuTokenDraft {
+  readonly mintUrl: string
+  readonly unit: string
+  readonly proofs: ReadonlyArray<{
+    readonly id: string
+    readonly amount: number
+    readonly secret: string
+    readonly C: string
+  }>
+}
+
+export type CashuReceiveOutcome =
+  | {
+      readonly kind: "received"
+      readonly operationId: string
+      readonly mintUrl: string
+      /** What landed in the wallet, after the mint's swap fee. */
+      readonly amountSats: number
+    }
+  | { readonly kind: "alreadyKnown"; readonly operationId: string | null }
+  | { readonly kind: "alreadySpent" }
+
+export interface CashuReceivedTransfer {
+  readonly operationId: string
+  readonly mintUrl: string
+  readonly amountSats: number
 }
 
 /**
@@ -348,6 +403,79 @@ export const createCashuWallet = ({
     }
   }
 
+  const describeToken: CashuWallet["describeToken"] = async (text) => {
+    const { linkshu } = await loadModules()
+    const tokenText = linkshu.extractTokenText(text)
+    if (tokenText === null) return null
+    const parsed = linkshu.parseTokenText(tokenText)
+    if (parsed === null || parsed.mint === null) return null
+    return { tokenText, mintUrl: parsed.mint, amountSats: parsed.amount }
+  }
+
+  const encodeToken: CashuWallet["encodeToken"] = async (token) => {
+    const { linkshu, effect } = await loadModules()
+    const mint = linkshu.parseMintUrl(token.mintUrl)
+    if (mint === null) return null
+    const decoded = effect.Schema.decodeUnknownEither(linkshu.DecodedToken)({
+      mint,
+      unit: token.unit,
+      memo: null,
+      proofs: token.proofs,
+    })
+    return effect.Either.isLeft(decoded)
+      ? null
+      : linkshu.encodeToken(decoded.right)
+  }
+
+  const receiveToken: CashuWallet["receiveToken"] = async (text) => {
+    const rt = await load()
+    const { linkshu, effect } = rt.modules
+    const outcome = await rt.runtime.runPromise(
+      effect.Effect.either(
+        effect.Effect.flatMap(linkshu.Receive, (receive) =>
+          receive.receive(new linkshu.ReceiveDraft({ text }))
+        )
+      )
+    )
+    if (effect.Either.isRight(outcome)) {
+      return {
+        kind: "received",
+        operationId: outcome.right.operationId,
+        mintUrl: outcome.right.mint,
+        amountSats: outcome.right.amount,
+      }
+    }
+    const error = outcome.left
+    if (error._tag === "TokenAlreadyKnown") {
+      return { kind: "alreadyKnown", operationId: error.operationId }
+    }
+    if (error._tag === "TokenAlreadySpent") return { kind: "alreadySpent" }
+    throw toWalletError(error)
+  }
+
+  const findReceivedTransfer: CashuWallet["findReceivedTransfer"] = async (
+    tokenText
+  ) => {
+    const rt = await load()
+    const { linkshu, effect } = rt.modules
+    const transfers = await rt.runtime.runPromise(
+      effect.Effect.flatMap(linkshu.Tokens, (tokens) => tokens.transfers)
+    )
+    const transfer = transfers.find(
+      (candidate) =>
+        candidate.kind === "receive" &&
+        candidate.status === "done" &&
+        candidate.tokenText === tokenText
+    )
+    return transfer === undefined
+      ? null
+      : {
+          operationId: transfer.id,
+          mintUrl: transfer.mint,
+          amountSats: transfer.amount,
+        }
+  }
+
   const subscribeInventory: CashuWallet["subscribeInventory"] = (listener) => {
     let unsubscribe: (() => void) | undefined
     let active = true
@@ -373,6 +501,10 @@ export const createCashuWallet = ({
     getBalances,
     subscribeInventory,
     restore,
+    describeToken,
+    encodeToken,
+    receiveToken,
+    findReceivedTransfer,
     async [Symbol.asyncDispose]() {
       if (disposed) return
       disposed = true

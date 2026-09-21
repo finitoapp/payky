@@ -30,7 +30,10 @@ import {
   markPaymentPaidCash,
   markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
-import { buildBitcoinPaymentUri } from "@/core/modules/payment/payment-bitcoin-uri-utils.ts"
+import {
+  type BitcoinQrMode,
+  buildBitcoinPaymentUri,
+} from "@/core/modules/payment/payment-bitcoin-uri-utils.ts"
 import {
   type BankQrPayload,
   createBankQrPayloads,
@@ -107,6 +110,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     useState<PaymentMethodTab | null>(null)
   const [selectedIbanQrFormat, setSelectedIbanQrFormat] =
     useState<BankQrFormat | null>(null)
+  const [selectedBitcoinQrMode, setSelectedBitcoinQrMode] =
+    useState<BitcoinQrMode>("universal")
   const query = paymentRequestQuery(paymentId)
   const claimsQuery = paymentClaimsQuery(paymentId)
   const { data: payments } = useEvoluQuery(query)
@@ -162,14 +167,32 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       // Lightning slot goes to the mint's invoice, which any Lightning
       // wallet can pay; Spark's own Lightning invoice is only shown when
       // Spark is the sole method.
+      const cashuLnInvoice = enabledCashuAccount
+        ? (payment?.cashuLnInvoice ?? null)
+        : null
+      const sparkInvoice = enabledSparkAccount
+        ? (payment?.sparkInvoice ?? null)
+        : null
       const qrPayload = enabledCashuAccount
         ? buildBitcoinPaymentUri({
-            lightningInvoice: payment?.cashuLnInvoice ?? null,
-            sparkInvoice: enabledSparkAccount
-              ? (payment?.sparkInvoice ?? null)
-              : null,
+            lightningInvoice: cashuLnInvoice,
+            sparkInvoice,
           })
         : (payment?.lnInvoice ?? payment?.sparkInvoice ?? null)
+      const cashuRequest =
+        payment !== undefined &&
+        cashuLnInvoice !== null &&
+        payment.cashuAmountSats !== null &&
+        payment.cashuMintUrl !== null &&
+        payment.cashuQuoteId !== null
+          ? {
+              amountSats: payment.cashuAmountSats,
+              mintUrl: payment.cashuMintUrl,
+              quoteId: payment.cashuQuoteId,
+              lightningInvoice: cashuLnInvoice,
+              sparkInvoice,
+            }
+          : null
 
       paymentMethods.push({
         id: "bitcoin",
@@ -178,6 +201,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         accountId: bitcoinAccount.id,
         sparkAccountId: enabledSparkAccount?.id ?? null,
         cashuAccountId: enabledCashuAccount?.id ?? null,
+        cashuRequest,
         label: t("paymentWait.method.lightning"),
         qrPayload,
         icon: <ZapIcon />,
@@ -642,7 +666,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               ibanPaymentPending={ibanPaymentPending}
               ibanVariableSymbol={payment.variableSymbol}
               preparingMessageKey={activePreparingPaymentMethodKey}
+              selectedBitcoinQrMode={selectedBitcoinQrMode}
               selectedIbanQrFormat={selectedIbanQrFormat}
+              onSelectBitcoinQrMode={setSelectedBitcoinQrMode}
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}
               onMarkIbanPaid={() => void handleMarkIbanPaid()}

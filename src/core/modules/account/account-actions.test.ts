@@ -8,7 +8,11 @@ import { describe, expect, test } from "vitest"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { IbanSchema, NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import {
+  IbanSchema,
+  NonEmptyString255,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   deriveDefaultSparkWalletSecret,
@@ -22,6 +26,7 @@ import {
   saveFiatBankAccount,
   saveSparkAccount,
   updateAccount,
+  updateSparkAccountSyncPointer,
 } from "./account-actions.ts"
 import {
   accountByIdQuery,
@@ -74,6 +79,14 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
         ).as("cashRegister"),
       ])
       .where("account.id", "=", id)
+  )
+
+const sparkAccountSyncPointerByIdQuery = (id: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("sparkAccountSyncPointer")
+      .select(["id", "lastSyncedAt", "isDeleted"])
+      .where("id", "=", id)
   )
 
 describe("account actions", () => {
@@ -423,5 +436,75 @@ describe("account actions", () => {
     await expect
       .poll(() => evolu.loadQuery(sparkAccountQuery))
       .toMatchObject([{ isDeleted: sqliteFalse, secret: attachedSecret }])
+  })
+
+  test("updates, clears, and restores the Spark account sync pointer", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    await run.ok(
+      updateAccount({
+        id: sparkAccountId,
+        deviceId: undefined,
+        name: NonEmptyString255("Spark account"),
+        spark: { secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc") },
+      })
+    )
+
+    await run.ok(
+      updateSparkAccountSyncPointer({
+        id: sparkAccountId,
+        lastSyncedAt: TimestampMs(Date.parse("2026-05-31T00:00:00.000Z")),
+      })
+    )
+    await expect
+      .poll(() =>
+        evolu.loadQuery(sparkAccountSyncPointerByIdQuery(sparkAccountId))
+      )
+      .toEqual([
+        {
+          id: sparkAccountId,
+          lastSyncedAt: Date.parse("2026-05-31T00:00:00.000Z"),
+          isDeleted: sqliteFalse,
+        },
+      ])
+
+    await run.ok(
+      updateSparkAccountSyncPointer({ id: sparkAccountId, lastSyncedAt: null })
+    )
+    await expect
+      .poll(() =>
+        evolu.loadQuery(sparkAccountSyncPointerByIdQuery(sparkAccountId))
+      )
+      .toEqual([
+        {
+          id: sparkAccountId,
+          lastSyncedAt: Date.parse("2026-05-31T00:00:00.000Z"),
+          isDeleted: sqliteTrue,
+        },
+      ])
+
+    await run.ok(
+      updateSparkAccountSyncPointer({
+        id: sparkAccountId,
+        lastSyncedAt: TimestampMs(Date.parse("2026-06-01T00:00:00.000Z")),
+      })
+    )
+    await expect
+      .poll(() =>
+        evolu.loadQuery(sparkAccountSyncPointerByIdQuery(sparkAccountId))
+      )
+      .toEqual([
+        {
+          id: sparkAccountId,
+          lastSyncedAt: Date.parse("2026-06-01T00:00:00.000Z"),
+          isDeleted: sqliteFalse,
+        },
+      ])
   })
 })

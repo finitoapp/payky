@@ -24,6 +24,7 @@ import type {
   BankQrFormat,
   FiatCurrency,
   Iban,
+  TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import type {
@@ -387,4 +388,47 @@ export const saveCashRegisterAccount =
     })
 
     return ok(cashRegisterAccountId)
+  }
+
+/**
+ * Updates or resets the Spark sync job's per-account high-water mark —
+ * mirrors `updateFioPluginSyncPointer`. `null` soft-deletes the pointer row,
+ * which makes the next sync a cold start (unbounded full history scan)
+ * instead of resuming from a 72h lookback window.
+ */
+export const updateSparkAccountSyncPointer =
+  ({
+    id,
+    lastSyncedAt,
+  }: {
+    readonly id: AccountId
+    readonly lastSyncedAt: TimestampMs | null
+  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    await runMutationWithCompletion((options) => {
+      if (lastSyncedAt === null) {
+        return run.deps.evolu.update(
+          "sparkAccountSyncPointer",
+          {
+            id,
+            isDeleted: sqliteTrue,
+          },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+
+      return run.deps.evolu.upsert(
+        "sparkAccountSyncPointer",
+        {
+          id,
+          lastSyncedAt,
+          isDeleted: sqliteFalse,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(id)
   }

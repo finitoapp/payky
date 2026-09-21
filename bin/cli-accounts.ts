@@ -1,5 +1,6 @@
 import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
+import { parseISO } from "date-fns"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
@@ -12,6 +13,7 @@ import {
   deleteAccount,
   loadAccount,
   updateAccount,
+  updateSparkAccountSyncPointer,
 } from "../src/core/modules/account/account-actions"
 import { AccountId } from "../src/core/modules/account/account-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
@@ -23,9 +25,11 @@ import {
 } from "../src/core/modules/shared/key-derivation"
 import {
   AccountKindSchema,
+  DateStringSchema,
   FiatCurrencySchema,
   IbanSchema,
   NonEmptyString255Schema,
+  TimestampMsSchema,
 } from "../src/core/modules/shared/schema"
 
 const accountsWithDetailsQuery = createQuery((db) =>
@@ -350,6 +354,61 @@ export const registerAccountsCommand =
               })
             )
             run.deps.console.log(`Updated account ${options.id}`)
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "set-spark-sync-pointer",
+          description:
+            "Set the Spark sync job's local high-water mark to local midnight of the given date. The next sync only rescans the last 72 hours from it.",
+          args: {},
+          opts: {
+            id: AccountId.describe("Spark account id"),
+            date: DateStringSchema.describe("d;Date in YYYY-MM-DD format"),
+          },
+          async action(_, options) {
+            await run.orThrow(loadAccount(options.id))
+
+            await run.ok(
+              updateSparkAccountSyncPointer({
+                id: options.id,
+                lastSyncedAt: TimestampMsSchema.decode(
+                  parseISO(options.date).getTime()
+                ),
+              })
+            )
+
+            run.deps.console.log(
+              `Set Spark sync pointer for account ${options.id} to ${options.date}`
+            )
+          },
+        })
+      )
+
+      .addCommand(
+        zodCommand({
+          name: "reset-spark-sync-pointer",
+          description:
+            "Clear the Spark sync job's local high-water mark. The next sync becomes a full, unbounded history scan.",
+          args: {},
+          opts: {
+            id: AccountId.describe("Spark account id"),
+          },
+          async action(_, options) {
+            await run.orThrow(loadAccount(options.id))
+
+            await run.ok(
+              updateSparkAccountSyncPointer({
+                id: options.id,
+                lastSyncedAt: null,
+              })
+            )
+
+            run.deps.console.log(
+              `Reset Spark sync pointer for account ${options.id}`
+            )
           },
         })
       )

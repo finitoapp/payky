@@ -24,12 +24,15 @@ import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
   saveSparkAccount,
+  updateSparkAccountSyncPointer,
 } from "@/core/modules/account/account-actions.ts"
 import {
   cashRegisterAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
+import { sparkAccountSyncPointerByAccountIdQuery } from "@/core/modules/account/account-spark-queries.ts"
+import { sparkAccountId } from "@/core/modules/account/account-utils.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   bankQrFormats,
@@ -41,8 +44,11 @@ import {
   type BankQrFormat,
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
+  TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import { timestampMsDateCodec } from "@/features/settings/inline-edit-codecs.ts"
+import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
@@ -72,6 +78,7 @@ export function PaymentAccountsSettingsPage() {
       <div className="flex flex-col gap-5">
         <FiatBankAccountForm />
         <SparkAccountForm />
+        <SparkAccountSyncPointerField />
         <CashRegisterAccountForm />
       </div>
     </>
@@ -426,6 +433,47 @@ function SparkAccountForm() {
         </Field>
       </FieldGroup>
     </SettingsFormCard>
+  )
+}
+
+/**
+ * Kept outside `SparkAccountForm`'s `<form>` on purpose: `InlineEditField`
+ * saves itself on Enter without calling `preventDefault`, so nesting it
+ * inside that form's submit handler (which also drives the async privacy-mode
+ * wallet call) would fire both on Enter. Rendered as its own bare field, not
+ * a titled card, next to the Spark account section it belongs to — this is a
+ * rarely-touched debug/support control, not a primary setting.
+ */
+function SparkAccountSyncPointerField() {
+  const appRun = useAppRun()
+  const { t } = useTranslation()
+  const { data: accountData } = useEvoluQuery(sparkAccountQuery)
+  const [account] = accountData
+  const { data: pointers } = useEvoluQuery(
+    sparkAccountSyncPointerByAccountIdQuery(sparkAccountId)
+  )
+  const [pointer] = pointers
+
+  if (account?.secret === undefined || account.secret === null) return null
+
+  return (
+    <InlineEditField
+      label={t("settings.sparkAccount.syncPointer.label")}
+      description={t("settings.sparkAccount.syncPointer.description")}
+      type="date"
+      defaultValue={pointer?.lastSyncedAt ?? TimestampMs(Date.now())}
+      codec={timestampMsDateCodec}
+      errorKey="settings.sparkAccount.syncPointer.invalid"
+      onSave={async (nextLastSyncedAt) => {
+        await using run = appRun()
+        await run.ok(
+          updateSparkAccountSyncPointer({
+            id: sparkAccountId,
+            lastSyncedAt: nextLastSyncedAt,
+          })
+        )
+      }}
+    />
   )
 }
 

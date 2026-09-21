@@ -4,6 +4,7 @@ import {
 } from "@buildonspark/spark-sdk"
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { testCreateConsole, testCreateRun } from "@evolu/common"
+import { subHours } from "date-fns"
 import { describe, expect, test } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
@@ -23,7 +24,7 @@ import {
   PositiveNumber,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
-import { createTestDateDep } from "@/test/date-dep.ts"
+import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
 
 const unimplementedFetch: FetchDep["fetch"] = (() => {
@@ -94,6 +95,11 @@ interface FakeTransfer {
 class FakeSparkWallet {
   readonly disposals: unknown[] = []
   readonly getTransferIds: string[] = []
+  readonly getTransfersCalls: Array<{
+    readonly limit: number
+    readonly offset: number
+    readonly createdAfter: Date | undefined
+  }> = []
   private readonly listeners = new Map<
     string,
     Set<(...args: ReadonlyArray<unknown>) => void>
@@ -105,10 +111,22 @@ class FakeSparkWallet {
     this.transfers = transfers
   }
 
-  async getTransfers(limit = 20, offset = 0) {
-    const transfers = this.transfers.slice(offset, offset + limit)
+  async getTransfers(limit = 20, offset = 0, createdAfter?: Date) {
+    this.getTransfersCalls.push({ limit, offset, createdAfter })
+
+    // Mirrors the real SDK: `createdAfter` narrows the set pagination then
+    // walks — "strictly after", per its own doc comment.
+    const filtered =
+      createdAfter === undefined
+        ? this.transfers
+        : this.transfers.filter(
+            (transfer) =>
+              transfer.createdTime !== undefined &&
+              transfer.createdTime.getTime() > createdAfter.getTime()
+          )
+    const transfers = filtered.slice(offset, offset + limit)
     const nextOffset =
-      offset + transfers.length < this.transfers.length
+      offset + transfers.length < filtered.length
         ? offset + transfers.length
         : offset
 
@@ -270,6 +288,61 @@ describe("spark account transaction sync job", () => {
     expect(
       await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
     ).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+
+  test("narrows the periodic rescan to a 72h createdAfter window after the first sync", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    const errors: unknown[] = []
+    const secret = createUniqueSecret()
+    await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Spark account"),
+        spark: {
+          secret,
+        },
+      })
+    )
+    // No transfers at all — this test only cares about what `createdAfter`
+    // each `getTransfers` call carries, not about recording anything.
+    const wallet = new FakeSparkWallet([])
+    await using jobRun = testCreateRun({
+      console: testCreateConsole(),
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(testFixedDate),
+      fetch: unimplementedFetch,
+      lockManager: createInProcessLockManager(),
+      onError: (error: unknown) => {
+        errors.push(error)
+      },
+    })
+    await using _job = await jobRun.ok(
+      createSparkAccountTransactionSyncJob({
+        walletFactory: createFakeWalletFactory(secret, wallet),
+        recheckIntervalMs: 10,
+      })
+    )
+
+    // First sync: no pointer yet, so the sweep is unbounded.
+    await expect
+      .poll(() => wallet.getTransfersCalls.length)
+      .toBeGreaterThanOrEqual(1)
+    expect(wallet.getTransfersCalls[0]).toMatchObject({
+      createdAfter: undefined,
+    })
+
+    // Second sync (queued by the recheck timer): the pointer this first
+    // sync saved narrows it to the last 72 hours.
+    await expect
+      .poll(() => wallet.getTransfersCalls.length)
+      .toBeGreaterThanOrEqual(2)
+    expect(wallet.getTransfersCalls[1]).toMatchObject({
+      createdAfter: subHours(testFixedDate, 72),
+    })
     expect(errors).toEqual([])
   })
 

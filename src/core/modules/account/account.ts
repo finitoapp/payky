@@ -10,6 +10,7 @@ import {
   IbanSchema,
   type InferTable,
   NonEmptyString255Schema,
+  TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
 export const account = {
@@ -31,6 +32,21 @@ export const accountSpark = {
   secret: SparkSecretSchema,
 } as const
 
+/**
+ * High-water mark for the Spark sync job's periodic full history rescan —
+ * mirrors `fioPluginSyncPointer`. `lastSyncedAt` is the wall-clock time the
+ * last successful rescan *started* (not the newest transfer's own
+ * `createdTime`/`updatedTime`), the same way FIO's pointer is the sync
+ * period's `to`, not a fact derived from the transactions found: an account
+ * with no new transfers must still advance the pointer forward with the
+ * clock, and a transfer's own timestamp says nothing about how safe skipping
+ * it is next time.
+ */
+export const sparkAccountSyncPointer = {
+  id: AccountId,
+  lastSyncedAt: TimestampMsSchema,
+} as const
+
 export const accountCashRegister = {
   id: AccountId,
   currency: FiatCurrencySchema,
@@ -43,4 +59,7 @@ export const accountIndexes = ((create) => [
 export type AccountRow = InferTable<typeof account>
 export type AccountIbanRow = InferTable<typeof accountIban>
 export type AccountSparkRow = InferTable<typeof accountSpark>
+export type SparkAccountSyncPointerRow = InferTable<
+  typeof sparkAccountSyncPointer
+>
 export type AccountCashRegisterRow = InferTable<typeof accountCashRegister>

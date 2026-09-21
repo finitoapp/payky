@@ -4,6 +4,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 /** How long the tick stays up. Applied to the animation, so the two cannot drift. */
@@ -16,6 +17,8 @@ interface InlineSave<T> {
   readonly save: (value: T) => Promise<void>
 }
 
+type InlineSaveResult = Promise<void> | Promise<TranslationKey | undefined>
+
 /**
  * The save half every inline-edit control shares: run `onSave`, toast when
  * it rejects, and show the tick only when it did not.
@@ -25,7 +28,7 @@ interface InlineSave<T> {
  * copy here would be one more thing to keep in step.
  */
 export const useInlineSave = <T,>(
-  onSave: (value: T) => Promise<void>
+  onSave: (value: T) => InlineSaveResult
 ): InlineSave<T> => {
   const { t } = useTranslation()
   // `pending` is the whole point here: it is true for as long as the tick
@@ -36,7 +39,11 @@ export const useInlineSave = <T,>(
 
   const save = async (value: T) => {
     try {
-      await onSave(value)
+      const errorKey = await onSave(value)
+      if (errorKey !== undefined) {
+        toast.error(t(errorKey))
+        return
+      }
       flashSaved()
     } catch {
       toast.error(t("settings.saveFailed"))
@@ -55,7 +62,7 @@ export const useInlineSave = <T,>(
  */
 export const useInlineChoice = <T,>(
   defaultValue: T,
-  onSave: (value: T) => Promise<void>
+  onSave: (value: T) => InlineSaveResult
 ) => {
   const { justSaved, save } = useInlineSave(onSave)
   // Boxed, because `null` and `false` are values a control can legitimately

@@ -28,7 +28,6 @@ import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.se
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
 import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_terminal.settings.categories'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
-import { Route as TerminalSettingsDefaultPaymentMethodRouteImport } from './routes/_terminal.settings.default-payment-method'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
@@ -157,12 +156,6 @@ const TerminalSettingsDebugConsoleRoute =
   TerminalSettingsDebugConsoleRouteImport.update({
     id: '/debug-console',
     path: '/debug-console',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
-const TerminalSettingsDefaultPaymentMethodRoute =
-  TerminalSettingsDefaultPaymentMethodRouteImport.update({
-    id: '/default-payment-method',
-    path: '/default-payment-method',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsDonationsRoute =
@@ -358,7 +351,6 @@ export interface FileRoutesByFullPath {
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
-  '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
@@ -406,7 +398,6 @@ export interface FileRoutesByTo {
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
-  '/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
@@ -457,7 +448,6 @@ export interface FileRoutesById {
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRoute
   '/_terminal/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
-  '/_terminal/settings/default-payment-method': typeof TerminalSettingsDefaultPaymentMethodRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
@@ -510,7 +500,6 @@ export interface FileRouteTypes {
     | '/settings/accounts'
     | '/settings/categories'
     | '/settings/debug-console'
-    | '/settings/default-payment-method'
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
@@ -558,7 +547,6 @@ export interface FileRouteTypes {
     | '/payment/$paymentId'
     | '/settings/accounts'
     | '/settings/debug-console'
-    | '/settings/default-payment-method'
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
@@ -608,7 +596,6 @@ export interface FileRouteTypes {
     | '/_terminal/settings/accounts'
     | '/_terminal/settings/categories'
     | '/_terminal/settings/debug-console'
-    | '/_terminal/settings/default-payment-method'
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/evolu-export'
@@ -784,13 +771,6 @@ declare module '@tanstack/react-router' {
       path: '/debug-console'
       fullPath: '/settings/debug-console'
       preLoaderRoute: typeof TerminalSettingsDebugConsoleRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/default-payment-method': {
-      id: '/_terminal/settings/default-payment-method'
-      path: '/default-payment-method'
-      fullPath: '/settings/default-payment-method'
-      preLoaderRoute: typeof TerminalSettingsDefaultPaymentMethodRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/donations': {
@@ -1083,7 +1063,6 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
   TerminalSettingsCategoriesRoute: typeof TerminalSettingsCategoriesRouteWithChildren
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
-  TerminalSettingsDefaultPaymentMethodRoute: typeof TerminalSettingsDefaultPaymentMethodRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
@@ -1109,8 +1088,6 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAccountsRoute: TerminalSettingsAccountsRoute,
   TerminalSettingsCategoriesRoute: TerminalSettingsCategoriesRouteWithChildren,
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
-  TerminalSettingsDefaultPaymentMethodRoute:
-    TerminalSettingsDefaultPaymentMethodRoute,
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,

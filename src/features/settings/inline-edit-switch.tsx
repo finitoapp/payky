@@ -12,6 +12,7 @@ import {
   InlineEditSavedTick,
   useInlineChoice,
 } from "@/features/settings/inline-edit-save.tsx"
+import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 interface InlineEditSwitchProps {
@@ -20,7 +21,10 @@ interface InlineEditSwitchProps {
   readonly defaultValue: boolean
   readonly disabled?: boolean
   readonly showText?: boolean
-  readonly onSave: (checked: boolean) => Promise<void>
+  readonly showSaved?: boolean
+  readonly onSave:
+    | ((checked: boolean) => Promise<void>)
+    | ((checked: boolean) => Promise<TranslationKey | undefined>)
 }
 
 export function InlineEditSwitch({
@@ -29,6 +33,7 @@ export function InlineEditSwitch({
   defaultValue,
   disabled,
   showText = true,
+  showSaved = true,
   onSave,
 }: InlineEditSwitchProps) {
   const id = useId()
@@ -40,7 +45,7 @@ export function InlineEditSwitch({
   return (
     <Field
       orientation="horizontal"
-      className={cn("relative", justSaved && !showText && "pr-7")}
+      className={cn("relative", justSaved && showSaved && !showText && "pr-7")}
     >
       <Switch
         id={id}
@@ -52,14 +57,14 @@ export function InlineEditSwitch({
         }}
       />
       {showText && (
-        <FieldContent className={cn(justSaved && "pr-7")}>
+        <FieldContent className={cn(justSaved && showSaved && "pr-7")}>
           <FieldLabel htmlFor={id}>{label}</FieldLabel>
           {description !== undefined && (
             <FieldDescription>{description}</FieldDescription>
           )}
         </FieldContent>
       )}
-      {justSaved && <InlineEditSavedTick className="right-0" />}
+      {justSaved && showSaved && <InlineEditSavedTick className="right-0" />}
     </Field>
   )
 }

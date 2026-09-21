@@ -4,7 +4,6 @@ import {
   ArrowUpFromLine,
   BadgeDollarSign,
   Bug,
-  CircleDollarSign,
   DatabaseBackup,
   FolderIcon,
   Globe,
@@ -107,12 +106,6 @@ const catalogSettings: ReadonlyArray<SettingRow> = [
 ]
 
 const paymentSettings: ReadonlyArray<SettingRow> = [
-  {
-    icon: CircleDollarSign,
-    title: "settings.defaultPaymentMethod.title",
-    description: "settings.defaultPaymentMethod.description",
-    to: "/settings/default-payment-method",
-  },
   {
     icon: BadgeDollarSign,
     title: "settings.tips.title",

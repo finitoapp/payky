@@ -1,5 +1,5 @@
 import { expect, test } from "./support/fixtures.ts"
-import { translate } from "./support/i18n.ts"
+import { translate, translateValue } from "./support/i18n.ts"
 import {
   expandAdvancedOptions,
   pickInlineOption,
@@ -48,15 +48,54 @@ test("edit the fiat bank account and cash register settings", async ({
     )
   })
 
-  await test.step("disable the cash register", () =>
-    toggleInlineSwitch(page, "settings.cashRegisterAccount.enabled.label"))
+  await test.step("make the bank account default", async () => {
+    await page
+      .getByRole("button", {
+        name: translateValue(
+          "en",
+          "settings.paymentAccounts.default.set.aria",
+          translate("en", "settings.paymentAccounts.method.iban")
+        ),
+      })
+      .click()
 
-  await test.step("verify the cash register stays disabled after reload", async () => {
+    const bankSwitch = page.getByRole("switch", {
+      name: translate("en", "settings.fiatBankAccount.enabled.label"),
+    })
+    await bankSwitch.click()
+    await expect(
+      page.getByText(
+        translate("en", "settings.paymentAccounts.default.deactivate")
+      )
+    ).toBeVisible()
+    await expect(bankSwitch).toBeChecked()
+  })
+
+  await test.step("disable the cash register and prevent it becoming default", async () => {
+    await toggleInlineSwitch(page, "settings.cashRegisterAccount.enabled.label")
+
+    await expect(
+      page.getByRole("button", {
+        name: translateValue(
+          "en",
+          "settings.paymentAccounts.default.set.aria",
+          translate("en", "settings.paymentAccounts.method.cashRegister")
+        ),
+      })
+    ).toBeDisabled()
+  })
+
+  await test.step("verify default and disabled methods persist after reload", async () => {
     await reloadPage(page, "en", "settings.paymentAccounts.title")
     await expect(
       page.getByRole("switch", {
         name: translate("en", "settings.cashRegisterAccount.enabled.label"),
       })
     ).not.toBeChecked()
+    await expect(
+      page.getByRole("switch", {
+        name: translate("en", "settings.fiatBankAccount.enabled.label"),
+      })
+    ).toBeChecked()
   })
 })

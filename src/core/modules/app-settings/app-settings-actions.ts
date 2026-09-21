@@ -1,4 +1,5 @@
 import {
+  err,
   ok,
   sqliteFalse,
   sqliteTrue,
@@ -7,6 +8,12 @@ import {
 } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
+import {
+  cashRegisterAccountQuery,
+  fiatBankAccountQuery,
+  sparkAccountQuery,
+} from "@/core/modules/account/account-queries.ts"
 import type { appSettings } from "@/core/modules/app-settings/app-settings.ts"
 import type {
   AppSettingsId,
@@ -18,11 +25,19 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { settingsQuery } from "./app-settings-queries.ts"
 import {
   stringifyTipFixedAmounts,
   stringifyTipPercentages,
 } from "./app-settings-tips.ts"
 import { createDefaultSettings, settingsId } from "./app-settings-utils.ts"
+
+const defaultPaymentMethodDisabledError = defineError(
+  "DefaultPaymentMethodDisabled"
+)<{ readonly method: DefaultPaymentMethod }>()
+export type DefaultPaymentMethodDisabledError = ReturnType<
+  typeof defaultPaymentMethodDisabledError
+>
 
 /**
  * Creates the appSettings row when onboarding finishes. The row's existence
@@ -86,3 +101,47 @@ export const updateTipSettings =
         presetTipFixedAmountsJson: stringifyTipFixedAmounts(input.fixedAmounts),
       })
     )
+
+export const setDefaultPaymentMethod =
+  (
+    method: DefaultPaymentMethod
+  ): Task<
+    AppSettingsId,
+    DefaultPaymentMethodDisabledError,
+    EvoluDep & EvoluOwnerIdDep
+  > =>
+  async (run) => {
+    const [
+      settingsRows,
+      fiatBankAccountRows,
+      sparkAccountRows,
+      cashRegisterAccountRows,
+    ] = await Promise.all([
+      run.deps.evolu.loadQuery(settingsQuery),
+      run.deps.evolu.loadQuery(fiatBankAccountQuery),
+      run.deps.evolu.loadQuery(sparkAccountQuery),
+      run.deps.evolu.loadQuery(cashRegisterAccountQuery),
+    ])
+    const [settings] = settingsRows
+    const [fiatBankAccount] = fiatBankAccountRows
+    const [sparkAccount] = sparkAccountRows
+    const [cashRegisterAccount] = cashRegisterAccountRows
+    const fiatCurrency = settings?.fiatCurrency
+    const methodIsEnabled = {
+      iban:
+        fiatBankAccount !== undefined &&
+        fiatBankAccount.isDeleted !== 1 &&
+        fiatBankAccount.currency === fiatCurrency,
+      spark: sparkAccount !== undefined && sparkAccount.isDeleted !== 1,
+      cashRegister:
+        cashRegisterAccount !== undefined &&
+        cashRegisterAccount.isDeleted !== 1 &&
+        cashRegisterAccount.currency === fiatCurrency,
+    } satisfies Record<DefaultPaymentMethod, boolean>
+
+    if (!methodIsEnabled[method]) {
+      return err(defaultPaymentMethodDisabledError({ method }))
+    }
+
+    return await run(updateSettings({ defaultPaymentMethod: method }))
+  }

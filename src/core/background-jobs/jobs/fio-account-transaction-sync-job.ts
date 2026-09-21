@@ -14,7 +14,10 @@ import {
   type FioTransaction,
   fetchFioTransactionsByPeriod,
 } from "@/core/integrations/fio/fio-client.ts"
-import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  computeAccountTransactionRows,
+  upsertAccountTransactionRows,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { defaultFioPluginSyncLookbackDays } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import {
@@ -23,7 +26,12 @@ import {
   fioPluginSyncPointerByPluginIdQuery,
 } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
-import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import {
+  loadAutomaticReconciliationClaimForNewAccountTransaction,
+  loadBillClosedAtForPayment,
+  reconcileAccountTransaction,
+  upsertReconciliationClaimRows,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
   removeUndefinedValues,
   runMutationWithCompletion,
@@ -324,43 +332,68 @@ class FioPluginSync {
 
         const bankReference = NonEmptyString255Schema.decode(transaction.id)
 
-        const accountTransactionId = await this.run.ok(
-          createAccountTransaction({
-            accountId: this.plugin.accountId,
-            amount: IntegerSchema.decode(transaction.amountMinor),
-            currency: transaction.currency,
-            occurredAt: TimestampMsSchema.decode(
-              dateStringToDate(transaction.bookedDate).getTime()
-            ),
-            note: createTransactionNote(transaction),
-            internalTransferGroupId: null,
-            source: {
-              deviceId: null,
-              source: "auto",
-            },
-            iban: {
-              variableSymbol: transaction.variableSymbol,
-              constantSymbol: transaction.constantSymbol,
-              specificSymbol: transaction.specificSymbol,
-              bankReference,
-            },
-          })
-        )
-        this.run.deps.console.debug("Reconciling FIO account transaction.", {
+        const input = {
           accountId: this.plugin.accountId,
-          accountTransactionId,
-          bankReference,
-          pluginId: this.plugin.id,
-        })
-        const paymentId = await this.run.ok(
-          reconcileAccountTransaction(accountTransactionId)
+          amount: IntegerSchema.decode(transaction.amountMinor),
+          currency: transaction.currency,
+          occurredAt: TimestampMsSchema.decode(
+            dateStringToDate(transaction.bookedDate).getTime()
+          ),
+          note: createTransactionNote(transaction),
+          internalTransferGroupId: null,
+          source: {
+            deviceId: null,
+            source: "auto" as const,
+          },
+          iban: {
+            variableSymbol: transaction.variableSymbol,
+            constantSymbol: transaction.constantSymbol,
+            specificSymbol: transaction.specificSymbol,
+            bankReference,
+          },
+        }
+        const accountTransaction = computeAccountTransactionRows(
+          input,
+          this.run.deps.date.now()
         )
+        const claim = await this.run.ok(
+          loadAutomaticReconciliationClaimForNewAccountTransaction(
+            input,
+            accountTransaction.id
+          )
+        )
+        const billClosing =
+          claim === null
+            ? null
+            : await this.run.ok(
+                loadBillClosedAtForPayment(
+                  claim.paymentId,
+                  accountTransaction.id
+                )
+              )
+
+        await runMutationWithCompletion((options) => {
+          upsertAccountTransactionRows(
+            this.run.deps.evolu,
+            accountTransaction,
+            { ...options, ownerId: this.run.deps.evoluOwnerId }
+          )
+          if (claim !== null) {
+            upsertReconciliationClaimRows(
+              this.run.deps.evolu,
+              claim,
+              billClosing,
+              { ...options, ownerId: this.run.deps.evoluOwnerId }
+            )
+          }
+        })
+        const accountTransactionId = accountTransaction.id
         this.run.deps.console.info("Created FIO account transaction.", {
           accountId: this.plugin.accountId,
           accountTransactionId,
           amount: transaction.amountMinor,
           bankReference,
-          paymentId,
+          paymentId: claim?.paymentId ?? null,
           pluginId: this.plugin.id,
         })
         return true

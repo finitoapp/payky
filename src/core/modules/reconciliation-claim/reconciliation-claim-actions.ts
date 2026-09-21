@@ -6,6 +6,7 @@ import {
 } from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { CreateAccountTransactionInput } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { upsertBillClosedAt } from "@/core/modules/bill/bill-actions.ts"
 import { loadBillClosedAtIfCovered } from "@/core/modules/bill/bill-guards.ts"
@@ -19,6 +20,7 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import {
+  NonNegativeInteger,
   type SyncSource,
   type TimestampMs,
   TimestampMsSchema,
@@ -27,7 +29,9 @@ import {
   activeReconciliationClaimByAccountTransactionIdQuery,
   cashRegisterReconciliationCandidateByAccountTransactionIdQuery,
   ibanReconciliationCandidateByAccountTransactionIdQuery,
+  ibanReconciliationCandidateByValuesQuery,
   sparkReconciliationCandidateByAccountTransactionIdQuery,
+  sparkReconciliationCandidateByValuesQuery,
 } from "./reconciliation-claim-queries.ts"
 import type { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
 
@@ -73,6 +77,79 @@ export interface ReconciliationClaimWrite {
   readonly source: SyncSource
   readonly claimedAt: TimestampMs
 }
+
+const createAutomaticReconciliationClaim = (
+  paymentId: PaymentId,
+  accountTransactionId: AccountTransactionId,
+  now: Date
+): ReconciliationClaimWrite => ({
+  id: createIdFromString<"ReconciliationClaim">(
+    `reconciliationClaim:automatic:${paymentId}:${accountTransactionId}`
+  ),
+  deviceId: null,
+  paymentId,
+  accountTransactionId,
+  source: "auto",
+  claimedAt: TimestampMsSchema.decode(now.getTime()),
+})
+
+/**
+ * Finds the automatic claim a newly discovered FIO or Spark transaction
+ * should receive before the transaction exists in Evolu, so the caller can
+ * write both rows in one mutation batch.
+ */
+export const loadAutomaticReconciliationClaimForNewAccountTransaction =
+  (
+    accountTransaction: CreateAccountTransactionInput,
+    accountTransactionId: AccountTransactionId
+  ): Task<ReconciliationClaimWrite | null, never, EvoluDep & DateDep> =>
+  async (run) => {
+    const { iban, spark } = accountTransaction
+    let paymentId: PaymentId | undefined
+
+    if (iban?.variableSymbol !== null && iban?.variableSymbol !== undefined) {
+      if (
+        accountTransaction.amount < 0 ||
+        accountTransaction.currency === "BTC"
+      )
+        return ok(null)
+      const candidates = await run.deps.evolu.loadQuery(
+        ibanReconciliationCandidateByValuesQuery({
+          accountId: accountTransaction.accountId,
+          amount: NonNegativeInteger(accountTransaction.amount),
+          currency: accountTransaction.currency,
+          variableSymbol: iban.variableSymbol,
+          specificSymbol: iban.specificSymbol ?? null,
+        })
+      )
+      paymentId = candidates[0]?.paymentId
+    } else if (spark) {
+      if (
+        accountTransaction.amount < 0 ||
+        accountTransaction.currency !== "BTC"
+      )
+        return ok(null)
+      const candidates = await run.deps.evolu.loadQuery(
+        sparkReconciliationCandidateByValuesQuery({
+          accountId: accountTransaction.accountId,
+          amount: NonNegativeInteger(accountTransaction.amount),
+          lnInvoice: spark.lightning?.lnInvoice ?? null,
+          sparkInvoice: spark.sparkInvoice?.sparkInvoice ?? null,
+        })
+      )
+      paymentId = candidates[0]?.paymentId
+    }
+
+    return ok(
+      paymentId === undefined
+        ? null
+        : createAutomaticReconciliationClaim(
+            paymentId,
+            accountTransactionId,
+            run.deps.date.now()
+          )
+    )
+  }
 
 /**
  * Upserts a reconciliation claim and, if `billClosing` says it now fully
@@ -202,18 +279,13 @@ export const reconcileAccountTransaction =
       ibanCandidates[0] ?? sparkCandidates[0] ?? cashRegisterCandidates[0]
     if (!candidate) return ok(null)
 
-    const id = createIdFromString<"ReconciliationClaim">(
-      `reconciliationClaim:automatic:${candidate.paymentId}:${accountTransactionId}`
-    )
-
     await run.ok(
       writeClaimAndCloseBillIfCovered({
-        id,
-        deviceId: null,
-        paymentId: candidate.paymentId,
-        accountTransactionId,
-        source: "auto",
-        claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        ...createAutomaticReconciliationClaim(
+          candidate.paymentId,
+          accountTransactionId,
+          run.deps.date.now()
+        ),
       })
     )
 

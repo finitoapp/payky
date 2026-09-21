@@ -1,8 +1,17 @@
 import type { KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
+import type {
+  AccountTransactionIbanRow,
+  AccountTransactionRow,
+} from "@/core/modules/account-transaction/account-transaction.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type {
+  FiatCurrency,
+  NonEmptyString,
+  NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
 
 /** Whether a payment has been claimed by a matched incoming transaction. */
 export const activeReconciliationClaimsByPaymentIdQuery = (
@@ -118,6 +127,42 @@ export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
       }>()
   )
 
+export const ibanReconciliationCandidateByValuesQuery = ({
+  accountId,
+  amount,
+  currency,
+  variableSymbol,
+  specificSymbol,
+}: Pick<AccountTransactionRow, "accountId"> &
+  Pick<AccountTransactionIbanRow, "variableSymbol" | "specificSymbol"> & {
+    readonly amount: NonNegativeInteger
+    readonly currency: FiatCurrency
+  }) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentIban")
+      .innerJoin("payment", "payment.id", "paymentIban.id")
+      .leftJoin(
+        "reconciliationClaim",
+        "reconciliationClaim.paymentId",
+        "payment.id"
+      )
+      .select(["payment.id as paymentId"])
+      .where("paymentIban.accountId", "=", accountId)
+      .where("paymentIban.variableSymbol", "=", variableSymbol)
+      .where("paymentIban.specificSymbol", "is", specificSymbol)
+      .where("paymentIban.isDeleted", "is not", 1)
+      .where("payment.isDeleted", "is not", 1)
+      .where("payment.amount", "=", amount)
+      .where("payment.currency", "=", currency)
+      .where("reconciliationClaim.id", "is", null)
+      .orderBy("payment.id")
+      .limit(1)
+      .$narrowType<{
+        paymentId: KyselyNotNull
+      }>()
+  )
+
 export const cashRegisterReconciliationCandidateByAccountTransactionIdQuery = (
   accountTransactionId: AccountTransactionId
 ) =>
@@ -224,6 +269,68 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
               eb.ref("accountTransactionSparkInvoice.sparkInvoice")
             ),
           ]),
+        ])
+      )
+      .where("reconciliationClaim.id", "is", null)
+      .orderBy("payment.id")
+      .limit(1)
+      .$narrowType<{
+        paymentId: KyselyNotNull
+      }>()
+  )
+
+export const sparkReconciliationCandidateByValuesQuery = ({
+  accountId,
+  amount,
+  lnInvoice,
+  sparkInvoice,
+}: Pick<AccountTransactionRow, "accountId"> & {
+  readonly amount: NonNegativeInteger
+  readonly lnInvoice: NonEmptyString | null
+  readonly sparkInvoice: NonEmptyString | null
+}) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentBtc")
+      .leftJoin("paymentBtcLightning", (join) =>
+        join
+          .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
+          .on("paymentBtcLightning.isDeleted", "is not", 1)
+      )
+      .leftJoin("paymentBtcSpark", (join) =>
+        join
+          .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
+          .on("paymentBtcSpark.isDeleted", "is not", 1)
+      )
+      .innerJoin("payment", "payment.id", "paymentBtc.id")
+      .leftJoin(
+        "reconciliationClaim",
+        "reconciliationClaim.paymentId",
+        "payment.id"
+      )
+      .select(["payment.id as paymentId"])
+      .where("paymentBtc.accountId", "=", accountId)
+      .where("paymentBtc.amountSats", "=", amount)
+      .where("paymentBtc.isDeleted", "is not", 1)
+      .where("payment.isDeleted", "is not", 1)
+      .where((eb) =>
+        eb.or([
+          ...(lnInvoice === null
+            ? []
+            : [
+                eb.and([
+                  eb("paymentBtcLightning.lnInvoice", "is not", null),
+                  eb("paymentBtcLightning.lnInvoice", "=", lnInvoice),
+                ]),
+              ]),
+          ...(sparkInvoice === null
+            ? []
+            : [
+                eb.and([
+                  eb("paymentBtcSpark.sparkInvoice", "is not", null),
+                  eb("paymentBtcSpark.sparkInvoice", "=", sparkInvoice),
+                ]),
+              ]),
         ])
       )
       .where("reconciliationClaim.id", "is", null)

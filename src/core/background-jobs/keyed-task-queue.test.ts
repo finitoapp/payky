@@ -226,4 +226,24 @@ describe("createKeyedTaskQueue", () => {
 
     expect(executions).toEqual(["first"])
   })
+
+  test("waits for running work during async disposal", async () => {
+    const queue = createKeyedTaskQueue({ onError: () => {} })
+    const deferred = createDeferred<void>()
+    let finished = false
+
+    queue.enqueue("work", async () => {
+      await deferred.promise
+      finished = true
+    })
+
+    await delay(0)
+    const disposal = queue[Symbol.asyncDispose]()
+    await delay(0)
+    expect(finished).toBe(false)
+
+    deferred.resolve()
+    await disposal
+    expect(finished).toBe(true)
+  })
 })

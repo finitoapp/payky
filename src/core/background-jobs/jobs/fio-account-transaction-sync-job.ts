@@ -107,14 +107,14 @@ class FioAccountTransactionSync {
     this.queueRefresh()
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
     if (this.refreshQueue.isDisposed) return
 
-    this.refreshQueue[Symbol.dispose]()
     this.unsubscribePlugins()
+    await this.refreshQueue[Symbol.asyncDispose]()
 
     for (const sync of this.pluginSyncs.values()) {
-      sync.dispose()
+      await sync.dispose()
     }
     this.pluginSyncs.clear()
     this.run.deps.console.info("Stopped FIO account transaction sync job.")
@@ -190,11 +190,11 @@ class FioPluginSync {
     this.queueSync()
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
     if (this.syncQueue.isDisposed) return
 
-    this.syncQueue[Symbol.dispose]()
     clearInterval(this.timer)
+    await this.syncQueue[Symbol.asyncDispose]()
   }
 
   matches(plugin: ActiveFioPlugin): boolean {

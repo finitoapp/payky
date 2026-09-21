@@ -97,7 +97,7 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
 | 4 | Spark transfer with no Lightning/Spark invoice | open by design — never recorded |
 | 5 | Ambiguous candidate ties | open — `payment.id` order decides |
 | 6 | Canceled-payment collision | open — resolved at display time only |
-| 7 | Disposal doesn't await in-flight work | **partially resolved** |
+| 7 | Disposal doesn't await in-flight work | resolved |
 | 8 | One throwing queue key stalls its siblings | open — Spark's multi-key queue only |
 
 1. **Resolved.** The jobs compute the transaction id and find the candidate
@@ -124,16 +124,10 @@ the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
    for the manual path; resolved there by display precedence, not prevented
    here.
 
-7. **Partially resolved.** `createKeyedTaskQueue`'s dispose only flips a
-   flag — it can't interrupt in-flight work, and that's unchanged. What
-   changed: `createAccountTransaction`/`reconcileAccountTransaction` calls
-   used to run through a detached `createRun(...)` per call, invisible to
-   disposal. Both jobs now compose through one `run.create()` scope per job
-   (`jobRun`, disposed via `AsyncDisposableStack`), so those calls are real
-   child Tasks — async disposal of `jobRun` now actually waits for whichever
-   one is in flight. It still doesn't stop the queue's own drain loop
-   between calls; a call started after `jobRun` is disposed now throws
-   (reported via `onError`) instead of silently writing.
+7. **Resolved.** Async disposal clears each queue's pending work and awaits
+   the running item. FIO/Spark sessions propagate that wait, and the app
+   waits for jobs before disposing their parent `Run`. Disposal remains
+   graceful rather than interrupting an active network or database call.
 
 8. **Multi-key queue stall.** `createKeyedTaskQueue`'s drain loop wraps its
    whole `while` in one `try`/`catch` — one throwing key aborts the loop,

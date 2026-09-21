@@ -3,7 +3,8 @@ export interface KeyedTaskQueueDeps {
 }
 
 export interface KeyedTaskQueue<TKey extends string = string>
-  extends Disposable {
+  extends AsyncDisposable,
+    Disposable {
   readonly enqueue: (key: TKey, work: () => Promise<void>) => void
   readonly isDisposed: boolean
 }
@@ -15,19 +16,19 @@ export const createKeyedTaskQueue = <TKey extends string = string>(
   const keyOrder: TKey[] = []
   let running = false
   let disposed = false
+  let drain: Promise<void> | undefined
 
-  const enqueue = (key: TKey, work: () => Promise<void>): void => {
-    if (disposed) return
+  const dispose = (): void => {
+    disposed = true
+    queue.clear()
+    keyOrder.length = 0
+  }
 
-    if (!queue.has(key)) {
-      keyOrder.push(key)
-    }
-    queue.set(key, work)
+  const startDrain = (): void => {
+    if (running) return
 
-    const run = async (): Promise<void> => {
-      if (running) return
-
-      running = true
+    running = true
+    drain = (async () => {
       try {
         while (keyOrder.length > 0 && !disposed) {
           const currentKey = keyOrder.shift()
@@ -42,9 +43,17 @@ export const createKeyedTaskQueue = <TKey extends string = string>(
       } finally {
         running = false
       }
-    }
+    })()
+  }
 
-    void run()
+  const enqueue = (key: TKey, work: () => Promise<void>): void => {
+    if (disposed) return
+
+    if (!queue.has(key)) {
+      keyOrder.push(key)
+    }
+    queue.set(key, work)
+    startDrain()
   }
 
   return {
@@ -52,10 +61,10 @@ export const createKeyedTaskQueue = <TKey extends string = string>(
     get isDisposed() {
       return disposed
     },
-    [Symbol.dispose]() {
-      disposed = true
-      queue.clear()
-      keyOrder.length = 0
+    [Symbol.dispose]: dispose,
+    async [Symbol.asyncDispose]() {
+      dispose()
+      await drain
     },
   }
 }

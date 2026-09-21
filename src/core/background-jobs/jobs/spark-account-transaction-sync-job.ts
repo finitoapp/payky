@@ -211,9 +211,9 @@ const createSparkAccountSyncManager = ({
     async [Symbol.asyncDispose]() {
       if (refreshQueue.isDisposed) return
 
-      refreshQueue[Symbol.dispose]()
       clearInterval(recheckTimer)
       unsubscribeAccounts()
+      await refreshQueue[Symbol.asyncDispose]()
 
       for (const session of sessions.values()) {
         await session[Symbol.asyncDispose]()
@@ -588,12 +588,13 @@ const createSparkAccountSyncSession = ({
       if (disposed) return
 
       disposed = true
-      queue[Symbol.dispose]()
       pendingTransferIds.clear()
       pendingHistorySync = false
 
       unsubscribeEvents?.()
       unsubscribeEvents = undefined
+
+      await queue[Symbol.asyncDispose]()
 
       const walletToCleanup = wallet
       wallet = undefined

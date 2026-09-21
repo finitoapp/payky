@@ -400,6 +400,91 @@ describe("fio account transaction sync job", () => {
     expect(errors).toEqual([])
   })
 
+  test("does not advance the sync pointer when a transaction lock is held", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    const errors: unknown[] = []
+    const console = testCreateConsole()
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Bank account"),
+        iban: {
+          iban: IbanSchema.decode("CZ6508000000192000145399"),
+          currency: "CZK",
+        },
+      })
+    )
+    const fioPluginId = await run.ok(
+      saveFioPlugin({
+        accountId,
+        numberOfSecondsBetweenChecks: PositiveInteger(60),
+        syncLookbackDays: PositiveInteger(1),
+        isActive: sqliteTrue,
+      })
+    )
+    await run.ok(
+      addFioPluginToken({
+        fioPluginId,
+        token: NonEmptyString255("fio-token-1"),
+      })
+    )
+    evolu.upsert(
+      "fioPluginSyncPointer",
+      {
+        id: fioPluginId,
+        lastSyncedDate: DateStringSchema.decode("2026-05-20"),
+      },
+      { ownerId: evolu.appOwner.id }
+    )
+    const lockManager = createInProcessLockManager()
+    const lockAcquired = Promise.withResolvers<void>()
+    const releaseLock = Promise.withResolvers<void>()
+    const heldLock = lockManager.request(
+      `fio-transaction-${accountId}-${fioTransaction.column0.value}`,
+      async () => {
+        lockAcquired.resolve()
+        await releaseLock.promise
+      }
+    )
+    await lockAcquired.promise
+
+    try {
+      await using jobRun = testCreateRun({
+        console,
+        evolu,
+        evoluOwnerId: evolu.appOwner.id,
+        lockManager,
+        onError: (error: unknown) => {
+          errors.push(error)
+        },
+        fetch: async () =>
+          statementResponse({ transactions: [fioTransaction] }),
+        ...createTestDateDep(new Date("2026-05-31T10:00:00.000Z")),
+      })
+      await using _job = await jobRun.ok(createFioAccountTransactionSyncJob())
+
+      await expect
+        .poll(() => console.getEntriesSnapshot())
+        .toContainEqual({
+          method: "debug",
+          path: ["fio-account-transaction-sync-job"],
+          args: [
+            "Did not advance FIO sync pointer because a transaction was locked.",
+            { accountId, pluginId: fioPluginId },
+          ],
+        })
+      expect(
+        await evolu.loadQuery(fioPluginSyncPointerQuery(fioPluginId))
+      ).toEqual([{ id: fioPluginId, lastSyncedDate: "2026-05-20" }])
+      expect(errors).toEqual([])
+    } finally {
+      releaseLock.resolve()
+      await heldLock
+    }
+  })
+
   test("logs FIO rate limiting without reporting a job error", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

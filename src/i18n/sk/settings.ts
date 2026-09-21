@@ -226,6 +226,7 @@ export const skSettings = {
   "settings.fiat.usd.description":
     "Používať americký dolár pre sumy v termináli",
   "settings.fiat.usd.title": "Americký dolar",
+  "settings.fiatBankAccount.advanced": "Pokročilé možnosti",
   "settings.fiatBankAccount.currency.description":
     "Platby v tejto mene môžu použiť tento bankový účet.",
   "settings.fiatBankAccount.currency.label": "Mena bankového účtu",
@@ -485,6 +486,7 @@ export const skSettings = {
   "settings.sparkAccount.enabled.description":
     "Vypnutý Spark účet zostane uložený, ale platobné toky ho budú ignorovať.",
   "settings.sparkAccount.enabled.label": "Povoliť Spark účet",
+  "settings.sparkAccount.advanced": "Pokročilé možnosti",
   "settings.sparkAccount.form.description":
     "Payky túto Spark peňaženku odvodí z kľúča na obnovu účtu.",
   "settings.sparkAccount.form.title": "Spark účet",

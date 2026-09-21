@@ -224,6 +224,7 @@ export const enSettings = {
   "settings.fiat.title": "Fiat Currency",
   "settings.fiat.usd.description": "Use US dollar for terminal amounts",
   "settings.fiat.usd.title": "US dollar",
+  "settings.fiatBankAccount.advanced": "Advanced options",
   "settings.fiatBankAccount.currency.description":
     "Payments in this currency can use this bank account.",
   "settings.fiatBankAccount.currency.label": "Bank account currency",
@@ -481,6 +482,7 @@ export const enSettings = {
   "settings.sparkAccount.enabled.description":
     "Disabled Spark accounts stay stored but are ignored by payment flows.",
   "settings.sparkAccount.enabled.label": "Enable Spark account",
+  "settings.sparkAccount.advanced": "Advanced options",
   "settings.sparkAccount.form.description":
     "Payky derives this Spark wallet from your account recovery key.",
   "settings.sparkAccount.form.title": "Spark account",

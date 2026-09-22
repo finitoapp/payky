@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import {
-  defaultEvoluTransportUrl,
+  defaultEvoluTransportUrls,
   upsertAccountEvoluWebsocketTransport,
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
@@ -42,7 +42,7 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reloadAppEvolu = useReloadAppEvolu()
   const urlInputId = useId()
-  const [url, setUrl] = useState<string>(defaultEvoluTransportUrl)
+  const [url, setUrl] = useState<string>("")
   const { pending, saved, error, setError, resetSaved, submit } =
     useSettingsForm()
 
@@ -100,7 +100,7 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
                   aria-invalid={error !== null}
                   autoComplete="off"
                   inputMode="url"
-                  placeholder={defaultEvoluTransportUrl}
+                  placeholder={defaultEvoluTransportUrls[0]}
                   onChange={(event) => {
                     setUrl(event.currentTarget.value)
                     setError(null)

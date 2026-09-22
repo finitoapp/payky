@@ -83,11 +83,10 @@ export function AccountsSettingsPage() {
       return
     }
 
-    // Confirmed because there is no undo and, for an account created here,
-    // no copy anywhere else: `insertAccount` leaves its relay transport
-    // inactive, so its data has never left this device, and the row is only
-    // soft-deleted — every query filters it out with no way back except
-    // re-entering the recovery phrase.
+    // Confirmed because there is no undo: the row is only soft-deleted, every
+    // query filters it out, and the only way back is re-entering the recovery
+    // phrase. `insertAccount` activates the default relays, so a copy may sit
+    // there — but reaching it still needs that same phrase.
     const confirmed = await confirm({
       title: t("settings.accounts.remove.confirm.title", { name }),
       description: t("settings.accounts.remove.confirm.description"),

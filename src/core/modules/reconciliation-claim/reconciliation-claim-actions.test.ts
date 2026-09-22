@@ -14,6 +14,7 @@ import {
   createBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import {
+  loadBill,
   loadBillCoverage,
   loadBillStatus,
 } from "@/core/modules/bill/bill-guards.ts"
@@ -35,7 +36,10 @@ import {
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
-import { reconcileAccountTransaction } from "./reconciliation-claim-actions.ts"
+import {
+  claimManualReconciliation,
+  reconcileAccountTransaction,
+} from "./reconciliation-claim-actions.ts"
 
 // `DateDep` included because every test below builds its run with
 // `createTestDateDep()`: without it a helper here can only compose the
@@ -978,5 +982,80 @@ describe("reconciliation claim actions", () => {
       claimedSum: 12_900,
       coverage: "paid",
     })
+  })
+
+  test("a partial claim does not cache the bill as closed", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createCashRegisterAccount(run)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(12_900),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+    // Only 50.00 of the 129.00 owed. The claim is real, so it is written —
+    // but the bill is not covered, and the `closedAt` cache must not say it
+    // is while the live derivation says otherwise.
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(5_000),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T12:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: { deviceId: null, source: "manual" },
+      })
+    )
+
+    await run.ok(
+      claimManualReconciliation({
+        paymentId,
+        accountTransactionId,
+        deviceId: null,
+      })
+    )
+
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("open")
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      claimedSum: 5_000,
+      coverage: "underpaid",
+    })
+    await expect(
+      run.orThrow(loadBill(billId)).then((bill) => bill.closedAt)
+    ).resolves.toBeNull()
   })
 })

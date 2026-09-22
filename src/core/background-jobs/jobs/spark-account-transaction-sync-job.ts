@@ -345,10 +345,11 @@ const createSparkAccountSyncSession = ({
           claim === null
             ? null
             : await run.ok(
-                loadBillClosedAtForPayment(
-                  claim.paymentId,
-                  accountTransaction.id
-                )
+                loadBillClosedAtForPayment(claim.paymentId, {
+                  id: accountTransaction.id,
+                  amount: accountTransaction.input.amount,
+                  currency: accountTransaction.input.currency,
+                })
               )
 
         await runMutationWithCompletion((options) => {

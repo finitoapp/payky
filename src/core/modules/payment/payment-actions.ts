@@ -500,7 +500,11 @@ const markPaymentPaid =
       claimedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
     }
     const billClosing = await run.ok(
-      loadBillClosedAtForPayment(paymentId, accountTransaction.id)
+      loadBillClosedAtForPayment(paymentId, {
+        id: accountTransaction.id,
+        amount: accountTransaction.input.amount,
+        currency: accountTransaction.input.currency,
+      })
     )
 
     const { evoluOwnerId } = run.deps

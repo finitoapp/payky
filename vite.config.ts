@@ -164,6 +164,11 @@ export default (({ command }: ConfigEnv) => {
     test: {
       exclude: [...defaultExclude, "e2e/**"],
       setupFiles: ["./src/test/setup.ts"],
+      // The same zone `playwright.config.ts` pins, so a formatted date means
+      // the same thing in both suites and on a developer machine that is not
+      // in UTC. Without it the date formatters can only be asserted against
+      // whatever zone the runner happens to sit in.
+      env: { TZ: "Europe/Prague" },
       coverage: {
         provider: "v8",
         reporter: ["text", "html", "lcov"],

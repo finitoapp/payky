@@ -136,10 +136,18 @@ export function useCartBill({
   // second of two rapid taps was silently lost. Ordering matters here beyond
   // safety — the bill-line ledger is append-only and undo/redo replays it in
   // reverse, so out-of-order appends would make undo pop the wrong entry.
-  const queueRef = useRef<Promise<void>>(Promise.resolve())
+  const queueRef = useRef<Promise<unknown>>(Promise.resolve())
   const pendingCountRef = useRef(0)
 
-  const runQueued = async (operation: () => Promise<void>): Promise<void> => {
+  /**
+   * Resolves `true` only when the operation actually applied and was
+   * recorded on the undo stack. Failures are reported here, so most call
+   * sites can keep ignoring the result — but one that offers to undo the
+   * change has to know, or it offers to undo whatever came before it.
+   */
+  const runQueued = async (
+    operation: () => Promise<boolean>
+  ): Promise<boolean> => {
     pendingCountRef.current += 1
     setPending(true)
 
@@ -147,14 +155,16 @@ export function useCartBill({
     // — realistically only `ensureBillExists` below, which rethrows when
     // the bill row can't be created. Report it the way every Result
     // failure in this hook is reported instead of letting it escape:
-    // every call site is `void cart.addOne(...)`, so a rejection produced
+    // most call sites are `void cart.addOne(...)`, so a rejection produced
     // no log, no toast and a tap that silently did nothing.
-    const guarded = async () => {
+    const guarded = async (): Promise<boolean> => {
       try {
-        await operation()
+        return await operation()
       } catch (error) {
         console.error("Cart mutation failed", error)
         toast.error(t("settings.saveFailed"))
+
+        return false
       }
     }
 
@@ -164,7 +174,7 @@ export function useCartBill({
     queueRef.current = queued
 
     try {
-      await queued
+      return await queued
     } finally {
       pendingCountRef.current -= 1
       if (pendingCountRef.current === 0) setPending(false)
@@ -249,7 +259,8 @@ export function useCartBill({
       if (!result.ok) {
         console.error("Failed to add catalog item to cart", result.error)
         showCartMutationErrorToast(t, result.error)
-        return
+
+        return false
       }
 
       record([
@@ -264,6 +275,8 @@ export function useCartBill({
           totalAmount: NonNegativeInteger(catalogItem.unitAmount * quantity),
         },
       ])
+
+      return true
     })
 
   const addOne = (catalogItem: CatalogItemRow) =>
@@ -275,12 +288,12 @@ export function useCartBill({
    * the whole line (the X on a summary row). Both are the same append with
    * different amounts — the ledger has no notion of "one" versus "all".
    */
-  const removeFromCart = async (
+  const removeFromCart = (
     summary: BillLineSummary,
     quantity: PositiveNumber,
     totalAmount: NonNegativeInteger
-  ) => {
-    await runQueued(async () => {
+  ) =>
+    runQueued(async () => {
       const { device } = await jotaiStore.get(accountAtom)
       await using run = appRun()
       const result = await run(
@@ -295,7 +308,8 @@ export function useCartBill({
       if (!result.ok) {
         console.error("Failed to remove from cart", result.error)
         showCartMutationErrorToast(t, result.error)
-        return
+
+        return false
       }
 
       record([
@@ -310,8 +324,9 @@ export function useCartBill({
           totalAmount,
         },
       ])
+
+      return true
     })
-  }
 
   const removeOne = (summary: BillLineSummary) =>
     removeFromCart(
@@ -323,10 +338,10 @@ export function useCartBill({
   const removeLine = (summary: BillLineSummary) =>
     removeFromCart(summary, summary.quantity, summary.totalAmount)
 
-  const clear = async (summaries: ReadonlyArray<BillLineSummary>) => {
-    if (summaries.length === 0) return
+  const clear = (summaries: ReadonlyArray<BillLineSummary>) => {
+    if (summaries.length === 0) return Promise.resolve(false)
 
-    await runQueued(async () => {
+    return runQueued(async () => {
       const { device } = await jotaiStore.get(accountAtom)
       const lines: CartHistoryEntry = summaries.map((summary) => ({
         billId,
@@ -344,10 +359,13 @@ export function useCartBill({
       if (!result.ok) {
         console.error("Failed to clear cart", result.error)
         showCartMutationErrorToast(t, result.error)
-        return
+
+        return false
       }
 
       record(lines)
+
+      return true
     })
   }
 
@@ -365,7 +383,8 @@ export function useCartBill({
       const rows = await evolu.loadQuery(billByIdQuery(billId))
       if (rows.length === 0) {
         onTableSeedChange(nextTableId)
-        return
+
+        return true
       }
 
       await using run = appRun()
@@ -374,6 +393,8 @@ export function useCartBill({
           ? removeTableFromBill(billId)
           : assignBillToTable({ id: billId, tableId: nextTableId })
       )
+
+      return true
     })
 
   // The top of the stack is read inside `runQueued`, not before it, so two
@@ -382,7 +403,7 @@ export function useCartBill({
   const undo = () =>
     runQueued(async () => {
       const entry = undoStackRef.current.at(-1)
-      if (entry === undefined) return
+      if (entry === undefined) return false
 
       await using run = appRun()
       const result = await run(
@@ -391,32 +412,38 @@ export function useCartBill({
       if (!result.ok) {
         console.error("Failed to undo cart change", result.error)
         showCartMutationErrorToast(t, result.error)
-        return
+
+        return false
       }
 
       setStacks(undoStackRef.current.slice(0, -1), [
         ...redoStackRef.current,
         entry,
       ])
+
+      return true
     })
 
   const redo = () =>
     runQueued(async () => {
       const entry = redoStackRef.current.at(-1)
-      if (entry === undefined) return
+      if (entry === undefined) return false
 
       await using run = appRun()
       const result = await run(appendGuardedBillLines(billId, entry))
       if (!result.ok) {
         console.error("Failed to redo cart change", result.error)
         showCartMutationErrorToast(t, result.error)
-        return
+
+        return false
       }
 
       setStacks(
         [...undoStackRef.current, entry],
         redoStackRef.current.slice(0, -1)
       )
+
+      return true
     })
 
   return {

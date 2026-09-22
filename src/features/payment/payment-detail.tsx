@@ -41,12 +41,12 @@ import {
   paymentReconciliationsQuery,
 } from "@/core/modules/payment/payment-queries.ts"
 import {
-  calculatePaymentClaimedSum,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
@@ -149,7 +149,7 @@ function PaymentDetailContent({
   // different method — both real money, so the sum of its distinct claimed
   // transactions can exceed its own `amount`. See `payment.ts`'s
   // `excessAcknowledgedAt` doc comment.
-  const claimedTransactionSum = calculatePaymentClaimedSum(
+  const claimedTransactionSum = sumDistinctClaimedAmounts(
     reconciliations.flatMap((reconciliation) =>
       reconciliation.accountTransactionId === null
         ? []
@@ -157,6 +157,10 @@ function PaymentDetailContent({
             {
               accountTransactionId: reconciliation.accountTransactionId,
               amount: reconciliation.transactionAmount,
+              currency: reconciliation.transactionCurrency,
+              paymentAmount: payment.amount,
+              paymentCurrency: payment.currency,
+              paymentAmountSats: payment.amountSats,
             },
           ]
     )

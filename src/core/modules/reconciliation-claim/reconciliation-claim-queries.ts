@@ -55,18 +55,34 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
         "accountTransaction.id",
         "reconciliationClaim.accountTransactionId"
       )
+      .innerJoin("payment", "payment.id", "reconciliationClaim.paymentId")
+      .leftJoin("paymentBtc", (join) =>
+        join
+          .onRef("paymentBtc.id", "=", "payment.id")
+          .on("paymentBtc.isDeleted", "is not", 1)
+      )
       .select([
         "reconciliationClaim.accountTransactionId",
         "accountTransaction.amount",
+        "accountTransaction.currency",
+        "payment.amount as paymentAmount",
+        "payment.currency as paymentCurrency",
+        "paymentBtc.amountSats as paymentAmountSats",
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", 1)
       .where("reconciliationClaim.accountTransactionId", "is not", null)
       .where("accountTransaction.isDeleted", "is not", 1)
       .where("accountTransaction.amount", "is not", null)
+      .where("accountTransaction.currency", "is not", null)
+      .where("payment.amount", "is not", null)
+      .where("payment.currency", "is not", null)
       .$narrowType<{
         accountTransactionId: KyselyNotNull
         amount: KyselyNotNull
+        currency: KyselyNotNull
+        paymentAmount: KyselyNotNull
+        paymentCurrency: KyselyNotNull
       }>()
   )
 

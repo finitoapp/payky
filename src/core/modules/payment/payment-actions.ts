@@ -33,7 +33,6 @@ import type {
   paymentCashRegister,
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
-import { calculatePaymentClaimedSum } from "@/core/modules/payment/payment-status-utils.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
   createPaymentNumberDate,
@@ -48,6 +47,7 @@ import {
   activeClaimedTransactionsByPaymentIdQuery,
   activeReconciliationClaimsByPaymentIdQuery,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
+import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -690,7 +690,7 @@ export const acknowledgePaymentExcessSettlement =
     const claimedTransactions = await run.deps.evolu.loadQuery(
       activeClaimedTransactionsByPaymentIdQuery(paymentId)
     )
-    const claimedSum = calculatePaymentClaimedSum(claimedTransactions)
+    const claimedSum = sumDistinctClaimedAmounts(claimedTransactions)
     if (claimedSum <= paymentResult.value.amount) {
       return err(createPaymentNotOverpaidError({ id: paymentId }))
     }

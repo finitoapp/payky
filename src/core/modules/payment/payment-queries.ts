@@ -236,27 +236,36 @@ export const paymentDetailQuery = (paymentId: PaymentId) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
+      // For the satoshi amount only: the detail screen reads its claimed
+      // transactions in the payment's currency, and a BTC settlement needs
+      // this to convert (see `toPaymentCurrencyAmount`).
+      .leftJoin("paymentBtc", (join) =>
+        join
+          .onRef("paymentBtc.id", "=", "payment.id")
+          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
+      )
       .select([
-        "id",
-        "deviceId",
-        "billId",
-        "tableId",
-        "amount",
-        "currency",
-        "tipAmount",
-        "canceledAt",
-        "confirmedPaidAt",
-        "excessAcknowledgedAt",
-        "expiresAt",
-        "createdAt",
-        "updatedAt",
+        "payment.id",
+        "payment.deviceId",
+        "payment.billId",
+        "payment.tableId",
+        "payment.amount",
+        "payment.currency",
+        "payment.tipAmount",
+        "payment.canceledAt",
+        "payment.confirmedPaidAt",
+        "payment.excessAcknowledgedAt",
+        "payment.expiresAt",
+        "payment.createdAt",
+        "payment.updatedAt",
+        "paymentBtc.amountSats",
       ])
-      .where("id", "=", paymentId)
-      .where("isDeleted", "is not", sqliteTrue)
-      .where("amount", "is not", null)
-      .where("currency", "is not", null)
-      .where("tipAmount", "is not", null)
-      .where("createdAt", "is not", null)
+      .where("payment.id", "=", paymentId)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where("payment.amount", "is not", null)
+      .where("payment.currency", "is not", null)
+      .where("payment.tipAmount", "is not", null)
+      .where("payment.createdAt", "is not", null)
       .$narrowType<{
         amount: KyselyNotNull
         currency: KyselyNotNull
@@ -398,15 +407,36 @@ export const latestPaymentsQuery = (limit: number) =>
               "ownClaimTx.id",
               "ownClaim.accountTransactionId"
             )
-            .select(["ownClaim.accountTransactionId", "ownClaimTx.amount"])
+            .leftJoin("paymentBtc as ownPaymentBtc", (join) =>
+              join
+                .onRef("ownPaymentBtc.id", "=", "ownClaim.paymentId")
+                .on("ownPaymentBtc.isDeleted", "is not", sqliteTrue)
+            )
+            .select([
+              "ownClaim.accountTransactionId",
+              "ownClaimTx.amount",
+              "ownClaimTx.currency",
+              "ownPaymentBtc.amountSats as paymentAmountSats",
+            ])
+            // The claim's payment is this row's payment (see the `whereRef`
+            // below), so its amount and currency come from the outer query
+            // rather than a second join.
+            .select((ownEb) => [
+              ownEb.ref("payment.amount").as("paymentAmount"),
+              ownEb.ref("payment.currency").as("paymentCurrency"),
+            ])
             .whereRef("ownClaim.paymentId", "=", "payment.id")
             .where("ownClaim.isDeleted", "is not", sqliteTrue)
             .where("ownClaim.accountTransactionId", "is not", null)
+            .where("ownClaimTx.currency", "is not", null)
             .where("ownClaimTx.isDeleted", "is not", sqliteTrue)
             .where("ownClaimTx.amount", "is not", null)
             .$narrowType<{
               accountTransactionId: KyselyNotNull
               amount: KyselyNotNull
+              currency: KyselyNotNull
+              paymentAmount: KyselyNotNull
+              paymentCurrency: KyselyNotNull
             }>()
         ).as("ownClaimedTransactions"),
         evoluJsonArrayFrom(

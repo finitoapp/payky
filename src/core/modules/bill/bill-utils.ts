@@ -1,7 +1,9 @@
-import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import type { Currency, FiatCurrency } from "@/core/modules/shared/schema.ts"
+import {
+  type ClaimedAmount,
+  toPaymentCurrencyAmount,
+} from "@/core/modules/shared/claimed-amount.ts"
 import {
   NonNegativeInteger,
   type TimestampMs,
@@ -60,81 +62,26 @@ export const deriveBillCoverage = (
 }
 
 /**
- * One account transaction claimed against a payment, as the coverage
- * queries return it.
- *
- * `amount` is denominated in the *transaction's* currency, which is not
- * always the bill's: a Lightning/Spark settlement records satoshis
- * (`currency: "BTC"`) against a payment charged in fiat. `paymentAmount`
- * and `paymentAmountSats` are the two sides of that same charge, so the
- * ratio between them is the exchange rate locked when the invoice was
- * created — see `toPaymentCurrencyAmount`.
+ * One claimed transaction as the bill-coverage queries return it: the
+ * shared money fields plus which payment it settles and that payment's tip.
  */
-export interface ClaimedTransaction {
+export interface ClaimedTransaction extends ClaimedAmount {
   readonly paymentId: PaymentId
-  readonly accountTransactionId: AccountTransactionId
-  readonly amount: number
-  readonly currency: Currency
   readonly tipAmount: NonNegativeInteger
-  readonly paymentAmount: NonNegativeInteger
-  readonly paymentCurrency: FiatCurrency
-  /** Only a BTC payment carries one; `null` for every other method. */
-  readonly paymentAmountSats: NonNegativeInteger | null
-}
-
-/**
- * A claimed transaction's value in its payment's (and therefore its
- * bill's) currency. Summing raw amounts across currencies is the bug this
- * exists to prevent: 8 600 satoshis against a 129.00 CZK bill read as
- * 8 600 minor units and left the bill underpaid forever.
- *
- * Scaling by the payment's own fiat-per-satoshi ratio rather than by
- * `paymentBtc.exchangeRate` is deliberate: a settlement of exactly
- * `paymentAmountSats` then contributes exactly `paymentAmount`, with no
- * rounding drift. `deriveBillCoverage` compares for equality, so a single
- * minor unit of drift is the difference between `paid` and `underpaid`.
- * A partial or excess settlement scales proportionally, which is also what
- * keeps two claims on one payment from each counting as a full payment.
- */
-const toPaymentCurrencyAmount = (transaction: ClaimedTransaction): number => {
-  if (transaction.currency === transaction.paymentCurrency) {
-    return transaction.amount
-  }
-
-  // No rate to convert with — a non-fiat transaction claimed against a
-  // payment that never carried a satoshi amount, which only a manual claim
-  // can produce. Counting nothing leaves the bill underpaid and visible to
-  // staff; inventing a rate would close it on a number nobody computed.
-  if (
-    transaction.paymentAmountSats === null ||
-    transaction.paymentAmountSats === 0
-  ) {
-    return 0
-  }
-
-  return Math.round(
-    (transaction.amount * transaction.paymentAmount) /
-      transaction.paymentAmountSats
-  )
 }
 
 /**
  * Sums, per payment, the non-tip portion of every distinct account
  * transaction actively claimed against it, then adds those per-payment
- * totals together. Every amount is first converted into the payment's own
- * currency (see `toPaymentCurrencyAmount`), so a Lightning settlement in
- * satoshis and a cash settlement in minor units can be added at all.
+ * totals together.
  *
- * Deduplicates by *transaction* id (not payment id) —
- * `calculatePaymentClaimedSum`'s doc comment explains why a payment can
- * carry more than one active claim (a genuine multi-method split, or a
- * CRDT merge race across two offline devices), and either way the real
- * money that arrived for it is the sum of its distinct transactions, not
- * its nominal `amount` counted once regardless of how much was actually
- * claimed. Tip is still subtracted only once per payment (it's an
- * attribute of the payment, not of any one transaction), and a payment
- * whose transactions still fall short of its tip (a partial, incomplete
- * split) contributes zero rather than a negative amount.
+ * The dedup-by-transaction-id rule and the currency conversion both come
+ * from `sumDistinctClaimedAmounts`, which the payment's own
+ * excess-settlement check uses too; what this adds is the tip. Tip is
+ * subtracted only once per payment (it's an attribute of the payment, not
+ * of any one transaction), and a payment whose transactions still fall
+ * short of its tip (a partial, incomplete split) contributes zero rather
+ * than a negative amount.
  */
 export const calculateClaimedSum = (
   claimedTransactions: ReadonlyArray<ClaimedTransaction>

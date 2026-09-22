@@ -1,6 +1,5 @@
-import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
-  NonNegativeInteger,
+  type NonNegativeInteger,
   type TimestampMs,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -77,34 +76,6 @@ export const computePaymentExpiresAt = (
   expirySeconds === undefined
     ? null
     : TimestampMsSchema.decode(now.getTime() + expirySeconds * 1000)
-
-/**
- * Sums the amounts of every distinct account transaction actively claimed
- * against a single payment, deduplicated by transaction id. A payment
- * normally has exactly one, but can end up with more than one for two very
- * different reasons: a genuine split settlement across methods (e.g. part
- * cash, part manually-reconciled bank transfer) that together add up to the
- * payment's own amount, or a CRDT merge race where two offline devices each
- * independently settle the *same* full amount through a different channel —
- * see `derivePaymentHasExcessSettlement`. See docs/bill-payment-states.md.
- */
-export const calculatePaymentClaimedSum = (
-  claimedTransactions: ReadonlyArray<{
-    readonly accountTransactionId: AccountTransactionId
-    readonly amount: number
-  }>
-): NonNegativeInteger => {
-  const uniqueByTransactionId = new Map(
-    claimedTransactions.map((transaction) => [
-      transaction.accountTransactionId,
-      transaction.amount,
-    ])
-  )
-
-  return NonNegativeInteger(
-    [...uniqueByTransactionId.values()].reduce((sum, amount) => sum + amount, 0)
-  )
-}
 
 /**
  * Whether a payment has been claimed for more than its own `amount` — the

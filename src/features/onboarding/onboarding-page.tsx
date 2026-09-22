@@ -44,7 +44,6 @@ import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/accoun
 import { AccountStep } from "@/features/onboarding/onboarding-steps/account-step.tsx"
 import { CountryStep } from "@/features/onboarding/onboarding-steps/country-step.tsx"
 import { CurrencyStep } from "@/features/onboarding/onboarding-steps/currency-step.tsx"
-import { LanguageStep } from "@/features/onboarding/onboarding-steps/language-step.tsx"
 import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-step.tsx"
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"
 import {
@@ -52,19 +51,19 @@ import {
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
+import { LanguageSelect } from "@/features/shared/language-select.tsx"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
-import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function OnboardingPage() {
   const runToast = useRunToast()
   const navigate = useNavigate()
-  const setLanguage = useSetLanguage()
   const setLocale = useSetLocale()
   const { language, t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
@@ -163,6 +162,10 @@ export function OnboardingPage() {
     setFinishing(true)
 
     const succeeded = await runToast(async (run) => {
+      // The header's language picker changes the wizard's own text as often as
+      // the user likes; the device locale (number/money formatting) follows
+      // from the language that survived to here, once, so switching back and
+      // forth while reading never leaves the wrong regional format applied.
       setLocale(getDeviceLocaleForLanguage(language))
 
       // A restored account whose first sync hasn't finished yet can briefly
@@ -315,22 +318,6 @@ export function OnboardingPage() {
           ) : null}
 
           <Card>
-            {step === "language" ? (
-              <LanguageStep
-                language={language}
-                pending={pending}
-                onSelect={(nextLanguage) => {
-                  // Only previews the wizard's own text live. The device
-                  // locale (number/money formatting) is derived from the
-                  // final language choice once, in finishOnboarding — not
-                  // on every intermediate click here — so switching languages
-                  // back and forth while deciding never leaves the wrong
-                  // regional format applied.
-                  setLanguage(nextLanguage)
-                }}
-              />
-            ) : null}
-
             {step === "accountChoice" ? (
               <AccountChoiceStep
                 accountType={accountType}
@@ -446,6 +433,10 @@ export function OnboardingPage() {
               </CardFooter>
             )}
           </Card>
+
+          <div className="flex justify-end">
+            <LanguageSelect disabled={pending} />
+          </div>
         </div>
       </PhoneViewport>
     </main>

@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test"
 
 import type { FiatCurrency } from "../../src/core/modules/shared/schema.ts"
-import type { Language, TranslationKey } from "../../src/i18n/resources.ts"
+import type { Language } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
 
 /**
@@ -17,12 +17,6 @@ import { translate } from "./i18n.ts"
  * reactive redirect off the onboarding page. Assumes the app has already
  * loaded on the current page (the bridge mounts for every route).
  */
-const languageOptionKeyByLanguage: Record<Language, TranslationKey> = {
-  en: "settings.language.english.title",
-  cs: "settings.language.czech.title",
-  sk: "settings.language.slovak.title",
-}
-
 export async function seedCurrentAccountOnboarding(
   page: Page,
   language: Language,
@@ -88,14 +82,6 @@ export async function completeOnboarding(
   await page
     .getByRole("heading", { name: translate(language, "onboarding.title") })
     .waitFor()
-  await page
-    .getByRole("button", {
-      name: translate(language, languageOptionKeyByLanguage[language]),
-    })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
   await page
     .getByRole("button", {
       name: translate(language, "onboarding.accountChoice.new.title"),
@@ -164,9 +150,6 @@ export async function completeOnboardingDefaults(
   await page
     .getByRole("heading", { name: translate(language, "onboarding.title") })
     .waitFor()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
   await page
     .getByRole("button", {
       name: translate(language, "onboarding.accountChoice.new.title"),

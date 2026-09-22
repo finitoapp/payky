@@ -5,7 +5,6 @@ import { getOnboardingSteps } from "@/features/onboarding/onboarding-form-state.
 describe("getOnboardingSteps", () => {
   test("includes the setup steps for a new account", () => {
     expect(getOnboardingSteps("new")).toEqual([
-      "language",
       "accountChoice",
       "country",
       "currency",
@@ -15,10 +14,6 @@ describe("getOnboardingSteps", () => {
   })
 
   test("goes directly from account choice to recovery for restoration", () => {
-    expect(getOnboardingSteps("restore")).toEqual([
-      "language",
-      "accountChoice",
-      "restore",
-    ])
+    expect(getOnboardingSteps("restore")).toEqual(["accountChoice", "restore"])
   })
 })

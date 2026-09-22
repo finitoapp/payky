@@ -42,7 +42,6 @@ export const enOnboarding = {
     "Turns on tax rates for catalog items. You can change this later in Settings.",
   "onboarding.country.vatPayer.label": "I am a VAT payer",
   "onboarding.finish": "Finish",
-  "onboarding.language.description": "Choose the language used across the app.",
   "onboarding.language.title": "Choose language",
   "onboarding.next": "Next",
   "onboarding.payments.btc.description":

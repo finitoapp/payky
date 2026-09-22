@@ -75,12 +75,6 @@ test("an invalid IBAN blocks advancing past the payment methods step", async ({
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", {
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
@@ -132,9 +126,6 @@ test("onboarding restore account starts the sync-wait screen", async ({
 }) => {
   await test.step("start onboarding and choose restore", async () => {
     await gotoPage(page, "/", "en", "onboarding.title")
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
     await page
       .getByRole("button", {
         name: translate("en", "onboarding.accountChoice.new.title"),
@@ -196,14 +187,6 @@ test("finish is blocked until the recovery phrase is confirmed, and it can be co
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", {
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
@@ -260,14 +243,6 @@ test("the currency step defaults to the chosen country's currency, not the UI la
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", {
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
@@ -299,9 +274,6 @@ test("the currency step defaults to the chosen country's currency, not the UI la
 test("changing the language after picking a currency does not reset that choice", async ({
   page,
 }) => {
-  const backButton = page.getByRole("button", {
-    name: translate("en", "onboarding.back"),
-  })
   const nextButton = page.getByRole("button", {
     name: translate("en", "onboarding.next"),
   })
@@ -316,12 +288,6 @@ test("changing the language after picking a currency does not reset that choice"
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "settings.language.english.title"),
-      })
-      .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", {
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
@@ -334,32 +300,23 @@ test("changing the language after picking a currency does not reset that choice"
     await expect(usdOption).toHaveAttribute("aria-pressed", "true")
   })
 
-  await test.step("go back to the language step and switch to Czech", async () => {
-    await backButton.click()
-    await backButton.click()
-    await backButton.click()
+  await test.step("switch to Czech from the header picker, without leaving the step", async () => {
     await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "settings.language.czech.title"),
+      .getByRole("combobox", {
+        name: translate("en", "onboarding.language.title"),
       })
       .click()
+    await page.getByRole("option", { name: "Čeština" }).click()
   })
 
-  await test.step("walking back to the currency step still shows the explicit US dollar choice", async () => {
-    // The UI itself previews the newly picked language immediately, so
-    // accessible names switch to Czech from here on.
-    const czechNextButton = page.getByRole("button", {
-      name: translate("cs", "onboarding.next"),
-    })
-    const usdOptionCzech = page.getByRole("button", {
-      name: translate("cs", "settings.fiat.usd.title"),
-    })
-    await czechNextButton.click()
-    await czechNextButton.click()
-    await czechNextButton.click()
-    await expect(usdOptionCzech).toHaveAttribute("aria-pressed", "true")
+  await test.step("the step now reads in Czech and keeps the explicit US dollar choice", async () => {
+    await expect(
+      page.getByRole("button", { name: translate("cs", "onboarding.next") })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("button", {
+        name: translate("cs", "settings.fiat.usd.title"),
+      })
+    ).toHaveAttribute("aria-pressed", "true")
   })
 })

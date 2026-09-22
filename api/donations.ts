@@ -114,6 +114,12 @@ export const toDonationItem = (transfer: DonateTransfer): DonationItem => ({
  * pages until either `limit` donations are collected or the source is
  * exhausted, capped by `MAX_PAGES_PER_REQUEST` to bound worst-case latency
  * when donations are sparse among many other transfers.
+ *
+ * The cursor is a transfer offset, not a donation offset, so collection stops
+ * *inside* the page that reaches `limit` and resumes at the transfer right
+ * after the last one collected. Draining the whole page and truncating the
+ * surplus instead would advance the cursor past donations that were never
+ * returned, making them unreachable for good.
  */
 export const collectDonationsPage = async (
   source: DonateTransferSource,
@@ -121,28 +127,27 @@ export const collectDonationsPage = async (
 ): Promise<DonationsResponse> => {
   const items: DonationItem[] = []
   let currentOffset = offset
-  let exhausted = false
 
   for (let page = 0; page < MAX_PAGES_PER_REQUEST; page += 1) {
     const result = await source.getTransfers(limit, currentOffset)
 
-    for (const transfer of result.transfers) {
-      if (isDonation(transfer)) items.push(toDonationItem(transfer))
+    for (const [index, transfer] of result.transfers.entries()) {
+      if (!isDonation(transfer)) continue
+
+      items.push(toDonationItem(transfer))
+      if (items.length >= limit) {
+        return { items, nextCursor: encodeCursor(currentOffset + index + 1) }
+      }
     }
 
     if (result.transfers.length === 0 || result.offset <= currentOffset) {
-      exhausted = true
-      break
+      return { items, nextCursor: null }
     }
 
     currentOffset = result.offset
-    if (items.length >= limit) break
   }
 
-  return {
-    items: items.slice(0, limit),
-    nextCursor: exhausted ? null : encodeCursor(currentOffset),
-  }
+  return { items, nextCursor: encodeCursor(currentOffset) }
 }
 
 const createDefaultTransferSource = (

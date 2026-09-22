@@ -41,8 +41,15 @@ const donation = (overrides: Partial<DonateTransfer> = {}): DonateTransfer => ({
   ...overrides,
 })
 
+/**
+ * Offset pagination over one flat transfer stream, the way the SDK does it:
+ * a call answers with the `limit` transfers starting at `offset` plus the
+ * offset to resume at. Handing out pre-cut pages instead would let the
+ * fake's offsets drift from the real ones, which is what the cursor is
+ * built from.
+ */
 const createSource = (
-  pages: readonly (readonly DonateTransfer[])[]
+  transfers: readonly DonateTransfer[]
 ): DonateTransferSource & { readonly calls: number[] } => {
   const calls: number[] = []
 
@@ -50,13 +57,9 @@ const createSource = (
     calls,
     getTransfers: (limit, offset) => {
       calls.push(offset)
-      const pageIndex = offset / limit
-      const transfers = pages[pageIndex] ?? []
+      const page = transfers.slice(offset, offset + limit)
 
-      return Promise.resolve({
-        transfers,
-        offset: transfers.length === 0 ? offset : offset + limit,
-      })
+      return Promise.resolve({ transfers: page, offset: offset + page.length })
     },
   }
 }
@@ -135,11 +138,9 @@ describe("parseLimit", () => {
 describe("collectDonationsPage", () => {
   test("filters non-donation transfers out of a page", async () => {
     const source = createSource([
-      [
-        donation({ totalValue: 100 }),
-        donation({ transferDirection: "OUTGOING" }),
-        donation({ status: "TRANSFER_STATUS_SENDER_INITIATED" }),
-      ],
+      donation({ totalValue: 100 }),
+      donation({ transferDirection: "OUTGOING" }),
+      donation({ status: "TRANSFER_STATUS_SENDER_INITIATED" }),
     ])
 
     const result = await collectDonationsPage(source, { limit: 20, offset: 0 })
@@ -151,8 +152,9 @@ describe("collectDonationsPage", () => {
 
   test("pulls additional pages until the limit is reached", async () => {
     const source = createSource([
-      [donation({ transferDirection: "OUTGOING" })],
-      [donation({ totalValue: 1 }), donation({ totalValue: 2 })],
+      donation({ transferDirection: "OUTGOING" }),
+      donation({ totalValue: 1 }),
+      donation({ totalValue: 2 }),
     ])
 
     const result = await collectDonationsPage(source, { limit: 1, offset: 0 })
@@ -163,8 +165,34 @@ describe("collectDonationsPage", () => {
     expect(decodeCursor(result.nextCursor ?? "")).toBe(2)
   })
 
+  test("resumes at the first uncollected donation, not past the whole page", async () => {
+    // Page 1 (offsets 0-1) holds one donation, page 2 (offsets 2-3) holds two:
+    // the limit is reached mid-page, so the third donation must survive into
+    // the next request instead of being truncated away behind the cursor.
+    const source = createSource([
+      donation({ totalValue: 1 }),
+      donation({ transferDirection: "OUTGOING" }),
+      donation({ totalValue: 2 }),
+      donation({ totalValue: 3 }),
+    ])
+
+    const first = await collectDonationsPage(source, { limit: 2, offset: 0 })
+
+    expect(first.items.map((item) => item.amountSats)).toEqual([1, 2])
+    const nextOffset = decodeCursor(first.nextCursor ?? "")
+    expect(nextOffset).toBe(3)
+
+    const second = await collectDonationsPage(source, {
+      limit: 2,
+      offset: nextOffset ?? 0,
+    })
+
+    expect(second.items.map((item) => item.amountSats)).toEqual([3])
+    expect(second.nextCursor).toBeNull()
+  })
+
   test("returns a null cursor once the source is exhausted", async () => {
-    const source = createSource([[donation()]])
+    const source = createSource([donation()])
 
     const result = await collectDonationsPage(source, { limit: 20, offset: 0 })
 

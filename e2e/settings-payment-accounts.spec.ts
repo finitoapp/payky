@@ -40,6 +40,22 @@ test("edit the fiat bank account and cash register settings", async ({
       })
       .click()
 
+    // The click only starts the write, and nothing in the DOM waits for it.
+    // `preventDefaultPaymentMethodDisable` re-reads the settings row when the
+    // switch below is flipped, so until this badge appears it still sees the
+    // cash register as the default, allows the bank account to be disabled,
+    // and both assertions below fail with no error toast in sight.
+    await expect(
+      page
+        .locator('[data-slot="card"]')
+        .filter({
+          hasText: translate("en", "settings.fiatBankAccount.form.title"),
+        })
+        .getByText(translate("en", "settings.paymentAccounts.default"), {
+          exact: true,
+        })
+    ).toBeVisible()
+
     const bankSwitch = page.getByRole("switch", {
       name: translate("en", "settings.fiatBankAccount.enabled.label"),
     })

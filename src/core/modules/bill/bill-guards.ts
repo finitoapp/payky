@@ -26,6 +26,7 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
+  type Currency,
   type FiatCurrency,
   type NonNegativeInteger,
   type TimestampMs,
@@ -370,8 +371,14 @@ export const loadBillClosedAtIfCovered =
       readonly amount: NonNegativeInteger
       readonly currency: FiatCurrency
       readonly tipAmount: NonNegativeInteger
+      /** Only a BTC payment has one; see `calculateClaimedSum`. */
+      readonly amountSats: NonNegativeInteger | null
     },
-    accountTransactionId: AccountTransactionId
+    claimedTransaction: {
+      readonly id: AccountTransactionId
+      readonly amount: number
+      readonly currency: Currency
+    }
   ): Task<
     { readonly billId: BillId; readonly closedAt: TimestampMs } | null,
     never,
@@ -392,24 +399,23 @@ export const loadBillClosedAtIfCovered =
     // own dedup-by-transaction-id collapses the duplicate, so this never
     // double-counts.
     //
-    // The row stands in the payment's own currency for its own amount, not
-    // the claimed transaction's: this function is not given the transaction,
-    // only its id. For a Lightning/Spark claim that now agrees with what the
-    // live query derives, since a full settlement converts back to exactly
-    // `payment.amount` — but a partial or excess claim still reads as the
-    // nominal amount here. Replacing this with the real transaction amount
-    // is issues.md #96.
+    // It carries the claimed transaction's own amount and currency, the same
+    // thing `claimedTransactionsByBillIdQuery` reads for every claim that is
+    // already written. Standing in the payment's nominal amount instead made
+    // this cache decide `paid` on a number the live `deriveBillStatus` never
+    // computes — a bill would vanish from the floor view while every guard
+    // still read it as open.
     const claimedSum = calculateClaimedSum([
       ...claimedTransactions,
       {
         paymentId: payment.id,
-        accountTransactionId,
-        amount: payment.amount,
-        currency: payment.currency,
+        accountTransactionId: claimedTransaction.id,
+        amount: claimedTransaction.amount,
+        currency: claimedTransaction.currency,
         tipAmount: payment.tipAmount,
         paymentAmount: payment.amount,
         paymentCurrency: payment.currency,
-        paymentAmountSats: null,
+        paymentAmountSats: payment.amountSats,
       },
     ])
 

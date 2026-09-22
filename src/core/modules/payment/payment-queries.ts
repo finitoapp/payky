@@ -7,6 +7,41 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { PaymentId } from "./payment-types.ts"
 
+/**
+ * Just the payment fields bill coverage needs, plus the satoshi amount a
+ * BTC payment was created for. `paymentByIdQuery` cannot carry the last
+ * one — `amountSats` lives on `paymentBtc` — and without it a satoshi
+ * settlement has no rate to convert back to fiat with. See
+ * `calculateClaimedSum`.
+ */
+export const paymentBillCoverageByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("payment")
+      .leftJoin("paymentBtc", (join) =>
+        join
+          .onRef("paymentBtc.id", "=", "payment.id")
+          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "payment.id",
+        "payment.billId",
+        "payment.amount",
+        "payment.currency",
+        "payment.tipAmount",
+        "paymentBtc.amountSats",
+      ])
+      .where("payment.id", "=", idValue)
+      .where("payment.amount", "is not", null)
+      .where("payment.currency", "is not", null)
+      .where("payment.tipAmount", "is not", null)
+      .$narrowType<{
+        amount: KyselyNotNull
+        currency: KyselyNotNull
+        tipAmount: KyselyNotNull
+      }>()
+  )
+
 export const paymentByIdQuery = (idValue: PaymentId) =>
   createQuery((db) =>
     db

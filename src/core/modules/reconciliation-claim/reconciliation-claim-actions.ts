@@ -7,12 +7,13 @@ import {
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { CreateAccountTransactionInput } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import { accountTransactionAmountByIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { upsertBillClosedAt } from "@/core/modules/bill/bill-actions.ts"
 import { loadBillClosedAtIfCovered } from "@/core/modules/bill/bill-guards.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
-import { paymentByIdQuery } from "@/core/modules/payment/payment-queries.ts"
+import { paymentBillCoverageByIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -20,6 +21,7 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import {
+  type Currency,
   NonNegativeInteger,
   type SyncSource,
   type TimestampMs,
@@ -52,7 +54,17 @@ import type { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
 export const loadBillClosedAtForPayment =
   (
     paymentId: PaymentId,
-    accountTransactionId: AccountTransactionId
+    /**
+     * The transaction the claim points at, by value: what it is worth and
+     * in which currency. Passed rather than read back because
+     * `markPaymentPaid` and the sync jobs call this *before* writing it —
+     * the row is not in the database yet.
+     */
+    claimedTransaction: {
+      readonly id: AccountTransactionId
+      readonly amount: number
+      readonly currency: Currency
+    }
   ): Task<
     { readonly billId: BillId; readonly closedAt: TimestampMs } | null,
     never,
@@ -60,12 +72,12 @@ export const loadBillClosedAtForPayment =
   > =>
   async (run) => {
     const [paymentRow] = await run.deps.evolu.loadQuery(
-      paymentByIdQuery(paymentId)
+      paymentBillCoverageByIdQuery(paymentId)
     )
     if (paymentRow === undefined) return ok(null)
 
     return ok(
-      await run.ok(loadBillClosedAtIfCovered(paymentRow, accountTransactionId))
+      await run.ok(loadBillClosedAtIfCovered(paymentRow, claimedTransaction))
     )
   }
 
@@ -195,9 +207,22 @@ const writeClaimAndCloseBillIfCovered =
   ): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const billClosing = await run.ok(
-      loadBillClosedAtForPayment(claim.paymentId, claim.accountTransactionId)
+    // Unlike the sync jobs and `markPaymentPaid`, this path claims a
+    // transaction that already exists, so its amount has to be read back
+    // before coverage can be told what the claim is worth.
+    const [claimedTransaction] = await run.deps.evolu.loadQuery(
+      accountTransactionAmountByIdQuery(claim.accountTransactionId)
     )
+    const billClosing =
+      claimedTransaction === undefined
+        ? null
+        : await run.ok(
+            loadBillClosedAtForPayment(claim.paymentId, {
+              id: claim.accountTransactionId,
+              amount: claimedTransaction.amount,
+              currency: claimedTransaction.currency,
+            })
+          )
 
     await runMutationWithCompletion((options) =>
       upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {

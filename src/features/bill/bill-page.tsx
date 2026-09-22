@@ -348,22 +348,12 @@ function BillLockedMessage({
   )
 }
 
-interface CartApi {
-  readonly pending: boolean
-  readonly canUndo: boolean
-  readonly canRedo: boolean
-  readonly addOne: (catalogItem: CatalogItemRow) => Promise<void>
-  readonly addQuantity: (
-    catalogItem: CatalogItemRow,
-    quantity: PositiveNumber
-  ) => Promise<void>
-  readonly removeOne: (summary: BillLineSummary) => Promise<void>
-  readonly removeLine: (summary: BillLineSummary) => Promise<void>
-  readonly clear: (summaries: ReadonlyArray<BillLineSummary>) => Promise<void>
-  readonly assignTable: (tableId: TableId | null) => Promise<void>
-  readonly undo: () => Promise<void>
-  readonly redo: () => Promise<void>
-}
+/**
+ * Taken from the hook rather than restated: as a hand-written copy it had
+ * already drifted, declaring `Promise<void>` where the mutations resolve to
+ * whether the change was actually applied.
+ */
+type CartApi = Readonly<ReturnType<typeof useCartBill>>
 
 interface SharedCartViewProps {
   readonly cart: CartApi
@@ -756,13 +746,20 @@ function BillCartView({
                         locale={locale}
                         disabled={cart.pending}
                         onRemove={(removedSummary) => {
-                          void cart.removeLine(removedSummary).then(() => {
-                            showUndoToast(
-                              t("bill.summary.removeLine.toast", {
-                                name: removedSummary.name,
-                              })
-                            )
-                          })
+                          void cart
+                            .removeLine(removedSummary)
+                            .then((removed) => {
+                              // A failed removal already raised its own error
+                              // toast and recorded nothing, so offering to undo
+                              // here would invert the change before it.
+                              if (!removed) return
+
+                              showUndoToast(
+                                t("bill.summary.removeLine.toast", {
+                                  name: removedSummary.name,
+                                })
+                              )
+                            })
                         }}
                       />
                     ))}
@@ -794,8 +791,10 @@ function BillCartView({
                     size={"xs"}
                     disabled={summaries.length === 0 || cart.pending}
                     onClick={() => {
-                      void cart.clear(summaries).then(() => {
-                        showUndoToast(t("bill.summary.clear.toast"))
+                      void cart.clear(summaries).then((cleared) => {
+                        if (cleared) {
+                          showUndoToast(t("bill.summary.clear.toast"))
+                        }
                       })
                     }}
                   >

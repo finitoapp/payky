@@ -1,11 +1,13 @@
 import { describe, expect, test } from "vitest"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { Currency } from "@/core/modules/shared/schema.ts"
 import {
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import {
+  type ClaimedTransaction,
   calculateClaimedSum,
   claimedPaymentIdSet,
   deriveBillCoverage,
@@ -15,6 +17,33 @@ import {
 } from "./bill-utils.ts"
 
 const now = new Date("2026-06-05T12:00:00.000Z")
+
+/**
+ * A claimed transaction in the payment's own currency — the ordinary
+ * cash/IBAN shape, where no conversion applies. Cross-currency cases below
+ * override `currency`/`paymentAmountSats` explicitly.
+ */
+const claimed = (fields: {
+  readonly paymentId: string
+  readonly accountTransactionId: string
+  readonly amount: number
+  readonly tipAmount?: number
+  readonly currency?: Currency
+  readonly paymentAmount?: number
+  readonly paymentAmountSats?: number | null
+}): ClaimedTransaction => ({
+  paymentId: fields.paymentId as PaymentId,
+  accountTransactionId: fields.accountTransactionId as AccountTransactionId,
+  amount: fields.amount,
+  currency: fields.currency ?? "CZK",
+  tipAmount: NonNegativeInteger(fields.tipAmount ?? 0),
+  paymentAmount: NonNegativeInteger(fields.paymentAmount ?? fields.amount),
+  paymentCurrency: "CZK",
+  paymentAmountSats:
+    fields.paymentAmountSats === null || fields.paymentAmountSats === undefined
+      ? null
+      : NonNegativeInteger(fields.paymentAmountSats),
+})
 
 describe("deriveBillStatus", () => {
   test("open when nothing else applies", () => {
@@ -154,18 +183,17 @@ describe("calculateClaimedSum", () => {
   test("sums amount minus tip across payments", () => {
     expect(
       calculateClaimedSum([
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-1" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-1",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
-        {
-          paymentId: "payment-2" as PaymentId,
-          accountTransactionId: "tx-2" as AccountTransactionId,
+        }),
+        claimed({
+          paymentId: "payment-2",
+          accountTransactionId: "tx-2",
           amount: 2_500,
-          tipAmount: NonNegativeInteger(500),
-        },
+          tipAmount: 500,
+        }),
       ])
     ).toBe(3_000)
   })
@@ -173,18 +201,16 @@ describe("calculateClaimedSum", () => {
   test("deduplicates a transaction claimed more than once for the same payment", () => {
     expect(
       calculateClaimedSum([
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-1" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-1",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-1" as AccountTransactionId,
+        }),
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-1",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
+        }),
       ])
     ).toBe(1_000)
   })
@@ -192,18 +218,16 @@ describe("calculateClaimedSum", () => {
   test("sums two distinct transactions claimed for the same payment (a genuine split, or a duplicate-settlement collision)", () => {
     expect(
       calculateClaimedSum([
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-cash" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-cash",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-lightning" as AccountTransactionId,
+        }),
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-lightning",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
+        }),
       ])
     ).toBe(2_000)
   })
@@ -211,18 +235,18 @@ describe("calculateClaimedSum", () => {
   test("subtracts tip only once per payment across its distinct transactions", () => {
     expect(
       calculateClaimedSum([
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-cash" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-cash",
           amount: 600,
-          tipAmount: NonNegativeInteger(100),
-        },
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-lightning" as AccountTransactionId,
+          tipAmount: 100,
+        }),
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-lightning",
           amount: 400,
-          tipAmount: NonNegativeInteger(100),
-        },
+          tipAmount: 100,
+        }),
       ])
     ).toBe(900)
   })
@@ -233,18 +257,17 @@ describe("calculateClaimedSum", () => {
     // into what other payments legitimately covered.
     expect(
       calculateClaimedSum([
-        {
-          paymentId: "payment-short" as PaymentId,
-          accountTransactionId: "tx-partial" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-short",
+          accountTransactionId: "tx-partial",
           amount: 100,
-          tipAmount: NonNegativeInteger(500),
-        },
-        {
-          paymentId: "payment-full" as PaymentId,
-          accountTransactionId: "tx-full" as AccountTransactionId,
+          tipAmount: 500,
+        }),
+        claimed({
+          paymentId: "payment-full",
+          accountTransactionId: "tx-full",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
+        }),
       ])
     ).toBe(1_000)
   })
@@ -260,24 +283,121 @@ describe("calculateClaimedSum", () => {
     // which staff notice, rather than closing one that was not paid.
     expect(
       calculateClaimedSum([
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-a" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-a",
           amount: 600,
-          tipAmount: NonNegativeInteger(300),
-        },
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-b" as AccountTransactionId,
+          tipAmount: 300,
+        }),
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-b",
           amount: 400,
-          tipAmount: NonNegativeInteger(100),
-        },
+          tipAmount: 100,
+        }),
       ])
     ).toBe(700)
   })
 
   test("returns zero for no claimed transactions", () => {
     expect(calculateClaimedSum([])).toBe(0)
+  })
+
+  test("converts a satoshi settlement into the payment's fiat amount", () => {
+    // The 129.00 CZK bill paid by an 8 600-sat Lightning invoice. Summed raw,
+    // this read as 8 600 minor units against a 12 900 total and left the bill
+    // underpaid — and uneditable — forever.
+    expect(
+      calculateClaimedSum([
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-lightning",
+          amount: 8_600,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: 8_600,
+        }),
+      ])
+    ).toBe(12_900)
+  })
+
+  test("subtracts the tip from a converted satoshi settlement", () => {
+    expect(
+      calculateClaimedSum([
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-lightning",
+          amount: 8_600,
+          currency: "BTC",
+          tipAmount: 900,
+          paymentAmount: 12_900,
+          paymentAmountSats: 8_600,
+        }),
+      ])
+    ).toBe(12_000)
+  })
+
+  test("scales a partial satoshi settlement instead of crediting the whole payment", () => {
+    // Half the satoshis the invoice asked for is half the fiat, not a paid
+    // bill — substituting `payment.amount` whenever the currency differs
+    // would close this one.
+    expect(
+      calculateClaimedSum([
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-lightning",
+          amount: 4_300,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: 8_600,
+        }),
+      ])
+    ).toBe(6_450)
+  })
+
+  test("counts two satoshi settlements on one payment separately", () => {
+    // The duplicate-settlement collision on the Lightning path: two devices
+    // each settle the same invoice. Both are real money, so the bill reads
+    // overpaid — crediting `payment.amount` per row would say the same, but
+    // for the wrong reason, and would say it for a half-sized pair too.
+    expect(
+      calculateClaimedSum([
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-first",
+          amount: 8_600,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: 8_600,
+        }),
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-second",
+          amount: 8_600,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: 8_600,
+        }),
+      ])
+    ).toBe(25_800)
+  })
+
+  test("counts nothing for a foreign-currency transaction with no rate to convert by", () => {
+    // Only a manual claim can produce this. Counting zero leaves the bill
+    // underpaid and visible to staff; inventing a rate would close it on a
+    // number nobody computed.
+    expect(
+      calculateClaimedSum([
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-lightning",
+          amount: 8_600,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: null,
+        }),
+      ])
+    ).toBe(0)
   })
 })
 
@@ -383,12 +503,11 @@ describe("deriveBillHistoryItemSummary", () => {
         confirmedClosedAt: null,
         billTotal: NonNegativeInteger(1_000),
         claimedTransactions: [
-          {
-            paymentId: "payment-1" as PaymentId,
-            accountTransactionId: "tx-1" as AccountTransactionId,
+          claimed({
+            paymentId: "payment-1",
+            accountTransactionId: "tx-1",
             amount: 1_000,
-            tipAmount: NonNegativeInteger(0),
-          },
+          }),
         ],
       })
     ).toEqual({
@@ -406,12 +525,11 @@ describe("deriveBillHistoryItemSummary", () => {
       confirmedClosedAt: null,
       billTotal: NonNegativeInteger(1_000),
       claimedTransactions: [
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-1" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-1",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
+        }),
       ],
     })
 
@@ -425,12 +543,11 @@ describe("deriveBillHistoryItemSummary", () => {
       confirmedClosedAt: TimestampMs(now.getTime() - 1),
       billTotal: NonNegativeInteger(1_000),
       claimedTransactions: [
-        {
-          paymentId: "payment-1" as PaymentId,
-          accountTransactionId: "tx-1" as AccountTransactionId,
+        claimed({
+          paymentId: "payment-1",
+          accountTransactionId: "tx-1",
           amount: 1_000,
-          tipAmount: NonNegativeInteger(0),
-        },
+        }),
       ],
     })
 

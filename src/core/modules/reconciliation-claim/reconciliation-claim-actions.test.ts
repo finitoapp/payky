@@ -13,7 +13,10 @@ import {
   addManualAmountToBill,
   createBill,
 } from "@/core/modules/bill/bill-actions.ts"
-import { loadBillStatus } from "@/core/modules/bill/bill-guards.ts"
+import {
+  loadBillCoverage,
+  loadBillStatus,
+} from "@/core/modules/bill/bill-guards.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -880,5 +883,100 @@ describe("reconciliation claim actions", () => {
     })
 
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+  })
+
+  test("a Lightning settlement in satoshis closes its fiat bill", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createSparkAccount(run)
+
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(12_900),
+      })
+    )
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        spark: {
+          accountId,
+          amountSats: NonNegativeInteger(8_600),
+          exchangeRate: PositiveNumber(1_500_000),
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc8600n1prepared"),
+            lightningReceiveRequestId: null,
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
+            paymentPreimage: null,
+          },
+        },
+      })
+    )
+    // The settlement records satoshis; the bill and the payment are in
+    // koruna. Summed raw, 8 600 against a 12 900 total read as underpaid and
+    // the bill stayed open — and editable again — for good.
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(8_600),
+        currency: "BTC",
+        occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        spark: {
+          sparkTransferId: NonEmptyStringSchema.decode("spark-transfer-1"),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc8600n1prepared"),
+            preImage: NonEmptyStringSchema.decode("preimage-1"),
+            paymentHash: NonEmptyStringSchema.decode("payment-hash-1"),
+          },
+        },
+      })
+    )
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: paymentId,
+    })
+
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      billTotal: 12_900,
+      claimedSum: 12_900,
+      coverage: "paid",
+    })
   })
 })

@@ -100,23 +100,21 @@ const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 } as const
 
-const getRequestOrigin = (request: Request): string => {
-  const forwardedProto = request.headers.get("x-forwarded-proto")
-  const forwardedHost = request.headers.get("x-forwarded-host")
-
-  if (forwardedProto !== null && forwardedHost !== null) {
-    return `${forwardedProto}://${forwardedHost}`
-  }
-
-  return new URL(request.url).origin
-}
-
-const getDefaultIdentifier = (request: Request): string => {
-  const host =
-    request.headers.get("x-forwarded-host") ?? new URL(request.url).host
-
-  return `donate@${host}`
-}
+/**
+ * The request's own URL, never `x-forwarded-proto`/`x-forwarded-host`. Those
+ * headers are attacker-supplied unless every hop in front of this function is
+ * known to overwrite them, and everything derived from the origin here is a
+ * leg of the payment: `callback` is where the wallet asks for the invoice,
+ * the LUD-21 `verify` URL is where it checks settlement, and the identifier
+ * goes into the metadata the wallet hashes into the invoice description hash.
+ * A poisoned host points all three at someone else.
+ *
+ * Behind a proxy that rewrites the request URL itself, set
+ * `PAYKY_DONATE_CALLBACK_URL` — an operator-controlled value beats guessing
+ * from a header the operator cannot vouch for.
+ */
+const getRequestOrigin = (request: Request): string =>
+  new URL(request.url).origin
 
 const loadConfig = (request: Request): Result<DonateConfig, LnurlError> => {
   const parsedEnv = EnvSchema.safeParse(process.env)
@@ -126,16 +124,20 @@ const loadConfig = (request: Request): Result<DonateConfig, LnurlError> => {
   }
 
   const env = parsedEnv.data
+  const callbackUrl =
+    env.PAYKY_DONATE_CALLBACK_URL ??
+    `${getRequestOrigin(request)}/.well-known/lnurlp/donate`
 
   return ok({
     mnemonic: env.PAYKY_DONATE_SPARK_MNEMONIC,
     minSendableMsats: env.PAYKY_DONATE_MIN_SATS * MSATS_PER_SAT,
     maxSendableMsats: env.PAYKY_DONATE_MAX_SATS * MSATS_PER_SAT,
     description: env.PAYKY_DONATE_DESCRIPTION,
-    identifier: env.PAYKY_DONATE_IDENTIFIER ?? getDefaultIdentifier(request),
-    callbackUrl:
-      env.PAYKY_DONATE_CALLBACK_URL ??
-      `${getRequestOrigin(request)}/.well-known/lnurlp/donate`,
+    // Derived from the callback, not from the request: the two name the same
+    // deployment, so a configured callback has to carry the identifier with it.
+    identifier:
+      env.PAYKY_DONATE_IDENTIFIER ?? `donate@${new URL(callbackUrl).host}`,
+    callbackUrl,
     invoiceExpirySeconds: env.PAYKY_DONATE_INVOICE_EXPIRY_SECONDS,
   })
 }

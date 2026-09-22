@@ -20,6 +20,7 @@ import {
   useCallback,
   useDeferredValue,
   useMemo,
+  useRef,
   useState,
 } from "react"
 import { toast } from "sonner"
@@ -404,9 +405,18 @@ function BillCartView({
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const { data: tables } = useEvoluQuery(tablesQuery)
+  // The `*Pending` state drives `disabled`, which only takes effect on the
+  // next render, so two fast taps on a low-end terminal both enter the
+  // handler. `createPayment` deliberately accepts a bill that already has a
+  // pending payment (see `payment-actions.ts`), so the second tap would
+  // create a second payment and silently lock the cart. The ref is the half
+  // that is true immediately; the state exists only to re-render `disabled`.
+  // Same pairing as `terminal-payment-keypad.tsx` and `payment-tip-page.tsx`.
+  const chargePendingRef = useRef(false)
   const [chargePending, setChargePending] = useState(false)
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
   const [splitDialogOpen, setSplitDialogOpen] = useState(false)
+  const splitPendingRef = useRef(false)
   const [splitPending, setSplitPending] = useState(false)
 
   const currentTable = tables.find((table) => table.id === tableId)
@@ -470,8 +480,9 @@ function BillCartView({
   const totalAmountPulseControls = useChangePulse(totalAmount)
 
   const handleCharge = async () => {
-    if (summaries.length === 0) return
+    if (summaries.length === 0 || chargePendingRef.current) return
 
+    chargePendingRef.current = true
     setChargePending(true)
     try {
       if (settings?.tipsEnabled === sqliteTrue) {
@@ -489,6 +500,7 @@ function BillCartView({
         billId,
       })
     } finally {
+      chargePendingRef.current = false
       setChargePending(false)
     }
   }
@@ -534,6 +546,9 @@ function BillCartView({
   }
 
   const handleConfirmSplit = async (input: SplitBillConfirmInput) => {
+    if (splitPendingRef.current) return
+
+    splitPendingRef.current = true
     setSplitPending(true)
     try {
       await using run = appRun()
@@ -595,6 +610,7 @@ function BillCartView({
         })
       }
     } finally {
+      splitPendingRef.current = false
       setSplitPending(false)
     }
   }

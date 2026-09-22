@@ -11,11 +11,11 @@ import {
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { latestPaymentsQuery } from "@/core/modules/payment/payment-queries.ts"
 import {
-  calculatePaymentClaimedSum,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
+import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import {
   PaymentStatusIcon,
@@ -116,7 +116,7 @@ const resolvePaymentHistoryIssueFlags = (
   const hasExcessSettlement = derivePaymentHasExcessSettlement({
     amount: item.amount,
     excessAcknowledgedAt: item.excessAcknowledgedAt,
-    claimedSum: calculatePaymentClaimedSum(item.ownClaimedTransactions),
+    claimedSum: sumDistinctClaimedAmounts(item.ownClaimedTransactions),
   })
   const hasOtherClaimedPayment = item.billClaimedTransactions.some(
     (transaction) => transaction.paymentId !== item.id

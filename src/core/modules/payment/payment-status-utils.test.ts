@@ -1,11 +1,9 @@
 import { describe, expect, test } from "vitest"
-import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import {
-  calculatePaymentClaimedSum,
   computePaymentExpiresAt,
   DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
   derivePaymentHasExcessSettlement,
@@ -132,42 +130,6 @@ describe("computePaymentExpiresAt", () => {
     expect(
       computePaymentExpiresAt(now, DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS)
     ).toBe(now.getTime() + DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS * 1000)
-  })
-})
-
-describe("calculatePaymentClaimedSum", () => {
-  test("sums distinct claimed transactions", () => {
-    expect(
-      calculatePaymentClaimedSum([
-        {
-          accountTransactionId: "tx-cash" as AccountTransactionId,
-          amount: 1_000,
-        },
-        {
-          accountTransactionId: "tx-lightning" as AccountTransactionId,
-          amount: 1_000,
-        },
-      ])
-    ).toBe(2_000)
-  })
-
-  test("deduplicates the same transaction claimed more than once", () => {
-    expect(
-      calculatePaymentClaimedSum([
-        {
-          accountTransactionId: "tx-cash" as AccountTransactionId,
-          amount: 1_000,
-        },
-        {
-          accountTransactionId: "tx-cash" as AccountTransactionId,
-          amount: 1_000,
-        },
-      ])
-    ).toBe(1_000)
-  })
-
-  test("returns zero for no claimed transactions", () => {
-    expect(calculatePaymentClaimedSum([])).toBe(0)
   })
 })
 

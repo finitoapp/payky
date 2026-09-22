@@ -454,22 +454,37 @@ export const latestPaymentsQuery = (limit: number) =>
               "billClaimTx.id",
               "billClaim.accountTransactionId"
             )
+            .leftJoin("paymentBtc as billPaymentBtc", (join) =>
+              join
+                .onRef("billPaymentBtc.id", "=", "billPayment.id")
+                .on("billPaymentBtc.isDeleted", "is not", sqliteTrue)
+            )
             .select([
               "billPayment.id as paymentId",
               "billPayment.tipAmount",
+              "billPayment.amount as paymentAmount",
+              "billPayment.currency as paymentCurrency",
+              "billPaymentBtc.amountSats as paymentAmountSats",
               "billClaim.accountTransactionId",
               "billClaimTx.amount",
+              "billClaimTx.currency",
             ])
             .whereRef("billPayment.billId", "=", "payment.billId")
             .where("billPayment.isDeleted", "is not", sqliteTrue)
             .where("billPayment.tipAmount", "is not", null)
+            .where("billPayment.amount", "is not", null)
+            .where("billPayment.currency", "is not", null)
             .where("billClaim.accountTransactionId", "is not", null)
             .where("billClaimTx.isDeleted", "is not", sqliteTrue)
             .where("billClaimTx.amount", "is not", null)
+            .where("billClaimTx.currency", "is not", null)
             .$narrowType<{
               tipAmount: KyselyNotNull
+              paymentAmount: KyselyNotNull
+              paymentCurrency: KyselyNotNull
               accountTransactionId: KyselyNotNull
               amount: KyselyNotNull
+              currency: KyselyNotNull
             }>()
         ).as("billClaimedTransactions"),
       ])

@@ -251,22 +251,37 @@ export const latestBillsQuery = (limit: number) =>
               "accountTransaction.id",
               "reconciliationClaim.accountTransactionId"
             )
+            .leftJoin("paymentBtc", (join) =>
+              join
+                .onRef("paymentBtc.id", "=", "payment.id")
+                .on("paymentBtc.isDeleted", "is not", 1)
+            )
             .select([
               "payment.id as paymentId",
               "payment.tipAmount",
+              "payment.amount as paymentAmount",
+              "payment.currency as paymentCurrency",
+              "paymentBtc.amountSats as paymentAmountSats",
               "reconciliationClaim.accountTransactionId",
               "accountTransaction.amount",
+              "accountTransaction.currency",
             ])
             .whereRef("payment.billId", "=", "bill.id")
             .where("payment.isDeleted", "is not", 1)
             .where("payment.tipAmount", "is not", null)
+            .where("payment.amount", "is not", null)
+            .where("payment.currency", "is not", null)
             .where("reconciliationClaim.accountTransactionId", "is not", null)
             .where("accountTransaction.isDeleted", "is not", 1)
             .where("accountTransaction.amount", "is not", null)
+            .where("accountTransaction.currency", "is not", null)
             .$narrowType<{
               tipAmount: KyselyNotNull
+              paymentAmount: KyselyNotNull
+              paymentCurrency: KyselyNotNull
               accountTransactionId: KyselyNotNull
               amount: KyselyNotNull
+              currency: KyselyNotNull
             }>()
         ).as("claimedTransactions"),
       ])

@@ -26,6 +26,7 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
+  type FiatCurrency,
   type NonNegativeInteger,
   type TimestampMs,
   TimestampMsSchema,
@@ -39,6 +40,7 @@ import type { BillId } from "./bill-types.ts"
 import {
   type BillCoverage,
   type BillStatus,
+  type ClaimedTransaction,
   calculateClaimedSum,
   claimedPaymentIdSet,
   deriveBillCoverage,
@@ -126,12 +128,7 @@ const loadBillTotalAndClaimedSum =
     {
       readonly summaries: ReadonlyArray<BillLineSummary>
       readonly billTotal: NonNegativeInteger
-      readonly claimedTransactions: ReadonlyArray<{
-        readonly paymentId: PaymentId
-        readonly accountTransactionId: AccountTransactionId
-        readonly amount: number
-        readonly tipAmount: NonNegativeInteger
-      }>
+      readonly claimedTransactions: ReadonlyArray<ClaimedTransaction>
     },
     never,
     EvoluDep
@@ -371,6 +368,7 @@ export const loadBillClosedAtIfCovered =
       readonly id: PaymentId
       readonly billId: BillId | null
       readonly amount: NonNegativeInteger
+      readonly currency: FiatCurrency
       readonly tipAmount: NonNegativeInteger
     },
     accountTransactionId: AccountTransactionId
@@ -393,13 +391,25 @@ export const loadBillClosedAtIfCovered =
     // that (per a concurrent write) already landed, `calculateClaimedSum`'s
     // own dedup-by-transaction-id collapses the duplicate, so this never
     // double-counts.
+    //
+    // The row stands in the payment's own currency for its own amount, not
+    // the claimed transaction's: this function is not given the transaction,
+    // only its id. For a Lightning/Spark claim that now agrees with what the
+    // live query derives, since a full settlement converts back to exactly
+    // `payment.amount` — but a partial or excess claim still reads as the
+    // nominal amount here. Replacing this with the real transaction amount
+    // is issues.md #96.
     const claimedSum = calculateClaimedSum([
       ...claimedTransactions,
       {
         paymentId: payment.id,
         accountTransactionId,
         amount: payment.amount,
+        currency: payment.currency,
         tipAmount: payment.tipAmount,
+        paymentAmount: payment.amount,
+        paymentCurrency: payment.currency,
+        paymentAmountSats: null,
       },
     ])
 

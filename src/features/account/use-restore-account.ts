@@ -2,7 +2,7 @@ import { useAtomValue } from "jotai"
 import { useState } from "react"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { restoreOrSelectAccount } from "@/core/evolu/device-account.ts"
+import { createOrSelectAccount } from "@/core/evolu/device-account.ts"
 import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
 import {
   mnemonicToMasterKey,
@@ -55,7 +55,7 @@ export function useRestoreAccount(): RestoreAccount {
 
     await submit(async () => {
       const masterKey = await mnemonicToMasterKey(mnemonicResult.data)
-      await restoreOrSelectAccount(deviceEvolu, masterKey)
+      await createOrSelectAccount(deviceEvolu, masterKey)
       reloadAppEvolu()
     })
 

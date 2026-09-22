@@ -1074,3 +1074,67 @@ test("rapid taps on the item grid are never dropped", async ({
     )
   })
 })
+
+test("a double-tapped charge creates only one payment", async ({
+  seededPage: page,
+}) => {
+  await test.step("add a catalog item", () =>
+    addCatalogItem(page, "en", { name: "Coffee", price: "5" }))
+
+  // With tips on, charging only navigates to the tip screen and creates
+  // nothing — the bill's charge button issues the payment itself only on
+  // the no-tips path, which is the one that could mint two of them.
+  await test.step("turn tips off", async () => {
+    await gotoPage(page, "/settings/tips", "en", "settings.tips.title")
+    await page
+      .getByRole("checkbox", {
+        name: translate("en", "settings.tips.enabled.label"),
+      })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "settings.tips.save") })
+      .click()
+    await expect(
+      page.getByText(translate("en", "settings.tips.saved"))
+    ).toBeVisible()
+  })
+
+  await test.step("charge the cart twice within one task", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+    await page
+      .getByRole("button", { name: nameParam("bill.brick.add.aria", "Coffee") })
+      .click()
+
+    const chargeButton = page.getByRole("button", {
+      name: translate("en", "home.pay"),
+    })
+    await expect(chargeButton).toBeInViewport()
+    // The button stays disabled until the added line lands in `summaries`,
+    // and the raw clicks below skip the actionability checks that would
+    // otherwise wait this out — an early click just returns and charges
+    // nothing.
+    await expect(chargeButton).toBeEnabled()
+    // Both clicks land before React can re-render the button as disabled —
+    // the real two-taps-on-a-slow-terminal case. Playwright's own `click()`
+    // waits for actionability and would serialise them instead.
+    await chargeButton.evaluate((button: HTMLElement) => {
+      button.click()
+      button.click()
+    })
+    await page
+      .getByRole("tab", { name: translate("en", "paymentWait.method.iban") })
+      .waitFor()
+  })
+
+  await test.step("the bill is locked by exactly one payment", async () => {
+    await page.goBack()
+    await expect(page.getByText(translate("en", "bill.locked"))).toBeVisible()
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "bill.locked.viewPayment"),
+        exact: true,
+      })
+    ).toBeVisible()
+  })
+})

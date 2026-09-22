@@ -4,7 +4,6 @@ import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 
 export type OnboardingStep =
-  | "language"
   | "accountChoice"
   | "country"
   | "currency"
@@ -24,7 +23,6 @@ export type OnboardingPaymentMethod = "cash" | "btc" | "iban"
 export type OnboardingCountryChoice = CountryCode | "OTHER"
 
 const newAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
-  "language",
   "accountChoice",
   "country",
   "currency",
@@ -33,7 +31,6 @@ const newAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
 ]
 
 const restoreAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
-  "language",
   "accountChoice",
   "restore",
 ]
@@ -65,7 +62,7 @@ interface OnboardingFormState {
 }
 
 export const initialOnboardingFormState: OnboardingFormState = {
-  step: "language",
+  step: "accountChoice",
   accountType: null,
   currency: null,
   paymentMethods: new Set(["cash", "btc"]),

@@ -44,8 +44,6 @@ export const skOnboarding = {
     "Zapne daňové sadzby pre položky katalógu. Neskôr to môžete zmeniť v Nastaveniach.",
   "onboarding.country.vatPayer.label": "Som platiteľ DPH",
   "onboarding.finish": "Dokončiť",
-  "onboarding.language.description":
-    "Vyberte jazyk, ktorý bude aplikácia používať.",
   "onboarding.language.title": "Výber jazyka",
   "onboarding.next": "Ďalej",
   "onboarding.payments.btc.description":

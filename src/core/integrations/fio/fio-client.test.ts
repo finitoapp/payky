@@ -6,6 +6,7 @@ import { DateStringSchema } from "@/core/modules/shared/schema.ts"
 import {
   createFioApiDep,
   type FioApiDep,
+  type FioApiError,
   type FioRateLimitError,
   type FioStrongAuthorizationRequiredError,
   fetchFioLastTransactions,
@@ -56,6 +57,27 @@ const statementResponse = (transactions: unknown) =>
 
 const inputToString = (input: RequestInfo | URL): string =>
   input instanceof URL ? input.toString() : String(input)
+
+/**
+ * The statement fixture with only its `Objem` (amount) column replaced.
+ * `moneyToMinorUnits` is not exported, so the cases below reach it the way
+ * production does — through a whole downloaded statement.
+ */
+const statementWithAmount = (value: unknown) =>
+  statementResponse([{ ...transaction, column2: { value, name: "Objem" } }])
+
+const fetchStatementWithAmount = async (value: unknown) => {
+  const deps = {
+    ...createFioApiDep({
+      tokens: ["token-a"],
+      baseUrl: "https://example.test",
+    }),
+    fetch: async () => statementWithAmount(value),
+  } satisfies FioApiDep & FetchDep
+  await using run = testCreateRun(deps)
+
+  return await run(fetchFioLastTransactions())
+}
 
 describe("fio client", () => {
   test("downloads and normalizes last transactions", async () => {
@@ -195,6 +217,52 @@ describe("fio client", () => {
     expect(requestedUrls).toEqual([
       "https://example.test/v1/rest/set-last-date/token-a/2026-05-27/",
     ])
+  })
+
+  // `amountMinor` is what later decides whether a bill is covered, so each
+  // shape FIO can put in `Objem` is worth stating outright.
+  test.each([
+    { objem: "199.50", expected: 19_950, shape: "a string with a dot" },
+    { objem: 199.5, expected: 19_950, shape: "a JSON number" },
+    { objem: 199, expected: 19_900, shape: "a whole JSON number" },
+    { objem: "199,50", expected: 19_950, shape: "a comma decimal" },
+    { objem: "1234", expected: 123_400, shape: "no fraction part" },
+    { objem: "199.5", expected: 19_950, shape: "one fraction digit" },
+    { objem: "-199.50", expected: -19_950, shape: "an outgoing transfer" },
+    { objem: "-0,5", expected: -50, shape: "a negative under one unit" },
+    { objem: 0, expected: 0, shape: "zero" },
+    { objem: "  199.50  ", expected: 19_950, shape: "surrounding whitespace" },
+    // The two branches disagree below a cent: a JSON number is rounded to two
+    // places, while the identical string ("199.555" in the rejection table
+    // below) is refused outright. FIO sends whole cents, so nothing depends on
+    // it today — but it is not the same rule twice.
+    { objem: 199.555, expected: 19_956, shape: "a sub-cent JSON number" },
+  ])("reads $shape as $expected minor units", async ({ objem, expected }) => {
+    const result = await fetchStatementWithAmount(objem)
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.transactions[0]?.amountMinor).toBe(expected)
+  })
+
+  // A malformed amount rejects the *whole* statement, so nothing at all is
+  // ingested from that download — worth knowing which shapes do that.
+  test.each([
+    { objem: "1 234,56", shape: "a space-grouped amount" },
+    { objem: "1,234.56", shape: "a thousands separator" },
+    { objem: "199.555", shape: "three fraction digits" },
+    { objem: "abc", shape: "a non-numeric value" },
+    { objem: "", shape: "an empty string" },
+  ])("rejects the statement for $shape", async ({ objem }) => {
+    const result = await fetchStatementWithAmount(objem)
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        type: "FioApiError",
+        message: "Invalid FIO account statement response.",
+      } satisfies Partial<FioApiError>,
+    })
   })
 
   test("returns a typed rate limit error", async () => {

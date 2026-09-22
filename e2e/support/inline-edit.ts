@@ -1,12 +1,13 @@
-import type { Locator, Page } from "@playwright/test"
+import { expect, type Locator, type Page } from "@playwright/test"
 
 import type { TranslationKey } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
 
 /**
  * Helpers for the settings edit forms, where every field saves itself
- * instead of a form-wide submit button. Each one waits for the saved tick,
- * so the caller can navigate away knowing the write landed.
+ * instead of a form-wide submit button. Each one waits for the write to
+ * land — the saved tick where the control renders one, its own settled
+ * state where it does not — so the caller can navigate away right after.
  *
  * Runner-agnostic, like `i18n.ts`: no `test.step(...)` in here.
  */
@@ -84,9 +85,16 @@ export async function toggleInlineSwitch(
   const toggle = page.getByRole("switch", {
     name: translate("en", labelKey),
   })
+  const wasChecked = await toggle.isChecked()
 
   await toggle.click()
-  await savedTickFor(page, toggle).waitFor()
+  await expect(toggle).toBeChecked({ checked: !wasChecked })
+  // Not the saved tick: a switch can be rendered with `showSaved={false}`
+  // (both payment-accounts switches are), and then no tick ever appears.
+  // `useInlineChoice` disables the control while the save is in flight and
+  // re-enables it on the live Evolu row, so waiting for it to come back
+  // enabled — still toggled — is the settle signal that holds either way.
+  await expect(toggle).toBeEnabled()
 }
 
 /**

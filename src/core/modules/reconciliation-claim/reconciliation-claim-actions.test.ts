@@ -8,14 +8,17 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
   addManualAmountToBill,
   createBill,
 } from "@/core/modules/bill/bill-actions.ts"
 import { loadBillStatus } from "@/core/modules/bill/bill-guards.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   IbanSchema,
   Integer,
@@ -31,7 +34,12 @@ import {
 import { createTestDateDep } from "@/test/date-dep.ts"
 import { reconcileAccountTransaction } from "./reconciliation-claim-actions.ts"
 
-type TestRun = DisposableRun<TestRunDefaultDeps & EvoluDep & EvoluOwnerIdDep>
+// `DateDep` included because every test below builds its run with
+// `createTestDateDep()`: without it a helper here can only compose the
+// actions that happen not to read the clock.
+type TestRun = DisposableRun<
+  TestRunDefaultDeps & EvoluDep & EvoluOwnerIdDep & DateDep
+>
 
 const reconciliationClaimsQuery = createQuery((db) =>
   db
@@ -73,6 +81,61 @@ const createCashRegisterAccount = async (run: TestRun): Promise<AccountId> =>
       },
     })
   )
+
+/**
+ * A 19 950 CZK IBAN payment and one incoming transfer carrying the very same
+ * symbols, so the only thing a case varies is the money on the transfer. The
+ * symbol pair already matches: what is under test is that matching symbols
+ * alone are not enough to claim a payment.
+ */
+const seedIbanPaymentAndTransfer = async (
+  run: TestRun,
+  transfer: { readonly amount: Integer; readonly currency: FiatCurrency }
+): Promise<{
+  readonly paymentId: PaymentId
+  readonly accountTransactionId: AccountTransactionId
+}> => {
+  const accountId = await createIbanAccount(run)
+  const paymentId = await run.orThrow(
+    createPayment({
+      deviceId: null,
+      billId: null,
+      tableId: null,
+      amount: NonNegativeInteger(19_950),
+      currency: "CZK",
+      tipAmount: NonNegativeInteger(0),
+      canceledAt: null,
+      expiresAt: null,
+      iban: {
+        accountId,
+        variableSymbol: VariableSymbol("123456"),
+        specificSymbol: SpecificSymbol("260605"),
+      },
+    })
+  )
+  const accountTransactionId = await run.ok(
+    createAccountTransaction({
+      accountId,
+      amount: transfer.amount,
+      currency: transfer.currency,
+      occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+      note: null,
+      internalTransferGroupId: null,
+      source: {
+        deviceId: null,
+        source: "auto",
+      },
+      iban: {
+        variableSymbol: VariableSymbol("123456"),
+        constantSymbol: null,
+        specificSymbol: SpecificSymbol("260605"),
+        bankReference: NonEmptyString255("123456789"),
+      },
+    })
+  )
+
+  return { paymentId, accountTransactionId }
+}
 
 describe("reconciliation claim actions", () => {
   test("automatically reconciles a cash register account transaction by amount", async () => {
@@ -323,6 +386,197 @@ describe("reconciliation claim actions", () => {
     await expect
       .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
       .toEqual([])
+  })
+
+  test("does not reconcile a cash register account transaction for a different amount", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createCashRegisterAccount(run)
+    await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: {
+          accountId,
+        },
+      })
+    )
+    // The cash query matches on the drawer and the amount alone (see the
+    // note on `cashRegisterReconciliationCandidateByAccountTransactionIdQuery`),
+    // so the amount is the whole of what separates this from a false claim.
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(100),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T12:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "manual",
+        },
+      })
+    )
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: null,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([])
+  })
+
+  test("does not reconcile an IBAN account transaction for a different amount", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    // 1 CZK against a 199.50 CZK payment: without the amount check, the right
+    // symbols alone would settle the payment — and close its bill — for a
+    // hundredth of what was owed.
+    const { accountTransactionId } = await seedIbanPaymentAndTransfer(run, {
+      amount: Integer(100),
+      currency: "CZK",
+    })
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: null,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([])
+  })
+
+  test("does not reconcile an IBAN account transaction in a different currency", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    // The same number of minor units, but euros against a koruna payment.
+    const { accountTransactionId } = await seedIbanPaymentAndTransfer(run, {
+      amount: Integer(19_950),
+      currency: "EUR",
+    })
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: null,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([])
+  })
+
+  test("claims the lowest payment id when two pending payments match equally", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(run)
+    const createMatchingPayment = () =>
+      run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(19_950),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+          iban: {
+            accountId,
+            variableSymbol: VariableSymbol("123456"),
+            specificSymbol: SpecificSymbol("260605"),
+          },
+        })
+      )
+    const firstPaymentId = await createMatchingPayment()
+    const secondPaymentId = await createMatchingPayment()
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(19_950),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: {
+          deviceId: null,
+          source: "auto",
+        },
+        iban: {
+          variableSymbol: VariableSymbol("123456"),
+          constantSymbol: null,
+          specificSymbol: SpecificSymbol("260605"),
+          bankReference: NonEmptyString255("123456789"),
+        },
+      })
+    )
+
+    // Payment ids are random, so the tie-break is `orderBy("payment.id")`,
+    // not creation order — the expectation has to be derived the same way
+    // rather than assumed to be the payment written first. This pins the
+    // outcome, not the clause: SQLite happens to return these rows in id
+    // order even with the `orderBy` deleted, so it is the single claim and
+    // the deterministic winner that are under test here.
+    const expectedPaymentId =
+      firstPaymentId < secondPaymentId ? firstPaymentId : secondPaymentId
+
+    await expect(
+      run(reconcileAccountTransaction(accountTransactionId))
+    ).resolves.toEqual({
+      ok: true,
+      value: expectedPaymentId,
+    })
+
+    // Exactly one claim: the transfer funds one of the two payments, never
+    // both.
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([
+        {
+          paymentId: expectedPaymentId,
+          accountTransactionId,
+          source: "auto",
+        },
+      ])
   })
 
   test("automatically reconciles a Spark account transaction by LN invoice and sats amount", async () => {

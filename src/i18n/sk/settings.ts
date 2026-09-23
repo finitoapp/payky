@@ -220,6 +220,8 @@ export const skSettings = {
   "settings.fiatBankAccount.iban.invalid":
     "Zadajte platný IBAN alebo české číslo účtu.",
   "settings.fiatBankAccount.iban.label": "IBAN alebo číslo účtu",
+  "settings.fiatBankAccount.iban.required":
+    "Zadajte IBAN alebo číslo účtu, alebo bankový prevod vypnite.",
   "settings.fiatBankAccount.qrFormat.description":
     "Tento formát sa pri bankových QR platbách zobrazí ako prvý.",
   "settings.fiatBankAccount.qrFormat.label": "Predvolený formát QR",
@@ -363,6 +365,8 @@ export const skSettings = {
   "settings.legalEntity.description":
     "Určuje krajinu pre predvolené daňové sadzby a to, či sa sadzby uplatňujú na položky katalógu.",
   "settings.legalEntity.title": "Krajina a DPH",
+  "settings.legalEntity.vatPayer.description":
+    "Pridá daňové sadzby k položkám katalógu.",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.paymentAccounts.description":
     "Nastavenie bankového, Spark a pokladničného účtu",

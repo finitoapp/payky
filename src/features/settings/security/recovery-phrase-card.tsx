@@ -22,7 +22,11 @@ interface RecoveryPhraseCardProps {
   readonly mnemonic: string
 }
 
-export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
+/**
+ * The phrase itself, without the card around it. Split out for the onboarding
+ * step, which is already a card and would otherwise nest one inside another.
+ */
+export function RecoveryPhraseFields({ mnemonic }: RecoveryPhraseCardProps) {
   const { t } = useTranslation()
   const mnemonicInputId = useId()
 
@@ -34,6 +38,48 @@ export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
   }
 
   return (
+    <>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor={mnemonicInputId}>
+            {t("settings.security.mnemonic.label")}
+          </FieldLabel>
+          <PasswordTextarea
+            id={mnemonicInputId}
+            value={mnemonic}
+            hideLabel={t("passwordTextarea.hide")}
+            showLabel={t("passwordTextarea.show")}
+            readOnly
+            aria-readonly="true"
+            autoComplete="off"
+          />
+          <FieldDescription>
+            {t("settings.security.mnemonic.help")}
+          </FieldDescription>
+          <FieldDescription>
+            {t("settings.security.mnemonic.warning")}
+          </FieldDescription>
+        </Field>
+      </FieldGroup>
+      <div className="mt-4 flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={copyMnemonic}
+        >
+          <CopyIcon data-icon="inline-start" />
+          {t("settings.security.mnemonic.copy")}
+        </Button>
+      </div>
+    </>
+  )
+}
+
+export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
+  const { t } = useTranslation()
+
+  return (
     <Card>
       <CardHeader>
         <CardTitle>{t("settings.security.mnemonic.title")}</CardTitle>
@@ -42,39 +88,7 @@ export function RecoveryPhraseCard({ mnemonic }: RecoveryPhraseCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor={mnemonicInputId}>
-              {t("settings.security.mnemonic.label")}
-            </FieldLabel>
-            <PasswordTextarea
-              id={mnemonicInputId}
-              value={mnemonic}
-              hideLabel={t("passwordTextarea.hide")}
-              showLabel={t("passwordTextarea.show")}
-              readOnly
-              aria-readonly="true"
-              autoComplete="off"
-            />
-            <FieldDescription>
-              {t("settings.security.mnemonic.help")}
-            </FieldDescription>
-            <FieldDescription>
-              {t("settings.security.mnemonic.warning")}
-            </FieldDescription>
-          </Field>
-        </FieldGroup>
-        <div className="mt-4 flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={copyMnemonic}
-          >
-            <CopyIcon data-icon="inline-start" />
-            {t("settings.security.mnemonic.copy")}
-          </Button>
-        </div>
+        <RecoveryPhraseFields mnemonic={mnemonic} />
       </CardContent>
     </Card>
   )

@@ -7,13 +7,33 @@ import type {
   OnboardingCountryChoice,
   OnboardingPaymentMethod,
 } from "@/features/onboarding/onboarding-form-state.ts"
+import type { Language } from "@/i18n/resources.ts"
 
 /**
- * The currency step's default: derived from the country chosen on the
- * previous step, not the UI language, so a Czech merchant who reads the
- * wizard in English still lands on CZK. See `finishOnboarding` for the
- * device locale (number/money formatting), which is derived from language
- * instead — the two are deliberately independent.
+ * The country's default, until the merchant picks one: the language they
+ * read the wizard in is the only signal available this early, and it is a
+ * good one for the two countries Payky ships tax presets for. Anyone else
+ * starts on "other" rather than on a country that would seed wrong rates.
+ */
+export const getDefaultCountryForLanguage = (
+  language: Language
+): OnboardingCountryChoice => {
+  if (language === "cs") {
+    return "CZ"
+  }
+
+  if (language === "sk") {
+    return "SK"
+  }
+
+  return "OTHER"
+}
+
+/**
+ * The currency's default: derived from the country, not straight from the
+ * UI language, so picking a country explicitly overrides what the language
+ * implied. See `finishOnboarding` for the device locale (number/money
+ * formatting), which is derived from language instead.
  */
 export const getDefaultCurrencyForCountry = (
   country: OnboardingCountryChoice | null

@@ -1,10 +1,8 @@
 import { useAtomValue } from "jotai"
-import { useId, useState } from "react"
+import { useId } from "react"
 
-import { accountAtom, recoveryMnemonicAtom } from "@/atoms/account.ts"
-import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
+import { recoveryMnemonicAtom } from "@/atoms/account.ts"
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -14,56 +12,32 @@ import { Checkbox } from "@/components/ui/checkbox.tsx"
 import {
   Field,
   FieldContent,
-  FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { Input } from "@/components/ui/input.tsx"
-import { updateAccountName } from "@/core/evolu/device-account.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
-import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
-import { TransportToggleList } from "@/features/settings/security/transport-toggle-list.tsx"
-import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
+import { RecoveryPhraseFields } from "@/features/settings/security/recovery-phrase-card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
+/**
+ * The last step does one thing: hand over the recovery phrase and make the
+ * merchant acknowledge it. The account name and the sync relays used to live
+ * here too; both have sensible defaults and belong in Settings, where they
+ * can be changed at any time — unlike the phrase, which is only shown to a
+ * fresh account once.
+ */
 export function AccountStep({
   recoveryPhraseConfirmed,
+  recoveryPhraseError,
   onRecoveryPhraseConfirmedChange,
 }: {
   readonly recoveryPhraseConfirmed: boolean
+  readonly recoveryPhraseError: TranslationKey | null
   readonly onRecoveryPhraseConfirmedChange: (confirmed: boolean) => void
 }) {
   const { t } = useTranslation()
-  const account = useAtomValue(accountAtom)
   const recoveryMnemonic = useAtomValue(recoveryMnemonicAtom)
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const reloadAppEvolu = useReloadAppEvolu()
-  const [name, setName] = useState(account.name)
-  const [nameError, setNameError] = useState<TranslationKey | null>(null)
-  const formId = useId()
-
-  const saveName = async () => {
-    const trimmedName = name.trim()
-
-    if (trimmedName === "") {
-      setName(account.name)
-      setNameError("onboarding.account.name.error.required")
-      return
-    }
-
-    setNameError(null)
-
-    if (trimmedName === account.name) {
-      return
-    }
-
-    await runMutationWithCompletion((options) =>
-      updateAccountName(deviceEvolu, account.id, trimmedName, options)
-    )
-    reloadAppEvolu()
-  }
+  const confirmInputId = useId()
 
   return (
     <>
@@ -73,57 +47,27 @@ export function AccountStep({
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-5">
-          <FieldGroup>
-            <Field data-invalid={nameError !== null}>
-              <FieldLabel htmlFor={`${formId}-name`}>
-                {t("onboarding.account.name.label")}
-              </FieldLabel>
-              <Input
-                id={`${formId}-name`}
-                value={name}
-                aria-invalid={nameError !== null}
-                autoComplete="off"
-                onChange={(event) => {
-                  setName(event.currentTarget.value)
-                  setNameError(null)
-                }}
-                onBlur={() => {
-                  void saveName()
-                }}
-              />
-              <FieldDescription>
-                {t("onboarding.account.name.description")}
-              </FieldDescription>
-              <FieldError>{nameError ? t(nameError) : null}</FieldError>
-            </Field>
-          </FieldGroup>
+          <RecoveryPhraseFields mnemonic={recoveryMnemonic} />
 
-          <RecoveryPhraseCard mnemonic={recoveryMnemonic} />
-
-          <Field orientation="horizontal">
+          <Field
+            orientation="horizontal"
+            data-invalid={recoveryPhraseError !== null}
+          >
             <Checkbox
-              id={`${formId}-recoveryPhraseConfirm`}
+              id={confirmInputId}
               checked={recoveryPhraseConfirmed}
+              aria-invalid={recoveryPhraseError !== null}
               onCheckedChange={onRecoveryPhraseConfirmedChange}
             />
             <FieldContent>
-              <FieldLabel htmlFor={`${formId}-recoveryPhraseConfirm`}>
+              <FieldLabel htmlFor={confirmInputId}>
                 {t("onboarding.account.mnemonic.confirm")}
               </FieldLabel>
+              <FieldError>
+                {recoveryPhraseError ? t(recoveryPhraseError) : null}
+              </FieldError>
             </FieldContent>
           </Field>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("onboarding.account.transport.title")}</CardTitle>
-              <CardDescription>
-                {t("onboarding.account.transport.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TransportToggleList accountId={account.id} />
-            </CardContent>
-          </Card>
         </div>
       </CardContent>
     </>

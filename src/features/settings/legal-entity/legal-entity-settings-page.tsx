@@ -82,7 +82,7 @@ export function LegalEntitySettingsPage() {
 
             <InlineEditCheckbox
               label={t("settings.legalEntity.vatPayer.label")}
-              description={t("onboarding.country.vatPayer.description")}
+              description={t("settings.legalEntity.vatPayer.description")}
               defaultValue={vatPayer}
               // The country comes first: saving this while none is chosen
               // would write "other" on the user's behalf, which is what the

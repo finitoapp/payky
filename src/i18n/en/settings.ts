@@ -218,6 +218,8 @@ export const enSettings = {
   "settings.fiatBankAccount.iban.invalid":
     "Enter a valid IBAN or Czech account number.",
   "settings.fiatBankAccount.iban.label": "IBAN or account number",
+  "settings.fiatBankAccount.iban.required":
+    "Enter your IBAN or account number, or turn bank transfer off.",
   "settings.fiatBankAccount.qrFormat.description":
     "This format is shown first for bank QR payments.",
   "settings.fiatBankAccount.qrFormat.label": "Default QR format",
@@ -361,6 +363,8 @@ export const enSettings = {
   "settings.legalEntity.description":
     "Sets the country used for default tax rates and whether tax rates apply to catalog items.",
   "settings.legalEntity.title": "Country & VAT",
+  "settings.legalEntity.vatPayer.description":
+    "Adds tax rates to catalog items.",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
   "settings.paymentAccounts.description":
     "Configure bank, Spark, and cash register accounts",

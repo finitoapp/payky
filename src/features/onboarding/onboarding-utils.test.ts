@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
 import {
+  getDefaultCountryForLanguage,
   getDefaultCurrencyForCountry,
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
@@ -10,6 +11,26 @@ import {
 
 const methods = (...values: ReadonlyArray<OnboardingPaymentMethod>) =>
   new Set(values)
+
+describe("getDefaultCountryForLanguage", () => {
+  test("maps each localized language to its own country", () => {
+    expect(getDefaultCountryForLanguage("cs")).toBe("CZ")
+    expect(getDefaultCountryForLanguage("sk")).toBe("SK")
+  })
+
+  test("leaves every other language on 'other'", () => {
+    expect(getDefaultCountryForLanguage("en")).toBe("OTHER")
+  })
+
+  test("chains into a currency: Czech reads in CZK, English in USD", () => {
+    expect(
+      getDefaultCurrencyForCountry(getDefaultCountryForLanguage("cs"))
+    ).toBe(FiatCurrency.CZK)
+    expect(
+      getDefaultCurrencyForCountry(getDefaultCountryForLanguage("en"))
+    ).toBe(FiatCurrency.USD)
+  })
+})
 
 describe("getDefaultCurrencyForCountry", () => {
   test("maps the two supported countries to their own currency", () => {

@@ -12,16 +12,15 @@ import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
+import { updateFioPluginAccountRow } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
+import { fioPluginByIdQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
+import { fioPluginId } from "@/core/modules/fio-plugin/fio-plugin-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
-  createRowId,
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
-import {
-  deriveDefaultSparkWalletSecret,
-  type SparkSecret,
-} from "@/core/modules/shared/key-derivation.ts"
+import { deriveDefaultSparkWalletSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import type {
   BankQrFormat,
@@ -37,12 +36,17 @@ import type {
   accountIban,
   accountSpark,
 } from "./account.ts"
-import { accountByIdQuery, sparkAccountSecretQuery } from "./account-queries.ts"
+import {
+  accountByIdQuery,
+  cashRegisterAccountQuery,
+  fiatBankAccountQuery,
+  sparkAccountQuery,
+} from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
-  cashRegisterAccountId,
-  fiatBankAccountId,
-  sparkAccountId,
+  createCashRegisterAccountId,
+  createIbanAccountId,
+  createSparkAccountId,
 } from "./account-utils.ts"
 
 type AccountIbanCreateInput = Omit<
@@ -52,9 +56,11 @@ type AccountIbanCreateInput = Omit<
   readonly defaultQrFormat?: BankQrFormat
 }
 
+// `iban` and `currency` are left out because the account id derives from
+// them — see `createIbanAccountId`.
 type AccountIbanUpdateInput = Omit<
   UpdateValues<typeof accountIban>,
-  "id" | "defaultQrFormat"
+  "id" | "iban" | "currency" | "defaultQrFormat"
 > & {
   readonly defaultQrFormat?: BankQrFormat
 }
@@ -108,23 +114,38 @@ const deriveAccountKind = (detail: {
   return "cashRegister"
 }
 
+const deriveNewAccountId = (
+  detail: RequireExactlyOne<{
+    iban: { readonly iban: Iban; readonly currency: FiatCurrency }
+    spark: InsertValues<typeof accountSpark>
+    cashRegister: InsertValues<typeof accountCashRegister>
+  }>
+): AccountId => {
+  if (detail.iban) return createIbanAccountId(detail.iban)
+  if (detail.spark) return createSparkAccountId(detail.spark.secret)
+  return createCashRegisterAccountId(detail.cashRegister.currency)
+}
+
+/**
+ * Writes the account its detail values derive to, reviving it when it was
+ * deleted — creating an account that already exists is the same account,
+ * not a second one.
+ */
 export const createAccount =
-  ({
-    iban,
-    spark,
-    cashRegister,
-    ...input
-  }: Simplify<
-    Omit<InsertValues<typeof account>, "kind"> &
-      RequireExactlyOne<{
-        iban: AccountIbanCreateInput
-        spark: InsertValues<typeof accountSpark>
-        cashRegister: InsertValues<typeof accountCashRegister>
-      }>
-  >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (
+    input: Simplify<
+      Omit<InsertValues<typeof account>, "kind"> &
+        RequireExactlyOne<{
+          iban: AccountIbanCreateInput
+          spark: InsertValues<typeof accountSpark>
+          cashRegister: InsertValues<typeof accountCashRegister>
+        }>
+    >
+  ): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
-    const id = createRowId<"Account">()
+    const { iban, spark, cashRegister, ...root } = input
+    const id = deriveNewAccountId(input)
 
     const kind = deriveAccountKind({ iban, spark, cashRegister })
 
@@ -166,9 +187,10 @@ export const createAccount =
       return run.deps.evolu.upsert(
         "account",
         removeUndefinedValues({
-          ...input,
+          ...root,
           id,
           kind,
+          isDeleted: sqliteFalse,
         }),
         { ...options, ownerId: evoluOwnerId }
       )
@@ -177,6 +199,12 @@ export const createAccount =
     return ok(id)
   }
 
+/**
+ * Edits what an account's id does not derive from. The Spark secret, the
+ * IBAN and currency, and the cash register currency are not accepted here:
+ * a different value is a different account, so it goes through
+ * `createAccount` (or the `save*Account` actions) instead.
+ */
 export const updateAccount =
   ({
     iban,
@@ -187,8 +215,11 @@ export const updateAccount =
     Pick<UpdateValues<typeof account>, "id" | "deviceId" | "name"> &
       RequireExactlyOne<{
         iban: AccountIbanUpdateInput
-        spark: Omit<UpdateValues<typeof accountSpark>, "id">
-        cashRegister: Omit<UpdateValues<typeof accountCashRegister>, "id">
+        spark: Omit<UpdateValues<typeof accountSpark>, "id" | "secret">
+        cashRegister: Omit<
+          UpdateValues<typeof accountCashRegister>,
+          "id" | "currency"
+        >
       }>
   >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
@@ -265,6 +296,15 @@ export const deleteAccount =
     return ok(idValue)
   }
 
+/**
+ * Saves the fiat bank account the settings configure.
+ *
+ * Its id derives from the IBAN and currency, so a save that changes either
+ * writes a different account. The one it replaces is retired in the same
+ * batch, and the Fio plugin — which always follows the fiat bank account —
+ * is re-pointed with it. Returns `null` when no IBAN was ever configured and
+ * none is given, as there is no account to write yet.
+ */
 export const saveFiatBankAccount =
   ({
     enabled,
@@ -277,107 +317,138 @@ export const saveFiatBankAccount =
     readonly currency: FiatCurrency
     readonly defaultQrFormat?: BankQrFormat
   }): Task<
-    AccountId,
+    AccountId | null,
     DefaultPaymentMethodCannotBeDisabledError,
     EvoluDep & EvoluOwnerIdDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evolu, evoluOwnerId } = run.deps
 
     if (!enabled) {
       const allowed = await run(preventDefaultPaymentMethodDisable("iban"))
       if (!allowed.ok) return allowed
     }
 
+    const [current] = await evolu.loadQuery(fiatBankAccountQuery)
+    const nextIban = iban ?? current?.iban
+    if (nextIban === undefined) return ok(null)
+
+    const id = createIbanAccountId({ iban: nextIban, currency })
+    const [fioPlugin] = await evolu.loadQuery(fioPluginByIdQuery(fioPluginId))
+
     await runMutationWithCompletion((options) => {
-      if (iban !== undefined) {
-        run.deps.evolu.upsert(
-          "accountIban",
-          removeUndefinedValues({
-            id: fiatBankAccountId,
-            iban,
-            currency,
-            defaultQrFormat: defaultQrFormat ?? "spayd",
-          }),
-          { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+      evolu.upsert(
+        "accountIban",
+        {
+          id,
+          iban: nextIban,
+          currency,
+          defaultQrFormat:
+            defaultQrFormat ?? current?.defaultQrFormat ?? "spayd",
+        },
+        mutationOptions
+      )
+
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
         )
       }
 
-      return run.deps.evolu.upsert(
+      if (fioPlugin !== undefined && fioPlugin.accountId !== id) {
+        updateFioPluginAccountRow(evolu, id, mutationOptions)
+      }
+
+      return evolu.upsert(
         "account",
         {
-          id: fiatBankAccountId,
+          id,
           deviceId: null,
           name: NonEmptyString255("Fiat bank account"),
           kind: "iban",
           isDeleted: enabled ? sqliteFalse : sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        mutationOptions
       )
     })
 
-    return ok(fiatBankAccountId)
+    return ok(id)
   }
 
+/**
+ * Saves the Spark account the settings configure, keeping whichever wallet it
+ * already has and deriving the default one from the master key only when it
+ * has none yet. Returns `null` when disabling a Spark account that never
+ * existed, as there is nothing to write.
+ */
 export const saveSparkAccount =
   ({
     enabled,
   }: {
     readonly enabled: boolean
   }): Task<
-    {
-      readonly accountId: AccountId
-      readonly secret: SparkSecret | undefined
-    },
+    AccountId | null,
     DefaultPaymentMethodCannotBeDisabledError,
     EvoluDep & EvoluOwnerIdDep & MasterKeyDep
   > =>
   async (run) => {
-    const { evoluOwnerId, masterKey } = run.deps
+    const { evolu, evoluOwnerId, masterKey } = run.deps
 
     if (!enabled) {
       const allowed = await run(preventDefaultPaymentMethodDisable("spark"))
       if (!allowed.ok) return allowed
     }
 
-    // Preload guards a domain invariant: an existing Spark wallet secret
-    // must never be overwritten, so one is derived only when enabling Spark
-    // without any stored secret yet.
-    const existingSecret = enabled
-      ? (await run.deps.evolu.loadQuery(sparkAccountSecretQuery))[0]?.secret
-      : undefined
+    // Preloaded so enabling Spark keeps the wallet already configured rather
+    // than switching back to the default one.
+    const [current] = await evolu.loadQuery(sparkAccountQuery)
     const secret =
-      existingSecret ??
+      current?.secret ??
       (enabled ? deriveDefaultSparkWalletSecret(masterKey) : undefined)
+    if (secret === undefined) return ok(null)
+
+    const id = createSparkAccountId(secret)
 
     await runMutationWithCompletion((options) => {
-      if (secret !== undefined) {
-        run.deps.evolu.upsert(
-          "accountSpark",
-          removeUndefinedValues({
-            id: sparkAccountId,
-            secret,
-          }),
-          { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+      evolu.upsert("accountSpark", { id, secret }, mutationOptions)
+
+      // Only a legacy account whose id predates derivation differs here.
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
         )
       }
 
-      return run.deps.evolu.upsert(
+      return evolu.upsert(
         "account",
         {
-          id: sparkAccountId,
+          id,
           deviceId: null,
           name: NonEmptyString255("Spark account"),
           kind: "spark",
           isDeleted: enabled ? sqliteFalse : sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        mutationOptions
       )
     })
 
-    return ok({ accountId: sparkAccountId, secret })
+    return ok(id)
   }
 
+/**
+ * Saves the cash register the settings configure. Its id derives from the
+ * currency, so enabling it in a different currency writes a different
+ * account and retires the previous one in the same batch. Returns `null` when
+ * disabling a cash register that never existed.
+ */
 export const saveCashRegisterAccount =
   ({
     enabled,
@@ -386,12 +457,12 @@ export const saveCashRegisterAccount =
     readonly enabled: boolean
     readonly currency: FiatCurrency
   }): Task<
-    AccountId,
+    AccountId | null,
     DefaultPaymentMethodCannotBeDisabledError,
     EvoluDep & EvoluOwnerIdDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evolu, evoluOwnerId } = run.deps
 
     if (!enabled) {
       const allowed = await run(
@@ -400,41 +471,51 @@ export const saveCashRegisterAccount =
       if (!allowed.ok) return allowed
     }
 
-    await runMutationWithCompletion((options) => {
-      if (enabled) {
-        run.deps.evolu.upsert(
-          "accountCashRegister",
-          removeUndefinedValues({
-            id: cashRegisterAccountId,
-            currency,
-          }),
-          { ...options, ownerId: evoluOwnerId }
-        )
+    const [current] = await evolu.loadQuery(cashRegisterAccountQuery)
 
-        run.deps.evolu.upsert(
+    if (!enabled) {
+      if (current === undefined) return ok(null)
+
+      await runMutationWithCompletion((options) =>
+        evolu.update(
           "account",
-          {
-            id: cashRegisterAccountId,
-            deviceId: null,
-            name: NonEmptyString255("Cash register"),
-            kind: "cashRegister",
-            isDeleted: sqliteFalse,
-          },
+          { id: current.id, isDeleted: sqliteTrue },
           { ...options, ownerId: evoluOwnerId }
         )
-      } else {
-        run.deps.evolu.update(
+      )
+
+      return ok(current.id)
+    }
+
+    const id = createCashRegisterAccountId(currency)
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+      evolu.upsert("accountCashRegister", { id, currency }, mutationOptions)
+
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
           "account",
-          {
-            id: cashRegisterAccountId,
-            isDeleted: sqliteTrue,
-          },
-          { ...options, ownerId: evoluOwnerId }
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
         )
       }
+
+      return evolu.upsert(
+        "account",
+        {
+          id,
+          deviceId: null,
+          name: NonEmptyString255("Cash register"),
+          kind: "cashRegister",
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
     })
 
-    return ok(cashRegisterAccountId)
+    return ok(id)
   }
 
 /**

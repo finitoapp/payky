@@ -1,6 +1,7 @@
 import {
   createIdFromString,
   type InsertValues,
+  type MutationOptions,
   ok,
   sqliteFalse,
   sqliteTrue,
@@ -9,7 +10,9 @@ import {
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
-import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
+import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type {
   FioPluginRow,
   fioPlugin,
@@ -179,6 +182,21 @@ export const updateFioPluginSyncPointer =
     return ok(id)
   }
 
+/**
+ * Points the Fio plugin at another fiat bank account. The account's id
+ * derives from its IBAN and currency, so changing either makes it a new
+ * account, and the plugin has to follow it there. A plain write taking the
+ * caller's `MutationOptions`, so the account module can fold it into the
+ * batch that replaces the account.
+ */
+export const updateFioPluginAccountRow = (
+  evolu: EvoluDep["evolu"],
+  accountId: AccountId,
+  options: MutationOptions
+): void => {
+  evolu.update("fioPlugin", { id: fioPluginId, accountId }, options)
+}
+
 export const deleteFioPlugin =
   (
     idValue: FioPluginId
@@ -255,6 +273,7 @@ export const migrateLegacyFioPlugins =
     if (newestLegacy === undefined) return ok([])
 
     const [current] = await evolu.loadQuery(fioPluginByIdQuery(fioPluginId))
+    const [bankAccount] = await evolu.loadQuery(fiatBankAccountQuery)
     const [currentPointer] = await evolu.loadQuery(
       fioPluginSyncPointerByPluginIdQuery(fioPluginId)
     )
@@ -270,7 +289,7 @@ export const migrateLegacyFioPlugins =
           "fioPlugin",
           removeUndefinedValues({
             id: fioPluginId,
-            accountId: fiatBankAccountId,
+            accountId: bankAccount?.id ?? legacyFiatBankAccountId,
             numberOfSecondsBetweenChecks:
               newestLegacy.numberOfSecondsBetweenChecks,
             syncLookbackDays:

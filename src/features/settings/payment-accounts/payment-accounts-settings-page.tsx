@@ -38,7 +38,7 @@ import {
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
 import { sparkAccountSyncPointerByAccountIdQuery } from "@/core/modules/account/account-spark-queries.ts"
-import { sparkAccountId } from "@/core/modules/account/account-utils.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   type DefaultPaymentMethodDisabledError,
   setDefaultPaymentMethod,
@@ -298,10 +298,6 @@ function SparkAccountCard() {
   const [account] = accountData
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
-  const { data: pointers } = useEvoluQuery(
-    sparkAccountSyncPointerByAccountIdQuery(sparkAccountId)
-  )
-  const [pointer] = pointers
   const [privacyMode, setPrivacyMode] = useState(false)
   const [privacyModeError, setPrivacyModeError] =
     useState<TranslationKey | null>(null)
@@ -449,28 +445,8 @@ function SparkAccountCard() {
                         }}
                       />
 
-                      {secret !== null && (
-                        <InlineEditField
-                          label={t("settings.sparkAccount.syncPointer.label")}
-                          description={t(
-                            "settings.sparkAccount.syncPointer.description"
-                          )}
-                          type="date"
-                          defaultValue={
-                            pointer?.lastSyncedAt ?? TimestampMs(Date.now())
-                          }
-                          codec={timestampMsDateCodec}
-                          errorKey="settings.sparkAccount.syncPointer.invalid"
-                          onSave={async (nextLastSyncedAt) => {
-                            await using run = appRun()
-                            await run.ok(
-                              updateSparkAccountSyncPointer({
-                                id: sparkAccountId,
-                                lastSyncedAt: nextLastSyncedAt,
-                              })
-                            )
-                          }}
-                        />
+                      {account !== undefined && (
+                        <SparkSyncPointerField accountId={account.id} />
                       )}
                     </FieldGroup>
                   </div>
@@ -481,6 +457,44 @@ function SparkAccountCard() {
         </fieldset>
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Its own component because the pointer is keyed by the Spark account's id,
+ * which derives from the wallet secret and so only exists once the account
+ * does.
+ */
+function SparkSyncPointerField({
+  accountId,
+}: {
+  readonly accountId: AccountId
+}) {
+  const appRun = useAppRun()
+  const { t } = useTranslation()
+  const { data: pointers } = useEvoluQuery(
+    sparkAccountSyncPointerByAccountIdQuery(accountId)
+  )
+  const [pointer] = pointers
+
+  return (
+    <InlineEditField
+      label={t("settings.sparkAccount.syncPointer.label")}
+      description={t("settings.sparkAccount.syncPointer.description")}
+      type="date"
+      defaultValue={pointer?.lastSyncedAt ?? TimestampMs(Date.now())}
+      codec={timestampMsDateCodec}
+      errorKey="settings.sparkAccount.syncPointer.invalid"
+      onSave={async (nextLastSyncedAt) => {
+        await using run = appRun()
+        await run.ok(
+          updateSparkAccountSyncPointer({
+            id: accountId,
+            lastSyncedAt: nextLastSyncedAt,
+          })
+        )
+      }}
+    />
   )
 }
 

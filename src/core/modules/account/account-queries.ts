@@ -2,11 +2,6 @@ import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "./account-types.ts"
-import {
-  cashRegisterAccountId,
-  fiatBankAccountId,
-  sparkAccountId,
-} from "./account-utils.ts"
 
 export const accountByIdQuery = (idValue: AccountId) =>
   createQuery((db) =>
@@ -72,6 +67,19 @@ export const ibanAccountByIdQuery = (idValue: AccountId) =>
       }>()
   )
 
+/**
+ * The account of this kind the app configures from settings — the enabled
+ * one, else the most recently saved disabled one, so a disabled account still
+ * shows the configuration it would come back with. Saving it retires any
+ * other account of the kind, so more than one enabled row only appears after
+ * two devices saved different values offline; the latest save wins, the same
+ * on every device.
+ *
+ * "Latest save" is `createdAt`, which Evolu restamps on every upsert, and not
+ * `updatedAt`: retiring the replaced account is an update in the very batch
+ * that saves its successor, so the two share a timestamp, and only
+ * `createdAt` keeps the retired one from tying with it.
+ */
 export const fiatBankAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")
@@ -85,13 +93,16 @@ export const fiatBankAccountQuery = createQuery((db) =>
       "accountIban.currency",
       "accountIban.defaultQrFormat",
     ])
-    .where("account.id", "=", fiatBankAccountId)
     .where("account.kind", "=", "iban")
     .where("accountIban.isDeleted", "is not", 1)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountIban.iban", "is not", null)
     .where("accountIban.currency", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
     .$narrowType<{
       name: KyselyNotNull
       kind: KyselyNotNull
@@ -100,6 +111,7 @@ export const fiatBankAccountQuery = createQuery((db) =>
     }>()
 )
 
+/** Picked the same way as `fiatBankAccountQuery`. */
 export const sparkAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")
@@ -111,12 +123,15 @@ export const sparkAccountQuery = createQuery((db) =>
       "account.isDeleted",
       "accountSpark.secret",
     ])
-    .where("account.id", "=", sparkAccountId)
     .where("account.kind", "=", "spark")
     .where("accountSpark.isDeleted", "is not", 1)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountSpark.secret", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
     .$narrowType<{
       name: KyselyNotNull
       kind: KyselyNotNull
@@ -124,15 +139,7 @@ export const sparkAccountQuery = createQuery((db) =>
     }>()
 )
 
-export const sparkAccountSecretQuery = createQuery((db) =>
-  db
-    .selectFrom("accountSpark")
-    .select(["id", "secret"])
-    .where("id", "=", sparkAccountId)
-    .where("secret", "is not", null)
-    .$narrowType<{ secret: KyselyNotNull }>()
-)
-
+/** Picked the same way as `fiatBankAccountQuery`. */
 export const cashRegisterAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")
@@ -144,12 +151,15 @@ export const cashRegisterAccountQuery = createQuery((db) =>
       "account.isDeleted",
       "accountCashRegister.currency",
     ])
-    .where("account.id", "=", cashRegisterAccountId)
     .where("account.kind", "=", "cashRegister")
     .where("accountCashRegister.isDeleted", "is not", 1)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountCashRegister.currency", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
     .$narrowType<{
       name: KyselyNotNull
       kind: KyselyNotNull
@@ -160,6 +170,9 @@ export const cashRegisterAccountQuery = createQuery((db) =>
 /**
  * Every non-deleted account with the method-specific columns the payment
  * waiting screen needs to offer a Spark, IBAN, or cash-register tab.
+ *
+ * Newest first, so the screen's first match per kind is the same account
+ * `fiatBankAccountQuery` and its siblings pick.
  */
 export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
   db
@@ -192,6 +205,8 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.id", "is not", null)
     .where("account.kind", "is not", null)
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
     .$narrowType<{
       id: KyselyNotNull
       kind: KyselyNotNull

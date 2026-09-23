@@ -293,20 +293,13 @@ export const registerAccountsCommand =
         zodCommand({
           name: "update",
           description:
-            "Update an account and its current kind-specific details.",
+            "Update an account's name or device. Its IBAN, currency or Spark secret cannot change: the account id derives from them, so a different value is a different account.",
           args: {},
           opts: {
             id: AccountId.describe("Account id"),
             name: NonEmptyString255Schema.optional().describe("n;Account name"),
             deviceId: DeviceId.optional().describe(
               "Device id that updated the account"
-            ),
-            iban: IbanSchema.optional().describe("IBAN for bank accounts"),
-            currency: FiatCurrencySchema.optional().describe(
-              "c;Currency for IBAN or cash register accounts"
-            ),
-            secret: SparkSecretSchema.optional().describe(
-              "s;Spark wallet secret as 16-byte hex"
             ),
           },
           async action(_, options) {
@@ -317,10 +310,7 @@ export const registerAccountsCommand =
                   id: options.id,
                   deviceId: options.deviceId,
                   name: options.name,
-                  iban: {
-                    iban: options.iban,
-                    currency: options.currency,
-                  },
+                  iban: {},
                 })
               )
 
@@ -334,9 +324,7 @@ export const registerAccountsCommand =
                   id: options.id,
                   deviceId: options.deviceId,
                   name: options.name,
-                  spark: {
-                    secret: options.secret,
-                  },
+                  spark: {},
                 })
               )
               run.deps.console.log(`Updated account ${options.id}`)
@@ -348,9 +336,7 @@ export const registerAccountsCommand =
                 id: options.id,
                 deviceId: options.deviceId,
                 name: options.name,
-                cashRegister: {
-                  currency: options.currency,
-                },
+                cashRegister: {},
               })
             )
             run.deps.console.log(`Updated account ${options.id}`)

@@ -14,7 +14,7 @@ import {
   loadPendingMigrations,
   runMigrations,
 } from "@/core/migrations/migrations.ts"
-import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
+import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -162,7 +162,7 @@ describe("app migrations", () => {
           "fioPlugin",
           {
             id: legacyId,
-            accountId: fiatBankAccountId,
+            accountId: legacyFiatBankAccountId,
             numberOfSecondsBetweenChecks: PositiveInteger(300),
             syncLookbackDays: PositiveInteger(3),
             isActive: sqliteTrue,
@@ -191,6 +191,50 @@ describe("app migrations", () => {
         ok: true,
         value: 1,
       })
+
+      await expect(
+        run(loadPendingMigrations(appMigrations))
+      ).resolves.toMatchObject({ ok: true, value: [] })
+    } finally {
+      await dispose()
+    }
+  }, 15_000)
+  test("the registry reaches the account id migration and then reports done", async () => {
+    const { deps, dispose } = await createDeps()
+    try {
+      await using run = testCreateRun(deps)
+      const { evolu } = deps
+      const legacyId = createRowId<"Account">()
+
+      // A cash register at a random id, as `createAccount` minted them before
+      // ids were derived from the currency.
+      await runMutationWithCompletion((options) => {
+        const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+
+        evolu.upsert(
+          "accountCashRegister",
+          { id: legacyId, currency: "CZK" },
+          mutationOptions
+        )
+        evolu.upsert(
+          "account",
+          {
+            id: legacyId,
+            deviceId: null,
+            name: NonEmptyString255("Cash register"),
+            kind: "cashRegister",
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+      })
+
+      const pending = await run.ok(loadPendingMigrations(appMigrations))
+      expect(pending.map((migration) => migration.name)).toEqual([
+        "2026-09-23-account-derived-id",
+      ])
+
+      await run.ok(runMigrations(pending))
 
       await expect(
         run(loadPendingMigrations(appMigrations))

@@ -6,8 +6,8 @@ import {
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
 import {
-  cashRegisterAccountId,
-  fiatBankAccountId,
+  createCashRegisterAccountId,
+  legacyFiatBankAccountId,
 } from "@/core/modules/account/account-utils.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
@@ -205,7 +205,7 @@ export function E2eTestBridge() {
           "fioPlugin",
           {
             id: legacyPluginId,
-            accountId: fiatBankAccountId,
+            accountId: legacyFiatBankAccountId,
             numberOfSecondsBetweenChecks: PositiveInteger(300),
             syncLookbackDays: PositiveInteger(3),
             isActive: sqliteFalse,
@@ -460,6 +460,10 @@ export function E2eTestBridge() {
         loadCalculatedBillLineSummaries(parsedBillId)
       )
       const totalAmount = deriveBillSummaryTotal(summaries)
+      // The cash register `__e2eSeedOnboarding` enabled, in the bill's currency.
+      const cashRegisterAccountId = createCashRegisterAccountId(
+        billRow.currency
+      )
 
       const paymentResult = await run(
         createPayment({

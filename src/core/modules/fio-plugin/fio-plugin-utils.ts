@@ -2,8 +2,9 @@ import { createIdFromString } from "@evolu/common"
 
 /**
  * The Fio plugin is a singleton, like the accounts it syncs against: there is
- * one fiat bank account (`fiatBankAccountId`) and so at most one Fio
- * integration for it. Its id is therefore fixed rather than generated, which
+ * one fiat bank account (`fiatBankAccountQuery`) and so at most one Fio
+ * integration for it, re-pointed whenever that account is replaced
+ * (`updateFioPluginAccountRow`). Its id is therefore fixed rather than generated, which
  * is what lets every part of the settings page — including adding tokens —
  * work before the `fioPlugin` row itself exists.
  *

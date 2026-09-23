@@ -2,7 +2,6 @@ import { createIdFromString, sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test, vi } from "vitest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
-import { createAccount } from "@/core/modules/account/account-actions.ts"
 import {
   createAccountTransaction,
   deleteAccountTransaction,
@@ -37,7 +36,10 @@ import { paymentLinesToBillLineSummaries } from "@/core/modules/payment-line/pay
 import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import { activeReconciliationClaimsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import {
   Integer,
   NonEmptyString255,
@@ -521,15 +523,29 @@ describe("payment actions", () => {
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
     const { cashRegisterAccountId } = await createPaymentAccounts(deps)
-    const secondCashRegisterAccountId = await run.ok(
-      createAccount({
-        deviceId: null,
-        name: NonEmptyString255("Second cash register"),
-        cashRegister: {
-          currency: "CZK",
+    // A cash register's id derives from its currency, so `createAccount`
+    // cannot make a second CZK one — only data from before derived ids can
+    // hold two, which is the shape seeded here.
+    const secondCashRegisterAccountId = createRowId<"Account">()
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+
+      evolu.upsert(
+        "accountCashRegister",
+        { id: secondCashRegisterAccountId, currency: "CZK" },
+        mutationOptions
+      )
+      evolu.upsert(
+        "account",
+        {
+          id: secondCashRegisterAccountId,
+          deviceId: null,
+          name: NonEmptyString255("Second cash register"),
+          kind: "cashRegister",
         },
-      })
-    )
+        mutationOptions
+      )
+    })
     const occurredAt = TimestampMsSchema.decode(1_700_000_000_000)
 
     const id = await run.orThrow(

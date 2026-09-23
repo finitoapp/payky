@@ -10,7 +10,7 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
+import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -694,7 +694,7 @@ describe("fio plugin actions", () => {
         "fioPlugin",
         {
           id,
-          accountId: fiatBankAccountId,
+          accountId: legacyFiatBankAccountId,
           numberOfSecondsBetweenChecks: PositiveInteger(300),
           syncLookbackDays: PositiveInteger(3),
           isActive: sqliteTrue,
@@ -753,7 +753,7 @@ describe("fio plugin actions", () => {
       .toMatchObject([
         {
           id: fioPluginId,
-          accountId: fiatBankAccountId,
+          accountId: legacyFiatBankAccountId,
           numberOfSecondsBetweenChecks: 300,
           syncLookbackDays: 3,
           isActive: sqliteTrue,
@@ -811,7 +811,7 @@ describe("fio plugin actions", () => {
     // fixed id, tokenless, while the legacy row kept the tokens.
     await run.ok(
       saveFioPlugin({
-        accountId: fiatBankAccountId,
+        accountId: legacyFiatBankAccountId,
         numberOfSecondsBetweenChecks: PositiveInteger(60),
         isActive: sqliteFalse,
       })

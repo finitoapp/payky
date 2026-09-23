@@ -27,7 +27,8 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
+import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
+import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import {
   addFioPluginToken,
   deleteFioPluginToken,
@@ -128,6 +129,8 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
   const { t } = useTranslation()
   const pointerQuery = fioPluginSyncPointerByPluginIdQuery(fioPluginId)
   const { data: pointers } = useEvoluQuery(pointerQuery)
+  const { data: bankAccounts } = useEvoluQuery(fiatBankAccountQuery)
+  const [bankAccount] = bankAccounts
   const [pointer] = pointers
   const lastSyncedDate = pointer?.lastSyncedDate ?? getDefaultLastSyncedDate()
 
@@ -152,7 +155,9 @@ function FioPluginForm({ plugin, isNativeRuntime }: FioPluginFormProps) {
     await using run = appRun()
     await run.ok(
       saveFioPlugin({
-        accountId: fiatBankAccountId,
+        // With no bank account yet, the plugin waits on the placeholder id
+        // until `saveFiatBankAccount` points it at the real one.
+        accountId: bankAccount?.id ?? legacyFiatBankAccountId,
         numberOfSecondsBetweenChecks:
           changed.numberOfSecondsBetweenChecks ?? numberOfSecondsBetweenChecks,
         syncLookbackDays: changed.syncLookbackDays ?? syncLookbackDays,

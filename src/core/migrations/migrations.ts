@@ -1,6 +1,7 @@
 import { ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
 import { migrateLegacyFioPlugins } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { hasLegacyFioPluginQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -92,6 +93,9 @@ export const appMigrations: ReadonlyArray<AppMigration> = [
       ok((await run.deps.evolu.loadQuery(hasLegacyFioPluginQuery)).length > 0),
     run: migrateLegacyFioPlugins(),
   },
+  // After the Fio one: a legacy plugin it adopts can still point at the
+  // legacy fiat bank account, and this is what re-points it.
+  accountDerivedIdMigration,
 ]
 
 /**

@@ -2,7 +2,7 @@ import { evoluJsonArrayFrom, type KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { fiatBankAccountId } from "@/core/modules/account/account-utils.ts"
+import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import { fioPluginId } from "@/core/modules/fio-plugin/fio-plugin-utils.ts"
 import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
@@ -47,7 +47,7 @@ export const fiatBankAccountFioPluginQuery = createQuery((db) =>
   db
     .selectFrom("fioPlugin")
     .selectAll()
-    .where("accountId", "=", fiatBankAccountId)
+    .where("id", "=", fioPluginId)
     .where("accountId", "is not", null)
     .where("numberOfSecondsBetweenChecks", "is not", null)
     .where("isActive", "is not", null)
@@ -165,7 +165,7 @@ export const hasLegacyFioPluginQuery = createQuery((db) =>
   db
     .selectFrom("fioPlugin")
     .select("id")
-    .where("accountId", "=", fiatBankAccountId)
+    .where("accountId", "=", legacyFiatBankAccountId)
     .where("id", "!=", fioPluginId)
     .where("id", "is not", null)
     .where("numberOfSecondsBetweenChecks", "is not", null)
@@ -203,7 +203,7 @@ export const legacyFioPluginsQuery = createQuery((db) =>
           }>()
       ).as("tokens"),
     ])
-    .where("fioPlugin.accountId", "=", fiatBankAccountId)
+    .where("fioPlugin.accountId", "=", legacyFiatBankAccountId)
     .where("fioPlugin.id", "!=", fioPluginId)
     .where("fioPlugin.id", "is not", null)
     .where("fioPlugin.numberOfSecondsBetweenChecks", "is not", null)

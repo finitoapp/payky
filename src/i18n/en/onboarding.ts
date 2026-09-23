@@ -8,17 +8,12 @@ export const enOnboarding = {
   "accountRestore.timeout.title": "Still restoring account",
   "accountRestore.title": "Restoring account",
   "onboarding.account.description":
-    "Review the identity Payky generated for this device. You can rename it and turn on sync now or later in Settings.",
+    "Save the phrase below somewhere safe. You will need it to open this account on another device.",
   "onboarding.account.mnemonic.confirm":
     "I've saved my recovery phrase somewhere safe",
-  "onboarding.account.name.description":
-    "Shown in the accounts list when switching identities.",
-  "onboarding.account.name.error.required": "Enter an account name.",
-  "onboarding.account.name.label": "Account name",
-  "onboarding.account.title": "Your account",
-  "onboarding.account.transport.description":
-    "Turn on sync to back up this account and use it on other devices.",
-  "onboarding.account.transport.title": "Sync",
+  "onboarding.account.mnemonic.required":
+    "Confirm you have saved the recovery phrase before finishing.",
+  "onboarding.account.title": "Back up your account",
   "onboarding.accountChoice.description":
     "Create a new account for this device or restore one you already use.",
   "onboarding.accountChoice.new.description":
@@ -35,12 +30,17 @@ export const enOnboarding = {
   "onboarding.cancelSetup.confirm.description":
     "This new account will be discarded and you'll switch back to {name}.",
   "onboarding.cancelSetup.confirm.title": "Cancel account creation?",
-  "onboarding.country.description":
-    "This sets sensible tax rate defaults for your catalog.",
-  "onboarding.country.title": "Choose your country",
-  "onboarding.country.vatPayer.description":
-    "Turns on tax rates for catalog items. You can change this later in Settings.",
-  "onboarding.country.vatPayer.label": "I am a VAT payer",
+  "onboarding.countryCurrency.country.description":
+    "Preloads the tax rates your catalog starts with.",
+  "onboarding.countryCurrency.currency.description":
+    "Every amount you enter in the terminal is in this currency.",
+  "onboarding.countryCurrency.currency.label": "Currency",
+  "onboarding.countryCurrency.description":
+    "Both only preset how Payky works for you — you can change either later in Settings.",
+  "onboarding.countryCurrency.title": "Country and currency",
+  "onboarding.countryCurrency.vatPayer.description":
+    "Adds tax rates to catalog items.",
+  "onboarding.countryCurrency.vatPayer.label": "I am a VAT payer",
   "onboarding.finish": "Finish",
   "onboarding.language.title": "Choose language",
   "onboarding.next": "Next",

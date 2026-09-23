@@ -10,17 +10,12 @@ export const csOnboarding = {
   "accountRestore.timeout.title": "Obnova účtu stále probíhá",
   "accountRestore.title": "Obnovování účtu",
   "onboarding.account.description":
-    "Zkontrolujte identitu, kterou Payky pro toto zařízení vygeneroval. Můžete ji přejmenovat a zapnout synchronizaci teď, nebo později v Nastavení.",
+    "Uložte si frázi níže na bezpečné místo. Budete ji potřebovat, až budete chtít účet otevřít na jiném zařízení.",
   "onboarding.account.mnemonic.confirm":
     "Uložil(a) jsem si recovery phrase na bezpečné místo",
-  "onboarding.account.name.description":
-    "Zobrazuje se v seznamu účtů při přepínání identit.",
-  "onboarding.account.name.error.required": "Zadejte název účtu.",
-  "onboarding.account.name.label": "Název účtu",
-  "onboarding.account.title": "Váš účet",
-  "onboarding.account.transport.description":
-    "Zapnutím synchronizace tento účet zálohujete a můžete ho použít na dalších zařízeních.",
-  "onboarding.account.transport.title": "Synchronizace",
+  "onboarding.account.mnemonic.required":
+    "Než nastavení dokončíte, potvrďte, že máte recovery phrase uloženou.",
+  "onboarding.account.title": "Zálohování účtu",
   "onboarding.accountChoice.description":
     "Vytvořte nový účet pro toto zařízení nebo obnovte účet, který už používáte.",
   "onboarding.accountChoice.new.description":
@@ -37,12 +32,17 @@ export const csOnboarding = {
   "onboarding.cancelSetup.confirm.description":
     "Tento nový účet bude zahozen a přepnete se zpět na {name}.",
   "onboarding.cancelSetup.confirm.title": "Zrušit vytváření účtu?",
-  "onboarding.country.description":
-    "Podle toho nastavíme výchozí daňové sazby v katalogu.",
-  "onboarding.country.title": "Vyberte svou zemi",
-  "onboarding.country.vatPayer.description":
-    "Zapne daňové sazby u položek katalogu. Později to lze změnit v Nastavení.",
-  "onboarding.country.vatPayer.label": "Jsem plátce DPH",
+  "onboarding.countryCurrency.country.description":
+    "Určuje daňové sazby, se kterými katalog začne.",
+  "onboarding.countryCurrency.currency.description":
+    "Všechny částky zadané v terminálu budou v této měně.",
+  "onboarding.countryCurrency.currency.label": "Měna",
+  "onboarding.countryCurrency.description":
+    "Obojí jen přednastaví, jak bude Payky fungovat — změnit to jde kdykoli v Nastavení.",
+  "onboarding.countryCurrency.title": "Země a měna",
+  "onboarding.countryCurrency.vatPayer.description":
+    "Přidá daňové sazby k položkám katalogu.",
+  "onboarding.countryCurrency.vatPayer.label": "Jsem plátce DPH",
   "onboarding.finish": "Dokončit",
   "onboarding.language.title": "Výběr jazyka",
   "onboarding.next": "Další",

@@ -1,11 +1,11 @@
 import { KeyRound, Plus } from "lucide-react"
-import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import type { OnboardingAccountType } from "@/features/onboarding/onboarding-form-state.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -32,12 +32,16 @@ const accountTypeOptions: ReadonlyArray<AccountTypeOption> = [
   },
 ]
 
+/**
+ * A signpost, not a selection: picking an option leaves the step immediately,
+ * so `VerticalNav` (stateless, like the settings index it is borrowed from)
+ * rather than `OptionToggleGroup` — a toggle group would show the previous
+ * answer as pressed when the user comes back here.
+ */
 export function AccountChoiceStep({
-  accountType,
   pending,
   onSelect,
 }: {
-  readonly accountType: OnboardingAccountType | null
   readonly pending: boolean
   readonly onSelect: (accountType: OnboardingAccountType) => void
 }) {
@@ -52,16 +56,31 @@ export function AccountChoiceStep({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <OptionToggleGroup
-          value={accountType}
-          options={accountTypeOptions.map((option) => ({
-            value: option.value,
-            icon: option.icon,
-            title: t(option.label),
-            description: t(option.description),
-          }))}
-          disabled={pending}
-          onChange={onSelect}
+        <VerticalNav
+          className="border bg-transparent shadow-none"
+          items={accountTypeOptions.map((option) => {
+            const Icon = option.icon
+
+            return {
+              id: option.value,
+              kind: "button" as const,
+              icon: <Icon className="text-muted-foreground" />,
+              label: (
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold">
+                    {t(option.label)}
+                  </span>
+                  <span className="text-xs leading-snug text-muted-foreground">
+                    {t(option.description)}
+                  </span>
+                </span>
+              ),
+              onClick: () => {
+                if (pending) return
+                onSelect(option.value)
+              },
+            }
+          })}
         />
       </CardContent>
     </>

@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test"
 import { translate } from "./support/i18n.ts"
 import { gotoPage } from "./support/navigation.ts"
-import { completeOnboarding } from "./support/onboarding.ts"
+import {
+  chooseOnboardingCountry,
+  chooseOnboardingCurrency,
+  completeOnboarding,
+} from "./support/onboarding.ts"
 
 // A fixed, valid SLIP-39 recovery mnemonic (derived from an arbitrary test
 // master key: ffeeddccbbaa99887766554433221100). Never onboarded against
@@ -58,7 +62,7 @@ test("choosing a country during onboarding seeds its tax rates", async ({
   })
 })
 
-test("an invalid IBAN blocks advancing past the payment methods step", async ({
+test("the payment methods step reports a missing or invalid IBAN on Next", async ({
   page,
 }) => {
   const nextButton = page.getByRole("button", {
@@ -78,34 +82,48 @@ test("an invalid IBAN blocks advancing past the payment methods step", async ({
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await nextButton.click()
+    await chooseOnboardingCountry(page, "en", "country.cz")
     await nextButton.click()
   })
 
-  await test.step("enabling IBAN with no value yet keeps Next disabled", async () => {
-    await page
-      .getByRole("checkbox", {
+  await test.step("bank transfer is on by default, with no error shown yet", async () => {
+    await expect(
+      page.getByRole("checkbox", {
         name: translate("en", "onboarding.payments.iban.title"),
       })
-      .click()
-    await expect(nextButton).toBeDisabled()
+    ).toBeChecked()
+    await expect(nextButton).toBeEnabled()
+    await expect(ibanInput).toHaveAttribute("aria-invalid", "false")
   })
 
-  await test.step("typing an invalid IBAN keeps Next disabled and shows the error", async () => {
-    await ibanInput.fill("12345")
-    await expect(nextButton).toBeDisabled()
+  await test.step("Next with an empty IBAN marks the input instead of advancing", async () => {
+    await nextButton.click()
+    await expect(ibanInput).toHaveAttribute("aria-invalid", "true")
     await expect(
-      page.getByText(translate("en", "settings.fiatBankAccount.iban.invalid"))
+      page.getByText(translate("en", "settings.fiatBankAccount.iban.required"))
+    ).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "onboarding.payments.title"), {
+        exact: true,
+      })
     ).toBeVisible()
   })
 
-  await test.step("fixing the IBAN re-enables Next and lets onboarding complete", async () => {
+  await test.step("an invalid IBAN swaps the message and still holds the step", async () => {
+    await ibanInput.fill("12345")
+    await nextButton.click()
+    await expect(
+      page.getByText(translate("en", "settings.fiatBankAccount.iban.invalid"))
+    ).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "onboarding.payments.title"), {
+        exact: true,
+      })
+    ).toBeVisible()
+  })
+
+  await test.step("fixing the IBAN lets onboarding complete", async () => {
     await ibanInput.fill("CZ6508000000192000145399")
-    await expect(nextButton).toBeEnabled()
     await nextButton.click()
     await page
       .getByRole("checkbox", {
@@ -136,9 +154,6 @@ test("onboarding restore account starts the sync-wait screen", async ({
         name: translate("en", "onboarding.accountChoice.restore.title"),
       })
       .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
   })
 
   await test.step("submit a recovery phrase", async () => {
@@ -165,7 +180,7 @@ test("onboarding restore account starts the sync-wait screen", async ({
   })
 })
 
-test("finish is blocked until the recovery phrase is confirmed, and it can be copied", async ({
+test("finish reports an unconfirmed recovery phrase, which can be copied", async ({
   page,
 }) => {
   const finishButton = page.getByRole("button", {
@@ -190,26 +205,33 @@ test("finish is blocked until the recovery phrase is confirmed, and it can be co
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
+    await chooseOnboardingCountry(page, "en", "country.cz")
     await page
       .getByRole("button", { name: translate("en", "onboarding.next") })
       .click()
     await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
+      .getByRole("textbox", {
+        name: translate("en", "settings.fiatBankAccount.iban.label"),
+      })
+      .fill("CZ6508000000192000145399")
     await page
       .getByRole("button", { name: translate("en", "onboarding.next") })
       .click()
     await finishButton.waitFor()
   })
 
-  await test.step("finish is disabled before confirming the recovery phrase", async () => {
-    await expect(finishButton).toBeDisabled()
+  await test.step("finishing without confirming marks the checkbox instead", async () => {
+    await expect(finishButton).toBeEnabled()
+    await finishButton.click()
+    await expect(confirmCheckbox).toHaveAttribute("aria-invalid", "true")
+    await expect(
+      page.getByText(translate("en", "onboarding.account.mnemonic.required"))
+    ).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "onboarding.account.title"), {
+        exact: true,
+      })
+    ).toBeVisible()
   })
 
   await test.step("the recovery phrase can be copied", async () => {
@@ -223,9 +245,9 @@ test("finish is blocked until the recovery phrase is confirmed, and it can be co
     ).toBeVisible()
   })
 
-  await test.step("confirming the checkbox enables finish and completes onboarding", async () => {
+  await test.step("confirming the checkbox lets finish complete onboarding", async () => {
     await confirmCheckbox.click()
-    await expect(finishButton).toBeEnabled()
+    await expect(confirmCheckbox).toHaveAttribute("aria-invalid", "false")
     await finishButton.click()
     await page
       .getByRole("button", { name: translate("en", "settings.title") })
@@ -246,39 +268,23 @@ test("the currency step defaults to the chosen country's currency, not the UI la
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await page
-      .getByRole("button", { name: translate("en", "onboarding.next") })
-      .click()
+    await chooseOnboardingCountry(page, "en", "country.cz")
   })
 
   await test.step("Czech koruna is preselected, not the US dollar", async () => {
     await expect(
-      page.getByRole("button", {
-        name: translate("en", "settings.fiat.czk.title"),
+      page.getByRole("combobox", {
+        name: translate("en", "onboarding.countryCurrency.currency.label"),
       })
-    ).toHaveAttribute("aria-pressed", "true")
-    await expect(
-      page.getByRole("button", {
-        name: translate("en", "settings.fiat.usd.title"),
-      })
-    ).toHaveAttribute("aria-pressed", "false")
+    ).toContainText(translate("en", "settings.fiat.czk.title"))
   })
 })
 
 test("changing the language after picking a currency does not reset that choice", async ({
   page,
 }) => {
-  const nextButton = page.getByRole("button", {
-    name: translate("en", "onboarding.next"),
-  })
-  const usdOption = page.getByRole("button", {
-    name: translate("en", "settings.fiat.usd.title"),
+  const currencySelect = page.getByRole("combobox", {
+    name: translate("en", "onboarding.countryCurrency.currency.label"),
   })
 
   await test.step("walk to the currency step and explicitly pick US dollar", async () => {
@@ -291,13 +297,11 @@ test("changing the language after picking a currency does not reset that choice"
         name: translate("en", "onboarding.accountChoice.new.title"),
       })
       .click()
-    await nextButton.click()
-    await page
-      .getByRole("button", { name: translate("en", "country.cz") })
-      .click()
-    await nextButton.click()
-    await usdOption.click()
-    await expect(usdOption).toHaveAttribute("aria-pressed", "true")
+    await chooseOnboardingCountry(page, "en", "country.cz")
+    await chooseOnboardingCurrency(page, "en", "settings.fiat.usd.title")
+    await expect(currencySelect).toContainText(
+      translate("en", "settings.fiat.usd.title")
+    )
   })
 
   await test.step("switch to Czech from the header picker, without leaving the step", async () => {
@@ -314,9 +318,9 @@ test("changing the language after picking a currency does not reset that choice"
       page.getByRole("button", { name: translate("cs", "onboarding.next") })
     ).toBeVisible()
     await expect(
-      page.getByRole("button", {
-        name: translate("cs", "settings.fiat.usd.title"),
+      page.getByRole("combobox", {
+        name: translate("cs", "onboarding.countryCurrency.currency.label"),
       })
-    ).toHaveAttribute("aria-pressed", "true")
+    ).toContainText(translate("cs", "settings.fiat.usd.title"))
   })
 })

@@ -5,8 +5,7 @@ import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 
 export type OnboardingStep =
   | "accountChoice"
-  | "country"
-  | "currency"
+  | "countryCurrency"
   | "payments"
   | "account"
   | "restore"
@@ -17,15 +16,15 @@ export type OnboardingPaymentMethod = "cash" | "btc" | "iban"
  * `legalEntity.country` (`CountryCode | null`, where `null` means "other"),
  * this form-local type keeps "other" as an explicit value distinct from
  * "not chosen yet" (`OnboardingFormState.country: OnboardingCountryChoice |
- * null`) so the step's "Next" button can gate on an actual choice. Translate
+ * null`), which is what lets the country keep following the UI language until
+ * the merchant picks one (see `getDefaultCountryForLanguage`). Translate
  * `"OTHER"` to `null` only when calling `setLegalEntity`.
  */
 export type OnboardingCountryChoice = CountryCode | "OTHER"
 
 const newAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
   "accountChoice",
-  "country",
-  "currency",
+  "countryCurrency",
   "payments",
   "account",
 ]
@@ -49,7 +48,7 @@ interface OnboardingFormState {
   readonly currency: FiatCurrency | null
   readonly paymentMethods: ReadonlySet<OnboardingPaymentMethod>
   readonly iban: string
-  /** `null` until the user picks one on the country step. */
+  /** `null` until the user picks one; until then it follows the UI language. */
   readonly country: OnboardingCountryChoice | null
   /** `null` until the user answers the VAT-payer question; treated as "not a VAT payer". */
   readonly vatPayer: boolean | null
@@ -65,7 +64,7 @@ export const initialOnboardingFormState: OnboardingFormState = {
   step: "accountChoice",
   accountType: null,
   currency: null,
-  paymentMethods: new Set(["cash", "btc"]),
+  paymentMethods: new Set(["cash", "btc", "iban"]),
   iban: "",
   country: null,
   vatPayer: null,

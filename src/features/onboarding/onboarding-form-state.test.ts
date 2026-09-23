@@ -6,8 +6,7 @@ describe("getOnboardingSteps", () => {
   test("includes the setup steps for a new account", () => {
     expect(getOnboardingSteps("new")).toEqual([
       "accountChoice",
-      "country",
-      "currency",
+      "countryCurrency",
       "payments",
       "account",
     ])

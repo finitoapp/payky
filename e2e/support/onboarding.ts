@@ -1,8 +1,43 @@
 import type { Page } from "@playwright/test"
 
 import type { FiatCurrency } from "../../src/core/modules/shared/schema.ts"
-import type { Language } from "../../src/i18n/resources.ts"
+import type { Language, TranslationKey } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
+
+/**
+ * The country and currency dropdowns on the second onboarding step. Both are
+ * `Select`s labeled by their `FieldLabel`, so they are addressed by role and
+ * label rather than by the option text the way the old toggle groups were.
+ */
+export async function chooseOnboardingCountry(
+  page: Page,
+  language: Language,
+  countryKey: TranslationKey
+): Promise<void> {
+  await page
+    .getByRole("combobox", {
+      name: translate(language, "settings.legalEntity.country.label"),
+    })
+    .click()
+  await page
+    .getByRole("option", { name: translate(language, countryKey) })
+    .click()
+}
+
+export async function chooseOnboardingCurrency(
+  page: Page,
+  language: Language,
+  currencyKey: TranslationKey
+): Promise<void> {
+  await page
+    .getByRole("combobox", {
+      name: translate(language, "onboarding.countryCurrency.currency.label"),
+    })
+    .click()
+  await page
+    .getByRole("option", { name: translate(language, currencyKey) })
+    .click()
+}
 
 /**
  * Runner-agnostic: `bin/generate-doc-screenshots.ts` imports these helpers
@@ -87,26 +122,13 @@ export async function completeOnboarding(
       name: translate(language, "onboarding.accountChoice.new.title"),
     })
     .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "country.cz") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
+  await chooseOnboardingCountry(page, language, "country.cz")
   await page
     .getByRole("button", { name: translate(language, "onboarding.next") })
     .click()
   await page
     .getByRole("checkbox", {
       name: translate(language, "onboarding.payments.btc.title"),
-    })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.payments.iban.title"),
     })
     .click()
   await page.getByRole("textbox").fill("CZ6508000000192000145399")
@@ -136,8 +158,8 @@ export async function completeOnboarding(
  * Completes onboarding for an account that is already selected and already
  * on the onboarding flow (for example right after creating a new device
  * account from Settings > Accounts), accepting every default. Unlike
- * completeOnboarding, this does not navigate or pick a language/payment
- * methods.
+ * completeOnboarding, this does not navigate or change which payment methods
+ * are enabled — it only fills the IBAN the default bank transfer requires.
  *
  * Used instead of the window.__e2eSeedOnboarding bridge for a second device
  * account: switching accounts recreates the app's Evolu client, and the
@@ -155,18 +177,11 @@ export async function completeOnboardingDefaults(
       name: translate(language, "onboarding.accountChoice.new.title"),
     })
     .click()
+  await chooseOnboardingCountry(page, language, "country.cz")
   await page
     .getByRole("button", { name: translate(language, "onboarding.next") })
     .click()
-  await page
-    .getByRole("button", { name: translate(language, "country.cz") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
+  await page.getByRole("textbox").fill("CZ6508000000192000145399")
   await page
     .getByRole("button", { name: translate(language, "onboarding.next") })
     .click()

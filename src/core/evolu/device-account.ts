@@ -136,9 +136,33 @@ export const createAccountMasterKey = (): MasterKey => createMasterKey()
 export const createRandomAccountName = () =>
   NonEmptyString255(createRandomDisplayName())
 
+/**
+ * Stands in for the active account's app owner id inside a stored transport
+ * URL, so a relay that addresses a room by path can be configured without
+ * knowing which account will use it. `resolveTransportUrl` substitutes it
+ * before the URL is dialed; the stored row keeps the placeholder.
+ *
+ * The owner id is what every relay already routes this account's messages by,
+ * and it is a 22-character Base64Url string — exactly the letters, digits,
+ * `-` and `_` a room id may contain — so it needs no escaping.
+ */
+// biome-ignore lint/suspicious/noTemplateCurlyInString: the literal `${appOwnerId}` is the stored syntax, not an interpolation that lost its backticks.
+export const appOwnerIdPlaceholder = "${appOwnerId}"
+
+/**
+ * Matches the placeholder both as written and percent-encoded, because a URL
+ * that has been through `new URL()` carries `$%7BappOwnerId%7D` instead. An
+ * unsubstituted placeholder would put every account in one shared room, which
+ * is worth two forms in one regex to rule out.
+ */
+const appOwnerIdPlaceholderPattern = /\$(?:\{appOwnerId\}|%7BappOwnerId%7D)/giu
+
+export const resolveTransportUrl = (url: string, appOwnerId: string): WssUrl =>
+  WssUrl(url.replace(appOwnerIdPlaceholderPattern, appOwnerId))
+
 export const defaultEvoluTransportUrls = [
   WssUrl("wss://evolu.linky.fit"),
-  WssUrl("wss://live-relay.payky.me"),
+  WssUrl(`wss://live-relay.payky.me/${appOwnerIdPlaceholder}`),
 ] as const
 
 const createAccountEvoluTransportId = ({

@@ -3,7 +3,11 @@ import { hmac } from "@noble/hashes/hmac.js"
 import { sha512 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
 import { HDKey } from "@scure/bip32"
-import { entropyToMnemonic, validateMnemonic } from "@scure/bip39"
+import {
+  entropyToMnemonic,
+  mnemonicToEntropy,
+  validateMnemonic,
+} from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { Slip39 } from "slip39-ts"
 import { z } from "zod"
@@ -161,3 +165,7 @@ export const deriveDefaultSparkWalletSecret = (
  */
 export const sparkSecretToMnemonic = (secret: SparkSecret): SparkMnemonic =>
   SparkMnemonic(entropyToMnemonic(hexToBytes(secret), wordlist))
+
+/** The inverse of `sparkSecretToMnemonic`, for a wallet the user brings. */
+export const sparkMnemonicToSecret = (mnemonic: SparkMnemonic): SparkSecret =>
+  SparkSecret(bytesToHex(mnemonicToEntropy(mnemonic, wordlist)))

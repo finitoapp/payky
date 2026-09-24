@@ -481,6 +481,8 @@ export const csSettings = {
     "Vypnutý Spark účet zůstane uložený, ale platební toky ho budou ignorovat.",
   "settings.sparkAccount.enabled.label": "Povolit Spark účet",
   "settings.sparkAccount.advanced": "Pokročilé volby",
+  "settings.sparkAccount.form.customDescription":
+    "Payky přijímá Spark platby do vaší vlastní peněženky.",
   "settings.sparkAccount.form.description":
     "Payky tuto Spark peněženku odvodí z klíče pro obnovu účtu.",
   "settings.sparkAccount.form.title": "Spark účet",
@@ -497,6 +499,29 @@ export const csSettings = {
     "Lokální ukazatel synchronizace pro periodické přeskenování historie. Pokud ukazatel ještě neexistuje, použije se dnešní datum; přeskenování se z něj dívá jen 72 hodin zpět.",
   "settings.sparkAccount.syncPointer.invalid": "Zadejte platné datum.",
   "settings.sparkAccount.syncPointer.label": "Poslední synchronizované datum",
+  "settings.sparkAccount.wallet.cancel": "Zrušit",
+  "settings.sparkAccount.wallet.change": "Změnit peněženku…",
+  "settings.sparkAccount.wallet.changeDialog.current":
+    "Tuto peněženku už používáte.",
+  "settings.sparkAccount.wallet.changeDialog.description":
+    "Vyberte peněženku, do které mají chodit nové Spark platby.",
+  "settings.sparkAccount.wallet.changeDialog.inUse": "Právě se používá.",
+  "settings.sparkAccount.wallet.changeDialog.invalid":
+    "Toto není platný mnemonic o 12 slovech.",
+  "settings.sparkAccount.wallet.changeDialog.title": "Změnit peněženku",
+  "settings.sparkAccount.wallet.changeDialog.wordCount": "{value}/12 slov",
+  "settings.sparkAccount.wallet.custom.description":
+    "Spark peněženka, kterou přidáte jejím 12slovným mnemonicem.",
+  "settings.sparkAccount.wallet.custom.title": "Vlastní peněženka",
+  "settings.sparkAccount.wallet.label": "Peněženka",
+  "settings.sparkAccount.wallet.payky.description":
+    "Odvozená z klíče pro obnovu účtu.",
+  "settings.sparkAccount.wallet.payky.title": "Peněženka Payky",
+  "settings.sparkAccount.wallet.switch": "Přepnout",
+  "settings.sparkAccount.wallet.warning.funds":
+    "Peníze zůstanou v současné peněžence a tady už nebudou vidět. Nejdřív je vyberte, nebo si uschovejte její mnemonic.",
+  "settings.sparkAccount.wallet.warning.invoices":
+    "Nezaplacené faktury současné peněženky se už nezaznamenají.",
   "settings.support": "PODPORA A INFORMACE",
   "settings.tables.add": "Přidat stůl",
   "settings.tables.delete": "Smazat stůl",

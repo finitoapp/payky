@@ -1,11 +1,15 @@
-import { ChevronDown } from "lucide-react"
-import { useEffect, useId, useState } from "react"
+import { useAtomValue } from "jotai"
+import { ChevronDown, KeyRound, type LucideIcon, Wallet } from "lucide-react"
+import { Suspense, useEffect, useId, useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
 
+import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
+import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
   CardAction,
@@ -20,8 +24,17 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog.tsx"
+import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
@@ -30,6 +43,8 @@ import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
   saveSparkAccount,
+  selectCustomSparkWallet,
+  selectDefaultSparkWallet,
   updateSparkAccountSyncPointer,
 } from "@/core/modules/account/account-actions.ts"
 import {
@@ -39,6 +54,7 @@ import {
 } from "@/core/modules/account/account-queries.ts"
 import { sparkAccountSyncPointerByAccountIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { normalizeMnemonic } from "@/core/modules/account/account-utils.ts"
 import {
   type DefaultPaymentMethodDisabledError,
   setDefaultPaymentMethod,
@@ -47,7 +63,13 @@ import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import { isValidIban } from "@/core/modules/shared/iban-utils.ts"
-import { sparkSecretToMnemonic } from "@/core/modules/shared/key-derivation.ts"
+import {
+  deriveDefaultSparkWalletSecret,
+  SparkMnemonicSchema,
+  type SparkSecret,
+  sparkMnemonicToSecret,
+  sparkSecretToMnemonic,
+} from "@/core/modules/shared/key-derivation.ts"
 import {
   BankAccountInputIbanSchema,
   type BankQrFormat,
@@ -67,6 +89,7 @@ import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -303,9 +326,13 @@ function SparkAccountCard() {
     useState<TranslationKey | null>(null)
   const [privacyModePending, setPrivacyModePending] = useState(false)
 
+  const { masterKey } = useAtomValue(accountAtom)
+
   const enabled = account ? account.isDeleted !== 1 : false
   const secret = account?.secret ?? null
   const isDefault = settings?.defaultPaymentMethod === "spark"
+  const isDefaultWallet =
+    secret === null || secret === deriveDefaultSparkWalletSecret(masterKey)
 
   useEffect(() => {
     let active = true
@@ -358,7 +385,11 @@ function SparkAccountCard() {
           />
         </CardTitle>
         <CardDescription>
-          {t("settings.sparkAccount.form.description")}
+          {t(
+            isDefaultWallet
+              ? "settings.sparkAccount.form.description"
+              : "settings.sparkAccount.form.customDescription"
+          )}
         </CardDescription>
         <CardAction>
           <InlineEditSwitch
@@ -383,6 +414,13 @@ function SparkAccountCard() {
         <fieldset disabled={!enabled} className="contents">
           <div className={!enabled ? "opacity-50" : undefined}>
             <FieldGroup>
+              {secret !== null && (
+                <SparkWalletSummary
+                  secret={secret}
+                  isDefaultWallet={isDefaultWallet}
+                />
+              )}
+
               {secret !== null && (
                 <Field>
                   <FieldLabel htmlFor={mnemonicId}>
@@ -446,7 +484,13 @@ function SparkAccountCard() {
                       />
 
                       {account !== undefined && (
-                        <SparkSyncPointerField accountId={account.id} />
+                        // The pointer query is keyed by the account id, so it
+                        // first loads when this panel opens or the wallet
+                        // changes. Suspending here keeps that to this field
+                        // instead of blanking the whole page.
+                        <Suspense fallback={null}>
+                          <SparkSyncPointerField accountId={account.id} />
+                        </Suspense>
                       )}
                     </FieldGroup>
                   </div>
@@ -457,6 +501,206 @@ function SparkAccountCard() {
         </fieldset>
       </CardContent>
     </Card>
+  )
+}
+
+type SparkWalletKind = "payky" | "custom"
+
+const sparkWalletOptions = [
+  {
+    value: "payky",
+    icon: KeyRound,
+    title: "settings.sparkAccount.wallet.payky.title",
+    description: "settings.sparkAccount.wallet.payky.description",
+  },
+  {
+    value: "custom",
+    icon: Wallet,
+    title: "settings.sparkAccount.wallet.custom.title",
+    description: "settings.sparkAccount.wallet.custom.description",
+  },
+] as const satisfies ReadonlyArray<{
+  readonly value: SparkWalletKind
+  readonly icon: LucideIcon
+  readonly title: TranslationKey
+  readonly description: TranslationKey
+}>
+
+/**
+ * Which wallet Spark payments go to, and the one way to change it: a dialog
+ * covering every switch — to your own wallet, from one of your own to
+ * another, and back to the Payky wallet.
+ */
+function SparkWalletSummary({
+  secret,
+  isDefaultWallet,
+}: {
+  readonly secret: SparkSecret
+  readonly isDefaultWallet: boolean
+}) {
+  const { t } = useTranslation()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const current = isDefaultWallet
+    ? sparkWalletOptions[0]
+    : sparkWalletOptions[1]
+  const CurrentIcon = current.icon
+
+  return (
+    <Field>
+      <FieldLabel>{t("settings.sparkAccount.wallet.label")}</FieldLabel>
+      <div className="flex items-center gap-4 rounded-lg border px-4 py-3">
+        <CurrentIcon className="size-4 shrink-0 text-muted-foreground" />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="font-semibold">{t(current.title)}</span>
+          <span className="text-xs text-muted-foreground">
+            {t(current.description)}
+          </span>
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setDialogOpen(true)}
+        >
+          {t("settings.sparkAccount.wallet.change")}
+        </Button>
+      </div>
+      <ChangeSparkWalletDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        currentSecret={secret}
+        isDefaultWallet={isDefaultWallet}
+      />
+    </Field>
+  )
+}
+
+function ChangeSparkWalletDialog({
+  open,
+  onOpenChange,
+  currentSecret,
+  isDefaultWallet,
+}: {
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly currentSecret: SparkSecret
+  readonly isDefaultWallet: boolean
+}) {
+  const { t } = useTranslation()
+  const runToast = useRunToast()
+  const mnemonicId = useId()
+  // Your own wallet is preselected: changing the wallet most often means
+  // bringing a new mnemonic, including when one of your own is active.
+  const [target, setTarget] = useState<SparkWalletKind>("custom")
+  const [mnemonic, setMnemonic] = useState("")
+
+  const normalized = normalizeMnemonic(mnemonic)
+  const wordCount = normalized === "" ? 0 : normalized.split(" ").length
+  const parsed = SparkMnemonicSchema.safeParse(normalized)
+  const isCurrentMnemonic =
+    parsed.success && sparkMnemonicToSecret(parsed.data) === currentSecret
+  const mnemonicErrorKey: TranslationKey | null = isCurrentMnemonic
+    ? "settings.sparkAccount.wallet.changeDialog.current"
+    : !parsed.success && wordCount >= 12
+      ? "settings.sparkAccount.wallet.changeDialog.invalid"
+      : null
+  const canSwitch =
+    target === "payky" ? !isDefaultWallet : parsed.success && !isCurrentMnemonic
+
+  const close = () => {
+    setTarget("custom")
+    setMnemonic("")
+    onOpenChange(false)
+  }
+
+  const switchWallet = async () => {
+    if (!canSwitch) return
+    close()
+
+    await runToast(async (run) => {
+      if (target === "payky") {
+        await run.ok(selectDefaultSparkWallet())
+      } else if (parsed.success) {
+        await run.ok(selectCustomSparkWallet({ mnemonic: parsed.data }))
+      }
+    })
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) close()
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("settings.sparkAccount.wallet.changeDialog.title")}
+          </DialogTitle>
+          <DialogDescription>
+            {t("settings.sparkAccount.wallet.changeDialog.description")}
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void switchWallet()
+          }}
+        >
+          <OptionToggleGroup<SparkWalletKind>
+            value={target}
+            options={sparkWalletOptions.map((option) => ({
+              value: option.value,
+              icon: option.icon,
+              title: t(option.title),
+              description:
+                option.value === "payky" && isDefaultWallet
+                  ? t("settings.sparkAccount.wallet.changeDialog.inUse")
+                  : t(option.description),
+            }))}
+            onChange={setTarget}
+          />
+          {target === "custom" && (
+            <Field data-invalid={mnemonicErrorKey !== null}>
+              <FieldLabel htmlFor={mnemonicId}>
+                {t("settings.sparkAccount.mnemonic.label")}
+              </FieldLabel>
+              <PasswordTextarea
+                id={mnemonicId}
+                value={mnemonic}
+                hideLabel={t("passwordTextarea.hide")}
+                showLabel={t("passwordTextarea.show")}
+                aria-invalid={mnemonicErrorKey !== null}
+                autoComplete="off"
+                onChange={(event) => setMnemonic(event.currentTarget.value)}
+              />
+              <FieldDescription>
+                {t("settings.sparkAccount.wallet.changeDialog.wordCount", {
+                  value: wordCount,
+                })}
+              </FieldDescription>
+              <FieldError>
+                {mnemonicErrorKey === null ? null : t(mnemonicErrorKey)}
+              </FieldError>
+            </Field>
+          )}
+          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            <li>{t("settings.sparkAccount.wallet.warning.invoices")}</li>
+            <li>{t("settings.sparkAccount.wallet.warning.funds")}</li>
+          </ul>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={close}>
+              {t("settings.sparkAccount.wallet.cancel")}
+            </Button>
+            <Button type="submit" disabled={!canSwitch}>
+              {t("settings.sparkAccount.wallet.switch")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

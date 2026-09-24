@@ -6,13 +6,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { FieldGroup } from "@/components/ui/field.tsx"
+import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
+import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
+import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types.ts"
+import {
+  FiatCurrency,
+  FiatCurrencySchema,
+} from "@/core/modules/shared/schema.ts"
 import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
 import { optionalIdCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
+import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -37,6 +44,7 @@ export function LegalEntitySettingsPage() {
   const { t } = useTranslation()
   const { data } = useEvoluQuery(legalEntityQuery)
   const [legalEntity] = data
+  const [settings] = useEvoluQuery(settingsQuery).data
 
   const vatPayer = legalEntity?.vatPayer === 1
 
@@ -79,6 +87,23 @@ export function LegalEntitySettingsPage() {
               }))}
               onSave={(country) => save({ country, vatPayer })}
             />
+
+            <InlineEditSelect
+              label={t("settings.legalEntity.currency.label")}
+              defaultValue={settings?.fiatCurrency ?? FiatCurrency.CZK}
+              codec={FiatCurrencySchema}
+              options={fiatCurrencyOptions.map((option) => ({
+                value: option.value,
+                label: t(option.label),
+              }))}
+              onSave={async (fiatCurrency) => {
+                await using run = appRun()
+                await run.ok(updateSettings({ fiatCurrency }))
+              }}
+            />
+            <FieldDescription>
+              {t("settings.legalEntity.currency.description")}
+            </FieldDescription>
 
             <InlineEditCheckbox
               label={t("settings.legalEntity.vatPayer.label")}

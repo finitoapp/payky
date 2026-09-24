@@ -40,9 +40,6 @@ export const csOnboarding = {
   "onboarding.countryCurrency.description":
     "Obojí jen přednastaví, jak bude Payky fungovat — změnit to jde kdykoli v Nastavení.",
   "onboarding.countryCurrency.title": "Země a měna",
-  "onboarding.countryCurrency.vatPayer.description":
-    "Přidá daňové sazby k položkám katalogu.",
-  "onboarding.countryCurrency.vatPayer.label": "Jsem plátce DPH",
   "onboarding.finish": "Dokončit",
   "onboarding.language.title": "Výběr jazyka",
   "onboarding.next": "Další",

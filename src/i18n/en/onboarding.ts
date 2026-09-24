@@ -38,9 +38,6 @@ export const enOnboarding = {
   "onboarding.countryCurrency.description":
     "Both only preset how Payky works for you — you can change either later in Settings.",
   "onboarding.countryCurrency.title": "Country and currency",
-  "onboarding.countryCurrency.vatPayer.description":
-    "Adds tax rates to catalog items.",
-  "onboarding.countryCurrency.vatPayer.label": "I am a VAT payer",
   "onboarding.finish": "Finish",
   "onboarding.language.title": "Choose language",
   "onboarding.next": "Next",

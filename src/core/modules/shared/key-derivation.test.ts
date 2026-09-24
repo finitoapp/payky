@@ -12,6 +12,7 @@ import {
   mnemonicToMasterKey,
   RecoveryMnemonicSchema,
   SparkMnemonicSchema,
+  sparkMnemonicToSecret,
   sparkSecretToMnemonic,
 } from "./key-derivation.ts"
 
@@ -53,6 +54,12 @@ describe("key derivation", () => {
     )
     expect(SparkMnemonicSchema.safeParse(mnemonic).success).toBe(true)
     expect(mnemonic.split(" ")).toHaveLength(12)
+  })
+
+  test("turns a Spark wallet mnemonic back into its secret", () => {
+    const secret = deriveDefaultSparkWalletSecret(masterKey)
+
+    expect(sparkMnemonicToSecret(sparkSecretToMnemonic(secret))).toBe(secret)
   })
 
   test("round-trips the master key through its SLIP-39 recovery mnemonic", async () => {

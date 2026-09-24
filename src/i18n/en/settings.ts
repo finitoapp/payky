@@ -476,6 +476,8 @@ export const enSettings = {
     "Disabled Spark accounts stay stored but are ignored by payment flows.",
   "settings.sparkAccount.enabled.label": "Enable Spark account",
   "settings.sparkAccount.advanced": "Advanced options",
+  "settings.sparkAccount.form.customDescription":
+    "Payky receives Spark payments into your own wallet.",
   "settings.sparkAccount.form.description":
     "Payky derives this Spark wallet from your account recovery key.",
   "settings.sparkAccount.form.title": "Spark account",
@@ -492,6 +494,29 @@ export const enSettings = {
     "Local sync pointer for the periodic history rescan. If no pointer exists yet, today is used; the rescan only looks back 72 hours from it.",
   "settings.sparkAccount.syncPointer.invalid": "Enter a valid date.",
   "settings.sparkAccount.syncPointer.label": "Last synced date",
+  "settings.sparkAccount.wallet.cancel": "Cancel",
+  "settings.sparkAccount.wallet.change": "Change wallet…",
+  "settings.sparkAccount.wallet.changeDialog.current":
+    "This wallet is already in use.",
+  "settings.sparkAccount.wallet.changeDialog.description":
+    "Choose the wallet new Spark payments go to.",
+  "settings.sparkAccount.wallet.changeDialog.inUse": "In use now.",
+  "settings.sparkAccount.wallet.changeDialog.invalid":
+    "This is not a valid 12-word mnemonic.",
+  "settings.sparkAccount.wallet.changeDialog.title": "Change wallet",
+  "settings.sparkAccount.wallet.changeDialog.wordCount": "{value}/12 words",
+  "settings.sparkAccount.wallet.custom.description":
+    "A Spark wallet you bring by its 12-word mnemonic.",
+  "settings.sparkAccount.wallet.custom.title": "Your own wallet",
+  "settings.sparkAccount.wallet.label": "Wallet",
+  "settings.sparkAccount.wallet.payky.description":
+    "Derived from your account recovery key.",
+  "settings.sparkAccount.wallet.payky.title": "Payky wallet",
+  "settings.sparkAccount.wallet.switch": "Switch",
+  "settings.sparkAccount.wallet.warning.funds":
+    "Its funds stay in the current wallet and are no longer shown here. Withdraw them first, or keep its mnemonic.",
+  "settings.sparkAccount.wallet.warning.invoices":
+    "Unpaid invoices from the current wallet will no longer be detected.",
   "settings.support": "SUPPORT & INFO",
   "settings.tables.add": "Add table",
   "settings.tables.delete": "Delete table",

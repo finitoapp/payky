@@ -1,6 +1,7 @@
 import {
   err,
   type InsertValues,
+  type MutationOptions,
   ok,
   sqliteFalse,
   sqliteTrue,
@@ -8,7 +9,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import type { RequireExactlyOne, Simplify } from "type-fest"
-import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
@@ -20,7 +21,12 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
-import { deriveDefaultSparkWalletSecret } from "@/core/modules/shared/key-derivation.ts"
+import {
+  deriveDefaultSparkWalletSecret,
+  type SparkMnemonic,
+  type SparkSecret,
+  sparkMnemonicToSecret,
+} from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import type {
   BankQrFormat,
@@ -28,7 +34,10 @@ import type {
   Iban,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
-import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import {
+  NonEmptyString255,
+  TimestampMsSchema,
+} from "@/core/modules/shared/schema.ts"
 import type {
   AccountRow,
   account,
@@ -42,6 +51,7 @@ import {
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
+import { sparkAccountSyncPointerByAccountIdQuery } from "./account-spark-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
   createCashRegisterAccountId,
@@ -413,35 +423,127 @@ export const saveSparkAccount =
 
     const id = createSparkAccountId(secret)
 
+    // Only a legacy account whose id predates derivation differs from `id`
+    // here, so this retires nothing else.
+    await runMutationWithCompletion((options) =>
+      upsertSparkAccountRows(
+        evolu,
+        { id, secret, enabled, replacedId: current?.id },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(id)
+  }
+
+/**
+ * Writes the Spark account for `secret` and retires `replacedId`, the one it
+ * takes over from, so at most one Spark account stays live.
+ */
+const upsertSparkAccountRows = (
+  evolu: EvoluDep["evolu"],
+  {
+    id,
+    secret,
+    enabled,
+    replacedId,
+  }: {
+    readonly id: AccountId
+    readonly secret: SparkSecret
+    readonly enabled: boolean
+    readonly replacedId: AccountId | undefined
+  },
+  options: MutationOptions
+): void => {
+  evolu.upsert("accountSpark", { id, secret }, options)
+
+  if (replacedId !== undefined && replacedId !== id) {
+    evolu.update("account", { id: replacedId, isDeleted: sqliteTrue }, options)
+  }
+
+  evolu.upsert(
+    "account",
+    {
+      id,
+      deviceId: null,
+      name: NonEmptyString255("Spark account"),
+      kind: "spark",
+      isDeleted: enabled ? sqliteFalse : sqliteTrue,
+    },
+    options
+  )
+}
+
+/**
+ * Switches Spark payments to the wallet behind `secret`, enabling Spark if it
+ * was off. The previous wallet's account is retired and stops syncing:
+ * invoices it issued that are still open are no longer detected, and its
+ * balance is no longer shown — which the settings page warns about before
+ * calling this. Switching back later revives the same account, with its sync
+ * pointer and history.
+ *
+ * A wallet switched to for the first time gets its sync pointer set to now,
+ * so its first sync looks back only the usual 72 hours instead of importing
+ * the wallet's whole history as unmatched transactions.
+ */
+const selectSparkWallet =
+  (
+    secret: SparkSecret
+  ): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const id = createSparkAccountId(secret)
+    const [current] = await evolu.loadQuery(sparkAccountQuery)
+    const [pointer] = await evolu.loadQuery(
+      sparkAccountSyncPointerByAccountIdQuery(id)
+    )
+
     await runMutationWithCompletion((options) => {
       const mutationOptions = { ...options, ownerId: evoluOwnerId }
 
-      evolu.upsert("accountSpark", { id, secret }, mutationOptions)
+      upsertSparkAccountRows(
+        evolu,
+        { id, secret, enabled: true, replacedId: current?.id },
+        mutationOptions
+      )
 
-      // Only a legacy account whose id predates derivation differs here.
-      if (current !== undefined && current.id !== id) {
-        evolu.update(
-          "account",
-          { id: current.id, isDeleted: sqliteTrue },
+      if (pointer === undefined) {
+        evolu.upsert(
+          "sparkAccountSyncPointer",
+          {
+            id,
+            lastSyncedAt: TimestampMsSchema.decode(
+              run.deps.date.now().getTime()
+            ),
+            isDeleted: sqliteFalse,
+          },
           mutationOptions
         )
       }
-
-      return evolu.upsert(
-        "account",
-        {
-          id,
-          deviceId: null,
-          name: NonEmptyString255("Spark account"),
-          kind: "spark",
-          isDeleted: enabled ? sqliteFalse : sqliteTrue,
-        },
-        mutationOptions
-      )
     })
 
     return ok(id)
   }
+
+/** Switches Spark payments to a wallet the user brings as its 12 words. */
+export const selectCustomSparkWallet = ({
+  mnemonic,
+}: {
+  readonly mnemonic: SparkMnemonic
+}): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  selectSparkWallet(sparkMnemonicToSecret(mnemonic))
+
+/** Switches Spark payments back to the wallet derived from the master key. */
+export const selectDefaultSparkWallet =
+  (): Task<
+    AccountId,
+    never,
+    EvoluDep & EvoluOwnerIdDep & DateDep & MasterKeyDep
+  > =>
+  async (run) =>
+    await run(
+      selectSparkWallet(deriveDefaultSparkWalletSecret(run.deps.masterKey))
+    )
 
 /**
  * Saves the cash register the settings configure. Its id derives from the

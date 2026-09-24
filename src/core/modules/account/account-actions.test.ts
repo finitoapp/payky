@@ -14,6 +14,7 @@ import {
   PositiveInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import { saveFioPlugin } from "../fio-plugin/fio-plugin-actions.ts"
 import { fioPluginByIdQuery } from "../fio-plugin/fio-plugin-queries.ts"
@@ -22,6 +23,7 @@ import {
   deriveDefaultSparkWalletSecret,
   MasterKey,
   SparkSecret,
+  sparkSecretToMnemonic,
 } from "../shared/key-derivation.ts"
 import {
   createAccount,
@@ -30,6 +32,8 @@ import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
   saveSparkAccount,
+  selectCustomSparkWallet,
+  selectDefaultSparkWallet,
   updateAccount,
   updateSparkAccountSyncPointer,
 } from "./account-actions.ts"
@@ -616,4 +620,66 @@ describe("account actions", () => {
         },
       ])
   })
+  test("switches Spark payments to a custom wallet and back to the default", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      masterKey,
+      ...createTestDateDep(),
+    })
+    const defaultId = createSparkAccountId(
+      deriveDefaultSparkWalletSecret(masterKey)
+    )
+    const customSecret = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+    const customId = createSparkAccountId(customSecret)
+
+    await run.orThrow(saveSparkAccount({ enabled: true }))
+    await run.ok(
+      updateSparkAccountSyncPointer({
+        id: defaultId,
+        lastSyncedAt: TimestampMs(Date.parse("2026-09-01T00:00:00.000Z")),
+      })
+    )
+
+    await expect(
+      run(
+        selectCustomSparkWallet({
+          mnemonic: sparkSecretToMnemonic(customSecret),
+        })
+      )
+    ).resolves.toEqual({ ok: true, value: customId })
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toMatchObject([
+        { id: customId, isDeleted: sqliteFalse, secret: customSecret },
+      ])
+    await expect
+      .poll(() => evolu.loadQuery(accountByIdQuery(defaultId)))
+      .toMatchObject([{ isDeleted: sqliteTrue }])
+    // A wallet new to Payky starts syncing from the switch, not from its
+    // whole history.
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountSyncPointerByIdQuery(customId)))
+      .toMatchObject([{ lastSyncedAt: testFixedDate.getTime() }])
+
+    await expect(run(selectDefaultSparkWallet())).resolves.toEqual({
+      ok: true,
+      value: defaultId,
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toMatchObject([{ id: defaultId, isDeleted: sqliteFalse }])
+    await expect
+      .poll(() => evolu.loadQuery(accountByIdQuery(customId)))
+      .toMatchObject([{ isDeleted: sqliteTrue }])
+    // The revived account picks its sync up where it left off.
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountSyncPointerByIdQuery(defaultId)))
+      .toMatchObject([{ lastSyncedAt: Date.parse("2026-09-01T00:00:00.000Z") }])
+  }, 15_000)
 })

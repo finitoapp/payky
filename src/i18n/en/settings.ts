@@ -79,6 +79,8 @@ export const enSettings = {
     "the Switchio SoftPOS app on this device,",
   "settings.cardSwitchioAccount.info.softposLink": "About Switchio SoftPOS",
   "settings.cardSwitchioAccount.info.title": "Payment card payments",
+  "settings.cardSwitchioAccount.notInstalledWarning":
+    "The Switchio SoftPOS app is not installed on this device.",
   "settings.cardSwitchioAccount.nativeRuntimeWarning":
     "The card terminal is available only in the native app.",
   "settings.catalog": "MENU",

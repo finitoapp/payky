@@ -81,6 +81,8 @@ export const skSettings = {
   "settings.cardSwitchioAccount.info.softposLink":
     "O aplikácii Switchio SoftPOS",
   "settings.cardSwitchioAccount.info.title": "Platby platobnou kartou",
+  "settings.cardSwitchioAccount.notInstalledWarning":
+    "Aplikácia Switchio SoftPOS nie je na tomto zariadení nainštalovaná.",
   "settings.cardSwitchioAccount.nativeRuntimeWarning":
     "Platobný terminál je dostupný len v natívnej aplikácii.",
   "settings.catalog": "PONUKA",

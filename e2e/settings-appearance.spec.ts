@@ -84,7 +84,12 @@ test("reveal the recovery phrase", async ({ seededPage: page }) => {
 
 test("toggle error reporting", async ({ seededPage: page }) => {
   await test.step("open privacy settings", () =>
-    gotoPage(page, "/settings/privacy", "en", "settings.privacy.title"))
+    gotoPage(
+      page,
+      "/settings/about/privacy",
+      "en",
+      "settings.about.privacy.title"
+    ))
 
   await test.step("toggle error reporting on and off", async () => {
     // errorReportingEnabled defaults to false (device setting).

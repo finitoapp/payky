@@ -1,6 +1,10 @@
 import { expect, test } from "./support/fixtures.ts"
 import { translate, translateValue } from "./support/i18n.ts"
-import { fillInlineField, pickInlineToggle } from "./support/inline-edit.ts"
+import {
+  fillInlineField,
+  pickInlineOption,
+  pickInlineToggle,
+} from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
 test("configure tip presets", async ({ seededPage: page }) => {
@@ -80,21 +84,25 @@ test("configure tip presets", async ({ seededPage: page }) => {
 })
 
 test("switch the default fiat currency", async ({ seededPage: page }) => {
-  await test.step("open fiat currency settings", () =>
-    gotoPage(page, "/settings/fiat", "en", "settings.fiat.title"))
+  await test.step("open business settings", () =>
+    gotoPage(
+      page,
+      "/settings/legal-entity",
+      "en",
+      "settings.legalEntity.title"
+    ))
 
-  const czkOption = page.getByRole("button", {
-    name: translate("en", "settings.fiat.czk.title"),
+  const czk = translate("en", "settings.fiat.czk.title")
+  const currencySelect = page.getByRole("combobox", {
+    name: translate("en", "settings.legalEntity.currency.label"),
   })
 
-  await test.step("select Czech koruna", async () => {
-    await czkOption.click()
-    await expect(czkOption).toHaveAttribute("aria-pressed", "true")
-  })
+  await test.step("select Czech koruna", () =>
+    pickInlineOption(page, "settings.legalEntity.currency.label", czk))
 
   await test.step("verify the selection persists after reload", async () => {
-    await reloadPage(page, "en", "settings.fiat.title")
-    await expect(czkOption).toHaveAttribute("aria-pressed", "true")
+    await reloadPage(page, "en", "settings.legalEntity.title")
+    await expect(currencySelect).toContainText(czk)
   })
 })
 

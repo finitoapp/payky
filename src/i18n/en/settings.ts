@@ -5,7 +5,7 @@ export const enSettings = {
     "Join the development and follow the project",
   "settings.about.github.title": "Source code on GitHub",
   "settings.about.privacy.body":
-    "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, mint information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and mint or wallet access data secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Cashu mints to issue, redeem, or manage ecash tokens\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS AND ERROR REPORTING\nPayky does not use analytics or tracking services. Optional error reporting through Sentry is available to help diagnose crashes and bugs. It is off by default and only activates if you turn it on in Settings > Privacy. When enabled, error reports may include device and app information, and error messages and stack traces; recovery phrases and bank account numbers are automatically redacted before being sent.\n\n5. THIRD-PARTY MINTS\nWhen using ecash mints, the mint operator may see transaction amounts, timing, token redemption activity, and related metadata. Choose trusted mints and avoid keeping unnecessary balances with any single mint.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: June 2026",
+    "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, mint information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and mint or wallet access data secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Cashu mints to issue, redeem, or manage ecash tokens\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS AND ERROR REPORTING\nPayky does not use analytics or tracking services. Optional error reporting through Sentry is available to help diagnose crashes and bugs. It is off by default and only activates if you turn it on in Settings > About > Data and privacy. When enabled, error reports may include device and app information, and error messages and stack traces; recovery phrases and bank account numbers are automatically redacted before being sent.\n\n5. THIRD-PARTY MINTS\nWhen using ecash mints, the mint operator may see transaction amounts, timing, token redemption activity, and related metadata. Choose trusted mints and avoid keeping unnecessary balances with any single mint.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: June 2026",
   "settings.about.privacy.description":
     "Application data is stored locally and synchronized through Evolu.",
   "settings.about.privacy.heading": "Payky Privacy Policy",
@@ -203,15 +203,8 @@ export const enSettings = {
     "wallet mnemonics, recovery phrases, and API tokens",
   "settings.evoluExport.warning.title": "Sensitive export",
   "settings.evoluExport.warning.walletMetadata": "wallet-related metadata",
-  "settings.fiat.czk.description": "Use Czech koruna for terminal amounts",
   "settings.fiat.czk.title": "Czech koruna",
-  "settings.fiat.eur.description": "Use euro for terminal amounts",
   "settings.fiat.eur.title": "Euro",
-  "settings.fiat.mode.description":
-    "Choose the fiat currency used by default when creating payments.",
-  "settings.fiat.mode.title": "Default fiat currency",
-  "settings.fiat.title": "Fiat Currency",
-  "settings.fiat.usd.description": "Use US dollar for terminal amounts",
   "settings.fiat.usd.title": "US dollar",
   "settings.fiatBankAccount.advanced": "Advanced options",
   "settings.fiatBankAccount.currency.description":
@@ -362,9 +355,12 @@ export const enSettings = {
   "settings.language.title": "Language & Region",
   "settings.legalEntity.country.label": "Country",
   "settings.legalEntity.country.placeholder": "Select a country",
+  "settings.legalEntity.currency.description":
+    "The fiat currency used by default when creating payments.",
+  "settings.legalEntity.currency.label": "Currency",
   "settings.legalEntity.description":
-    "Sets the country used for default tax rates and whether tax rates apply to catalog items.",
-  "settings.legalEntity.title": "Country & VAT",
+    "Your business's country, currency, and VAT status.",
+  "settings.legalEntity.title": "Business",
   "settings.legalEntity.vatPayer.description":
     "Adds tax rates to catalog items.",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
@@ -434,7 +430,6 @@ export const enSettings = {
     "Include the short two-digit year in generated payment numbers",
   "settings.paymentNumberSeries.year.short.title": "Short year",
   "settings.payments": "PAYMENTS",
-  "settings.privacy.description": "Manage error reporting",
   "settings.privacy.errorReporting.description":
     "Send crash reports and error details to help fix bugs. Off by default — nothing is sent unless you turn this on.",
   "settings.privacy.errorReporting.disable": "Disable",
@@ -442,7 +437,6 @@ export const enSettings = {
   "settings.privacy.errorReporting.enable": "Enable",
   "settings.privacy.errorReporting.enabled": "Enabled",
   "settings.privacy.errorReporting.title": "Error reporting",
-  "settings.privacy.title": "Privacy",
   "settings.saveFailed": "Could not save the change. Please try again.",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.mnemonic.copied": "Recovery phrase copied.",

@@ -6,7 +6,7 @@ export const csSettings = {
   "settings.about.github.description": "Zapojte se do vývoje aplikace",
   "settings.about.github.title": "Zdrojový kód na GitHubu",
   "settings.about.privacy.body":
-    "PAYKY - ZÁSADY OCHRANY SOUKROMÍ\n\n1. SBĚR DAT\nPayky neprodává osobní údaje a je navrženo tak, aby aplikační data zůstávala lokálně ve vašem zařízení. Aplikace ukládá nastavení terminálu, katalogová data, záznamy plateb a související provozní data lokálně a synchronizuje aplikační data přes Evolu.\n\n2. PLATEBNÍ DATA\nPlatební a terminálová data mohou obsahovat částky, časové údaje, názvy položek, stav platby, informace o mintech, identifikátory zařízení a další záznamy potřebné pro provoz bitcoinového platebního terminálu. Chraňte své zařízení, přihlašovací údaje, zálohy a přístupová data k mintům nebo peněženkám.\n\n3. SÍŤOVÁ KOMUNIKACE\nAplikace může komunikovat s:\n- infrastrukturou Evolu pro synchronizaci lokálních-first aplikačních dat\n- Cashu minty pro vydávání, proplácení nebo správu ecash tokenů\n- Lightning nebo peněženkovými službami používanými k vytvoření nebo vypořádání plateb\n- cenovými nebo kurzovými API, pokud je zapnutý fiat přepočet\n\nTyto služby mohou mít vlastní zásady ochrany soukromí, logy a pravidla uchovávání dat.\n\n4. ANALYTIKA A HLÁŠENÍ CHYB\nPayky nepoužívá analytické ani sledovací služby. K dispozici je volitelné hlášení chyb přes Sentry, které pomáhá diagnostikovat pády a chyby aplikace. Je ve výchozím stavu vypnuté a aktivuje se jen tehdy, když ho zapnete v Nastavení > Soukromí. Po zapnutí mohou hlášení chyb obsahovat informace o zařízení a aplikaci a chybové zprávy a stack trace; obnovovací fráze a čísla bankovních účtů jsou před odesláním automaticky redigovány.\n\n5. MINTY TŘETÍCH STRAN\nPři používání ecash mintů může provozovatel mintu vidět částky transakcí, časování, aktivitu proplácení tokenů a související metadata. Vybírejte důvěryhodné minty a nedržte zbytečné zůstatky u jednoho mintu.\n\n6. ZÁLOHY A SYNCHRONIZACE\nPokud jsou zapnuté synchronizační nebo zálohovací funkce, mohou být aplikační data přenášena do synchronizační infrastruktury. Se synchronizovanými daty zacházejte jako s provozními obchodními daty a chraňte každé zařízení, které k nim má přístup.\n\n7. KONTAKT\nKontaktní údaje pro otázky soukromí budou zveřejněny v dokumentaci projektu.\n\nPoslední aktualizace: červen 2026",
+    "PAYKY - ZÁSADY OCHRANY SOUKROMÍ\n\n1. SBĚR DAT\nPayky neprodává osobní údaje a je navrženo tak, aby aplikační data zůstávala lokálně ve vašem zařízení. Aplikace ukládá nastavení terminálu, katalogová data, záznamy plateb a související provozní data lokálně a synchronizuje aplikační data přes Evolu.\n\n2. PLATEBNÍ DATA\nPlatební a terminálová data mohou obsahovat částky, časové údaje, názvy položek, stav platby, informace o mintech, identifikátory zařízení a další záznamy potřebné pro provoz bitcoinového platebního terminálu. Chraňte své zařízení, přihlašovací údaje, zálohy a přístupová data k mintům nebo peněženkám.\n\n3. SÍŤOVÁ KOMUNIKACE\nAplikace může komunikovat s:\n- infrastrukturou Evolu pro synchronizaci lokálních-first aplikačních dat\n- Cashu minty pro vydávání, proplácení nebo správu ecash tokenů\n- Lightning nebo peněženkovými službami používanými k vytvoření nebo vypořádání plateb\n- cenovými nebo kurzovými API, pokud je zapnutý fiat přepočet\n\nTyto služby mohou mít vlastní zásady ochrany soukromí, logy a pravidla uchovávání dat.\n\n4. ANALYTIKA A HLÁŠENÍ CHYB\nPayky nepoužívá analytické ani sledovací služby. K dispozici je volitelné hlášení chyb přes Sentry, které pomáhá diagnostikovat pády a chyby aplikace. Je ve výchozím stavu vypnuté a aktivuje se jen tehdy, když ho zapnete v Nastavení > O aplikaci > Data a soukromí. Po zapnutí mohou hlášení chyb obsahovat informace o zařízení a aplikaci a chybové zprávy a stack trace; obnovovací fráze a čísla bankovních účtů jsou před odesláním automaticky redigovány.\n\n5. MINTY TŘETÍCH STRAN\nPři používání ecash mintů může provozovatel mintu vidět částky transakcí, časování, aktivitu proplácení tokenů a související metadata. Vybírejte důvěryhodné minty a nedržte zbytečné zůstatky u jednoho mintu.\n\n6. ZÁLOHY A SYNCHRONIZACE\nPokud jsou zapnuté synchronizační nebo zálohovací funkce, mohou být aplikační data přenášena do synchronizační infrastruktury. Se synchronizovanými daty zacházejte jako s provozními obchodními daty a chraňte každé zařízení, které k nim má přístup.\n\n7. KONTAKT\nKontaktní údaje pro otázky soukromí budou zveřejněny v dokumentaci projektu.\n\nPoslední aktualizace: červen 2026",
   "settings.about.privacy.description":
     "Data aplikace se ukládají lokálně a synchronizují přes Evolu.",
   "settings.about.privacy.heading": "Zásady ochrany soukromí Payky",
@@ -205,17 +205,8 @@ export const csSettings = {
   "settings.evoluExport.warning.title": "Citlivý export",
   "settings.evoluExport.warning.walletMetadata":
     "metadata související s peněženkou",
-  "settings.fiat.czk.description":
-    "Používat českou korunu pro částky v terminálu",
   "settings.fiat.czk.title": "Česká koruna",
-  "settings.fiat.eur.description": "Používat euro pro částky v terminálu",
   "settings.fiat.eur.title": "Euro",
-  "settings.fiat.mode.description":
-    "Vyberte fiat měnu, která se použije jako výchozí při vytváření plateb.",
-  "settings.fiat.mode.title": "Výchozí fiat měna",
-  "settings.fiat.title": "Fiat měna",
-  "settings.fiat.usd.description":
-    "Používat americký dolar pro částky v terminálu",
   "settings.fiat.usd.title": "Americký dolar",
   "settings.fiatBankAccount.advanced": "Pokročilé volby",
   "settings.fiatBankAccount.currency.description":
@@ -366,9 +357,12 @@ export const csSettings = {
   "settings.language.title": "Jazyk a region",
   "settings.legalEntity.country.label": "Země",
   "settings.legalEntity.country.placeholder": "Vyberte zemi",
+  "settings.legalEntity.currency.description":
+    "Fiat měna, ve které se ve výchozím stavu vytvářejí platby.",
+  "settings.legalEntity.currency.label": "Měna",
   "settings.legalEntity.description":
-    "Určuje zemi pro výchozí daňové sazby a to, zda se sazby uplatňují u položek katalogu.",
-  "settings.legalEntity.title": "Země a DPH",
+    "Země, měna a plátcovství DPH vašeho podniku.",
+  "settings.legalEntity.title": "Podnik",
   "settings.legalEntity.vatPayer.description":
     "Přidá daňové sazby k položkám katalogu.",
   "settings.legalEntity.vatPayer.label": "Jsem plátce DPH",
@@ -439,7 +433,6 @@ export const csSettings = {
     "Přidat do generovaných čísel plateb krátký dvouciferný rok",
   "settings.paymentNumberSeries.year.short.title": "Krátký rok",
   "settings.payments": "PLATBY",
-  "settings.privacy.description": "Správa hlášení chyb",
   "settings.privacy.errorReporting.description":
     "Odesílat hlášení pádů a chyb, aby se daly snadněji opravit. Ve výchozím stavu vypnuto — nic se neodesílá, dokud to nezapnete.",
   "settings.privacy.errorReporting.disable": "Vypnout",
@@ -447,7 +440,6 @@ export const csSettings = {
   "settings.privacy.errorReporting.enable": "Zapnout",
   "settings.privacy.errorReporting.enabled": "Zapnuto",
   "settings.privacy.errorReporting.title": "Hlášení chyb",
-  "settings.privacy.title": "Soukromí",
   "settings.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase zkopírována.",

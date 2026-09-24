@@ -1,5 +1,6 @@
 import type { Task } from "@evolu/common"
 import { z } from "zod"
+import { appEnv } from "@/core/app-env.ts"
 import {
   type FetchDep,
   type FetchError,
@@ -7,7 +8,10 @@ import {
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 
-const DONATIONS_URL = "/api/donations"
+const DONATIONS_URL = new URL(
+  "/api/donations",
+  appEnv.VITE_PAYKY_API_BASE_URL
+).toString()
 
 const buildDonationsUrl = (cursor: string | undefined): string =>
   cursor === undefined

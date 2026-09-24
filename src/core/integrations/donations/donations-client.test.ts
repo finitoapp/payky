@@ -31,7 +31,7 @@ describe("donations client", () => {
         nextCursor: "abc",
       },
     })
-    expect(requestedUrls).toEqual(["/api/donations"])
+    expect(requestedUrls).toEqual(["https://payky.me/api/donations"])
   })
 
   test("appends the cursor as a query parameter", async () => {
@@ -46,7 +46,9 @@ describe("donations client", () => {
 
     await run(fetchDonationHistory({ cursor: "next page" }))
 
-    expect(requestedUrls).toEqual(["/api/donations?cursor=next%20page"])
+    expect(requestedUrls).toEqual([
+      "https://payky.me/api/donations?cursor=next%20page",
+    ])
   })
 
   test("returns a null cursor as-is", async () => {

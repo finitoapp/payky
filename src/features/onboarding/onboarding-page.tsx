@@ -104,7 +104,6 @@ export function OnboardingPage() {
     accountType,
     iban,
     country,
-    vatPayer,
     paymentMethods: selectedPaymentMethods,
   } = form
   const onboardingSteps = getOnboardingSteps(accountType)
@@ -213,7 +212,9 @@ export function OnboardingPage() {
       const persistedCountry =
         selectedCountry === "OTHER" ? null : selectedCountry
       if (existingLegalEntity.length === 0) {
-        await run.ok(setLegalEntity({ country: persistedCountry, vatPayer }))
+        await run.ok(
+          setLegalEntity({ country: persistedCountry, vatPayer: false })
+        )
       }
       if (existingTaxRates.length === 0) {
         await run.ok(seedTaxRatesForCountry(persistedCountry))
@@ -367,19 +368,12 @@ export function OnboardingPage() {
               <CountryCurrencyStep
                 country={selectedCountry}
                 currency={selectedCurrency}
-                vatPayer={vatPayer}
                 pending={pending}
                 onSelectCountry={(nextCountry) => {
                   setForm((current) => ({ ...current, country: nextCountry }))
                 }}
                 onSelectCurrency={(nextCurrency) => {
                   setForm((current) => ({ ...current, currency: nextCurrency }))
-                }}
-                onChangeVatPayer={(nextVatPayer) => {
-                  setForm((current) => ({
-                    ...current,
-                    vatPayer: nextVatPayer,
-                  }))
                 }}
               />
             ) : null}

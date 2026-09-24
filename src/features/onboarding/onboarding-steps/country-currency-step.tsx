@@ -5,10 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { Checkbox } from "@/components/ui/checkbox.tsx"
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldGroup,
   FieldLabel,
@@ -46,24 +44,19 @@ const countryOptions: ReadonlyArray<CountryOption> = [
 export function CountryCurrencyStep({
   country,
   currency,
-  vatPayer,
   pending,
   onSelectCountry,
   onSelectCurrency,
-  onChangeVatPayer,
 }: {
   readonly country: OnboardingCountryChoice
   readonly currency: FiatCurrencyType
-  readonly vatPayer: boolean | null
   readonly pending: boolean
   readonly onSelectCountry: (country: OnboardingCountryChoice) => void
   readonly onSelectCurrency: (currency: FiatCurrencyType) => void
-  readonly onChangeVatPayer: (vatPayer: boolean) => void
 }) {
   const { t } = useTranslation()
   const countryInputId = useId()
   const currencyInputId = useId()
-  const vatPayerInputId = useId()
 
   return (
     <>
@@ -140,25 +133,6 @@ export function CountryCurrencyStep({
             <FieldDescription>
               {t("onboarding.countryCurrency.currency.description")}
             </FieldDescription>
-          </Field>
-
-          <Field orientation="horizontal">
-            <Checkbox
-              id={vatPayerInputId}
-              checked={vatPayer === true}
-              disabled={pending}
-              onCheckedChange={(checked) => {
-                onChangeVatPayer(checked)
-              }}
-            />
-            <FieldContent>
-              <FieldLabel htmlFor={vatPayerInputId}>
-                {t("onboarding.countryCurrency.vatPayer.label")}
-              </FieldLabel>
-              <FieldDescription>
-                {t("onboarding.countryCurrency.vatPayer.description")}
-              </FieldDescription>
-            </FieldContent>
           </Field>
         </FieldGroup>
       </CardContent>

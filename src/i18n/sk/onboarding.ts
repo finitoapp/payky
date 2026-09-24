@@ -40,9 +40,6 @@ export const skOnboarding = {
   "onboarding.countryCurrency.description":
     "Oboje len prednastaví, ako bude Payky fungovať — zmeniť sa to dá kedykoľvek v Nastaveniach.",
   "onboarding.countryCurrency.title": "Krajina a mena",
-  "onboarding.countryCurrency.vatPayer.description":
-    "Pridá daňové sadzby k položkám katalógu.",
-  "onboarding.countryCurrency.vatPayer.label": "Som platiteľ DPH",
   "onboarding.finish": "Dokončiť",
   "onboarding.language.title": "Výber jazyka",
   "onboarding.next": "Ďalej",

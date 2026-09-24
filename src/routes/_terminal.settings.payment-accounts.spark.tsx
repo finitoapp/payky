@@ -1,14 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { SparkAccountSettingsPage } from "@/features/settings/payment-accounts/spark-account-settings-page.tsx"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 
 export const Route = createFileRoute(
   "/_terminal/settings/payment-accounts/spark"
 )({
-  component: SparkAccountSettingsPage,
-  staticData: {
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
-  },
+  component: SparkAccountLayout,
 })
+
+function SparkAccountLayout() {
+  return <Outlet />
+}

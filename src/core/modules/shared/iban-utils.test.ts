@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 import {
   BbanSchema,
   czechBbanToIban,
+  isFioBankIban,
   normalizeBankAccountInputToIban,
   normalizeIbanInput,
 } from "./iban-utils.ts"
@@ -74,5 +75,13 @@ describe("IBAN utilities", () => {
       ok: false,
       error: { type: "InvalidBankAccountInput" },
     })
+  })
+
+  test("recognizes Fio banka IBANs by bank code", () => {
+    expect(isFioBankIban("CZ65 2010 0000 0024 0028 9187")).toBe(true)
+    expect(isFioBankIban("SK31 8330 0000 0021 0000 1234")).toBe(true)
+    expect(isFioBankIban("CZ6508000000192000145399")).toBe(false)
+    expect(isFioBankIban("SK3120100000002100001234")).toBe(false)
+    expect(isFioBankIban("DE89370400440532013000")).toBe(false)
   })
 })

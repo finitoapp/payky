@@ -57,7 +57,6 @@ function FiatCurrencyPage() {
               value: option.value,
               icon: BadgeDollarSign,
               title: t(option.label),
-              description: t(option.description),
             }))}
             onChange={(fiatCurrency) => {
               void saveFiatCurrency(fiatCurrency)

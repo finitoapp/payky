@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react"
+import { Check, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
@@ -55,7 +55,7 @@ export function OptionToggleGroup<Value extends string>({
           <ToggleGroupItem
             key={option.value}
             value={option.value}
-            className="flex h-auto justify-start gap-6 whitespace-normal px-6 py-4 text-left"
+            className="flex h-auto justify-start gap-6 whitespace-normal px-6 py-4 text-left aria-pressed:border-primary aria-pressed:bg-primary/5"
           >
             {Icon === undefined ? null : (
               <Icon className="text-muted-foreground" />
@@ -68,6 +68,7 @@ export function OptionToggleGroup<Value extends string>({
                 </span>
               )}
             </span>
+            <Check className="ml-auto text-primary opacity-0 group-aria-pressed/toggle:opacity-100" />
           </ToggleGroupItem>
         )
       })}

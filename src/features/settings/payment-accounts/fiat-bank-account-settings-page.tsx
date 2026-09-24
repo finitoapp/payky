@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Plug, TriangleAlert } from "lucide-react"
 import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -15,11 +15,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { saveFiatBankAccount } from "@/core/modules/account/account-actions.ts"
 import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import { isValidIban } from "@/core/modules/shared/iban-utils.ts"
+import { isFioBankIban, isValidIban } from "@/core/modules/shared/iban-utils.ts"
 import {
   BankAccountInputIbanSchema,
   type BankQrFormat,
@@ -195,6 +196,31 @@ export function FiatBankAccountSettingsPage() {
           </FieldGroup>
         </CardContent>
       </Card>
+      <VerticalNav
+        items={[
+          {
+            kind: "link",
+            to: "/settings/payment-accounts/iban/fio-plugin",
+            icon: <Plug className="text-muted-foreground" />,
+            label: (
+              <span className="flex flex-col gap-1">
+                <span className="text-sm font-semibold">
+                  {t("settings.fioPlugin.title")}
+                </span>
+                <span className="text-xs leading-snug text-muted-foreground">
+                  {t("settings.fioPlugin.description")}
+                </span>
+                {iban !== null && !isFioBankIban(iban) ? (
+                  <span className="flex items-start gap-1.5 text-xs leading-snug text-warning">
+                    <TriangleAlert className="size-3.5 shrink-0" />
+                    {t("settings.fioPlugin.notFioIbanWarning")}
+                  </span>
+                ) : null}
+              </span>
+            ),
+          },
+        ]}
+      />
     </>
   )
 }

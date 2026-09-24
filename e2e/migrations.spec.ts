@@ -73,7 +73,7 @@ test("the migration popup reports a run in progress, then its success", async ({
     await stopHoldingMigrations(page)
     await gotoPage(
       page,
-      "/settings/fio-plugin",
+      "/settings/payment-accounts/iban/fio-plugin",
       "en",
       "settings.fioPlugin.title"
     )

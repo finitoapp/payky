@@ -1,5 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx"
-import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
+import {
+  verticalNavShellClassName,
+  verticalNavTitleClassName,
+} from "@/components/vertical-nav.tsx"
 import { cn, placeholderFadeOpacity } from "@/lib/utils.ts"
 
 /**
@@ -13,20 +16,28 @@ import { cn, placeholderFadeOpacity } from "@/lib/utils.ts"
  */
 export function ListSkeleton({
   rows = 5,
+  title,
   className,
 }: {
   readonly rows?: number
+  /** The real list's title, known before its rows are, so it doesn't pop in. */
+  readonly title?: string
   readonly className?: string
 }) {
   return (
-    <div className={cn(verticalNavShellClassName, "divide-y", className)}>
-      {Array.from({ length: rows }, (_, index) => (
-        <ListSkeletonRow
-          // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, never reordered or filtered
-          key={index}
-          opacity={placeholderFadeOpacity(index, rows)}
-        />
-      ))}
+    <div className={cn(verticalNavShellClassName, className)}>
+      {title !== undefined ? (
+        <div className={verticalNavTitleClassName}>{title}</div>
+      ) : null}
+      <div className="divide-y">
+        {Array.from({ length: rows }, (_, index) => (
+          <ListSkeletonRow
+            // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, never reordered or filtered
+            key={index}
+            opacity={placeholderFadeOpacity(index, rows)}
+          />
+        ))}
+      </div>
     </div>
   )
 }

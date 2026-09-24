@@ -17,6 +17,10 @@ export type NavLinkTo = LinkProps["to"]
 export const verticalNavShellClassName =
   "bg-card flex flex-col rounded-md overflow-hidden shadow"
 
+/** The title row a `VerticalNav` draws, shared with `ListSkeleton` for the same reason. */
+export const verticalNavTitleClassName =
+  "p-4 font-bold text-xs text-muted-foreground"
+
 type NavItemTarget =
   | {
       readonly kind: "link"
@@ -25,6 +29,8 @@ type NavItemTarget =
     }
   | { readonly kind: "href"; readonly href: string }
   | { readonly kind: "button"; readonly onClick?: () => void }
+  /** A read-only row: no hover, no focus stop, nothing to activate. */
+  | { readonly kind: "static" }
 
 type NavItem = NavItemTarget & {
   /** Stable identity for list reconciliation; falls back to array index when omitted. */
@@ -55,15 +61,11 @@ export function VerticalNav({
 }: VerticalNavProps) {
   return (
     <div className={cn(verticalNavShellClassName, className)}>
-      {title && (
-        <div className={"p-4 font-bold text-xs text-muted-foreground"}>
-          {title}
-        </div>
-      )}
+      {title && <div className={verticalNavTitleClassName}>{title}</div>}
       <nav className={"divide-y"}>
         {items.length === 0 && empty !== undefined ? (
           <NavItemComponent
-            item={{ kind: "button", disableAction: true, label: empty }}
+            item={{ kind: "static", disableAction: true, label: empty }}
           />
         ) : (
           items.map((item, index) => (
@@ -76,10 +78,20 @@ export function VerticalNav({
 }
 
 function NavItemComponent({ item }: { item: NavItem }) {
+  const layoutClassName =
+    "text-left flex w-full items-center gap-3 px-3 py-2 text-sm font-medium"
+
+  if (item.kind === "static") {
+    return (
+      <div className={cn(layoutClassName, item.className)}>
+        <NavItemContent item={item} />
+      </div>
+    )
+  }
+
   const className = cn(
-    "text-left",
-    "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-all",
-    "hover:bg-accent/50",
+    layoutClassName,
+    "transition-all hover:bg-accent/50",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
     item.className
   )

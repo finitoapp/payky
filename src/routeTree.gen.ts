@@ -32,7 +32,6 @@ import { Route as TerminalSettingsDonationsRouteImport } from './routes/_termina
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
 import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
-import { Route as TerminalSettingsFioPluginRouteImport } from './routes/_terminal.settings.fio-plugin'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsLegalEntityRouteImport } from './routes/_terminal.settings.legal-entity'
@@ -44,7 +43,6 @@ import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.s
 import { Route as TerminalSettingsTaxRatesRouteImport } from './routes/_terminal.settings.tax-rates'
 import { Route as TerminalSettingsThemeRouteImport } from './routes/_terminal.settings.theme'
 import { Route as TerminalSettingsTipsRouteImport } from './routes/_terminal.settings.tips'
-import { Route as TerminalSettingsWithdrawRouteImport } from './routes/_terminal.settings.withdraw'
 import { Route as TerminalActivityBillsBillIdRouteImport } from './routes/_terminal.activity_.bills_.$billId'
 import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
@@ -62,6 +60,10 @@ import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './rout
 import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
 import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_terminal.settings.tables.$tableId'
 import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_terminal.settings.tables.new'
+import { Route as TerminalSettingsPaymentAccountsIbanIndexRouteImport } from './routes/_terminal.settings.payment-accounts.iban.index'
+import { Route as TerminalSettingsPaymentAccountsIbanFioPluginRouteImport } from './routes/_terminal.settings.payment-accounts.iban.fio-plugin'
+import { Route as TerminalSettingsPaymentAccountsSparkIndexRouteImport } from './routes/_terminal.settings.payment-accounts.spark.index'
+import { Route as TerminalSettingsPaymentAccountsSparkWithdrawRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdraw'
 
 const TerminalRoute = TerminalRouteImport.update({
   id: '/_terminal',
@@ -185,12 +187,6 @@ const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
   path: '/fiat',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
-const TerminalSettingsFioPluginRoute =
-  TerminalSettingsFioPluginRouteImport.update({
-    id: '/fio-plugin',
-    path: '/fio-plugin',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
 const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -252,12 +248,6 @@ const TerminalSettingsTipsRoute = TerminalSettingsTipsRouteImport.update({
   path: '/tips',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
-const TerminalSettingsWithdrawRoute =
-  TerminalSettingsWithdrawRouteImport.update({
-    id: '/withdraw',
-    path: '/withdraw',
-    getParentRoute: () => TerminalSettingsRoute,
-  } as any)
 const TerminalActivityBillsBillIdRoute =
   TerminalActivityBillsBillIdRouteImport.update({
     id: '/activity_/bills_/$billId',
@@ -360,6 +350,30 @@ const TerminalSettingsTablesNewRoute =
     path: '/new',
     getParentRoute: () => TerminalSettingsTablesRoute,
   } as any)
+const TerminalSettingsPaymentAccountsIbanIndexRoute =
+  TerminalSettingsPaymentAccountsIbanIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsPaymentAccountsIbanRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsIbanFioPluginRoute =
+  TerminalSettingsPaymentAccountsIbanFioPluginRouteImport.update({
+    id: '/fio-plugin',
+    path: '/fio-plugin',
+    getParentRoute: () => TerminalSettingsPaymentAccountsIbanRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsSparkIndexRoute =
+  TerminalSettingsPaymentAccountsSparkIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsPaymentAccountsSparkRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsSparkWithdrawRoute =
+  TerminalSettingsPaymentAccountsSparkWithdrawRouteImport.update({
+    id: '/withdraw',
+    path: '/withdraw',
+    getParentRoute: () => TerminalSettingsPaymentAccountsSparkRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
@@ -383,7 +397,6 @@ export interface FileRoutesByFullPath {
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
-  '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
@@ -395,7 +408,6 @@ export interface FileRoutesByFullPath {
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/tips': typeof TerminalSettingsTipsRoute
-  '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/settings/': typeof TerminalSettingsIndexRoute
   '/activity/bills/$billId': typeof TerminalActivityBillsBillIdRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -405,8 +417,8 @@ export interface FileRoutesByFullPath {
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
-  '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
-  '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
+  '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
@@ -414,6 +426,10 @@ export interface FileRoutesByFullPath {
   '/settings/items/': typeof TerminalSettingsItemsIndexRoute
   '/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables/': typeof TerminalSettingsTablesIndexRoute
+  '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
+  '/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  '/settings/payment-accounts/iban/': typeof TerminalSettingsPaymentAccountsIbanIndexRoute
+  '/settings/payment-accounts/spark/': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
 }
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
@@ -434,7 +450,6 @@ export interface FileRoutesByTo {
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/fiat': typeof TerminalSettingsFiatRoute
-  '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
@@ -443,7 +458,6 @@ export interface FileRoutesByTo {
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
   '/settings/tips': typeof TerminalSettingsTipsRoute
-  '/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/settings': typeof TerminalSettingsIndexRoute
   '/activity/bills/$billId': typeof TerminalActivityBillsBillIdRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -453,8 +467,6 @@ export interface FileRoutesByTo {
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
-  '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
-  '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
@@ -462,6 +474,10 @@ export interface FileRoutesByTo {
   '/settings/items': typeof TerminalSettingsItemsIndexRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables': typeof TerminalSettingsTablesIndexRoute
+  '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
+  '/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanIndexRoute
+  '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -487,7 +503,6 @@ export interface FileRoutesById {
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
-  '/_terminal/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
@@ -499,7 +514,6 @@ export interface FileRoutesById {
   '/_terminal/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/_terminal/settings/theme': typeof TerminalSettingsThemeRoute
   '/_terminal/settings/tips': typeof TerminalSettingsTipsRoute
-  '/_terminal/settings/withdraw': typeof TerminalSettingsWithdrawRoute
   '/_terminal/settings/': typeof TerminalSettingsIndexRoute
   '/_terminal/activity_/bills_/$billId': typeof TerminalActivityBillsBillIdRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
@@ -509,8 +523,8 @@ export interface FileRoutesById {
   '/_terminal/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/_terminal/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/_terminal/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
-  '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
-  '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
+  '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/_terminal/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
@@ -518,6 +532,10 @@ export interface FileRoutesById {
   '/_terminal/settings/items/': typeof TerminalSettingsItemsIndexRoute
   '/_terminal/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/_terminal/settings/tables/': typeof TerminalSettingsTablesIndexRoute
+  '/_terminal/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
+  '/_terminal/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  '/_terminal/settings/payment-accounts/iban/': typeof TerminalSettingsPaymentAccountsIbanIndexRoute
+  '/_terminal/settings/payment-accounts/spark/': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -543,7 +561,6 @@ export interface FileRouteTypes {
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
     | '/settings/fiat'
-    | '/settings/fio-plugin'
     | '/settings/items'
     | '/settings/language'
     | '/settings/legal-entity'
@@ -555,7 +572,6 @@ export interface FileRouteTypes {
     | '/settings/tax-rates'
     | '/settings/theme'
     | '/settings/tips'
-    | '/settings/withdraw'
     | '/settings/'
     | '/activity/bills/$billId'
     | '/settings/about/privacy'
@@ -574,6 +590,10 @@ export interface FileRouteTypes {
     | '/settings/items/'
     | '/settings/payment-accounts/'
     | '/settings/tables/'
+    | '/settings/payment-accounts/iban/fio-plugin'
+    | '/settings/payment-accounts/spark/withdraw'
+    | '/settings/payment-accounts/iban/'
+    | '/settings/payment-accounts/spark/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/error'
@@ -594,7 +614,6 @@ export interface FileRouteTypes {
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
     | '/settings/fiat'
-    | '/settings/fio-plugin'
     | '/settings/language'
     | '/settings/legal-entity'
     | '/settings/payment-number-series'
@@ -603,7 +622,6 @@ export interface FileRouteTypes {
     | '/settings/tax-rates'
     | '/settings/theme'
     | '/settings/tips'
-    | '/settings/withdraw'
     | '/settings'
     | '/activity/bills/$billId'
     | '/settings/about/privacy'
@@ -613,8 +631,6 @@ export interface FileRouteTypes {
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
     | '/settings/payment-accounts/card-switchio'
-    | '/settings/payment-accounts/iban'
-    | '/settings/payment-accounts/spark'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about'
@@ -622,6 +638,10 @@ export interface FileRouteTypes {
     | '/settings/items'
     | '/settings/payment-accounts'
     | '/settings/tables'
+    | '/settings/payment-accounts/iban/fio-plugin'
+    | '/settings/payment-accounts/spark/withdraw'
+    | '/settings/payment-accounts/iban'
+    | '/settings/payment-accounts/spark'
   id:
     | '__root__'
     | '/_terminal'
@@ -646,7 +666,6 @@ export interface FileRouteTypes {
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/evolu-export'
     | '/_terminal/settings/fiat'
-    | '/_terminal/settings/fio-plugin'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
     | '/_terminal/settings/legal-entity'
@@ -658,7 +677,6 @@ export interface FileRouteTypes {
     | '/_terminal/settings/tax-rates'
     | '/_terminal/settings/theme'
     | '/_terminal/settings/tips'
-    | '/_terminal/settings/withdraw'
     | '/_terminal/settings/'
     | '/_terminal/activity_/bills_/$billId'
     | '/_terminal/settings/about/privacy'
@@ -677,6 +695,10 @@ export interface FileRouteTypes {
     | '/_terminal/settings/items/'
     | '/_terminal/settings/payment-accounts/'
     | '/_terminal/settings/tables/'
+    | '/_terminal/settings/payment-accounts/iban/fio-plugin'
+    | '/_terminal/settings/payment-accounts/spark/withdraw'
+    | '/_terminal/settings/payment-accounts/iban/'
+    | '/_terminal/settings/payment-accounts/spark/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -851,13 +873,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsFiatRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
-    '/_terminal/settings/fio-plugin': {
-      id: '/_terminal/settings/fio-plugin'
-      path: '/fio-plugin'
-      fullPath: '/settings/fio-plugin'
-      preLoaderRoute: typeof TerminalSettingsFioPluginRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
     '/_terminal/settings/items': {
       id: '/_terminal/settings/items'
       path: '/items'
@@ -933,13 +948,6 @@ declare module '@tanstack/react-router' {
       path: '/tips'
       fullPath: '/settings/tips'
       preLoaderRoute: typeof TerminalSettingsTipsRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/withdraw': {
-      id: '/_terminal/settings/withdraw'
-      path: '/withdraw'
-      fullPath: '/settings/withdraw'
-      preLoaderRoute: typeof TerminalSettingsWithdrawRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/activity_/bills_/$billId': {
@@ -1061,6 +1069,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsTablesNewRouteImport
       parentRoute: typeof TerminalSettingsTablesRoute
     }
+    '/_terminal/settings/payment-accounts/iban/': {
+      id: '/_terminal/settings/payment-accounts/iban/'
+      path: '/'
+      fullPath: '/settings/payment-accounts/iban/'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsIbanIndexRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsIbanRoute
+    }
+    '/_terminal/settings/payment-accounts/iban/fio-plugin': {
+      id: '/_terminal/settings/payment-accounts/iban/fio-plugin'
+      path: '/fio-plugin'
+      fullPath: '/settings/payment-accounts/iban/fio-plugin'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsIbanFioPluginRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsIbanRoute
+    }
+    '/_terminal/settings/payment-accounts/spark/': {
+      id: '/_terminal/settings/payment-accounts/spark/'
+      path: '/'
+      fullPath: '/settings/payment-accounts/spark/'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkIndexRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
+    }
+    '/_terminal/settings/payment-accounts/spark/withdraw': {
+      id: '/_terminal/settings/payment-accounts/spark/withdraw'
+      path: '/withdraw'
+      fullPath: '/settings/payment-accounts/spark/withdraw'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
+    }
   }
 }
 
@@ -1118,10 +1154,46 @@ const TerminalSettingsItemsRouteWithChildren =
     TerminalSettingsItemsRouteChildren,
   )
 
+interface TerminalSettingsPaymentAccountsIbanRouteChildren {
+  TerminalSettingsPaymentAccountsIbanFioPluginRoute: typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
+  TerminalSettingsPaymentAccountsIbanIndexRoute: typeof TerminalSettingsPaymentAccountsIbanIndexRoute
+}
+
+const TerminalSettingsPaymentAccountsIbanRouteChildren: TerminalSettingsPaymentAccountsIbanRouteChildren =
+  {
+    TerminalSettingsPaymentAccountsIbanFioPluginRoute:
+      TerminalSettingsPaymentAccountsIbanFioPluginRoute,
+    TerminalSettingsPaymentAccountsIbanIndexRoute:
+      TerminalSettingsPaymentAccountsIbanIndexRoute,
+  }
+
+const TerminalSettingsPaymentAccountsIbanRouteWithChildren =
+  TerminalSettingsPaymentAccountsIbanRoute._addFileChildren(
+    TerminalSettingsPaymentAccountsIbanRouteChildren,
+  )
+
+interface TerminalSettingsPaymentAccountsSparkRouteChildren {
+  TerminalSettingsPaymentAccountsSparkWithdrawRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  TerminalSettingsPaymentAccountsSparkIndexRoute: typeof TerminalSettingsPaymentAccountsSparkIndexRoute
+}
+
+const TerminalSettingsPaymentAccountsSparkRouteChildren: TerminalSettingsPaymentAccountsSparkRouteChildren =
+  {
+    TerminalSettingsPaymentAccountsSparkWithdrawRoute:
+      TerminalSettingsPaymentAccountsSparkWithdrawRoute,
+    TerminalSettingsPaymentAccountsSparkIndexRoute:
+      TerminalSettingsPaymentAccountsSparkIndexRoute,
+  }
+
+const TerminalSettingsPaymentAccountsSparkRouteWithChildren =
+  TerminalSettingsPaymentAccountsSparkRoute._addFileChildren(
+    TerminalSettingsPaymentAccountsSparkRouteChildren,
+  )
+
 interface TerminalSettingsPaymentAccountsRouteChildren {
   TerminalSettingsPaymentAccountsCardSwitchioRoute: typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
-  TerminalSettingsPaymentAccountsIbanRoute: typeof TerminalSettingsPaymentAccountsIbanRoute
-  TerminalSettingsPaymentAccountsSparkRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
+  TerminalSettingsPaymentAccountsIbanRoute: typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  TerminalSettingsPaymentAccountsSparkRoute: typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   TerminalSettingsPaymentAccountsIndexRoute: typeof TerminalSettingsPaymentAccountsIndexRoute
 }
 
@@ -1130,9 +1202,9 @@ const TerminalSettingsPaymentAccountsRouteChildren: TerminalSettingsPaymentAccou
     TerminalSettingsPaymentAccountsCardSwitchioRoute:
       TerminalSettingsPaymentAccountsCardSwitchioRoute,
     TerminalSettingsPaymentAccountsIbanRoute:
-      TerminalSettingsPaymentAccountsIbanRoute,
+      TerminalSettingsPaymentAccountsIbanRouteWithChildren,
     TerminalSettingsPaymentAccountsSparkRoute:
-      TerminalSettingsPaymentAccountsSparkRoute,
+      TerminalSettingsPaymentAccountsSparkRouteWithChildren,
     TerminalSettingsPaymentAccountsIndexRoute:
       TerminalSettingsPaymentAccountsIndexRoute,
   }
@@ -1169,7 +1241,6 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
   TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
-  TerminalSettingsFioPluginRoute: typeof TerminalSettingsFioPluginRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
@@ -1181,7 +1252,6 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsTaxRatesRoute: typeof TerminalSettingsTaxRatesRoute
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsTipsRoute: typeof TerminalSettingsTipsRoute
-  TerminalSettingsWithdrawRoute: typeof TerminalSettingsWithdrawRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
 }
 
@@ -1194,7 +1264,6 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
   TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
-  TerminalSettingsFioPluginRoute: TerminalSettingsFioPluginRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
   TerminalSettingsLegalEntityRoute: TerminalSettingsLegalEntityRoute,
@@ -1208,7 +1277,6 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsTaxRatesRoute: TerminalSettingsTaxRatesRoute,
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsTipsRoute: TerminalSettingsTipsRoute,
-  TerminalSettingsWithdrawRoute: TerminalSettingsWithdrawRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
 }
 

@@ -2,7 +2,14 @@ import { App as CapacitorApp } from "@capacitor/app"
 import { Capacitor } from "@capacitor/core"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { GitFork, type Info, ScrollText, ShieldCheck } from "lucide-react"
+import {
+  Bug,
+  DatabaseBackup,
+  GitFork,
+  type Info,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react"
 import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
@@ -52,6 +59,21 @@ const aboutRows: ReadonlyArray<AboutRow> = [
   },
 ]
 
+const developerRows: ReadonlyArray<AboutRow> = [
+  {
+    icon: DatabaseBackup,
+    title: "settings.evoluExport.title",
+    description: "settings.evoluExport.description",
+    target: { kind: "link", to: "/settings/evolu-export" },
+  },
+  {
+    icon: Bug,
+    title: "settings.debugConsole.title",
+    description: "settings.debugConsole.description",
+    target: { kind: "link", to: "/settings/debug-console" },
+  },
+]
+
 function createAboutNavItems(
   rows: ReadonlyArray<AboutRow>,
   t: (key: TranslationKey) => string
@@ -77,6 +99,10 @@ function createAboutNavItems(
 function AboutPage() {
   const { t } = useTranslation()
   const aboutItems = useMemo(() => createAboutNavItems(aboutRows, t), [t])
+  const developerItems = useMemo(
+    () => createAboutNavItems(developerRows, t),
+    [t]
+  )
   const isCapacitorAndroid = Capacitor.getPlatform() === "android"
   const androidVersionCodeQuery = useQuery({
     queryKey: ["native", "android-version-code"],
@@ -111,6 +137,7 @@ function AboutPage() {
       </div>
 
       <VerticalNav title={t("settings.about.app.title")} items={aboutItems} />
+      <VerticalNav title={t("settings.developers")} items={developerItems} />
     </>
   )
 }

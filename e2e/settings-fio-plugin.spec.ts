@@ -51,7 +51,7 @@ test("save Fio settings and add a token, in either order", async ({
   await test.step("open with no plugin row saved yet", async () => {
     await gotoPage(
       page,
-      "/settings/fio-plugin",
+      "/settings/payment-accounts/iban/fio-plugin",
       "en",
       "settings.fioPlugin.title"
     )

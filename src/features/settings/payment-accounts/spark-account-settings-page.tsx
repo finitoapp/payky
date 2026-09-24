@@ -1,5 +1,11 @@
 import { useAtomValue } from "jotai"
-import { ChevronDown, KeyRound, type LucideIcon, Wallet } from "lucide-react"
+import {
+  ArrowUpFromLine,
+  ChevronDown,
+  KeyRound,
+  type LucideIcon,
+  Wallet,
+} from "lucide-react"
 import { Suspense, useEffect, useId, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
@@ -34,6 +40,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import {
   selectCustomSparkWallet,
   selectDefaultSparkWallet,
@@ -214,6 +221,27 @@ export function SparkAccountSettingsPage() {
           </FieldGroup>
         </CardContent>
       </Card>
+      {secret !== null && (
+        <VerticalNav
+          items={[
+            {
+              kind: "link",
+              to: "/settings/payment-accounts/spark/withdraw",
+              icon: <ArrowUpFromLine className="text-muted-foreground" />,
+              label: (
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold">
+                    {t("settings.withdrawals.title")}
+                  </span>
+                  <span className="text-xs leading-snug text-muted-foreground">
+                    {t("settings.withdrawals.description")}
+                  </span>
+                </span>
+              ),
+            },
+          ]}
+        />
+      )}
     </>
   )
 }

@@ -27,24 +27,20 @@ export const Route = createFileRoute("/_terminal/settings/language")({
 interface LocaleOption {
   readonly value: DeviceLocale
   readonly label: TranslationKey
-  readonly description: TranslationKey
 }
 
 const localeOptions: ReadonlyArray<LocaleOption> = [
   {
     value: "en-US",
     label: "settings.language.locale.english.title",
-    description: "settings.language.locale.english.description",
   },
   {
     value: "cs-CZ",
     label: "settings.language.locale.czech.title",
-    description: "settings.language.locale.czech.description",
   },
   {
     value: "sk-SK",
     label: "settings.language.locale.slovak.title",
-    description: "settings.language.locale.slovak.description",
   },
 ]
 
@@ -73,7 +69,6 @@ function LanguagePage() {
               value: option.value,
               icon: Languages,
               title: option.label,
-              description: t(option.description),
             }))}
             onChange={setLanguage}
           />
@@ -94,7 +89,6 @@ function LanguagePage() {
               value: option.value,
               icon: Globe2,
               title: t(option.label),
-              description: t(option.description),
             }))}
             onChange={setLocale}
           />

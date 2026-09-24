@@ -207,7 +207,6 @@ export const skSettings = {
     "metadata súvisiace s peňaženkou",
   "settings.fiat.czk.description": "Používať českú korunu pre sumy v termináli",
   "settings.fiat.czk.title": "Česká koruna",
-  "settings.fiat.description": "Vyberte predvolenú fiat menu",
   "settings.fiat.eur.description": "Používať euro pre sumy v termináli",
   "settings.fiat.eur.title": "Euro",
   "settings.fiat.mode.description":
@@ -267,6 +266,8 @@ export const skSettings = {
   "settings.fioPlugin.syncLookbackDays.invalid":
     "Zadajte celé číslo väčšie ako nula.",
   "settings.fioPlugin.syncLookbackDays.label": "Dni spätnej kontroly",
+  "settings.fioPlugin.notFioIbanWarning":
+    "Tento IBAN nepatrí k účtu vo Fio banke, plugin preto jeho platby nenájde.",
   "settings.fioPlugin.title": "Fio plugin",
   "settings.fioPlugin.token.description":
     "Nechajte prázdne, ak chcete uložiť len základné nastavenia.",
@@ -349,27 +350,17 @@ export const skSettings = {
   "settings.items.search": "Hľadať položky...",
   "settings.items.search.clear.aria": "Vymazať hľadanie",
   "settings.items.title": "Položky",
-  "settings.language.czech.description": "Používať české preklady",
   "settings.language.czech.title": "Čeština",
-  "settings.language.description": "Vyberte jazyk aplikácie a región",
-  "settings.language.english.description": "Používať anglické preklady",
   "settings.language.english.title": "Angličtina",
-  "settings.language.locale.czech.description":
-    "Používať české formátovanie dátumov, čísel a mien",
   "settings.language.locale.czech.title": "Česko",
   "settings.language.locale.description":
     "Vyberte regionálny formát pre dátumy, čísla a meny.",
-  "settings.language.locale.english.description":
-    "Používať americké formátovanie dátumov, čísel a mien",
   "settings.language.locale.english.title": "Spojené štáty",
-  "settings.language.locale.slovak.description":
-    "Používať slovenské formátovanie dátumov, čísel a mien",
   "settings.language.locale.slovak.title": "Slovensko",
   "settings.language.locale.title": "Regionálny formát",
   "settings.language.mode.description":
     "Vyberte jazyk, ktorý má aplikácia používať.",
   "settings.language.mode.title": "Jazyk aplikácie",
-  "settings.language.slovak.description": "Používať slovenské preklady",
   "settings.language.slovak.title": "Slovenčina",
   "settings.language.title": "Jazyk a región",
   "settings.legalEntity.country.label": "Krajina",
@@ -380,8 +371,6 @@ export const skSettings = {
   "settings.legalEntity.vatPayer.description":
     "Pridá daňové sadzby k položkám katalógu.",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
-  "settings.paymentAccounts.description":
-    "Nastavenie bankového, Spark a pokladničného účtu",
   "settings.paymentAccounts.default": "Predvolená",
   "settings.paymentAccounts.method.cashRegister": "Hotovosť",
   "settings.paymentAccounts.method.iban": "Bankový prevod",
@@ -458,7 +447,6 @@ export const skSettings = {
   "settings.privacy.errorReporting.enabled": "Zapnuté",
   "settings.privacy.errorReporting.title": "Hlásenie chýb",
   "settings.privacy.title": "Súkromie",
-  "settings.privacyGroup": "SÚKROMIE",
   "settings.saveFailed": "Zmenu sa nepodarilo uložiť. Skúste to prosím znova.",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",
@@ -605,7 +593,6 @@ export const skSettings = {
   "settings.taxRates.title": "Daňové sadzby",
   "settings.theme.dark.description": "Vždy použiť tmavé rozhranie",
   "settings.theme.dark.title": "Tmavý",
-  "settings.theme.description": "Prepínanie medzi svetlým a tmavým režimom",
   "settings.theme.light.description": "Vždy použiť svetlé rozhranie",
   "settings.theme.light.title": "Svetlý",
   "settings.theme.mode.description":
@@ -615,7 +602,6 @@ export const skSettings = {
     "Riadiť sa nastavením operačného systému",
   "settings.theme.system.title": "Auto",
   "settings.theme.title": "Motív",
-  "settings.tips.description": "Nastavenie tringeltu pre účty",
   "settings.tips.enabled.description":
     "Zákazníci môžu pri platení pridať tringelt.",
   "settings.tips.enabled.label": "Povoliť tringelty",
@@ -651,4 +637,9 @@ export const skSettings = {
   "settings.withdrawals.description":
     "Odoslať Bitcoin zo Spark účtu na on-chain adresu",
   "settings.withdrawals.title": "Výbery",
+  "settings.taxesGroup": "DANE A DOKLADY",
+  "settings.tips.nav.on": "Zapnuté",
+  "settings.tips.nav.off": "Vypnuté",
+  "settings.paymentAccounts.nav.none": "Žiadne",
+  "settings.taxRates.nav.description": "Sadzby DPH pre vaše položky",
 } satisfies Record<keyof typeof enSettings, string>

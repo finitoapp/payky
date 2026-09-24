@@ -218,24 +218,18 @@ export function OnboardingPage() {
       if (existingTaxRates.length === 0) {
         await run.ok(seedTaxRatesForCountry(persistedCountry))
       }
-      // `saveCashRegisterAccount`/`saveSparkAccount`/`saveFiatBankAccount` can
-      // return `DefaultPaymentMethodCannotBeDisabledError` (a restored account
-      // landing back in onboarding, see the race note above, can already have
-      // one of these set as the default). `run.orThrow` turns that into
-      // `runToast`'s fallback toast instead of silently leaving the account
-      // half-updated.
-      await run.orThrow(
+      await run.ok(
         saveCashRegisterAccount({
           enabled: selectedPaymentMethods.has("cash"),
           currency: selectedCurrency,
         })
       )
-      await run.orThrow(
+      await run.ok(
         saveSparkAccount({
           enabled: selectedPaymentMethods.has("btc"),
         })
       )
-      await run.orThrow(
+      await run.ok(
         saveFiatBankAccount({
           enabled: ibanEnabled,
           iban: ibanParseResult?.success ? ibanParseResult.data : undefined,

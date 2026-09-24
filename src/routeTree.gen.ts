@@ -55,6 +55,9 @@ import { Route as TerminalSettingsCategoriesNewRouteImport } from './routes/_ter
 import { Route as TerminalSettingsItemsIndexRouteImport } from './routes/_terminal.settings.items.index'
 import { Route as TerminalSettingsItemsCatalogItemIdRouteImport } from './routes/_terminal.settings.items.$catalogItemId'
 import { Route as TerminalSettingsItemsNewRouteImport } from './routes/_terminal.settings.items.new'
+import { Route as TerminalSettingsPaymentAccountsIndexRouteImport } from './routes/_terminal.settings.payment-accounts.index'
+import { Route as TerminalSettingsPaymentAccountsIbanRouteImport } from './routes/_terminal.settings.payment-accounts.iban'
+import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './routes/_terminal.settings.payment-accounts.spark'
 import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
 import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_terminal.settings.tables.$tableId'
 import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_terminal.settings.tables.new'
@@ -314,6 +317,24 @@ const TerminalSettingsItemsNewRoute =
     path: '/new',
     getParentRoute: () => TerminalSettingsItemsRoute,
   } as any)
+const TerminalSettingsPaymentAccountsIndexRoute =
+  TerminalSettingsPaymentAccountsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsIbanRoute =
+  TerminalSettingsPaymentAccountsIbanRouteImport.update({
+    id: '/iban',
+    path: '/iban',
+    getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsSparkRoute =
+  TerminalSettingsPaymentAccountsSparkRouteImport.update({
+    id: '/spark',
+    path: '/spark',
+    getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
+  } as any)
 const TerminalSettingsTablesIndexRoute =
   TerminalSettingsTablesIndexRouteImport.update({
     id: '/',
@@ -359,7 +380,7 @@ export interface FileRoutesByFullPath {
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
-  '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
+  '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRouteWithChildren
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
@@ -376,11 +397,14 @@ export interface FileRoutesByFullPath {
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
+  '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
   '/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items/': typeof TerminalSettingsItemsIndexRoute
+  '/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables/': typeof TerminalSettingsTablesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -405,7 +429,6 @@ export interface FileRoutesByTo {
   '/settings/fio-plugin': typeof TerminalSettingsFioPluginRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
-  '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
@@ -421,11 +444,14 @@ export interface FileRoutesByTo {
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
+  '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
   '/settings/categories': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items': typeof TerminalSettingsItemsIndexRoute
+  '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables': typeof TerminalSettingsTablesIndexRoute
 }
 export interface FileRoutesById {
@@ -456,7 +482,7 @@ export interface FileRoutesById {
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
-  '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRoute
+  '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRouteWithChildren
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
@@ -473,11 +499,14 @@ export interface FileRoutesById {
   '/_terminal/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/_terminal/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/_terminal/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
+  '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/_terminal/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
   '/_terminal/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/_terminal/settings/items/': typeof TerminalSettingsItemsIndexRoute
+  '/_terminal/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/_terminal/settings/tables/': typeof TerminalSettingsTablesIndexRoute
 }
 export interface FileRouteTypes {
@@ -525,11 +554,14 @@ export interface FileRouteTypes {
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
+    | '/settings/payment-accounts/iban'
+    | '/settings/payment-accounts/spark'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about/'
     | '/settings/categories/'
     | '/settings/items/'
+    | '/settings/payment-accounts/'
     | '/settings/tables/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -554,7 +586,6 @@ export interface FileRouteTypes {
     | '/settings/fio-plugin'
     | '/settings/language'
     | '/settings/legal-entity'
-    | '/settings/payment-accounts'
     | '/settings/payment-number-series'
     | '/settings/privacy'
     | '/settings/security'
@@ -570,11 +601,14 @@ export interface FileRouteTypes {
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
+    | '/settings/payment-accounts/iban'
+    | '/settings/payment-accounts/spark'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about'
     | '/settings/categories'
     | '/settings/items'
+    | '/settings/payment-accounts'
     | '/settings/tables'
   id:
     | '__root__'
@@ -621,11 +655,14 @@ export interface FileRouteTypes {
     | '/_terminal/settings/categories/new'
     | '/_terminal/settings/items/$catalogItemId'
     | '/_terminal/settings/items/new'
+    | '/_terminal/settings/payment-accounts/iban'
+    | '/_terminal/settings/payment-accounts/spark'
     | '/_terminal/settings/tables/$tableId'
     | '/_terminal/settings/tables/new'
     | '/_terminal/settings/about/'
     | '/_terminal/settings/categories/'
     | '/_terminal/settings/items/'
+    | '/_terminal/settings/payment-accounts/'
     | '/_terminal/settings/tables/'
   fileRoutesById: FileRoutesById
 }
@@ -962,6 +999,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsItemsNewRouteImport
       parentRoute: typeof TerminalSettingsItemsRoute
     }
+    '/_terminal/settings/payment-accounts/': {
+      id: '/_terminal/settings/payment-accounts/'
+      path: '/'
+      fullPath: '/settings/payment-accounts/'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsIndexRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
+    '/_terminal/settings/payment-accounts/iban': {
+      id: '/_terminal/settings/payment-accounts/iban'
+      path: '/iban'
+      fullPath: '/settings/payment-accounts/iban'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsIbanRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
+    '/_terminal/settings/payment-accounts/spark': {
+      id: '/_terminal/settings/payment-accounts/spark'
+      path: '/spark'
+      fullPath: '/settings/payment-accounts/spark'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
     '/_terminal/settings/tables/': {
       id: '/_terminal/settings/tables/'
       path: '/'
@@ -1040,6 +1098,27 @@ const TerminalSettingsItemsRouteWithChildren =
     TerminalSettingsItemsRouteChildren,
   )
 
+interface TerminalSettingsPaymentAccountsRouteChildren {
+  TerminalSettingsPaymentAccountsIbanRoute: typeof TerminalSettingsPaymentAccountsIbanRoute
+  TerminalSettingsPaymentAccountsSparkRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
+  TerminalSettingsPaymentAccountsIndexRoute: typeof TerminalSettingsPaymentAccountsIndexRoute
+}
+
+const TerminalSettingsPaymentAccountsRouteChildren: TerminalSettingsPaymentAccountsRouteChildren =
+  {
+    TerminalSettingsPaymentAccountsIbanRoute:
+      TerminalSettingsPaymentAccountsIbanRoute,
+    TerminalSettingsPaymentAccountsSparkRoute:
+      TerminalSettingsPaymentAccountsSparkRoute,
+    TerminalSettingsPaymentAccountsIndexRoute:
+      TerminalSettingsPaymentAccountsIndexRoute,
+  }
+
+const TerminalSettingsPaymentAccountsRouteWithChildren =
+  TerminalSettingsPaymentAccountsRoute._addFileChildren(
+    TerminalSettingsPaymentAccountsRouteChildren,
+  )
+
 interface TerminalSettingsTablesRouteChildren {
   TerminalSettingsTablesTableIdRoute: typeof TerminalSettingsTablesTableIdRoute
   TerminalSettingsTablesNewRoute: typeof TerminalSettingsTablesNewRoute
@@ -1071,7 +1150,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
-  TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRoute
+  TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRouteWithChildren
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
   TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
@@ -1096,7 +1175,8 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
   TerminalSettingsLegalEntityRoute: TerminalSettingsLegalEntityRoute,
-  TerminalSettingsPaymentAccountsRoute: TerminalSettingsPaymentAccountsRoute,
+  TerminalSettingsPaymentAccountsRoute:
+    TerminalSettingsPaymentAccountsRouteWithChildren,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
   TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,

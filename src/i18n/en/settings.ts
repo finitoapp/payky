@@ -369,15 +369,17 @@ export const enSettings = {
   "settings.paymentAccounts.description":
     "Configure bank, Spark, and cash register accounts",
   "settings.paymentAccounts.default": "Default",
-  "settings.paymentAccounts.default.disabled":
-    "Only active payment methods can be set as default.",
-  "settings.paymentAccounts.default.deactivate":
-    "Set another payment method as default before disabling this one.",
-  "settings.paymentAccounts.default.set": "Set as default",
-  "settings.paymentAccounts.default.set.aria": "Set {name} as default",
   "settings.paymentAccounts.method.cashRegister": "Cash",
   "settings.paymentAccounts.method.iban": "Bank transfer",
   "settings.paymentAccounts.method.spark": "Bitcoin",
+  "settings.paymentAccounts.moveDown.aria": "Move {name} down",
+  "settings.paymentAccounts.moveUp.aria": "Move {name} up",
+  "settings.paymentAccounts.order.description":
+    "Customers see payment methods in this order. The first available one opens automatically.",
+  "settings.paymentAccounts.status.currencyMismatch":
+    "Set up in {currency}, but the app uses {appCurrency}",
+  "settings.paymentAccounts.status.missingIban":
+    "Add a bank account to turn this on",
   "settings.paymentAccounts.title": "Payment Accounts",
   "settings.paymentNumberSeries.day.default.description":
     "Include the two-digit day in generated payment numbers",

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import {
   defaultPaymentMethodOrder,
+  getPaymentMethodOrder,
   parsePaymentMethodOrder,
 } from "./app-settings-utils.ts"
 
@@ -49,5 +50,20 @@ describe("parsePaymentMethodOrder", () => {
       "cashRegister",
       "spark",
     ])
+  })
+})
+
+describe("getPaymentMethodOrder", () => {
+  test("moves the default method to the front", () => {
+    expect(
+      getPaymentMethodOrder({
+        paymentMethodOrderJson: '["iban","cashRegister","spark"]',
+        defaultPaymentMethod: "spark",
+      })
+    ).toEqual(["spark", "iban", "cashRegister"])
+  })
+
+  test("falls back to the default order without settings", () => {
+    expect(getPaymentMethodOrder(undefined)).toEqual(defaultPaymentMethodOrder)
   })
 })

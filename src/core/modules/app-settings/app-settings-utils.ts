@@ -35,10 +35,6 @@ export const createDefaultSettings = (): AppSettingsRow => ({
   defaultPaymentMethod,
 })
 
-export const getDefaultPaymentMethod = (
-  value: DefaultPaymentMethod | undefined
-): DefaultPaymentMethod => value ?? defaultPaymentMethod
-
 export const parsePaymentMethodOrder = (
   value: string | null | undefined
 ): ReadonlyArray<DefaultPaymentMethod> => {
@@ -62,4 +58,25 @@ export const parsePaymentMethodOrder = (
   } catch {
     return defaultPaymentMethodOrder
   }
+}
+
+/**
+ * The order payment methods are offered in, with the default one first.
+ * `setPaymentMethodOrder` keeps the two in step; settings written before it
+ * (onboarding stores them independently) get the default moved to the front,
+ * which is the tab they already opened first.
+ */
+export const getPaymentMethodOrder = (
+  settings:
+    | {
+        readonly paymentMethodOrderJson: string
+        readonly defaultPaymentMethod: DefaultPaymentMethod
+      }
+    | undefined
+): ReadonlyArray<DefaultPaymentMethod> => {
+  const order = parsePaymentMethodOrder(settings?.paymentMethodOrderJson)
+  if (settings === undefined) return order
+
+  const first = settings.defaultPaymentMethod
+  return [first, ...order.filter((method) => method !== first)]
 }

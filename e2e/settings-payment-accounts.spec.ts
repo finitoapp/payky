@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test"
+
 import type { TranslationKey } from "../src/i18n/resources.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { nameParam, translate } from "./support/i18n.ts"
@@ -8,111 +10,129 @@ import {
 } from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
 
-const setAsDefaultButton = (methodTitleKey: TranslationKey) =>
-  nameParam(
-    "settings.paymentAccounts.default.set.aria",
-    translate("en", methodTitleKey)
+const en = (key: TranslationKey) => translate("en", key)
+
+const methodRows = (page: Page) =>
+  page
+    .getByRole("list")
+    .filter({ hasText: en("settings.paymentAccounts.method.spark") })
+    .getByRole("listitem")
+
+const methodRow = (page: Page, titleKey: TranslationKey) =>
+  methodRows(page).filter({ hasText: en(titleKey) })
+
+const defaultBadge = (page: Page, titleKey: TranslationKey) =>
+  methodRow(page, titleKey).getByText(en("settings.paymentAccounts.default"), {
+    exact: true,
+  })
+
+const openOverview = (page: Page) =>
+  gotoPage(
+    page,
+    "/settings/payment-accounts",
+    "en",
+    "settings.paymentAccounts.title"
   )
 
-test("edit the fiat bank account and cash register settings", async ({
+test("reorder payment methods and let the first available one be the default", async ({
   seededPage: page,
 }) => {
-  await test.step("open payment accounts settings", () =>
-    gotoPage(
-      page,
-      "/settings/payment-accounts",
-      "en",
-      "settings.paymentAccounts.title"
-    ))
+  await test.step("open payment accounts settings", () => openOverview(page))
 
-  const currencySelect = page.getByRole("combobox", {
-    name: translate("en", "settings.fiatBankAccount.currency.label"),
+  // The seed makes the cash register the default, so it leads the list.
+  await test.step("the default method comes first", async () => {
+    await expect(methodRows(page).first()).toContainText(
+      en("settings.paymentAccounts.method.cashRegister")
+    )
+    await expect(
+      defaultBadge(page, "settings.paymentAccounts.method.cashRegister")
+    ).toBeVisible()
   })
 
-  // The default-payment-method steps run before the currency change on
-  // purpose: `setDefaultPaymentMethod` only accepts a bank account whose
-  // currency matches the app's fiat currency, so once this account is on EUR
-  // its "Set as default" button is correctly disabled.
-  await test.step("make the bank account default", async () => {
-    await page
-      .getByRole("button", {
-        name: setAsDefaultButton("settings.paymentAccounts.method.iban"),
-      })
-      .click()
-
-    // The click only starts the write, and nothing in the DOM waits for it.
-    // `preventDefaultPaymentMethodDisable` re-reads the settings row when the
-    // switch below is flipped, so until this badge appears it still sees the
-    // cash register as the default, allows the bank account to be disabled,
-    // and both assertions below fail with no error toast in sight.
-    await expect(
-      page
-        .locator('[data-slot="card"]')
-        .filter({
-          hasText: translate("en", "settings.fiatBankAccount.form.title"),
-        })
-        .getByText(translate("en", "settings.paymentAccounts.default"), {
-          exact: true,
-        })
-    ).toBeVisible()
-
-    const bankSwitch = page.getByRole("switch", {
-      name: translate("en", "settings.fiatBankAccount.enabled.label"),
+  await test.step("move the bank transfer to the top", async () => {
+    const moveUp = page.getByRole("button", {
+      name: nameParam(
+        "settings.paymentAccounts.moveUp.aria",
+        en("settings.paymentAccounts.method.iban")
+      ),
     })
-    await bankSwitch.click()
+    await moveUp.click()
+    await expect(methodRows(page).first()).toContainText(
+      en("settings.paymentAccounts.method.iban")
+    )
+    await expect(moveUp).toBeDisabled()
     await expect(
-      page.getByText(
-        translate("en", "settings.paymentAccounts.default.deactivate")
-      )
+      defaultBadge(page, "settings.paymentAccounts.method.iban")
     ).toBeVisible()
-    await expect(bankSwitch).toBeChecked()
   })
 
-  await test.step("disable the cash register and prevent it becoming default", async () => {
-    await toggleInlineSwitch(page, "settings.cashRegisterAccount.enabled.label")
-
+  await test.step("turning the first method off hands the default to the next available one", async () => {
+    await toggleInlineSwitch(page, "settings.fiatBankAccount.enabled.label")
     await expect(
-      page.getByRole("button", {
-        name: setAsDefaultButton(
-          "settings.paymentAccounts.method.cashRegister"
-        ),
-      })
-    ).toBeDisabled()
+      defaultBadge(page, "settings.paymentAccounts.method.cashRegister")
+    ).toBeVisible()
+    await expect(
+      defaultBadge(page, "settings.paymentAccounts.method.iban")
+    ).toHaveCount(0)
   })
 
-  await test.step("open the bank account's advanced options", () =>
-    expandAdvancedOptions(
-      page,
-      "settings.fiatBankAccount.form.title",
-      "settings.fiatBankAccount.advanced"
-    ))
-
-  await test.step("change the bank account currency", () =>
-    pickInlineOption(
-      page,
-      "settings.fiatBankAccount.currency.label",
-      translate("en", "settings.fiat.eur.title")
-    ))
-
-  await test.step("verify the currency, default and disabled methods persist after reload", async () => {
+  await test.step("the order and the disabled method persist after reload", async () => {
     await reloadPage(page, "en", "settings.paymentAccounts.title")
+    await expect(methodRows(page).first()).toContainText(
+      en("settings.paymentAccounts.method.iban")
+    )
+    await expect(
+      page.getByRole("switch", {
+        name: en("settings.fiatBankAccount.enabled.label"),
+      })
+    ).not.toBeChecked()
+    await expect(
+      defaultBadge(page, "settings.paymentAccounts.method.cashRegister")
+    ).toBeVisible()
+  })
+})
+
+test("edit the fiat bank account on its own page", async ({
+  seededPage: page,
+}) => {
+  await test.step("open the bank transfer details", async () => {
+    await openOverview(page)
+    await methodRow(page, "settings.paymentAccounts.method.iban")
+      .getByRole("link")
+      .click()
+    await expect(
+      page.getByRole("heading", {
+        name: en("settings.paymentAccounts.method.iban"),
+      })
+    ).toBeVisible()
+  })
+
+  await test.step("change the bank account currency", async () => {
     await expandAdvancedOptions(
       page,
       "settings.fiatBankAccount.form.title",
       "settings.fiatBankAccount.advanced"
     )
-    await expect(currencySelect).toContainText(
-      translate("en", "settings.fiat.eur.title")
+    await pickInlineOption(
+      page,
+      "settings.fiatBankAccount.currency.label",
+      en("settings.fiat.eur.title")
+    )
+  })
+
+  // The seed runs the app in USD, so an EUR bank account is no longer
+  // offered, and the overview says why instead of dropping it silently.
+  await test.step("the overview flags the currency mismatch", async () => {
+    await openOverview(page)
+    await expect(
+      methodRow(page, "settings.paymentAccounts.method.iban")
+    ).toContainText(
+      en("settings.paymentAccounts.status.currencyMismatch")
+        .replace("{currency}", "EUR")
+        .replace("{appCurrency}", "USD")
     )
     await expect(
-      page.getByRole("switch", {
-        name: translate("en", "settings.cashRegisterAccount.enabled.label"),
-      })
-    ).not.toBeChecked()
-    await expect(
-      page.getByRole("switch", {
-        name: translate("en", "settings.fiatBankAccount.enabled.label"),
-      })
-    ).toBeChecked()
+      defaultBadge(page, "settings.paymentAccounts.method.iban")
+    ).toHaveCount(0)
   })
 })

@@ -21,10 +21,7 @@ import {
 } from "@/components/ui/tabs.tsx"
 import { enabledPaymentMethodAccountsQuery } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
-import {
-  getDefaultPaymentMethod,
-  parsePaymentMethodOrder,
-} from "@/core/modules/app-settings/app-settings-utils.ts"
+import { getPaymentMethodOrder } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
   cancelPayment,
   markPaymentPaidCash,
@@ -139,15 +136,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const isPaid = paymentStatus === "paid"
   const wakeLockEnabled = payment !== undefined && paymentStatus === "pending"
   const { supported: wakeLockSupported } = useScreenWakeLock(wakeLockEnabled)
-  const configuredDefaultPaymentMethod = getDefaultPaymentMethod(
-    settings?.defaultPaymentMethod
-  )
 
   const orderedPaymentMethods = useMemo(() => {
     const paymentMethods: PaymentMethodOption[] = []
-    const paymentMethodOrder = parsePaymentMethodOrder(
-      settings?.paymentMethodOrderJson
-    )
+    const paymentMethodOrder = getPaymentMethodOrder(settings)
 
     const enabledSparkAccount = enabledPaymentMethodAccounts.find(
       (account) => account.kind === "spark" && account.sparkSecret !== null
@@ -232,28 +224,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         paymentMethodOrder.indexOf(firstMethod.kind) -
         paymentMethodOrder.indexOf(secondMethod.kind)
     )
-  }, [
-    enabledPaymentMethodAccounts,
-    payment,
-    selectedIbanQrFormat,
-    settings?.paymentMethodOrderJson,
-    t,
-  ])
+  }, [enabledPaymentMethodAccounts, payment, selectedIbanQrFormat, settings, t])
   const selectedPaymentMethodOption =
     selectedPaymentMethod === null
       ? null
       : (orderedPaymentMethods.find(
           (method) => method.id === selectedPaymentMethod
         ) ?? null)
-  const defaultPaymentMethodOption =
-    orderedPaymentMethods.find(
-      (method) => method.kind === configuredDefaultPaymentMethod
-    ) ?? null
   const activePaymentMethod =
-    selectedPaymentMethodOption ??
-    defaultPaymentMethodOption ??
-    orderedPaymentMethods[0] ??
-    null
+    selectedPaymentMethodOption ?? orderedPaymentMethods[0] ?? null
   const activePreparationKey =
     activePaymentMethod === null
       ? null

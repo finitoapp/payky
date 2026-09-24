@@ -126,11 +126,13 @@ function NavItemComponent({ item }: { item: NavItem }) {
 function NavItemContent({ item }: { item: NavItem }) {
   return (
     <div className={"p-1 flex w-full items-center"}>
-      <div className="flex items-center gap-3 w-full p-0.5">
+      {/* The label shrinks (min-w-0) so a long label truncates instead of
+          squeezing the icon and chevron out of the row. */}
+      <div className="flex items-center gap-3 w-full p-0.5 [&>svg]:shrink-0">
         {item.icon}
-        <span className={"w-full"}>{item.label}</span>
+        <span className={"w-full min-w-0"}>{item.label}</span>
         {!item.disableAction && (
-          <div className={"pl-2"}>
+          <div className={"shrink-0 pl-2"}>
             {item.action ? item.action : <ChevronRight className="h-4 w-4" />}
           </div>
         )}

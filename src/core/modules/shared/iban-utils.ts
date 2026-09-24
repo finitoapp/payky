@@ -113,6 +113,21 @@ const getIbanRemainder = (value: string) => {
   return remainder
 }
 
+/**
+ * Fio banka's bank code per country — the four digits right after the check
+ * digits in a CZ or SK IBAN. The Fio API serves both, so either counts.
+ */
+const fioBankCodes: Readonly<Record<string, string>> = {
+  CZ: "2010",
+  SK: "8330",
+}
+
+export const isFioBankIban = (value: string) => {
+  const iban = normalizeIbanInput(value)
+
+  return fioBankCodes[iban.slice(0, 2)] === iban.slice(4, 8)
+}
+
 export const isValidIban = (value: string) => {
   const iban = normalizeIbanInput(value)
 

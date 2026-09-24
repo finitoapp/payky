@@ -15,7 +15,7 @@ const formPaths = [
   "/settings/tables/new",
   "/settings/tax-rates",
   "/settings/payment-accounts/iban",
-  "/settings/fio-plugin",
+  "/settings/payment-accounts/iban/fio-plugin",
   "/settings/payment-number-series",
   "/settings/legal-entity",
   "/settings/tips",

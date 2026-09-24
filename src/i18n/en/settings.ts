@@ -205,7 +205,6 @@ export const enSettings = {
   "settings.evoluExport.warning.walletMetadata": "wallet-related metadata",
   "settings.fiat.czk.description": "Use Czech koruna for terminal amounts",
   "settings.fiat.czk.title": "Czech koruna",
-  "settings.fiat.description": "Choose your default fiat currency",
   "settings.fiat.eur.description": "Use euro for terminal amounts",
   "settings.fiat.eur.title": "Euro",
   "settings.fiat.mode.description":
@@ -265,6 +264,8 @@ export const enSettings = {
   "settings.fioPlugin.syncLookbackDays.invalid":
     "Enter a whole number greater than zero.",
   "settings.fioPlugin.syncLookbackDays.label": "Sync lookback days",
+  "settings.fioPlugin.notFioIbanWarning":
+    "This IBAN is not a Fio banka account, so the plugin will not find its payments.",
   "settings.fioPlugin.title": "Fio Plugin",
   "settings.fioPlugin.token.description":
     "Leave empty to update only basic settings.",
@@ -346,27 +347,17 @@ export const enSettings = {
   "settings.items.search": "Search items...",
   "settings.items.search.clear.aria": "Clear search",
   "settings.items.title": "Items",
-  "settings.language.czech.description": "Use Czech translations",
   "settings.language.czech.title": "Czech",
-  "settings.language.description": "Choose app language and region",
-  "settings.language.english.description": "Use English translations",
   "settings.language.english.title": "English",
-  "settings.language.locale.czech.description":
-    "Use Czech date, number, and currency formatting",
   "settings.language.locale.czech.title": "Czechia",
   "settings.language.locale.description":
     "Choose the regional format used for dates, numbers, and currencies.",
-  "settings.language.locale.english.description":
-    "Use United States date, number, and currency formatting",
   "settings.language.locale.english.title": "United States",
-  "settings.language.locale.slovak.description":
-    "Use Slovak date, number, and currency formatting",
   "settings.language.locale.slovak.title": "Slovakia",
   "settings.language.locale.title": "Regional format",
   "settings.language.mode.description":
     "Choose which language the app should use.",
   "settings.language.mode.title": "App language",
-  "settings.language.slovak.description": "Use Slovak translations",
   "settings.language.slovak.title": "Slovak",
   "settings.language.title": "Language & Region",
   "settings.legalEntity.country.label": "Country",
@@ -377,8 +368,6 @@ export const enSettings = {
   "settings.legalEntity.vatPayer.description":
     "Adds tax rates to catalog items.",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
-  "settings.paymentAccounts.description":
-    "Configure bank, Spark, and cash register accounts",
   "settings.paymentAccounts.default": "Default",
   "settings.paymentAccounts.method.cashRegister": "Cash",
   "settings.paymentAccounts.method.iban": "Bank transfer",
@@ -454,7 +443,6 @@ export const enSettings = {
   "settings.privacy.errorReporting.enabled": "Enabled",
   "settings.privacy.errorReporting.title": "Error reporting",
   "settings.privacy.title": "Privacy",
-  "settings.privacyGroup": "PRIVACY",
   "settings.saveFailed": "Could not save the change. Please try again.",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.mnemonic.copied": "Recovery phrase copied.",
@@ -600,7 +588,6 @@ export const enSettings = {
   "settings.taxRates.title": "Tax rates",
   "settings.theme.dark.description": "Always use the dark interface",
   "settings.theme.dark.title": "Dark",
-  "settings.theme.description": "Switch between light and dark mode",
   "settings.theme.light.description": "Always use the light interface",
   "settings.theme.light.title": "Light",
   "settings.theme.mode.description":
@@ -609,7 +596,6 @@ export const enSettings = {
   "settings.theme.system.description": "Follow the operating system setting",
   "settings.theme.system.title": "Auto",
   "settings.theme.title": "Theme",
-  "settings.tips.description": "Configure tip options for bills",
   "settings.tips.enabled.description": "Customers can add a tip while paying.",
   "settings.tips.enabled.label": "Enable tips",
   "settings.tips.fixedAmounts.add": "Add fixed amount",
@@ -646,4 +632,9 @@ export const enSettings = {
   "settings.withdrawals.description":
     "Send Bitcoin from a Spark account to an on-chain address",
   "settings.withdrawals.title": "Withdrawals",
+  "settings.taxesGroup": "TAXES & DOCUMENTS",
+  "settings.tips.nav.on": "On",
+  "settings.tips.nav.off": "Off",
+  "settings.paymentAccounts.nav.none": "None",
+  "settings.taxRates.nav.description": "VAT rates for your items",
 } as const

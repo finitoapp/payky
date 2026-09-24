@@ -2,15 +2,13 @@ import { sqliteTrue } from "@evolu/common"
 import { createFileRoute } from "@tanstack/react-router"
 import {
   BadgeDollarSign,
-  Banknote,
+  Building2,
   FolderIcon,
-  Globe,
   type Grid2X2,
   HeartHandshake,
   Info,
   Landmark,
   Languages,
-  Lock,
   Percent,
   ReceiptText,
   ShieldCheck,
@@ -122,14 +120,15 @@ function SettingsPage() {
       .map(([, key]) => t(key))
       .join(", ") || t("settings.paymentAccounts.nav.none")
 
-  const countryValue =
+  const fiatCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
+  const businessValue =
     legalEntity === undefined
-      ? undefined
-      : t(
+      ? fiatCurrency
+      : `${t(
           legalEntity.country === null
             ? "country.other"
             : `country.${legalEntity.country.toLowerCase() as "cz" | "sk"}`
-        )
+        )} · ${fiatCurrency}`
 
   const catalogItems = createSettingsNavItems(
     [
@@ -157,6 +156,12 @@ function SettingsPage() {
   const paymentItems = createSettingsNavItems(
     [
       {
+        icon: Building2,
+        title: "settings.legalEntity.title",
+        value: businessValue,
+        to: "/settings/legal-entity",
+      },
+      {
         icon: Landmark,
         title: "settings.paymentAccounts.title",
         value: paymentMethodsValue,
@@ -172,23 +177,11 @@ function SettingsPage() {
         ),
         to: "/settings/tips",
       },
-      {
-        icon: Banknote,
-        title: "settings.fiat.title",
-        value: settings?.fiatCurrency ?? FiatCurrency.CZK,
-        to: "/settings/fiat",
-      },
     ],
     t
   )
   const taxItems = createSettingsNavItems(
     [
-      {
-        icon: Globe,
-        title: "settings.legalEntity.title",
-        value: countryValue,
-        to: "/settings/legal-entity",
-      },
       {
         icon: Percent,
         title: "settings.taxRates.title",
@@ -217,12 +210,6 @@ function SettingsPage() {
         title: "settings.security.title",
         description: "settings.security.description",
         to: "/settings/security",
-      },
-      {
-        icon: Lock,
-        title: "settings.privacy.title",
-        description: "settings.privacy.description",
-        to: "/settings/privacy",
       },
     ],
     t

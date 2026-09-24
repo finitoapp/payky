@@ -31,13 +31,11 @@ import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_term
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
-import { Route as TerminalSettingsFiatRouteImport } from './routes/_terminal.settings.fiat'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsLegalEntityRouteImport } from './routes/_terminal.settings.legal-entity'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
-import { Route as TerminalSettingsPrivacyRouteImport } from './routes/_terminal.settings.privacy'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
 import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.settings.tables'
 import { Route as TerminalSettingsTaxRatesRouteImport } from './routes/_terminal.settings.tax-rates'
@@ -182,11 +180,6 @@ const TerminalSettingsEvoluExportRoute =
     path: '/evolu-export',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
-const TerminalSettingsFiatRoute = TerminalSettingsFiatRouteImport.update({
-  id: '/fiat',
-  path: '/fiat',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
 const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -216,11 +209,6 @@ const TerminalSettingsPaymentNumberSeriesRoute =
     path: '/payment-number-series',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
-const TerminalSettingsPrivacyRoute = TerminalSettingsPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => TerminalSettingsRoute,
-} as any)
 const TerminalSettingsSecurityRoute =
   TerminalSettingsSecurityRouteImport.update({
     id: '/security',
@@ -396,13 +384,11 @@ export interface FileRoutesByFullPath {
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
-  '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRouteWithChildren
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
-  '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -449,11 +435,9 @@ export interface FileRoutesByTo {
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
-  '/settings/fiat': typeof TerminalSettingsFiatRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
-  '/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
@@ -502,13 +486,11 @@ export interface FileRoutesById {
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
-  '/_terminal/settings/fiat': typeof TerminalSettingsFiatRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRouteWithChildren
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
-  '/_terminal/settings/privacy': typeof TerminalSettingsPrivacyRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/_terminal/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -560,13 +542,11 @@ export interface FileRouteTypes {
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
-    | '/settings/fiat'
     | '/settings/items'
     | '/settings/language'
     | '/settings/legal-entity'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
-    | '/settings/privacy'
     | '/settings/security'
     | '/settings/tables'
     | '/settings/tax-rates'
@@ -613,11 +593,9 @@ export interface FileRouteTypes {
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/evolu-export'
-    | '/settings/fiat'
     | '/settings/language'
     | '/settings/legal-entity'
     | '/settings/payment-number-series'
-    | '/settings/privacy'
     | '/settings/security'
     | '/settings/tax-rates'
     | '/settings/theme'
@@ -665,13 +643,11 @@ export interface FileRouteTypes {
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/evolu-export'
-    | '/_terminal/settings/fiat'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
     | '/_terminal/settings/legal-entity'
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
-    | '/_terminal/settings/privacy'
     | '/_terminal/settings/security'
     | '/_terminal/settings/tables'
     | '/_terminal/settings/tax-rates'
@@ -866,13 +842,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsEvoluExportRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
-    '/_terminal/settings/fiat': {
-      id: '/_terminal/settings/fiat'
-      path: '/fiat'
-      fullPath: '/settings/fiat'
-      preLoaderRoute: typeof TerminalSettingsFiatRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
     '/_terminal/settings/items': {
       id: '/_terminal/settings/items'
       path: '/items'
@@ -906,13 +875,6 @@ declare module '@tanstack/react-router' {
       path: '/payment-number-series'
       fullPath: '/settings/payment-number-series'
       preLoaderRoute: typeof TerminalSettingsPaymentNumberSeriesRouteImport
-      parentRoute: typeof TerminalSettingsRoute
-    }
-    '/_terminal/settings/privacy': {
-      id: '/_terminal/settings/privacy'
-      path: '/privacy'
-      fullPath: '/settings/privacy'
-      preLoaderRoute: typeof TerminalSettingsPrivacyRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/security': {
@@ -1240,13 +1202,11 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
-  TerminalSettingsFiatRoute: typeof TerminalSettingsFiatRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRouteWithChildren
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
-  TerminalSettingsPrivacyRoute: typeof TerminalSettingsPrivacyRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsTablesRoute: typeof TerminalSettingsTablesRouteWithChildren
   TerminalSettingsTaxRatesRoute: typeof TerminalSettingsTaxRatesRoute
@@ -1263,7 +1223,6 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
-  TerminalSettingsFiatRoute: TerminalSettingsFiatRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
   TerminalSettingsLegalEntityRoute: TerminalSettingsLegalEntityRoute,
@@ -1271,7 +1230,6 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
     TerminalSettingsPaymentAccountsRouteWithChildren,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
-  TerminalSettingsPrivacyRoute: TerminalSettingsPrivacyRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsTablesRoute: TerminalSettingsTablesRouteWithChildren,
   TerminalSettingsTaxRatesRoute: TerminalSettingsTaxRatesRoute,

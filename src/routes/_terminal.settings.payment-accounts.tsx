@@ -1,12 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { PaymentAccountsSettingsPage } from "@/features/settings/payment-accounts/payment-accounts-settings-page.tsx"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/_terminal/settings/payment-accounts")({
-  component: PaymentAccountsSettingsPage,
-  staticData: {
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
-  },
+  component: PaymentAccountsLayout,
 })
+
+function PaymentAccountsLayout() {
+  return <Outlet />
+}

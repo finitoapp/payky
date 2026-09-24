@@ -60,9 +60,9 @@ test.beforeEach(async ({ page }) => {
   await seedOnboarding(page, "en", { spark: true })
   await gotoPage(
     page,
-    "/settings/payment-accounts",
+    "/settings/payment-accounts/spark",
     "en",
-    "settings.paymentAccounts.title"
+    "settings.paymentAccounts.method.spark"
   )
 })
 
@@ -89,7 +89,7 @@ test("switch from the Payky wallet to your own wallets and back", async ({
     switchToOwnWallet(page, ownWalletA))
 
   await test.step("your own wallet is shown as active and survives a reload", async () => {
-    await reloadPage(page, "en", "settings.paymentAccounts.title")
+    await reloadPage(page, "en", "settings.paymentAccounts.method.spark")
     await expect(shownMnemonic(page)).toHaveValue(ownWalletA)
     await expect(
       sparkCard(page).getByText(

@@ -431,14 +431,14 @@ describe("account actions", () => {
       })
     )
 
-    const firstId = await run.orThrow(
+    const firstId = await run.ok(
       saveFiatBankAccount({ enabled: true, iban, currency: "CZK" })
     )
     await expect
       .poll(() => evolu.loadQuery(fioPluginByIdQuery(fioPluginId)))
       .toMatchObject([{ accountId: firstId }])
 
-    const secondId = await run.orThrow(
+    const secondId = await run.ok(
       saveFiatBankAccount({ enabled: true, iban, currency: "EUR" })
     )
     expect(secondId).not.toBe(firstId)
@@ -461,9 +461,7 @@ describe("account actions", () => {
     await expect(
       run(saveCashRegisterAccount({ enabled: false, currency: "CZK" }))
     ).resolves.toEqual({ ok: true, value: null })
-    await run.orThrow(
-      saveCashRegisterAccount({ enabled: true, currency: "CZK" })
-    )
+    await run.ok(saveCashRegisterAccount({ enabled: true, currency: "CZK" }))
     await expect(
       run(saveCashRegisterAccount({ enabled: true, currency: "EUR" }))
     ).resolves.toEqual({ ok: true, value: createCashRegisterAccountId("EUR") })
@@ -485,9 +483,7 @@ describe("account actions", () => {
 
     // Back to an account used before: re-saving it restamps `createdAt`, so
     // it is still the one picked once disabled, not the EUR one in between.
-    await run.orThrow(
-      saveCashRegisterAccount({ enabled: true, currency: "CZK" })
-    )
+    await run.ok(saveCashRegisterAccount({ enabled: true, currency: "CZK" }))
     await expect(
       run(saveCashRegisterAccount({ enabled: false, currency: "CZK" }))
     ).resolves.toEqual({ ok: true, value: createCashRegisterAccountId("CZK") })
@@ -636,7 +632,7 @@ describe("account actions", () => {
     const customSecret = SparkSecret("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
     const customId = createSparkAccountId(customSecret)
 
-    await run.orThrow(saveSparkAccount({ enabled: true }))
+    await run.ok(saveSparkAccount({ enabled: true }))
     await run.ok(
       updateSparkAccountSyncPointer({
         id: defaultId,

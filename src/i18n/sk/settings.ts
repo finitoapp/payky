@@ -371,15 +371,17 @@ export const skSettings = {
   "settings.paymentAccounts.description":
     "Nastavenie bankového, Spark a pokladničného účtu",
   "settings.paymentAccounts.default": "Predvolená",
-  "settings.paymentAccounts.default.disabled":
-    "Ako predvolenú možno nastaviť iba aktívnu platobnú metódu.",
-  "settings.paymentAccounts.default.deactivate":
-    "Pred vypnutím tejto metódy nastavte ako predvolenú inú platobnú metódu.",
-  "settings.paymentAccounts.default.set": "Nastaviť ako predvolenú",
-  "settings.paymentAccounts.default.set.aria": "Nastaviť {name} ako predvolenú",
   "settings.paymentAccounts.method.cashRegister": "Hotovosť",
   "settings.paymentAccounts.method.iban": "Bankový prevod",
   "settings.paymentAccounts.method.spark": "Bitcoin",
+  "settings.paymentAccounts.moveDown.aria": "Posunúť {name} nadol",
+  "settings.paymentAccounts.moveUp.aria": "Posunúť {name} nahor",
+  "settings.paymentAccounts.order.description":
+    "Zákazník uvidí platobné metódy v tomto poradí. Prvá dostupná sa otvorí automaticky.",
+  "settings.paymentAccounts.status.currencyMismatch":
+    "Nastavené v {currency}, aplikácia však používa {appCurrency}",
+  "settings.paymentAccounts.status.missingIban":
+    "Na zapnutie doplňte bankový účet",
   "settings.paymentAccounts.title": "Platobné účty",
   "settings.paymentNumberSeries.day.default.description":
     "Pridať do generovaných čísel platieb dvojciferný deň",

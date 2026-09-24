@@ -137,6 +137,12 @@ const deriveAccountTransactionKind = (detail: {
 export type CreateAccountTransactionInput = Simplify<
   Omit<InsertValues<typeof accountTransaction>, "kind"> & {
     readonly id?: AccountTransactionId
+    /**
+     * Only for the kinds that have no detail table of their own — every
+     * other kind is implied by its `iban`/`spark`/`onchain` input and
+     * overrides this.
+     */
+    readonly kind?: "cashRegister" | "cardSwitchio"
     readonly source: Omit<
       InsertValues<typeof accountTransactionSource>,
       "id" | "accountTransactionId" | "recordedAt"
@@ -169,6 +175,7 @@ export type CreateAccountTransactionInput = Simplify<
 export const computeAccountTransactionRows = (
   {
     id: providedId,
+    kind: providedKind,
     iban,
     spark,
     onchain,
@@ -189,9 +196,11 @@ export const computeAccountTransactionRows = (
   const sourceId = createIdFromString<"AccountTransactionSource">(
     `accountTransactionSource:${id}:${source.source}`
   )
-  // No detail row means a cash-drawer movement.
+  // No detail row means the caller's kind, or a cash-drawer movement.
   const kind =
-    deriveAccountTransactionKind({ iban, spark, onchain }) ?? "cashRegister"
+    deriveAccountTransactionKind({ iban, spark, onchain }) ??
+    providedKind ??
+    "cashRegister"
 
   return {
     id,

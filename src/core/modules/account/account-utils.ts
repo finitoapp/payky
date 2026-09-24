@@ -29,6 +29,11 @@ export const createCashRegisterAccountId = (
 ): AccountId =>
   createIdFromString<"Account">(`account:cashRegister:${currency}`)
 
+export const createCardSwitchioAccountId = (
+  currency: FiatCurrency
+): AccountId =>
+  createIdFromString<"Account">(`account:cardSwitchio:${currency}`)
+
 /**
  * The fixed id the fiat bank account had before ids were derived from its
  * IBAN and currency. `migrateLegacyFioPlugins` matches the legacy plugin rows

@@ -44,6 +44,7 @@ import type {
 } from "./account.ts"
 import {
   accountByIdQuery,
+  cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
@@ -51,6 +52,7 @@ import {
 import { sparkAccountSyncPointerByAccountIdQuery } from "./account-spark-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
+  createCardSwitchioAccountId,
   createCashRegisterAccountId,
   createIbanAccountId,
   createSparkAccountId,
@@ -610,6 +612,70 @@ export const updateSparkAccountSyncPointer =
           isDeleted: sqliteFalse,
         },
         { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(id)
+  }
+
+/**
+ * Enables or disables the SwitchioPay card terminal, mirroring
+ * {@link saveCashRegisterAccount}. Only Android can drive the terminal (the
+ * ECR protocol is intent-based), but the account itself is plain synced data
+ * — the runtime gate belongs in the UI, not here.
+ */
+export const saveCardSwitchioAccount =
+  ({
+    enabled,
+    currency,
+  }: {
+    readonly enabled: boolean
+    readonly currency: FiatCurrency
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+
+    const [current] = await evolu.loadQuery(cardSwitchioAccountQuery)
+
+    if (!enabled) {
+      if (current === undefined) return ok(null)
+
+      await runMutationWithCompletion((options) =>
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
+
+      return ok(current.id)
+    }
+
+    const id = createCardSwitchioAccountId(currency)
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+      evolu.upsert("accountCardSwitchio", { id, currency }, mutationOptions)
+
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
+        )
+      }
+
+      return evolu.upsert(
+        "account",
+        {
+          id,
+          deviceId: null,
+          name: NonEmptyString255("Card terminal"),
+          kind: "cardSwitchio",
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
       )
     })
 

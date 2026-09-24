@@ -77,13 +77,19 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-type PaymentDetailPaymentMethod = "cashRegister" | "iban" | "onchain" | "spark"
+type PaymentDetailPaymentMethod =
+  | "cashRegister"
+  | "iban"
+  | "onchain"
+  | "cardSwitchio"
+  | "spark"
 type PaymentDetailClaimSource = "auto" | "manual"
 
 const paymentMethodLabelKey = {
   cashRegister: "paymentDetail.paymentMethod.cash",
   iban: "paymentDetail.paymentMethod.iban",
   onchain: "paymentDetail.paymentMethod.onchain",
+  cardSwitchio: "paymentDetail.paymentMethod.card",
   spark: "paymentDetail.paymentMethod.spark",
 } satisfies Record<PaymentDetailPaymentMethod, TranslationKey>
 

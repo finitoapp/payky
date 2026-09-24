@@ -70,6 +70,17 @@ export const enSettings = {
   "settings.cashRegisterAccount.form.description":
     "Cash register payments use the currently selected fiat currency.",
   "settings.cashRegisterAccount.form.title": "Cash register",
+  "settings.cardSwitchioAccount.enabled.label": "Enable card terminal",
+  "settings.cardSwitchioAccount.info.contract":
+    "a signed contract with a payment solution provider, for example Comgate.",
+  "settings.cardSwitchioAccount.info.description":
+    "To accept payment card payments you need:",
+  "settings.cardSwitchioAccount.info.softpos":
+    "the Switchio SoftPOS app on this device,",
+  "settings.cardSwitchioAccount.info.softposLink": "About Switchio SoftPOS",
+  "settings.cardSwitchioAccount.info.title": "Payment card payments",
+  "settings.cardSwitchioAccount.nativeRuntimeWarning":
+    "The card terminal is available only in the native app.",
   "settings.catalog": "MENU",
   "settings.categories.add": "Add category",
   "settings.categories.delete": "Delete category",
@@ -369,6 +380,7 @@ export const enSettings = {
   "settings.paymentAccounts.default": "Default",
   "settings.paymentAccounts.method.cashRegister": "Cash",
   "settings.paymentAccounts.method.iban": "Bank transfer",
+  "settings.paymentAccounts.method.cardSwitchio": "Payment card",
   "settings.paymentAccounts.method.spark": "Bitcoin",
   "settings.paymentAccounts.moveDown.aria": "Move {name} down",
   "settings.paymentAccounts.moveUp.aria": "Move {name} up",

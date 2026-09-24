@@ -1,6 +1,8 @@
+import { Capacitor } from "@capacitor/core"
 import { Link, useNavigate } from "@tanstack/react-router"
 import {
   BanknoteIcon,
+  CreditCardIcon,
   LandmarkIcon,
   LoaderCircleIcon,
   XIcon,
@@ -26,7 +28,9 @@ import {
   cancelPayment,
   markPaymentPaidCash,
   markPaymentPaidIban,
+  payPaymentWithSwitchioCard,
 } from "@/core/modules/payment/payment-actions.ts"
+import type { PayPaymentWithSwitchioCardError } from "@/core/modules/payment/payment-errors.ts"
 import {
   type BankQrPayload,
   createBankQrPayloads,
@@ -53,6 +57,7 @@ import type {
   PaymentMethodTab,
 } from "@/features/payment-wait/payment-wait-types.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -67,7 +72,24 @@ const preparingPaymentMethodKeys = {
   spark: "paymentWait.preparing.spark",
   iban: "paymentWait.preparing.iban",
   cash: "paymentWait.preparing.cash",
+  card: "paymentWait.preparing.card",
 } satisfies Record<PaymentMethodTab, TranslationKey>
+
+/**
+ * A card decline and an unreadable terminal result must never read the
+ * same: after an unreadable result the card may well have been charged, so
+ * staff has to check SwitchioPay instead of simply tapping again.
+ */
+const cardPaymentErrorKeys = {
+  PaymentNotFound: "paymentWait.cardPaid.error.generic",
+  PaymentNotPayable: "paymentWait.cardPaid.error.notPayable",
+  CardSwitchioAccountNotFound: "paymentWait.cardPaid.error.generic",
+  AccountCurrencyMismatch: "paymentWait.cardPaid.error.generic",
+  SwitchioAttemptUnresolved: "paymentWait.cardPaid.error.unreadable",
+  SwitchioUnavailable: "paymentWait.cardPaid.error.unavailable",
+  SwitchioPaymentFailed: "paymentWait.cardPaid.error.declined",
+  SwitchioResultUnreadable: "paymentWait.cardPaid.error.unreadable",
+} satisfies Record<PayPaymentWithSwitchioCardError["type"], TranslationKey>
 
 export function PaymentWaitPage({ paymentId }: { readonly paymentId: string }) {
   const { t } = useTranslation()
@@ -86,11 +108,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const navigate = useNavigate()
+  const confirm = useConfirmDialog()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
   const [ibanPaymentPending, setIbanPaymentPending] = useState(false)
   const [ibanPaymentErrorKey, setIbanPaymentErrorKey] =
+    useState<TranslationKey | null>(null)
+  const [cardPaymentPending, setCardPaymentPending] = useState(false)
+  const [cardPaymentErrorKey, setCardPaymentErrorKey] =
     useState<TranslationKey | null>(null)
   const [cancelPending, setCancelPending] = useState(false)
   const [paymentMethodPreparationState, setPaymentMethodPreparationState] =
@@ -219,6 +245,27 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       })
     }
 
+    // The SwitchioPay terminal is driven through Android intents, so the
+    // method only exists inside the native app — offering it in a browser or
+    // PWA would render a tab whose only button can never work.
+    const enabledCardAccount = Capacitor.isNativePlatform()
+      ? enabledPaymentMethodAccounts.find(
+          (account) =>
+            account.kind === "cardSwitchio" &&
+            account.cardCurrency === payment?.currency
+        )
+      : undefined
+    if (enabledCardAccount) {
+      paymentMethods.push({
+        id: "card",
+        kind: "cardSwitchio",
+        accountId: enabledCardAccount.id,
+        label: t("paymentWait.method.card"),
+        qrPayload: null,
+        icon: <CreditCardIcon />,
+      })
+    }
+
     return paymentMethods.toSorted(
       (firstMethod, secondMethod) =>
         paymentMethodOrder.indexOf(firstMethod.kind) -
@@ -258,7 +305,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       (activePaymentMethod.id === "iban" && payment.ibanAccountId !== null) ||
       (activePaymentMethod.id === "cash" &&
         payment.cashRegisterAccountId !== null &&
-        payment.cashRegisterAccountId !== undefined))
+        payment.cashRegisterAccountId !== undefined) ||
+      (activePaymentMethod.id === "card" &&
+        payment.cardAccountId !== null &&
+        payment.cardAccountId !== undefined))
 
   const runPaymentMethodPreparation = useCallback(
     async (
@@ -273,6 +323,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             paymentId,
             ...(method.kind === "cashRegister"
               ? { cashRegister: { accountId: method.accountId } }
+              : {}),
+            ...(method.kind === "cardSwitchio"
+              ? { card: { accountId: method.accountId } }
               : {}),
             ...(method.kind === "iban"
               ? { bank: { accountId: method.accountId } }
@@ -400,6 +453,14 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     ibanAccountId !== null &&
     ibanAccountId !== undefined &&
     !isPaid
+  const cardAccountId = payment.cardAccountId
+  const isCardPaymentMethod = activePaymentMethod?.id === "card"
+  const cardUnresolvedTransactionId = payment.cardUnresolvedTransactionId
+  const canPayCard =
+    isCardPaymentMethod &&
+    cardAccountId !== null &&
+    cardAccountId !== undefined &&
+    paymentStatus === "pending"
   const canCancelPayment = payment.canceledAt === null && !isPaid
 
   const handleMarkCashPaid = async () => {
@@ -447,6 +508,49 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       }
     } finally {
       setIbanPaymentPending(false)
+    }
+  }
+
+  const handlePayCard = async () => {
+    if (!canPayCard) return
+
+    // The last attempt's outcome is unknown, so the card may already have
+    // been charged: another attempt only after staff has checked SwitchioPay.
+    const retryUnresolved =
+      cardUnresolvedTransactionId !== null &&
+      cardUnresolvedTransactionId !== undefined
+    if (retryUnresolved) {
+      const confirmed = await confirm({
+        title: t("paymentWait.cardPaid.retryUnresolved.title"),
+        description: t("paymentWait.cardPaid.retryUnresolved.description", {
+          transactionId: cardUnresolvedTransactionId,
+        }),
+        confirmLabel: t("paymentWait.cardPaid.retryUnresolved.confirm"),
+        cancelLabel: t("paymentWait.cardPaid.retryUnresolved.cancel"),
+        variant: "destructive",
+      })
+      if (!confirmed) return
+    }
+
+    setCardPaymentErrorKey(null)
+    setCardPaymentPending(true)
+    try {
+      await using run = appRun()
+
+      const result = await run(
+        payPaymentWithSwitchioCard({
+          paymentId,
+          accountId: cardAccountId,
+          retryUnresolved,
+        })
+      )
+
+      if (!result.ok) {
+        console.error("Failed to take the card payment", result.error)
+        setCardPaymentErrorKey(cardPaymentErrorKeys[result.error.type])
+      }
+    } finally {
+      setCardPaymentPending(false)
     }
   }
 
@@ -517,7 +621,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                   if (
                     value === "spark" ||
                     value === "iban" ||
-                    value === "cash"
+                    value === "cash" ||
+                    value === "card"
                   ) {
                     setSelectedPaymentMethod(value)
                   }
@@ -572,7 +677,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             </div>
           ) : null}
 
-          {activePreparingPaymentMethodKey && isCashPaymentMethod ? (
+          {activePreparingPaymentMethodKey &&
+          (isCashPaymentMethod || isCardPaymentMethod) ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoaderCircleIcon className="animate-spin" />
               <span>{t(activePreparingPaymentMethodKey)}</span>
@@ -586,6 +692,13 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}
               cashRegisterAccountId={cashRegisterAccountId}
+              canPayCard={canPayCard}
+              cardPaymentErrorKey={cardPaymentErrorKey}
+              cardPaymentPending={cardPaymentPending}
+              cardAccountId={cardAccountId}
+              cardUnresolvedTransactionId={
+                cardPaymentPending ? null : cardUnresolvedTransactionId
+              }
               canMarkIbanPaid={canMarkIbanPaid}
               ibanPaymentErrorKey={ibanPaymentErrorKey}
               ibanPaymentPending={ibanPaymentPending}
@@ -595,6 +708,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
               onMarkCashPaid={() => void handleMarkCashPaid()}
               onMarkIbanPaid={() => void handleMarkIbanPaid()}
+              onPayCard={() => void handlePayCard()}
             />
           ) : null}
 
@@ -603,7 +717,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               <p className="text-lg font-semibold tracking-tight">
                 {isCashPaymentMethod
                   ? t("paymentWait.cashPaid.prompt")
-                  : t("paymentWait.scanOrTap")}
+                  : isCardPaymentMethod
+                    ? t("paymentWait.cardPaid.prompt")
+                    : t("paymentWait.scanOrTap")}
               </p>
             </div>
             {wakeLockEnabled && !wakeLockSupported ? (

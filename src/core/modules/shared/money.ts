@@ -147,3 +147,14 @@ export const satsToFiat = ({
   readonly sats: number
   readonly exchangeRate: number
 }): number => (sats / SATS_PER_BTC) * exchangeRate
+
+/**
+ * ISO 4217 numeric currency codes, required by payment terminals that speak
+ * the numeric form of the standard rather than the alphabetic one (Switchio
+ * Pay's ECR protocol, for example).
+ */
+export const currencyNumericCodes = {
+  USD: 840,
+  EUR: 978,
+  CZK: 203,
+} as const satisfies Record<FiatCurrency, number>

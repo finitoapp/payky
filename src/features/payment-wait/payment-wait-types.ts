@@ -6,7 +6,7 @@ import type { BankQrPayload } from "@/core/modules/payment/payment-iban-qr-paylo
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export type PaymentMethodTab = "spark" | "iban" | "cash"
+export type PaymentMethodTab = "spark" | "iban" | "cash" | "card"
 
 export interface PaymentMethodOptionBase {
   readonly kind: DefaultPaymentMethod
@@ -26,6 +26,7 @@ export type PaymentMethodOption = PaymentMethodOptionBase &
         readonly iban: string | null
       }
     | { readonly id: "cash"; readonly qrPayload: null }
+    | { readonly id: "card"; readonly qrPayload: null }
   )
 
 export interface CashPaymentTabProps {
@@ -34,6 +35,16 @@ export interface CashPaymentTabProps {
   readonly cashPaymentPending: boolean
   readonly cashRegisterAccountId: AccountId | null | undefined
   readonly onMarkCashPaid: () => void
+}
+
+export interface CardPaymentTabProps {
+  readonly canPayCard: boolean
+  readonly cardPaymentErrorKey: TranslationKey | null
+  readonly cardPaymentPending: boolean
+  readonly cardAccountId: AccountId | null | undefined
+  /** Set while the last terminal attempt's outcome is unknown. */
+  readonly cardUnresolvedTransactionId: string | null | undefined
+  readonly onPayCard: () => void
 }
 
 export interface IbanPaidTabProps {

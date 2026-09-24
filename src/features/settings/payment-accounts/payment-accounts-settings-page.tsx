@@ -1,9 +1,11 @@
+import { Capacitor } from "@capacitor/core"
 import { Link, type LinkProps } from "@tanstack/react-router"
 import {
   BanknoteIcon,
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  CreditCardIcon,
   LandmarkIcon,
   type LucideIcon,
   ZapIcon,
@@ -14,11 +16,13 @@ import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
 import {
+  saveCardSwitchioAccount,
   saveCashRegisterAccount,
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
 import {
+  cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
@@ -61,15 +65,22 @@ export function PaymentAccountsSettingsPage() {
   const { data: bankData } = useEvoluQuery(fiatBankAccountQuery)
   const { data: sparkData } = useEvoluQuery(sparkAccountQuery)
   const { data: cashData } = useEvoluQuery(cashRegisterAccountQuery)
+  const { data: cardData } = useEvoluQuery(cardSwitchioAccountQuery)
   const [settings] = settingsData
   const [bank] = bankData
   const [spark] = sparkData
   const [cash] = cashData
+  const [card] = cardData
 
   const appCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
   const bankEnabled = bank !== undefined && bank.isDeleted !== 1
   const sparkEnabled = spark !== undefined && spark.isDeleted !== 1
   const cashEnabled = cash !== undefined && cash.isDeleted !== 1
+  const cardEnabled = card !== undefined && card.isDeleted !== 1
+  // The SwitchioPay terminal is driven through Android intents, so only the
+  // native app can offer it. The account is plain synced data, though, so it
+  // stays configurable here for the devices that can.
+  const isNativeRuntime = Capacitor.isNativePlatform()
 
   const currencyMismatch = (currency: FiatCurrency | undefined) =>
     currency === undefined || currency === appCurrency
@@ -137,6 +148,27 @@ export function PaymentAccountsSettingsPage() {
         await using run = appRun()
         await run.ok(
           saveCashRegisterAccount({ enabled, currency: appCurrency })
+        )
+      },
+    },
+    cardSwitchio: {
+      icon: CreditCardIcon,
+      title: "settings.paymentAccounts.method.cardSwitchio",
+      switchLabel: "settings.cardSwitchioAccount.enabled.label",
+      enabled: cardEnabled,
+      available:
+        isNativeRuntime && cardEnabled && card.currency === appCurrency,
+      canEnable: true,
+      status: !isNativeRuntime
+        ? t("settings.cardSwitchioAccount.nativeRuntimeWarning")
+        : cardEnabled
+          ? currencyMismatch(card.currency)
+          : null,
+      to: "/settings/payment-accounts/card-switchio",
+      saveEnabled: async (enabled) => {
+        await using run = appRun()
+        await run.ok(
+          saveCardSwitchioAccount({ enabled, currency: appCurrency })
         )
       },
     },

@@ -15,6 +15,8 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(SwitchioPlugin.class);
+
         super.onCreate(savedInstanceState);
         enableEdgeToEdge();
         hideSystemBars();

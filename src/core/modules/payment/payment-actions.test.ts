@@ -1,7 +1,18 @@
-import { createIdFromString, sqliteTrue, testCreateRun } from "@evolu/common"
+import {
+  createIdFromString,
+  ok,
+  sqliteTrue,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test, vi } from "vitest"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  createYadioApiDep,
+  type YadioApiDep,
+} from "@/core/integrations/yadio/yadio-client.ts"
+import { saveCardSwitchioAccount } from "@/core/modules/account/account-actions.ts"
+import { createCardSwitchioAccountId } from "@/core/modules/account/account-utils.ts"
 import {
   createAccountTransaction,
   deleteAccountTransaction,
@@ -52,6 +63,12 @@ import {
   TimestampMsSchema,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
+import {
+  interpretSwitchioPaymentResult,
+  type SwitchioTerminalDep,
+} from "@/core/native/switchio.ts"
+import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
@@ -63,8 +80,11 @@ import {
   loadPayment,
   markPaymentPaidCash,
   markPaymentPaidIban,
+  payPaymentWithSwitchioCard,
+  settleRestoredSwitchioCardPayment,
   updatePayment,
 } from "./payment-actions.ts"
+import { preparePaymentMethod } from "./payment-preparation-actions.ts"
 import {
   paymentByIdQuery,
   paymentsWithClaimsByBillIdQuery,
@@ -75,6 +95,12 @@ import {
   paymentWithDetailsByIdQuery,
   reconciliationClaimsByPaymentIdQuery,
 } from "./payment-test-fixtures.ts"
+import type { PaymentId } from "./payment-types.ts"
+
+const paymentCardSwitchioByPaymentIdQuery = (id: PaymentId) =>
+  createQuery((db) =>
+    db.selectFrom("paymentCardSwitchio").selectAll().where("id", "=", id)
+  )
 
 describe("payment actions", () => {
   test("creates and loads a payment with payment option details through real Evolu", async () => {
@@ -2779,4 +2805,413 @@ describe("payment actions", () => {
       coverage: "paid",
     })
   }, 15_000)
+
+  test("takes a card payment on the terminal and settles it", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const requests: Array<{ readonly transactionId: string }> = []
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+      switchioTerminal: {
+        pay: async (request) => {
+          requests.push(request)
+          return ok({
+            responseCode: "OK",
+            authCode: "114546",
+            sequenceNumber: "001001614",
+            maskedPan: "970348******3910",
+            cardLabel: "Air Bank",
+            terminalId: "M1TNEXGO01",
+            terminalDateTime: "Jul 16, 2020 14:39:37",
+          })
+        },
+      },
+      // `preparePaymentMethod` declares the Spark/rate deps for its other
+      // branches; the card branch never reaches them.
+      fetch: async () => new Response("{}"),
+      sparkWallet: { create: async () => createFakeSparkWallet({}) },
+      ...createYadioApiDep(),
+    } satisfies EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      SwitchioTerminalDep &
+      SparkWalletDep &
+      FetchDep &
+      YadioApiDep
+    await using run = testCreateRun(deps)
+    await run.ok(saveCardSwitchioAccount({ enabled: true, currency: "CZK" }))
+    const cardAccountId = createCardSwitchioAccountId("CZK")
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(1_000),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+    await run.orThrow(
+      preparePaymentMethod({
+        paymentId: id,
+        card: { accountId: cardAccountId },
+      })
+    )
+
+    await expect(
+      run(
+        payPaymentWithSwitchioCard({ paymentId: id, accountId: cardAccountId })
+      )
+    ).resolves.toEqual({ ok: true, value: id })
+
+    // ECR adds `tipAmount` to the `amount` it is given, so the terminal
+    // must be asked for the total *minus* the tip: 11_900 + 1_000 is the
+    // 12_900 the customer owes, not 13_900.
+    expect(requests).toMatchObject([
+      {
+        amount: 11_900,
+        tipAmount: 1_000,
+        currencyCode: 203,
+      },
+    ])
+    expect(requests[0]?.transactionId).toContain(id)
+
+    await expect
+      .poll(() => evolu.loadQuery(accountTransactionsByPaymentIdQuery(id)))
+      .toMatchObject([
+        {
+          accountId: cardAccountId,
+          kind: "cardSwitchio",
+          amount: 12_900,
+          currency: "CZK",
+        },
+      ])
+
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id)))
+      .toHaveLength(1)
+
+    await expect
+      .poll(() => evolu.loadQuery(paymentCardSwitchioByPaymentIdQuery(id)))
+      .toMatchObject([
+        {
+          accountId: cardAccountId,
+          transactionId: requests[0]?.transactionId,
+          responseCode: "OK",
+          authCode: "114546",
+          sequenceNumber: "001001614",
+          maskedPan: "970348******3910",
+          cardLabel: "Air Bank",
+          terminalId: "M1TNEXGO01",
+          terminalDateTime: "Jul 16, 2020 14:39:37",
+        },
+      ])
+  }, 15_000)
+
+  test("a declined card leaves the payment unsettled but keeps the terminal request id", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+      switchioTerminal: {
+        pay: async () =>
+          interpretSwitchioPaymentResult({
+            resultCode: 0,
+            transactionResult: JSON.stringify({
+              responseCode: "DECLINED",
+              responseMessage: "zamitnuto",
+            }),
+          }),
+      },
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SwitchioTerminalDep
+    await using run = testCreateRun(deps)
+    await run.ok(saveCardSwitchioAccount({ enabled: true, currency: "CZK" }))
+    const cardAccountId = createCardSwitchioAccountId("CZK")
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    const result = await run(
+      payPaymentWithSwitchioCard({ paymentId: id, accountId: cardAccountId })
+    )
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error).toMatchObject({
+      type: "SwitchioPaymentFailed",
+      responseCode: "DECLINED",
+    })
+
+    // No money arrived, so nothing may claim the payment...
+    expect(
+      await evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id))
+    ).toHaveLength(0)
+    // ...but the ECR request id written before the intent left is still
+    // there, which is what makes a lost result traceable.
+    const [cardRow] = await evolu.loadQuery(
+      paymentCardSwitchioByPaymentIdQuery(id)
+    )
+    expect(cardRow?.transactionId).toContain(id)
+    expect(cardRow?.responseCode).toBe(null)
+    // A decline is a definite answer, so the attempt is not left unresolved.
+    expect(cardRow?.unresolvedTransactionId).toBe(null)
+  }, 15_000)
+
+  test("refuses a card account whose currency differs from the payment", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+      switchioTerminal: {
+        pay: async () => {
+          throw new Error("The terminal must not be asked to pay.")
+        },
+      },
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SwitchioTerminalDep
+    await using run = testCreateRun(deps)
+    await run.ok(saveCardSwitchioAccount({ enabled: true, currency: "EUR" }))
+    const cardAccountId = createCardSwitchioAccountId("EUR")
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+      })
+    )
+
+    const result = await run(
+      payPaymentWithSwitchioCard({ paymentId: id, accountId: cardAccountId })
+    )
+
+    expect(result.ok).toBe(false)
+    expect(!result.ok && result.error).toMatchObject({
+      type: "AccountCurrencyMismatch",
+      accountKind: "cardSwitchio",
+    })
+  }, 15_000)
+
+  describe("card payment attempts", () => {
+    const approved = ok({
+      responseCode: "OK",
+      authCode: "114546",
+      sequenceNumber: null,
+      maskedPan: null,
+      cardLabel: null,
+      terminalId: null,
+      terminalDateTime: null,
+    })
+
+    const setUp = async (
+      pay: SwitchioTerminalDep["switchioTerminal"]["pay"]
+    ) => {
+      const testEvolu = await createEvoluTest()
+      const { evolu } = testEvolu
+      const requests: Array<{ readonly transactionId: string }> = []
+      const deps = {
+        evolu,
+        evoluOwnerId: evolu.appOwner.id,
+        ...createTestDateDep(),
+        switchioTerminal: {
+          pay: async (request) => {
+            requests.push(request)
+            return pay(request)
+          },
+        },
+      } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & SwitchioTerminalDep
+      const run = testCreateRun(deps)
+      await run.ok(saveCardSwitchioAccount({ enabled: true, currency: "CZK" }))
+      const accountId = createCardSwitchioAccountId("CZK")
+      const paymentId = await run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(12_900),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+        })
+      )
+      return {
+        evolu,
+        run,
+        requests,
+        accountId,
+        paymentId,
+        [Symbol.asyncDispose]: async () => {
+          await run[Symbol.asyncDispose]()
+          await testEvolu[Symbol.asyncDispose]()
+        },
+      }
+    }
+
+    test("refuses an already paid payment before the terminal is asked", async () => {
+      await using ctx = await setUp(async () => approved)
+      const { run, requests, accountId, paymentId } = ctx
+
+      await run.orThrow(payPaymentWithSwitchioCard({ paymentId, accountId }))
+      const second = await run(
+        payPaymentWithSwitchioCard({ paymentId, accountId })
+      )
+
+      expect(!second.ok && second.error).toMatchObject({
+        type: "PaymentNotPayable",
+        status: "paid",
+      })
+      expect(requests).toHaveLength(1)
+    }, 15_000)
+
+    test("refuses a canceled payment before the terminal is asked", async () => {
+      await using ctx = await setUp(async () => approved)
+      const { run, requests, accountId, paymentId } = ctx
+
+      await run.orThrow(cancelPayment(paymentId))
+      const result = await run(
+        payPaymentWithSwitchioCard({ paymentId, accountId })
+      )
+
+      expect(!result.ok && result.error).toMatchObject({
+        type: "PaymentNotPayable",
+        status: "canceled",
+      })
+      expect(requests).toHaveLength(0)
+    }, 15_000)
+
+    test("an unreadable result blocks another attempt until it is explicitly retried", async () => {
+      const results = [
+        interpretSwitchioPaymentResult({
+          resultCode: -1,
+          transactionResult: "not json",
+        }),
+        approved,
+      ]
+      await using ctx = await setUp(async () => {
+        const next = results.shift()
+        if (next === undefined) throw new Error("Unexpected terminal call.")
+        return next
+      })
+      const { evolu, run, requests, accountId, paymentId } = ctx
+
+      const first = await run(
+        payPaymentWithSwitchioCard({ paymentId, accountId })
+      )
+      expect(!first.ok && first.error.type).toBe("SwitchioResultUnreadable")
+      const [unresolvedRow] = await evolu.loadQuery(
+        paymentCardSwitchioByPaymentIdQuery(paymentId)
+      )
+      expect(unresolvedRow?.unresolvedTransactionId).toBe(
+        requests[0]?.transactionId
+      )
+
+      const blocked = await run(
+        payPaymentWithSwitchioCard({ paymentId, accountId })
+      )
+      expect(!blocked.ok && blocked.error).toMatchObject({
+        type: "SwitchioAttemptUnresolved",
+        transactionId: requests[0]?.transactionId,
+      })
+      expect(requests).toHaveLength(1)
+
+      await expect(
+        run(
+          payPaymentWithSwitchioCard({
+            paymentId,
+            accountId,
+            retryUnresolved: true,
+          })
+        )
+      ).resolves.toEqual({ ok: true, value: paymentId })
+      const [settledRow] = await evolu.loadQuery(
+        paymentCardSwitchioByPaymentIdQuery(paymentId)
+      )
+      expect(settledRow).toMatchObject({
+        transactionId: requests[1]?.transactionId,
+        unresolvedTransactionId: null,
+        authCode: "114546",
+      })
+    }, 15_000)
+
+    test("settles a result restored after the app was killed", async () => {
+      // The WebView died while SwitchioPay was in the foreground: the bridge
+      // call never resolved normally, so the attempt stays unresolved.
+      await using ctx = await setUp(async () =>
+        interpretSwitchioPaymentResult({
+          resultCode: -1,
+          transactionResult: null,
+        })
+      )
+      const { evolu, run, requests, accountId, paymentId } = ctx
+      await run(payPaymentWithSwitchioCard({ paymentId, accountId }))
+      const transactionId = requests[0]?.transactionId ?? null
+
+      await expect(
+        run(
+          settleRestoredSwitchioCardPayment({
+            resultCode: -1,
+            transactionId,
+            transactionResult: JSON.stringify({
+              transactionId,
+              responseCode: "OK",
+              authCode: "998877",
+            }),
+          })
+        )
+      ).resolves.toEqual({ ok: true, value: paymentId })
+
+      await expect
+        .poll(() =>
+          evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(paymentId))
+        )
+        .toHaveLength(1)
+      const [row] = await evolu.loadQuery(
+        paymentCardSwitchioByPaymentIdQuery(paymentId)
+      )
+      expect(row).toMatchObject({
+        unresolvedTransactionId: null,
+        authCode: "998877",
+      })
+    }, 15_000)
+
+    test("refuses a restored result for an unknown request id", async () => {
+      await using ctx = await setUp(async () => approved)
+
+      const result = await ctx.run(
+        settleRestoredSwitchioCardPayment({
+          resultCode: -1,
+          transactionId: "unknown",
+          transactionResult: JSON.stringify({ responseCode: "OK" }),
+        })
+      )
+
+      expect(!result.ok && result.error).toMatchObject({
+        type: "SwitchioRestoredResultUnmatched",
+        transactionId: "unknown",
+      })
+    }, 15_000)
+  })
 })

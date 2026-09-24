@@ -11,6 +11,7 @@ import { AppErrorBoundary } from "@/components/app/error-boundary.tsx"
 import { NativeBackButtonHandler } from "@/components/app/native-back-button-handler.tsx"
 import { PwaUpdateToast } from "@/components/app/pwa-update-toast.tsx"
 import { SentryController } from "@/components/app/sentry-controller.tsx"
+import { SwitchioRestoredResult } from "@/components/app/switchio-restored-result.tsx"
 import { E2eTestBridge } from "@/components/e2e-test-bridge.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { Toaster } from "@/components/ui/sonner.tsx"
@@ -95,6 +96,7 @@ export function App() {
                    */}
                   <AppMigrations>
                     <AppBackgroundJobs />
+                    <SwitchioRestoredResult />
                   </AppMigrations>
                   <E2eTestBridge />
                 </Suspense>

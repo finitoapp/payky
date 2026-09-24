@@ -22,6 +22,7 @@ export const defaultPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> = [
   "cashRegister",
   "spark",
   "iban",
+  "cardSwitchio",
 ]
 
 export const createDefaultSettings = (): AppSettingsRow => ({

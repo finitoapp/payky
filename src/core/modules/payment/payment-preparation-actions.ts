@@ -18,6 +18,7 @@ import {
   type YadioHttpError,
 } from "@/core/integrations/yadio/yadio-client.ts"
 import {
+  cardSwitchioAccountByIdQuery,
   cashRegisterAccountByIdQuery,
   ibanAccountByIdQuery,
 } from "@/core/modules/account/account-queries.ts"
@@ -26,6 +27,7 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type {
   payment,
   paymentBtc,
+  paymentCardSwitchio,
   paymentCashRegister,
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
@@ -61,9 +63,11 @@ import {
 import {
   type AccountCurrencyMismatchError,
   type AccountSparkNotFoundError,
+  type CardSwitchioAccountNotFoundError,
   type CashRegisterAccountNotFoundError,
   type CreatePreparedPaymentError,
   createAccountSparkNotFoundError,
+  createCardSwitchioAccountNotFoundError,
   createCashRegisterAccountNotFoundError,
   createIbanAccountNotFoundError,
   createPaymentNumberNotFoundError,
@@ -300,6 +304,37 @@ const prepareCashRegisterMethod =
     return ok({ id: paymentId, accountId })
   }
 
+const prepareCardMethod =
+  ({
+    paymentId,
+    accountId,
+    paymentCurrency,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly paymentCurrency: FiatCurrency
+  }): Task<
+    UpsertValues<typeof paymentCardSwitchio>,
+    CardSwitchioAccountNotFoundError | AccountCurrencyMismatchError,
+    EvoluDep
+  > =>
+  async (run) => {
+    const accountResult = loadAccountWithCurrencyCheck({
+      rows: await run.deps.evolu.loadQuery(
+        cardSwitchioAccountByIdQuery(accountId)
+      ),
+      notFoundError: createCardSwitchioAccountNotFoundError({
+        id: accountId,
+      }),
+      accountKind: "cardSwitchio",
+      accountId,
+      expectedCurrency: paymentCurrency,
+    })
+    if (!accountResult.ok) return accountResult
+
+    return ok({ id: paymentId, accountId })
+  }
+
 /**
  * Unlike the other methods, a bank transfer needs the payment's number: its
  * serial and date become the variable and specific symbols the payer quotes.
@@ -411,6 +446,7 @@ export const preparePaymentMethod =
     paymentId,
     bank,
     cashRegister,
+    card,
     spark,
   }: {
     readonly paymentId: PaymentId
@@ -418,6 +454,9 @@ export const preparePaymentMethod =
       readonly accountId: AccountId
     }
     readonly cashRegister?: {
+      readonly accountId: AccountId
+    }
+    readonly card?: {
       readonly accountId: AccountId
     }
     readonly spark?: {
@@ -453,15 +492,24 @@ export const preparePaymentMethod =
 
     // `null` means the method wasn't requested, which is not the same as
     // failing to prepare it — hence one nullable `Result` each, collapsed to
-    // plain nullable values below. The cash and bank preparations are
+    // plain nullable values below. The cash, card and bank preparations are
     // independent reads, so they run together.
-    const [cashRegisterResult, ibanResult] = await Promise.all([
+    const [cashRegisterResult, cardResult, ibanResult] = await Promise.all([
       cashRegister === undefined
         ? null
         : run(
             prepareCashRegisterMethod({
               paymentId,
               accountId: cashRegister.accountId,
+              paymentCurrency: payment.currency,
+            })
+          ),
+      card === undefined
+        ? null
+        : run(
+            prepareCardMethod({
+              paymentId,
+              accountId: card.accountId,
               paymentCurrency: payment.currency,
             })
           ),
@@ -478,6 +526,7 @@ export const preparePaymentMethod =
     if (cashRegisterResult !== null && !cashRegisterResult.ok) {
       return cashRegisterResult
     }
+    if (cardResult !== null && !cardResult.ok) return cardResult
     if (ibanResult !== null && !ibanResult.ok) return ibanResult
 
     // Spark waits its turn: it calls out to Yadio and the Spark SDK, so
@@ -496,11 +545,13 @@ export const preparePaymentMethod =
     if (sparkResult !== null && !sparkResult.ok) return sparkResult
 
     const cashRegisterValues = cashRegisterResult?.value ?? null
+    const cardValues = cardResult?.value ?? null
     const ibanValues = ibanResult?.value ?? null
     const sparkValues = sparkResult?.value ?? null
 
     if (
       cashRegisterValues === null &&
+      cardValues === null &&
       ibanValues === null &&
       sparkValues === null
     ) {
@@ -508,25 +559,35 @@ export const preparePaymentMethod =
     }
 
     // `payment.expiresAt` describes the payment as a whole, but only some
-    // methods expire: a Lightning invoice does, a cash drawer or a bank
-    // transfer never does. The methods can coexist on one payment, so the
-    // payment expires only while *every* prepared method has an expiry
-    // window. Without this, preparing Lightning and then switching the same
-    // payment to cash or IBAN left the old `expiresAt` behind, and 15
+    // methods expire: a Lightning invoice does, a cash drawer, a card
+    // terminal or a bank transfer never does. The methods can coexist on one
+    // payment, so the payment expires only while *every* prepared method has
+    // an expiry window. Without this, preparing Lightning and then switching
+    // the same payment to cash or IBAN left the old `expiresAt` behind, and 15
     // minutes later `derivePaymentStatus` reported a perfectly live cash
     // payment as `expired` — silently releasing the bill's editing lock.
     // See docs/bill-payment-states.md.
     const hasNonExpiringMethod =
       cashRegisterValues !== null ||
+      cardValues !== null ||
       ibanValues !== null ||
       nonExpiringMethods.some(
         (row) =>
-          row.cashRegisterAccountId !== null || row.ibanAccountId !== null
+          row.cashRegisterAccountId !== null ||
+          row.cardAccountId !== null ||
+          row.ibanAccountId !== null
       )
 
     await runMutationWithCompletion((options) => {
       if (cashRegisterValues !== null) {
         run.deps.evolu.upsert("paymentCashRegister", cashRegisterValues, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
+      }
+
+      if (cardValues !== null) {
+        run.deps.evolu.upsert("paymentCardSwitchio", cardValues, {
           ...options,
           ownerId: evoluOwnerId,
         })

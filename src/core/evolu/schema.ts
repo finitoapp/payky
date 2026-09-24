@@ -3,6 +3,7 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 
 import {
   account,
+  accountCardSwitchio,
   accountCashRegister,
   accountIban,
   accountIndexes,
@@ -44,6 +45,7 @@ import {
   paymentBtc,
   paymentBtcLightning,
   paymentBtcSpark,
+  paymentCardSwitchio,
   paymentCashRegister,
   paymentIban,
   paymentIndexes,
@@ -71,6 +73,7 @@ export const AppSchema = {
   accountSpark,
   sparkAccountSyncPointer,
   accountCashRegister,
+  accountCardSwitchio,
   accountTransaction,
   accountTransactionIban,
   accountTransactionSpark,
@@ -92,6 +95,7 @@ export const AppSchema = {
   paymentBtcLightning,
   paymentBtcSpark,
   paymentIban,
+  paymentCardSwitchio,
   paymentLine,
   paymentNumber,
   paymentLastNumber,

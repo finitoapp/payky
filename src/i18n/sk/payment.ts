@@ -54,6 +54,7 @@ export const skPayment = {
   "paymentDetail.invalidId": "Neplatné ID platby.",
   "paymentDetail.notFound": "Platba sa nenašla.",
   "paymentDetail.paymentMethod": "Zaplatené cez",
+  "paymentDetail.paymentMethod.card": "Platobnou kartou",
   "paymentDetail.paymentMethod.cash": "Hotovosť",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.none": "Zatiaľ nespárované",
@@ -104,6 +105,31 @@ export const skPayment = {
   "paymentWait.cancel": "Zrušiť platbu",
   "paymentWait.cancelError": "Platbu sa nepodarilo zrušiť.",
   "paymentWait.canceled": "Táto platba bola zrušená.",
+  "paymentWait.cardPaid.action": "Zaplatiť platobnou kartou",
+  "paymentWait.cardPaid.error.declined": "Platba platobnou kartou neprebehla.",
+  "paymentWait.cardPaid.error.generic":
+    "Platbu platobnou kartou nie je možné vykonať.",
+  "paymentWait.cardPaid.error.unavailable":
+    "Aplikácia terminálu SwitchioPay nie je na tomto zariadení dostupná.",
+  "paymentWait.cardPaid.error.unreadable":
+    "Terminál nevrátil čitateľný výsledok. Predtým, než to skúsite znova, skontrolujte transakciu v SwitchioPay.",
+  "paymentWait.cardPaid.error.notPayable":
+    "Túto platbu už nie je možné zaplatiť kartou.",
+  "paymentWait.cardPaid.pending": "Čakám na terminál...",
+  "paymentWait.cardPaid.prompt": "Prijmite platbu platobnou kartou",
+  "paymentWait.cardPaid.unavailable":
+    "K tejto platbe nie je pripojený platobný terminál.",
+  "paymentWait.cardPaid.restored.paid":
+    "Platba kartou bola po reštarte aplikácie zaznamenaná.",
+  "paymentWait.cardPaid.restored.unresolved":
+    "Výsledok platby kartou z obdobia pred reštartom aplikácie sa nepodarilo spracovať. Skontrolujte transakciu v SwitchioPay.",
+  "paymentWait.cardPaid.retryUnresolved.cancel": "Späť",
+  "paymentWait.cardPaid.retryUnresolved.confirm": "Strhnúť znova",
+  "paymentWait.cardPaid.retryUnresolved.description":
+    "Výsledok posledného pokusu ({transactionId}) nie je známy a karta už mohla byť stiahnutá. Strhnite znova, až keď v SwitchioPay overíte, že platba neprebehla.",
+  "paymentWait.cardPaid.retryUnresolved.title": "Strhnúť kartu znova?",
+  "paymentWait.cardPaid.unresolved":
+    "Výsledok posledného pokusu ({transactionId}) nie je známy. Predtým, než to skúsite znova, skontrolujte transakciu v SwitchioPay.",
   "paymentWait.cashPaid.action": "Označiť ako zaplatené",
   "paymentWait.cashPaid.error": "Platbu sa nepodarilo označiť ako zaplatenú.",
   "paymentWait.cashPaid.pending": "Označujem ako zaplatené...",
@@ -128,6 +154,7 @@ export const skPayment = {
   "paymentWait.ibanPaid.error": "Prevod sa nepodarilo potvrdiť.",
   "paymentWait.ibanPaid.pending": "Potvrdzujem...",
   "paymentWait.invalidId": "Neplatné ID platby.",
+  "paymentWait.method.card": "Platobná karta",
   "paymentWait.method.cash": "Hotovosť",
   "paymentWait.method.iban": "Prevod",
   "paymentWait.method.lightning": "Bitcoin",
@@ -137,6 +164,7 @@ export const skPayment = {
   "paymentWait.pay": "Zaplatiť",
   "paymentWait.prepareError": "Túto platobnú metódu sa nepodarilo pripraviť.",
   "paymentWait.prepareRetry": "Skúsiť platobnú metódu znova",
+  "paymentWait.preparing.card": "Pripravujem platbu platobnou kartou...",
   "paymentWait.preparing.cash": "Pripravujem hotovostnú platbu...",
   "paymentWait.preparing.iban": "Pripravujem bankovú QR platbu...",
   "paymentWait.preparing.spark": "Pripravujem Lightning žiadosť...",

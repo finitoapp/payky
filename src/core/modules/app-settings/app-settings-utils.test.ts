@@ -31,24 +31,23 @@ describe("parsePaymentMethodOrder", () => {
   })
 
   test("preserves a valid stored order", () => {
-    expect(parsePaymentMethodOrder('["iban","spark","cashRegister"]')).toEqual([
-      "iban",
-      "spark",
-      "cashRegister",
-    ])
+    expect(
+      parsePaymentMethodOrder('["iban","spark","cashRegister","cardSwitchio"]')
+    ).toEqual(["iban", "spark", "cashRegister", "cardSwitchio"])
   })
 
   test("dedups repeated methods, keeping the first occurrence", () => {
     expect(
-      parsePaymentMethodOrder('["iban","iban","spark","cashRegister"]')
-    ).toEqual(["iban", "spark", "cashRegister"])
+      parsePaymentMethodOrder(
+        '["iban","iban","spark","cashRegister","cardSwitchio"]'
+      )
+    ).toEqual(["iban", "spark", "cashRegister", "cardSwitchio"])
   })
 
   test("appends methods missing from a partial stored order", () => {
     expect(parsePaymentMethodOrder('["iban"]')).toEqual([
       "iban",
-      "cashRegister",
-      "spark",
+      ...defaultPaymentMethodOrder.filter((method) => method !== "iban"),
     ])
   })
 })
@@ -60,7 +59,7 @@ describe("getPaymentMethodOrder", () => {
         paymentMethodOrderJson: '["iban","cashRegister","spark"]',
         defaultPaymentMethod: "spark",
       })
-    ).toEqual(["spark", "iban", "cashRegister"])
+    ).toEqual(["spark", "iban", "cashRegister", "cardSwitchio"])
   })
 
   test("falls back to the default order without settings", () => {

@@ -13,6 +13,7 @@ import {
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluSchema } from "@/core/evolu/schema.ts"
 import {
+  cardSwitchioAccountByIdQuery,
   cashRegisterAccountByIdQuery,
   ibanAccountByIdQuery,
 } from "@/core/modules/account/account-queries.ts"
@@ -33,12 +34,14 @@ import type {
   paymentCashRegister,
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
+import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
   createPaymentNumberDate,
   loadNextPaymentNumber,
   upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
+import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
 import {
   loadBillClosedAtForPayment,
   upsertReconciliationClaimRows,
@@ -54,7 +57,15 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
+import { currencyNumericCodes } from "@/core/modules/shared/money.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
+import {
+  interpretSwitchioPaymentResult,
+  type SwitchioCardPaymentResult,
+  type SwitchioNativePayResult,
+  type SwitchioPaymentError,
+  type SwitchioTerminalDep,
+} from "@/core/native/switchio.ts"
 import {
   assertHasSparkIdentifier,
   type WithSparkDetails,
@@ -62,13 +73,17 @@ import {
 import {
   type FiatCurrency,
   type NonEmptyString,
+  NonEmptyString255,
+  NonEmptyString255Schema,
   type TimestampMs,
   TimestampMsSchema,
 } from "../shared/schema.ts"
 import {
   type AccountCurrencyMismatchError,
+  type CardSwitchioAccountNotFoundError,
   type CreatePaymentError,
   createAccountCurrencyMismatchError,
+  createCardSwitchioAccountNotFoundError,
   createCashRegisterAccountNotFoundError,
   createIbanAccountNotFoundError,
   createPaymentAlreadyPaidError,
@@ -76,15 +91,27 @@ import {
   createPaymentNotClaimedError,
   createPaymentNotFoundError,
   createPaymentNotOverpaidError,
+  createPaymentNotPayableError,
+  createSwitchioAttemptUnresolvedError,
+  createSwitchioRestoredResultUnmatchedError,
   type MarkPaymentPaidCashError,
   type MarkPaymentPaidIbanError,
+  type PaymentAccountKind,
   type PaymentAlreadyPaidError,
   type PaymentNotCanceledError,
   type PaymentNotClaimedError,
   type PaymentNotFoundError,
   type PaymentNotOverpaidError,
+  type PayPaymentWithSwitchioCardError,
+  type SettleRestoredSwitchioCardPaymentError,
 } from "./payment-errors.ts"
-import { paymentByIdQuery } from "./payment-queries.ts"
+import {
+  paymentByIdQuery,
+  paymentCardSwitchioByIdQuery,
+  paymentCardSwitchioByTransactionIdQuery,
+} from "./payment-queries.ts"
+import { derivePaymentStatus } from "./payment-status-utils.ts"
+import { createVariableSymbolFromSerialNumber } from "./payment-symbol-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 /**
  * Shared "load the first row or fail, then check its currency matches" step
@@ -103,7 +130,7 @@ export const loadAccountWithCurrencyCheck = <
 }: {
   readonly rows: ReadonlyArray<TRow>
   readonly notFoundError: TNotFoundError
-  readonly accountKind: "cashRegister" | "iban"
+  readonly accountKind: PaymentAccountKind
   readonly accountId: AccountId
   readonly expectedCurrency: FiatCurrency
 }): Result<TRow, TNotFoundError | AccountCurrencyMismatchError> => {
@@ -123,6 +150,21 @@ export const loadAccountWithCurrencyCheck = <
   }
 
   return ok(account)
+}
+
+/**
+ * Reads an optional 255-char column, dropping an over-long value rather than
+ * throwing on it: the terminal result fields it reads are only there for
+ * tracing a transaction, and losing one of them must never fail a payment
+ * whose card was already charged.
+ */
+const optionalNonEmptyString255 = (
+  value: string | null | undefined
+): NonEmptyString255 | null => {
+  if (value === null || value === undefined || value === "") return null
+
+  const parsed = NonEmptyString255Schema.safeParse(value)
+  return parsed.success ? parsed.data : null
 }
 
 export type PaymentBtcInput = WithSparkDetails<
@@ -432,6 +474,7 @@ const markPaymentPaid =
     accountKind,
     accountQuery,
     notFoundError,
+    accountTransactionKind,
     transactionIdPrefix,
     paymentId,
     accountId,
@@ -439,7 +482,8 @@ const markPaymentPaid =
     occurredAt,
     note,
   }: MarkPaymentPaidInput & {
-    readonly accountKind: "cashRegister" | "iban"
+    readonly accountKind: PaymentAccountKind
+    readonly accountTransactionKind?: "cardSwitchio"
     readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
     readonly notFoundError: TNotFoundError
     readonly transactionIdPrefix: string
@@ -476,6 +520,7 @@ const markPaymentPaid =
           `${transactionIdPrefix}${paymentId}:${accountId}`
         ),
         accountId,
+        kind: accountTransactionKind,
         amount: payment.amount,
         currency: payment.currency,
         occurredAt:
@@ -558,6 +603,289 @@ export const markPaymentPaidIban = (
     notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
     transactionIdPrefix: "accountTransaction:iban:manual:payment:",
   })
+
+/**
+ * Records what the SwitchioPay terminal answered for one attempt — shared by
+ * `payPaymentWithSwitchioCard` and `settleRestoredSwitchioCardPayment`, since
+ * a result that only arrives after Android restarted the app means exactly
+ * the same thing.
+ *
+ * On success this mirrors `markPaymentPaidCash`: one account transaction
+ * keyed on payment + account (so a repeated result settles once, not twice)
+ * and one reconciliation claim, which is what makes `derivePaymentStatus`
+ * report the payment as paid. A definite failure clears the attempt's
+ * `unresolvedTransactionId`; an unreadable result leaves it set, because the
+ * card may have been charged. See docs/bill-payment-states.md.
+ */
+const recordSwitchioTerminalOutcome =
+  ({
+    paymentId,
+    accountId,
+    deviceId,
+    transactionId,
+    terminalResult,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly deviceId?: DeviceId | null
+    readonly transactionId: NonEmptyString255
+    readonly terminalResult: Result<
+      SwitchioCardPaymentResult,
+      SwitchioPaymentError
+    >
+  }): Task<
+    PaymentId,
+    | PaymentNotFoundError
+    | CardSwitchioAccountNotFoundError
+    | AccountCurrencyMismatchError
+    | SwitchioPaymentError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+
+    if (!terminalResult.ok) {
+      run.deps.console.warn("[payment] Switchio card payment failed", {
+        paymentId,
+        transactionId,
+        error: terminalResult.error,
+      })
+
+      if (terminalResult.error.type !== "SwitchioResultUnreadable") {
+        // Only this attempt's own marker is cleared: a late result for an
+        // older attempt must not resolve a newer one that is still unknown.
+        const [cardRow] = await run.deps.evolu.loadQuery(
+          paymentCardSwitchioByIdQuery(paymentId)
+        )
+        if (cardRow?.unresolvedTransactionId === transactionId) {
+          await runMutationWithCompletion((options) =>
+            run.deps.evolu.update(
+              "paymentCardSwitchio",
+              { id: paymentId, unresolvedTransactionId: null },
+              { ...options, ownerId: evoluOwnerId }
+            )
+          )
+        }
+      }
+
+      return terminalResult
+    }
+
+    // Transaction and claim land in one batch through `markPaymentPaid`, and
+    // before the terminal's trace fields on purpose: the claim is what makes
+    // the payment read as paid, so if the app dies mid-way the worst outcome
+    // is a paid payment with a thinner audit trail rather than a charged card
+    // that still shows as unpaid. `occurredAt` defaults to now — the card was
+    // approved just now, not when the intent was launched. No payment-status
+    // guard here: the card has been charged, so the money is recorded even
+    // on a payment that got canceled meanwhile.
+    const settleResult = await run(
+      markPaymentPaid({
+        paymentId,
+        accountId,
+        deviceId,
+        accountKind: "cardSwitchio",
+        accountTransactionKind: "cardSwitchio",
+        accountQuery: cardSwitchioAccountByIdQuery,
+        notFoundError: createCardSwitchioAccountNotFoundError({
+          id: accountId,
+        }),
+        transactionIdPrefix: "accountTransaction:cardSwitchio:payment:",
+      })
+    )
+    if (!settleResult.ok) return settleResult
+
+    const result = terminalResult.value
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "paymentCardSwitchio",
+        {
+          id: paymentId,
+          transactionId,
+          unresolvedTransactionId: null,
+          responseCode: optionalNonEmptyString255(result.responseCode),
+          authCode: optionalNonEmptyString255(result.authCode),
+          sequenceNumber: optionalNonEmptyString255(result.sequenceNumber),
+          maskedPan: optionalNonEmptyString255(result.maskedPan),
+          cardLabel: optionalNonEmptyString255(result.cardLabel),
+          terminalId: optionalNonEmptyString255(result.terminalId),
+          terminalDateTime: optionalNonEmptyString255(result.terminalDateTime),
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return settleResult
+  }
+
+/**
+ * Takes a card payment on the SwitchioPay terminal and settles it.
+ *
+ * Refuses before the terminal is asked when the payment can no longer take
+ * money: another method on the same payment may already have settled it, and
+ * the payment-wait screen's own `isPaid` check trails behind the database.
+ *
+ * The ECR request id is persisted *before* control leaves for SwitchioPay,
+ * both as `transactionId` and as `unresolvedTransactionId`: Android may kill
+ * this WebView while the terminal app is in the foreground, and with the id
+ * stored the result can still be matched (`settleRestoredSwitchioCardPayment`)
+ * or, failing that, checked against the terminal's own records. While the
+ * previous attempt is unresolved, another one needs `retryUnresolved` — the
+ * caller's confirmation that staff has checked SwitchioPay.
+ */
+export const payPaymentWithSwitchioCard =
+  ({
+    paymentId,
+    accountId,
+    deviceId,
+    retryUnresolved = false,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly deviceId?: DeviceId | null
+    readonly retryUnresolved?: boolean
+  }): Task<
+    PaymentId,
+    PayPaymentWithSwitchioCardError,
+    EvoluDep & EvoluOwnerIdDep & DateDep & SwitchioTerminalDep
+  > =>
+  async (run) => {
+    const { evoluOwnerId } = run.deps
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    const payment = paymentResult.value
+    const accountResult = loadAccountWithCurrencyCheck({
+      rows: await run.deps.evolu.loadQuery(
+        cardSwitchioAccountByIdQuery(accountId)
+      ),
+      notFoundError: createCardSwitchioAccountNotFoundError({
+        id: accountId,
+      }),
+      accountKind: "cardSwitchio",
+      accountId,
+      expectedCurrency: payment.currency,
+    })
+    if (!accountResult.ok) return accountResult
+
+    const [activeClaims, cardRows, paymentNumbers] = await Promise.all([
+      run.deps.evolu.loadQuery(
+        activeReconciliationClaimsByPaymentIdQuery(paymentId)
+      ),
+      run.deps.evolu.loadQuery(paymentCardSwitchioByIdQuery(paymentId)),
+      run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
+    ])
+
+    const status = derivePaymentStatus({
+      canceledAt: payment.canceledAt,
+      confirmedPaidAt: payment.confirmedPaidAt,
+      expiresAt: payment.expiresAt,
+      hasActiveClaim: activeClaims.length > 0,
+      now: run.deps.date.now(),
+    })
+    if (status !== "pending") {
+      return err(createPaymentNotPayableError({ id: paymentId, status }))
+    }
+
+    const unresolvedTransactionId = cardRows[0]?.unresolvedTransactionId
+    if (
+      unresolvedTransactionId !== null &&
+      unresolvedTransactionId !== undefined &&
+      !retryUnresolved
+    ) {
+      return err(
+        createSwitchioAttemptUnresolvedError({
+          id: paymentId,
+          transactionId: unresolvedTransactionId,
+        })
+      )
+    }
+
+    const paymentNumber = paymentNumbers[0]
+    const transactionId = NonEmptyString255(
+      `${paymentId}-${run.deps.date.now().getTime()}`
+    )
+
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.upsert(
+        "paymentCardSwitchio",
+        {
+          id: paymentId,
+          accountId,
+          transactionId,
+          unresolvedTransactionId: transactionId,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    const terminalResult = await run.deps.switchioTerminal.pay(
+      removeUndefinedValues({
+        transactionId,
+        // ECR takes the amount *without* the tip and adds `tipAmount` to it
+        // itself — its result documents `amount` as the total including the
+        // tip, while the request's does not. Passing the stored
+        // tip-inclusive total here charged the tip twice.
+        amount: calculatePaymentBaseAmount(payment),
+        tipAmount: payment.tipAmount,
+        currencyCode: currencyNumericCodes[payment.currency],
+        invoiceNumber:
+          paymentNumber === undefined
+            ? undefined
+            : createVariableSymbolFromSerialNumber(paymentNumber.serialNumber),
+      })
+    )
+
+    return run(
+      recordSwitchioTerminalOutcome({
+        paymentId,
+        accountId,
+        deviceId,
+        transactionId,
+        terminalResult,
+      })
+    )
+  }
+
+/**
+ * Settles a SwitchioPay result that Capacitor delivered as an
+ * `appRestoredResult` event: Android killed the app while the terminal was
+ * in the foreground, so the promise `payPaymentWithSwitchioCard` awaited is
+ * gone. The echoed request id finds the payment the attempt was made for.
+ */
+export const settleRestoredSwitchioCardPayment =
+  (
+    restored: SwitchioNativePayResult
+  ): Task<
+    PaymentId,
+    SettleRestoredSwitchioCardPaymentError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const transactionId = optionalNonEmptyString255(restored.transactionId)
+    const [cardRow] =
+      transactionId === null
+        ? []
+        : await run.deps.evolu.loadQuery(
+            paymentCardSwitchioByTransactionIdQuery(transactionId)
+          )
+    if (transactionId === null || cardRow === undefined) {
+      return err(
+        createSwitchioRestoredResultUnmatchedError({
+          transactionId: restored.transactionId,
+        })
+      )
+    }
+
+    return run(
+      recordSwitchioTerminalOutcome({
+        paymentId: cardRow.id,
+        accountId: cardRow.accountId,
+        transactionId,
+        terminalResult: interpretSwitchioPaymentResult(restored),
+      })
+    )
+  }
 
 export const cancelPayment =
   (

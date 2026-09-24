@@ -51,6 +51,7 @@ export const enPayment = {
   "paymentDetail.invalidId": "Invalid payment id.",
   "paymentDetail.notFound": "Payment was not found.",
   "paymentDetail.paymentMethod": "Paid by",
+  "paymentDetail.paymentMethod.card": "Payment card",
   "paymentDetail.paymentMethod.cash": "Cash",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.none": "Not reconciled yet",
@@ -102,6 +103,32 @@ export const enPayment = {
   "paymentWait.cancel": "Cancel payment",
   "paymentWait.cancelError": "Could not cancel the payment.",
   "paymentWait.canceled": "This payment was canceled.",
+  "paymentWait.cardPaid.action": "Pay with payment card",
+  "paymentWait.cardPaid.error.declined":
+    "Payment by payment card did not go through.",
+  "paymentWait.cardPaid.error.generic":
+    "Could not take payment by payment card.",
+  "paymentWait.cardPaid.error.unavailable":
+    "The SwitchioPay terminal app is not available on this device.",
+  "paymentWait.cardPaid.error.unreadable":
+    "The terminal did not report a readable result. Check the transaction in SwitchioPay before trying again.",
+  "paymentWait.cardPaid.error.notPayable":
+    "This payment can no longer be paid by card.",
+  "paymentWait.cardPaid.pending": "Waiting for the terminal...",
+  "paymentWait.cardPaid.prompt": "Accept payment by payment card",
+  "paymentWait.cardPaid.unavailable":
+    "Card terminal is not attached to this payment.",
+  "paymentWait.cardPaid.restored.paid":
+    "Card payment settled after the app restarted.",
+  "paymentWait.cardPaid.restored.unresolved":
+    "A card payment result from before the app restarted could not be processed. Check the transaction in SwitchioPay.",
+  "paymentWait.cardPaid.retryUnresolved.cancel": "Back",
+  "paymentWait.cardPaid.retryUnresolved.confirm": "Charge again",
+  "paymentWait.cardPaid.retryUnresolved.description":
+    "The result of the last attempt ({transactionId}) is unknown and the card may already have been charged. Charge again only after checking in SwitchioPay that it did not go through.",
+  "paymentWait.cardPaid.retryUnresolved.title": "Charge the card again?",
+  "paymentWait.cardPaid.unresolved":
+    "The result of the last attempt ({transactionId}) is unknown. Check the transaction in SwitchioPay before trying again.",
   "paymentWait.cashPaid.action": "Mark as paid",
   "paymentWait.cashPaid.error": "Could not mark the payment as paid.",
   "paymentWait.cashPaid.pending": "Marking paid...",
@@ -125,6 +152,7 @@ export const enPayment = {
   "paymentWait.ibanPaid.error": "Could not confirm the transfer.",
   "paymentWait.ibanPaid.pending": "Confirming...",
   "paymentWait.invalidId": "Invalid payment id.",
+  "paymentWait.method.card": "Payment card",
   "paymentWait.method.cash": "Cash",
   "paymentWait.method.iban": "Transfer",
   "paymentWait.method.lightning": "Bitcoin",
@@ -135,6 +163,7 @@ export const enPayment = {
   "paymentWait.pay": "Pay",
   "paymentWait.prepareError": "Could not prepare this payment method.",
   "paymentWait.prepareRetry": "Retry payment method",
+  "paymentWait.preparing.card": "Preparing payment by payment card...",
   "paymentWait.preparing.cash": "Preparing cash payment...",
   "paymentWait.preparing.iban": "Preparing bank QR payment...",
   "paymentWait.preparing.spark": "Preparing Lightning request...",

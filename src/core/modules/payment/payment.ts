@@ -8,6 +8,7 @@ import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   FiatCurrencySchema,
   type InferTable,
+  NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
@@ -69,6 +70,42 @@ export const paymentBtcSpark = {
   sparkInvoice: NonEmptyStringSchema,
 } as const
 
+/**
+ * A card payment taken on the SwitchioPay terminal.
+ *
+ * `transactionId` is the ECR request id this app generates and writes
+ * *before* handing control to SwitchioPay, so a payment whose result never
+ * makes it back (Android can kill this WebView while the terminal app is in
+ * the foreground) can still be matched against the terminal's own records.
+ * It stays `null` until the first attempt is launched, and is replaced on
+ * every retry.
+ *
+ * `unresolvedTransactionId` is set to the same id before the intent leaves
+ * and cleared once the terminal gives a definite answer. While it is set, the
+ * last attempt's outcome is unknown — the result was unreadable, or never
+ * came back — and the card may have been charged, so
+ * `payPaymentWithSwitchioCard` refuses another attempt until staff has
+ * checked SwitchioPay and explicitly retries.
+ *
+ * The result fields are what the ECR v8 transaction result carries for
+ * tracing a transaction with the acquirer; everything else the terminal
+ * returns (EMV data, tokens, DCC) is deliberately dropped. See
+ * `src/core/native/switchio.ts`.
+ */
+export const paymentCardSwitchio = {
+  id: PaymentId,
+  accountId: AccountId,
+  transactionId: NonEmptyString255Schema.nullable(),
+  unresolvedTransactionId: NonEmptyString255Schema.nullable(),
+  responseCode: NonEmptyString255Schema.nullable(),
+  authCode: NonEmptyString255Schema.nullable(),
+  sequenceNumber: NonEmptyString255Schema.nullable(),
+  maskedPan: NonEmptyString255Schema.nullable(),
+  cardLabel: NonEmptyString255Schema.nullable(),
+  terminalId: NonEmptyString255Schema.nullable(),
+  terminalDateTime: NonEmptyString255Schema.nullable(),
+} as const
+
 export const paymentIban = {
   id: PaymentId,
   accountId: AccountId,
@@ -90,6 +127,12 @@ export const paymentIndexes = ((create) => [
   create("paymentBtcSpark_sparkInvoice")
     .on("paymentBtcSpark")
     .column("sparkInvoice"),
+  create("paymentCardSwitchio_accountId")
+    .on("paymentCardSwitchio")
+    .column("accountId"),
+  create("paymentCardSwitchio_transactionId")
+    .on("paymentCardSwitchio")
+    .column("transactionId"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
   create("paymentIban_variableSymbol")
     .on("paymentIban")
@@ -102,3 +145,4 @@ export type PaymentBtcRow = InferTable<typeof paymentBtc>
 export type PaymentBtcLightningRow = InferTable<typeof paymentBtcLightning>
 export type PaymentBtcSparkRow = InferTable<typeof paymentBtcSpark>
 export type PaymentIbanRow = InferTable<typeof paymentIban>
+export type PaymentCardSwitchioRow = InferTable<typeof paymentCardSwitchio>

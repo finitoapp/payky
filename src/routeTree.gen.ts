@@ -56,6 +56,7 @@ import { Route as TerminalSettingsItemsIndexRouteImport } from './routes/_termin
 import { Route as TerminalSettingsItemsCatalogItemIdRouteImport } from './routes/_terminal.settings.items.$catalogItemId'
 import { Route as TerminalSettingsItemsNewRouteImport } from './routes/_terminal.settings.items.new'
 import { Route as TerminalSettingsPaymentAccountsIndexRouteImport } from './routes/_terminal.settings.payment-accounts.index'
+import { Route as TerminalSettingsPaymentAccountsCardSwitchioRouteImport } from './routes/_terminal.settings.payment-accounts.card-switchio'
 import { Route as TerminalSettingsPaymentAccountsIbanRouteImport } from './routes/_terminal.settings.payment-accounts.iban'
 import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './routes/_terminal.settings.payment-accounts.spark'
 import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
@@ -323,6 +324,12 @@ const TerminalSettingsPaymentAccountsIndexRoute =
     path: '/',
     getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
   } as any)
+const TerminalSettingsPaymentAccountsCardSwitchioRoute =
+  TerminalSettingsPaymentAccountsCardSwitchioRouteImport.update({
+    id: '/card-switchio',
+    path: '/card-switchio',
+    getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
+  } as any)
 const TerminalSettingsPaymentAccountsIbanRoute =
   TerminalSettingsPaymentAccountsIbanRouteImport.update({
     id: '/iban',
@@ -397,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
@@ -444,6 +452,7 @@ export interface FileRoutesByTo {
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
@@ -499,6 +508,7 @@ export interface FileRoutesById {
   '/_terminal/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/_terminal/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/_terminal/settings/items/new': typeof TerminalSettingsItemsNewRoute
+  '/_terminal/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRoute
   '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRoute
   '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
+    | '/settings/payment-accounts/card-switchio'
     | '/settings/payment-accounts/iban'
     | '/settings/payment-accounts/spark'
     | '/settings/tables/$tableId'
@@ -601,6 +612,7 @@ export interface FileRouteTypes {
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
+    | '/settings/payment-accounts/card-switchio'
     | '/settings/payment-accounts/iban'
     | '/settings/payment-accounts/spark'
     | '/settings/tables/$tableId'
@@ -655,6 +667,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/categories/new'
     | '/_terminal/settings/items/$catalogItemId'
     | '/_terminal/settings/items/new'
+    | '/_terminal/settings/payment-accounts/card-switchio'
     | '/_terminal/settings/payment-accounts/iban'
     | '/_terminal/settings/payment-accounts/spark'
     | '/_terminal/settings/tables/$tableId'
@@ -1006,6 +1019,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsIndexRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsRoute
     }
+    '/_terminal/settings/payment-accounts/card-switchio': {
+      id: '/_terminal/settings/payment-accounts/card-switchio'
+      path: '/card-switchio'
+      fullPath: '/settings/payment-accounts/card-switchio'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsCardSwitchioRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
     '/_terminal/settings/payment-accounts/iban': {
       id: '/_terminal/settings/payment-accounts/iban'
       path: '/iban'
@@ -1099,6 +1119,7 @@ const TerminalSettingsItemsRouteWithChildren =
   )
 
 interface TerminalSettingsPaymentAccountsRouteChildren {
+  TerminalSettingsPaymentAccountsCardSwitchioRoute: typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   TerminalSettingsPaymentAccountsIbanRoute: typeof TerminalSettingsPaymentAccountsIbanRoute
   TerminalSettingsPaymentAccountsSparkRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
   TerminalSettingsPaymentAccountsIndexRoute: typeof TerminalSettingsPaymentAccountsIndexRoute
@@ -1106,6 +1127,8 @@ interface TerminalSettingsPaymentAccountsRouteChildren {
 
 const TerminalSettingsPaymentAccountsRouteChildren: TerminalSettingsPaymentAccountsRouteChildren =
   {
+    TerminalSettingsPaymentAccountsCardSwitchioRoute:
+      TerminalSettingsPaymentAccountsCardSwitchioRoute,
     TerminalSettingsPaymentAccountsIbanRoute:
       TerminalSettingsPaymentAccountsIbanRoute,
     TerminalSettingsPaymentAccountsSparkRoute:

@@ -5,6 +5,7 @@ import {
 } from "@evolu/common"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**
@@ -165,7 +166,8 @@ export const paymentSparkDetailsByIdQuery = (idValue: PaymentId) =>
 
 /**
  * The account ids of a payment's prepared methods that never expire on
- * their own — a cash register drawer or a bank transfer. Read by
+ * their own — a cash register drawer, a card terminal or a bank transfer.
+ * Read by
  * `preparePaymentMethod`: `payment.expiresAt` describes the payment as a
  * whole, but the methods are not mutually exclusive (a payment can offer
  * Lightning *and* cash), so the payment only expires while every prepared
@@ -185,12 +187,50 @@ export const paymentNonExpiringMethodsByIdQuery = (idValue: PaymentId) =>
           .onRef("paymentCashRegister.id", "=", "payment.id")
           .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCardSwitchio", (join) =>
+        join
+          .onRef("paymentCardSwitchio.id", "=", "payment.id")
+          .on("paymentCardSwitchio.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "paymentIban.accountId as ibanAccountId",
         "paymentCashRegister.accountId as cashRegisterAccountId",
+        "paymentCardSwitchio.accountId as cardAccountId",
       ])
       .where("payment.id", "=", idValue)
       .where("payment.isDeleted", "is not", sqliteTrue)
+  )
+
+/**
+ * The card-terminal row of a payment, read by `payPaymentWithSwitchioCard`
+ * for the previous attempt's `unresolvedTransactionId`.
+ */
+export const paymentCardSwitchioByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentCardSwitchio")
+      .select(["id", "accountId", "transactionId", "unresolvedTransactionId"])
+      .where("id", "=", idValue)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("accountId", "is not", null)
+      .$narrowType<{ accountId: KyselyNotNull }>()
+  )
+
+/**
+ * The payment a terminal request id was launched for — how a result that
+ * arrives after Android restarted the app finds its way back.
+ */
+export const paymentCardSwitchioByTransactionIdQuery = (
+  transactionId: NonEmptyString255
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentCardSwitchio")
+      .select(["id", "accountId"])
+      .where("transactionId", "=", transactionId)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("accountId", "is not", null)
+      .$narrowType<{ accountId: KyselyNotNull }>()
   )
 
 /**
@@ -597,6 +637,11 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
           .onRef("paymentCashRegister.id", "=", "payment.id")
           .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCardSwitchio", (join) =>
+        join
+          .onRef("paymentCardSwitchio.id", "=", "payment.id")
+          .on("paymentCardSwitchio.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.billId",
@@ -613,6 +658,8 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentIban.variableSymbol",
         "paymentIban.specificSymbol",
         "paymentCashRegister.accountId as cashRegisterAccountId",
+        "paymentCardSwitchio.accountId as cardAccountId",
+        "paymentCardSwitchio.unresolvedTransactionId as cardUnresolvedTransactionId",
       ])
       .where("payment.id", "=", paymentId)
       .where("payment.isDeleted", "is not", sqliteTrue)

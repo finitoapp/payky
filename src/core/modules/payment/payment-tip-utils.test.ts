@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
   calculatePaymentAmounts,
+  calculatePaymentBaseAmount,
   calculatePercentageTipAmount,
 } from "./payment-tip-utils.ts"
 
@@ -46,5 +47,34 @@ describe("calculatePaymentAmounts", () => {
       amount: 500,
       tipAmount: 0,
     })
+  })
+})
+
+describe("calculatePaymentBaseAmount", () => {
+  test("takes the tip back out of a payment total", () => {
+    expect(
+      calculatePaymentBaseAmount({
+        amount: NonNegativeInteger(525),
+        tipAmount: NonNegativeInteger(25),
+      })
+    ).toBe(500)
+  })
+
+  test("round-trips a tipped total back to the amount it was built from", () => {
+    const amount = NonNegativeInteger(12_900)
+    const tipAmount = NonNegativeInteger(1_000)
+
+    expect(
+      calculatePaymentBaseAmount(calculatePaymentAmounts({ amount, tipAmount }))
+    ).toBe(amount)
+  })
+
+  test("never goes negative, however inconsistent the stored pair is", () => {
+    expect(
+      calculatePaymentBaseAmount({
+        amount: NonNegativeInteger(100),
+        tipAmount: NonNegativeInteger(500),
+      })
+    ).toBe(0)
   })
 })

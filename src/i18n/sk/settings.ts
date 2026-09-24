@@ -71,6 +71,18 @@ export const skSettings = {
   "settings.cashRegisterAccount.form.description":
     "Hotovostné platby používajú aktuálne vybranú fiat menu.",
   "settings.cashRegisterAccount.form.title": "Pokladna",
+  "settings.cardSwitchioAccount.enabled.label": "Zapnúť platobný terminál",
+  "settings.cardSwitchioAccount.info.contract":
+    "uzavretú zmluvu s poskytovateľom platobného riešenia, napríklad Comgate.",
+  "settings.cardSwitchioAccount.info.description":
+    "Na prijímanie platieb platobnou kartou potrebujete:",
+  "settings.cardSwitchioAccount.info.softpos":
+    "aplikáciu Switchio SoftPOS na tomto zariadení,",
+  "settings.cardSwitchioAccount.info.softposLink":
+    "O aplikácii Switchio SoftPOS",
+  "settings.cardSwitchioAccount.info.title": "Platby platobnou kartou",
+  "settings.cardSwitchioAccount.nativeRuntimeWarning":
+    "Platobný terminál je dostupný len v natívnej aplikácii.",
   "settings.catalog": "PONUKA",
   "settings.categories.add": "Pridať kategóriu",
   "settings.categories.delete": "Vymazať kategóriu",
@@ -371,6 +383,7 @@ export const skSettings = {
   "settings.paymentAccounts.default": "Predvolená",
   "settings.paymentAccounts.method.cashRegister": "Hotovosť",
   "settings.paymentAccounts.method.iban": "Bankový prevod",
+  "settings.paymentAccounts.method.cardSwitchio": "Platobná karta",
   "settings.paymentAccounts.method.spark": "Bitcoin",
   "settings.paymentAccounts.moveDown.aria": "Posunúť {name} nadol",
   "settings.paymentAccounts.moveUp.aria": "Posunúť {name} nahor",

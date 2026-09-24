@@ -130,7 +130,12 @@ export type Currency = ValueOf<typeof Currency>
 
 export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))
-export const AccountKindSchema = z.enum(["iban", "spark", "cashRegister"])
+export const AccountKindSchema = z.enum([
+  "iban",
+  "spark",
+  "cashRegister",
+  "cardSwitchio",
+])
 export const AccountTransactionKindSchema = z.enum([
   ...AccountKindSchema.options,
   "onchain",

@@ -52,6 +52,17 @@ export const accountCashRegister = {
   currency: FiatCurrencySchema,
 } as const
 
+/**
+ * The card terminal the SwitchioPay app is paired with. Owns nothing but a
+ * currency: everything else about the terminal (merchant id, acquirer,
+ * batches) lives in SwitchioPay itself, which this app only drives through
+ * intents. See `src/core/native/switchio.ts`.
+ */
+export const accountCardSwitchio = {
+  id: AccountId,
+  currency: FiatCurrencySchema,
+} as const
+
 export const accountIndexes = ((create) => [
   create("account_kind").on("account").column("kind"),
 ]) satisfies IndexesConfig
@@ -63,3 +74,4 @@ export type SparkAccountSyncPointerRow = InferTable<
   typeof sparkAccountSyncPointer
 >
 export type AccountCashRegisterRow = InferTable<typeof accountCashRegister>
+export type AccountCardSwitchioRow = InferTable<typeof accountCardSwitchio>

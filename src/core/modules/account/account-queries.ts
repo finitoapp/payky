@@ -40,6 +40,29 @@ export const cashRegisterAccountByIdQuery = (idValue: AccountId) =>
       }>()
   )
 
+export const cardSwitchioAccountByIdQuery = (idValue: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("account")
+      .innerJoin("accountCardSwitchio", "accountCardSwitchio.id", "account.id")
+      .select([
+        "account.id",
+        "account.name",
+        "account.kind",
+        "accountCardSwitchio.currency",
+      ])
+      .where("account.id", "=", idValue)
+      .where("account.kind", "=", "cardSwitchio")
+      .where("account.isDeleted", "is not", 1)
+      .where("accountCardSwitchio.isDeleted", "is not", 1)
+      .where("accountCardSwitchio.currency", "is not", null)
+      .$narrowType<{
+        name: KyselyNotNull
+        kind: KyselyNotNull
+        currency: KyselyNotNull
+      }>()
+  )
+
 export const ibanAccountByIdQuery = (idValue: AccountId) =>
   createQuery((db) =>
     db
@@ -167,9 +190,36 @@ export const cashRegisterAccountQuery = createQuery((db) =>
     }>()
 )
 
+export const cardSwitchioAccountQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .innerJoin("accountCardSwitchio", "accountCardSwitchio.id", "account.id")
+    .select([
+      "account.id",
+      "account.name",
+      "account.kind",
+      "account.isDeleted",
+      "accountCardSwitchio.currency",
+    ])
+    .where("account.kind", "=", "cardSwitchio")
+    .where("accountCardSwitchio.isDeleted", "is not", 1)
+    .where("account.name", "is not", null)
+    .where("account.kind", "is not", null)
+    .where("accountCardSwitchio.currency", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
+    .$narrowType<{
+      name: KyselyNotNull
+      kind: KyselyNotNull
+      currency: KyselyNotNull
+    }>()
+)
+
 /**
  * Every non-deleted account with the method-specific columns the payment
- * waiting screen needs to offer a Spark, IBAN, or cash-register tab.
+ * waiting screen needs to offer a Spark, IBAN, cash-register, or card tab.
  *
  * Newest first, so the screen's first match per kind is the same account
  * `fiatBankAccountQuery` and its siblings pick.
@@ -192,6 +242,11 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
         .onRef("accountCashRegister.id", "=", "account.id")
         .on("accountCashRegister.isDeleted", "is not", sqliteTrue)
     )
+    .leftJoin("accountCardSwitchio", (join) =>
+      join
+        .onRef("accountCardSwitchio.id", "=", "account.id")
+        .on("accountCardSwitchio.isDeleted", "is not", sqliteTrue)
+    )
     .select([
       "account.id",
       "account.kind",
@@ -201,6 +256,7 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
       "accountIban.currency as ibanCurrency",
       "accountIban.defaultQrFormat as ibanDefaultQrFormat",
       "accountCashRegister.currency as cashRegisterCurrency",
+      "accountCardSwitchio.currency as cardCurrency",
     ])
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.id", "is not", null)

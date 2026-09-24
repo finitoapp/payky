@@ -5,6 +5,7 @@ import { useMemo } from "react"
 import { accountAtom } from "@/atoms/account.ts"
 import { createDateDep, createFetchDep } from "@/core/deps.ts"
 import { createYadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
+import { createSwitchioTerminalDep } from "@/core/native/switchio.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -14,8 +15,9 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
  *
  * Returns a stable factory that creates a disposable Run wired with the full
  * superset of app dependencies (console, evolu, evoluOwnerId, date, fetch,
- * sparkWallet, yadioApi). Task dependency typing is structural, so Tasks that
- * need only a subset are unaffected by the extra deps.
+ * sparkWallet, yadioApi, switchioTerminal). Task dependency typing is
+ * structural, so Tasks that need only a subset are unaffected by the extra
+ * deps.
  *
  * ### Example
  *
@@ -45,6 +47,7 @@ export const useAppRun = () => {
         ...createFetchDep(),
         ...createSparkWalletDep(),
         ...createYadioApiDep(),
+        ...createSwitchioTerminalDep(),
       })
   }, [account.masterKey, console, evolu])
 }

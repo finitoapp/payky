@@ -36,6 +36,14 @@
         </provider>
     </application>
 
+    <!-- Lets SwitchioPlugin.isInstalled resolve the ECR payment intent. -->
+    <queries>
+        <intent>
+            <action android:name="switchio.pay.ECR" />
+            <data android:scheme="app" android:host="switchiopay" android:path="/api/main/v8/payment" />
+        </intent>
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />

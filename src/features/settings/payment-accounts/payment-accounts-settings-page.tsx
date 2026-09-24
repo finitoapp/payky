@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import { useQuery } from "@tanstack/react-query"
 import { Link, type LinkProps } from "@tanstack/react-router"
 import {
   BanknoteIcon,
@@ -32,6 +33,7 @@ import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import { getPaymentMethodOrder } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { isSwitchioInstalled } from "@/core/native/switchio.ts"
 import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -81,6 +83,11 @@ export function PaymentAccountsSettingsPage() {
   // native app can offer it. The account is plain synced data, though, so it
   // stays configurable here for the devices that can.
   const isNativeRuntime = Capacitor.isNativePlatform()
+  const switchioInstalledQuery = useQuery({
+    queryKey: ["native", "switchio-installed"],
+    queryFn: isSwitchioInstalled,
+    enabled: isNativeRuntime,
+  })
 
   const currencyMismatch = (currency: FiatCurrency | undefined) =>
     currency === undefined || currency === appCurrency
@@ -161,9 +168,11 @@ export function PaymentAccountsSettingsPage() {
       canEnable: true,
       status: !isNativeRuntime
         ? t("settings.cardSwitchioAccount.nativeRuntimeWarning")
-        : cardEnabled
-          ? currencyMismatch(card.currency)
-          : null,
+        : switchioInstalledQuery.data === false
+          ? t("settings.cardSwitchioAccount.notInstalledWarning")
+          : cardEnabled
+            ? currencyMismatch(card.currency)
+            : null,
       to: "/settings/payment-accounts/card-switchio",
       saveEnabled: async (enabled) => {
         await using run = appRun()

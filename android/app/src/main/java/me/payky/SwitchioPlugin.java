@@ -20,11 +20,11 @@ import org.json.JSONObject;
  * carrying a JSON payload, and the result comes back as a JSON string in the
  * activity result bundle. See "SwitchioPay - ECR API" sections 3.1 - 3.3.
  *
- * Whether SwitchioPay is installed is not probed up front: package
- * visibility filtering (Android 11+) would require declaring a {@code
- * <queries>} intent that exactly matches SwitchioPay's own intent filter,
- * which is not documented. Launching and handling
- * {@link ActivityNotFoundException} needs no such guess.
+ * {@link #isInstalled} probes with the same action and URI {@link #pay}
+ * launches, declared in the manifest's {@code <queries>} so package
+ * visibility filtering (Android 11+) lets it resolve. It only drives a
+ * settings warning: {@link #pay} still handles
+ * {@link ActivityNotFoundException} rather than trusting the probe.
  */
 @CapacitorPlugin(name = "Switchio")
 public class SwitchioPlugin extends Plugin {
@@ -37,6 +37,25 @@ public class SwitchioPlugin extends Plugin {
     // Matched by `src/core/native/switchio.ts`: the one rejection known to
     // happen before anything could have been charged.
     private static final String NOT_INSTALLED_CODE = "SWITCHIO_NOT_INSTALLED";
+
+    @PluginMethod
+    public void isInstalled(PluginCall call) {
+        boolean installed = paymentIntent("{}")
+                .resolveActivity(getContext().getPackageManager()) != null;
+        JSObject result = new JSObject();
+        result.put("installed", installed);
+        call.resolve(result);
+    }
+
+    private static Intent paymentIntent(String data) {
+        Uri uri = new Uri.Builder()
+                .scheme(URI_SCHEME)
+                .authority(URI_AUTHORITY)
+                .path(URI_PATH_PAYMENT)
+                .appendQueryParameter("data", data)
+                .build();
+        return new Intent(ECR_ACTION, uri);
+    }
 
     @PluginMethod
     public void pay(PluginCall call) {
@@ -69,14 +88,7 @@ public class SwitchioPlugin extends Plugin {
             return;
         }
 
-        Uri uri = new Uri.Builder()
-                .scheme(URI_SCHEME)
-                .authority(URI_AUTHORITY)
-                .path(URI_PATH_PAYMENT)
-                .appendQueryParameter("data", data.toString())
-                .build();
-
-        Intent intent = new Intent(ECR_ACTION, uri);
+        Intent intent = paymentIntent(data.toString());
         // Recommended by the ECR docs to keep SwitchioPay from opening a
         // second instance of itself.
         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);

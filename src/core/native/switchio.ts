@@ -11,6 +11,7 @@ import { defineError } from "@/core/error.ts"
  * native side lives in `android/app/src/main/java/me/payky/SwitchioPlugin.java`.
  */
 interface SwitchioNativePlugin {
+  isInstalled(): Promise<{ readonly installed: boolean }>
   pay(options: {
     readonly transactionId: string
     readonly amount: number
@@ -195,6 +196,10 @@ export const interpretSwitchioPaymentResult = ({
     terminalDateTime: optionalString(parsed.dateTimeTerminal),
   })
 }
+
+/** Whether this device can launch SwitchioPay; always `false` outside the native app. */
+export const isSwitchioInstalled = async (): Promise<boolean> =>
+  Capacitor.isNativePlatform() && (await SwitchioNative.isInstalled()).installed
 
 const isNotInstalledRejection = (error: unknown): boolean =>
   typeof error === "object" &&

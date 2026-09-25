@@ -63,4 +63,6 @@ export const enCommon = {
   "tables.tile.free": "Free",
   "tables.tile.multipleBills": "{value} open bills",
   "tables.tile.newBill": "New bill",
+  "tables.tile.partiallyPaid": "Partly paid",
+  "tables.tile.paymentPending": "Paying…",
 } as const

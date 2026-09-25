@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -33,7 +34,11 @@ import { TaxRecap } from "@/features/bill/tax-recap.tsx"
 import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
-import { PaymentDetailRow } from "@/features/payment/payment-detail.tsx"
+import {
+  PaymentDetailCopyRow,
+  PaymentDetailRow,
+  PaymentDetailTechnical,
+} from "@/features/payment/payment-detail.tsx"
 import {
   PaymentStatusIcon,
   paymentStatusBadgeClassName,
@@ -94,28 +99,38 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
   const hasTaxRecap = hasTaxableLines(taxRecapRows)
 
+  const closedOrCanceledLabel =
+    billStatus.status === "closed" && bill.closedAt !== null
+      ? t("billDetail.closedAtValue", {
+          date: formatDateTime(new Date(bill.closedAt), locale),
+        })
+      : billStatus.status === "canceled" && bill.canceledAt !== null
+        ? t("billDetail.canceledAtValue", {
+            date: formatDateTime(new Date(bill.canceledAt), locale),
+          })
+        : null
+
   return (
     <div className="flex flex-col gap-4">
+      {billStatus.status === "open" ? (
+        <Button
+          className="h-12"
+          nativeButton={false}
+          render={<Link to="/bill" search={{ billId }} />}
+        >
+          {t("billDetail.backToBill")}
+        </Button>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>
             {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
           </CardTitle>
-          <CardDescription>{bill.id}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("billDetail.total")}
-              </span>
-              <strong className="text-4xl font-semibold tracking-tight">
-                {formatMoney(
-                  { value: totalAmount, currency: bill.currency },
-                  locale
-                )}
-              </strong>
-            </div>
+          <CardDescription>
+            {formatDateTime(new Date(bill.createdAt), locale)}
+          </CardDescription>
+          <CardAction>
             <Badge
               variant={
                 billStatus.status === "canceled" ? "destructive" : "secondary"
@@ -124,35 +139,41 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
             >
               {t(billStatusLabelKey[billStatus.status])}
             </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <strong className="text-4xl font-semibold tracking-tight tabular-nums">
+              {formatMoney(
+                { value: totalAmount, currency: bill.currency },
+                locale
+              )}
+            </strong>
+            {closedOrCanceledLabel === null ? null : (
+              <span className="text-sm text-muted-foreground">
+                {closedOrCanceledLabel}
+              </span>
+            )}
           </div>
 
-          {billStatus.status === "open" ? (
-            <Button
-              variant="outline"
-              className="h-12"
-              nativeButton={false}
-              render={<Link to="/bill" search={{ billId }} />}
-            >
-              {t("billDetail.backToBill")}
-            </Button>
-          ) : null}
+          {/*
+           * Spelled out rather than "—": a counter sale with no table is a
+           * fact staff should read, not a missing value. "—" stays for a
+           * tableId whose table row is gone (deleted since).
+           */}
+          <PaymentDetailRow label={t("billDetail.table")}>
+            {bill.tableId === null ? (
+              <span className="text-muted-foreground">
+                {t("billDetail.noTable")}
+              </span>
+            ) : (
+              (table?.name ?? t("billDetail.emptyValue"))
+            )}
+          </PaymentDetailRow>
 
           {billStatus.hasCancellationCollision ? (
             <BillCancellationCollisionPanel billId={billId} />
           ) : null}
-
-          <Separator />
-
-          <div className="flex flex-col gap-3">
-            <PaymentDetailRow
-              label={t("billDetail.table")}
-              value={table?.name ?? t("billDetail.emptyValue")}
-            />
-            <PaymentDetailRow
-              label={t("billDetail.createdAt")}
-              value={formatDateTime(new Date(bill.createdAt), locale)}
-            />
-          </div>
 
           <Separator />
 
@@ -245,6 +266,20 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
           )}
         </CardContent>
       </Card>
+
+      <PaymentDetailTechnical>
+        <PaymentDetailCopyRow label={t("billDetail.id")} value={bill.id} />
+        <PaymentDetailCopyRow
+          label={t("paymentDetail.deviceId")}
+          value={bill.deviceId}
+        />
+        {bill.updatedAt === null ? null : (
+          <PaymentDetailRow
+            label={t("paymentDetail.updatedAt")}
+            value={formatDateTime(new Date(bill.updatedAt), locale)}
+          />
+        )}
+      </PaymentDetailTechnical>
     </div>
   )
 }

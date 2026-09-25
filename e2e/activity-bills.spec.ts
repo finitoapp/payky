@@ -98,7 +98,7 @@ test("clicking a bill row in the list opens its detail page", async ({
     .waitFor()
   expect(page.url()).toContain(`/activity/bills/${billId}`)
   await expect(
-    page.getByText(translate("en", "bill.status.closed"))
+    page.getByText(translate("en", "bill.status.closed"), { exact: true })
   ).toBeVisible()
   await page.screenshot({
     path: `${screenshotDir}/activity-bill-detail.png`,
@@ -205,7 +205,7 @@ test("the bill detail page shows the total, items, table, and linked payment", a
   await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
 
   await expect(
-    page.getByText(translate("en", "bill.status.closed"))
+    page.getByText(translate("en", "bill.status.closed"), { exact: true })
   ).toBeVisible()
   await expect(page.locator("strong", { hasText: "$5.00" })).toBeVisible()
   await expect(page.getByText("Coffee")).toBeVisible()
@@ -315,7 +315,7 @@ test("the bill detail page's own collision message resolves directly", async ({
     page.getByText(translate("en", "bill.collision.title"))
   ).toBeHidden()
   await expect(
-    page.getByText(translate("en", "bill.status.closed"))
+    page.getByText(translate("en", "bill.status.closed"), { exact: true })
   ).toBeVisible()
   await page.screenshot({
     path: `${screenshotDir}/activity-bill-detail-collision-resolved.png`,

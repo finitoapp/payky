@@ -2,14 +2,16 @@ import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { FetchDep } from "@/core/deps.ts"
+import type {
+  LnurlHttpError,
+  LnurlResponseError,
+} from "@/core/integrations/lnurl/lnurl-client.ts"
 import {
   createLud16MetadataUrl,
   fetchLnurlPayInvoice,
   fetchLnurlPayMetadata,
   fetchLnurlVerify,
-  type LnurlPayHttpError,
   type LnurlPayMetadata,
-  type LnurlPayResponseError,
 } from "./lnurl-pay-client.ts"
 
 const inputToString = (input: RequestInfo | URL): string =>
@@ -45,7 +47,7 @@ describe("lnurl pay client", () => {
     expect(createLud16MetadataUrl("not-an-address")).toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayRequestError",
+        type: "LnurlRequestError",
         message: "Invalid Lightning address.",
       },
     })
@@ -115,7 +117,7 @@ describe("lnurl pay client", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayRequestError",
+        type: "LnurlRequestError",
         message: "Recipient not found.",
       },
     })
@@ -132,11 +134,11 @@ describe("lnurl pay client", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayHttpError",
+        type: "LnurlHttpError",
         message: "LNURL metadata request failed: 503",
         status: 503,
         responseBody: "Service unavailable",
-      } satisfies Partial<LnurlPayHttpError>,
+      } satisfies Partial<LnurlHttpError>,
     })
   })
 
@@ -151,11 +153,11 @@ describe("lnurl pay client", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayResponseError",
+        type: "LnurlResponseError",
         message: "Invalid LNURL metadata response.",
         status: 200,
         responseBody: "<html>not json</html>",
-      } satisfies Partial<LnurlPayResponseError>,
+      } satisfies Partial<LnurlResponseError>,
     })
   })
 
@@ -170,10 +172,10 @@ describe("lnurl pay client", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayResponseError",
+        type: "LnurlResponseError",
         message: "Invalid LNURL metadata response.",
         status: 200,
-      } satisfies Partial<LnurlPayResponseError>,
+      } satisfies Partial<LnurlResponseError>,
     })
   })
 
@@ -234,10 +236,10 @@ describe("lnurl pay client", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayResponseError",
+        type: "LnurlResponseError",
         message: "Invalid LNURL invoice response.",
         status: 200,
-      } satisfies Partial<LnurlPayResponseError>,
+      } satisfies Partial<LnurlResponseError>,
     })
   })
 
@@ -276,11 +278,11 @@ describe("lnurl pay client", () => {
     ).resolves.toMatchObject({
       ok: false,
       error: {
-        type: "LnurlPayResponseError",
+        type: "LnurlResponseError",
         message: "Invalid LNURL verify response.",
         status: 200,
         responseBody: "not json",
-      } satisfies Partial<LnurlPayResponseError>,
+      } satisfies Partial<LnurlResponseError>,
     })
   })
 })

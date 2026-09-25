@@ -10,8 +10,9 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import type { EvoluSchema } from "@/core/evolu/schema.ts"
+import { redeemLnurlWithdraw } from "@/core/integrations/lnurl/lnurl-withdraw-client.ts"
 import {
   cardSwitchioAccountByIdQuery,
   cashRegisterAccountByIdQuery,
@@ -87,6 +88,7 @@ import {
   createCashRegisterAccountNotFoundError,
   createIbanAccountNotFoundError,
   createPaymentAlreadyPaidError,
+  createPaymentLightningInvoiceNotFoundError,
   createPaymentNotCanceledError,
   createPaymentNotClaimedError,
   createPaymentNotFoundError,
@@ -102,6 +104,7 @@ import {
   type PaymentNotClaimedError,
   type PaymentNotFoundError,
   type PaymentNotOverpaidError,
+  type PayPaymentWithBoltCardError,
   type PayPaymentWithSwitchioCardError,
   type SettleRestoredSwitchioCardPaymentError,
 } from "./payment-errors.ts"
@@ -109,6 +112,7 @@ import {
   paymentByIdQuery,
   paymentCardSwitchioByIdQuery,
   paymentCardSwitchioByTransactionIdQuery,
+  paymentSparkDetailsByIdQuery,
 } from "./payment-queries.ts"
 import { derivePaymentStatus } from "./payment-status-utils.ts"
 import { createVariableSymbolFromSerialNumber } from "./payment-symbol-utils.ts"
@@ -843,6 +847,58 @@ export const payPaymentWithSwitchioCard =
         deviceId,
         transactionId,
         terminalResult,
+      })
+    )
+  }
+
+/**
+ * Pays a payment's Lightning invoice from the Bolt Card whose `lnurlw://`
+ * link was read over NFC. Writes nothing: `ok` only means the card's service
+ * accepted the invoice, and the payment reads as paid once the Spark sync
+ * sees the invoice settle — exactly as when a wallet scans the QR. Retrying
+ * cannot charge twice, since a Lightning invoice can only be paid once.
+ */
+export const payPaymentWithBoltCard =
+  ({
+    paymentId,
+    uri,
+  }: {
+    readonly paymentId: PaymentId
+    readonly uri: string
+  }): Task<void, PayPaymentWithBoltCardError, EvoluDep & DateDep & FetchDep> =>
+  async (run) => {
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    const payment = paymentResult.value
+    const [activeClaims, sparkRows] = await Promise.all([
+      run.deps.evolu.loadQuery(
+        activeReconciliationClaimsByPaymentIdQuery(paymentId)
+      ),
+      run.deps.evolu.loadQuery(paymentSparkDetailsByIdQuery(paymentId)),
+    ])
+
+    const status = derivePaymentStatus({
+      canceledAt: payment.canceledAt,
+      confirmedPaidAt: payment.confirmedPaidAt,
+      expiresAt: payment.expiresAt,
+      hasActiveClaim: activeClaims.length > 0,
+      now: run.deps.date.now(),
+    })
+    if (status !== "pending") {
+      return err(createPaymentNotPayableError({ id: paymentId, status }))
+    }
+
+    const spark = sparkRows[0]
+    if (spark?.lnInvoice === null || spark?.lnInvoice === undefined) {
+      return err(createPaymentLightningInvoiceNotFoundError({ id: paymentId }))
+    }
+
+    return run(
+      redeemLnurlWithdraw({
+        uri,
+        invoice: spark.lnInvoice,
+        amountSats: spark.amountSats,
       })
     )
   }

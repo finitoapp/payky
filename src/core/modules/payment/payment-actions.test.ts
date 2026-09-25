@@ -1552,7 +1552,9 @@ describe("payment actions", () => {
 
     await expect
       .poll(() => evolu.loadQuery(paymentsWithClaimsByBillIdQuery(billId)))
-      .toMatchObject([{ id: paymentId, claimCount: 1 }])
+      .toMatchObject([
+        { id: paymentId, claimedTransactions: [{ kind: "cashRegister" }] },
+      ])
 
     const [transaction] = await evolu.loadQuery(
       createQuery((db) => db.selectFrom("accountTransaction").select(["id"]))
@@ -1560,13 +1562,13 @@ describe("payment actions", () => {
     if (transaction === undefined) throw new Error("no account transaction")
     await run.ok(deleteAccountTransaction(transaction.id))
 
-    // `claimCount` feeds `derivePaymentStatus`'s `hasActiveClaim` on the bill
+    // `claimedTransactions` feeds `derivePaymentStatus`'s `hasActiveClaim` on the bill
     // detail page. A claim whose transaction is gone is not money that
     // arrived — the bill's own coverage already ignores it — so counting it
     // would keep displaying the payment as paid while it funds nothing.
     await expect
       .poll(() => evolu.loadQuery(paymentsWithClaimsByBillIdQuery(billId)))
-      .toMatchObject([{ id: paymentId, claimCount: 0 }])
+      .toMatchObject([{ id: paymentId, claimedTransactions: [] }])
   }, 15_000)
 
   test("marks a payment paid against a cash register or an IBAN account, each under its own deterministic transaction id", async () => {

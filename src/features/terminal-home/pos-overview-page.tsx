@@ -2,6 +2,9 @@ import { useTimestamp } from "@dedalik/use-react"
 import { Link } from "@tanstack/react-router"
 import { PlusIcon } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
+import { z } from "zod"
+
+import { Toggle } from "@/components/ui/toggle.tsx"
 
 import {
   type OpenBillRow,
@@ -21,66 +24,163 @@ import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
 import { TableTileShell } from "@/features/tables/table-tile.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatElapsed, formatMoney } from "@/lib/format-utils.ts"
 
+interface BillWithStats {
+  readonly bill: OpenBillRow
+  readonly stats: ReturnType<typeof deriveBillSummaryStats>
+}
+
+const OCCUPIED_ONLY_STORAGE_KEY = "payky.posOccupiedOnly"
+const OccupiedOnlySchema = z.boolean()
+
 /**
- * Single overview grid for the POS home screen: a permanent "no table"
- * tile listing every open bill that isn't on a table, followed by one
- * tile per real table. The "no table" tile uses the exact same shell as a
- * table tile — it's always present (even with nothing in it) so it reads
- * as part of the grid rather than a special case, and doubles as the
- * always-available entry point for starting a bill without a table.
+ * Single overview grid for the POS home screen: one tile per real table,
+ * followed by a permanent "no table" tile listing every open bill that isn't
+ * on a table. The "no table" tile uses the exact same shell as a table tile
+ * — it's always present (even with nothing in it) so it reads as part of the
+ * grid rather than a special case, and doubles as the entry point for
+ * starting a bill without a table. It comes last because in a venue with
+ * tables it is the exception; without tables it is the only tile anyway.
+ *
+ * Above the grid, a summary of what is open across the floor and an
+ * "occupied only" filter that hides free tiles on a large floor.
  */
 export function PosOverviewPage() {
   const { t } = useTranslation()
+  const locale = useLocale()
   const { data: tables } = useEvoluQuery(tablesQuery)
   const { data: openBills } = useEvoluQuery(openBillsQuery)
+  const [occupiedOnly, setOccupiedOnly] = useLocalStorageState(
+    OCCUPIED_ONLY_STORAGE_KEY,
+    false,
+    OccupiedOnlySchema
+  )
 
-  const billsByTableId = useMemo(() => {
-    const map = new Map<TableId, ReadonlyArray<OpenBillRow>>()
-    for (const bill of openBills) {
-      if (bill.tableId === null) continue
-      map.set(bill.tableId, [...(map.get(bill.tableId) ?? []), bill])
-    }
-    // Newest first, matching the "no table" tile's own ordering.
-    for (const [tableId, bills] of map) {
-      map.set(
-        tableId,
-        [...bills].sort((a, b) => b.displayNumber - a.displayNumber)
-      )
-    }
-    return map
-  }, [openBills])
-
-  const unassignedBills = useMemo(
+  // Derived from the rows' embedded `lines`/`items`, not a per-bill query:
+  // a query per bill meant the floor view opened two more for every bill on
+  // screen. Newest first, in every tile.
+  const rows = useMemo(
     () =>
       openBills
-        .filter((bill) => bill.tableId === null)
-        .sort((a, b) => b.displayNumber - a.displayNumber),
+        .map((bill) => ({
+          bill,
+          stats: deriveBillSummaryStats(
+            calculateBillLineSummaries(bill.lines, bill.items)
+          ),
+        }))
+        .sort((a, b) => b.bill.displayNumber - a.bill.displayNumber),
     [openBills]
   )
 
+  const rowsByTableId = useMemo(() => {
+    const map = new Map<TableId | null, ReadonlyArray<BillWithStats>>()
+    for (const row of rows) {
+      map.set(row.bill.tableId, [...(map.get(row.bill.tableId) ?? []), row])
+    }
+    return map
+  }, [rows])
+
+  const tiles = [
+    ...tables.map((table) => ({
+      key: table.id,
+      testId: "table-tile",
+      name: table.name,
+      subtitle: t("tables.seatCount", { value: table.seatCount }),
+      tableId: table.id,
+      rows: rowsByTableId.get(table.id) ?? [],
+    })),
+    {
+      key: "no-table",
+      testId: "no-table-tile",
+      name: t("bill.table.dialog.none"),
+      subtitle: undefined,
+      tableId: undefined,
+      rows: rowsByTableId.get(null) ?? [],
+    },
+  ]
+  const visibleTiles = occupiedOnly
+    ? tiles.filter((tile) => tile.rows.length > 0)
+    : tiles
+  const floorTotal = formatRowsTotal(rows, locale)
+
   return (
-    <div className="mt-4 grid grid-cols-2 gap-2 pb-4">
-      <OverviewTile
-        testId="no-table-tile"
-        name={t("bill.table.dialog.none")}
-        tableId={undefined}
-        bills={unassignedBills}
-      />
-      {tables.map((table) => (
-        <OverviewTile
-          key={table.id}
-          testId="table-tile"
-          name={table.name}
-          subtitle={t("tables.seatCount", { value: table.seatCount })}
-          tableId={table.id}
-          bills={billsByTableId.get(table.id) ?? []}
-        />
-      ))}
+    <div className="mt-4 flex flex-col gap-3 pb-4">
+      {(rows.length > 0 || tables.length > 0) && (
+        <div className="flex min-h-8 items-center justify-between gap-2 px-1">
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {rows.length > 0 &&
+              (floorTotal === undefined
+                ? t("home.pos.summaryCount", { count: rows.length })
+                : t("home.pos.summary", {
+                    count: rows.length,
+                    total: floorTotal,
+                  }))}
+          </p>
+          {tables.length > 0 && (
+            <Toggle
+              size="sm"
+              variant="outline"
+              pressed={occupiedOnly}
+              onPressedChange={setOccupiedOnly}
+            >
+              {t("home.pos.occupiedOnly")}
+            </Toggle>
+          )}
+        </div>
+      )}
+      {visibleTiles.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2">
+          {visibleTiles.map(({ key, ...tile }) => (
+            <OverviewTile key={key} {...tile} />
+          ))}
+        </div>
+      ) : (
+        <p className="px-1 py-6 text-center text-sm text-muted-foreground">
+          {t("home.pos.noneOccupied")}
+        </p>
+      )}
+      {tables.length === 0 && (
+        <p className="px-1 text-sm text-muted-foreground">
+          {t("home.pos.noTables")}{" "}
+          <Link
+            to="/settings/tables"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            {t("home.pos.addTables")}
+          </Link>
+        </p>
+      )}
     </div>
+  )
+}
+
+/**
+ * The summed total of `rows`, formatted — or `undefined` when they are in
+ * more than one currency, which have no meaningful sum.
+ */
+const formatRowsTotal = (
+  rows: ReadonlyArray<BillWithStats>,
+  locale: string
+): string | undefined => {
+  const [first] = rows
+  if (
+    first === undefined ||
+    rows.some(({ bill }) => bill.currency !== first.bill.currency)
+  ) {
+    return undefined
+  }
+  return formatMoney(
+    {
+      value: NonNegativeInteger(
+        rows.reduce((sum, { stats }) => sum + stats.totalAmount, 0)
+      ),
+      currency: first.bill.currency,
+    },
+    locale
   )
 }
 
@@ -105,47 +205,19 @@ function OverviewTile({
   name,
   subtitle,
   tableId,
-  bills,
+  rows,
 }: {
   readonly testId: string
   readonly name: string
-  readonly subtitle?: string
+  readonly subtitle: string | undefined
   readonly tableId: TableId | undefined
-  readonly bills: ReadonlyArray<OpenBillRow>
+  readonly rows: ReadonlyArray<BillWithStats>
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const occupied = bills.length > 0
-  const onlyBill = bills.length === 1 ? bills[0] : undefined
-
-  // Derived from the rows' embedded `lines`/`items`, not a per-bill query:
-  // a query per bill meant the floor view opened two more for every bill on
-  // screen.
-  const rows = useMemo(
-    () =>
-      bills.map((bill) => ({
-        bill,
-        stats: deriveBillSummaryStats(
-          calculateBillLineSummaries(bill.lines, bill.items)
-        ),
-      })),
-    [bills]
-  )
-  const [firstBill] = bills
-  const tableTotal =
-    bills.length > 1 &&
-    firstBill !== undefined &&
-    bills.every((bill) => bill.currency === firstBill.currency)
-      ? formatMoney(
-          {
-            value: NonNegativeInteger(
-              rows.reduce((sum, { stats }) => sum + stats.totalAmount, 0)
-            ),
-            currency: firstBill.currency,
-          },
-          locale
-        )
-      : undefined
+  const occupied = rows.length > 0
+  const onlyBill = rows.length === 1 ? rows[0]?.bill : undefined
+  const tableTotal = rows.length > 1 ? formatRowsTotal(rows, locale) : undefined
 
   return (
     <div data-testid={testId} className="relative">

@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react"
+import { type ReactNode, Suspense, useState } from "react"
 
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
@@ -25,25 +25,51 @@ export function CategoriesSettingsPage() {
 
 function CategoriesSettingsBody() {
   const { t } = useTranslation()
-  const { data: existRows } = useEvoluQuery(catalogCategoriesExistQuery)
-  const hasAny = existRows.length > 0
-
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 250)
 
+  const searchInput = (
+    <SearchInput
+      value={search}
+      onChange={setSearch}
+      placeholder={t("settings.categories.search")}
+      clearAriaLabel={t("settings.categories.search.clear.aria")}
+    />
+  )
+
+  return (
+    <Suspense
+      fallback={
+        <>
+          {searchInput}
+          <ListSkeleton />
+        </>
+      }
+    >
+      <CategoriesSettingsContent
+        searchInput={searchInput}
+        search={debouncedSearch}
+      />
+    </Suspense>
+  )
+}
+
+function CategoriesSettingsContent({
+  searchInput,
+  search,
+}: {
+  readonly searchInput: ReactNode
+  readonly search: string
+}) {
+  const { data: existRows } = useEvoluQuery(catalogCategoriesExistQuery)
+  const hasAny = existRows.length > 0
+
   return (
     <>
-      {hasAny && (
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t("settings.categories.search")}
-          clearAriaLabel={t("settings.categories.search.clear.aria")}
-        />
-      )}
+      {hasAny && searchInput}
 
       <Suspense fallback={<ListSkeleton />}>
-        <CategoriesList search={debouncedSearch} hasAny={hasAny} />
+        <CategoriesList search={search} hasAny={hasAny} />
       </Suspense>
     </>
   )

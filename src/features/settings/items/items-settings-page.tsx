@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useState } from "react"
+import { type ReactNode, Suspense, useMemo, useState } from "react"
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { SearchInput } from "@/components/search-input.tsx"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
@@ -27,6 +27,50 @@ export function ItemsSettingsPage() {
 
 function ItemsSettingsBody() {
   const { t } = useTranslation()
+  const [search, setSearch] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
+  const debouncedSearch = useDebouncedValue(search, 250)
+
+  const searchInput = (
+    <SearchInput
+      value={search}
+      onChange={setSearch}
+      placeholder={t("settings.items.search")}
+      clearAriaLabel={t("settings.items.search.clear.aria")}
+    />
+  )
+
+  return (
+    <Suspense
+      fallback={
+        <>
+          {searchInput}
+          <ListSkeleton />
+        </>
+      }
+    >
+      <ItemsSettingsContent
+        searchInput={searchInput}
+        search={debouncedSearch}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+      />
+    </Suspense>
+  )
+}
+
+function ItemsSettingsContent({
+  searchInput,
+  search,
+  categoryFilter,
+  onCategoryFilterChange,
+}: {
+  readonly searchInput: ReactNode
+  readonly search: string
+  readonly categoryFilter: CategoryFilter
+  readonly onCategoryFilterChange: (value: CategoryFilter) => void
+}) {
+  const { t } = useTranslation()
   const { data: categories } = useEvoluQuery(catalogCategoriesQuery)
   const { data: usedCategoryIdRows } = useEvoluQuery(
     catalogItemUsedCategoryIdsQuery
@@ -37,33 +81,22 @@ function ItemsSettingsBody() {
   )
   const hasAny = usedCategoryIds.size > 0
 
-  const [search, setSearch] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
-  const debouncedSearch = useDebouncedValue(search, 250)
-
   return (
     <>
-      {hasAny && (
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t("settings.items.search")}
-          clearAriaLabel={t("settings.items.search.clear.aria")}
-        />
-      )}
+      {hasAny && searchInput}
 
       <CategoryFilterBar
         categories={categories}
         usedCategoryIds={usedCategoryIds}
         value={categoryFilter}
-        onValueChange={setCategoryFilter}
+        onValueChange={onCategoryFilterChange}
         allLabel={t("settings.items.category.all")}
         uncategorizedLabel={t("settings.items.category.uncategorized")}
       />
 
       <Suspense fallback={<ListSkeleton />}>
         <ItemsList
-          search={debouncedSearch}
+          search={search}
           categoryFilter={categoryFilter}
           hasAny={hasAny}
           categories={categories}

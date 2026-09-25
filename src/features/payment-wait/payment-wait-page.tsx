@@ -8,11 +8,17 @@ import {
   XIcon,
   ZapIcon,
 } from "lucide-react"
+import { LayoutGroup, motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { RouteMessage } from "@/components/route-message.tsx"
+import {
+  SlidingPillSegmentContent,
+  slidingPillLayout,
+  useSlidingPillTransition,
+} from "@/components/sliding-pill.tsx"
 import { SuccessPanel } from "@/components/success-panel.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -109,6 +115,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const locale = useLocale()
   const navigate = useNavigate()
   const confirm = useConfirmDialog()
+  const pillTransition = useSlidingPillTransition()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
     useState<TranslationKey | null>(null)
@@ -640,18 +647,39 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                       : t("paymentWait.scanOrTap")}
                   </TabsContent>
                 ))}
-                <TabsList className="mx-auto h-16 rounded-full border border-black/15 dark:border-white/15  bg-background p-2 px-3 text-muted-foreground">
-                  {orderedPaymentMethods.map((method) => (
-                    <TabsTrigger
-                      key={method.id}
-                      value={method.id}
-                      className="h-full rounded-full px-5 -mx-1 text-muted-foreground data-active:bg-foreground data-active:text-background dark:data-active:bg-white dark:data-active:text-black"
-                    >
-                      {method.icon}
-                      <span>{method.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                {/* Same control as the home mode switch: `sliding-pill.tsx`. */}
+                <LayoutGroup>
+                  <TabsList
+                    render={
+                      <motion.div {...slidingPillLayout(pillTransition)} />
+                    }
+                    className="mx-auto h-16 gap-0.5 border border-black/15 bg-background p-2 text-muted-foreground dark:border-white/15"
+                  >
+                    {orderedPaymentMethods.map((method) => {
+                      const active = method.id === activePaymentMethod.id
+                      return (
+                        <TabsTrigger
+                          key={method.id}
+                          value={method.id}
+                          aria-label={method.label}
+                          render={
+                            <motion.button
+                              {...slidingPillLayout(pillTransition)}
+                            />
+                          }
+                          className="isolate h-full min-w-12 flex-none gap-0 border-0 text-muted-foreground transition-colors duration-300 data-active:bg-transparent data-active:text-background data-active:shadow-none dark:data-active:bg-transparent dark:data-active:text-background motion-reduce:transition-none px-6"
+                        >
+                          <SlidingPillSegmentContent
+                            active={active}
+                            pillId="payment-method-pill"
+                            icon={method.icon}
+                            label={method.label}
+                          />
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+                </LayoutGroup>
               </Tabs>
             ) : (
               <p className="max-w-72 text-balance text-sm text-muted-foreground">

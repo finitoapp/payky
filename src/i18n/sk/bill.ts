@@ -96,6 +96,7 @@ export const skBill = {
   "billHistory.empty.description": "Vytvorené účty sa zobrazia tu.",
   "billHistory.empty.title": "Zatiaľ žiadne účty",
   "billHistory.overpaid": "Preplatené",
+  "billHistory.tip": "+ {amount} prepitné",
   "billHistory.title": "História účtov",
   "billHistory.underpaid": "Nedoplatené",
   "taxRecap.base": "Základ",

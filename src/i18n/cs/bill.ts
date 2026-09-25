@@ -94,6 +94,7 @@ export const csBill = {
   "billHistory.empty.description": "Vytvořené účty se zobrazí zde.",
   "billHistory.empty.title": "Zatím žádné účty",
   "billHistory.overpaid": "Přeplaceno",
+  "billHistory.tip": "+ {amount} spropitné",
   "billHistory.title": "Historie účtů",
   "billHistory.underpaid": "Nedoplaceno",
   "taxRecap.base": "Základ",

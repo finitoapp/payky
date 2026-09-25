@@ -314,7 +314,7 @@ test("the payment detail shows the bill's coverage as underpaid or overpaid when
   })
 })
 
-test("a payment with both a cancellation collision and an overpaid bill shows both issues in the list, separated by a middle dot", async ({
+test("a payment with both a cancellation collision and an overpaid bill shows both issues on its list row", async ({
   seededPage: page,
 }) => {
   await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
@@ -326,12 +326,15 @@ test("a payment with both a cancellation collision and an overpaid bill shows bo
     await simulateCancelAfterClaim(page, "en")
   })
 
-  await test.step("the activity list shows both issues on the same row, joined by a middle dot", async () => {
+  await test.step("the activity list shows both issues on the same row", async () => {
     await gotoPage(page, "/activity", "en", "activity.title")
+    const row = page.locator("nav").getByRole("link")
+    await expect(row).toHaveCount(1)
     await expect(
-      page.getByText(
-        `${translate("en", "paymentDetail.collision.title")} · ${translate("en", "paymentHistory.billOverpaid")}`
-      )
+      row.getByText(translate("en", "paymentDetail.collision.title"))
+    ).toBeVisible()
+    await expect(
+      row.getByText(translate("en", "paymentHistory.billOverpaid"))
     ).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/activity-list-multiple-issues.png`,

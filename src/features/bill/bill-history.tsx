@@ -6,7 +6,7 @@ import {
   RotateCwIcon,
   XIcon,
 } from "lucide-react"
-import { type ReactNode, useMemo } from "react"
+import type { ReactNode } from "react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { latestBillsQuery } from "@/core/modules/bill/bill-queries.ts"
 import {
@@ -17,12 +17,21 @@ import {
   calculateBillLineSummaries,
   deriveBillSummaryTotal,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
+import {
+  ActivityAmount,
+  ActivityIssueBadges,
+  activityIssueRowClassName,
+  formatActivityDayTitle,
+  PaymentMethodIcons,
+} from "@/features/activity/activity-row.tsx"
 import { billStatusLabelKey } from "@/features/bill/bill-status-display.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
+import { formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { groupByDay } from "@/lib/group-by-day.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -61,23 +70,19 @@ function BillStatusIcon({
 }
 
 /**
- * Everything this bill row should flag, joined with " · " — the
- * canceled+funded collision (see docs/bill-payment-states.md), and coverage
- * being off. Overpaid is always worth flagging; underpaid is only flagged
- * once a partial payment has actually landed (`claimedSum > 0`) — an
- * ordinary open cart with nothing paid yet is also "underpaid" by
- * definition, and flagging every one of those would drown out the genuine
- * signal (see the "reading the combination" table in
- * docs/bill-payment-states.md).
+ * Everything this bill row should flag — the canceled+funded collision (see
+ * docs/bill-payment-states.md), and coverage being off. Overpaid is always
+ * worth flagging; underpaid is only flagged once a partial payment has
+ * actually landed (`claimedSum > 0`) — an ordinary open cart with nothing
+ * paid yet is also "underpaid" by definition, and flagging every one of
+ * those would drown out the genuine signal (see the "reading the
+ * combination" table in docs/bill-payment-states.md).
  */
-function BillHistoryIssues({
-  summary,
-}: {
-  readonly summary: BillHistoryItemSummary
-}) {
-  const { t } = useTranslation()
-
-  const issues = [
+const resolveBillHistoryIssues = (
+  summary: BillHistoryItemSummary,
+  t: ReturnType<typeof useTranslation>["t"]
+): ReadonlyArray<string> =>
+  [
     summary.hasCancellationCollision ? t("bill.collision.title") : null,
     summary.coverage === "overpaid" ? t("billHistory.overpaid") : null,
     summary.coverage === "underpaid" && summary.claimedSum > 0
@@ -85,81 +90,35 @@ function BillHistoryIssues({
       : null,
   ].filter((issue): issue is string => issue !== null)
 
-  if (issues.length === 0) return null
-
-  return (
-    <span className="text-xs font-medium text-warning">
-      {issues.join(" · ")}
-    </span>
-  )
-}
+const summarizeBill = (bill: BillHistoryRow): BillHistoryItemSummary =>
+  deriveBillHistoryItemSummary({
+    canceledAt: bill.canceledAt,
+    confirmedClosedAt: bill.confirmedClosedAt,
+    billTotal: deriveBillSummaryTotal(
+      calculateBillLineSummaries(bill.lines, bill.items)
+    ),
+    claimedTransactions: bill.claimedTransactions,
+  })
 
 /**
- * Reproduces the icon/label/action layout `NavItemContent` (`vertical-nav.tsx`)
- * and `PaymentHistory` build from separate `item` slots — bill rows can't use
- * those slots directly since every piece (icon, amount, status text) needs
- * `bill.lines`/`bill.items`/`bill.claimedTransactions`, already loaded by
- * `latestBillsQuery` for every row in one round trip, reduced here through the same pure
- * `calculateBillLineSummaries`/`deriveBillHistoryItemSummary` the detail page
- * uses — not a plain `.map()` callback. Assembling the equivalent DOM by hand
- * here, instead, is what keeps a bill row visually identical to a payment row.
+ * Tips of the bill's settled payments, each counted once however many
+ * transactions settled it. Shown on top of the bill total, which excludes
+ * them.
  */
-function BillHistoryItemContent({ bill }: { readonly bill: BillHistoryRow }) {
-  const { t } = useTranslation()
-  const locale = useLocale()
-
-  const summary = useMemo(() => {
-    const summaries = calculateBillLineSummaries(bill.lines, bill.items)
-    const billTotal = deriveBillSummaryTotal(summaries)
-
-    return deriveBillHistoryItemSummary({
-      canceledAt: bill.canceledAt,
-      confirmedClosedAt: bill.confirmedClosedAt,
-      billTotal,
-      claimedTransactions: bill.claimedTransactions,
-    })
-  }, [bill])
-
-  return (
-    <div className={"flex items-center gap-3 w-full"}>
-      <div className={"p-2"}>
-        <BillStatusIcon
-          status={summary.status}
-          hasCancellationCollision={summary.hasCancellationCollision}
-        />
-      </div>
-      <div className={"flex gap-2 justify-between w-full"}>
-        <div className={"flex flex-col gap-2 items-start w-max"}>
-          <strong>
-            {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
-          </strong>
-          <div className={"flex text-xs"}>
-            <span>
-              {formatMoney(
-                { value: summary.billTotal, currency: bill.currency },
-                locale
-              )}
-            </span>
-            &nbsp;&nbsp;•&nbsp;&nbsp;
-            <span className={"text-muted-foreground"}>
-              {formatTime(new Date(bill.createdAt), locale)}
-            </span>
-          </div>
-          <BillHistoryIssues summary={summary} />
-        </div>
-      </div>
-      <div className={"pl-2"}>
-        <span className="text-xs font-medium text-muted-foreground">
-          {t(billStatusLabelKey[summary.status])}
-        </span>
-      </div>
-    </div>
-  )
-}
+const sumSettledTips = (bill: BillHistoryRow): number =>
+  Array.from(
+    new Map(
+      bill.claimedTransactions.map((transaction) => [
+        transaction.paymentId,
+        transaction.tipAmount,
+      ])
+    ).values()
+  ).reduce((sum, tip) => sum + tip, 0)
 
 export const BillHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
+  const now = useNow([])
   const {
     rows: items,
     hasMore,
@@ -185,22 +144,98 @@ export const BillHistory = () => {
     )
   }
 
-  const dayGroups = groupByDay(items, (bill) => new Date(bill.createdAt))
+  const rows = items.map((bill) => ({ bill, summary: summarizeBill(bill) }))
+  const dayGroups = groupByDay(rows, ({ bill }) => new Date(bill.createdAt))
 
   return (
     <div className="flex flex-col gap-4">
-      {dayGroups.map((group) => (
+      {dayGroups.map((group, groupIndex) => (
         <VerticalNav
           key={group.date.toDateString()}
-          title={formatDate(group.date, locale)}
-          items={group.items.map((bill) => ({
-            id: bill.id,
-            kind: "link" as const,
-            to: "/activity/bills/$billId",
-            params: { billId: bill.id },
-            disableAction: true,
-            label: <BillHistoryItemContent bill={bill} />,
-          }))}
+          title={formatActivityDayTitle({
+            date: group.date,
+            now,
+            locale,
+            // Only closed bills count: an open one isn't settled yet and a
+            // canceled one never will be.
+            amounts: group.items
+              .filter(({ summary }) => summary.status === "closed")
+              .map(({ bill, summary }) => ({
+                value: summary.billTotal,
+                currency: bill.currency,
+              })),
+            // The last group may continue on the next, not yet loaded page.
+            isComplete: !hasMore || groupIndex < dayGroups.length - 1,
+          })}
+          items={group.items.map(({ bill, summary }) => {
+            const issues = resolveBillHistoryIssues(summary, t)
+            const tips = sumSettledTips(bill)
+
+            return {
+              id: bill.id,
+              kind: "link" as const,
+              to: "/activity/bills/$billId",
+              params: { billId: bill.id },
+              className:
+                issues.length > 0 ? activityIssueRowClassName : undefined,
+              label: (
+                <div className={"flex flex-col gap-1 items-start min-w-0"}>
+                  <strong className="max-w-full truncate">
+                    {bill.label ??
+                      t("bill.list.label", { number: bill.displayNumber })}
+                  </strong>
+                  <div
+                    className={
+                      "flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground"
+                    }
+                  >
+                    <span>{formatTime(new Date(bill.createdAt), locale)}</span>
+                    {bill.tableName !== null && <span>· {bill.tableName}</span>}
+                    {tips > 0 && (
+                      <span>
+                        ·{" "}
+                        {t("billHistory.tip", {
+                          amount: formatMoney(
+                            {
+                              value: NonNegativeInteger(tips),
+                              currency: bill.currency,
+                            },
+                            locale
+                          ),
+                        })}
+                      </span>
+                    )}
+                    <PaymentMethodIcons
+                      kinds={bill.claimedTransactions.map(
+                        (transaction) => transaction.transactionKind
+                      )}
+                    />
+                  </div>
+                  <ActivityIssueBadges issues={issues} />
+                </div>
+              ),
+              icon: (
+                <div className={"p-2"}>
+                  <BillStatusIcon
+                    status={summary.status}
+                    hasCancellationCollision={summary.hasCancellationCollision}
+                  />
+                </div>
+              ),
+              action: (
+                <ActivityAmount
+                  money={{ value: summary.billTotal, currency: bill.currency }}
+                  // A canceled bill whose money arrived anyway is not void —
+                  // striking its total through would hide exactly that.
+                  isVoid={
+                    summary.status === "canceled" &&
+                    !summary.hasCancellationCollision
+                  }
+                  statusLabel={t(billStatusLabelKey[summary.status])}
+                />
+              ),
+            }
+          })}
         />
       ))}
       {hasMore && (

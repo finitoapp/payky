@@ -87,6 +87,8 @@ export const skPayment = {
     "Vytvorené platobné žiadosti sa zobrazia tu.",
   "paymentHistory.empty.title": "Zatiaľ žiadne platby",
   "paymentHistory.payment": "Platba",
+  "paymentHistory.paymentNumber": "Platba č. {number}",
+  "paymentHistory.tip": "vr. prepitného {amount}",
   "paymentHistory.title": "História platieb",
   "paymentTip.continue": "Pokračovať k platbe",
   "paymentTip.creating": "Vytváram platbu...",

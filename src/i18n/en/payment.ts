@@ -84,6 +84,8 @@ export const enPayment = {
     "Created payment requests will appear here.",
   "paymentHistory.empty.title": "No payments yet",
   "paymentHistory.payment": "Payment",
+  "paymentHistory.paymentNumber": "Payment #{number}",
+  "paymentHistory.tip": "incl. {amount} tip",
   "paymentHistory.title": "Payment history",
   "paymentTip.continue": "Continue to payment",
   "paymentTip.creating": "Creating payment...",

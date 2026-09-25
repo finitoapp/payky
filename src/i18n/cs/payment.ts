@@ -87,6 +87,8 @@ export const csPayment = {
     "Vytvořené platební žádosti se zobrazí tady.",
   "paymentHistory.empty.title": "Zatím žádné platby",
   "paymentHistory.payment": "Platba",
+  "paymentHistory.paymentNumber": "Platba č. {number}",
+  "paymentHistory.tip": "vč. spropitného {amount}",
   "paymentHistory.title": "Historie plateb",
   "paymentTip.continue": "Pokračovat k platbě",
   "paymentTip.creating": "Vytvářím platbu...",

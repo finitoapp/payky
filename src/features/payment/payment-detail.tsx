@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { parseISO } from "date-fns"
+import { ChevronDownIcon, ChevronRightIcon, CopyIcon } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
@@ -18,12 +18,19 @@ import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
+import { Skeleton } from "@/components/ui/skeleton.tsx"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -64,7 +71,10 @@ import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
-import { paymentMethodLabelKey } from "@/features/payment/payment-method-display.tsx"
+import {
+  paymentMethodIcon,
+  paymentMethodLabelKey,
+} from "@/features/payment/payment-method-display.tsx"
 import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
@@ -75,7 +85,8 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
+import { copyToClipboard } from "@/lib/clipboard.ts"
+import { formatDateTime, formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 type PaymentDetailClaimSource = "auto" | "manual"
@@ -93,6 +104,16 @@ export function PaymentDetail({ paymentId }: { readonly paymentId: string }) {
   }
 
   return <PaymentDetailContent paymentId={parsedPaymentId.data} />
+}
+
+/** Suspense fallback shaped like the summary card, so the page doesn't flash empty. */
+export function PaymentDetailSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <Skeleton className="h-40 w-full rounded-xl" />
+      <Skeleton className="h-28 w-full rounded-xl" />
+    </div>
+  )
 }
 
 function PaymentDetailContent({
@@ -195,56 +216,46 @@ function PaymentDetailContent({
   const handleRefund = () => {
     toast.info(t("paymentDetail.collision.refund.comingSoon"))
   }
-  const paymentMethodValue =
-    reconciliations.length === 0
-      ? t("paymentDetail.paymentMethod.none")
-      : Array.from(
-          new Set(
-            reconciliations.map((reconciliation) =>
-              t(paymentMethodLabelKey[reconciliation.transactionKind])
-            )
-          )
-        ).join(", ")
+  const paymentMethodKinds = [
+    ...new Set(
+      reconciliations.map((reconciliation) => reconciliation.transactionKind)
+    ),
+  ]
 
   return (
     <div className="flex flex-col gap-4">
       {isPending ? (
-        <Button
-          variant="outline"
-          nativeButton={false}
-          render={
-            <Link
-              to="/payment/$paymentId"
-              params={{ paymentId }}
-              aria-label={t("paymentDetail.backToPayment")}
-            />
-          }
-        >
-          {t("paymentDetail.backToPayment")}
-        </Button>
+        <div className="flex flex-col gap-1">
+          <Button
+            className="h-12"
+            nativeButton={false}
+            render={<Link to="/payment/$paymentId" params={{ paymentId }} />}
+          >
+            {t("paymentDetail.backToPayment")}
+          </Button>
+          {payment.expiresAt === null ? null : (
+            <p className="text-center text-xs text-muted-foreground">
+              {t("paymentDetail.expiresAt", {
+                time: formatTime(new Date(payment.expiresAt), locale),
+              })}
+            </p>
+          )}
+        </div>
       ) : null}
 
       <Card>
         <CardHeader>
-          <CardTitle>{t("paymentDetail.title")}</CardTitle>
-          <CardDescription>{payment.id}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-muted-foreground">
-                {t("paymentDetail.amount")}
-              </span>
-              <strong className="text-4xl font-semibold tracking-tight">
-                {formatMoney(
-                  {
-                    value: payment.amount,
-                    currency: payment.currency,
-                  },
-                  locale
-                )}
-              </strong>
-            </div>
+          {paymentNumber ? (
+            <CardTitle>
+              {t("paymentDetail.number", {
+                number: paymentNumber.serialNumber,
+              })}
+            </CardTitle>
+          ) : null}
+          <CardDescription>
+            {formatDateTime(new Date(payment.createdAt), locale)}
+          </CardDescription>
+          <CardAction>
             <Badge
               variant={
                 paymentStatus === "canceled" ? "destructive" : "secondary"
@@ -253,6 +264,49 @@ function PaymentDetailContent({
             >
               {t(paymentStatusLabelKey[paymentStatus])}
             </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <strong className="text-4xl font-semibold tracking-tight tabular-nums">
+              {formatMoney(
+                {
+                  value: payment.amount,
+                  currency: payment.currency,
+                },
+                locale
+              )}
+            </strong>
+            {payment.tipAmount > 0 ? (
+              <span className="text-sm text-muted-foreground">
+                {t("paymentDetail.tipIncluded", {
+                  amount: formatMoney(
+                    { value: payment.tipAmount, currency: payment.currency },
+                    locale
+                  ),
+                })}
+              </span>
+            ) : null}
+            {paymentMethodKinds.length > 0 ? (
+              <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-medium">
+                {paymentMethodKinds.map((kind) => {
+                  const Icon = paymentMethodIcon[kind]
+                  return (
+                    <span key={kind} className="inline-flex items-center gap-1">
+                      <Icon aria-hidden className="size-4" />
+                      {t(paymentMethodLabelKey[kind])}
+                    </span>
+                  )
+                })}
+              </span>
+            ) : null}
+            {payment.canceledAt === null ? null : (
+              <span className="text-sm text-muted-foreground">
+                {t("paymentDetail.canceledAtValue", {
+                  date: formatDateTime(new Date(payment.canceledAt), locale),
+                })}
+              </span>
+            )}
           </div>
 
           {hasCancellationCollision ? (
@@ -298,70 +352,6 @@ function PaymentDetailContent({
               </Button>
             </CollisionAlert>
           ) : null}
-
-          <Separator />
-
-          <div className="flex flex-col gap-3">
-            <PaymentDetailRow
-              label={t("paymentDetail.tipAmount")}
-              value={formatMoney(
-                {
-                  value: payment.tipAmount,
-                  currency: payment.currency,
-                },
-                locale
-              )}
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.createdAt")}
-              value={formatDateTime(new Date(payment.createdAt), locale)}
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.updatedAt")}
-              value={
-                payment.updatedAt === null
-                  ? t("paymentDetail.emptyValue")
-                  : formatDateTime(new Date(payment.updatedAt), locale)
-              }
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.canceledAt")}
-              value={
-                payment.canceledAt === null
-                  ? t("paymentDetail.emptyValue")
-                  : formatDateTime(new Date(payment.canceledAt), locale)
-              }
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.paymentNumber.serialNumber")}
-              value={
-                paymentNumber
-                  ? String(paymentNumber.serialNumber)
-                  : t("paymentDetail.emptyValue")
-              }
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.paymentNumber.date")}
-              value={
-                paymentNumber
-                  ? formatDate(parseISO(paymentNumber.date), locale)
-                  : t("paymentDetail.emptyValue")
-              }
-            />
-            <PaymentDetailRow
-              label={t("paymentDetail.paymentMethod")}
-              value={paymentMethodValue}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex flex-col gap-3">
-            <PaymentDetailRow
-              label={t("paymentDetail.deviceId")}
-              value={payment.deviceId ?? t("paymentDetail.emptyValue")}
-            />
-          </div>
         </CardContent>
       </Card>
 
@@ -393,48 +383,43 @@ function PaymentDetailContent({
                         locale
                       )}
                     </TimelineDate>
-                    <TimelineTitle>
+                    <TimelineTitle className="flex items-center gap-2">
                       {t(paymentMethodLabelKey[reconciliation.transactionKind])}
+                      <Badge variant="secondary">
+                        {t(claimSourceLabelKey[reconciliation.source])}
+                      </Badge>
                     </TimelineTitle>
                   </TimelineHeader>
                   <TimelineIndicator />
                   <TimelineSeparator />
                   <TimelineContent>
-                    <div className="mt-2 rounded-lg border bg-muted/20 p-3">
-                      <div className="mb-3 flex items-start justify-between gap-4">
-                        <span className="break-all text-xs text-muted-foreground">
-                          {reconciliation.id}
-                        </span>
-                        <Badge variant="secondary">
-                          {t(claimSourceLabelKey[reconciliation.source])}
-                        </Badge>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <PaymentDetailRow
-                          label={t("paymentDetail.transaction.id")}
-                          value={
-                            reconciliation.accountTransactionId ??
-                            t("paymentDetail.emptyValue")
-                          }
-                        />
-                        <PaymentDetailRow
-                          label={t("paymentDetail.transaction.account")}
-                          value={
-                            reconciliation.accountName ??
-                            reconciliation.accountId ??
-                            t("paymentDetail.emptyValue")
-                          }
-                        />
-                        <PaymentDetailRow
-                          label={t("paymentDetail.transaction.amount")}
-                          value={formatMoney(
-                            {
-                              value: reconciliation.transactionAmount,
-                              currency: reconciliation.transactionCurrency,
-                            },
-                            locale
-                          )}
-                        />
+                    <div className="mt-2 flex flex-col gap-2 rounded-lg border bg-muted/20 p-3">
+                      <PaymentDetailRow
+                        label={t("paymentDetail.transaction.amount")}
+                        value={formatMoney(
+                          {
+                            value: reconciliation.transactionAmount,
+                            currency: reconciliation.transactionCurrency,
+                          },
+                          locale
+                        )}
+                        emphasize
+                      />
+                      <PaymentDetailOptionalRow
+                        label={t("paymentDetail.transaction.account")}
+                        value={
+                          reconciliation.accountName ?? reconciliation.accountId
+                        }
+                      />
+                      <PaymentDetailOptionalRow
+                        label={t("paymentDetail.transaction.variableSymbol")}
+                        value={reconciliation.variableSymbol}
+                      />
+                      <PaymentDetailOptionalRow
+                        label={t("paymentDetail.transaction.note")}
+                        value={reconciliation.transactionNote}
+                      />
+                      <PaymentDetailTechnical>
                         <PaymentDetailRow
                           label={t("paymentDetail.transaction.occurredAt")}
                           value={formatDateTime(
@@ -442,52 +427,47 @@ function PaymentDetailContent({
                             locale
                           )}
                         />
-                        <PaymentDetailRow
-                          label={t("paymentDetail.transaction.recordedAt")}
-                          value={
-                            reconciliation.transactionRecordedAt === null
-                              ? t("paymentDetail.emptyValue")
-                              : formatDateTime(
-                                  new Date(
-                                    reconciliation.transactionRecordedAt
-                                  ),
-                                  locale
-                                )
-                          }
+                        {reconciliation.transactionRecordedAt ===
+                        null ? null : (
+                          <PaymentDetailRow
+                            label={t("paymentDetail.transaction.recordedAt")}
+                            value={formatDateTime(
+                              new Date(reconciliation.transactionRecordedAt),
+                              locale
+                            )}
+                          />
+                        )}
+                        {reconciliation.transactionSource === null ? null : (
+                          <PaymentDetailRow
+                            label={t("paymentDetail.transaction.source")}
+                            value={t(
+                              claimSourceLabelKey[
+                                reconciliation.transactionSource
+                              ]
+                            )}
+                          />
+                        )}
+                        <PaymentDetailCopyRow
+                          label={t("paymentDetail.transaction.id")}
+                          value={reconciliation.accountTransactionId}
                         />
-                        <PaymentDetailRow
-                          label={t("paymentDetail.transaction.source")}
-                          value={
-                            reconciliation.transactionSource === null
-                              ? t("paymentDetail.emptyValue")
-                              : t(
-                                  claimSourceLabelKey[
-                                    reconciliation.transactionSource
-                                  ]
-                                )
-                          }
-                        />
-                        <PaymentDetailOptionalRow
-                          label={t("paymentDetail.transaction.note")}
-                          value={reconciliation.transactionNote}
-                        />
-                        <PaymentDetailOptionalRow
-                          label={t("paymentDetail.transaction.variableSymbol")}
-                          value={reconciliation.variableSymbol}
-                        />
-                        <PaymentDetailOptionalRow
+                        <PaymentDetailCopyRow
                           label={t("paymentDetail.transaction.bankReference")}
                           value={reconciliation.bankReference}
                         />
-                        <PaymentDetailOptionalRow
+                        <PaymentDetailCopyRow
                           label={t("paymentDetail.transaction.sparkTransferId")}
                           value={reconciliation.sparkTransferId}
                         />
-                        <PaymentDetailOptionalRow
+                        <PaymentDetailCopyRow
                           label={t("paymentDetail.transaction.paymentHash")}
                           value={reconciliation.paymentHash}
                         />
-                      </div>
+                        <PaymentDetailCopyRow
+                          label={t("paymentDetail.reconciliation.id")}
+                          value={reconciliation.id}
+                        />
+                      </PaymentDetailTechnical>
                     </div>
                   </TimelineContent>
                 </TimelineItem>
@@ -496,6 +476,23 @@ function PaymentDetailContent({
           )}
         </CardContent>
       </Card>
+
+      <PaymentDetailTechnical>
+        <PaymentDetailCopyRow
+          label={t("paymentDetail.id")}
+          value={payment.id}
+        />
+        <PaymentDetailCopyRow
+          label={t("paymentDetail.deviceId")}
+          value={payment.deviceId}
+        />
+        {payment.updatedAt === null ? null : (
+          <PaymentDetailRow
+            label={t("paymentDetail.updatedAt")}
+            value={formatDateTime(new Date(payment.updatedAt), locale)}
+          />
+        )}
+      </PaymentDetailTechnical>
     </div>
   )
 }
@@ -579,6 +576,17 @@ function PaymentDetailBillCard({
         <CardDescription>
           {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
         </CardDescription>
+        <CardAction>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link to="/activity/bills/$billId" params={{ billId }} />}
+          >
+            {t("paymentDetail.bill.open")}
+            <ChevronRightIcon data-icon="inline-end" />
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-4">
@@ -586,8 +594,20 @@ function PaymentDetailBillCard({
             <span className="text-sm font-medium text-muted-foreground">
               {t("paymentDetail.bill.table")}
             </span>
-            <span className="text-sm font-medium">
-              {table?.name ?? t("paymentDetail.emptyValue")}
+            {/*
+             * Spelled out rather than "—": a counter sale with no table is a
+             * fact staff should read, not a missing value. "—" stays for a
+             * tableId whose table row is gone (deleted since).
+             */}
+            <span
+              className={cn(
+                "text-sm font-medium",
+                bill.tableId === null && "text-muted-foreground"
+              )}
+            >
+              {bill.tableId === null
+                ? t("paymentDetail.bill.noTable")
+                : (table?.name ?? t("paymentDetail.emptyValue"))}
             </span>
           </div>
           <Badge
@@ -784,6 +804,65 @@ function PaymentDetailBillCard({
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/** Identifiers and bookkeeping timestamps staff rarely need, collapsed by default. */
+function PaymentDetailTechnical({
+  children,
+}: {
+  readonly children: ReactNode
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Collapsible>
+      <CollapsibleTrigger className="group flex items-center gap-1 text-xs font-medium text-muted-foreground">
+        {t("paymentDetail.technical")}
+        <ChevronDownIcon
+          aria-hidden
+          className="size-3.5 transition-transform group-data-panel-open:rotate-180"
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="flex flex-col gap-2 pt-2">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function PaymentDetailCopyRow({
+  label,
+  value,
+}: {
+  readonly label: string
+  readonly value: string | null
+}) {
+  const { t } = useTranslation()
+
+  if (value === null) return null
+
+  return (
+    <div className="flex items-center justify-between gap-2 text-sm">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="flex min-w-0 items-center gap-1">
+        <span className="truncate font-mono text-xs">{value}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label={t("paymentDetail.copy", { label })}
+          onClick={() =>
+            void copyToClipboard(value, {
+              copied: t("paymentDetail.copied"),
+              failed: t("paymentDetail.copyError"),
+            })
+          }
+        >
+          <CopyIcon />
+        </Button>
+      </span>
+    </div>
   )
 }
 

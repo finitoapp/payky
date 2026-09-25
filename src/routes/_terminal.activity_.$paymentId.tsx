@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PaymentDetail } from "@/features/payment/payment-detail.tsx"
+import {
+  PaymentDetail,
+  PaymentDetailSkeleton,
+} from "@/features/payment/payment-detail.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/activity_/$paymentId")({
@@ -22,7 +25,7 @@ function PaymentDetailPage() {
       <FadeHeader title={t("paymentDetail.title")} />
 
       <section className="pt-16">
-        <Suspense fallback={null}>
+        <Suspense fallback={<PaymentDetailSkeleton />}>
           <PaymentDetail paymentId={paymentId} />
         </Suspense>
       </section>

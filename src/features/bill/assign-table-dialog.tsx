@@ -166,7 +166,7 @@ function TableAssignmentTile({
         occupied
         selected={selected}
       >
-        <p className="text-sm text-primary-foreground/80">
+        <p className="text-sm text-muted-foreground">
           {t("tables.tile.multipleBills", { value: bills.length })}
         </p>
       </TableTileShell>

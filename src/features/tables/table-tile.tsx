@@ -18,25 +18,32 @@ import { cn } from "@/lib/utils.ts"
  * assignment picker, so all three show occupancy the same way. Takes a
  * plain name/subtitle rather than a `TableRow` so a non-table tile can
  * reuse it without faking a table row.
+ *
+ * Occupied is a tint and an accent ring, not a solid fill: on a busy floor
+ * most tiles are occupied, and a wall of solid color stops telling them
+ * apart — the solid accent is left for what needs attention inside a tile.
+ * `icon` defaults to the table glyph; pass `null` for none.
  */
 export function TableTileShell({
   name,
   subtitle,
   occupied,
   selected,
+  icon = <Table2 className="size-5 shrink-0 text-muted-foreground" />,
   children,
 }: {
   readonly name: string
   readonly subtitle?: ReactNode
   readonly occupied: boolean
   readonly selected?: boolean
+  readonly icon?: ReactNode
   readonly children: ReactNode
 }) {
   return (
     <Card
       className={cn(
-        "gap-3 p-4",
-        occupied && "bg-primary text-primary-foreground",
+        "h-full gap-3 p-4",
+        occupied && "bg-primary/15 ring-primary/60",
         selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
@@ -44,22 +51,10 @@ export function TableTileShell({
         <div className="min-w-0">
           <p className="truncate font-medium">{name}</p>
           {subtitle !== undefined && (
-            <p
-              className={cn(
-                "text-sm text-muted-foreground",
-                occupied && "text-primary-foreground/80"
-              )}
-            >
-              {subtitle}
-            </p>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           )}
         </div>
-        <Table2
-          className={cn(
-            "size-5 shrink-0 text-muted-foreground",
-            occupied && "text-primary-foreground/80"
-          )}
-        />
+        {icon}
       </div>
       {children}
     </Card>
@@ -80,9 +75,9 @@ export function OccupiedTableSummary({ bill }: { readonly bill: OpenBillRow }) {
   )
 
   return (
-    <div className="flex flex-col gap-0.5 text-primary-foreground/80">
+    <div className="flex flex-col gap-0.5 text-muted-foreground">
       <p className="text-sm">{t("bill.itemsCount", { value: itemCount })}</p>
-      <p className="text-sm font-semibold text-primary-foreground">
+      <p className="text-sm font-semibold text-foreground">
         {formatMoney({ value: totalAmount, currency: bill.currency }, locale)}
       </p>
     </div>

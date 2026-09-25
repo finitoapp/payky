@@ -60,37 +60,24 @@ export const paymentByIdQuery = (idValue: PaymentId) =>
   )
 
 /**
- * Every non-deleted payment for a bill, newest first, with its claim count —
- * the read model behind the bill detail page's "payments on this bill"
- * section. Mirrors `latestPaymentsQuery` in `payment-history.tsx` (same
- * shape, filtered by `billId` instead of capped globally), so
- * `derivePaymentStatus` can be computed the same way for each row.
+ * Every non-deleted payment for a bill, newest first, with the transactions
+ * claimed against it — the read model behind the bill detail page's
+ * "payments on this bill" section. Mirrors `latestPaymentsQuery` in
+ * `payment-history.tsx` (same shape, filtered by `billId` instead of capped
+ * globally), so `derivePaymentStatus` can be computed the same way for each
+ * row, and each row can show its payment method icons.
  *
- * `claimCount` counts claims whose `accountTransaction` is still there, not
- * claims outright: it feeds `derivePaymentStatus`'s `hasActiveClaim`, and a
- * claim pointing at a deleted transaction is not money that arrived — the
- * bill's own coverage (`calculateClaimedSum`) already ignores it, so counting
- * it here displayed a payment as paid while it funded nothing. Same reading
+ * `claimedTransactions` lists only claims whose `accountTransaction` is still
+ * there: it feeds `derivePaymentStatus`'s `hasActiveClaim`, and a claim
+ * pointing at a deleted transaction is not money that arrived — the bill's
+ * own coverage (`calculateClaimedSum`) already ignores it, so counting it
+ * here displayed a payment as paid while it funded nothing. Same reading
  * the editing lock settled on; see `claimedPaymentIdSet`.
  */
 export const paymentsWithClaimsByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
-      .leftJoin("reconciliationClaim", (join) =>
-        join
-          .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-          .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
-      )
-      .leftJoin("accountTransaction", (join) =>
-        join
-          .onRef(
-            "accountTransaction.id",
-            "=",
-            "reconciliationClaim.accountTransactionId"
-          )
-          .on("accountTransaction.isDeleted", "is not", sqliteTrue)
-      )
       .select([
         "payment.id",
         "payment.amount",
@@ -102,7 +89,21 @@ export const paymentsWithClaimsByBillIdQuery = (billId: BillId) =>
         "payment.createdAt",
       ])
       .select((eb) =>
-        eb.fn.count<number>("accountTransaction.id").as("claimCount")
+        evoluJsonArrayFrom(
+          eb
+            .selectFrom("reconciliationClaim")
+            .innerJoin(
+              "accountTransaction",
+              "accountTransaction.id",
+              "reconciliationClaim.accountTransactionId"
+            )
+            .select("accountTransaction.kind")
+            .whereRef("reconciliationClaim.paymentId", "=", "payment.id")
+            .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+            .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+            .where("accountTransaction.kind", "is not", null)
+            .$narrowType<{ kind: KyselyNotNull }>()
+        ).as("claimedTransactions")
       )
       .where("payment.billId", "=", billId)
       .where("payment.isDeleted", "is not", sqliteTrue)
@@ -110,16 +111,6 @@ export const paymentsWithClaimsByBillIdQuery = (billId: BillId) =>
       .where("payment.currency", "is not", null)
       .where("payment.tipAmount", "is not", null)
       .where("payment.createdAt", "is not", null)
-      .groupBy([
-        "payment.id",
-        "payment.amount",
-        "payment.currency",
-        "payment.tipAmount",
-        "payment.canceledAt",
-        "payment.confirmedPaidAt",
-        "payment.expiresAt",
-        "payment.createdAt",
-      ])
       .orderBy("payment.createdAt", "desc")
       .$narrowType<{
         amount: KyselyNotNull

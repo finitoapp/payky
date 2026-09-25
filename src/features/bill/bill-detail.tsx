@@ -24,6 +24,7 @@ import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import { PaymentMethodIcons } from "@/features/activity/activity-row.tsx"
 import { BillCancellationCollisionPanel } from "@/features/bill/bill-cancellation-collision-panel.tsx"
 import { BillCoverageWarning } from "@/features/bill/bill-coverage-warning.tsx"
 import {
@@ -54,17 +55,6 @@ import { cn } from "@/lib/utils.ts"
 type BillDetailPaymentRowData = InferRow<
   ReturnType<typeof paymentsWithClaimsByBillIdQuery>
 >
-
-/**
- * `paymentsWithClaimsByBillIdQuery` selects `claimCount` through
- * `eb.fn.count<number>(...)`, and that type argument is an assertion rather
- * than a guarantee: SQLite drivers return `COUNT()` as `bigint` or `string`
- * depending on the build. Coerce once, at the one place the repo still uses
- * `COUNT` — `payment-history.tsx` dropped its own copy of this when it
- * replaced the count with an embedded array it could take `.length` of.
- */
-const toClaimCount = (value: number | string | bigint): number =>
-  typeof value === "number" ? value : Number(value)
 
 export function BillDetail({ billId }: { readonly billId: string }) {
   const parsedBillId = BillId.safeParse(billId)
@@ -292,7 +282,7 @@ function BillDetailPaymentRow({
   readonly locale: string
 }) {
   const { t } = useTranslation()
-  const claimCount = toClaimCount(payment.claimCount)
+  const claimCount = payment.claimedTransactions.length
   const now = useNow([payment.expiresAt])
   const status = derivePaymentStatus({
     canceledAt: payment.canceledAt,
@@ -327,8 +317,11 @@ function BillDetailPaymentRow({
             locale
           )}
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="flex items-center gap-2 text-xs text-muted-foreground">
           {formatDateTime(new Date(payment.createdAt), locale)}
+          <PaymentMethodIcons
+            kinds={payment.claimedTransactions.map(({ kind }) => kind)}
+          />
         </span>
       </div>
       <Badge

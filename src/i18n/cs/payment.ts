@@ -110,6 +110,24 @@ export const csPayment = {
   "paymentTip.percentages": "Spropitné v procentech",
   "paymentTip.title": "Chcete přidat spropitné?",
   "paymentWait.back": "Zpět na terminál",
+  "paymentWait.boltCard.awaitingSettlement":
+    "Karta přijata, čekám na platbu...",
+  "paymentWait.boltCard.disabled":
+    "NFC je vypnuté. Zapněte ho, abyste mohli přijímat Bolt Card.",
+  "paymentWait.boltCard.enable": "Zapnout NFC",
+  "paymentWait.boltCard.error.amountOutOfRange":
+    "Částka je mimo limit této karty.",
+  "paymentWait.boltCard.error.generic":
+    "Platba kartou se nezdařila. Přiložte ji znovu.",
+  "paymentWait.boltCard.error.network":
+    "Nepodařilo se spojit se službou karty. Zkontrolujte připojení a přiložte kartu znovu.",
+  "paymentWait.boltCard.error.notPayable": "Tuto platbu už nelze zaplatit.",
+  "paymentWait.boltCard.error.rejected": "Karta byla odmítnuta: {reason}",
+  "paymentWait.boltCard.error.timeout":
+    "Karta platbu včas nedokončila. Přiložte ji znovu nebo zvolte jinou metodu.",
+  "paymentWait.boltCard.error.unsupportedCard": "Tato karta není Bolt Card.",
+  "paymentWait.boltCard.processing": "Čtu kartu...",
+  "paymentWait.boltCard.ready": "Nebo přiložte Bolt Card",
   "paymentWait.cancel": "Zrušit platbu",
   "paymentWait.cancelError": "Platbu se nepodařilo zrušit.",
   "paymentWait.canceled": "Tato platba byla zrušena.",

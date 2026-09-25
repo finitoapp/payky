@@ -1,5 +1,6 @@
 import type { FetchError } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import type { RedeemLnurlWithdrawError } from "@/core/integrations/lnurl/lnurl-withdraw-client.ts"
 import type {
   YadioApiError,
   YadioHttpError,
@@ -202,6 +203,25 @@ export type PayPaymentWithSwitchioCardError =
   | CardSwitchioAccountNotFoundError
   | AccountCurrencyMismatchError
   | SwitchioPaymentError
+
+/**
+ * A Bolt Card was tapped for a payment with no Lightning invoice — a Spark
+ * invoice alone cannot be handed to an LNURL-withdraw service.
+ */
+export const createPaymentLightningInvoiceNotFoundError = defineError(
+  "PaymentLightningInvoiceNotFound"
+)<{
+  readonly id: PaymentId
+}>()
+export type PaymentLightningInvoiceNotFoundError = ReturnType<
+  typeof createPaymentLightningInvoiceNotFoundError
+>
+
+export type PayPaymentWithBoltCardError =
+  | PaymentNotFoundError
+  | PaymentNotPayableError
+  | PaymentLightningInvoiceNotFoundError
+  | RedeemLnurlWithdrawError
 
 export type SettleRestoredSwitchioCardPaymentError =
   | SwitchioRestoredResultUnmatchedError

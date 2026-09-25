@@ -80,6 +80,7 @@ import {
   loadPayment,
   markPaymentPaidCash,
   markPaymentPaidIban,
+  payPaymentWithBoltCard,
   payPaymentWithSwitchioCard,
   settleRestoredSwitchioCardPayment,
   updatePayment,
@@ -3214,6 +3215,99 @@ describe("payment actions", () => {
         type: "SwitchioRestoredResultUnmatched",
         transactionId: "unknown",
       })
+    }, 15_000)
+  })
+
+  describe("bolt card payments", () => {
+    const setUp = async ({ canceled }: { readonly canceled: boolean }) => {
+      const testEvolu = await createEvoluTest()
+      const { evolu } = testEvolu
+      const requestedUrls: string[] = []
+      const deps = {
+        evolu,
+        evoluOwnerId: evolu.appOwner.id,
+        ...createTestDateDep(),
+        fetch: async (input) => {
+          const url = input instanceof URL ? input.toString() : String(input)
+          requestedUrls.push(url)
+          return Response.json(
+            url.startsWith("https://card.example.test/callback")
+              ? { status: "OK" }
+              : {
+                  tag: "withdrawRequest",
+                  callback: "https://card.example.test/callback",
+                  k1: "k1",
+                  minWithdrawable: 1_000,
+                  maxWithdrawable: 100_000_000,
+                }
+          )
+        },
+      } satisfies EvoluDep & EvoluOwnerIdDep & DateDep & FetchDep
+      const run = testCreateRun(deps)
+      const { sparkAccountId } = await createPaymentAccounts(deps)
+      const paymentId = await run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(12_900),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: canceled ? TimestampMs(1_700_000_000_000) : null,
+          expiresAt: null,
+          spark: {
+            accountId: sparkAccountId,
+            amountSats: NonNegativeInteger(20_000),
+            exchangeRate: PositiveNumber(1_500_000),
+            exchangeRateSource: "yadio",
+            exchangeRateFetchedAt: TimestampMs(1_700_000_000_000),
+            lightning: {
+              lnInvoice: NonEmptyStringSchema.decode("lnbc200u1test"),
+              lightningReceiveRequestId: null,
+              paymentHash: null,
+              paymentPreimage: null,
+            },
+          },
+        })
+      )
+
+      return {
+        run,
+        paymentId,
+        requestedUrls,
+        [Symbol.asyncDispose]: async () => {
+          await run[Symbol.asyncDispose]()
+          await testEvolu[Symbol.asyncDispose]()
+        },
+      }
+    }
+
+    const uri = "lnurlw://card.example.test/ln?p=AA&c=BB"
+
+    test("hands the payment's Lightning invoice to the card's service", async () => {
+      await using ctx = await setUp({ canceled: false })
+
+      await expect(
+        ctx.run(payPaymentWithBoltCard({ paymentId: ctx.paymentId, uri }))
+      ).resolves.toEqual({ ok: true, value: undefined })
+      expect(ctx.requestedUrls).toEqual([
+        "https://card.example.test/ln?p=AA&c=BB",
+        "https://card.example.test/callback?k1=k1&pr=lnbc200u1test",
+      ])
+    }, 15_000)
+
+    test("does not touch the card for a payment that can no longer be paid", async () => {
+      await using ctx = await setUp({ canceled: true })
+
+      const result = await ctx.run(
+        payPaymentWithBoltCard({ paymentId: ctx.paymentId, uri })
+      )
+
+      expect(!result.ok && result.error).toMatchObject({
+        type: "PaymentNotPayable",
+        status: "canceled",
+      })
+      expect(ctx.requestedUrls).toEqual([])
     }, 15_000)
   })
 })

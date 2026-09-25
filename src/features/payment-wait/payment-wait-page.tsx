@@ -49,6 +49,7 @@ import {
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
+import { isNfcPlatform } from "@/core/native/nfc.ts"
 import {
   clearPaymentMethodPreparation,
   createPaymentMethodPreparationRunner,
@@ -469,6 +470,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     cardAccountId !== undefined &&
     paymentStatus === "pending"
   const canCancelPayment = payment.canceledAt === null && !isPaid
+  // A Bolt Card pays a Lightning invoice, not a Spark one, and only Android
+  // has an NFC reader that can wait under the QR for a tap.
+  const boltCardPaymentId =
+    isNfcPlatform() &&
+    activePaymentMethod?.id === "spark" &&
+    paymentStatus === "pending" &&
+    payment.lnInvoice !== null
+      ? paymentId
+      : null
 
   const handleMarkCashPaid = async () => {
     if (!canMarkCashPaid) return
@@ -716,6 +726,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           {activePaymentMethod ? (
             <PaymentMethodTabContent
               method={activePaymentMethod}
+              boltCardPaymentId={boltCardPaymentId}
               canMarkCashPaid={canMarkCashPaid}
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}

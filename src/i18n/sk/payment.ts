@@ -109,6 +109,25 @@ export const skPayment = {
   "paymentTip.percentages": "Prepitné v percentách",
   "paymentTip.title": "Chcete pridať prepitné?",
   "paymentWait.back": "Späť na terminál",
+  "paymentWait.boltCard.awaitingSettlement":
+    "Karta prijatá, čakám na platbu...",
+  "paymentWait.boltCard.disabled":
+    "NFC je vypnuté. Zapnite ho, aby ste mohli prijímať Bolt Card.",
+  "paymentWait.boltCard.enable": "Zapnúť NFC",
+  "paymentWait.boltCard.error.amountOutOfRange":
+    "Suma je mimo limitu tejto karty.",
+  "paymentWait.boltCard.error.generic":
+    "Platba kartou zlyhala. Priložte ju znova.",
+  "paymentWait.boltCard.error.network":
+    "Nepodarilo sa spojiť so službou karty. Skontrolujte pripojenie a priložte kartu znova.",
+  "paymentWait.boltCard.error.notPayable":
+    "Túto platbu už nie je možné zaplatiť.",
+  "paymentWait.boltCard.error.rejected": "Karta bola odmietnutá: {reason}",
+  "paymentWait.boltCard.error.timeout":
+    "Karta platbu včas nedokončila. Priložte ju znova alebo zvoľte inú metódu.",
+  "paymentWait.boltCard.error.unsupportedCard": "Táto karta nie je Bolt Card.",
+  "paymentWait.boltCard.processing": "Čítam kartu...",
+  "paymentWait.boltCard.ready": "Alebo priložte Bolt Card",
   "paymentWait.cancel": "Zrušiť platbu",
   "paymentWait.cancelError": "Platbu sa nepodarilo zrušiť.",
   "paymentWait.canceled": "Táto platba bola zrušená.",

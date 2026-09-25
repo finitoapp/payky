@@ -107,6 +107,25 @@ export const enPayment = {
   "paymentTip.percentages": "Percentage tips",
   "paymentTip.title": "Would you like to add a tip?",
   "paymentWait.back": "Back to terminal",
+  "paymentWait.boltCard.awaitingSettlement":
+    "Card accepted, waiting for the payment...",
+  "paymentWait.boltCard.disabled":
+    "NFC is off. Turn it on to accept Bolt Cards.",
+  "paymentWait.boltCard.enable": "Turn on NFC",
+  "paymentWait.boltCard.error.amountOutOfRange":
+    "The amount is outside this card's limit.",
+  "paymentWait.boltCard.error.generic":
+    "Could not pay with the card. Tap it again.",
+  "paymentWait.boltCard.error.network":
+    "Could not reach the card's service. Check the connection and tap again.",
+  "paymentWait.boltCard.error.notPayable":
+    "This payment can no longer be paid.",
+  "paymentWait.boltCard.error.rejected": "The card was declined: {reason}",
+  "paymentWait.boltCard.error.timeout":
+    "The card did not pay in time. Tap it again or use another method.",
+  "paymentWait.boltCard.error.unsupportedCard": "This card is not a Bolt Card.",
+  "paymentWait.boltCard.processing": "Reading the card...",
+  "paymentWait.boltCard.ready": "Or tap a Bolt Card",
   "paymentWait.cancel": "Cancel payment",
   "paymentWait.cancelError": "Could not cancel the payment.",
   "paymentWait.canceled": "This payment was canceled.",

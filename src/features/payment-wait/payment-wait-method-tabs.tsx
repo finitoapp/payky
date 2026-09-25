@@ -1,4 +1,6 @@
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
+import { BoltCardReader } from "@/features/payment-wait/payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "@/features/payment-wait/payment-wait-card-tab.tsx"
 import { CashPaymentTab } from "@/features/payment-wait/payment-wait-cash-tab.tsx"
 import { IbanPaymentTab } from "@/features/payment-wait/payment-wait-iban-tab.tsx"
@@ -13,6 +15,7 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function PaymentMethodTabContent({
   method,
+  boltCardPaymentId,
   canMarkCashPaid,
   cashPaymentErrorKey,
   cashPaymentPending,
@@ -34,6 +37,8 @@ export function PaymentMethodTabContent({
   onPayCard,
 }: {
   readonly method: PaymentMethodOption
+  /** Set while a Bolt Card may pay this payment's Lightning invoice. */
+  readonly boltCardPaymentId: PaymentId | null
   readonly preparingMessageKey: TranslationKey | null
   readonly selectedIbanQrFormat: BankQrFormat | null
   readonly onSelectIbanQrFormat: (format: BankQrFormat) => void
@@ -43,10 +48,15 @@ export function PaymentMethodTabContent({
   switch (method.id) {
     case "spark":
       return (
-        <QrPaymentRequest
-          qrPayload={method.qrPayload}
-          preparingMessageKey={preparingMessageKey}
-        />
+        <>
+          <QrPaymentRequest
+            qrPayload={method.qrPayload}
+            preparingMessageKey={preparingMessageKey}
+          />
+          {boltCardPaymentId !== null ? (
+            <BoltCardReader paymentId={boltCardPaymentId} />
+          ) : null}
+        </>
       )
     case "iban":
       return (

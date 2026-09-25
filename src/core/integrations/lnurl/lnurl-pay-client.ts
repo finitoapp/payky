@@ -1,14 +1,13 @@
 import { err, ok, type Result, type Task } from "@evolu/common"
 import { z } from "zod"
+import type { FetchDep } from "@/core/deps.ts"
 import {
-  appFetchAsJson,
-  type FetchDep,
-  type FetchError,
-  validateJsonResponse,
-} from "@/core/deps.ts"
-import { defineError } from "@/core/error.ts"
-
-const MSATS_PER_SAT = 1_000
+  createLnurlRequestError,
+  fetchLnurlJson,
+  type LnurlError,
+  type LnurlRequestError,
+  MSATS_PER_SAT,
+} from "@/core/integrations/lnurl/lnurl-client.ts"
 
 const LnurlPayMetadataSchema = z.object({
   tag: z.literal("payRequest"),
@@ -31,11 +30,6 @@ const LnurlVerifySchema = z.object({
   pr: z.string().trim().min(1),
 })
 
-const LnurlErrorSchema = z.object({
-  status: z.literal("ERROR"),
-  reason: z.string().trim().min(1),
-})
-
 export interface LnurlPayMetadata {
   readonly callback: string
   readonly minSendableSats: number
@@ -53,39 +47,11 @@ export interface LnurlVerify {
   readonly pr: string
 }
 
-const createLnurlPayRequestError = defineError("LnurlPayRequestError")<{
-  readonly message: string
-}>()
-export type LnurlPayRequestError = ReturnType<typeof createLnurlPayRequestError>
-
-const createLnurlPayHttpError = defineError("LnurlPayHttpError")<{
-  readonly message: string
-  readonly status: number
-  readonly responseBody: string
-}>()
-export type LnurlPayHttpError = ReturnType<typeof createLnurlPayHttpError>
-
-const createLnurlPayResponseError = defineError("LnurlPayResponseError")<{
-  readonly message: string
-  readonly status: number
-  readonly responseBody: string
-  readonly cause?: unknown
-}>()
-export type LnurlPayResponseError = ReturnType<
-  typeof createLnurlPayResponseError
->
-
-export type LnurlPayError =
-  | LnurlPayRequestError
-  | LnurlPayHttpError
-  | LnurlPayResponseError
-  | FetchError
-
-type LnurlPayTask<TResult> = Task<TResult, LnurlPayError, FetchDep>
+type LnurlPayTask<TResult> = Task<TResult, LnurlError, FetchDep>
 
 export const createLud16MetadataUrl = (
   address: string
-): Result<URL, LnurlPayRequestError> => {
+): Result<URL, LnurlRequestError> => {
   const [name, domain, extra] = address.trim().split("@")
 
   if (
@@ -96,7 +62,7 @@ export const createLud16MetadataUrl = (
     extra !== undefined
   ) {
     return err(
-      createLnurlPayRequestError({
+      createLnurlRequestError({
         message: "Invalid Lightning address.",
       })
     )
@@ -109,51 +75,6 @@ export const createLud16MetadataUrl = (
     )
   )
 }
-
-/**
- * Fetches an LNURL endpoint and validates its JSON body against `schema`.
- *
- * An LNURL `{ status: "ERROR", reason }` body takes precedence over the HTTP
- * status (per LUD-06 it may arrive with any status code), then HTTP failures,
- * then schema validation.
- */
-const fetchLnurlJson =
-  <TSchema extends z.ZodType>(
-    url: string | URL,
-    describe: string,
-    schema: TSchema
-  ): LnurlPayTask<z.output<TSchema>> =>
-  async (run) => {
-    const responseResult = await run(appFetchAsJson(url))
-    if (!responseResult.ok) return responseResult
-
-    const response = responseResult.value
-    if (response.json.ok) {
-      const lnurlError = LnurlErrorSchema.safeParse(response.json.value)
-      if (lnurlError.success) {
-        return err(
-          createLnurlPayRequestError({ message: lnurlError.data.reason })
-        )
-      }
-    }
-
-    return validateJsonResponse(response, {
-      schema,
-      onHttpError: ({ status, responseBody }) =>
-        createLnurlPayHttpError({
-          message: `${describe} request failed: ${status}`,
-          status,
-          responseBody,
-        }),
-      onResponseError: ({ status, responseBody, cause }) =>
-        createLnurlPayResponseError({
-          message: `Invalid ${describe} response.`,
-          status,
-          responseBody,
-          cause,
-        }),
-    })
-  }
 
 export const fetchLnurlPayMetadata =
   ({ address }: { readonly address: string }): LnurlPayTask<LnurlPayMetadata> =>

@@ -115,6 +115,26 @@ export const openBillsQuery = createQuery((db) =>
             unitAmount: KyselyNotNull
           }>()
       ).as("items"),
+      // The floor view's payment badges: the same inputs `usePendingPayments`
+      // reads per bill, folded in for the same one-query reason as above.
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("payment")
+          .select(["payment.id", "payment.canceledAt", "payment.expiresAt"])
+          .whereRef("payment.billId", "=", "bill.id")
+          .where("payment.isDeleted", "is not", sqliteTrue)
+      ).as("payments"),
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("reconciliationClaim")
+          .innerJoin("payment", "payment.id", "reconciliationClaim.paymentId")
+          .select(["reconciliationClaim.paymentId"])
+          .whereRef("payment.billId", "=", "bill.id")
+          .where("payment.isDeleted", "is not", sqliteTrue)
+          .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+          .where("reconciliationClaim.paymentId", "is not", null)
+          .$narrowType<{ paymentId: KyselyNotNull }>()
+      ).as("claims"),
     ])
     .where("canceledAt", "is", null)
     .where("closedAt", "is", null)

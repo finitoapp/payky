@@ -66,4 +66,6 @@ export const skCommon = {
   "tables.tile.free": "Voľný",
   "tables.tile.multipleBills": "{value} otvorených účtov",
   "tables.tile.newBill": "Nový účet",
+  "tables.tile.partiallyPaid": "Čiastočne zaplatené",
+  "tables.tile.paymentPending": "Prebieha platba",
 } satisfies Record<keyof typeof enCommon, string>

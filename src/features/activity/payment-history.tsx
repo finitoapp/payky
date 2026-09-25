@@ -18,6 +18,13 @@ import {
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import {
+  ActivityAmount,
+  ActivityIssueBadges,
+  activityIssueRowClassName,
+  formatActivityDayTitle,
+  PaymentMethodIcons,
+} from "@/features/activity/activity-row.tsx"
+import {
   PaymentStatusIcon,
   paymentStatusLabelKey,
 } from "@/features/payment/payment-status-display.tsx"
@@ -25,7 +32,7 @@ import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatDate, formatMoney, formatTime } from "@/lib/format-utils.ts"
+import { formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { groupByDay } from "@/lib/group-by-day.ts"
 
 type PaymentHistoryRow = InferRow<ReturnType<typeof latestPaymentsQuery>>
@@ -152,13 +159,29 @@ function PaymentHistoryIssues({
     flags.billOverpaid ? t("paymentHistory.billOverpaid") : null,
   ].filter((issue): issue is string => issue !== null)
 
-  if (issues.length === 0) return null
+  return <ActivityIssueBadges issues={issues} />
+}
 
-  return (
-    <span className="text-xs font-medium text-warning">
-      {issues.join(" · ")}
-    </span>
-  )
+const hasAnyIssue = (flags: PaymentHistoryIssueFlags): boolean =>
+  Object.values(flags).some(Boolean)
+
+/**
+ * The row's title: the bill it paid (its label, else its number), else the
+ * payment's own sequential number, so rows can be told apart without
+ * opening each one.
+ */
+const resolvePaymentTitle = (
+  item: PaymentHistoryRow,
+  t: ReturnType<typeof useTranslation>["t"]
+): string => {
+  if (item.billLabel !== null) return item.billLabel
+  if (item.billDisplayNumber !== null)
+    return t("bill.list.label", { number: item.billDisplayNumber })
+  if (item.paymentSerialNumber !== null)
+    return t("paymentHistory.paymentNumber", {
+      number: item.paymentSerialNumber,
+    })
+  return t("paymentHistory.payment")
 }
 
 export const PaymentHistory = () => {
@@ -193,81 +216,125 @@ export const PaymentHistory = () => {
   }
 
   const dayGroups = groupByDay(items, (item) => new Date(item.createdAt))
+  const statusOf = (item: PaymentHistoryRow) =>
+    resolvePaymentStatus(
+      {
+        canceledAt: item.canceledAt,
+        confirmedPaidAt: item.confirmedPaidAt,
+        expiresAt: item.expiresAt,
+        claimCount: toSettledClaimCount(item),
+      },
+      now
+    )
 
   return (
     <div className="flex flex-col gap-4">
-      {dayGroups.map((group) => (
-        <VerticalNav
-          key={group.date.toDateString()}
-          title={formatDate(group.date, locale)}
-          items={group.items.map((item) => {
-            const claimCount = toSettledClaimCount(item)
-            const paymentStatus = resolvePaymentStatus(
-              {
+      {dayGroups.map((group, groupIndex) => {
+        // The last group may continue on the next, not yet loaded page.
+        const isComplete = !hasMore || groupIndex < dayGroups.length - 1
+        // Only paid payments count: a pending, expired or canceled one is
+        // money that never arrived.
+        const title = formatActivityDayTitle({
+          date: group.date,
+          now,
+          locale,
+          amounts: group.items
+            .filter((item) => statusOf(item) === "paid")
+            .map((item) => ({ value: item.amount, currency: item.currency })),
+          isComplete,
+        })
+
+        return (
+          <VerticalNav
+            key={group.date.toDateString()}
+            title={title}
+            items={group.items.map((item) => {
+              const claimCount = toSettledClaimCount(item)
+              const paymentStatus = statusOf(item)
+              const hasCancellationCollision = resolveHasCancellationCollision({
                 canceledAt: item.canceledAt,
                 confirmedPaidAt: item.confirmedPaidAt,
-                expiresAt: item.expiresAt,
                 claimCount,
-              },
-              now
-            )
-            const hasCancellationCollision = resolveHasCancellationCollision({
-              canceledAt: item.canceledAt,
-              confirmedPaidAt: item.confirmedPaidAt,
-              claimCount,
-            })
-            const issueFlags = resolvePaymentHistoryIssueFlags(
-              item,
-              hasCancellationCollision
-            )
+              })
+              const issueFlags = resolvePaymentHistoryIssueFlags(
+                item,
+                hasCancellationCollision
+              )
+              // A canceled payment whose money arrived anyway is not void —
+              // striking its amount through would hide exactly that.
+              const isVoid =
+                (paymentStatus === "canceled" || paymentStatus === "expired") &&
+                !hasCancellationCollision
 
-            return {
-              id: item.id,
-              kind: "link" as const,
-              to: "/activity/$paymentId",
-              params: {
-                paymentId: item.id,
-              },
-              label: (
-                <div className={"flex gap-2 justify-between"}>
-                  <div className={"flex flex-col gap-2 items-start w-max"}>
-                    <strong>{t("paymentHistory.payment")}</strong>
-                    <div className={"flex text-xs"}>
+              return {
+                id: item.id,
+                kind: "link" as const,
+                className: hasAnyIssue(issueFlags)
+                  ? activityIssueRowClassName
+                  : undefined,
+                to: "/activity/$paymentId",
+                params: {
+                  paymentId: item.id,
+                },
+                label: (
+                  <div className={"flex flex-col gap-1 items-start min-w-0"}>
+                    <strong className="max-w-full truncate">
+                      {resolvePaymentTitle(item, t)}
+                    </strong>
+                    <div
+                      className={
+                        "flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground"
+                      }
+                    >
                       <span>
-                        {formatMoney(
-                          {
-                            value: item.amount,
-                            currency: item.currency,
-                          },
-                          locale
-                        )}
-                      </span>
-                      &nbsp;&nbsp;•&nbsp;&nbsp;
-                      <span className={"text-muted-foreground"}>
                         {formatTime(new Date(item.createdAt), locale)}
                       </span>
+                      {item.tableName !== null && (
+                        <span>· {item.tableName}</span>
+                      )}
+                      {item.tipAmount > 0 && (
+                        <span>
+                          ·{" "}
+                          {t("paymentHistory.tip", {
+                            amount: formatMoney(
+                              {
+                                value: item.tipAmount,
+                                currency: item.currency,
+                              },
+                              locale
+                            ),
+                          })}
+                        </span>
+                      )}
+                      <PaymentMethodIcons
+                        kinds={item.ownClaimedTransactions.map(
+                          (transaction) => transaction.transactionKind
+                        )}
+                      />
                     </div>
                     <PaymentHistoryIssues flags={issueFlags} />
                   </div>
-                </div>
-              ),
-              icon: (
-                <div className={"p-2"}>
-                  <PaymentStatusIcon
-                    status={paymentStatus}
-                    hasCancellationCollision={hasCancellationCollision}
+                ),
+                icon: (
+                  <div className={"p-2"}>
+                    <PaymentStatusIcon
+                      status={paymentStatus}
+                      hasCancellationCollision={hasCancellationCollision}
+                    />
+                  </div>
+                ),
+                action: (
+                  <ActivityAmount
+                    money={{ value: item.amount, currency: item.currency }}
+                    isVoid={isVoid}
+                    statusLabel={t(paymentStatusLabelKey[paymentStatus])}
                   />
-                </div>
-              ),
-              action: (
-                <span className="text-xs font-medium text-muted-foreground">
-                  {t(paymentStatusLabelKey[paymentStatus])}
-                </span>
-              ),
-            }
-          })}
-        />
-      ))}
+                ),
+              }
+            })}
+          />
+        )
+      })}
       {hasMore && (
         <>
           {isPending && <ActivityHistorySkeleton rows={5} />}

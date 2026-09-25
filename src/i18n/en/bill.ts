@@ -93,6 +93,7 @@ export const enBill = {
   "billHistory.empty.description": "Bills you create will show up here.",
   "billHistory.empty.title": "No bills yet",
   "billHistory.overpaid": "Overpaid",
+  "billHistory.tip": "+ {amount} tip",
   "billHistory.title": "Bill history",
   "billHistory.underpaid": "Underpaid",
   "taxRecap.base": "Base",

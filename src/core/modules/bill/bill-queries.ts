@@ -191,6 +191,14 @@ export const latestBillsQuery = (limit: number) =>
       .selectFrom("bill")
       .selectAll()
       .select((eb) => [
+        // A scalar subquery rather than a join, which would make the
+        // unqualified `bill` columns below ambiguous.
+        eb
+          .selectFrom("table")
+          .select("table.name")
+          .whereRef("table.id", "=", "bill.tableId")
+          .where("table.isDeleted", "is not", sqliteTrue)
+          .as("tableName"),
         evoluJsonArrayFrom(
           eb
             .selectFrom("billLine")
@@ -283,6 +291,7 @@ export const latestBillsQuery = (limit: number) =>
               "payment.currency as paymentCurrency",
               "paymentBtc.amountSats as paymentAmountSats",
               "reconciliationClaim.accountTransactionId",
+              "accountTransaction.kind as transactionKind",
               "accountTransaction.amount",
               "accountTransaction.currency",
             ])
@@ -295,7 +304,9 @@ export const latestBillsQuery = (limit: number) =>
             .where("accountTransaction.isDeleted", "is not", 1)
             .where("accountTransaction.amount", "is not", null)
             .where("accountTransaction.currency", "is not", null)
+            .where("accountTransaction.kind", "is not", null)
             .$narrowType<{
+              transactionKind: KyselyNotNull
               tipAmount: KyselyNotNull
               paymentAmount: KyselyNotNull
               paymentCurrency: KyselyNotNull

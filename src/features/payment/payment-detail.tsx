@@ -64,6 +64,7 @@ import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
 import { useBillLineSummaryDiff } from "@/features/bill/use-bill-line-summary-diff.ts"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
+import { paymentMethodLabelKey } from "@/features/payment/payment-method-display.tsx"
 import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
@@ -77,21 +78,7 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-type PaymentDetailPaymentMethod =
-  | "cashRegister"
-  | "iban"
-  | "onchain"
-  | "cardSwitchio"
-  | "spark"
 type PaymentDetailClaimSource = "auto" | "manual"
-
-const paymentMethodLabelKey = {
-  cashRegister: "paymentDetail.paymentMethod.cash",
-  iban: "paymentDetail.paymentMethod.iban",
-  onchain: "paymentDetail.paymentMethod.onchain",
-  cardSwitchio: "paymentDetail.paymentMethod.card",
-  spark: "paymentDetail.paymentMethod.spark",
-} satisfies Record<PaymentDetailPaymentMethod, TranslationKey>
 
 const claimSourceLabelKey = {
   auto: "paymentDetail.reconciliation.source.auto",

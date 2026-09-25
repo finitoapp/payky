@@ -426,9 +426,30 @@ export const latestPaymentsQuery = (limit: number) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
+      // The row's title and context in the activity list: which bill/table
+      // it paid, or its sequential number for a standalone payment.
+      .leftJoin("bill", (join) =>
+        join
+          .onRef("bill.id", "=", "payment.billId")
+          .on("bill.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("table", (join) =>
+        join
+          .onRef("table.id", "=", "bill.tableId")
+          .on("table.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentNumber", (join) =>
+        join
+          .onRef("paymentNumber.id", "=", "payment.id")
+          .on("paymentNumber.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.billId",
+        "bill.label as billLabel",
+        "bill.displayNumber as billDisplayNumber",
+        "table.name as tableName",
+        "paymentNumber.serialNumber as paymentSerialNumber",
         "payment.amount",
         "payment.currency",
         "payment.tipAmount",
@@ -454,6 +475,7 @@ export const latestPaymentsQuery = (limit: number) =>
             )
             .select([
               "ownClaim.accountTransactionId",
+              "ownClaimTx.kind as transactionKind",
               "ownClaimTx.amount",
               "ownClaimTx.currency",
               "ownPaymentBtc.amountSats as paymentAmountSats",
@@ -471,8 +493,10 @@ export const latestPaymentsQuery = (limit: number) =>
             .where("ownClaimTx.currency", "is not", null)
             .where("ownClaimTx.isDeleted", "is not", sqliteTrue)
             .where("ownClaimTx.amount", "is not", null)
+            .where("ownClaimTx.kind", "is not", null)
             .$narrowType<{
               accountTransactionId: KyselyNotNull
+              transactionKind: KyselyNotNull
               amount: KyselyNotNull
               currency: KyselyNotNull
               paymentAmount: KyselyNotNull

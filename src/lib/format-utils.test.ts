@@ -8,6 +8,7 @@ import {
   formatDateTime,
   formatElapsed,
   formatMoney,
+  formatRelativeDate,
   formatSatsAmount,
   formatTime,
 } from "./format-utils.ts"
@@ -134,6 +135,30 @@ describe("formatAddressGroups", () => {
   test("regroups a string that already carries spacing", () => {
     expect(formatAddressGroups("CZ65 0800 0000 1920 0014 5399")).toBe(
       "CZ65 0800 0000 1920 0014 5399"
+    )
+  })
+})
+
+describe("formatRelativeDate", () => {
+  const now = new Date(2026, 8, 25, 10, 0)
+
+  test("names today and yesterday in the locale's words, capitalized", () => {
+    expect(formatRelativeDate(new Date(2026, 8, 25, 0, 5), now, "en-US")).toBe(
+      "Today"
+    )
+    expect(
+      formatRelativeDate(new Date(2026, 8, 24, 23, 59), now, "cs-CZ")
+    ).toBe("Včera")
+  })
+
+  test("falls back to the plain date beyond yesterday and in the future", () => {
+    const older = new Date(2026, 8, 23, 12, 0)
+    const tomorrow = new Date(2026, 8, 26, 12, 0)
+    expect(formatRelativeDate(older, now, "en-US")).toBe(
+      formatDate(older, "en-US")
+    )
+    expect(formatRelativeDate(tomorrow, now, "en-US")).toBe(
+      formatDate(tomorrow, "en-US")
     )
   })
 })

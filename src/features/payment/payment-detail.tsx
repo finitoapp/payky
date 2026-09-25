@@ -808,7 +808,7 @@ function PaymentDetailBillCard({
 }
 
 /** Identifiers and bookkeeping timestamps staff rarely need, collapsed by default. */
-function PaymentDetailTechnical({
+export function PaymentDetailTechnical({
   children,
 }: {
   readonly children: ReactNode
@@ -831,7 +831,7 @@ function PaymentDetailTechnical({
   )
 }
 
-function PaymentDetailCopyRow({
+export function PaymentDetailCopyRow({
   label,
   value,
 }: {

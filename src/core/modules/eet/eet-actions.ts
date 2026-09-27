@@ -33,6 +33,7 @@ import {
   type EetEstablishmentId,
   type EetSaleId,
   EetSequenceNumberSchema,
+  type EetTipOwner,
 } from "@/core/modules/eet/eet-types.ts"
 import {
   bytesToEetBase64,
@@ -46,6 +47,7 @@ import {
   resolveEetEnvironment,
   toEetCashRegisterId,
 } from "@/core/modules/eet/eet-utils.ts"
+import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -139,6 +141,7 @@ interface EetSettingsValues {
   readonly environment?: EetEnvironment
   readonly establishmentId?: EetEstablishmentId
   readonly certificateId?: EetCertificateId
+  readonly tipOwner?: EetTipOwner
 }
 
 const upsertEetSettings = (
@@ -166,6 +169,17 @@ export const saveEetEstablishmentId =
       upsertEetSettings(run, { establishmentId }, options)
     )
     return ok(establishmentId)
+  }
+
+export const saveEetTipOwner =
+  (
+    tipOwner: EetTipOwner
+  ): Task<EetTipOwner, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    await runMutationWithCompletion((options) =>
+      upsertEetSettings(run, { tipOwner }, options)
+    )
+    return ok(tipOwner)
   }
 
 export const selectEetEnvironment =
@@ -281,6 +295,7 @@ export const createEetSale =
       readonly id: PaymentId
       readonly billId: BillId | null
       readonly amount: NonNegativeInteger
+      readonly tipAmount: NonNegativeInteger
       readonly currency: FiatCurrency
       readonly method: AccountKind
       readonly firstClaimedAt: TimestampMs
@@ -309,7 +324,10 @@ export const createEetSale =
           billId: payment.billId,
           deviceId,
           method: payment.method,
-          amount: payment.amount,
+          amount:
+            settings.tipOwner === "employees"
+              ? calculatePaymentBaseAmount(payment)
+              : payment.amount,
           currency: payment.currency,
           environment: resolveEetEnvironment({
             environment: settings.environment,

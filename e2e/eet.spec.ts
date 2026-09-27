@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test"
+import type { TranslationKey } from "../src/i18n/resources.ts"
 import { addCatalogItem } from "./support/bill.ts"
 import { createAndPaySecondPayment } from "./support/collisions.ts"
 import {
@@ -9,12 +10,13 @@ import {
   selectEetSandbox,
 } from "./support/eet.ts"
 import { expect, test } from "./support/fixtures.ts"
-import { nameParam, translate } from "./support/i18n.ts"
-import { toggleInlineSwitch } from "./support/inline-edit.ts"
+import { nameParam, translate, translateValue } from "./support/i18n.ts"
+import { pickInlineToggle, toggleInlineSwitch } from "./support/inline-edit.ts"
 import { gotoPage, waitForLocalWriteToSettle } from "./support/navigation.ts"
 import { seedOnboarding } from "./support/onboarding.ts"
 import {
   createPayment,
+  enterAmount,
   getPaymentIdFromUrl,
   markCashPaid,
   markCashPaidAndSettle,
@@ -446,6 +448,60 @@ test("the paid screen appears at once while EET cannot be reached", async ({
       .getByTestId("payment-paid-panel")
       .getByText(translate("en", "paymentWait.paid"))
   ).toBeVisible({ timeout: 2_000 })
+})
+
+test("tips that belong to employees are left out of the reported sale", async ({
+  page,
+}) => {
+  const tipOption = (key: TranslationKey) =>
+    page.getByRole("button", { name: new RegExp(translate("en", key)) })
+
+  await enableEetWithGeneratedCertificate(page, "en")
+
+  await test.step("tips belong to the business until the merchant says otherwise", async () => {
+    await expect(
+      page.getByText(translate("en", "settings.eet.tip.description"))
+    ).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "settings.eet.tip.note"))
+    ).toBeVisible()
+    await expect(tipOption("settings.eet.tip.business.title")).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+  })
+
+  await test.step("the merchant says tips belong to employees", async () => {
+    await pickInlineToggle(
+      page,
+      new RegExp(translate("en", "settings.eet.tip.employees.title"))
+    )
+    await waitForLocalWriteToSettle(page)
+  })
+
+  await test.step("a payment with a 10% tip is reported without the tip", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await enterAmount(page, "en")
+    await page
+      .getByRole("button", { name: translate("en", "home.pay") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translateValue("en", "settings.tips.percentages.value", 10),
+      })
+      .click()
+    await page
+      .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+      .click()
+    await markCashPaidAndSettle(page, "en")
+
+    await expect
+      .poll(
+        () => fakeEet.production.requests.at(-1)?.data.celk_trzba,
+        eetDeliveryTimeout
+      )
+      .toBe("5.90")
+  })
 })
 
 test("EET can be switched off again", async ({ page }) => {

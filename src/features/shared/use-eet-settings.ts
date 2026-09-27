@@ -24,6 +24,7 @@ export function useEetSettings() {
     isEnabled: enabledAt !== null,
     isTestCertificate,
     isProductionAvailable: isEetProductionConfigured,
+    tipOwner: settings?.tipOwner ?? "business",
     isSandboxActive: isEetSandboxActive({ enabledAt, environment }),
   }
 }

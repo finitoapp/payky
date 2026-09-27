@@ -3,14 +3,21 @@ import { createRun } from "@evolu/web"
 import { useAtomValue } from "jotai"
 import { useEffect } from "react"
 
+import { accountAtom } from "@/atoms/account.ts"
 import { evoluAtom } from "@/atoms/evolu.ts"
 import { getBackgroundJobsForRuntime } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
-import { createDateDep, createFetchDep } from "@/core/deps.ts"
+import {
+  createConnectivityDep,
+  createDateDep,
+  createFetchDep,
+} from "@/core/deps.ts"
+import { createEetApiDep } from "@/core/integrations/eet/eet-client.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
+  const deviceId = useAtomValue(accountAtom).device.id
   const console = useConsole()
 
   useEffect(() => {
@@ -20,11 +27,16 @@ export function AppBackgroundJobs() {
 
     let isDisposed = false
     let jobsDisposable: AsyncDisposable | null = null
+    const dateDep = createDateDep()
+    const fetchDep = createFetchDep()
     const run = createRun({
       evolu,
       evoluOwnerId: evolu.appOwner.id,
-      ...createDateDep(),
-      ...createFetchDep(),
+      deviceId,
+      ...dateDep,
+      ...fetchDep,
+      ...createConnectivityDep(),
+      ...createEetApiDep({ ...dateDep, ...fetchDep }),
       lockManager: navigator.locks,
       console,
       onError: (error: unknown) => {
@@ -65,7 +77,7 @@ export function AppBackgroundJobs() {
         }
       })()
     }
-  }, [console, evolu])
+  }, [console, deviceId, evolu])
 
   return null
 }

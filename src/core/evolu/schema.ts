@@ -33,6 +33,13 @@ import {
 } from "@/core/modules/catalog-item/catalog-item.ts"
 import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
+  eetCertificate,
+  eetIndexes,
+  eetSale,
+  eetSaleConfirmation,
+  eetSettings,
+} from "@/core/modules/eet/eet.ts"
+import {
   fioPlugin,
   fioPluginIndexes,
   fioPluginSyncPointer,
@@ -105,6 +112,10 @@ export const AppSchema = {
   fioPlugin,
   fioPluginSyncPointer,
   fioPluginToken,
+  eetSettings,
+  eetCertificate,
+  eetSale,
+  eetSaleConfirmation,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)
@@ -122,6 +133,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...reconciliationClaimIndexes(create),
   ...deviceIndexes(create),
   ...fioPluginIndexes(create),
+  ...eetIndexes(create),
 ]
 
 export type EvoluSchema = typeof AppSchema

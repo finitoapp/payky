@@ -1,14 +1,11 @@
 import { ok, type Task } from "@evolu/common"
 
-import type {
-  BackgroundJob,
-  BackgroundJobContext,
-} from "@/core/background-jobs/background-job-types.ts"
+import type { BackgroundJobContext } from "@/core/background-jobs/background-job-types.ts"
 
 export const runBackgroundJobs =
-  (
-    jobs: ReadonlyArray<BackgroundJob>
-  ): Task<AsyncDisposable, never, BackgroundJobContext> =>
+  <TContext extends BackgroundJobContext>(
+    jobs: ReadonlyArray<Task<AsyncDisposable, never, TContext>>
+  ): Task<AsyncDisposable, never, TContext> =>
   async (run) => {
     const disposer = new AsyncDisposableStack()
 

@@ -1,0 +1,272 @@
+import {
+  type ConsoleDep,
+  type LockManagerDep,
+  testCreateConsole,
+  testCreateRun,
+} from "@evolu/common"
+
+import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
+import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import { createEvoluTest } from "@/core/evolu/cli-client.ts"
+import type { EetCertificateFile } from "@/core/integrations/eet/eet-certificate.ts"
+import {
+  createEetApiDep,
+  type EetApiDep,
+} from "@/core/integrations/eet/eet-client.ts"
+import { createAccount } from "@/core/modules/account/account-actions.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import {
+  enableEet,
+  saveEetEstablishmentId,
+  selectEetEnvironment,
+  storeEetCertificate,
+} from "@/core/modules/eet/eet-actions.ts"
+import {
+  type EetEic,
+  type EetEnvironment,
+  EetEstablishmentIdSchema,
+} from "@/core/modules/eet/eet-types.ts"
+import {
+  createPayment,
+  markPaymentPaidCash,
+} from "@/core/modules/payment/payment-actions.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { claimManualReconciliation } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
+import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import {
+  type FiatCurrency,
+  Integer,
+  NonEmptyString255,
+  NonEmptyStringSchema,
+  NonNegativeInteger,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
+import { createTestDateDep, type TestDateDep } from "@/test/date-dep.ts"
+import {
+  createFakeEetResponder,
+  type FakeEetResponder,
+} from "@/test/eet-fake-responder.ts"
+import {
+  createTestCertificate,
+  type TestCertificate,
+} from "@/test/eet-test-certificates.ts"
+
+export const eetTestEic = "CZ1234567890" as EetEic
+
+const eetTestNow = new Date("2026-06-05T12:00:00.000Z")
+
+const testCertificateDescription = "generated test taxpayer"
+
+const testCertificateValidity = {
+  validFrom: new Date("2026-01-01T00:00:00.000Z"),
+  validTo: new Date("2027-12-31T00:00:00.000Z"),
+}
+
+let cashRegisterCertificate: Promise<TestCertificate> | undefined
+
+export const getEetTestCertificateFile = async (
+  eic: EetEic = eetTestEic
+): Promise<EetCertificateFile> => {
+  cashRegisterCertificate ??= createTestCertificate({
+    subject: {
+      commonName: eetTestEic,
+      description: testCertificateDescription,
+    },
+    ...testCertificateValidity,
+  })
+  const { certificateDer, privateKeyPkcs8 } = await cashRegisterCertificate
+
+  return {
+    eic,
+    description: testCertificateDescription,
+    ...testCertificateValidity,
+    certificateDer,
+    privateKeyPkcs8,
+  }
+}
+
+export type EetTestDeps = EvoluDep &
+  EvoluOwnerIdDep &
+  DateDep &
+  FetchDep &
+  LockManagerDep &
+  ConsoleDep &
+  EetApiDep
+
+export interface EetTestContext extends AsyncDisposable {
+  readonly deps: EetTestDeps
+  readonly clock: TestDateDep
+  readonly responder: FakeEetResponder
+  readonly deviceId: DeviceId
+  readonly cashRegisterAccountId: AccountId
+  readonly withEetApi: (options: {
+    readonly productionUrl?: string
+  }) => EetTestDeps
+}
+
+export const createEetTestContext = async ({
+  now = eetTestNow,
+  productionUrl,
+}: {
+  readonly now?: Date
+  readonly productionUrl?: string
+} = {}): Promise<EetTestContext> => {
+  const testEvolu = await createEvoluTest()
+  const { evolu } = testEvolu
+  const clock = createTestDateDep(now)
+  const responder = await createFakeEetResponder({ now: clock.date.now })
+  const baseDeps = {
+    evolu,
+    evoluOwnerId: evolu.appOwner.id,
+    date: clock.date,
+    fetch: responder.fetch,
+    lockManager: createInProcessLockManager(),
+    console: testCreateConsole(),
+  }
+  const withEetApi = (options: { readonly productionUrl?: string }) => ({
+    ...baseDeps,
+    ...createEetApiDep(baseDeps, {
+      productionUrl: options.productionUrl,
+      timeoutMs: 200,
+    }),
+  })
+  const deps = withEetApi({ productionUrl })
+
+  await using run = testCreateRun(deps)
+  const cashRegisterAccountId = await run.ok(
+    createAccount({
+      deviceId: null,
+      name: NonEmptyString255("Cash register"),
+      cashRegister: { currency: "CZK" },
+    })
+  )
+
+  return {
+    deps,
+    clock,
+    responder,
+    deviceId: createRowId<"Device">(),
+    cashRegisterAccountId,
+    withEetApi,
+    [Symbol.asyncDispose]: () => testEvolu[Symbol.asyncDispose](),
+  }
+}
+
+export const configureEet = async (
+  context: EetTestContext,
+  {
+    enabled = true,
+    environment = "playground",
+    isTestCertificate = false,
+    establishmentId = "24",
+  }: {
+    readonly enabled?: boolean
+    readonly environment?: EetEnvironment
+    readonly isTestCertificate?: boolean
+    readonly establishmentId?: string
+  } = {}
+): Promise<void> => {
+  await using run = testCreateRun(context.deps)
+  await run.ok(
+    storeEetCertificate({
+      certificate: await getEetTestCertificateFile(),
+      isTestCertificate,
+    })
+  )
+  await run.ok(
+    saveEetEstablishmentId(EetEstablishmentIdSchema.decode(establishmentId))
+  )
+  await run.orThrow(selectEetEnvironment(environment))
+  if (enabled) await run.orThrow(enableEet())
+}
+
+export const createTestPayment = async (
+  context: EetTestContext,
+  {
+    deviceId = context.deviceId,
+    amount = 25_000,
+    tipAmount = 0,
+    currency = "CZK",
+    billId = null,
+  }: {
+    readonly deviceId?: DeviceId | null
+    readonly amount?: number
+    readonly tipAmount?: number
+    readonly currency?: FiatCurrency
+    readonly billId?: BillId | null
+  } = {}
+): Promise<PaymentId> => {
+  await using run = testCreateRun(context.deps)
+  return await run.orThrow(
+    createPayment({
+      deviceId,
+      billId,
+      tableId: null,
+      amount: NonNegativeInteger(amount),
+      currency,
+      tipAmount: NonNegativeInteger(tipAmount),
+      canceledAt: null,
+      expiresAt: null,
+    })
+  )
+}
+
+export const settleInCash = async (
+  context: EetTestContext,
+  paymentId: PaymentId,
+  {
+    accountId = context.cashRegisterAccountId,
+    deviceId = context.deviceId,
+  }: {
+    readonly accountId?: AccountId
+    readonly deviceId?: DeviceId | null
+  } = {}
+): Promise<void> => {
+  await using run = testCreateRun(context.deps)
+  await run.orThrow(markPaymentPaidCash({ paymentId, accountId, deviceId }))
+}
+
+export const settleWithLightning = async (
+  context: EetTestContext,
+  paymentId: PaymentId
+): Promise<void> => {
+  await using run = testCreateRun(context.deps)
+  const sparkAccountId = await run.ok(
+    createAccount({
+      deviceId: null,
+      name: NonEmptyString255("Spark wallet"),
+      spark: { secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc") },
+    })
+  )
+  const accountTransactionId = await run.ok(
+    createAccountTransaction({
+      accountId: sparkAccountId,
+      amount: Integer(1_234),
+      currency: "BTC",
+      occurredAt: TimestampMs(context.clock.date.now().getTime()),
+      note: null,
+      internalTransferGroupId: null,
+      source: { deviceId: null, source: "auto" },
+      spark: {
+        sparkTransferId: NonEmptyStringSchema.decode(`transfer-${paymentId}`),
+        lightning: {
+          lnInvoice: NonEmptyStringSchema.decode(`lnbc1${paymentId}`),
+          preImage: null,
+          paymentHash: null,
+        },
+      },
+    })
+  )
+  await run.ok(
+    claimManualReconciliation({
+      paymentId,
+      accountTransactionId,
+      deviceId: null,
+    })
+  )
+}

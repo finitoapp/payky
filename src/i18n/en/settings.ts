@@ -451,10 +451,7 @@ export const enSettings = {
   "settings.security.mnemonic.warning":
     "If you lose this phrase, this account and its data can never be recovered — not even by us.",
   "settings.security.title": "Security & Sync",
-  "settings.security.transports.activate": "Activate",
-  "settings.security.transports.active": "Active",
   "settings.security.transports.add": "Add transport",
-  "settings.security.transports.deactivate": "Deactivate",
   "settings.security.transports.description":
     "Configure Evolu WebSocket sync endpoints for this device account.",
   "settings.security.transports.empty": "No transports saved.",
@@ -462,12 +459,32 @@ export const enSettings = {
     "Inactive transports stay stored but are ignored when opening the app data.",
   "settings.security.transports.inactive": "Inactive",
   "settings.security.transports.saved": "Transport added.",
+  "settings.security.transports.status.synced": "Synced",
+  "settings.security.transports.status.syncing": "Syncing…",
+  "settings.security.transports.status.connecting": "Connecting…",
+  "settings.security.transports.status.offline": "Offline",
+  "settings.security.transports.status.error": "Sync error",
+  "settings.security.transports.status.errors.version":
+    "The app and the relay use incompatible versions. Update the app.",
+  "settings.security.transports.status.errors.writeKey":
+    "The relay rejected this account's write key.",
+  "settings.security.transports.status.errors.quota":
+    "The relay's storage for this account is full.",
+  "settings.security.transports.status.errors.decrypt":
+    "Data from the relay could not be decrypted.",
+  "settings.security.transports.status.errors.generic":
+    "Syncing with this relay failed.",
+  "settings.security.transports.status.lastSynced": "Last synced {time}",
+  "settings.security.transports.status.firstSync": "First sync",
+  "settings.security.transports.status.unreachable": "Can't reach the relay",
+  "settings.security.transports.status.offlineSince": "Since {time}",
+  "settings.security.transports.accountId": "account ID",
+  "settings.security.transports.toggle": "Sync through {url}",
   "settings.security.transports.title": "Evolu transports",
   "settings.security.transports.url.description":
     "Only secure WebSocket URLs starting with wss: are accepted.",
   "settings.security.transports.url.invalid": "Enter a valid wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
-  "settings.security.transports.websocket": "WebSocket",
   "settings.sparkAccount.enabled.description":
     "Disabled Spark accounts stay stored but are ignored by payment flows.",
   "settings.sparkAccount.enabled.label": "Enable Spark account",

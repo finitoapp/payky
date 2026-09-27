@@ -455,10 +455,7 @@ export const skSettings = {
   "settings.security.mnemonic.warning":
     "Ak túto frázu stratíte, tento účet a jeho dáta už nikdy nepôjde obnoviť – nepodarí sa to ani nám.",
   "settings.security.title": "Bezpečnosť a synchronizácia",
-  "settings.security.transports.activate": "Aktivovať",
-  "settings.security.transports.active": "Aktívny",
   "settings.security.transports.add": "Pridať transport",
-  "settings.security.transports.deactivate": "Deaktivovať",
   "settings.security.transports.description":
     "Nastavenie Evolu WebSocket endpointov pre tento device účet.",
   "settings.security.transports.empty": "Nie sú uložené žiadne transporty.",
@@ -466,12 +463,32 @@ export const skSettings = {
     "Neaktívne transporty zostanú uložené, ale pri otváraní aplikačných dát sa ignorujú.",
   "settings.security.transports.inactive": "Neaktívny",
   "settings.security.transports.saved": "Transport pridaný.",
+  "settings.security.transports.status.synced": "Synchronizované",
+  "settings.security.transports.status.syncing": "Synchronizujem…",
+  "settings.security.transports.status.connecting": "Pripájam…",
+  "settings.security.transports.status.offline": "Offline",
+  "settings.security.transports.status.error": "Chyba synchronizácie",
+  "settings.security.transports.status.errors.version":
+    "Aplikácia a relay používajú nekompatibilné verzie. Aktualizujte aplikáciu.",
+  "settings.security.transports.status.errors.writeKey":
+    "Relay odmietol zapisovací kľúč tohto účtu.",
+  "settings.security.transports.status.errors.quota":
+    "Úložisko tohto účtu na relayi je plné.",
+  "settings.security.transports.status.errors.decrypt":
+    "Dáta z relaya sa nepodarilo dešifrovať.",
+  "settings.security.transports.status.errors.generic":
+    "Synchronizácia s týmto relayom zlyhala.",
+  "settings.security.transports.status.lastSynced": "Naposledy {time}",
+  "settings.security.transports.status.firstSync": "Prvá synchronizácia",
+  "settings.security.transports.status.unreachable": "Relay nie je dostupný",
+  "settings.security.transports.status.offlineSince": "Od {time}",
+  "settings.security.transports.accountId": "ID účtu",
+  "settings.security.transports.toggle": "Synchronizovať cez {url}",
   "settings.security.transports.title": "Evolu transporty",
   "settings.security.transports.url.description":
     "Povolené sú len zabezpečené WebSocket URL začínajúce na wss:.",
   "settings.security.transports.url.invalid": "Zadajte platnú wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
-  "settings.security.transports.websocket": "WebSocket",
   "settings.sparkAccount.enabled.description":
     "Vypnutý Spark účet zostane uložený, ale platobné toky ho budú ignorovať.",
   "settings.sparkAccount.enabled.label": "Povoliť Spark účet",

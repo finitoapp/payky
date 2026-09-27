@@ -36,6 +36,19 @@ export const minorUnitsToDecimalString = (props: Money): NumberString => {
   return NumberString(isNegative && base !== "0" ? `-${base}` : base)
 }
 
+export const minorUnitsToFixedDecimalString = (props: Money): NumberString => {
+  const fractionDigits = currencyFractionDigits[props.currency]
+  const digits = Math.abs(props.value)
+    .toString()
+    .padStart(fractionDigits + 1, "0")
+  const integerPart = digits.slice(0, digits.length - fractionDigits)
+  const fractionPart = digits.slice(digits.length - fractionDigits)
+  const base =
+    fractionDigits === 0 ? integerPart : `${integerPart}.${fractionPart}`
+
+  return NumberString(props.value < 0 ? `-${base}` : base)
+}
+
 /**
  * Normalizes a decimal string that may use either "." or "," as the decimal
  * separator, possibly with the other character used as a thousands grouping

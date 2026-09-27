@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test"
+import { fakeEetProductionUrl } from "./e2e/support/eet-endpoints.ts"
 import { pageHeight, pageWidth } from "./e2e/support/viewport.ts"
 
 const e2ePort = 5174
@@ -40,6 +41,7 @@ export default defineConfig({
   ],
   webServer: {
     command: webServerCommand,
+    env: { VITE_PAYKY_EET_PRODUCTION_URL: fakeEetProductionUrl },
     url: baseURL,
     ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,

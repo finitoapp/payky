@@ -1,5 +1,8 @@
 import { sqliteFalse } from "@evolu/common"
+import { useAtomValue } from "jotai"
 import { useEffect } from "react"
+
+import { accountAtom } from "@/atoms/account.ts"
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
@@ -160,6 +163,7 @@ declare global {
  */
 export function E2eTestBridge() {
   const appRun = useAppRun()
+  const deviceId = useAtomValue(accountAtom).device.id
 
   useEffect(() => {
     if (!import.meta.env.DEV && !__E2E_TEST_BUILD__) return
@@ -467,7 +471,7 @@ export function E2eTestBridge() {
 
       const paymentResult = await run(
         createPayment({
-          deviceId: null,
+          deviceId,
           billId: parsedBillId,
           tableId: null,
           amount: totalAmount,
@@ -519,7 +523,7 @@ export function E2eTestBridge() {
       delete window.__e2eCreateAndPaySecondPayment
       delete window.__e2eCancelBill
     }
-  }, [appRun])
+  }, [appRun, deviceId])
 
   return null
 }

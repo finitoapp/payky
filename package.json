@@ -75,6 +75,7 @@
     "cn": "0.4.0",
     "commander": "15.0.0",
     "date-fns": "4.4.0",
+    "fflate": "0.8.3",
     "jotai": "3.0.0",
     "kysely": "0.29.6",
     "lucide-react": "1.48.0",

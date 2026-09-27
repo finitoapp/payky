@@ -163,6 +163,103 @@ export const csSettings = {
   "settings.donations.sats.label": "Sats",
   "settings.donations.sats.range": "Povolený rozsah: {min}-{max} sats.",
   "settings.donations.title": "Dary",
+  "settings.eet.certificate.description":
+    "Certifikát, který vydala CA EET pro podepisování tržeb. Určuje evidující EIČ a Payky si jeho heslo neukládá.",
+  "settings.eet.certificate.eic": "Evidující EIČ",
+  "settings.eet.certificate.error.expired": "Platnost certifikátu skončila.",
+  "settings.eet.certificate.error.fileRequired":
+    "Vyberte soubor s certifikátem.",
+  "settings.eet.certificate.error.notYetValid": "Certifikát ještě není platný.",
+  "settings.eet.certificate.error.unreadable":
+    "Soubor není čitelný certifikát pokladny.",
+  "settings.eet.certificate.error.withoutEic": "Certifikát neuvádí EIČ.",
+  "settings.eet.certificate.error.withoutKey":
+    "Soubor neobsahuje soukromý klíč k certifikátu.",
+  "settings.eet.certificate.error.wrongPassword": "Heslo není správné.",
+  "settings.eet.certificate.expired.description":
+    "Tržby nelze evidovat, dokud neimportujete nový certifikát.",
+  "settings.eet.certificate.expired.title": "Platnost certifikátu skončila",
+  "settings.eet.certificate.expiresSoon.description":
+    "Obnovte ho v portálu EET a importujte nový certifikát.",
+  "settings.eet.certificate.expiresSoon.title":
+    "Platnost certifikátu brzy skončí",
+  "settings.eet.certificate.file.description":
+    "Soubor .p12 stažený z portálu EET.",
+  "settings.eet.certificate.file.label": "Soubor s certifikátem",
+  "settings.eet.certificate.import": "Importovat certifikát",
+  "settings.eet.certificate.imported": "Certifikát je importován",
+  "settings.eet.certificate.none": "Zatím není importován žádný certifikát.",
+  "settings.eet.certificate.password.label": "Heslo k certifikátu",
+  "settings.eet.certificate.testBadge": "Testovací certifikát",
+  "settings.eet.certificate.title": "Certifikát pokladny",
+  "settings.eet.certificate.validTo": "Platný do {date}",
+  "settings.eet.enabled.description":
+    "Evidují se jen platby přijaté po zapnutí.",
+  "settings.eet.enabled.incomplete":
+    "EET nejde zapnout, dokud není nastaven certifikát a číslo evidenční jednotky.",
+  "settings.eet.enabled.label": "Evidovat tržby v EET",
+  "settings.eet.enabled.missing": "Pro zapnutí EET doplňte {missing}.",
+  "settings.eet.environment.description": "Kam Payky tržby odesílá.",
+  "settings.eet.environment.playground.description":
+    "Pro vyzkoušení EET. Tržby jdou do testovacího prostředí EET a neevidují se.",
+  "settings.eet.environment.playground.title": "Sandbox",
+  "settings.eet.environment.production.description":
+    "Tržby se evidují u finanční správy.",
+  "settings.eet.environment.production.title": "Produkce",
+  "settings.eet.environment.productionUnavailable":
+    "Produkce v této verzi Payky zatím není dostupná.",
+  "settings.eet.environment.sandboxConfirm.cancel": "Zrušit",
+  "settings.eet.environment.sandboxConfirm.confirm": "Použít sandbox",
+  "settings.eet.environment.sandboxConfirm.description":
+    "Tržby se budou odesílat jen do testovacího prostředí EET. U finanční správy se evidovat nebudou.",
+  "settings.eet.environment.sandboxConfirm.title": "Přepnout EET do sandboxu?",
+  "settings.eet.environment.saved": "Prostředí je uloženo",
+  "settings.eet.environment.testCertificateBlocksProduction":
+    "Před přepnutím do produkce importujte produkční certifikát.",
+  "settings.eet.environment.title": "Prostředí",
+  "settings.eet.establishment.description":
+    "Číslo evidenční jednotky přidělené v MOJE daně.",
+  "settings.eet.establishment.invalid": "Zadejte celé číslo bez úvodních nul.",
+  "settings.eet.establishment.label": "Číslo evidenční jednotky",
+  "settings.eet.gap.certificate": "certifikát pokladny",
+  "settings.eet.gap.certificateExpired": "platný certifikát",
+  "settings.eet.gap.establishment": "číslo evidenční jednotky",
+  "settings.eet.nav.off": "Vypnuto",
+  "settings.eet.nav.production": "Zapnuto",
+  "settings.eet.nav.sandbox": "Sandbox",
+  "settings.eet.officialTest.description":
+    "V sandboxu můžete místo souboru použít některý z oficiálních testovacích certifikátů finanční správy.",
+  "settings.eet.officialTest.loading":
+    "Stahuji oficiální testovací certifikáty…",
+  "settings.eet.officialTest.show": "Použít oficiální testovací certifikát",
+  "settings.eet.officialTest.title": "Oficiální testovací certifikáty",
+  "settings.eet.officialTest.unavailable.description":
+    "Teď je nejde stáhnout. Importujte místo nich soubor s certifikátem.",
+  "settings.eet.officialTest.unavailable.title":
+    "Oficiální testovací certifikáty nejsou dostupné",
+  "settings.eet.officialTest.use": "Použít testovací certifikát {name}",
+  "settings.eet.officialTest.useShort": "Použít",
+  "settings.eet.reporting.description":
+    "Eviduje každou platbu přijatou na tomto účtu v systému EET 2.0. Platba zůstane zaplacená, i když EET není dostupná.",
+  "settings.eet.reporting.title": "Evidence tržeb",
+  "settings.eet.test.connection": "Otestovat spojení",
+  "settings.eet.test.description":
+    "Ověří nastavení bez přijetí platby. Nic odeslaného odsud se neeviduje jako tržba.",
+  "settings.eet.test.errorCode": "Chyba {code}: {message}",
+  "settings.eet.test.outcome.accepted": "EET testovací tržbu potvrdila.",
+  "settings.eet.test.outcome.failed": "EET zprávu nepřijala.",
+  "settings.eet.test.outcome.verified": "EET testovací zprávu přijala.",
+  "settings.eet.test.pok": "POK: {pok}",
+  "settings.eet.test.rawRequest": "Požadavek",
+  "settings.eet.test.rawResponse": "Odpověď",
+  "settings.eet.test.sale": "Odeslat testovací tržbu",
+  "settings.eet.test.title": "Test",
+  "settings.eet.test.unavailable":
+    "Nejdřív nastavte certifikát a číslo evidenční jednotky.",
+  "settings.eet.title": "EET",
+  "settings.eet.unconfirmed.description": "Tržby, které EET zatím nepotvrdila.",
+  "settings.eet.unconfirmed.empty": "EET potvrdila všechny tržby.",
+  "settings.eet.unconfirmed.title": "Nepotvrzené tržby",
   "settings.evoluExport.action": "Exportovat",
   "settings.evoluExport.action.pending": "Exportuji...",
   "settings.evoluExport.confirm.description":

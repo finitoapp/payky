@@ -30,6 +30,7 @@ import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_termin
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
+import { Route as TerminalSettingsEetRouteImport } from './routes/_terminal.settings.eet'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
@@ -174,6 +175,11 @@ const TerminalSettingsDonationsInvoiceRoute =
     path: '/donations-invoice',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalSettingsEetRoute = TerminalSettingsEetRouteImport.update({
+  id: '/eet',
+  path: '/eet',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
 const TerminalSettingsEvoluExportRoute =
   TerminalSettingsEvoluExportRouteImport.update({
     id: '/evolu-export',
@@ -383,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/settings/eet': typeof TerminalSettingsEetRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
@@ -434,6 +441,7 @@ export interface FileRoutesByTo {
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/settings/eet': typeof TerminalSettingsEetRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
+  '/_terminal/settings/eet': typeof TerminalSettingsEetRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
@@ -541,6 +550,7 @@ export interface FileRouteTypes {
     | '/settings/debug-console'
     | '/settings/donations'
     | '/settings/donations-invoice'
+    | '/settings/eet'
     | '/settings/evolu-export'
     | '/settings/items'
     | '/settings/language'
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/settings/debug-console'
     | '/settings/donations'
     | '/settings/donations-invoice'
+    | '/settings/eet'
     | '/settings/evolu-export'
     | '/settings/language'
     | '/settings/legal-entity'
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/debug-console'
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
+    | '/_terminal/settings/eet'
     | '/_terminal/settings/evolu-export'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
@@ -833,6 +845,13 @@ declare module '@tanstack/react-router' {
       path: '/donations-invoice'
       fullPath: '/settings/donations-invoice'
       preLoaderRoute: typeof TerminalSettingsDonationsInvoiceRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/eet': {
+      id: '/_terminal/settings/eet'
+      path: '/eet'
+      fullPath: '/settings/eet'
+      preLoaderRoute: typeof TerminalSettingsEetRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/evolu-export': {
@@ -1201,6 +1220,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
+  TerminalSettingsEetRoute: typeof TerminalSettingsEetRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
@@ -1222,6 +1242,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
+  TerminalSettingsEetRoute: TerminalSettingsEetRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,

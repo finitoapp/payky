@@ -161,6 +161,104 @@ export const enSettings = {
   "settings.donations.sats.label": "Sats",
   "settings.donations.sats.range": "Allowed range: {min}-{max} sats.",
   "settings.donations.title": "Donations",
+  "settings.eet.certificate.description":
+    "The certificate CA EET issued for signing sales. The reporting EIČ comes from it, and Payky does not keep its password.",
+  "settings.eet.certificate.eic": "Reporting EIČ",
+  "settings.eet.certificate.error.expired": "The certificate has expired.",
+  "settings.eet.certificate.error.fileRequired": "Choose a certificate file.",
+  "settings.eet.certificate.error.notYetValid":
+    "The certificate is not valid yet.",
+  "settings.eet.certificate.error.unreadable":
+    "The file is not a readable cash-register certificate.",
+  "settings.eet.certificate.error.withoutEic":
+    "The certificate does not name an EIČ.",
+  "settings.eet.certificate.error.withoutKey":
+    "The file holds no private key for its certificate.",
+  "settings.eet.certificate.error.wrongPassword": "The password is wrong.",
+  "settings.eet.certificate.expired.description":
+    "Sales cannot be reported until a new certificate is imported.",
+  "settings.eet.certificate.expired.title": "The certificate has expired",
+  "settings.eet.certificate.expiresSoon.description":
+    "Renew it in the EET portal and import the new certificate.",
+  "settings.eet.certificate.expiresSoon.title": "The certificate expires soon",
+  "settings.eet.certificate.file.description":
+    "The .p12 file downloaded from the EET portal.",
+  "settings.eet.certificate.file.label": "Certificate file",
+  "settings.eet.certificate.import": "Import certificate",
+  "settings.eet.certificate.imported": "Certificate imported",
+  "settings.eet.certificate.none": "No certificate imported yet.",
+  "settings.eet.certificate.password.label": "Certificate password",
+  "settings.eet.certificate.testBadge": "Test certificate",
+  "settings.eet.certificate.title": "Cash-register certificate",
+  "settings.eet.certificate.validTo": "Valid until {date}",
+  "settings.eet.enabled.description":
+    "Only payments received after you turn this on are reported.",
+  "settings.eet.enabled.incomplete":
+    "EET cannot be turned on until the certificate and the establishment number are set.",
+  "settings.eet.enabled.label": "Report sales to EET",
+  "settings.eet.enabled.missing": "To turn on EET, add {missing}.",
+  "settings.eet.environment.description": "Where Payky sends sales.",
+  "settings.eet.environment.playground.description":
+    "For trying EET out. Sales go to the EET test environment and are not reported.",
+  "settings.eet.environment.playground.title": "Sandbox",
+  "settings.eet.environment.production.description":
+    "Sales are reported to the tax administrator.",
+  "settings.eet.environment.production.title": "Production",
+  "settings.eet.environment.productionUnavailable":
+    "Production is not available in this version of Payky yet.",
+  "settings.eet.environment.sandboxConfirm.cancel": "Cancel",
+  "settings.eet.environment.sandboxConfirm.confirm": "Use the sandbox",
+  "settings.eet.environment.sandboxConfirm.description":
+    "Sales will be sent only to the EET test environment. They will not be reported to the tax administrator.",
+  "settings.eet.environment.sandboxConfirm.title": "Switch to the EET sandbox?",
+  "settings.eet.environment.saved": "Environment saved",
+  "settings.eet.environment.testCertificateBlocksProduction":
+    "Import a production certificate before switching to production.",
+  "settings.eet.environment.title": "Environment",
+  "settings.eet.establishment.description":
+    "The establishment number assigned in MOJE daně.",
+  "settings.eet.establishment.invalid":
+    "Enter a whole number without leading zeros.",
+  "settings.eet.establishment.label": "Establishment number",
+  "settings.eet.gap.certificate": "a cash-register certificate",
+  "settings.eet.gap.certificateExpired": "a certificate that has not expired",
+  "settings.eet.gap.establishment": "the establishment number",
+  "settings.eet.nav.off": "Off",
+  "settings.eet.nav.production": "On",
+  "settings.eet.nav.sandbox": "Sandbox",
+  "settings.eet.officialTest.description":
+    "In the sandbox you can use one of the tax administrator's official test certificates instead of a file.",
+  "settings.eet.officialTest.loading":
+    "Downloading the official test certificates…",
+  "settings.eet.officialTest.show": "Use an official test certificate",
+  "settings.eet.officialTest.title": "Official test certificates",
+  "settings.eet.officialTest.unavailable.description":
+    "They could not be downloaded right now. Import a certificate file instead.",
+  "settings.eet.officialTest.unavailable.title":
+    "Official test certificates are unavailable",
+  "settings.eet.officialTest.use": "Use test certificate {name}",
+  "settings.eet.officialTest.useShort": "Use",
+  "settings.eet.reporting.description":
+    "Reports every payment received on this account to the Czech EET 2.0 system. A payment stays paid even when EET is unavailable.",
+  "settings.eet.reporting.title": "Sales reporting",
+  "settings.eet.test.connection": "Test connection",
+  "settings.eet.test.description":
+    "Checks the configuration without taking a payment. Nothing sent from here is recorded as a sale.",
+  "settings.eet.test.errorCode": "Error {code}: {message}",
+  "settings.eet.test.outcome.accepted": "EET confirmed the test sale.",
+  "settings.eet.test.outcome.failed": "EET did not accept the message.",
+  "settings.eet.test.outcome.verified": "EET accepted the test message.",
+  "settings.eet.test.pok": "POK: {pok}",
+  "settings.eet.test.rawRequest": "Request",
+  "settings.eet.test.rawResponse": "Response",
+  "settings.eet.test.sale": "Send test sale",
+  "settings.eet.test.title": "Test",
+  "settings.eet.test.unavailable":
+    "Set up the certificate and the establishment number first.",
+  "settings.eet.title": "EET",
+  "settings.eet.unconfirmed.description": "Sales EET has not confirmed yet.",
+  "settings.eet.unconfirmed.empty": "EET has confirmed every sale.",
+  "settings.eet.unconfirmed.title": "Unconfirmed sales",
   "settings.evoluExport.action": "Export",
   "settings.evoluExport.action.pending": "Exporting...",
   "settings.evoluExport.confirm.description":

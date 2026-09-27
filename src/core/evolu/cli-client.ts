@@ -98,47 +98,11 @@ const createSqliteDep = (
   },
 })
 
-/**
- * Evolu's tenant disposal reaches for its own run after that run is gone,
- * surfacing as `{ type: "AbortError", reason: { defect: Error } }`.
- *
- * ponytail: matched on the message, since Evolu gives the defect no code of
- * its own - narrow this to a typed check if one ever appears.
- */
-const isDisposedObjectTeardownRace = (reported: unknown): boolean => {
-  const defect = (
-    reported as { readonly reason?: { readonly defect?: unknown } }
-  )?.reason?.defect
-
-  return (
-    defect instanceof Error &&
-    defect.message.includes("Cannot use a disposed object")
-  )
-}
-
 export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
   await using disposer = new AsyncDisposableStack()
 
   const consoleStoreOutput = createConsoleStoreOutput()
   const console = createConsole({ level: "warn" })
-  // The default reportDefect rethrows after a microtask to crash loudly.
-  // Evolu's SharedWorker/tenant teardown can race benignly across this
-  // single-process, multi-root simulation when everything shuts down at
-  // once, so log instead of letting that crash the CLI or the test run
-  // (matching @evolu/nodejs's runMain convention).
-  //
-  // That one race is reported as a full object plus stack *after* a command
-  // has already printed its result, which reads exactly like the command
-  // crashed - it is worth one line instead. Everything else still gets
-  // dumped whole.
-  const reportDefect = (reported: unknown) => {
-    if (isDisposedObjectTeardownRace(reported)) {
-      console.warn("Ignored Evolu teardown race: disposed object.")
-      return
-    }
-
-    console.error(reported)
-  }
 
   const run = disposer.use(
     createRun({
@@ -149,7 +113,6 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       createMessagePort: createMessagePort,
       createWebSocket: testCreateWebSocket({ throwOnCreate: true }),
       lockManager: testCreateLockManager(),
-      reportDefect,
     })
   )
 
@@ -165,7 +128,6 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       createMessagePort,
       lockManager: testCreateLockManager(),
       createSqliteDriver: () => () => ok(driver),
-      reportDefect,
     })
   )
 
@@ -174,12 +136,17 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       workerRun(startDbWorker(self))
     })
 
+  // Keep the SharedWorker's resources, so they are disposed before `run`
+  // and `workerRun`. Left to run disposal, its tenants would be torn down
+  // after their own runs were already disposed.
+  const sharedWorkerInit = Promise.withResolvers<AsyncDisposableStack>()
   const sharedWorker = createSharedWorker<
     SharedWorkerInput,
     SharedWorkerOutput
   >((self) => {
-    run(initSharedWorker(self))
+    sharedWorkerInit.resolve(run.ok(initSharedWorker(self)))
   })
+  disposer.use(await sharedWorkerInit.promise)
 
   const sqlite = disposer.use(
     await workerRun.ok(createSqlite(Name.orThrow("test")))

@@ -14,6 +14,8 @@ import {
   isInitialSyncPending,
 } from "@/core/evolu/initial-sync-state.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { EetSandboxBanner } from "@/features/shared/eet-sandbox-banner.tsx"
+import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -26,6 +28,7 @@ export const Route = createFileRoute("/_terminal")({
 function TerminalLayout() {
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
+  const { isSandboxActive } = useEetSettings()
   const terminalLayout = useMatches({
     select: (matches) => {
       for (let index = matches.length - 1; index >= 0; index -= 1) {
@@ -51,9 +54,11 @@ function TerminalLayout() {
     <main
       className={cn(
         "min-h-svh bg-background text-foreground",
+        isSandboxActive && "[--terminal-banner-height:2.5rem]",
         terminalLayout?.mainClassName
       )}
     >
+      {isSandboxActive ? <EetSandboxBanner /> : null}
       <PhoneViewport className={terminalLayout?.viewportClassName}>
         <Outlet />
       </PhoneViewport>

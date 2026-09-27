@@ -192,6 +192,7 @@ export const enPayment = {
     "Cash register is not attached to this payment.",
   "paymentWait.copyQr": "Copy QR code content",
   "paymentWait.detail": "Payment detail",
+  "paymentWait.eetSandbox": "Sent to the EET test environment only.",
   "paymentWait.ibanDetails.hide": "Hide bank details",
   "paymentWait.ibanDetails.iban.copied": "IBAN copied.",
   "paymentWait.ibanDetails.iban.copy": "Copy IBAN",

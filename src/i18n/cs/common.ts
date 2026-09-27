@@ -27,6 +27,7 @@ export const csCommon = {
   "country.cz": "Česká republika",
   "country.other": "Jiná země",
   "country.sk": "Slovensko",
+  "eet.sandbox.banner": "EET sandbox: tržby se neevidují u finanční správy",
   "eet.status.confirmed": "EET potvrzeno",
   "eet.status.overdue": "po lhůtě",
   "eet.status.pending": "EET čeká",

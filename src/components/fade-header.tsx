@@ -23,7 +23,7 @@ export const FadeHeader: FC<{
 
       if (divRef.current) {
         divRef.current.style.opacity = newOpacity.toString()
-        divRef.current.style.top = `calc(env(safe-area-inset-top) + ${(0 - scrollY / 2.5).toString()}px)`
+        divRef.current.style.top = `calc(env(safe-area-inset-top) + var(--terminal-banner-height, 0px) + ${(0 - scrollY / 2.5).toString()}px)`
       }
     }
 
@@ -50,7 +50,10 @@ export const FadeHeader: FC<{
     <div
       ref={divRef}
       className="text-center fixed left-0 right-0"
-      style={{ opacity: 1, top: "env(safe-area-inset-top)" }}
+      style={{
+        opacity: 1,
+        top: "calc(env(safe-area-inset-top) + var(--terminal-banner-height, 0px))",
+      }}
     >
       <div className="relative flex flex-row w-full justify-center">
         <div className="max-w-xl px-4 py-3 flex flex-1 flex-row justify-between gap-4">

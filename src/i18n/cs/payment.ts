@@ -190,6 +190,7 @@ export const csPayment = {
   "paymentWait.cashPaid.unavailable": "K této platbě není připojená pokladna.",
   "paymentWait.copyQr": "Zkopírovat obsah QR kódu",
   "paymentWait.detail": "Detail platby",
+  "paymentWait.eetSandbox": "Odesláno jen do testovacího prostředí EET.",
   "paymentWait.ibanDetails.hide": "Skrýt bankovní údaje",
   "paymentWait.ibanDetails.iban.copied": "IBAN zkopírován.",
   "paymentWait.ibanDetails.iban.copy": "Kopírovat IBAN",

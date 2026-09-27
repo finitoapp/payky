@@ -25,6 +25,8 @@ export const enCommon = {
   "country.cz": "Czech Republic",
   "country.other": "Other",
   "country.sk": "Slovakia",
+  "eet.sandbox.banner":
+    "EET sandbox: sales are not reported to the tax administrator",
   "eet.status.confirmed": "EET confirmed",
   "eet.status.overdue": "overdue",
   "eet.status.pending": "EET pending",

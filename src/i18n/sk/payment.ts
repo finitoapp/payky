@@ -193,6 +193,7 @@ export const skPayment = {
     "K tejto platbe nie je pripojená pokladnica.",
   "paymentWait.copyQr": "Skopírovať obsah QR kódu",
   "paymentWait.detail": "Detail platby",
+  "paymentWait.eetSandbox": "Odoslané len do testovacieho prostredia EET.",
   "paymentWait.ibanDetails.hide": "Skryť bankové údaje",
   "paymentWait.ibanDetails.iban.copied": "IBAN skopírovaný.",
   "paymentWait.ibanDetails.iban.copy": "Kopírovať IBAN",

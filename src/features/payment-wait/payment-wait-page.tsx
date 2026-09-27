@@ -63,6 +63,7 @@ import type {
   PaymentMethodOption,
   PaymentMethodTab,
 } from "@/features/payment-wait/payment-wait-types.ts"
+import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
@@ -116,6 +117,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const locale = useLocale()
   const navigate = useNavigate()
   const confirm = useConfirmDialog()
+  const { isSandboxActive: isEetSandboxActive } = useEetSettings()
   const pillTransition = useSlidingPillTransition()
   const [cashPaymentPending, setCashPaymentPending] = useState(false)
   const [cashPaymentErrorKey, setCashPaymentErrorKey] =
@@ -798,6 +800,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           <div className="flex flex-col items-center gap-4">
             <SuccessPanel
               title={t("paymentWait.paid")}
+              description={
+                isEetSandboxActive ? t("paymentWait.eetSandbox") : undefined
+              }
               actions={
                 <div className="flex flex-col items-center gap-8 pt-16 w-full">
                   <Button

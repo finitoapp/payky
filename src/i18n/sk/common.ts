@@ -27,6 +27,7 @@ export const skCommon = {
   "country.cz": "Česká republika",
   "country.other": "Iná krajina",
   "country.sk": "Slovensko",
+  "eet.sandbox.banner": "EET sandbox: tržby sa neevidujú u finančnej správy",
   "eet.status.confirmed": "EET potvrdené",
   "eet.status.overdue": "po lehote",
   "eet.status.pending": "EET čaká",

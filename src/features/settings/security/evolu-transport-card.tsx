@@ -56,6 +56,8 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-5">
+          <TransportToggleList accountId={accountId} />
+
           <form
             onSubmit={(event) => {
               event.preventDefault()
@@ -123,8 +125,6 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
               </Button>
             </div>
           </form>
-
-          <TransportToggleList accountId={accountId} />
         </div>
       </CardContent>
       <CardFooter>

@@ -1,20 +1,21 @@
 import { type KyselyNotNull, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { useAtomValue } from "jotai"
-import { Power, PowerOff } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { Badge } from "@/components/ui/badge.tsx"
-import { Button } from "@/components/ui/button.tsx"
+import { Switch } from "@/components/ui/switch.tsx"
+import { appOwnerIdPlaceholder } from "@/core/evolu/device-account.ts"
 import {
   type AccountId,
   createDeviceQuery,
 } from "@/core/evolu/device-client.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
+import { TransportSyncStatus } from "@/features/settings/security/transport-sync-status.tsx"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { cn } from "@/lib/utils.ts"
 
 const accountTransportsQuery = (accountId: AccountId) =>
   createDeviceQuery((db) =>
@@ -67,7 +68,7 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="divide-y rounded-lg border">
       {transports.map((transport) => (
         <TransportListItem
           key={transport.id}
@@ -115,39 +116,74 @@ function TransportListItem({
 }: TransportListItemProps) {
   const { t } = useTranslation()
   const active = isActive === sqliteTrue
-  const Icon = active ? PowerOff : Power
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border p-3">
-      <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-sm font-medium">
-          {t("settings.security.transports.websocket")}
-        </span>
-        <span className="truncate font-mono text-xs text-muted-foreground">
-          {url}
-        </span>
-      </span>
-      <div className="flex shrink-0 items-center gap-2">
-        <Badge variant={active ? "secondary" : "outline"}>
-          {active
-            ? t("settings.security.transports.active")
-            : t("settings.security.transports.inactive")}
-        </Badge>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
+    <li className="flex flex-col gap-2 p-3">
+      <TransportUrl url={url} muted={!active} />
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          {active ? (
+            <TransportSyncStatus url={url} />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              <span
+                aria-hidden="true"
+                className="mr-1.5 inline-block size-2 rounded-full border border-muted-foreground"
+              />
+              {t("settings.security.transports.inactive")}
+            </p>
+          )}
+        </div>
+        <Switch
+          aria-label={t("settings.security.transports.toggle", { url })}
+          checked={active}
           disabled={pendingTransportId !== null}
-          onClick={() => {
-            void onToggle(active ? sqliteFalse : sqliteTrue)
+          onCheckedChange={(checked) => {
+            void onToggle(checked ? sqliteTrue : sqliteFalse)
           }}
-        >
-          <Icon data-icon="inline-start" />
-          {active
-            ? t("settings.security.transports.deactivate")
-            : t("settings.security.transports.activate")}
-        </Button>
+        />
       </div>
     </li>
+  )
+}
+
+interface TransportUrlProps {
+  readonly url: string
+  readonly muted: boolean
+}
+
+/**
+ * The URL with its `wss://` scheme toned down — every transport has it — and
+ * the owner-id placeholder shown as what it stands for instead of raw
+ * template syntax.
+ */
+function TransportUrl({ url, muted }: TransportUrlProps) {
+  const { t } = useTranslation()
+  const scheme = "wss://"
+  const rest = url.startsWith(scheme) ? url.slice(scheme.length) : url
+  const parts = rest.split(appOwnerIdPlaceholder)
+
+  return (
+    <p
+      className={cn(
+        "font-mono text-sm font-medium break-all",
+        muted && "text-muted-foreground"
+      )}
+    >
+      {rest === url ? null : (
+        <span className="text-muted-foreground">{scheme}</span>
+      )}
+      {parts.map((part, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: the parts of one URL never reorder.
+        <span key={index}>
+          {index === 0 ? null : (
+            <span className="mx-0.5 rounded bg-muted px-1 py-0.5 font-sans text-xs font-normal text-muted-foreground">
+              {t("settings.security.transports.accountId")}
+            </span>
+          )}
+          {part}
+        </span>
+      ))}
+    </p>
   )
 }

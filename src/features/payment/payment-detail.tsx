@@ -1,5 +1,12 @@
+import type { InferRow } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
-import { ChevronDownIcon, ChevronRightIcon, CopyIcon } from "lucide-react"
+import { parseISO } from "date-fns"
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  RotateCwIcon,
+} from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
@@ -31,6 +38,7 @@ import {
 } from "@/components/ui/collapsible.tsx"
 import { Separator } from "@/components/ui/separator.tsx"
 import { Skeleton } from "@/components/ui/skeleton.tsx"
+import type { EetDeliveryOutcome } from "@/core/integrations/eet/eet-client.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -39,6 +47,12 @@ import {
   hasTaxableLines,
 } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  type DeliverEetSaleError,
+  retryEetSale,
+} from "@/core/modules/eet/eet-actions.ts"
+import { eetSaleByPaymentIdQuery } from "@/core/modules/eet/eet-queries.ts"
+import { parseEetWarnings } from "@/core/modules/eet/eet-utils.ts"
 import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
@@ -79,10 +93,15 @@ import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
 } from "@/features/payment/payment-status-display.tsx"
+import {
+  EetSaleStatusBadge,
+  useEetSaleStatus,
+} from "@/features/shared/eet-sale-status.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
@@ -362,6 +381,8 @@ function PaymentDetailContent({
           tipAmount={payment.tipAmount}
         />
       ) : null}
+
+      <PaymentDetailEetCard paymentId={paymentId} />
 
       <Card>
         <CardHeader>
@@ -802,6 +823,159 @@ function PaymentDetailBillCard({
             ) : null}
           </BillCoverageWarning>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+type PaymentDetailEetSale = InferRow<ReturnType<typeof eetSaleByPaymentIdQuery>>
+
+const retryErrorKeys = {
+  EetSaleNotFoundError: "paymentDetail.eet.retry.failed",
+  EetSaleAlreadyConfirmedError: "paymentDetail.eet.retry.alreadyConfirmed",
+  EetSaleUnsupportedError: "paymentDetail.eet.retry.unsupported",
+  EetSaleBusyError: "paymentDetail.eet.retry.busy",
+  EetSigningCertificateMissingError: "paymentDetail.eet.retry.noCertificate",
+} satisfies Record<DeliverEetSaleError["type"], TranslationKey>
+
+const retryOutcomeKeys = {
+  accepted: "paymentDetail.eet.retry.confirmed",
+  verified: "paymentDetail.eet.retry.confirmed",
+  retry: "paymentDetail.eet.retry.pending",
+  rejected: "paymentDetail.eet.retry.rejected",
+} satisfies Record<EetDeliveryOutcome["type"], TranslationKey>
+
+function PaymentDetailEetCard({
+  paymentId,
+}: {
+  readonly paymentId: PaymentId
+}) {
+  const [sale] = useEvoluQuery(eetSaleByPaymentIdQuery(paymentId)).data
+
+  return sale === undefined ? null : <PaymentDetailEetSaleCard sale={sale} />
+}
+
+function PaymentDetailEetSaleCard({
+  sale,
+}: {
+  readonly sale: PaymentDetailEetSale
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const runToast = useRunToast()
+  const [retrying, setRetrying] = useState(false)
+  const { status, isOverdue } = useEetSaleStatus(sale)
+  const warnings =
+    sale.warningsJson === null ? [] : parseEetWarnings(sale.warningsJson)
+  const canRetry = status === "pending" || status === "rejected"
+  const lastError =
+    sale.pok !== null || sale.lastErrorMessage === null
+      ? null
+      : sale.lastErrorCode === null
+        ? sale.lastErrorMessage
+        : t("paymentDetail.eet.errorCode", {
+            code: String(sale.lastErrorCode),
+            message: sale.lastErrorMessage,
+          })
+
+  const retry = async () => {
+    setRetrying(true)
+    await runToast(async (run) => {
+      const result = await run(retryEetSale(sale.id))
+      if (!result.ok) return retryErrorKeys[result.error.type]
+      const outcomeKey = retryOutcomeKeys[result.value.type]
+      if (result.value.type === "rejected") return outcomeKey
+      toast.success(t(outcomeKey))
+      return undefined
+    })
+    setRetrying(false)
+  }
+
+  return (
+    <Card data-testid="payment-detail-eet">
+      <CardHeader>
+        <CardTitle>{t("paymentDetail.eet.title")}</CardTitle>
+        <CardAction>
+          <EetSaleStatusBadge sale={sale} />
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {status === "testConfirmed" || sale.environment === "playground" ? (
+          <p className="text-xs text-info">{t("paymentDetail.eet.test")}</p>
+        ) : null}
+        {isOverdue ? (
+          <p className="text-sm text-destructive">
+            {t("paymentDetail.eet.overdue")}
+          </p>
+        ) : null}
+        {status === "unsupported" ? (
+          <p className="text-sm text-destructive">
+            {t("paymentDetail.eet.unsupported")}
+          </p>
+        ) : null}
+        <PaymentDetailCopyRow
+          label={t("paymentDetail.eet.pok")}
+          value={sale.pok}
+        />
+        {sale.receivedAt === null ? null : (
+          <PaymentDetailRow
+            label={t("paymentDetail.eet.receivedAt")}
+            value={formatDateTime(parseISO(sale.receivedAt), locale)}
+          />
+        )}
+        {warnings.map((warning) => (
+          <PaymentDetailRow
+            key={warning.code}
+            label={t("paymentDetail.eet.warning", {
+              code: String(warning.code),
+            })}
+            value={warning.message ?? ""}
+          />
+        ))}
+        {lastError === null ? null : (
+          <PaymentDetailRow
+            label={t("paymentDetail.eet.lastError")}
+            value={lastError}
+          />
+        )}
+        {canRetry ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12"
+            disabled={retrying}
+            onClick={() => void retry()}
+          >
+            <RotateCwIcon data-icon="inline-start" />
+            {t("paymentDetail.eet.retry")}
+          </Button>
+        ) : null}
+        <PaymentDetailTechnical>
+          <PaymentDetailRow
+            label={t("paymentDetail.eet.saleAt")}
+            value={formatDateTime(parseISO(sale.saleAt), locale)}
+          />
+          <PaymentDetailRow
+            label={t("paymentDetail.eet.eic")}
+            value={sale.eic}
+          />
+          <PaymentDetailRow
+            label={t("paymentDetail.eet.establishment")}
+            value={sale.establishmentId}
+          />
+          <PaymentDetailCopyRow
+            label={t("paymentDetail.eet.cashRegister")}
+            value={sale.cashRegisterId}
+          />
+          <PaymentDetailCopyRow
+            label={t("paymentDetail.eet.sequenceNumber")}
+            value={sale.sequenceNumber}
+          />
+          <PaymentDetailCopyRow
+            label={t("paymentDetail.eet.transactionId")}
+            value={sale.globalTransactionId ?? sale.lastGlobalTransactionId}
+          />
+        </PaymentDetailTechnical>
       </CardContent>
     </Card>
   )

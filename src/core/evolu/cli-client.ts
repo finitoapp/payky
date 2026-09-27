@@ -19,6 +19,7 @@ import {
   testCreateWebSocket,
 } from "@evolu/common"
 import {
+  createEvoluDeps,
   type DbWorkerInit,
   initSharedWorker,
   type SharedWorkerInput,
@@ -173,30 +174,27 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       workerRun(startDbWorker(self))
     })
 
-  const sharedWorker = disposer.use(
-    createSharedWorker<SharedWorkerInput, SharedWorkerOutput>((self) => {
-      run(initSharedWorker(self))
-    })
-  )
-  sharedWorker.port.onMessage = (message) => {
-    createDbWorker().postMessage(message, [message.port])
-  }
-  sharedWorker.port.postMessage({
-    type: "AnnounceTabLeader",
-    consoleLevel: "debug",
+  const sharedWorker = createSharedWorker<
+    SharedWorkerInput,
+    SharedWorkerOutput
+  >((self) => {
+    run(initSharedWorker(self))
   })
 
   const sqlite = disposer.use(
     await workerRun.ok(createSqlite(Name.orThrow("test")))
   )
-  const runWithEvoluDeps = disposer.use(
-    run.create({
+  // createEvoluDeps owns the shared worker and speaks its tab protocol
+  // (Waiting/Connected/DbWorkerInit, tab leader election).
+  const evoluDeps = disposer.use(
+    createEvoluDeps({
       ...run.deps,
       createDbWorker,
       reloadApp: constVoid,
       sharedWorker,
     })
   )
+  const runWithEvoluDeps = disposer.use(run.create(evoluDeps))
   const disposables = disposer.move()
 
   return {

@@ -1,4 +1,9 @@
-import { FlaskConicalIcon, LandmarkIcon } from "lucide-react"
+import {
+  FlaskConicalIcon,
+  LandmarkIcon,
+  StoreIcon,
+  UsersIcon,
+} from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -19,6 +24,7 @@ import {
   type EetTestCertificateBlocksProductionError,
   enableEet,
   saveEetEstablishmentId,
+  saveEetTipOwner,
   selectEetEnvironment,
 } from "@/core/modules/eet/eet-actions.ts"
 import {
@@ -26,6 +32,7 @@ import {
   type EetEnvironment,
   type EetEstablishmentId,
   EetEstablishmentIdSchema,
+  type EetTipOwner,
 } from "@/core/modules/eet/eet-types.ts"
 import { findEetConfigurationGaps } from "@/core/modules/eet/eet-utils.ts"
 import { EetCertificateCard } from "@/features/settings/eet/eet-certificate-card.tsx"
@@ -33,6 +40,7 @@ import { EetTestCard } from "@/features/settings/eet/eet-test-card.tsx"
 import { EetUnconfirmedSalesCard } from "@/features/settings/eet/eet-unconfirmed-sales-card.tsx"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
+import { InlineEditToggleGroup } from "@/features/settings/inline-edit-toggle-group.tsx"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
@@ -89,6 +97,7 @@ export function EetSettingsPage() {
           isEnabled={eet.isEnabled}
           gaps={gaps}
         />
+        <EetTipCard tipOwner={eet.tipOwner} />
         <EetEnvironmentCard
           environment={eet.environment}
           isProductionAvailable={eet.isProductionAvailable}
@@ -162,6 +171,45 @@ function EetReportingCard({
             }}
           />
         </FieldGroup>
+      </CardContent>
+    </Card>
+  )
+}
+
+function EetTipCard({ tipOwner }: { readonly tipOwner: EetTipOwner }) {
+  const { t } = useTranslation()
+  const appRun = useAppRun()
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.eet.tip.title")}</CardTitle>
+        <CardDescription>{t("settings.eet.tip.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <InlineEditToggleGroup<EetTipOwner>
+          label={t("settings.eet.tip.label")}
+          description={t("settings.eet.tip.note")}
+          defaultValue={tipOwner}
+          options={[
+            {
+              value: "business",
+              icon: StoreIcon,
+              title: t("settings.eet.tip.business.title"),
+              description: t("settings.eet.tip.business.description"),
+            },
+            {
+              value: "employees",
+              icon: UsersIcon,
+              title: t("settings.eet.tip.employees.title"),
+              description: t("settings.eet.tip.employees.description"),
+            },
+          ]}
+          onSave={async (next) => {
+            await using run = appRun()
+            await run.ok(saveEetTipOwner(next))
+          }}
+        />
       </CardContent>
     </Card>
   )

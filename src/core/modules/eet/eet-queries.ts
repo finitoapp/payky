@@ -20,6 +20,7 @@ export const eetSettingsQuery = createQuery((db) =>
       "eetSettings.environment",
       "eetSettings.establishmentId",
       "eetSettings.certificateId",
+      "eetSettings.tipOwner",
       "eetCertificate.eic",
       "eetCertificate.description",
       "eetCertificate.validFrom",
@@ -93,6 +94,7 @@ export const eetPaymentsToReportQuery = (deviceId: DeviceId) =>
               "payment.id",
               "payment.billId",
               "payment.amount",
+              "payment.tipAmount",
               "payment.currency",
               "eetSettings.enabledAt",
               firstActiveClaim
@@ -104,6 +106,7 @@ export const eetPaymentsToReportQuery = (deviceId: DeviceId) =>
           .where("payment.deviceId", "=", deviceId)
           .where("payment.isDeleted", "is not", sqliteTrue)
           .where("payment.amount", "is not", null)
+          .where("payment.tipAmount", "is not", null)
           .where("payment.currency", "is not", null)
           .where("eetSettings.enabledAt", "is not", null)
           .where((eb) =>
@@ -123,6 +126,7 @@ export const eetPaymentsToReportQuery = (deviceId: DeviceId) =>
       .whereRef("candidate.firstClaimedAt", ">=", "candidate.enabledAt")
       .$narrowType<{
         amount: KyselyNotNull
+        tipAmount: KyselyNotNull
         currency: KyselyNotNull
         enabledAt: KyselyNotNull
         firstClaimedAt: KyselyNotNull

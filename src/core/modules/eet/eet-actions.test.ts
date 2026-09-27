@@ -17,6 +17,7 @@ import {
   enableEet,
   retryEetSale,
   saveEetEstablishmentId,
+  saveEetTipOwner,
   selectEetEnvironment,
   sendEetTestMessage,
   storeEetCertificate,
@@ -51,6 +52,7 @@ const createSaleForNewPayment = async (
         id: createRowId<"Payment">(),
         billId: null,
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
         currency: "CZK",
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
@@ -297,6 +299,59 @@ describe("createEetSale", () => {
       .toMatchObject([{ amount: 25_000, establishmentId: "24" }])
     expect(await context.deps.evolu.loadQuery(allEetSalesQuery)).toHaveLength(1)
   })
+
+  test("reports the tip while nobody said who it belongs to", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+
+    const saleId = await createSaleForNewPayment(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+
+    expect(await context.deps.evolu.loadQuery(eetSettingsQuery)).toMatchObject([
+      { tipOwner: null },
+    ])
+    await expect
+      .poll(() => context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId)))
+      .toMatchObject([{ amount: 25_000 }])
+  })
+
+  test("leaves the tip out while tips belong to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(saveEetTipOwner("employees"))
+
+    const saleId = await createSaleForNewPayment(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+    await run.orThrow(deliverEetSale(saleId))
+
+    expect(await context.deps.evolu.loadQuery(eetSettingsQuery)).toMatchObject([
+      { tipOwner: "employees" },
+    ])
+    expect(context.responder.requests).toMatchObject([
+      { data: { celk_trzba: "230.00" } },
+    ])
+  })
+
+  test("keeps the tip of a sale created before tips went to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSaleForNewPayment(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+    context.responder.answerNext({ type: "timeout" })
+    await using run = testCreateRun(context.deps)
+
+    await run.orThrow(deliverEetSale(saleId))
+    await run.ok(saveEetTipOwner("employees"))
+    await run.orThrow(retryEetSale(saleId))
+
+    expect(
+      context.responder.requests.map(({ data }) => data.celk_trzba)
+    ).toEqual(["250.00", "250.00"])
+  })
 })
 
 describe("deliverEetSale", () => {
@@ -451,6 +506,7 @@ describe("retryEetSale", () => {
           id: createRowId<"Payment">(),
           billId: null,
           amount: NonNegativeInteger(25_000),
+          tipAmount: NonNegativeInteger(0),
           currency: "CZK",
           method: "cashRegister",
           firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),

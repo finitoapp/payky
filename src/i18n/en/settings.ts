@@ -255,6 +255,18 @@ export const enSettings = {
   "settings.eet.test.title": "Test",
   "settings.eet.test.unavailable":
     "Set up the certificate and the establishment number first.",
+  "settings.eet.tip.business.description":
+    "Payky reports the whole payment, tip included.",
+  "settings.eet.tip.business.title": "Tips belong to the business",
+  "settings.eet.tip.description":
+    "Whether a tip is part of the reported sale depends on who it belongs to. A tip that is the business's income must be reported by law. A tip that belongs to employees does not have to be. A change applies to payments received from then on.",
+  "settings.eet.tip.employees.description":
+    "Payky reports the payment without the tip. The tip stays recorded on the payment.",
+  "settings.eet.tip.employees.title": "Tips belong to employees",
+  "settings.eet.tip.label": "Who tips belong to",
+  "settings.eet.tip.note":
+    "A compulsory cover charge or service charge is not a tip. Charge it as an ordinary item on the bill, and it is always part of the sale.",
+  "settings.eet.tip.title": "Tips",
   "settings.eet.title": "EET",
   "settings.eet.unconfirmed.description": "Sales EET has not confirmed yet.",
   "settings.eet.unconfirmed.empty": "EET has confirmed every sale.",

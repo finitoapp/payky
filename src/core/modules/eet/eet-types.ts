@@ -17,6 +17,9 @@ export type EetSaleId = typeof EetSaleIdRaw.Output
 export const EetEnvironmentSchema = z.enum(["production", "playground"])
 export type EetEnvironment = z.output<typeof EetEnvironmentSchema>
 
+export const EetTipOwnerSchema = z.enum(["business", "employees"])
+export type EetTipOwner = z.output<typeof EetTipOwnerSchema>
+
 export const EetEstablishmentIdSchema = z
   .string()
   .regex(/^[1-9][0-9]{0,8}$/u)

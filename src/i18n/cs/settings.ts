@@ -256,6 +256,18 @@ export const csSettings = {
   "settings.eet.test.title": "Test",
   "settings.eet.test.unavailable":
     "Nejdřív nastavte certifikát a číslo evidenční jednotky.",
+  "settings.eet.tip.business.description":
+    "Payky eviduje celou platbu včetně spropitného.",
+  "settings.eet.tip.business.title": "Spropitné patří podniku",
+  "settings.eet.tip.description":
+    "Jestli je spropitné součástí evidované tržby, záleží na tom, komu patří. Spropitné, které je příjmem podniku, se ze zákona eviduje. Spropitné, které patří zaměstnancům, se evidovat nemusí. Změna platí pro platby přijaté od té chvíle.",
+  "settings.eet.tip.employees.description":
+    "Payky eviduje platbu bez spropitného. Spropitné zůstává u platby zapsané zvlášť.",
+  "settings.eet.tip.employees.title": "Spropitné patří zaměstnancům",
+  "settings.eet.tip.label": "Komu spropitné patří",
+  "settings.eet.tip.note":
+    "Povinný kuvert ani servisní poplatek nejsou spropitné. Účtujte je jako běžnou položku na účtu, do tržby se započítají vždy.",
+  "settings.eet.tip.title": "Spropitné",
   "settings.eet.title": "EET",
   "settings.eet.unconfirmed.description": "Tržby, které EET zatím nepotvrdila.",
   "settings.eet.unconfirmed.empty": "EET potvrdila všechny tržby.",

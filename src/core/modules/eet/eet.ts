@@ -16,6 +16,7 @@ import {
   EetSaleId,
   EetSequenceNumberSchema,
   EetSettingsId,
+  EetTipOwnerSchema,
   EetUnsupportedReasonSchema,
 } from "@/core/modules/eet/eet-types.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -36,6 +37,7 @@ export const eetSettings = {
   environment: EetEnvironmentSchema.nullable(),
   establishmentId: EetEstablishmentIdSchema.nullable(),
   certificateId: EetCertificateId.nullable(),
+  tipOwner: EetTipOwnerSchema.nullable(),
 } as const
 
 export const eetCertificate = {

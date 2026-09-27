@@ -258,6 +258,18 @@ export const skSettings = {
   "settings.eet.test.title": "Test",
   "settings.eet.test.unavailable":
     "Najprv nastavte certifikát a číslo evidenčnej jednotky.",
+  "settings.eet.tip.business.description":
+    "Payky eviduje celú platbu vrátane prepitného.",
+  "settings.eet.tip.business.title": "Prepitné patrí podniku",
+  "settings.eet.tip.description":
+    "Či je prepitné súčasťou evidovanej tržby, závisí od toho, komu patrí. Prepitné, ktoré je príjmom podniku, sa zo zákona eviduje. Prepitné, ktoré patrí zamestnancom, sa evidovať nemusí. Zmena platí pre platby prijaté od tej chvíle.",
+  "settings.eet.tip.employees.description":
+    "Payky eviduje platbu bez prepitného. Prepitné zostáva pri platbe zapísané zvlášť.",
+  "settings.eet.tip.employees.title": "Prepitné patrí zamestnancom",
+  "settings.eet.tip.label": "Komu patrí prepitné",
+  "settings.eet.tip.note":
+    "Povinný kuvert ani servisný poplatok nie sú prepitné. Účtujte ich ako bežnú položku na účte, do tržby sa započítajú vždy.",
+  "settings.eet.tip.title": "Prepitné",
   "settings.eet.title": "EET",
   "settings.eet.unconfirmed.description":
     "Tržby, ktoré EET zatiaľ nepotvrdila.",

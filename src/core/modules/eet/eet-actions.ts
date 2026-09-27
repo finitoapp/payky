@@ -1,0 +1,573 @@
+import {
+  err,
+  type LockManagerDep,
+  type MutationOptions,
+  ok,
+  sqliteFalse,
+  sqliteTrue,
+  type Task,
+} from "@evolu/common"
+
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
+import type { EetCertificateFile } from "@/core/integrations/eet/eet-certificate.ts"
+import type {
+  EetApiDep,
+  EetDeliveryOutcome,
+  EetReceipt,
+  EetSigningCertificate,
+  EetSubmission,
+} from "@/core/integrations/eet/eet-client.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import {
+  eetSaleByIdQuery,
+  eetSettingsQuery,
+  eetSigningCertificateQuery,
+} from "@/core/modules/eet/eet-queries.ts"
+import {
+  type EetBase64,
+  type EetCertificateId,
+  type EetConfigurationGap,
+  type EetEnvironment,
+  type EetEstablishmentId,
+  type EetSaleId,
+  EetSequenceNumberSchema,
+} from "@/core/modules/eet/eet-types.ts"
+import {
+  bytesToEetBase64,
+  createEetCertificateId,
+  createEetSaleId,
+  eetBase64ToBytes,
+  eetSettingsId,
+  findEetConfigurationGaps,
+  formatEetDateTime,
+  getEetUnsupportedReason,
+  resolveEetEnvironment,
+  toEetCashRegisterId,
+} from "@/core/modules/eet/eet-utils.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  removeUndefinedValues,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import { minorUnitsToFixedDecimalString } from "@/core/modules/shared/money.ts"
+import {
+  type AccountKind,
+  type FiatCurrency,
+  Integer,
+  NonEmptyString255,
+  NonEmptyStringSchema,
+  type NonNegativeInteger,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
+
+const createEetConfigurationIncompleteError = defineError(
+  "EetConfigurationIncompleteError"
+)<{ readonly missing: ReadonlyArray<EetConfigurationGap> }>()
+export type EetConfigurationIncompleteError = ReturnType<
+  typeof createEetConfigurationIncompleteError
+>
+
+const createEetProductionUnavailableError = defineError(
+  "EetProductionUnavailableError"
+)()
+export type EetProductionUnavailableError = ReturnType<
+  typeof createEetProductionUnavailableError
+>
+
+const createEetTestCertificateBlocksProductionError = defineError(
+  "EetTestCertificateBlocksProductionError"
+)()
+export type EetTestCertificateBlocksProductionError = ReturnType<
+  typeof createEetTestCertificateBlocksProductionError
+>
+
+const createEetTestSaleOutsidePlaygroundError = defineError(
+  "EetTestSaleOutsidePlaygroundError"
+)()
+export type EetTestSaleOutsidePlaygroundError = ReturnType<
+  typeof createEetTestSaleOutsidePlaygroundError
+>
+
+const createEetSaleNotFoundError = defineError("EetSaleNotFoundError")<{
+  readonly id: EetSaleId
+}>()
+export type EetSaleNotFoundError = ReturnType<typeof createEetSaleNotFoundError>
+
+const createEetSaleAlreadyConfirmedError = defineError(
+  "EetSaleAlreadyConfirmedError"
+)<{ readonly id: EetSaleId }>()
+export type EetSaleAlreadyConfirmedError = ReturnType<
+  typeof createEetSaleAlreadyConfirmedError
+>
+
+const createEetSaleUnsupportedError = defineError("EetSaleUnsupportedError")<{
+  readonly id: EetSaleId
+}>()
+export type EetSaleUnsupportedError = ReturnType<
+  typeof createEetSaleUnsupportedError
+>
+
+const createEetSaleBusyError = defineError("EetSaleBusyError")<{
+  readonly id: EetSaleId
+}>()
+export type EetSaleBusyError = ReturnType<typeof createEetSaleBusyError>
+
+const createEetSigningCertificateMissingError = defineError(
+  "EetSigningCertificateMissingError"
+)()
+export type EetSigningCertificateMissingError = ReturnType<
+  typeof createEetSigningCertificateMissingError
+>
+
+export type DeliverEetSaleError =
+  | EetSaleNotFoundError
+  | EetSaleAlreadyConfirmedError
+  | EetSaleUnsupportedError
+  | EetSaleBusyError
+  | EetSigningCertificateMissingError
+
+const loadEetSettings = async (evolu: EvoluDep["evolu"]) => {
+  const [settings] = await evolu.loadQuery(eetSettingsQuery)
+  return settings
+}
+
+interface EetSettingsValues {
+  readonly enabledAt?: TimestampMs | null
+  readonly environment?: EetEnvironment
+  readonly establishmentId?: EetEstablishmentId
+  readonly certificateId?: EetCertificateId
+}
+
+const upsertEetSettings = (
+  run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
+  values: EetSettingsValues,
+  options: MutationOptions
+): void => {
+  run.deps.evolu.upsert(
+    "eetSettings",
+    removeUndefinedValues({
+      ...values,
+      id: eetSettingsId,
+      isDeleted: sqliteFalse,
+    }),
+    { ...options, ownerId: run.deps.evoluOwnerId }
+  )
+}
+
+export const saveEetEstablishmentId =
+  (
+    establishmentId: EetEstablishmentId
+  ): Task<EetEstablishmentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    await runMutationWithCompletion((options) =>
+      upsertEetSettings(run, { establishmentId }, options)
+    )
+    return ok(establishmentId)
+  }
+
+export const selectEetEnvironment =
+  (
+    environment: EetEnvironment
+  ): Task<
+    EetEnvironment,
+    EetProductionUnavailableError | EetTestCertificateBlocksProductionError,
+    EvoluDep & EvoluOwnerIdDep & EetApiDep
+  > =>
+  async (run) => {
+    if (environment === "production") {
+      if (!run.deps.eetApi.isProductionAvailable) {
+        return err(createEetProductionUnavailableError())
+      }
+      const settings = await loadEetSettings(run.deps.evolu)
+      if (settings?.isTestCertificate === sqliteTrue) {
+        return err(createEetTestCertificateBlocksProductionError())
+      }
+    }
+
+    await runMutationWithCompletion((options) =>
+      upsertEetSettings(run, { environment }, options)
+    )
+    return ok(environment)
+  }
+
+export const storeEetCertificate =
+  ({
+    certificate,
+    isTestCertificate,
+  }: {
+    readonly certificate: EetCertificateFile
+    readonly isTestCertificate: boolean
+  }): Task<EetCertificateId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const certificateDer = bytesToEetBase64(certificate.certificateDer)
+    const id = createEetCertificateId(certificateDer)
+    const previousId = (await loadEetSettings(evolu))?.certificateId ?? null
+
+    await runMutationWithCompletion((options) => {
+      evolu.upsert(
+        "eetCertificate",
+        {
+          id,
+          eic: certificate.eic,
+          description:
+            certificate.description === null
+              ? null
+              : NonEmptyString255(certificate.description),
+          validFrom: TimestampMs(certificate.validFrom.getTime()),
+          validTo: TimestampMs(certificate.validTo.getTime()),
+          certificateDer,
+          privateKeyPkcs8: bytesToEetBase64(certificate.privateKeyPkcs8),
+          isTestCertificate: isTestCertificate ? sqliteTrue : sqliteFalse,
+          isDeleted: sqliteFalse,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+      if (previousId !== null && previousId !== id) {
+        evolu.update(
+          "eetCertificate",
+          { id: previousId, isDeleted: sqliteTrue },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
+      upsertEetSettings(run, { certificateId: id }, options)
+    })
+
+    return ok(id)
+  }
+
+export const enableEet =
+  (): Task<
+    TimestampMs,
+    EetConfigurationIncompleteError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const now = run.deps.date.now()
+    const settings = await loadEetSettings(run.deps.evolu)
+    const missing = findEetConfigurationGaps({
+      validTo: settings?.validTo ?? null,
+      establishmentId: settings?.establishmentId ?? null,
+      now,
+    })
+    if (missing.length > 0) {
+      return err(createEetConfigurationIncompleteError({ missing }))
+    }
+
+    const enabledAt = TimestampMs(now.getTime())
+    await runMutationWithCompletion((options) =>
+      upsertEetSettings(run, { enabledAt }, options)
+    )
+    return ok(enabledAt)
+  }
+
+export const disableEet =
+  (): Task<null, never, EvoluDep & EvoluOwnerIdDep> => async (run) => {
+    await runMutationWithCompletion((options) =>
+      upsertEetSettings(run, { enabledAt: null }, options)
+    )
+    return ok(null)
+  }
+
+export const createEetSale =
+  ({
+    payment,
+    deviceId,
+  }: {
+    readonly payment: {
+      readonly id: PaymentId
+      readonly billId: BillId | null
+      readonly amount: NonNegativeInteger
+      readonly currency: FiatCurrency
+      readonly method: AccountKind
+      readonly firstClaimedAt: TimestampMs
+    }
+    readonly deviceId: DeviceId
+  }): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const id = createEetSaleId(payment.id)
+    const [existing] = await evolu.loadQuery(eetSaleByIdQuery(id))
+    if (existing !== undefined) return ok(id)
+
+    const settings = await loadEetSettings(evolu)
+    const eic = settings?.eic ?? null
+    const establishmentId = settings?.establishmentId ?? null
+    if (settings === undefined || eic === null || establishmentId === null) {
+      return ok(null)
+    }
+
+    await runMutationWithCompletion((options) =>
+      evolu.upsert(
+        "eetSale",
+        {
+          id,
+          paymentId: payment.id,
+          billId: payment.billId,
+          deviceId,
+          method: payment.method,
+          amount: payment.amount,
+          currency: payment.currency,
+          environment: resolveEetEnvironment({
+            environment: settings.environment,
+            isTestCertificate: settings.isTestCertificate === sqliteTrue,
+            isProductionAvailable: run.deps.eetApi.isProductionAvailable,
+          }),
+          eic,
+          establishmentId,
+          cashRegisterId: toEetCashRegisterId(deviceId),
+          sequenceNumber: EetSequenceNumberSchema.decode(payment.id),
+          saleAt: formatEetDateTime(new Date(payment.firstClaimedAt)),
+          unsupportedReason: getEetUnsupportedReason(payment),
+          hadUnansweredAttempt: sqliteFalse,
+          lastAttemptAt: null,
+          lastAttemptResult: null,
+          lastErrorType: null,
+          lastErrorCode: null,
+          lastErrorMessage: null,
+          lastGlobalTransactionId: null,
+          isDeleted: sqliteFalse,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(id)
+  }
+
+const toNonEmpty255 = (value: string | null) =>
+  value === null || value.trim() === ""
+    ? null
+    : NonEmptyString255(value.trim().slice(0, 255))
+
+const toNonEmpty = (value: string) =>
+  value.trim() === "" ? null : NonEmptyStringSchema.decode(value)
+
+const recordEetDeliveryOutcome = (
+  run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
+  {
+    id,
+    outcome,
+    attemptedAt,
+  }: {
+    readonly id: EetSaleId
+    readonly outcome: EetDeliveryOutcome
+    readonly attemptedAt: TimestampMs
+  },
+  options: MutationOptions
+): void => {
+  const { evolu, evoluOwnerId } = run.deps
+  const mutationOptions = { ...options, ownerId: evoluOwnerId }
+
+  switch (outcome.type) {
+    case "accepted":
+    case "verified": {
+      evolu.update(
+        "eetSale",
+        {
+          id,
+          lastAttemptAt: attemptedAt,
+          lastGlobalTransactionId: toNonEmpty255(outcome.globalTransactionId),
+        },
+        mutationOptions
+      )
+      if (outcome.type === "accepted") {
+        evolu.upsert(
+          "eetSaleConfirmation",
+          {
+            id,
+            pok: NonEmptyString255(outcome.pok),
+            receivedAt: formatEetDateTime(new Date(outcome.receivedAt)),
+            isTest: outcome.isTest ? sqliteTrue : sqliteFalse,
+            warningsJson: JSON.stringify(outcome.warnings),
+            messageUuid: NonEmptyString255(outcome.messageUuid),
+            globalTransactionId: toNonEmpty255(outcome.globalTransactionId),
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+      }
+      return
+    }
+    case "retry":
+    case "rejected":
+      evolu.update(
+        "eetSale",
+        removeUndefinedValues({
+          id,
+          lastAttemptAt: attemptedAt,
+          lastAttemptResult: outcome.type,
+          lastErrorType: toNonEmpty255(outcome.errorType),
+          lastErrorCode: outcome.code === null ? null : Integer(outcome.code),
+          lastErrorMessage: toNonEmpty(outcome.message),
+          lastGlobalTransactionId: toNonEmpty255(outcome.globalTransactionId),
+          hadUnansweredAttempt: outcome.unanswered ? sqliteTrue : undefined,
+        }),
+        mutationOptions
+      )
+  }
+}
+
+const toSigningCertificate = (certificate: {
+  readonly certificateDer: EetBase64
+  readonly privateKeyPkcs8: EetBase64
+}): EetSigningCertificate => ({
+  certificateDer: eetBase64ToBytes(certificate.certificateDer),
+  privateKeyPkcs8: eetBase64ToBytes(certificate.privateKeyPkcs8),
+})
+
+export const deliverEetSale =
+  (
+    id: EetSaleId
+  ): Task<
+    EetDeliveryOutcome,
+    DeliverEetSaleError,
+    EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+  > =>
+  async (run) =>
+    await run.deps.lockManager.request(
+      `eet-sale-${id}`,
+      { ifAvailable: true },
+      async (lock) => {
+        if (lock === null) return err(createEetSaleBusyError({ id }))
+
+        const { evolu } = run.deps
+        const [sale] = await evolu.loadQuery(eetSaleByIdQuery(id))
+        if (sale === undefined) return err(createEetSaleNotFoundError({ id }))
+        if (sale.pok !== null) {
+          return err(createEetSaleAlreadyConfirmedError({ id }))
+        }
+        if (sale.unsupportedReason !== null) {
+          return err(createEetSaleUnsupportedError({ id }))
+        }
+
+        const [certificate] = await evolu.loadQuery(eetSigningCertificateQuery)
+        if (certificate === undefined) {
+          return err(createEetSigningCertificateMissingError())
+        }
+
+        const attemptedAt = TimestampMs(run.deps.date.now().getTime())
+        const { outcome } = await run.deps.eetApi.submit({
+          environment: sale.environment,
+          certificate: toSigningCertificate(certificate),
+          receipt: {
+            eic: sale.eic,
+            establishmentId: sale.establishmentId,
+            cashRegisterId: sale.cashRegisterId,
+            sequenceNumber: sale.sequenceNumber,
+            saleAt: sale.saleAt,
+            totalAmount: minorUnitsToFixedDecimalString({
+              value: sale.amount,
+              currency: sale.currency,
+            }),
+          },
+          firstSubmission: sale.lastAttemptAt === null,
+          verification: false,
+        })
+
+        await runMutationWithCompletion((options) =>
+          recordEetDeliveryOutcome(run, { id, outcome, attemptedAt }, options)
+        )
+        return ok(outcome)
+      }
+    )
+
+export const retryEetSale =
+  (
+    id: EetSaleId
+  ): Task<
+    EetDeliveryOutcome,
+    DeliverEetSaleError,
+    EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+  > =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const [sale] = await evolu.loadQuery(eetSaleByIdQuery(id))
+    if (sale === undefined) return err(createEetSaleNotFoundError({ id }))
+
+    const settings = await loadEetSettings(evolu)
+    const eic = settings?.eic ?? null
+    const establishmentId = settings?.establishmentId ?? null
+    const everyAttemptWasRejected =
+      sale.lastAttemptResult === "rejected" &&
+      sale.hadUnansweredAttempt !== sqliteTrue &&
+      sale.pok === null
+    const hasChangedTaxpayerDetails =
+      eic !== null &&
+      establishmentId !== null &&
+      (eic !== sale.eic || establishmentId !== sale.establishmentId)
+    if (everyAttemptWasRejected && hasChangedTaxpayerDetails) {
+      await runMutationWithCompletion((options) =>
+        evolu.update(
+          "eetSale",
+          { id, eic, establishmentId },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
+    }
+
+    return await run(deliverEetSale(id))
+  }
+
+export const sendEetTestMessage =
+  ({
+    kind,
+    deviceId,
+  }: {
+    readonly kind: "verification" | "sale"
+    readonly deviceId: DeviceId
+  }): Task<
+    EetSubmission,
+    EetConfigurationIncompleteError | EetTestSaleOutsidePlaygroundError,
+    EvoluDep & DateDep & EetApiDep
+  > =>
+  async (run) => {
+    const { evolu, eetApi } = run.deps
+    const now = run.deps.date.now()
+    const settings = await loadEetSettings(evolu)
+    const [certificate] = await evolu.loadQuery(eetSigningCertificateQuery)
+    const establishmentId = settings?.establishmentId ?? null
+    const missing = findEetConfigurationGaps({
+      validTo: settings?.validTo ?? null,
+      establishmentId,
+      now,
+    })
+    if (
+      missing.length > 0 ||
+      certificate === undefined ||
+      establishmentId === null
+    ) {
+      return err(createEetConfigurationIncompleteError({ missing }))
+    }
+
+    const environment = resolveEetEnvironment({
+      environment: settings?.environment ?? null,
+      isTestCertificate: certificate.isTestCertificate === sqliteTrue,
+      isProductionAvailable: eetApi.isProductionAvailable,
+    })
+    if (kind === "sale" && environment !== "playground") {
+      return err(createEetTestSaleOutsidePlaygroundError())
+    }
+
+    const receipt: EetReceipt = {
+      eic: certificate.eic,
+      establishmentId,
+      cashRegisterId: toEetCashRegisterId(deviceId),
+      sequenceNumber: `test-${now.getTime()}`,
+      saleAt: formatEetDateTime(now),
+      totalAmount: "1.00",
+    }
+
+    return ok(
+      await eetApi.submit({
+        environment,
+        certificate: toSigningCertificate(certificate),
+        receipt,
+        firstSubmission: true,
+        verification: kind === "verification",
+      })
+    )
+  }

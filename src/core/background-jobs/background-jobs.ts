@@ -1,15 +1,23 @@
-import type { BackgroundJob } from "@/core/background-jobs/background-job-types.ts"
+import type {
+  AppBackgroundJob,
+  BackgroundJob,
+} from "@/core/background-jobs/background-job-types.ts"
+import { startEetReportingJob } from "@/core/background-jobs/jobs/eet-reporting-job.ts"
 import { startFioAccountTransactionSyncJob } from "@/core/background-jobs/jobs/fio-account-transaction-sync-job.ts"
 import { startSparkAccountTransactionSyncJob } from "@/core/background-jobs/jobs/spark-account-transaction-sync-job.ts"
 
 /**
- * Every background job — right for anything that isn't a browser, which is
- * the native app and the CLI.
+ * Right for the CLI.
  */
-export const allBackgroundJobs = [
+export const cliBackgroundJobs = [
   startFioAccountTransactionSyncJob,
   startSparkAccountTransactionSyncJob,
 ] satisfies ReadonlyArray<BackgroundJob>
+
+const nativeBackgroundJobs = [
+  ...cliBackgroundJobs,
+  startEetReportingJob,
+] satisfies ReadonlyArray<AppBackgroundJob>
 
 /**
  * A browser or PWA can't reach the FIO API directly, so its sync job is left
@@ -18,10 +26,11 @@ export const allBackgroundJobs = [
  */
 const browserBackgroundJobs = [
   startSparkAccountTransactionSyncJob,
-] satisfies ReadonlyArray<BackgroundJob>
+  startEetReportingJob,
+] satisfies ReadonlyArray<AppBackgroundJob>
 
 export function getBackgroundJobsForRuntime(
   isNativePlatform: boolean
-): ReadonlyArray<BackgroundJob> {
-  return isNativePlatform ? allBackgroundJobs : browserBackgroundJobs
+): ReadonlyArray<AppBackgroundJob> {
+  return isNativePlatform ? nativeBackgroundJobs : browserBackgroundJobs
 }

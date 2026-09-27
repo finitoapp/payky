@@ -7,6 +7,7 @@ export const appEnv = createEnv({
     // Absolute, because the native app's origin is https://localhost and has
     // no /api of its own to resolve a relative path against.
     VITE_PAYKY_API_BASE_URL: z.url().default("https://payky.me"),
+    VITE_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

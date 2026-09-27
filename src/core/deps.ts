@@ -11,6 +11,7 @@ import {
 import type { JsonValue } from "type-fest"
 import type { z } from "zod"
 import { defineError } from "@/core/error.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 
 export interface FetchDep {
@@ -295,6 +296,25 @@ export const createFetchDep = (): FetchDep => ({
 export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }
 
 export type MasterKeyDep = { readonly masterKey: MasterKey }
+
+export type DeviceIdDep = { readonly deviceId: DeviceId }
+
+export type ConnectivityDep = {
+  readonly connectivity: {
+    readonly onOnline: (listener: () => void) => () => void
+  }
+}
+
+export const createConnectivityDep = (): ConnectivityDep => ({
+  connectivity: {
+    onOnline: (listener) => {
+      globalThis.addEventListener("online", listener)
+      return () => {
+        globalThis.removeEventListener("online", listener)
+      }
+    },
+  },
+})
 
 export type DateDep = {
   readonly date: {

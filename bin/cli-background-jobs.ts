@@ -1,7 +1,7 @@
 import { createConsole, ok, type Task } from "@evolu/common"
 import { runMain } from "@evolu/nodejs"
 import { type Command, createCommand } from "commander"
-import { allBackgroundJobs } from "@/core/background-jobs/background-jobs.ts"
+import { cliBackgroundJobs } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
@@ -37,7 +37,7 @@ export const registerBackgroundJobsCommand =
             },
           })(async (run) => {
             const backgroundJobsDisposable = await run.ok(
-              runBackgroundJobs(allBackgroundJobs)
+              runBackgroundJobs(cliBackgroundJobs)
             )
             run.deps.console.log("Background jobs are running.")
             return ok(backgroundJobsDisposable)

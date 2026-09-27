@@ -7,6 +7,7 @@ import {
   fiatMinorUnitsToSats,
   fiatToSats,
   minorUnitsToDecimalString,
+  minorUnitsToFixedDecimalString,
   SATS_PER_BTC,
   satsToFiat,
 } from "./money.ts"
@@ -52,6 +53,29 @@ describe("minorUnitsToDecimalString", () => {
     expect(
       minorUnitsToDecimalString({ value: Integer(-1_250), currency: "CZK" })
     ).toBe("-12.5")
+  })
+})
+
+describe("minorUnitsToFixedDecimalString", () => {
+  test("keeps every fraction digit of the currency", () => {
+    expect(
+      minorUnitsToFixedDecimalString({
+        value: Integer(25_000),
+        currency: "CZK",
+      })
+    ).toBe("250.00")
+    expect(
+      minorUnitsToFixedDecimalString({ value: Integer(5), currency: "CZK" })
+    ).toBe("0.05")
+    expect(
+      minorUnitsToFixedDecimalString({ value: Integer(0), currency: "CZK" })
+    ).toBe("0.00")
+  })
+
+  test("prefixes negative values with a minus sign", () => {
+    expect(
+      minorUnitsToFixedDecimalString({ value: Integer(-150), currency: "CZK" })
+    ).toBe("-1.50")
   })
 })
 

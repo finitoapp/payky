@@ -19,6 +19,7 @@ import {
   hasTaxableLines,
 } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
+import { eetSalesByBillIdQuery } from "@/core/modules/eet/eet-queries.ts"
 import { paymentsWithClaimsByBillIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
@@ -45,6 +46,7 @@ import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
 } from "@/features/payment/payment-status-display.tsx"
+import { EetSaleStatusBadge } from "@/features/shared/eet-sale-status.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -55,6 +57,7 @@ import { cn } from "@/lib/utils.ts"
 type BillDetailPaymentRowData = InferRow<
   ReturnType<typeof paymentsWithClaimsByBillIdQuery>
 >
+type BillDetailEetSale = InferRow<ReturnType<typeof eetSalesByBillIdQuery>>
 
 export function BillDetail({ billId }: { readonly billId: string }) {
   const parsedBillId = BillId.safeParse(billId)
@@ -78,6 +81,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
   const { claimedSum, coverage } = useBillCoverage(billId)
   const paymentsQuery = paymentsWithClaimsByBillIdQuery(billId)
   const { data: payments } = useEvoluQuery(paymentsQuery)
+  const { data: eetSales } = useEvoluQuery(eetSalesByBillIdQuery(billId))
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
@@ -249,6 +253,9 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
                 <BillDetailPaymentRow
                   key={payment.id}
                   payment={payment}
+                  eetSale={eetSales.find(
+                    (sale) => sale.paymentId === payment.id
+                  )}
                   locale={locale}
                 />
               ))}
@@ -276,9 +283,11 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
 
 function BillDetailPaymentRow({
   payment,
+  eetSale,
   locale,
 }: {
   readonly payment: BillDetailPaymentRowData
+  readonly eetSale: BillDetailEetSale | undefined
   readonly locale: string
 }) {
   const { t } = useTranslation()
@@ -324,12 +333,15 @@ function BillDetailPaymentRow({
           />
         </span>
       </div>
-      <Badge
-        variant={status === "canceled" ? "destructive" : "secondary"}
-        className={cn(paymentStatusBadgeClassName[status])}
-      >
-        {t(paymentStatusLabelKey[status])}
-      </Badge>
+      <span className="flex flex-col items-end gap-1">
+        <Badge
+          variant={status === "canceled" ? "destructive" : "secondary"}
+          className={cn(paymentStatusBadgeClassName[status])}
+        >
+          {t(paymentStatusLabelKey[status])}
+        </Badge>
+        {eetSale === undefined ? null : <EetSaleStatusBadge sale={eetSale} />}
+      </span>
     </Link>
   )
 }

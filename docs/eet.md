@@ -73,7 +73,7 @@ stored in `eetSale.method` but not sent.
 
 | Field | Value |
 |---|---|
-| `amount` | `payment.amount` (fiat minor units), minus tip when `tipOwner = employees` |
+| `amount` | `payment.amount` (fiat minor units), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
 | `saleAt` (`dat_trzby`) | first claim's `claimedAt` |
 | `sequenceNumber` (`porad_cis`) | the payment id |
 | `cashRegisterId` (`id_pokl`) | first 20 chars of the device id — one register per device |
@@ -155,6 +155,8 @@ Retry works from **any** device, not just the one that owns the sale.
 | Claim removed after the sale was created | Sale still reported; no correction/storno is sent |
 | Claim removed before creation | Not reported (query needs an active claim) |
 | Overpaid / multiple claims | One sale for `payment.amount`; extra money is not reported |
+| Cash rounded or change left | The sale reports the cash received (78.90 charged, 79 or 80 received); the payment, its claim and the cash register keep 78.90 |
+| Cash payment settled before the received amount was recorded | Reports `payment.amount` |
 | Underpaid claim | Still `payment.amount` |
 | Non-CZK payment | `unsupported`, never sent |
 | Owning device offline for days | Sales wait; become overdue after 48 h |
@@ -174,8 +176,9 @@ Retry works from **any** device, not just the one that owns the sale.
 2. **Silent loss on re-enable.** The `claimedAt >= enabledAt` rule drops
    payments whose sale creation had not run before a disable/enable cycle.
    A persisted "disabled since/until" window would fix it.
-3. **Reported amount is `payment.amount`, not what was received.** Over- and
-   underpayments are not reflected.
+3. **Reported amount is `payment.amount` for every method but cash.** Cash
+   reports what was received; over- and underpayments of other methods are
+   not reflected.
 4. **All payment methods are reported.** `method` is stored but unused; if
    some methods (e.g. bank transfer) should not be EET sales, nothing filters them.
 5. **Delivery bound to the creating device.** No automatic takeover when that

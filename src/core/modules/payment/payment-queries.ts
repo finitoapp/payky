@@ -275,6 +275,11 @@ export const paymentDetailQuery = (paymentId: PaymentId) =>
           .onRef("paymentBtc.id", "=", "payment.id")
           .on("paymentBtc.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCashRegister", (join) =>
+        join
+          .onRef("paymentCashRegister.id", "=", "payment.id")
+          .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.deviceId",
@@ -290,6 +295,7 @@ export const paymentDetailQuery = (paymentId: PaymentId) =>
         "payment.createdAt",
         "payment.updatedAt",
         "paymentBtc.amountSats",
+        "paymentCashRegister.receivedAmount as cashReceivedAmount",
       ])
       .where("payment.id", "=", paymentId)
       .where("payment.isDeleted", "is not", sqliteTrue)

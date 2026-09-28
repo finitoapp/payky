@@ -16,6 +16,8 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 export function PaymentMethodTabContent({
   method,
   boltCardPaymentId,
+  amount,
+  currency,
   canMarkCashPaid,
   cashPaymentErrorKey,
   cashPaymentPending,
@@ -78,6 +80,8 @@ export function PaymentMethodTabContent({
     case "cash":
       return (
         <CashPaymentTab
+          amount={amount}
+          currency={currency}
           canMarkCashPaid={canMarkCashPaid}
           cashPaymentErrorKey={cashPaymentErrorKey}
           cashPaymentPending={cashPaymentPending}

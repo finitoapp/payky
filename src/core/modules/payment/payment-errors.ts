@@ -13,6 +13,7 @@ import type {
 import type {
   FiatCurrency,
   NonEmptyString255,
+  NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import type { SwitchioPaymentError } from "@/core/native/switchio.ts"
 import type { PaymentStatus } from "./payment-status-utils.ts"
@@ -144,10 +145,21 @@ export type CreatePreparedPaymentError =
   | FetchError
   | CreatePaymentError
 
+export const createCashReceivedBelowChargeError = defineError(
+  "CashReceivedBelowCharge"
+)<{
+  readonly receivedAmount: NonNegativeInteger
+  readonly leastReceivedAmount: NonNegativeInteger
+}>()
+export type CashReceivedBelowChargeError = ReturnType<
+  typeof createCashReceivedBelowChargeError
+>
+
 export type MarkPaymentPaidCashError =
   | PaymentNotFoundError
   | CashRegisterAccountNotFoundError
   | AccountCurrencyMismatchError
+  | CashReceivedBelowChargeError
 
 export type MarkPaymentPaidIbanError =
   | PaymentNotFoundError

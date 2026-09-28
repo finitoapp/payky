@@ -222,13 +222,25 @@ export const settleInCash = async (
   {
     accountId = context.cashRegisterAccountId,
     deviceId = context.deviceId,
+    receivedAmount,
   }: {
     readonly accountId?: AccountId
     readonly deviceId?: DeviceId | null
+    readonly receivedAmount?: number
   } = {}
 ): Promise<void> => {
   await using run = testCreateRun(context.deps)
-  await run.orThrow(markPaymentPaidCash({ paymentId, accountId, deviceId }))
+  await run.orThrow(
+    markPaymentPaidCash({
+      paymentId,
+      accountId,
+      deviceId,
+      receivedAmount:
+        receivedAmount === undefined
+          ? undefined
+          : NonNegativeInteger(receivedAmount),
+    })
+  )
 }
 
 export const settleWithLightning = async (

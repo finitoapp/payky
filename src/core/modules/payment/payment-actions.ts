@@ -35,6 +35,7 @@ import type {
   paymentCashRegister,
   paymentIban,
 } from "@/core/modules/payment/payment.ts"
+import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
@@ -76,6 +77,7 @@ import {
   type NonEmptyString,
   NonEmptyString255,
   NonEmptyString255Schema,
+  type NonNegativeInteger,
   type TimestampMs,
   TimestampMsSchema,
 } from "../shared/schema.ts"
@@ -85,6 +87,7 @@ import {
   type CreatePaymentError,
   createAccountCurrencyMismatchError,
   createCardSwitchioAccountNotFoundError,
+  createCashReceivedBelowChargeError,
   createCashRegisterAccountNotFoundError,
   createIbanAccountNotFoundError,
   createPaymentAlreadyPaidError,
@@ -480,6 +483,7 @@ const markPaymentPaid =
     notFoundError,
     accountTransactionKind,
     transactionIdPrefix,
+    receivedCashAmount,
     paymentId,
     accountId,
     deviceId,
@@ -491,6 +495,7 @@ const markPaymentPaid =
     readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
     readonly notFoundError: TNotFoundError
     readonly transactionIdPrefix: string
+    readonly receivedCashAmount?: NonNegativeInteger
   }): Task<
     PaymentId,
     PaymentNotFoundError | TNotFoundError | AccountCurrencyMismatchError,
@@ -566,27 +571,58 @@ const markPaymentPaid =
         ...options,
         ownerId: evoluOwnerId,
       })
+      if (receivedCashAmount !== undefined) {
+        run.deps.evolu.upsert(
+          "paymentCashRegister",
+          { id: paymentId, accountId, receivedAmount: receivedCashAmount },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      }
     })
 
     return ok(paymentId)
   }
 
-export const markPaymentPaidCash = (
-  input: MarkPaymentPaidInput
-): Task<
-  PaymentId,
-  MarkPaymentPaidCashError,
-  EvoluDep & EvoluOwnerIdDep & DateDep
-> =>
-  markPaymentPaid({
-    ...input,
-    accountKind: "cashRegister",
-    accountQuery: cashRegisterAccountByIdQuery,
-    notFoundError: createCashRegisterAccountNotFoundError({
-      id: input.accountId,
-    }),
-    transactionIdPrefix: "accountTransaction:cashRegister:payment:",
-  })
+export const markPaymentPaidCash =
+  ({
+    receivedAmount,
+    ...input
+  }: MarkPaymentPaidInput & {
+    readonly receivedAmount?: NonNegativeInteger
+  }): Task<
+    PaymentId,
+    MarkPaymentPaidCashError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    if (receivedAmount !== undefined) {
+      const paymentResult = await run(loadPayment(input.paymentId))
+      if (!paymentResult.ok) return paymentResult
+
+      const leastReceivedAmount = roundCashAmount(paymentResult.value)
+      if (receivedAmount < leastReceivedAmount) {
+        return err(
+          createCashReceivedBelowChargeError({
+            receivedAmount,
+            leastReceivedAmount,
+          })
+        )
+      }
+    }
+
+    return await run(
+      markPaymentPaid({
+        ...input,
+        accountKind: "cashRegister",
+        accountQuery: cashRegisterAccountByIdQuery,
+        notFoundError: createCashRegisterAccountNotFoundError({
+          id: input.accountId,
+        }),
+        transactionIdPrefix: "accountTransaction:cashRegister:payment:",
+        receivedCashAmount: receivedAmount,
+      })
+    )
+  }
 
 /**
  * Manual counterpart to the Fio-plugin auto-settlement: staff confirming

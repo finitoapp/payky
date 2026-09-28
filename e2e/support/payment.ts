@@ -12,22 +12,25 @@ import { waitForLocalWriteToSettle } from "./navigation.ts"
  */
 export async function enterAmount(
   page: Page,
-  language: Language
+  language: Language,
+  amount = "5.9"
 ): Promise<void> {
-  await page.getByRole("button", { name: "5", exact: true }).click()
-  await page
-    .getByRole("button", {
-      name: translate(language, "home.keypad.decimal"),
-    })
-    .click()
-  await page.getByRole("button", { name: "9", exact: true }).click()
+  for (const key of amount) {
+    await page
+      .getByRole("button", {
+        name: key === "." ? translate(language, "home.keypad.decimal") : key,
+        exact: true,
+      })
+      .click()
+  }
 }
 
 export async function createPayment(
   page: Page,
-  language: Language
+  language: Language,
+  amount?: string
 ): Promise<void> {
-  await enterAmount(page, language)
+  await enterAmount(page, language, amount)
   await page
     .getByRole("button", { name: translate(language, "home.pay") })
     .click()
@@ -44,6 +47,16 @@ export async function createPayment(
     await skipTipButton.click()
     await ibanTab.waitFor()
   }
+}
+
+export async function enterCashReceived(
+  page: Page,
+  language: Language,
+  received: string
+): Promise<void> {
+  await page
+    .getByLabel(translate(language, "paymentWait.cashPaid.received"))
+    .fill(received)
 }
 
 export async function markCashPaid(

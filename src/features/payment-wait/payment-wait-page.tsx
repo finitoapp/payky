@@ -48,7 +48,11 @@ import {
 } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import { type BankQrFormat, Currency } from "@/core/modules/shared/schema.ts"
+import {
+  type BankQrFormat,
+  Currency,
+  type NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
 import { isNfcPlatform } from "@/core/native/nfc.ts"
 import {
   clearPaymentMethodPreparation,
@@ -482,7 +486,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       ? paymentId
       : null
 
-  const handleMarkCashPaid = async () => {
+  const handleMarkCashPaid = async (receivedAmount: NonNegativeInteger) => {
     if (!canMarkCashPaid) return
 
     setCashPaymentErrorKey(null)
@@ -494,6 +498,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         markPaymentPaidCash({
           paymentId,
           accountId: cashRegisterAccountId,
+          receivedAmount,
         })
       )
 
@@ -729,6 +734,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             <PaymentMethodTabContent
               method={activePaymentMethod}
               boltCardPaymentId={boltCardPaymentId}
+              amount={payment.amount}
+              currency={payment.currency}
               canMarkCashPaid={canMarkCashPaid}
               cashPaymentErrorKey={cashPaymentErrorKey}
               cashPaymentPending={cashPaymentPending}
@@ -747,7 +754,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               preparingMessageKey={activePreparingPaymentMethodKey}
               selectedIbanQrFormat={selectedIbanQrFormat}
               onSelectIbanQrFormat={setSelectedIbanQrFormat}
-              onMarkCashPaid={() => void handleMarkCashPaid()}
+              onMarkCashPaid={(receivedAmount) =>
+                void handleMarkCashPaid(receivedAmount)
+              }
               onMarkIbanPaid={() => void handleMarkIbanPaid()}
               onPayCard={() => void handlePayCard()}
             />

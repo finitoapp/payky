@@ -46,6 +46,7 @@ export const payment = {
 export const paymentCashRegister = {
   id: PaymentId,
   accountId: AccountId,
+  receivedAmount: NonNegativeIntegerSchema.nullable(),
 } as const
 
 export const paymentBtc = {

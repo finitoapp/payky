@@ -4,6 +4,7 @@ export const enPayment = {
   "payment.status.expired": "Expired",
   "payment.status.paid": "Paid",
   "payment.status.pending": "Pending",
+  "paymentDetail.cashReceived": "Received in cash {amount}",
   "paymentDetail.eet.cashRegister": "Cash register ID",
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "EET error {code}: {message}",
@@ -185,9 +186,12 @@ export const enPayment = {
   "paymentWait.cardPaid.unresolved":
     "The result of the last attempt ({transactionId}) is unknown. Check the transaction in SwitchioPay before trying again.",
   "paymentWait.cashPaid.action": "Mark as paid",
+  "paymentWait.cashPaid.difference": "Difference from the charge: {amount}",
   "paymentWait.cashPaid.error": "Could not mark the payment as paid.",
   "paymentWait.cashPaid.pending": "Marking paid...",
   "paymentWait.cashPaid.prompt": "Accept cash payment",
+  "paymentWait.cashPaid.received": "Cash received",
+  "paymentWait.cashPaid.receivedTooLow": "Enter at least {amount}.",
   "paymentWait.cashPaid.unavailable":
     "Cash register is not attached to this payment.",
   "paymentWait.copyQr": "Copy QR code content",

@@ -3,7 +3,11 @@ import type { ReactNode } from "react"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import type { BankQrPayload } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
+import type {
+  BankQrFormat,
+  FiatCurrency,
+  NonNegativeInteger,
+} from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export type PaymentMethodTab = "spark" | "iban" | "cash" | "card"
@@ -30,11 +34,13 @@ export type PaymentMethodOption = PaymentMethodOptionBase &
   )
 
 export interface CashPaymentTabProps {
+  readonly amount: NonNegativeInteger
+  readonly currency: FiatCurrency
   readonly canMarkCashPaid: boolean
   readonly cashPaymentErrorKey: TranslationKey | null
   readonly cashPaymentPending: boolean
   readonly cashRegisterAccountId: AccountId | null | undefined
-  readonly onMarkCashPaid: () => void
+  readonly onMarkCashPaid: (receivedAmount: NonNegativeInteger) => void
 }
 
 export interface CardPaymentTabProps {

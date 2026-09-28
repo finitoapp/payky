@@ -53,6 +53,7 @@ const createSaleForNewPayment = async (
         billId: null,
         amount: NonNegativeInteger(25_000),
         tipAmount: NonNegativeInteger(0),
+        cashReceivedAmount: null,
         currency: "CZK",
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
@@ -352,6 +353,76 @@ describe("createEetSale", () => {
       context.responder.requests.map(({ data }) => data.celk_trzba)
     ).toEqual(["250.00", "250.00"])
   })
+
+  test.each([
+    {
+      name: "cash rounded to whole crowns",
+      method: "cashRegister",
+      amount: 7_890,
+      cashReceivedAmount: 7_900,
+      reported: "79.00",
+    },
+    {
+      name: "change the customer left",
+      method: "cashRegister",
+      amount: 7_890,
+      cashReceivedAmount: 8_000,
+      reported: "80.00",
+    },
+    {
+      name: "a card payment",
+      method: "cardSwitchio",
+      amount: 7_890,
+      cashReceivedAmount: null,
+      reported: "78.90",
+    },
+    {
+      name: "cash without a received amount",
+      method: "cashRegister",
+      amount: 7_890,
+      cashReceivedAmount: null,
+      reported: "78.90",
+    },
+  ] as const)(
+    "reports what was received for $name",
+    async ({ method, amount, cashReceivedAmount, reported }) => {
+      await using context = await createEetTestContext()
+      await configureEet(context)
+      const saleId = await createSaleForNewPayment(context, {
+        method,
+        amount: NonNegativeInteger(amount),
+        cashReceivedAmount:
+          cashReceivedAmount === null
+            ? null
+            : NonNegativeInteger(cashReceivedAmount),
+      })
+      await using run = testCreateRun(context.deps)
+
+      await run.orThrow(deliverEetSale(saleId))
+
+      expect(context.responder.requests).toMatchObject([
+        { data: { celk_trzba: reported } },
+      ])
+    }
+  )
+
+  test("leaves the tip out of the cash received while tips belong to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(saveEetTipOwner("employees"))
+    const saleId = await createSaleForNewPayment(context, {
+      amount: NonNegativeInteger(11_000),
+      tipAmount: NonNegativeInteger(1_000),
+      cashReceivedAmount: NonNegativeInteger(11_000),
+    })
+
+    await run.orThrow(deliverEetSale(saleId))
+
+    expect(context.responder.requests).toMatchObject([
+      { data: { celk_trzba: "100.00" } },
+    ])
+  })
 })
 
 describe("deliverEetSale", () => {
@@ -507,6 +578,7 @@ describe("retryEetSale", () => {
           billId: null,
           amount: NonNegativeInteger(25_000),
           tipAmount: NonNegativeInteger(0),
+          cashReceivedAmount: null,
           currency: "CZK",
           method: "cashRegister",
           firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),

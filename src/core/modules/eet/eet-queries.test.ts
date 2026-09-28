@@ -38,6 +38,7 @@ const createSale = async (
         billId: null,
         amount: NonNegativeInteger(25_000),
         tipAmount: NonNegativeInteger(0),
+        cashReceivedAmount: null,
         currency,
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
@@ -58,7 +59,7 @@ describe("eetPaymentsToReportQuery", () => {
     await configureEet(context)
     context.clock.advance(1_000)
     const settled = await createTestPayment(context, { tipAmount: 2_000 })
-    await settleInCash(context, settled)
+    await settleInCash(context, settled, { receivedAmount: 26_000 })
     const unsettled = await createTestPayment(context)
     const otherDevice = await createTestPayment(context, {
       deviceId: createRowId<"Device">(),
@@ -75,6 +76,7 @@ describe("eetPaymentsToReportQuery", () => {
         billId: null,
         amount: 25_000,
         tipAmount: 2_000,
+        cashReceivedAmount: 26_000,
         currency: "CZK",
         enabledAt: context.clock.date.now().getTime() - 1_000,
         firstClaimedAt: context.clock.date.now().getTime(),

@@ -296,6 +296,20 @@ function PaymentDetailContent({
                 locale
               )}
             </strong>
+            {payment.cashReceivedAmount === null ||
+            payment.cashReceivedAmount === payment.amount ? null : (
+              <span className="text-sm text-muted-foreground">
+                {t("paymentDetail.cashReceived", {
+                  amount: formatMoney(
+                    {
+                      value: payment.cashReceivedAmount,
+                      currency: payment.currency,
+                    },
+                    locale
+                  ),
+                })}
+              </span>
+            )}
             {payment.tipAmount > 0 ? (
               <span className="text-sm text-muted-foreground">
                 {t("paymentDetail.tipIncluded", {

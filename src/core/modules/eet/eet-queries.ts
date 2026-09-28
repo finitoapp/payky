@@ -69,6 +69,11 @@ export const eetPaymentsToReportQuery = (deviceId: DeviceId) =>
               .on("eetSettings.id", "=", eetSettingsId)
               .on("eetSettings.isDeleted", "is not", sqliteTrue)
           )
+          .leftJoin("paymentCashRegister", (join) =>
+            join
+              .onRef("paymentCashRegister.id", "=", "payment.id")
+              .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
+          )
           .select((eb) => {
             const firstActiveClaim = eb
               .selectFrom("reconciliationClaim")
@@ -96,6 +101,7 @@ export const eetPaymentsToReportQuery = (deviceId: DeviceId) =>
               "payment.amount",
               "payment.tipAmount",
               "payment.currency",
+              "paymentCashRegister.receivedAmount as cashReceivedAmount",
               "eetSettings.enabledAt",
               firstActiveClaim
                 .select("reconciliationClaim.claimedAt")

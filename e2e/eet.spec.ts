@@ -17,6 +17,7 @@ import { seedOnboarding } from "./support/onboarding.ts"
 import {
   createPayment,
   enterAmount,
+  enterCashReceived,
   getPaymentIdFromUrl,
   markCashPaid,
   markCashPaidAndSettle,
@@ -27,9 +28,9 @@ const eetStatusOf = (page: Page) => page.getByTestId("eet-sale-status")
 
 const eetDeliveryTimeout = { timeout: 20_000 }
 
-async function takeCashPayment(page: Page): Promise<string> {
+async function takeCashPayment(page: Page, amount?: string): Promise<string> {
   await page.goto("/", { waitUntil: "domcontentloaded" })
-  await createPayment(page, "en")
+  await createPayment(page, "en", amount)
   await page
     .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
     .click()
@@ -37,6 +38,9 @@ async function takeCashPayment(page: Page): Promise<string> {
   await markCashPaidAndSettle(page, "en")
   return paymentId
 }
+
+const lastReportedAmount = () =>
+  fakeEet.production.requests.at(-1)?.data.celk_trzba
 
 async function openPaymentDetail(page: Page, paymentId: string): Promise<void> {
   await gotoPage(page, `/activity/${paymentId}`, "en", "paymentDetail.title")
@@ -493,14 +497,57 @@ test("tips that belong to employees are left out of the reported sale", async ({
     await page
       .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
       .click()
+    await enterCashReceived(page, "en", "6.49")
     await markCashPaidAndSettle(page, "en")
 
-    await expect
-      .poll(
-        () => fakeEet.production.requests.at(-1)?.data.celk_trzba,
-        eetDeliveryTimeout
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("5.90")
+  })
+})
+
+test("a cash sale is reported as the cash received", async ({ page }) => {
+  test.slow()
+
+  await enableEetWithGeneratedCertificate(page, "en")
+
+  await test.step("78.90 confirmed as prefilled is reported rounded to 79.00", async () => {
+    await takeCashPayment(page, "78.9")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("79.00")
+  })
+
+  await test.step("78.90 with the change left is reported as 80.00", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await createPayment(page, "en", "78.9")
+    await page
+      .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+      .click()
+    const paymentId = getPaymentIdFromUrl(page)
+    await enterCashReceived(page, "en", "77")
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "paymentWait.cashPaid.action"),
+      })
+    ).toBeDisabled()
+    await enterCashReceived(page, "en", "80")
+    await expect(
+      page.getByText(
+        translate("en", "paymentWait.cashPaid.difference").replace(
+          "{amount}",
+          "CZK 1.10"
+        )
       )
-      .toBe("5.90")
+    ).toBeVisible()
+    await markCashPaidAndSettle(page, "en")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("80.00")
+
+    await openPaymentDetail(page, paymentId)
+    await expect(
+      page.getByText(
+        translate("en", "paymentDetail.cashReceived").replace(
+          "{amount}",
+          "CZK 80.00"
+        )
+      )
+    ).toBeVisible()
   })
 })
 

@@ -3310,4 +3310,143 @@ describe("payment actions", () => {
       expect(ctx.requestedUrls).toEqual([])
     }, 15_000)
   })
+
+  describe("cash received", () => {
+    const cashReceivedByPaymentIdQuery = (id: PaymentId) =>
+      createQuery((db) =>
+        db
+          .selectFrom("paymentCashRegister")
+          .select(["receivedAmount"])
+          .where("id", "=", id)
+      )
+
+    const createCashContext = async () => {
+      const testEvolu = await createEvoluTest()
+      const { evolu } = testEvolu
+      const deps = {
+        evolu,
+        evoluOwnerId: evolu.appOwner.id,
+        ...createTestDateDep(),
+      } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+      const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+      await using run = testCreateRun(deps)
+      const billId = await run.ok(
+        createBill({
+          deviceId: null,
+          displayNumber: PositiveInteger(1),
+          label: null,
+          tableId: null,
+          currency: "CZK",
+        })
+      )
+      await run.orThrow(
+        addManualAmountToBill({
+          billId,
+          deviceId: null,
+          name: NonEmptyString255("Lunch"),
+          currency: "CZK",
+          totalAmount: NonNegativeInteger(7_890),
+        })
+      )
+      const paymentId = await run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId,
+          tableId: null,
+          amount: NonNegativeInteger(7_890),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+          cashRegister: { accountId: cashRegisterAccountId },
+        })
+      )
+
+      return {
+        evolu,
+        deps,
+        billId,
+        paymentId,
+        cashRegisterAccountId,
+        [Symbol.asyncDispose]: () => testEvolu[Symbol.asyncDispose](),
+      }
+    }
+
+    test("stores the cash received and keeps the charge everywhere else", async () => {
+      await using ctx = await createCashContext()
+      await using run = testCreateRun(ctx.deps)
+
+      await expect(
+        run(
+          markPaymentPaidCash({
+            paymentId: ctx.paymentId,
+            accountId: ctx.cashRegisterAccountId,
+            receivedAmount: NonNegativeInteger(8_000),
+          })
+        )
+      ).resolves.toEqual({ ok: true, value: ctx.paymentId })
+
+      await expect(
+        ctx.evolu.loadQuery(cashReceivedByPaymentIdQuery(ctx.paymentId))
+      ).resolves.toEqual([{ receivedAmount: 8_000 }])
+      await expect(
+        ctx.evolu.loadQuery(accountTransactionsByPaymentIdQuery(ctx.paymentId))
+      ).resolves.toMatchObject([{ amount: 7_890 }])
+      await expect(run.ok(loadBillCoverage(ctx.billId))).resolves.toEqual({
+        billTotal: 7_890,
+        claimedSum: 7_890,
+        coverage: "paid",
+      })
+      await expect(run.orThrow(loadBillStatus(ctx.billId))).resolves.toBe(
+        "closed"
+      )
+    }, 15_000)
+
+    test("refuses less than the charge rounded to whole crowns", async () => {
+      await using ctx = await createCashContext()
+      await using run = testCreateRun(ctx.deps)
+
+      await expect(
+        run(
+          markPaymentPaidCash({
+            paymentId: ctx.paymentId,
+            accountId: ctx.cashRegisterAccountId,
+            receivedAmount: NonNegativeInteger(7_700),
+          })
+        )
+      ).resolves.toEqual({
+        ok: false,
+        error: {
+          type: "CashReceivedBelowCharge",
+          receivedAmount: 7_700,
+          leastReceivedAmount: 7_900,
+        },
+      })
+
+      await expect(
+        ctx.evolu.loadQuery(
+          activeReconciliationClaimsByPaymentIdQuery(ctx.paymentId)
+        )
+      ).resolves.toEqual([])
+      await expect(
+        ctx.evolu.loadQuery(cashReceivedByPaymentIdQuery(ctx.paymentId))
+      ).resolves.toEqual([{ receivedAmount: null }])
+    }, 15_000)
+
+    test("keeps no received amount when the caller gives none", async () => {
+      await using ctx = await createCashContext()
+      await using run = testCreateRun(ctx.deps)
+
+      await run.orThrow(
+        markPaymentPaidCash({
+          paymentId: ctx.paymentId,
+          accountId: ctx.cashRegisterAccountId,
+        })
+      )
+
+      await expect(
+        ctx.evolu.loadQuery(cashReceivedByPaymentIdQuery(ctx.paymentId))
+      ).resolves.toEqual([{ receivedAmount: null }])
+    }, 15_000)
+  })
 })

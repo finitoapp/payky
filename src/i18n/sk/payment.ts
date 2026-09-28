@@ -6,6 +6,7 @@ export const skPayment = {
   "payment.status.expired": "Vypršalo",
   "payment.status.paid": "Zaplatené",
   "payment.status.pending": "Čaká",
+  "paymentDetail.cashReceived": "Prijaté v hotovosti {amount}",
   "paymentDetail.eet.cashRegister": "Označenie pokladnice",
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "Chyba EET {code}: {message}",
@@ -186,9 +187,12 @@ export const skPayment = {
   "paymentWait.cardPaid.unresolved":
     "Výsledok posledného pokusu ({transactionId}) nie je známy. Predtým, než to skúsite znova, skontrolujte transakciu v SwitchioPay.",
   "paymentWait.cashPaid.action": "Označiť ako zaplatené",
+  "paymentWait.cashPaid.difference": "Rozdiel oproti útrate: {amount}",
   "paymentWait.cashPaid.error": "Platbu sa nepodarilo označiť ako zaplatenú.",
   "paymentWait.cashPaid.pending": "Označujem ako zaplatené...",
   "paymentWait.cashPaid.prompt": "Prijmite hotovostnú platbu",
+  "paymentWait.cashPaid.received": "Prijatá hotovosť",
+  "paymentWait.cashPaid.receivedTooLow": "Zadajte aspoň {amount}.",
   "paymentWait.cashPaid.unavailable":
     "K tejto platbe nie je pripojená pokladnica.",
   "paymentWait.copyQr": "Skopírovať obsah QR kódu",

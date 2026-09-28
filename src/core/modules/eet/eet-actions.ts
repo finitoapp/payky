@@ -296,6 +296,7 @@ export const createEetSale =
       readonly billId: BillId | null
       readonly amount: NonNegativeInteger
       readonly tipAmount: NonNegativeInteger
+      readonly cashReceivedAmount: NonNegativeInteger | null
       readonly currency: FiatCurrency
       readonly method: AccountKind
       readonly firstClaimedAt: TimestampMs
@@ -315,6 +316,11 @@ export const createEetSale =
       return ok(null)
     }
 
+    const receivedAmount =
+      payment.method === "cashRegister"
+        ? (payment.cashReceivedAmount ?? payment.amount)
+        : payment.amount
+
     await runMutationWithCompletion((options) =>
       evolu.upsert(
         "eetSale",
@@ -326,8 +332,11 @@ export const createEetSale =
           method: payment.method,
           amount:
             settings.tipOwner === "employees"
-              ? calculatePaymentBaseAmount(payment)
-              : payment.amount,
+              ? calculatePaymentBaseAmount({
+                  amount: receivedAmount,
+                  tipAmount: payment.tipAmount,
+                })
+              : receivedAmount,
           currency: payment.currency,
           environment: resolveEetEnvironment({
             environment: settings.environment,

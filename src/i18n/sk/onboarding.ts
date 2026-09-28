@@ -1,13 +1,27 @@
 import type { enOnboarding } from "@/i18n/en/onboarding.ts"
 
 export const skOnboarding = {
+  "accountRestore.action.addRelay": "Pridať synchronizačný server",
+  "accountRestore.action.otherPhrase": "Použiť inú obnovovaciu frázu",
+  "accountRestore.action.retry": "Skúsiť znova",
+  "accountRestore.action.setupNew": "Nastaviť tento účet ako nový",
   "accountRestore.description":
     "Čakáme na synchronizáciu údajov účtu. Zvyčajne to trvá pár sekúnd.",
-  "accountRestore.timeout.continue": "Čakať ďalej",
-  "accountRestore.timeout.description":
-    "Nastavenia účtu zatiaľ nedorazili. Môžete ďalej čakať alebo tento účet výslovne nastaviť ako nový.",
-  "accountRestore.timeout.setup": "Nastaviť ako nový účet",
-  "accountRestore.timeout.title": "Obnova účtu stále prebieha",
+  "accountRestore.empty.description":
+    "Všetky synchronizačné servery dokončili synchronizáciu, ale žiadny z nich nemá údaje pre túto obnovovaciu frázu. Údaje môžu byť na serveri, ktorý v zozname nie je, alebo fráza patrí k inému účtu.",
+  "accountRestore.empty.title": "Údaje účtu sa nenašli",
+  "accountRestore.failed.description":
+    "S niektorými synchronizačnými servermi sa nepodarilo synchronizovať, takže údaje účtu môžu existovať, len zatiaľ nedorazili. Skontrolujte zoznam a skúste to znova.",
+  "accountRestore.failed.offline":
+    "Zariadenie je offline. Pripojte sa na internet a skúste to znova.",
+  "accountRestore.failed.title": "Účet sa nepodarilo synchronizovať",
+  "accountRestore.relays.title": "Synchronizačné servery",
+  "accountRestore.setupNew.confirm.cancel": "Späť",
+  "accountRestore.setupNew.confirm.confirm": "Nastaviť ako nový",
+  "accountRestore.setupNew.confirm.description":
+    "Nedostupné synchronizačné servery môžu údaje tohto účtu stále mať. Ak sa neskôr synchronizujú, nastavenia, ktoré zvolíte teraz, ich prepíšu.",
+  "accountRestore.setupNew.confirm.title": "Nastaviť bez údajov účtu?",
+  "accountRestore.syncing": "Synchronizácia údajov účtu…",
   "accountRestore.title": "Obnovovanie účtu",
   "onboarding.account.description":
     "Uložte si frázu nižšie na bezpečné miesto. Budete ju potrebovať, keď budete chcieť účet otvoriť na inom zariadení.",

@@ -137,8 +137,8 @@ export function OnboardingPage() {
 
   useEffect(() => {
     // The appSettings row's existence marks the account as onboarded. The row
-    // can also appear mid-form when a restored account finishes its first
-    // sync — leaving then keeps the synced settings intact.
+    // can also appear mid-form when a restored account's data arrives late
+    // — leaving then keeps the synced settings intact.
     if (settings !== undefined) {
       void navigate({ to: "/", replace: true })
     }
@@ -146,6 +146,7 @@ export function OnboardingPage() {
 
   const stepIndex = onboardingSteps.indexOf(step)
   const canGoBack = stepIndex > 0 && !pending
+  const isLastStep = stepIndex === onboardingSteps.length - 1
 
   const goNext = () => {
     if (step === "payments") {
@@ -184,7 +185,15 @@ export function OnboardingPage() {
   }
 
   const finishOnboarding = async () => {
-    if (!form.recoveryPhraseConfirmed) {
+    // A restored phrase finishes on the payments step, so the IBAN is checked
+    // here too, not only when leaving that step; its phrase is already backed
+    // up, so there is no confirmation to require.
+    const needsRecoveryPhrase = accountType !== "existingMnemonic"
+    if (
+      ibanMissing ||
+      ibanInvalid ||
+      (needsRecoveryPhrase && !form.recoveryPhraseConfirmed)
+    ) {
       setSubmitAttempted(true)
       return
     }
@@ -198,12 +207,15 @@ export function OnboardingPage() {
       // forth while reading never leaves the wrong regional format applied.
       setLocale(getDeviceLocaleForLanguage(language))
 
-      // A restored account whose first sync hasn't finished yet can briefly
-      // land back in onboarding (see the TODO in `_terminal.tsx`). Guard
-      // these two against that race: unlike the singleton account upserts
-      // below, `setLegalEntity` would overwrite an already-synced row via
-      // last-write-wins, and `seedTaxRatesForCountry` has no upsert
-      // semantics at all — it would insert a duplicate set of rates.
+      // A restored account can still reach onboarding with data on a relay
+      // this device has not synced yet — `_terminal.tsx` gives up waiting
+      // for an owner the shared worker never reports, and the restore page
+      // lets the merchant set up a phrase whose relays were unreachable.
+      // Guard these two against that data arriving later: unlike the
+      // singleton account upserts below, `setLegalEntity` would overwrite an
+      // already-synced row via last-write-wins, and `seedTaxRatesForCountry`
+      // has no upsert semantics at all — it would insert a duplicate set of
+      // rates.
       const [existingLegalEntity, existingTaxRates] = await Promise.all([
         run.deps.evolu.loadQuery(legalEntityQuery),
         run.deps.evolu.loadQuery(taxRatesQuery),
@@ -260,12 +272,15 @@ export function OnboardingPage() {
   const restoreExistingAccount = async () => {
     const restored = await restore()
 
-    if (!restored) {
+    if (restored === null) {
       return
     }
 
     setForm(initialOnboardingFormState)
-    await navigate({ to: "/restore-account" })
+    await navigate({
+      to: "/restore-account",
+      search: { source: "onboarding", ...restored },
+    })
   }
 
   const cancelSetup = async () => {
@@ -432,7 +447,7 @@ export function OnboardingPage() {
                   <ChevronLeft data-icon="inline-start" />
                   {t("onboarding.back")}
                 </Button>
-                {step === "account" ? (
+                {isLastStep ? (
                   <Button
                     type="button"
                     disabled={pending}

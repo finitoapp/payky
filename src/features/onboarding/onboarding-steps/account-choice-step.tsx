@@ -10,8 +10,11 @@ import type { OnboardingAccountType } from "@/features/onboarding/onboarding-for
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
+/** `existingMnemonic` is entered from the restore sync page, never picked here. */
+type ChoosableAccountType = Exclude<OnboardingAccountType, "existingMnemonic">
+
 interface AccountTypeOption {
-  readonly value: OnboardingAccountType
+  readonly value: ChoosableAccountType
   readonly label: TranslationKey
   readonly description: TranslationKey
   readonly icon: typeof Plus
@@ -43,7 +46,7 @@ export function AccountChoiceStep({
   onSelect,
 }: {
   readonly pending: boolean
-  readonly onSelect: (accountType: OnboardingAccountType) => void
+  readonly onSelect: (accountType: ChoosableAccountType) => void
 }) {
   const { t } = useTranslation()
 

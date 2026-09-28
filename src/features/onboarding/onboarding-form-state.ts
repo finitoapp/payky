@@ -9,7 +9,12 @@ export type OnboardingStep =
   | "payments"
   | "account"
   | "restore"
-export type OnboardingAccountType = "new" | "restore"
+/**
+ * `existingMnemonic` sets up a restored phrase whose relays had no account
+ * data (see the restore sync page): the account is already chosen and its
+ * phrase already backed up, so it skips both the choice and the backup step.
+ */
+export type OnboardingAccountType = "new" | "restore" | "existingMnemonic"
 export type OnboardingPaymentMethod = "cash" | "btc" | "iban"
 /**
  * The onboarding country step's own 3-way choice. Unlike the persisted
@@ -22,24 +27,16 @@ export type OnboardingPaymentMethod = "cash" | "btc" | "iban"
  */
 export type OnboardingCountryChoice = CountryCode | "OTHER"
 
-const newAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
-  "accountChoice",
-  "countryCurrency",
-  "payments",
-  "account",
-]
-
-const restoreAccountOnboardingSteps: ReadonlyArray<OnboardingStep> = [
-  "accountChoice",
-  "restore",
-]
+const onboardingStepsByAccountType = {
+  new: ["accountChoice", "countryCurrency", "payments", "account"],
+  restore: ["accountChoice", "restore"],
+  existingMnemonic: ["countryCurrency", "payments"],
+} satisfies Record<OnboardingAccountType, ReadonlyArray<OnboardingStep>>
 
 export const getOnboardingSteps = (
   accountType: OnboardingAccountType | null
 ): ReadonlyArray<OnboardingStep> =>
-  accountType === "restore"
-    ? restoreAccountOnboardingSteps
-    : newAccountOnboardingSteps
+  onboardingStepsByAccountType[accountType ?? "new"]
 
 interface OnboardingFormState {
   readonly step: OnboardingStep

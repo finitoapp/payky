@@ -128,8 +128,11 @@ export function AccountsSettingsPage() {
   const restoreAccount = async () => {
     const restored = await restore()
 
-    if (restored) {
-      await navigate({ to: "/restore-account" })
+    if (restored !== null) {
+      await navigate({
+        to: "/restore-account",
+        search: { source: "settings", ...restored },
+      })
     }
   }
 

@@ -15,4 +15,11 @@ describe("getOnboardingSteps", () => {
   test("goes directly from account choice to recovery for restoration", () => {
     expect(getOnboardingSteps("restore")).toEqual(["accountChoice", "restore"])
   })
+
+  test("skips the choice and backup steps for an already restored phrase", () => {
+    expect(getOnboardingSteps("existingMnemonic")).toEqual([
+      "countryCurrency",
+      "payments",
+    ])
+  })
 })

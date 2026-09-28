@@ -1,11 +1,25 @@
 export const enOnboarding = {
+  "accountRestore.action.addRelay": "Add sync server",
+  "accountRestore.action.otherPhrase": "Use a different recovery phrase",
+  "accountRestore.action.retry": "Try again",
+  "accountRestore.action.setupNew": "Set up this account as new",
   "accountRestore.description":
     "Waiting for the account data to sync. This usually takes a few seconds.",
-  "accountRestore.timeout.continue": "Keep waiting",
-  "accountRestore.timeout.description":
-    "No account settings have arrived yet. You can keep waiting or explicitly set up this account as new.",
-  "accountRestore.timeout.setup": "Set up as a new account",
-  "accountRestore.timeout.title": "Still restoring account",
+  "accountRestore.empty.description":
+    "Every sync server finished syncing, but none of them holds data for this recovery phrase. The data may be on a server that isn't listed, or the phrase may belong to a different account.",
+  "accountRestore.empty.title": "No account data found",
+  "accountRestore.failed.description":
+    "Some sync servers could not be synced with, so the account data may exist but hasn't arrived. Check the list and try again.",
+  "accountRestore.failed.offline":
+    "This device is offline. Connect to the internet and try again.",
+  "accountRestore.failed.title": "Couldn't sync the account",
+  "accountRestore.relays.title": "Sync servers",
+  "accountRestore.setupNew.confirm.cancel": "Go back",
+  "accountRestore.setupNew.confirm.confirm": "Set up as new",
+  "accountRestore.setupNew.confirm.description":
+    "The unreachable sync servers may still hold this account's data. If it syncs later, the settings you choose now will overwrite it.",
+  "accountRestore.setupNew.confirm.title": "Set up without the account data?",
+  "accountRestore.syncing": "Syncing account data…",
   "accountRestore.title": "Restoring account",
   "onboarding.account.description":
     "Save the phrase below somewhere safe. You will need it to open this account on another device.",

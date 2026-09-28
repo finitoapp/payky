@@ -5,14 +5,9 @@ import {
   chooseOnboardingCountry,
   chooseOnboardingCurrency,
   completeOnboarding,
+  createUnregisteredMnemonic,
+  submitRestorePhrase,
 } from "./support/onboarding.ts"
-
-// A fixed, valid SLIP-39 recovery mnemonic (derived from an arbitrary test
-// master key: ffeeddccbbaa99887766554433221100). Never onboarded against
-// this app's Evolu relay, so restoring with it always lands on a fresh,
-// unsynced account.
-const unregisteredTestMnemonic =
-  "alto wisdom academic academic anxiety saver envy hour campus decision disease mason slush quantity pumps loyalty bracelet muscle western material"
 
 test("complete onboarding as a new account", async ({ page }) => {
   let onboardingMnemonic = ""
@@ -139,44 +134,101 @@ test("the payment methods step reports a missing or invalid IBAN on Next", async
   })
 })
 
-test("onboarding restore account starts the sync-wait screen", async ({
+// Offline is the one sync failure e2e can produce deterministically, and it
+// wins over whatever the relays reported. It is switched on only once the
+// restore page has loaded: offline also blocks the dev server's lazy chunks.
+test("an offline restore fails, and another phrase returns to the restore step", async ({
   page,
+  context,
 }) => {
-  await test.step("start onboarding and choose restore", async () => {
-    await gotoPage(page, "/", "en", "onboarding.title")
+  await test.step("submit a recovery phrase and go offline", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
     await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
-      })
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.restore.title"),
-      })
-      .click()
+    await submitRestorePhrase(page, "en", await createUnregisteredMnemonic())
+    await context.setOffline(true)
   })
 
-  await test.step("submit a recovery phrase", async () => {
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.restore.action"),
-      })
-      .waitFor()
-    await page.getByRole("textbox").fill(unregisteredTestMnemonic)
-    await page
-      .getByRole("button", {
-        name: translate("en", "onboarding.restore.action"),
-      })
-      .click()
-  })
-
-  await test.step("land on the restore sync-wait screen", async () => {
-    await expect(page).toHaveURL(/\/restore-account$/)
+  await test.step("the sync fails with the offline explanation", async () => {
     await expect(
       page.getByRole("heading", {
-        name: translate("en", "accountRestore.title"),
+        name: translate("en", "accountRestore.failed.title"),
       })
     ).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "accountRestore.failed.offline"))
+    ).toBeVisible()
+  })
+
+  await test.step("use a different phrase", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "accountRestore.action.otherPhrase"),
+      })
+      .click()
+    await expect(page).toHaveURL(/\/onboarding$/u)
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "onboarding.restore.action"),
+      })
+    ).toBeVisible()
+    await expect(page.getByRole("textbox")).toHaveValue("")
+  })
+})
+
+test("setting up a phrase whose sync failed warns, then skips the backup step", async ({
+  page,
+  context,
+}) => {
+  await test.step("fail an offline restore", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await submitRestorePhrase(page, "en", await createUnregisteredMnemonic())
+    await context.setOffline(true)
+    await page
+      .getByRole("heading", {
+        name: translate("en", "accountRestore.failed.title"),
+      })
+      .waitFor()
+  })
+
+  await test.step("confirm the overwrite warning", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "accountRestore.action.setupNew"),
+      })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "accountRestore.setupNew.confirm.confirm"),
+        exact: true,
+      })
+      .click()
+    await context.setOffline(false)
+  })
+
+  await test.step("finish on the payments step", async () => {
+    await chooseOnboardingCountry(page, "en", "country.cz")
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.next") })
+      .click()
+    await page.getByRole("textbox").fill("CZ6508000000192000145399")
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.finish") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "settings.title") })
+      .waitFor()
+  })
+
+  await test.step("the empty account from the first start is gone", async () => {
+    await gotoPage(page, "/settings/accounts", "en", "settings.accounts.title")
+    await expect(
+      page.getByTestId("account-list").getByRole("listitem")
+    ).toHaveCount(1)
   })
 })
 

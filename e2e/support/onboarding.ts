@@ -1,5 +1,9 @@
 import type { Page } from "@playwright/test"
 
+import {
+  createMasterKey,
+  masterKeyToMnemonic,
+} from "../../src/core/modules/shared/key-derivation.ts"
 import type { FiatCurrency } from "../../src/core/modules/shared/schema.ts"
 import type { Language, TranslationKey } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
@@ -105,6 +109,43 @@ export async function seedOnboarding(
 ): Promise<void> {
   await page.goto("/", { waitUntil: "domcontentloaded" })
   await seedCurrentAccountOnboarding(page, language, options)
+}
+
+/**
+ * A recovery phrase no relay has seen. The relays e2e syncs with are real and
+ * shared, so a fixed phrase stays unregistered only until one run onboards
+ * it — every call derives a fresh master key instead.
+ */
+export const createUnregisteredMnemonic = (): Promise<string> =>
+  masterKeyToMnemonic(createMasterKey())
+
+/**
+ * Picks "restore" on the onboarding page already open and submits
+ * `mnemonic`, leaving the page on the restore sync screen. Navigates nowhere
+ * itself, so a caller can take the context offline first.
+ */
+export async function submitRestorePhrase(
+  page: Page,
+  language: Language,
+  mnemonic: string
+): Promise<void> {
+  await page
+    .getByRole("button", {
+      name: translate(language, "onboarding.accountChoice.restore.title"),
+    })
+    .click()
+  await page.getByRole("textbox").fill(mnemonic)
+  await page
+    .getByRole("button", {
+      name: translate(language, "onboarding.restore.action"),
+    })
+    .click()
+  await page.waitForURL(/\/restore-account\?/u)
+  await page
+    .getByText(translate(language, "accountRestore.relays.title"), {
+      exact: true,
+    })
+    .waitFor()
 }
 
 /** Completes onboarding as a new account and returns its recovery phrase. */

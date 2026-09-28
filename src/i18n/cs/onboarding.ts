@@ -1,13 +1,27 @@
 import type { enOnboarding } from "@/i18n/en/onboarding.ts"
 
 export const csOnboarding = {
+  "accountRestore.action.addRelay": "Přidat synchronizační server",
+  "accountRestore.action.otherPhrase": "Použít jinou obnovovací frázi",
+  "accountRestore.action.retry": "Zkusit znovu",
+  "accountRestore.action.setupNew": "Nastavit tento účet jako nový",
   "accountRestore.description":
     "Čekáme na synchronizaci dat účtu. Obvykle to trvá pár sekund.",
-  "accountRestore.timeout.continue": "Čekat dál",
-  "accountRestore.timeout.description":
-    "Nastavení účtu zatím nedorazilo. Můžete dále čekat nebo tento účet výslovně nastavit jako nový.",
-  "accountRestore.timeout.setup": "Nastavit jako nový účet",
-  "accountRestore.timeout.title": "Obnova účtu stále probíhá",
+  "accountRestore.empty.description":
+    "Všechny synchronizační servery dokončily synchronizaci, ale žádný z nich nemá data pro tuto obnovovací frázi. Data mohou být na serveru, který v seznamu není, nebo fráze patří k jinému účtu.",
+  "accountRestore.empty.title": "Data účtu nenalezena",
+  "accountRestore.failed.description":
+    "S některými synchronizačními servery se nepodařilo synchronizovat, takže data účtu mohou existovat, jen zatím nedorazila. Zkontrolujte seznam a zkuste to znovu.",
+  "accountRestore.failed.offline":
+    "Zařízení je offline. Připojte se k internetu a zkuste to znovu.",
+  "accountRestore.failed.title": "Účet se nepodařilo synchronizovat",
+  "accountRestore.relays.title": "Synchronizační servery",
+  "accountRestore.setupNew.confirm.cancel": "Zpět",
+  "accountRestore.setupNew.confirm.confirm": "Nastavit jako nový",
+  "accountRestore.setupNew.confirm.description":
+    "Nedostupné synchronizační servery mohou data tohoto účtu stále mít. Pokud se později synchronizují, nastavení, které zvolíte teď, je přepíše.",
+  "accountRestore.setupNew.confirm.title": "Nastavit bez dat účtu?",
+  "accountRestore.syncing": "Synchronizace dat účtu…",
   "accountRestore.title": "Obnovování účtu",
   "onboarding.account.description":
     "Uložte si frázi níže na bezpečné místo. Budete ji potřebovat, až budete chtít účet otevřít na jiném zařízení.",

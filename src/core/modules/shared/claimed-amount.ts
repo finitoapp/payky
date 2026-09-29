@@ -80,3 +80,12 @@ export const sumDistinctClaimedAmounts = (
       ).values(),
     ].reduce((sum, claim) => sum + toPaymentCurrencyAmount(claim), 0)
   )
+
+export const calculatePaymentExcess = ({
+  claims,
+  amount,
+}: {
+  readonly claims: ReadonlyArray<ClaimedAmount>
+  readonly amount: NonNegativeInteger
+}): NonNegativeInteger =>
+  NonNegativeInteger(Math.max(0, sumDistinctClaimedAmounts(claims) - amount))

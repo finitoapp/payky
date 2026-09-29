@@ -34,6 +34,7 @@ import {
 } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
+import { activeClaimedTransactionsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import {
   otherClaimedPaymentOfBillQuery,
   refundablePaymentLinesQuery,
@@ -50,6 +51,7 @@ import {
   deriveRefundableLines,
   sumRefundAmounts,
 } from "@/core/modules/refund/refund-utils.ts"
+import { calculatePaymentExcess } from "@/core/modules/shared/claimed-amount.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -212,8 +214,18 @@ export const refundPayment =
     }
 
     const refunds = await evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    const excess = calculatePaymentExcess({
+      claims: await evolu.loadQuery(
+        activeClaimedTransactionsByPaymentIdQuery(paymentId)
+      ),
+      amount: payment.amount,
+    })
     const remainingAmount = NonNegativeInteger(
-      Math.max(0, deriveRefundableAmount(payment) - sumRefundAmounts(refunds))
+      Math.max(
+        0,
+        deriveRefundableAmount({ ...payment, excess }) -
+          sumRefundAmounts(refunds)
+      )
     )
     const refundAmount = amount ?? sumRefundAmounts(refundLines)
     if (refundAmount === 0 || refundAmount > remainingAmount) {

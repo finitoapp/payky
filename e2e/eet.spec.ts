@@ -698,7 +698,9 @@ test("refunds of a paid bill reach EET as negative sales", async ({ page }) => {
   })
 })
 
-test("a payment settled twice reports the extra money", async ({ page }) => {
+test("a payment settled twice reports the extra money, and refunding it reverses only that", async ({
+  page,
+}) => {
   test.slow()
 
   await enableEetWithGeneratedCertificate(page, "en")
@@ -731,6 +733,29 @@ test("a payment settled twice reports the extra money", async ({ page }) => {
         translate("en", "eet.status.confirmed"),
       ],
       eetDeliveryTimeout
+    )
+  })
+
+  await test.step("the refund offers the extra money and reverses only it", async () => {
+    const extraSale = fakeEet.production.requests.at(1)
+    await refundFromPaymentDetail(page, "en")
+    await expect
+      .poll(lastReportedAmount, eetDeliveryTimeout)
+      .toBe(`-${extraSale?.data.celk_trzba}`)
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "paymentDetail.refunds.action"),
+      })
+    ).toBeVisible()
+  })
+
+  await test.step("the history shows the payment partly refunded", async () => {
+    await gotoPage(page, "/activity", "en", "activity.title")
+    await expect(page.getByTestId("refund-badge").first()).toHaveText(
+      new RegExp(
+        `^${translate("en", "refund.state.partial").split("{amount}")[0] ?? ""}`,
+        "u"
+      )
     )
   })
 })

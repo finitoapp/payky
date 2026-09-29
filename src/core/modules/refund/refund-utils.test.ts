@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest"
 
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import {
   NonNegativeInteger,
@@ -9,7 +11,9 @@ import {
   calculateRefundLineAmount,
   deriveRefundableAmount,
   deriveRefundableLines,
+  deriveRefundPrefillAmount,
   deriveRefundState,
+  summarizeRefundsByPayment,
 } from "./refund-utils.ts"
 
 const lineId = "line" as PaymentLineId
@@ -27,14 +31,87 @@ describe("deriveRefundableAmount", () => {
       deriveRefundableAmount({
         amount: NonNegativeInteger(7_890),
         cashReceivedAmount: NonNegativeInteger(7_900),
+        excess: NonNegativeInteger(0),
       })
     ).toBe(7_900)
     expect(
       deriveRefundableAmount({
         amount: NonNegativeInteger(7_890),
         cashReceivedAmount: null,
+        excess: NonNegativeInteger(0),
       })
     ).toBe(7_890)
+  })
+
+  test("adds what the payment received beyond its amount", () => {
+    expect(
+      deriveRefundableAmount({
+        amount: NonNegativeInteger(25_000),
+        cashReceivedAmount: NonNegativeInteger(25_000),
+        excess: NonNegativeInteger(25_000),
+      })
+    ).toBe(50_000)
+  })
+})
+
+describe("deriveRefundPrefillAmount", () => {
+  test.each([
+    { remaining: 25_000, excess: 0, prefill: 25_000 },
+    { remaining: 50_000, excess: 25_000, prefill: 25_000 },
+    { remaining: 10_000, excess: 25_000, prefill: 10_000 },
+  ])(
+    "prefills $prefill of $remaining left with $excess excess",
+    ({ remaining, excess, prefill }) => {
+      expect(
+        deriveRefundPrefillAmount({
+          remainingAmount: NonNegativeInteger(remaining),
+          excess: NonNegativeInteger(excess),
+        })
+      ).toBe(prefill)
+    }
+  )
+})
+
+describe("summarizeRefundsByPayment", () => {
+  const paymentId = "payment" as PaymentId
+  const refundOf = (amount: number, claimAmounts: ReadonlyArray<number>) => ({
+    paymentId,
+    amount: NonNegativeInteger(amount),
+    currency: "CZK" as const,
+    paymentAmount: NonNegativeInteger(25_000),
+    paymentCurrency: "CZK" as const,
+    paymentAmountSats: null,
+    cashReceivedAmount: null,
+    paymentClaims: claimAmounts.map((claimAmount, index) => ({
+      accountTransactionId: `tx-${index}` as AccountTransactionId,
+      amount: claimAmount,
+      currency: "CZK" as const,
+    })),
+  })
+
+  test("measures a returned duplicate against everything the payment received", () => {
+    const summary = summarizeRefundsByPayment([
+      refundOf(25_000, [25_000, 25_000]),
+    ]).get(paymentId)
+
+    expect(summary).toEqual({
+      refundedAmount: 25_000,
+      refundableAmount: 50_000,
+      currency: "CZK",
+    })
+    expect(summary === undefined ? null : deriveRefundState(summary)).toBe(
+      "partial"
+    )
+  })
+
+  test("reads a payment settled once and refunded in full as full", () => {
+    const summary = summarizeRefundsByPayment([refundOf(25_000, [25_000])]).get(
+      paymentId
+    )
+
+    expect(summary === undefined ? null : deriveRefundState(summary)).toBe(
+      "full"
+    )
   })
 })
 

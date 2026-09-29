@@ -72,7 +72,10 @@ import {
 } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
-import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
+import {
+  calculatePaymentExcess,
+  sumDistinctClaimedAmounts,
+} from "@/core/modules/shared/claimed-amount.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
@@ -189,22 +192,25 @@ function PaymentDetailContent({
   // different method — both real money, so the sum of its distinct claimed
   // transactions can exceed its own `amount`. See `payment.ts`'s
   // `excessAcknowledgedAt` doc comment.
-  const claimedTransactionSum = sumDistinctClaimedAmounts(
-    reconciliations.flatMap((reconciliation) =>
-      reconciliation.accountTransactionId === null
-        ? []
-        : [
-            {
-              accountTransactionId: reconciliation.accountTransactionId,
-              amount: reconciliation.transactionAmount,
-              currency: reconciliation.transactionCurrency,
-              paymentAmount: payment.amount,
-              paymentCurrency: payment.currency,
-              paymentAmountSats: payment.amountSats,
-            },
-          ]
-    )
+  const claimedTransactions = reconciliations.flatMap((reconciliation) =>
+    reconciliation.accountTransactionId === null
+      ? []
+      : [
+          {
+            accountTransactionId: reconciliation.accountTransactionId,
+            amount: reconciliation.transactionAmount,
+            currency: reconciliation.transactionCurrency,
+            paymentAmount: payment.amount,
+            paymentCurrency: payment.currency,
+            paymentAmountSats: payment.amountSats,
+          },
+        ]
   )
+  const claimedTransactionSum = sumDistinctClaimedAmounts(claimedTransactions)
+  const excess = calculatePaymentExcess({
+    claims: claimedTransactions,
+    amount: payment.amount,
+  })
   const hasExcessSettlementCollision = derivePaymentHasExcessSettlement({
     amount: payment.amount,
     excessAcknowledgedAt: payment.excessAcknowledgedAt,
@@ -397,6 +403,7 @@ function PaymentDetailContent({
 
       <PaymentDetailRefunds
         payment={payment}
+        excess={excess}
         isPaid={paymentStatus === "paid"}
         defaultMethod={
           paymentMethodKinds.includes("cashRegister")

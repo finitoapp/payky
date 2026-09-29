@@ -485,7 +485,7 @@ describe("eet reporting job: delivery", () => {
     })
     await configureEet(context, { environment: "playground" })
     context.responder.answerNext({ type: "error", code: 8, message: "Later" })
-    await using job = await startJob(context)
+    await using job = await startJob(context, { retryBaseDelayMs: 250 })
     const sandboxPayment = await reportOnePayment(context)
     await expect.poll(() => context.responder.requests).toHaveLength(1)
     await using run = testCreateRun(context.deps)

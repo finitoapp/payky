@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core"
 import { Link, useNavigate } from "@tanstack/react-router"
+import { useAtomValue } from "jotai"
 import {
   BanknoteIcon,
   CreditCardIcon,
@@ -12,6 +13,7 @@ import { LayoutGroup, motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { RouteMessage } from "@/components/route-message.tsx"
 import {
@@ -116,6 +118,7 @@ export function PaymentWaitPage({ paymentId }: { readonly paymentId: string }) {
 
 function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const appRun = useAppRun()
+  const deviceId = useAtomValue(accountAtom).device.id
   const console = useConsole()
   const { t } = useTranslation()
   const locale = useLocale()
@@ -498,6 +501,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         markPaymentPaidCash({
           paymentId,
           accountId: cashRegisterAccountId,
+          deviceId,
           receivedAmount,
         })
       )
@@ -523,6 +527,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         markPaymentPaidIban({
           paymentId,
           accountId: ibanAccountId,
+          deviceId,
         })
       )
 
@@ -565,6 +570,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         payPaymentWithSwitchioCard({
           paymentId,
           accountId: cardAccountId,
+          deviceId,
           retryUnresolved,
         })
       )

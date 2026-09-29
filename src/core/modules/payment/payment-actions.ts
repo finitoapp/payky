@@ -946,9 +946,13 @@ export const payPaymentWithBoltCard =
  * gone. The echoed request id finds the payment the attempt was made for.
  */
 export const settleRestoredSwitchioCardPayment =
-  (
-    restored: SwitchioNativePayResult
-  ): Task<
+  ({
+    restored,
+    deviceId,
+  }: {
+    readonly restored: SwitchioNativePayResult
+    readonly deviceId?: DeviceId | null
+  }): Task<
     PaymentId,
     SettleRestoredSwitchioCardPaymentError,
     EvoluDep & EvoluOwnerIdDep & DateDep
@@ -973,6 +977,7 @@ export const settleRestoredSwitchioCardPayment =
       recordSwitchioTerminalOutcome({
         paymentId: cardRow.id,
         accountId: cardRow.accountId,
+        deviceId,
         transactionId,
         terminalResult: interpretSwitchioPaymentResult(restored),
       })

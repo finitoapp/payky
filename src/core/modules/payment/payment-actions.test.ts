@@ -3175,13 +3175,15 @@ describe("payment actions", () => {
       await expect(
         run(
           settleRestoredSwitchioCardPayment({
-            resultCode: -1,
-            transactionId,
-            transactionResult: JSON.stringify({
+            restored: {
+              resultCode: -1,
               transactionId,
-              responseCode: "OK",
-              authCode: "998877",
-            }),
+              transactionResult: JSON.stringify({
+                transactionId,
+                responseCode: "OK",
+                authCode: "998877",
+              }),
+            },
           })
         )
       ).resolves.toEqual({ ok: true, value: paymentId })
@@ -3205,9 +3207,11 @@ describe("payment actions", () => {
 
       const result = await ctx.run(
         settleRestoredSwitchioCardPayment({
-          resultCode: -1,
-          transactionId: "unknown",
-          transactionResult: JSON.stringify({ responseCode: "OK" }),
+          restored: {
+            resultCode: -1,
+            transactionId: "unknown",
+            transactionResult: JSON.stringify({ responseCode: "OK" }),
+          },
         })
       )
 

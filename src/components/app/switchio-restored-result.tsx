@@ -1,8 +1,10 @@
 import { App as CapacitorApp } from "@capacitor/app"
 import { Capacitor } from "@capacitor/core"
+import { useAtomValue } from "jotai"
 import { useEffect } from "react"
 import { toast } from "sonner"
 
+import { accountAtom } from "@/atoms/account.ts"
 import { settleRestoredSwitchioCardPayment } from "@/core/modules/payment/payment-actions.ts"
 import type { SettleRestoredSwitchioCardPaymentError } from "@/core/modules/payment/payment-errors.ts"
 import {
@@ -36,6 +38,7 @@ const restoredErrorKeys = {
  */
 export function SwitchioRestoredResult() {
   const appRun = useAppRun()
+  const deviceId = useAtomValue(accountAtom).device.id
   const console = useConsole()
   const { t } = useTranslation()
 
@@ -57,7 +60,10 @@ export function SwitchioRestoredResult() {
 
         await using run = appRun()
         const result = await run(
-          settleRestoredSwitchioCardPayment(restored.data)
+          settleRestoredSwitchioCardPayment({
+            restored: restored.data,
+            deviceId,
+          })
         )
         if (result.ok) {
           toast.success(t("paymentWait.cardPaid.restored.paid"))
@@ -77,7 +83,7 @@ export function SwitchioRestoredResult() {
         }
       })()
     }
-  }, [appRun, console, t])
+  }, [appRun, console, deviceId, t])
 
   return null
 }

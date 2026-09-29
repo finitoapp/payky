@@ -25,10 +25,17 @@ import {
   EetWarningSchema,
 } from "@/core/modules/eet/eet-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { ReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-types.ts"
 import type { RefundId } from "@/core/modules/refund/refund-types.ts"
 import {
+  type ClaimedAmount,
+  sumDistinctClaimedAmounts,
+  toPaymentCurrencyAmount,
+} from "@/core/modules/shared/claimed-amount.ts"
+import {
+  type AccountKind,
   type FiatCurrency,
-  type NonNegativeInteger,
+  NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 
@@ -37,6 +44,15 @@ export const eetSettingsId: EetSettingsId =
 
 export const createEetSaleId = (paymentId: PaymentId): EetSaleId =>
   createIdFromString<"EetSale">(`eetSale:${paymentId}`)
+
+export const createEetExtraSaleId = ({
+  paymentId,
+  extraFrom,
+}: {
+  readonly paymentId: PaymentId
+  readonly extraFrom: NonNegativeInteger
+}): EetSaleId =>
+  createIdFromString<"EetSale">(`eetSale:${paymentId}:extra:${extraFrom}`)
 
 export const createEetReversalId = (refundId: RefundId): EetReversalId =>
   createIdFromString<"EetReversal">(`eetReversal:${refundId}`)
@@ -73,6 +89,70 @@ export const getEetReversalStartsAt = ({
   readonly saleConfirmedAt: EetDateTime
 }): TimestampMs =>
   TimestampMs(Math.max(refundedAt, parseEetDateTime(saleConfirmedAt)))
+
+export interface EetExtraClaim extends ClaimedAmount {
+  readonly claimId: ReconciliationClaimId
+  readonly claimedAt: TimestampMs
+  readonly deviceId: DeviceId | null
+  readonly method: AccountKind
+}
+
+export interface EetExtraSaleDue {
+  readonly extraFrom: NonNegativeInteger
+  readonly amount: NonNegativeInteger
+  readonly claim: EetExtraClaim
+}
+
+export const calculateEetSettlementValue = ({
+  settlement,
+  amount,
+}: {
+  readonly settlement: ClaimedAmount
+  readonly amount: NonNegativeInteger
+}): NonNegativeInteger =>
+  NonNegativeInteger(Math.min(amount, toPaymentCurrencyAmount(settlement)))
+
+export const deriveDueEetExtraSale = ({
+  claims,
+  amount,
+  enabledAt,
+  reportedExtra,
+}: {
+  readonly claims: ReadonlyArray<EetExtraClaim>
+  readonly amount: NonNegativeInteger
+  readonly enabledAt: TimestampMs
+  readonly reportedExtra: NonNegativeInteger
+}): EetExtraSaleDue | null => {
+  const ordered = claims.toSorted(
+    (left, right) =>
+      left.claimedAt - right.claimedAt ||
+      left.claimId.localeCompare(right.claimId)
+  )
+  const firstClaim = ordered.at(0)
+  const latestClaim = ordered.at(-1)
+  if (firstClaim === undefined || latestClaim === undefined) return null
+
+  const saleValue = calculateEetSettlementValue({
+    settlement: firstClaim,
+    amount,
+  })
+  const extraOf = (counted: ReadonlyArray<EetExtraClaim>) =>
+    Math.max(0, sumDistinctClaimedAmounts(counted) - saleValue)
+  const extraFrom = NonNegativeInteger(
+    Math.max(
+      reportedExtra,
+      extraOf(ordered.filter(({ claimedAt }) => claimedAt < enabledAt))
+    )
+  )
+  const extra = extraOf(ordered)
+  if (extra <= extraFrom) return null
+
+  return {
+    extraFrom,
+    amount: NonNegativeInteger(extra - extraFrom),
+    claim: latestClaim,
+  }
+}
 
 interface EetAttempts {
   readonly attemptStartedAt: TimestampMs | null

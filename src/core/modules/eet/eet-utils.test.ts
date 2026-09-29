@@ -1,20 +1,25 @@
 import { describe, expect, test } from "vitest"
 
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   type EetDateTime,
   EetEstablishmentIdSchema,
 } from "@/core/modules/eet/eet-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { ReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-types.ts"
 import {
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import {
   bytesToEetBase64,
+  createEetExtraSaleId,
   createEetSaleId,
+  deriveDueEetExtraSale,
   deriveEetCertificateExpiry,
   deriveEetSaleStatus,
+  type EetExtraClaim,
   eetBase64ToBytes,
   formatEetDateTime,
   getEetRecordingDeviceWaitEndsAt,
@@ -429,5 +434,164 @@ describe("parseEetWarnings", () => {
   test("reads a broken value as no warnings", () => {
     expect(parseEetWarnings("not json")).toEqual([])
     expect(parseEetWarnings('[{"code":"x"}]')).toEqual([])
+  })
+})
+
+describe("createEetExtraSaleId", () => {
+  const paymentId = "payment-1" as PaymentId
+
+  test("differs from the payment's sale and between levels", () => {
+    const first = createEetExtraSaleId({
+      paymentId,
+      extraFrom: NonNegativeInteger(0),
+    })
+    const second = createEetExtraSaleId({
+      paymentId,
+      extraFrom: NonNegativeInteger(25_000),
+    })
+
+    expect(first).not.toBe(createEetSaleId(paymentId))
+    expect(first).not.toBe(second)
+    expect(
+      createEetExtraSaleId({ paymentId, extraFrom: NonNegativeInteger(0) })
+    ).toBe(first)
+  })
+})
+
+describe("deriveDueEetExtraSale", () => {
+  const enabledAt = TimestampMs(1_000_000)
+  const claim = (fields: {
+    readonly claimId: string
+    readonly amount: number
+    readonly claimedAt: number
+  }): EetExtraClaim => ({
+    claimId: fields.claimId as ReconciliationClaimId,
+    accountTransactionId: `tx-${fields.claimId}` as AccountTransactionId,
+    amount: fields.amount,
+    currency: "CZK",
+    paymentAmount: NonNegativeInteger(25_000),
+    paymentCurrency: "CZK",
+    paymentAmountSats: null,
+    claimedAt: TimestampMs(fields.claimedAt),
+    deviceId: null,
+    method: "iban",
+  })
+  const card = claim({ claimId: "a", amount: 25_000, claimedAt: 2_000_000 })
+  const bank = claim({ claimId: "b", amount: 25_000, claimedAt: 3_000_000 })
+
+  test("reports a second settlement from the settlement that brought it", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [bank, card],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toEqual({ extraFrom: 0, amount: 25_000, claim: bank })
+  })
+
+  test("reports only the increase over what is already reported", () => {
+    const more = claim({ claimId: "c", amount: 10_000, claimedAt: 4_000_000 })
+
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank, more],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(25_000),
+      })
+    ).toEqual({ extraFrom: 25_000, amount: 10_000, claim: more })
+  })
+
+  test("has nothing due once the extra money is reported", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(25_000),
+      })
+    ).toBeNull()
+  })
+
+  test("reports the rest of a split from the settlement that brought it", () => {
+    const rest = claim({ claimId: "b", amount: 10_000, claimedAt: 3_000_000 })
+
+    expect(
+      deriveDueEetExtraSale({
+        claims: [
+          rest,
+          claim({ claimId: "a", amount: 15_000, claimedAt: 2_000_000 }),
+        ],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toEqual({ extraFrom: 0, amount: 10_000, claim: rest })
+  })
+
+  test("has nothing due while the rest of a short settlement has not arrived", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [claim({ claimId: "a", amount: 15_000, claimedAt: 2_000_000 })],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toBeNull()
+  })
+
+  test("reports the part of one transfer above the payment", () => {
+    const transfer = claim({
+      claimId: "a",
+      amount: 100_000,
+      claimedAt: 2_000_000,
+    })
+
+    expect(
+      deriveDueEetExtraSale({
+        claims: [transfer],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toEqual({ extraFrom: 0, amount: 75_000, claim: transfer })
+  })
+
+  test("never reports extra money brought before EET was enabled", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank],
+        amount: NonNegativeInteger(25_000),
+        enabledAt: TimestampMs(3_500_000),
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toBeNull()
+  })
+
+  test("reports extra money brought after EET was enabled again", () => {
+    const more = claim({ claimId: "c", amount: 10_000, claimedAt: 5_000_000 })
+
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank, more],
+        amount: NonNegativeInteger(25_000),
+        enabledAt: TimestampMs(4_500_000),
+        reportedExtra: NonNegativeInteger(25_000),
+      })
+    ).toEqual({ extraFrom: 25_000, amount: 10_000, claim: more })
+  })
+
+  test("breaks a tie on the settlement time by claim id", () => {
+    const tied = claim({ claimId: "c", amount: 25_000, claimedAt: 3_000_000 })
+
+    expect(
+      deriveDueEetExtraSale({
+        claims: [tied, card, bank],
+        amount: NonNegativeInteger(25_000),
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })?.claim
+    ).toBe(tied)
   })
 })

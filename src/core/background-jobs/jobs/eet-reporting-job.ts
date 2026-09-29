@@ -12,6 +12,7 @@ import type {
 } from "@/core/integrations/eet/eet-client.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
+  createEetExtraSale,
   createEetReversal,
   createEetSale,
   type DeliverEetReversalError,
@@ -19,6 +20,7 @@ import {
   deliverEetSale,
 } from "@/core/modules/eet/eet-actions.ts"
 import {
+  eetExtraClaimsQuery,
   eetPaymentsToReportQuery,
   eetRefundsToReverseQuery,
   eetReversalsToDeliverQuery,
@@ -26,11 +28,15 @@ import {
 } from "@/core/modules/eet/eet-queries.ts"
 import type { EetReversalId, EetSaleId } from "@/core/modules/eet/eet-types.ts"
 import {
+  calculateEetSettlementValue,
+  deriveDueEetExtraSale,
   EET_PRIORITY_PERIOD_MS,
   getEetReversalStartsAt,
   parseEetDateTime,
 } from "@/core/modules/eet/eet-utils.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 
 type EetRecordId = EetSaleId | EetReversalId
 
@@ -116,6 +122,9 @@ class EetReporting {
       evolu.subscribeQuery(eetPaymentsToReportQuery)(() => {
         this.queueCreation()
       }),
+      evolu.subscribeQuery(eetExtraClaimsQuery)(() => {
+        this.queueCreation()
+      }),
       evolu.subscribeQuery(eetSalesToDeliverQuery)(() => {
         this.queueDelivery()
       }),
@@ -184,7 +193,23 @@ class EetReporting {
         continue
       }
       const saleId = await this.run.ok(
-        createEetSale({ payment, deviceId: recordingDeviceId })
+        createEetSale({
+          payment: {
+            ...payment,
+            firstSettlementValue: calculateEetSettlementValue({
+              settlement: {
+                accountTransactionId: payment.firstClaimTransactionId,
+                amount: payment.firstClaimAmount,
+                currency: payment.firstClaimCurrency,
+                paymentAmount: payment.amount,
+                paymentCurrency: payment.currency,
+                paymentAmountSats: payment.paymentAmountSats,
+              },
+              amount: payment.amount,
+            }),
+          },
+          deviceId: recordingDeviceId,
+        })
       )
       if (saleId !== null) {
         this.run.deps.console.info("Created EET sale.", {
@@ -195,8 +220,12 @@ class EetReporting {
     }
 
     const refunds = await evolu.loadQuery(eetRefundsToReverseQuery)
+    const paymentsWithUnreportedExtra = await this.createExtraSales()
+    if (paymentsWithUnreportedExtra === null) return
+
     for (const refund of refunds) {
       if (this.queue.isDisposed) return
+      if (paymentsWithUnreportedExtra.has(refund.paymentId)) continue
       if (refund.deviceId !== this.run.deps.deviceId) {
         if (refund.saleConfirmedAt === null) continue
         const takeoverAt = this.getTakeoverAt(
@@ -221,6 +250,58 @@ class EetReporting {
         })
       }
     }
+  }
+
+  private async createExtraSales(): Promise<ReadonlySet<PaymentId> | null> {
+    const claims = await this.run.deps.evolu.loadQuery(eetExtraClaimsQuery)
+    const unreported = new Set<PaymentId>()
+
+    for (const paymentClaims of Map.groupBy(
+      claims,
+      ({ paymentId }) => paymentId
+    ).values()) {
+      if (this.queue.isDisposed) return null
+      const [payment] = paymentClaims
+      if (payment === undefined) continue
+      const due = deriveDueEetExtraSale({
+        claims: paymentClaims,
+        amount: payment.paymentAmount,
+        enabledAt: payment.enabledAt,
+        reportedExtra: NonNegativeInteger(payment.reportedExtra ?? 0),
+      })
+      if (due === null) continue
+
+      unreported.add(payment.paymentId)
+      const recordingDeviceId = due.claim.deviceId ?? payment.paymentDeviceId
+      if (recordingDeviceId === null) continue
+      const takeoverAt = this.getTakeoverAt(
+        recordingDeviceId,
+        due.claim.claimedAt
+      )
+      if (takeoverAt !== null) {
+        this.wakeUpAt(takeoverAt)
+        continue
+      }
+      const saleId = await this.run.ok(
+        createEetExtraSale({
+          payment: {
+            id: payment.paymentId,
+            billId: payment.billId,
+            currency: payment.paymentCurrency,
+          },
+          due,
+          deviceId: recordingDeviceId,
+        })
+      )
+      if (saleId === null) continue
+      unreported.delete(payment.paymentId)
+      this.run.deps.console.info("Created EET extra sale.", {
+        paymentId: payment.paymentId,
+        saleId,
+      })
+    }
+
+    return unreported
   }
 
   private async deliverSales(): Promise<void> {

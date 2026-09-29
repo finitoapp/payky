@@ -18,6 +18,8 @@ export const csPayment = {
   "paymentDetail.eet.retry": "Odeslat do EET znovu",
   "paymentDetail.eet.retry.alreadyConfirmed": "EET už tuto tržbu potvrdila.",
   "paymentDetail.eet.retry.busy": "Tržba se právě odesílá.",
+  "paymentDetail.eet.waitingForDevice":
+    "Do {time} ji odešle jen zařízení, které platbu přijalo.",
   "paymentDetail.eet.retry.confirmed": "EET tržbu potvrdila.",
   "paymentDetail.eet.retry.failed": "Tržbu se nepodařilo odeslat.",
   "paymentDetail.eet.retry.noCertificate":
@@ -36,6 +38,8 @@ export const csPayment = {
   "paymentDetail.eet.reversal.unsupported.taxpayer":
     "EET teď eviduje za jiného poplatníka než tržbu, storno se proto neodešle.",
   "paymentDetail.eet.reversal.waiting": "Čeká, až EET potvrdí původní tržbu.",
+  "paymentDetail.eet.reversal.waitingForDevice":
+    "Do {time} ho odešle jen zařízení, které vrácení zaznamenalo.",
   "paymentDetail.eet.saleAt": "Datum a čas tržby",
   "paymentDetail.eet.sequenceNumber": "Pořadové číslo",
   "paymentDetail.eet.test":

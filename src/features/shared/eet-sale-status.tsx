@@ -1,6 +1,7 @@
 import { sqliteTrue } from "@evolu/common"
 
 import { Badge } from "@/components/ui/badge.tsx"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   EetAttemptResult,
   EetDateTime,
@@ -10,9 +11,12 @@ import type {
 } from "@/core/modules/eet/eet-types.ts"
 import {
   deriveEetSaleStatus,
+  getEetPriorityEndsAt,
+  getEetRecordingDeviceWaitEndsAt,
   getEetSaleOverdueAt,
   isEetSaleOverdue,
 } from "@/core/modules/eet/eet-utils.ts"
+import type { TimestampMs } from "@/core/modules/shared/schema.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -57,6 +61,34 @@ export function useEetSaleStatus(sale: EetSaleStatusFields) {
     status,
     isOverdue: isEetSaleOverdue({ status, saleAt: sale.saleAt, now }),
   }
+}
+
+export function useEetRecordingDeviceWait({
+  attempts,
+  recordingDeviceId,
+  deviceId,
+  startsAt,
+}: {
+  readonly attempts: {
+    readonly attemptStartedAt: TimestampMs | null
+    readonly lastAttemptAt: TimestampMs | null
+  }
+  readonly recordingDeviceId: DeviceId
+  readonly deviceId: DeviceId
+  readonly startsAt: TimestampMs | null
+}): TimestampMs | null {
+  const now = useNow([
+    startsAt === null ? null : getEetPriorityEndsAt(startsAt),
+  ])
+  return startsAt === null
+    ? null
+    : getEetRecordingDeviceWaitEndsAt({
+        attempts,
+        recordingDeviceId,
+        deviceId,
+        startsAt,
+        now,
+      })
 }
 
 export function EetSaleStatusBadge({

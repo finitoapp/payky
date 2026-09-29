@@ -52,11 +52,27 @@ const EET_OVERDUE_AFTER_HOURS = 48
 
 const EET_CERTIFICATE_EXPIRY_WARNING_DAYS = 21
 
+export const EET_PRIORITY_PERIOD_MS = 10 * 60 * 1000
+
+const EET_FIRST_SENDING_PERIOD_MS = 5 * 60 * 1000
+
 export const toEetCashRegisterId = (deviceId: DeviceId): EetCashRegisterId =>
   EetCashRegisterIdSchema.decode(deviceId.slice(0, 20))
 
 export const formatEetDateTime = (date: Date): EetDateTime =>
   EetDateTimeSchema.decode(format(date, "yyyy-MM-dd'T'HH:mm:ssXXX"))
+
+export const parseEetDateTime = (value: EetDateTime): TimestampMs =>
+  TimestampMs(parseISO(value).getTime())
+
+export const getEetReversalStartsAt = ({
+  refundedAt,
+  saleConfirmedAt,
+}: {
+  readonly refundedAt: TimestampMs
+  readonly saleConfirmedAt: EetDateTime
+}): TimestampMs =>
+  TimestampMs(Math.max(refundedAt, parseEetDateTime(saleConfirmedAt)))
 
 interface EetAttempts {
   readonly attemptStartedAt: TimestampMs | null
@@ -74,6 +90,47 @@ export const hasLostEetAnswer = ({
 }: EetAttempts): boolean =>
   attemptStartedAt !== null &&
   (lastAttemptAt === null || attemptStartedAt > lastAttemptAt)
+
+export const isEetFirstSending = ({
+  attempts,
+  recordingDeviceId,
+  deviceId,
+  startsAt,
+  now,
+}: {
+  readonly attempts: EetAttempts
+  readonly recordingDeviceId: DeviceId
+  readonly deviceId: DeviceId
+  readonly startsAt: TimestampMs
+  readonly now: Date
+}): boolean =>
+  !hasEetAttempt(attempts) &&
+  recordingDeviceId === deviceId &&
+  now.getTime() <= startsAt + EET_FIRST_SENDING_PERIOD_MS
+
+export const getEetPriorityEndsAt = (startsAt: TimestampMs): TimestampMs =>
+  TimestampMs(startsAt + EET_PRIORITY_PERIOD_MS)
+
+export const getEetRecordingDeviceWaitEndsAt = ({
+  attempts,
+  recordingDeviceId,
+  deviceId,
+  startsAt,
+  now,
+}: {
+  readonly attempts: EetAttempts
+  readonly recordingDeviceId: DeviceId
+  readonly deviceId: DeviceId
+  readonly startsAt: TimestampMs
+  readonly now: Date
+}): TimestampMs | null => {
+  const endsAt = getEetPriorityEndsAt(startsAt)
+  return recordingDeviceId === deviceId ||
+    hasEetAttempt(attempts) ||
+    now.getTime() >= endsAt
+    ? null
+    : endsAt
+}
 
 export const bytesToEetBase64 = (bytes: Uint8Array): EetBase64 =>
   EetBase64Schema.decode(btoa(String.fromCharCode(...bytes)))

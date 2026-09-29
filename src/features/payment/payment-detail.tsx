@@ -1,6 +1,7 @@
 import type { InferRow } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
 import { parseISO } from "date-fns"
+import { useAtomValue } from "jotai"
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
+import { accountAtom } from "@/atoms/account.ts"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import {
@@ -52,7 +54,10 @@ import {
   retryEetSale,
 } from "@/core/modules/eet/eet-actions.ts"
 import { eetSaleByPaymentIdQuery } from "@/core/modules/eet/eet-queries.ts"
-import { parseEetWarnings } from "@/core/modules/eet/eet-utils.ts"
+import {
+  parseEetDateTime,
+  parseEetWarnings,
+} from "@/core/modules/eet/eet-utils.ts"
 import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
@@ -96,6 +101,7 @@ import {
 } from "@/features/payment/payment-status-display.tsx"
 import {
   EetSaleStatusBadge,
+  useEetRecordingDeviceWait,
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -889,10 +895,18 @@ function PaymentDetailEetSaleCard({
   const locale = useLocale()
   const runToast = useRunToast()
   const [retrying, setRetrying] = useState(false)
+  const deviceId = useAtomValue(accountAtom).device.id
   const { status, isOverdue } = useEetSaleStatus(sale)
+  const waitEndsAt = useEetRecordingDeviceWait({
+    attempts: sale,
+    recordingDeviceId: sale.deviceId,
+    deviceId,
+    startsAt: parseEetDateTime(sale.saleAt),
+  })
   const warnings =
     sale.warningsJson === null ? [] : parseEetWarnings(sale.warningsJson)
-  const canRetry = status === "pending" || status === "rejected"
+  const canRetry =
+    (status === "pending" || status === "rejected") && waitEndsAt === null
   const lastError =
     sale.pok !== null || sale.lastErrorMessage === null
       ? null
@@ -906,7 +920,7 @@ function PaymentDetailEetSaleCard({
   const retry = async () => {
     setRetrying(true)
     await runToast(async (run) => {
-      const result = await run(retryEetSale(sale.id))
+      const result = await run(retryEetSale({ id: sale.id, deviceId }))
       if (!result.ok) return retryErrorKeys[result.error.type]
       const outcomeKey = retryOutcomeKeys[result.value.type]
       if (result.value.type === "rejected") return outcomeKey
@@ -938,6 +952,13 @@ function PaymentDetailEetSaleCard({
             {t("paymentDetail.eet.unsupported")}
           </p>
         ) : null}
+        {waitEndsAt === null ? null : (
+          <p className="text-sm text-muted-foreground">
+            {t("paymentDetail.eet.waitingForDevice", {
+              time: formatTime(new Date(waitEndsAt), locale),
+            })}
+          </p>
+        )}
         <PaymentDetailCopyRow
           label={t("paymentDetail.eet.pok")}
           value={sale.pok}

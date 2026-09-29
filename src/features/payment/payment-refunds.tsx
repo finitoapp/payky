@@ -1,6 +1,6 @@
 import type { InferRow } from "@evolu/common"
 import { parseISO } from "date-fns"
-import { useStore } from "jotai"
+import { useAtomValue, useStore } from "jotai"
 import { MinusIcon, PlusIcon, RotateCwIcon, Undo2Icon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -39,6 +39,10 @@ import {
 } from "@/core/modules/eet/eet-actions.ts"
 import { eetReversalsByPaymentIdQuery } from "@/core/modules/eet/eet-queries.ts"
 import type { EetUnsupportedReason } from "@/core/modules/eet/eet-types.ts"
+import {
+  getEetReversalStartsAt,
+  parseEetDateTime,
+} from "@/core/modules/eet/eet-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import {
@@ -73,6 +77,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import {
   EetSaleStatusBadge,
+  useEetRecordingDeviceWait,
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
@@ -81,7 +86,7 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
+import { formatDateTime, formatMoney, formatTime } from "@/lib/format-utils.ts"
 
 type RefundMode = "amount" | "items"
 
@@ -548,10 +553,25 @@ function RefundEetReversal({
   const locale = useLocale()
   const runToast = useRunToast()
   const [retrying, setRetrying] = useState(false)
+  const deviceId = useAtomValue(accountAtom).device.id
   const { status, isOverdue } = useEetSaleStatus(reversal)
   const isWaitingForSale = status === "pending" && reversal.salePok === null
+  const waitEndsAt = useEetRecordingDeviceWait({
+    attempts: reversal,
+    recordingDeviceId: reversal.deviceId,
+    deviceId,
+    startsAt:
+      reversal.saleConfirmedAt === null
+        ? null
+        : getEetReversalStartsAt({
+            refundedAt: parseEetDateTime(reversal.saleAt),
+            saleConfirmedAt: reversal.saleConfirmedAt,
+          }),
+  })
   const canRetry =
-    !isWaitingForSale && (status === "pending" || status === "rejected")
+    !isWaitingForSale &&
+    waitEndsAt === null &&
+    (status === "pending" || status === "rejected")
   const lastError =
     reversal.pok !== null || reversal.lastErrorMessage === null
       ? null
@@ -565,7 +585,9 @@ function RefundEetReversal({
   const retry = async () => {
     setRetrying(true)
     await runToast(async (run) => {
-      const result = await run(deliverEetReversal(reversal.id))
+      const result = await run(
+        deliverEetReversal({ id: reversal.id, deviceId })
+      )
       if (!result.ok) return reversalRetryErrorKeys[result.error.type]
       const outcomeKey = reversalRetryOutcomeKeys[result.value.type]
       if (result.value.type === "rejected") return outcomeKey
@@ -599,6 +621,13 @@ function RefundEetReversal({
           {t("paymentDetail.eet.reversal.waiting")}
         </p>
       ) : null}
+      {waitEndsAt === null ? null : (
+        <p className="text-muted-foreground">
+          {t("paymentDetail.eet.reversal.waitingForDevice", {
+            time: formatTime(new Date(waitEndsAt), locale),
+          })}
+        </p>
+      )}
       {isOverdue ? (
         <p className="text-destructive">{t("paymentDetail.eet.overdue")}</p>
       ) : null}

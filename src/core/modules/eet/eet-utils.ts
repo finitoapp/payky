@@ -58,6 +58,23 @@ export const toEetCashRegisterId = (deviceId: DeviceId): EetCashRegisterId =>
 export const formatEetDateTime = (date: Date): EetDateTime =>
   EetDateTimeSchema.decode(format(date, "yyyy-MM-dd'T'HH:mm:ssXXX"))
 
+interface EetAttempts {
+  readonly attemptStartedAt: TimestampMs | null
+  readonly lastAttemptAt: TimestampMs | null
+}
+
+export const hasEetAttempt = ({
+  attemptStartedAt,
+  lastAttemptAt,
+}: EetAttempts): boolean => attemptStartedAt !== null || lastAttemptAt !== null
+
+export const hasLostEetAnswer = ({
+  attemptStartedAt,
+  lastAttemptAt,
+}: EetAttempts): boolean =>
+  attemptStartedAt !== null &&
+  (lastAttemptAt === null || attemptStartedAt > lastAttemptAt)
+
 export const bytesToEetBase64 = (bytes: Uint8Array): EetBase64 =>
   EetBase64Schema.decode(btoa(String.fromCharCode(...bytes)))
 

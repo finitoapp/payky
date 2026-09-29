@@ -10,6 +10,7 @@ import type {
   EetApiDep,
   EetDeliveryOutcome,
 } from "@/core/integrations/eet/eet-client.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   createEetReversal,
   createEetSale,
@@ -24,6 +25,11 @@ import {
   eetSalesToDeliverQuery,
 } from "@/core/modules/eet/eet-queries.ts"
 import type { EetReversalId, EetSaleId } from "@/core/modules/eet/eet-types.ts"
+import {
+  EET_PRIORITY_PERIOD_MS,
+  getEetReversalStartsAt,
+  parseEetDateTime,
+} from "@/core/modules/eet/eet-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 
 type EetRecordId = EetSaleId | EetReversalId
@@ -51,15 +57,20 @@ interface SaleBackoff {
 export const createEetReportingJob =
   ({
     retryBaseDelayMs = EET_RETRY_BASE_DELAY_MS,
+    priorityPeriodMs = EET_PRIORITY_PERIOD_MS,
   }: {
     readonly retryBaseDelayMs?: number
+    readonly priorityPeriodMs?: number
   } = {}): AppBackgroundJob =>
   (run) => {
     const jobRun = run.create({
       ...run.deps,
       console: run.deps.console.child("eet-reporting-job"),
     })
-    const reporting = new EetReporting(jobRun, retryBaseDelayMs)
+    const reporting = new EetReporting(jobRun, {
+      retryBaseDelayMs,
+      priorityPeriodMs,
+    })
 
     reporting.start()
 
@@ -75,28 +86,43 @@ export const startEetReportingJob = createEetReportingJob()
 class EetReporting {
   private readonly run: Run<AppBackgroundJobContext>
   private readonly retryBaseDelayMs: number
+  private readonly priorityPeriodMs: number
   private readonly backoffs = new Map<EetRecordId, SaleBackoff>()
+  private takeover: {
+    readonly at: number
+    readonly timer: ReturnType<typeof setTimeout>
+  } | null = null
   private onlineCount = 0
   private readonly unsubscribes: ReadonlyArray<() => void>
   private readonly queue = createKeyedTaskQueue<"create" | "deliver">({
     onError: (error) => this.run.deps.onError(error),
   })
 
-  constructor(run: Run<AppBackgroundJobContext>, retryBaseDelayMs: number) {
+  constructor(
+    run: Run<AppBackgroundJobContext>,
+    {
+      retryBaseDelayMs,
+      priorityPeriodMs,
+    }: {
+      readonly retryBaseDelayMs: number
+      readonly priorityPeriodMs: number
+    }
+  ) {
     this.run = run
     this.retryBaseDelayMs = retryBaseDelayMs
-    const { evolu, deviceId, connectivity } = run.deps
+    this.priorityPeriodMs = priorityPeriodMs
+    const { evolu, connectivity } = run.deps
     this.unsubscribes = [
-      evolu.subscribeQuery(eetPaymentsToReportQuery(deviceId))(() => {
+      evolu.subscribeQuery(eetPaymentsToReportQuery)(() => {
         this.queueCreation()
       }),
-      evolu.subscribeQuery(eetSalesToDeliverQuery(deviceId))(() => {
+      evolu.subscribeQuery(eetSalesToDeliverQuery)(() => {
         this.queueDelivery()
       }),
-      evolu.subscribeQuery(eetRefundsToReverseQuery(deviceId))(() => {
+      evolu.subscribeQuery(eetRefundsToReverseQuery)(() => {
         this.queueCreation()
       }),
-      evolu.subscribeQuery(eetReversalsToDeliverQuery(deviceId))(() => {
+      evolu.subscribeQuery(eetReversalsToDeliverQuery)(() => {
         this.queueDelivery()
       }),
       connectivity.onOnline(() => {
@@ -118,6 +144,8 @@ class EetReporting {
       if (timer !== null) clearTimeout(timer)
     }
     this.backoffs.clear()
+    if (this.takeover !== null) clearTimeout(this.takeover.timer)
+    this.takeover = null
     await this.queue[Symbol.asyncDispose]()
   }
 
@@ -139,12 +167,25 @@ class EetReporting {
   }
 
   private async createSales(): Promise<void> {
-    const { evolu, deviceId } = this.run.deps
-    const payments = await evolu.loadQuery(eetPaymentsToReportQuery(deviceId))
+    const { evolu } = this.run.deps
+    const payments = await evolu.loadQuery(eetPaymentsToReportQuery)
 
     for (const payment of payments) {
       if (this.queue.isDisposed) return
-      const saleId = await this.run.ok(createEetSale({ payment, deviceId }))
+      const recordingDeviceId =
+        payment.firstClaimDeviceId ?? payment.paymentDeviceId
+      if (recordingDeviceId === null) continue
+      const takeoverAt = this.getTakeoverAt(
+        recordingDeviceId,
+        payment.firstClaimedAt
+      )
+      if (takeoverAt !== null) {
+        this.wakeUpAt(takeoverAt)
+        continue
+      }
+      const saleId = await this.run.ok(
+        createEetSale({ payment, deviceId: recordingDeviceId })
+      )
       if (saleId !== null) {
         this.run.deps.console.info("Created EET sale.", {
           paymentId: payment.id,
@@ -153,11 +194,25 @@ class EetReporting {
       }
     }
 
-    const refunds = await evolu.loadQuery(eetRefundsToReverseQuery(deviceId))
+    const refunds = await evolu.loadQuery(eetRefundsToReverseQuery)
     for (const refund of refunds) {
       if (this.queue.isDisposed) return
+      if (refund.deviceId !== this.run.deps.deviceId) {
+        if (refund.saleConfirmedAt === null) continue
+        const takeoverAt = this.getTakeoverAt(
+          refund.deviceId,
+          getEetReversalStartsAt({
+            refundedAt: refund.refundedAt,
+            saleConfirmedAt: refund.saleConfirmedAt,
+          })
+        )
+        if (takeoverAt !== null) {
+          this.wakeUpAt(takeoverAt)
+          continue
+        }
+      }
       const reversalId = await this.run.ok(
-        createEetReversal({ refund, deviceId })
+        createEetReversal({ refund, deviceId: refund.deviceId })
       )
       if (reversalId !== null) {
         this.run.deps.console.info("Created EET reversal.", {
@@ -170,19 +225,68 @@ class EetReporting {
 
   private async deliverSales(): Promise<void> {
     const { evolu, deviceId } = this.run.deps
-    const sales = await evolu.loadQuery(eetSalesToDeliverQuery(deviceId))
+    const sales = await evolu.loadQuery(eetSalesToDeliverQuery)
     for (const sale of sales) {
       if (this.queue.isDisposed) return
-      await this.attemptDelivery(sale.id, deliverEetSale(sale.id))
+      const takeoverAt = this.getTakeoverAt(
+        sale.deviceId,
+        parseEetDateTime(sale.saleAt)
+      )
+      if (takeoverAt !== null) {
+        this.wakeUpAt(takeoverAt)
+        continue
+      }
+      await this.attemptDelivery(
+        sale.id,
+        deliverEetSale({ id: sale.id, deviceId })
+      )
     }
 
-    const reversals = await evolu.loadQuery(
-      eetReversalsToDeliverQuery(deviceId)
-    )
+    const reversals = await evolu.loadQuery(eetReversalsToDeliverQuery)
     for (const reversal of reversals) {
       if (this.queue.isDisposed) return
-      await this.attemptDelivery(reversal.id, deliverEetReversal(reversal.id))
+      const takeoverAt = this.getTakeoverAt(
+        reversal.deviceId,
+        getEetReversalStartsAt({
+          refundedAt: parseEetDateTime(reversal.saleAt),
+          saleConfirmedAt: reversal.saleConfirmedAt,
+        })
+      )
+      if (takeoverAt !== null) {
+        this.wakeUpAt(takeoverAt)
+        continue
+      }
+      await this.attemptDelivery(
+        reversal.id,
+        deliverEetReversal({ id: reversal.id, deviceId })
+      )
     }
+  }
+
+  private getTakeoverAt(
+    recordingDeviceId: DeviceId,
+    startsAt: number
+  ): number | null {
+    if (recordingDeviceId === this.run.deps.deviceId) return null
+    const takeoverAt = startsAt + this.priorityPeriodMs
+    return this.run.deps.date.now().getTime() >= takeoverAt ? null : takeoverAt
+  }
+
+  private wakeUpAt(at: number): void {
+    if (this.takeover !== null) {
+      if (this.takeover.at <= at) return
+      clearTimeout(this.takeover.timer)
+    }
+    const timer = setTimeout(
+      () => {
+        this.takeover = null
+        this.queueCreation()
+        this.queueDelivery()
+      },
+      Math.max(0, at - this.run.deps.date.now().getTime())
+    )
+    ;(timer as { readonly unref?: () => void }).unref?.()
+    this.takeover = { at, timer }
   }
 
   private async attemptDelivery(

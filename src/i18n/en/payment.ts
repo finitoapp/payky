@@ -17,6 +17,8 @@ export const enPayment = {
   "paymentDetail.eet.retry.alreadyConfirmed":
     "EET has already confirmed this sale.",
   "paymentDetail.eet.retry.busy": "This sale is being sent right now.",
+  "paymentDetail.eet.waitingForDevice":
+    "Until {time}, only the device that took the payment sends it.",
   "paymentDetail.eet.retry.confirmed": "EET confirmed the sale.",
   "paymentDetail.eet.retry.failed": "The sale could not be sent.",
   "paymentDetail.eet.retry.noCertificate":
@@ -37,6 +39,8 @@ export const enPayment = {
     "EET now reports for another taxpayer than the sale, so the reversal is not sent.",
   "paymentDetail.eet.reversal.waiting":
     "Waits until EET confirms the original sale.",
+  "paymentDetail.eet.reversal.waitingForDevice":
+    "Until {time}, only the device that recorded the refund sends it.",
   "paymentDetail.eet.saleAt": "Time of sale",
   "paymentDetail.eet.sequenceNumber": "Sale number",
   "paymentDetail.eet.test":

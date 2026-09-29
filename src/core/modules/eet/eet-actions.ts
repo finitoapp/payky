@@ -47,9 +47,11 @@ import {
   eetSettingsId,
   findEetConfigurationGaps,
   formatEetDateTime,
+  getEetReversalStartsAt,
   getEetUnsupportedReason,
-  hasEetAttempt,
   hasLostEetAnswer,
+  isEetFirstSending,
+  parseEetDateTime,
   resolveEetEnvironment,
   toEetCashRegisterId,
 } from "@/core/modules/eet/eet-utils.ts"
@@ -509,9 +511,13 @@ const toSigningCertificate = (certificate: {
 })
 
 export const deliverEetSale =
-  (
-    id: EetSaleId
-  ): Task<
+  ({
+    id,
+    deviceId,
+  }: {
+    readonly id: EetSaleId
+    readonly deviceId: DeviceId
+  }): Task<
     EetDeliveryOutcome,
     DeliverEetSaleError,
     EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
@@ -538,8 +544,15 @@ export const deliverEetSale =
           return err(createEetSigningCertificateMissingError())
         }
 
-        const attemptedAt = TimestampMs(run.deps.date.now().getTime())
-        const firstSubmission = !hasEetAttempt(sale)
+        const now = run.deps.date.now()
+        const attemptedAt = TimestampMs(now.getTime())
+        const firstSubmission = isEetFirstSending({
+          attempts: sale,
+          recordingDeviceId: sale.deviceId,
+          deviceId,
+          startsAt: parseEetDateTime(sale.saleAt),
+          now,
+        })
         await runMutationWithCompletion((options) =>
           evolu.update(
             "eetSale",
@@ -573,9 +586,13 @@ export const deliverEetSale =
     )
 
 export const retryEetSale =
-  (
-    id: EetSaleId
-  ): Task<
+  ({
+    id,
+    deviceId,
+  }: {
+    readonly id: EetSaleId
+    readonly deviceId: DeviceId
+  }): Task<
     EetDeliveryOutcome,
     DeliverEetSaleError,
     EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
@@ -607,7 +624,7 @@ export const retryEetSale =
       )
     }
 
-    return await run(deliverEetSale(id))
+    return await run(deliverEetSale({ id, deviceId }))
   }
 
 export const createEetReversal =
@@ -701,9 +718,13 @@ export const createEetReversal =
   }
 
 export const deliverEetReversal =
-  (
-    id: EetReversalId
-  ): Task<
+  ({
+    id,
+    deviceId,
+  }: {
+    readonly id: EetReversalId
+    readonly deviceId: DeviceId
+  }): Task<
     EetDeliveryOutcome,
     DeliverEetReversalError,
     EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
@@ -726,7 +747,7 @@ export const deliverEetReversal =
         if (reversal.unsupportedReason !== null) {
           return err(createEetSaleUnsupportedError({ id }))
         }
-        if (reversal.salePok === null) {
+        if (reversal.salePok === null || reversal.saleConfirmedAt === null) {
           return err(createEetReversalWaitingForSaleError({ id }))
         }
 
@@ -735,8 +756,18 @@ export const deliverEetReversal =
           return err(createEetSigningCertificateMissingError())
         }
 
-        const attemptedAt = TimestampMs(run.deps.date.now().getTime())
-        const firstSubmission = !hasEetAttempt(reversal)
+        const now = run.deps.date.now()
+        const attemptedAt = TimestampMs(now.getTime())
+        const firstSubmission = isEetFirstSending({
+          attempts: reversal,
+          recordingDeviceId: reversal.deviceId,
+          deviceId,
+          startsAt: getEetReversalStartsAt({
+            refundedAt: parseEetDateTime(reversal.saleAt),
+            saleConfirmedAt: reversal.saleConfirmedAt,
+          }),
+          now,
+        })
         await runMutationWithCompletion((options) =>
           evolu.update(
             "eetReversal",

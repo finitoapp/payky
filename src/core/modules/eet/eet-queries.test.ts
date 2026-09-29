@@ -51,7 +51,7 @@ const createSale = async (
 }
 
 describe("eetPaymentsToReportQuery", () => {
-  test("lists settled payments of this device since EET was enabled", async () => {
+  test("lists settled payments of every device since EET was enabled", async () => {
     await using context = await createEetTestContext()
     const before = await createTestPayment(context)
     await settleInCash(context, before)
@@ -61,28 +61,37 @@ describe("eetPaymentsToReportQuery", () => {
     const settled = await createTestPayment(context, { tipAmount: 2_000 })
     await settleInCash(context, settled, { receivedAmount: 26_000 })
     const unsettled = await createTestPayment(context)
-    const otherDevice = await createTestPayment(context, {
-      deviceId: createRowId<"Device">(),
+    const phoneDeviceId = createRowId<"Device">()
+    const takenOnPhone = await createTestPayment(context, {
+      deviceId: phoneDeviceId,
     })
-    await settleInCash(context, otherDevice)
+    await settleInCash(context, takenOnPhone)
 
-    const rows = await context.deps.evolu.loadQuery(
-      eetPaymentsToReportQuery(context.deviceId)
+    const rows = await context.deps.evolu.loadQuery(eetPaymentsToReportQuery)
+
+    expect(rows).toHaveLength(2)
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        {
+          id: settled,
+          billId: null,
+          amount: 25_000,
+          tipAmount: 2_000,
+          currency: "CZK",
+          paymentDeviceId: context.deviceId,
+          cashReceivedAmount: 26_000,
+          enabledAt: context.clock.date.now().getTime() - 1_000,
+          firstClaimedAt: context.clock.date.now().getTime(),
+          firstClaimDeviceId: context.deviceId,
+          method: "cashRegister",
+        },
+        expect.objectContaining({
+          id: takenOnPhone,
+          paymentDeviceId: phoneDeviceId,
+          firstClaimDeviceId: context.deviceId,
+        }),
+      ])
     )
-
-    expect(rows).toEqual([
-      {
-        id: settled,
-        billId: null,
-        amount: 25_000,
-        tipAmount: 2_000,
-        cashReceivedAmount: 26_000,
-        currency: "CZK",
-        enabledAt: context.clock.date.now().getTime() - 1_000,
-        firstClaimedAt: context.clock.date.now().getTime(),
-        method: "cashRegister",
-      },
-    ])
     expect(rows.map(({ id }) => id)).not.toContain(unsettled)
   })
 
@@ -91,47 +100,47 @@ describe("eetPaymentsToReportQuery", () => {
     await configureEet(context)
     const paymentId = await createTestPayment(context)
     await settleInCash(context, paymentId)
-    const [row] = await context.deps.evolu.loadQuery(
-      eetPaymentsToReportQuery(context.deviceId)
-    )
+    const [row] = await context.deps.evolu.loadQuery(eetPaymentsToReportQuery)
     if (row === undefined) throw new Error("Expected a payment to report.")
     await using run = testCreateRun(context.deps)
 
     await run.ok(createEetSale({ payment: row, deviceId: context.deviceId }))
 
     await expect
-      .poll(() =>
-        context.deps.evolu.loadQuery(eetPaymentsToReportQuery(context.deviceId))
-      )
+      .poll(() => context.deps.evolu.loadQuery(eetPaymentsToReportQuery))
       .toEqual([])
   })
 })
 
 describe("eetSalesToDeliverQuery and unconfirmedEetSalesQuery", () => {
-  test("separate what this device sends from what staff must see", async () => {
+  test("separate what may still be sent from what staff must see", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
     const pending = await createSale(context)
     const confirmed = await createSale(context)
     const rejected = await createSale(context)
     const unsupported = await createSale(context, { currency: "EUR" })
-    const otherDevice = await createSale(context, {
-      deviceId: createRowId<"Device">(),
-    })
+    const otherDeviceId = createRowId<"Device">()
+    const otherDevice = await createSale(context, { deviceId: otherDeviceId })
     await using run = testCreateRun(context.deps)
-    await run.orThrow(deliverEetSale(confirmed))
+    await run.orThrow(
+      deliverEetSale({ id: confirmed, deviceId: context.deviceId })
+    )
     context.responder.answerNext({ type: "error", code: 4, message: "Refused" })
-    await run.orThrow(deliverEetSale(rejected))
+    await run.orThrow(
+      deliverEetSale({ id: rejected, deviceId: context.deviceId })
+    )
 
     await expect
       .poll(async () =>
-        (
-          await context.deps.evolu.loadQuery(
-            eetSalesToDeliverQuery(context.deviceId)
-          )
-        ).map(({ id }) => id)
+        (await context.deps.evolu.loadQuery(eetSalesToDeliverQuery)).map(
+          ({ id, deviceId }) => ({ id, deviceId })
+        )
       )
-      .toEqual([pending])
+      .toEqual([
+        { id: pending, deviceId: context.deviceId },
+        { id: otherDevice, deviceId: otherDeviceId },
+      ])
     const unconfirmed = await context.deps.evolu.loadQuery(
       unconfirmedEetSalesQuery
     )

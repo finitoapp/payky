@@ -7,6 +7,7 @@ import {
   enableEetWithGeneratedCertificate,
   type FakeEet,
   routeFakeEet,
+  seedEetSaleFromAnotherDevice,
   selectEetSandbox,
 } from "./support/eet.ts"
 import { expect, test } from "./support/fixtures.ts"
@@ -395,6 +396,65 @@ test("the payment detail shows a confirmed sale and lets staff resend a pending 
         name: translate("en", "paymentDetail.eet.retry"),
       })
     ).toHaveCount(0)
+  })
+})
+
+test("another device's sale waits for that device, then is sent from here as a repeat", async ({
+  page,
+}) => {
+  test.slow()
+  const waitingText = new RegExp(
+    translate("en", "paymentDetail.eet.waitingForDevice")
+      .split("{time}")
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"))
+      .join(".+"),
+    "u"
+  )
+  const retryButton = page.getByRole("button", {
+    name: translate("en", "paymentDetail.eet.retry"),
+  })
+  let recentPaymentId = ""
+  let olderPaymentId = ""
+
+  await test.step("take two cash payments before EET is on", async () => {
+    recentPaymentId = await takeCashPayment(page)
+    olderPaymentId = await takeCashPayment(page)
+  })
+
+  await enableEetWithGeneratedCertificate(page, "en")
+
+  await test.step("a sale another device took 3 minutes ago waits for it", async () => {
+    await seedEetSaleFromAnotherDevice(page, recentPaymentId, 3)
+    await openPaymentDetail(page, recentPaymentId)
+    await expect(page.getByTestId("payment-detail-eet")).toContainText(
+      waitingText
+    )
+    await expect(retryButton).toHaveCount(0)
+  })
+
+  await test.step("a sale another device took 11 minutes ago is sent from here", async () => {
+    const cashRegisterId = await seedEetSaleFromAnotherDevice(
+      page,
+      olderPaymentId,
+      11
+    )
+    await openPaymentDetail(page, olderPaymentId)
+    await expect(eetStatusOf(page)).toHaveText(
+      translate("en", "eet.status.confirmed"),
+      eetDeliveryTimeout
+    )
+    expect(
+      fakeEet.production.requests.filter(
+        ({ data }) => data.porad_cis === olderPaymentId
+      )
+    ).toMatchObject([
+      { header: { prvni_zaslani: "false" }, data: { id_pokl: cashRegisterId } },
+    ])
+    expect(
+      fakeEet.production.requests.filter(
+        ({ data }) => data.porad_cis === recentPaymentId
+      )
+    ).toEqual([])
   })
 })
 

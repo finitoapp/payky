@@ -55,10 +55,8 @@ an `eetSale`.
 
 ## Which payments get reported
 
-`eetPaymentsToReportQuery(deviceId)` selects a payment when **all** hold:
+`eetPaymentsToReportQuery` selects a payment of any device when **all** hold:
 
-- `payment.deviceId` is **this** device (only the device that created the
-  payment reports it),
 - EET is enabled (`enabledAt !== null`),
 - it has an active reconciliation claim, and the **first** claim's
   `claimedAt >= enabledAt`,
@@ -69,6 +67,44 @@ reported (money arrived). The payment method does not matter either — cash,
 card, Lightning and IBAN are all reported; the method of the first claim is
 stored in `eetSale.method` but not sent.
 
+## Recording device and takeover
+
+Every sale and reversal has a **recording device**, stored as its `deviceId`:
+
+| Record | Recording device |
+|---|---|
+| Sale | the first claim's `deviceId`: the device where staff confirmed cash or card, or matched a transfer by hand |
+| Sale with an automatic claim (FIO, Spark) | `payment.deviceId`, the device that showed the QR code or invoice |
+| Reversal | `refund.deviceId` |
+
+A payment or refund without any device is never reported. The record's
+**start time** is its `saleAt`, and for a reversal the later of the refund
+and its sale's confirmation (`getEetReversalStartsAt`), since a reversal
+cannot be sent earlier.
+
+For the first 10 minutes after the start time (`EET_PRIORITY_PERIOD_MS`),
+only the recording device creates and delivers the record. After that, the
+job on **every** device of the account creates it if it is missing and
+delivers it until confirmed. Whoever creates or sends it, the body stays the
+recording device's: `id_pokl` is its cash-register id, so EET sees a
+takeover as a resend of the same sale. The job sets one timer for the
+earliest takeover still ahead, because no data change marks that moment.
+
+`prvni_zaslani` (`firstSubmission`) is `true` only when all hold
+(`isEetFirstSending`):
+
+- the record has no attempt yet (`attemptStartedAt` and `lastAttemptAt` are
+  both `null`),
+- the sender is the recording device,
+- the attempt starts within 5 minutes of the start time.
+
+Everything else is sent as a repeat. The gap between the last possible first
+sending (5 min) and the earliest takeover (10 min) absorbs device clocks
+that disagree and a request still in flight. The mark therefore errs only
+toward "repeated": a first attempt made late (the app was off), or a takeover
+of a record the recording device never sent. It is wrong toward "first" only
+when a device clock is more than 5 minutes ahead of the recording device's.
+
 ## Sale creation — what gets frozen
 
 `createEetSale` writes the row once and never rewrites the reported data:
@@ -78,7 +114,7 @@ stored in `eetSale.method` but not sent.
 | `amount` | `payment.amount` (fiat minor units), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
 | `saleAt` (`dat_trzby`) | first claim's `claimedAt` |
 | `sequenceNumber` (`porad_cis`) | the payment id |
-| `cashRegisterId` (`id_pokl`) | first 20 chars of the device id — one register per device |
+| `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id — one register per device |
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
 | `unsupportedReason` | `currency` if not CZK, `amount` if > 99 999 999.99 |
 
@@ -91,8 +127,9 @@ The job subscribes to two queries for sales and two for reversals (see
 "Refunds and storno") and runs through a keyed queue (one `create` and one
 `deliver` pass at a time):
 
-- `eetSalesToDeliverQuery(deviceId)`: this device's sales that are supported,
-  unconfirmed and whose `lastAttemptResult` is `null` or `retry`.
+- `eetSalesToDeliverQuery`: every device's sales that are supported,
+  unconfirmed and whose `lastAttemptResult` is `null` or `retry`; the job
+  sends its own at once and the others after their 10 minutes.
 - Each delivery takes a Web Lock `eet-sale-<id>` (`ifAvailable`); if held,
   it is skipped as `EetSaleBusyError`.
 - Signing always uses the **current** certificate, not the one active when the
@@ -102,8 +139,7 @@ The job subscribes to two queries for sales and two for reversals (see
   An attempt that finds an `attemptStartedAt` with no `lastAttemptAt`, or a
   later one, inherits an attempt whose answer never arrived (the app closed
   mid-request) and sets `hadUnansweredAttempt`.
-- `prvni_zaslani` (`firstSubmission`) is `true` only while the sale has no
-  attempt (`attemptStartedAt` and `lastAttemptAt` both `null`).
+- `prvni_zaslani` follows "Recording device and takeover" above.
 
 Outcome mapping (`eet-client.ts`):
 
@@ -152,7 +188,11 @@ Payment detail offers **Retry** for `pending` and `rejected`. `retryEetSale`:
   a typo is safe. Otherwise the frozen data stays.
 - Then delivers exactly as the job does (same lock, same outcome recording).
 
-Retry works from **any** device, not just the one that owns the sale.
+Retry works from the recording device at any time, and from any other
+device once the record has an attempt or its 10 minutes are over. Until then
+the other device shows until when it waits for the recording device. An
+attempt already made means the recording device's next message is a repeat
+anyway, so a retry from elsewhere cannot make a first-sending mark wrong.
 
 ## Refunds and storno
 
@@ -161,9 +201,11 @@ payment, as an amount or as items. The payment stays paid and its bill stays
 closed (see `bill-payment-states.md`). EET 2.0 has no storno message: a
 reversal is a new sale with a negative amount and no link to the original.
 
-`eetRefundsToReverseQuery(deviceId)` selects a refund when it was recorded
-on **this** device, its payment has a supported `eetSale`, and no reversal
-exists for it yet. `createEetReversal` freezes:
+`eetRefundsToReverseQuery` selects a refund of any device when its payment
+has a supported `eetSale` and no reversal exists for it yet. The refund's
+device creates the reversal at once; other devices only after its 10
+minutes, counted from the sale's confirmation when that came after the
+refund. `createEetReversal` freezes:
 
 | Field | Value |
 |---|---|
@@ -174,7 +216,7 @@ exists for it yet. `createEetReversal` freezes:
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
 | `unsupportedReason` | `disabled` if EET is off or not set up, `environment` if the current environment is not the sale's, `taxpayer` if the current EIC is not the sale's |
 
-`eetReversalsToDeliverQuery(deviceId)` holds a reversal back until its sale
+`eetReversalsToDeliverQuery` holds a reversal back until its sale
 has a confirmation, so EET never gets the reversal first. Delivery then
 follows the sale's rules: Web Lock `eet-reversal-<id>`, the same outcome
 mapping, backoff, status, overdue and manual retry. Manual retry never
@@ -202,16 +244,18 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | Cash payment settled before the received amount was recorded | Reports `payment.amount` |
 | Underpaid claim | Still `payment.amount` |
 | Non-CZK payment | `unsupported`, never sent |
-| Owning device offline for days | Sales wait; become overdue after 48 h |
-| Owning device lost | Its sales are only delivered by someone tapping Retry on another device |
+| Recording device offline or lost | After 10 minutes another device of the account creates and delivers its records, marked as repeated |
+| Recording device alive while EET is down | After 10 minutes other devices retry too; every message is a repeat with the same body, so EET sees one sale |
+| App closed while an attempt waits for its answer | The next attempt is a repeat and the record counts as possibly recorded by EET |
+| Payment created on one device, paid in cash on another | The device that took the cash reports it, with its own `id_pokl` |
+| Recording device and another create the same sale while cut off from sync | Same row id; if the settings changed in between, the merged row can mix two snapshots and its next resend would be a second sale |
 | Certificate expires while enabled | Nothing stops creation/delivery; EET rejects; after replacing the cert every rejected sale must be retried one by one |
 | Certificate replaced with a different EIC | Pending sales keep the old EIC but are signed with the new cert. Retry fixes the EIC only if all prior attempts were rejected |
 | Environment switched while sales are pending | Each sale keeps its env: old playground sales still go to playground, signed with the new (maybe production) cert, and vice versa |
 | Playground `.p12` uploaded as a file | Stored as a non-test certificate → can resolve to `production` |
 | `production` sale synced into a build without production URL | Retries every 15 min forever |
-| App closed while an attempt waits for its answer | The next attempt is a repeat and the record counts as possibly recorded by EET |
 | Two devices retry the same sale | Web Lock is per browser, not per account: both may submit; the confirmation row is last-write-wins |
-| Clock skew | `claimedAt` and `enabledAt` come from different device clocks; a claim just after enabling can fall before `enabledAt` |
+| Clock skew | `claimedAt` and `enabledAt` come from different device clocks; a claim just after enabling can fall before `enabledAt`. A device clock more than 5 minutes ahead can take over before the recording device's last possible first sending |
 
 ## Known gaps
 
@@ -226,16 +270,14 @@ EET lists unconfirmed reversals next to unconfirmed sales.
    not reflected.
 4. **All payment methods are reported.** `method` is stored but unused; if
    some methods (e.g. bank transfer) should not be EET sales, nothing filters them.
-5. **Delivery bound to the creating device.** No automatic takeover when that
-   device disappears.
-6. **Expired certificate is not a gate.** Only the settings card warns
+5. **Expired certificate is not a gate.** Only the settings card warns
    (21 days ahead); nothing warns on the terminal, and sales keep failing.
-7. **No bulk retry** of rejected sales after a configuration fix.
-8. **Response verifier checks only** the signer's `O` field
+6. **No bulk retry** of rejected sales after a configuration fix.
+7. **Response verifier checks only** the signer's `O` field
    (`Generální finanční ředitelství`), validity dates and the signature — no
    chain to a trusted CA, so a self-signed cert with that `O` passes.
-9. **Endless retry** with no cap and no escalation beyond the overdue badge.
-10. **Private key syncs to every device** of the account (encrypted, but
-    a compromised device leaks the signing key).
-11. **Sale time = claim time**, not when the customer paid; for an IBAN
+8. **Endless retry** with no cap and no escalation beyond the overdue badge.
+9. **Private key syncs to every device** of the account (encrypted, but
+   a compromised device leaks the signing key).
+10. **Sale time = claim time**, not when the customer paid; for an IBAN
     transfer matched later by bank sync, `dat_trzby` is the match time.

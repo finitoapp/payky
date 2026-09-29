@@ -22,6 +22,8 @@ import {
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
+import { createEetSale } from "@/core/modules/eet/eet-actions.ts"
+import { toEetCashRegisterId } from "@/core/modules/eet/eet-utils.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import {
@@ -29,6 +31,7 @@ import {
   markPaymentPaidCash,
 } from "@/core/modules/payment/payment-actions.ts"
 import {
+  paymentDetailQuery,
   paymentIbanDetailsByIdQuery,
   paymentSparkDetailsByIdQuery,
 } from "@/core/modules/payment/payment-queries.ts"
@@ -69,6 +72,10 @@ declare global {
     ) => Promise<void>
     __e2eCreateAndPaySecondPayment?: (billId: string) => Promise<void>
     __e2eCancelBill?: (billId: string) => Promise<void>
+    __e2eSeedEetSaleFromAnotherDevice?: (
+      paymentId: string,
+      minutesAgo: number
+    ) => Promise<string>
     __e2eSeedLegacyFioPlugin?: () => Promise<void>
   }
 }
@@ -513,6 +520,44 @@ export function E2eTestBridge() {
       }
     }
 
+    window.__e2eSeedEetSaleFromAnotherDevice = async (
+      paymentIdValue,
+      minutesAgo
+    ) => {
+      const parsedPaymentId = PaymentId.parse(paymentIdValue)
+      await using run = appRun()
+
+      const [payment] = await run.deps.evolu.loadQuery(
+        paymentDetailQuery(parsedPaymentId)
+      )
+      if (!payment) {
+        throw new Error(`Payment ${parsedPaymentId} not found.`)
+      }
+
+      const otherDeviceId = createRowId<"Device">()
+      const saleId = await run.ok(
+        createEetSale({
+          payment: {
+            id: parsedPaymentId,
+            billId: payment.billId,
+            amount: payment.amount,
+            tipAmount: payment.tipAmount,
+            cashReceivedAmount: null,
+            currency: payment.currency,
+            method: "cashRegister",
+            firstClaimedAt: TimestampMsSchema.decode(
+              run.deps.date.now().getTime() - minutesAgo * 60_000
+            ),
+          },
+          deviceId: otherDeviceId,
+        })
+      )
+      if (saleId === null) {
+        throw new Error("EET is not set up, so no sale was created.")
+      }
+      return toEetCashRegisterId(otherDeviceId)
+    }
+
     return () => {
       delete window.__e2eSeedOnboarding
       delete window.__e2eMarkSparkPaid
@@ -522,6 +567,7 @@ export function E2eTestBridge() {
       delete window.__e2eSimulateBillModifiedDuringPayment
       delete window.__e2eCreateAndPaySecondPayment
       delete window.__e2eCancelBill
+      delete window.__e2eSeedEetSaleFromAnotherDevice
     }
   }, [appRun, deviceId])
 

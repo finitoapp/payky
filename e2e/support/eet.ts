@@ -164,3 +164,21 @@ export async function selectEetSandbox(
     .click()
   await waitForLocalWriteToSettle(page)
 }
+
+export async function seedEetSaleFromAnotherDevice(
+  page: Page,
+  paymentId: string,
+  minutesAgo: number
+): Promise<string> {
+  await page.waitForFunction(
+    () => typeof window.__e2eSeedEetSaleFromAnotherDevice === "function"
+  )
+  const cashRegisterId = await page.evaluate(
+    ([id, minutes]) => window.__e2eSeedEetSaleFromAnotherDevice?.(id, minutes),
+    [paymentId, minutesAgo] as const
+  )
+  if (cashRegisterId === undefined) {
+    throw new Error("The e2e bridge is not mounted.")
+  }
+  return cashRegisterId
+}

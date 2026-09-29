@@ -336,7 +336,9 @@ describe("createEetSale", () => {
     const saleId = await createSaleForNewPayment(context, {
       tipAmount: NonNegativeInteger(2_000),
     })
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
 
     expect(await context.deps.evolu.loadQuery(eetSettingsQuery)).toMatchObject([
       { tipOwner: "employees" },
@@ -355,9 +357,11 @@ describe("createEetSale", () => {
     context.responder.answerNext({ type: "timeout" })
     await using run = testCreateRun(context.deps)
 
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     await run.ok(saveEetTipOwner("employees"))
-    await run.orThrow(retryEetSale(saleId))
+    await run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
 
     expect(
       context.responder.requests.map(({ data }) => data.celk_trzba)
@@ -408,7 +412,9 @@ describe("createEetSale", () => {
       })
       await using run = testCreateRun(context.deps)
 
-      await run.orThrow(deliverEetSale(saleId))
+      await run.orThrow(
+        deliverEetSale({ id: saleId, deviceId: context.deviceId })
+      )
 
       expect(context.responder.requests).toMatchObject([
         { data: { celk_trzba: reported } },
@@ -427,7 +433,9 @@ describe("createEetSale", () => {
       cashReceivedAmount: NonNegativeInteger(11_000),
     })
 
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
 
     expect(context.responder.requests).toMatchObject([
       { data: { celk_trzba: "100.00" } },
@@ -446,7 +454,9 @@ describe("deliverEetSale", () => {
     })
     await using run = testCreateRun(context.deps)
 
-    const outcome = await run.orThrow(deliverEetSale(saleId))
+    const outcome = await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
 
     expect(outcome).toMatchObject({ type: "accepted", isTest: true })
     await expect
@@ -468,7 +478,9 @@ describe("deliverEetSale", () => {
         data: { celk_trzba: "250.00", id_jednotky: "24" },
       },
     ])
-    await expect(run(deliverEetSale(saleId))).resolves.toEqual({
+    await expect(
+      run(deliverEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).resolves.toEqual({
       ok: false,
       error: { type: "EetSaleAlreadyConfirmedError", id: saleId },
     })
@@ -483,7 +495,8 @@ describe("deliverEetSale", () => {
 
     const result = await context.deps.lockManager.request(
       `eet-sale-${saleId}`,
-      async () => await run(deliverEetSale(saleId))
+      async () =>
+        await run(deliverEetSale({ id: saleId, deviceId: context.deviceId }))
     )
 
     expect(result).toEqual({
@@ -500,9 +513,11 @@ describe("deliverEetSale", () => {
     context.responder.answerNext({ type: "timeout" })
     await using run = testCreateRun(context.deps)
 
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
-    await run.orThrow(retryEetSale(saleId))
+    await run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
 
     const [first, second] = context.responder.requests
     expect(second?.data).toEqual(first?.data)
@@ -520,17 +535,33 @@ const closeAppDuringSubmit = (context: EetTestContext) => ({
   },
 })
 
-describe("an attempt cut off by the app closing", () => {
-  test("makes the next attempt a repeated sending", async () => {
+describe("first and repeated sending", () => {
+  test("marks the recording device's first attempt as the first sending", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSaleForNewPayment(context)
+    context.clock.advance(1_000)
+    await using run = testCreateRun(context.deps)
+
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
+
+    expect(context.responder.requests).toMatchObject([
+      { header: { prvni_zaslani: "true" } },
+    ])
+  })
+
+  test("marks the attempt after an app closed mid-attempt as repeated", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
     const saleId = await createSaleForNewPayment(context)
     await using closingRun = testCreateRun(closeAppDuringSubmit(context))
     await using run = testCreateRun(context.deps)
 
-    await expect(closingRun(deliverEetSale(saleId))).rejects.toMatchObject({
-      type: "AbortError",
-    })
+    await expect(
+      closingRun(deliverEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).rejects.toMatchObject({ type: "AbortError" })
     await expect(
       context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId))
     ).resolves.toMatchObject([
@@ -540,7 +571,9 @@ describe("an attempt cut off by the app closing", () => {
       },
     ])
     context.clock.advance(1_000)
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
 
     expect(context.responder.requests).toMatchObject([
       { header: { prvni_zaslani: "false" } },
@@ -548,6 +581,37 @@ describe("an attempt cut off by the app closing", () => {
     await expect(
       context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId))
     ).resolves.toMatchObject([{ hadUnansweredAttempt: sqliteTrue }])
+  })
+
+  test("marks a first attempt made after 5 minutes as repeated", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSaleForNewPayment(context)
+    context.clock.advance(6 * 60 * 1000)
+    await using run = testCreateRun(context.deps)
+
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
+
+    expect(context.responder.requests).toMatchObject([
+      { header: { prvni_zaslani: "false" } },
+    ])
+  })
+
+  test("marks an attempt from another device as repeated", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSaleForNewPayment(context)
+    await using run = testCreateRun(context.deps)
+
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: createRowId<"Device">() })
+    )
+
+    expect(context.responder.requests).toMatchObject([
+      { header: { prvni_zaslani: "false" } },
+    ])
   })
 })
 
@@ -563,12 +627,16 @@ describe("retryEetSale", () => {
     })
     await using run = testCreateRun(context.deps)
 
-    await expect(run.orThrow(deliverEetSale(saleId))).resolves.toMatchObject({
+    await expect(
+      run.orThrow(deliverEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).resolves.toMatchObject({
       type: "rejected",
       code: 6,
     })
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
-    await expect(run.orThrow(retryEetSale(saleId))).resolves.toMatchObject({
+    await expect(
+      run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).resolves.toMatchObject({
       type: "accepted",
     })
 
@@ -587,10 +655,14 @@ describe("retryEetSale", () => {
     )
     await using run = testCreateRun(context.deps)
 
-    await run.orThrow(deliverEetSale(saleId))
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
-    await run.orThrow(retryEetSale(saleId))
+    await run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
 
     expect(
       context.responder.requests.map(({ data }) => data.id_jednotky)
@@ -609,13 +681,15 @@ describe("retryEetSale", () => {
     await using closingRun = testCreateRun(closeAppDuringSubmit(context))
     await using run = testCreateRun(context.deps)
 
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     context.clock.advance(1_000)
-    await expect(closingRun(deliverEetSale(saleId))).rejects.toMatchObject({
-      type: "AbortError",
-    })
+    await expect(
+      closingRun(deliverEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).rejects.toMatchObject({ type: "AbortError" })
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
-    await run.orThrow(retryEetSale(saleId))
+    await run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
 
     expect(
       context.responder.requests.map(({ data }) => data.id_jednotky)
@@ -629,12 +703,14 @@ describe("retryEetSale", () => {
     context.responder.answerNext({ type: "tamperedConfirmation" })
     await using run = testCreateRun(context.deps)
 
-    await expect(run.orThrow(deliverEetSale(saleId))).resolves.toMatchObject({
+    await expect(
+      run.orThrow(deliverEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).resolves.toMatchObject({
       type: "rejected",
       errorType: "EetSignatureError",
     })
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
-    await run.orThrow(retryEetSale(saleId))
+    await run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
 
     expect(
       context.responder.requests.map(({ data }) => data.id_jednotky)
@@ -662,7 +738,9 @@ describe("retryEetSale", () => {
     )
     if (saleId === null) throw new Error("Expected a created sale.")
 
-    await expect(run.orThrow(retryEetSale(saleId))).resolves.toMatchObject({
+    await expect(
+      run.orThrow(retryEetSale({ id: saleId, deviceId: context.deviceId }))
+    ).resolves.toMatchObject({
       type: "accepted",
     })
   })
@@ -935,7 +1013,9 @@ describe("createEetReversal", () => {
     await configureEet(context, { environment: "playground" })
     const { paymentId, saleId } = await createSaleToReverse(context)
     await using run = testCreateRun(context.deps)
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     await run.orThrow(selectEetEnvironment("production"))
 
     const reversalId = await reverseRefund(context, {
@@ -948,7 +1028,9 @@ describe("createEetReversal", () => {
     await expect(
       context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
     ).resolves.toMatchObject([{ unsupportedReason: "environment" }])
-    await expect(run(deliverEetReversal(reversalId))).resolves.toMatchObject({
+    await expect(
+      run(deliverEetReversal({ id: reversalId, deviceId: context.deviceId }))
+    ).resolves.toMatchObject({
       ok: false,
       error: { type: "EetSaleUnsupportedError" },
     })
@@ -982,7 +1064,9 @@ describe("deliverEetReversal", () => {
     await configureEet(context)
     const { paymentId, saleId } = await createSaleToReverse(context)
     await using run = testCreateRun(context.deps)
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     context.clock.advance(
       new Date("2027-01-10T08:00:00.000Z").getTime() -
         context.clock.date.now().getTime()
@@ -995,7 +1079,9 @@ describe("deliverEetReversal", () => {
     if (reversalId === null) throw new Error("Expected a reversal.")
 
     await expect(
-      run.orThrow(deliverEetReversal(reversalId))
+      run.orThrow(
+        deliverEetReversal({ id: reversalId, deviceId: context.deviceId })
+      )
     ).resolves.toMatchObject({ type: "accepted" })
 
     const [sale, reversal] = context.responder.requests
@@ -1005,6 +1091,7 @@ describe("deliverEetReversal", () => {
     })
     expect(reversal?.data.porad_cis).not.toBe(sale?.data.porad_cis)
     expect(reversal?.header.uuid_zpravy).not.toBe(sale?.header.uuid_zpravy)
+    expect(reversal?.header.prvni_zaslani).toBe("true")
     await expect(
       context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
     ).resolves.toMatchObject([{ pok: expect.stringMatching(/-ff$/u) }])
@@ -1022,7 +1109,9 @@ describe("deliverEetReversal", () => {
     if (reversalId === null) throw new Error("Expected a reversal.")
     await using run = testCreateRun(context.deps)
 
-    await expect(run(deliverEetReversal(reversalId))).resolves.toEqual({
+    await expect(
+      run(deliverEetReversal({ id: reversalId, deviceId: context.deviceId }))
+    ).resolves.toEqual({
       ok: false,
       error: { type: "EetReversalWaitingForSaleError", id: reversalId },
     })
@@ -1034,7 +1123,9 @@ describe("deliverEetReversal", () => {
     await configureEet(context)
     const { paymentId, saleId } = await createSaleToReverse(context)
     await using run = testCreateRun(context.deps)
-    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
     const reversalId = await reverseRefund(context, {
       paymentId,
       saleId,
@@ -1044,7 +1135,9 @@ describe("deliverEetReversal", () => {
     context.responder.answerNext({ type: "timeout" })
 
     await expect(
-      run.orThrow(deliverEetReversal(reversalId))
+      run.orThrow(
+        deliverEetReversal({ id: reversalId, deviceId: context.deviceId })
+      )
     ).resolves.toMatchObject({ type: "retry" })
     await expect(
       context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))

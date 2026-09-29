@@ -17,8 +17,11 @@ import {
   deriveEetSaleStatus,
   eetBase64ToBytes,
   formatEetDateTime,
+  getEetRecordingDeviceWaitEndsAt,
+  getEetReversalStartsAt,
   getEetUnsupportedReason,
   hasLostEetAnswer,
+  isEetFirstSending,
   isEetSaleOverdue,
   isEetSandboxActive,
   parseEetWarnings,
@@ -268,25 +271,102 @@ describe("isEetSaleOverdue", () => {
   })
 })
 
+const tablet = "tablet-device-id-0001" as DeviceId
+const phone = "phone-device-id-00001" as DeviceId
+const startsAt = TimestampMs(Date.parse("2027-01-09T15:45:36.000Z"))
+const minutesAfterStart = (minutes: number) =>
+  new Date(startsAt + minutes * 60 * 1000)
+const noAttempt: {
+  readonly attemptStartedAt: TimestampMs | null
+  readonly lastAttemptAt: TimestampMs | null
+} = { attemptStartedAt: null, lastAttemptAt: null }
+
+describe("isEetFirstSending", () => {
+  test.each([
+    ["the recording device right after the start", tablet, noAttempt, 0, true],
+    ["the recording device at 5 minutes", tablet, noAttempt, 5, true],
+    ["the recording device after 5 minutes", tablet, noAttempt, 6, false],
+    ["another device", phone, noAttempt, 0, false],
+    [
+      "an attempt already started",
+      tablet,
+      { attemptStartedAt: startsAt, lastAttemptAt: null },
+      1,
+      false,
+    ],
+    [
+      "an attempt from before attempts were recorded up front",
+      tablet,
+      { attemptStartedAt: null, lastAttemptAt: startsAt },
+      1,
+      false,
+    ],
+  ])("is %s: %s", (_case, deviceId, attempts, minutes, expected) => {
+    expect(
+      isEetFirstSending({
+        attempts,
+        recordingDeviceId: tablet,
+        deviceId,
+        startsAt,
+        now: minutesAfterStart(minutes),
+      })
+    ).toBe(expected)
+  })
+})
+
 describe("hasLostEetAnswer", () => {
   test("sees an attempt whose answer was never recorded", () => {
-    const startedAt = TimestampMs(Date.parse("2027-01-09T15:45:36.000Z"))
-    const later = TimestampMs(startedAt + 60_000)
+    const later = TimestampMs(startsAt + 60_000)
+    expect(hasLostEetAnswer(noAttempt)).toBe(false)
     expect(
-      hasLostEetAnswer({ attemptStartedAt: null, lastAttemptAt: null })
+      hasLostEetAnswer({ attemptStartedAt: startsAt, lastAttemptAt: startsAt })
     ).toBe(false)
     expect(
-      hasLostEetAnswer({
-        attemptStartedAt: startedAt,
-        lastAttemptAt: startedAt,
+      hasLostEetAnswer({ attemptStartedAt: startsAt, lastAttemptAt: null })
+    ).toBe(true)
+    expect(
+      hasLostEetAnswer({ attemptStartedAt: later, lastAttemptAt: startsAt })
+    ).toBe(true)
+  })
+})
+
+describe("getEetRecordingDeviceWaitEndsAt", () => {
+  test("keeps another device waiting for 10 minutes unless an attempt exists", () => {
+    const endsAt = startsAt + 10 * 60 * 1000
+    const wait = (deviceId: DeviceId, minutes: number, attempts = noAttempt) =>
+      getEetRecordingDeviceWaitEndsAt({
+        attempts,
+        recordingDeviceId: tablet,
+        deviceId,
+        startsAt,
+        now: minutesAfterStart(minutes),
       })
-    ).toBe(false)
+
+    expect(wait(phone, 3)).toBe(endsAt)
+    expect(wait(phone, 10)).toBeNull()
+    expect(wait(tablet, 3)).toBeNull()
     expect(
-      hasLostEetAnswer({ attemptStartedAt: startedAt, lastAttemptAt: null })
-    ).toBe(true)
+      wait(phone, 3, { attemptStartedAt: startsAt, lastAttemptAt: startsAt })
+    ).toBeNull()
+  })
+})
+
+describe("getEetReversalStartsAt", () => {
+  test("starts at the later of the refund and its sale's confirmation", () => {
+    const refundedAt = TimestampMs(Date.parse("2027-01-10T08:00:00.000Z"))
+
     expect(
-      hasLostEetAnswer({ attemptStartedAt: later, lastAttemptAt: startedAt })
-    ).toBe(true)
+      getEetReversalStartsAt({
+        refundedAt,
+        saleConfirmedAt: "2027-01-09T16:45:40+01:00" as EetDateTime,
+      })
+    ).toBe(refundedAt)
+    expect(
+      getEetReversalStartsAt({
+        refundedAt,
+        saleConfirmedAt: "2027-01-10T10:00:00+01:00" as EetDateTime,
+      })
+    ).toBe(Date.parse("2027-01-10T09:00:00.000Z"))
   })
 })
 

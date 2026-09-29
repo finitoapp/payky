@@ -97,7 +97,13 @@ The job subscribes to two queries for sales and two for reversals (see
   it is skipped as `EetSaleBusyError`.
 - Signing always uses the **current** certificate, not the one active when the
   sale was created.
-- `prvni_zaslani` (`firstSubmission`) is `true` only while `lastAttemptAt` is `null`.
+- Before the message leaves, the attempt is written as `attemptStartedAt` in
+  its own batch. The outcome later sets `lastAttemptAt` to the same instant.
+  An attempt that finds an `attemptStartedAt` with no `lastAttemptAt`, or a
+  later one, inherits an attempt whose answer never arrived (the app closed
+  mid-request) and sets `hadUnansweredAttempt`.
+- `prvni_zaslani` (`firstSubmission`) is `true` only while the sale has no
+  attempt (`attemptStartedAt` and `lastAttemptAt` both `null`).
 
 Outcome mapping (`eet-client.ts`):
 
@@ -140,7 +146,7 @@ the account are listed in Settings → EET.
 
 Payment detail offers **Retry** for `pending` and `rejected`. `retryEetSale`:
 
-- If **every** attempt was rejected (no unanswered one, no FIK) and the
+- If **every** attempt was rejected (no unanswered or cut-off one, no FIK) and the
   current settings have a different EIC or establishment id, it first
   rewrites those two fields on the sale — EET never saw the sale, so fixing
   a typo is safe. Otherwise the frozen data stays.
@@ -203,6 +209,7 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | Environment switched while sales are pending | Each sale keeps its env: old playground sales still go to playground, signed with the new (maybe production) cert, and vice versa |
 | Playground `.p12` uploaded as a file | Stored as a non-test certificate → can resolve to `production` |
 | `production` sale synced into a build without production URL | Retries every 15 min forever |
+| App closed while an attempt waits for its answer | The next attempt is a repeat and the record counts as possibly recorded by EET |
 | Two devices retry the same sale | Web Lock is per browser, not per account: both may submit; the confirmation row is last-write-wins |
 | Clock skew | `claimedAt` and `enabledAt` come from different device clocks; a claim just after enabling can fall before `enabledAt` |
 

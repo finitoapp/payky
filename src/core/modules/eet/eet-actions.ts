@@ -48,6 +48,8 @@ import {
   findEetConfigurationGaps,
   formatEetDateTime,
   getEetUnsupportedReason,
+  hasEetAttempt,
+  hasLostEetAnswer,
   resolveEetEnvironment,
   toEetCashRegisterId,
 } from "@/core/modules/eet/eet-utils.ts"
@@ -366,6 +368,7 @@ export const createEetSale =
           saleAt: formatEetDateTime(new Date(payment.firstClaimedAt)),
           unsupportedReason: getEetUnsupportedReason(payment),
           hadUnansweredAttempt: sqliteFalse,
+          attemptStartedAt: null,
           lastAttemptAt: null,
           lastAttemptResult: null,
           lastErrorType: null,
@@ -485,6 +488,18 @@ const recordEetReversalDeliveryOutcome = (
   }
 }
 
+const toEetAttemptStartValues = (
+  attempts: {
+    readonly attemptStartedAt: TimestampMs | null
+    readonly lastAttemptAt: TimestampMs | null
+  },
+  attemptStartedAt: TimestampMs
+) =>
+  removeUndefinedValues({
+    attemptStartedAt,
+    hadUnansweredAttempt: hasLostEetAnswer(attempts) ? sqliteTrue : undefined,
+  })
+
 const toSigningCertificate = (certificate: {
   readonly certificateDer: EetBase64
   readonly privateKeyPkcs8: EetBase64
@@ -508,7 +523,7 @@ export const deliverEetSale =
       async (lock) => {
         if (lock === null) return err(createEetSaleBusyError({ id }))
 
-        const { evolu } = run.deps
+        const { evolu, evoluOwnerId } = run.deps
         const [sale] = await evolu.loadQuery(eetSaleByIdQuery(id))
         if (sale === undefined) return err(createEetSaleNotFoundError({ id }))
         if (sale.pok !== null) {
@@ -524,6 +539,14 @@ export const deliverEetSale =
         }
 
         const attemptedAt = TimestampMs(run.deps.date.now().getTime())
+        const firstSubmission = !hasEetAttempt(sale)
+        await runMutationWithCompletion((options) =>
+          evolu.update(
+            "eetSale",
+            { id, ...toEetAttemptStartValues(sale, attemptedAt) },
+            { ...options, ownerId: evoluOwnerId }
+          )
+        )
         const { outcome } = await run.deps.eetApi.submit({
           environment: sale.environment,
           certificate: toSigningCertificate(certificate),
@@ -538,7 +561,7 @@ export const deliverEetSale =
               currency: sale.currency,
             }),
           },
-          firstSubmission: sale.lastAttemptAt === null,
+          firstSubmission,
           verification: false,
         })
 
@@ -568,6 +591,7 @@ export const retryEetSale =
     const everyAttemptWasRejected =
       sale.lastAttemptResult === "rejected" &&
       sale.hadUnansweredAttempt !== sqliteTrue &&
+      !hasLostEetAnswer(sale) &&
       sale.pok === null
     const hasChangedTaxpayerDetails =
       eic !== null &&
@@ -660,6 +684,7 @@ export const createEetReversal =
           saleAt: formatEetDateTime(new Date(refund.refundedAt)),
           unsupportedReason,
           hadUnansweredAttempt: sqliteFalse,
+          attemptStartedAt: null,
           lastAttemptAt: null,
           lastAttemptResult: null,
           lastErrorType: null,
@@ -690,7 +715,7 @@ export const deliverEetReversal =
       async (lock) => {
         if (lock === null) return err(createEetSaleBusyError({ id }))
 
-        const { evolu } = run.deps
+        const { evolu, evoluOwnerId } = run.deps
         const [reversal] = await evolu.loadQuery(eetReversalByIdQuery(id))
         if (reversal === undefined) {
           return err(createEetSaleNotFoundError({ id }))
@@ -711,6 +736,14 @@ export const deliverEetReversal =
         }
 
         const attemptedAt = TimestampMs(run.deps.date.now().getTime())
+        const firstSubmission = !hasEetAttempt(reversal)
+        await runMutationWithCompletion((options) =>
+          evolu.update(
+            "eetReversal",
+            { id, ...toEetAttemptStartValues(reversal, attemptedAt) },
+            { ...options, ownerId: evoluOwnerId }
+          )
+        )
         const { outcome } = await run.deps.eetApi.submit({
           environment: reversal.environment,
           certificate: toSigningCertificate(certificate),
@@ -725,7 +758,7 @@ export const deliverEetReversal =
               currency: reversal.currency,
             }),
           },
-          firstSubmission: reversal.lastAttemptAt === null,
+          firstSubmission,
           verification: false,
         })
 

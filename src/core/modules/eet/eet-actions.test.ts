@@ -512,6 +512,45 @@ describe("deliverEetSale", () => {
   })
 })
 
+const closeAppDuringSubmit = (context: EetTestContext) => ({
+  ...context.deps,
+  eetApi: {
+    ...context.deps.eetApi,
+    submit: () => Promise.reject(new Error("App closed")),
+  },
+})
+
+describe("an attempt cut off by the app closing", () => {
+  test("makes the next attempt a repeated sending", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSaleForNewPayment(context)
+    await using closingRun = testCreateRun(closeAppDuringSubmit(context))
+    await using run = testCreateRun(context.deps)
+
+    await expect(closingRun(deliverEetSale(saleId))).rejects.toMatchObject({
+      type: "AbortError",
+    })
+    await expect(
+      context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId))
+    ).resolves.toMatchObject([
+      {
+        attemptStartedAt: context.clock.date.now().getTime(),
+        lastAttemptAt: null,
+      },
+    ])
+    context.clock.advance(1_000)
+    await run.orThrow(deliverEetSale(saleId))
+
+    expect(context.responder.requests).toMatchObject([
+      { header: { prvni_zaslani: "false" } },
+    ])
+    await expect(
+      context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId))
+    ).resolves.toMatchObject([{ hadUnansweredAttempt: sqliteTrue }])
+  })
+})
+
 describe("retryEetSale", () => {
   test("takes the corrected establishment number when every attempt was rejected", async () => {
     await using context = await createEetTestContext()
@@ -556,6 +595,31 @@ describe("retryEetSale", () => {
     expect(
       context.responder.requests.map(({ data }) => data.id_jednotky)
     ).toEqual(["24", "24", "24"])
+  })
+
+  test("keeps the original data after an attempt cut off by the app closing", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSaleForNewPayment(context)
+    context.responder.answerNext({
+      type: "error",
+      code: 6,
+      message: "Unknown establishment",
+    })
+    await using closingRun = testCreateRun(closeAppDuringSubmit(context))
+    await using run = testCreateRun(context.deps)
+
+    await run.orThrow(deliverEetSale(saleId))
+    context.clock.advance(1_000)
+    await expect(closingRun(deliverEetSale(saleId))).rejects.toMatchObject({
+      type: "AbortError",
+    })
+    await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
+    await run.orThrow(retryEetSale(saleId))
+
+    expect(
+      context.responder.requests.map(({ data }) => data.id_jednotky)
+    ).toEqual(["24", "24"])
   })
 
   test("keeps the original data after a confirmation it could not verify", async () => {

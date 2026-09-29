@@ -6,7 +6,10 @@ import {
   EetEstablishmentIdSchema,
 } from "@/core/modules/eet/eet-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
+import {
+  NonNegativeInteger,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
 import {
   bytesToEetBase64,
   createEetSaleId,
@@ -15,6 +18,7 @@ import {
   eetBase64ToBytes,
   formatEetDateTime,
   getEetUnsupportedReason,
+  hasLostEetAnswer,
   isEetSaleOverdue,
   isEetSandboxActive,
   parseEetWarnings,
@@ -261,6 +265,28 @@ describe("isEetSaleOverdue", () => {
       false
     )
     expect(isEetSaleOverdue({ status: "unsupported", saleAt, now })).toBe(false)
+  })
+})
+
+describe("hasLostEetAnswer", () => {
+  test("sees an attempt whose answer was never recorded", () => {
+    const startedAt = TimestampMs(Date.parse("2027-01-09T15:45:36.000Z"))
+    const later = TimestampMs(startedAt + 60_000)
+    expect(
+      hasLostEetAnswer({ attemptStartedAt: null, lastAttemptAt: null })
+    ).toBe(false)
+    expect(
+      hasLostEetAnswer({
+        attemptStartedAt: startedAt,
+        lastAttemptAt: startedAt,
+      })
+    ).toBe(false)
+    expect(
+      hasLostEetAnswer({ attemptStartedAt: startedAt, lastAttemptAt: null })
+    ).toBe(true)
+    expect(
+      hasLostEetAnswer({ attemptStartedAt: later, lastAttemptAt: startedAt })
+    ).toBe(true)
   })
 })
 

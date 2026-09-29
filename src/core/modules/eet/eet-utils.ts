@@ -16,6 +16,7 @@ import {
   EetDateTimeSchema,
   type EetEnvironment,
   type EetEstablishmentId,
+  type EetReversalId,
   type EetSaleId,
   type EetSaleStatus,
   type EetSettingsId,
@@ -24,6 +25,7 @@ import {
   EetWarningSchema,
 } from "@/core/modules/eet/eet-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { RefundId } from "@/core/modules/refund/refund-types.ts"
 import {
   type FiatCurrency,
   type NonNegativeInteger,
@@ -35,6 +37,9 @@ export const eetSettingsId: EetSettingsId =
 
 export const createEetSaleId = (paymentId: PaymentId): EetSaleId =>
   createIdFromString<"EetSale">(`eetSale:${paymentId}`)
+
+export const createEetReversalId = (refundId: RefundId): EetReversalId =>
+  createIdFromString<"EetReversal">(`eetReversal:${refundId}`)
 
 export const createEetCertificateId = (
   certificateDer: EetBase64

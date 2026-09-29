@@ -27,6 +27,16 @@ export const skPayment = {
   "paymentDetail.eet.retry.rejected": "EET tržbu znova odmietla.",
   "paymentDetail.eet.retry.unsupported":
     "Túto tržbu nie je možné do EET odoslať.",
+  "paymentDetail.eet.reversal.retry.confirmed": "EET storno potvrdila.",
+  "paymentDetail.eet.reversal.retry.rejected": "EET storno znova odmietla.",
+  "paymentDetail.eet.reversal.title": "Storno v EET {amount}",
+  "paymentDetail.eet.reversal.unsupported.disabled":
+    "Pri vrátení bola EET vypnutá, storno sa preto neodošle.",
+  "paymentDetail.eet.reversal.unsupported.environment":
+    "EET teraz beží v inom prostredí než tržba, storno sa preto neodošle.",
+  "paymentDetail.eet.reversal.unsupported.taxpayer":
+    "EET teraz eviduje za iného platiteľa než tržbu, storno sa preto neodošle.",
+  "paymentDetail.eet.reversal.waiting": "Čaká, kým EET potvrdí pôvodnú tržbu.",
   "paymentDetail.eet.saleAt": "Dátum a čas tržby",
   "paymentDetail.eet.sequenceNumber": "Poradové číslo",
   "paymentDetail.eet.test":
@@ -37,6 +47,10 @@ export const skPayment = {
     "EET prijíma len tržby v českých korunách, preto táto tržba nebola odoslaná.",
   "paymentDetail.eet.warning": "Varovanie EET {code}",
   "paymentDetail.number": "Platba č. {number}",
+  "paymentDetail.refunds.action": "Vrátiť peniaze",
+  "paymentDetail.refunds.method.cashRegister": "Z pokladne",
+  "paymentDetail.refunds.method.outside": "Mimo Payky",
+  "paymentDetail.refunds.title": "Vrátenia",
   "paymentDetail.tipIncluded": "Z toho tringelt {amount}",
   "paymentDetail.canceledAtValue": "Zrušené {date}",
   "paymentDetail.expiresAt": "Vyprší o {time}",
@@ -239,4 +253,30 @@ export const skPayment = {
   "paymentWait.scanOrTap": "Naskenujte a zaplaťte",
   "paymentWait.wakeLockUnsupported":
     "Tento prehliadač nevie automaticky udržať obrazovku zapnutú.",
+  "refund.created": "Vrátenie je zaznamenané.",
+  "refund.dialog.amount.invalid": "Zadajte sumu najviac {amount}.",
+  "refund.dialog.amount.label": "Vrátená suma",
+  "refund.dialog.cancel": "Zrušiť",
+  "refund.dialog.confirm": "Vrátiť {amount}",
+  "refund.dialog.confirmEmpty": "Vrátiť",
+  "refund.dialog.description":
+    "Vrátenie sa nedá vziať späť. Platba zostane zaplatená a účet uzavretý.",
+  "refund.dialog.items.available": "Najviac {quantity}",
+  "refund.dialog.items.decrease": "Menej: {name}",
+  "refund.dialog.items.increase": "Viac: {name}",
+  "refund.dialog.items.label": "Vrátené položky",
+  "refund.dialog.method.cashRegister": "V hotovosti z pokladne",
+  "refund.dialog.method.label": "Ako peniaze vraciate",
+  "refund.dialog.method.outside":
+    "Mimo Payky, napríklad na platobnom termináli",
+  "refund.dialog.mode.amount": "Suma",
+  "refund.dialog.mode.items": "Položky",
+  "refund.dialog.mode.label": "Čo vraciate",
+  "refund.dialog.title": "Vrátiť peniaze",
+  "refund.error.amount": "Suma je vyššia, než koľko zostáva vrátiť.",
+  "refund.error.cashRegister": "Pre túto menu tu nie je pokladňa.",
+  "refund.error.items": "Tieto položky sa už nedajú vrátiť.",
+  "refund.error.notPaid": "Vrátiť sa dá iba zaplatená platba.",
+  "refund.state.full": "Vrátené {amount}",
+  "refund.state.partial": "Čiastočne vrátené {amount}",
 } satisfies Record<keyof typeof enPayment, string>

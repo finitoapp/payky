@@ -15,6 +15,8 @@ import {
   derivePaymentStatus,
   type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
+import { refundSummariesQuery } from "@/core/modules/refund/refund-queries.ts"
+import { summarizeRefundsByPayment } from "@/core/modules/refund/refund-utils.ts"
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import {
@@ -28,6 +30,8 @@ import {
   PaymentStatusIcon,
   paymentStatusLabelKey,
 } from "@/features/payment/payment-status-display.tsx"
+import { RefundBadge } from "@/features/shared/refund-badge.tsx"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -193,6 +197,8 @@ export const PaymentHistory = () => {
     isPending,
     sentinelRef,
   } = useInfiniteEvoluQuery([], latestPaymentsQuery)
+  const { data: refunds } = useEvoluQuery(refundSummariesQuery)
+  const refundsByPayment = summarizeRefundsByPayment(refunds)
   // Nothing writes a row when a payment expires, so the clock has to tick on
   // its own or a listed pending payment never becomes Expired.
   const now = useNow(items.map((item) => item.expiresAt))
@@ -313,6 +319,7 @@ export const PaymentHistory = () => {
                       />
                     </div>
                     <PaymentHistoryIssues flags={issueFlags} />
+                    <RefundBadge summary={refundsByPayment.get(item.id)} />
                   </div>
                 ),
                 icon: (

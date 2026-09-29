@@ -270,6 +270,7 @@ export const enSettings = {
   "settings.eet.title": "EET",
   "settings.eet.unconfirmed.description": "Sales EET has not confirmed yet.",
   "settings.eet.unconfirmed.empty": "EET has confirmed every sale.",
+  "settings.eet.unconfirmed.reversal": "Reversal {amount}",
   "settings.eet.unconfirmed.title": "Unconfirmed sales",
   "settings.evoluExport.action": "Export",
   "settings.evoluExport.action.pending": "Exporting...",

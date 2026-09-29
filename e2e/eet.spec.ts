@@ -12,7 +12,11 @@ import {
 import { expect, test } from "./support/fixtures.ts"
 import { nameParam, translate, translateValue } from "./support/i18n.ts"
 import { pickInlineToggle, toggleInlineSwitch } from "./support/inline-edit.ts"
-import { gotoPage, waitForLocalWriteToSettle } from "./support/navigation.ts"
+import {
+  gotoPage,
+  gotoPosOverview,
+  waitForLocalWriteToSettle,
+} from "./support/navigation.ts"
 import { seedOnboarding } from "./support/onboarding.ts"
 import {
   createPayment,
@@ -21,6 +25,7 @@ import {
   getPaymentIdFromUrl,
   markCashPaid,
   markCashPaidAndSettle,
+  refundFromPaymentDetail,
   startBillAndBeginCashPayment,
 } from "./support/payment.ts"
 
@@ -548,6 +553,84 @@ test("a cash sale is reported as the cash received", async ({ page }) => {
         )
       )
     ).toBeVisible()
+  })
+})
+
+test("refunds of a paid bill reach EET as negative sales", async ({ page }) => {
+  test.slow()
+
+  await enableEetWithGeneratedCertificate(page, "en")
+  await addCatalogItem(page, "en", { name: "Beer", price: "50" })
+  await addCatalogItem(page, "en", { name: "Goulash", price: "150" })
+
+  const { billId, paymentId } =
+    await test.step("a bill of 2 beers and a goulash is paid in cash", async () => {
+      await gotoPosOverview(page, "en")
+      await page
+        .getByTestId("no-table-tile")
+        .getByRole("link", { name: translate("en", "tables.tile.newBill") })
+        .click()
+      for (const name of ["Beer", "Beer", "Goulash"]) {
+        await page
+          .getByRole("button", { name: nameParam("bill.brick.add.aria", name) })
+          .click()
+      }
+      await waitForLocalWriteToSettle(page)
+      const billId = new URL(page.url()).searchParams.get("billId") ?? ""
+      await page
+        .getByRole("button", { name: translate("en", "home.pay") })
+        .click()
+      const skipTip = page.getByRole("button", {
+        name: translate("en", "paymentTip.none"),
+      })
+      const markPaid = page.getByRole("button", {
+        name: translate("en", "paymentWait.cashPaid.action"),
+      })
+      await skipTip.or(markPaid).first().waitFor()
+      if (await skipTip.isVisible()) await skipTip.click()
+      await markPaid.waitFor()
+      const paymentId = getPaymentIdFromUrl(page)
+      await markCashPaidAndSettle(page, "en")
+      await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("250.00")
+      return { billId, paymentId }
+    })
+
+  await test.step("one beer is refunded and reversed", async () => {
+    await openPaymentDetail(page, paymentId)
+    await refundFromPaymentDetail(page, "en", { items: ["Beer"] })
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-50.00")
+  })
+
+  await test.step("the rest is refunded and reversed", async () => {
+    await refundFromPaymentDetail(page, "en")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-200.00")
+    await expect(page.getByTestId("payment-detail-eet-reversal")).toHaveCount(2)
+    await expect(
+      page
+        .getByTestId("payment-detail-eet-reversal")
+        .getByTestId("eet-sale-status")
+    ).toHaveText(
+      [
+        translate("en", "eet.status.confirmed"),
+        translate("en", "eet.status.confirmed"),
+      ],
+      eetDeliveryTimeout
+    )
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "paymentDetail.refunds.action"),
+      })
+    ).toHaveCount(0)
+  })
+
+  await test.step("the payment shows refunded while its bill stays closed", async () => {
+    await gotoPage(page, `/activity/bills/${billId}`, "en", "billDetail.title")
+    await expect(
+      page.getByText(translate("en", "bill.status.closed")).first()
+    ).toBeVisible()
+    await expect(page.getByTestId("refund-badge")).toHaveText(
+      translate("en", "refund.state.full").replace("{amount}", "CZK 250.00")
+    )
   })
 })
 

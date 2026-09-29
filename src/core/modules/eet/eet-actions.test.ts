@@ -3,6 +3,9 @@ import { describe, expect, test } from "vitest"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createBill } from "@/core/modules/bill/bill-actions.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { RefundId } from "@/core/modules/refund/refund-types.ts"
 import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
 import {
   NonNegativeInteger,
@@ -11,7 +14,9 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { createTestCertificate } from "@/test/eet-test-certificates.ts"
 import {
+  createEetReversal,
   createEetSale,
+  deliverEetReversal,
   deliverEetSale,
   disableEet,
   enableEet,
@@ -23,6 +28,7 @@ import {
   storeEetCertificate,
 } from "./eet-actions.ts"
 import {
+  eetReversalByIdQuery,
   eetSaleByIdQuery,
   eetSettingsQuery,
   eetSigningCertificateQuery,
@@ -34,7 +40,11 @@ import {
   eetTestEic,
   getEetTestCertificateFile,
 } from "./eet-test-fixtures.ts"
-import { type EetEic, EetEstablishmentIdSchema } from "./eet-types.ts"
+import {
+  type EetEic,
+  EetEstablishmentIdSchema,
+  type EetSaleId,
+} from "./eet-types.ts"
 import { bytesToEetBase64 } from "./eet-utils.ts"
 
 const allEetSalesQuery = createQuery((db) =>
@@ -664,5 +674,318 @@ describe("sendEetTestMessage", () => {
       error: { type: "EetTestSaleOutsidePlaygroundError" },
     })
     expect(context.responder.requests).toEqual([])
+  })
+})
+
+const allEetReversalsQuery = createQuery((db) =>
+  db.selectFrom("eetReversal").selectAll()
+)
+
+const reverseRefund = async (
+  context: EetTestContext,
+  {
+    paymentId,
+    saleId,
+    amount,
+    refundId = createRowId<"Refund">(),
+    deviceId = context.deviceId,
+  }: {
+    readonly paymentId: PaymentId
+    readonly saleId: EetSaleId
+    readonly amount: number
+    readonly refundId?: RefundId
+    readonly deviceId?: DeviceId
+  }
+) => {
+  await using run = testCreateRun(context.deps)
+  return await run.ok(
+    createEetReversal({
+      refund: {
+        id: refundId,
+        paymentId,
+        amount: NonNegativeInteger(amount),
+        refundedAt: TimestampMs(context.clock.date.now().getTime()),
+        saleId,
+      },
+      deviceId,
+    })
+  )
+}
+
+const createSaleToReverse = async (
+  context: EetTestContext,
+  overrides: Partial<Parameters<typeof createEetSale>[0]["payment"]> = {}
+) => {
+  const paymentId = createRowId<"Payment">()
+  const saleId = await createSaleForNewPayment(context, {
+    id: paymentId,
+    ...overrides,
+  })
+  return { paymentId, saleId }
+}
+
+describe("createEetReversal", () => {
+  test.each([
+    {
+      name: "a rounded cash sale in full",
+      payment: { amount: 7_890, tipAmount: 0, cashReceivedAmount: 7_900 },
+      refunded: 7_900,
+      reversed: 7_900,
+    },
+    {
+      name: "one refunded item",
+      payment: { amount: 25_000, tipAmount: 0, cashReceivedAmount: null },
+      refunded: 5_000,
+      reversed: 5_000,
+    },
+  ])("reverses $name", async ({ payment, refunded, reversed }) => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      amount: NonNegativeInteger(payment.amount),
+      tipAmount: NonNegativeInteger(payment.tipAmount),
+      cashReceivedAmount:
+        payment.cashReceivedAmount === null
+          ? null
+          : NonNegativeInteger(payment.cashReceivedAmount),
+    })
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: refunded,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([
+      { amount: reversed, saleId, paymentId, unsupportedReason: null },
+    ])
+  })
+
+  test("leaves out a refunded tip that belongs to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(saveEetTipOwner("employees"))
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 25_000,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ amount: 23_000 }])
+  })
+
+  test("caps later refunds at what the sale has left", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+
+    const amounts = [
+      await reverseRefund(context, { paymentId, saleId, amount: 20_000 }),
+      await reverseRefund(context, { paymentId, saleId, amount: 10_000 }),
+      await reverseRefund(context, { paymentId, saleId, amount: 100 }),
+    ]
+
+    expect(amounts[2]).toBeNull()
+    expect(
+      (await context.deps.evolu.loadQuery(allEetReversalsQuery))
+        .map(({ amount }) => amount)
+        .sort()
+    ).toEqual([20_000, 5_000].sort())
+  })
+
+  test("creates nothing for an unsupported sale", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      currency: "EUR",
+    })
+
+    await expect(
+      reverseRefund(context, { paymentId, saleId, amount: 1_000 })
+    ).resolves.toBeNull()
+    expect(await context.deps.evolu.loadQuery(allEetReversalsQuery)).toEqual([])
+  })
+
+  test("keeps one reversal when two devices see the refund", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    const refundId = createRowId<"Refund">()
+
+    const first = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+      refundId,
+    })
+    const second = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+      refundId,
+      deviceId: createRowId<"Device">(),
+    })
+
+    expect(second).toBe(first)
+    expect(
+      await context.deps.evolu.loadQuery(allEetReversalsQuery)
+    ).toMatchObject([{ deviceId: context.deviceId }])
+  })
+
+  test("carries the establishment number in force at the refund", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([
+      { establishmentId: "77", unsupportedReason: null },
+    ])
+  })
+
+  test("never sends a reversal once EET runs in another environment", async () => {
+    await using context = await createEetTestContext({
+      productionUrl: "https://eet.invalid/production",
+    })
+    await configureEet(context, { environment: "playground" })
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(deliverEetSale(saleId))
+    await run.orThrow(selectEetEnvironment("production"))
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ unsupportedReason: "environment" }])
+    await expect(run(deliverEetReversal(reversalId))).resolves.toMatchObject({
+      ok: false,
+      error: { type: "EetSaleUnsupportedError" },
+    })
+  })
+
+  test("marks a reversal unsupported while EET is off", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(disableEet())
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ unsupportedReason: "disabled" }])
+  })
+})
+
+describe("deliverEetReversal", () => {
+  test("sends the negative amount at the moment of the refund", async () => {
+    await using context = await createEetTestContext({
+      now: new Date("2027-01-09T15:45:36.000Z"),
+    })
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(deliverEetSale(saleId))
+    context.clock.advance(
+      new Date("2027-01-10T08:00:00.000Z").getTime() -
+        context.clock.date.now().getTime()
+    )
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 25_000,
+    })
+    if (reversalId === null) throw new Error("Expected a reversal.")
+
+    await expect(
+      run.orThrow(deliverEetReversal(reversalId))
+    ).resolves.toMatchObject({ type: "accepted" })
+
+    const [sale, reversal] = context.responder.requests
+    expect(reversal?.data).toMatchObject({
+      celk_trzba: "-250.00",
+      dat_trzby: "2027-01-10T09:00:00+01:00",
+    })
+    expect(reversal?.data.porad_cis).not.toBe(sale?.data.porad_cis)
+    expect(reversal?.header.uuid_zpravy).not.toBe(sale?.header.uuid_zpravy)
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ pok: expect.stringMatching(/-ff$/u) }])
+  })
+
+  test("waits while its sale is not confirmed", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await using run = testCreateRun(context.deps)
+
+    await expect(run(deliverEetReversal(reversalId))).resolves.toEqual({
+      ok: false,
+      error: { type: "EetReversalWaitingForSaleError", id: reversalId },
+    })
+    expect(context.responder.requests).toEqual([])
+  })
+
+  test("stays pending while EET cannot be reached", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(deliverEetSale(saleId))
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    context.responder.answerNext({ type: "timeout" })
+
+    await expect(
+      run.orThrow(deliverEetReversal(reversalId))
+    ).resolves.toMatchObject({ type: "retry" })
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([
+      { pok: null, lastAttemptResult: "retry", hadUnansweredAttempt: 1 },
+    ])
   })
 })

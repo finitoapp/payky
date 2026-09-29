@@ -22,6 +22,11 @@ import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils
 import { eetSalesByBillIdQuery } from "@/core/modules/eet/eet-queries.ts"
 import { paymentsWithClaimsByBillIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
+import { refundSummariesByBillIdQuery } from "@/core/modules/refund/refund-queries.ts"
+import {
+  type PaymentRefundSummary,
+  summarizeRefundsByPayment,
+} from "@/core/modules/refund/refund-utils.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
@@ -47,6 +52,7 @@ import {
   paymentStatusLabelKey,
 } from "@/features/payment/payment-status-display.tsx"
 import { EetSaleStatusBadge } from "@/features/shared/eet-sale-status.tsx"
+import { RefundBadge } from "@/features/shared/refund-badge.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -82,6 +88,8 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
   const paymentsQuery = paymentsWithClaimsByBillIdQuery(billId)
   const { data: payments } = useEvoluQuery(paymentsQuery)
   const { data: eetSales } = useEvoluQuery(eetSalesByBillIdQuery(billId))
+  const { data: refunds } = useEvoluQuery(refundSummariesByBillIdQuery(billId))
+  const refundsByPayment = summarizeRefundsByPayment(refunds)
   const bill = bills[0]
 
   if (!bill || billStatus === undefined) {
@@ -256,6 +264,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
                   eetSale={eetSales.find(
                     (sale) => sale.paymentId === payment.id
                   )}
+                  refundSummary={refundsByPayment.get(payment.id)}
                   locale={locale}
                 />
               ))}
@@ -284,10 +293,12 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
 function BillDetailPaymentRow({
   payment,
   eetSale,
+  refundSummary,
   locale,
 }: {
   readonly payment: BillDetailPaymentRowData
   readonly eetSale: BillDetailEetSale | undefined
+  readonly refundSummary: PaymentRefundSummary | undefined
   readonly locale: string
 }) {
   const { t } = useTranslation()
@@ -340,6 +351,7 @@ function BillDetailPaymentRow({
         >
           {t(paymentStatusLabelKey[status])}
         </Badge>
+        <RefundBadge summary={refundSummary} />
         {eetSale === undefined ? null : <EetSaleStatusBadge sale={eetSale} />}
       </span>
     </Link>

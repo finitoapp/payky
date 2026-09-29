@@ -67,6 +67,7 @@ const createSaleForNewPayment = async (
         currency: "CZK",
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+        firstSettlementValue: overrides.amount ?? NonNegativeInteger(25_000),
         ...overrides,
       },
       deviceId: context.deviceId,
@@ -732,6 +733,7 @@ describe("retryEetSale", () => {
           currency: "CZK",
           method: "cashRegister",
           firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+          firstSettlementValue: NonNegativeInteger(25_000),
         },
         deviceId: createRowId<"Device">(),
       })

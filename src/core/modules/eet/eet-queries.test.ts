@@ -8,6 +8,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { createEetSale, deliverEetSale } from "./eet-actions.ts"
 import {
+  eetExtraClaimsQuery,
   eetPaymentsToReportQuery,
   eetSalesToDeliverQuery,
   unconfirmedEetSalesQuery,
@@ -17,6 +18,7 @@ import {
   createEetTestContext,
   createTestPayment,
   type EetTestContext,
+  settleByTransfer,
   settleInCash,
 } from "./eet-test-fixtures.ts"
 
@@ -42,6 +44,7 @@ const createSale = async (
         currency,
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+        firstSettlementValue: NonNegativeInteger(25_000),
       },
       deviceId,
     })
@@ -84,6 +87,10 @@ describe("eetPaymentsToReportQuery", () => {
           firstClaimedAt: context.clock.date.now().getTime(),
           firstClaimDeviceId: context.deviceId,
           method: "cashRegister",
+          firstClaimTransactionId: expect.any(String),
+          firstClaimAmount: 25_000,
+          firstClaimCurrency: "CZK",
+          paymentAmountSats: null,
         },
         expect.objectContaining({
           id: takenOnPhone,
@@ -104,7 +111,12 @@ describe("eetPaymentsToReportQuery", () => {
     if (row === undefined) throw new Error("Expected a payment to report.")
     await using run = testCreateRun(context.deps)
 
-    await run.ok(createEetSale({ payment: row, deviceId: context.deviceId }))
+    await run.ok(
+      createEetSale({
+        payment: { ...row, firstSettlementValue: row.amount },
+        deviceId: context.deviceId,
+      })
+    )
 
     await expect
       .poll(() => context.deps.evolu.loadQuery(eetPaymentsToReportQuery))
@@ -147,5 +159,54 @@ describe("eetSalesToDeliverQuery and unconfirmedEetSalesQuery", () => {
     expect(new Set(unconfirmed.map(({ id }) => id))).toEqual(
       new Set([pending, rejected, unsupported, otherDevice])
     )
+  })
+})
+
+describe("eetExtraClaimsQuery", () => {
+  test("lists every claim of a payment that may have received more than its amount", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const settledTwice = await createTestPayment(context)
+    await settleInCash(context, settledTwice)
+    await settleByTransfer(context, settledTwice)
+    const overpaid = await createTestPayment(context)
+    await settleByTransfer(context, overpaid, { amount: 30_000 })
+    const settledOnce = await createTestPayment(context)
+    await settleInCash(context, settledOnce)
+
+    const claims = await context.deps.evolu.loadQuery(eetExtraClaimsQuery)
+    const byPaymentThenAmount = (
+      left: { readonly paymentId: string; readonly amount: number },
+      right: { readonly paymentId: string; readonly amount: number }
+    ) =>
+      left.paymentId.localeCompare(right.paymentId) ||
+      left.amount - right.amount
+
+    expect(
+      claims
+        .map(({ paymentId, amount }) => ({ paymentId, amount }))
+        .toSorted(byPaymentThenAmount)
+    ).toEqual(
+      [
+        { paymentId: settledTwice, amount: 25_000 },
+        { paymentId: settledTwice, amount: 25_000 },
+        { paymentId: overpaid, amount: 30_000 },
+      ].toSorted(byPaymentThenAmount)
+    )
+    expect(claims.every(({ reportedExtra }) => reportedExtra === null)).toBe(
+      true
+    )
+  })
+
+  test("lists nothing while EET is disabled", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context, { enabled: false })
+    const paymentId = await createTestPayment(context)
+    await settleInCash(context, paymentId)
+    await settleByTransfer(context, paymentId)
+
+    await expect(
+      context.deps.evolu.loadQuery(eetExtraClaimsQuery)
+    ).resolves.toEqual([])
   })
 })

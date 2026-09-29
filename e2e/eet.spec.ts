@@ -1,7 +1,10 @@
 import type { Page } from "@playwright/test"
 import type { TranslationKey } from "../src/i18n/resources.ts"
 import { addCatalogItem } from "./support/bill.ts"
-import { createAndPaySecondPayment } from "./support/collisions.ts"
+import {
+  createAndPaySecondPayment,
+  simulateDuplicateSettlement,
+} from "./support/collisions.ts"
 import {
   createEetCertificateFile,
   enableEetWithGeneratedCertificate,
@@ -26,6 +29,7 @@ import {
   getPaymentIdFromUrl,
   markCashPaid,
   markCashPaidAndSettle,
+  prepareIbanPayment,
   refundFromPaymentDetail,
   startBillAndBeginCashPayment,
 } from "./support/payment.ts"
@@ -690,6 +694,43 @@ test("refunds of a paid bill reach EET as negative sales", async ({ page }) => {
     ).toBeVisible()
     await expect(page.getByTestId("refund-badge")).toHaveText(
       translate("en", "refund.state.full").replace("{amount}", "CZK 250.00")
+    )
+  })
+})
+
+test("a payment settled twice reports the extra money", async ({ page }) => {
+  test.slow()
+
+  await enableEetWithGeneratedCertificate(page, "en")
+
+  const paymentId =
+    await test.step("a cash payment is also settled by a bank transfer", async () => {
+      await page.goto("/", { waitUntil: "domcontentloaded" })
+      await createPayment(page, "en")
+      await prepareIbanPayment(page, "en")
+      await page
+        .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+        .click()
+      const paymentId = getPaymentIdFromUrl(page)
+      await markCashPaidAndSettle(page, "en")
+      await simulateDuplicateSettlement(page)
+      await expect
+        .poll(() => fakeEet.production.requests.length, eetDeliveryTimeout)
+        .toBe(2)
+      return paymentId
+    })
+
+  await test.step("the payment detail shows the sale and the extra money sale", async () => {
+    await openPaymentDetail(page, paymentId)
+    await expect(page.getByTestId("payment-detail-eet-extra")).toContainText(
+      translate("en", "paymentDetail.eet.extra.description")
+    )
+    await expect(eetStatusOf(page)).toHaveText(
+      [
+        translate("en", "eet.status.confirmed"),
+        translate("en", "eet.status.confirmed"),
+      ],
+      eetDeliveryTimeout
     )
   })
 })

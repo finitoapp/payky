@@ -40,6 +40,7 @@ import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
   type FiatCurrency,
+  IbanSchema,
   Integer,
   NonEmptyString255,
   NonEmptyStringSchema,
@@ -280,5 +281,43 @@ export const settleWithLightning = async (
       accountTransactionId,
       deviceId: null,
     })
+  )
+}
+
+export const settleByTransfer = async (
+  context: EetTestContext,
+  paymentId: PaymentId,
+  {
+    amount = 25_000,
+    deviceId = null,
+  }: {
+    readonly amount?: number
+    readonly deviceId?: DeviceId | null
+  } = {}
+): Promise<void> => {
+  await using run = testCreateRun(context.deps)
+  const bankAccountId = await run.ok(
+    createAccount({
+      deviceId: null,
+      name: NonEmptyString255("Bank account"),
+      iban: {
+        iban: IbanSchema.decode("CZ6508000000192000145399"),
+        currency: "CZK",
+      },
+    })
+  )
+  const accountTransactionId = await run.ok(
+    createAccountTransaction({
+      accountId: bankAccountId,
+      amount: Integer(amount),
+      currency: "CZK",
+      occurredAt: TimestampMs(context.clock.date.now().getTime()),
+      note: null,
+      internalTransferGroupId: null,
+      source: { deviceId: null, source: "auto" },
+    })
+  )
+  await run.ok(
+    claimManualReconciliation({ paymentId, accountTransactionId, deviceId })
   )
 }

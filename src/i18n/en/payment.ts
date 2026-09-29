@@ -9,6 +9,9 @@ export const enPayment = {
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "EET error {code}: {message}",
   "paymentDetail.eet.establishment": "Establishment",
+  "paymentDetail.eet.extra.description":
+    "Money that arrived after the first settlement, or above the payment amount, is reported as its own sale, and refunding it reverses only that sale.",
+  "paymentDetail.eet.extra.title": "Extra money in EET {amount}",
   "paymentDetail.eet.lastError": "Last error",
   "paymentDetail.eet.overdue": "Not confirmed within 48 hours of the sale.",
   "paymentDetail.eet.pok": "POK",

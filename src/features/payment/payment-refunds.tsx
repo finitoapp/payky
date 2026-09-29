@@ -555,7 +555,8 @@ function RefundEetReversal({
   const [retrying, setRetrying] = useState(false)
   const deviceId = useAtomValue(accountAtom).device.id
   const { status, isOverdue } = useEetSaleStatus(reversal)
-  const isWaitingForSale = status === "pending" && reversal.salePok === null
+  const isWaitingForSale =
+    status === "pending" && reversal.saleConfirmedAt === null
   const waitEndsAt = useEetRecordingDeviceWait({
     attempts: reversal,
     recordingDeviceId: reversal.deviceId,

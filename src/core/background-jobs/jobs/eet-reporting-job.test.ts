@@ -16,17 +16,20 @@ import {
   disableEet,
   enableEet,
   retryEetSale,
+  saveEetTipOwner,
   selectEetEnvironment,
 } from "@/core/modules/eet/eet-actions.ts"
 import {
   eetReversalsByPaymentIdQuery,
   eetSaleByPaymentIdQuery,
+  eetSalesByPaymentIdQuery,
 } from "@/core/modules/eet/eet-queries.ts"
 import {
   configureEet,
   createEetTestContext,
   createTestPayment,
   type EetTestContext,
+  settleByTransfer,
   settleInCash,
   settleWithLightning,
 } from "@/core/modules/eet/eet-test-fixtures.ts"
@@ -815,5 +818,348 @@ describe("eet reporting job: takeover", () => {
       data: { celk_trzba: "-50.00" },
     })
     expect(other.errors).toEqual([])
+  })
+})
+
+const salesOf = (context: EetTestContext, paymentId: PaymentId) =>
+  context.deps.evolu.loadQuery(eetSalesByPaymentIdQuery(paymentId))
+
+const settleTwice = async (context: EetTestContext, paymentId: PaymentId) => {
+  await settleInCash(context, paymentId)
+  context.clock.advance(1_000)
+  await settleByTransfer(context, paymentId, { deviceId: context.deviceId })
+}
+
+describe("eet reporting job: extra money", () => {
+  test("reports a payment settled twice as its sale and an extra sale", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+
+    await settleTwice(context, paymentId)
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        {
+          extraFrom: null,
+          amount: 25_000,
+          method: "cashRegister",
+          pok: expect.any(String),
+        },
+        {
+          extraFrom: 0,
+          amount: 25_000,
+          method: "iban",
+          deviceId: context.deviceId,
+          pok: expect.any(String),
+        },
+      ])
+    expect(
+      context.responder.requests.map(({ data }) => data.celk_trzba)
+    ).toEqual(["250.00", "250.00"])
+    const [sale, extraSale] = await salesOf(context, paymentId)
+    expect(extraSale?.sequenceNumber).not.toBe(sale?.sequenceNumber)
+    expect(extraSale?.saleAt).not.toBe(sale?.saleAt)
+    expect(job.errors).toEqual([])
+  })
+
+  test("reports the part of one transfer above the payment", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+
+    await settleByTransfer(context, paymentId, {
+      amount: 100_000,
+      deviceId: context.deviceId,
+    })
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, amount: 25_000, pok: expect.any(String) },
+        { extraFrom: 0, amount: 75_000, pok: expect.any(String) },
+      ])
+    expect(job.errors).toEqual([])
+  })
+
+  test("reports a split as the money each settlement brought", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+
+    await settleByTransfer(context, paymentId, {
+      amount: 15_000,
+      deviceId: context.deviceId,
+    })
+    context.clock.advance(1_000)
+    await settleByTransfer(context, paymentId, {
+      amount: 10_000,
+      deviceId: context.deviceId,
+    })
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, amount: 15_000, pok: expect.any(String) },
+        { extraFrom: 0, amount: 10_000, pok: expect.any(String) },
+      ])
+    const [sale, extraSale] = await salesOf(context, paymentId)
+    expect(extraSale?.saleAt).not.toBe(sale?.saleAt)
+    expect(job.errors).toEqual([])
+  })
+
+  test("reports only what a short first settlement brought", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+
+    await settleByTransfer(context, paymentId, {
+      amount: 15_000,
+      deviceId: context.deviceId,
+    })
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, amount: 15_000, pok: expect.any(String) },
+      ])
+    await settleLater(100)
+    await expect(salesOf(context, paymentId)).resolves.toHaveLength(1)
+    expect(
+      context.responder.requests.map(({ data }) => data.celk_trzba)
+    ).toEqual(["150.00"])
+    expect(job.errors).toEqual([])
+  })
+
+  test("reports each increase of the extra money once", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleTwice(context, paymentId)
+    await expect.poll(() => salesOf(context, paymentId)).toHaveLength(2)
+
+    await settleByTransfer(context, paymentId, {
+      amount: 10_000,
+      deviceId: context.deviceId,
+    })
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, amount: 25_000 },
+        { extraFrom: 0, amount: 25_000 },
+        { extraFrom: 25_000, amount: 10_000, pok: expect.any(String) },
+      ])
+    expect(job.errors).toEqual([])
+  })
+
+  test("reports all extra money while tips belong to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    {
+      await using run = testCreateRun(context.deps)
+      await run.ok(saveEetTipOwner("employees"))
+    }
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context, { tipAmount: 2_000 })
+
+    await settleTwice(context, paymentId)
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, amount: 23_000 },
+        { extraFrom: 0, amount: 25_000 },
+      ])
+    expect(job.errors).toEqual([])
+  })
+
+  test("never reports extra money brought while EET was disabled", async () => {
+    await using context = await createEetTestContext()
+    const paymentId = await createTestPayment(context)
+    await settleTwice(context, paymentId)
+    context.clock.advance(1_000)
+    await configureEet(context)
+    await using job = await startJob(context)
+
+    await settleLater(100)
+
+    await expect(salesOf(context, paymentId)).resolves.toEqual([])
+    expect(context.responder.requests).toEqual([])
+    expect(job.errors).toEqual([])
+  })
+
+  test("creates one extra sale when two devices see it", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using phone = await startJob(context)
+    await using tablet = await startJob(context, {
+      deviceId: createRowId<"Device">(),
+    })
+    const paymentId = await createTestPayment(context)
+
+    await settleTwice(context, paymentId)
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }, { pok: expect.any(String) }])
+    await settleLater(100)
+    await expect(salesOf(context, paymentId)).resolves.toHaveLength(2)
+    expect([...phone.errors, ...tablet.errors]).toEqual([])
+  })
+
+  test("leaves automatically matched extra money to the device that created the payment", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const tabletDeviceId = createRowId<"Device">()
+    await using phone = await startJob(context)
+    await using tablet = await startJob(context, { deviceId: tabletDeviceId })
+    const paymentId = await createTestPayment(context, {
+      deviceId: tabletDeviceId,
+    })
+
+    await settleInCash(context, paymentId, { deviceId: tabletDeviceId })
+    context.clock.advance(1_000)
+    await settleByTransfer(context, paymentId)
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, deviceId: tabletDeviceId },
+        {
+          extraFrom: 0,
+          deviceId: tabletDeviceId,
+          cashRegisterId: toEetCashRegisterId(tabletDeviceId),
+          pok: expect.any(String),
+        },
+      ])
+    expect([...phone.errors, ...tablet.errors]).toEqual([])
+  })
+})
+
+describe("eet reporting job: reversals of extra money", () => {
+  test("returning the duplicate leaves the real sale reported", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleTwice(context, paymentId)
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }, { pok: expect.any(String) }])
+
+    await refundInCash(context, { paymentId, amount: 25_000 })
+
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ amount: 25_000, pok: expect.any(String) }])
+    expect(
+      context.responder.requests.map(({ data }) => data.celk_trzba)
+    ).toEqual(["250.00", "250.00", "-250.00"])
+    expect(job.errors).toEqual([])
+  })
+
+  test("waits for the extra sale before reversing a refund", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const bankDeviceId = createRowId<"Device">()
+    await using job = await startJob(context, { priorityPeriodMs: 100 })
+    const paymentId = await createTestPayment(context)
+    await settleByTransfer(context, paymentId, {
+      amount: 15_000,
+      deviceId: context.deviceId,
+    })
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }])
+    context.clock.advance(1_000)
+    await settleByTransfer(context, paymentId, {
+      amount: 10_000,
+      deviceId: bankDeviceId,
+    })
+
+    await refundInCash(context, { paymentId, amount: 25_000 })
+    await settleLater(300)
+    await expect(reversalsOf(context, paymentId)).resolves.toEqual([])
+    context.clock.advance(1_000)
+
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ amount: 25_000, pok: expect.any(String) }])
+    expect(
+      context.responder.requests.map(({ data }) => data.celk_trzba)
+    ).toEqual(["150.00", "100.00", "-250.00"])
+    expect(job.errors).toEqual([])
+  })
+
+  test("sends the reversal only once the extra sale is confirmed", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleInCash(context, paymentId)
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }])
+    context.responder.answerNext({
+      type: "error",
+      code: 4,
+      message: "Neplatny podpis SOAP zpravy",
+    })
+    context.clock.advance(1_000)
+    await settleByTransfer(context, paymentId, { deviceId: context.deviceId })
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([{}, { lastAttemptResult: "rejected" }])
+
+    await refundInCash(context, { paymentId, amount: 25_000 })
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ amount: 25_000, saleConfirmedAt: null }])
+    await settleLater(100)
+    expect(context.responder.requests).toHaveLength(2)
+
+    const [, extraSale] = await salesOf(context, paymentId)
+    if (extraSale === undefined) throw new Error("Expected an extra sale.")
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(
+      retryEetSale({ id: extraSale.id, deviceId: context.deviceId })
+    )
+
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }])
+    expect(job.errors).toEqual([])
+  })
+
+  test("refunding the second payment of an overpaid bill reverses only its sale", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const billId = await createTestBill(context)
+    const first = await createTestPayment(context, { billId })
+    const second = await createTestPayment(context, { billId })
+    await settleInCash(context, first)
+    await settleByTransfer(context, second, { deviceId: context.deviceId })
+    await expect
+      .poll(async () => [
+        ...(await saleOf(context, first)),
+        ...(await saleOf(context, second)),
+      ])
+      .toMatchObject([{ pok: expect.any(String) }, { pok: expect.any(String) }])
+
+    await refundInCash(context, { paymentId: second, amount: 25_000 })
+
+    await expect
+      .poll(() => reversalsOf(context, second))
+      .toMatchObject([{ amount: 25_000, pok: expect.any(String) }])
+    await expect(reversalsOf(context, first)).resolves.toEqual([])
+    expect(job.errors).toEqual([])
   })
 })

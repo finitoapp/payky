@@ -548,6 +548,7 @@ export function E2eTestBridge() {
             firstClaimedAt: TimestampMsSchema.decode(
               run.deps.date.now().getTime() - minutesAgo * 60_000
             ),
+            firstSettlementValue: payment.amount,
           },
           deviceId: otherDeviceId,
         })

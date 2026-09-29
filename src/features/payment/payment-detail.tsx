@@ -53,7 +53,7 @@ import {
   type DeliverEetSaleError,
   retryEetSale,
 } from "@/core/modules/eet/eet-actions.ts"
-import { eetSaleByPaymentIdQuery } from "@/core/modules/eet/eet-queries.ts"
+import { eetSalesByPaymentIdQuery } from "@/core/modules/eet/eet-queries.ts"
 import {
   parseEetDateTime,
   parseEetWarnings,
@@ -413,7 +413,7 @@ function PaymentDetailContent({
         />
       ) : null}
 
-      <PaymentDetailEetCard paymentId={paymentId} />
+      <PaymentDetailEetCards paymentId={paymentId} />
 
       <Card>
         <CardHeader>
@@ -859,7 +859,9 @@ function PaymentDetailBillCard({
   )
 }
 
-type PaymentDetailEetSale = InferRow<ReturnType<typeof eetSaleByPaymentIdQuery>>
+type PaymentDetailEetSale = InferRow<
+  ReturnType<typeof eetSalesByPaymentIdQuery>
+>
 
 const retryErrorKeys = {
   EetSaleNotFoundError: "paymentDetail.eet.retry.failed",
@@ -876,14 +878,16 @@ const retryOutcomeKeys = {
   rejected: "paymentDetail.eet.retry.rejected",
 } satisfies Record<EetDeliveryOutcome["type"], TranslationKey>
 
-function PaymentDetailEetCard({
+function PaymentDetailEetCards({
   paymentId,
 }: {
   readonly paymentId: PaymentId
 }) {
-  const [sale] = useEvoluQuery(eetSaleByPaymentIdQuery(paymentId)).data
+  const sales = useEvoluQuery(eetSalesByPaymentIdQuery(paymentId)).data
 
-  return sale === undefined ? null : <PaymentDetailEetSaleCard sale={sale} />
+  return sales.map((sale) => (
+    <PaymentDetailEetSaleCard key={sale.id} sale={sale} />
+  ))
 }
 
 function PaymentDetailEetSaleCard({
@@ -897,6 +901,7 @@ function PaymentDetailEetSaleCard({
   const [retrying, setRetrying] = useState(false)
   const deviceId = useAtomValue(accountAtom).device.id
   const { status, isOverdue } = useEetSaleStatus(sale)
+  const isExtraMoney = sale.extraFrom !== null
   const waitEndsAt = useEetRecordingDeviceWait({
     attempts: sale,
     recordingDeviceId: sale.deviceId,
@@ -931,14 +936,32 @@ function PaymentDetailEetSaleCard({
   }
 
   return (
-    <Card data-testid="payment-detail-eet">
+    <Card
+      data-testid={
+        isExtraMoney ? "payment-detail-eet-extra" : "payment-detail-eet"
+      }
+    >
       <CardHeader>
-        <CardTitle>{t("paymentDetail.eet.title")}</CardTitle>
+        <CardTitle>
+          {isExtraMoney
+            ? t("paymentDetail.eet.extra.title", {
+                amount: formatMoney(
+                  { value: sale.amount, currency: sale.currency },
+                  locale
+                ),
+              })
+            : t("paymentDetail.eet.title")}
+        </CardTitle>
         <CardAction>
           <EetSaleStatusBadge sale={sale} />
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {isExtraMoney ? (
+          <p className="text-sm text-muted-foreground">
+            {t("paymentDetail.eet.extra.description")}
+          </p>
+        ) : null}
         {status === "testConfirmed" || sale.environment === "playground" ? (
           <p className="text-xs text-info">{t("paymentDetail.eet.test")}</p>
         ) : null}

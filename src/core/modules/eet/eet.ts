@@ -76,6 +76,7 @@ export const eetSale = {
   lastErrorCode: IntegerSchema.nullable(),
   lastErrorMessage: NonEmptyStringSchema.nullable(),
   lastGlobalTransactionId: NonEmptyString255Schema.nullable(),
+  extraFrom: NonNegativeIntegerSchema.nullable(),
 } as const
 
 export const eetSaleConfirmation = {

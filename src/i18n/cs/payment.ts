@@ -11,6 +11,9 @@ export const csPayment = {
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "Chyba EET {code}: {message}",
   "paymentDetail.eet.establishment": "Evidenční jednotka",
+  "paymentDetail.eet.extra.description":
+    "Peníze, které přišly po prvním zaplacení nebo nad částku platby, jsou v EET jako samostatná tržba a jejich vrácení stornuje jen ji.",
+  "paymentDetail.eet.extra.title": "Dodatečná platba v EET {amount}",
   "paymentDetail.eet.lastError": "Poslední chyba",
   "paymentDetail.eet.overdue": "Nepotvrzeno do 48 hodin od tržby.",
   "paymentDetail.eet.pok": "POK",

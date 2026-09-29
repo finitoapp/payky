@@ -11,6 +11,9 @@ export const skPayment = {
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "Chyba EET {code}: {message}",
   "paymentDetail.eet.establishment": "Evidenčná jednotka",
+  "paymentDetail.eet.extra.description":
+    "Peniaze, ktoré prišli po prvom zaplatení alebo nad sumu platby, sú v EET ako samostatná tržba a ich vrátenie stornuje len ju.",
+  "paymentDetail.eet.extra.title": "Dodatočná platba v EET {amount}",
   "paymentDetail.eet.lastError": "Posledná chyba",
   "paymentDetail.eet.overdue": "Nepotvrdené do 48 hodín od tržby.",
   "paymentDetail.eet.pok": "POK",

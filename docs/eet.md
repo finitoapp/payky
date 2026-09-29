@@ -11,7 +11,7 @@ how a refund reverses it, and what each state and edge case means. Read it befor
 |---|---|---|
 | `eetSettings` (one row, fixed id) | `modules/eet/eet.ts` | `enabledAt`, `environment`, `establishmentId`, `certificateId`, `tipOwner` |
 | `eetCertificate` | same | EIC, validity, DER cert + **PKCS#8 private key** (base64), `isTestCertificate` |
-| `eetSale` (id = `eetSale:<paymentId>`) | same | Frozen snapshot of what is reported + last attempt bookkeeping |
+| `eetSale` (id = `eetSale:<paymentId>`, or `eetSale:<paymentId>:extra:<extraFrom>` for extra money) | same | Frozen snapshot of what is reported + last attempt bookkeeping. `extraFrom` is `null` on a payment's sale |
 | `eetSaleConfirmation` (same id as sale) | same | FIK/`pok`, `receivedAt`, `isTest`, warnings. Its existence = confirmed |
 | `eetReversal` (id = `eetReversal:<refundId>`) | same | Frozen snapshot of the negative sale one refund reports + last attempt bookkeeping |
 | `eetReversalConfirmation` (same id as reversal) | same | Same as `eetSaleConfirmation`, for a reversal |
@@ -75,6 +75,7 @@ Every sale and reversal has a **recording device**, stored as its `deviceId`:
 |---|---|
 | Sale | the first claim's `deviceId`: the device where staff confirmed cash or card, or matched a transfer by hand |
 | Sale with an automatic claim (FIO, Spark) | `payment.deviceId`, the device that showed the QR code or invoice |
+| Extra money sale | the same rule, applied to the claim that brought the extra money |
 | Reversal | `refund.deviceId` |
 
 A payment or refund without any device is never reported. The record's
@@ -111,7 +112,7 @@ when a device clock is more than 5 minutes ahead of the recording device's.
 
 | Field | Value |
 |---|---|
-| `amount` | `payment.amount` (fiat minor units), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
+| `amount` | what the first claim brought, capped at `payment.amount` (`calculateEetSettlementValue`), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
 | `saleAt` (`dat_trzby`) | first claim's `claimedAt` |
 | `sequenceNumber` (`porad_cis`) | the payment id |
 | `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id — one register per device |
@@ -194,6 +195,35 @@ the other device shows until when it waits for the recording device. An
 attempt already made means the recording device's next message is a repeat
 anyway, so a retry from elsewhere cannot make a first-sending mark wrong.
 
+## Extra money
+
+A payment's sale reports what its first claim brought. Its **extra money**
+is everything its claims bring beyond that: the rest of a payment the first
+claim paid only in part, and any money above `payment.amount`. It is the
+distinct claimed transactions in the payment's currency (the valuation bill
+coverage uses) less the first claim's value capped at `payment.amount`. A
+split between cash and a transfer, two devices settling one payment through
+two methods, a transfer larger than the payment, or a second transfer
+attached by hand all bring some.
+
+Money kept is a sale at the moment it arrives, and money returned is
+reversed, so extra money is reported when it arrives rather than held back
+until staff decides. `eetExtraClaimsQuery` lists the claims of payments that
+may have extra money, and `deriveDueEetExtraSale` turns them into the next
+**extra money sale**:
+
+| Field | Value |
+|---|---|
+| `extraFrom` | the extra money already reported: the sum of the payment's extra money sales, or the extra money brought before `enabledAt` when that is larger |
+| `amount` | the current extra money minus `extraFrom`. The tip owner does not matter: the tip is left out of the payment's sale |
+| `method`, `saleAt` | the latest claim's, ordered by `claimedAt`, then claim id |
+| `sequenceNumber` | the extra money sale's own id |
+
+Each later increase becomes one more extra money sale at the next
+`extraFrom`. Keying by the level lets a device that missed a claim report
+the rest once the claim syncs. Extra money that shrinks because a claim was
+removed keeps its sale. Everything else follows the sale's rules.
+
 ## Refunds and storno
 
 A refund (`refundPayment` in `modules/refund`) returns money for a paid
@@ -202,25 +232,26 @@ closed (see `bill-payment-states.md`). EET 2.0 has no storno message: a
 reversal is a new sale with a negative amount and no link to the original.
 
 `eetRefundsToReverseQuery` selects a refund of any device when its payment
-has a supported `eetSale` and no reversal exists for it yet. The refund's
-device creates the reversal at once; other devices only after its 10
-minutes, counted from the sale's confirmation when that came after the
-refund. `createEetReversal` freezes:
+has a supported sale and no reversal exists for it yet. The job skips it
+while the payment has extra money no extra money sale reports yet. The
+refund's device creates the reversal at once; other devices only after its
+10 minutes, counted from the latest confirmation of the payment's supported
+sales when that came after the refund. `createEetReversal` freezes:
 
 | Field | Value |
 |---|---|
-| `amount` | refund amount, capped at the sale's `amount` minus earlier supported reversals. Stored positive, sent negated (`-250.00`) |
+| `amount` | refund amount, capped at what the payment's supported sale and extra money sales report together minus earlier supported reversals. Stored positive, sent negated (`-250.00`) |
 | `saleAt` (`dat_trzby`) | the refund's `refundedAt` |
 | `sequenceNumber` (`porad_cis`) | the refund id |
 | `cashRegisterId` (`id_pokl`) | the device that recorded the refund |
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
 | `unsupportedReason` | `disabled` if EET is off or not set up, `environment` if the current environment is not the sale's, `taxpayer` if the current EIC is not the sale's |
 
-`eetReversalsToDeliverQuery` holds a reversal back until its sale
-has a confirmation, so EET never gets the reversal first. Delivery then
-follows the sale's rules: Web Lock `eet-reversal-<id>`, the same outcome
-mapping, backoff, status, overdue and manual retry. Manual retry never
-rewrites a reversal's frozen data.
+`eetReversalsToDeliverQuery` holds a reversal back until every supported
+sale of its payment has a confirmation, so EET never gets the reversal
+first. Delivery then follows the sale's rules: Web Lock
+`eet-reversal-<id>`, the same outcome mapping, backoff, status, overdue and
+manual retry. Manual retry never rewrites a reversal's frozen data.
 
 Each refund shows its reversal status on the payment detail, and Settings →
 EET lists unconfirmed reversals next to unconfirmed sales.
@@ -236,13 +267,14 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | Refund before the sale was created | The reversal is created once the sale exists |
 | Refund of a payment with no sale or an unsupported sale | No reversal |
 | Refunded tip that employees own | Not reversed: the cap is what the sale reported |
-| Sale pending or rejected | Its reversals wait, for good if the sale is never confirmed |
+| Sale or extra money sale pending or rejected | The payment's reversals wait, for good if it is never confirmed |
 | EET disabled, or environment or EIC changed, when the reversal is created | Reversal `unsupported`, never sent |
 | Claim removed before creation | Not reported (query needs an active claim) |
-| Overpaid / multiple claims | One sale for `payment.amount`; extra money is not reported |
+| Overpaid / multiple claims | One sale for `payment.amount` and an extra money sale for the rest; a refund of the extra money reverses only that |
+| Refund before the extra money sale exists | The reversal waits for it, then covers the refund in full |
 | Cash rounded or change left | The sale reports the cash received (78.90 charged, 79 or 80 received); the payment, its claim and the cash register keep 78.90 |
 | Cash payment settled before the received amount was recorded | Reports `payment.amount` |
-| Underpaid claim | Still `payment.amount` |
+| First claim short of the amount | The sale reports what the claim brought; the rest becomes an extra money sale when it arrives, and is never reported if it never does |
 | Non-CZK payment | `unsupported`, never sent |
 | Recording device offline or lost | After 10 minutes another device of the account creates and delivers its records, marked as repeated |
 | Recording device alive while EET is down | After 10 minutes other devices retry too; every message is a repeat with the same body, so EET sees one sale |
@@ -265,19 +297,16 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 2. **Silent loss on re-enable.** The `claimedAt >= enabledAt` rule drops
    payments whose sale creation had not run before a disable/enable cycle.
    A persisted "disabled since/until" window would fix it.
-3. **Reported amount is `payment.amount` for every method but cash.** Cash
-   reports what was received; over- and underpayments of other methods are
-   not reflected.
-4. **All payment methods are reported.** `method` is stored but unused; if
+3. **All payment methods are reported.** `method` is stored but unused; if
    some methods (e.g. bank transfer) should not be EET sales, nothing filters them.
-5. **Expired certificate is not a gate.** Only the settings card warns
+4. **Expired certificate is not a gate.** Only the settings card warns
    (21 days ahead); nothing warns on the terminal, and sales keep failing.
-6. **No bulk retry** of rejected sales after a configuration fix.
-7. **Response verifier checks only** the signer's `O` field
+5. **No bulk retry** of rejected sales after a configuration fix.
+6. **Response verifier checks only** the signer's `O` field
    (`Generální finanční ředitelství`), validity dates and the signature — no
    chain to a trusted CA, so a self-signed cert with that `O` passes.
-8. **Endless retry** with no cap and no escalation beyond the overdue badge.
-9. **Private key syncs to every device** of the account (encrypted, but
+7. **Endless retry** with no cap and no escalation beyond the overdue badge.
+8. **Private key syncs to every device** of the account (encrypted, but
    a compromised device leaks the signing key).
-10. **Sale time = claim time**, not when the customer paid; for an IBAN
+9. **Sale time = claim time**, not when the customer paid; for an IBAN
     transfer matched later by bank sync, `dat_trzby` is the match time.

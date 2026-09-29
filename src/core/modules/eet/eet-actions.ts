@@ -24,6 +24,7 @@ import {
   eetReversalByIdQuery,
   eetReversalsBySaleIdQuery,
   eetSaleByIdQuery,
+  eetSalesByPaymentIdQuery,
   eetSettingsQuery,
   eetSigningCertificateQuery,
 } from "@/core/modules/eet/eet-queries.ts"
@@ -41,8 +42,10 @@ import {
 import {
   bytesToEetBase64,
   createEetCertificateId,
+  createEetExtraSaleId,
   createEetReversalId,
   createEetSaleId,
+  type EetExtraSaleDue,
   eetBase64ToBytes,
   eetSettingsId,
   findEetConfigurationGaps,
@@ -306,26 +309,34 @@ export const disableEet =
     return ok(null)
   }
 
-export const createEetSale =
+const createEetSaleRecord =
   ({
+    id,
+    extraFrom,
     payment,
+    method,
+    settledAt,
     deviceId,
+    sequenceNumber,
+    receivedAmount,
+    tipAmount,
   }: {
+    readonly id: EetSaleId
+    readonly extraFrom: NonNegativeInteger | null
     readonly payment: {
       readonly id: PaymentId
       readonly billId: BillId | null
-      readonly amount: NonNegativeInteger
-      readonly tipAmount: NonNegativeInteger
-      readonly cashReceivedAmount: NonNegativeInteger | null
       readonly currency: FiatCurrency
-      readonly method: AccountKind
-      readonly firstClaimedAt: TimestampMs
     }
+    readonly method: AccountKind
+    readonly settledAt: TimestampMs
     readonly deviceId: DeviceId
+    readonly sequenceNumber: string
+    readonly receivedAmount: NonNegativeInteger
+    readonly tipAmount: NonNegativeInteger
   }): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> =>
   async (run) => {
     const { evolu, evoluOwnerId } = run.deps
-    const id = createEetSaleId(payment.id)
     const [existing] = await evolu.loadQuery(eetSaleByIdQuery(id))
     if (existing !== undefined) return ok(id)
 
@@ -336,11 +347,10 @@ export const createEetSale =
       return ok(null)
     }
 
-    const receivedAmount =
-      payment.method === "cashRegister"
-        ? (payment.cashReceivedAmount ?? payment.amount)
-        : payment.amount
-
+    const reportedAmount =
+      settings.tipOwner === "employees"
+        ? calculatePaymentBaseAmount({ amount: receivedAmount, tipAmount })
+        : receivedAmount
     await runMutationWithCompletion((options) =>
       evolu.upsert(
         "eetSale",
@@ -349,14 +359,8 @@ export const createEetSale =
           paymentId: payment.id,
           billId: payment.billId,
           deviceId,
-          method: payment.method,
-          amount:
-            settings.tipOwner === "employees"
-              ? calculatePaymentBaseAmount({
-                  amount: receivedAmount,
-                  tipAmount: payment.tipAmount,
-                })
-              : receivedAmount,
+          method,
+          amount: reportedAmount,
           currency: payment.currency,
           environment: resolveEetEnvironment({
             environment: settings.environment,
@@ -366,9 +370,12 @@ export const createEetSale =
           eic,
           establishmentId,
           cashRegisterId: toEetCashRegisterId(deviceId),
-          sequenceNumber: EetSequenceNumberSchema.decode(payment.id),
-          saleAt: formatEetDateTime(new Date(payment.firstClaimedAt)),
-          unsupportedReason: getEetUnsupportedReason(payment),
+          sequenceNumber: EetSequenceNumberSchema.decode(sequenceNumber),
+          saleAt: formatEetDateTime(new Date(settledAt)),
+          unsupportedReason: getEetUnsupportedReason({
+            amount: reportedAmount,
+            currency: payment.currency,
+          }),
           hadUnansweredAttempt: sqliteFalse,
           attemptStartedAt: null,
           lastAttemptAt: null,
@@ -377,6 +384,7 @@ export const createEetSale =
           lastErrorCode: null,
           lastErrorMessage: null,
           lastGlobalTransactionId: null,
+          extraFrom,
           isDeleted: sqliteFalse,
         },
         { ...options, ownerId: evoluOwnerId }
@@ -385,6 +393,70 @@ export const createEetSale =
 
     return ok(id)
   }
+
+export const createEetSale = ({
+  payment,
+  deviceId,
+}: {
+  readonly payment: {
+    readonly id: PaymentId
+    readonly billId: BillId | null
+    readonly amount: NonNegativeInteger
+    readonly tipAmount: NonNegativeInteger
+    readonly cashReceivedAmount: NonNegativeInteger | null
+    readonly currency: FiatCurrency
+    readonly method: AccountKind
+    readonly firstClaimedAt: TimestampMs
+    readonly firstSettlementValue: NonNegativeInteger
+  }
+  readonly deviceId: DeviceId
+}): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> => {
+  return createEetSaleRecord({
+    id: createEetSaleId(payment.id),
+    extraFrom: null,
+    payment,
+    method: payment.method,
+    settledAt: payment.firstClaimedAt,
+    deviceId,
+    sequenceNumber: payment.id,
+    receivedAmount:
+      payment.method === "cashRegister"
+        ? (payment.cashReceivedAmount ?? payment.amount)
+        : payment.firstSettlementValue,
+    tipAmount: payment.tipAmount,
+  })
+}
+
+export const createEetExtraSale = ({
+  payment,
+  due,
+  deviceId,
+}: {
+  readonly payment: {
+    readonly id: PaymentId
+    readonly billId: BillId | null
+    readonly currency: FiatCurrency
+  }
+  readonly due: EetExtraSaleDue
+  readonly deviceId: DeviceId
+}): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> => {
+  const id = createEetExtraSaleId({
+    paymentId: payment.id,
+    extraFrom: due.extraFrom,
+  })
+
+  return createEetSaleRecord({
+    id,
+    extraFrom: due.extraFrom,
+    payment,
+    method: due.claim.method,
+    settledAt: due.claim.claimedAt,
+    deviceId,
+    sequenceNumber: id,
+    receivedAmount: due.amount,
+    tipAmount: NonNegativeInteger(0),
+  })
+}
 
 const toNonEmpty255 = (value: string | null) =>
   value === null || value.trim() === ""
@@ -657,7 +729,13 @@ export const createEetReversal =
     const reversedAmount = reversals
       .filter(({ unsupportedReason }) => unsupportedReason === null)
       .reduce((sum, reversal) => sum + reversal.amount, 0)
-    const amount = Math.min(refund.amount, sale.amount - reversedAmount)
+    const sales = await evolu.loadQuery(
+      eetSalesByPaymentIdQuery(refund.paymentId)
+    )
+    const reportedAmount = sales
+      .filter(({ unsupportedReason }) => unsupportedReason === null)
+      .reduce((sum, paymentSale) => sum + paymentSale.amount, 0)
+    const amount = Math.min(refund.amount, reportedAmount - reversedAmount)
     if (amount <= 0) return ok(null)
 
     const settings = await loadEetSettings(evolu)
@@ -747,7 +825,7 @@ export const deliverEetReversal =
         if (reversal.unsupportedReason !== null) {
           return err(createEetSaleUnsupportedError({ id }))
         }
-        if (reversal.salePok === null || reversal.saleConfirmedAt === null) {
+        if (reversal.saleConfirmedAt === null) {
           return err(createEetReversalWaitingForSaleError({ id }))
         }
 

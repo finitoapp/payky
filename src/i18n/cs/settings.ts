@@ -271,6 +271,7 @@ export const csSettings = {
   "settings.eet.title": "EET",
   "settings.eet.unconfirmed.description": "Tržby, které EET zatím nepotvrdila.",
   "settings.eet.unconfirmed.empty": "EET potvrdila všechny tržby.",
+  "settings.eet.unconfirmed.reversal": "Storno {amount}",
   "settings.eet.unconfirmed.title": "Nepotvrzené tržby",
   "settings.evoluExport.action": "Exportovat",
   "settings.evoluExport.action.pending": "Exportuji...",

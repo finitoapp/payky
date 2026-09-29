@@ -25,6 +25,18 @@ export const enPayment = {
     "EET did not answer. The sale will be sent again automatically.",
   "paymentDetail.eet.retry.rejected": "EET rejected the sale again.",
   "paymentDetail.eet.retry.unsupported": "This sale cannot be reported to EET.",
+  "paymentDetail.eet.reversal.retry.confirmed": "EET confirmed the reversal.",
+  "paymentDetail.eet.reversal.retry.rejected":
+    "EET rejected the reversal again.",
+  "paymentDetail.eet.reversal.title": "EET reversal {amount}",
+  "paymentDetail.eet.reversal.unsupported.disabled":
+    "EET was switched off at the refund, so the reversal is not sent.",
+  "paymentDetail.eet.reversal.unsupported.environment":
+    "EET now runs in another environment than the sale, so the reversal is not sent.",
+  "paymentDetail.eet.reversal.unsupported.taxpayer":
+    "EET now reports for another taxpayer than the sale, so the reversal is not sent.",
+  "paymentDetail.eet.reversal.waiting":
+    "Waits until EET confirms the original sale.",
   "paymentDetail.eet.saleAt": "Time of sale",
   "paymentDetail.eet.sequenceNumber": "Sale number",
   "paymentDetail.eet.test":
@@ -35,6 +47,10 @@ export const enPayment = {
     "EET accepts sales in Czech crowns only, so this sale was not sent.",
   "paymentDetail.eet.warning": "EET warning {code}",
   "paymentDetail.number": "Payment #{number}",
+  "paymentDetail.refunds.action": "Refund money",
+  "paymentDetail.refunds.method.cashRegister": "From the cash register",
+  "paymentDetail.refunds.method.outside": "Outside Payky",
+  "paymentDetail.refunds.title": "Refunds",
   "paymentDetail.tipIncluded": "Includes {amount} tip",
   "paymentDetail.canceledAtValue": "Canceled {date}",
   "paymentDetail.expiresAt": "Expires at {time}",
@@ -238,4 +254,30 @@ export const enPayment = {
   "paymentWait.scanOrTap": "Scan and pay",
   "paymentWait.wakeLockUnsupported":
     "This browser cannot keep the screen awake automatically.",
+  "refund.created": "Refund recorded.",
+  "refund.dialog.amount.invalid": "Enter an amount up to {amount}.",
+  "refund.dialog.amount.label": "Amount to refund",
+  "refund.dialog.cancel": "Cancel",
+  "refund.dialog.confirm": "Refund {amount}",
+  "refund.dialog.confirmEmpty": "Refund",
+  "refund.dialog.description":
+    "A refund cannot be undone. The payment stays paid and its bill stays closed.",
+  "refund.dialog.items.available": "Up to {quantity}",
+  "refund.dialog.items.decrease": "Fewer {name}",
+  "refund.dialog.items.increase": "More {name}",
+  "refund.dialog.items.label": "Items to refund",
+  "refund.dialog.method.cashRegister": "Cash from the register",
+  "refund.dialog.method.label": "How the money goes back",
+  "refund.dialog.method.outside":
+    "Outside Payky, for example on the card terminal",
+  "refund.dialog.mode.amount": "Amount",
+  "refund.dialog.mode.items": "Items",
+  "refund.dialog.mode.label": "What to refund",
+  "refund.dialog.title": "Refund money",
+  "refund.error.amount": "The amount is more than what is left to refund.",
+  "refund.error.cashRegister": "There is no cash register for this currency.",
+  "refund.error.items": "These items can no longer be refunded.",
+  "refund.error.notPaid": "Only a paid payment can be refunded.",
+  "refund.state.full": "Refunded {amount}",
+  "refund.state.partial": "Partly refunded {amount}",
 } as const

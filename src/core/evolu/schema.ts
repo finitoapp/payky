@@ -35,6 +35,8 @@ import { device, deviceIndexes } from "@/core/modules/device/device.ts"
 import {
   eetCertificate,
   eetIndexes,
+  eetReversal,
+  eetReversalConfirmation,
   eetSale,
   eetSaleConfirmation,
   eetSettings,
@@ -70,6 +72,11 @@ import {
   reconciliationClaim,
   reconciliationClaimIndexes,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim.ts"
+import {
+  refund,
+  refundIndexes,
+  refundLine,
+} from "@/core/modules/refund/refund.ts"
 import { table } from "@/core/modules/table/table.ts"
 import { taxRate, taxRateIndexes } from "@/core/modules/tax-rate/tax-rate.ts"
 
@@ -116,6 +123,10 @@ export const AppSchema = {
   eetCertificate,
   eetSale,
   eetSaleConfirmation,
+  eetReversal,
+  eetReversalConfirmation,
+  refund,
+  refundLine,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)
@@ -134,6 +145,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...deviceIndexes(create),
   ...fioPluginIndexes(create),
   ...eetIndexes(create),
+  ...refundIndexes(create),
 ]
 
 export type EvoluSchema = typeof AppSchema

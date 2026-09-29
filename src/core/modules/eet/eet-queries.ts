@@ -3,7 +3,7 @@ import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
-import type { EetSaleId } from "@/core/modules/eet/eet-types.ts"
+import type { EetReversalId, EetSaleId } from "@/core/modules/eet/eet-types.ts"
 import { createEetSaleId, eetSettingsId } from "@/core/modules/eet/eet-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 
@@ -258,4 +258,195 @@ export const unconfirmedEetSalesQuery = createQuery((db) =>
     .where("eetSale.saleAt", "is not", null)
     .orderBy("eetSale.saleAt", "desc")
     .$narrowType<EetSaleRequiredColumns>()
+)
+
+export const eetRefundsToReverseQuery = (deviceId: DeviceId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("refund")
+      .innerJoin("eetSale", "eetSale.paymentId", "refund.paymentId")
+      .select([
+        "refund.id",
+        "refund.paymentId",
+        "refund.amount",
+        "refund.refundedAt",
+        "eetSale.id as saleId",
+      ])
+      .where("refund.deviceId", "=", deviceId)
+      .where("refund.isDeleted", "is not", sqliteTrue)
+      .where("refund.paymentId", "is not", null)
+      .where("refund.amount", "is not", null)
+      .where("refund.refundedAt", "is not", null)
+      .where("eetSale.isDeleted", "is not", sqliteTrue)
+      .where("eetSale.unsupportedReason", "is", null)
+      .where((eb) =>
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("eetReversal")
+              .select("eetReversal.id")
+              .whereRef("eetReversal.refundId", "=", "refund.id")
+          )
+        )
+      )
+      .orderBy("refund.refundedAt")
+      .$narrowType<{
+        paymentId: KyselyNotNull
+        amount: KyselyNotNull
+        refundedAt: KyselyNotNull
+      }>()
+  )
+
+export const eetReversalsBySaleIdQuery = (saleId: EetSaleId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("eetReversal")
+      .select([
+        "eetReversal.id",
+        "eetReversal.amount",
+        "eetReversal.unsupportedReason",
+      ])
+      .where("eetReversal.saleId", "=", saleId)
+      .where("eetReversal.isDeleted", "is not", sqliteTrue)
+      .where("eetReversal.amount", "is not", null)
+      .$narrowType<{ amount: KyselyNotNull }>()
+  )
+
+export const eetReversalsToDeliverQuery = (deviceId: DeviceId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("eetReversal")
+      .innerJoin("eetSaleConfirmation", (join) =>
+        join
+          .onRef("eetSaleConfirmation.id", "=", "eetReversal.saleId")
+          .on("eetSaleConfirmation.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("eetReversalConfirmation", (join) =>
+        join
+          .onRef("eetReversalConfirmation.id", "=", "eetReversal.id")
+          .on("eetReversalConfirmation.isDeleted", "is not", sqliteTrue)
+      )
+      .select(["eetReversal.id", "eetReversal.lastAttemptAt"])
+      .where("eetReversal.deviceId", "=", deviceId)
+      .where("eetReversal.isDeleted", "is not", sqliteTrue)
+      .where("eetReversal.unsupportedReason", "is", null)
+      .where((eb) =>
+        eb.or([
+          eb("eetReversal.lastAttemptResult", "is", null),
+          eb("eetReversal.lastAttemptResult", "=", "retry"),
+        ])
+      )
+      .where("eetReversalConfirmation.id", "is", null)
+      .orderBy("eetReversal.createdAt")
+  )
+
+const eetReversalColumns = [
+  "eetReversal.id",
+  "eetReversal.refundId",
+  "eetReversal.saleId",
+  "eetReversal.paymentId",
+  "eetReversal.deviceId",
+  "eetReversal.amount",
+  "eetReversal.currency",
+  "eetReversal.environment",
+  "eetReversal.eic",
+  "eetReversal.establishmentId",
+  "eetReversal.cashRegisterId",
+  "eetReversal.sequenceNumber",
+  "eetReversal.saleAt",
+  "eetReversal.unsupportedReason",
+  "eetReversal.hadUnansweredAttempt",
+  "eetReversal.lastAttemptAt",
+  "eetReversal.lastAttemptResult",
+  "eetReversal.lastErrorType",
+  "eetReversal.lastErrorCode",
+  "eetReversal.lastErrorMessage",
+  "eetReversal.lastGlobalTransactionId",
+  "eetReversalConfirmation.pok",
+  "eetReversalConfirmation.receivedAt",
+  "eetReversalConfirmation.isTest",
+  "eetReversalConfirmation.warningsJson",
+  "eetReversalConfirmation.globalTransactionId",
+  "eetSaleConfirmation.pok as salePok",
+] as const
+
+type EetReversalRequiredColumns = {
+  refundId: KyselyNotNull
+  saleId: KyselyNotNull
+  paymentId: KyselyNotNull
+  deviceId: KyselyNotNull
+  amount: KyselyNotNull
+  currency: KyselyNotNull
+  environment: KyselyNotNull
+  eic: KyselyNotNull
+  establishmentId: KyselyNotNull
+  cashRegisterId: KyselyNotNull
+  sequenceNumber: KyselyNotNull
+  saleAt: KyselyNotNull
+}
+
+export const eetReversalByIdQuery = (reversalId: EetReversalId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("eetReversal")
+      .leftJoin("eetReversalConfirmation", (join) =>
+        join
+          .onRef("eetReversalConfirmation.id", "=", "eetReversal.id")
+          .on("eetReversalConfirmation.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("eetSaleConfirmation", (join) =>
+        join
+          .onRef("eetSaleConfirmation.id", "=", "eetReversal.saleId")
+          .on("eetSaleConfirmation.isDeleted", "is not", sqliteTrue)
+      )
+      .select(eetReversalColumns)
+      .where("eetReversal.id", "=", reversalId)
+      .where("eetReversal.isDeleted", "is not", sqliteTrue)
+      .where("eetReversal.refundId", "is not", null)
+      .where("eetReversal.saleAt", "is not", null)
+      .$narrowType<EetReversalRequiredColumns>()
+  )
+
+export const eetReversalsByPaymentIdQuery = (paymentId: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("eetReversal")
+      .leftJoin("eetReversalConfirmation", (join) =>
+        join
+          .onRef("eetReversalConfirmation.id", "=", "eetReversal.id")
+          .on("eetReversalConfirmation.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("eetSaleConfirmation", (join) =>
+        join
+          .onRef("eetSaleConfirmation.id", "=", "eetReversal.saleId")
+          .on("eetSaleConfirmation.isDeleted", "is not", sqliteTrue)
+      )
+      .select(eetReversalColumns)
+      .where("eetReversal.paymentId", "=", paymentId)
+      .where("eetReversal.isDeleted", "is not", sqliteTrue)
+      .where("eetReversal.refundId", "is not", null)
+      .where("eetReversal.saleAt", "is not", null)
+      .$narrowType<EetReversalRequiredColumns>()
+  )
+
+export const unconfirmedEetReversalsQuery = createQuery((db) =>
+  db
+    .selectFrom("eetReversal")
+    .leftJoin("eetReversalConfirmation", (join) =>
+      join
+        .onRef("eetReversalConfirmation.id", "=", "eetReversal.id")
+        .on("eetReversalConfirmation.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("eetSaleConfirmation", (join) =>
+      join
+        .onRef("eetSaleConfirmation.id", "=", "eetReversal.saleId")
+        .on("eetSaleConfirmation.isDeleted", "is not", sqliteTrue)
+    )
+    .select(eetReversalColumns)
+    .where("eetReversalConfirmation.id", "is", null)
+    .where("eetReversal.isDeleted", "is not", sqliteTrue)
+    .where("eetReversal.refundId", "is not", null)
+    .where("eetReversal.saleAt", "is not", null)
+    .orderBy("eetReversal.saleAt", "desc")
+    .$narrowType<EetReversalRequiredColumns>()
 )

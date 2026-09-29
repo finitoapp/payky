@@ -21,6 +21,8 @@ import type {
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
+  eetReversalByIdQuery,
+  eetReversalsBySaleIdQuery,
   eetSaleByIdQuery,
   eetSettingsQuery,
   eetSigningCertificateQuery,
@@ -31,6 +33,7 @@ import {
   type EetConfigurationGap,
   type EetEnvironment,
   type EetEstablishmentId,
+  type EetReversalId,
   type EetSaleId,
   EetSequenceNumberSchema,
   type EetTipOwner,
@@ -38,6 +41,7 @@ import {
 import {
   bytesToEetBase64,
   createEetCertificateId,
+  createEetReversalId,
   createEetSaleId,
   eetBase64ToBytes,
   eetSettingsId,
@@ -49,6 +53,7 @@ import {
 } from "@/core/modules/eet/eet-utils.ts"
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { RefundId } from "@/core/modules/refund/refund-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
@@ -61,7 +66,7 @@ import {
   Integer,
   NonEmptyString255,
   NonEmptyStringSchema,
-  type NonNegativeInteger,
+  NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 
@@ -94,26 +99,26 @@ export type EetTestSaleOutsidePlaygroundError = ReturnType<
 >
 
 const createEetSaleNotFoundError = defineError("EetSaleNotFoundError")<{
-  readonly id: EetSaleId
+  readonly id: EetSaleId | EetReversalId
 }>()
 export type EetSaleNotFoundError = ReturnType<typeof createEetSaleNotFoundError>
 
 const createEetSaleAlreadyConfirmedError = defineError(
   "EetSaleAlreadyConfirmedError"
-)<{ readonly id: EetSaleId }>()
+)<{ readonly id: EetSaleId | EetReversalId }>()
 export type EetSaleAlreadyConfirmedError = ReturnType<
   typeof createEetSaleAlreadyConfirmedError
 >
 
 const createEetSaleUnsupportedError = defineError("EetSaleUnsupportedError")<{
-  readonly id: EetSaleId
+  readonly id: EetSaleId | EetReversalId
 }>()
 export type EetSaleUnsupportedError = ReturnType<
   typeof createEetSaleUnsupportedError
 >
 
 const createEetSaleBusyError = defineError("EetSaleBusyError")<{
-  readonly id: EetSaleId
+  readonly id: EetSaleId | EetReversalId
 }>()
 export type EetSaleBusyError = ReturnType<typeof createEetSaleBusyError>
 
@@ -124,12 +129,23 @@ export type EetSigningCertificateMissingError = ReturnType<
   typeof createEetSigningCertificateMissingError
 >
 
+const createEetReversalWaitingForSaleError = defineError(
+  "EetReversalWaitingForSaleError"
+)<{ readonly id: EetReversalId }>()
+export type EetReversalWaitingForSaleError = ReturnType<
+  typeof createEetReversalWaitingForSaleError
+>
+
 export type DeliverEetSaleError =
   | EetSaleNotFoundError
   | EetSaleAlreadyConfirmedError
   | EetSaleUnsupportedError
   | EetSaleBusyError
   | EetSigningCertificateMissingError
+
+export type DeliverEetReversalError =
+  | DeliverEetSaleError
+  | EetReversalWaitingForSaleError
 
 const loadEetSettings = async (evolu: EvoluDep["evolu"]) => {
   const [settings] = await evolu.loadQuery(eetSettingsQuery)
@@ -373,6 +389,48 @@ const toNonEmpty255 = (value: string | null) =>
 const toNonEmpty = (value: string) =>
   value.trim() === "" ? null : NonEmptyStringSchema.decode(value)
 
+const toEetAttemptValues = (
+  outcome: EetDeliveryOutcome,
+  attemptedAt: TimestampMs
+) => {
+  switch (outcome.type) {
+    case "accepted":
+    case "verified":
+      return {
+        attempt: {
+          lastAttemptAt: attemptedAt,
+          lastGlobalTransactionId: toNonEmpty255(outcome.globalTransactionId),
+        },
+        confirmation:
+          outcome.type === "accepted"
+            ? ({
+                pok: NonEmptyString255(outcome.pok),
+                receivedAt: formatEetDateTime(new Date(outcome.receivedAt)),
+                isTest: outcome.isTest ? sqliteTrue : sqliteFalse,
+                warningsJson: JSON.stringify(outcome.warnings),
+                messageUuid: NonEmptyString255(outcome.messageUuid),
+                globalTransactionId: toNonEmpty255(outcome.globalTransactionId),
+                isDeleted: sqliteFalse,
+              } as const)
+            : null,
+      }
+    case "retry":
+    case "rejected":
+      return {
+        attempt: removeUndefinedValues({
+          lastAttemptAt: attemptedAt,
+          lastAttemptResult: outcome.type,
+          lastErrorType: toNonEmpty255(outcome.errorType),
+          lastErrorCode: outcome.code === null ? null : Integer(outcome.code),
+          lastErrorMessage: toNonEmpty(outcome.message),
+          lastGlobalTransactionId: toNonEmpty255(outcome.globalTransactionId),
+          hadUnansweredAttempt: outcome.unanswered ? sqliteTrue : undefined,
+        }),
+        confirmation: null,
+      }
+  }
+}
+
 const recordEetDeliveryOutcome = (
   run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
   {
@@ -388,53 +446,42 @@ const recordEetDeliveryOutcome = (
 ): void => {
   const { evolu, evoluOwnerId } = run.deps
   const mutationOptions = { ...options, ownerId: evoluOwnerId }
+  const { attempt, confirmation } = toEetAttemptValues(outcome, attemptedAt)
 
-  switch (outcome.type) {
-    case "accepted":
-    case "verified": {
-      evolu.update(
-        "eetSale",
-        {
-          id,
-          lastAttemptAt: attemptedAt,
-          lastGlobalTransactionId: toNonEmpty255(outcome.globalTransactionId),
-        },
-        mutationOptions
-      )
-      if (outcome.type === "accepted") {
-        evolu.upsert(
-          "eetSaleConfirmation",
-          {
-            id,
-            pok: NonEmptyString255(outcome.pok),
-            receivedAt: formatEetDateTime(new Date(outcome.receivedAt)),
-            isTest: outcome.isTest ? sqliteTrue : sqliteFalse,
-            warningsJson: JSON.stringify(outcome.warnings),
-            messageUuid: NonEmptyString255(outcome.messageUuid),
-            globalTransactionId: toNonEmpty255(outcome.globalTransactionId),
-            isDeleted: sqliteFalse,
-          },
-          mutationOptions
-        )
-      }
-      return
-    }
-    case "retry":
-    case "rejected":
-      evolu.update(
-        "eetSale",
-        removeUndefinedValues({
-          id,
-          lastAttemptAt: attemptedAt,
-          lastAttemptResult: outcome.type,
-          lastErrorType: toNonEmpty255(outcome.errorType),
-          lastErrorCode: outcome.code === null ? null : Integer(outcome.code),
-          lastErrorMessage: toNonEmpty(outcome.message),
-          lastGlobalTransactionId: toNonEmpty255(outcome.globalTransactionId),
-          hadUnansweredAttempt: outcome.unanswered ? sqliteTrue : undefined,
-        }),
-        mutationOptions
-      )
+  evolu.update("eetSale", { id, ...attempt }, mutationOptions)
+  if (confirmation !== null) {
+    evolu.upsert(
+      "eetSaleConfirmation",
+      { id, ...confirmation },
+      mutationOptions
+    )
+  }
+}
+
+const recordEetReversalDeliveryOutcome = (
+  run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
+  {
+    id,
+    outcome,
+    attemptedAt,
+  }: {
+    readonly id: EetReversalId
+    readonly outcome: EetDeliveryOutcome
+    readonly attemptedAt: TimestampMs
+  },
+  options: MutationOptions
+): void => {
+  const { evolu, evoluOwnerId } = run.deps
+  const mutationOptions = { ...options, ownerId: evoluOwnerId }
+  const { attempt, confirmation } = toEetAttemptValues(outcome, attemptedAt)
+
+  evolu.update("eetReversal", { id, ...attempt }, mutationOptions)
+  if (confirmation !== null) {
+    evolu.upsert(
+      "eetReversalConfirmation",
+      { id, ...confirmation },
+      mutationOptions
+    )
   }
 }
 
@@ -538,6 +585,160 @@ export const retryEetSale =
 
     return await run(deliverEetSale(id))
   }
+
+export const createEetReversal =
+  ({
+    refund,
+    deviceId,
+  }: {
+    readonly refund: {
+      readonly id: RefundId
+      readonly paymentId: PaymentId
+      readonly amount: NonNegativeInteger
+      readonly refundedAt: TimestampMs
+      readonly saleId: EetSaleId
+    }
+    readonly deviceId: DeviceId
+  }): Task<
+    EetReversalId | null,
+    never,
+    EvoluDep & EvoluOwnerIdDep & EetApiDep
+  > =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const id = createEetReversalId(refund.id)
+    const [existing] = await evolu.loadQuery(eetReversalByIdQuery(id))
+    if (existing !== undefined) return ok(id)
+
+    const [sale] = await evolu.loadQuery(eetSaleByIdQuery(refund.saleId))
+    if (sale === undefined || sale.unsupportedReason !== null) return ok(null)
+    const reversals = await evolu.loadQuery(eetReversalsBySaleIdQuery(sale.id))
+    const reversedAmount = reversals
+      .filter(({ unsupportedReason }) => unsupportedReason === null)
+      .reduce((sum, reversal) => sum + reversal.amount, 0)
+    const amount = Math.min(refund.amount, sale.amount - reversedAmount)
+    if (amount <= 0) return ok(null)
+
+    const settings = await loadEetSettings(evolu)
+    const eic = settings?.eic ?? null
+    const establishmentId = settings?.establishmentId ?? null
+    const environment =
+      settings === undefined
+        ? sale.environment
+        : resolveEetEnvironment({
+            environment: settings.environment,
+            isTestCertificate: settings.isTestCertificate === sqliteTrue,
+            isProductionAvailable: run.deps.eetApi.isProductionAvailable,
+          })
+    const unsupportedReason =
+      (settings?.enabledAt ?? null) === null ||
+      eic === null ||
+      establishmentId === null
+        ? "disabled"
+        : environment !== sale.environment
+          ? "environment"
+          : eic !== sale.eic
+            ? "taxpayer"
+            : null
+
+    await runMutationWithCompletion((options) =>
+      evolu.upsert(
+        "eetReversal",
+        {
+          id,
+          refundId: refund.id,
+          saleId: sale.id,
+          paymentId: refund.paymentId,
+          deviceId,
+          amount: NonNegativeInteger(amount),
+          currency: sale.currency,
+          environment,
+          eic: eic ?? sale.eic,
+          establishmentId: establishmentId ?? sale.establishmentId,
+          cashRegisterId: toEetCashRegisterId(deviceId),
+          sequenceNumber: EetSequenceNumberSchema.decode(refund.id),
+          saleAt: formatEetDateTime(new Date(refund.refundedAt)),
+          unsupportedReason,
+          hadUnansweredAttempt: sqliteFalse,
+          lastAttemptAt: null,
+          lastAttemptResult: null,
+          lastErrorType: null,
+          lastErrorCode: null,
+          lastErrorMessage: null,
+          lastGlobalTransactionId: null,
+          isDeleted: sqliteFalse,
+        },
+        { ...options, ownerId: evoluOwnerId }
+      )
+    )
+
+    return ok(id)
+  }
+
+export const deliverEetReversal =
+  (
+    id: EetReversalId
+  ): Task<
+    EetDeliveryOutcome,
+    DeliverEetReversalError,
+    EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+  > =>
+  async (run) =>
+    await run.deps.lockManager.request(
+      `eet-reversal-${id}`,
+      { ifAvailable: true },
+      async (lock) => {
+        if (lock === null) return err(createEetSaleBusyError({ id }))
+
+        const { evolu } = run.deps
+        const [reversal] = await evolu.loadQuery(eetReversalByIdQuery(id))
+        if (reversal === undefined) {
+          return err(createEetSaleNotFoundError({ id }))
+        }
+        if (reversal.pok !== null) {
+          return err(createEetSaleAlreadyConfirmedError({ id }))
+        }
+        if (reversal.unsupportedReason !== null) {
+          return err(createEetSaleUnsupportedError({ id }))
+        }
+        if (reversal.salePok === null) {
+          return err(createEetReversalWaitingForSaleError({ id }))
+        }
+
+        const [certificate] = await evolu.loadQuery(eetSigningCertificateQuery)
+        if (certificate === undefined) {
+          return err(createEetSigningCertificateMissingError())
+        }
+
+        const attemptedAt = TimestampMs(run.deps.date.now().getTime())
+        const { outcome } = await run.deps.eetApi.submit({
+          environment: reversal.environment,
+          certificate: toSigningCertificate(certificate),
+          receipt: {
+            eic: reversal.eic,
+            establishmentId: reversal.establishmentId,
+            cashRegisterId: reversal.cashRegisterId,
+            sequenceNumber: reversal.sequenceNumber,
+            saleAt: reversal.saleAt,
+            totalAmount: minorUnitsToFixedDecimalString({
+              value: Integer(-reversal.amount),
+              currency: reversal.currency,
+            }),
+          },
+          firstSubmission: reversal.lastAttemptAt === null,
+          verification: false,
+        })
+
+        await runMutationWithCompletion((options) =>
+          recordEetReversalDeliveryOutcome(
+            run,
+            { id, outcome, attemptedAt },
+            options
+          )
+        )
+        return ok(outcome)
+      }
+    )
 
 export const sendEetTestMessage =
   ({

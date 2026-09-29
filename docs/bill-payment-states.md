@@ -173,6 +173,26 @@ from canceled+claimed above — a payment can be simultaneously
 Canceled-despite-claimed *and* over-claimed, and resolving one never writes
 to the other's field.
 
+### Refunds
+
+A `refund` row (the `refund` module) records money returned to a customer
+for a payment that is Paid: an amount, how it went back — cash from the cash
+register, or outside Payky such as on the card terminal — and when. A refund
+by items adds one `refundLine` per returned quantity of the payment's frozen
+`paymentLine`, which is offered only while the payment is the one payment
+claimed for its bill. `refundPayment` refuses a payment that is not Paid and
+an amount of zero or above what is left: the cash received for a cash
+payment with a received amount, the payment's `amount` otherwise, less every
+earlier refund.
+
+A refund is not a state. It never touches `canceledAt`, `confirmedPaidAt` or
+any claim, so the payment stays Paid, and coverage still sums the claimed
+transactions, so its bill stays covered and closed. The payment detail, the
+bill's payment rows and the payment history derive "partly refunded" or
+"refunded" from the refunds alone. A cash refund writes a negative
+`cashRegister` account transaction that no payment claims, which keeps it out
+of every coverage sum.
+
 ## Bill vertical
 
 ### Stored fields
@@ -470,8 +490,8 @@ the other's fields.
   out-of-band process. This includes the "Refund" action surfaced next to a
   canceled+claimed payment's, canceled+funded bill's, and duplicate-settlement
   payment's collisions in the UI — it is the same placeholder in all three
-  places, telling staff refunds aren't supported yet, not a working refund
-  flow.
+  places, not the [refund](#refunds) of a Paid payment, which returns at
+  most what the payment itself took.
 - No automatic resolution of any of the three collisions (payment
   canceled+claimed, bill canceled+funded, payment duplicate-settlement) —
   `confirmPaymentPaidDespiteCancellation`, `confirmBillClosedDespiteCancellation`,

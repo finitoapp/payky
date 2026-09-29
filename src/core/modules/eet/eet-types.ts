@@ -14,6 +14,10 @@ export const EetSaleIdRaw = id("EetSale")
 export const EetSaleId = standardSchemaToZod(EetSaleIdRaw)
 export type EetSaleId = typeof EetSaleIdRaw.Output
 
+export const EetReversalIdRaw = id("EetReversal")
+export const EetReversalId = standardSchemaToZod(EetReversalIdRaw)
+export type EetReversalId = typeof EetReversalIdRaw.Output
+
 export const EetEnvironmentSchema = z.enum(["production", "playground"])
 export type EetEnvironment = z.output<typeof EetEnvironmentSchema>
 
@@ -56,7 +60,13 @@ export const EetBase64Schema = z
   .brand<"EetBase64">()
 export type EetBase64 = z.output<typeof EetBase64Schema>
 
-export const EetUnsupportedReasonSchema = z.enum(["currency", "amount"])
+export const EetUnsupportedReasonSchema = z.enum([
+  "currency",
+  "amount",
+  "disabled",
+  "environment",
+  "taxpayer",
+])
 export type EetUnsupportedReason = z.output<typeof EetUnsupportedReasonSchema>
 
 export const EetAttemptResultSchema = z.enum(["retry", "rejected"])

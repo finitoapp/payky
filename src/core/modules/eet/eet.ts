@@ -13,6 +13,7 @@ import {
   EetEicSchema,
   EetEnvironmentSchema,
   EetEstablishmentIdSchema,
+  EetReversalId,
   EetSaleId,
   EetSequenceNumberSchema,
   EetSettingsId,
@@ -20,6 +21,7 @@ import {
   EetUnsupportedReasonSchema,
 } from "@/core/modules/eet/eet-types.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { RefundId } from "@/core/modules/refund/refund-types.ts"
 import {
   AccountKindSchema,
   FiatCurrencySchema,
@@ -85,12 +87,51 @@ export const eetSaleConfirmation = {
   globalTransactionId: NonEmptyString255Schema.nullable(),
 } as const
 
+export const eetReversal = {
+  id: EetReversalId,
+  refundId: RefundId,
+  saleId: EetSaleId,
+  paymentId: PaymentId,
+  deviceId: DeviceId,
+  amount: NonNegativeIntegerSchema,
+  currency: FiatCurrencySchema,
+  environment: EetEnvironmentSchema,
+  eic: EetEicSchema,
+  establishmentId: EetEstablishmentIdSchema,
+  cashRegisterId: EetCashRegisterIdSchema,
+  sequenceNumber: EetSequenceNumberSchema,
+  saleAt: EetDateTimeSchema,
+  unsupportedReason: EetUnsupportedReasonSchema.nullable(),
+  hadUnansweredAttempt: SqliteBoolean,
+  lastAttemptAt: TimestampMsSchema.nullable(),
+  lastAttemptResult: EetAttemptResultSchema.nullable(),
+  lastErrorType: NonEmptyString255Schema.nullable(),
+  lastErrorCode: IntegerSchema.nullable(),
+  lastErrorMessage: NonEmptyStringSchema.nullable(),
+  lastGlobalTransactionId: NonEmptyString255Schema.nullable(),
+} as const
+
+export const eetReversalConfirmation = {
+  id: EetReversalId,
+  pok: NonEmptyString255Schema,
+  receivedAt: EetDateTimeSchema,
+  isTest: SqliteBoolean,
+  warningsJson: z.string(),
+  messageUuid: NonEmptyString255Schema,
+  globalTransactionId: NonEmptyString255Schema.nullable(),
+} as const
+
 export const eetIndexes = ((create) => [
   create("eetSale_paymentId").on("eetSale").column("paymentId"),
   create("eetSale_deviceId").on("eetSale").column("deviceId"),
+  create("eetReversal_refundId").on("eetReversal").column("refundId"),
+  create("eetReversal_saleId").on("eetReversal").column("saleId"),
+  create("eetReversal_paymentId").on("eetReversal").column("paymentId"),
+  create("eetReversal_deviceId").on("eetReversal").column("deviceId"),
 ]) satisfies IndexesConfig
 
 export type EetSettingsRow = InferTable<typeof eetSettings>
 export type EetCertificateRow = InferTable<typeof eetCertificate>
 export type EetSaleRow = InferTable<typeof eetSale>
 export type EetSaleConfirmationRow = InferTable<typeof eetSaleConfirmation>
+export type EetReversalRow = InferTable<typeof eetReversal>

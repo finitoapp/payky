@@ -274,6 +274,7 @@ export const skSettings = {
   "settings.eet.unconfirmed.description":
     "Tržby, ktoré EET zatiaľ nepotvrdila.",
   "settings.eet.unconfirmed.empty": "EET potvrdila všetky tržby.",
+  "settings.eet.unconfirmed.reversal": "Storno {amount}",
   "settings.eet.unconfirmed.title": "Nepotvrdené tržby",
   "settings.evoluExport.action": "Exportovať",
   "settings.evoluExport.action.pending": "Exportujem...",

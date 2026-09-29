@@ -15,9 +15,13 @@ import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   disableEet,
   enableEet,
+  retryEetSale,
   selectEetEnvironment,
 } from "@/core/modules/eet/eet-actions.ts"
-import { eetSaleByPaymentIdQuery } from "@/core/modules/eet/eet-queries.ts"
+import {
+  eetReversalsByPaymentIdQuery,
+  eetSaleByPaymentIdQuery,
+} from "@/core/modules/eet/eet-queries.ts"
 import {
   configureEet,
   createEetTestContext,
@@ -33,6 +37,7 @@ import {
 import { paymentClaimsQuery } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { refundPayment } from "@/core/modules/refund/refund-actions.ts"
 import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
 import {
   IbanSchema,
@@ -551,6 +556,126 @@ describe("eet reporting job: delivery", () => {
       status: "closed",
       coverage: "paid",
     })
+    expect(job.errors).toEqual([])
+  })
+})
+
+const refundInCash = async (
+  context: EetTestContext,
+  {
+    paymentId,
+    amount,
+    deviceId = context.deviceId,
+  }: {
+    readonly paymentId: PaymentId
+    readonly amount: number
+    readonly deviceId?: DeviceId
+  }
+) => {
+  await using run = testCreateRun(context.deps)
+  return await run.orThrow(
+    refundPayment({
+      paymentId,
+      method: "cashRegister",
+      deviceId,
+      amount: NonNegativeInteger(amount),
+    })
+  )
+}
+
+const reversalsOf = (context: EetTestContext, paymentId: PaymentId) =>
+  context.deps.evolu.loadQuery(eetReversalsByPaymentIdQuery(paymentId))
+
+describe("eet reporting job: reversals", () => {
+  test("reverses a cash refund of a confirmed sale", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleInCash(context, paymentId, { receivedAmount: 25_000 })
+    await expect
+      .poll(() => saleOf(context, paymentId))
+      .toMatchObject([{ pok: expect.stringMatching(/-ff$/u) }])
+
+    await refundInCash(context, { paymentId, amount: 5_000 })
+
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ amount: 5_000, pok: expect.stringMatching(/-ff$/u) }])
+    expect(context.responder.requests.at(-1)?.data.celk_trzba).toBe("-50.00")
+    expect(job.errors).toEqual([])
+  })
+
+  test("sends a reversal only once its sale is confirmed", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    context.responder.answerNext({
+      type: "error",
+      code: 4,
+      message: "Neplatny podpis SOAP zpravy",
+    })
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleInCash(context, paymentId, { receivedAmount: 25_000 })
+    await expect
+      .poll(() => saleOf(context, paymentId))
+      .toMatchObject([{ lastAttemptResult: "rejected" }])
+
+    await refundInCash(context, { paymentId, amount: 25_000 })
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ amount: 25_000, pok: null, lastAttemptAt: null }])
+    await settleLater(100)
+    expect(context.responder.requests).toHaveLength(1)
+
+    const [sale] = await saleOf(context, paymentId)
+    if (sale === undefined) throw new Error("Expected a sale.")
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(retryEetSale(sale.id))
+
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ pok: expect.stringMatching(/-ff$/u) }])
+    expect(
+      context.responder.requests.map(({ data }) => data.celk_trzba)
+    ).toEqual(["250.00", "250.00", "-250.00"])
+    expect(job.errors).toEqual([])
+  })
+
+  test("reverses nothing for a payment settled before EET was enabled", async () => {
+    await using context = await createEetTestContext()
+    const paymentId = await createTestPayment(context)
+    await settleInCash(context, paymentId)
+    context.clock.advance(1_000)
+    await configureEet(context)
+    await using job = await startJob(context)
+
+    await refundInCash(context, { paymentId, amount: 5_000 })
+    await settleLater(100)
+
+    await expect(reversalsOf(context, paymentId)).resolves.toEqual([])
+    expect(context.responder.requests).toEqual([])
+    expect(job.errors).toEqual([])
+  })
+
+  test("leaves a refund to the device that recorded it", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleInCash(context, paymentId)
+    await expect
+      .poll(() => saleOf(context, paymentId))
+      .toMatchObject([{ pok: expect.stringMatching(/-ff$/u) }])
+
+    await refundInCash(context, {
+      paymentId,
+      amount: 5_000,
+      deviceId: createRowId<"Device">(),
+    })
+    await settleLater(100)
+
+    await expect(reversalsOf(context, paymentId)).resolves.toEqual([])
     expect(job.errors).toEqual([])
   })
 })

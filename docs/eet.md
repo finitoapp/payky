@@ -1,7 +1,7 @@
 # EET reporting
 
 How a received payment becomes an EET 2.0 sale (`tržba`), gets delivered,
-and what each state and edge case means. Read it before changing
+how a refund reverses it, and what each state and edge case means. Read it before changing
 `src/core/modules/eet/*`, `eet-reporting-job.ts`, or
 `src/core/integrations/eet/*`.
 
@@ -13,6 +13,8 @@ and what each state and edge case means. Read it before changing
 | `eetCertificate` | same | EIC, validity, DER cert + **PKCS#8 private key** (base64), `isTestCertificate` |
 | `eetSale` (id = `eetSale:<paymentId>`) | same | Frozen snapshot of what is reported + last attempt bookkeeping |
 | `eetSaleConfirmation` (same id as sale) | same | FIK/`pok`, `receivedAt`, `isTest`, warnings. Its existence = confirmed |
+| `eetReversal` (id = `eetReversal:<refundId>`) | same | Frozen snapshot of the negative sale one refund reports + last attempt bookkeeping |
+| `eetReversalConfirmation` (same id as reversal) | same | Same as `eetSaleConfirmation`, for a reversal |
 | Reporting job | `background-jobs/jobs/eet-reporting-job.ts` | Creates sales, delivers them, backs off |
 | Client | `integrations/eet/eet-client.ts` | Signs + submits via `@finitoapp/eet-client`, maps errors to `retry`/`rejected` |
 | Response verifier | `integrations/eet/eet-response-verifier.ts` | Checks the response signature |
@@ -85,8 +87,9 @@ sales created afterwards — with one exception in "Manual retry" below.
 
 ## Delivery
 
-The job subscribes to two queries and runs through a keyed queue (one
-`create` and one `deliver` pass at a time):
+The job subscribes to two queries for sales and two for reversals (see
+"Refunds and storno") and runs through a keyed queue (one `create` and one
+`deliver` pass at a time):
 
 - `eetSalesToDeliverQuery(deviceId)`: this device's sales that are supported,
   unconfirmed and whose `lastAttemptResult` is `null` or `retry`.
@@ -112,7 +115,7 @@ may have recorded the sale even though we got no usable answer.
 
 Backoff for `retry`: 30 s · 2^(n−1), capped at 15 min, **no attempt limit**.
 The backoff lives in memory: an app restart or an `online` event retries
-immediately. `rejected` sales are never retried automatically.
+immediately, also when the event arrives while an attempt is in flight. `rejected` sales are never retried automatically.
 
 ## Sale status
 
@@ -145,6 +148,35 @@ Payment detail offers **Retry** for `pending` and `rejected`. `retryEetSale`:
 
 Retry works from **any** device, not just the one that owns the sale.
 
+## Refunds and storno
+
+A refund (`refundPayment` in `modules/refund`) returns money for a paid
+payment, as an amount or as items. The payment stays paid and its bill stays
+closed (see `bill-payment-states.md`). EET 2.0 has no storno message: a
+reversal is a new sale with a negative amount and no link to the original.
+
+`eetRefundsToReverseQuery(deviceId)` selects a refund when it was recorded
+on **this** device, its payment has a supported `eetSale`, and no reversal
+exists for it yet. `createEetReversal` freezes:
+
+| Field | Value |
+|---|---|
+| `amount` | refund amount, capped at the sale's `amount` minus earlier supported reversals. Stored positive, sent negated (`-250.00`) |
+| `saleAt` (`dat_trzby`) | the refund's `refundedAt` |
+| `sequenceNumber` (`porad_cis`) | the refund id |
+| `cashRegisterId` (`id_pokl`) | the device that recorded the refund |
+| `eic`, `establishmentId`, `environment` | current settings at creation time |
+| `unsupportedReason` | `disabled` if EET is off or not set up, `environment` if the current environment is not the sale's, `taxpayer` if the current EIC is not the sale's |
+
+`eetReversalsToDeliverQuery(deviceId)` holds a reversal back until its sale
+has a confirmation, so EET never gets the reversal first. Delivery then
+follows the sale's rules: Web Lock `eet-reversal-<id>`, the same outcome
+mapping, backoff, status, overdue and manual retry. Manual retry never
+rewrites a reversal's frozen data.
+
+Each refund shows its reversal status on the payment detail, and Settings →
+EET lists unconfirmed reversals next to unconfirmed sales.
+
 ## Edge cases
 
 | Case | Behavior |
@@ -153,6 +185,11 @@ Retry works from **any** device, not just the one that owns the sale.
 | Disable → re-enable | `enabledAt` moves forward; payments claimed before the new `enabledAt` whose sale was not created yet (device was offline/closed) are **never reported** |
 | Disable with pending sales | Delivery continues; disabling only stops new sales |
 | Claim removed after the sale was created | Sale still reported; no correction/storno is sent |
+| Refund before the sale was created | The reversal is created once the sale exists |
+| Refund of a payment with no sale or an unsupported sale | No reversal |
+| Refunded tip that employees own | Not reversed: the cap is what the sale reported |
+| Sale pending or rejected | Its reversals wait, for good if the sale is never confirmed |
+| EET disabled, or environment or EIC changed, when the reversal is created | Reversal `unsupported`, never sent |
 | Claim removed before creation | Not reported (query needs an active claim) |
 | Overpaid / multiple claims | One sale for `payment.amount`; extra money is not reported |
 | Cash rounded or change left | The sale reports the cash received (78.90 charged, 79 or 80 received); the payment, its claim and the cash register keep 78.90 |
@@ -171,8 +208,9 @@ Retry works from **any** device, not just the one that owns the sale.
 
 ## Known gaps
 
-1. **No storno / correction.** Refunds, removed claims, and canceled-but-paid
-   payments have no negative sale path.
+1. **No correction for removed claims.** Refunds are reversed (see
+   "Refunds and storno"), but removed claims and canceled-but-paid payments
+   have no negative sale path.
 2. **Silent loss on re-enable.** The `claimedAt >= enabledAt` rule drops
    payments whose sale creation had not run before a disable/enable cycle.
    A persisted "disabled since/until" window would fix it.

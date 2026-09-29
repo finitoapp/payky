@@ -1,0 +1,445 @@
+import { testCreateRun } from "@evolu/common"
+import { describe, expect, test } from "vitest"
+
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import { createEvoluTest } from "@/core/evolu/cli-client.ts"
+import { createQuery } from "@/core/evolu/schema.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
+import {
+  addCatalogItemToBill,
+  addManualAmountToBill,
+  createBill,
+} from "@/core/modules/bill/bill-actions.ts"
+import {
+  loadBillCoverage,
+  loadBillStatus,
+} from "@/core/modules/bill/bill-guards.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import { createCatalogItem } from "@/core/modules/catalog-item/catalog-item-actions.ts"
+import {
+  createPayment,
+  markPaymentPaidCash,
+  markPaymentPaidIban,
+} from "@/core/modules/payment/payment-actions.ts"
+import { paymentClaimsQuery } from "@/core/modules/payment/payment-queries.ts"
+import { createPaymentAccounts } from "@/core/modules/payment/payment-test-fixtures.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  NonEmptyString255,
+  NonNegativeInteger,
+  PositiveInteger,
+  PositiveNumber,
+} from "@/core/modules/shared/schema.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
+import { refundPayment } from "./refund-actions.ts"
+import {
+  refundablePaymentLinesQuery,
+  refundLinesByPaymentIdQuery,
+  refundsByPaymentIdQuery,
+} from "./refund-queries.ts"
+import { deriveRefundableLines } from "./refund-utils.ts"
+
+const accountTransactionsQuery = (accountId: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransaction")
+      .leftJoin(
+        "reconciliationClaim",
+        "reconciliationClaim.accountTransactionId",
+        "accountTransaction.id"
+      )
+      .select([
+        "accountTransaction.amount",
+        "accountTransaction.occurredAt",
+        "reconciliationClaim.paymentId",
+      ])
+      .where("accountTransaction.accountId", "=", accountId)
+      .orderBy("accountTransaction.createdAt")
+  )
+
+const createRefundContext = async () => {
+  const testEvolu = await createEvoluTest()
+  const { evolu } = testEvolu
+  const clock = createTestDateDep()
+  const deps = {
+    evolu,
+    evoluOwnerId: evolu.appOwner.id,
+    ...clock,
+  } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+  const accounts = await createPaymentAccounts(deps)
+
+  const createTestPayment = async ({
+    amount,
+    billId = null,
+  }: {
+    readonly amount: number
+    readonly billId?: BillId | null
+  }): Promise<PaymentId> => {
+    await using run = testCreateRun(deps)
+    return await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId,
+        tableId: null,
+        amount: NonNegativeInteger(amount),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: accounts.cashRegisterAccountId },
+      })
+    )
+  }
+
+  const settleInCash = async (paymentId: PaymentId, receivedAmount: number) => {
+    await using run = testCreateRun(deps)
+    await run.orThrow(
+      markPaymentPaidCash({
+        paymentId,
+        accountId: accounts.cashRegisterAccountId,
+        receivedAmount: NonNegativeInteger(receivedAmount),
+      })
+    )
+  }
+
+  const settleByTransfer = async (paymentId: PaymentId) => {
+    await using run = testCreateRun(deps)
+    await run.orThrow(
+      markPaymentPaidIban({ paymentId, accountId: accounts.ibanAccountId })
+    )
+  }
+
+  const createBillOf = async (
+    lines: ReadonlyArray<{
+      readonly name: string
+      readonly unitAmount: number
+      readonly quantity: number
+    }>
+  ): Promise<BillId> => {
+    await using run = testCreateRun(deps)
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    for (const [index, line] of lines.entries()) {
+      const catalogItemId = await run.ok(
+        createCatalogItem({
+          deviceId: null,
+          categoryId: null,
+          name: NonEmptyString255(line.name),
+          description: null,
+          currency: "CZK",
+          unitAmount: NonNegativeInteger(line.unitAmount),
+          sortOrder: NonNegativeInteger(index),
+          scanCode: null,
+        })
+      )
+      await run.orThrow(
+        addCatalogItemToBill({
+          billId,
+          deviceId: null,
+          catalogItemId,
+          quantity: PositiveNumber(line.quantity),
+        })
+      )
+    }
+    return billId
+  }
+
+  return {
+    evolu,
+    deps,
+    clock,
+    ...accounts,
+    createTestPayment,
+    settleInCash,
+    settleByTransfer,
+    createBillOf,
+    [Symbol.asyncDispose]: () => testEvolu[Symbol.asyncDispose](),
+  }
+}
+
+type RefundContext = Awaited<ReturnType<typeof createRefundContext>>
+
+const refundOf = async (
+  context: RefundContext,
+  input: Parameters<typeof refundPayment>[0]
+) => {
+  await using run = testCreateRun(context.deps)
+  return await run(refundPayment(input))
+}
+
+const billWithBeersAndGoulash = [
+  { name: "Beer", unitAmount: 5_000, quantity: 2 },
+  { name: "Goulash", unitAmount: 15_000, quantity: 1 },
+] as const
+
+describe("refundPayment", () => {
+  test("returns a rounded cash payment in full from the cash register", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({ amount: 7_890 })
+    await context.settleInCash(paymentId, 7_900)
+    context.clock.advance(60_000)
+    const refundedAt = context.clock.date.now().getTime()
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(7_900),
+      })
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      context.evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    ).resolves.toMatchObject([
+      { amount: 7_900, method: "cashRegister", refundedAt },
+    ])
+    await expect(
+      context.evolu.loadQuery(
+        accountTransactionsQuery(context.cashRegisterAccountId)
+      )
+    ).resolves.toMatchObject([
+      { amount: 7_890, paymentId },
+      { amount: -7_900, occurredAt: refundedAt, paymentId: null },
+    ])
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(100),
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: { type: "RefundAmountInvalid", amount: 100, remainingAmount: 0 },
+    })
+  })
+
+  test("returns a payment in parts outside Payky without moving any account", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({ amount: 25_000 })
+    await context.settleByTransfer(paymentId)
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(5_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+    context.clock.advance(60_000)
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(20_001),
+      })
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "RefundAmountInvalid", remainingAmount: 20_000 },
+    })
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(20_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      context.evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    ).resolves.toMatchObject([
+      { amount: 5_000, method: "outside" },
+      { amount: 20_000, method: "outside" },
+    ])
+    await expect(
+      context.evolu.loadQuery(
+        accountTransactionsQuery(context.cashRegisterAccountId)
+      )
+    ).resolves.toEqual([])
+  })
+
+  test("refuses nothing and more than the payment", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({ amount: 25_000 })
+    await context.settleByTransfer(paymentId)
+
+    for (const amount of [0, 30_000]) {
+      await expect(
+        refundOf(context, {
+          paymentId,
+          method: "outside",
+          deviceId: null,
+          amount: NonNegativeInteger(amount),
+        })
+      ).resolves.toMatchObject({
+        ok: false,
+        error: { type: "RefundAmountInvalid", remainingAmount: 25_000 },
+      })
+    }
+    await expect(
+      context.evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    ).resolves.toEqual([])
+  })
+
+  test("refuses a payment that is not paid", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({ amount: 25_000 })
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(1_000),
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: { type: "RefundPaymentNotPaid", paymentId, status: "pending" },
+    })
+  })
+
+  test("returns one of two beers and offers the rest", async () => {
+    await using context = await createRefundContext()
+    const billId = await context.createBillOf(billWithBeersAndGoulash)
+    const paymentId = await context.createTestPayment({
+      amount: 25_000,
+      billId,
+    })
+    await context.settleInCash(paymentId, 25_000)
+    const lines = await context.evolu.loadQuery(
+      refundablePaymentLinesQuery(paymentId)
+    )
+    const beer = lines.find(({ name }) => name === "Beer")
+    if (beer === undefined) throw new Error("Expected the beer line.")
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        lines: [{ paymentLineId: beer.id, quantity: PositiveNumber(1) }],
+      })
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      context.evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    ).resolves.toMatchObject([{ amount: 5_000 }])
+    const refundLines = await context.evolu.loadQuery(
+      refundLinesByPaymentIdQuery(paymentId)
+    )
+    expect(refundLines).toMatchObject([
+      { name: "Beer", quantity: 1, amount: 5_000 },
+    ])
+    expect(
+      deriveRefundableLines(lines, refundLines).map(
+        ({ line, remainingQuantity }) => [line.name, remainingQuantity]
+      )
+    ).toEqual([
+      ["Beer", 1],
+      ["Goulash", 1],
+    ])
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        lines: [{ paymentLineId: beer.id, quantity: PositiveNumber(2) }],
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: { type: "RefundLineUnavailable", paymentLineId: beer.id },
+    })
+  })
+
+  test("offers only an amount for a bill paid by two payments", async () => {
+    await using context = await createRefundContext()
+    const billId = await context.createBillOf([
+      { name: "Pizza", unitAmount: 10_000, quantity: 2 },
+    ])
+    const first = await context.createTestPayment({ amount: 10_000, billId })
+    await context.settleInCash(first, 10_000)
+    const second = await context.createTestPayment({ amount: 10_000, billId })
+    await context.settleInCash(second, 10_000)
+    const [pizza] = await context.evolu.loadQuery(
+      refundablePaymentLinesQuery(second)
+    )
+    if (pizza === undefined) throw new Error("Expected the pizza line.")
+
+    await expect(
+      refundOf(context, {
+        paymentId: second,
+        method: "cashRegister",
+        deviceId: null,
+        lines: [{ paymentLineId: pizza.id, quantity: PositiveNumber(1) }],
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: { type: "RefundItemsUnavailable", paymentId: second },
+    })
+    await expect(
+      refundOf(context, {
+        paymentId: second,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(10_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+  })
+
+  test("keeps a fully refunded payment paid and its bill closed and covered", async () => {
+    await using context = await createRefundContext()
+    await using run = testCreateRun(context.deps)
+    const billId = await run.ok(
+      createBill({
+        deviceId: null,
+        displayNumber: PositiveInteger(1),
+        label: null,
+        tableId: null,
+        currency: "CZK",
+      })
+    )
+    await run.orThrow(
+      addManualAmountToBill({
+        billId,
+        deviceId: null,
+        name: NonEmptyString255("Dinner"),
+        currency: "CZK",
+        totalAmount: NonNegativeInteger(25_000),
+      })
+    )
+    const paymentId = await context.createTestPayment({
+      amount: 25_000,
+      billId,
+    })
+    await context.settleInCash(paymentId, 25_000)
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(25_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      context.evolu.loadQuery(paymentClaimsQuery(paymentId))
+    ).resolves.toHaveLength(1)
+    await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
+    await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
+      coverage: "paid",
+    })
+  })
+})

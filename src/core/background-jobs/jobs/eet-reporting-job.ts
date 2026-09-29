@@ -1,19 +1,38 @@
-import { ok, type Run } from "@evolu/common"
+import { type LockManagerDep, ok, type Run, type Task } from "@evolu/common"
 
 import type {
   AppBackgroundJob,
   AppBackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type {
+  EetApiDep,
+  EetDeliveryOutcome,
+} from "@/core/integrations/eet/eet-client.ts"
 import {
+  createEetReversal,
   createEetSale,
+  type DeliverEetReversalError,
+  deliverEetReversal,
   deliverEetSale,
 } from "@/core/modules/eet/eet-actions.ts"
 import {
   eetPaymentsToReportQuery,
+  eetRefundsToReverseQuery,
+  eetReversalsToDeliverQuery,
   eetSalesToDeliverQuery,
 } from "@/core/modules/eet/eet-queries.ts"
-import type { EetSaleId } from "@/core/modules/eet/eet-types.ts"
+import type { EetReversalId, EetSaleId } from "@/core/modules/eet/eet-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+
+type EetRecordId = EetSaleId | EetReversalId
+
+type EetDelivery = Task<
+  EetDeliveryOutcome,
+  DeliverEetReversalError,
+  EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+>
 
 const EET_RETRY_BASE_DELAY_MS = 30_000
 const EET_RETRY_MAX_DELAY_MS = 15 * 60 * 1000
@@ -56,7 +75,7 @@ export const startEetReportingJob = createEetReportingJob()
 class EetReporting {
   private readonly run: Run<AppBackgroundJobContext>
   private readonly retryBaseDelayMs: number
-  private readonly backoffs = new Map<EetSaleId, SaleBackoff>()
+  private readonly backoffs = new Map<EetRecordId, SaleBackoff>()
   private onlineCount = 0
   private readonly unsubscribes: ReadonlyArray<() => void>
   private readonly queue = createKeyedTaskQueue<"create" | "deliver">({
@@ -72,6 +91,12 @@ class EetReporting {
         this.queueCreation()
       }),
       evolu.subscribeQuery(eetSalesToDeliverQuery(deviceId))(() => {
+        this.queueDelivery()
+      }),
+      evolu.subscribeQuery(eetRefundsToReverseQuery(deviceId))(() => {
+        this.queueCreation()
+      }),
+      evolu.subscribeQuery(eetReversalsToDeliverQuery(deviceId))(() => {
         this.queueDelivery()
       }),
       connectivity.onOnline(() => {
@@ -127,44 +152,72 @@ class EetReporting {
         })
       }
     }
+
+    const refunds = await evolu.loadQuery(eetRefundsToReverseQuery(deviceId))
+    for (const refund of refunds) {
+      if (this.queue.isDisposed) return
+      const reversalId = await this.run.ok(
+        createEetReversal({ refund, deviceId })
+      )
+      if (reversalId !== null) {
+        this.run.deps.console.info("Created EET reversal.", {
+          refundId: refund.id,
+          reversalId,
+        })
+      }
+    }
   }
 
   private async deliverSales(): Promise<void> {
     const { evolu, deviceId } = this.run.deps
     const sales = await evolu.loadQuery(eetSalesToDeliverQuery(deviceId))
-
     for (const sale of sales) {
       if (this.queue.isDisposed) return
-      if (this.isWaitingForRetry(sale.id)) continue
+      await this.attemptDelivery(sale.id, deliverEetSale(sale.id))
+    }
 
-      const onlineCountBefore = this.onlineCount
-      const result = await this.run(deliverEetSale(sale.id))
-      if (!result.ok) {
-        this.run.deps.console.debug("Skipped EET delivery.", {
-          saleId: sale.id,
-          reason: result.error.type,
-        })
-        continue
-      }
-
-      const cameOnlineDuringAttempt = this.onlineCount !== onlineCountBefore
-      if (result.value.type === "retry") {
-        if (!cameOnlineDuringAttempt) this.scheduleRetry(sale.id)
-      } else {
-        this.backoffs.delete(sale.id)
-      }
-      this.run.deps.console.info("Attempted EET delivery.", {
-        saleId: sale.id,
-        outcome: result.value.type,
-      })
+    const reversals = await evolu.loadQuery(
+      eetReversalsToDeliverQuery(deviceId)
+    )
+    for (const reversal of reversals) {
+      if (this.queue.isDisposed) return
+      await this.attemptDelivery(reversal.id, deliverEetReversal(reversal.id))
     }
   }
 
-  private isWaitingForRetry(saleId: EetSaleId): boolean {
+  private async attemptDelivery(
+    id: EetRecordId,
+    delivery: EetDelivery
+  ): Promise<void> {
+    if (this.isWaitingForRetry(id)) return
+
+    const onlineCountBefore = this.onlineCount
+    const result = await this.run(delivery)
+    if (!result.ok) {
+      this.run.deps.console.debug("Skipped EET delivery.", {
+        id,
+        reason: result.error.type,
+      })
+      return
+    }
+
+    const cameOnlineDuringAttempt = this.onlineCount !== onlineCountBefore
+    if (result.value.type === "retry") {
+      if (!cameOnlineDuringAttempt) this.scheduleRetry(id)
+    } else {
+      this.backoffs.delete(id)
+    }
+    this.run.deps.console.info("Attempted EET delivery.", {
+      id,
+      outcome: result.value.type,
+    })
+  }
+
+  private isWaitingForRetry(saleId: EetRecordId): boolean {
     return (this.backoffs.get(saleId)?.timer ?? null) !== null
   }
 
-  private scheduleRetry(saleId: EetSaleId): void {
+  private scheduleRetry(saleId: EetRecordId): void {
     const failedAttempts = (this.backoffs.get(saleId)?.failedAttempts ?? 0) + 1
     const delayMs = getEetRetryDelayMs(failedAttempts, this.retryBaseDelayMs)
     const timer = setTimeout(() => {

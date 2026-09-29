@@ -209,3 +209,41 @@ export async function startBillAndBeginCashPayment(
 
   return billId
 }
+
+export async function refundFromPaymentDetail(
+  page: Page,
+  language: Language,
+  { items = [] }: { readonly items?: ReadonlyArray<string> } = {}
+): Promise<void> {
+  await page
+    .getByRole("button", {
+      name: translate(language, "paymentDetail.refunds.action"),
+    })
+    .click()
+  const dialog = page.getByRole("dialog")
+  if (items.length > 0) {
+    await dialog
+      .getByRole("button", {
+        name: translate(language, "refund.dialog.mode.items"),
+      })
+      .click()
+    for (const name of items) {
+      await dialog
+        .getByRole("button", {
+          name: translate(language, "refund.dialog.items.increase").replace(
+            "{name}",
+            name
+          ),
+        })
+        .click()
+    }
+  }
+  const [confirmPrefix = ""] = translate(
+    language,
+    "refund.dialog.confirm"
+  ).split("{amount}")
+  await dialog
+    .getByRole("button", { name: new RegExp(`^${confirmPrefix}.+`, "u") })
+    .click()
+  await dialog.waitFor({ state: "hidden" })
+}

@@ -1,0 +1,295 @@
+import {
+  createIdFromString,
+  err,
+  ok,
+  type Result,
+  sqliteFalse,
+  type Task,
+} from "@evolu/common"
+import type { RequireExactlyOne } from "type-fest"
+
+import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
+import { cashRegisterAccountByIdQuery } from "@/core/modules/account/account-queries.ts"
+import { createCashRegisterAccountId } from "@/core/modules/account/account-utils.ts"
+import {
+  computeAccountTransactionRows,
+  upsertAccountTransactionRows,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { DeviceId } from "@/core/modules/device/device-types.ts"
+import {
+  type CashRegisterAccountNotFoundError,
+  createCashRegisterAccountNotFoundError,
+  createPaymentNotFoundError,
+  type PaymentNotFoundError,
+} from "@/core/modules/payment/payment-errors.ts"
+import {
+  paymentClaimsQuery,
+  paymentDetailQuery,
+} from "@/core/modules/payment/payment-queries.ts"
+import {
+  derivePaymentStatus,
+  type PaymentStatus,
+} from "@/core/modules/payment/payment-status-utils.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
+import {
+  otherClaimedPaymentOfBillQuery,
+  refundablePaymentLinesQuery,
+  refundLinesByPaymentIdQuery,
+  refundsByPaymentIdQuery,
+} from "@/core/modules/refund/refund-queries.ts"
+import type {
+  RefundId,
+  RefundMethod,
+} from "@/core/modules/refund/refund-types.ts"
+import {
+  calculateRefundLineAmount,
+  deriveRefundableAmount,
+  deriveRefundableLines,
+  sumRefundAmounts,
+} from "@/core/modules/refund/refund-utils.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
+import {
+  Integer,
+  NonNegativeInteger,
+  type PositiveNumber,
+  TimestampMs,
+} from "@/core/modules/shared/schema.ts"
+
+const createRefundPaymentNotPaidError = defineError("RefundPaymentNotPaid")<{
+  readonly paymentId: PaymentId
+  readonly status: PaymentStatus
+}>()
+export type RefundPaymentNotPaidError = ReturnType<
+  typeof createRefundPaymentNotPaidError
+>
+
+const createRefundAmountInvalidError = defineError("RefundAmountInvalid")<{
+  readonly amount: NonNegativeInteger
+  readonly remainingAmount: NonNegativeInteger
+}>()
+export type RefundAmountInvalidError = ReturnType<
+  typeof createRefundAmountInvalidError
+>
+
+const createRefundItemsUnavailableError = defineError(
+  "RefundItemsUnavailable"
+)<{ readonly paymentId: PaymentId }>()
+export type RefundItemsUnavailableError = ReturnType<
+  typeof createRefundItemsUnavailableError
+>
+
+const createRefundLineUnavailableError = defineError("RefundLineUnavailable")<{
+  readonly paymentLineId: PaymentLineId
+}>()
+export type RefundLineUnavailableError = ReturnType<
+  typeof createRefundLineUnavailableError
+>
+
+export type RefundPaymentError =
+  | PaymentNotFoundError
+  | RefundPaymentNotPaidError
+  | RefundAmountInvalidError
+  | RefundItemsUnavailableError
+  | RefundLineUnavailableError
+  | CashRegisterAccountNotFoundError
+
+export interface RefundLineInput {
+  readonly paymentLineId: PaymentLineId
+  readonly quantity: PositiveNumber
+}
+
+interface RefundLineValues extends RefundLineInput {
+  readonly amount: NonNegativeInteger
+}
+
+const loadRefundLines = async (
+  evolu: EvoluDep["evolu"],
+  {
+    paymentId,
+    billId,
+    lines,
+  }: {
+    readonly paymentId: PaymentId
+    readonly billId: BillId | null
+    readonly lines: ReadonlyArray<RefundLineInput>
+  }
+): Promise<
+  Result<
+    ReadonlyArray<RefundLineValues>,
+    RefundItemsUnavailableError | RefundLineUnavailableError
+  >
+> => {
+  const otherClaimedPayments = await evolu.loadQuery(
+    otherClaimedPaymentOfBillQuery(paymentId)
+  )
+  if (billId === null || otherClaimedPayments.length > 0) {
+    return err(createRefundItemsUnavailableError({ paymentId }))
+  }
+
+  const [paymentLines, refundedLines] = await Promise.all([
+    evolu.loadQuery(refundablePaymentLinesQuery(paymentId)),
+    evolu.loadQuery(refundLinesByPaymentIdQuery(paymentId)),
+  ])
+  const refundableLines = deriveRefundableLines(paymentLines, refundedLines)
+  const values: RefundLineValues[] = []
+  for (const { paymentLineId, quantity } of lines) {
+    const refundable = refundableLines.find(
+      ({ line }) => line.id === paymentLineId
+    )
+    const isRepeated = values.some(
+      (value) => value.paymentLineId === paymentLineId
+    )
+    if (
+      refundable === undefined ||
+      isRepeated ||
+      quantity > refundable.remainingQuantity
+    ) {
+      return err(createRefundLineUnavailableError({ paymentLineId }))
+    }
+    values.push({
+      paymentLineId,
+      quantity,
+      amount: calculateRefundLineAmount(refundable, quantity),
+    })
+  }
+  return ok(values)
+}
+
+export const refundPayment =
+  ({
+    paymentId,
+    method,
+    deviceId,
+    amount,
+    lines,
+  }: {
+    readonly paymentId: PaymentId
+    readonly method: RefundMethod
+    readonly deviceId: DeviceId | null
+  } & RequireExactlyOne<{
+    readonly amount: NonNegativeInteger
+    readonly lines: ReadonlyArray<RefundLineInput>
+  }>): Task<
+    RefundId,
+    RefundPaymentError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const now = run.deps.date.now()
+    const [payment] = await evolu.loadQuery(paymentDetailQuery(paymentId))
+    if (payment === undefined) {
+      return err(createPaymentNotFoundError({ id: paymentId }))
+    }
+    const claims = await evolu.loadQuery(paymentClaimsQuery(paymentId))
+    const status = derivePaymentStatus({
+      canceledAt: payment.canceledAt,
+      confirmedPaidAt: payment.confirmedPaidAt,
+      expiresAt: payment.expiresAt,
+      hasActiveClaim: claims.length > 0,
+      now,
+    })
+    if (status !== "paid") {
+      return err(createRefundPaymentNotPaidError({ paymentId, status }))
+    }
+
+    let refundLines: ReadonlyArray<RefundLineValues> = []
+    if (lines !== undefined) {
+      const linesResult = await loadRefundLines(evolu, {
+        paymentId,
+        billId: payment.billId,
+        lines,
+      })
+      if (!linesResult.ok) return linesResult
+      refundLines = linesResult.value
+    }
+
+    const refunds = await evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    const remainingAmount = NonNegativeInteger(
+      Math.max(0, deriveRefundableAmount(payment) - sumRefundAmounts(refunds))
+    )
+    const refundAmount = amount ?? sumRefundAmounts(refundLines)
+    if (refundAmount === 0 || refundAmount > remainingAmount) {
+      return err(
+        createRefundAmountInvalidError({
+          amount: refundAmount,
+          remainingAmount,
+        })
+      )
+    }
+
+    const id = createRowId<"Refund">()
+    const refundedAt = TimestampMs(now.getTime())
+    let cashTransaction: ReturnType<
+      typeof computeAccountTransactionRows
+    > | null = null
+    if (method === "cashRegister") {
+      const accountId = createCashRegisterAccountId(payment.currency)
+      const [account] = await evolu.loadQuery(
+        cashRegisterAccountByIdQuery(accountId)
+      )
+      if (account === undefined) {
+        return err(createCashRegisterAccountNotFoundError({ id: accountId }))
+      }
+      cashTransaction = computeAccountTransactionRows(
+        {
+          id: createIdFromString<"AccountTransaction">(
+            `accountTransaction:cashRegister:refund:${id}`
+          ),
+          accountId,
+          amount: Integer(-refundAmount),
+          currency: payment.currency,
+          occurredAt: refundedAt,
+          note: null,
+          internalTransferGroupId: null,
+          source: { deviceId, source: "manual" },
+        },
+        now
+      )
+    }
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      evolu.upsert(
+        "refund",
+        {
+          id,
+          paymentId,
+          deviceId,
+          amount: refundAmount,
+          currency: payment.currency,
+          method,
+          refundedAt,
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+      for (const line of refundLines) {
+        evolu.upsert(
+          "refundLine",
+          {
+            id: createRowId<"RefundLine">(),
+            refundId: id,
+            paymentId,
+            paymentLineId: line.paymentLineId,
+            quantity: line.quantity,
+            amount: line.amount,
+            isDeleted: sqliteFalse,
+          },
+          mutationOptions
+        )
+      }
+      if (cashTransaction !== null) {
+        upsertAccountTransactionRows(evolu, cashTransaction, mutationOptions)
+      }
+    })
+
+    return ok(id)
+  }

@@ -89,6 +89,7 @@ import {
   paymentMethodIcon,
   paymentMethodLabelKey,
 } from "@/features/payment/payment-method-display.tsx"
+import { PaymentDetailRefunds } from "@/features/payment/payment-refunds.tsx"
 import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
@@ -387,6 +388,16 @@ function PaymentDetailContent({
           ) : null}
         </CardContent>
       </Card>
+
+      <PaymentDetailRefunds
+        payment={payment}
+        isPaid={paymentStatus === "paid"}
+        defaultMethod={
+          paymentMethodKinds.includes("cashRegister")
+            ? "cashRegister"
+            : "outside"
+        }
+      />
 
       {payment.billId !== null ? (
         <PaymentDetailBillCard

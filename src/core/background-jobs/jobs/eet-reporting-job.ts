@@ -57,6 +57,7 @@ class EetReporting {
   private readonly run: Run<AppBackgroundJobContext>
   private readonly retryBaseDelayMs: number
   private readonly backoffs = new Map<EetSaleId, SaleBackoff>()
+  private onlineCount = 0
   private readonly unsubscribes: ReadonlyArray<() => void>
   private readonly queue = createKeyedTaskQueue<"create" | "deliver">({
     onError: (error) => this.run.deps.onError(error),
@@ -104,6 +105,7 @@ class EetReporting {
   }
 
   private retryNow(): void {
+    this.onlineCount += 1
     for (const [saleId, backoff] of this.backoffs) {
       if (backoff.timer !== null) clearTimeout(backoff.timer)
       this.backoffs.set(saleId, { ...backoff, timer: null })
@@ -135,6 +137,7 @@ class EetReporting {
       if (this.queue.isDisposed) return
       if (this.isWaitingForRetry(sale.id)) continue
 
+      const onlineCountBefore = this.onlineCount
       const result = await this.run(deliverEetSale(sale.id))
       if (!result.ok) {
         this.run.deps.console.debug("Skipped EET delivery.", {
@@ -144,8 +147,9 @@ class EetReporting {
         continue
       }
 
+      const cameOnlineDuringAttempt = this.onlineCount !== onlineCountBefore
       if (result.value.type === "retry") {
-        this.scheduleRetry(sale.id)
+        if (!cameOnlineDuringAttempt) this.scheduleRetry(sale.id)
       } else {
         this.backoffs.delete(sale.id)
       }

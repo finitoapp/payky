@@ -1065,6 +1065,24 @@ describe("eet reporting job: reversals of extra money", () => {
     expect(job.errors).toEqual([])
   })
 
+  test("returning everything reverses the sale and the extra money", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context)
+    await settleTwice(context, paymentId)
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }, { pok: expect.any(String) }])
+
+    await refundInCash(context, { paymentId, amount: 50_000 })
+
+    await expect
+      .poll(() => reversalsOf(context, paymentId))
+      .toMatchObject([{ amount: 50_000, pok: expect.any(String) }])
+    expect(job.errors).toEqual([])
+  })
+
   test("waits for the extra sale before reversing a refund", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)

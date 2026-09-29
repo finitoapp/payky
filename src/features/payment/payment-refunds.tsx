@@ -60,6 +60,7 @@ import {
   calculateRefundLineAmount,
   deriveRefundableAmount,
   deriveRefundableLines,
+  deriveRefundPrefillAmount,
   type RefundableLine,
   sumRefundAmounts,
 } from "@/core/modules/refund/refund-utils.ts"
@@ -114,6 +115,7 @@ const refundErrorKeys = {
 
 export function PaymentDetailRefunds({
   payment,
+  excess,
   isPaid,
   defaultMethod,
 }: {
@@ -124,6 +126,7 @@ export function PaymentDetailRefunds({
     readonly currency: FiatCurrency
     readonly cashReceivedAmount: NonNegativeInteger | null
   }
+  readonly excess: NonNegativeInteger
   readonly isPaid: boolean
   readonly defaultMethod: RefundMethod
 }) {
@@ -143,8 +146,9 @@ export function PaymentDetailRefunds({
   const { data: reversals } = useEvoluQuery(
     eetReversalsByPaymentIdQuery(payment.id)
   )
+  const refundableAmount = deriveRefundableAmount({ ...payment, excess })
   const remainingAmount = NonNegativeInteger(
-    Math.max(0, deriveRefundableAmount(payment) - sumRefundAmounts(refunds))
+    Math.max(0, refundableAmount - sumRefundAmounts(refunds))
   )
   const refundableLines =
     payment.billId === null || otherClaimedPayments.length > 0
@@ -180,7 +184,7 @@ export function PaymentDetailRefunds({
               <RefundBadge
                 summary={{
                   refundedAmount: sumRefundAmounts(refunds),
-                  refundableAmount: deriveRefundableAmount(payment),
+                  refundableAmount,
                   currency: payment.currency,
                 }}
               />
@@ -233,6 +237,7 @@ export function PaymentDetailRefunds({
           paymentId={payment.id}
           currency={payment.currency}
           remainingAmount={remainingAmount}
+          prefillAmount={deriveRefundPrefillAmount({ remainingAmount, excess })}
           refundableLines={refundableLines}
           defaultMethod={defaultMethod}
           onClose={() => setDialogOpen(false)}
@@ -246,6 +251,7 @@ function RefundDialog({
   paymentId,
   currency,
   remainingAmount,
+  prefillAmount,
   refundableLines,
   defaultMethod,
   onClose,
@@ -253,6 +259,7 @@ function RefundDialog({
   readonly paymentId: PaymentId
   readonly currency: FiatCurrency
   readonly remainingAmount: NonNegativeInteger
+  readonly prefillAmount: NonNegativeInteger
   readonly refundableLines: ReadonlyArray<RefundableLine<RefundablePaymentLine>>
   readonly defaultMethod: RefundMethod
   readonly onClose: () => void
@@ -264,7 +271,7 @@ function RefundDialog({
   const [mode, setMode] = useState<RefundMode>("amount")
   const [method, setMethod] = useState<RefundMethod>(defaultMethod)
   const [amountText, setAmountText] = useState<string>(() =>
-    minorUnitsToDecimalString({ value: remainingAmount, currency })
+    minorUnitsToDecimalString({ value: prefillAmount, currency })
   )
   const [quantities, setQuantities] = useState<
     Readonly<Partial<Record<PaymentLineId, number>>>

@@ -1,7 +1,10 @@
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import type { RefundState } from "@/core/modules/refund/refund-types.ts"
+import { calculatePaymentExcess } from "@/core/modules/shared/claimed-amount.ts"
 import {
+  type Currency,
   type FiatCurrency,
   type ItemLineType,
   NonNegativeInteger,
@@ -11,10 +14,24 @@ import {
 export const deriveRefundableAmount = ({
   amount,
   cashReceivedAmount,
+  excess,
 }: {
   readonly amount: NonNegativeInteger
   readonly cashReceivedAmount: NonNegativeInteger | null
-}): NonNegativeInteger => cashReceivedAmount ?? amount
+  readonly excess: NonNegativeInteger
+}): NonNegativeInteger =>
+  NonNegativeInteger((cashReceivedAmount ?? amount) + excess)
+
+export const deriveRefundPrefillAmount = ({
+  remainingAmount,
+  excess,
+}: {
+  readonly remainingAmount: NonNegativeInteger
+  readonly excess: NonNegativeInteger
+}): NonNegativeInteger =>
+  excess > 0
+    ? NonNegativeInteger(Math.min(excess, remainingAmount))
+    : remainingAmount
 
 export const sumRefundAmounts = (
   refunds: ReadonlyArray<{ readonly amount: NonNegativeInteger }>
@@ -44,11 +61,27 @@ export const summarizeRefundsByPayment = (
     readonly amount: NonNegativeInteger
     readonly currency: FiatCurrency
     readonly paymentAmount: NonNegativeInteger
+    readonly paymentCurrency: FiatCurrency
+    readonly paymentAmountSats: NonNegativeInteger | null
     readonly cashReceivedAmount: NonNegativeInteger | null
+    readonly paymentClaims: ReadonlyArray<{
+      readonly accountTransactionId: AccountTransactionId
+      readonly amount: number
+      readonly currency: Currency
+    }>
   }>
 ): ReadonlyMap<PaymentId, PaymentRefundSummary> => {
   const summaries = new Map<PaymentId, PaymentRefundSummary>()
   for (const refund of refunds) {
+    const excess = calculatePaymentExcess({
+      claims: refund.paymentClaims.map((claim) => ({
+        ...claim,
+        paymentAmount: refund.paymentAmount,
+        paymentCurrency: refund.paymentCurrency,
+        paymentAmountSats: refund.paymentAmountSats,
+      })),
+      amount: refund.paymentAmount,
+    })
     summaries.set(refund.paymentId, {
       refundedAmount: NonNegativeInteger(
         (summaries.get(refund.paymentId)?.refundedAmount ?? 0) + refund.amount
@@ -56,6 +89,7 @@ export const summarizeRefundsByPayment = (
       refundableAmount: deriveRefundableAmount({
         amount: refund.paymentAmount,
         cashReceivedAmount: refund.cashReceivedAmount,
+        excess,
       }),
       currency: refund.currency,
     })

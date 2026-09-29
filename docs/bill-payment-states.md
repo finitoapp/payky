@@ -182,8 +182,9 @@ by items adds one `refundLine` per returned quantity of the payment's frozen
 `paymentLine`, which is offered only while the payment is the one payment
 claimed for its bill. `refundPayment` refuses a payment that is not Paid and
 an amount of zero or above what is left: the cash received for a cash
-payment with a received amount, the payment's `amount` otherwise, less every
-earlier refund.
+payment with a received amount, the payment's `amount` otherwise, plus what
+its claims brought beyond `amount`, less every earlier refund. When there is
+such an excess, the refund dialog offers it first.
 
 A refund is not a state. It never touches `canceledAt`, `confirmedPaidAt` or
 any claim, so the payment stays Paid, and coverage still sums the claimed

@@ -222,7 +222,9 @@ may have extra money, and `deriveDueEetExtraSale` turns them into the next
 Each later increase becomes one more extra money sale at the next
 `extraFrom`. Keying by the level lets a device that missed a claim report
 the rest once the claim syncs. Extra money that shrinks because a claim was
-removed keeps its sale. Everything else follows the sale's rules.
+removed keeps its sale. Everything else follows the sale's rules. The code
+keeps "excess" for money above `payment.amount` only
+(`calculatePaymentExcess`), which the refund limit uses.
 
 ## Refunds and storno
 

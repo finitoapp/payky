@@ -1,4 +1,8 @@
-import { type KyselyNotNull, sqliteTrue } from "@evolu/common"
+import {
+  evoluJsonArrayFrom,
+  type KyselyNotNull,
+  sqliteTrue,
+} from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -39,7 +43,9 @@ export const refundsByPaymentIdQuery = (paymentId: PaymentId) =>
       .$narrowType<RefundRequiredColumns>()
   )
 
-export const refundSummariesQuery = createQuery((db) =>
+const selectRefundSummaries = (
+  db: Parameters<Parameters<typeof createQuery>[0]>[0]
+) =>
   db
     .selectFrom("refund")
     .innerJoin("payment", "payment.id", "refund.paymentId")
@@ -48,57 +54,67 @@ export const refundSummariesQuery = createQuery((db) =>
         .onRef("paymentCashRegister.id", "=", "payment.id")
         .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
     )
-    .select([
+    .leftJoin("paymentBtc", (join) =>
+      join
+        .onRef("paymentBtc.id", "=", "payment.id")
+        .on("paymentBtc.isDeleted", "is not", sqliteTrue)
+    )
+    .select((eb) => [
       "refund.paymentId",
       "refund.amount",
       "refund.currency",
       "payment.billId",
       "payment.amount as paymentAmount",
+      "payment.currency as paymentCurrency",
+      "paymentBtc.amountSats as paymentAmountSats",
       "paymentCashRegister.receivedAmount as cashReceivedAmount",
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("reconciliationClaim")
+          .innerJoin(
+            "accountTransaction",
+            "accountTransaction.id",
+            "reconciliationClaim.accountTransactionId"
+          )
+          .select([
+            "reconciliationClaim.accountTransactionId",
+            "accountTransaction.amount",
+            "accountTransaction.currency",
+          ])
+          .whereRef("reconciliationClaim.paymentId", "=", "payment.id")
+          .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+          .where("reconciliationClaim.accountTransactionId", "is not", null)
+          .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+          .where("accountTransaction.amount", "is not", null)
+          .where("accountTransaction.currency", "is not", null)
+          .$narrowType<{
+            accountTransactionId: KyselyNotNull
+            amount: KyselyNotNull
+            currency: KyselyNotNull
+          }>()
+      ).as("paymentClaims"),
     ])
     .where("refund.isDeleted", "is not", sqliteTrue)
     .where("refund.paymentId", "is not", null)
     .where("refund.amount", "is not", null)
     .where("refund.currency", "is not", null)
     .where("payment.amount", "is not", null)
+    .where("payment.currency", "is not", null)
     .$narrowType<{
       paymentId: KyselyNotNull
       amount: KyselyNotNull
       currency: KyselyNotNull
       paymentAmount: KyselyNotNull
+      paymentCurrency: KyselyNotNull
     }>()
+
+export const refundSummariesQuery = createQuery((db) =>
+  selectRefundSummaries(db)
 )
 
 export const refundSummariesByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>
-    db
-      .selectFrom("refund")
-      .innerJoin("payment", "payment.id", "refund.paymentId")
-      .leftJoin("paymentCashRegister", (join) =>
-        join
-          .onRef("paymentCashRegister.id", "=", "payment.id")
-          .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
-      )
-      .select([
-        "refund.paymentId",
-        "refund.amount",
-        "refund.currency",
-        "payment.billId",
-        "payment.amount as paymentAmount",
-        "paymentCashRegister.receivedAmount as cashReceivedAmount",
-      ])
-      .where("payment.billId", "=", billId)
-      .where("refund.isDeleted", "is not", sqliteTrue)
-      .where("refund.paymentId", "is not", null)
-      .where("refund.amount", "is not", null)
-      .where("refund.currency", "is not", null)
-      .where("payment.amount", "is not", null)
-      .$narrowType<{
-        paymentId: KyselyNotNull
-        amount: KyselyNotNull
-        currency: KyselyNotNull
-        paymentAmount: KyselyNotNull
-      }>()
+    selectRefundSummaries(db).where("payment.billId", "=", billId)
   )
 
 export const refundLinesByPaymentIdQuery = (paymentId: PaymentId) =>

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
   type ClaimedAmount,
+  calculatePaymentExcess,
   sumDistinctClaimedAmounts,
 } from "@/core/modules/shared/claimed-amount.ts"
 import type { Currency } from "@/core/modules/shared/schema.ts"
@@ -119,5 +120,71 @@ describe("sumDistinctClaimedAmounts", () => {
         }),
       ])
     ).toBe(0)
+  })
+})
+
+describe("calculatePaymentExcess", () => {
+  test.each([
+    {
+      name: "a payment settled twice",
+      claims: [
+        claimed({ accountTransactionId: "tx-card", amount: 25_000 }),
+        claimed({ accountTransactionId: "tx-bank", amount: 25_000 }),
+      ],
+      amount: 25_000,
+      excess: 25_000,
+    },
+    {
+      name: "one transfer larger than the payment",
+      claims: [
+        claimed({
+          accountTransactionId: "tx-bank",
+          amount: 100_000,
+          paymentAmount: 50_000,
+        }),
+      ],
+      amount: 50_000,
+      excess: 50_000,
+    },
+    {
+      name: "a split that adds up",
+      claims: [
+        claimed({ accountTransactionId: "tx-cash", amount: 30_000 }),
+        claimed({ accountTransactionId: "tx-bank", amount: 20_000 }),
+      ],
+      amount: 50_000,
+      excess: 0,
+    },
+    {
+      name: "a second Lightning settlement at the payment's rate",
+      claims: [
+        claimed({
+          accountTransactionId: "tx-first",
+          amount: 86_000,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: 86_000,
+        }),
+        claimed({
+          accountTransactionId: "tx-second",
+          amount: 43_000,
+          currency: "BTC",
+          paymentAmount: 12_900,
+          paymentAmountSats: 86_000,
+        }),
+      ],
+      amount: 12_900,
+      excess: 6_450,
+    },
+    {
+      name: "a cash payment whose change the guest left",
+      claims: [claimed({ accountTransactionId: "tx-cash", amount: 7_890 })],
+      amount: 7_890,
+      excess: 0,
+    },
+  ])("$name", ({ claims, amount, excess }) => {
+    expect(
+      calculatePaymentExcess({ claims, amount: NonNegativeInteger(amount) })
+    ).toBe(excess)
   })
 })

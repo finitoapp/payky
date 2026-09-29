@@ -293,6 +293,33 @@ describe("refundPayment", () => {
     ).resolves.toEqual([])
   })
 
+  test("returns the excess of a payment settled twice as well", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({ amount: 25_000 })
+    await context.settleInCash(paymentId, 25_000)
+    await context.settleByTransfer(paymentId)
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(50_001),
+      })
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "RefundAmountInvalid", remainingAmount: 50_000 },
+    })
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(50_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+  })
+
   test("refuses a payment that is not paid", async () => {
     await using context = await createRefundContext()
     const paymentId = await context.createTestPayment({ amount: 25_000 })

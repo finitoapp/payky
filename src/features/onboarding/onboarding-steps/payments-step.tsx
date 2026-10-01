@@ -1,5 +1,5 @@
 import { Banknote, Bitcoin, Landmark } from "lucide-react"
-import { useId } from "react"
+import { useId, useState } from "react"
 
 import {
   CardContent,
@@ -18,6 +18,11 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
+import {
+  BankAccountDescription,
+  type BankAccountDisplayFormat,
+  BankAccountFormatToggle,
+} from "@/features/shared/bank-account-input.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -72,6 +77,7 @@ export function PaymentsStep({
   const { t } = useTranslation()
   const ibanEnabled = paymentMethods.has("iban")
   const paymentMethodInputId = useId()
+  const [ibanFormat, setIbanFormat] = useState<BankAccountDisplayFormat>("bban")
 
   return (
     <>
@@ -108,9 +114,20 @@ export function PaymentsStep({
           })}
 
           <Field data-disabled={!ibanEnabled} data-invalid={ibanError !== null}>
-            <FieldLabel htmlFor={ibanInputId}>
-              {t("settings.fiatBankAccount.iban.label")}
-            </FieldLabel>
+            <div className="flex items-center justify-between gap-2">
+              <FieldLabel htmlFor={ibanInputId}>
+                {t("settings.fiatBankAccount.iban.label")}
+              </FieldLabel>
+              <BankAccountFormatToggle
+                format={ibanFormat}
+                draft={iban}
+                disabled={pending || !ibanEnabled}
+                onFormatChange={(next, convertedDraft) => {
+                  setIbanFormat(next)
+                  if (convertedDraft !== undefined) onIbanChange(convertedDraft)
+                }}
+              />
+            </div>
             <Input
               id={ibanInputId}
               value={iban}
@@ -123,7 +140,7 @@ export function PaymentsStep({
               }}
             />
             <FieldDescription>
-              {t("settings.fiatBankAccount.iban.description")}
+              <BankAccountDescription draft={iban} />
             </FieldDescription>
             <FieldError>{ibanError ? t(ibanError) : null}</FieldError>
           </Field>

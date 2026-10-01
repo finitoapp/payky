@@ -1,4 +1,5 @@
 import { ChevronDown, Plug, TriangleAlert } from "lucide-react"
+import { useState } from "react"
 import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -15,12 +16,18 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { saveFiatBankAccount } from "@/core/modules/account/account-actions.ts"
 import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import { isFioBankIban, isValidIban } from "@/core/modules/shared/iban-utils.ts"
+import {
+  czechBankNameForIban,
+  czechIbanToBban,
+  isFioBankIban,
+  isValidIban,
+} from "@/core/modules/shared/iban-utils.ts"
 import {
   BankAccountInputIbanSchema,
   type BankQrFormat,
@@ -47,24 +54,40 @@ import type { TranslationKey } from "@/i18n/resources.ts"
  */
 const ValidatedIbanSchema = z.string().refine(isValidIban).brand<"Iban">()
 
+type IbanDisplayFormat = "iban" | "bban"
+
+const encodeIban = {
+  iban: (value: string) => value,
+  // Czech accounts read as the account number people know them by; any other
+  // IBAN has no such form and stays as it is.
+  bban: (value: string) => czechIbanToBban(value) ?? value,
+} satisfies Record<IbanDisplayFormat, (value: string) => string>
+
 /**
  * Accepts any bank account input format (IBAN or a Czech account number) and
  * normalizes to IBAN, same as the onboarding flow's validation — but as a
  * codec, so it can drive an `InlineEditField` directly. Blank means "not set
  * yet", matching `optionalDateCodec`'s shape. Decode never throws: an
  * unparseable value passes through untouched so `ValidatedIbanSchema` is the
- * one thing deciding valid vs. invalid, per this file's other codecs.
+ * one thing deciding valid vs. invalid, per this file's other codecs. One
+ * codec per display format, since only `encode` differs.
  */
-const optionalIbanCodec = z.codec(z.string(), ValidatedIbanSchema.nullable(), {
-  decode: (value) => {
-    const trimmed = value.trim()
-    if (trimmed === "") return null
+const createOptionalIbanCodec = (format: IbanDisplayFormat) =>
+  z.codec(z.string(), ValidatedIbanSchema.nullable(), {
+    decode: (value) => {
+      const trimmed = value.trim()
+      if (trimmed === "") return null
 
-    const parsed = BankAccountInputIbanSchema.safeParse(trimmed)
-    return parsed.success ? parsed.data : trimmed
-  },
-  encode: (value) => value ?? "",
-})
+      const parsed = BankAccountInputIbanSchema.safeParse(trimmed)
+      return parsed.success ? parsed.data : trimmed
+    },
+    encode: (value) => (value === null ? "" : encodeIban[format](value)),
+  })
+
+const optionalIbanCodecs = {
+  iban: createOptionalIbanCodec("iban"),
+  bban: createOptionalIbanCodec("bban"),
+} satisfies Record<IbanDisplayFormat, unknown>
 
 // Every option value comes from a fixed, locally-built option list (never
 // user input), so this cannot realistically fail — a decode error here would
@@ -105,6 +128,17 @@ export function FiatBankAccountSettingsPage() {
   const currency =
     account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK
   const defaultQrFormat = account?.defaultQrFormat ?? "spayd"
+  const [ibanFormat, setIbanFormat] = useState<IbanDisplayFormat>("bban")
+  // Follows the draft, so the bank shows up while the number is being typed.
+  const bankLabel = (draft: string) => {
+    const parsed = BankAccountInputIbanSchema.safeParse(draft)
+    if (!parsed.success || !parsed.data.startsWith("CZ")) return undefined
+
+    return (
+      czechBankNameForIban(parsed.data) ??
+      t("settings.fiatBankAccount.iban.unknownBank")
+    )
+  }
 
   // `saveFiatBankAccount` upserts the whole row, so a partial save would
   // reset the fields it leaves out. Each control sends the current settings
@@ -140,9 +174,50 @@ export function FiatBankAccountSettingsPage() {
           <FieldGroup>
             <InlineEditField
               label={t("settings.fiatBankAccount.iban.label")}
-              description={t("settings.fiatBankAccount.iban.description")}
+              description={(draft) => {
+                const bank = bankLabel(draft)
+                return (
+                  <>
+                    {bank !== undefined && (
+                      <span className="block font-medium text-foreground">
+                        {bank}
+                      </span>
+                    )}
+                    {t("settings.fiatBankAccount.iban.description")}
+                  </>
+                )
+              }}
               defaultValue={iban}
-              codec={optionalIbanCodec}
+              codec={optionalIbanCodecs[ibanFormat]}
+              labelAction={
+                iban === null || czechIbanToBban(iban) !== null
+                  ? ({ draft, replaceDraft }) => (
+                      <ToggleGroup<IbanDisplayFormat>
+                        size="sm"
+                        variant="outline"
+                        spacing={0}
+                        value={[ibanFormat]}
+                        onValueChange={([next]) => {
+                          if (next === undefined) return
+                          setIbanFormat(next)
+                          // Mid-edit, carry what is typed over to the other
+                          // form; text that is not a valid account stays.
+                          const parsed =
+                            BankAccountInputIbanSchema.safeParse(draft)
+                          if (parsed.success)
+                            replaceDraft(encodeIban[next](parsed.data))
+                        }}
+                      >
+                        <ToggleGroupItem value="bban">
+                          {t("settings.fiatBankAccount.iban.format.bban")}
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="iban">
+                          {t("settings.fiatBankAccount.iban.format.iban")}
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    )
+                  : undefined
+              }
               errorKey="settings.fiatBankAccount.iban.invalid"
               onSave={(nextIban) => save({ iban: nextIban ?? undefined })}
             />

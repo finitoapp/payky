@@ -53,7 +53,8 @@ interface InlineEditFieldProps<T extends string | number | null> {
    * is then held from the start, not from the first keystroke.
    */
   readonly startEditing?: boolean
-  readonly description?: ReactNode
+  /** A function gets the text on screen, for a hint that follows the typing. */
+  readonly description?: ReactNode | ((draft: string) => ReactNode)
   readonly placeholder?: string
   /** Only the native pickers we actually use; the codec handles the value. */
   readonly type?: "text" | "date"
@@ -76,6 +77,16 @@ interface InlineEditFieldProps<T extends string | number | null> {
    * hidden during an edit, where the confirm and discard buttons sit.
    */
   readonly trailing?: ReactNode
+  /**
+   * Control rendered beside the label — the bank account field's IBAN /
+   * account-number switch. It sees the text on screen and, mid-edit, can
+   * replace it without ending the edit (clicks inside it keep the focus).
+   * While idle `replaceDraft` does nothing: the display follows the codec.
+   */
+  readonly labelAction?: (edit: {
+    readonly draft: string
+    readonly replaceDraft: (draft: string) => void
+  }) => ReactNode
   /** Rejects to report a failed save; the field toasts and shows no tick. */
   readonly onSave: (value: T) => Promise<void>
   /**
@@ -112,6 +123,7 @@ export function InlineEditField<T extends string | number | null>({
   codec,
   errorKey,
   trailing,
+  labelAction,
   onSave,
   onEditFinished,
 }: InlineEditFieldProps<T>) {
@@ -129,6 +141,8 @@ export function InlineEditField<T extends string | number | null>({
   const { justSaved, save } = useInlineSave(onSave)
 
   const editing = state.status === "editing"
+  const value =
+    state.status === "idle" ? z.encode(codec, defaultValue) : state.draft
   const saving = state.status === "saving"
 
   const adornment = ((): InlineEditAdornment => {
@@ -184,9 +198,25 @@ export function InlineEditField<T extends string | number | null>({
 
   return (
     <Field data-invalid={editing && state.invalid}>
-      <FieldLabel htmlFor={id} className={hideLabel === true ? "sr-only" : ""}>
-        {label}
-      </FieldLabel>
+      <div className="flex items-center justify-between gap-2">
+        <FieldLabel
+          htmlFor={id}
+          className={hideLabel === true ? "sr-only" : ""}
+        >
+          {label}
+        </FieldLabel>
+        {labelAction !== undefined && (
+          // biome-ignore lint/a11y/noStaticElementInteractions: only keeps the input's focus; the control inside handles its own interaction
+          <div onMouseDown={keepFocus}>
+            {labelAction({
+              draft: value,
+              replaceDraft: (draft) => {
+                if (editing) dispatch({ type: "edit", draft })
+              },
+            })}
+          </div>
+        )}
+      </div>
       <div className="relative">
         <Input
           ref={inputRef}
@@ -195,11 +225,7 @@ export function InlineEditField<T extends string | number | null>({
             adornmentPadding[adornment],
             editing && state.blinking && "animate-input-blink"
           )}
-          value={
-            state.status === "idle"
-              ? z.encode(codec, defaultValue)
-              : state.draft
-          }
+          value={value}
           aria-invalid={editing && state.invalid}
           autoComplete="off"
           autoFocus={startEditing}
@@ -267,7 +293,9 @@ export function InlineEditField<T extends string | number | null>({
         {adornment === "tick" && <InlineEditSavedTick className="right-2.5" />}
       </div>
       {description !== undefined && (
-        <FieldDescription>{description}</FieldDescription>
+        <FieldDescription>
+          {typeof description === "function" ? description(value) : description}
+        </FieldDescription>
       )}
       <FieldError>{editing && state.invalid ? t(errorKey) : null}</FieldError>
     </Field>

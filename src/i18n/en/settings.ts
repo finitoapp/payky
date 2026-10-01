@@ -329,11 +329,15 @@ export const enSettings = {
   "settings.fiatBankAccount.form.title": "Bank account details",
   "settings.fiatBankAccount.iban.description":
     "Enter an IBAN or a Czech account number such as 123456789/0100. The saved value is normalized to IBAN.",
+  "settings.fiatBankAccount.iban.format.bban": "Account number",
+  "settings.fiatBankAccount.iban.format.iban": "IBAN",
   "settings.fiatBankAccount.iban.invalid":
     "Enter a valid IBAN or Czech account number.",
   "settings.fiatBankAccount.iban.label": "IBAN or account number",
   "settings.fiatBankAccount.iban.required":
     "Enter your IBAN or account number, or turn bank transfer off.",
+  "settings.fiatBankAccount.iban.unknownBank":
+    "Unknown bank — we couldn't tell which bank this account belongs to",
   "settings.fiatBankAccount.qrFormat.description":
     "This format is shown first for bank QR payments.",
   "settings.fiatBankAccount.qrFormat.label": "Default QR format",

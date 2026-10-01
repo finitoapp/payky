@@ -330,11 +330,15 @@ export const csSettings = {
   "settings.fiatBankAccount.form.title": "Údaje bankovního účtu",
   "settings.fiatBankAccount.iban.description":
     "Zadejte IBAN nebo české číslo účtu, například 123456789/0100. Uložená hodnota se normalizuje na IBAN.",
+  "settings.fiatBankAccount.iban.format.bban": "Číslo účtu",
+  "settings.fiatBankAccount.iban.format.iban": "IBAN",
   "settings.fiatBankAccount.iban.invalid":
     "Zadejte platný IBAN nebo české číslo účtu.",
   "settings.fiatBankAccount.iban.label": "IBAN nebo číslo účtu",
   "settings.fiatBankAccount.iban.required":
     "Zadejte IBAN nebo číslo účtu, nebo bankovní převod vypněte.",
+  "settings.fiatBankAccount.iban.unknownBank":
+    "Neznámá banka — nepodařilo se rozpoznat, ke které bance účet patří",
   "settings.fiatBankAccount.qrFormat.description":
     "Tento formát se u bankovních QR plateb zobrazí jako první.",
   "settings.fiatBankAccount.qrFormat.label": "Výchozí formát QR",

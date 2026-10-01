@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest"
 import {
   BbanSchema,
+  czechBankNameForIban,
   czechBbanToIban,
+  czechIbanToBban,
   isFioBankIban,
   normalizeBankAccountInputToIban,
   normalizeIbanInput,
@@ -83,5 +85,35 @@ describe("IBAN utilities", () => {
     expect(isFioBankIban("CZ6508000000192000145399")).toBe(false)
     expect(isFioBankIban("SK3120100000002100001234")).toBe(false)
     expect(isFioBankIban("DE89370400440532013000")).toBe(false)
+  })
+})
+
+describe("czechIbanToBban", () => {
+  test("drops leading zeros and keeps a prefix", () => {
+    expect(czechIbanToBban("CZ6508000000192000145399")).toBe(
+      "19-2000145399/0800"
+    )
+    expect(czechIbanToBban("CZ1801000000000123456789")).toBe("123456789/0100")
+  })
+
+  test("round-trips through the BBAN parser", () => {
+    const bban = czechIbanToBban("CZ6508000000192000145399")
+    expect(bban).not.toBeNull()
+    expect(czechBbanToIban(BbanSchema.parse(bban))).toBe(
+      "CZ6508000000192000145399"
+    )
+  })
+
+  test("returns null for non-CZ IBANs", () => {
+    expect(czechIbanToBban("SK3112000000198742637541")).toBeNull()
+  })
+})
+
+describe("czechBankNameForIban", () => {
+  test("detects the bank from the bank code", () => {
+    expect(czechBankNameForIban("CZ6508000000192000145399")).toBe(
+      "Česká spořitelna, a.s."
+    )
+    expect(czechBankNameForIban("SK3112000000198742637541")).toBeUndefined()
   })
 })

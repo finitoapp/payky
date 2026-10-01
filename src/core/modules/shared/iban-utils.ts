@@ -3,6 +3,8 @@ import { z } from "zod"
 
 import { defineError } from "@/core/error.ts"
 
+import { czechBankNames } from "./czech-bank-codes.ts"
+
 const ibanCountryLengths: Readonly<Record<string, number>> = {
   AD: 24,
   AE: 23,
@@ -206,4 +208,27 @@ export const normalizeBankAccountInputToIban = (
   }
 
   return err(createInvalidBankAccountInputError())
+}
+
+/**
+ * The Czech account number (`prefix-number/bank`, leading zeros dropped) a CZ
+ * IBAN encodes, or `null` for any other IBAN.
+ */
+export const czechIbanToBban = (value: string) => {
+  const iban = normalizeIbanInput(value)
+  if (!iban.startsWith("CZ") || !isValidIban(iban)) return null
+
+  const bankCode = iban.slice(4, 8)
+  const prefix = iban.slice(8, 14).replace(/^0+/u, "")
+  const accountNumber = iban.slice(14).replace(/^0+/u, "")
+
+  return `${prefix === "" ? "" : `${prefix}-`}${accountNumber}/${bankCode}`
+}
+
+/** The bank a CZ IBAN belongs to, when the CNB register knows its code. */
+export const czechBankNameForIban = (value: string) => {
+  const iban = normalizeIbanInput(value)
+  if (!iban.startsWith("CZ")) return undefined
+
+  return czechBankNames[iban.slice(4, 8)]
 }

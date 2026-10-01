@@ -4,7 +4,9 @@ How a received payment becomes an EET 2.0 sale (`tržba`), gets delivered,
 how a refund reverses it, and what each state and edge case means. Read it before changing
 `src/core/modules/eet/*`, `eet-reporting-job.ts`, or
 `src/core/integrations/eet/*`. The decisions behind it, with the tests that
-hold them, are recorded in [`decisions/eet/`](decisions/eet/).
+hold them, are recorded in [`decisions/eet/`](decisions/eet/), with the cash
+and refund ones in [`decisions/payment/`](decisions/payment/) and
+[`decisions/refund/`](decisions/refund/).
 
 ## Moving parts
 
@@ -76,16 +78,16 @@ Every sale and reversal has a **recording device**, stored as its `deviceId`:
 |---|---|
 | Sale | the first claim's `deviceId`: the device where staff confirmed cash or card, or matched a transfer by hand |
 | Sale with an automatic claim (FIO, Spark) | `payment.deviceId`, the device that showed the QR code or invoice |
-| Extra money sale | the same rule, applied to the claim that brought the extra money |
+| Extra money sale | the same rule, applied to the payment's latest claim |
 | Reversal | `refund.deviceId` |
 
 A payment or refund without any device is never reported. The record's
 **start time** is its `saleAt`, and for a reversal the later of the refund
-and its sale's confirmation (`getEetReversalStartsAt`), since a reversal
-cannot be sent earlier.
+and the latest confirmation of the payment's supported sales
+(`getEetReversalStartsAt`), since a reversal cannot be sent earlier.
 
 For the first 10 minutes after the start time (`EET_PRIORITY_PERIOD_MS`),
-only the recording device creates and delivers the record. After that, the
+only the recording device's job creates and delivers the record. After that, the
 job on **every** device of the account creates it if it is missing and
 delivers it until confirmed. Whoever creates or sends it, the body stays the
 recording device's: `id_pokl` is its cash-register id, so EET sees a
@@ -116,7 +118,7 @@ when a device clock is more than 5 minutes ahead of the recording device's.
 | `amount` | what the first claim brought, capped at `payment.amount` (`calculateEetSettlementValue`), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
 | `saleAt` (`dat_trzby`) | first claim's `claimedAt` |
 | `sequenceNumber` (`porad_cis`) | the payment id |
-| `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id — one register per device |
+| `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id, so one register per device |
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
 | `unsupportedReason` | `currency` if not CZK, `amount` if > 99 999 999.99 |
 | `reportedTipAmount` | the tip the sale reports: `payment.tipAmount` while tips belong to the business, `0` while they belong to employees and on every extra money sale. `null` on a sale created before it existed, read as `0` |
@@ -126,9 +128,10 @@ sales created afterwards — with one exception in "Manual retry" below.
 
 ## Delivery
 
-The job subscribes to two queries for sales and two for reversals (see
-"Refunds and storno") and runs through a keyed queue (one `create` and one
-`deliver` pass at a time):
+The job subscribes to three queries for sales and two for reversals (see
+"Extra money" and "Refunds and storno") and runs through a keyed queue: one
+pass at a time, with at most one pending `create` and one pending `deliver`
+pass:
 
 - `eetSalesToDeliverQuery`: every device's sales that are supported,
   unconfirmed and whose `lastAttemptResult` is `null` or `retry`; the job
@@ -185,8 +188,9 @@ the account are listed in Settings → EET.
 
 Payment detail offers **Retry** for `pending` and `rejected`. `retryEetSale`:
 
-- If **every** attempt was rejected (no unanswered or cut-off one, no FIK) and the
-  current settings have a different EIC or establishment id, it first
+- If the last attempt was rejected, none went unanswered or was cut off,
+  there is no FIK, and the current settings have a different EIC or
+  establishment id, it first
   rewrites those two fields on the sale — EET never saw the sale, so fixing
   a typo is safe. Otherwise the frozen data stays.
 - Then delivers exactly as the job does (same lock, same outcome recording).
@@ -217,7 +221,7 @@ may have extra money, and `deriveDueEetExtraSale` turns them into the next
 | Field | Value |
 |---|---|
 | `extraFrom` | the extra money already reported: the sum of the payment's extra money sales, or the extra money brought before `enabledAt` when that is larger |
-| `amount` | the current extra money minus `extraFrom`. The tip owner does not matter: the tip is left out of the payment's sale |
+| `amount` | the current extra money minus `extraFrom`. The tip owner does not matter, as only the payment's sale takes the tip off (see "Known gaps") |
 | `method`, `saleAt` | the latest claim's, ordered by `claimedAt`, then claim id |
 | `sequenceNumber` | the extra money sale's own id |
 
@@ -278,14 +282,15 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | Sale or extra money sale pending or rejected | The payment's reversals wait, for good if it is never confirmed |
 | EET disabled, or environment or EIC changed, when the reversal is created | Reversal `unsupported`, never sent |
 | Claim removed before creation | Not reported (query needs an active claim) |
-| Overpaid / multiple claims | One sale for `payment.amount` and an extra money sale for the rest; a refund of the extra money reverses only that |
+| Overpaid / multiple claims | One sale for the first claim, capped at `payment.amount`, and an extra money sale for the rest; a refund of the extra money reverses only that |
+| Two devices settle one payment while cut off from sync | Over-reported (see "Known gaps") |
 | Refund before the extra money sale exists | The reversal waits for it, then covers the refund in full |
 | Cash rounded or change left | The sale reports the cash received (78.90 charged, 79 or 80 received); the payment, its claim and the cash register keep 78.90 |
 | Cash payment settled before the received amount was recorded | Reports `payment.amount` |
 | First claim short of the amount | The sale reports what the claim brought; the rest becomes an extra money sale when it arrives, and is never reported if it never does |
 | Non-CZK payment | `unsupported`, never sent |
 | Recording device offline or lost | After 10 minutes another device of the account creates and delivers its records, marked as repeated |
-| Recording device alive while EET is down | After 10 minutes other devices retry too; every message is a repeat with the same body, so EET sees one sale |
+| Recording device alive while EET is down | After 10 minutes other devices retry too; every later message is a repeat with the same body, so EET sees one sale |
 | App closed while an attempt waits for its answer | The next attempt is a repeat and the record counts as possibly recorded by EET |
 | Payment created on one device, paid in cash on another | The device that took the cash reports it, with its own `id_pokl` |
 | Recording device and another create the same sale while cut off from sync | Same row id; if the settings changed in between, the merged row can mix two snapshots and its next resend would be a second sale |
@@ -318,3 +323,9 @@ EET lists unconfirmed reversals next to unconfirmed sales.
    a compromised device leaks the signing key).
 9. **Sale time = claim time**, not when the customer paid; for an IBAN
     transfer matched later by bank sync, `dat_trzby` is the match time.
+10. **Two offline devices over-report one payment.** Each takes its own
+    settlement as the first and reports it as the payment's sale, and the
+    extra money sale later reports the second settlement again.
+11. **A tip larger than the first settlement leaks into EET.** While tips
+    belong to employees, the payment's sale takes the tip off only down to
+    `0`, and the extra money sale reports the rest of the tip.

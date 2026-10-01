@@ -13,17 +13,17 @@ eet/0005).
 
 ## Decision
 
-A refund of a payment with a supported sale becomes one reversal, sent as a
-negative sale at the moment of the refund. A refund of goods reverses its
-amount. A tip refund (see refund/0004) reverses the tip the payment's sale
-reports, which the sale fixes when it is created: the whole tip while tips
-belong to the business, nothing while they belong to employees, and nothing
-for a sale created before it recorded this. Both are capped at what the
-payment's sales reported minus earlier reversals, so a refund with nothing
-to reverse, such as the tip refund of a tip that belonged to employees, gets
-no reversal. A reversal waits until every sale of its payment is confirmed,
-because one sent first could take EET below what it holds if a sale were
-later rejected.
+A refund of a payment with a supported sale becomes at most one reversal,
+sent as a negative sale at the moment of the refund. A refund of goods
+reverses its amount. A tip refund (see refund/0004) reverses the tip the
+payment's sale reports, which the sale fixes when it is created: the whole
+tip while tips belong to the business, nothing while they belong to
+employees, and nothing for a sale created before it recorded this. Both are
+capped at what the payment's sales reported minus earlier reversals that can
+be sent, so a refund with nothing to reverse, such as the tip refund of a
+tip that belonged to employees, gets no reversal. A reversal waits until
+every sale of its payment is confirmed, because one sent first could take
+EET below what it holds if a sale were later rejected.
 
 ## Alternatives considered
 
@@ -35,23 +35,27 @@ EET below what was sold.
 
 ## Consequences
 
-A tip that belongs to employees is never reversed when it is refunded as the
-tip; entered as an amount it is a refund of goods (see refund/0004). The tip
-refund of a sale created before the reported tip was recorded sends no
-storno, so a tip that sale did report stays in EET, which errs toward
+The tip refund of a sale created before the reported tip was recorded sends
+no storno, so a tip that sale did report stays in EET, which errs toward
 reporting more than was sold. A reversal waits for good if a sale of its
 payment is never confirmed. A reversal created while EET is off, or in
 another environment or for another taxpayer than its sale, is never sent and
-is listed as needing attention.
+is listed among the unconfirmed sales in the EET settings.
 
 ## Enforced by
 
 - `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps a refund at a sale that left out an employees' tip`
 - `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps later refunds at what the sale has left`
 - `src/core/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > sends a reversal only once its sale is confirmed`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses a refund recorded before its sale was created`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning the duplicate leaves the real sale reported`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning everything reverses the sale and the extra money`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > sends the reversal only once the extra sale is confirmed`
+- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > marks a reversal unsupported while EET is off`
+- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > never sends a reversal once EET runs in another environment`
+- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > never sends a reversal once EET reports for another taxpayer`
+- `src/core/modules/eet/eet-queries.test.ts > unconfirmedEetReversalsQuery > lists a reversal until it is confirmed, also one never sent`
 - `src/core/modules/eet/eet-actions.test.ts > createEetSale > fixes the tip it reports`
 - `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses no tip refund of a tip that belonged to employees`
 - `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses the tip refund of a tip that belonged to the business`

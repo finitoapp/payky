@@ -1,6 +1,6 @@
 # 0003 A refund may return everything the payment received
 
-Status: accepted
+Status: superseded by refund/0005
 Date: 2026-09-29
 
 ## Context

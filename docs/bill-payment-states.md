@@ -176,16 +176,18 @@ to the other's field.
 ### Refunds
 
 A `refund` row (the `refund` module) records money returned to a customer
-for a payment that is Paid: an amount, how it went back — cash from the cash
-register, or outside Payky such as on the card terminal — and when. A refund
-by items adds one `refundLine` per returned quantity of the payment's frozen
-`paymentLine`, which is offered only while the payment is the one payment
-claimed for its bill. A refund by amount or by items returns goods only.
+for a payment that is Paid: an amount, how it went back (cash from the cash
+register, or outside Payky such as on the card terminal) and when. A refund
+by items adds one `refundLine` per returned `paymentLine` of the payment's
+frozen lines, with the quantity returned, and is offered only while no other
+payment of its bill has a claim. A refund by amount or by items returns
+goods only.
 `refundPayment` refuses a payment that is not Paid and an amount of zero or
 above what is left: the cash received for a cash payment with a received
 amount, the payment's `amount` otherwise, plus what its claims brought
 beyond `amount`, less the payment's `tipAmount` and every earlier refund of
-goods. When there is such an excess, the refund dialog offers it first.
+goods. When there is such an excess, the refund dialog prefills it, capped
+at what is left.
 
 The tip is refunded on its own: `refundPaymentTip` returns the whole
 `tipAmount` as a refund with `isTip` set, once per payment (its id is

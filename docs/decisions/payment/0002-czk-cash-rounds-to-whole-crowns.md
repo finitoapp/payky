@@ -5,21 +5,23 @@ Date: 2026-09-28
 
 ## Context
 
-The seminar's example rounds 78.90 CZK paid in cash to 79 CZK (GFŘ seminar
-for developers, slide 59). Payky has no cash rounding rule for any other
-currency.
+A cash total is rounded to the nearest valid denomination (§ 3 odst. 1 písm.
+c) of zákon č. 634/1992 Sb., o ochraně spotřebitele), which for CZK is the
+whole crown. The seminar's example rounds 78.90 CZK paid in cash to 79 CZK
+(GFŘ seminar for developers, slide 59). Payky has no cash rounding rule for
+any other currency.
 
 ## Decision
 
-A CZK charge rounds to the nearest whole crown, halves up, and the cash
+A CZK charge rounds to the nearest whole crown, 50 haléř up, and the cash
 received cannot be lower than that. Any other currency is prefilled with the
 exact charge.
 
 ## Alternatives considered
 
-Accepting any amount. Rounding down to whole crowns is the only legitimate
-way to receive less than the charge, and anything lower is an underpayment
-this field must not hide.
+Accepting any amount. Rounding to the nearest crown takes at most 49 haléř
+off the charge, and anything lower is an underpayment this field must not
+hide.
 
 ## Consequences
 

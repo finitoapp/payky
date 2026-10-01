@@ -7,9 +7,8 @@ Date: 2026-09-29
 
 A payment can bring more than its first settlement: a second settlement, a
 transfer larger than the payment, or the rest of a split. A sale must be
-recorded at the latest when its money is received (GFŘ seminar for
-developers, slide 17). Payky therefore treats money the business keeps as a
-sale when it arrives, and reverses money it returns.
+recorded at the latest when its money is received, or when the order to pay
+is issued if that comes first (GFŘ seminar for developers, slide 17).
 
 ## Decision
 
@@ -17,19 +16,22 @@ A payment's sale reports what its first settlement brought, capped at the
 payment amount, or for cash the cash received (see payment/0001), less a tip
 that belongs to employees (see eet/0005). Everything later settlements bring
 beyond that is reported as an extra money sale when it arrives, with the
-method, time and recording device of the claim that brought it. Each
+method, time and recording device of the payment's latest claim. Each
 increase adds one more extra money sale. Extra money brought before EET was
 enabled is never reported.
 
 ## Alternatives considered
 
 Holding the extra money back until staff decides whether it was a mistake.
-That is lawful only if a mistaken payment is not a sale, which nothing we
-hold confirms. Reporting on arrival and reversing on return is lawful either
-way. Keying each extra money sale by the settlement that brought it. A
-device that missed a settlement in the middle would leave it unreported for
-good, while keying by the level already reported lets the next level report
-the rest once the settlement syncs.
+It would leave the money unreported if it was a sale, and no source we hold
+says a mistaken payment is not one. Reporting on arrival and reversing on
+return is safe either way: recording the return of a payment that was not a
+sale is not challenged (GFŘ guideline on the EET act, version 1.0 of 31
+August 2016, section 2.2.3, written for the first EET). Keying each extra
+money sale by the settlement that brought it. A device that missed a
+settlement in the middle would leave it unreported for good, while keying by
+the level already reported lets the next level report the rest once the
+settlement syncs.
 
 ## Consequences
 
@@ -41,6 +43,11 @@ the rest is reported only if it ever arrives.
 
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment settled twice as its sale and an extra sale`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports only what a short first settlement brought`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports the part of one transfer above the payment`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
+- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports a second settlement from the settlement that brought it`
+- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > breaks a tie on the settlement time by claim id`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports each increase of the extra money once`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > never reports extra money brought while EET was disabled`
 - `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

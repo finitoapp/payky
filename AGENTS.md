@@ -2,7 +2,7 @@
 
 ## Commands
 
-- `bun run check` before handing work back. It is `check:lint` (Biome) + `check:ts` (`tsc -b`, tests included) + `check:decisions` (every accepted decision record names tests that exist, or says why it cannot, see below) + `check:tests` (Vitest); run those individually while narrowing a failure.
+- `bun run check` before handing work back. It is `check:lint` (Biome) + `check:ts` (`tsc -b`, tests included) + `check:decisions` (decision records name the tests that hold them, see `docs/decisions/README.md`) + `check:tests` (Vitest); run those individually while narrowing a failure.
 - `bun run format` applies Biome's fixes; `bun run test:watch` reruns Vitest on change; `bun run check:coverage` writes a report to `coverage/`.
 - `bun run dev` starts Vite over HTTPS with a self-signed cert (`PAYKY_DISABLE_BASIC_SSL=1` turns that off for Android live-reload).
 - End-to-end tests are not part of `check` and need their own run — see "E2E Testing" below.
@@ -10,7 +10,7 @@
 ## Project Rules
 
 - Write all code, comments, commit messages, and documentation in English.
-- Business decisions are recorded in `docs/decisions/<domain>/`, one file per decision, each naming the tests that hold it under `## Enforced by` (format in `docs/decisions/README.md`). Read the decisions of a domain before changing its behavior. A change that reverses or narrows a decision adds a new record and marks the old one `Status: superseded by <domain>/NNNN` instead of rewriting it, and a new business rule gets its own record. `check:decisions` fails when an accepted record names no test and gives no `Untestable:` reason, or names a test that does not exist.
+- Business decisions are recorded in `docs/decisions/<domain>/`, one file per decision, each naming the tests that hold it under `## Enforced by` (format in `docs/decisions/README.md`). Read the decisions of a domain before changing its behavior. A change that reverses or narrows a decision adds a new record and marks the old one `Status: superseded by <domain>/NNNN` instead of rewriting it, and a new business rule gets its own record.
 - Commit messages follow Conventional Commits: `type(scope): imperative summary`, lowercase, no trailing period. Types in use are `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`; the scope names the module or feature touched (`refactor(payment):`). The subject says what changed and the body says why — put the reasoning there, not in the subject.
 - Error reporting goes through `src/core/sentry.ts` and is opt-in per device (`errorReportingEnabled`, driven by `SentryController`). Report unexpected crashes only: `captureReportedError` has exactly two sanctioned call sites, the root error handler in `src/App.tsx` and `src/components/app/error-boundary.tsx`. Never pair it with a `toast.error` or any other handled failure — an expected `Result` the UI already shows the user is not a crash. Events are scrubbed of recovery phrases and IBAN-shaped strings, but keep secrets out of error payloads rather than relying on that.
 - Use Bun for dependency management and scripts. Keep `exact = true` in `bunfig.toml`.

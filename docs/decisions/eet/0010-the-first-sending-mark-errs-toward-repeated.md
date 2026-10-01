@@ -1,4 +1,4 @@
-# 0010 The first-sending mark is set only when it is certainly true
+# 0010 The first-sending mark errs toward repeated
 
 Status: accepted
 Date: 2026-09-29
@@ -27,8 +27,8 @@ which would block the first sending whenever the relay is down.
 
 ## Consequences
 
-The mark errs toward repeated: a late first sending is marked as the resend
-it effectively is. It errs toward first only when a device clock is more
+The mark errs toward repeated: a first sending later than 5 minutes is
+marked as a repeat. It errs toward first only when a device clock is more
 than 5 minutes ahead of the recording device's. The 5 minutes between the
 last first sending and the earliest takeover absorb clocks that disagree and
 requests still in flight.
@@ -41,3 +41,4 @@ requests still in flight.
 - `src/core/modules/eet/eet-actions.test.ts > first and repeated sending > marks an attempt from another device as repeated`
 - `src/core/modules/eet/eet-actions.test.ts > retryEetSale > keeps the original data after an attempt cut off by the app closing`
 - `src/core/modules/eet/eet-utils.test.ts > isEetFirstSending > is %s: %s`
+- `src/core/modules/eet/eet-utils.test.ts > isEetFirstSending > errs toward first after a takeover by a clock %i minutes ahead: %s`

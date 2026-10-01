@@ -21,17 +21,19 @@ keep the charge.
 ## Alternatives considered
 
 Writing the received amount as the cash register transaction. The register
-would be exact, but every rounding would show the bill as overpaid and ask
-staff to deal with the excess.
+would be exact, but every rounding would show the bill overpaid, or
+underpaid and still open, and ask staff to deal with the difference.
 
 ## Consequences
 
-The cash register drifts by rounding differences, which nothing shows today.
-A cash payment settled before the received amount was recorded reports its
-charge.
+The cash register balance drifts from the cash in the drawer by the rounding
+differences, and no view shows that drift. The payment detail shows a
+payment's cash received when it differs from the charge. A cash payment
+settled before the received amount was recorded reports its charge.
 
 ## Enforced by
 
 - `src/core/modules/eet/eet-actions.test.ts > createEetSale > reports what was received for $name`
+- `src/core/modules/eet/eet-actions.test.ts > createEetSale > leaves the tip out of the cash received while tips belong to employees`
 - `src/core/modules/payment/payment-actions.test.ts > payment actions > cash received > stores the cash received and keeps the charge everywhere else`
 - `e2e/eet.spec.ts > a cash sale is reported as the cash received`

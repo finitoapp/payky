@@ -1,50 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1164" height="2044" viewBox="0 0 1164 2044">
-  <title>Modern Android phone frame</title>
+  <title>Modern Android phone frame, Payky gold</title>
   <defs>
     <filter id="body-shadow" x="-12%" y="-8%" width="124%" height="120%">
       <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity=".2"/>
     </filter>
     <linearGradient id="rail" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#202428"/>
-      <stop offset=".08" stop-color="#454c52"/>
-      <stop offset=".18" stop-color="#2c3236"/>
-      <stop offset=".5" stop-color="#363c41"/>
-      <stop offset=".82" stop-color="#2c3236"/>
-      <stop offset=".94" stop-color="#495057"/>
-      <stop offset="1" stop-color="#1e2327"/>
+      <stop stop-color="#6E4A0E"/>
+      <stop offset=".08" stop-color="#F2C94C"/>
+      <stop offset=".18" stop-color="#B87918"/>
+      <stop offset=".5" stop-color="#D99A22"/>
+      <stop offset=".82" stop-color="#B87918"/>
+      <stop offset=".94" stop-color="#F8D96A"/>
+      <stop offset="1" stop-color="#6A460C"/>
     </linearGradient>
     <linearGradient id="rail-rim" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#d5dde2" stop-opacity=".72"/>
-      <stop offset=".08" stop-color="#727a80" stop-opacity=".46"/>
-      <stop offset=".92" stop-color="#101214" stop-opacity=".4"/>
-      <stop offset="1" stop-color="#8d969c" stop-opacity=".56"/>
+      <stop stop-color="#FFF0C2" stop-opacity=".72"/>
+      <stop offset=".08" stop-color="#C49A3A" stop-opacity=".46"/>
+      <stop offset=".92" stop-color="#3A2806" stop-opacity=".4"/>
+      <stop offset="1" stop-color="#E8C67A" stop-opacity=".56"/>
     </linearGradient>
     <linearGradient id="top-reflection" x1="0" y1="0" x2="1" y2=".24">
       <stop stop-color="#ffffff" stop-opacity="0"/>
       <stop offset=".05" stop-color="#ffffff" stop-opacity=".82"/>
-      <stop offset=".24" stop-color="#e8f2f6" stop-opacity=".52"/>
-      <stop offset=".7" stop-color="#aebdc6" stop-opacity=".12"/>
+      <stop offset=".24" stop-color="#FDF2D6" stop-opacity=".52"/>
+      <stop offset=".7" stop-color="#E6CC92" stop-opacity=".12"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="bottom-reflection" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#dce7ec" stop-opacity="0"/>
-      <stop offset=".1" stop-color="#dce7ec" stop-opacity=".18"/>
-      <stop offset=".72" stop-color="#f2f8fb" stop-opacity=".48"/>
-      <stop offset=".94" stop-color="#dce7ec" stop-opacity=".16"/>
-      <stop offset="1" stop-color="#dce7ec" stop-opacity="0"/>
+      <stop stop-color="#F8EBC8" stop-opacity="0"/>
+      <stop offset=".1" stop-color="#F8EBC8" stop-opacity=".18"/>
+      <stop offset=".72" stop-color="#FFF8E4" stop-opacity=".48"/>
+      <stop offset=".94" stop-color="#F8EBC8" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#F8EBC8" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="side-reflection" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#edf5f8" stop-opacity="0"/>
-      <stop offset=".08" stop-color="#edf5f8" stop-opacity=".5"/>
-      <stop offset=".34" stop-color="#d7e3e9" stop-opacity=".14"/>
-      <stop offset=".75" stop-color="#d7e3e9" stop-opacity=".05"/>
-      <stop offset="1" stop-color="#edf5f8" stop-opacity="0"/>
+      <stop stop-color="#FEF4DC" stop-opacity="0"/>
+      <stop offset=".08" stop-color="#FEF4DC" stop-opacity=".5"/>
+      <stop offset=".34" stop-color="#F4E0AE" stop-opacity=".14"/>
+      <stop offset=".75" stop-color="#F4E0AE" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#FEF4DC" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="button" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#272d32"/>
-      <stop offset=".34" stop-color="#4d555b"/>
-      <stop offset=".55" stop-color="#707a81"/>
-      <stop offset="1" stop-color="#252b30"/>
+      <stop stop-color="#6A470C"/>
+      <stop offset=".34" stop-color="#C48A22"/>
+      <stop offset=".55" stop-color="#F2C94C"/>
+      <stop offset="1" stop-color="#664409"/>
     </linearGradient>
     <radialGradient id="lens" cx="35%" cy="25%" r="72%">
       <stop stop-color="#4d718c"/>
@@ -70,14 +70,14 @@
     <path d="M210 350V1610" fill="none" stroke="url(#side-reflection)" stroke-width="2" stroke-linecap="round"/>
     <path d="M954 370V1520" fill="none" stroke="url(#side-reflection)" stroke-opacity=".42" stroke-width="1.5" stroke-linecap="round"/>
     <path d="M201 1751c0 48 39 87 87 87h588" fill="none" stroke="url(#bottom-reflection)" stroke-width="2" stroke-linecap="round"/>
-    <rect x="202" y="201" width="760" height="1629" rx="80" fill="none" stroke="#8f969b" stroke-opacity=".18" stroke-width="2"/>
+    <rect x="202" y="201" width="760" height="1629" rx="80" fill="none" stroke="#E9C060" stroke-opacity=".18" stroke-width="2"/>
     <rect x="968" y="500" width="8" height="75" rx="4" fill="url(#button)"/>
     <rect x="968" y="612" width="8" height="142" rx="4" fill="url(#button)"/>
-    <rect x="969" y="502" width="1" height="71" rx=".5" fill="#e2edf2" fill-opacity=".46"/>
-    <rect x="969" y="614" width="1" height="138" rx=".5" fill="#e2edf2" fill-opacity=".46"/>
-    <path d="M970 501h4" fill="none" stroke="#f5fbff" stroke-opacity=".44" stroke-width="1.2" stroke-linecap="round"/>
-    <path d="M970 613h4" fill="none" stroke="#f5fbff" stroke-opacity=".44" stroke-width="1.2" stroke-linecap="round"/>
-    <rect x="563" y="208" width="38" height="2" rx="1" fill="#b2b9be" fill-opacity=".18"/>
+    <rect x="969" y="502" width="1" height="71" rx=".5" fill="#FDF0CC" fill-opacity=".46"/>
+    <rect x="969" y="614" width="1" height="138" rx=".5" fill="#FDF0CC" fill-opacity=".46"/>
+    <path d="M970 501h4" fill="none" stroke="#FFF9E8" stroke-opacity=".44" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M970 613h4" fill="none" stroke="#FFF9E8" stroke-opacity=".44" stroke-width="1.2" stroke-linecap="round"/>
+    <rect x="563" y="208" width="38" height="2" rx="1" fill="#F5DEA0" fill-opacity=".18"/>
     <circle cx="582" cy="228" r="7" fill="#090c0e" stroke="#59626a" stroke-opacity=".18"/>
     <circle cx="582" cy="228" r="4.5" fill="url(#lens)"/>
     <circle cx="580.5" cy="226.5" r="1" fill="#a5d3ee" fill-opacity=".32"/>

@@ -169,6 +169,13 @@ const tablesCartItemByLanguage: Record<Language, CartItem> = {
   sk: { name: "Káva", price: "2.5", quantity: 1 },
 }
 
+// A koruna amount reads as a real sale; the euro and dollar defaults already do.
+const paymentAmountByLanguage: Record<Language, string> = {
+  en: "5.9",
+  cs: "249",
+  sk: "5.9",
+}
+
 async function capturePage(
   page: Page,
   name: ScreenshotScenario["name"],
@@ -192,7 +199,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
     name: "payment",
     async capture(page, language) {
       await completeOnboarding(page, language, { baseURL: appUrl })
-      await createPayment(page, language)
+      await createPayment(page, language, paymentAmountByLanguage[language])
       await page
         .getByRole("tab", {
           name: translate(language, "paymentWait.method.iban"),

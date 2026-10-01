@@ -36,6 +36,16 @@ export const SparkMnemonicSchema = z
 export type SparkMnemonic = z.output<typeof SparkMnemonicSchema>
 export const SparkMnemonic = SparkMnemonicSchema.decode
 
+/** A 32-byte secp256k1 private key, the Nostr signing key. */
+export const NostrSecretKeySchema = z
+  .instanceof(Uint8Array)
+  .refine((bytes) => bytes.length === 32, {
+    message: "A Nostr secret key is exactly 32 bytes.",
+  })
+  .brand<"NostrSecretKey">()
+export type NostrSecretKey = z.output<typeof NostrSecretKeySchema>
+export const NostrSecretKey = NostrSecretKeySchema.decode
+
 export const DerivationPathSchema = z.string().brand<"DerivationPath">()
 export type DerivationPath = z.output<typeof DerivationPathSchema>
 export const DerivationPath = DerivationPathSchema.decode
@@ -73,6 +83,12 @@ export const evoluOwnerDerivationPath = DerivationPath(
 export const defaultSparkWalletDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/12'/0'"
 )
+/**
+ * NIP-06: plain BIP-32, not BIP-85 — the node's private key is the key.
+ * Linky derives the same path, so both apps publish one profile. Pinned by
+ * `NOSTR_VECTOR` in `key-derivation-cross-app.test.ts`.
+ */
+export const nostrKeyDerivationPath = DerivationPath("m/44'/1237'/0'/0/0")
 
 const bipEntropyHmacKey = new TextEncoder().encode("bip-entropy-from-k")
 
@@ -89,6 +105,18 @@ const deriveEntropy = (
   }
 
   return hmac(sha512, bipEntropyHmacKey, privateKey).slice(0, 32)
+}
+
+export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey => {
+  const privateKey = HDKey.fromMasterSeed(hexToBytes(masterKey)).derive(
+    nostrKeyDerivationPath
+  ).privateKey
+
+  if (privateKey === null) {
+    throw new Error("The Nostr derivation path yielded no private key.")
+  }
+
+  return NostrSecretKey(new Uint8Array(privateKey))
 }
 
 export const createMasterKey = (): MasterKey =>

@@ -564,6 +564,27 @@ export const skSettings = {
   "settings.privacy.productLookup.enable": "Zapnúť",
   "settings.privacy.productLookup.enabled": "Zapnuté",
   "settings.privacy.productLookup.title": "Dohľadanie produktov",
+  "settings.profile.description":
+    "Váš Nostr profil, rovnaký, aký pre túto obnovovaciu frázu zobrazuje Linky.",
+  "settings.profile.loadFailed":
+    "Nepodarilo sa spojiť so žiadnym Nostr relayom a načítať profil. Skontrolujte pripojenie a skúste to znova.",
+  "settings.profile.name.invalid": "Meno je príliš dlhé.",
+  "settings.profile.name.label": "Meno",
+  "settings.profile.name.placeholder": "Názov vášho obchodu",
+  "settings.profile.npub.copied": "Verejný kľúč skopírovaný",
+  "settings.profile.npub.copy": "Kopírovať verejný kľúč",
+  "settings.profile.npub.copyFailed": "Verejný kľúč sa nepodarilo skopírovať",
+  "settings.profile.npub.label": "Verejný kľúč",
+  "settings.profile.picture.choose": "Vybrať obrázok",
+  "settings.profile.picture.invalid":
+    "Tento súbor nie je obrázok, ktorý prehliadač vie načítať.",
+  "settings.profile.picture.label": "Obrázok",
+  "settings.profile.picture.remove": "Odstrániť obrázok",
+  "settings.profile.retry": "Skúsiť znova",
+  "settings.profile.saveFailed":
+    "Žiadny Nostr relay profil neprijal. Skúste to neskôr.",
+  "settings.profile.setName": "Nastavte svoje meno",
+  "settings.profile.title": "Profil",
   "settings.saveFailed": "Zmenu sa nepodarilo uložiť. Skúste to prosím znova.",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",

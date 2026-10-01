@@ -37,6 +37,7 @@ import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsLegalEntityRouteImport } from './routes/_terminal.settings.legal-entity'
 import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_terminal.settings.payment-accounts'
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
+import { Route as TerminalSettingsProfileRouteImport } from './routes/_terminal.settings.profile'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
 import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.settings.tables'
 import { Route as TerminalSettingsTaxRatesRouteImport } from './routes/_terminal.settings.tax-rates'
@@ -215,6 +216,11 @@ const TerminalSettingsPaymentNumberSeriesRoute =
     path: '/payment-number-series',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
+const TerminalSettingsProfileRoute = TerminalSettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
 const TerminalSettingsSecurityRoute =
   TerminalSettingsSecurityRouteImport.update({
     id: '/security',
@@ -396,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRouteWithChildren
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/settings/profile': typeof TerminalSettingsProfileRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/settings/profile': typeof TerminalSettingsProfileRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
   '/settings/theme': typeof TerminalSettingsThemeRoute
@@ -500,6 +508,7 @@ export interface FileRoutesById {
   '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/_terminal/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsRouteWithChildren
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
+  '/_terminal/settings/profile': typeof TerminalSettingsProfileRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
   '/_terminal/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/_terminal/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -557,6 +566,7 @@ export interface FileRouteTypes {
     | '/settings/legal-entity'
     | '/settings/payment-accounts'
     | '/settings/payment-number-series'
+    | '/settings/profile'
     | '/settings/security'
     | '/settings/tables'
     | '/settings/tax-rates'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/legal-entity'
     | '/settings/payment-number-series'
+    | '/settings/profile'
     | '/settings/security'
     | '/settings/tax-rates'
     | '/settings/theme'
@@ -660,6 +671,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/legal-entity'
     | '/_terminal/settings/payment-accounts'
     | '/_terminal/settings/payment-number-series'
+    | '/_terminal/settings/profile'
     | '/_terminal/settings/security'
     | '/_terminal/settings/tables'
     | '/_terminal/settings/tax-rates'
@@ -894,6 +906,13 @@ declare module '@tanstack/react-router' {
       path: '/payment-number-series'
       fullPath: '/settings/payment-number-series'
       preLoaderRoute: typeof TerminalSettingsPaymentNumberSeriesRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/profile': {
+      id: '/_terminal/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof TerminalSettingsProfileRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/security': {
@@ -1227,6 +1246,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
   TerminalSettingsPaymentAccountsRoute: typeof TerminalSettingsPaymentAccountsRouteWithChildren
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
+  TerminalSettingsProfileRoute: typeof TerminalSettingsProfileRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
   TerminalSettingsTablesRoute: typeof TerminalSettingsTablesRouteWithChildren
   TerminalSettingsTaxRatesRoute: typeof TerminalSettingsTaxRatesRoute
@@ -1251,6 +1271,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
     TerminalSettingsPaymentAccountsRouteWithChildren,
   TerminalSettingsPaymentNumberSeriesRoute:
     TerminalSettingsPaymentNumberSeriesRoute,
+  TerminalSettingsProfileRoute: TerminalSettingsProfileRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
   TerminalSettingsTablesRoute: TerminalSettingsTablesRouteWithChildren,
   TerminalSettingsTaxRatesRoute: TerminalSettingsTaxRatesRoute,

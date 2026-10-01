@@ -559,6 +559,27 @@ export const enSettings = {
   "settings.privacy.productLookup.enable": "Enable",
   "settings.privacy.productLookup.enabled": "Enabled",
   "settings.privacy.productLookup.title": "Product lookup",
+  "settings.profile.description":
+    "Your Nostr profile, the same one Linky shows for this recovery phrase.",
+  "settings.profile.loadFailed":
+    "Could not reach any Nostr relay to load your profile. Check your connection and try again.",
+  "settings.profile.name.invalid": "The name is too long.",
+  "settings.profile.name.label": "Name",
+  "settings.profile.name.placeholder": "Your shop's name",
+  "settings.profile.npub.copied": "Public key copied",
+  "settings.profile.npub.copy": "Copy public key",
+  "settings.profile.npub.copyFailed": "Could not copy the public key",
+  "settings.profile.npub.label": "Public key",
+  "settings.profile.picture.choose": "Choose picture",
+  "settings.profile.picture.invalid":
+    "This file is not an image the browser can read.",
+  "settings.profile.picture.label": "Picture",
+  "settings.profile.picture.remove": "Remove picture",
+  "settings.profile.retry": "Try again",
+  "settings.profile.saveFailed":
+    "No Nostr relay accepted the profile. Try again later.",
+  "settings.profile.setName": "Set your name",
+  "settings.profile.title": "Profile",
   "settings.saveFailed": "Could not save the change. Please try again.",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.mnemonic.copied": "Recovery phrase copied.",

@@ -80,6 +80,7 @@
     "kysely": "0.29.6",
     "lucide-react": "1.48.0",
     "motion": "13.4.4",
+    "nostr-tools": "2.23.3",
     "qrcode.react": "4.2.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

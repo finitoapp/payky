@@ -1,3 +1,4 @@
+import { SqliteBoolean } from "@evolu/common"
 import type { IndexesConfig } from "@evolu/common/local-first"
 
 import { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -24,6 +25,7 @@ export const refund = {
   currency: FiatCurrencySchema,
   method: RefundMethodSchema,
   refundedAt: TimestampMsSchema,
+  isTip: SqliteBoolean,
 } as const
 
 export const refundLine = {

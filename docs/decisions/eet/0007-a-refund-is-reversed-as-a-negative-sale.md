@@ -1,6 +1,6 @@
 # 0007 A refund is reversed in EET as a new negative sale, capped at what was reported
 
-Status: accepted
+Status: superseded by eet/0011
 Date: 2026-09-29
 
 ## Context

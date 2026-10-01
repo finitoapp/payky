@@ -119,6 +119,7 @@ when a device clock is more than 5 minutes ahead of the recording device's.
 | `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id — one register per device |
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
 | `unsupportedReason` | `currency` if not CZK, `amount` if > 99 999 999.99 |
+| `reportedTipAmount` | the tip the sale reports: `payment.tipAmount` while tips belong to the business, `0` while they belong to employees and on every extra money sale. `null` on a sale created before it existed, read as `0` |
 
 Later changes to settings (tip owner, environment, establishment) affect only
 sales created afterwards — with one exception in "Manual retry" below.
@@ -229,10 +230,12 @@ keeps "excess" for money above `payment.amount` only
 
 ## Refunds and storno
 
-A refund (`refundPayment` in `modules/refund`) returns money for a paid
-payment, as an amount or as items. The payment stays paid and its bill stays
-closed (see `bill-payment-states.md`). EET 2.0 has no storno message: a
-reversal is a new sale with a negative amount and no link to the original.
+A refund (`refundPayment` in `modules/refund`) returns goods for a paid
+payment, as an amount or as items, and never its tip. The tip has its own
+refund (`refundPaymentTip`), marked by `refund.isTip`. The payment stays paid
+and its bill stays closed (see `bill-payment-states.md`). EET 2.0 has no
+storno message: a reversal is a new sale with a negative amount and no link
+to the original.
 
 `eetRefundsToReverseQuery` selects a refund of any device when its payment
 has a supported sale and no reversal exists for it yet. The job skips it
@@ -243,7 +246,7 @@ sales when that came after the refund. `createEetReversal` freezes:
 
 | Field | Value |
 |---|---|
-| `amount` | refund amount, capped at what the payment's supported sale and extra money sales report together minus earlier supported reversals. Stored positive, sent negated (`-250.00`) |
+| `amount` | for a refund of goods the refund amount, for a tip refund (`refund.isTip`) the payment's sale's `reportedTipAmount`, both capped at what the payment's supported sale and extra money sales report together minus earlier supported reversals. A tip refund of a sale that reports no tip gets no reversal. Stored positive, sent negated (`-250.00`) |
 | `saleAt` (`dat_trzby`) | the refund's `refundedAt` |
 | `sequenceNumber` (`porad_cis`) | the refund id |
 | `cashRegisterId` (`id_pokl`) | the device that recorded the refund |
@@ -269,7 +272,9 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | Claim removed after the sale was created | Sale still reported; no correction/storno is sent |
 | Refund before the sale was created | The reversal is created once the sale exists |
 | Refund of a payment with no sale or an unsupported sale | No reversal |
-| Refund of a payment whose tip belongs to employees | Refunding the whole payment does not reverse the tip, as the cap is what the sales reported; a refund of the tip alone is reversed like any other amount |
+| Refund of a payment with a tip | A refund by amount or by items returns goods only, so its limit leaves the tip out; the tip has its own refund, which is reversed only when the sale reported the tip (tips belonged to the business) |
+| Tip refund of a sale created before `reportedTipAmount` existed | No reversal; if the sale did report the tip, EET keeps it, which errs toward reporting more than was sold |
+| Tip entered as an amount while goods remain | Accepted and reversed as goods; the separate tip action and the dialog's note are what steer staff to the tip refund |
 | Sale or extra money sale pending or rejected | The payment's reversals wait, for good if it is never confirmed |
 | EET disabled, or environment or EIC changed, when the reversal is created | Reversal `unsupported`, never sent |
 | Claim removed before creation | Not reported (query needs an active claim) |

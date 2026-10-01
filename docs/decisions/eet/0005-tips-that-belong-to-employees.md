@@ -28,10 +28,9 @@ value reads as the business.
 
 ## Consequences
 
-Refunding a whole payment does not reverse its employees' tip, because a
-reversal is capped at what the sales reported (see eet/0007). A refund of
-the tip alone, entered as an amount, is reversed like any other money, since
-a refund does not say what it returns.
+A tip that belongs to employees is never reversed when it is refunded as the
+tip: the tip has its own refund (see refund/0004), and its reversal covers
+only a tip the sale reported (see eet/0011).
 
 ## Enforced by
 

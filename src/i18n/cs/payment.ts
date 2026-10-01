@@ -57,6 +57,8 @@ export const csPayment = {
   "paymentDetail.refunds.method.cashRegister": "Z pokladny",
   "paymentDetail.refunds.method.outside": "Mimo Payky",
   "paymentDetail.refunds.title": "Vratky",
+  "paymentDetail.refunds.tipAction": "Vrátit spropitné ({amount})",
+  "paymentDetail.refunds.tip": "Spropitné",
   "paymentDetail.tipIncluded": "Z toho spropitné {amount}",
   "paymentDetail.canceledAtValue": "Zrušeno {date}",
   "paymentDetail.expiresAt": "Vyprší v {time}",
@@ -258,6 +260,12 @@ export const csPayment = {
   "paymentWait.wakeLockUnsupported":
     "Tento prohlížeč neumí automaticky udržet obrazovku zapnutou.",
   "refund.created": "Vratka je zaznamenaná.",
+  "refund.tipDialog.title": "Vrátit spropitné",
+  "refund.tipDialog.description":
+    "Vrátí celé spropitné {amount}. Vrácení zboží ho nikdy nezahrnuje.",
+  "refund.tipCreated": "Spropitné vráceno.",
+  "refund.error.tip": "Spropitné této platby už je vrácené.",
+  "refund.dialog.tipHint": "Bez spropitného {amount}, to se vrací zvlášť.",
   "refund.dialog.amount.invalid": "Zadejte částku nejvýš {amount}.",
   "refund.dialog.amount.label": "Vracená částka",
   "refund.dialog.cancel": "Zrušit",

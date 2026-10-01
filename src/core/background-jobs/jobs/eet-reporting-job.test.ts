@@ -865,6 +865,23 @@ describe("eet reporting job: extra money", () => {
     expect(job.errors).toEqual([])
   })
 
+  test("reports no tip on an extra sale", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context, { tipAmount: 2_000 })
+
+    await settleTwice(context, paymentId)
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, reportedTipAmount: 2_000 },
+        { extraFrom: 0, reportedTipAmount: 0 },
+      ])
+    expect(job.errors).toEqual([])
+  })
+
   test("reports the part of one transfer above the payment", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)

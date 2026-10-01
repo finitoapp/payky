@@ -47,7 +47,9 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import {
   type RefundPaymentError,
+  type RefundPaymentTipError,
   refundPayment,
+  refundPaymentTip,
 } from "@/core/modules/refund/refund-actions.ts"
 import {
   otherClaimedPaymentOfBillQuery,
@@ -60,8 +62,11 @@ import {
   calculateRefundLineAmount,
   deriveRefundableAmount,
   deriveRefundableLines,
+  deriveRefundableTipAmount,
   deriveRefundPrefillAmount,
+  isTipRefund,
   type RefundableLine,
+  sumGoodsRefundAmounts,
   sumRefundAmounts,
 } from "@/core/modules/refund/refund-utils.ts"
 import {
@@ -113,6 +118,13 @@ const refundErrorKeys = {
   CashRegisterAccountNotFound: "refund.error.cashRegister",
 } satisfies Record<RefundPaymentError["type"], TranslationKey>
 
+const tipRefundErrorKeys = {
+  PaymentNotFound: "paymentDetail.notFound",
+  RefundPaymentNotPaid: "refund.error.notPaid",
+  RefundTipUnavailable: "refund.error.tip",
+  CashRegisterAccountNotFound: "refund.error.cashRegister",
+} satisfies Record<RefundPaymentTipError["type"], TranslationKey>
+
 export function PaymentDetailRefunds({
   payment,
   excess,
@@ -123,6 +135,7 @@ export function PaymentDetailRefunds({
     readonly id: PaymentId
     readonly billId: BillId | null
     readonly amount: NonNegativeInteger
+    readonly tipAmount: NonNegativeInteger
     readonly currency: FiatCurrency
     readonly cashReceivedAmount: NonNegativeInteger | null
   }
@@ -133,6 +146,7 @@ export function PaymentDetailRefunds({
   const { t } = useTranslation()
   const locale = useLocale()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [tipDialogOpen, setTipDialogOpen] = useState(false)
   const { data: refunds } = useEvoluQuery(refundsByPaymentIdQuery(payment.id))
   const { data: refundLines } = useEvoluQuery(
     refundLinesByPaymentIdQuery(payment.id)
@@ -148,34 +162,57 @@ export function PaymentDetailRefunds({
   )
   const refundableAmount = deriveRefundableAmount({ ...payment, excess })
   const remainingAmount = NonNegativeInteger(
-    Math.max(0, refundableAmount - sumRefundAmounts(refunds))
+    Math.max(0, refundableAmount - sumGoodsRefundAmounts(refunds))
   )
+  const refundableTipAmount = deriveRefundableTipAmount({
+    tipAmount: payment.tipAmount,
+    refunds,
+  })
   const refundableLines =
     payment.billId === null || otherClaimedPayments.length > 0
       ? []
       : deriveRefundableLines(paymentLines, refundLines)
   const canRefund = isPaid && remainingAmount > 0
+  const canRefundTip = isPaid && refundableTipAmount > 0
   const formatAmount = (value: NonNegativeInteger) =>
     formatMoney({ value, currency: payment.currency }, locale)
 
-  if (refunds.length === 0 && !canRefund) return null
+  if (refunds.length === 0 && !canRefund && !canRefundTip) return null
 
-  const refundButton = canRefund ? (
-    <Button
-      type="button"
-      variant="outline"
-      className="h-12"
-      onClick={() => setDialogOpen(true)}
-    >
-      <Undo2Icon data-icon="inline-start" />
-      {t("paymentDetail.refunds.action")}
-    </Button>
-  ) : null
+  const refundButtons =
+    canRefund || canRefundTip ? (
+      <div className="flex flex-col gap-2">
+        {canRefund ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12"
+            onClick={() => setDialogOpen(true)}
+          >
+            <Undo2Icon data-icon="inline-start" />
+            {t("paymentDetail.refunds.action")}
+          </Button>
+        ) : null}
+        {canRefundTip ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12"
+            onClick={() => setTipDialogOpen(true)}
+          >
+            <Undo2Icon data-icon="inline-start" />
+            {t("paymentDetail.refunds.tipAction", {
+              amount: formatAmount(refundableTipAmount),
+            })}
+          </Button>
+        ) : null}
+      </div>
+    ) : null
 
   return (
     <>
       {refunds.length === 0 ? (
-        refundButton
+        refundButtons
       ) : (
         <Card data-testid="payment-detail-refunds">
           <CardHeader>
@@ -183,7 +220,7 @@ export function PaymentDetailRefunds({
             <CardAction>
               <RefundBadge
                 summary={{
-                  refundedAmount: sumRefundAmounts(refunds),
+                  refundedAmount: sumGoodsRefundAmounts(refunds),
                   refundableAmount,
                   currency: payment.currency,
                 }}
@@ -203,6 +240,9 @@ export function PaymentDetailRefunds({
                       {formatAmount(refund.amount)}
                     </span>
                     <span className="text-xs text-muted-foreground">
+                      {isTipRefund(refund)
+                        ? `${t("paymentDetail.refunds.tip")} · `
+                        : null}
                       {t(refundMethodLabelKey[refund.method])} ·{" "}
                       {formatDateTime(new Date(refund.refundedAt), locale)}
                     </span>
@@ -228,7 +268,7 @@ export function PaymentDetailRefunds({
                 </div>
               ))}
             </div>
-            {refundButton}
+            {refundButtons}
           </CardContent>
         </Card>
       )}
@@ -239,8 +279,18 @@ export function PaymentDetailRefunds({
           remainingAmount={remainingAmount}
           prefillAmount={deriveRefundPrefillAmount({ remainingAmount, excess })}
           refundableLines={refundableLines}
+          tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
           onClose={() => setDialogOpen(false)}
+        />
+      ) : null}
+      {tipDialogOpen ? (
+        <TipRefundDialog
+          paymentId={payment.id}
+          currency={payment.currency}
+          tipAmount={refundableTipAmount}
+          defaultMethod={defaultMethod}
+          onClose={() => setTipDialogOpen(false)}
         />
       ) : null}
     </>
@@ -253,6 +303,7 @@ function RefundDialog({
   remainingAmount,
   prefillAmount,
   refundableLines,
+  tipAmount,
   defaultMethod,
   onClose,
 }: {
@@ -261,6 +312,7 @@ function RefundDialog({
   readonly remainingAmount: NonNegativeInteger
   readonly prefillAmount: NonNegativeInteger
   readonly refundableLines: ReadonlyArray<RefundableLine<RefundablePaymentLine>>
+  readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
   readonly onClose: () => void
 }) {
@@ -366,6 +418,11 @@ function RefundDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-5">
+          {tipAmount > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("refund.dialog.tipHint", { amount: formatAmount(tipAmount) })}
+            </p>
+          ) : null}
           {refundableLines.length > 0 ? (
             <ToggleGroup
               aria-label={t("refund.dialog.mode.label")}
@@ -470,31 +527,11 @@ function RefundDialog({
             </FieldSet>
           )}
 
-          <FieldSet>
-            <FieldLegend variant="label">
-              {t("refund.dialog.method.label")}
-            </FieldLegend>
-            <ToggleGroup
-              aria-label={t("refund.dialog.method.label")}
-              className="grid w-full grid-cols-1 gap-2"
-              variant="outline"
-              disabled={pending}
-              value={[method]}
-              onValueChange={(values) => {
-                const [value] = values
-                if (value === "cashRegister" || value === "outside") {
-                  setMethod(value)
-                }
-              }}
-            >
-              <ToggleGroupItem value="cashRegister" className="justify-start">
-                {t("refund.dialog.method.cashRegister")}
-              </ToggleGroupItem>
-              <ToggleGroupItem value="outside" className="justify-start">
-                {t("refund.dialog.method.outside")}
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </FieldSet>
+          <RefundMethodField
+            method={method}
+            disabled={pending}
+            onChange={setMethod}
+          />
         </div>
 
         <DialogFooter>
@@ -520,6 +557,128 @@ function RefundDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function TipRefundDialog({
+  paymentId,
+  currency,
+  tipAmount,
+  defaultMethod,
+  onClose,
+}: {
+  readonly paymentId: PaymentId
+  readonly currency: FiatCurrency
+  readonly tipAmount: NonNegativeInteger
+  readonly defaultMethod: RefundMethod
+  readonly onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const runToast = useRunToast()
+  const jotaiStore = useStore()
+  const [method, setMethod] = useState<RefundMethod>(defaultMethod)
+  const [pending, setPending] = useState(false)
+  const formattedTip = formatMoney({ value: tipAmount, currency }, locale)
+
+  const confirm = async () => {
+    if (pending) return
+    setPending(true)
+    const { device } = await jotaiStore.get(accountAtom)
+    const refunded = await runToast(async (run) => {
+      const result = await run(
+        refundPaymentTip({ paymentId, method, deviceId: device.id })
+      )
+      if (!result.ok) return tipRefundErrorKeys[result.error.type]
+      return undefined
+    })
+    setPending(false)
+    if (refunded) {
+      toast.success(t("refund.tipCreated"))
+      onClose()
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !pending) onClose()
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("refund.tipDialog.title")}</DialogTitle>
+          <DialogDescription>
+            {t("refund.tipDialog.description", { amount: formattedTip })}
+          </DialogDescription>
+        </DialogHeader>
+
+        <RefundMethodField
+          method={method}
+          disabled={pending}
+          onChange={setMethod}
+        />
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={onClose}
+          >
+            {t("refund.dialog.cancel")}
+          </Button>
+          <Button
+            type="button"
+            disabled={pending}
+            onClick={() => void confirm()}
+          >
+            {t("refund.dialog.confirm", { amount: formattedTip })}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function RefundMethodField({
+  method,
+  disabled,
+  onChange,
+}: {
+  readonly method: RefundMethod
+  readonly disabled: boolean
+  readonly onChange: (method: RefundMethod) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <FieldSet>
+      <FieldLegend variant="label">
+        {t("refund.dialog.method.label")}
+      </FieldLegend>
+      <ToggleGroup
+        aria-label={t("refund.dialog.method.label")}
+        className="grid w-full grid-cols-1 gap-2"
+        variant="outline"
+        disabled={disabled}
+        value={[method]}
+        onValueChange={(values) => {
+          const [value] = values
+          if (value === "cashRegister" || value === "outside") {
+            onChange(value)
+          }
+        }}
+      >
+        <ToggleGroupItem value="cashRegister" className="justify-start">
+          {t("refund.dialog.method.cashRegister")}
+        </ToggleGroupItem>
+        <ToggleGroupItem value="outside" className="justify-start">
+          {t("refund.dialog.method.outside")}
+        </ToggleGroupItem>
+      </ToggleGroup>
+    </FieldSet>
   )
 }
 

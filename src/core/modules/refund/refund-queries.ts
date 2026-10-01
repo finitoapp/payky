@@ -16,6 +16,7 @@ const refundColumns = [
   "refund.currency",
   "refund.method",
   "refund.refundedAt",
+  "refund.isTip",
 ] as const
 
 type RefundRequiredColumns = {
@@ -63,8 +64,10 @@ const selectRefundSummaries = (
       "refund.paymentId",
       "refund.amount",
       "refund.currency",
+      "refund.isTip",
       "payment.billId",
       "payment.amount as paymentAmount",
+      "payment.tipAmount as paymentTipAmount",
       "payment.currency as paymentCurrency",
       "paymentBtc.amountSats as paymentAmountSats",
       "paymentCashRegister.receivedAmount as cashReceivedAmount",
@@ -99,12 +102,14 @@ const selectRefundSummaries = (
     .where("refund.amount", "is not", null)
     .where("refund.currency", "is not", null)
     .where("payment.amount", "is not", null)
+    .where("payment.tipAmount", "is not", null)
     .where("payment.currency", "is not", null)
     .$narrowType<{
       paymentId: KyselyNotNull
       amount: KyselyNotNull
       currency: KyselyNotNull
       paymentAmount: KyselyNotNull
+      paymentTipAmount: KyselyNotNull
       paymentCurrency: KyselyNotNull
     }>()
 

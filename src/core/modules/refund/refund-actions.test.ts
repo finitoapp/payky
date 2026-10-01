@@ -1,4 +1,4 @@
-import { testCreateRun } from "@evolu/common"
+import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
@@ -32,7 +32,7 @@ import {
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
-import { refundPayment } from "./refund-actions.ts"
+import { refundPayment, refundPaymentTip } from "./refund-actions.ts"
 import {
   refundablePaymentLinesQuery,
   refundLinesByPaymentIdQuery,
@@ -72,9 +72,11 @@ const createRefundContext = async () => {
   const createTestPayment = async ({
     amount,
     billId = null,
+    tipAmount = 0,
   }: {
     readonly amount: number
     readonly billId?: BillId | null
+    readonly tipAmount?: number
   }): Promise<PaymentId> => {
     await using run = testCreateRun(deps)
     return await run.orThrow(
@@ -84,7 +86,7 @@ const createRefundContext = async () => {
         tableId: null,
         amount: NonNegativeInteger(amount),
         currency: "CZK",
-        tipAmount: NonNegativeInteger(0),
+        tipAmount: NonNegativeInteger(tipAmount),
         canceledAt: null,
         expiresAt: null,
         cashRegister: { accountId: accounts.cashRegisterAccountId },
@@ -173,6 +175,14 @@ const refundOf = async (
 ) => {
   await using run = testCreateRun(context.deps)
   return await run(refundPayment(input))
+}
+
+const refundTipOf = async (
+  context: RefundContext,
+  input: Parameters<typeof refundPaymentTip>[0]
+) => {
+  await using run = testCreateRun(context.deps)
+  return await run(refundPaymentTip(input))
 }
 
 const billWithBeersAndGoulash = [
@@ -467,6 +477,161 @@ describe("refundPayment", () => {
     await expect(run.orThrow(loadBillStatus(billId))).resolves.toBe("closed")
     await expect(run.ok(loadBillCoverage(billId))).resolves.toMatchObject({
       coverage: "paid",
+    })
+  })
+})
+
+describe("refunds of a payment with a tip", () => {
+  test("leave the tip out of a refund by amount", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({
+      amount: 25_000,
+      tipAmount: 2_000,
+    })
+    await context.settleByTransfer(paymentId)
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(24_000),
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        type: "RefundAmountInvalid",
+        amount: 24_000,
+        remainingAmount: 23_000,
+      },
+    })
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(23_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+  })
+
+  test("leave the tip out of the cash received", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({
+      amount: 25_000,
+      tipAmount: 2_000,
+    })
+    await context.settleInCash(paymentId, 26_000)
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(24_100),
+      })
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "RefundAmountInvalid", remainingAmount: 24_000 },
+    })
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(24_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+  })
+
+  test("return the whole tip once, in cash from the cash register", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({
+      amount: 25_000,
+      tipAmount: 2_000,
+    })
+    await context.settleInCash(paymentId, 25_000)
+    context.clock.advance(60_000)
+    const refundedAt = context.clock.date.now().getTime()
+
+    await expect(
+      refundTipOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+      })
+    ).resolves.toMatchObject({ ok: true })
+    await expect(
+      refundTipOf(context, { paymentId, method: "outside", deviceId: null })
+    ).resolves.toEqual({
+      ok: false,
+      error: { type: "RefundTipUnavailable", paymentId },
+    })
+
+    await expect(
+      context.evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    ).resolves.toMatchObject([
+      { amount: 2_000, method: "cashRegister", refundedAt, isTip: sqliteTrue },
+    ])
+    await expect(
+      context.evolu.loadQuery(
+        accountTransactionsQuery(context.cashRegisterAccountId)
+      )
+    ).resolves.toMatchObject([
+      { amount: 25_000, paymentId },
+      { amount: -2_000, occurredAt: refundedAt, paymentId: null },
+    ])
+  })
+
+  test("return the tip after all the goods", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({
+      amount: 25_000,
+      tipAmount: 2_000,
+    })
+    await context.settleByTransfer(paymentId)
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "outside",
+        deviceId: null,
+        amount: NonNegativeInteger(23_000),
+      })
+    ).resolves.toMatchObject({ ok: true })
+
+    await expect(
+      refundTipOf(context, { paymentId, method: "outside", deviceId: null })
+    ).resolves.toMatchObject({ ok: true })
+  })
+
+  test("refuse a tip refund without a tip or before the payment is paid", async () => {
+    await using context = await createRefundContext()
+    const withoutTip = await context.createTestPayment({ amount: 25_000 })
+    await context.settleByTransfer(withoutTip)
+    const unpaid = await context.createTestPayment({
+      amount: 25_000,
+      tipAmount: 2_000,
+    })
+
+    await expect(
+      refundTipOf(context, {
+        paymentId: withoutTip,
+        method: "outside",
+        deviceId: null,
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: { type: "RefundTipUnavailable", paymentId: withoutTip },
+    })
+    await expect(
+      refundTipOf(context, {
+        paymentId: unpaid,
+        method: "outside",
+        deviceId: null,
+      })
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "RefundPaymentNotPaid", paymentId: unpaid },
     })
   })
 })

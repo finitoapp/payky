@@ -1,3 +1,5 @@
+import { type SqliteBoolean, sqliteTrue } from "@evolu/common"
+
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
@@ -15,12 +17,39 @@ export const deriveRefundableAmount = ({
   amount,
   cashReceivedAmount,
   excess,
+  tipAmount,
 }: {
   readonly amount: NonNegativeInteger
   readonly cashReceivedAmount: NonNegativeInteger | null
   readonly excess: NonNegativeInteger
+  readonly tipAmount: NonNegativeInteger
 }): NonNegativeInteger =>
-  NonNegativeInteger((cashReceivedAmount ?? amount) + excess)
+  NonNegativeInteger(
+    Math.max(0, (cashReceivedAmount ?? amount) + excess - tipAmount)
+  )
+
+export const isTipRefund = ({
+  isTip,
+}: {
+  readonly isTip: SqliteBoolean | null
+}): boolean => isTip === sqliteTrue
+
+export const sumGoodsRefundAmounts = (
+  refunds: ReadonlyArray<{
+    readonly amount: NonNegativeInteger
+    readonly isTip: SqliteBoolean | null
+  }>
+): NonNegativeInteger =>
+  sumRefundAmounts(refunds.filter((refund) => !isTipRefund(refund)))
+
+export const deriveRefundableTipAmount = ({
+  tipAmount,
+  refunds,
+}: {
+  readonly tipAmount: NonNegativeInteger
+  readonly refunds: ReadonlyArray<{ readonly isTip: SqliteBoolean | null }>
+}): NonNegativeInteger =>
+  refunds.some(isTipRefund) ? NonNegativeInteger(0) : tipAmount
 
 export const deriveRefundPrefillAmount = ({
   remainingAmount,
@@ -60,7 +89,9 @@ export const summarizeRefundsByPayment = (
     readonly paymentId: PaymentId
     readonly amount: NonNegativeInteger
     readonly currency: FiatCurrency
+    readonly isTip: SqliteBoolean | null
     readonly paymentAmount: NonNegativeInteger
+    readonly paymentTipAmount: NonNegativeInteger
     readonly paymentCurrency: FiatCurrency
     readonly paymentAmountSats: NonNegativeInteger | null
     readonly cashReceivedAmount: NonNegativeInteger | null
@@ -84,12 +115,14 @@ export const summarizeRefundsByPayment = (
     })
     summaries.set(refund.paymentId, {
       refundedAmount: NonNegativeInteger(
-        (summaries.get(refund.paymentId)?.refundedAmount ?? 0) + refund.amount
+        (summaries.get(refund.paymentId)?.refundedAmount ?? 0) +
+          (isTipRefund(refund) ? 0 : refund.amount)
       ),
       refundableAmount: deriveRefundableAmount({
         amount: refund.paymentAmount,
         cashReceivedAmount: refund.cashReceivedAmount,
         excess,
+        tipAmount: refund.paymentTipAmount,
       }),
       currency: refund.currency,
     })

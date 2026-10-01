@@ -60,6 +60,7 @@ export const eetSale = {
   deviceId: DeviceId,
   method: AccountKindSchema,
   amount: NonNegativeIntegerSchema,
+  reportedTipAmount: NonNegativeIntegerSchema.nullable(),
   currency: FiatCurrencySchema,
   environment: EetEnvironmentSchema,
   eic: EetEicSchema,

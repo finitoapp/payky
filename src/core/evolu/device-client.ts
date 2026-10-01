@@ -57,6 +57,7 @@ export interface DeviceSettings {
   readonly theme: DeviceTheme
   readonly locale: DeviceLocale
   readonly errorReportingEnabled: 0 | 1
+  readonly productLookupEnabled: 0 | 1
 }
 
 const deviceEvoluSchema = {
@@ -90,6 +91,7 @@ const deviceEvoluSchema = {
     theme: DeviceThemeSchema.nullable(),
     locale: DeviceLocaleSchema.nullable(),
     errorReportingEnabled: SqliteBoolSchema.nullable(),
+    productLookupEnabled: SqliteBoolSchema.nullable(),
   },
 } as const
 
@@ -120,6 +122,7 @@ export function createDefaultDeviceSettings(
     theme: "system",
     locale: getDeviceLocaleForLanguage(language),
     errorReportingEnabled: sqliteFalse,
+    productLookupEnabled: sqliteFalse,
   }
 }
 

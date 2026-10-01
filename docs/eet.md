@@ -3,7 +3,8 @@
 How a received payment becomes an EET 2.0 sale (`tržba`), gets delivered,
 how a refund reverses it, and what each state and edge case means. Read it before changing
 `src/core/modules/eet/*`, `eet-reporting-job.ts`, or
-`src/core/integrations/eet/*`.
+`src/core/integrations/eet/*`. The decisions behind it, with the tests that
+hold them, are recorded in [`decisions/eet/`](decisions/eet/).
 
 ## Moving parts
 
@@ -268,7 +269,7 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | Claim removed after the sale was created | Sale still reported; no correction/storno is sent |
 | Refund before the sale was created | The reversal is created once the sale exists |
 | Refund of a payment with no sale or an unsupported sale | No reversal |
-| Refunded tip that employees own | Not reversed: the cap is what the sale reported |
+| Refund of a payment whose tip belongs to employees | Refunding the whole payment does not reverse the tip, as the cap is what the sales reported; a refund of the tip alone is reversed like any other amount |
 | Sale or extra money sale pending or rejected | The payment's reversals wait, for good if it is never confirmed |
 | EET disabled, or environment or EIC changed, when the reversal is created | Reversal `unsupported`, never sent |
 | Claim removed before creation | Not reported (query needs an active claim) |

@@ -16,14 +16,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { saveFiatBankAccount } from "@/core/modules/account/account-actions.ts"
 import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import {
-  czechBankNameForIban,
   czechIbanToBban,
   isFioBankIban,
   isValidIban,
@@ -39,6 +37,12 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
+import {
+  BankAccountDescription,
+  type BankAccountDisplayFormat,
+  BankAccountFormatToggle,
+  formatBankAccount,
+} from "@/features/shared/bank-account-input.tsx"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -54,15 +58,6 @@ import type { TranslationKey } from "@/i18n/resources.ts"
  */
 const ValidatedIbanSchema = z.string().refine(isValidIban).brand<"Iban">()
 
-type IbanDisplayFormat = "iban" | "bban"
-
-const encodeIban = {
-  iban: (value: string) => value,
-  // Czech accounts read as the account number people know them by; any other
-  // IBAN has no such form and stays as it is.
-  bban: (value: string) => czechIbanToBban(value) ?? value,
-} satisfies Record<IbanDisplayFormat, (value: string) => string>
-
 /**
  * Accepts any bank account input format (IBAN or a Czech account number) and
  * normalizes to IBAN, same as the onboarding flow's validation — but as a
@@ -72,7 +67,7 @@ const encodeIban = {
  * one thing deciding valid vs. invalid, per this file's other codecs. One
  * codec per display format, since only `encode` differs.
  */
-const createOptionalIbanCodec = (format: IbanDisplayFormat) =>
+const createOptionalIbanCodec = (format: BankAccountDisplayFormat) =>
   z.codec(z.string(), ValidatedIbanSchema.nullable(), {
     decode: (value) => {
       const trimmed = value.trim()
@@ -81,13 +76,13 @@ const createOptionalIbanCodec = (format: IbanDisplayFormat) =>
       const parsed = BankAccountInputIbanSchema.safeParse(trimmed)
       return parsed.success ? parsed.data : trimmed
     },
-    encode: (value) => (value === null ? "" : encodeIban[format](value)),
+    encode: (value) => (value === null ? "" : formatBankAccount[format](value)),
   })
 
 const optionalIbanCodecs = {
   iban: createOptionalIbanCodec("iban"),
   bban: createOptionalIbanCodec("bban"),
-} satisfies Record<IbanDisplayFormat, unknown>
+} satisfies Record<BankAccountDisplayFormat, unknown>
 
 // Every option value comes from a fixed, locally-built option list (never
 // user input), so this cannot realistically fail — a decode error here would
@@ -128,17 +123,7 @@ export function FiatBankAccountSettingsPage() {
   const currency =
     account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK
   const defaultQrFormat = account?.defaultQrFormat ?? "spayd"
-  const [ibanFormat, setIbanFormat] = useState<IbanDisplayFormat>("bban")
-  // Follows the draft, so the bank shows up while the number is being typed.
-  const bankLabel = (draft: string) => {
-    const parsed = BankAccountInputIbanSchema.safeParse(draft)
-    if (!parsed.success || !parsed.data.startsWith("CZ")) return undefined
-
-    return (
-      czechBankNameForIban(parsed.data) ??
-      t("settings.fiatBankAccount.iban.unknownBank")
-    )
-  }
+  const [ibanFormat, setIbanFormat] = useState<BankAccountDisplayFormat>("bban")
 
   // `saveFiatBankAccount` upserts the whole row, so a partial save would
   // reset the fields it leaves out. Each control sends the current settings
@@ -174,47 +159,23 @@ export function FiatBankAccountSettingsPage() {
           <FieldGroup>
             <InlineEditField
               label={t("settings.fiatBankAccount.iban.label")}
-              description={(draft) => {
-                const bank = bankLabel(draft)
-                return (
-                  <>
-                    {bank !== undefined && (
-                      <span className="block font-medium text-foreground">
-                        {bank}
-                      </span>
-                    )}
-                    {t("settings.fiatBankAccount.iban.description")}
-                  </>
-                )
-              }}
+              description={(draft) => <BankAccountDescription draft={draft} />}
               defaultValue={iban}
               codec={optionalIbanCodecs[ibanFormat]}
               labelAction={
                 iban === null || czechIbanToBban(iban) !== null
                   ? ({ draft, replaceDraft }) => (
-                      <ToggleGroup<IbanDisplayFormat>
-                        size="sm"
-                        variant="outline"
-                        spacing={0}
-                        value={[ibanFormat]}
-                        onValueChange={([next]) => {
-                          if (next === undefined) return
+                      <BankAccountFormatToggle
+                        format={ibanFormat}
+                        draft={draft}
+                        onFormatChange={(next, convertedDraft) => {
                           setIbanFormat(next)
                           // Mid-edit, carry what is typed over to the other
                           // form; text that is not a valid account stays.
-                          const parsed =
-                            BankAccountInputIbanSchema.safeParse(draft)
-                          if (parsed.success)
-                            replaceDraft(encodeIban[next](parsed.data))
+                          if (convertedDraft !== undefined)
+                            replaceDraft(convertedDraft)
                         }}
-                      >
-                        <ToggleGroupItem value="bban">
-                          {t("settings.fiatBankAccount.iban.format.bban")}
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="iban">
-                          {t("settings.fiatBankAccount.iban.format.iban")}
-                        </ToggleGroupItem>
-                      </ToggleGroup>
+                      />
                     )
                   : undefined
               }

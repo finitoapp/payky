@@ -3,6 +3,7 @@ import {
   type LockManagerDep,
   type MutationOptions,
   ok,
+  type SqliteBoolean,
   sqliteFalse,
   sqliteTrue,
   type Task,
@@ -61,6 +62,7 @@ import {
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { RefundId } from "@/core/modules/refund/refund-types.ts"
+import { isTipRefund } from "@/core/modules/refund/refund-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
@@ -351,6 +353,8 @@ const createEetSaleRecord =
       settings.tipOwner === "employees"
         ? calculatePaymentBaseAmount({ amount: receivedAmount, tipAmount })
         : receivedAmount
+    const reportedTipAmount =
+      settings.tipOwner === "employees" ? NonNegativeInteger(0) : tipAmount
     await runMutationWithCompletion((options) =>
       evolu.upsert(
         "eetSale",
@@ -361,6 +365,7 @@ const createEetSaleRecord =
           deviceId,
           method,
           amount: reportedAmount,
+          reportedTipAmount,
           currency: payment.currency,
           environment: resolveEetEnvironment({
             environment: settings.environment,
@@ -708,6 +713,7 @@ export const createEetReversal =
       readonly id: RefundId
       readonly paymentId: PaymentId
       readonly amount: NonNegativeInteger
+      readonly isTip: SqliteBoolean | null
       readonly refundedAt: TimestampMs
       readonly saleId: EetSaleId
     }
@@ -735,7 +741,10 @@ export const createEetReversal =
     const reportedAmount = sales
       .filter(({ unsupportedReason }) => unsupportedReason === null)
       .reduce((sum, paymentSale) => sum + paymentSale.amount, 0)
-    const amount = Math.min(refund.amount, reportedAmount - reversedAmount)
+    const reversibleAmount = isTipRefund(refund)
+      ? (sale.reportedTipAmount ?? 0)
+      : refund.amount
+    const amount = Math.min(reversibleAmount, reportedAmount - reversedAmount)
     if (amount <= 0) return ok(null)
 
     const settings = await loadEetSettings(evolu)

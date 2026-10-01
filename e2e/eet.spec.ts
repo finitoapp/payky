@@ -29,8 +29,10 @@ import {
   getPaymentIdFromUrl,
   markCashPaid,
   markCashPaidAndSettle,
+  openRefundDialog,
   prepareIbanPayment,
   refundFromPaymentDetail,
+  refundTipFromPaymentDetail,
   startBillAndBeginCashPayment,
 } from "./support/payment.ts"
 
@@ -570,6 +572,85 @@ test("tips that belong to employees are left out of the reported sale", async ({
     await markCashPaidAndSettle(page, "en")
 
     await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("5.90")
+  })
+})
+
+test("a refunded tip reaches EET only while tips belong to the business", async ({
+  page,
+}) => {
+  test.slow()
+  const reportedAmounts = () =>
+    fakeEet.production.requests.map(({ data }) => data.celk_trzba)
+  const tipActionPrefix = translate("en", "paymentDetail.refunds.tipAction")
+    .split("{amount}")[0]
+    ?.replace("(", "\\(")
+  const tipAction = page.getByRole("button", {
+    name: new RegExp(`^${tipActionPrefix}`, "u"),
+  })
+  const payWithTip = async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await enterAmount(page, "en")
+    await page
+      .getByRole("button", { name: translate("en", "home.pay") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translateValue("en", "settings.tips.percentages.value", 10),
+      })
+      .click()
+    await page
+      .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "paymentWait.cashPaid.action"),
+      })
+      .waitFor()
+    const paymentId = getPaymentIdFromUrl(page)
+    await enterCashReceived(page, "en", "6.49")
+    await markCashPaidAndSettle(page, "en")
+    return paymentId
+  }
+
+  await enableEetWithGeneratedCertificate(page, "en")
+
+  await test.step("a tip that belongs to the business is reversed", async () => {
+    const paymentId = await payWithTip()
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("6.49")
+    await openPaymentDetail(page, paymentId)
+    const refundDialog = await openRefundDialog(page, "en")
+    await expect(
+      refundDialog.getByText(
+        translate("en", "refund.dialog.tipHint").replace("{amount}", "CZK 0.59")
+      )
+    ).toBeVisible()
+    await refundDialog
+      .getByRole("button", { name: translate("en", "refund.dialog.cancel") })
+      .click()
+    await expect(refundDialog).toBeHidden()
+    await refundTipFromPaymentDetail(page, "en")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-0.59")
+    await expect(page.getByTestId("payment-detail-refund")).toContainText(
+      translate("en", "paymentDetail.refunds.tip")
+    )
+    await expect(tipAction).toHaveCount(0)
+  })
+
+  await test.step("a tip that belongs to employees is not reversed", async () => {
+    await gotoPage(page, "/settings/eet", "en", "settings.eet.title")
+    await pickInlineToggle(
+      page,
+      new RegExp(translate("en", "settings.eet.tip.employees.title"))
+    )
+    await waitForLocalWriteToSettle(page)
+    const paymentId = await payWithTip()
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("5.90")
+    const sentBefore = reportedAmounts().length
+    await openPaymentDetail(page, paymentId)
+    await refundTipFromPaymentDetail(page, "en")
+    await refundFromPaymentDetail(page, "en")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-5.90")
+    expect(reportedAmounts().slice(sentBefore)).toEqual(["-5.90"])
   })
 })
 

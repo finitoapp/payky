@@ -58,6 +58,8 @@ export const enPayment = {
   "paymentDetail.refunds.method.cashRegister": "From the cash register",
   "paymentDetail.refunds.method.outside": "Outside Payky",
   "paymentDetail.refunds.title": "Refunds",
+  "paymentDetail.refunds.tipAction": "Refund the tip ({amount})",
+  "paymentDetail.refunds.tip": "Tip",
   "paymentDetail.tipIncluded": "Includes {amount} tip",
   "paymentDetail.canceledAtValue": "Canceled {date}",
   "paymentDetail.expiresAt": "Expires at {time}",
@@ -262,6 +264,13 @@ export const enPayment = {
   "paymentWait.wakeLockUnsupported":
     "This browser cannot keep the screen awake automatically.",
   "refund.created": "Refund recorded.",
+  "refund.tipDialog.title": "Refund the tip",
+  "refund.tipDialog.description":
+    "Returns the whole tip of {amount}. A refund of goods never includes it.",
+  "refund.tipCreated": "Tip refunded.",
+  "refund.error.tip": "The tip of this payment is already refunded.",
+  "refund.dialog.tipHint":
+    "Leaves out the {amount} tip, which has its own refund.",
   "refund.dialog.amount.invalid": "Enter an amount up to {amount}.",
   "refund.dialog.amount.label": "Amount to refund",
   "refund.dialog.cancel": "Cancel",

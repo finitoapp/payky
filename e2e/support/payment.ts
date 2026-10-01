@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test"
+import type { Locator, Page } from "@playwright/test"
 
 import type { Language } from "../../src/i18n/resources.ts"
 import { startBillWithCoffee } from "./bill.ts"
@@ -210,17 +210,24 @@ export async function startBillAndBeginCashPayment(
   return billId
 }
 
-export async function refundFromPaymentDetail(
+export async function openRefundDialog(
   page: Page,
-  language: Language,
-  { items = [] }: { readonly items?: ReadonlyArray<string> } = {}
-): Promise<void> {
+  language: Language
+): Promise<Locator> {
   await page
     .getByRole("button", {
       name: translate(language, "paymentDetail.refunds.action"),
     })
     .click()
-  const dialog = page.getByRole("dialog")
+  return page.getByRole("dialog")
+}
+
+export async function refundFromPaymentDetail(
+  page: Page,
+  language: Language,
+  { items = [] }: { readonly items?: ReadonlyArray<string> } = {}
+): Promise<void> {
+  const dialog = await openRefundDialog(page, language)
   if (items.length > 0) {
     await dialog
       .getByRole("button", {
@@ -244,6 +251,35 @@ export async function refundFromPaymentDetail(
   ).split("{amount}")
   await dialog
     .getByRole("button", { name: new RegExp(`^${confirmPrefix}.+`, "u") })
+    .click()
+  await dialog.waitFor({ state: "hidden" })
+}
+
+const escapeRegExp = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
+
+export async function refundTipFromPaymentDetail(
+  page: Page,
+  language: Language
+): Promise<void> {
+  const [actionPrefix = ""] = translate(
+    language,
+    "paymentDetail.refunds.tipAction"
+  ).split("{amount}")
+  await page
+    .getByRole("button", {
+      name: new RegExp(`^${escapeRegExp(actionPrefix)}`, "u"),
+    })
+    .click()
+  const dialog = page.getByRole("dialog")
+  const [confirmPrefix = ""] = translate(
+    language,
+    "refund.dialog.confirm"
+  ).split("{amount}")
+  await dialog
+    .getByRole("button", {
+      name: new RegExp(`^${escapeRegExp(confirmPrefix)}.+`, "u"),
+    })
     .click()
   await dialog.waitFor({ state: "hidden" })
 }

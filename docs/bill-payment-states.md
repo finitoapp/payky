@@ -180,19 +180,27 @@ for a payment that is Paid: an amount, how it went back — cash from the cash
 register, or outside Payky such as on the card terminal — and when. A refund
 by items adds one `refundLine` per returned quantity of the payment's frozen
 `paymentLine`, which is offered only while the payment is the one payment
-claimed for its bill. `refundPayment` refuses a payment that is not Paid and
-an amount of zero or above what is left: the cash received for a cash
-payment with a received amount, the payment's `amount` otherwise, plus what
-its claims brought beyond `amount`, less every earlier refund. When there is
-such an excess, the refund dialog offers it first.
+claimed for its bill. A refund by amount or by items returns goods only.
+`refundPayment` refuses a payment that is not Paid and an amount of zero or
+above what is left: the cash received for a cash payment with a received
+amount, the payment's `amount` otherwise, plus what its claims brought
+beyond `amount`, less the payment's `tipAmount` and every earlier refund of
+goods. When there is such an excess, the refund dialog offers it first.
+
+The tip is refunded on its own: `refundPaymentTip` returns the whole
+`tipAmount` as a refund with `isTip` set, once per payment (its id is
+derived from the payment), in cash or outside Payky, whoever the tip belongs
+to. A refund without `isTip` is a refund of goods, which covers every refund
+recorded before the flag existed.
 
 A refund is not a state. It never touches `canceledAt`, `confirmedPaidAt` or
 any claim, so the payment stays Paid, and coverage still sums the claimed
 transactions, so its bill stays covered and closed. The payment detail, the
 bill's payment rows and the payment history derive "partly refunded" or
-"refunded" from the refunds alone. A cash refund writes a negative
-`cashRegister` account transaction that no payment claims, which keeps it out
-of every coverage sum.
+"refunded" from the refunds of goods alone, so a tip refund never changes
+that state and the refund list labels it as the tip. A cash refund writes a
+negative `cashRegister` account transaction that no payment claims, which
+keeps it out of every coverage sum.
 
 ## Bill vertical
 

@@ -6,7 +6,10 @@ import { createBill } from "@/core/modules/bill/bill-actions.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { RefundId } from "@/core/modules/refund/refund-types.ts"
-import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import {
   NonNegativeInteger,
   PositiveInteger,
@@ -326,6 +329,26 @@ describe("createEetSale", () => {
     await expect
       .poll(() => context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId)))
       .toMatchObject([{ amount: 25_000 }])
+  })
+
+  test("fixes the tip it reports", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    const businessTip = await createSaleForNewPayment(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+    await run.ok(saveEetTipOwner("employees"))
+    const employeesTip = await createSaleForNewPayment(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+
+    await expect(
+      context.deps.evolu.loadQuery(eetSaleByIdQuery(businessTip))
+    ).resolves.toMatchObject([{ reportedTipAmount: 2_000 }])
+    await expect(
+      context.deps.evolu.loadQuery(eetSaleByIdQuery(employeesTip))
+    ).resolves.toMatchObject([{ reportedTipAmount: 0 }])
   })
 
   test("leaves the tip out while tips belong to employees", async () => {
@@ -831,12 +854,14 @@ const reverseRefund = async (
     paymentId,
     saleId,
     amount,
+    isTip = null,
     refundId = createRowId<"Refund">(),
     deviceId = context.deviceId,
   }: {
     readonly paymentId: PaymentId
     readonly saleId: EetSaleId
     readonly amount: number
+    readonly isTip?: typeof sqliteTrue | null
     readonly refundId?: RefundId
     readonly deviceId?: DeviceId
   }
@@ -848,6 +873,7 @@ const reverseRefund = async (
         id: refundId,
         paymentId,
         amount: NonNegativeInteger(amount),
+        isTip,
         refundedAt: TimestampMs(context.clock.date.now().getTime()),
         saleId,
       },
@@ -908,7 +934,7 @@ describe("createEetReversal", () => {
     ])
   })
 
-  test("leaves out a refunded tip that belongs to employees", async () => {
+  test("caps a refund at a sale that left out an employees' tip", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
     await using run = testCreateRun(context.deps)
@@ -927,6 +953,69 @@ describe("createEetReversal", () => {
     await expect(
       context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
     ).resolves.toMatchObject([{ amount: 23_000 }])
+  })
+
+  test("reverses no tip refund of a tip that belonged to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(saveEetTipOwner("employees"))
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+
+    await expect(
+      reverseRefund(context, {
+        paymentId,
+        saleId,
+        amount: 2_000,
+        isTip: sqliteTrue,
+      })
+    ).resolves.toBeNull()
+  })
+
+  test("reverses the tip refund of a tip that belonged to the business", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 2_000,
+      isTip: sqliteTrue,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ amount: 2_000 }])
+  })
+
+  test("reverses no tip refund of a sale that recorded no reported tip", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      tipAmount: NonNegativeInteger(2_000),
+    })
+    await runMutationWithCompletion((options) =>
+      context.deps.evolu.update(
+        "eetSale",
+        { id: saleId, reportedTipAmount: null },
+        { ...options, ownerId: context.deps.evoluOwnerId }
+      )
+    )
+
+    await expect(
+      reverseRefund(context, {
+        paymentId,
+        saleId,
+        amount: 2_000,
+        isTip: sqliteTrue,
+      })
+    ).resolves.toBeNull()
   })
 
   test("caps later refunds at what the sale has left", async () => {

@@ -1,3 +1,4 @@
+import { sqliteTrue } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
@@ -11,6 +12,7 @@ import {
   calculateRefundLineAmount,
   deriveRefundableAmount,
   deriveRefundableLines,
+  deriveRefundableTipAmount,
   deriveRefundPrefillAmount,
   deriveRefundState,
   summarizeRefundsByPayment,
@@ -32,6 +34,7 @@ describe("deriveRefundableAmount", () => {
         amount: NonNegativeInteger(7_890),
         cashReceivedAmount: NonNegativeInteger(7_900),
         excess: NonNegativeInteger(0),
+        tipAmount: NonNegativeInteger(0),
       })
     ).toBe(7_900)
     expect(
@@ -39,6 +42,7 @@ describe("deriveRefundableAmount", () => {
         amount: NonNegativeInteger(7_890),
         cashReceivedAmount: null,
         excess: NonNegativeInteger(0),
+        tipAmount: NonNegativeInteger(0),
       })
     ).toBe(7_890)
   })
@@ -49,8 +53,47 @@ describe("deriveRefundableAmount", () => {
         amount: NonNegativeInteger(25_000),
         cashReceivedAmount: NonNegativeInteger(25_000),
         excess: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
       })
     ).toBe(50_000)
+  })
+
+  test("leaves the tip out", () => {
+    expect(
+      deriveRefundableAmount({
+        amount: NonNegativeInteger(25_000),
+        cashReceivedAmount: null,
+        excess: NonNegativeInteger(0),
+        tipAmount: NonNegativeInteger(2_000),
+      })
+    ).toBe(23_000)
+    expect(
+      deriveRefundableAmount({
+        amount: NonNegativeInteger(25_000),
+        cashReceivedAmount: NonNegativeInteger(25_000),
+        excess: NonNegativeInteger(0),
+        tipAmount: NonNegativeInteger(2_000),
+      })
+    ).toBe(23_000)
+  })
+})
+
+describe("deriveRefundableTipAmount", () => {
+  test("offers the whole tip until a tip refund returns it", () => {
+    const tipAmount = NonNegativeInteger(2_000)
+    expect(deriveRefundableTipAmount({ tipAmount, refunds: [] })).toBe(2_000)
+    expect(
+      deriveRefundableTipAmount({ tipAmount, refunds: [{ isTip: null }] })
+    ).toBe(2_000)
+    expect(
+      deriveRefundableTipAmount({ tipAmount, refunds: [{ isTip: sqliteTrue }] })
+    ).toBe(0)
+    expect(
+      deriveRefundableTipAmount({
+        tipAmount: NonNegativeInteger(0),
+        refunds: [],
+      })
+    ).toBe(0)
   })
 })
 
@@ -74,11 +117,20 @@ describe("deriveRefundPrefillAmount", () => {
 
 describe("summarizeRefundsByPayment", () => {
   const paymentId = "payment" as PaymentId
-  const refundOf = (amount: number, claimAmounts: ReadonlyArray<number>) => ({
+  const refundOf = (
+    amount: number,
+    claimAmounts: ReadonlyArray<number>,
+    {
+      isTip = null,
+      tipAmount = 0,
+    }: { readonly isTip?: 1 | null; readonly tipAmount?: number } = {}
+  ) => ({
     paymentId,
     amount: NonNegativeInteger(amount),
     currency: "CZK" as const,
+    isTip,
     paymentAmount: NonNegativeInteger(25_000),
+    paymentTipAmount: NonNegativeInteger(tipAmount),
     paymentCurrency: "CZK" as const,
     paymentAmountSats: null,
     cashReceivedAmount: null,
@@ -101,6 +153,33 @@ describe("summarizeRefundsByPayment", () => {
     })
     expect(summary === undefined ? null : deriveRefundState(summary)).toBe(
       "partial"
+    )
+  })
+
+  test("leaves a tip refund out of the refunded state", () => {
+    const tipOnly = summarizeRefundsByPayment([
+      refundOf(2_000, [25_000], { isTip: sqliteTrue, tipAmount: 2_000 }),
+    ]).get(paymentId)
+    const goodsAndTip = summarizeRefundsByPayment([
+      refundOf(23_000, [25_000], { tipAmount: 2_000 }),
+      refundOf(2_000, [25_000], { isTip: sqliteTrue, tipAmount: 2_000 }),
+    ]).get(paymentId)
+    const goodsOnly = summarizeRefundsByPayment([
+      refundOf(23_000, [25_000], { tipAmount: 2_000 }),
+    ]).get(paymentId)
+
+    expect(tipOnly === undefined ? null : deriveRefundState(tipOnly)).toBe(
+      "none"
+    )
+    expect(goodsAndTip).toMatchObject({
+      refundedAmount: 23_000,
+      refundableAmount: 23_000,
+    })
+    expect(
+      goodsAndTip === undefined ? null : deriveRefundState(goodsAndTip)
+    ).toBe("full")
+    expect(goodsOnly === undefined ? null : deriveRefundState(goodsOnly)).toBe(
+      "full"
     )
   })
 

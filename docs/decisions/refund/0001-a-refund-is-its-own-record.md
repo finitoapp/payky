@@ -6,7 +6,7 @@ Date: 2026-09-29
 ## Context
 
 Money returned for a reported sale is reported as a storno with a negative
-amount (see eet/0007). The guideline for the first EET required a sale
+amount (see eet/0011). The guideline for the first EET required a sale
 returned in cash to be recorded that way (GFŘ methodological guideline to
 the law on sales records, version 1.0 of 31 August 2016, chapter 2.2.3).
 Payky had no refund at all.

@@ -317,6 +317,38 @@ describe("isEetFirstSending", () => {
       })
     ).toBe(expected)
   })
+
+  test.each([
+    [5, false],
+    [6, true],
+  ])(
+    "errs toward first after a takeover by a clock %i minutes ahead: %s",
+    (minutesAhead, expected) => {
+      const takeover = minutesAfterStart(10)
+      const recordingClockAfterTakeover = new Date(
+        takeover.getTime() - minutesAhead * 60 * 1000 + 1
+      )
+
+      expect(
+        getEetRecordingDeviceWaitEndsAt({
+          attempts: noAttempt,
+          recordingDeviceId: tablet,
+          deviceId: phone,
+          startsAt,
+          now: takeover,
+        })
+      ).toBeNull()
+      expect(
+        isEetFirstSending({
+          attempts: noAttempt,
+          recordingDeviceId: tablet,
+          deviceId: tablet,
+          startsAt,
+          now: recordingClockAfterTakeover,
+        })
+      ).toBe(expected)
+    }
+  )
 })
 
 describe("hasLostEetAnswer", () => {

@@ -28,18 +28,30 @@ export interface FakeEet {
   readonly playground: FakeEetResponder
   readonly production: FakeEetResponder
   readonly setUnreachable: (unreachable: boolean) => void
+  readonly stopAnswering: () => void
+  readonly unansweredRequestCount: () => number
 }
 
+type FakeEetConnection = "answering" | "refusing" | "hanging"
+
 const fulfillFrom =
-  (responder: FakeEetResponder, isUnreachable: () => boolean) =>
+  (
+    responder: FakeEetResponder,
+    connection: () => FakeEetConnection,
+    leaveUnanswered: () => void
+  ) =>
   async (route: Route): Promise<void> => {
     const request = route.request()
     if (request.method() === "OPTIONS") {
       await route.fulfill({ status: 204, headers: corsHeaders })
       return
     }
-    if (isUnreachable()) {
+    if (connection() === "refusing") {
       await route.abort("connectionrefused")
+      return
+    }
+    if (connection() === "hanging") {
+      leaveUnanswered()
       return
     }
 
@@ -67,24 +79,32 @@ const fulfillFrom =
 export async function routeFakeEet(page: Page): Promise<FakeEet> {
   const playground = await createFakeEetResponder({ test: true })
   const production = await createFakeEetResponder({ test: false })
-  let unreachable = false
-  const isUnreachable = () => unreachable
+  let connection: FakeEetConnection = "answering"
+  let unansweredRequests = 0
+  const currentConnection = () => connection
+  const leaveUnanswered = () => {
+    unansweredRequests += 1
+  }
 
   await page.route(
     "https://pg.trzbyeet.gov.cz/**",
-    fulfillFrom(playground, isUnreachable)
+    fulfillFrom(playground, currentConnection, leaveUnanswered)
   )
   await page.route(
     `${new URL(fakeEetProductionUrl).origin}/**`,
-    fulfillFrom(production, isUnreachable)
+    fulfillFrom(production, currentConnection, leaveUnanswered)
   )
 
   return {
     playground,
     production,
     setUnreachable: (next) => {
-      unreachable = next
+      connection = next ? "refusing" : "answering"
     },
+    stopAnswering: () => {
+      connection = "hanging"
+    },
+    unansweredRequestCount: () => unansweredRequests,
   }
 }
 

@@ -505,7 +505,7 @@ test("the paid screen appears at once while EET cannot be reached", async ({
   page,
 }) => {
   await enableEetWithGeneratedCertificate(page, "en")
-  fakeEet.setUnreachable(true)
+  fakeEet.stopAnswering()
 
   await page.goto("/", { waitUntil: "domcontentloaded" })
   await createPayment(page, "en")
@@ -518,6 +518,9 @@ test("the paid screen appears at once while EET cannot be reached", async ({
     })
     .click()
 
+  await expect
+    .poll(fakeEet.unansweredRequestCount, eetDeliveryTimeout)
+    .toBeGreaterThan(0)
   await expect(
     page
       .getByTestId("payment-paid-panel")

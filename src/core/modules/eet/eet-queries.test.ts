@@ -6,11 +6,19 @@ import {
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
-import { createEetSale, deliverEetSale } from "./eet-actions.ts"
+import {
+  createEetReversal,
+  createEetSale,
+  deliverEetReversal,
+  deliverEetSale,
+  disableEet,
+} from "./eet-actions.ts"
 import {
   eetExtraClaimsQuery,
   eetPaymentsToReportQuery,
+  eetSaleByIdQuery,
   eetSalesToDeliverQuery,
+  unconfirmedEetReversalsQuery,
   unconfirmedEetSalesQuery,
 } from "./eet-queries.ts"
 import {
@@ -159,6 +167,52 @@ describe("eetSalesToDeliverQuery and unconfirmedEetSalesQuery", () => {
     expect(new Set(unconfirmed.map(({ id }) => id))).toEqual(
       new Set([pending, rejected, unsupported, otherDevice])
     )
+  })
+})
+
+describe("unconfirmedEetReversalsQuery", () => {
+  test("lists a reversal until it is confirmed, also one never sent", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const saleId = await createSale(context)
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
+    const [sale] = await context.deps.evolu.loadQuery(eetSaleByIdQuery(saleId))
+    if (sale === undefined) throw new Error("Expected a created sale.")
+    const reverse = async () => {
+      const reversalId = await run.ok(
+        createEetReversal({
+          refund: {
+            id: createRowId<"Refund">(),
+            paymentId: sale.paymentId,
+            amount: NonNegativeInteger(5_000),
+            isTip: null,
+            refundedAt: TimestampMs(context.clock.date.now().getTime()),
+            saleId,
+          },
+          deviceId: context.deviceId,
+        })
+      )
+      if (reversalId === null) throw new Error("Expected a reversal.")
+      return reversalId
+    }
+    const pending = await reverse()
+    const confirmed = await reverse()
+
+    await run.orThrow(
+      deliverEetReversal({ id: confirmed, deviceId: context.deviceId })
+    )
+    await run.ok(disableEet())
+    context.clock.advance(1_000)
+    const neverSent = await reverse()
+
+    expect(
+      (await context.deps.evolu.loadQuery(unconfirmedEetReversalsQuery)).map(
+        ({ id }) => id
+      )
+    ).toEqual([neverSent, pending])
   })
 })
 

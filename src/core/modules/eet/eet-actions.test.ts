@@ -33,6 +33,7 @@ import {
 import {
   eetReversalByIdQuery,
   eetSaleByIdQuery,
+  eetSalesByPaymentIdQuery,
   eetSettingsQuery,
   eetSigningCertificateQuery,
 } from "./eet-queries.ts"
@@ -372,6 +373,25 @@ describe("createEetSale", () => {
     ])
   })
 
+  test("reports 0.00 for a payment that is all tip while tips belong to employees", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    await run.ok(saveEetTipOwner("employees"))
+
+    const saleId = await createSaleForNewPayment(context, {
+      amount: NonNegativeInteger(2_000),
+      tipAmount: NonNegativeInteger(2_000),
+    })
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
+
+    expect(context.responder.requests).toMatchObject([
+      { data: { celk_trzba: "0.00" } },
+    ])
+  })
+
   test("keeps the tip of a sale created before tips went to employees", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
@@ -454,7 +474,7 @@ describe("createEetSale", () => {
     const saleId = await createSaleForNewPayment(context, {
       amount: NonNegativeInteger(11_000),
       tipAmount: NonNegativeInteger(1_000),
-      cashReceivedAmount: NonNegativeInteger(11_000),
+      cashReceivedAmount: NonNegativeInteger(11_100),
     })
 
     await run.orThrow(
@@ -462,7 +482,7 @@ describe("createEetSale", () => {
     )
 
     expect(context.responder.requests).toMatchObject([
-      { data: { celk_trzba: "100.00" } },
+      { data: { celk_trzba: "101.00" } },
     ])
   })
 })
@@ -934,6 +954,26 @@ describe("createEetReversal", () => {
     ])
   })
 
+  test("keeps a reversal out of the sale table", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetSalesByPaymentIdQuery(paymentId))
+    ).resolves.toMatchObject([{ id: saleId }])
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toHaveLength(1)
+  })
+
   test("caps a refund at a sale that left out an employees' tip", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
@@ -1119,6 +1159,39 @@ describe("createEetReversal", () => {
     await expect(
       context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
     ).resolves.toMatchObject([{ unsupportedReason: "environment" }])
+    await expect(
+      run(deliverEetReversal({ id: reversalId, deviceId: context.deviceId }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "EetSaleUnsupportedError" },
+    })
+  })
+
+  test("never sends a reversal once EET reports for another taxpayer", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    await using run = testCreateRun(context.deps)
+    await run.orThrow(
+      deliverEetSale({ id: saleId, deviceId: context.deviceId })
+    )
+    await run.ok(
+      storeEetCertificate({
+        certificate: await getEetTestCertificateFile("CZ9876543210" as EetEic),
+        isTestCertificate: false,
+      })
+    )
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 5_000,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ unsupportedReason: "taxpayer" }])
     await expect(
       run(deliverEetReversal({ id: reversalId, deviceId: context.deviceId }))
     ).resolves.toMatchObject({

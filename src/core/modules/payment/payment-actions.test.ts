@@ -3073,6 +3073,22 @@ describe("payment actions", () => {
       }
     }
 
+    test("records the device that took the card payment on its claim", async () => {
+      await using ctx = await setUp(async () => approved)
+      const { evolu, run, accountId, paymentId } = ctx
+      const deviceId = createRowId<"Device">()
+
+      await run.orThrow(
+        payPaymentWithSwitchioCard({ paymentId, accountId, deviceId })
+      )
+
+      await expect
+        .poll(() =>
+          evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(paymentId))
+        )
+        .toMatchObject([{ deviceId }])
+    }, 15_000)
+
     test("refuses an already paid payment before the terminal is asked", async () => {
       await using ctx = await setUp(async () => approved)
       const { run, requests, accountId, paymentId } = ctx

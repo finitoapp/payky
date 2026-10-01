@@ -561,6 +561,27 @@ export const csSettings = {
   "settings.privacy.productLookup.enable": "Zapnout",
   "settings.privacy.productLookup.enabled": "Zapnuto",
   "settings.privacy.productLookup.title": "Dohledání produktů",
+  "settings.profile.description":
+    "Váš Nostr profil, stejný, jaký pro tuto obnovovací frázi zobrazuje Linky.",
+  "settings.profile.loadFailed":
+    "Nepodařilo se spojit s žádným Nostr relayem a načíst profil. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.profile.name.invalid": "Jméno je příliš dlouhé.",
+  "settings.profile.name.label": "Jméno",
+  "settings.profile.name.placeholder": "Název vašeho obchodu",
+  "settings.profile.npub.copied": "Veřejný klíč zkopírován",
+  "settings.profile.npub.copy": "Kopírovat veřejný klíč",
+  "settings.profile.npub.copyFailed": "Veřejný klíč se nepodařilo zkopírovat",
+  "settings.profile.npub.label": "Veřejný klíč",
+  "settings.profile.picture.choose": "Vybrat obrázek",
+  "settings.profile.picture.invalid":
+    "Tento soubor není obrázek, který prohlížeč umí načíst.",
+  "settings.profile.picture.label": "Obrázek",
+  "settings.profile.picture.remove": "Odebrat obrázek",
+  "settings.profile.retry": "Zkusit znovu",
+  "settings.profile.saveFailed":
+    "Žádný Nostr relay profil nepřijal. Zkuste to později.",
+  "settings.profile.setName": "Nastavte své jméno",
+  "settings.profile.title": "Profil",
   "settings.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase zkopírována.",

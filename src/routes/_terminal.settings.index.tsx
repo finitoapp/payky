@@ -32,6 +32,7 @@ import {
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -269,6 +270,8 @@ function SettingsPage() {
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.title")} />
+
+      <ProfileCard />
 
       <VerticalNav title={t("settings.catalog")} items={catalogItems} />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />

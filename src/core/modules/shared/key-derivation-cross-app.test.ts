@@ -9,6 +9,7 @@ import { describe, expect, test } from "vitest"
 import {
   deriveDefaultSparkWalletSecret,
   deriveEvoluOwnerSecret,
+  deriveNostrSecretKey,
   MasterKey,
   masterKeyToMnemonic,
   mnemonicToMasterKey,
@@ -172,6 +173,9 @@ describe("cross-app derivation vectors (shared with Linky)", () => {
     const root = HDKey.fromMasterSeed(hexToBytes(MASTER_SECRET_HEX))
     const privateKey = root.derive(NOSTR_VECTOR.path).privateKey
     expect(privateKey && bytesToHex(privateKey)).toBe(
+      NOSTR_VECTOR.privateKeyHex
+    )
+    expect(bytesToHex(deriveNostrSecretKey(MasterKey(MASTER_SECRET_HEX)))).toBe(
       NOSTR_VECTOR.privateKeyHex
     )
   })

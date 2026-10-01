@@ -7,7 +7,7 @@ Date: 2026-09-27
 
 A confirmation from the EET playground carries a POK ending in `-ff`, which
 is not a real POK under the law (interface description, chapter 3.4.2.3). A
-merchant may want to try EET before going live.
+merchant tries EET against the playground before going live.
 
 ## Decision
 
@@ -28,10 +28,13 @@ easier to miss than a banner the merchant cannot dismiss.
 ## Consequences
 
 A sale left in the sandbox by mistake is never reported. The confirmation
-and the banner are what guard against that.
+guards a switch from production. The banner guards every case, including a
+build without a production endpoint, which starts in the playground.
 
 ## Enforced by
 
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > keeps sandbox sales in the sandbox after switching to production`
 - `src/core/modules/eet/eet-actions.test.ts > selectEetEnvironment > refuses production while a test certificate is stored`
+- `src/core/modules/eet/eet-utils.test.ts > deriveEetSaleStatus > derives $status for $name`
+- `src/core/modules/eet/eet-utils.test.ts > resolveEetEnvironment > falls back to the playground without a production endpoint`
 - `e2e/eet.spec.ts > the sandbox asks first, warns on every terminal screen, and marks the paid screen`

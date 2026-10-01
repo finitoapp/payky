@@ -5,22 +5,25 @@ Date: 2026-09-29
 
 ## Context
 
-EET wants a sale recorded at the latest when the money is received (GFŘ
-seminar for developers, slide 17), with the identifier of the cash register
-on which it is recorded (slides 19 and 22). EET treats a message with the
-same body as the same sale, and the body includes that identifier (interface
-description, chapter 4).
+EET wants a sale recorded at the latest when its money is received, or when
+the order to pay is issued if that comes first (GFŘ seminar for developers,
+slide 17), with the identifier of the cash register on which it is recorded
+(slide 19). EET treats a message with the same body as the same sale, and
+the body includes that identifier (interface description, chapter 4).
 
 ## Decision
 
-A sale belongs to the device that recorded the payment's first settlement:
+A payment's sale belongs to the device that recorded its first settlement:
 where staff confirmed cash or card, or matched a transfer by hand. A
 settlement Payky matched on its own belongs to the device that created the
-payment. A reversal belongs to the device that recorded the refund. For 10
-minutes only that device creates the record and sends it automatically.
-After that, any device of the account creates a missing record and delivers
-an unconfirmed one, still with the recording device's cash register
-identifier.
+payment. An extra money sale follows the same rule for the payment's latest
+claim (see eet/0006). A reversal belongs to the device that recorded the
+refund, and a refund without a device gets none. For 10 minutes only that
+device creates the record and sends it automatically. The 10 minutes start
+at the settlement the sale follows, and for a reversal at the later of the
+refund and the latest confirmation of its payment's sales. After that, any
+device of the account creates a missing record and delivers an unconfirmed
+one, still with the recording device's cash register identifier.
 
 ## Alternatives considered
 
@@ -39,8 +42,14 @@ minutes unless the record already has an attempt.
 
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > reports a payment on the device that settled it in cash`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports a bank payment on the device that confirmed it by hand`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports an automatically matched payment on the device that created it`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses nothing for a refund with no device`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
+- `src/core/modules/payment/payment-actions.test.ts > payment actions > card payment attempts > records the device that took the card payment on its claim`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > takes over a pending sale once its device's priority is over`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > creates a sale its recording device never created`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > takes over a reversal only after its sale's confirmation and the priority`
 - `src/core/modules/eet/eet-utils.test.ts > getEetRecordingDeviceWaitEndsAt > keeps another device waiting for 10 minutes unless an attempt exists`
+- `src/core/modules/eet/eet-utils.test.ts > getEetReversalStartsAt > starts at the later of the refund and its sale's confirmation`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
 - `e2e/eet.spec.ts > another device's sale waits for that device, then is sent from here as a repeat`

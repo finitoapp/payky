@@ -13,11 +13,12 @@ Payky had no refund at all.
 
 ## Decision
 
-A refund is a separate record: payment, amount, method, time, device and
-refunded lines. The payment stays paid, its claims stay, and its bill stays
-closed and covered. The payment detail, the bill's payment rows and the
-payment history show it as partly or fully refunded. A cash refund leaves
-the cash register as a transaction no payment claims.
+A refund is a separate record: payment, amount, method, time, device,
+refunded lines and whether it is the tip refund (see refund/0004). The
+payment stays paid, its claims stay, and its bill stays closed and covered.
+The payment detail, the bill's payment rows and the payment history show it
+as partly or fully refunded. A cash refund leaves the cash register as a
+transaction no payment claims.
 
 ## Alternatives considered
 
@@ -35,4 +36,6 @@ it.
 
 - `src/core/modules/refund/refund-actions.test.ts > refundPayment > keeps a fully refunded payment paid and its bill closed and covered`
 - `src/core/modules/refund/refund-actions.test.ts > refundPayment > returns a payment in parts outside Payky without moving any account`
+- `src/core/modules/refund/refund-actions.test.ts > refundPayment > returns a rounded cash payment in full from the cash register`
 - `e2e/eet.spec.ts > refunds of a paid bill reach EET as negative sales`
+- `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

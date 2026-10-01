@@ -5,9 +5,9 @@ Date: 2026-09-29
 
 ## Context
 
-Every reader of the sale table in a version without refunds takes each row
-there as a positive sale to deliver. Devices of one account can run
-different versions while they update.
+A version without refunds lists every row of the sale table as a positive
+sale, and delivers the rows that carry its own device id. Devices of one
+account can run different versions while they update.
 
 ## Decision
 
@@ -17,8 +17,9 @@ the sale tables, with the amount stored positive and sent negated.
 ## Alternatives considered
 
 A reversal row in the sale table, stored positive like every reversal
-amount. An older device of the same account would deliver it as a positive
-sale.
+amount. Every older device would list it as a positive sale, and the device
+that recorded the refund would deliver it as one after going back to an
+older version.
 
 ## Consequences
 
@@ -26,4 +27,6 @@ Sale and reversal code share the delivery rules but read different tables.
 
 ## Enforced by
 
-Untestable: the risk lives in older builds running on other devices of the account, which the tests of the current code cannot run.
+- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
+- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > keeps a reversal out of the sale table`
+- `src/core/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`

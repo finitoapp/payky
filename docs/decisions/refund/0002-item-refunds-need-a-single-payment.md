@@ -11,9 +11,9 @@ own. With several payments, Payky cannot tell which payment paid which line.
 
 ## Decision
 
-Staff can refund chosen items while the payment is the only one claimed for
-its bill. Otherwise only an amount is offered. A tip is never part of an
-item refund. Returning the rest of a line returns the rest of its amount, so
+Staff can refund chosen items while no other payment of its bill has a
+claim. Otherwise only an amount is offered. A tip is never part of an item
+refund. Returning the rest of a line returns the rest of its amount, so
 rounding leaves nothing behind.
 
 ## Alternatives considered
@@ -23,7 +23,8 @@ None recorded.
 ## Consequences
 
 Bills paid by several payments are refunded by amount only, until payments
-record which lines they paid.
+record which lines they paid. A claim whose transaction was deleted still
+counts here, though the payment's status ignores it.
 
 ## Enforced by
 

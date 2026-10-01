@@ -5,7 +5,8 @@ Date: 2026-09-27
 
 ## Context
 
-EET records money at the latest when it is received (GFŘ seminar for
+The taxpayer records a sale at the latest when its money is received, or
+when the order to pay is issued if that comes first (GFŘ seminar for
 developers, slide 17). A deposit and the rest are recorded like any other
 payments, with no link between them (slide 61). A bill can be paid in
 several payments, and a keypad payment has no bill at all.
@@ -33,3 +34,8 @@ reverses a payment's sales, not a bill's.
 
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports each payment of a bill paid in two payments`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports a keypad Lightning payment without a bill`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment settled before EET was enabled`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment settled while EET was disabled`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment with no device`
+- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > refunding the second payment of an overpaid bill reverses only its sale`
+- `e2e/eet.spec.ts > the bill detail shows the EET status of each payment`

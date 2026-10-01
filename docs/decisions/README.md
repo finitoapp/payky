@@ -7,10 +7,11 @@ from it. The code shows what happens. These files keep the reason, so
 nobody has to dig it out of old commits and nobody undoes it by accident.
 
 Every accepted decision names the tests that hold it, or says why no test
-can. `bun run check` runs `check:decisions`, which fails when an accepted
-decision names no test and gives no reason, or names a test that does not
-exist. Renaming or deleting a test a decision relies on therefore fails the
-check until the decision is updated. Whether a named test really holds its
+can. `bun run check` runs `check:decisions`, which fails when a decision has
+no accepted or superseded status, or an accepted decision names no test and
+gives no reason, or names a test that vitest or playwright does not list.
+Renaming or deleting a test a decision relies on therefore fails the check
+until the decision is updated. Whether a named test really holds its
 decision is for review to judge.
 
 ## Format
@@ -63,6 +64,9 @@ A decision refers to another one by domain and number, such as
 
 ## Changing a decision
 
-Do not rewrite an accepted decision. Add a new one, set the old one to
-`Status: superseded by eet/0011`, and let the new one name the tests. A
-superseded decision keeps its reasoning and is not checked.
+Do not rewrite an accepted decision to change what Payky does. Add a new
+one, set the old one to `Status: superseded by eet/0011`, and let the new
+one name the tests. A superseded decision keeps its reasoning and is not
+checked. A correction that makes a record true without changing the
+decision is an edit, and so is a consequence that now points to the
+decision that changed it.

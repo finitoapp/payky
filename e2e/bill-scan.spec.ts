@@ -132,3 +132,124 @@ test("scanning an unknown code can create a new catalog item and add it to the c
     ).toHaveValue("3333")
   })
 })
+
+test("an opted-in device prefills a scanned retail barcode from Open Food Facts", async ({
+  seededPage: page,
+}) => {
+  const lookedUpUrls: string[] = []
+  await page.route("https://world.openfoodfacts.org/**", (route) => {
+    lookedUpUrls.push(route.request().url())
+    return route.fulfill({
+      json: {
+        status: 1,
+        product: {
+          product_name: "Coca-Cola Original",
+          brands: "Coca-Cola",
+          quantity: "330 ml",
+        },
+      },
+    })
+  })
+
+  await test.step("a device that has not opted in sends nothing", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+    await enterBillScanMode(page, "en")
+    await injectScanCode(page, "5449000000996")
+    await page
+      .getByRole("button", {
+        name: translate("en", "bill.scan.unknown.cancel"),
+      })
+      .click()
+    expect(lookedUpUrls).toEqual([])
+  })
+
+  await test.step("opt in to product lookup", async () => {
+    await gotoPage(
+      page,
+      "/settings/about/privacy",
+      "en",
+      "settings.about.privacy.title"
+    )
+    await page
+      .locator('[data-slot="card"]')
+      .filter({
+        hasText: translate("en", "settings.privacy.productLookup.title"),
+      })
+      .getByRole("button", {
+        name: translate("en", "settings.privacy.productLookup.enable"),
+      })
+      .click()
+  })
+
+  await test.step("an internal code is never looked up", async () => {
+    // Scan mode is remembered from the first visit, so it is still on.
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+    await injectScanCode(page, "3333")
+    await page
+      .getByRole("button", {
+        name: translate("en", "bill.scan.unknown.cancel"),
+      })
+      .click()
+    expect(lookedUpUrls).toEqual([])
+  })
+
+  await test.step("the unknown-code dialog already names the product", async () => {
+    await injectScanCode(page, "5449000000996")
+    const dialog = page.getByRole("alertdialog")
+    await expect(
+      dialog.getByText(translate("en", "bill.scan.unknown.match"))
+    ).toBeVisible()
+    await expect(dialog.getByText("Coca-Cola Original")).toBeVisible()
+    await expect(dialog.getByText("Coca-Cola, 330 ml")).toBeVisible()
+  })
+
+  await test.step("a retail barcode opens the form prefilled", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "bill.scan.unknown.create"),
+      })
+      .click()
+    await expect(
+      page.getByRole("textbox", {
+        name: translate("en", "settings.items.form.name.label"),
+      })
+    ).toHaveValue("Coca-Cola Original")
+    await expect(
+      page.getByRole("textbox", {
+        name: translate("en", "settings.items.form.description.label"),
+      })
+    ).toHaveValue("Coca-Cola, 330 ml")
+    await expect(
+      page
+        .getByRole("dialog")
+        .getByText(
+          translate("en", "bill.scan.lookup.source").replace(
+            "{source}",
+            "Open Food Facts"
+          )
+        )
+    ).toBeVisible()
+    expect(lookedUpUrls).toHaveLength(1)
+  })
+
+  await test.step("saving adds the prefilled item to the cart", async () => {
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "settings.items.form.price.label"),
+      })
+      .fill("1.5")
+    await page
+      .getByRole("button", { name: translate("en", "bill.scan.create.save") })
+      .click()
+    const summaryTrigger = page.getByTestId("bill-summary-trigger")
+    await expect(summaryTrigger).toContainText(
+      translateValue("en", "bill.itemsCount", 1)
+    )
+    await summaryTrigger.click()
+    await expect(
+      page.getByTestId("bill-summary-panel").getByText("Coca-Cola Original")
+    ).toBeVisible()
+  })
+})

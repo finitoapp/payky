@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog.tsx"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -45,19 +46,22 @@ import {
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import type { useProductLookup } from "@/hooks/use-product-lookup.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * Lightweight create-item form opened from bill scan mode when a scanned
  * code matches no catalog item — just enough to add the item and keep
- * scanning (name, price, category). Anything else (description, etc.) is
- * left for the full form under Settings.
+ * scanning (name, description, price, category). Anything else is left for
+ * the full form under Settings. Name and description are prefilled from
+ * `productLookup` once it arrives, unless the user already typed into them.
  */
 export function CreateCatalogItemDialog({
   open,
   onOpenChange,
   scanCode,
+  productLookup,
   currency,
   categories,
   onCreated,
@@ -65,6 +69,7 @@ export function CreateCatalogItemDialog({
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly scanCode: string
+  readonly productLookup: ReturnType<typeof useProductLookup>
   readonly currency: FiatCurrencyType
   readonly categories: ReadonlyArray<CatalogCategoryRow>
   readonly onCreated: (item: CatalogItemRow) => void
@@ -79,6 +84,7 @@ export function CreateCatalogItemDialog({
   )
   const selectableTaxRates = filterSelectableTaxRates(taxRates, undefined)
   const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
   const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
     "none"
@@ -87,15 +93,34 @@ export function CreateCatalogItemDialog({
     defaultTaxRate?.id ?? "none"
   )
   const [nameError, setNameError] = useState<TranslationKey | null>(null)
+  const [descriptionError, setDescriptionError] =
+    useState<TranslationKey | null>(null)
   const [priceError, setPriceError] = useState<TranslationKey | null>(null)
   const [pending, setPending] = useState(false)
 
+  const { product } = productLookup
+  const [prefilledFrom, setPrefilledFrom] = useState(product)
+  if (product !== prefilledFrom) {
+    setPrefilledFrom(product)
+    if (product === undefined) {
+      // The lookup only goes away once the code is dismissed, so this clears
+      // a prefill the user never got to see.
+      setName("")
+      setDescription("")
+    } else {
+      if (name === "") setName(product.name)
+      if (description === "") setDescription(product.description ?? "")
+    }
+  }
+
   const resetForm = () => {
     setName("")
+    setDescription("")
     setPrice("")
     setCategoryId("none")
     setTaxRateId(defaultTaxRate?.id ?? "none")
     setNameError(null)
+    setDescriptionError(null)
     setPriceError(null)
   }
 
@@ -118,12 +143,22 @@ export function CreateCatalogItemDialog({
           onSubmit={(event) => {
             event.preventDefault()
             setNameError(null)
+            setDescriptionError(null)
             setPriceError(null)
 
             const trimmedName = name.trim()
             const nameResult = NonEmptyString255Schema.safeParse(trimmedName)
             if (!nameResult.success) {
               setNameError("settings.items.form.name.invalid")
+              return
+            }
+
+            const trimmedDescription = description.trim()
+            const descriptionResult = trimmedDescription
+              ? NonEmptyString255Schema.safeParse(trimmedDescription)
+              : null
+            if (descriptionResult !== null && !descriptionResult.success) {
+              setDescriptionError("settings.items.form.description.invalid")
               return
             }
 
@@ -151,7 +186,7 @@ export function CreateCatalogItemDialog({
                     deviceId: null,
                     categoryId: categoryId === "none" ? null : categoryId,
                     name: nameResult.data,
-                    description: null,
+                    description: descriptionResult?.data ?? null,
                     currency,
                     unitAmount,
                     scanCode: scanCodeResult?.data ?? null,
@@ -196,6 +231,36 @@ export function CreateCatalogItemDialog({
                 }}
               />
               <FieldError>{nameError ? t(nameError) : null}</FieldError>
+            </Field>
+
+            <Field data-invalid={descriptionError !== null}>
+              <FieldLabel htmlFor={`${formId}-description`}>
+                {t("settings.items.form.description.label")}
+              </FieldLabel>
+              <Input
+                id={`${formId}-description`}
+                value={description}
+                disabled={pending}
+                aria-invalid={descriptionError !== null}
+                autoComplete="off"
+                placeholder={t("settings.items.form.description.placeholder")}
+                onChange={(event) => {
+                  setDescription(event.currentTarget.value)
+                  setDescriptionError(null)
+                }}
+              />
+              <FieldError>
+                {descriptionError ? t(descriptionError) : null}
+              </FieldError>
+              {productLookup.isFetching ? (
+                <FieldDescription>
+                  {t("bill.scan.lookup.loading")}
+                </FieldDescription>
+              ) : product !== undefined ? (
+                <FieldDescription>
+                  {t("bill.scan.lookup.source", { source: product.source })}
+                </FieldDescription>
+              ) : null}
             </Field>
 
             <Field data-invalid={priceError !== null}>

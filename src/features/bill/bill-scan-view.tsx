@@ -20,6 +20,7 @@ import {
   useConfirmDialog,
   useIsConfirmDialogOpen,
 } from "@/hooks/use-confirm-dialog.ts"
+import { useProductLookup } from "@/hooks/use-product-lookup.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
@@ -61,22 +62,26 @@ export function BillScanView({
     ReadonlyArray<CatalogItemRow>
   >([])
   const [createDialogCode, setCreateDialogCode] = useState<string | null>(null)
+  // Set as soon as an unknown code is scanned, so the lookup runs while the
+  // "unknown code" confirm is still open and the form opens prefilled.
+  const [lookupCode, setLookupCode] = useState<string | null>(null)
+  const productLookup = useProductLookup(lookupCode)
 
   const handleScan = useCallback(
     (rawValue: string) => {
       const matches = findCatalogItemsByScanCode(currencyItems, rawValue)
 
       if (matches.length === 0) {
+        setLookupCode(rawValue)
         void (async () => {
           const confirmed = await confirm({
             title: t("bill.scan.unknown.title"),
-            description: t("bill.scan.unknown.description", {
-              code: rawValue,
-            }),
+            description: <UnknownCodeDescription code={rawValue} />,
             confirmLabel: t("bill.scan.unknown.create"),
             cancelLabel: t("bill.scan.unknown.cancel"),
           })
           if (confirmed) setCreateDialogCode(rawValue)
+          else setLookupCode(null)
         })()
         return
       }
@@ -185,17 +190,54 @@ export function BillScanView({
       <CreateCatalogItemDialog
         open={createDialogCode !== null}
         onOpenChange={(nextOpen) => {
-          if (!nextOpen) setCreateDialogCode(null)
+          if (!nextOpen) {
+            setCreateDialogCode(null)
+            setLookupCode(null)
+          }
         }}
         scanCode={createDialogCode ?? ""}
+        productLookup={productLookup}
         currency={currency}
         categories={categories}
         onCreated={(item) => {
           setCreateDialogCode(null)
+          setLookupCode(null)
           setLastScanned(item)
           onAdd(item)
         }}
       />
     </div>
+  )
+}
+
+/**
+ * Rendered by the global confirm host, outside this view, so it subscribes to
+ * the lookup itself — same query key as `BillScanView`'s, so it shares that
+ * request and fills in the moment the product is recognized.
+ */
+function UnknownCodeDescription({ code }: { readonly code: string }) {
+  const { t } = useTranslation()
+  const { product, isFetching } = useProductLookup(code)
+
+  return (
+    <>
+      {t("bill.scan.unknown.description", { code })}
+      {isFetching ? (
+        <span className="mt-3 block">{t("bill.scan.lookup.loading")}</span>
+      ) : product !== undefined ? (
+        <span className="mt-3 block">
+          {t("bill.scan.unknown.match")}
+          <span className="block font-medium text-foreground">
+            {product.name}
+          </span>
+          {product.description !== null && (
+            <span className="block">{product.description}</span>
+          )}
+          <span className="mt-1 block text-xs">
+            {t("bill.scan.lookup.source", { source: product.source })}
+          </span>
+        </span>
+      ) : null}
+    </>
   )
 }

@@ -92,22 +92,26 @@ test("toggle error reporting", async ({ seededPage: page }) => {
     ))
 
   await test.step("toggle error reporting on and off", async () => {
-    // errorReportingEnabled defaults to false (device setting).
-    await page
+    // errorReportingEnabled defaults to false (device setting). The privacy
+    // page has more than one consent card with the same button labels.
+    const card = page.locator('[data-slot="card"]').filter({
+      hasText: translate("en", "settings.privacy.errorReporting.title"),
+    })
+    await card
       .getByRole("button", {
         name: translate("en", "settings.privacy.errorReporting.enable"),
       })
       .click()
     await expect(
-      page.getByText(translate("en", "settings.privacy.errorReporting.enabled"))
+      card.getByText(translate("en", "settings.privacy.errorReporting.enabled"))
     ).toBeVisible()
-    await page
+    await card
       .getByRole("button", {
         name: translate("en", "settings.privacy.errorReporting.disable"),
       })
       .click()
     await expect(
-      page.getByText(
+      card.getByText(
         translate("en", "settings.privacy.errorReporting.disabled")
       )
     ).toBeVisible()

@@ -19,6 +19,8 @@ import {
   type ReactNode,
   useCallback,
   useDeferredValue,
+  useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -88,6 +90,7 @@ import {
 } from "@/features/bill/split-bill-dialog.tsx"
 import { useBillCancellationCollisionActions } from "@/features/bill/use-bill-cancellation-collision-actions.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillScanHandler } from "@/features/bill/use-bill-scan-handler.tsx"
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { usePendingPayments } from "@/features/bill/use-pending-payments.ts"
@@ -100,6 +103,7 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
@@ -135,9 +139,12 @@ const splitBillErrorKeys = {
 export function BillPage({
   billId,
   initialTableId,
+  initialScanCode,
 }: {
   readonly billId: BillId
   readonly initialTableId?: TableId
+  /** A code scanned on the home screen, which opened this bill to add it. */
+  readonly initialScanCode?: string
 }) {
   useScreenWakeLock(true)
   const { t } = useTranslation()
@@ -207,6 +214,7 @@ export function BillPage({
         onSummaryOpenChange={setSummaryOpen}
         scanMode={scanMode}
         onScanModeChange={setScanMode}
+        initialScanCode={initialScanCode}
       />
     )
   }
@@ -383,6 +391,7 @@ function BillCartView({
   onSummaryOpenChange,
   scanMode,
   onScanModeChange,
+  initialScanCode,
 }: {
   readonly billId: BillId
   /** Whether `billId`'s row has been written to Evolu yet. */
@@ -390,6 +399,7 @@ function BillCartView({
   readonly currency: FiatCurrencyType
   readonly summaries: ReadonlyArray<BillLineSummary>
   readonly tableId: TableId | null
+  readonly initialScanCode: string | undefined
 } & SharedCartViewProps) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -472,6 +482,50 @@ function BillCartView({
     [searchForQuery, categoryFilterForQuery, currencyForQuery],
     createGridPageQuery
   )
+
+  const addScannedItem = async (catalogItem: CatalogItemRow) => {
+    const added = await cart.addOne(catalogItem)
+    // Scan mode shows the scanned item in its own panel; the grid may have
+    // it scrolled out of view, so say what was added.
+    if (added && !scanMode) {
+      toast.success(
+        t("bill.scan.added", { name: getStaffDisplayName(catalogItem) })
+      )
+    }
+  }
+  const billScan = useBillScanHandler({
+    currencyItems,
+    categories,
+    currency,
+    onAdd: (catalogItem) => void addScannedItem(catalogItem),
+  })
+  useHardwareScanner({
+    enabled: !billScan.dialogsOpen && !splitDialogOpen && !tablePickerOpen,
+    onScan: (code) => {
+      // A focused search field received the code's characters too.
+      if (search.endsWith(code)) {
+        onSearchChange(search.slice(0, -code.length))
+      }
+      billScan.handleScan(code)
+    },
+  })
+
+  // Handled once, then dropped from the URL so a reload or a back
+  // navigation into this bill does not add the item a second time.
+  const initialScanHandledRef = useRef(false)
+  const handleInitialScan = useEffectEvent((code: string) => {
+    billScan.handleScan(code)
+    void navigate({
+      to: "/bill",
+      search: (previous) => ({ ...previous, scan: undefined }),
+      replace: true,
+    })
+  })
+  useEffect(() => {
+    if (initialScanCode === undefined || initialScanHandledRef.current) return
+    initialScanHandledRef.current = true
+    handleInitialScan(initialScanCode)
+  }, [initialScanCode])
 
   const { totalAmount, itemCount } = useMemo(
     () => deriveBillSummaryStats(summaries),
@@ -617,6 +671,7 @@ function BillCartView({
 
   return (
     <>
+      {billScan.dialogs}
       <SplitBillDialog
         open={splitDialogOpen}
         onOpenChange={setSplitDialogOpen}
@@ -671,9 +726,9 @@ function BillCartView({
       <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain mt-2">
         {scanMode ? (
           <BillScanView
-            currencyItems={currencyItems}
-            categories={categories}
-            currency={currency}
+            lastScanned={billScan.lastScanned}
+            paused={billScan.dialogsOpen}
+            onScan={billScan.handleScan}
             summaries={summaries}
             locale={locale}
             onAdd={(catalogItem) => void cart.addOne(catalogItem)}

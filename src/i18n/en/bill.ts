@@ -41,6 +41,7 @@ export const enBill = {
   "bill.scan.create.save": "Add item",
   "bill.scan.create.title": "Add scanned item",
   "bill.scan.lastScanned.empty": "Scan an item to add it to the bill.",
+  "bill.scan.added": "Added {name}",
   "bill.scan.lookup.loading": "Looking up the product…",
   "bill.scan.lookup.source": "Product details from {source}.",
   "bill.scan.toggle.aria": "Scan items",

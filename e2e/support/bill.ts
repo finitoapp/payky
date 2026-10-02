@@ -328,3 +328,16 @@ export async function addTable(
     })
     .waitFor()
 }
+
+/**
+ * Types `code` the way a keyboard-wedge (HID) barcode scanner does: every
+ * character back to back, then Enter — fast enough for
+ * `src/hooks/use-hardware-scanner.ts` to tell it apart from typing.
+ */
+export async function typeHardwareScan(
+  page: Page,
+  code: string
+): Promise<void> {
+  await page.keyboard.type(code)
+  await page.keyboard.press("Enter")
+}

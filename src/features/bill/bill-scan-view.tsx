@@ -1,26 +1,12 @@
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Card } from "@/components/ui/card.tsx"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { getLatestCatalogItemSummary } from "@/core/modules/bill-line/bill-line-utils.ts"
-import type { CatalogCategoryRow } from "@/core/modules/catalog-category/catalog-category.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
-import {
-  findCatalogItemsByScanCode,
-  getStaffDisplayName,
-} from "@/core/modules/catalog-item/catalog-item-utils.ts"
-import type {
-  FiatCurrency as FiatCurrencyType,
-  PositiveNumber,
-} from "@/core/modules/shared/schema.ts"
-import { CreateCatalogItemDialog } from "@/features/bill/create-catalog-item-dialog.tsx"
+import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import type { PositiveNumber } from "@/core/modules/shared/schema.ts"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
-import { ScanCodeCollisionDialog } from "@/features/bill/scan-code-collision-dialog.tsx"
 import { ScanCodeScanner } from "@/features/scanner/scan-code-scanner.tsx"
-import {
-  useConfirmDialog,
-  useIsConfirmDialogOpen,
-} from "@/hooks/use-confirm-dialog.ts"
-import { useProductLookup } from "@/hooks/use-product-lookup.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
@@ -30,23 +16,24 @@ import { cn } from "@/lib/utils.ts"
  * scanner on top, and a panel below showing only the most recently scanned
  * item (its running quantity in the cart plus the usual +/- controls) — the
  * full cart contents stay in the bottom summary, same as in the regular
- * grid view.
+ * grid view. What a scan does, and its dialogs, live in
+ * `useBillScanHandler`, which the hardware scanner shares.
  */
 export function BillScanView({
-  currencyItems,
-  categories,
-  currency,
+  lastScanned,
+  paused,
   summaries,
   locale,
+  onScan,
   onAdd,
   onAddQuantity,
   onRemove,
 }: {
-  readonly currencyItems: ReadonlyArray<CatalogItemRow>
-  readonly categories: ReadonlyArray<CatalogCategoryRow>
-  readonly currency: FiatCurrencyType
+  readonly lastScanned: CatalogItemRow | null
+  readonly paused: boolean
   readonly summaries: ReadonlyArray<BillLineSummary>
   readonly locale: string
+  readonly onScan: (rawValue: string) => void
   readonly onAdd: (catalogItem: CatalogItemRow) => void
   readonly onAddQuantity: (
     catalogItem: CatalogItemRow,
@@ -55,49 +42,6 @@ export function BillScanView({
   readonly onRemove: (summary: BillLineSummary) => void
 }) {
   const { t } = useTranslation()
-  const confirm = useConfirmDialog()
-  const isConfirmDialogOpen = useIsConfirmDialogOpen()
-  const [lastScanned, setLastScanned] = useState<CatalogItemRow | null>(null)
-  const [collisionCandidates, setCollisionCandidates] = useState<
-    ReadonlyArray<CatalogItemRow>
-  >([])
-  const [createDialogCode, setCreateDialogCode] = useState<string | null>(null)
-  // Set as soon as an unknown code is scanned, so the lookup runs while the
-  // "unknown code" confirm is still open and the form opens prefilled.
-  const [lookupCode, setLookupCode] = useState<string | null>(null)
-  const productLookup = useProductLookup(lookupCode)
-
-  const handleScan = useCallback(
-    (rawValue: string) => {
-      const matches = findCatalogItemsByScanCode(currencyItems, rawValue)
-
-      if (matches.length === 0) {
-        setLookupCode(rawValue)
-        void (async () => {
-          const confirmed = await confirm({
-            title: t("bill.scan.unknown.title"),
-            description: <UnknownCodeDescription code={rawValue} />,
-            confirmLabel: t("bill.scan.unknown.create"),
-            cancelLabel: t("bill.scan.unknown.cancel"),
-          })
-          if (confirmed) setCreateDialogCode(rawValue)
-          else setLookupCode(null)
-        })()
-        return
-      }
-
-      if (matches.length > 1) {
-        setCollisionCandidates(matches)
-        return
-      }
-
-      const [item] = matches
-      if (item === undefined) return
-      setLastScanned(item)
-      onAdd(item)
-    },
-    [currencyItems, onAdd, confirm, t]
-  )
 
   const matchingSummaries = useMemo(
     () =>
@@ -117,15 +61,10 @@ export function BillScanView({
       ? undefined
       : getLatestCatalogItemSummary(matchingSummaries, lastScanned.id)
 
-  const dialogsOpen =
-    isConfirmDialogOpen ||
-    collisionCandidates.length > 0 ||
-    createDialogCode !== null
-
   return (
     <div className="flex h-full flex-col">
       <div className="relative h-96 shrink-0 overflow-hidden rounded-lg bg-black sm:h-[28rem]">
-        <ScanCodeScanner onScan={handleScan} paused={dialogsOpen} />
+        <ScanCodeScanner onScan={onScan} paused={paused} />
       </div>
 
       <div className="mt-2 flex-1 overflow-y-auto pb-4">
@@ -173,71 +112,6 @@ export function BillScanView({
           </Card>
         )}
       </div>
-
-      <ScanCodeCollisionDialog
-        open={collisionCandidates.length > 0}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) setCollisionCandidates([])
-        }}
-        candidates={collisionCandidates}
-        onSelect={(item) => {
-          setCollisionCandidates([])
-          setLastScanned(item)
-          onAdd(item)
-        }}
-      />
-
-      <CreateCatalogItemDialog
-        open={createDialogCode !== null}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setCreateDialogCode(null)
-            setLookupCode(null)
-          }
-        }}
-        scanCode={createDialogCode ?? ""}
-        productLookup={productLookup}
-        currency={currency}
-        categories={categories}
-        onCreated={(item) => {
-          setCreateDialogCode(null)
-          setLookupCode(null)
-          setLastScanned(item)
-          onAdd(item)
-        }}
-      />
     </div>
-  )
-}
-
-/**
- * Rendered by the global confirm host, outside this view, so it subscribes to
- * the lookup itself — same query key as `BillScanView`'s, so it shares that
- * request and fills in the moment the product is recognized.
- */
-function UnknownCodeDescription({ code }: { readonly code: string }) {
-  const { t } = useTranslation()
-  const { product, isFetching } = useProductLookup(code)
-
-  return (
-    <>
-      {t("bill.scan.unknown.description", { code })}
-      {isFetching ? (
-        <span className="mt-3 block">{t("bill.scan.lookup.loading")}</span>
-      ) : product !== undefined ? (
-        <span className="mt-3 block">
-          {t("bill.scan.unknown.match")}
-          <span className="block font-medium text-foreground">
-            {product.name}
-          </span>
-          {product.description !== null && (
-            <span className="block">{product.description}</span>
-          )}
-          <span className="mt-1 block text-xs">
-            {t("bill.scan.lookup.source", { source: product.source })}
-          </span>
-        </span>
-      ) : null}
-    </>
   )
 }

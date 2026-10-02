@@ -40,7 +40,8 @@ no storno, so a tip that sale did report stays in EET, which errs toward
 reporting more than was sold. A reversal waits for good if a sale of its
 payment is never confirmed. A reversal created while EET is off, or in
 another environment or for another taxpayer than its sale, is never sent and
-is listed among the unconfirmed sales in the EET settings.
+is listed among the unconfirmed sales in the EET settings. A tip refund
+reverses no more than it returned (see payment/0003).
 
 ## Enforced by
 

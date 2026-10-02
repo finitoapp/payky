@@ -1,7 +1,10 @@
 import { type SqliteBoolean, sqliteTrue } from "@evolu/common"
 
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
-import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
+import {
+  deriveReceivedTipAmount,
+  roundCashAmount,
+} from "@/core/modules/payment/payment-cash-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import type {
@@ -23,14 +26,26 @@ export const deriveRefundableAmount = ({
   cashReceivedAmount,
   excess,
   tipAmount,
+  currency,
 }: {
   readonly amount: NonNegativeInteger
   readonly cashReceivedAmount: NonNegativeInteger | null
   readonly excess: NonNegativeInteger
   readonly tipAmount: NonNegativeInteger
+  readonly currency: FiatCurrency
 }): NonNegativeInteger =>
   NonNegativeInteger(
-    Math.max(0, (cashReceivedAmount ?? amount) + excess - tipAmount)
+    Math.max(
+      0,
+      (cashReceivedAmount ?? amount) +
+        excess -
+        deriveReceivedTipAmount({
+          amount,
+          tipAmount,
+          cashReceivedAmount,
+          currency,
+        })
+    )
   )
 
 export const isTipRefund = ({
@@ -48,13 +63,26 @@ export const sumGoodsRefundAmounts = (
   sumRefundAmounts(refunds.filter((refund) => !isTipRefund(refund)))
 
 export const deriveRefundableTipAmount = ({
+  amount,
   tipAmount,
+  cashReceivedAmount,
+  currency,
   refunds,
 }: {
+  readonly amount: NonNegativeInteger
   readonly tipAmount: NonNegativeInteger
+  readonly cashReceivedAmount: NonNegativeInteger | null
+  readonly currency: FiatCurrency
   readonly refunds: ReadonlyArray<{ readonly isTip: SqliteBoolean | null }>
 }): NonNegativeInteger =>
-  refunds.some(isTipRefund) ? NonNegativeInteger(0) : tipAmount
+  refunds.some(isTipRefund)
+    ? NonNegativeInteger(0)
+    : deriveReceivedTipAmount({
+        amount,
+        tipAmount,
+        cashReceivedAmount,
+        currency,
+      })
 
 export const deriveRefundPrefillAmount = ({
   remainingAmount,
@@ -140,6 +168,7 @@ export const summarizeRefundsByPayment = (
         cashReceivedAmount: refund.cashReceivedAmount,
         excess,
         tipAmount: refund.paymentTipAmount,
+        currency: refund.paymentCurrency,
       }),
       currency: refund.currency,
     })

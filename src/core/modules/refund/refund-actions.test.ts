@@ -482,6 +482,37 @@ describe("refundPayment", () => {
 })
 
 describe("refunds of a payment with a tip", () => {
+  test("split cash into the goods in whole crowns and the tip", async () => {
+    await using context = await createRefundContext()
+    const paymentId = await context.createTestPayment({
+      amount: 5_828,
+      tipAmount: 278,
+    })
+    await context.settleInCash(paymentId, 5_800)
+
+    await expect(
+      refundOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+        amount: NonNegativeInteger(5_700),
+      })
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "RefundAmountInvalid", remainingAmount: 5_600 },
+    })
+    await expect(
+      refundTipOf(context, {
+        paymentId,
+        method: "cashRegister",
+        deviceId: null,
+      })
+    ).resolves.toMatchObject({ ok: true })
+    await expect(
+      context.evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
+    ).resolves.toMatchObject([{ amount: 200, isTip: sqliteTrue }])
+  })
+
   test("leave the tip out of a refund by amount", async () => {
     await using context = await createRefundContext()
     const paymentId = await context.createTestPayment({
@@ -528,18 +559,18 @@ describe("refunds of a payment with a tip", () => {
         paymentId,
         method: "cashRegister",
         deviceId: null,
-        amount: NonNegativeInteger(24_100),
+        amount: NonNegativeInteger(23_100),
       })
     ).resolves.toMatchObject({
       ok: false,
-      error: { type: "RefundAmountInvalid", remainingAmount: 24_000 },
+      error: { type: "RefundAmountInvalid", remainingAmount: 23_000 },
     })
     await expect(
       refundOf(context, {
         paymentId,
         method: "cashRegister",
         deviceId: null,
-        amount: NonNegativeInteger(24_000),
+        amount: NonNegativeInteger(23_000),
       })
     ).resolves.toMatchObject({ ok: true })
   })

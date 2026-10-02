@@ -475,6 +475,27 @@ describe("createEetSale", () => {
     }
   )
 
+  test("reports the goods in whole crowns when cash takes part of the tip", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using run = testCreateRun(context.deps)
+    const cashSale = {
+      amount: NonNegativeInteger(5_828),
+      tipAmount: NonNegativeInteger(278),
+      cashReceivedAmount: NonNegativeInteger(5_800),
+    }
+    const businessTip = await createSaleForNewPayment(context, cashSale)
+    await run.ok(saveEetTipOwner("employees"))
+    const employeesTip = await createSaleForNewPayment(context, cashSale)
+
+    await expect(
+      context.deps.evolu.loadQuery(eetSaleByIdQuery(businessTip))
+    ).resolves.toMatchObject([{ amount: 5_800, reportedTipAmount: 200 }])
+    await expect(
+      context.deps.evolu.loadQuery(eetSaleByIdQuery(employeesTip))
+    ).resolves.toMatchObject([{ amount: 5_600, reportedTipAmount: 0 }])
+  })
+
   test("leaves the tip out of the cash received while tips belong to employees", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
@@ -491,7 +512,7 @@ describe("createEetSale", () => {
     )
 
     expect(context.responder.requests).toMatchObject([
-      { data: { celk_trzba: "101.00" } },
+      { data: { celk_trzba: "100.00" } },
     ])
   })
 })
@@ -1042,6 +1063,26 @@ describe("createEetReversal", () => {
     await expect(
       context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
     ).resolves.toMatchObject([{ amount: 2_000 }])
+  })
+
+  test("reverses no more of a tip than its refund returned", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context, {
+      tipAmount: NonNegativeInteger(278),
+    })
+
+    const reversalId = await reverseRefund(context, {
+      paymentId,
+      saleId,
+      amount: 200,
+      isTip: sqliteTrue,
+    })
+
+    if (reversalId === null) throw new Error("Expected a reversal.")
+    await expect(
+      context.deps.evolu.loadQuery(eetReversalByIdQuery(reversalId))
+    ).resolves.toMatchObject([{ amount: 200 }])
   })
 
   test("reverses no tip refund of a sale that recorded no reported tip", async () => {

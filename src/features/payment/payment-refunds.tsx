@@ -165,7 +165,7 @@ export function PaymentDetailRefunds({
     Math.max(0, refundableAmount - sumGoodsRefundAmounts(refunds))
   )
   const refundableTipAmount = deriveRefundableTipAmount({
-    tipAmount: payment.tipAmount,
+    ...payment,
     refunds,
   })
   const refundableLines =

@@ -36,4 +36,4 @@ the exact tip, also from the cash register.
 ## Enforced by
 
 - `src/core/modules/refund/refund-utils.test.ts > deriveRefundPrefillAmount > prefills $prefill of $remaining $currency left for a refund $method`
-- `e2e/eet.spec.ts > a refunded tip reaches EET only while tips belong to the business`
+- `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

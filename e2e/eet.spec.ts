@@ -557,7 +557,7 @@ test("tips that belong to employees are left out of the reported sale", async ({
     await waitForLocalWriteToSettle(page)
   })
 
-  await test.step("a payment with a 10% tip is reported without the tip", async () => {
+  await test.step("a cash payment with a 10% tip is reported as its goods in whole crowns", async () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await enterAmount(page, "en")
     await page
@@ -574,7 +574,7 @@ test("tips that belong to employees are left out of the reported sale", async ({
     await enterCashReceived(page, "en", "6.49")
     await markCashPaidAndSettle(page, "en")
 
-    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("5.90")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("6.00")
   })
 })
 
@@ -624,25 +624,15 @@ test("a refunded tip reaches EET only while tips belong to the business", async 
     const refundDialog = await openRefundDialog(page, "en")
     await expect(
       refundDialog.getByText(
-        translate("en", "refund.dialog.tipHint").replace("{amount}", "CZK 0.59")
+        translate("en", "refund.dialog.tipHint").replace("{amount}", "CZK 0.49")
       )
     ).toBeVisible()
-    const refundAmount = refundDialog.getByLabel(
-      translate("en", "refund.dialog.amount.label")
-    )
-    await expect(refundAmount).toHaveValue("5")
-    await refundDialog
-      .getByRole("button", {
-        name: translate("en", "refund.dialog.method.outside"),
-      })
-      .click()
-    await expect(refundAmount).toHaveValue("5.9")
     await refundDialog
       .getByRole("button", { name: translate("en", "refund.dialog.cancel") })
       .click()
     await expect(refundDialog).toBeHidden()
     await refundTipFromPaymentDetail(page, "en")
-    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-0.59")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-0.49")
     await expect(page.getByTestId("payment-detail-refund")).toContainText(
       translate("en", "paymentDetail.refunds.tip")
     )
@@ -657,13 +647,13 @@ test("a refunded tip reaches EET only while tips belong to the business", async 
     )
     await waitForLocalWriteToSettle(page)
     const paymentId = await payWithTip()
-    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("5.90")
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("6.00")
     const sentBefore = reportedAmounts().length
     await openPaymentDetail(page, paymentId)
     await refundTipFromPaymentDetail(page, "en")
     await refundFromPaymentDetail(page, "en", { outside: true })
-    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-5.90")
-    expect(reportedAmounts().slice(sentBefore)).toEqual(["-5.90"])
+    await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-6.00")
+    expect(reportedAmounts().slice(sentBefore)).toEqual(["-6.00"])
   })
 })
 
@@ -837,6 +827,21 @@ test("a payment settled twice reports the extra money, and refunding it reverses
 
   await test.step("the refund offers the extra money and reverses only it", async () => {
     const extraSale = fakeEet.production.requests.at(1)
+    const refundDialog = await openRefundDialog(page, "en")
+    const refundAmount = refundDialog.getByLabel(
+      translate("en", "refund.dialog.amount.label")
+    )
+    await expect(refundAmount).toHaveValue("6")
+    await refundDialog
+      .getByRole("button", {
+        name: translate("en", "refund.dialog.method.outside"),
+      })
+      .click()
+    await expect(refundAmount).toHaveValue("5.9")
+    await refundDialog
+      .getByRole("button", { name: translate("en", "refund.dialog.cancel") })
+      .click()
+    await expect(refundDialog).toBeHidden()
     await refundFromPaymentDetail(page, "en", { outside: true })
     await expect
       .poll(lastReportedAmount, eetDeliveryTimeout)

@@ -60,6 +60,7 @@ import {
   resolveEetEnvironment,
   toEetCashRegisterId,
 } from "@/core/modules/eet/eet-utils.ts"
+import { deriveReceivedTipAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { RefundId } from "@/core/modules/refund/refund-types.ts"
@@ -437,7 +438,10 @@ export const createEetSale = ({
       payment.method === "cashRegister"
         ? (payment.cashReceivedAmount ?? payment.amount)
         : payment.firstSettlementValue,
-    tipAmount: payment.tipAmount,
+    tipAmount:
+      payment.method === "cashRegister"
+        ? deriveReceivedTipAmount(payment)
+        : payment.tipAmount,
   })
 }
 
@@ -754,7 +758,7 @@ export const createEetReversal =
       .filter(({ unsupportedReason }) => unsupportedReason === null)
       .reduce((sum, paymentSale) => sum + paymentSale.amount, 0)
     const reversibleAmount = isTipRefund(refund)
-      ? (sale.reportedTipAmount ?? 0)
+      ? Math.min(refund.amount, sale.reportedTipAmount ?? 0)
       : refund.amount
     const amount = Math.min(reversibleAmount, reportedAmount - reversedAmount)
     if (amount <= 0) return ok(null)

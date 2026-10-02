@@ -33,7 +33,8 @@ Returning everything takes two confirmations, one for the goods and one for
 the tip, in either order. While goods remain, staff can still enter the
 tip's amount as goods, which is reversed as goods. The separate action and a
 note in the refund dialog are what steer them to the tip refund. How a tip
-refund reaches EET is eet/0011.
+refund reaches EET is eet/0011. In cash, the whole tip is the tip the cash
+brought above the goods (see payment/0003).
 
 ## Enforced by
 

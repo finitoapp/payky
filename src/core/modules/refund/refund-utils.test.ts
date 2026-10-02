@@ -35,6 +35,7 @@ describe("deriveRefundableAmount", () => {
         cashReceivedAmount: NonNegativeInteger(7_900),
         excess: NonNegativeInteger(0),
         tipAmount: NonNegativeInteger(0),
+        currency: "CZK",
       })
     ).toBe(7_900)
     expect(
@@ -43,6 +44,7 @@ describe("deriveRefundableAmount", () => {
         cashReceivedAmount: null,
         excess: NonNegativeInteger(0),
         tipAmount: NonNegativeInteger(0),
+        currency: "CZK",
       })
     ).toBe(7_890)
   })
@@ -54,6 +56,7 @@ describe("deriveRefundableAmount", () => {
         cashReceivedAmount: NonNegativeInteger(25_000),
         excess: NonNegativeInteger(25_000),
         tipAmount: NonNegativeInteger(0),
+        currency: "CZK",
       })
     ).toBe(50_000)
   })
@@ -65,6 +68,7 @@ describe("deriveRefundableAmount", () => {
         cashReceivedAmount: null,
         excess: NonNegativeInteger(0),
         tipAmount: NonNegativeInteger(2_000),
+        currency: "CZK",
       })
     ).toBe(23_000)
     expect(
@@ -73,6 +77,7 @@ describe("deriveRefundableAmount", () => {
         cashReceivedAmount: NonNegativeInteger(25_000),
         excess: NonNegativeInteger(0),
         tipAmount: NonNegativeInteger(2_000),
+        currency: "CZK",
       })
     ).toBe(23_000)
   })
@@ -80,20 +85,41 @@ describe("deriveRefundableAmount", () => {
 
 describe("deriveRefundableTipAmount", () => {
   test("offers the whole tip until a tip refund returns it", () => {
-    const tipAmount = NonNegativeInteger(2_000)
-    expect(deriveRefundableTipAmount({ tipAmount, refunds: [] })).toBe(2_000)
+    const payment = {
+      amount: NonNegativeInteger(25_000),
+      tipAmount: NonNegativeInteger(2_000),
+      cashReceivedAmount: null,
+      currency: "CZK",
+    } as const
+    expect(deriveRefundableTipAmount({ ...payment, refunds: [] })).toBe(2_000)
     expect(
-      deriveRefundableTipAmount({ tipAmount, refunds: [{ isTip: null }] })
+      deriveRefundableTipAmount({ ...payment, refunds: [{ isTip: null }] })
     ).toBe(2_000)
     expect(
-      deriveRefundableTipAmount({ tipAmount, refunds: [{ isTip: sqliteTrue }] })
+      deriveRefundableTipAmount({
+        ...payment,
+        refunds: [{ isTip: sqliteTrue }],
+      })
     ).toBe(0)
     expect(
       deriveRefundableTipAmount({
+        ...payment,
         tipAmount: NonNegativeInteger(0),
         refunds: [],
       })
     ).toBe(0)
+  })
+
+  test("offers the tip the cash brought above the goods in whole crowns", () => {
+    expect(
+      deriveRefundableTipAmount({
+        amount: NonNegativeInteger(5_828),
+        tipAmount: NonNegativeInteger(278),
+        cashReceivedAmount: NonNegativeInteger(5_800),
+        currency: "CZK",
+        refunds: [],
+      })
+    ).toBe(200)
   })
 })
 

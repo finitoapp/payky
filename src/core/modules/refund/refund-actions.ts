@@ -393,10 +393,7 @@ export const refundPaymentTip =
     const payment = paymentResult.value
 
     const refunds = await evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
-    const tipAmount = deriveRefundableTipAmount({
-      tipAmount: payment.tipAmount,
-      refunds,
-    })
+    const tipAmount = deriveRefundableTipAmount({ ...payment, refunds })
     if (tipAmount === 0) {
       return err(createRefundTipUnavailableError({ paymentId }))
     }

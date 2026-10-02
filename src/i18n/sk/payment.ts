@@ -7,6 +7,7 @@ export const skPayment = {
   "payment.status.paid": "Zaplatené",
   "payment.status.pending": "Čaká",
   "paymentDetail.cashReceived": "Prijaté v hotovosti {amount}",
+  "paymentDetail.eet.amount": "Odoslaná suma",
   "paymentDetail.eet.cashRegister": "Označenie pokladnice",
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "Chyba EET {code}: {message}",

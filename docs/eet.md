@@ -181,9 +181,9 @@ immediately, also when the event arrives while an attempt is in flight. `rejecte
 **Overdue**: `pending` or `rejected` more than 48 h after `saleAt`. Shown as
 a badge suffix and a warning on the payment detail.
 
-Status is shown on the payment detail (with FIK, warnings, last error,
-technical ids), per payment on the bill detail, and all unconfirmed sales of
-the account are listed in Settings → EET.
+Status is shown on the payment detail (with the amount sent, FIK, warnings,
+last error, technical ids), per payment on the bill detail, and all
+unconfirmed sales of the account are listed in Settings → EET.
 
 ## Manual retry
 

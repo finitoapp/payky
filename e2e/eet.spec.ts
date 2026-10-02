@@ -711,6 +711,11 @@ test("a cash sale is reported as the cash received", async ({ page }) => {
         )
       )
     ).toBeVisible()
+    const eetCard = page.getByTestId("payment-detail-eet")
+    await expect(
+      eetCard.getByText(translate("en", "paymentDetail.eet.amount"))
+    ).toBeVisible()
+    await expect(eetCard.getByText("CZK 80.00")).toBeVisible()
   })
 })
 

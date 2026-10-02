@@ -3,7 +3,6 @@ import {
   type LockManagerDep,
   type MutationOptions,
   ok,
-  type SqliteBoolean,
   sqliteFalse,
   sqliteTrue,
   type Task,
@@ -727,7 +726,7 @@ export const createEetReversal =
       readonly id: RefundId
       readonly paymentId: PaymentId
       readonly amount: NonNegativeInteger
-      readonly isTip: SqliteBoolean | null
+      readonly isTip: typeof sqliteTrue | null
       readonly refundedAt: TimestampMs
       readonly saleId: EetSaleId
     }

@@ -337,7 +337,6 @@ export const refundPayment =
           currency: payment.currency,
           method,
           refundedAt,
-          isTip: sqliteFalse,
           isDeleted: sqliteFalse,
         },
         mutationOptions

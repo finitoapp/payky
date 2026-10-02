@@ -1,4 +1,3 @@
-import { SqliteBoolean } from "@evolu/common"
 import type { IndexesConfig } from "@evolu/common/local-first"
 
 import { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -14,6 +13,7 @@ import {
   type InferTable,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
+  SqliteTrueSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
@@ -25,7 +25,7 @@ export const refund = {
   currency: FiatCurrencySchema,
   method: RefundMethodSchema,
   refundedAt: TimestampMsSchema,
-  isTip: SqliteBoolean,
+  isTip: SqliteTrueSchema.nullable(),
 } as const
 
 export const refundLine = {

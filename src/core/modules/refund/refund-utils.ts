@@ -1,4 +1,4 @@
-import { type SqliteBoolean, sqliteTrue } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
@@ -51,13 +51,13 @@ export const deriveRefundableAmount = ({
 export const isTipRefund = ({
   isTip,
 }: {
-  readonly isTip: SqliteBoolean | null
+  readonly isTip: typeof sqliteTrue | null
 }): boolean => isTip === sqliteTrue
 
 export const sumGoodsRefundAmounts = (
   refunds: ReadonlyArray<{
     readonly amount: NonNegativeInteger
-    readonly isTip: SqliteBoolean | null
+    readonly isTip: typeof sqliteTrue | null
   }>
 ): NonNegativeInteger =>
   sumRefundAmounts(refunds.filter((refund) => !isTipRefund(refund)))
@@ -73,7 +73,7 @@ export const deriveRefundableTipAmount = ({
   readonly tipAmount: NonNegativeInteger
   readonly cashReceivedAmount: NonNegativeInteger | null
   readonly currency: FiatCurrency
-  readonly refunds: ReadonlyArray<{ readonly isTip: SqliteBoolean | null }>
+  readonly refunds: ReadonlyArray<{ readonly isTip: typeof sqliteTrue | null }>
 }): NonNegativeInteger =>
   refunds.some(isTipRefund)
     ? NonNegativeInteger(0)
@@ -134,7 +134,7 @@ export const summarizeRefundsByPayment = (
     readonly paymentId: PaymentId
     readonly amount: NonNegativeInteger
     readonly currency: FiatCurrency
-    readonly isTip: SqliteBoolean | null
+    readonly isTip: typeof sqliteTrue | null
     readonly paymentAmount: NonNegativeInteger
     readonly paymentTipAmount: NonNegativeInteger
     readonly paymentCurrency: FiatCurrency

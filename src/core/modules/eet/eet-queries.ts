@@ -1,4 +1,9 @@
-import { type KyselyNotNull, kyselySql, sqliteTrue } from "@evolu/common"
+import {
+  evoluJsonArrayFrom,
+  type KyselyNotNull,
+  kyselySql,
+  sqliteTrue,
+} from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -7,7 +12,7 @@ import type {
   EetReversalId,
   EetSaleId,
 } from "@/core/modules/eet/eet-types.ts"
-import { createEetSaleId, eetSettingsId } from "@/core/modules/eet/eet-utils.ts"
+import { eetSettingsId } from "@/core/modules/eet/eet-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 
 const paymentSalesConfirmation = (
@@ -214,9 +219,19 @@ export const eetExtraClaimsQuery = createQuery((db) =>
       "payment.billId",
       "payment.deviceId as paymentDeviceId",
       "payment.amount as paymentAmount",
+      "payment.tipAmount as paymentTipAmount",
       "payment.currency as paymentCurrency",
       "paymentBtc.amountSats as paymentAmountSats",
       "eetSettings.enabledAt",
+      "eetSettings.tipOwner",
+      evoluJsonArrayFrom(
+        eb
+          .selectFrom("eetSale")
+          .select("eetSale.accountTransactionId")
+          .whereRef("eetSale.paymentId", "=", "payment.id")
+          .where("eetSale.isDeleted", "is not", sqliteTrue)
+          .where("eetSale.extraFrom", "is", null)
+      ).as("sales"),
       eb
         .selectFrom("eetSale")
         .select((eb) => eb.fn.sum<number>("eetSale.amount").as("amount"))
@@ -329,6 +344,7 @@ const eetSaleColumns = [
   "eetSale.lastErrorMessage",
   "eetSale.lastGlobalTransactionId",
   "eetSale.extraFrom",
+  "eetSale.accountTransactionId",
   "eetSaleConfirmation.pok",
   "eetSaleConfirmation.receivedAt",
   "eetSaleConfirmation.isTest",
@@ -366,9 +382,6 @@ export const eetSaleByIdQuery = (saleId: EetSaleId) =>
       .where("eetSale.saleAt", "is not", null)
       .$narrowType<EetSaleRequiredColumns>()
   )
-
-export const eetSaleByPaymentIdQuery = (paymentId: PaymentId) =>
-  eetSaleByIdQuery(createEetSaleId(paymentId))
 
 export const eetSalesByPaymentIdQuery = (paymentId: PaymentId) =>
   createQuery((db) =>
@@ -465,21 +478,6 @@ export const eetRefundsToReverseQuery = createQuery((db) =>
       refundedAt: KyselyNotNull
     }>()
 )
-
-export const eetReversalsBySaleIdQuery = (saleId: EetSaleId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("eetReversal")
-      .select([
-        "eetReversal.id",
-        "eetReversal.amount",
-        "eetReversal.unsupportedReason",
-      ])
-      .where("eetReversal.saleId", "=", saleId)
-      .where("eetReversal.isDeleted", "is not", sqliteTrue)
-      .where("eetReversal.amount", "is not", null)
-      .$narrowType<{ amount: KyselyNotNull }>()
-  )
 
 export const eetReversalsToDeliverQuery = createQuery((db) =>
   db

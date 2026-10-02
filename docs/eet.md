@@ -14,7 +14,7 @@ and refund ones in [`decisions/payment/`](decisions/payment/) and
 |---|---|---|
 | `eetSettings` (one row, fixed id) | `modules/eet/eet.ts` | `enabledAt`, `environment`, `establishmentId`, `certificateId`, `tipOwner` |
 | `eetCertificate` | same | EIC, validity, DER cert + **PKCS#8 private key** (base64), `isTestCertificate` |
-| `eetSale` (id = `eetSale:<paymentId>`, or `eetSale:<paymentId>:extra:<extraFrom>` for extra money) | same | Frozen snapshot of what is reported + last attempt bookkeeping. `extraFrom` is `null` on a payment's sale |
+| `eetSale` (id = `eetSale:<paymentId>:<accountTransactionId>`, `eetSale:<paymentId>` on a sale created before sales recorded their settlement, or `eetSale:<paymentId>:extra:<extraFrom>` for extra money) | same | Frozen snapshot of what is reported + last attempt bookkeeping. `extraFrom` is `null` on a payment's sale |
 | `eetSaleConfirmation` (same id as sale) | same | FIK/`pok`, `receivedAt`, `isTest`, warnings. Its existence = confirmed |
 | `eetReversal` (id = `eetReversal:<refundId>`) | same | Frozen snapshot of the negative sale one refund reports + last attempt bookkeeping |
 | `eetReversalConfirmation` (same id as reversal) | same | Same as `eetSaleConfirmation`, for a reversal |
@@ -117,6 +117,7 @@ when a device clock is more than 5 minutes ahead of the recording device's.
 |---|---|
 | `amount` | what the first claim brought, capped at `payment.amount` (`calculateEetSettlementValue`), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
 | `saleAt` (`dat_trzby`) | first claim's `claimedAt` |
+| `accountTransactionId` | the first claim's transaction, the settlement the sale reports. `null` on an extra money sale and on a sale created before it existed |
 | `sequenceNumber` (`porad_cis`) | the payment id |
 | `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id, so one register per device |
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
@@ -203,14 +204,22 @@ anyway, so a retry from elsewhere cannot make a first-sending mark wrong.
 
 ## Extra money
 
-A payment's sale reports what its first claim brought. Its **extra money**
-is everything its claims bring beyond that: the rest of a payment the first
+A payment's sale reports what its first claim brought, as the device
+creating the sale sees the claims. Its **extra money** is everything its
+claims bring beyond what its sales report: the rest of a payment the first
 claim paid only in part, and any money above `payment.amount`. It is the
 distinct claimed transactions in the payment's currency (the valuation bill
-coverage uses) less the first claim's value capped at `payment.amount`. A
-split between cash and a transfer, two devices settling one payment through
-two methods, a transfer larger than the payment, or a second transfer
-attached by hand all bring some.
+coverage uses) less the value, each capped at `payment.amount`, of the
+settlements the payment's sales report. A sale reports the transaction its
+`accountTransactionId` names. Each sale that names none, or names one no
+active claim has, stands for the earliest settlement no sale names, and
+before the payment has a sale its first claim counts. While tips belong to
+employees and those settlements bring less than `payment.tipAmount`, the
+extra money starts above the tip instead. A split between cash and a
+transfer, a transfer larger than the payment, or a second transfer attached
+by hand all bring some. Two devices that settle one payment while cut off
+from sync each create a sale for their own settlement, so neither
+settlement is extra money.
 
 Money kept is a sale at the moment it arrives, and money returned is
 reversed, so extra money is reported when it arrives rather than held back
@@ -221,7 +230,7 @@ may have extra money, and `deriveDueEetExtraSale` turns them into the next
 | Field | Value |
 |---|---|
 | `extraFrom` | the extra money already reported: the sum of the payment's extra money sales, or the extra money brought before `enabledAt` when that is larger |
-| `amount` | the current extra money minus `extraFrom`. The tip owner does not matter, as only the payment's sale takes the tip off (see "Known gaps") |
+| `amount` | the current extra money minus `extraFrom` |
 | `method`, `saleAt` | the latest claim's, ordered by `claimedAt`, then claim id |
 | `sequenceNumber` | the extra money sale's own id |
 
@@ -250,7 +259,7 @@ sales when that came after the refund. `createEetReversal` freezes:
 
 | Field | Value |
 |---|---|
-| `amount` | for a refund of goods the refund amount, for a tip refund (`refund.isTip`) the payment's sale's `reportedTipAmount`, both capped at what the payment's supported sale and extra money sales report together minus earlier supported reversals. A tip refund of a sale that reports no tip gets no reversal. Stored positive, sent negated (`-250.00`) |
+| `amount` | for a refund of goods the refund amount, for a tip refund (`refund.isTip`) the `reportedTipAmount` of the payment's sale (of one of them when two devices each created one), both capped at what the payment's supported sales and extra money sales report together minus the payment's earlier supported reversals. A tip refund of a sale that reports no tip gets no reversal. Stored positive, sent negated (`-250.00`) |
 | `saleAt` (`dat_trzby`) | the refund's `refundedAt` |
 | `sequenceNumber` (`porad_cis`) | the refund id |
 | `cashRegisterId` (`id_pokl`) | the device that recorded the refund |
@@ -283,7 +292,7 @@ EET lists unconfirmed reversals next to unconfirmed sales.
 | EET disabled, or environment or EIC changed, when the reversal is created | Reversal `unsupported`, never sent |
 | Claim removed before creation | Not reported (query needs an active claim) |
 | Overpaid / multiple claims | One sale for the first claim, capped at `payment.amount`, and an extra money sale for the rest; a refund of the extra money reverses only that |
-| Two devices settle one payment while cut off from sync | Over-reported (see "Known gaps") |
+| Two devices settle one payment while cut off from sync | One sale per settlement, each from its own device and cash register, and no extra money sale for either. A device that receives the other's settlement before that device's sale over-reports (see "Known gaps") |
 | Refund before the extra money sale exists | The reversal waits for it, then covers the refund in full |
 | Cash rounded or change left | The sale reports the cash received (78.90 charged, 79 or 80 received); the payment, its claim and the cash register keep 78.90 |
 | Cash payment settled before the received amount was recorded | Reports `payment.amount` |
@@ -323,9 +332,8 @@ EET lists unconfirmed reversals next to unconfirmed sales.
    a compromised device leaks the signing key).
 9. **Sale time = claim time**, not when the customer paid; for an IBAN
     transfer matched later by bank sync, `dat_trzby` is the match time.
-10. **Two offline devices over-report one payment.** Each takes its own
-    settlement as the first and reports it as the payment's sale, and the
-    extra money sale later reports the second settlement again.
-11. **A tip larger than the first settlement leaks into EET.** While tips
-    belong to employees, the payment's sale takes the tip off only down to
-    `0`, and the extra money sale reports the rest of the tip.
+10. **A settlement that syncs before its sale is reported twice.** When two
+    devices settle one payment while cut off from sync, a device that
+    receives the other device's settlement before that device's sale
+    reports the settlement as extra money, and the other device's sale
+    reports it too.

@@ -2,6 +2,7 @@ import { createIdFromString } from "@evolu/common"
 import { addDays, addHours, format, parseISO } from "date-fns"
 import { z } from "zod"
 
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   type EetAttemptResult,
@@ -20,6 +21,7 @@ import {
   type EetSaleId,
   type EetSaleStatus,
   type EetSettingsId,
+  type EetTipOwner,
   type EetUnsupportedReason,
   type EetWarning,
   EetWarningSchema,
@@ -42,8 +44,14 @@ import {
 export const eetSettingsId: EetSettingsId =
   createIdFromString<"EetSettings">("payky-eet-settings")
 
-export const createEetSaleId = (paymentId: PaymentId): EetSaleId =>
-  createIdFromString<"EetSale">(`eetSale:${paymentId}`)
+export const createEetSaleId = ({
+  paymentId,
+  accountTransactionId,
+}: {
+  readonly paymentId: PaymentId
+  readonly accountTransactionId: AccountTransactionId
+}): EetSaleId =>
+  createIdFromString<"EetSale">(`eetSale:${paymentId}:${accountTransactionId}`)
 
 export const createEetExtraSaleId = ({
   paymentId,
@@ -115,11 +123,17 @@ export const calculateEetSettlementValue = ({
 export const deriveDueEetExtraSale = ({
   claims,
   amount,
+  tipAmount,
+  tipOwner,
+  saleSettlementIds,
   enabledAt,
   reportedExtra,
 }: {
   readonly claims: ReadonlyArray<EetExtraClaim>
   readonly amount: NonNegativeInteger
+  readonly tipAmount: NonNegativeInteger
+  readonly tipOwner: EetTipOwner | null
+  readonly saleSettlementIds: ReadonlyArray<AccountTransactionId | null>
   readonly enabledAt: TimestampMs
   readonly reportedExtra: NonNegativeInteger
 }): EetExtraSaleDue | null => {
@@ -132,12 +146,39 @@ export const deriveDueEetExtraSale = ({
   const latestClaim = ordered.at(-1)
   if (firstClaim === undefined || latestClaim === undefined) return null
 
-  const saleValue = calculateEetSettlementValue({
-    settlement: firstClaim,
-    amount,
-  })
+  const settlements = [
+    ...new Map(
+      ordered.map((claim) => [claim.accountTransactionId, claim])
+    ).values(),
+  ]
+  const reportedIds =
+    saleSettlementIds.length === 0
+      ? [firstClaim.accountTransactionId]
+      : saleSettlementIds
+  const hasOwnSale = ({ accountTransactionId }: EetExtraClaim) =>
+    reportedIds.includes(accountTransactionId)
+  const salesWithoutClaim = reportedIds.filter(
+    (id) =>
+      !settlements.some(
+        ({ accountTransactionId }) => accountTransactionId === id
+      )
+  ).length
+  const saleValue = [
+    ...settlements.filter(hasOwnSale),
+    ...settlements
+      .filter((settlement) => !hasOwnSale(settlement))
+      .slice(0, salesWithoutClaim),
+  ].reduce(
+    (sum, settlement) =>
+      sum + calculateEetSettlementValue({ settlement, amount }),
+    0
+  )
+  const employeesTip = tipOwner === "employees" ? tipAmount : 0
   const extraOf = (counted: ReadonlyArray<EetExtraClaim>) =>
-    Math.max(0, sumDistinctClaimedAmounts(counted) - saleValue)
+    Math.max(
+      0,
+      sumDistinctClaimedAmounts(counted) - Math.max(saleValue, employeesTip)
+    )
   const extraFrom = NonNegativeInteger(
     Math.max(
       reportedExtra,

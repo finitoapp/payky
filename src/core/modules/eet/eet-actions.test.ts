@@ -71,6 +71,7 @@ const createSaleForNewPayment = async (
         currency: "CZK",
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+        firstClaimTransactionId: createRowId<"AccountTransaction">(),
         firstSettlementValue: overrides.amount ?? NonNegativeInteger(25_000),
         ...overrides,
       },
@@ -257,10 +258,12 @@ describe("createEetSale", () => {
       })
     )
     const paymentId = createRowId<"Payment">()
+    const firstClaimTransactionId = createRowId<"AccountTransaction">()
 
     const saleId = await createSaleForNewPayment(context, {
       id: paymentId,
       billId,
+      firstClaimTransactionId,
     })
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
 
@@ -270,6 +273,7 @@ describe("createEetSale", () => {
         {
           paymentId,
           billId,
+          accountTransactionId: firstClaimTransactionId,
           deviceId: context.deviceId,
           method: "cashRegister",
           amount: 25_000,
@@ -301,12 +305,17 @@ describe("createEetSale", () => {
     await using context = await createEetTestContext()
     await configureEet(context)
     const paymentId = createRowId<"Payment">()
-    const saleId = await createSaleForNewPayment(context, { id: paymentId })
+    const firstClaimTransactionId = createRowId<"AccountTransaction">()
+    const saleId = await createSaleForNewPayment(context, {
+      id: paymentId,
+      firstClaimTransactionId,
+    })
     await using run = testCreateRun(context.deps)
     await run.ok(saveEetEstablishmentId(EetEstablishmentIdSchema.decode("77")))
 
     await createSaleForNewPayment(context, {
       id: paymentId,
+      firstClaimTransactionId,
       amount: NonNegativeInteger(1),
     })
 
@@ -776,6 +785,7 @@ describe("retryEetSale", () => {
           currency: "CZK",
           method: "cashRegister",
           firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+          firstClaimTransactionId: createRowId<"AccountTransaction">(),
           firstSettlementValue: NonNegativeInteger(25_000),
         },
         deviceId: createRowId<"Device">(),
@@ -1075,6 +1085,26 @@ describe("createEetReversal", () => {
         .map(({ amount }) => amount)
         .sort()
     ).toEqual([20_000, 5_000].sort())
+  })
+
+  test("caps refunds at what every sale of the payment reports, whichever sale they name", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const { paymentId, saleId } = await createSaleToReverse(context)
+    const otherSaleId = await createSaleForNewPayment(context, {
+      id: paymentId,
+    })
+
+    await reverseRefund(context, { paymentId, saleId, amount: 25_000 })
+    await reverseRefund(context, {
+      paymentId,
+      saleId: otherSaleId,
+      amount: 25_000,
+    })
+
+    await expect(
+      reverseRefund(context, { paymentId, saleId, amount: 100 })
+    ).resolves.toBeNull()
   })
 
   test("creates nothing for an unsupported sale", async () => {

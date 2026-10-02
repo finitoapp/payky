@@ -33,8 +33,8 @@ behavior, so an empty value reads as the business.
 A tip that belongs to employees is never reversed when it is refunded as the
 tip: the tip has its own refund (see refund/0004), and its reversal covers
 only a tip the sale reported (see eet/0011). A first settlement smaller than
-the tip reports `0.00`, and the part of the tip it could not cover is
-reported with the extra money. `docs/eet.md` lists that as a known gap.
+the tip reports `0.00`, and the rest of the tip is left out of the extra
+money (see eet/0012).
 
 ## Enforced by
 

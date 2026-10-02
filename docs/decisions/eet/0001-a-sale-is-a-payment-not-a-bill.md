@@ -14,7 +14,7 @@ several payments, and a keypad payment has no bill at all.
 ## Decision
 
 A payment whose first settlement comes while EET is on gets its own EET
-sale, and later money beyond it gets extra money sales (see eet/0006).
+sale, and later money beyond it gets extra money sales (see eet/0012).
 `docs/eet.md` lists the payments that are never reported despite this, such
 as a payment with no device, or one whose sale was not yet created when EET
 was switched off and on again. A bill paid in two payments has two sales. A

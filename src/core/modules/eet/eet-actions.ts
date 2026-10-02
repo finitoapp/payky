@@ -19,11 +19,12 @@ import type {
   EetSigningCertificate,
   EetSubmission,
 } from "@/core/integrations/eet/eet-client.ts"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   eetReversalByIdQuery,
-  eetReversalsBySaleIdQuery,
+  eetReversalsByPaymentIdQuery,
   eetSaleByIdQuery,
   eetSalesByPaymentIdQuery,
   eetSettingsQuery,
@@ -315,6 +316,7 @@ const createEetSaleRecord =
   ({
     id,
     extraFrom,
+    accountTransactionId,
     payment,
     method,
     settledAt,
@@ -325,6 +327,7 @@ const createEetSaleRecord =
   }: {
     readonly id: EetSaleId
     readonly extraFrom: NonNegativeInteger | null
+    readonly accountTransactionId: AccountTransactionId | null
     readonly payment: {
       readonly id: PaymentId
       readonly billId: BillId | null
@@ -362,6 +365,7 @@ const createEetSaleRecord =
           id,
           paymentId: payment.id,
           billId: payment.billId,
+          accountTransactionId,
           deviceId,
           method,
           amount: reportedAmount,
@@ -412,13 +416,18 @@ export const createEetSale = ({
     readonly currency: FiatCurrency
     readonly method: AccountKind
     readonly firstClaimedAt: TimestampMs
+    readonly firstClaimTransactionId: AccountTransactionId
     readonly firstSettlementValue: NonNegativeInteger
   }
   readonly deviceId: DeviceId
 }): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> => {
   return createEetSaleRecord({
-    id: createEetSaleId(payment.id),
+    id: createEetSaleId({
+      paymentId: payment.id,
+      accountTransactionId: payment.firstClaimTransactionId,
+    }),
     extraFrom: null,
+    accountTransactionId: payment.firstClaimTransactionId,
     payment,
     method: payment.method,
     settledAt: payment.firstClaimedAt,
@@ -453,6 +462,7 @@ export const createEetExtraSale = ({
   return createEetSaleRecord({
     id,
     extraFrom: due.extraFrom,
+    accountTransactionId: null,
     payment,
     method: due.claim.method,
     settledAt: due.claim.claimedAt,
@@ -731,7 +741,9 @@ export const createEetReversal =
 
     const [sale] = await evolu.loadQuery(eetSaleByIdQuery(refund.saleId))
     if (sale === undefined || sale.unsupportedReason !== null) return ok(null)
-    const reversals = await evolu.loadQuery(eetReversalsBySaleIdQuery(sale.id))
+    const reversals = await evolu.loadQuery(
+      eetReversalsByPaymentIdQuery(refund.paymentId)
+    )
     const reversedAmount = reversals
       .filter(({ unsupportedReason }) => unsupportedReason === null)
       .reduce((sum, reversal) => sum + reversal.amount, 0)

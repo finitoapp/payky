@@ -2,6 +2,7 @@ import { SqliteBoolean } from "@evolu/common"
 import type { IndexesConfig } from "@evolu/common/local-first"
 import { z } from "zod"
 
+import { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
@@ -57,6 +58,7 @@ export const eetSale = {
   id: EetSaleId,
   paymentId: PaymentId,
   billId: BillId.nullable(),
+  accountTransactionId: AccountTransactionId.nullable(),
   deviceId: DeviceId,
   method: AccountKindSchema,
   amount: NonNegativeIntegerSchema,

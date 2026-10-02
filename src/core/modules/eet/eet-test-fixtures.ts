@@ -16,6 +16,7 @@ import {
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
@@ -294,7 +295,7 @@ export const settleByTransfer = async (
     readonly amount?: number
     readonly deviceId?: DeviceId | null
   } = {}
-): Promise<void> => {
+): Promise<AccountTransactionId> => {
   await using run = testCreateRun(context.deps)
   const bankAccountId = await run.ok(
     createAccount({
@@ -320,4 +321,5 @@ export const settleByTransfer = async (
   await run.ok(
     claimManualReconciliation({ paymentId, accountTransactionId, deviceId })
   )
+  return accountTransactionId
 }

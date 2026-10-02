@@ -989,6 +989,13 @@ function PaymentDetailEetSaleCard({
             })}
           </p>
         )}
+        <PaymentDetailRow
+          label={t("paymentDetail.eet.amount")}
+          value={formatMoney(
+            { value: sale.amount, currency: sale.currency },
+            locale
+          )}
+        />
         <PaymentDetailCopyRow
           label={t("paymentDetail.eet.pok")}
           value={sale.pok}

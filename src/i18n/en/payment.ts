@@ -5,6 +5,7 @@ export const enPayment = {
   "payment.status.paid": "Paid",
   "payment.status.pending": "Pending",
   "paymentDetail.cashReceived": "Received in cash {amount}",
+  "paymentDetail.eet.amount": "Amount sent",
   "paymentDetail.eet.cashRegister": "Cash register ID",
   "paymentDetail.eet.eic": "EIČ",
   "paymentDetail.eet.errorCode": "EET error {code}: {message}",

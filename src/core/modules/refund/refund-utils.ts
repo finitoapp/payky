@@ -1,10 +1,15 @@
 import { type SqliteBoolean, sqliteTrue } from "@evolu/common"
 
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
-import type { RefundState } from "@/core/modules/refund/refund-types.ts"
+import type {
+  RefundMethod,
+  RefundState,
+} from "@/core/modules/refund/refund-types.ts"
 import { calculatePaymentExcess } from "@/core/modules/shared/claimed-amount.ts"
+import { currencyFractionDigits } from "@/core/modules/shared/money.ts"
 import {
   type Currency,
   type FiatCurrency,
@@ -54,13 +59,25 @@ export const deriveRefundableTipAmount = ({
 export const deriveRefundPrefillAmount = ({
   remainingAmount,
   excess,
+  method,
+  currency,
 }: {
   readonly remainingAmount: NonNegativeInteger
   readonly excess: NonNegativeInteger
-}): NonNegativeInteger =>
-  excess > 0
-    ? NonNegativeInteger(Math.min(excess, remainingAmount))
-    : remainingAmount
+  readonly method: RefundMethod
+  readonly currency: FiatCurrency
+}): NonNegativeInteger => {
+  const amount =
+    excess > 0
+      ? NonNegativeInteger(Math.min(excess, remainingAmount))
+      : remainingAmount
+  if (method !== "cashRegister") return amount
+
+  const rounded = roundCashAmount({ amount, currency })
+  return rounded > remainingAmount
+    ? NonNegativeInteger(rounded - 10 ** currencyFractionDigits[currency])
+    : rounded
+}
 
 export const sumRefundAmounts = (
   refunds: ReadonlyArray<{ readonly amount: NonNegativeInteger }>

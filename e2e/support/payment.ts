@@ -225,9 +225,19 @@ export async function openRefundDialog(
 export async function refundFromPaymentDetail(
   page: Page,
   language: Language,
-  { items = [] }: { readonly items?: ReadonlyArray<string> } = {}
+  {
+    items = [],
+    outside = false,
+  }: { readonly items?: ReadonlyArray<string>; readonly outside?: boolean } = {}
 ): Promise<void> {
   const dialog = await openRefundDialog(page, language)
+  if (outside) {
+    await dialog
+      .getByRole("button", {
+        name: translate(language, "refund.dialog.method.outside"),
+      })
+      .click()
+  }
   if (items.length > 0) {
     await dialog
       .getByRole("button", {

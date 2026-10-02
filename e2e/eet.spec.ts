@@ -627,6 +627,16 @@ test("a refunded tip reaches EET only while tips belong to the business", async 
         translate("en", "refund.dialog.tipHint").replace("{amount}", "CZK 0.59")
       )
     ).toBeVisible()
+    const refundAmount = refundDialog.getByLabel(
+      translate("en", "refund.dialog.amount.label")
+    )
+    await expect(refundAmount).toHaveValue("5")
+    await refundDialog
+      .getByRole("button", {
+        name: translate("en", "refund.dialog.method.outside"),
+      })
+      .click()
+    await expect(refundAmount).toHaveValue("5.9")
     await refundDialog
       .getByRole("button", { name: translate("en", "refund.dialog.cancel") })
       .click()
@@ -651,7 +661,7 @@ test("a refunded tip reaches EET only while tips belong to the business", async 
     const sentBefore = reportedAmounts().length
     await openPaymentDetail(page, paymentId)
     await refundTipFromPaymentDetail(page, "en")
-    await refundFromPaymentDetail(page, "en")
+    await refundFromPaymentDetail(page, "en", { outside: true })
     await expect.poll(lastReportedAmount, eetDeliveryTimeout).toBe("-5.90")
     expect(reportedAmounts().slice(sentBefore)).toEqual(["-5.90"])
   })
@@ -822,7 +832,7 @@ test("a payment settled twice reports the extra money, and refunding it reverses
 
   await test.step("the refund offers the extra money and reverses only it", async () => {
     const extraSale = fakeEet.production.requests.at(1)
-    await refundFromPaymentDetail(page, "en")
+    await refundFromPaymentDetail(page, "en", { outside: true })
     await expect
       .poll(lastReportedAmount, eetDeliveryTimeout)
       .toBe(`-${extraSale?.data.celk_trzba}`)

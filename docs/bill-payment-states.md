@@ -187,7 +187,9 @@ above what is left: the cash received for a cash payment with a received
 amount, the payment's `amount` otherwise, plus what its claims brought
 beyond `amount`, less the payment's `tipAmount` and every earlier refund of
 goods. When there is such an excess, the refund dialog prefills it, capped
-at what is left.
+at what is left. A refund of a CZK payment from the cash register is
+prefilled in whole crowns, never above what is left (see
+[`refund/0006`](decisions/refund/0006-a-cash-refund-is-offered-in-whole-crowns.md)).
 
 The tip is refunded on its own: `refundPaymentTip` returns the whole
 `tipAmount` as a refund with `isTip` set, once per payment (its id is

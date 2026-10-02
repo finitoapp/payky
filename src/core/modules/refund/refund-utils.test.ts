@@ -109,6 +109,48 @@ describe("deriveRefundPrefillAmount", () => {
         deriveRefundPrefillAmount({
           remainingAmount: NonNegativeInteger(remaining),
           excess: NonNegativeInteger(excess),
+          method: "outside",
+          currency: "CZK",
+        })
+      ).toBe(prefill)
+    }
+  )
+
+  test.each([
+    {
+      remaining: 5_525,
+      method: "cashRegister",
+      currency: "CZK",
+      prefill: 5_500,
+    },
+    {
+      remaining: 7_900,
+      method: "cashRegister",
+      currency: "CZK",
+      prefill: 7_900,
+    },
+    {
+      remaining: 5_550,
+      method: "cashRegister",
+      currency: "CZK",
+      prefill: 5_500,
+    },
+    { remaining: 5_525, method: "outside", currency: "CZK", prefill: 5_525 },
+    {
+      remaining: 5_525,
+      method: "cashRegister",
+      currency: "EUR",
+      prefill: 5_525,
+    },
+  ] as const)(
+    "prefills $prefill of $remaining $currency left for a refund $method",
+    ({ remaining, method, currency, prefill }) => {
+      expect(
+        deriveRefundPrefillAmount({
+          remainingAmount: NonNegativeInteger(remaining),
+          excess: NonNegativeInteger(0),
+          method,
+          currency,
         })
       ).toBe(prefill)
     }

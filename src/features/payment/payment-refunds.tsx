@@ -277,7 +277,7 @@ export function PaymentDetailRefunds({
           paymentId={payment.id}
           currency={payment.currency}
           remainingAmount={remainingAmount}
-          prefillAmount={deriveRefundPrefillAmount({ remainingAmount, excess })}
+          excess={excess}
           refundableLines={refundableLines}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
@@ -301,7 +301,7 @@ function RefundDialog({
   paymentId,
   currency,
   remainingAmount,
-  prefillAmount,
+  excess,
   refundableLines,
   tipAmount,
   defaultMethod,
@@ -310,7 +310,7 @@ function RefundDialog({
   readonly paymentId: PaymentId
   readonly currency: FiatCurrency
   readonly remainingAmount: NonNegativeInteger
-  readonly prefillAmount: NonNegativeInteger
+  readonly excess: NonNegativeInteger
   readonly refundableLines: ReadonlyArray<RefundableLine<RefundablePaymentLine>>
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
@@ -322,9 +322,18 @@ function RefundDialog({
   const jotaiStore = useStore()
   const [mode, setMode] = useState<RefundMode>("amount")
   const [method, setMethod] = useState<RefundMethod>(defaultMethod)
-  const [amountText, setAmountText] = useState<string>(() =>
-    minorUnitsToDecimalString({ value: prefillAmount, currency })
-  )
+  const [typedAmountText, setTypedAmountText] = useState<string | null>(null)
+  const amountText =
+    typedAmountText ??
+    minorUnitsToDecimalString({
+      value: deriveRefundPrefillAmount({
+        remainingAmount,
+        excess,
+        method,
+        currency,
+      }),
+      currency,
+    })
   const [quantities, setQuantities] = useState<
     Readonly<Partial<Record<PaymentLineId, number>>>
   >({})
@@ -456,7 +465,9 @@ function RefundDialog({
                 autoComplete="off"
                 disabled={pending}
                 aria-invalid={typedAmount === null}
-                onChange={(event) => setAmountText(event.currentTarget.value)}
+                onChange={(event) =>
+                  setTypedAmountText(event.currentTarget.value)
+                }
               />
               <FieldError>
                 {typedAmount === null

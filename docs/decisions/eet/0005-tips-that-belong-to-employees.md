@@ -34,7 +34,8 @@ A tip that belongs to employees is never reversed when it is refunded as the
 tip: the tip has its own refund (see refund/0004), and its reversal covers
 only a tip the sale reported (see eet/0011). A first settlement smaller than
 the tip reports `0.00`, and the rest of the tip is left out of the extra
-money (see eet/0012).
+money (see eet/0012). In cash, the tip is what the cash received brought
+above the goods in whole crowns (see payment/0003).
 
 ## Enforced by
 

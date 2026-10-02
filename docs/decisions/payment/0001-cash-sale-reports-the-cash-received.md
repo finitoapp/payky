@@ -29,7 +29,8 @@ underpaid and still open, and ask staff to deal with the difference.
 The cash register balance drifts from the cash in the drawer by the rounding
 differences, and no view shows that drift. The payment detail shows a
 payment's cash received when it differs from the charge. A cash payment
-settled before the received amount was recorded reports its charge.
+settled before the received amount was recorded reports its charge. With a
+tip, the cash above the goods in whole crowns is the tip (see payment/0003).
 
 ## Enforced by
 

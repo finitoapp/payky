@@ -185,14 +185,16 @@ goods only.
 `refundPayment` refuses a payment that is not Paid and an amount of zero or
 above what is left: the cash received for a cash payment with a received
 amount, the payment's `amount` otherwise, plus what its claims brought
-beyond `amount`, less the payment's `tipAmount` and every earlier refund of
-goods. When there is such an excess, the refund dialog prefills it, capped
+beyond `amount`, less the payment's tip and every earlier refund of goods.
+In cash with a received amount, the tip is what the cash brought above the
+goods rounded to whole crowns (see
+[`payment/0003`](decisions/payment/0003-a-cash-tip-is-what-the-goods-leave.md)). When there is such an excess, the refund dialog prefills it, capped
 at what is left. A refund of a CZK payment from the cash register is
 prefilled in whole crowns, never above what is left (see
 [`refund/0006`](decisions/refund/0006-a-cash-refund-is-offered-in-whole-crowns.md)).
 
-The tip is refunded on its own: `refundPaymentTip` returns the whole
-`tipAmount` as a refund with `isTip` set, once per payment (its id is
+The tip is refunded on its own: `refundPaymentTip` returns the whole tip as
+a refund with `isTip` set, once per payment (its id is
 derived from the payment), in cash or outside Payky, whoever the tip belongs
 to. A refund without `isTip` is a refund of goods, which covers every refund
 recorded before the flag existed.

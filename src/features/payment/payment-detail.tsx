@@ -62,6 +62,7 @@ import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
 } from "@/core/modules/payment/payment-actions.ts"
+import { deriveReceivedTipAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import {
   paymentDetailQuery,
   paymentReconciliationsQuery,
@@ -211,6 +212,7 @@ function PaymentDetailContent({
     claims: claimedTransactions,
     amount: payment.amount,
   })
+  const receivedTipAmount = deriveReceivedTipAmount(payment)
   const hasExcessSettlementCollision = derivePaymentHasExcessSettlement({
     amount: payment.amount,
     excessAcknowledgedAt: payment.excessAcknowledgedAt,
@@ -323,11 +325,11 @@ function PaymentDetailContent({
                 })}
               </span>
             )}
-            {payment.tipAmount > 0 ? (
+            {receivedTipAmount > 0 ? (
               <span className="text-sm text-muted-foreground">
                 {t("paymentDetail.tipIncluded", {
                   amount: formatMoney(
-                    { value: payment.tipAmount, currency: payment.currency },
+                    { value: receivedTipAmount, currency: payment.currency },
                     locale
                   ),
                 })}

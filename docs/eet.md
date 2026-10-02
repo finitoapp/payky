@@ -50,7 +50,9 @@ with its private key, and every sale sync to all devices of the account
    While enabled in `playground`, the terminal shows the sandbox banner and
    the payment-wait screen says so.
 5. **Tip owner** — `business` (default): tip is part of the reported sale;
-   `employees`: tip is subtracted (`calculatePaymentBaseAmount`).
+   `employees`: tip is subtracted (`calculatePaymentBaseAmount`). In cash
+   with a tip, the tip is what the cash received brought above the goods
+   rounded to whole crowns (`deriveReceivedTipAmount`).
 
 The settings page also has a test card: a verification message (`overovaci`
 mode, anywhere) or a real 1.00 CZK test sale (playground only). Neither writes
@@ -115,14 +117,14 @@ when a device clock is more than 5 minutes ahead of the recording device's.
 
 | Field | Value |
 |---|---|
-| `amount` | what the first claim brought, capped at `payment.amount` (`calculateEetSettlementValue`), or the cash received when the first claim is the cash register, minus tip when `tipOwner = employees` |
+| `amount` | what the first claim brought, capped at `payment.amount` (`calculateEetSettlementValue`), or the cash received when the first claim is the cash register, minus the tip when `tipOwner = employees`. In cash with a tip, the tip is what the cash received brought above the goods rounded to whole crowns |
 | `saleAt` (`dat_trzby`) | first claim's `claimedAt` |
 | `accountTransactionId` | the first claim's transaction, the settlement the sale reports. `null` on an extra money sale and on a sale created before it existed |
 | `sequenceNumber` (`porad_cis`) | the payment id |
 | `cashRegisterId` (`id_pokl`) | first 20 chars of the recording device's id, so one register per device |
 | `eic`, `establishmentId`, `environment` | current settings at creation time |
 | `unsupportedReason` | `currency` if not CZK, `amount` if > 99 999 999.99 |
-| `reportedTipAmount` | the tip the sale reports: `payment.tipAmount` while tips belong to the business, `0` while they belong to employees and on every extra money sale. `null` on a sale created before it existed, read as `0` |
+| `reportedTipAmount` | the tip the sale reports: the tip (in cash, the tip received) while tips belong to the business, `0` while they belong to employees and on every extra money sale. `null` on a sale created before it existed, read as `0` |
 
 Later changes to settings (tip owner, environment, establishment) affect only
 sales created afterwards — with one exception in "Manual retry" below.
@@ -259,7 +261,7 @@ sales when that came after the refund. `createEetReversal` freezes:
 
 | Field | Value |
 |---|---|
-| `amount` | for a refund of goods the refund amount, for a tip refund (`refund.isTip`) the `reportedTipAmount` of the payment's sale (of one of them when two devices each created one), both capped at what the payment's supported sales and extra money sales report together minus the payment's earlier supported reversals. A tip refund of a sale that reports no tip gets no reversal. Stored positive, sent negated (`-250.00`) |
+| `amount` | for a refund of goods the refund amount, for a tip refund (`refund.isTip`) the tip refunded, at most the `reportedTipAmount` of the payment's sale (of one of them when two devices each created one), both capped at what the payment's supported sales and extra money sales report together minus the payment's earlier supported reversals. A tip refund of a sale that reports no tip gets no reversal. Stored positive, sent negated (`-250.00`) |
 | `saleAt` (`dat_trzby`) | the refund's `refundedAt` |
 | `sequenceNumber` (`porad_cis`) | the refund id |
 | `cashRegisterId` (`id_pokl`) | the device that recorded the refund |

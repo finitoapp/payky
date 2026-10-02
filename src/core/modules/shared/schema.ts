@@ -43,6 +43,7 @@ export type NonEmptyString255 = z.output<typeof NonEmptyString255Schema>
 export const NonEmptyString255 = NonEmptyString255Schema.decode
 
 export const SqliteBoolSchema = z.union([z.literal(0), z.literal(1)])
+export const SqliteTrueSchema = z.literal(1)
 
 export const WssUrlSchema = z
   .url({ protocol: /^wss$/ })

@@ -43,6 +43,7 @@ export const skBill = {
   "bill.scan.create.save": "Pridať položku",
   "bill.scan.create.title": "Pridať naskenovanú položku",
   "bill.scan.lastScanned.empty": "Naskenujte položku a pridajte ju do účtu.",
+  "bill.scan.added": "Pridané: {name}",
   "bill.scan.lookup.loading": "Dohľadávam produkt…",
   "bill.scan.lookup.source": "Údaje o produkte z {source}.",
   "bill.scan.toggle.aria": "Skenovať položky",

@@ -79,8 +79,10 @@ import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -88,7 +90,12 @@ const categoryCodec = optionalIdCodec<CatalogCategoryId>()
 const taxRateCodec = optionalIdCodec<TaxRateId>()
 const currencyCodec = FiatCurrencySchema
 
-export function NewCatalogItemPage() {
+export function NewCatalogItemPage({
+  initialScanCode,
+}: {
+  /** Prefills the scan code, for an unknown code scanned on the items list. */
+  readonly initialScanCode?: string
+}) {
   const { t } = useTranslation()
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
@@ -99,6 +106,7 @@ export function NewCatalogItemPage() {
       <FadeHeader title={t("settings.items.form.title.create")} />
       <CreateCatalogItemForm
         defaultCurrency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+        initialScanCode={initialScanCode ?? ""}
       />
     </>
   )
@@ -196,8 +204,10 @@ const useCatalogItemOptions = (currentTaxRateId?: TaxRateId | null) => {
  */
 function CreateCatalogItemForm({
   defaultCurrency,
+  initialScanCode,
 }: {
   readonly defaultCurrency: FiatCurrencyType
+  readonly initialScanCode: string
 }) {
   const runToast = useRunToast()
   const router = useRouter()
@@ -219,14 +229,28 @@ function CreateCatalogItemForm({
   )
   const [currency, setCurrency] = useState<FiatCurrencyType>(defaultCurrency)
   const [price, setPrice] = useState("")
-  const [scanCode, setScanCode] = useState("")
+  const [scanCode, setScanCode] = useState(initialScanCode)
   const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
   const [errors, setErrors] = useState<CatalogItemFormErrors>({})
   const { pending, saved, resetSaved, submit } = useSettingsForm()
+  const isConfirmDialogOpen = useIsConfirmDialogOpen()
 
   const clearError = (field: keyof CatalogItemFormErrors) => {
     setErrors((current) => ({ ...current, [field]: undefined }))
   }
+
+  const applyScanCode = (rawValue: string) => {
+    setScanCode(rawValue)
+    clearError("scanCode")
+    resetSaved()
+  }
+  // Fills the field wherever focus is. A focused scan code field already
+  // received the characters and is overwritten with the clean code; the
+  // scanner's swallowed Enter keeps any focused field from submitting.
+  useHardwareScanner({
+    enabled: !scannerDialogOpen && !isConfirmDialogOpen && !pending,
+    onScan: applyScanCode,
+  })
 
   // Uniqueness can't be enforced (multiple devices can assign the same code
   // before syncing), so this is a heads-up shown next to the field, not a
@@ -563,11 +587,7 @@ function CreateCatalogItemForm({
       <ScanCodeScannerDialog
         open={scannerDialogOpen}
         onOpenChange={setScannerDialogOpen}
-        onScan={(rawValue) => {
-          setScanCode(rawValue)
-          clearError("scanCode")
-          resetSaved()
-        }}
+        onScan={applyScanCode}
       />
     </>
   )
@@ -588,6 +608,7 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
     item.taxRateId
   )
   const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
+  const isConfirmDialogOpen = useIsConfirmDialogOpen()
 
   // How many minor units the price means depends on the currency next to it,
   // so the codec is rebuilt whenever that changes.
@@ -605,6 +626,16 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
     await using run = appRun()
     await run(updateCatalogItem({ id: item.id, ...values }))
   }
+
+  const applyScanCode = (rawValue: string) => {
+    const parsed = z.safeDecode(optionalTextCodec, rawValue)
+    if (!parsed.success) return
+    void saveItem({ scanCode: parsed.data })
+  }
+  useHardwareScanner({
+    enabled: !scannerDialogOpen && !isConfirmDialogOpen,
+    onScan: applyScanCode,
+  })
 
   // Uniqueness can't be enforced (multiple devices can assign the same code
   // before syncing), so this is a heads-up shown next to the field, not a
@@ -753,11 +784,7 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
       <ScanCodeScannerDialog
         open={scannerDialogOpen}
         onOpenChange={setScannerDialogOpen}
-        onScan={(rawValue) => {
-          const parsed = z.safeDecode(optionalTextCodec, rawValue)
-          if (!parsed.success) return
-          void saveItem({ scanCode: parsed.data })
-        }}
+        onScan={applyScanCode}
       />
 
       <Button

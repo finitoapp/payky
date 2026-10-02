@@ -42,6 +42,7 @@ export const csBill = {
   "bill.scan.create.save": "Přidat položku",
   "bill.scan.create.title": "Přidat naskenovanou položku",
   "bill.scan.lastScanned.empty": "Naskenujte položku a přidejte ji do účtu.",
+  "bill.scan.added": "Přidáno: {name}",
   "bill.scan.lookup.loading": "Dohledávám produkt…",
   "bill.scan.lookup.source": "Údaje o produktu z {source}.",
   "bill.scan.toggle.aria": "Skenovat položky",

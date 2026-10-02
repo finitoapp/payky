@@ -15,6 +15,8 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 const BillSearchSchema = z.object({
   billId: z.string().optional(),
   tableId: TableId.optional().catch(undefined),
+  /** A code scanned on the home screen; `BillPage` adds it once. */
+  scan: z.string().optional().catch(undefined),
 })
 
 export const Route = createFileRoute("/_terminal/bill")({
@@ -33,7 +35,11 @@ export const Route = createFileRoute("/_terminal/bill")({
     if (search.billId === undefined) {
       throw redirect({
         to: "/bill",
-        search: { billId: createRandomBillId(), tableId: search.tableId },
+        search: {
+          billId: createRandomBillId(),
+          tableId: search.tableId,
+          scan: search.scan,
+        },
         replace: true,
       })
     }
@@ -48,7 +54,7 @@ export const Route = createFileRoute("/_terminal/bill")({
 
 function BillRoute() {
   const { t } = useTranslation()
-  const { billId, tableId } = Route.useSearch()
+  const { billId, tableId, scan } = Route.useSearch()
   // A well-formed id that has no bill row yet is *not* an error: that is
   // exactly how a new cart starts (see `beforeLoad`). Only an unparseable
   // one is.
@@ -60,7 +66,11 @@ function BillRoute() {
 
   return (
     <Suspense fallback={null}>
-      <BillPage billId={parsedBillId.data} initialTableId={tableId} />
+      <BillPage
+        billId={parsedBillId.data}
+        initialTableId={tableId}
+        initialScanCode={scan}
+      />
     </Suspense>
   )
 }

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { createRandomBillId } from "@/core/modules/bill/bill-types.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrency,
@@ -20,7 +21,9 @@ import {
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
 import { PosOverviewPage } from "@/features/terminal-home/pos-overview-page.tsx"
 import { TerminalPaymentKeypad } from "@/features/terminal-home/terminal-payment-keypad.tsx"
+import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -151,6 +154,20 @@ function TerminalPaymentKeypadLoader() {
 
 function TerminalHomePage() {
   useScreenWakeLock(true)
+  const navigate = useNavigate()
+  const isConfirmDialogOpen = useIsConfirmDialogOpen()
+  // A scan in either mode starts a new bill without a table; `BillPage`
+  // then adds the item exactly as if it had been scanned there. The
+  // scanner's capture-phase listener also keeps the code's closing Enter
+  // from reaching the keypad as a charge.
+  useHardwareScanner({
+    enabled: !isConfirmDialogOpen,
+    onScan: (code) =>
+      void navigate({
+        to: "/bill",
+        search: { billId: createRandomBillId(), scan: code },
+      }),
+  })
   const [terminalHomeMode] = useTerminalHomeMode()
   const isNumpadMode = terminalHomeMode !== "pos"
 

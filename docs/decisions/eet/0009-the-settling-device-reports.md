@@ -17,7 +17,7 @@ A payment's sale belongs to the device that recorded its first settlement:
 where staff confirmed cash or card, or matched a transfer by hand. A
 settlement Payky matched on its own belongs to the device that created the
 payment. An extra money sale follows the same rule for the payment's latest
-claim (see eet/0006). A reversal belongs to the device that recorded the
+claim (see eet/0012). A reversal belongs to the device that recorded the
 refund, and a refund without a device gets none. For 10 minutes only that
 device creates the record and sends it automatically. The 10 minutes start
 at the settlement the sale follows, and for a reversal at the later of the

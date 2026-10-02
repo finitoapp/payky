@@ -1,6 +1,6 @@
 # 0006 Extra money is reported as its own sale when it arrives
 
-Status: accepted
+Status: superseded by eet/0012
 Date: 2026-09-29
 
 ## Context

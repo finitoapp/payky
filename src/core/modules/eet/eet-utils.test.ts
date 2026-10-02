@@ -5,6 +5,7 @@ import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   type EetDateTime,
   EetEstablishmentIdSchema,
+  type EetTipOwner,
 } from "@/core/modules/eet/eet-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { ReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-types.ts"
@@ -51,13 +52,25 @@ describe("EetEstablishmentIdSchema", () => {
 })
 
 describe("createEetSaleId", () => {
-  test("derives the same id for the same payment on every device", () => {
+  test("derives the same id for the same settlement of a payment on every device", () => {
     const paymentId = "p-aaaaaaaaaaaaaaaaaaaa" as PaymentId
+    const accountTransactionId =
+      "t-aaaaaaaaaaaaaaaaaaaa" as AccountTransactionId
+    const saleId = createEetSaleId({ paymentId, accountTransactionId })
 
-    expect(createEetSaleId(paymentId)).toBe(createEetSaleId(paymentId))
-    expect(createEetSaleId(paymentId)).not.toBe(
-      createEetSaleId("p-bbbbbbbbbbbbbbbbbbbb" as PaymentId)
-    )
+    expect(createEetSaleId({ paymentId, accountTransactionId })).toBe(saleId)
+    expect(
+      createEetSaleId({
+        paymentId: "p-bbbbbbbbbbbbbbbbbbbb" as PaymentId,
+        accountTransactionId,
+      })
+    ).not.toBe(saleId)
+    expect(
+      createEetSaleId({
+        paymentId,
+        accountTransactionId: "t-bbbbbbbbbbbbbbbbbbbb" as AccountTransactionId,
+      })
+    ).not.toBe(saleId)
   })
 })
 
@@ -482,7 +495,12 @@ describe("createEetExtraSaleId", () => {
       extraFrom: NonNegativeInteger(25_000),
     })
 
-    expect(first).not.toBe(createEetSaleId(paymentId))
+    expect(first).not.toBe(
+      createEetSaleId({
+        paymentId,
+        accountTransactionId: "tx-a" as AccountTransactionId,
+      })
+    )
     expect(first).not.toBe(second)
     expect(
       createEetExtraSaleId({ paymentId, extraFrom: NonNegativeInteger(0) })
@@ -516,6 +534,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [bank, card],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(0),
       })
@@ -529,6 +550,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [card, bank, more],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(25_000),
       })
@@ -540,6 +564,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [card, bank],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(25_000),
       })
@@ -556,6 +583,9 @@ describe("deriveDueEetExtraSale", () => {
           claim({ claimId: "a", amount: 15_000, claimedAt: 2_000_000 }),
         ],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(0),
       })
@@ -567,6 +597,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [claim({ claimId: "a", amount: 15_000, claimedAt: 2_000_000 })],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(0),
       })
@@ -584,6 +617,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [transfer],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(0),
       })
@@ -595,6 +631,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [card, bank],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt: TimestampMs(3_500_000),
         reportedExtra: NonNegativeInteger(0),
       })
@@ -608,10 +647,103 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [card, bank, more],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt: TimestampMs(4_500_000),
         reportedExtra: NonNegativeInteger(25_000),
       })
     ).toEqual({ extraFrom: 25_000, amount: 10_000, claim: more })
+  })
+
+  test("counts every settlement a sale of the payment reports", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank],
+        amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [
+          card.accountTransactionId,
+          bank.accountTransactionId,
+        ],
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toBeNull()
+  })
+
+  test("reports the first settlement when only a later one has a sale", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank],
+        amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [bank.accountTransactionId],
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toEqual({ extraFrom: 0, amount: 25_000, claim: bank })
+  })
+
+  test("lets a sale of a removed claim stand for the earliest settlement without a sale", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank],
+        amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [
+          "tx-removed" as AccountTransactionId,
+          bank.accountTransactionId,
+        ],
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toBeNull()
+  })
+
+  test("lets a sale that recorded no settlement stand for the first one", () => {
+    expect(
+      deriveDueEetExtraSale({
+        claims: [card, bank],
+        amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [null],
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+    ).toEqual({ extraFrom: 0, amount: 25_000, claim: bank })
+  })
+
+  test("leaves out the part of an employees' tip the first settlement could not cover", () => {
+    const rest = claim({ claimId: "b", amount: 20_000, claimedAt: 3_000_000 })
+    const due = (tipOwner: EetTipOwner) =>
+      deriveDueEetExtraSale({
+        claims: [
+          claim({ claimId: "a", amount: 5_000, claimedAt: 2_000_000 }),
+          rest,
+        ],
+        amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(10_000),
+        tipOwner,
+        saleSettlementIds: [],
+        enabledAt,
+        reportedExtra: NonNegativeInteger(0),
+      })
+
+    expect(due("employees")).toEqual({
+      extraFrom: 0,
+      amount: 15_000,
+      claim: rest,
+    })
+    expect(due("business")).toEqual({
+      extraFrom: 0,
+      amount: 20_000,
+      claim: rest,
+    })
   })
 
   test("breaks a tie on the settlement time by claim id", () => {
@@ -621,6 +753,9 @@ describe("deriveDueEetExtraSale", () => {
       deriveDueEetExtraSale({
         claims: [tied, card, bank],
         amount: NonNegativeInteger(25_000),
+        tipAmount: NonNegativeInteger(0),
+        tipOwner: null,
+        saleSettlementIds: [],
         enabledAt,
         reportedExtra: NonNegativeInteger(0),
       })?.claim

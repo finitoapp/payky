@@ -46,6 +46,7 @@ is listed among the unconfirmed sales in the EET settings.
 
 - `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
 - `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps later refunds at what the sale has left`
+- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps refunds at what every sale of the payment reports, whichever sale they name`
 - `src/core/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > sends a reversal only once its sale is confirmed`
 - `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses a refund recorded before its sale was created`

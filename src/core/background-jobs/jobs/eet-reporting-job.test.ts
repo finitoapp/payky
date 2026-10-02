@@ -13,6 +13,7 @@ import { loadBillStatusSnapshot } from "@/core/modules/bill/bill-guards.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
+  createEetSale,
   disableEet,
   enableEet,
   retryEetSale,
@@ -21,7 +22,6 @@ import {
 } from "@/core/modules/eet/eet-actions.ts"
 import {
   eetReversalsByPaymentIdQuery,
-  eetSaleByPaymentIdQuery,
   eetSalesByPaymentIdQuery,
 } from "@/core/modules/eet/eet-queries.ts"
 import {
@@ -51,6 +51,7 @@ import {
   NonEmptyString255,
   NonNegativeInteger,
   PositiveInteger,
+  TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import {
   createEetReportingJob,
@@ -117,8 +118,10 @@ const startJob = async (
   }
 }
 
-const saleOf = (context: EetTestContext, paymentId: PaymentId) =>
-  context.deps.evolu.loadQuery(eetSaleByPaymentIdQuery(paymentId))
+const saleOf = async (context: EetTestContext, paymentId: PaymentId) =>
+  (
+    await context.deps.evolu.loadQuery(eetSalesByPaymentIdQuery(paymentId))
+  ).filter(({ extraFrom }) => extraFrom === null)
 
 const settleLater = (milliseconds: number) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds))
@@ -984,6 +987,7 @@ describe("eet reporting job: extra money", () => {
         },
         {
           extraFrom: 0,
+          accountTransactionId: null,
           amount: 25_000,
           method: "iban",
           deviceId: context.deviceId,
@@ -1110,7 +1114,7 @@ describe("eet reporting job: extra money", () => {
     expect(job.errors).toEqual([])
   })
 
-  test("reports all extra money while tips belong to employees", async () => {
+  test("reports all extra money once the sale has taken off an employees' tip", async () => {
     await using context = await createEetTestContext()
     await configureEet(context)
     {
@@ -1128,6 +1132,86 @@ describe("eet reporting job: extra money", () => {
         { extraFrom: null, amount: 23_000 },
         { extraFrom: 0, amount: 25_000 },
       ])
+    expect(job.errors).toEqual([])
+  })
+
+  test("leaves the rest of an employees' tip out of the extra money", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    {
+      await using run = testCreateRun(context.deps)
+      await run.ok(saveEetTipOwner("employees"))
+    }
+    await using job = await startJob(context)
+    const paymentId = await createTestPayment(context, { tipAmount: 10_000 })
+
+    await settleByTransfer(context, paymentId, {
+      amount: 5_000,
+      deviceId: context.deviceId,
+    })
+    context.clock.advance(1_000)
+    await settleByTransfer(context, paymentId, {
+      amount: 20_000,
+      deviceId: context.deviceId,
+    })
+
+    await expect
+      .poll(() => salesOf(context, paymentId))
+      .toMatchObject([
+        { extraFrom: null, amount: 0, pok: expect.any(String) },
+        { extraFrom: 0, amount: 15_000, pok: expect.any(String) },
+      ])
+    expect(job.errors).toEqual([])
+  })
+
+  test("reports a payment two devices settled while cut off from sync as one sale each", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    const tablet = createRowId<"Device">()
+    const paymentId = await createTestPayment(context)
+    {
+      await using phone = await startJob(context)
+      await settleInCash(context, paymentId)
+      await expect
+        .poll(() => saleOf(context, paymentId))
+        .toMatchObject([{ pok: expect.any(String) }])
+      expect(phone.errors).toEqual([])
+    }
+    context.clock.advance(1_000)
+    const transferId = await settleByTransfer(context, paymentId, {
+      deviceId: tablet,
+    })
+    {
+      await using run = testCreateRun(context.deps)
+      await run.ok(
+        createEetSale({
+          payment: {
+            id: paymentId,
+            billId: null,
+            amount: NonNegativeInteger(25_000),
+            tipAmount: NonNegativeInteger(0),
+            cashReceivedAmount: null,
+            currency: "CZK",
+            method: "iban",
+            firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+            firstClaimTransactionId: transferId,
+            firstSettlementValue: NonNegativeInteger(25_000),
+          },
+          deviceId: tablet,
+        })
+      )
+    }
+    await using job = await startJob(context, { deviceId: tablet })
+
+    await expect
+      .poll(() => saleOf(context, paymentId))
+      .toMatchObject([{ pok: expect.any(String) }, { pok: expect.any(String) }])
+    await settleLater(100)
+    await expect(salesOf(context, paymentId)).resolves.toHaveLength(2)
+    expect(context.responder.requests.map(({ data }) => data.id_pokl)).toEqual([
+      toEetCashRegisterId(context.deviceId),
+      toEetCashRegisterId(tablet),
+    ])
     expect(job.errors).toEqual([])
   })
 

@@ -266,6 +266,11 @@ class EetReporting {
       const due = deriveDueEetExtraSale({
         claims: paymentClaims,
         amount: payment.paymentAmount,
+        tipAmount: NonNegativeInteger(payment.paymentTipAmount ?? 0),
+        tipOwner: payment.tipOwner,
+        saleSettlementIds: payment.sales.map(
+          ({ accountTransactionId }) => accountTransactionId
+        ),
         enabledAt: payment.enabledAt,
         reportedExtra: NonNegativeInteger(payment.reportedExtra ?? 0),
       })

@@ -52,6 +52,7 @@ const createSale = async (
         currency,
         method: "cashRegister",
         firstClaimedAt: TimestampMs(context.clock.date.now().getTime()),
+        firstClaimTransactionId: createRowId<"AccountTransaction">(),
         firstSettlementValue: NonNegativeInteger(25_000),
       },
       deviceId,

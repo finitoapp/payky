@@ -9,6 +9,7 @@ import {
   Info,
   Landmark,
   Languages,
+  LifeBuoy,
   Percent,
   ReceiptText,
   ShieldCheck,
@@ -250,6 +251,12 @@ function SettingsPage() {
   )
   const supportItems = createSettingsNavItems(
     [
+      {
+        icon: LifeBuoy,
+        title: "settings.supportChat.title",
+        description: "settings.supportChat.description",
+        to: "/settings/support",
+      },
       {
         icon: HeartHandshake,
         title: "settings.donations.title",

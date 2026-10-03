@@ -55,6 +55,7 @@ const env = createEnv({
   server: {
     PAYKY_SUPPORT_NPUBS: NpubListSchema.default([
       "npub1ysdhhw8wx4ew4490mrfpd2gyv3w08rqudqp5pjasgn2kxduahuhstrqnll",
+      "npub1lhxycw3zsyyhz47khqcsw65f4m94p0fuvrs6lxvcqrwv5w0xxs8saaejq0",
     ]),
     // Teams separated by ";", members by ",", oldest first. When the team
     // changes, its line-up until then is appended here.
@@ -67,7 +68,9 @@ const env = createEnv({
           .filter((team) => team !== "")
       )
       .pipe(z.array(NpubListSchema))
-      .default([]),
+      .default([
+        ["npub1ysdhhw8wx4ew4490mrfpd2gyv3w08rqudqp5pjasgn2kxduahuhstrqnll"],
+      ]),
     PAYKY_SUPPORT_RELAYS: RelayListSchema.default([
       "wss://relay.damus.io",
       "wss://nos.lol",

@@ -16,6 +16,11 @@ export interface SupportTeamResponse {
   readonly formerTeams: ReadonlyArray<ReadonlyArray<string>>
   /** Where every copy goes and the chat reads; each member lists one. */
   readonly relays: ReadonlyArray<string>
+  /**
+   * Profile indexers, only ever read: they hold the team's names and
+   * pictures and the account's DM relay list when these live elsewhere.
+   */
+  readonly indexerRelays: ReadonlyArray<string>
 }
 
 interface SupportTeamError {
@@ -30,6 +35,11 @@ const isNpub = (value: string): boolean => {
     return false
   }
 }
+
+const RelayListSchema = z
+  .string()
+  .transform((value) => value.split(",").map((url) => url.trim()))
+  .pipe(z.array(z.url({ protocol: /^wss?$/u })).min(1))
 
 const NpubListSchema = z
   .string()
@@ -58,16 +68,16 @@ const env = createEnv({
       )
       .pipe(z.array(NpubListSchema))
       .default([]),
-    PAYKY_SUPPORT_RELAYS: z
-      .string()
-      .transform((value) => value.split(",").map((url) => url.trim()))
-      .pipe(z.array(z.url({ protocol: /^wss?$/u })).min(1))
-      .default([
-        "wss://relay.damus.io",
-        "wss://nos.lol",
-        "wss://relay.0xchat.com",
-        "wss://nostr.linky.fit",
-      ]),
+    PAYKY_SUPPORT_RELAYS: RelayListSchema.default([
+      "wss://relay.damus.io",
+      "wss://nos.lol",
+      "wss://relay.0xchat.com",
+      "wss://nostr.linky.fit",
+    ]),
+    PAYKY_SUPPORT_INDEXER_RELAYS: RelayListSchema.default([
+      "wss://purplepag.es",
+      "wss://profiles.nostr1.com",
+    ]),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -77,6 +87,7 @@ const currentTeam: SupportTeamResponse = {
   pubkeys: env.PAYKY_SUPPORT_NPUBS,
   formerTeams: env.PAYKY_SUPPORT_FORMER_TEAMS,
   relays: env.PAYKY_SUPPORT_RELAYS,
+  indexerRelays: env.PAYKY_SUPPORT_INDEXER_RELAYS,
 }
 
 const jsonHeaders = {

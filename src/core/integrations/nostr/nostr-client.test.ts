@@ -36,7 +36,6 @@ const createFakeNostrDep = ({
   const deps = {
     nostr: {
       relays: ["wss://relay.test"],
-      profileRelays: ["wss://profiles.test"],
       pool: {
         get: async (relays) => {
           queried.push(relays)
@@ -123,7 +122,7 @@ describe("nostr client", () => {
     })
   })
 
-  test("reads profiles from the profile indexers too but publishes only to the app's relays", async () => {
+  test("reads a profile from extra relays too but publishes only to the app's relays", async () => {
     const fake = createFakeNostrDep()
     await using run = testCreateRun({
       ...fake.deps,
@@ -131,7 +130,9 @@ describe("nostr client", () => {
       date: { now: () => new Date() },
     })
 
-    await run(fetchNostrProfile({ pubkey }))
+    await run(
+      fetchNostrProfile({ pubkey, extraRelays: ["wss://profiles.test"] })
+    )
     await run(publishNostrProfile({ metadata: { name: "Shop" } }))
 
     expect(fake.queried).toEqual([["wss://relay.test", "wss://profiles.test"]])

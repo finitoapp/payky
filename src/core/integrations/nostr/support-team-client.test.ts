@@ -26,6 +26,7 @@ describe("support team client", () => {
       pubkeys: [npubEncode(current)],
       formerTeams: [[npubEncode(former)]],
       relays: ["wss://support.test"],
+      indexerRelays: ["wss://indexer.test"],
     })
     await using run = testCreateRun(server.deps)
 
@@ -35,6 +36,7 @@ describe("support team client", () => {
         pubkeys: [current],
         formerTeams: [[former]],
         relays: ["wss://support.test"],
+        indexerRelays: ["wss://indexer.test"],
       },
     })
     expect(server.requestedUrls).toEqual(["https://payky.me/api/support-team"])
@@ -46,6 +48,7 @@ describe("support team client", () => {
         pubkeys: [current],
         formerTeams: [],
         relays: ["wss://support.test"],
+        indexerRelays: [],
       }).deps
     )
 

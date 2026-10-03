@@ -403,15 +403,23 @@ function MessageBubble({
   )
 }
 
+/**
+ * A support member's profile, also read from the team's indexers, where the
+ * names of people who publish elsewhere live. Bubbles render only once the
+ * team is loaded, so its indexers are known by then.
+ */
+const useSupportMemberProfile = (pubkey: string) =>
+  useNostrProfile(pubkey, useSupportTeam().data?.indexerRelays)
+
 function SupportAvatar({ pubkey }: { readonly pubkey: string }) {
-  const profile = useNostrProfile(pubkey)
+  const profile = useSupportMemberProfile(pubkey)
   return (
     <ProfileAvatar picture={profile.data?.picture ?? null} className="size-7" />
   )
 }
 
 function SupportAuthor({ pubkey }: { readonly pubkey: string }) {
-  const profile = useNostrProfile(pubkey)
+  const profile = useSupportMemberProfile(pubkey)
   return (
     <span className="px-1 text-xs font-medium text-muted-foreground">
       {profile.data?.name ?? shortenNpub(npubEncode(pubkey))}

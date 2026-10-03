@@ -19,14 +19,20 @@ export const useNostrIdentity = (): NostrIdentity => {
 export const nostrProfileQueryKey = (pubkey: string) =>
   ["nostr", "profile", pubkey] as const
 
-/** The account's published kind-0 profile; errors when no relay answered. */
-export const useNostrProfile = (pubkey: string) => {
+/**
+ * A published kind-0 profile; errors when no relay answered. `extraRelays`
+ * are read on top of the app's relays.
+ */
+export const useNostrProfile = (
+  pubkey: string,
+  extraRelays?: ReadonlyArray<string>
+) => {
   const appRun = useAppRun()
   return useQuery({
     queryKey: nostrProfileQueryKey(pubkey),
     queryFn: async () => {
       await using run = appRun()
-      const result = await run(fetchNostrProfile({ pubkey }))
+      const result = await run(fetchNostrProfile({ pubkey, extraRelays }))
       if (!result.ok) throw result.error
       return result.value
     },

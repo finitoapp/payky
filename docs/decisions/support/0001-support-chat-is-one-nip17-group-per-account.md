@@ -20,10 +20,11 @@ and Linky publishes that key's 10050 list.
 ## Decision
 
 The support team comes from Payky's API (`/api/support-team`), configured in
-the server's `PAYKY_SUPPORT_NPUBS`, `PAYKY_SUPPORT_FORMER_TEAMS` and
-`PAYKY_SUPPORT_RELAYS`, so it changes with a deploy instead of an app
-release. It names the current members, every former line-up and the support
-relays. The app has no list of its own to fall back on: when the API does not
+the server's `PAYKY_SUPPORT_NPUBS`, `PAYKY_SUPPORT_FORMER_TEAMS`,
+`PAYKY_SUPPORT_RELAYS` and `PAYKY_SUPPORT_INDEXER_RELAYS`, so it changes with
+a deploy instead of an app release. It names the current members, every
+former line-up, the support relays and the profile indexers the chat reads
+the members' names and the account's DM relay list from. The app has no list of its own to fall back on: when the API does not
 answer, the chat says support is unavailable and offers a retry, and nothing
 can be sent. Every support member lists one of the support relays as a DM
 relay in Amethyst; that is an operating rule of the team, so the app never
@@ -61,7 +62,7 @@ Amethyst delivers the replies to the account's 10050 relays, so the chat
 reads from those and from the support relays. The app never changes an
 existing 10050 list, since Linky owns it too. Only an account that has none
 gets one, naming the support relays, on its first send, and only when every
-relay asked, the app's, the profile indexers and the support relays, answered
+relay asked, the app's, the team's indexers and the support relays, answered
 in time without one.
 
 A received gift wrap counts only when the seal's signature is valid, the
@@ -128,7 +129,7 @@ is no unread state and no push notification.
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > sends support's copies to the team's relays and the account's to where it reads`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > publishes DM relays naming the team's relays for an account without any`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > never changes an account's existing DM relay list`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads the account's newest DM relays from the app's relays, the indexers and the team's`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads the account's newest DM relays from the app's relays and the team's indexers and relays`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reports a missing DM relay list only when every relay answered in time`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > fails without publishing the account's own copy when no copy reached support`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads a reply from one member beside the account's message, without its trailer`

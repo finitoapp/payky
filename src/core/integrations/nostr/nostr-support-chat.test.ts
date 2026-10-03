@@ -54,6 +54,7 @@ const team: SupportTeam = {
   pubkeys: supportPubkeys,
   formerTeams: [],
   relays: [supportRelay],
+  indexerRelays: [profileRelay],
 }
 /** An account whose DM relays Linky set up. */
 const linkyInbox: DmInbox = { relays: [linkyRelay], listMissing: false }
@@ -86,7 +87,6 @@ const createFakeNostrDep = ({
   const deps = {
     nostr: {
       relays: [appRelay],
-      profileRelays: [profileRelay],
       pool: {
         get: async () => null,
         publish: (relays, event) => {
@@ -284,7 +284,7 @@ describe("support chat", () => {
     expect(wrapsTo(fake.published, me)).toEqual([])
   })
 
-  test("reads the account's newest DM relays from the app's relays, the indexers and the team's", async () => {
+  test("reads the account's newest DM relays from the app's relays and the team's indexers and relays", async () => {
     const fake = createFakeNostrDep({
       stored: [
         dmRelayList(["wss://old.test"], 1),

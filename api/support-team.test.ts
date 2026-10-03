@@ -9,6 +9,7 @@ const team: SupportTeamResponse = {
   pubkeys: ["npub1current"],
   formerTeams: [["npub1former"]],
   relays: ["wss://support.test"],
+  indexerRelays: ["wss://indexer.test"],
 }
 
 const request = (method: string) =>
@@ -37,6 +38,7 @@ describe("handleSupportTeamRequest", () => {
         "wss://relay.0xchat.com",
         "wss://nostr.linky.fit",
       ],
+      indexerRelays: ["wss://purplepag.es", "wss://profiles.nostr1.com"],
     })
   })
 

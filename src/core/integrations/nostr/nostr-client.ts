@@ -20,8 +20,6 @@ export const RELAY_MAX_WAIT_MS = 6_000
 export interface NostrDep {
   readonly nostr: {
     readonly relays: ReadonlyArray<string>
-    /** Read for profiles on top of `relays`; never written to. */
-    readonly profileRelays: ReadonlyArray<string>
     readonly pool: Pick<
       AbstractSimplePool,
       | "get"
@@ -42,7 +40,6 @@ export const createNostrDep = (): NostrDep => {
   return {
     nostr: {
       relays: appEnv.VITE_PAYKY_NOSTR_RELAYS,
-      profileRelays: appEnv.VITE_PAYKY_NOSTR_PROFILE_RELAYS,
       pool: sharedPool,
     },
   }
@@ -167,12 +164,18 @@ export type NostrPublishRejectedError = ReturnType<
 export const fetchNostrProfile =
   ({
     pubkey,
+    extraRelays = [],
   }: {
     readonly pubkey: string
+    /**
+     * Read on top of the app's relays, such as the profile indexers that
+     * hold the support team's names; never written to.
+     */
+    readonly extraRelays?: ReadonlyArray<string>
   }): Task<NostrProfile, NostrRelaysUnreachableError, NostrDep> =>
   async (run) => {
-    const { pool, relays, profileRelays } = run.deps.nostr
-    const readRelays = [...new Set([...relays, ...profileRelays])]
+    const { pool, relays } = run.deps.nostr
+    const readRelays = [...new Set([...relays, ...extraRelays])]
     // The pool keeps the newest event of all of them.
     const event = await pool.get(
       readRelays,

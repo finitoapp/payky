@@ -57,6 +57,8 @@ export interface SupportTeam {
   readonly formerTeams: ReadonlyArray<ReadonlyArray<string>>
   /** Where every copy goes and the chat reads; each member lists one. */
   readonly relays: ReadonlyArray<string>
+  /** Read only: the team's profiles and the account's DM relay list. */
+  readonly indexerRelays: ReadonlyArray<string>
 }
 
 /** Where Amethyst delivers the account's DMs: its kind 10050 relays. */
@@ -240,7 +242,7 @@ export const loadDmInbox =
     const secretKey = deriveNostrSecretKey(run.deps.masterKey)
     const asked = unique([
       ...nostr.relays,
-      ...nostr.profileRelays,
+      ...team.indexerRelays,
       ...team.relays,
     ])
     const startedAt = date.now().getTime()

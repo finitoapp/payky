@@ -32,6 +32,7 @@ const SupportTeamResponseSchema = z.object({
   pubkeys: z.array(NpubSchema).min(1),
   formerTeams: z.array(z.array(NpubSchema).min(1)),
   relays: z.array(z.url({ protocol: /^wss?$/u })).min(1),
+  indexerRelays: z.array(z.url({ protocol: /^wss?$/u })),
 })
 
 const createSupportTeamHttpError = defineError("SupportTeamHttpError")<{

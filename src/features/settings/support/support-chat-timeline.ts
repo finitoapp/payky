@@ -5,6 +5,43 @@ import type { SupportMessage } from "@/core/integrations/nostr/nostr-support-cha
 /** A message as the chat shows it, including one still on its way. */
 export interface ChatEntry extends SupportMessage {
   readonly status: "sent" | "sending" | "failed"
+  /** The emoji it got, each once, in the order they came. */
+  readonly reactions: ReadonlyArray<string>
+}
+
+/**
+ * The delivered messages as the chat shows them, each with the reactions
+ * to it (support/0002). What its author deleted is gone, a deleted message's
+ * reactions with it (NIP-09: a deletion counts only for its author's own
+ * events). A reaction to a message the chat does not hold is not shown.
+ */
+export const toChatEntries = (
+  messages: ReadonlyArray<SupportMessage>
+): ReadonlyArray<ChatEntry> => {
+  const deleted = new Set(
+    messages
+      .filter((message) => message.type === "deletion")
+      .flatMap(({ author, refersTo }) =>
+        refersTo.map((id) => `${author}:${id}`)
+      )
+  )
+  const kept = messages.filter(
+    (message) => !deleted.has(`${message.author}:${message.id}`)
+  )
+  const reactions = new Map<string, ReadonlyArray<string>>()
+  for (const { type, refersTo, text } of kept) {
+    const [target] = refersTo
+    if (type !== "reaction" || target === undefined) continue
+    const current = reactions.get(target) ?? []
+    if (!current.includes(text)) reactions.set(target, [...current, text])
+  }
+  return kept
+    .filter((message) => message.type === "message")
+    .map((message) => ({
+      ...message,
+      status: "sent",
+      reactions: reactions.get(message.id) ?? [],
+    }))
 }
 
 export type TimelineItem =

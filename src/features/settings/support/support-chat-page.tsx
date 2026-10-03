@@ -36,6 +36,7 @@ import {
   buildTimeline,
   type ChatEntry,
   type TimelineItem,
+  toChatEntries,
 } from "@/features/settings/support/support-chat-timeline.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -93,9 +94,7 @@ export function SupportChatPage() {
   const failedQuery = team.isError ? team : inbox.isError ? inbox : messages
 
   const entries: ReadonlyArray<ChatEntry> = [
-    ...(messages.data ?? []).map(
-      (message): ChatEntry => ({ ...message, status: "sent" })
-    ),
+    ...toChatEntries(messages.data ?? []),
     ...pending,
   ]
 
@@ -167,7 +166,10 @@ function useSendSupportMessage({
         fromSupport: false,
         text,
         sentAt: Math.floor(Date.now() / 1000),
+        type: "message",
+        refersTo: [],
         status: "sending",
+        reactions: [],
       },
     ])
 
@@ -484,6 +486,12 @@ function MessageBubble({
             ) : null}
           </span>
         </div>
+        {/* As in messengers, reactions overlap the bubble's lower edge. */}
+        {entry.reactions.length > 0 ? (
+          <span className="-mt-2.5 mx-2 rounded-full bg-card px-1.5 text-sm ring-1 ring-foreground/10 ring-inset">
+            {entry.reactions.join(" ")}
+          </span>
+        ) : null}
         {entry.status === "failed" ? (
           <Button
             type="button"

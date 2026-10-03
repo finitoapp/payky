@@ -1,8 +1,10 @@
 import { err, ok, type Task } from "@evolu/common"
 import {
   DirectMessageRelaysList,
+  EventDeletion,
   GiftWrap,
   PrivateDirectMessage,
+  Reaction,
   Seal,
 } from "nostr-tools/kinds"
 import { decrypt, getConversationKey } from "nostr-tools/nip44"
@@ -88,7 +90,20 @@ export interface SupportMessage {
   readonly text: string
   /** Unix seconds, from the rumor; the wraps' own times are randomized. */
   readonly sentAt: number
+  /**
+   * What NIP-17 carries in the room: a message; a NIP-25 reaction, whose
+   * `text` is the emoji; or a NIP-09 deletion, by which its author takes
+   * back a message or a reaction of theirs.
+   */
+  readonly type: SupportMessageType
+  /**
+   * The ids a reaction reacts to (exactly one) or a deletion deletes; empty
+   * for a message.
+   */
+  readonly refersTo: ReadonlyArray<string>
 }
+
+export type SupportMessageType = "message" | "reaction" | "deletion"
 
 /** What the support team sees under each message (support/0001). */
 export interface SupportClientInfo {
@@ -117,6 +132,9 @@ const EventSchema = z.object({
 })
 const SealSchema = EventSchema.extend({ sig: z.string() })
 
+/** A NIP-17 rumor: an unsigned kind 14 event. */
+type NostrRumor = z.output<typeof EventSchema>
+
 const decryptJson = (
   payload: string,
   secretKey: NostrSecretKey,
@@ -129,26 +147,28 @@ const pTagValues = (tags: ReadonlyArray<ReadonlyArray<string>>) =>
     name === "p" && value !== undefined ? [value] : []
   )
 
+/** What NIP-17 puts in a chat that the support chat reads, by kind. */
+const chatKindTypes: Readonly<Record<number, SupportMessageType>> = {
+  [PrivateDirectMessage]: "message",
+  [Reaction]: "reaction",
+  [EventDeletion]: "deletion",
+}
+
 /**
- * A gift wrap addressed to the account, as a support chat message — or
- * `null`. nostr-tools' `unwrapEvent` checks nothing, so this verifies the
- * seal's signature, that the seal and the rumor share their author and that
- * the rumor's id is its hash: without that anyone could post a message "from
- * support" asking for the recovery phrase. A message belongs to the chat when
- * its room — the author and every `p` tag — is exactly the account plus the
- * team, current or former: the account's other DMs, from Linky for one, share
- * the key, and a 1:1 with a single member of a larger team is not the
- * support room.
+ * The rumor inside a gift wrap addressed to `secretKey` — a message or a
+ * reaction — or `null`.
+ * nostr-tools' `unwrapEvent` checks nothing, so this verifies the seal's
+ * signature, that the seal and the rumor share their author and that the
+ * rumor's id is its hash: without that anyone could post a message "from
+ * support" asking for the recovery phrase.
  */
-export const decodeSupportWrap = ({
+const unwrapVerifiedRumor = ({
   wrap,
   secretKey,
-  team,
 }: {
   readonly wrap: Event
   readonly secretKey: NostrSecretKey
-  readonly team: SupportTeam
-}): SupportMessage | null => {
+}): NostrRumor | null => {
   if (wrap.kind !== GiftWrap) return null
   try {
     const seal = SealSchema.safeParse(
@@ -162,38 +182,81 @@ export const decodeSupportWrap = ({
     )
     if (!parsed.success) return null
     const rumor = parsed.data
-    if (
-      rumor.kind !== PrivateDirectMessage ||
-      rumor.pubkey !== seal.data.pubkey ||
-      getEventHash(rumor) !== rumor.id
-    ) {
-      return null
-    }
-
-    const me = getPublicKey(secretKey)
-    const room = new Set([rumor.pubkey, ...pTagValues(rumor.tags)])
-    const isSupportRoom = [team.pubkeys, ...team.formerTeams].some((lineUp) => {
-      const supportRoom = new Set([me, ...lineUp])
-      return (
-        room.size === supportRoom.size &&
-        [...supportRoom].every((pubkey) => room.has(pubkey))
-      )
-    })
-    if (!isSupportRoom) return null
-    // The room holds only the account and support, so anyone else wrote it
-    // from support.
-    const fromSupport = rumor.pubkey !== me
-
-    return {
-      id: rumor.id,
-      author: rumor.pubkey,
-      fromSupport,
-      text: fromSupport ? rumor.content : stripClientTrailer(rumor.content),
-      sentAt: rumor.created_at,
-    }
+    return chatKindTypes[rumor.kind] !== undefined &&
+      rumor.pubkey === seal.data.pubkey &&
+      getEventHash(rumor) === rumor.id
+      ? rumor
+      : null
   } catch {
     // Not encrypted to this key, or not JSON inside.
     return null
+  }
+}
+
+/** A NIP-17 room: the rumor's author and every `p` tag. */
+const rumorRoom = (rumor: NostrRumor): ReadonlySet<string> =>
+  new Set([rumor.pubkey, ...pTagValues(rumor.tags)])
+
+/**
+ * A gift wrap addressed to the account, as a support chat message, a
+ * reaction or a deletion — or `null`. A message or a reaction belongs to the
+ * chat when its room is exactly the account plus the team, current or
+ * former: the account's other DMs, from Linky for one, share the key, and a
+ * 1:1 with a single member of a larger team is not the support room. A
+ * deletion counts by its author alone, the account or anyone who has been
+ * on the team: it removes only its author's own events, so whom it tags
+ * does not matter, and clients tag it differently.
+ */
+export const decodeSupportWrap = ({
+  wrap,
+  secretKey,
+  team,
+}: {
+  readonly wrap: Event
+  readonly secretKey: NostrSecretKey
+  readonly team: SupportTeam
+}): SupportMessage | null => {
+  const rumor = unwrapVerifiedRumor({ wrap, secretKey })
+  const type = rumor === null ? undefined : chatKindTypes[rumor.kind]
+  if (rumor === null || type === undefined) return null
+
+  const me = getPublicKey(secretKey)
+  const lineUps = [team.pubkeys, ...team.formerTeams]
+  const room = rumorRoom(rumor)
+  const belongs =
+    type === "deletion"
+      ? [me, ...lineUps.flat()].includes(rumor.pubkey)
+      : lineUps.some((lineUp) => {
+          const supportRoom = new Set([me, ...lineUp])
+          return (
+            room.size === supportRoom.size &&
+            [...supportRoom].every((pubkey) => room.has(pubkey))
+          )
+        })
+  if (!belongs) return null
+
+  const eTags = rumor.tags.flatMap(([name, value]) =>
+    name === "e" && value !== undefined ? [value] : []
+  )
+  // NIP-25: the last `e` tag names the message reacted to.
+  const refersTo = {
+    message: [],
+    reaction: eTags.slice(-1),
+    deletion: eTags,
+  }[type]
+  if (type !== "message" && refersTo.length === 0) return null
+  // The room holds only the account and support, so anyone else wrote it
+  // from support.
+  const fromSupport = rumor.pubkey !== me
+
+  return {
+    id: rumor.id,
+    author: rumor.pubkey,
+    fromSupport,
+    text: fromSupport ? rumor.content : stripClientTrailer(rumor.content),
+    sentAt: rumor.created_at,
+    type,
+    refersTo,
   }
 }
 
@@ -583,5 +646,7 @@ export const sendSupportMessage =
       fromSupport: false,
       text,
       sentAt: now,
+      type: "message",
+      refersTo: [],
     })
   }

@@ -28,6 +28,7 @@ import {
   fetchSupportMessages,
   loadDmInbox,
   mergeSupportMessages,
+  publishDmRelayList,
   type SupportClientInfo,
   type SupportMessage,
   type SupportTeam,
@@ -57,7 +58,7 @@ const team: SupportTeam = {
   indexerRelays: [profileRelay],
 }
 /** An account whose DM relays Linky set up. */
-const linkyInbox: DmInbox = { relays: [linkyRelay], listMissing: false }
+const linkyInbox: DmInbox = { relays: [linkyRelay], state: "found" }
 
 const client: SupportClientInfo = { version: "1.2.3", platform: "android" }
 
@@ -250,21 +251,39 @@ describe("support chat", () => {
     ])
   })
 
-  test("publishes DM relays naming the team's relays for an account without any", async () => {
+  test("publishes DM relays naming the team's relays to them and to the indexers", async () => {
     const fake = createFakeNostrDep()
-    await send(fake.deps, { relays: [], listMissing: true })
+    await using run = testCreateRun(runDeps(fake.deps))
 
-    const relayList = fake.published.find(({ event }) => event.kind === 10050)
-    expect(relayList?.relays).toEqual([supportRelay])
+    expect(await run(publishDmRelayList({ team }))).toEqual({
+      ok: true,
+      value: undefined,
+    })
+    const [relayList] = fake.published
+    expect(relayList?.relays).toEqual([supportRelay, profileRelay])
     expect(relayList?.event).toMatchObject({
+      kind: 10050,
       pubkey: me,
       tags: [["relay", supportRelay]],
     })
   })
 
-  test("never changes an account's existing DM relay list", async () => {
+  test("reports DM relays no relay accepted, so the chat can warn", async () => {
+    const fake = createFakeNostrDep({ accepts: () => false })
+    await using run = testCreateRun(runDeps(fake.deps))
+
+    expect(await run(publishDmRelayList({ team }))).toEqual({
+      ok: false,
+      error: {
+        type: "NostrPublishRejectedError",
+        reasons: ["connection failure: x", "connection failure: x"],
+      },
+    })
+  })
+
+  test("never publishes a DM relay list with a message", async () => {
     const fake = createFakeNostrDep()
-    await send(fake.deps)
+    await send(fake.deps, { relays: [], state: "missing" })
 
     expect(fake.published.some(({ event }) => event.kind === 10050)).toBe(false)
   })
@@ -295,23 +314,44 @@ describe("support chat", () => {
 
     expect(await run(loadDmInbox({ team }))).toEqual({
       ok: true,
-      value: { relays: [linkyRelay], listMissing: false },
+      value: { relays: [linkyRelay], state: "found" },
     })
-    expect(fake.queried[0]?.relays).toEqual([
-      appRelay,
-      profileRelay,
-      supportRelay,
+    expect(fake.queried.map(({ relays }) => relays)).toEqual([
+      [appRelay],
+      [profileRelay],
+      [supportRelay],
     ])
   })
 
-  test("reports a missing DM relay list only when every relay answered in time", async () => {
-    await using answered = testCreateRun(runDeps(createFakeNostrDep().deps))
-    expect(await answered(loadDmInbox({ team }))).toEqual({
+  test("reports a missing DM relay list when the relays that answered, an indexer among them, hold none", async () => {
+    await using allAnswered = testCreateRun(runDeps(createFakeNostrDep().deps))
+    expect(await allAnswered(loadDmInbox({ team }))).toEqual({
       ok: true,
-      value: { relays: [], listMissing: true },
+      value: { relays: [], state: "missing" },
     })
 
-    const clock = [1_700_000_000_000, 1_700_000_007_000]
+    // A dead relay, like relay.0xchat.com, must not block the list for good.
+    await using oneDead = testCreateRun(
+      runDeps(
+        createFakeNostrDep({ connected: [profileRelay, supportRelay] }).deps
+      )
+    )
+    expect(await oneDead(loadDmInbox({ team }))).toEqual({
+      ok: true,
+      value: { relays: [], state: "missing" },
+    })
+  })
+
+  test("leaves the DM relays unverified when no indexer answered in time", async () => {
+    await using noIndexer = testCreateRun(
+      runDeps(createFakeNostrDep({ connected: [appRelay, supportRelay] }).deps)
+    )
+    expect(await noIndexer(loadDmInbox({ team }))).toEqual({
+      ok: true,
+      value: { relays: [], state: "unverified" },
+    })
+
+    const clock = [1_700_000_000_000]
     await using timedOut = testCreateRun(
       runDeps(
         createFakeNostrDep().deps,
@@ -320,15 +360,18 @@ describe("support chat", () => {
     )
     expect(await timedOut(loadDmInbox({ team }))).toEqual({
       ok: true,
-      value: { relays: [], listMissing: false },
+      value: { relays: [], state: "unverified" },
     })
+  })
 
-    await using unreachable = testCreateRun(
-      runDeps(createFakeNostrDep({ connected: [appRelay, supportRelay] }).deps)
+  test("leaves the DM relays unverified when the account's list names no relay", async () => {
+    await using run = testCreateRun(
+      runDeps(createFakeNostrDep({ stored: [dmRelayList([], 1)] }).deps)
     )
-    expect(await unreachable(loadDmInbox({ team }))).toEqual({
+
+    expect(await run(loadDmInbox({ team }))).toEqual({
       ok: true,
-      value: { relays: [], listMissing: false },
+      value: { relays: [], state: "unverified" },
     })
   })
 

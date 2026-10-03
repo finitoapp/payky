@@ -678,6 +678,17 @@ export const csSettings = {
     "Nezaplacené faktury současné peněženky se už nezaznamenají.",
   "settings.supportChat.teamUnavailable":
     "Podpora je teď nedostupná. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.supportChat.inbox.unverified":
+    "Nepodařilo se ověřit, kam vám může podpora odpovědět, takže zatím nemusí mít jak odpovědět.",
+  "settings.supportChat.inbox.publishFailed":
+    "Podpora vám zatím nemůže odpovědět: seznam relayí pro odpovědi se nepodařilo zveřejnit.",
+  "settings.supportChat.inbox.publishAnyway": "Přesto zveřejnit",
+  "settings.supportChat.inbox.confirm.title":
+    "Přesto zveřejnit relaye pro odpovědi?",
+  "settings.supportChat.inbox.confirm.description":
+    "Pokud už váš účet má seznam relayí pro soukromé zprávy, například z Linky, bude nahrazen a zprávy posílané na jeho relaye vám tam nemusí docházet.",
+  "settings.supportChat.inbox.confirm.confirm": "Zveřejnit",
+  "settings.supportChat.inbox.confirm.cancel": "Zrušit",
   "settings.supportChat.title": "Kontaktovat podporu",
   "settings.supportChat.description": "Napište týmu Payky",
   "settings.supportChat.empty":

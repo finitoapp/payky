@@ -675,6 +675,17 @@ export const enSettings = {
     "Unpaid invoices from the current wallet will no longer be detected.",
   "settings.supportChat.teamUnavailable":
     "Support is unavailable right now. Check your connection and try again.",
+  "settings.supportChat.inbox.unverified":
+    "We could not check where support can reply to you, so they may not be able to answer yet.",
+  "settings.supportChat.inbox.publishFailed":
+    "Support cannot reply to you yet: the list of relays they reply to could not be published.",
+  "settings.supportChat.inbox.publishAnyway": "Publish anyway",
+  "settings.supportChat.inbox.confirm.title":
+    "Publish the reply relays anyway?",
+  "settings.supportChat.inbox.confirm.description":
+    "If your account already has a list of relays for direct messages, for example from Linky, it will be replaced, and messages sent to the relays it named may stop reaching you there.",
+  "settings.supportChat.inbox.confirm.confirm": "Publish",
+  "settings.supportChat.inbox.confirm.cancel": "Cancel",
   "settings.supportChat.title": "Contact support",
   "settings.supportChat.description": "Chat with the Payky team",
   "settings.supportChat.empty":

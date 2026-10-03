@@ -681,6 +681,17 @@ export const skSettings = {
     "Nezaplatené faktúry súčasnej peňaženky sa už nezaznamenajú.",
   "settings.supportChat.teamUnavailable":
     "Podpora je teraz nedostupná. Skontrolujte pripojenie a skúste to znova.",
+  "settings.supportChat.inbox.unverified":
+    "Nepodarilo sa overiť, kam vám môže podpora odpovedať, takže zatiaľ nemusí mať ako odpovedať.",
+  "settings.supportChat.inbox.publishFailed":
+    "Podpora vám zatiaľ nemôže odpovedať: zoznam relayí pre odpovede sa nepodarilo zverejniť.",
+  "settings.supportChat.inbox.publishAnyway": "Napriek tomu zverejniť",
+  "settings.supportChat.inbox.confirm.title":
+    "Napriek tomu zverejniť relaye pre odpovede?",
+  "settings.supportChat.inbox.confirm.description":
+    "Ak už váš účet má zoznam relayí pre súkromné správy, napríklad z Linky, bude nahradený a správy posielané na jeho relaye vám tam nemusia chodiť.",
+  "settings.supportChat.inbox.confirm.confirm": "Zverejniť",
+  "settings.supportChat.inbox.confirm.cancel": "Zrušiť",
   "settings.supportChat.title": "Kontaktovať podporu",
   "settings.supportChat.description": "Napíšte tímu Payky",
   "settings.supportChat.empty":

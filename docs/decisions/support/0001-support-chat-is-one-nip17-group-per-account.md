@@ -60,10 +60,25 @@ support goes to the support relays.
 
 Amethyst delivers the replies to the account's 10050 relays, so the chat
 reads from those and from the support relays. The app never changes an
-existing 10050 list, since Linky owns it too. Only an account that has none
-gets one, naming the support relays, on its first send, and only when every
-relay asked, the app's, the team's indexers and the support relays, answered
-in time without one.
+existing 10050 list on its own, since Linky owns it too. Only an account
+that has none gets one, naming the support relays, alongside its first
+message. It counts as having
+none when no relay that answered in time holds a list and one of the team's
+indexers answered among them; the app's, the indexers and the support relays
+are asked one by one. A relay that does not answer is left out: requiring
+every one blocked the list for good while `relay.0xchat.com`, a default, was
+down, and Amethyst then could not reply. Linky publishes its list to every
+relay it uses, so a live relay holds it. The list goes to the support relays
+and to the indexers, where Amethyst looks it up for an account with no NIP-65
+relays.
+
+When the list could not be checked (no indexer answered, or it names no
+relay) or publishing it failed, support may have nowhere to reply, and the
+chat warns above the composer. Retrying checks again and publishes when the
+list turns out missing, or publishes again after a failure. The warning also
+offers to publish anyway, behind a confirmation that says it replaces any
+list the account has, Linky's included: the user's choice when the indexers
+stay unreachable.
 
 A received gift wrap counts only when the seal's signature is valid, the
 seal and the rumor share their author and the rumor's id is its hash. The
@@ -112,7 +127,7 @@ chat there, and a reply from Linky lands in Payky's chat. With several, Linky
 splits the group into a 1:1 chat per member and its replies reach only one
 of them.
 
-An account that has a 10050 list only on relays that did not answer is
+An account whose 10050 list sits only on relays that did not answer is
 treated as having none and gets a new one, which then replaces it. Changing
 the team makes a new room in Amethyst, where the old conversation stays
 apart; the app keeps showing it as long as its line-up is among the former
@@ -127,10 +142,13 @@ is no unread state and no push notification.
 
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > sends one rumor tagged with every support member to each of them and to the account`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > sends support's copies to the team's relays and the account's to where it reads`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > publishes DM relays naming the team's relays for an account without any`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > never changes an account's existing DM relay list`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > publishes DM relays naming the team's relays to them and to the indexers`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reports DM relays no relay accepted, so the chat can warn`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > never publishes a DM relay list with a message`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads the account's newest DM relays from the app's relays and the team's indexers and relays`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reports a missing DM relay list only when every relay answered in time`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reports a missing DM relay list when the relays that answered, an indexer among them, hold none`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > leaves the DM relays unverified when no indexer answered in time`
+- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > leaves the DM relays unverified when the account's list names no relay`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > fails without publishing the account's own copy when no copy reached support`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads a reply from one member beside the account's message, without its trailer`
 - `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > drops a message whose seal was signed by someone else than its author`

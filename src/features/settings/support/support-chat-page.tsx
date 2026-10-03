@@ -3,6 +3,7 @@ import { useMediaQuery, useResizeObserver } from "@dedalik/use-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   AlertCircleIcon,
+  AlertTriangleIcon,
   CheckIcon,
   ClockIcon,
   LockIcon,
@@ -37,13 +38,14 @@ import {
   type ChatEntry,
   type TimelineItem,
 } from "@/features/settings/support/support-chat-timeline.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNostrIdentity, useNostrProfile } from "@/hooks/use-nostr-profile.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import {
-  dmInboxQueryKey,
   supportMessagesQueryKey,
   useDmInbox,
+  usePublishDmRelayList,
   useSupportMessages,
   useSupportTeam,
 } from "@/hooks/use-support-chat.ts"
@@ -73,6 +75,15 @@ export function SupportChatPage() {
     team: team.data,
     inbox: inbox.data,
   })
+  const dmRelayList = usePublishDmRelayList({ pubkey, team: team.data })
+  // The first message of an account without a DM relay list publishes one
+  // alongside it: until then support has nowhere to reply.
+  const sendAndOpenReplies = async (text: string) => {
+    await Promise.all([
+      send(text),
+      inbox.data?.state === "missing" ? dmRelayList.publish() : undefined,
+    ])
+  }
   // Without the team there is nobody to write to: the chat says so instead
   // of falling back to a list built into the app (support/0001).
   const failure: TranslationKey | null = team.isError
@@ -107,7 +118,21 @@ export function SupportChatPage() {
         onReload={() => void failedQuery.refetch()}
         onRetry={retry}
       />
-      <Composer onSend={send} disabled={team.data === undefined} />
+      {inbox.data?.state === "unverified" || dmRelayList.failed ? (
+        <DmInboxWarning
+          unverified={inbox.data?.state === "unverified"}
+          publishFailed={dmRelayList.failed}
+          onVerify={async () => {
+            const { data } = await inbox.refetch()
+            if (data?.state === "missing") await dmRelayList.publish()
+          }}
+          onPublish={dmRelayList.publish}
+        />
+      ) : null}
+      <Composer
+        onSend={sendAndOpenReplies}
+        disabled={team.data === undefined}
+      />
     </div>
   )
 }
@@ -158,9 +183,8 @@ function useSendSupportMessage({
             platform: Capacitor.getPlatform(),
           },
           team,
-          // Not loaded yet: send to the team's relays and leave the account's
-          // DM relays to a later send.
-          inbox: inbox ?? { relays: [], listMissing: false },
+          // Not loaded yet: the own copy goes to the team's relays only.
+          inbox: inbox ?? { relays: [], state: "unverified" },
         })
       )
       // Not delivered is shown on the message itself, with a retry.
@@ -175,10 +199,6 @@ function useSendSupportMessage({
         )
       )
       return
-    }
-    // The send published a DM relay list for an account without one.
-    if (inbox?.listMissing === true) {
-      void queryClient.invalidateQueries({ queryKey: dmInboxQueryKey(pubkey) })
     }
     // Relays may not serve it back yet, so the cache takes it directly.
     queryClient.setQueryData(
@@ -195,6 +215,93 @@ function useSendSupportMessage({
   }
 
   return { pending, send, retry }
+}
+
+/**
+ * Support may have nowhere to reply: the account's DM relay list could not be
+ * checked, or publishing it failed (support/0001). Retrying checks again — and
+ * publishes when the list turns out missing — or publishes again; publishing
+ * over a list that could not be checked is a separate, confirmed choice,
+ * because it replaces the list Linky may rely on.
+ */
+function DmInboxWarning({
+  unverified,
+  publishFailed,
+  onVerify,
+  onPublish,
+}: {
+  readonly unverified: boolean
+  readonly publishFailed: boolean
+  readonly onVerify: () => Promise<void>
+  readonly onPublish: () => Promise<void>
+}) {
+  const { t } = useTranslation()
+  const confirm = useConfirmDialog()
+  const [busy, setBusy] = useState(false)
+  const busyWhile = async (action: () => Promise<void>) => {
+    setBusy(true)
+    try {
+      await action()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="shrink-0 px-3 pb-3">
+      <Alert variant="warning">
+        <AlertTriangleIcon />
+        <AlertDescription>
+          {t(
+            unverified
+              ? "settings.supportChat.inbox.unverified"
+              : "settings.supportChat.inbox.publishFailed"
+          )}
+        </AlertDescription>
+        <AlertAction>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() =>
+              void busyWhile(
+                unverified && !publishFailed ? onVerify : onPublish
+              )
+            }
+          >
+            {t("settings.supportChat.retry")}
+          </Button>
+          {unverified ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void busyWhile(async () => {
+                  const confirmed = await confirm({
+                    title: t("settings.supportChat.inbox.confirm.title"),
+                    description: t(
+                      "settings.supportChat.inbox.confirm.description"
+                    ),
+                    confirmLabel: t(
+                      "settings.supportChat.inbox.confirm.confirm"
+                    ),
+                    cancelLabel: t("settings.supportChat.inbox.confirm.cancel"),
+                    variant: "destructive",
+                  })
+                  if (confirmed) await onPublish()
+                })
+              }
+            >
+              {t("settings.supportChat.inbox.publishAnyway")}
+            </Button>
+          ) : null}
+        </AlertAction>
+      </Alert>
+    </div>
+  )
 }
 
 /** How close to the bottom still counts as reading the newest messages. */

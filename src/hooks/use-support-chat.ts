@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAtomValue } from "jotai"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { createDateDep } from "@/core/deps.ts"
@@ -10,12 +10,14 @@ import {
   fetchSupportMessages,
   loadDmInbox,
   mergeSupportMessages,
+  publishDmRelayList,
   type SupportMessage,
   type SupportTeam,
   subscribeSupportMessages,
 } from "@/core/integrations/nostr/nostr-support-chat.ts"
 import { fetchSupportTeam } from "@/core/integrations/nostr/support-team-client.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 
 export const supportMessagesQueryKey = (pubkey: string) =>
   ["nostr", "support", pubkey] as const
@@ -65,6 +67,42 @@ export const useDmInbox = ({
     },
     staleTime: 5 * 60_000,
   })
+}
+
+/**
+ * Publishes the account's DM relay list (support/0001) and remembers whether
+ * the last attempt failed, which the chat warns about. A published list is
+ * written into the inbox's cache: relays may not serve it back yet.
+ */
+export const usePublishDmRelayList = ({
+  pubkey,
+  team,
+}: {
+  readonly pubkey: string
+  readonly team: SupportTeam | undefined
+}) => {
+  const runToast = useRunToast()
+  const queryClient = useQueryClient()
+  const [failed, setFailed] = useState(false)
+
+  const publish = async () => {
+    if (team === undefined) return
+    const outcome = { published: false }
+    await runToast(async (run) => {
+      const result = await run(publishDmRelayList({ team }))
+      // A rejection is shown by the chat's warning, not a toast.
+      outcome.published = result.ok
+    })
+    setFailed(!outcome.published)
+    if (outcome.published) {
+      queryClient.setQueryData(dmInboxQueryKey(pubkey), {
+        relays: team.relays,
+        state: "found",
+      } satisfies DmInbox)
+    }
+  }
+
+  return { publish, failed }
 }
 
 /**

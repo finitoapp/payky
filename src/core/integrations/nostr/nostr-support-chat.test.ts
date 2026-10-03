@@ -231,6 +231,8 @@ describe("support chat", () => {
         fromSupport: false,
         text: "The printer is offline",
         sentAt: 1_700_000_000,
+        type: "message",
+        refersTo: [],
       },
     })
   })
@@ -397,6 +399,76 @@ describe("support chat", () => {
     ])
   })
 
+  test("reads support's reaction to a message, and drops one that names no message", async () => {
+    const reaction = (tags: ReadonlyArray<ReadonlyArray<string>>) =>
+      createWrap(
+        createSeal(
+          createRumor(
+            {
+              kind: 7,
+              created_at: 1_700_000_100,
+              content: "👀",
+              tags: [...tags, ["p", me], ["p", secondSupport]].map((tag) => [
+                ...tag,
+              ]),
+            },
+            firstSupportKey
+          ),
+          firstSupportKey,
+          me
+        ),
+        me
+      )
+
+    const result = await fetchMessages(
+      createFakeNostrDep({
+        stored: [reaction([["e", "message-id"]]), reaction([])],
+      }).deps
+    )
+
+    expect(result.ok && result.value).toMatchObject([
+      {
+        author: firstSupport,
+        text: "👀",
+        type: "reaction",
+        refersTo: ["message-id"],
+      },
+    ])
+  })
+
+  test("reads a deletion by a support member however it is tagged, but none by a stranger", async () => {
+    const deletion = (from: Uint8Array) =>
+      createWrap(
+        createSeal(
+          createRumor(
+            {
+              kind: 5,
+              created_at: 1_700_000_100,
+              content: "",
+              tags: [
+                ["e", "reaction-id"],
+                ["k", "7"],
+              ],
+            },
+            from
+          ),
+          from,
+          me
+        ),
+        me
+      )
+
+    const result = await fetchMessages(
+      createFakeNostrDep({
+        stored: [deletion(firstSupportKey), deletion(generateSecretKey())],
+      }).deps
+    )
+
+    expect(result.ok && result.value).toMatchObject([
+      { author: firstSupport, type: "deletion", refersTo: ["reaction-id"] },
+    ])
+  })
+
   test("loads the last ninety days from the team's relays and the account's DM inbox", async () => {
     const fake = createFakeNostrDep()
     await fetchMessages(fake.deps)
@@ -559,6 +631,8 @@ describe("support chat", () => {
       fromSupport: false,
       text: id,
       sentAt,
+      type: "message",
+      refersTo: [],
     })
 
     expect(

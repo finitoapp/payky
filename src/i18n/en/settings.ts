@@ -695,8 +695,6 @@ export const enSettings = {
   "settings.supportChat.retry": "Try again",
   "settings.supportChat.message.label": "Message",
   "settings.supportChat.message.placeholder": "Write a message…",
-  "settings.supportChat.disclosure":
-    "The message is end-to-end encrypted over Nostr and sent from your account's Nostr profile. The app version and platform are attached so we can help.",
   "settings.supportChat.send": "Send",
   "settings.supportChat.sent": "Sent",
   "settings.supportChat.sending": "Sending…",

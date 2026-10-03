@@ -676,6 +676,23 @@ export const csSettings = {
     "Peníze zůstanou v současné peněžence a tady už nebudou vidět. Nejdřív je vyberte, nebo si uschovejte její mnemonic.",
   "settings.sparkAccount.wallet.warning.invoices":
     "Nezaplacené faktury současné peněženky se už nezaznamenají.",
+  "settings.supportChat.teamUnavailable":
+    "Podpora je teď nedostupná. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.supportChat.title": "Kontaktovat podporu",
+  "settings.supportChat.description": "Napište týmu Payky",
+  "settings.supportChat.empty":
+    "Zatím tu nejsou žádné zprávy. Popište, s čím potřebujete pomoct, a tým Payky vám odpoví tady.",
+  "settings.supportChat.loadFailed":
+    "Konverzaci se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.",
+  "settings.supportChat.retry": "Zkusit znovu",
+  "settings.supportChat.message.label": "Zpráva",
+  "settings.supportChat.message.placeholder": "Napište zprávu…",
+  "settings.supportChat.disclosure":
+    "Zpráva je šifrovaná end-to-end přes Nostr a odchází z Nostr profilu vašeho účtu. Připojujeme verzi aplikace a platformu, abychom mohli pomoct.",
+  "settings.supportChat.send": "Odeslat",
+  "settings.supportChat.sent": "Odesláno",
+  "settings.supportChat.sending": "Odesílám…",
+  "settings.supportChat.notDelivered": "Nedoručeno. Klepněte pro opakování",
   "settings.support": "PODPORA A INFORMACE",
   "settings.tables.add": "Přidat stůl",
   "settings.tables.delete": "Smazat stůl",

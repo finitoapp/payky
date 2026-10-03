@@ -31,13 +31,20 @@ const createFakeNostrDep = ({
   readonly publishResults?: ReadonlyArray<string | Error>
 } = {}) => {
   const published: Event[] = []
+  const queried: (readonly string[])[] = []
+  const publishedTo: (readonly string[])[] = []
   const deps = {
     nostr: {
       relays: ["wss://relay.test"],
+      profileRelays: ["wss://profiles.test"],
       pool: {
-        get: async () => stored,
-        publish: (_relays, event) => {
+        get: async (relays) => {
+          queried.push(relays)
+          return stored
+        },
+        publish: (relays, event) => {
           published.push(event)
+          publishedTo.push(relays)
           return publishResults.map((result) =>
             result instanceof Error
               ? Promise.reject(result)
@@ -45,10 +52,12 @@ const createFakeNostrDep = ({
           )
         },
         listConnectionStatus: () => new Map([["wss://relay.test/", connected]]),
+        subscribeMany: () => ({ close: () => undefined }),
+        subscribeManyEose: () => ({ close: () => undefined }),
       },
     },
   } satisfies NostrDep
-  return { deps, published }
+  return { deps, published, queried, publishedTo }
 }
 
 const profileEvent = (content: string) => ({ content }) as Event
@@ -112,6 +121,21 @@ describe("nostr client", () => {
       ok: true,
       value: emptyNostrProfile,
     })
+  })
+
+  test("reads profiles from the profile indexers too but publishes only to the app's relays", async () => {
+    const fake = createFakeNostrDep()
+    await using run = testCreateRun({
+      ...fake.deps,
+      masterKey,
+      date: { now: () => new Date() },
+    })
+
+    await run(fetchNostrProfile({ pubkey }))
+    await run(publishNostrProfile({ metadata: { name: "Shop" } }))
+
+    expect(fake.queried).toEqual([["wss://relay.test", "wss://profiles.test"]])
+    expect(fake.publishedTo).toEqual([["wss://relay.test"]])
   })
 
   test("fails instead of reporting an empty profile when no relay answered", async () => {

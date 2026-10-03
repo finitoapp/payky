@@ -20,6 +20,13 @@ export const appEnv = createEnv({
         "wss://relay.0xchat.com",
         "wss://nostr.linky.fit",
       ]),
+    // Read-only extras for profile and relay-list lookups: indexers, which
+    // hold what people publish elsewhere, such as the support team's names.
+    VITE_PAYKY_NOSTR_PROFILE_RELAYS: z
+      .string()
+      .transform((value) => value.split(",").map((url) => url.trim()))
+      .pipe(z.array(z.url({ protocol: /^wss?$/u })))
+      .default(["wss://purplepag.es", "wss://profiles.nostr1.com"]),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

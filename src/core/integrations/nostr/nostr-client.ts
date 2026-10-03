@@ -3,6 +3,7 @@ import type { AbstractSimplePool } from "nostr-tools/abstract-pool"
 import { npubEncode } from "nostr-tools/nip19"
 import { SimplePool } from "nostr-tools/pool"
 import { finalizeEvent, getPublicKey } from "nostr-tools/pure"
+import { normalizeURL } from "nostr-tools/utils"
 import { z } from "zod"
 
 import { appEnv } from "@/core/app-env.ts"
@@ -14,14 +15,20 @@ import {
 } from "@/core/modules/shared/key-derivation.ts"
 
 const PROFILE_KIND = 0
-const RELAY_MAX_WAIT_MS = 6_000
+export const RELAY_MAX_WAIT_MS = 6_000
 
 export interface NostrDep {
   readonly nostr: {
     readonly relays: ReadonlyArray<string>
+    /** Read for profiles on top of `relays`; never written to. */
+    readonly profileRelays: ReadonlyArray<string>
     readonly pool: Pick<
       AbstractSimplePool,
-      "get" | "publish" | "listConnectionStatus"
+      | "get"
+      | "publish"
+      | "listConnectionStatus"
+      | "subscribeMany"
+      | "subscribeManyEose"
     >
   }
 }
@@ -33,7 +40,11 @@ let sharedPool: SimplePool | undefined
 export const createNostrDep = (): NostrDep => {
   sharedPool ??= new SimplePool()
   return {
-    nostr: { relays: appEnv.VITE_PAYKY_NOSTR_RELAYS, pool: sharedPool },
+    nostr: {
+      relays: appEnv.VITE_PAYKY_NOSTR_RELAYS,
+      profileRelays: appEnv.VITE_PAYKY_NOSTR_PROFILE_RELAYS,
+      pool: sharedPool,
+    },
   }
 }
 
@@ -134,14 +145,14 @@ export const mergeProfileMetadata = ({
   }
 }
 
-const createNostrRelaysUnreachableError = defineError(
+export const createNostrRelaysUnreachableError = defineError(
   "NostrRelaysUnreachableError"
 )()
 export type NostrRelaysUnreachableError = ReturnType<
   typeof createNostrRelaysUnreachableError
 >
 
-const createNostrPublishRejectedError = defineError(
+export const createNostrPublishRejectedError = defineError(
   "NostrPublishRejectedError"
 )<{ readonly reasons: ReadonlyArray<string> }>()
 export type NostrPublishRejectedError = ReturnType<
@@ -160,9 +171,11 @@ export const fetchNostrProfile =
     readonly pubkey: string
   }): Task<NostrProfile, NostrRelaysUnreachableError, NostrDep> =>
   async (run) => {
-    const { pool, relays } = run.deps.nostr
+    const { pool, relays, profileRelays } = run.deps.nostr
+    const readRelays = [...new Set([...relays, ...profileRelays])]
+    // The pool keeps the newest event of all of them.
     const event = await pool.get(
-      [...relays],
+      readRelays,
       { kinds: [PROFILE_KIND], authors: [pubkey] },
       { maxWait: RELAY_MAX_WAIT_MS }
     )
@@ -170,8 +183,7 @@ export const fetchNostrProfile =
       return ok(parseProfileMetadata(event.content) ?? emptyNostrProfile)
     }
 
-    const anyConnected = [...pool.listConnectionStatus().values()].some(Boolean)
-    return anyConnected
+    return isAnyRelayConnected(pool, readRelays)
       ? ok(emptyNostrProfile)
       : err(createNostrRelaysUnreachableError())
   }
@@ -199,23 +211,45 @@ export const publishNostrProfile =
       deriveNostrSecretKey(run.deps.masterKey)
     )
 
-    // A relay that cannot be reached resolves with a "connection failure"
-    // string instead of rejecting, so successes are counted explicitly.
     const results = await Promise.allSettled(
       pool.publish([...relays], event, { maxWait: RELAY_MAX_WAIT_MS })
     )
-    const accepted = results.some(
-      (result) =>
-        result.status === "fulfilled" &&
-        !result.value.startsWith("connection failure")
-    )
-    if (accepted) return ok()
+    if (isPublishAccepted(results)) return ok()
 
     return err(
-      createNostrPublishRejectedError({
-        reasons: results.map((result) =>
-          result.status === "fulfilled" ? result.value : String(result.reason)
-        ),
-      })
+      createNostrPublishRejectedError({ reasons: publishReasons(results) })
     )
   }
+
+/**
+ * A relay that cannot be reached resolves with a "connection failure" string
+ * instead of rejecting, so successes are counted explicitly.
+ */
+export const isPublishAccepted = (
+  results: ReadonlyArray<PromiseSettledResult<string>>
+): boolean =>
+  results.some(
+    (result) =>
+      result.status === "fulfilled" &&
+      !result.value.startsWith("connection failure")
+  )
+
+export const publishReasons = (
+  results: ReadonlyArray<PromiseSettledResult<string>>
+): ReadonlyArray<string> =>
+  results.map((result) =>
+    result.status === "fulfilled" ? result.value : String(result.reason)
+  )
+
+/**
+ * Whether any of `relays` is connected — what tells "nothing stored" from
+ * "nobody answered" after an empty read of them. Only those: the shared pool
+ * also holds sockets to relays this read never asked.
+ */
+export const isAnyRelayConnected = (
+  pool: Pick<AbstractSimplePool, "listConnectionStatus">,
+  relays: ReadonlyArray<string>
+): boolean => {
+  const status = pool.listConnectionStatus()
+  return relays.some((relay) => status.get(normalizeURL(relay)) === true)
+}

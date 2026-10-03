@@ -673,6 +673,23 @@ export const enSettings = {
     "Its funds stay in the current wallet and are no longer shown here. Withdraw them first, or keep its mnemonic.",
   "settings.sparkAccount.wallet.warning.invoices":
     "Unpaid invoices from the current wallet will no longer be detected.",
+  "settings.supportChat.teamUnavailable":
+    "Support is unavailable right now. Check your connection and try again.",
+  "settings.supportChat.title": "Contact support",
+  "settings.supportChat.description": "Chat with the Payky team",
+  "settings.supportChat.empty":
+    "No messages yet. Describe what you need help with and the Payky team will reply here.",
+  "settings.supportChat.loadFailed":
+    "Could not load the conversation. Check your connection and try again.",
+  "settings.supportChat.retry": "Try again",
+  "settings.supportChat.message.label": "Message",
+  "settings.supportChat.message.placeholder": "Write a message…",
+  "settings.supportChat.disclosure":
+    "The message is end-to-end encrypted over Nostr and sent from your account's Nostr profile. The app version and platform are attached so we can help.",
+  "settings.supportChat.send": "Send",
+  "settings.supportChat.sent": "Sent",
+  "settings.supportChat.sending": "Sending…",
+  "settings.supportChat.notDelivered": "Not delivered. Tap to retry",
   "settings.support": "SUPPORT & INFO",
   "settings.tables.add": "Add table",
   "settings.tables.delete": "Delete table",

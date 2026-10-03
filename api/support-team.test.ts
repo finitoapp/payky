@@ -30,8 +30,11 @@ describe("handleSupportTeamRequest", () => {
     expect(await response.json()).toEqual({
       pubkeys: [
         "npub1ysdhhw8wx4ew4490mrfpd2gyv3w08rqudqp5pjasgn2kxduahuhstrqnll",
+        "npub1lhxycw3zsyyhz47khqcsw65f4m94p0fuvrs6lxvcqrwv5w0xxs8saaejq0",
       ],
-      formerTeams: [],
+      formerTeams: [
+        ["npub1ysdhhw8wx4ew4490mrfpd2gyv3w08rqudqp5pjasgn2kxduahuhstrqnll"],
+      ],
       relays: [
         "wss://relay.damus.io",
         "wss://nos.lol",

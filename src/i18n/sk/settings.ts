@@ -701,8 +701,6 @@ export const skSettings = {
   "settings.supportChat.retry": "Skúsiť znova",
   "settings.supportChat.message.label": "Správa",
   "settings.supportChat.message.placeholder": "Napíšte správu…",
-  "settings.supportChat.disclosure":
-    "Správa je šifrovaná end-to-end cez Nostr a odchádza z Nostr profilu vášho účtu. Pripájame verziu aplikácie a platformu, aby sme mohli pomôcť.",
   "settings.supportChat.send": "Odoslať",
   "settings.supportChat.sent": "Odoslané",
   "settings.supportChat.sending": "Odosielam…",

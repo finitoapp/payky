@@ -6,7 +6,6 @@ import {
   AlertTriangleIcon,
   CheckIcon,
   ClockIcon,
-  LockIcon,
   RotateCwIcon,
   SendIcon,
 } from "lucide-react"
@@ -351,13 +350,6 @@ function Conversation({
           STICK_TO_BOTTOM_PX
       }}
     >
-      <Alert>
-        <LockIcon />
-        <AlertDescription>
-          {t("settings.supportChat.disclosure")}
-        </AlertDescription>
-      </Alert>
-
       {failure === null ? null : (
         <Alert variant="destructive">
           <AlertCircleIcon />

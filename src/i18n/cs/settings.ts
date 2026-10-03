@@ -698,8 +698,6 @@ export const csSettings = {
   "settings.supportChat.retry": "Zkusit znovu",
   "settings.supportChat.message.label": "Zpráva",
   "settings.supportChat.message.placeholder": "Napište zprávu…",
-  "settings.supportChat.disclosure":
-    "Zpráva je šifrovaná end-to-end přes Nostr a odchází z Nostr profilu vašeho účtu. Připojujeme verzi aplikace a platformu, abychom mohli pomoct.",
   "settings.supportChat.send": "Odeslat",
   "settings.supportChat.sent": "Odesláno",
   "settings.supportChat.sending": "Odesílám…",

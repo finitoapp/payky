@@ -22,7 +22,7 @@ export const registerAiCommand =
         async action({ prompt }) {
           const result = await run(
             askAssistant({
-              prompt,
+              messages: [{ role: "user", content: prompt }],
               tools: createRepoAiTools(process.cwd()),
               onText: (text) => process.stdout.write(text),
             })

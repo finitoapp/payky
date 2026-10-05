@@ -8,7 +8,7 @@ import {
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../evolu/cli-client"
-import { askAssistant } from "./assistant.ts"
+import { askAssistant, recentMessages } from "./assistant.ts"
 
 const usage = {
   inputTokens: {
@@ -76,16 +76,19 @@ describe("askAssistant", () => {
     )
 
     const streamed: string[] = []
+    const toolCalls: string[] = []
     const reply = await run.orThrow(
       askAssistant({
-        prompt: "What is open?",
+        messages: [{ role: "user", content: "What is open?" }],
         tools: {},
         onText: (text) => streamed.push(text),
+        onToolCall: (toolName) => toolCalls.push(toolName),
       })
     )
 
     expect(reply).toBe("One open bill.")
     expect(streamed.join("")).toBe(reply)
+    expect(toolCalls).toEqual(["listOpenBills"])
     expect(JSON.stringify(aiModel.doStreamCalls[1]?.prompt)).toContain("Dinner")
   })
 
@@ -102,12 +105,74 @@ describe("askAssistant", () => {
     })
 
     const result = await run(
-      askAssistant({ prompt: "Hi", tools: {}, onText: () => undefined })
+      askAssistant({
+        messages: [{ role: "user", content: "Hi" }],
+        tools: {},
+        onText: () => undefined,
+      })
     )
 
     expect(result).toMatchObject({
       ok: false,
       error: { type: "AiRequestError" },
     })
+  })
+
+  test("stops with the reply so far when its run is aborted", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      console: createConsole(),
+      aiModel: new MockLanguageModelV4({
+        doStream: {
+          stream: simulateReadableStream({
+            chunks: [
+              { type: "text-start", id: "text-1" },
+              { type: "text-delta", id: "text-1", delta: "Half" },
+              { type: "text-delta", id: "text-1", delta: " of it." },
+              { type: "text-end", id: "text-1" },
+              {
+                type: "finish",
+                finishReason: { unified: "stop", raw: undefined },
+                usage,
+              },
+            ],
+            chunkDelayInMs: 50,
+          }),
+        },
+      }),
+    })
+
+    const streamed: string[] = []
+    const fiber = run.abortable(
+      askAssistant({
+        messages: [{ role: "user", content: "Hi" }],
+        tools: {},
+        onText: (text) => {
+          streamed.push(text)
+          fiber.abort()
+        },
+      })
+    )
+
+    expect(await fiber).toEqual({ ok: true, value: "Half" })
+    expect(streamed).toEqual(["Half"])
+  })
+})
+
+describe("recentMessages", () => {
+  test("keeps the last twenty messages, starting at a question", () => {
+    const conversation = Array.from({ length: 25 }, (_, index) => ({
+      role: index % 2 === 0 ? ("user" as const) : ("assistant" as const),
+      content: String(index),
+    }))
+
+    const recent = recentMessages(conversation)
+
+    expect(recent.map((message) => message.content)).toEqual(
+      Array.from({ length: 19 }, (_, index) => String(index + 6))
+    )
   })
 })

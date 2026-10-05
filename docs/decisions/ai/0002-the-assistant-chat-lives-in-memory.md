@@ -28,6 +28,9 @@ the text as it is, without a Markdown renderer.
 
 The page asks no consent and shows no notice before data goes to the
 provider; its empty state says only that it answers through an AI provider.
+The page and its settings entry are named "AI assistant" instead: next to
+the support chat, the name alone tells that a machine answers, and that an
+answer may be wrong.
 
 ## Alternatives considered
 

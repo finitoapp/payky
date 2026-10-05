@@ -712,7 +712,7 @@ export const csSettings = {
   "settings.supportChat.sent": "Odesláno",
   "settings.supportChat.sending": "Odesílám…",
   "settings.supportChat.notDelivered": "Nedoručeno. Klepněte pro opakování",
-  "settings.assistant.title": "Asistent",
+  "settings.assistant.title": "AI asistent",
   "settings.assistant.description": "Zeptejte se na své účty a platby",
   "settings.assistant.empty":
     "Zeptejte se na své účty a platby. Asistent je čte v tomto zařízení a odpovídá pomocí poskytovatele AI.",

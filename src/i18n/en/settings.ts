@@ -709,7 +709,7 @@ export const enSettings = {
   "settings.supportChat.sent": "Sent",
   "settings.supportChat.sending": "Sending…",
   "settings.supportChat.notDelivered": "Not delivered. Tap to retry",
-  "settings.assistant.title": "Assistant",
+  "settings.assistant.title": "AI assistant",
   "settings.assistant.description": "Ask about your bills and payments",
   "settings.assistant.empty":
     "Ask about your bills and payments. The assistant reads them on this device and answers through an AI provider.",

@@ -715,7 +715,7 @@ export const skSettings = {
   "settings.supportChat.sent": "Odoslané",
   "settings.supportChat.sending": "Odosielam…",
   "settings.supportChat.notDelivered": "Nedoručené. Ťuknite pre opakovanie",
-  "settings.assistant.title": "Asistent",
+  "settings.assistant.title": "AI asistent",
   "settings.assistant.description": "Opýtajte sa na svoje účty a platby",
   "settings.assistant.empty":
     "Opýtajte sa na svoje účty a platby. Asistent ich číta v tomto zariadení a odpovedá pomocou poskytovateľa AI.",

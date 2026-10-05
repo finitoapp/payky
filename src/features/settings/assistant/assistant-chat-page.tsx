@@ -12,6 +12,7 @@ import {
   assistantConversationAtom,
   toAssistantMessages,
 } from "@/features/settings/assistant/assistant-conversation.ts"
+import { decisionAiTools } from "@/features/settings/assistant/decision-ai-tools.ts"
 import {
   ChatComposer,
   ChatLayout,
@@ -131,8 +132,8 @@ function useAssistantConversation() {
     const current = run.abortable(
       askAssistant({
         messages: toAssistantMessages(earlier, question),
-        // The docs and source code tools need the repository: CLI only.
-        tools: {},
+        // The source code tools need the repository, so only the CLI has them.
+        tools: decisionAiTools,
         onText: (text) =>
           store.set(answeringAtom, (answer) => ({
             text: answer.text + text,

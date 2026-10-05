@@ -715,6 +715,23 @@ export const skSettings = {
   "settings.supportChat.sent": "Odoslané",
   "settings.supportChat.sending": "Odosielam…",
   "settings.supportChat.notDelivered": "Nedoručené. Ťuknite pre opakovanie",
+  "settings.assistant.title": "Asistent",
+  "settings.assistant.description": "Opýtajte sa na svoje účty a platby",
+  "settings.assistant.empty":
+    "Opýtajte sa na svoje účty a platby. Asistent ich číta v tomto zariadení a odpovedá pomocou poskytovateľa AI.",
+  "settings.assistant.suggestion.openBills": "Ktoré účty sú ešte otvorené?",
+  "settings.assistant.suggestion.latestPayments":
+    "Aké boli moje posledné platby?",
+  "settings.assistant.suggestion.today": "Koľko dnes prišlo na tržbách?",
+  "settings.assistant.message.label": "Otázka",
+  "settings.assistant.message.placeholder": "Opýtajte sa…",
+  "settings.assistant.send": "Odoslať",
+  "settings.assistant.stop": "Zastaviť",
+  "settings.assistant.thinking": "Premýšľam…",
+  "settings.assistant.lookingUp": "Prechádzam vaše dáta…",
+  "settings.assistant.stopped": "Zastavené",
+  "settings.assistant.failed":
+    "Nepodarilo sa odpovedať. Ťuknite pre opakovanie",
   "settings.support": "PODPORA A INFORMÁCIE",
   "settings.tables.add": "Pridať stôl",
   "settings.tables.delete": "Vymazať stôl",

@@ -1,8 +1,9 @@
 import { createIdFromString, id } from "@evolu/common"
 import type { StandardSchemaV1 } from "@standard-schema/spec"
 import { describe, expect, test } from "vitest"
+import { z } from "zod"
 
-import { standardSchemaToZod } from "./zod-utils.ts"
+import { jsonCodec, standardSchemaToZod } from "./zod-utils.ts"
 
 describe("standardSchemaToZod", () => {
   test("passes through a value the standard schema accepts", () => {
@@ -56,6 +57,32 @@ describe("standardSchemaToZod", () => {
 
     expect(() => standardSchemaToZod(asyncSchema).parse("value")).toThrow(
       "Only synchronous validation is supported for standard schemas."
+    )
+  })
+})
+
+describe("jsonCodec", () => {
+  const codec = jsonCodec(z.array(z.number()))
+
+  test("decodes JSON matching the schema", () => {
+    expect(z.safeDecode(codec, "[1,2]").data).toEqual([1, 2])
+  })
+
+  test("reports malformed JSON as an issue instead of throwing", () => {
+    const result = z.safeDecode(codec, "not json")
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0]?.code).toBe("invalid_format")
+  })
+
+  test("rejects JSON that does not match the schema", () => {
+    expect(z.safeDecode(codec, '["a"]').success).toBe(false)
+  })
+
+  test("encodes a valid value and refuses an invalid one", () => {
+    expect(z.encode(codec, [1, 2])).toBe("[1,2]")
+    expect(z.safeEncode(codec, ["a"] as unknown as number[]).success).toBe(
+      false
     )
   })
 })

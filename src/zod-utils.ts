@@ -49,3 +49,29 @@ export const standardSchemaToZod = <TSchema extends StandardSchemaV1>(
       return result.value
     }) as z.ZodType<InferStandardOutput<TSchema>, InferStandardInput<TSchema>>
 }
+
+/**
+ * A JSON string decoded into `schema`'s output, and back. Use it instead of
+ * `JSON.parse`: `z.safeDecode` reports malformed JSON as an ordinary issue,
+ * so callers need no `try`/`catch`, and `z.encode` validates before writing.
+ *
+ * `schema` must be encodable: a `.transform()` or `preprocess` in it (also
+ * `standardSchemaToZod`) makes `z.encode` throw — `z.safeEncode` too.
+ */
+export const jsonCodec = <TSchema extends z.core.$ZodType>(schema: TSchema) =>
+  z.codec(z.string(), schema, {
+    decode: (text, ctx) => {
+      try {
+        return JSON.parse(text)
+      } catch (error) {
+        ctx.issues.push({
+          code: "invalid_format",
+          format: "json",
+          input: text,
+          message: error instanceof Error ? error.message : "Invalid JSON",
+        })
+        return z.NEVER
+      }
+    },
+    encode: (value) => JSON.stringify(value),
+  })

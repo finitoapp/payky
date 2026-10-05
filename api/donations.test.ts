@@ -108,7 +108,9 @@ describe("cursor encoding", () => {
   })
 
   test("rejects a cursor with a negative offset", () => {
-    expect(decodeCursor(encodeCursor(-1))).toBeNull()
+    const cursor = Buffer.from('{"offset":-1}').toString("base64url")
+
+    expect(decodeCursor(cursor)).toBeNull()
   })
 })
 

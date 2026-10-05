@@ -1,4 +1,5 @@
 import { createIdFromString, sqliteTrue } from "@evolu/common"
+import { z } from "zod"
 
 import type { AppSettingsRow } from "@/core/modules/app-settings/app-settings.ts"
 import {
@@ -8,6 +9,7 @@ import {
   TerminalHomeModeSchema,
 } from "@/core/modules/app-settings/app-settings-types.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 import {
   defaultTipFixedAmounts,
   defaultTipPercentages,
@@ -27,6 +29,16 @@ export const defaultPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> = [
   "cardSwitchio",
 ]
 
+/** `paymentMethodOrderJson` as stored. */
+export const PaymentMethodOrderJson = jsonCodec(
+  DefaultPaymentMethodSchema.array().readonly()
+)
+
+/** `enabledHomeModesJson` as stored. */
+export const EnabledHomeModesJson = jsonCodec(
+  TerminalHomeModeSchema.array().readonly()
+)
+
 /**
  * `enabledHomeModesJson` is left out: `null` already means every mode, which
  * also offers a mode added later to anyone who never narrowed the set.
@@ -41,7 +53,10 @@ export const createDefaultSettings = (): Omit<
   tipsEnabled: sqliteTrue,
   presetTipPercentagesJson: stringifyTipPercentages(defaultTipPercentages),
   presetTipFixedAmountsJson: stringifyTipFixedAmounts(defaultTipFixedAmounts),
-  paymentMethodOrderJson: JSON.stringify(defaultPaymentMethodOrder),
+  paymentMethodOrderJson: z.encode(
+    PaymentMethodOrderJson,
+    defaultPaymentMethodOrder
+  ),
   defaultPaymentMethod,
 })
 
@@ -52,22 +67,17 @@ export const parsePaymentMethodOrder = (
     return defaultPaymentMethodOrder
   }
 
-  try {
-    const parsedJson: unknown = JSON.parse(value)
-    const parsed = DefaultPaymentMethodSchema.array().safeParse(parsedJson)
-    if (!parsed.success) return defaultPaymentMethodOrder
+  const parsed = z.safeDecode(PaymentMethodOrderJson, value)
+  if (!parsed.success) return defaultPaymentMethodOrder
 
-    const uniqueMethods = parsed.data.filter(
-      (method, index, methods) => methods.indexOf(method) === index
-    )
-    const missingMethods = defaultPaymentMethodOrder.filter(
-      (method) => !uniqueMethods.includes(method)
-    )
+  const uniqueMethods = parsed.data.filter(
+    (method, index, methods) => methods.indexOf(method) === index
+  )
+  const missingMethods = defaultPaymentMethodOrder.filter(
+    (method) => !uniqueMethods.includes(method)
+  )
 
-    return [...uniqueMethods, ...missingMethods]
-  } catch {
-    return defaultPaymentMethodOrder
-  }
+  return [...uniqueMethods, ...missingMethods]
 }
 
 /**
@@ -105,17 +115,11 @@ export const parseEnabledHomeModes = (
 ): ReadonlyArray<TerminalHomeMode> => {
   if (value === null || value === undefined) return terminalHomeModes
 
-  try {
-    const parsed = TerminalHomeModeSchema.array().safeParse(JSON.parse(value))
-    if (!parsed.success) return terminalHomeModes
+  const parsed = z.safeDecode(EnabledHomeModesJson, value)
+  if (!parsed.success) return terminalHomeModes
 
-    const enabled = terminalHomeModes.filter((mode) =>
-      parsed.data.includes(mode)
-    )
-    return enabled.length === 0 ? terminalHomeModes : enabled
-  } catch {
-    return terminalHomeModes
-  }
+  const enabled = terminalHomeModes.filter((mode) => parsed.data.includes(mode))
+  return enabled.length === 0 ? terminalHomeModes : enabled
 }
 
 /** The remembered mode while it is enabled, otherwise the first enabled one. */

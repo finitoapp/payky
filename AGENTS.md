@@ -18,6 +18,7 @@
 - Use shadcn-style local UI components in `src/components/ui`; primitives must come from Base UI.
 - `src/components/ui` (shadcn) and `src/components/reui` (ReUI) are vendored third-party code, not ours. Never edit, refactor, shrink, or delete anything in them — not to remove an export nothing imports, not to trim an unused variant, not to fix a lint or style nit. They are kept byte-for-byte as upstream ships them so a registry re-add or upgrade stays a clean overwrite. Update them only by re-adding the component from its registry (`shadcn` CLI, ReUI MCP). An audit or dead-code scan flagging something in these two directories is a false positive; adapt the call site instead.
 - Use Zod for form, domain, and Evolu schema validation.
+    - Read and write JSON strings through `jsonCodec(schema)` from `src/zod-utils.ts`, not `JSON.parse`: `z.safeDecode` returns malformed JSON as an ordinary failed result, so callers need no `try`/`catch`. Write the same value back with `z.encode(codec, value)` so a stored column has one definition for both directions. A one-way `JSON.stringify` (a hash input, an outbound protocol payload, a debug dump) stays as it is. Tests may use `JSON.parse`.
 - Store persistent application data through Evolu. Avoid direct `localStorage` except for non-critical UI preferences such as language.
 - Use Biome for linting and formatting.
 - Dates split two ways, and both sides are deliberate — don't hand-roll either with `padStart` and `getMonth() + 1`:

@@ -7,6 +7,7 @@ import {
   sqliteTrue,
   type Task,
 } from "@evolu/common"
+import { z } from "zod"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
@@ -47,6 +48,7 @@ import {
   createEetReversalId,
   createEetSaleId,
   type EetExtraSaleDue,
+  EetWarningsJson,
   eetBase64ToBytes,
   eetSettingsId,
   findEetConfigurationGaps,
@@ -502,7 +504,7 @@ const toEetAttemptValues = (
                 pok: NonEmptyString255(outcome.pok),
                 receivedAt: formatEetDateTime(new Date(outcome.receivedAt)),
                 isTest: outcome.isTest ? sqliteTrue : sqliteFalse,
-                warningsJson: JSON.stringify(outcome.warnings),
+                warningsJson: z.encode(EetWarningsJson, outcome.warnings),
                 messageUuid: NonEmptyString255(outcome.messageUuid),
                 globalTransactionId: toNonEmpty255(outcome.globalTransactionId),
                 isDeleted: sqliteFalse,

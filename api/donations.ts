@@ -5,6 +5,7 @@ import {
   type DonateWallet,
   loadDonateWalletConfig,
 } from "../src/core/server/donate-wallet.js"
+import { jsonCodec } from "../src/zod-utils.js"
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
@@ -65,24 +66,22 @@ const jsonResponse = (
     },
   })
 
-const CursorSchema = z.object({
-  offset: z.number().int().nonnegative(),
-})
+const CursorJson = jsonCodec(
+  z.object({
+    offset: z.number().int().nonnegative(),
+  })
+)
 
 export const encodeCursor = (offset: number): string =>
-  Buffer.from(JSON.stringify({ offset })).toString("base64url")
+  Buffer.from(z.encode(CursorJson, { offset })).toString("base64url")
 
 export const decodeCursor = (cursor: string): number | null => {
-  try {
-    const decoded = JSON.parse(
-      Buffer.from(cursor, "base64url").toString("utf8")
-    ) as unknown
-    const parsed = CursorSchema.safeParse(decoded)
+  const parsed = z.safeDecode(
+    CursorJson,
+    Buffer.from(cursor, "base64url").toString("utf8")
+  )
 
-    return parsed.success ? parsed.data.offset : null
-  } catch {
-    return null
-  }
+  return parsed.success ? parsed.data.offset : null
 }
 
 export const parseLimit = (value: string | null): number => {

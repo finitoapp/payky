@@ -3,6 +3,7 @@ import { err, ok, type Result } from "@evolu/common"
 import { z } from "zod"
 
 import { defineError } from "@/core/error.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 
 /**
  * Bridge to the SwitchioPay terminal app's ECR API (v8), which is driven
@@ -72,6 +73,7 @@ const SwitchioTransactionResultSchema = z.object({
   terminalIdAcquirer: z.string().nullish(),
   dateTimeTerminal: z.string().nullish(),
 })
+const SwitchioTransactionResultJson = jsonCodec(SwitchioTransactionResultSchema)
 
 const createSwitchioUnavailableError = defineError("SwitchioUnavailable")<{
   readonly reason: "notNativeRuntime" | "notInstalled"
@@ -146,14 +148,11 @@ export const interpretSwitchioPaymentResult = ({
   > | null => {
     if (transactionResult === null || transactionResult === "") return null
 
-    try {
-      const result = SwitchioTransactionResultSchema.safeParse(
-        JSON.parse(transactionResult)
-      )
-      return result.success ? result.data : null
-    } catch {
-      return null
-    }
+    const result = z.safeDecode(
+      SwitchioTransactionResultJson,
+      transactionResult
+    )
+    return result.success ? result.data : null
   })()
 
   if (resultCode !== switchioResultCode.success) {

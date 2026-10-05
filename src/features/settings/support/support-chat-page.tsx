@@ -32,6 +32,7 @@ import {
   sendSupportMessage,
 } from "@/core/integrations/nostr/nostr-support-chat.ts"
 import { ProfileAvatar } from "@/features/settings/profile/profile-avatar.tsx"
+import { splitMentions } from "@/features/settings/support/support-chat-mentions.ts"
 import {
   buildTimeline,
   type ChatEntry,
@@ -462,7 +463,7 @@ function MessageBubble({
           )}
         >
           <span className="whitespace-pre-wrap [overflow-wrap:anywhere]">
-            {entry.text}
+            <MessageText text={entry.text} own={own} />
           </span>
           <span
             className={cn(
@@ -530,6 +531,56 @@ function SupportAuthor({ pubkey }: { readonly pubkey: string }) {
   return (
     <span className="px-1 text-xs font-medium text-muted-foreground">
       {profile.data?.name ?? shortenNpub(npubEncode(pubkey))}
+    </span>
+  )
+}
+
+/** A message, with the accounts it mentions shown by name. */
+function MessageText({
+  text,
+  own,
+}: {
+  readonly text: string
+  readonly own: boolean
+}) {
+  let offset = 0
+  return splitMentions(text).map((part) => {
+    // Parts never move, so where one starts is a stable key.
+    const key = offset
+    offset += part.kind === "text" ? part.text.length : 1
+    return part.kind === "text" ? (
+      <span key={key}>{part.text}</span>
+    ) : (
+      <Mention key={key} pubkey={part.pubkey} own={own} />
+    )
+  })
+}
+
+/** A mentioned account as other clients show it: a chip with its picture. */
+function Mention({
+  pubkey,
+  own,
+}: {
+  readonly pubkey: string
+  readonly own: boolean
+}) {
+  const profile = useSupportMemberProfile(pubkey)
+  return (
+    <span
+      className={cn(
+        "inline-flex max-w-full items-center gap-1 rounded-full py-px pr-2 pl-0.5 align-bottom font-medium whitespace-nowrap",
+        own
+          ? "bg-primary-foreground/15 text-primary-foreground"
+          : "bg-primary/10 text-primary"
+      )}
+    >
+      <ProfileAvatar
+        picture={profile.data?.picture ?? null}
+        className="size-4"
+      />
+      <span className="truncate">
+        {profile.data?.name ?? shortenNpub(npubEncode(pubkey))}
+      </span>
     </span>
   )
 }

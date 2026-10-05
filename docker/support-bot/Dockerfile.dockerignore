@@ -1,0 +1,11 @@
+# The build context is the repository root; the image copies only the bot's
+# files, so everything else, secrets and builds above all, stays out of it.
+*
+!package.json
+!bun.lock
+!bunfig.toml
+!tsconfig.json
+!src
+!bin/support-bot.ts
+**/*.test.ts
+**/*.test.tsx

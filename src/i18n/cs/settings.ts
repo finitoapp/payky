@@ -712,6 +712,23 @@ export const csSettings = {
   "settings.supportChat.sent": "Odesláno",
   "settings.supportChat.sending": "Odesílám…",
   "settings.supportChat.notDelivered": "Nedoručeno. Klepněte pro opakování",
+  "settings.assistant.title": "Asistent",
+  "settings.assistant.description": "Zeptejte se na své účty a platby",
+  "settings.assistant.empty":
+    "Zeptejte se na své účty a platby. Asistent je čte v tomto zařízení a odpovídá pomocí poskytovatele AI.",
+  "settings.assistant.suggestion.openBills": "Které účty jsou ještě otevřené?",
+  "settings.assistant.suggestion.latestPayments":
+    "Jaké byly moje poslední platby?",
+  "settings.assistant.suggestion.today": "Kolik dnes přišlo na tržbách?",
+  "settings.assistant.message.label": "Dotaz",
+  "settings.assistant.message.placeholder": "Zeptejte se…",
+  "settings.assistant.send": "Odeslat",
+  "settings.assistant.stop": "Zastavit",
+  "settings.assistant.thinking": "Přemýšlím…",
+  "settings.assistant.lookingUp": "Procházím vaše data…",
+  "settings.assistant.stopped": "Zastaveno",
+  "settings.assistant.failed":
+    "Nepodařilo se odpovědět. Klepněte pro opakování",
   "settings.support": "PODPORA A INFORMACE",
   "settings.tables.add": "Přidat stůl",
   "settings.tables.delete": "Smazat stůl",

@@ -15,6 +15,7 @@ import {
   ReceiptText,
   ShieldCheck,
   ShoppingBag,
+  Sparkles,
   Stamp,
   SunMoon,
   Table2Icon,
@@ -268,6 +269,12 @@ function SettingsPage() {
         title: "settings.supportChat.title",
         description: "settings.supportChat.description",
         to: "/settings/support",
+      },
+      {
+        icon: Sparkles,
+        title: "settings.assistant.title",
+        description: "settings.assistant.description",
+        to: "/settings/assistant",
       },
       {
         icon: HeartHandshake,

@@ -26,6 +26,7 @@ import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
 import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
+import { Route as TerminalSettingsAssistantRouteImport } from './routes/_terminal.settings.assistant'
 import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_terminal.settings.categories'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
@@ -152,6 +153,12 @@ const TerminalSettingsAccountsRoute =
   TerminalSettingsAccountsRouteImport.update({
     id: '/accounts',
     path: '/accounts',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsAssistantRoute =
+  TerminalSettingsAssistantRouteImport.update({
+    id: '/assistant',
+    path: '/assistant',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsCategoriesRoute =
@@ -404,6 +411,7 @@ export interface FileRoutesByFullPath {
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
+  '/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
@@ -460,6 +468,7 @@ export interface FileRoutesByTo {
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
+  '/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
@@ -514,6 +523,7 @@ export interface FileRoutesById {
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRoute
+  '/_terminal/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/_terminal/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
@@ -574,6 +584,7 @@ export interface FileRouteTypes {
     | '/payment/$paymentId'
     | '/settings/about'
     | '/settings/accounts'
+    | '/settings/assistant'
     | '/settings/categories'
     | '/settings/debug-console'
     | '/settings/donations'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/accounts'
+    | '/settings/assistant'
     | '/settings/debug-console'
     | '/settings/donations'
     | '/settings/donations-invoice'
@@ -683,6 +695,7 @@ export interface FileRouteTypes {
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
     | '/_terminal/settings/accounts'
+    | '/_terminal/settings/assistant'
     | '/_terminal/settings/categories'
     | '/_terminal/settings/debug-console'
     | '/_terminal/settings/donations'
@@ -854,6 +867,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/settings/accounts'
       preLoaderRoute: typeof TerminalSettingsAccountsRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/assistant': {
+      id: '/_terminal/settings/assistant'
+      path: '/assistant'
+      fullPath: '/settings/assistant'
+      preLoaderRoute: typeof TerminalSettingsAssistantRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/categories': {
@@ -1274,6 +1294,7 @@ const TerminalSettingsTablesRouteWithChildren =
 interface TerminalSettingsRouteChildren {
   TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRoute
+  TerminalSettingsAssistantRoute: typeof TerminalSettingsAssistantRoute
   TerminalSettingsCategoriesRoute: typeof TerminalSettingsCategoriesRouteWithChildren
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
@@ -1299,6 +1320,7 @@ interface TerminalSettingsRouteChildren {
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAboutRoute: TerminalSettingsAboutRouteWithChildren,
   TerminalSettingsAccountsRoute: TerminalSettingsAccountsRoute,
+  TerminalSettingsAssistantRoute: TerminalSettingsAssistantRoute,
   TerminalSettingsCategoriesRoute: TerminalSettingsCategoriesRouteWithChildren,
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,

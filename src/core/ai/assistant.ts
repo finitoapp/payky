@@ -2,6 +2,7 @@ import { type ConsoleDep, err, ok, type Run, type Task } from "@evolu/common"
 import {
   isStepCount,
   type LanguageModel,
+  type ModelMessage,
   streamText,
   type ToolSet,
   tool,
@@ -27,11 +28,15 @@ export type AiRequestError = ReturnType<typeof createAiRequestError>
 
 const maxSteps = 10
 
+/** How much of a long conversation the model sees, to bound its tokens. */
+const maxMessages = 20
+
 const systemPrompt = `You are the assistant inside Payky, a point-of-sale app for merchants that takes Bitcoin (Lightning), bank transfer, card and cash payments.
 Answer the merchant's question. Use the data tools to look at their bills and payments, and the documentation and source code tools, when you have them, to explain how Payky behaves.
 Money amounts in the data are integer minor units of the row's currency (cents for fiat, sats for bitcoin).
 If the code suggests a bug, say it only looks like one, and name the file and line that makes you think so.
-Reply in the language of the question. Keep the answer short and readable for a merchant, not a developer.`
+Reply in the language of the question. Keep the answer short and readable for a merchant, not a developer.
+Write plain text, never Markdown: no asterisks, hashes, backticks or tables. Use line breaks, and a hyphen at the start of a line for a list.`
 
 /** Read-only tools over the merchant's local Evolu data. */
 const createDataTools = (run: Run<EvoluDep>) => ({
@@ -65,35 +70,55 @@ const createDataTools = (run: Run<EvoluDep>) => ({
 })
 
 /**
- * Answers one prompt with the model from `AiModelDep`, streaming the reply
- * through `onText`, and resolves to the full reply. Text already streamed
- * stays streamed when the request then fails with `AiRequestError`.
+ * The last `maxMessages` of a conversation, starting at a question: a
+ * provider may refuse a conversation that opens with its own reply.
+ */
+export const recentMessages = (
+  messages: ReadonlyArray<ModelMessage>
+): ModelMessage[] => {
+  const recent = messages.slice(-maxMessages)
+  const firstQuestion = recent.findIndex((message) => message.role === "user")
+  return firstQuestion === -1 ? [] : recent.slice(firstQuestion)
+}
+
+/**
+ * Answers the last question of a conversation with the model from
+ * `AiModelDep`, streaming the reply through `onText`, and resolves to the full
+ * reply. Text already streamed stays streamed when the request then fails
+ * with `AiRequestError`. Aborting the run stops the request and resolves to
+ * the reply so far.
  *
  * `tools` adds the runtime-specific tools (documentation, source code) on top
  * of the data tools, which read the local Evolu database and work anywhere.
+ * `onToolCall` names each tool as the model starts it, so a caller can show
+ * what the wait is for.
  */
 export const askAssistant =
   ({
-    prompt,
+    messages,
     tools,
     onText,
+    onToolCall,
   }: {
-    readonly prompt: string
+    readonly messages: ReadonlyArray<ModelMessage>
     readonly tools: ToolSet
     readonly onText: (text: string) => void
+    readonly onToolCall?: (toolName: string) => void
   }): Task<string, AiRequestError, AiModelDep & EvoluDep & ConsoleDep> =>
   async (run) => {
     let streamError: unknown = null
     const result = streamText({
       model: run.deps.aiModel,
       system: systemPrompt,
-      prompt,
+      messages: recentMessages(messages),
       tools: { ...createDataTools(run), ...tools },
       stopWhen: isStepCount(maxSteps),
+      abortSignal: run.signal,
       onToolExecutionStart: ({ toolCall }) => {
         run.deps.console.debug(
           `[ai] ${toolCall.toolName} ${JSON.stringify(toolCall.input)}`
         )
+        onToolCall?.(toolCall.toolName)
       },
       onError: ({ error }) => {
         streamError = error

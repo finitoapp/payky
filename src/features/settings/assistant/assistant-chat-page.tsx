@@ -6,13 +6,14 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { createAiModelDep } from "@/core/ai/ai-model.ts"
 import { askAssistant } from "@/core/ai/assistant.ts"
+import { createRepoAiTools } from "@/core/ai/repo-ai-tools.ts"
 import { appEnv } from "@/core/app-env.ts"
 import {
   type AssistantTurn,
   assistantConversationAtom,
   toAssistantMessages,
 } from "@/features/settings/assistant/assistant-conversation.ts"
-import { decisionAiTools } from "@/features/settings/assistant/decision-ai-tools.ts"
+import { createSnapshotRepoFilesLoader } from "@/features/settings/assistant/snapshot-repo-files.ts"
 import {
   ChatComposer,
   ChatLayout,
@@ -132,8 +133,7 @@ function useAssistantConversation() {
     const current = run.abortable(
       askAssistant({
         messages: toAssistantMessages(earlier, question),
-        // The source code tools need the repository, so only the CLI has them.
-        tools: decisionAiTools,
+        tools: createRepoAiTools(createSnapshotRepoFilesLoader(run)),
         onText: (text) =>
           store.set(answeringAtom, (answer) => ({
             text: answer.text + text,

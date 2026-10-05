@@ -1,4 +1,5 @@
-import { execSync } from "node:child_process"
+import { execFileSync, execSync } from "node:child_process"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import { sentryVitePlugin } from "@sentry/vite-plugin"
 import tailwindcss from "@tailwindcss/vite"
@@ -81,6 +82,48 @@ function evoluAndroidWebViewWorkerLocksPlugin(): PluginOption {
   }
 }
 
+const repoSnapshotPaths = ["src", "api", "docs", "AGENTS.md"]
+
+/**
+ * The repository's text files the app assistant's tools read (ai/0003), as
+ * `src/core/integrations/repo-snapshot/repo-snapshot-client.ts` expects them.
+ * Only files git tracks, so `.env` files and build output stay out.
+ */
+function readRepoSnapshot(): string {
+  // `-I` leaves binary files out; every text file matches the empty pattern.
+  const paths = execFileSync(
+    "git",
+    ["grep", "-I", "-l", "-z", "-e", "", "--", ...repoSnapshotPaths],
+    { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }
+  )
+    .split("\0")
+    .filter((file) => file !== "")
+  const files = Object.fromEntries(
+    paths.map((file) => [file, readFileSync(file, "utf8")])
+  )
+  return JSON.stringify({ version: getAppVersion(), files })
+}
+
+/** Serves the snapshot in development and emits it with the web build. */
+function repoSnapshotPlugin(): PluginOption {
+  return {
+    name: "payky-repo-snapshot",
+    configureServer(server) {
+      server.middlewares.use("/repo-snapshot.json", (_request, response) => {
+        response.setHeader("content-type", "application/json")
+        response.end(readRepoSnapshot())
+      })
+    },
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "repo-snapshot.json",
+        source: readRepoSnapshot(),
+      })
+    },
+  }
+}
+
 function isNativeAndroidWebViewBuild(command: string): boolean {
   return command === "build" && process.env.PAYKY_CAPACITOR_BUILD === "1"
 }
@@ -89,6 +132,7 @@ function isNativeAndroidWebViewBuild(command: string): boolean {
 export default (({ command }: ConfigEnv) => {
   const useAndroidWebViewWorkerLocksPlugin =
     isNativeAndroidWebViewBuild(command)
+  const isCapacitorBuild = process.env.PAYKY_CAPACITOR_BUILD === "1"
   const useBasicSsl = process.env.PAYKY_DISABLE_BASIC_SSL !== "1"
   const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
   const useSentryVitePlugin = command === "build" && Boolean(sentryAuthToken)
@@ -118,6 +162,8 @@ export default (({ command }: ConfigEnv) => {
       }),
       react(),
       tailwindcss(),
+      // The native app reads payky.me's snapshot instead of carrying one.
+      ...(isCapacitorBuild ? [] : [repoSnapshotPlugin()]),
       VitePWA({
         registerType: "prompt",
         injectRegister: "auto",

@@ -3,8 +3,9 @@ import type { Command } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { type AiModelDep, askAssistant } from "@/core/ai/assistant.ts"
+import { createRepoAiTools } from "@/core/ai/repo-ai-tools.ts"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import { createRepoAiTools } from "@/core/cli/repo-ai-tools.ts"
+import { createGitRepoFiles } from "@/core/cli/git-repo-files.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 
 export const registerAiCommand =
@@ -23,7 +24,7 @@ export const registerAiCommand =
           const result = await run(
             askAssistant({
               messages: [{ role: "user", content: prompt }],
-              tools: createRepoAiTools(process.cwd()),
+              tools: createRepoAiTools(createGitRepoFiles(process.cwd())),
               onText: (text) => process.stdout.write(text),
             })
           )

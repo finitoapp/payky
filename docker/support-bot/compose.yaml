@@ -1,0 +1,54 @@
+# The support bot (support/0004), hardened: run from this directory with
+# `docker compose up -d --build`. Secrets live in PAYKY_BOT_ENV_FILE
+# (default /etc/payky/support-bot.env, mode 0600, never in git); see
+# .env.example for its variables. A rootless Docker or Podman daemon is
+# preferred, so an escape from the container lands as an unprivileged user.
+#
+# The bot needs only outgoing connections to the public internet (relays,
+# the model's API, GitHub, payky.me). Keep it off the host and the local
+# network by dropping its subnet's traffic to private ranges, once per boot:
+#
+#   iptables -I DOCKER-USER -s 10.250.250.0/24 \
+#     -d 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,100.64.0.0/10 \
+#     -j DROP
+#
+# That is why `dns` names public resolvers: the host's, often the router,
+# sit in a private range.
+services:
+  support-bot:
+    build:
+      context: ../..
+      dockerfile: docker/support-bot/Dockerfile
+    image: payky-support-bot
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    volumes:
+      - bot-repo:/data
+    env_file:
+      - ${PAYKY_BOT_ENV_FILE:-/etc/payky/support-bot.env}
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+    dns: [1.1.1.1, 9.9.9.9]
+    networks: [bot]
+    restart: unless-stopped
+    logging:
+      driver: journald
+      options:
+        tag: payky-support-bot
+
+networks:
+  bot:
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
+    ipam:
+      config:
+        - subnet: 10.250.250.0/24
+
+volumes:
+  bot-repo: {}

@@ -28,6 +28,7 @@ import {
   fetchSupportMessages,
   loadDmInbox,
   mergeSupportMessages,
+  parseClientTrailer,
   publishDmRelayList,
   type SupportClientInfo,
   type SupportMessage,
@@ -565,6 +566,8 @@ describe("support chat", () => {
 
     expect(text).toBe("Hello\nthere\n\n— Payky 1.2.3 · android")
     expect(stripClientTrailer(text)).toBe("Hello\nthere")
+    expect(parseClientTrailer(text)).toEqual(client)
+    expect(parseClientTrailer("Hello")).toBeNull()
   })
 
   test("listens two days back on the team's relays and the DM inbox and passes on the verified messages", () => {

@@ -111,7 +111,7 @@ export interface SupportClientInfo {
   readonly platform: string
 }
 
-const trailerPattern = /\n\n— Payky \S+ · \S+$/u
+const trailerPattern = /\n\n— Payky (\S+) · (\S+)$/u
 
 export const appendClientTrailer = (
   text: string,
@@ -121,6 +121,14 @@ export const appendClientTrailer = (
 /** The account's own message as typed, without the trailer it was sent with. */
 export const stripClientTrailer = (text: string): string =>
   text.replace(trailerPattern, "")
+
+/** The app version and platform an account's message was sent from. */
+export const parseClientTrailer = (text: string): SupportClientInfo | null => {
+  const [, version, platform] = trailerPattern.exec(text) ?? []
+  return version === undefined || platform === undefined
+    ? null
+    : { version, platform }
+}
 
 const EventSchema = z.object({
   id: z.string(),
@@ -133,7 +141,7 @@ const EventSchema = z.object({
 const SealSchema = EventSchema.extend({ sig: z.string() })
 
 /** A NIP-17 rumor: an unsigned kind 14 event. */
-type NostrRumor = z.output<typeof EventSchema>
+export type NostrRumor = z.output<typeof EventSchema>
 
 const decryptJson = (
   payload: string,
@@ -162,7 +170,7 @@ const chatKindTypes: Readonly<Record<number, SupportMessageType>> = {
  * rumor's id is its hash: without that anyone could post a message "from
  * support" asking for the recovery phrase.
  */
-const unwrapVerifiedRumor = ({
+export const unwrapVerifiedRumor = ({
   wrap,
   secretKey,
 }: {
@@ -194,7 +202,7 @@ const unwrapVerifiedRumor = ({
 }
 
 /** A NIP-17 room: the rumor's author and every `p` tag. */
-const rumorRoom = (rumor: NostrRumor): ReadonlySet<string> =>
+export const rumorRoom = (rumor: NostrRumor): ReadonlySet<string> =>
   new Set([rumor.pubkey, ...pTagValues(rumor.tags)])
 
 /**
@@ -264,7 +272,7 @@ export const decodeSupportWrap = ({
  * Every event `relays` hold for `filter`. Relays that keep gift wraps private
  * ask for NIP-42 AUTH, answered with the account's key.
  */
-const queryWithAuth = (
+export const queryWithAuth = (
   pool: NostrDep["nostr"]["pool"],
   relays: ReadonlyArray<string>,
   filter: Parameters<NostrDep["nostr"]["pool"]["subscribeManyEose"]>[1],
@@ -280,7 +288,7 @@ const queryWithAuth = (
     })
   })
 
-const authSigner =
+export const authSigner =
   (secretKey: NostrSecretKey) =>
   async (template: EventTemplate): Promise<VerifiedEvent> =>
     finalizeEvent(template, secretKey)

@@ -4,19 +4,13 @@ import { join } from "node:path"
 import { promisify } from "node:util"
 import { tool } from "ai"
 import { z } from "zod"
+import { takeLines } from "@/lib/take-lines.ts"
 
 const execFileAsync = promisify(execFile)
 
 const maxListedFiles = 500
 const maxSearchLines = 200
 const maxReadLines = 400
-
-const takeLines = (text: string, max: number): string => {
-  const lines = text.split("\n").filter((line) => line !== "")
-  return lines.length > max
-    ? [...lines.slice(0, max), `… ${lines.length - max} more lines`].join("\n")
-    : lines.join("\n")
-}
 
 /**
  * Documentation and source code tools over the git checkout at `rootDir`.

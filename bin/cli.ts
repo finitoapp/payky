@@ -6,6 +6,9 @@ import {
 } from "@evolu/common"
 import { installPolyfills } from "@evolu/common/polyfills"
 import { type Command, createCommand } from "commander"
+import { createAiModelDep } from "@/core/ai/ai-model.ts"
+import type { AiModelDep } from "@/core/ai/assistant.ts"
+import { cliEnv } from "@/core/cli/cli-env.ts"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
   createDateDep,
@@ -16,6 +19,7 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { registerAccountTransfersCommand } from "./cli-account-transfers"
 import { registerAccountsCommand } from "./cli-accounts"
+import { registerAiCommand } from "./cli-ai"
 import { registerBackgroundJobsCommand } from "./cli-background-jobs"
 import { registerBillsCommand } from "./cli-bills"
 import { registerCatalogItemsCommand } from "./cli-catalog-items"
@@ -30,7 +34,11 @@ declare const process: {
 
 const commands: ((
   program: Command
-) => Task<void, never, EvoluDep & EvoluOwnerIdDep & ConsoleDep & DateDep>)[] = [
+) => Task<
+  void,
+  never,
+  EvoluDep & EvoluOwnerIdDep & ConsoleDep & DateDep & AiModelDep
+>)[] = [
   registerCatalogItemsCommand,
   registerBillsCommand,
   registerAccountsCommand,
@@ -40,6 +48,7 @@ const commands: ((
   registerTablesCommand,
   registerFioPluginsCommand,
   registerBackgroundJobsCommand,
+  registerAiCommand,
 ]
 
 const main = async () => {
@@ -67,6 +76,11 @@ const main = async () => {
     evoluOwnerId,
     console,
     ...createDateDep(),
+    ...createAiModelDep({
+      baseURL: cliEnv.PAYKY_AI_BASE_URL,
+      ownerId: evoluOwnerId,
+      model: cliEnv.PAYKY_AI_MODEL,
+    }),
   })
 
   const program = createCommand()
@@ -75,8 +89,11 @@ const main = async () => {
     .description("Manage Payky local data and background jobs.")
     .version("0.0.1")
 
+  // Called with the root run, not started as a child Task: a child run is
+  // disposed as soon as registration returns, so every action that runs a
+  // Task after its first `await` would get a RunDisposedAbortReason.
   for (const command of commands) {
-    run(command(program))
+    command(program)(run)
   }
 
   await program.parseAsync(process.argv)

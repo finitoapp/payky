@@ -260,11 +260,22 @@ bun --env-file=.env.cli bin/cli.ts accounts list
 Supported variables:
 
 - `PAYKY_SQLITE_PATH`: SQLite database file path. Defaults to `.data/payky.db`.
+- `PAYKY_AI_BASE_URL`: OpenAI-compatible endpoint. Defaults to Payky's AI
+  proxy, `https://payky.me/api/ai/v1`, which holds the provider and its key
+  and takes the account's owner id as its key (`docs/decisions/ai/0001`).
+  Point it at a local Ollama, `http://localhost:11434/v1`, to develop
+  without it.
+- `PAYKY_AI_MODEL`: model name for an endpoint other than the proxy, which
+  picks its own; it must support tool calling.
 
-Current runtime caveat: the CLI uses `better-sqlite3`, which may fail under Bun
-in environments where Bun does not support that native module. If that happens,
-the browser app and Vitest checks can still be run normally through the scripts
-above.
+`payky ai` is a prototype assistant. Run it from the repository root: it reads
+the local data, and the docs and source code git tracks. It never writes.
+
+```bash
+bun bin/cli.ts ai "Which bills are still open?"
+PAYKY_AI_BASE_URL=http://localhost:11434/v1 PAYKY_AI_MODEL=qwen3 \
+  bun bin/cli.ts ai "How does bill coverage work?"
+```
 
 ## Internationalization
 

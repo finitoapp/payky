@@ -36,7 +36,10 @@ export interface NostrDep {
 let sharedPool: SimplePool | undefined
 
 export const createNostrDep = (): NostrDep => {
-  sharedPool ??= new SimplePool()
+  // Pings close a socket that died silently (a phone asleep, a dropped NAT
+  // mapping), so the next publish reconnects instead of timing out and the
+  // live chat subscription reports its close instead of going quiet.
+  sharedPool ??= new SimplePool({ enablePing: true })
   return {
     nostr: {
       relays: appEnv.VITE_PAYKY_NOSTR_RELAYS,

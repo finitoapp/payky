@@ -6,6 +6,7 @@ import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   completeOnboarding,
+  setEnabledHomeModes,
   updateTipSettings,
 } from "./app-settings-actions.ts"
 import { settingsQuery } from "./app-settings-queries.ts"
@@ -57,5 +58,58 @@ describe("tip settings actions", () => {
           presetTipFixedAmountsJson: "[2500,5000]",
         }),
       ])
+  })
+})
+
+describe("setEnabledHomeModes", () => {
+  const onboard = completeOnboarding({
+    fiatCurrency: "CZK",
+    defaultPaymentMethod,
+    paymentMethodOrderJson: JSON.stringify(defaultPaymentMethodOrder),
+  })
+
+  test("onboarding leaves the home modes unset, which means all of them", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun(createDeps(evolu))
+
+    await run.ok(onboard)
+
+    await expect
+      .poll(() => evolu.loadQuery(settingsQuery))
+      .toEqual([expect.objectContaining({ enabledHomeModesJson: null })])
+  })
+
+  test("saves the enabled modes in their fixed order", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun(createDeps(evolu))
+
+    await run.ok(onboard)
+    await run.orThrow(setEnabledHomeModes(["pos", "numpad", "pos"]))
+
+    await expect
+      .poll(() => evolu.loadQuery(settingsQuery))
+      .toEqual([
+        expect.objectContaining({ enabledHomeModesJson: '["numpad","pos"]' }),
+      ])
+  })
+
+  test("refuses to disable every mode and keeps the stored set", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun(createDeps(evolu))
+
+    await run.ok(onboard)
+    await run.orThrow(setEnabledHomeModes(["pos"]))
+    const result = await run(setEnabledHomeModes([]))
+
+    expect(result).toEqual({
+      ok: false,
+      error: { type: "NoHomeModeEnabled" },
+    })
+    await expect
+      .poll(() => evolu.loadQuery(settingsQuery))
+      .toEqual([expect.objectContaining({ enabledHomeModesJson: '["pos"]' })])
   })
 })

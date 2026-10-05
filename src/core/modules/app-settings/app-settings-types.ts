@@ -13,3 +13,6 @@ export const DefaultPaymentMethodSchema = z.enum([
   "cardSwitchio",
 ])
 export type DefaultPaymentMethod = z.output<typeof DefaultPaymentMethodSchema>
+
+export const TerminalHomeModeSchema = z.enum(["numpad", "pos"])
+export type TerminalHomeMode = z.output<typeof TerminalHomeModeSchema>

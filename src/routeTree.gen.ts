@@ -32,6 +32,7 @@ import { Route as TerminalSettingsDonationsRouteImport } from './routes/_termina
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEetRouteImport } from './routes/_terminal.settings.eet'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
+import { Route as TerminalSettingsHomeScreenRouteImport } from './routes/_terminal.settings.home-screen'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
 import { Route as TerminalSettingsLanguageRouteImport } from './routes/_terminal.settings.language'
 import { Route as TerminalSettingsLegalEntityRouteImport } from './routes/_terminal.settings.legal-entity'
@@ -186,6 +187,12 @@ const TerminalSettingsEvoluExportRoute =
   TerminalSettingsEvoluExportRouteImport.update({
     id: '/evolu-export',
     path: '/evolu-export',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsHomeScreenRoute =
+  TerminalSettingsHomeScreenRouteImport.update({
+    id: '/home-screen',
+    path: '/home-screen',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsItemsRoute = TerminalSettingsItemsRouteImport.update({
@@ -403,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/eet': typeof TerminalSettingsEetRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
+  '/settings/home-screen': typeof TerminalSettingsHomeScreenRoute
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
@@ -457,6 +465,7 @@ export interface FileRoutesByTo {
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/eet': typeof TerminalSettingsEetRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
+  '/settings/home-screen': typeof TerminalSettingsHomeScreenRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
   '/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
@@ -511,6 +520,7 @@ export interface FileRoutesById {
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/eet': typeof TerminalSettingsEetRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
+  '/_terminal/settings/home-screen': typeof TerminalSettingsHomeScreenRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
   '/_terminal/settings/language': typeof TerminalSettingsLanguageRoute
   '/_terminal/settings/legal-entity': typeof TerminalSettingsLegalEntityRoute
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/settings/donations-invoice'
     | '/settings/eet'
     | '/settings/evolu-export'
+    | '/settings/home-screen'
     | '/settings/items'
     | '/settings/language'
     | '/settings/legal-entity'
@@ -624,6 +635,7 @@ export interface FileRouteTypes {
     | '/settings/donations-invoice'
     | '/settings/eet'
     | '/settings/evolu-export'
+    | '/settings/home-screen'
     | '/settings/language'
     | '/settings/legal-entity'
     | '/settings/payment-number-series'
@@ -677,6 +689,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/eet'
     | '/_terminal/settings/evolu-export'
+    | '/_terminal/settings/home-screen'
     | '/_terminal/settings/items'
     | '/_terminal/settings/language'
     | '/_terminal/settings/legal-entity'
@@ -883,6 +896,13 @@ declare module '@tanstack/react-router' {
       path: '/evolu-export'
       fullPath: '/settings/evolu-export'
       preLoaderRoute: typeof TerminalSettingsEvoluExportRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/home-screen': {
+      id: '/_terminal/settings/home-screen'
+      path: '/home-screen'
+      fullPath: '/settings/home-screen'
+      preLoaderRoute: typeof TerminalSettingsHomeScreenRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/items': {
@@ -1260,6 +1280,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEetRoute: typeof TerminalSettingsEetRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
+  TerminalSettingsHomeScreenRoute: typeof TerminalSettingsHomeScreenRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
   TerminalSettingsLanguageRoute: typeof TerminalSettingsLanguageRoute
   TerminalSettingsLegalEntityRoute: typeof TerminalSettingsLegalEntityRoute
@@ -1284,6 +1305,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEetRoute: TerminalSettingsEetRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
+  TerminalSettingsHomeScreenRoute: TerminalSettingsHomeScreenRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
   TerminalSettingsLanguageRoute: TerminalSettingsLanguageRoute,
   TerminalSettingsLegalEntityRoute: TerminalSettingsLegalEntityRoute,

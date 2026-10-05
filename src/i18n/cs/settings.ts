@@ -394,6 +394,16 @@ export const csSettings = {
   "settings.fioPlugin.tokens.item": "Fio API token",
   "settings.fioPlugin.tokens.remove": "Odebrat",
   "settings.fioPlugin.tokens.title": "Tokeny",
+  "settings.homeScreen.atLeastOneMode":
+    "Nechte zapnutý aspoň jeden mód — hlavní obrazovka musí mít co zobrazit.",
+  "settings.homeScreen.modes.description":
+    "Vyberte, mezi kterými zobrazeními lze na hlavní obrazovce přepínat. Když necháte zapnuté jen jedno, přepínač zmizí.",
+  "settings.homeScreen.modes.title": "Módy",
+  "settings.homeScreen.numpad.description":
+    "Zadejte částku a rovnou ji naúčtujte.",
+  "settings.homeScreen.pos.description":
+    "Stoly a otevřené účty, účtované z katalogu.",
+  "settings.homeScreen.title": "Hlavní obrazovka",
   "settings.items.add": "Přidat položku",
   "settings.items.category.all": "Vše",
   "settings.items.category.uncategorized": "Bez kategorie",

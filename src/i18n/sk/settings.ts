@@ -397,6 +397,16 @@ export const skSettings = {
   "settings.fioPlugin.tokens.item": "Fio API token",
   "settings.fioPlugin.tokens.remove": "Odobrať",
   "settings.fioPlugin.tokens.title": "Tokeny",
+  "settings.homeScreen.atLeastOneMode":
+    "Nechajte zapnutý aspoň jeden režim — hlavná obrazovka musí mať čo zobraziť.",
+  "settings.homeScreen.modes.description":
+    "Vyberte, medzi ktorými zobrazeniami sa dá na hlavnej obrazovke prepínať. Keď necháte zapnuté len jedno, prepínač zmizne.",
+  "settings.homeScreen.modes.title": "Režimy",
+  "settings.homeScreen.numpad.description":
+    "Zadajte sumu a rovno ju naúčtujte.",
+  "settings.homeScreen.pos.description":
+    "Stoly a otvorené účty, účtované z katalógu.",
+  "settings.homeScreen.title": "Hlavná obrazovka",
   "settings.items.add": "Pridať položku",
   "settings.items.category.all": "Všetko",
   "settings.items.category.uncategorized": "Bez kategórie",

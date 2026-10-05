@@ -47,7 +47,11 @@ const homeModeItems = [
 
 const Header = () => {
   const { t } = useTranslation()
-  const [terminalHomeMode, setTerminalHomeMode] = useTerminalHomeMode()
+  const {
+    mode: terminalHomeMode,
+    enabledModes,
+    setMode: setTerminalHomeMode,
+  } = useTerminalHomeMode()
   const transition = useSlidingPillTransition()
 
   return (
@@ -56,43 +60,46 @@ const Header = () => {
        * Both modes stay on screen so the control reads as a switch rather
        * than a mystery icon; only the active one spells out its label, which
        * keeps "Klávesnice" from crowding the header on a phone. The motion
-       * is `sliding-pill.tsx`'s.
+       * is `sliding-pill.tsx`'s. With a single mode enabled in settings
+       * there is nothing to switch to, so the control goes away entirely.
        */}
-      <LayoutGroup>
-        <ToggleGroup
-          value={[terminalHomeMode]}
-          onValueChange={(value) => {
-            // Tapping the already-active segment would empty the group.
-            const [nextMode] = value
-            if (nextMode !== undefined) setTerminalHomeMode(nextMode)
-          }}
-          // Not 0: the vendored group squares off joined segments at spacing 0.
-          spacing={0.5}
-          render={<motion.div {...slidingPillLayout(transition)} />}
-          className="border border-input p-1"
-        >
-          {homeModeItems.map(({ mode, icon: Icon, label }) => {
-            const active = mode === terminalHomeMode
-            return (
-              <ToggleGroupItem
-                key={mode}
-                value={mode}
-                aria-label={t(label)}
-                render={<motion.button {...slidingPillLayout(transition)} />}
-                className="relative isolate h-9 min-w-9 gap-0 px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent aria-pressed:bg-transparent aria-pressed:text-background motion-reduce:transition-none"
-              >
-                <SlidingPillSegmentContent
-                  active={active}
-                  pillId="home-mode-pill"
-                  icon={<Icon className="size-4" strokeWidth={2.5} />}
-                  label={t(label)}
-                />
-              </ToggleGroupItem>
-            )
-          })}
-        </ToggleGroup>
-      </LayoutGroup>
-      <div className="flex items-center gap-4">
+      {enabledModes.length > 1 && (
+        <LayoutGroup>
+          <ToggleGroup
+            value={[terminalHomeMode]}
+            onValueChange={(value) => {
+              // Tapping the already-active segment would empty the group.
+              const [nextMode] = value
+              if (nextMode !== undefined) setTerminalHomeMode(nextMode)
+            }}
+            // Not 0: the vendored group squares off joined segments at spacing 0.
+            spacing={0.5}
+            render={<motion.div {...slidingPillLayout(transition)} />}
+            className="border border-input p-1"
+          >
+            {homeModeItems.map(({ mode, icon: Icon, label }) => {
+              const active = mode === terminalHomeMode
+              return (
+                <ToggleGroupItem
+                  key={mode}
+                  value={mode}
+                  aria-label={t(label)}
+                  render={<motion.button {...slidingPillLayout(transition)} />}
+                  className="relative isolate h-9 min-w-9 gap-0 px-4 text-muted-foreground transition-colors duration-300 hover:bg-transparent aria-pressed:bg-transparent aria-pressed:text-background motion-reduce:transition-none"
+                >
+                  <SlidingPillSegmentContent
+                    active={active}
+                    pillId="home-mode-pill"
+                    icon={<Icon className="size-4" strokeWidth={2.5} />}
+                    label={t(label)}
+                  />
+                </ToggleGroupItem>
+              )
+            })}
+          </ToggleGroup>
+        </LayoutGroup>
+      )}
+      <div className="ml-auto flex items-center gap-4">
         <Button
           nativeButton={false}
           variant={"ghost"}
@@ -168,7 +175,7 @@ function TerminalHomePage() {
         search: { billId: createRandomBillId(), scan: code },
       }),
   })
-  const [terminalHomeMode] = useTerminalHomeMode()
+  const { mode: terminalHomeMode } = useTerminalHomeMode()
   const isNumpadMode = terminalHomeMode !== "pos"
 
   return (

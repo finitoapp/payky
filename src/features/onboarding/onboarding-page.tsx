@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useEffect, useId, useState } from "react"
+import { z } from "zod"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
@@ -28,6 +29,7 @@ import {
 } from "@/core/modules/account/account-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
@@ -255,7 +257,8 @@ export function OnboardingPage() {
           defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
             selectedPaymentMethods
           ),
-          paymentMethodOrderJson: JSON.stringify(
+          paymentMethodOrderJson: z.encode(
+            PaymentMethodOrderJson,
             getPaymentMethodOrder(selectedPaymentMethods)
           ),
         })

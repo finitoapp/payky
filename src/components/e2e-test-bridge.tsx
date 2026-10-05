@@ -1,6 +1,7 @@
 import { sqliteFalse } from "@evolu/common"
 import { useAtomValue } from "jotai"
 import { useEffect } from "react"
+import { z } from "zod"
 
 import { accountAtom } from "@/atoms/account.ts"
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/core/modules/account/account-utils.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
+import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { cancelBill } from "@/core/modules/bill/bill-actions.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -195,7 +197,8 @@ export function E2eTestBridge() {
         completeOnboarding({
           fiatCurrency,
           defaultPaymentMethod: "cashRegister",
-          paymentMethodOrderJson: JSON.stringify(
+          paymentMethodOrderJson: z.encode(
+            PaymentMethodOrderJson,
             sparkEnabled
               ? ["spark", "iban", "cashRegister"]
               : ["iban", "cashRegister"]

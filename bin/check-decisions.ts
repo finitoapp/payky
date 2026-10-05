@@ -4,6 +4,8 @@ import { join, relative } from "node:path"
 import { promisify } from "node:util"
 import { z } from "zod"
 
+import { jsonCodec } from "@/zod-utils.ts"
+
 import { findDecisionProblems, readDecisionRecord } from "./decisions.ts"
 
 const decisionsDirectory = "docs/decisions"
@@ -39,9 +41,9 @@ const listUnitTestIds = async (): Promise<ReadonlyArray<string>> => {
   const { stdout } = await run("bunx", ["vitest", "list", "--json"], {
     maxBuffer: 64 * 1024 * 1024,
   })
-  return VitestListSchema.parse(JSON.parse(stdout)).map(
-    ({ name, file }) => `${relative(process.cwd(), file)} > ${name}`
-  )
+  return z
+    .decode(jsonCodec(VitestListSchema), stdout)
+    .map(({ name, file }) => `${relative(process.cwd(), file)} > ${name}`)
 }
 
 const listSuiteTestIds = (
@@ -64,7 +66,7 @@ const listEndToEndTestIds = async (): Promise<ReadonlyArray<string>> => {
     ["playwright", "test", "--list", "--reporter=json"],
     { maxBuffer: 64 * 1024 * 1024 }
   )
-  const { config, suites } = PlaywrightListSchema.parse(JSON.parse(stdout))
+  const { config, suites } = z.decode(jsonCodec(PlaywrightListSchema), stdout)
   return suites.flatMap((suite) => listSuiteTestIds(suite, [], config.rootDir))
 }
 

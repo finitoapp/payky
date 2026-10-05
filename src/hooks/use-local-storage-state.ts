@@ -1,5 +1,7 @@
-import { useCallback, useSyncExternalStore } from "react"
-import type { z } from "zod"
+import { useCallback, useMemo, useSyncExternalStore } from "react"
+import { z } from "zod"
+
+import { jsonCodec } from "@/zod-utils.ts"
 
 type Listener = () => void
 
@@ -41,16 +43,17 @@ function subscribe(key: string, listener: Listener) {
 
 function readStoredValue<T>(
   key: string,
-  schema: z.ZodType<T>,
+  codec: z.ZodType<T, string>,
   defaultValue: T
 ): T {
   try {
     const raw = localStorage.getItem(key)
     if (raw === null) return defaultValue
 
-    const parsed = schema.safeParse(JSON.parse(raw))
+    const parsed = z.safeDecode(codec, raw)
     return parsed.success ? parsed.data : defaultValue
   } catch {
+    // Storage blocked (private browsing, disabled site data, ...).
     return defaultValue
   }
 }
@@ -83,29 +86,33 @@ export function useLocalStorageState<T>(
   defaultValue: T,
   schema: z.ZodType<T>
 ) {
+  const codec = useMemo(() => jsonCodec(schema), [schema])
   const subscribeToKey = useCallback(
     (listener: Listener) => subscribe(key, listener),
     [key]
   )
   const getSnapshot = useCallback(
-    () => readStoredValue(key, schema, defaultValue),
-    [key, schema, defaultValue]
+    () => readStoredValue(key, codec, defaultValue),
+    [key, codec, defaultValue]
   )
 
   const value = useSyncExternalStore(subscribeToKey, getSnapshot)
 
   const setStoredValue = useCallback(
     (next: T | ((previous: T) => T)) => {
-      const previous = readStoredValue(key, schema, defaultValue)
+      const previous = readStoredValue(key, codec, defaultValue)
       const resolved = next instanceof Function ? next(previous) : next
+      // Outside the `try`: a schema that cannot encode is a programmer
+      // error, not a storage failure to swallow.
+      const serialized = z.encode(codec, resolved)
       try {
-        localStorage.setItem(key, JSON.stringify(resolved))
+        localStorage.setItem(key, serialized)
       } catch {
         // Ignore storage write failures (private browsing, quota, ...).
       }
       notify(key)
     },
-    [key, schema, defaultValue]
+    [key, codec, defaultValue]
   )
 
   return [value, setStoredValue] as const

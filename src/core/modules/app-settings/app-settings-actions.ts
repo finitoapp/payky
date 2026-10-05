@@ -6,6 +6,7 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
+import { z } from "zod"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
@@ -27,6 +28,8 @@ import {
 } from "./app-settings-tips.ts"
 import {
   createDefaultSettings,
+  EnabledHomeModesJson,
+  PaymentMethodOrderJson,
   settingsId,
   terminalHomeModes,
 } from "./app-settings-utils.ts"
@@ -107,7 +110,7 @@ export const setPaymentMethodOrder =
   async (run) =>
     await run(
       updateSettings({
-        paymentMethodOrderJson: JSON.stringify(order),
+        paymentMethodOrderJson: z.encode(PaymentMethodOrderJson, order),
         defaultPaymentMethod: order[0],
       })
     )
@@ -132,6 +135,8 @@ export const setEnabledHomeModes =
     if (enabled.length === 0) return err(createNoHomeModeEnabledError())
 
     return await run(
-      updateSettings({ enabledHomeModesJson: JSON.stringify(enabled) })
+      updateSettings({
+        enabledHomeModesJson: z.encode(EnabledHomeModesJson, enabled),
+      })
     )
   }

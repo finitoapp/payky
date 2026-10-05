@@ -38,6 +38,7 @@ import {
   deriveNostrSecretKey,
   type NostrSecretKey,
 } from "@/core/modules/shared/key-derivation.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 
 /**
  * The support chat is one NIP-17 group per account: the account's own Nostr
@@ -131,16 +132,19 @@ const EventSchema = z.object({
   content: z.string(),
 })
 const SealSchema = EventSchema.extend({ sig: z.string() })
+const EventJson = jsonCodec(EventSchema)
+const SealJson = jsonCodec(SealSchema)
 
 /** A NIP-17 rumor: an unsigned kind 14 event. */
 type NostrRumor = z.output<typeof EventSchema>
 
-const decryptJson = (
+const decryptJson = <T>(
+  codec: z.ZodType<T, string>,
   payload: string,
   secretKey: NostrSecretKey,
   pubkey: string
-): unknown =>
-  JSON.parse(decrypt(payload, getConversationKey(secretKey, pubkey)))
+) =>
+  z.safeDecode(codec, decrypt(payload, getConversationKey(secretKey, pubkey)))
 
 const pTagValues = (tags: ReadonlyArray<ReadonlyArray<string>>) =>
   tags.flatMap(([name, value]) =>
@@ -171,14 +175,15 @@ const unwrapVerifiedRumor = ({
 }): NostrRumor | null => {
   if (wrap.kind !== GiftWrap) return null
   try {
-    const seal = SealSchema.safeParse(
-      decryptJson(wrap.content, secretKey, wrap.pubkey)
-    )
+    const seal = decryptJson(SealJson, wrap.content, secretKey, wrap.pubkey)
     if (!seal.success || seal.data.kind !== Seal || !verifyEvent(seal.data)) {
       return null
     }
-    const parsed = EventSchema.safeParse(
-      decryptJson(seal.data.content, secretKey, seal.data.pubkey)
+    const parsed = decryptJson(
+      EventJson,
+      seal.data.content,
+      secretKey,
+      seal.data.pubkey
     )
     if (!parsed.success) return null
     const rumor = parsed.data
@@ -188,7 +193,7 @@ const unwrapVerifiedRumor = ({
       ? rumor
       : null
   } catch {
-    // Not encrypted to this key, or not JSON inside.
+    // Not encrypted to this key.
     return null
   }
 }

@@ -40,6 +40,7 @@ import {
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 
 export const eetSettingsId: EetSettingsId =
   createIdFromString<"EetSettings">("payky-eet-settings")
@@ -364,11 +365,10 @@ export const findEetConfigurationGaps = ({
   return gaps
 }
 
+/** `eetSale.warningsJson` as stored. */
+export const EetWarningsJson = jsonCodec(z.array(EetWarningSchema).readonly())
+
 export const parseEetWarnings = (json: string): ReadonlyArray<EetWarning> => {
-  try {
-    const parsed = z.array(EetWarningSchema).safeParse(JSON.parse(json))
-    return parsed.success ? parsed.data : []
-  } catch {
-    return []
-  }
+  const parsed = z.safeDecode(EetWarningsJson, json)
+  return parsed.success ? parsed.data : []
 }

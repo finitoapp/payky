@@ -13,6 +13,7 @@ import {
   deriveNostrSecretKey,
   type MasterKey,
 } from "@/core/modules/shared/key-derivation.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 
 const PROFILE_KIND = 0
 export const RELAY_MAX_WAIT_MS = 6_000
@@ -85,6 +86,7 @@ const ProfileMetadataSchema = z.looseObject({
   display_name: z.string().optional(),
   picture: z.string().optional(),
 })
+const ProfileMetadataJson = jsonCodec(ProfileMetadataSchema)
 
 const isDisplayablePicture = (value: string): boolean => {
   if (value.startsWith("data:image/")) return true
@@ -95,27 +97,28 @@ const isDisplayablePicture = (value: string): boolean => {
   }
 }
 
-/** `display_name` before `name`, as Linky reads it; `null` for non-metadata. */
-export const profileFromMetadata = (value: unknown): NostrProfile | null => {
-  const parsed = ProfileMetadataSchema.safeParse(value)
-  if (!parsed.success) return null
-
-  const name = (parsed.data.display_name ?? parsed.data.name ?? "").trim()
-  const picture = (parsed.data.picture ?? "").trim()
+const toNostrProfile = (
+  metadata: z.output<typeof ProfileMetadataSchema>
+): NostrProfile => {
+  const name = (metadata.display_name ?? metadata.name ?? "").trim()
+  const picture = (metadata.picture ?? "").trim()
   return {
     name: name === "" ? null : name,
     picture: isDisplayablePicture(picture) ? picture : null,
-    metadata: parsed.data,
+    metadata,
   }
+}
+
+/** `display_name` before `name`, as Linky reads it; `null` for non-metadata. */
+export const profileFromMetadata = (value: unknown): NostrProfile | null => {
+  const parsed = ProfileMetadataSchema.safeParse(value)
+  return parsed.success ? toNostrProfile(parsed.data) : null
 }
 
 /** A kind-0 event's content as a profile; `null` when it is not metadata. */
 export const parseProfileMetadata = (content: string): NostrProfile | null => {
-  try {
-    return profileFromMetadata(JSON.parse(content))
-  } catch {
-    return null
-  }
+  const parsed = z.safeDecode(ProfileMetadataJson, content)
+  return parsed.success ? toNostrProfile(parsed.data) : null
 }
 
 /**

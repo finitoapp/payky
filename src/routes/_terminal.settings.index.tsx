@@ -6,6 +6,7 @@ import {
   FolderIcon,
   type Grid2X2,
   HeartHandshake,
+  House,
   Info,
   Landmark,
   Languages,
@@ -33,10 +34,12 @@ import {
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { homeModeLabelKeys } from "@/features/settings/home-screen/home-screen-settings-page.tsx"
 import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -112,6 +115,7 @@ function SettingsPage() {
   const [spark] = useEvoluQuery(sparkAccountQuery).data
   const [card] = useEvoluQuery(cardSwitchioAccountQuery).data
   const eet = useEetSettings()
+  const { enabledModes: enabledHomeModes } = useTerminalHomeMode()
 
   const enabledMethods = [
     [cash, "settings.paymentAccounts.method.cashRegister"],
@@ -245,6 +249,14 @@ function SettingsPage() {
         title: "settings.theme.title",
         value: t(themeValueKeys[theme]),
         to: "/settings/theme",
+      },
+      {
+        icon: House,
+        title: "settings.homeScreen.title",
+        value: enabledHomeModes
+          .map((mode) => t(homeModeLabelKeys[mode]))
+          .join(", "),
+        to: "/settings/home-screen",
       },
     ],
     t

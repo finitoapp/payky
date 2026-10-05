@@ -19,6 +19,12 @@ export const appSettings = {
   presetTipFixedAmountsJson: z.string(),
   paymentMethodOrderJson: z.string(),
   defaultPaymentMethod: DefaultPaymentMethodSchema,
+  /**
+   * The home-screen modes on offer, as a JSON array; `null` means all of
+   * them. Nullable and left out of `settingsQuery`'s filter, so rows written
+   * before the column existed still count as onboarded settings.
+   */
+  enabledHomeModesJson: z.string().nullable(),
 } as const
 
 export type AppSettingsRow = InferTable<typeof appSettings>

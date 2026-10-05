@@ -393,6 +393,16 @@ export const enSettings = {
   "settings.fioPlugin.tokens.item": "Fio API token",
   "settings.fioPlugin.tokens.remove": "Remove",
   "settings.fioPlugin.tokens.title": "Tokens",
+  "settings.homeScreen.atLeastOneMode":
+    "Keep at least one mode on — the home screen needs something to show.",
+  "settings.homeScreen.modes.description":
+    "Choose which views the home screen lets you switch between. With just one on, the switch disappears.",
+  "settings.homeScreen.modes.title": "Modes",
+  "settings.homeScreen.numpad.description":
+    "Type an amount and charge it straight away.",
+  "settings.homeScreen.pos.description":
+    "Tables and open bills, charged from the catalog.",
+  "settings.homeScreen.title": "Home screen",
   "settings.items.add": "Add item",
   "settings.items.category.all": "All",
   "settings.items.category.uncategorized": "Uncategorized",

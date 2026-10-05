@@ -3,7 +3,9 @@ import { describe, expect, test } from "vitest"
 import {
   defaultPaymentMethodOrder,
   getPaymentMethodOrder,
+  parseEnabledHomeModes,
   parsePaymentMethodOrder,
+  resolveTerminalHomeMode,
 } from "./app-settings-utils.ts"
 
 describe("parsePaymentMethodOrder", () => {
@@ -64,5 +66,37 @@ describe("getPaymentMethodOrder", () => {
 
   test("falls back to the default order without settings", () => {
     expect(getPaymentMethodOrder(undefined)).toEqual(defaultPaymentMethodOrder)
+  })
+})
+
+describe("parseEnabledHomeModes", () => {
+  test("treats an unset value as every mode", () => {
+    expect(parseEnabledHomeModes(null)).toEqual(["numpad", "pos"])
+    expect(parseEnabledHomeModes(undefined)).toEqual(["numpad", "pos"])
+  })
+
+  test("treats an unreadable or empty value as every mode", () => {
+    expect(parseEnabledHomeModes("not json")).toEqual(["numpad", "pos"])
+    expect(parseEnabledHomeModes('["unknownMode"]')).toEqual(["numpad", "pos"])
+    expect(parseEnabledHomeModes("[]")).toEqual(["numpad", "pos"])
+  })
+
+  test("keeps the stored modes in their fixed order, without duplicates", () => {
+    expect(parseEnabledHomeModes('["pos"]')).toEqual(["pos"])
+    expect(parseEnabledHomeModes('["pos","numpad","pos"]')).toEqual([
+      "numpad",
+      "pos",
+    ])
+  })
+})
+
+describe("resolveTerminalHomeMode", () => {
+  test("keeps the remembered mode while it is enabled", () => {
+    expect(resolveTerminalHomeMode("pos", ["numpad", "pos"])).toBe("pos")
+  })
+
+  test("falls back to the first enabled mode when the remembered one is disabled", () => {
+    expect(resolveTerminalHomeMode("pos", ["numpad"])).toBe("numpad")
+    expect(resolveTerminalHomeMode("numpad", ["pos"])).toBe("pos")
   })
 })

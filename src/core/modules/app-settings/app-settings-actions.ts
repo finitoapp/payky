@@ -1,4 +1,5 @@
 import {
+  err,
   ok,
   sqliteFalse,
   sqliteTrue,
@@ -7,10 +8,12 @@ import {
 } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
 import type { appSettings } from "@/core/modules/app-settings/app-settings.ts"
 import type {
   AppSettingsId,
   DefaultPaymentMethod,
+  TerminalHomeMode,
 } from "@/core/modules/app-settings/app-settings-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -22,7 +25,11 @@ import {
   stringifyTipFixedAmounts,
   stringifyTipPercentages,
 } from "./app-settings-tips.ts"
-import { createDefaultSettings, settingsId } from "./app-settings-utils.ts"
+import {
+  createDefaultSettings,
+  settingsId,
+  terminalHomeModes,
+} from "./app-settings-utils.ts"
 
 /**
  * Creates the appSettings row when onboarding finishes. The row's existence
@@ -104,3 +111,27 @@ export const setPaymentMethodOrder =
         defaultPaymentMethod: order[0],
       })
     )
+
+const createNoHomeModeEnabledError = defineError("NoHomeModeEnabled")()
+export type NoHomeModeEnabledError = ReturnType<
+  typeof createNoHomeModeEnabledError
+>
+
+/**
+ * Saves which modes the home screen offers. The home screen must always have
+ * one to show, so an empty set is refused rather than written. The whole set
+ * is one column on purpose: two devices each switching off a different mode
+ * resolve to one of their writes, never to both modes off.
+ */
+export const setEnabledHomeModes =
+  (
+    modes: ReadonlyArray<TerminalHomeMode>
+  ): Task<AppSettingsId, NoHomeModeEnabledError, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    const enabled = terminalHomeModes.filter((mode) => modes.includes(mode))
+    if (enabled.length === 0) return err(createNoHomeModeEnabledError())
+
+    return await run(
+      updateSettings({ enabledHomeModesJson: JSON.stringify(enabled) })
+    )
+  }

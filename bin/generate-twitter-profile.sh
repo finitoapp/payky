@@ -9,7 +9,8 @@
 # both images go out as dithered PNG8.
 # Header safe zone: mobile crops up to 60 px top and bottom, and on desktop the
 # avatar is a circle centred at (207, 500) with r ~167 (to x ~375), which the
-# copy clears: it starts at x 360 and stays inside y 66-420, while the phones are
+# copy clears: it starts at x 300, the bottom line (the one level with the
+# circle) at x 380, and it stays inside y 66-420, while the phones are
 # decoration that mobile may trim at the top and that run off the bottom edge.
 # x.com on a 1x screen shows the 600x200 variant, so everything is drawn to stay
 # legible at 40 % — the slogan ends up ~25 px on screen.
@@ -25,7 +26,7 @@ export XDG_DATA_HOME="$work/fontroot"
 mkdir -p "$XDG_DATA_HOME/fonts"
 
 # Inter is the app's UI font.
-curl -sfL "https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf" \
+curl -sfL "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf" \
   -o "$XDG_DATA_HOME/fonts/Inter.ttf"
 fc-cache -f >/dev/null
 
@@ -34,7 +35,18 @@ for screen in payment paid; do
 done
 paid="data:image/png;base64,$(base64 -w0 "$work/paid.png")"
 payment="data:image/png;base64,$(base64 -w0 "$work/payment.png")"
-rsvg-convert -w 300 public/pwa-icon.svg -o "$work/logo.png"
+# The haze logo lies flat behind the phones: a perspective tilt pulls its top
+# corners in and squashes it, and the blur grows from its near (bottom) edge to
+# its far one. SVG has neither perspective nor a variable blur, hence magick.
+# The 100 px margin gives the blur room; the crop drops the empty top half.
+rsvg-convert -w 900 public/pwa-icon.svg -o "$work/logo-flat.png"
+magick "$work/logo-flat.png" -background none -gravity center -extent 1100x1100 \
+  -virtual-pixel transparent \
+  -distort Perspective '100,100 300,700  1000,100 800,700  100,1000 100,1000  1000,1000 1000,1000' \
+  -gravity NorthWest -crop 1100x600+0+500 +repage "$work/logo-tilted.png"
+# At half size: the variable blur is slow, and a blur hides the upscale anyway.
+magick "$work/logo-tilted.png" -resize 50% \( -size 550x300 gradient:white-black -level 18%,67% \) \
+  -compose blur -define compose:args=10 -composite "$work/logo.png"
 logo="data:image/png;base64,$(base64 -w0 "$work/logo.png")"
 
 case $lang in
@@ -45,9 +57,6 @@ esac
 cat >"$work/header.svg" <<SVG
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1500" height="500">
   <defs>
-    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="10"/>
-    </filter>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#F8D96A"/>
       <stop offset="1" stop-color="#D99A22"/>
@@ -82,18 +91,17 @@ cat >"$work/header.svg" <<SVG
   <!-- Pure black: X's dark page is #000, and anything lighter reads as grey beside it. -->
   <rect width="1500" height="500" fill="#000000"/>
   <rect width="1500" height="500" fill="url(#dots)" mask="url(#dotsMask)"/>
-  <image x="760" y="30" width="900" height="900" opacity="0.32" filter="url(#haze)" xlink:href="$logo"/>
+  <image x="520" y="-30" width="1300" height="709" opacity="0.4" xlink:href="$logo"/>
   <g filter="url(#shadow)">
     <g transform="translate(881 32) rotate(-2)"><image x="0" y="0" width="265" height="546" xlink:href="$payment"/></g>
     <g transform="translate(1185 48) rotate(2)"><image x="0" y="0" width="265" height="546" xlink:href="$paid"/></g>
   </g>
   <g font-family="Inter" font-weight="800" filter="url(#textShadow)">
     <!-- Each line indented a step further, so the three read as a building sequence. -->
-    <g font-size="62" letter-spacing="-2.2">
-      <text x="360" y="200" fill="#8A9099">$line1</text>
-      <text x="400" y="272" fill="#F4F5F6">$line2</text>
-      <text x="440" y="344" fill="url(#gold)">$line3</text>
-    </g>
+    <!-- ...and a size larger, so the sequence also builds in weight. -->
+    <text x="300" y="196" font-size="54" letter-spacing="-1.9" fill="#8A9099">$line1</text>
+    <text x="340" y="272" font-size="62" letter-spacing="-2.2" fill="#F4F5F6">$line2</text>
+    <text x="380" y="350" font-size="67" letter-spacing="-2.4" fill="url(#gold)">$line3</text>
   </g>
 </svg>
 SVG

@@ -1,7 +1,11 @@
 import { AbortError } from "@evolu/common"
 import { atom, type PrimitiveAtom, useAtomValue, useStore } from "jotai"
-import { AlertCircleIcon, RotateCwIcon } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import {
+  AlertCircleIcon,
+  MessageSquarePlusIcon,
+  RotateCwIcon,
+} from "lucide-react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import { createAiModelDep } from "@/core/ai/ai-model.ts"
@@ -35,12 +39,21 @@ const suggestions = [
   "settings.assistant.suggestion.openBills",
   "settings.assistant.suggestion.latestPayments",
   "settings.assistant.suggestion.today",
+  "settings.assistant.suggestion.howSplit",
 ] as const satisfies ReadonlyArray<TranslationKey>
 
-/** The reply being streamed in, and whether a tool is reading data for it. */
+/** What a tool the reply waits for reads: the merchant's data or the docs. */
+type LookingUp = "data" | "docs"
+
+const lookingUpKeys = {
+  data: "settings.assistant.lookingUp.data",
+  docs: "settings.assistant.lookingUp.docs",
+} satisfies Record<LookingUp, TranslationKey>
+
+/** The reply being streamed in, and what a tool is reading for it. */
 interface Answering {
   readonly text: string
-  readonly lookingUp: boolean
+  readonly lookingUp: LookingUp | null
 }
 
 /**
@@ -51,17 +64,39 @@ interface Answering {
  */
 export function AssistantChatPage() {
   const { t } = useTranslation()
-  const { turns, answeringAtom, ask, stop } = useAssistantConversation()
+  const { turns, answeringAtom, ask, stop, startOver } =
+    useAssistantConversation()
   const last = turns.at(-1)
   const answering = last?.status === "answering"
 
   return (
-    <ChatLayout title={t("settings.assistant.title")}>
+    <ChatLayout
+      title={t("settings.assistant.title")}
+      headerAction={
+        turns.length === 0 ? null : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("settings.assistant.newConversation")}
+            onClick={startOver}
+          >
+            <MessageSquarePlusIcon className="size-5 text-primary" />
+          </Button>
+        )
+      }
+    >
       <ChatScrollArea followKey={answering ? last.id : null}>
         {turns.length === 0 ? (
           <EmptyConversation onAsk={ask} />
         ) : (
-          <ol className="mt-auto flex flex-col gap-3" aria-live="polite">
+          // Busy while a reply streams in, so a screen reader reads it once
+          // it is complete rather than word by word.
+          <ol
+            className="mt-auto flex flex-col gap-2"
+            aria-live="polite"
+            aria-busy={answering}
+          >
             {turns.map((turn) => (
               <Turn
                 key={turn.id}
@@ -102,7 +137,7 @@ function useAssistantConversation() {
   const conversation = useAtomValue(assistantConversationAtom)
   const turns = conversation.ownerId === ownerId ? conversation.turns : []
   const [answeringAtom] = useState(() =>
-    atom<Answering>({ text: "", lookingUp: false })
+    atom<Answering>({ text: "", lookingUp: null })
   )
   const fiber = useRef<{ readonly abort: () => void } | null>(null)
 
@@ -127,22 +162,23 @@ function useAssistantConversation() {
       ...earlier,
       { id, question, reply: "", status: "answering" },
     ])
-    store.set(answeringAtom, { text: "", lookingUp: false })
+    store.set(answeringAtom, { text: "", lookingUp: null })
 
     await using run = appRun()
+    const repoTools = createRepoAiTools(createSnapshotRepoFilesLoader(run))
     const current = run.abortable(
       askAssistant({
         messages: toAssistantMessages(earlier, question),
-        tools: createRepoAiTools(createSnapshotRepoFilesLoader(run)),
+        tools: repoTools,
         onText: (text) =>
           store.set(answeringAtom, (answer) => ({
             text: answer.text + text,
-            lookingUp: false,
+            lookingUp: null,
           })),
-        onToolCall: () =>
+        onToolCall: (toolName) =>
           store.set(answeringAtom, (answer) => ({
             ...answer,
-            lookingUp: true,
+            lookingUp: Object.hasOwn(repoTools, toolName) ? "docs" : "data",
           })),
       }),
       { ...run.deps, ...createAiModelDep({ baseURL: AI_PROXY_URL, ownerId }) }
@@ -176,6 +212,11 @@ function useAssistantConversation() {
     answeringAtom,
     ask: (question: string, retryOf?: string) => void ask(question, retryOf),
     stop: () => fiber.current?.abort(),
+    /** Stops a reply still coming and forgets the conversation. */
+    startOver: () => {
+      fiber.current?.abort()
+      updateTurns(() => [])
+    },
   }
 }
 
@@ -186,7 +227,8 @@ function EmptyConversation({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="m-auto flex max-w-xs flex-col items-center gap-3 text-center">
+    // At the bottom, next to the composer and the thumb, as in messengers.
+    <div className="mx-auto mt-auto flex max-w-xs flex-col items-center gap-3 text-center">
       <p className="text-sm text-muted-foreground">
         {t("settings.assistant.empty")}
       </p>
@@ -224,7 +266,7 @@ function Turn({
         <Bubble own={false}>{turn.reply}</Bubble>
       )}
       {turn.status === "stopped" ? (
-        <li className="self-start px-1 text-xs text-muted-foreground">
+        <li className="self-start px-3 text-xs text-muted-foreground">
           {t("settings.assistant.stopped")}
         </li>
       ) : null}
@@ -247,7 +289,11 @@ function Turn({
   )
 }
 
-/** The reply as it streams in; until the first words, what it waits for. */
+/**
+ * The reply as it streams in. Until the first words it is a bubble that is
+ * typing, saying what a tool reads, if one does; a tool started after some
+ * words says it below them.
+ */
 function AnsweringBubble({
   answeringAtom,
 }: {
@@ -255,35 +301,63 @@ function AnsweringBubble({
 }) {
   const { t } = useTranslation()
   const { text, lookingUp } = useAtomValue(answeringAtom)
-  if (text !== "" && !lookingUp) return <Bubble own={false}>{text}</Bubble>
+  const waitingFor = (
+    <span className="flex items-center gap-2 text-muted-foreground">
+      <TypingDots />
+      {lookingUp === null ? (
+        <span className="sr-only">{t("settings.assistant.thinking")}</span>
+      ) : (
+        <span className="text-xs">{t(lookingUpKeys[lookingUp])}</span>
+      )}
+    </span>
+  )
+  if (text === "") return <Bubble own={false}>{waitingFor}</Bubble>
   return (
     <>
-      {text === "" ? null : <Bubble own={false}>{text}</Bubble>}
-      <li className="animate-pulse self-start px-1 text-xs text-muted-foreground">
-        {t(
-          lookingUp
-            ? "settings.assistant.lookingUp"
-            : "settings.assistant.thinking"
-        )}
-      </li>
+      <Bubble own={false}>{text}</Bubble>
+      {lookingUp === null ? null : (
+        <li className="self-start px-3">{waitingFor}</li>
+      )}
     </>
   )
 }
 
-/** The support chat's bubbles: the merchant on the primary colour, replies on a card. */
+function TypingDots() {
+  return (
+    <span className="flex h-5 items-center gap-1" aria-hidden="true">
+      {["[animation-delay:-0.3s]", "[animation-delay:-0.15s]", ""].map(
+        (delay) => (
+          <span
+            key={delay}
+            className={cn(
+              "size-1.5 animate-bounce rounded-full bg-current",
+              delay
+            )}
+          />
+        )
+      )}
+    </span>
+  )
+}
+
+/**
+ * The support chat's bubbles: the merchant on the primary colour, replies on
+ * a card. A question opens a turn, so it keeps more room above it than the
+ * reply below it has.
+ */
 function Bubble({
   own,
   children,
 }: {
   readonly own: boolean
-  readonly children: string
+  readonly children: ReactNode
 }) {
   return (
     <li
       className={cn(
         "max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]",
         own
-          ? "self-end bg-primary text-primary-foreground"
+          ? "self-end bg-primary text-primary-foreground not-first:mt-3"
           : "self-start bg-card text-card-foreground ring-1 ring-foreground/10 ring-inset"
       )}
     >

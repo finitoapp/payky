@@ -352,7 +352,8 @@ function Conversation({
           <Skeleton className="h-10 w-3/5 rounded-2xl" />
         </div>
       ) : timeline.length === 0 && failure === null ? (
-        <p className="m-auto max-w-xs text-center text-sm text-muted-foreground">
+        // At the bottom, next to the composer, as the assistant's.
+        <p className="mx-auto mt-auto max-w-xs text-center text-sm text-muted-foreground">
           {t("settings.supportChat.empty")}
         </p>
       ) : (

@@ -94,3 +94,34 @@ test("retries a question the assistant could not answer", async ({
     await expect(page.getByText("Now it works.")).toBeVisible()
   })
 })
+
+test("starts a new conversation", async ({ seededPage: page }) => {
+  await mockAssistantProxy(page, [{ text: "No bill is open." }])
+  const question = translate("en", "settings.assistant.suggestion.openBills")
+
+  await test.step("ask a question", async () => {
+    await gotoPage(
+      page,
+      "/settings/assistant",
+      "en",
+      "settings.assistant.title"
+    )
+    await page.getByRole("button", { name: question }).click()
+    await expect(page.getByText("No bill is open.")).toBeVisible()
+  })
+
+  await test.step("start over with the suggestions again", async () => {
+    await page
+      .getByRole("button", {
+        name: translate("en", "settings.assistant.newConversation"),
+      })
+      .click()
+    await expect(page.getByText("No bill is open.")).toHaveCount(0)
+    await expect(page.getByRole("button", { name: question })).toBeVisible()
+    await expect(
+      page.getByRole("button", {
+        name: translate("en", "settings.assistant.newConversation"),
+      })
+    ).toHaveCount(0)
+  })
+})

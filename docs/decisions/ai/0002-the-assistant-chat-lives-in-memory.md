@@ -23,6 +23,10 @@ question; a question that failed is left out until it is asked again.
 Leaving the page or the stop button stops a reply that is still coming, and
 the words that came so far stay, marked as stopped.
 
+A button in the header starts a new conversation: it stops a reply that is
+still coming and forgets the conversation. It is the only way to drop one,
+since the model would otherwise go on seeing its last twenty messages.
+
 Replies are plain text: the system prompt asks for it and the page shows
 the text as it is, without a Markdown renderer.
 
@@ -64,3 +68,4 @@ code tools, so it answers from the data and the system prompt only.
 - `src/core/ai/assistant.test.ts > askAssistant > stops with the reply so far when its run is aborted`
 - `e2e/settings-assistant.spec.ts > asks the assistant and keeps the conversation`
 - `e2e/settings-assistant.spec.ts > retries a question the assistant could not answer`
+- `e2e/settings-assistant.spec.ts > starts a new conversation`

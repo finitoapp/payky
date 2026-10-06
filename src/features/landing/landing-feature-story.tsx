@@ -74,12 +74,21 @@ function PhoneScreen({
 }) {
   const { language, t } = useLandingTranslation()
   return (
-    <img
-      src={mockupsByLanguage[language][screen]}
-      alt={t(mockupAltKeys[screen])}
-      className={cn("w-full drop-shadow-2xl", className)}
-      loading="lazy"
-    />
+    <div className={cn("relative", className)}>
+      <img
+        src={mockupsByLanguage[language][screen]}
+        alt={t(mockupAltKeys[screen])}
+        className="w-full drop-shadow-2xl"
+        loading="lazy"
+      />
+      {/* Ripples off the check of the paid screen, the same in every language. */}
+      {screen === "paid" ? (
+        <div
+          aria-hidden="true"
+          className="landing-check-ping absolute top-[37.8%] left-1/2 aspect-square w-[15.3%]"
+        />
+      ) : null}
+    </div>
   )
 }
 

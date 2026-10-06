@@ -6,7 +6,7 @@ import {
   ZapIcon,
 } from "lucide-react"
 
-import { useId } from "react"
+import { type PointerEvent, useId } from "react"
 
 import { buttonVariants } from "@/components/ui/button.tsx"
 import { mockupsByLanguage } from "@/features/landing/landing-mockups.ts"
@@ -62,6 +62,19 @@ function Network() {
       </svg>
       {nodes.map((node, index) => (
         <Pulse key={node.label} from={node} to={hub} delay={index * 1.1} />
+      ))}
+      {/* A ripple where each spark lands, one pulse period after it sets off. */}
+      {nodes.map((node, index) => (
+        <div
+          key={node.label}
+          aria-hidden="true"
+          className="landing-ping z-10"
+          style={{
+            left: percent(hub.x),
+            top: percent(hub.y),
+            animationDelay: `${index * 1.1 + 3.2}s`,
+          }}
+        />
       ))}
       {nodes.map((node) => {
         const Icon = node.icon
@@ -166,13 +179,37 @@ function EetStamp() {
   )
 }
 
+/** Leans the phones after a mouse through `--landing-px/py` (landing.css). */
+function tiltToward(event: PointerEvent<HTMLDivElement>) {
+  if (event.pointerType !== "mouse") return
+  const rect = event.currentTarget.getBoundingClientRect()
+  const style = event.currentTarget.style
+  style.setProperty(
+    "--landing-px",
+    String(((event.clientX - rect.left) / rect.width) * 2 - 1)
+  )
+  style.setProperty(
+    "--landing-py",
+    String(((event.clientY - rect.top) / rect.height) * 2 - 1)
+  )
+}
+
+function resetTilt(event: PointerEvent<HTMLDivElement>) {
+  event.currentTarget.style.removeProperty("--landing-px")
+  event.currentTarget.style.removeProperty("--landing-py")
+}
+
 /** Two tilted phones in a pool of accent light: the keypad behind, the QR in front. */
 function Stage() {
   const { language, t } = useLandingTranslation()
   const mockups = mockupsByLanguage[language]
 
   return (
-    <div className="relative mx-auto aspect-[0.82] w-full max-w-md lg:max-w-lg">
+    <div
+      className="relative mx-auto aspect-[0.82] w-full max-w-md lg:max-w-lg"
+      onPointerMove={tiltToward}
+      onPointerLeave={resetTilt}
+    >
       <Glow size="110%" top="50%" left="58%" />
       <Network />
       <Placed left="-4%" top="18%" width="56%" className="landing-tilt-back">
@@ -189,6 +226,11 @@ function Stage() {
           alt={t("landing.mockup.payment.alt")}
           className="w-full drop-shadow-2xl"
           loading="eager"
+        />
+        {/* Over the QR card of the payment mockup, the same in every language. */}
+        <div
+          aria-hidden="true"
+          className="landing-scan absolute top-[37.1%] left-[21.8%] h-[32%] w-[56.4%]"
         />
       </Placed>
       {/* Stamped on the phone's corner: the one thing a Czech merchant asks first. */}
@@ -211,7 +253,7 @@ function AccentedTitle() {
   return (
     <h1 className="landing-rise text-5xl font-extrabold tracking-tight text-balance sm:text-6xl lg:text-7xl">
       {before}
-      <span className="text-(--landing-ink)">{accent}</span>
+      <span className="landing-shine">{accent}</span>
       {after}
     </h1>
   )
@@ -221,7 +263,7 @@ export function LandingHero() {
   const { t } = useLandingTranslation()
 
   return (
-    <section className="overflow-hidden">
+    <section className="landing-dots relative isolate overflow-hidden">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-12 pb-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:pt-24 lg:pb-24">
         <div className="flex flex-col gap-7">
           <AccentedTitle />
@@ -233,7 +275,7 @@ export function LandingHero() {
               href="#get-started"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "h-12 rounded-full px-7 text-base font-semibold has-data-[icon=inline-end]:pr-6"
+                "landing-nudge h-12 rounded-full px-7 text-base font-semibold has-data-[icon=inline-end]:pr-6"
               )}
             >
               {t("landing.cta.howTo")}

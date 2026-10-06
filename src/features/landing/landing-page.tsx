@@ -147,8 +147,8 @@ const signalGroupUrl =
 function NotNeeded() {
   const { t } = useLandingTranslation()
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-      <Reveal>
+    <section className="landing-grain bg-primary text-primary-foreground">
+      <Reveal className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="flex flex-col items-center gap-7 text-center">
           <div
             className="flex gap-7"
@@ -159,7 +159,7 @@ function NotNeeded() {
               <Icon
                 key={Icon.displayName}
                 aria-hidden="true"
-                className="size-8 text-(--landing-ink)"
+                className="size-8"
                 strokeWidth={1.75}
               />
             ))}
@@ -176,31 +176,33 @@ function NotNeeded() {
 function More() {
   const { t } = useLandingTranslation()
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-      <Reveal>
-        <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
-          {t("landing.more.title")}
-        </h2>
-      </Reveal>
-      <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-        {moreItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <Reveal key={item.title}>
-              <article className="flex flex-col gap-3">
-                <span className="flex size-11 items-center justify-center rounded-xl bg-accent text-(--landing-ink)">
-                  <Icon aria-hidden="true" className="size-5" />
-                </span>
-                <h3 className="text-xl font-semibold tracking-tight">
-                  {t(item.title)}
-                </h3>
-                <p className="leading-relaxed text-pretty text-muted-foreground">
-                  {t(item.body)}
-                </p>
-              </article>
-            </Reveal>
-          )
-        })}
+    <section className="bg-muted/40">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <Reveal>
+          <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
+            {t("landing.more.title")}
+          </h2>
+        </Reveal>
+        <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {moreItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Reveal key={item.title}>
+                <article className="flex flex-col gap-3">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-accent text-(--landing-ink)">
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                  <h3 className="text-xl font-semibold tracking-tight">
+                    {t(item.title)}
+                  </h3>
+                  <p className="leading-relaxed text-pretty text-muted-foreground">
+                    {t(item.body)}
+                  </p>
+                </article>
+              </Reveal>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
@@ -244,8 +246,8 @@ function Faq() {
   const [openFaq, setOpenFaq] = useState<TranslationKey | null>(null)
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-      <Reveal>
+    <section className="bg-muted/40">
+      <Reveal className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="grid gap-10 lg:grid-cols-[1fr_2fr]">
           <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
             {t("landing.faq.title")}

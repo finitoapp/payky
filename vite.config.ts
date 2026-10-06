@@ -167,6 +167,11 @@ export default (({ command }: ConfigEnv) => {
       VitePWA({
         registerType: "prompt",
         injectRegister: "auto",
+        // The native app ships its assets in the APK, so a service worker only
+        // gets in the way: its precache survives an APK update and serves the
+        // old bundle until the update toast is accepted. The self-destroying
+        // worker replaces one already installed, clears it and reloads once.
+        selfDestroying: isCapacitorBuild,
         manifest: false,
         workbox: {
           cleanupOutdatedCaches: true,

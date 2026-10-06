@@ -18,7 +18,7 @@ The landing page is a document of its own, `landing.html`, built beside the
 app and prerendered at build time once per language: Czech at `/landing`,
 English at `/landing/en`, Slovak at `/landing/sk`. Each file carries its
 own title, description, Open Graph tags, a canonical link to itself and
-`hreflang` links to the others, with English as `x-default`, a share image
+`hreflang` links to the others, with Czech as `x-default` (landing/0004), a share image
 and structured data for search results: the app as a free
 `SoftwareApplication` and the page's FAQ as an `FAQPage`. `robots.txt`
 points at a `sitemap.xml` listing the three addresses. The browser
@@ -26,8 +26,8 @@ hydrates the prerendered page.
 
 The address decides the language. Choosing another language on the page
 moves to that language's page and remembers the choice; the redirect from
-the app (landing/0001) goes to the remembered language, else to the
-browser's. A visitor who opens a language's address is never moved to
+the app (landing/0001) goes to the remembered language, else to Czech
+(landing/0004). A visitor who opens a language's address is never moved to
 another one.
 
 The page loads no account. Its appearance is its own choice, kept in the

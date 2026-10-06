@@ -6,20 +6,20 @@
     <xhtml:link rel="alternate" hreflang="cs" href="https://payky.me/landing"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://payky.me/landing/en"/>
     <xhtml:link rel="alternate" hreflang="sk" href="https://payky.me/landing/sk"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://payky.me/landing/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://payky.me/landing"/>
   </url>
   <url>
     <loc>https://payky.me/landing/en</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://payky.me/landing"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://payky.me/landing/en"/>
     <xhtml:link rel="alternate" hreflang="sk" href="https://payky.me/landing/sk"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://payky.me/landing/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://payky.me/landing"/>
   </url>
   <url>
     <loc>https://payky.me/landing/sk</loc>
     <xhtml:link rel="alternate" hreflang="cs" href="https://payky.me/landing"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://payky.me/landing/en"/>
     <xhtml:link rel="alternate" hreflang="sk" href="https://payky.me/landing/sk"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://payky.me/landing/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://payky.me/landing"/>
   </url>
 </urlset>

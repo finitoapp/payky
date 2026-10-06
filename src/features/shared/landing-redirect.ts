@@ -1,7 +1,6 @@
 import { Capacitor } from "@capacitor/core"
 import { z } from "zod"
 
-import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 import type { Language } from "@/i18n/resources.ts"
 import { jsonCodec } from "@/zod-utils.ts"
 
@@ -70,7 +69,10 @@ export function markAppEntered(): void {
   }
 }
 
-/** The language picked on the landing page before, else the browser's. */
+/**
+ * The language picked on the landing page before, else Czech, whatever the
+ * browser's language is (landing/0004).
+ */
 export function preferredLandingLanguage(): Language {
   try {
     const stored = localStorage.getItem(landingLanguageStorageKey)
@@ -79,9 +81,9 @@ export function preferredLandingLanguage(): Language {
       if (parsed.success) return parsed.data
     }
   } catch {
-    // Storage blocked: fall back to the browser's language.
+    // Storage blocked: the default it is.
   }
-  return getPreferredDeviceLanguage(navigator.language)
+  return "cs"
 }
 
 export function rememberLandingLanguage(language: Language): void {
@@ -91,7 +93,7 @@ export function rememberLandingLanguage(language: Language): void {
       z.encode(LandingLanguageJson, language)
     )
   } catch {
-    // Storage blocked: the next redirect uses the browser's language.
+    // Storage blocked: the next redirect uses the default.
   }
 }
 

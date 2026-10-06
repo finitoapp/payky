@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "release": "bun run bin/release.ts",
     "build": "vite build && vite build --ssr src/landing-server.tsx --outDir dist-ssr && bun run bin/prerender-landing.ts",
     "cap": "cap",
     "cap:build": "PAYKY_CAPACITOR_BUILD=1 vite build",

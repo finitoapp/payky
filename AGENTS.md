@@ -6,6 +6,7 @@
 - `bun run format` applies Biome's fixes; `bun run test:watch` reruns Vitest on change; `bun run check:coverage` writes a report to `coverage/`.
 - `bun run dev` starts Vite over HTTPS with a self-signed cert (`PAYKY_DISABLE_BASIC_SSL=1` turns that off for Android live-reload).
 - End-to-end tests are not part of `check` and need their own run — see "E2E Testing" below.
+- `bun run release` cuts a release from `main` (or a `hotfix/*` branch): it commits the next CalVer `YY.M.MICRO` into `package.json` and pushes the `v<version>` tag that ships it. Leave `version` alone otherwise; `docs/releases.md` has the whole flow.
 
 ## Project Rules
 

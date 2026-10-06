@@ -31,7 +31,7 @@ describe("renderLandingDocument", () => {
       `<link rel="alternate" hrefLang="sk" href="https://payky.me/landing/sk"/>`
     )
     expect(document).toContain(
-      `<link rel="alternate" hrefLang="x-default" href="https://payky.me/landing/en"/>`
+      `<link rel="alternate" hrefLang="x-default" href="https://payky.me/landing"/>`
     )
   })
 

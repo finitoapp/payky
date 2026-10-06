@@ -4,19 +4,19 @@ import { translate } from "./support/i18n.ts"
 test("a new browser visitor lands on the landing page until they open the app", async ({
   page,
 }) => {
-  await test.step("the app's address shows the landing page in the browser's language", async () => {
+  await test.step("the app's address shows the Czech landing page, whatever the browser's language", async () => {
     await page.goto("/", { waitUntil: "domcontentloaded" })
-    await expect(page).toHaveURL("/landing/en")
+    await expect(page).toHaveURL("/landing")
   })
 
   await test.step("the landing page opens onboarding", async () => {
     await page
       .getByRole("link", {
-        name: translate("en", "landing.closing.get.pwa.action"),
+        name: translate("cs", "landing.closing.get.pwa.action"),
       })
       .click()
     await expect(
-      page.getByRole("heading", { name: translate("en", "onboarding.title") })
+      page.getByRole("heading", { name: translate("cs", "onboarding.title") })
     ).toBeVisible()
   })
 

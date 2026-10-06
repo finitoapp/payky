@@ -78,7 +78,7 @@ function LandingHead({ language }: { readonly language: Language }) {
           href={pageUrl(alternate)}
         />
       ))}
-      <link rel="alternate" hrefLang="x-default" href={pageUrl("en")} />
+      <link rel="alternate" hrefLang="x-default" href={pageUrl("cs")} />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content={t["app.name"]} />
       <meta property="og:title" content={title} />

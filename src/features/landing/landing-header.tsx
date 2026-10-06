@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router"
 import {
   ArrowDownIcon,
   LanguagesIcon,
@@ -8,7 +7,7 @@ import {
   SunIcon,
 } from "lucide-react"
 
-import { type Theme, useTheme } from "@/components/theme-provider.tsx"
+import type { Theme } from "@/components/theme-provider.tsx"
 import { buttonVariants } from "@/components/ui/button.tsx"
 import {
   DropdownMenu,
@@ -18,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
+import { useLandingTheme } from "@/features/landing/use-landing-theme.ts"
+import { landingPaths } from "@/features/shared/landing-redirect.ts"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
@@ -53,21 +54,21 @@ const iconButtonClassName = cn(
  */
 export function LandingHeader() {
   const { language, setLanguage, t } = useLandingTranslation()
-  const { theme, setTheme } = useTheme()
+  const [theme, setTheme] = useLandingTheme()
   const ThemeIcon = themeIcons[theme]
   const themeLabel = `${t("landing.theme.label")}: ${t(themeLabelKeys[theme])}`
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link
-          to="/landing"
+        <a
+          href={landingPaths[language]}
           className="inline-flex shrink-0 items-center gap-2.5 text-lg font-bold tracking-tight"
           aria-label={t("app.name")}
         >
           <img src="/pwa-icon.svg" alt="" className="size-8 shrink-0" />
           <span>{t("app.name")}</span>
-        </Link>
+        </a>
 
         <div className="flex items-center gap-1">
           <a

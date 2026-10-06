@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build --ssr src/landing-server.tsx --outDir dist-ssr && bun run bin/prerender-landing.ts",
     "cap": "cap",
     "cap:build": "PAYKY_CAPACITOR_BUILD=1 vite build",
     "cap:sync": "bun run cap:build && cap sync",
@@ -37,7 +37,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:preview": "PAYKY_E2E_BUILD=1 VITE_PAYKY_EET_PRODUCTION_URL=https://eet-production.invalid/eet/services/EETServiceSOAP/v4 vite build && PAYKY_E2E_SERVER=preview playwright test",
+    "test:e2e:preview": "PAYKY_E2E_BUILD=1 VITE_PAYKY_EET_PRODUCTION_URL=https://eet-production.invalid/eet/services/EETServiceSOAP/v4 bun run build && PAYKY_E2E_SERVER=preview playwright test",
     "preview": "vite preview"
   },
   "dependencies": {

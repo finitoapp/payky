@@ -1,13 +1,13 @@
 import { createContext, useContext } from "react"
-import { z } from "zod"
 
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
 
 /**
- * The landing page translates straight from `resources` with a language of
- * its own, kept apart from the device setting: a visitor comparing the page
- * in two languages must not switch the app a merchant has set up on the
- * same device. This context carries that choice to the page's sections.
+ * The landing page translates straight from `resources` in the language of
+ * its address (landing/0002), kept apart from the device setting: a visitor
+ * comparing the page in two languages must not switch the app a merchant
+ * has set up on the same device. This context carries it to the sections;
+ * `setLanguage` moves to that language's page.
  */
 export interface LandingTranslation {
   readonly language: Language
@@ -27,11 +27,3 @@ export function useLandingTranslation(): LandingTranslation {
   }
   return translation
 }
-
-export const landingLanguageStorageKey = "payky.landingLanguage"
-
-export const LandingLanguageSchema: z.ZodType<Language> = z.enum([
-  "cs",
-  "en",
-  "sk",
-])

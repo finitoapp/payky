@@ -16,6 +16,8 @@ import {
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { EetSandboxBanner } from "@/features/shared/eet-sandbox-banner.tsx"
 import {
+  landingPaths,
+  preferredLandingLanguage,
   readLandingRedirectEnvironment,
   shouldRedirectToLanding,
 } from "@/features/shared/landing-redirect.ts"
@@ -97,12 +99,12 @@ function NotOnboarded() {
 
   useEffect(() => {
     if (!waitingForSync) {
-      void navigate({
-        to: shouldRedirectToLanding(readLandingRedirectEnvironment())
-          ? "/landing"
-          : "/onboarding",
-        replace: true,
-      })
+      if (shouldRedirectToLanding(readLandingRedirectEnvironment())) {
+        // Another document: the landing page is prerendered (landing/0002).
+        window.location.replace(landingPaths[preferredLandingLanguage()])
+      } else {
+        void navigate({ to: "/onboarding", replace: true })
+      }
     }
   }, [navigate, waitingForSync])
 

@@ -18,20 +18,20 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
-import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 import { LandingClosing } from "@/features/landing/landing-closing.tsx"
 import { LandingFeatureStory } from "@/features/landing/landing-feature-story.tsx"
 import { LandingHeader } from "@/features/landing/landing-header.tsx"
 import { LandingHero } from "@/features/landing/landing-hero.tsx"
 import { Reveal } from "@/features/landing/landing-parts.tsx"
 import {
-  LandingLanguageSchema,
   type LandingTranslation,
   LandingTranslationContext,
-  landingLanguageStorageKey,
   useLandingTranslation,
 } from "@/features/landing/landing-translation.ts"
-import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
+import {
+  landingPaths,
+  rememberLandingLanguage,
+} from "@/features/shared/landing-redirect.ts"
 import {
   type Language,
   resources,
@@ -120,7 +120,8 @@ const useCaseCards: ReadonlyArray<UseCaseCard> = [
   },
 ]
 
-const faqItems: ReadonlyArray<FaqItem> = [
+/** Also the prerendered page's FAQ structured data (landing/0002). */
+export const faqItems: ReadonlyArray<FaqItem> = [
   {
     question: "landing.faq.catch.question",
     answer: "landing.faq.catch.answer",
@@ -332,22 +333,17 @@ function Footer() {
   )
 }
 
-export function LandingPage() {
-  const [preferredLanguage] = useState(() =>
-    getPreferredDeviceLanguage(navigator.language)
-  )
-  const [language, setLanguage] = useLocalStorageState<Language>(
-    landingLanguageStorageKey,
-    preferredLanguage,
-    LandingLanguageSchema
-  )
+export function LandingPage({ language }: { readonly language: Language }) {
   const translation = useMemo<LandingTranslation>(
     () => ({
       language,
-      setLanguage,
+      setLanguage: (next) => {
+        rememberLandingLanguage(next)
+        window.location.assign(landingPaths[next])
+      },
       t: (key) => resources[language][key],
     }),
-    [language, setLanguage]
+    [language]
   )
 
   return (

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest"
 
-import { shouldRedirectToLanding } from "./landing-redirect.ts"
+import {
+  landingLanguageFromPath,
+  shouldRedirectToLanding,
+} from "./landing-redirect.ts"
 
 describe("shouldRedirectToLanding", () => {
   test("sends a browser tab that never opened the app to the landing page", () => {
@@ -26,5 +29,17 @@ describe("shouldRedirectToLanding", () => {
         ...overrides,
       })
     ).toBe(false)
+  })
+})
+
+describe("landingLanguageFromPath", () => {
+  test.each([
+    ["/landing", "cs"],
+    ["/landing/", "cs"],
+    ["/landing/en", "en"],
+    ["/landing/sk/", "sk"],
+    ["/landing/de", "cs"],
+  ] as const)("reads %s as %s", (pathname, language) => {
+    expect(landingLanguageFromPath(pathname)).toBe(language)
   })
 })

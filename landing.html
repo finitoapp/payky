@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00C245" />
+    <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!--landing-head-->
+    <script>
+      // The landing page's own theme (use-landing-theme.ts), applied before
+      // the first paint so the prerendered page never flashes the wrong one.
+      ;(() => {
+        var theme = null
+        try {
+          theme = localStorage.getItem("payky.landingTheme")
+        } catch (error) {}
+        if (
+          theme === '"dark"' ||
+          (theme !== '"light"' &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.classList.add("dark")
+        }
+      })()
+    </script>
+    <noscript>
+      <!-- Sections fade in on scroll only when a script can reveal them. -->
+      <style>
+        .landing-reveal {
+          opacity: 1;
+          transform: none;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body>
+    <div id="root"><!--landing-app--></div>
+    <script type="module" src="/src/landing-main.tsx"></script>
+  </body>
+</html>

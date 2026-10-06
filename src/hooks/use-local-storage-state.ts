@@ -96,7 +96,15 @@ export function useLocalStorageState<T>(
     [key, codec, defaultValue]
   )
 
-  const value = useSyncExternalStore(subscribeToKey, getSnapshot)
+  // A prerendered page (landing/0002) renders and hydrates with the default;
+  // the stored value follows right after hydration.
+  const getServerSnapshot = useCallback(() => defaultValue, [defaultValue])
+
+  const value = useSyncExternalStore(
+    subscribeToKey,
+    getSnapshot,
+    getServerSnapshot
+  )
 
   const setStoredValue = useCallback(
     (next: T | ((previous: T) => T)) => {

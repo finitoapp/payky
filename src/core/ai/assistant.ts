@@ -32,14 +32,18 @@ const maxSteps = 10
 const maxMessages = 20
 
 const systemPrompt = `You are the assistant inside Payky, a point-of-sale app for merchants that takes Bitcoin (Lightning), bank transfer, card and cash payments.
-Answer the merchant's question. Use the data tools to look at their bills and payments, and the documentation and source code tools, when you have them, to explain how Payky behaves.
+Answer the merchant's question. Use the data tools, when you have them, to look at their bills and payments, and the documentation and source code tools, when you have them, to explain how Payky behaves. Without the data tools you cannot see the merchant's data; say so when a question needs it.
 Money amounts in the data are integer minor units of the row's currency (cents for fiat, sats for bitcoin).
 If the code suggests a bug, say it only looks like one, and name the file and line that makes you think so.
 Reply in the language of the question. Keep the answer short and readable for a merchant, not a developer.
 Write plain text, never Markdown: no asterisks, hashes, backticks or tables. Use line breaks, and a hyphen at the start of a line for a list.`
 
-/** Read-only tools over the merchant's local Evolu data. */
-const createDataTools = (run: Run<EvoluDep>) => ({
+/**
+ * Read-only tools over the merchant's local Evolu data. Whatever they return
+ * leaves the device to the model, so the app offers them only with the
+ * merchant's consent (ai/0004).
+ */
+export const createDataTools = (run: Run<EvoluDep>) => ({
   listOpenBills: tool({
     description: "List open bills with their items.",
     inputSchema: z.object({}),
@@ -88,8 +92,8 @@ export const recentMessages = (
  * with `AiRequestError`. Aborting the run stops the request and resolves to
  * the reply so far.
  *
- * `tools` adds the runtime-specific tools (documentation, source code) on top
- * of the data tools, which read the local Evolu database and work anywhere.
+ * `tools` are all the model may call: the data tools (`createDataTools`), the
+ * documentation and source code tools, or none.
  * `onToolCall` names each tool as the model starts it, so a caller can show
  * what the wait is for.
  */
@@ -104,14 +108,14 @@ export const askAssistant =
     readonly tools: ToolSet
     readonly onText: (text: string) => void
     readonly onToolCall?: (toolName: string) => void
-  }): Task<string, AiRequestError, AiModelDep & EvoluDep & ConsoleDep> =>
+  }): Task<string, AiRequestError, AiModelDep & ConsoleDep> =>
   async (run) => {
     let streamError: unknown = null
     const result = streamText({
       model: run.deps.aiModel,
       system: systemPrompt,
       messages: recentMessages(messages),
-      tools: { ...createDataTools(run), ...tools },
+      tools,
       stopWhen: isStepCount(maxSteps),
       abortSignal: run.signal,
       onToolExecutionStart: ({ toolCall }) => {

@@ -42,8 +42,9 @@ export type AssistantMockReply =
 
 /**
  * Answers the assistant's requests to Payky's AI proxy with `replies`, one
- * per request in order; the last one repeats. Returns the bearer token and
- * messages of every request, so a spec can check what the app sent.
+ * per request in order; the last one repeats. Returns the bearer token,
+ * messages and tool names of every request, so a spec can check what the app
+ * sent.
  */
 export async function mockAssistantProxy(
   page: Page,
@@ -55,6 +56,7 @@ export async function mockAssistantProxy(
       readonly role: string
       readonly content: unknown
     }>
+    readonly toolNames: ReadonlyArray<string>
   }>
 }> {
   const requests: Array<{
@@ -63,6 +65,7 @@ export async function mockAssistantProxy(
       readonly role: string
       readonly content: unknown
     }>
+    toolNames: ReadonlyArray<string>
   }> = []
 
   await page.route(AI_PROXY_URL, async (route) => {
@@ -71,9 +74,14 @@ export async function mockAssistantProxy(
       await route.fulfill({ status: 204, headers: corsHeaders })
       return
     }
+    const body = request.postDataJSON()
     requests.push({
       authorization: await request.headerValue("authorization"),
-      messages: request.postDataJSON().messages,
+      messages: body.messages,
+      toolNames: (body.tools ?? []).map(
+        (tool: { readonly function: { readonly name: string } }) =>
+          tool.function.name
+      ),
     })
     const reply = replies[Math.min(requests.length, replies.length) - 1]
     if (reply === undefined || "status" in reply) {

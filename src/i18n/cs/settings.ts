@@ -6,7 +6,7 @@ export const csSettings = {
   "settings.about.github.description": "Zapojte se do vývoje aplikace",
   "settings.about.github.title": "Zdrojový kód na GitHubu",
   "settings.about.privacy.body":
-    "PAYKY - ZÁSADY OCHRANY SOUKROMÍ\n\n1. SBĚR DAT\nPayky neprodává osobní údaje a je navrženo tak, aby aplikační data zůstávala lokálně ve vašem zařízení. Aplikace ukládá nastavení terminálu, katalogová data, záznamy plateb a související provozní data lokálně a synchronizuje aplikační data přes Evolu.\n\n2. PLATEBNÍ DATA\nPlatební a terminálová data mohou obsahovat částky, časové údaje, názvy položek, stav platby, informace o Spark peněžence, identifikátory zařízení a další záznamy potřebné pro provoz bitcoinového platebního terminálu. Chraňte své zařízení, přihlašovací údaje, zálohy a přístupová data k peněžence, zejména obnovovací frázi.\n\n3. SÍŤOVÁ KOMUNIKACE\nAplikace může komunikovat s:\n- infrastrukturou Evolu pro synchronizaci lokálních-first aplikačních dat\n- Spark operátory a poskytovateli služeb Spark pro provoz Spark peněženky a odesílání či přijímání bitcoinových plateb\n- Lightning nebo peněženkovými službami používanými k vytvoření nebo vypořádání plateb\n- cenovými nebo kurzovými API, pokud je zapnutý fiat přepočet\n- Open Food Facts a Open Beauty Facts pro dohledání naskenovaných čárových kódů, pokud je zapnuté dohledání produktů\n\nTyto služby mohou mít vlastní zásady ochrany soukromí, logy a pravidla uchovávání dat.\n\n4. ANALYTIKA A HLÁŠENÍ CHYB\nPayky nepoužívá analytické ani sledovací služby. K dispozici je volitelné hlášení chyb přes Sentry, které pomáhá diagnostikovat pády a chyby aplikace. Je ve výchozím stavu vypnuté a aktivuje se jen tehdy, když ho zapnete v Nastavení > O aplikaci > Data a soukromí. Po zapnutí mohou hlášení chyb obsahovat informace o zařízení a aplikaci a chybové zprávy a stack trace; obnovovací fráze a čísla bankovních účtů jsou před odesláním automaticky redigovány.\n\n5. SÍŤ SPARK\nPlatby přes Spark peněženku zpracovávají Spark operátoři a poskytovatelé služeb Spark, kteří mohou vidět částky transakcí, časování, identifikátory peněženky a související metadata.\n\n6. ZÁLOHY A SYNCHRONIZACE\nPokud jsou zapnuté synchronizační nebo zálohovací funkce, mohou být aplikační data přenášena do synchronizační infrastruktury. Se synchronizovanými daty zacházejte jako s provozními obchodními daty a chraňte každé zařízení, které k nim má přístup.\n\n7. KONTAKT\nKontaktní údaje pro otázky soukromí budou zveřejněny v dokumentaci projektu.\n\nPoslední aktualizace: říjen 2026",
+    "PAYKY - ZÁSADY OCHRANY SOUKROMÍ\n\n1. SBĚR DAT\nPayky neprodává osobní údaje a je navrženo tak, aby aplikační data zůstávala lokálně ve vašem zařízení. Aplikace ukládá nastavení terminálu, katalogová data, záznamy plateb a související provozní data lokálně a synchronizuje aplikační data přes Evolu.\n\n2. PLATEBNÍ DATA\nPlatební a terminálová data mohou obsahovat částky, časové údaje, názvy položek, stav platby, informace o Spark peněžence, identifikátory zařízení a další záznamy potřebné pro provoz bitcoinového platebního terminálu. Chraňte své zařízení, přihlašovací údaje, zálohy a přístupová data k peněžence, zejména obnovovací frázi.\n\n3. SÍŤOVÁ KOMUNIKACE\nAplikace může komunikovat s:\n- infrastrukturou Evolu pro synchronizaci lokálních-first aplikačních dat\n- Spark operátory a poskytovateli služeb Spark pro provoz Spark peněženky a odesílání či přijímání bitcoinových plateb\n- Lightning nebo peněženkovými službami používanými k vytvoření nebo vypořádání plateb\n- cenovými nebo kurzovými API, pokud je zapnutý fiat přepočet\n- Open Food Facts a Open Beauty Facts pro dohledání naskenovaných čárových kódů, pokud je zapnuté dohledání produktů\n- Server Payky a jeho poskytovatele AI pro odpovědi AI asistenta, pokud je zapnutý: vaše dotazy, odpovědi asistenta a, pokud to povolíte, účty a platby, které asistent čte\n\nTyto služby mohou mít vlastní zásady ochrany soukromí, logy a pravidla uchovávání dat.\n\n4. ANALYTIKA A HLÁŠENÍ CHYB\nPayky nepoužívá analytické ani sledovací služby. K dispozici je volitelné hlášení chyb přes Sentry, které pomáhá diagnostikovat pády a chyby aplikace. Je ve výchozím stavu vypnuté a aktivuje se jen tehdy, když ho zapnete v Nastavení > O aplikaci > Data a soukromí. Po zapnutí mohou hlášení chyb obsahovat informace o zařízení a aplikaci a chybové zprávy a stack trace; obnovovací fráze a čísla bankovních účtů jsou před odesláním automaticky redigovány.\n\n5. SÍŤ SPARK\nPlatby přes Spark peněženku zpracovávají Spark operátoři a poskytovatelé služeb Spark, kteří mohou vidět částky transakcí, časování, identifikátory peněženky a související metadata.\n\n6. ZÁLOHY A SYNCHRONIZACE\nPokud jsou zapnuté synchronizační nebo zálohovací funkce, mohou být aplikační data přenášena do synchronizační infrastruktury. Se synchronizovanými daty zacházejte jako s provozními obchodními daty a chraňte každé zařízení, které k nim má přístup.\n\n7. KONTAKT\nKontaktní údaje pro otázky soukromí budou zveřejněny v dokumentaci projektu.\n\nPoslední aktualizace: říjen 2026",
   "settings.about.privacy.description":
     "Data aplikace se ukládají lokálně a synchronizují přes Evolu.",
   "settings.about.privacy.heading": "Zásady ochrany soukromí Payky",
@@ -571,6 +571,18 @@ export const csSettings = {
   "settings.privacy.productLookup.enable": "Zapnout",
   "settings.privacy.productLookup.enabled": "Zapnuto",
   "settings.privacy.productLookup.title": "Dohledání produktů",
+  "settings.privacy.aiAssistant.title": "AI asistent",
+  "settings.privacy.aiAssistant.description":
+    "Asistent odpovídá přes server Payky a poskytovatele AI, takže vaše dotazy a to, co asistent čte, opouští toto zařízení. Ve výchozím stavu vypnuto.",
+  "settings.privacy.aiAssistant.off.title": "Vypnuto",
+  "settings.privacy.aiAssistant.off.description":
+    "Asistent je skrytý a nic se neodesílá.",
+  "settings.privacy.aiAssistant.public.title": "Jen dokumentace a kód",
+  "settings.privacy.aiAssistant.public.description":
+    "Čte veřejnou dokumentaci a zdrojový kód Payky. Vaše účty a platby zůstávají v tomto zařízení.",
+  "settings.privacy.aiAssistant.all.title": "Včetně mých dat",
+  "settings.privacy.aiAssistant.all.description":
+    "Čte i vaše účty a platby v tomto zařízení a to, co přečte, odesílá poskytovateli AI.",
   "settings.profile.description":
     "Váš Nostr profil, stejný, jaký pro tuto obnovovací frázi zobrazuje Linky.",
   "settings.profile.loadFailed":
@@ -717,11 +729,14 @@ export const csSettings = {
     "Zeptejte se na účty, platby a jak Payky funguje",
   "settings.assistant.empty":
     "Zeptejte se na své účty a platby nebo na to, jak Payky funguje. Asistent čte vaše data v tomto zařízení a dokumentaci Payky a odpovídá pomocí poskytovatele AI.",
+  "settings.assistant.emptyPublic":
+    "Zeptejte se, jak Payky funguje. Asistent čte dokumentaci a kód Payky, ne vaše data, a odpovídá pomocí poskytovatele AI.",
   "settings.assistant.suggestion.openBills": "Které účty jsou ještě otevřené?",
   "settings.assistant.suggestion.latestPayments":
     "Jaké byly moje poslední platby?",
   "settings.assistant.suggestion.today": "Kolik dnes přišlo na tržbách?",
   "settings.assistant.suggestion.howSplit": "Jak funguje rozdělení účtu?",
+  "settings.assistant.suggestion.howRefund": "Jak vrátím platbu?",
   "settings.assistant.message.label": "Dotaz",
   "settings.assistant.message.placeholder": "Zeptejte se…",
   "settings.assistant.send": "Odeslat",

@@ -1,6 +1,7 @@
 import type { OwnerId } from "@evolu/common"
 import type { ModelMessage } from "ai"
 import { atom } from "jotai"
+import type { AiAssistantAccess } from "@/core/evolu/device-client.ts"
 
 /** One question and the assistant's reply to it. */
 export interface AssistantTurn {
@@ -15,14 +16,17 @@ export interface AssistantTurn {
 }
 
 /**
- * The conversation, in memory only (ai/0002): it outlives leaving the page
+ * The conversation, in memory only (ai/0004): it outlives leaving the page
  * but not a reload. It belongs to the account it was held with, so switching
  * accounts starts afresh rather than showing one account's answers in another.
+ * It belongs to the access it was held with too (ai/0004): replies about the
+ * merchant's data must not be sent again once the device allows less.
  */
 export const assistantConversationAtom = atom<{
   readonly ownerId: OwnerId | null
+  readonly access: AiAssistantAccess
   readonly turns: ReadonlyArray<AssistantTurn>
-}>({ ownerId: null, turns: [] })
+}>({ ownerId: null, access: "off", turns: [] })
 
 /**
  * The conversation as the model reads it, with `question` asked last. A

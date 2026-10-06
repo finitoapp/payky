@@ -39,6 +39,7 @@ import { homeModeLabelKeys } from "@/features/settings/home-screen/home-screen-s
 import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
+import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -117,6 +118,7 @@ function SettingsPage() {
   const [card] = useEvoluQuery(cardSwitchioAccountQuery).data
   const eet = useEetSettings()
   const { enabledModes: enabledHomeModes } = useTerminalHomeMode()
+  const aiAssistantAccess = useAiAssistantAccess()
 
   const enabledMethods = [
     [cash, "settings.paymentAccounts.method.cashRegister"],
@@ -270,12 +272,17 @@ function SettingsPage() {
         description: "settings.supportChat.description",
         to: "/settings/support",
       },
-      {
-        icon: Sparkles,
-        title: "settings.assistant.title",
-        description: "settings.assistant.description",
-        to: "/settings/assistant",
-      },
+      // Only on a device that allowed it, in the privacy settings (ai/0004).
+      ...(aiAssistantAccess === "off"
+        ? []
+        : [
+            {
+              icon: Sparkles,
+              title: "settings.assistant.title",
+              description: "settings.assistant.description",
+              to: "/settings/assistant",
+            } as const,
+          ]),
       {
         icon: HeartHandshake,
         title: "settings.donations.title",

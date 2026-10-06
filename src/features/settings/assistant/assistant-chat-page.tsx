@@ -1,4 +1,5 @@
 import { AbortError } from "@evolu/common"
+import { Navigate } from "@tanstack/react-router"
 import { atom, type PrimitiveAtom, useAtomValue, useStore } from "jotai"
 import {
   AlertCircleIcon,
@@ -10,19 +11,20 @@ import { type ReactNode, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { createAiModelDep } from "@/core/ai/ai-model.ts"
 import { askAssistant } from "@/core/ai/assistant.ts"
-import { createRepoAiTools } from "@/core/ai/repo-ai-tools.ts"
 import { appEnv } from "@/core/app-env.ts"
+import type { AiAssistantAccess } from "@/core/evolu/device-client.ts"
 import {
   type AssistantTurn,
   assistantConversationAtom,
   toAssistantMessages,
 } from "@/features/settings/assistant/assistant-conversation.ts"
-import { createSnapshotRepoFilesLoader } from "@/features/settings/assistant/snapshot-repo-files.ts"
+import { createAssistantTools } from "@/features/settings/assistant/assistant-tools.ts"
 import {
   ChatComposer,
   ChatLayout,
   ChatScrollArea,
 } from "@/features/settings/chat/chat-layout.tsx"
+import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -35,12 +37,26 @@ const AI_PROXY_URL = new URL(
   appEnv.VITE_PAYKY_API_BASE_URL
 ).toString()
 
-const suggestions = [
-  "settings.assistant.suggestion.openBills",
-  "settings.assistant.suggestion.latestPayments",
-  "settings.assistant.suggestion.today",
-  "settings.assistant.suggestion.howSplit",
-] as const satisfies ReadonlyArray<TranslationKey>
+/** What the assistant may read, as its empty state says and suggests. */
+type Access = Exclude<AiAssistantAccess, "off">
+
+const emptyKeys = {
+  public: "settings.assistant.emptyPublic",
+  all: "settings.assistant.empty",
+} satisfies Record<Access, TranslationKey>
+
+const suggestions = {
+  public: [
+    "settings.assistant.suggestion.howSplit",
+    "settings.assistant.suggestion.howRefund",
+  ],
+  all: [
+    "settings.assistant.suggestion.openBills",
+    "settings.assistant.suggestion.latestPayments",
+    "settings.assistant.suggestion.today",
+    "settings.assistant.suggestion.howSplit",
+  ],
+} satisfies Record<Access, ReadonlyArray<TranslationKey>>
 
 /** What a tool the reply waits for reads: the merchant's data or the docs. */
 type LookingUp = "data" | "docs"
@@ -57,15 +73,24 @@ interface Answering {
 }
 
 /**
- * A chat with the assistant (ai/0002), laid out like the support chat. The
+ * A chat with the assistant (ai/0004), laid out like the support chat. The
  * assistant reads the merchant's local data through its tools and answers
  * through Payky's AI proxy. The conversation stays in memory while the app
  * runs; leaving the page stops a reply that is still coming.
+ *
+ * The assistant exists only on a device that allowed it (ai/0004); anywhere
+ * else the page sends the merchant to the privacy settings.
  */
 export function AssistantChatPage() {
+  const access = useAiAssistantAccess()
+  if (access === "off") return <Navigate to="/settings/about/privacy" replace />
+  return <AssistantChat access={access} />
+}
+
+function AssistantChat({ access }: { readonly access: Access }) {
   const { t } = useTranslation()
   const { turns, answeringAtom, ask, stop, startOver } =
-    useAssistantConversation()
+    useAssistantConversation(access)
   const last = turns.at(-1)
   const answering = last?.status === "answering"
 
@@ -88,7 +113,7 @@ export function AssistantChatPage() {
     >
       <ChatScrollArea followKey={answering ? last.id : null}>
         {turns.length === 0 ? (
-          <EmptyConversation onAsk={ask} />
+          <EmptyConversation access={access} onAsk={ask} />
         ) : (
           // Busy while a reply streams in, so a screen reader reads it once
           // it is complete rather than word by word.
@@ -125,17 +150,21 @@ export function AssistantChatPage() {
 }
 
 /**
- * The conversation of the active account and asking within it. The reply
+ * The conversation of the active account and access, and asking within it.
+ * A conversation held with another access starts afresh, so
+ * replies about the merchant's data are not sent again (ai/0004). The reply
  * being streamed lives in a page-scoped atom that only its bubble reads, so
  * a token re-renders that bubble rather than the whole conversation; it joins
  * the conversation once it is complete.
  */
-function useAssistantConversation() {
+function useAssistantConversation(access: Access) {
   const appRun = useAppRun()
   const store = useStore()
   const ownerId = useEvolu().appOwner.id
   const conversation = useAtomValue(assistantConversationAtom)
-  const turns = conversation.ownerId === ownerId ? conversation.turns : []
+  const isCurrent = (current: typeof conversation) =>
+    current.ownerId === ownerId && current.access === access
+  const turns = isCurrent(conversation) ? conversation.turns : []
   const [answeringAtom] = useState(() =>
     atom<Answering>({ text: "", lookingUp: null })
   )
@@ -151,7 +180,8 @@ function useAssistantConversation() {
   ) =>
     store.set(assistantConversationAtom, (current) => ({
       ownerId,
-      turns: update(current.ownerId === ownerId ? current.turns : []),
+      access,
+      turns: update(isCurrent(current) ? current.turns : []),
     }))
 
   /** Asks `question`, or asks the failed turn `retryOf` again. */
@@ -165,11 +195,11 @@ function useAssistantConversation() {
     store.set(answeringAtom, { text: "", lookingUp: null })
 
     await using run = appRun()
-    const repoTools = createRepoAiTools(createSnapshotRepoFilesLoader(run))
+    const { tools, repoTools } = createAssistantTools(access, run)
     const current = run.abortable(
       askAssistant({
         messages: toAssistantMessages(earlier, question),
-        tools: repoTools,
+        tools,
         onText: (text) =>
           store.set(answeringAtom, (answer) => ({
             text: answer.text + text,
@@ -221,18 +251,18 @@ function useAssistantConversation() {
 }
 
 function EmptyConversation({
+  access,
   onAsk,
 }: {
+  readonly access: Access
   readonly onAsk: (question: string) => void
 }) {
   const { t } = useTranslation()
   return (
     // At the bottom, next to the composer and the thumb, as in messengers.
     <div className="mx-auto mt-auto flex max-w-xs flex-col items-center gap-3 text-center">
-      <p className="text-sm text-muted-foreground">
-        {t("settings.assistant.empty")}
-      </p>
-      {suggestions.map((key) => (
+      <p className="text-sm text-muted-foreground">{t(emptyKeys[access])}</p>
+      {suggestions[access].map((key) => (
         <Button
           key={key}
           type="button"

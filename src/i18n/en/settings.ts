@@ -5,7 +5,7 @@ export const enSettings = {
     "Join the development and follow the project",
   "settings.about.github.title": "Source code on GitHub",
   "settings.about.privacy.body":
-    "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, Spark wallet information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and wallet access data, especially your recovery phrase, secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Spark operators and Spark service providers to run the Spark wallet and send or receive Bitcoin payments\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n- Open Food Facts and Open Beauty Facts to look up scanned barcodes, if product lookup is enabled\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS AND ERROR REPORTING\nPayky does not use analytics or tracking services. Optional error reporting through Sentry is available to help diagnose crashes and bugs. It is off by default and only activates if you turn it on in Settings > About > Data and privacy. When enabled, error reports may include device and app information, and error messages and stack traces; recovery phrases and bank account numbers are automatically redacted before being sent.\n\n5. SPARK NETWORK\nPayments through the Spark wallet are processed by Spark operators and Spark service providers, which may see transaction amounts, timing, wallet identifiers, and related metadata.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: October 2026",
+    "PAYKY - PRIVACY POLICY\n\n1. DATA COLLECTION\nPayky does not sell personal data and is designed to keep application data local to your device. The app stores terminal settings, catalog data, payment records, and related operational data locally and synchronizes application data through Evolu.\n\n2. PAYMENT DATA\nPayment and terminal data may include amounts, timestamps, item names, payment status, Spark wallet information, device identifiers, and other records needed to operate a Bitcoin payment terminal. Keep your device, credentials, backups, and wallet access data, especially your recovery phrase, secure.\n\n3. NETWORK COMMUNICATIONS\nThe app may communicate with:\n- Evolu synchronization infrastructure to sync local-first application data\n- Spark operators and Spark service providers to run the Spark wallet and send or receive Bitcoin payments\n- Lightning or wallet services used to create or settle payments\n- Price or exchange-rate APIs when fiat conversion is enabled\n- Open Food Facts and Open Beauty Facts to look up scanned barcodes, if product lookup is enabled\n- Payky's server and its AI provider to answer the AI assistant, if it is enabled: your questions, the assistant's replies and, if you allowed it, the bills and payments it reads\n\nThese services may have their own privacy policies, logs, and retention rules.\n\n4. ANALYTICS AND ERROR REPORTING\nPayky does not use analytics or tracking services. Optional error reporting through Sentry is available to help diagnose crashes and bugs. It is off by default and only activates if you turn it on in Settings > About > Data and privacy. When enabled, error reports may include device and app information, and error messages and stack traces; recovery phrases and bank account numbers are automatically redacted before being sent.\n\n5. SPARK NETWORK\nPayments through the Spark wallet are processed by Spark operators and Spark service providers, which may see transaction amounts, timing, wallet identifiers, and related metadata.\n\n6. BACKUPS AND SYNC\nIf synchronization or backup features are enabled, application data may be transmitted to synchronization infrastructure. Treat synced data as operational business data and protect every device that can access it.\n\n7. CONTACT\nPrivacy contact details will be published with the project documentation.\n\nLast updated: October 2026",
   "settings.about.privacy.description":
     "Application data is stored locally and synchronized through Evolu.",
   "settings.about.privacy.heading": "Payky Privacy Policy",
@@ -569,6 +569,18 @@ export const enSettings = {
   "settings.privacy.productLookup.enable": "Enable",
   "settings.privacy.productLookup.enabled": "Enabled",
   "settings.privacy.productLookup.title": "Product lookup",
+  "settings.privacy.aiAssistant.title": "AI assistant",
+  "settings.privacy.aiAssistant.description":
+    "The assistant answers through Payky's server and an AI provider, so what you ask and what it reads leaves this device. Off by default.",
+  "settings.privacy.aiAssistant.off.title": "Off",
+  "settings.privacy.aiAssistant.off.description":
+    "The assistant is hidden and nothing is sent.",
+  "settings.privacy.aiAssistant.public.title": "Documentation and code only",
+  "settings.privacy.aiAssistant.public.description":
+    "It reads Payky's public documentation and source code. Your bills and payments stay on this device.",
+  "settings.privacy.aiAssistant.all.title": "Including my data",
+  "settings.privacy.aiAssistant.all.description":
+    "It also reads your bills and payments on this device and sends what it reads to the AI provider.",
   "settings.profile.description":
     "Your Nostr profile, the same one Linky shows for this recovery phrase.",
   "settings.profile.loadFailed":
@@ -714,10 +726,13 @@ export const enSettings = {
     "Ask about your bills, payments and how Payky works",
   "settings.assistant.empty":
     "Ask about your bills and payments, or how Payky works. The assistant reads your data on this device and Payky's documentation, and answers through an AI provider.",
+  "settings.assistant.emptyPublic":
+    "Ask how Payky works. The assistant reads Payky's documentation and code, not your data, and answers through an AI provider.",
   "settings.assistant.suggestion.openBills": "Which bills are still open?",
   "settings.assistant.suggestion.latestPayments": "What were my last payments?",
   "settings.assistant.suggestion.today": "How much did I take today?",
   "settings.assistant.suggestion.howSplit": "How does splitting a bill work?",
+  "settings.assistant.suggestion.howRefund": "How do I refund a payment?",
   "settings.assistant.message.label": "Question",
   "settings.assistant.message.placeholder": "Ask a question…",
   "settings.assistant.send": "Send",

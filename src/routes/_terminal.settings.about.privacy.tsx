@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
+import { AiAssistantCard } from "@/features/settings/privacy/ai-assistant-card.tsx"
 import { ErrorReportingCard } from "@/features/settings/privacy/error-reporting-card.tsx"
 import { ProductLookupCard } from "@/features/settings/privacy/product-lookup-card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -33,6 +34,7 @@ function PrivacyPage() {
         {/* The consents come first; the policy below explains what they send. */}
         <ErrorReportingCard />
         <ProductLookupCard />
+        <AiAssistantCard />
         <Card>
           <CardHeader>
             <CardTitle>{t("settings.about.privacy.heading")}</CardTitle>

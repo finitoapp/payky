@@ -8,7 +8,7 @@ import {
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import { createEvoluTest } from "../evolu/cli-client"
-import { askAssistant, recentMessages } from "./assistant.ts"
+import { askAssistant, createDataTools, recentMessages } from "./assistant.ts"
 
 const usage = {
   inputTokens: {
@@ -80,7 +80,7 @@ describe("askAssistant", () => {
     const reply = await run.orThrow(
       askAssistant({
         messages: [{ role: "user", content: "What is open?" }],
-        tools: {},
+        tools: createDataTools(run),
         onText: (text) => streamed.push(text),
         onToolCall: (toolName) => toolCalls.push(toolName),
       })

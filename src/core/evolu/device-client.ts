@@ -46,10 +46,16 @@ export const deviceSettingsId = createIdFromString<"DeviceSettings">(
 const DeviceLanguageSchema = z.enum(["en", "cs", "sk"])
 const DeviceThemeSchema = z.enum(["system", "light", "dark"])
 const DeviceLocaleSchema = z.enum(["cs-CZ", "en-US", "sk-SK"])
+/**
+ * What the AI assistant may send off the device (ai/0004): nothing, Payky's
+ * public documentation and code, or the merchant's data as well.
+ */
+const AiAssistantAccessSchema = z.enum(["off", "public", "all"])
 
 export type DeviceLanguage = z.output<typeof DeviceLanguageSchema>
 export type DeviceTheme = z.output<typeof DeviceThemeSchema>
 export type DeviceLocale = z.output<typeof DeviceLocaleSchema>
+export type AiAssistantAccess = z.output<typeof AiAssistantAccessSchema>
 
 export interface DeviceSettings {
   readonly id: DeviceSettingsId
@@ -58,6 +64,7 @@ export interface DeviceSettings {
   readonly locale: DeviceLocale
   readonly errorReportingEnabled: 0 | 1
   readonly productLookupEnabled: 0 | 1
+  readonly aiAssistantAccess: AiAssistantAccess
 }
 
 const deviceEvoluSchema = {
@@ -92,6 +99,7 @@ const deviceEvoluSchema = {
     locale: DeviceLocaleSchema.nullable(),
     errorReportingEnabled: SqliteBoolSchema.nullable(),
     productLookupEnabled: SqliteBoolSchema.nullable(),
+    aiAssistantAccess: AiAssistantAccessSchema.nullable(),
   },
 } as const
 
@@ -123,6 +131,7 @@ export function createDefaultDeviceSettings(
     locale: getDeviceLocaleForLanguage(language),
     errorReportingEnabled: sqliteFalse,
     productLookupEnabled: sqliteFalse,
+    aiAssistantAccess: "off",
   }
 }
 

@@ -28,6 +28,7 @@ const deviceSettingsQuery = createDeviceQuery((db) =>
       "locale",
       "errorReportingEnabled",
       "productLookupEnabled",
+      "aiAssistantAccess",
     ])
     .where("id", "=", deviceSettingsId)
 )
@@ -47,6 +48,7 @@ function withDeviceSettingsDefaults(
       row?.errorReportingEnabled ?? defaults.errorReportingEnabled,
     productLookupEnabled:
       row?.productLookupEnabled ?? defaults.productLookupEnabled,
+    aiAssistantAccess: row?.aiAssistantAccess ?? defaults.aiAssistantAccess,
   }
 }
 

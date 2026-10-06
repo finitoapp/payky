@@ -1,6 +1,6 @@
 # 0002 The assistant chat lives in memory and asks no consent
 
-Status: accepted
+Status: superseded by ai/0004
 Date: 2026-10-05
 
 ## Context

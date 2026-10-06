@@ -62,3 +62,42 @@ test("switching the landing page's language moves to that language's page", asyn
     await expect(page).toHaveURL("/landing")
   })
 })
+
+test("the app starts in the language of the landing page it was opened from", async ({
+  page,
+}) => {
+  await page.goto("/landing", { waitUntil: "domcontentloaded" })
+  await page
+    .getByRole("link", {
+      name: translate("cs", "landing.closing.get.pwa.action"),
+    })
+    .click()
+
+  await expect(
+    page.getByRole("heading", { name: translate("cs", "onboarding.title") })
+  ).toBeVisible()
+  await expect(page).toHaveURL("/onboarding")
+
+  await test.step("and keeps it on the app's address", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await expect(
+      page.getByRole("heading", { name: translate("cs", "onboarding.title") })
+    ).toBeVisible()
+  })
+})
+
+test("a device with an account keeps its language when opened from the landing page", async ({
+  seededPage: page,
+}) => {
+  await page.goto("/landing", { waitUntil: "domcontentloaded" })
+  await page
+    .getByRole("link", {
+      name: translate("cs", "landing.closing.get.pwa.action"),
+    })
+    .click()
+
+  await expect(page).toHaveURL("/")
+  await expect(
+    page.getByRole("button", { name: translate("en", "settings.title") })
+  ).toBeVisible()
+})

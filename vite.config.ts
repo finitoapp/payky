@@ -242,8 +242,14 @@ export default (({ command, isSsrBuild }: ConfigEnv) => {
                 maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
                 navigateFallback: "/index.html",
                 // The landing pages are served as they were prerendered, never
-                // replaced by the app's shell or kept in its precache.
-                navigateFallbackDenylist: [/^\/landing(?:\/|$)/u],
+                // replaced by the app's shell or kept in its precache. Files
+                // (sitemap.xml, robots.txt) and server routes go to the network
+                // too, mirroring the SPA rewrite in vercel.json.
+                navigateFallbackDenylist: [
+                  /^\/landing(?:\/|$)/u,
+                  /^\/(?:api|\.well-known)\//u,
+                  /\/[^/]+\.[^/]+$/u,
+                ],
                 globIgnores: ["landing*.html", "landing/og-*.png"],
               },
             }),

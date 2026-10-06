@@ -68,7 +68,7 @@ function GetOptionAction({ option }: { readonly option: GetOption }) {
   }
 
   return (
-    <Link to="/" className={actionClassName}>
+    <Link to="/onboarding" className={actionClassName}>
       <GlobeIcon aria-hidden="true" data-icon="inline-start" />
       {t(option.action)}
     </Link>

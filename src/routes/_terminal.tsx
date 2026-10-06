@@ -15,6 +15,10 @@ import {
 } from "@/core/evolu/initial-sync-state.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { EetSandboxBanner } from "@/features/shared/eet-sandbox-banner.tsx"
+import {
+  readLandingRedirectEnvironment,
+  shouldRedirectToLanding,
+} from "@/features/shared/landing-redirect.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -69,7 +73,8 @@ function TerminalLayout() {
 /**
  * A missing appSettings row means nothing while the account's first sync is
  * still transferring (a restored account reopened mid-sync), so this waits
- * for that before sending the account to onboarding, where finishing would
+ * for that before sending the account to onboarding (or, in a browser tab
+ * that never opened the app, to the landing page — landing/0001), where finishing would
  * overwrite the synced settings via last-write-wins. Kept out of
  * `TerminalLayout` so an onboarded terminal never re-renders on sync-state
  * snapshots.
@@ -92,7 +97,12 @@ function NotOnboarded() {
 
   useEffect(() => {
     if (!waitingForSync) {
-      void navigate({ to: "/onboarding", replace: true })
+      void navigate({
+        to: shouldRedirectToLanding(readLandingRedirectEnvironment())
+          ? "/landing"
+          : "/onboarding",
+        replace: true,
+      })
     }
   }, [navigate, waitingForSync])
 

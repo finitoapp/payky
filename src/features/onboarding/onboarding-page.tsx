@@ -53,6 +53,7 @@ import {
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
+import { markAppEntered } from "@/features/shared/landing-redirect.ts"
 import { LanguageSelect } from "@/features/shared/language-select.tsx"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
@@ -136,6 +137,10 @@ export function OnboardingPage() {
     submitAttempted && !form.recoveryPhraseConfirmed
       ? "onboarding.account.mnemonic.required"
       : null
+
+  // Having reached the app once, this browser no longer gets the landing
+  // page instead of onboarding (landing/0001).
+  useEffect(markAppEntered, [])
 
   useEffect(() => {
     // The appSettings row's existence marks the account as onboarded. The row

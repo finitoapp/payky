@@ -40,8 +40,9 @@ const getOptions: ReadonlyArray<GetOption> = [
   },
 ]
 
+// Outlined: the contact form above holds the one primary action of the section.
 const actionClassName = cn(
-  buttonVariants({ size: "lg" }),
+  buttonVariants({ variant: "outline", size: "lg" }),
   "mt-auto h-11 w-fit rounded-full px-6 text-base font-semibold has-data-[icon=inline-start]:pl-5"
 )
 
@@ -79,7 +80,7 @@ function HelpYou() {
   return (
     <article
       id="contact"
-      className="grid scroll-mt-24 gap-8 rounded-3xl bg-card p-6 shadow-sm sm:p-10 lg:grid-cols-[2fr_3fr] lg:gap-14"
+      className="landing-beam grid scroll-mt-24 gap-8 rounded-3xl p-6 shadow-sm sm:p-10 lg:grid-cols-[2fr_3fr] lg:gap-14"
     >
       <div className="flex flex-col gap-4">
         <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">

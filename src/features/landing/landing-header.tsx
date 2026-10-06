@@ -7,6 +7,8 @@ import {
   SunIcon,
 } from "lucide-react"
 
+import { flushSync } from "react-dom"
+
 import type { Theme } from "@/components/theme-provider.tsx"
 import { buttonVariants } from "@/components/ui/button.tsx"
 import {
@@ -46,6 +48,33 @@ const iconButtonClassName = cn(
   buttonVariants({ variant: "ghost", size: "icon-lg" }),
   "rounded-full text-muted-foreground hover:text-foreground"
 )
+
+/**
+ * Applies a theme change as a circle growing out of `origin` (landing.css),
+ * or at once where View Transitions are missing or motion is reduced.
+ */
+function switchTheme(origin: Element, apply: () => void) {
+  if (
+    typeof document.startViewTransition !== "function" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    apply()
+    return
+  }
+  const rect = origin.getBoundingClientRect()
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  const radius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y)
+  )
+  const root = document.documentElement.style
+  root.setProperty("--landing-theme-x", `${x}px`)
+  root.setProperty("--landing-theme-y", `${y}px`)
+  root.setProperty("--landing-theme-r", `${radius}px`)
+  // Synchronous, so the `dark` class is on before the new snapshot is taken.
+  document.startViewTransition(() => flushSync(apply))
+}
 
 /**
  * Brand on the left; on the right the one action, the language and the
@@ -115,7 +144,9 @@ export function LandingHeader() {
             className={iconButtonClassName}
             aria-label={themeLabel}
             title={themeLabel}
-            onClick={() => setTheme(nextTheme[theme])}
+            onClick={(event) =>
+              switchTheme(event.currentTarget, () => setTheme(nextTheme[theme]))
+            }
           >
             <ThemeIcon aria-hidden="true" />
           </button>

@@ -315,7 +315,7 @@ export function LandingContactForm() {
             type="submit"
             size="lg"
             disabled={pending}
-            className="h-11 rounded-full px-6 text-base font-semibold"
+            className="h-11 rounded-full px-6 text-base font-semibold has-data-[icon=inline-start]:pl-5"
           >
             {pending ? (
               <LoaderCircleIcon

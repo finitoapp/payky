@@ -68,7 +68,7 @@ test("the payment methods step reports a missing or invalid IBAN on Next", async
   })
 
   await test.step("walk onboarding up to the payment methods step", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()
@@ -142,7 +142,7 @@ test("an offline restore fails, and another phrase returns to the restore step",
   context,
 }) => {
   await test.step("submit a recovery phrase and go offline", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()
@@ -182,7 +182,7 @@ test("setting up a phrase whose sync failed warns, then skips the backup step", 
   context,
 }) => {
   await test.step("fail an offline restore", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()
@@ -248,7 +248,7 @@ test("finish reports an unconfirmed recovery phrase, which can be copied", async
   await page.context().grantPermissions(["clipboard-write"])
 
   await test.step("walk onboarding up to the account step", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()
@@ -311,7 +311,7 @@ test("the currency step defaults to the chosen country's currency, not the UI la
   page,
 }) => {
   await test.step("walk onboarding in English, choosing the Czech Republic", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()
@@ -340,7 +340,7 @@ test("changing the language after picking a currency does not reset that choice"
   })
 
   await test.step("walk to the currency step and explicitly pick US dollar", async () => {
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("heading", { name: translate("en", "onboarding.title") })
       .waitFor()

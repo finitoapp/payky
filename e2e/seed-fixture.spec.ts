@@ -10,7 +10,7 @@ test("seeding survives the document being replaced mid-call", async ({
   // rare to reproduce by waiting (once in 13+ runs of that spec), so the
   // destroyed context is caused here on purpose: the bridge call reloads the
   // document instead of returning, which is exactly the shape of the failure.
-  await page.goto("/", { waitUntil: "domcontentloaded" })
+  await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
   await page.waitForFunction(
     () => typeof window.__e2eSeedOnboarding === "function"
   )

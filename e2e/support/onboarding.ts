@@ -107,7 +107,7 @@ export async function seedOnboarding(
   language: Language,
   options?: { readonly spark?: boolean; readonly fiatCurrency?: FiatCurrency }
 ): Promise<void> {
-  await page.goto("/", { waitUntil: "domcontentloaded" })
+  await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
   await seedCurrentAccountOnboarding(page, language, options)
 }
 
@@ -154,7 +154,9 @@ export async function completeOnboarding(
   language: Language,
   options?: { readonly baseURL?: string }
 ): Promise<string> {
-  await page.goto(options?.baseURL ?? "/", { waitUntil: "domcontentloaded" })
+  await page.goto(`${options?.baseURL ?? ""}/onboarding`, {
+    waitUntil: "domcontentloaded",
+  })
   await page
     .getByRole("heading", { name: translate(language, "onboarding.title") })
     .waitFor()

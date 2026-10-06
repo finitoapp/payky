@@ -3,7 +3,7 @@ import {
   useMutationObserver,
   useResizeObserver,
 } from "@dedalik/use-react"
-import { SendIcon, SquareIcon } from "lucide-react"
+import { ArrowDownIcon, SendIcon, SquareIcon } from "lucide-react"
 import {
   type ReactNode,
   useCallback,
@@ -16,6 +16,7 @@ import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
  * A chat laid out like a messenger: the header stays put, the conversation
@@ -23,18 +24,21 @@ import { Textarea } from "@/components/ui/textarea.tsx"
  */
 export function ChatLayout({
   title,
+  headerAction,
   children,
 }: {
   readonly title: string
+  /** Shown at the end of the header, such as starting over. */
+  readonly headerAction?: ReactNode
   readonly children: ReactNode
 }) {
   return (
     // Fixed to the screen rather than scrolling the window: `FadeHeader`
     // fades out with the window's scroll, and a chat starts scrolled down.
     <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+var(--terminal-banner-height,0px))] bottom-0 mx-auto flex max-w-xl flex-col">
-      <FadeHeader title={title} />
-      {/* The same 24px above the header as every other settings page. */}
-      <div className="h-20 shrink-0" />
+      <FadeHeader title={title} endAddon={headerAction} />
+      {/* As tall as the header; the conversation scrolls up to its edge. */}
+      <div className="h-14 shrink-0" />
       {children}
     </div>
   )
@@ -62,8 +66,11 @@ export function ChatScrollArea({
   readonly followKey: string | null
   readonly children: ReactNode
 }) {
+  const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
+  // State only for the button; following reads the ref, not a render.
+  const [awayFromBottom, setAwayFromBottom] = useState(false)
   // The composer growing or the soft keyboard opening shrinks the view.
   const { height } = useResizeObserver(scrollRef)
 
@@ -84,17 +91,37 @@ export function ChatScrollArea({
   }, [followKey])
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-3 pb-4"
-      onScroll={(event) => {
-        const element = event.currentTarget
-        stickToBottom.current =
-          element.scrollHeight - element.scrollTop - element.clientHeight <
-          STICK_TO_BOTTOM_PX
-      }}
-    >
-      {children}
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        ref={scrollRef}
+        // The 24px above the first message every settings page has below its
+        // header, faded so that older messages leave under the header softly.
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-3 pt-6 pb-4 [mask-image:linear-gradient(to_bottom,transparent,black_1.5rem)]"
+        onScroll={(event) => {
+          const element = event.currentTarget
+          stickToBottom.current =
+            element.scrollHeight - element.scrollTop - element.clientHeight <
+            STICK_TO_BOTTOM_PX
+          setAwayFromBottom(!stickToBottom.current)
+        }}
+      >
+        {children}
+      </div>
+      {awayFromBottom ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full shadow-md"
+          aria-label={t("settings.chat.scrollToLatest")}
+          onClick={() => {
+            const element = scrollRef.current
+            element?.scrollTo({ top: element.scrollHeight, behavior: "smooth" })
+          }}
+        >
+          <ArrowDownIcon />
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -170,6 +197,11 @@ export function ChatComposer({
             <Button
               type="submit"
               size="icon-lg"
+              // Grey until there is something to send, as in messengers; a
+              // faded primary reads as enabled.
+              variant={
+                disabled || draft.trim() === "" ? "secondary" : "default"
+              }
               className="shrink-0"
               aria-label={sendLabel}
               disabled={disabled || draft.trim() === ""}

@@ -61,14 +61,19 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
-import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
+import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
+import type { Language, TranslationKey } from "@/i18n/resources.ts"
 
-export function OnboardingPage() {
+export function OnboardingPage({
+  landingLanguage,
+}: {
+  readonly landingLanguage?: Language
+}) {
   const runToast = useRunToast()
   const navigate = useNavigate()
   const setLocale = useSetLocale()
   const { language, t } = useTranslation()
+  const setLanguage = useSetLanguage()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const [form, setForm] = useAtom(onboardingFormAtom)
@@ -141,6 +146,16 @@ export function OnboardingPage() {
   // Having reached the app once, this browser no longer gets the landing
   // page instead of onboarding (landing/0001).
   useEffect(markAppEntered, [])
+
+  // A visitor arriving from the landing page continues in its language; a
+  // device that already has an account keeps its own (landing/0003), and the
+  // effect below takes it to the app. The parameter is dropped once read, so
+  // a reload or Back does not undo a language picked here meanwhile.
+  useEffect(() => {
+    if (landingLanguage === undefined || settings !== undefined) return
+    setLanguage(landingLanguage)
+    void navigate({ to: "/onboarding", search: {}, replace: true })
+  }, [landingLanguage, navigate, setLanguage, settings])
 
   useEffect(() => {
     // The appSettings row's existence marks the account as onboarded. The row

@@ -46,7 +46,7 @@ const actionClassName = cn(
 )
 
 function GetOptionAction({ option }: { readonly option: GetOption }) {
-  const { t } = useLandingTranslation()
+  const { language, t } = useLandingTranslation()
 
   if (option.id === "android") {
     return (
@@ -64,7 +64,8 @@ function GetOptionAction({ option }: { readonly option: GetOption }) {
 
   return (
     // A plain link: the app is another document than this prerendered page.
-    <a href="/onboarding" className={actionClassName}>
+    // The app starts in this page's language (landing/0003).
+    <a href={`/onboarding?lang=${language}`} className={actionClassName}>
       <GlobeIcon aria-hidden="true" data-icon="inline-start" />
       {t(option.action)}
     </a>

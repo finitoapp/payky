@@ -1,3 +1,4 @@
+import { createRun } from "@evolu/web"
 import {
   CircleCheckIcon,
   LoaderCircleIcon,
@@ -18,13 +19,12 @@ import {
   FieldSet,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { Skeleton } from "@/components/ui/skeleton.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import { createFetchDep } from "@/core/deps.ts"
 import { sendContactMessage } from "@/core/integrations/contact-client.ts"
 import type { ContactMessage } from "@/core/modules/contact/contact-message.ts"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
-import { useRunToast } from "@/hooks/use-run-toast.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -123,16 +123,17 @@ function ContactSent({ onReset }: { readonly onReset: () => void }) {
 }
 
 /**
- * Suspends with the app's run (it needs `fetch` through the app's deps), so
- * the page wraps it in a boundary with {@link LandingContactFormSkeleton}.
+ * Runs its one Task on a run of its own: the landing page loads no account,
+ * so `useAppRun` and the app's toaster are not there (landing/0002). A
+ * failure is said next to the button instead.
  */
 export function LandingContactForm() {
   const { language, t } = useLandingTranslation()
-  const runToast = useRunToast()
   const id = useId()
   const [values, setValues] = useState<ContactFormValues>(emptyValues)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [pending, setPending] = useState(false)
+  const [failed, setFailed] = useState(false)
   const [sent, setSent] = useState(false)
 
   const update = (patch: Partial<ContactFormValues>) =>
@@ -145,16 +146,17 @@ export function LandingContactForm() {
     if (!checked.ok) return
 
     setPending(true)
+    setFailed(false)
     try {
-      const delivered = await runToast(async (run) => {
-        const result = await run(
-          sendContactMessage(toContactMessage(values, language))
-        )
-        if (!result.ok) return "landing.contact.failed"
-      })
-      if (delivered) {
+      await using run = createRun(createFetchDep())
+      const result = await run(
+        sendContactMessage(toContactMessage(values, language))
+      )
+      if (result.ok) {
         setSent(true)
         setValues(emptyValues)
+      } else {
+        setFailed(true)
       }
     } finally {
       setPending(false)
@@ -300,9 +302,15 @@ export function LandingContactForm() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            {t("landing.contact.privacy")}
-          </p>
+          {failed ? (
+            <p className="text-sm text-destructive" role="alert">
+              {t("landing.contact.failed")}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t("landing.contact.privacy")}
+            </p>
+          )}
           <Button
             type="submit"
             size="lg"
@@ -325,17 +333,5 @@ export function LandingContactForm() {
         </div>
       </FieldGroup>
     </form>
-  )
-}
-
-export function LandingContactFormSkeleton() {
-  return (
-    <div className="flex flex-col gap-6" aria-hidden="true">
-      <Skeleton className="h-6 w-56" />
-      <Skeleton className="h-11 w-full rounded-full" />
-      <Skeleton className="h-11 w-full" />
-      <Skeleton className="h-20 w-full" />
-      <Skeleton className="h-11 w-36 self-end rounded-full" />
-    </div>
   )
 }

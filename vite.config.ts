@@ -124,18 +124,54 @@ function repoSnapshotPlugin(): PluginOption {
   }
 }
 
+/**
+ * The landing page is its own document, prerendered once per language by
+ * `bin/prerender-landing.ts` (landing/0002). These middlewares give the dev
+ * and preview servers the addresses `vercel.json` gives production: the dev
+ * server serves the unrendered template, which renders in the browser, and
+ * the preview server serves the prerendered file for the address's
+ * language, Czech at `/landing`.
+ */
+function landingPagesPlugin(): PluginOption {
+  const landingPath = /^\/landing(?:\/([a-z]{2}))?\/?(?:\?.*)?$/u
+  return {
+    name: "payky-landing-pages",
+    configureServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        if (request.url !== undefined && landingPath.test(request.url)) {
+          request.url = "/landing.html"
+        }
+        next()
+      })
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        const match = request.url?.match(landingPath)
+        if (match) {
+          request.url = `/landing-${match[1] ?? "cs"}.html`
+        }
+        next()
+      })
+    },
+  }
+}
+
 function isNativeAndroidWebViewBuild(command: string): boolean {
   return command === "build" && process.env.PAYKY_CAPACITOR_BUILD === "1"
 }
 
 // https://vite.dev/config/
-export default (({ command }: ConfigEnv) => {
+export default (({ command, isSsrBuild }: ConfigEnv) => {
   const useAndroidWebViewWorkerLocksPlugin =
     isNativeAndroidWebViewBuild(command)
   const isCapacitorBuild = process.env.PAYKY_CAPACITOR_BUILD === "1"
   const useBasicSsl = process.env.PAYKY_DISABLE_BASIC_SSL !== "1"
   const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
-  const useSentryVitePlugin = command === "build" && Boolean(sentryAuthToken)
+  const useSentryVitePlugin =
+    command === "build" && !isSsrBuild && Boolean(sentryAuthToken)
+  // The server bundle `bin/prerender-landing.ts` renders the landing page
+  // with; it ships nothing, so it needs no worker, snapshot or upload.
+  const isLandingServerBuild = isSsrBuild === true
 
   return {
     define: {
@@ -150,6 +186,17 @@ export default (({ command }: ConfigEnv) => {
     },
     build: {
       sourcemap: useSentryVitePlugin,
+      // The native app opens the terminal only, never the landing page.
+      ...(isCapacitorBuild || isLandingServerBuild
+        ? {}
+        : {
+            rolldownOptions: {
+              input: {
+                main: path.resolve(import.meta.dirname, "index.html"),
+                landing: path.resolve(import.meta.dirname, "landing.html"),
+              },
+            },
+          }),
     },
     plugins: [
       ...(useBasicSsl ? [basicSsl()] : []),
@@ -162,24 +209,35 @@ export default (({ command }: ConfigEnv) => {
       }),
       react(),
       tailwindcss(),
+      landingPagesPlugin(),
       // The native app reads payky.me's snapshot instead of carrying one.
-      ...(isCapacitorBuild ? [] : [repoSnapshotPlugin()]),
-      VitePWA({
-        registerType: "prompt",
-        injectRegister: "auto",
-        // The native app ships its assets in the APK, so a service worker only
-        // gets in the way: its precache survives an APK update and serves the
-        // old bundle until the update toast is accepted. The self-destroying
-        // worker replaces one already installed, clears it and reloads once.
-        selfDestroying: isCapacitorBuild,
-        manifest: false,
-        workbox: {
-          cleanupOutdatedCaches: true,
-          globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
-          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-          navigateFallback: "/index.html",
-        },
-      }),
+      ...(isCapacitorBuild || isLandingServerBuild
+        ? []
+        : [repoSnapshotPlugin()]),
+      ...(isLandingServerBuild
+        ? []
+        : [
+            VitePWA({
+              registerType: "prompt",
+              injectRegister: "auto",
+              // The native app ships its assets in the APK, so a service worker only
+              // gets in the way: its precache survives an APK update and serves the
+              // old bundle until the update toast is accepted. The self-destroying
+              // worker replaces one already installed, clears it and reloads once.
+              selfDestroying: isCapacitorBuild,
+              manifest: false,
+              workbox: {
+                cleanupOutdatedCaches: true,
+                globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
+                maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+                navigateFallback: "/index.html",
+                // The landing pages are served as they were prerendered, never
+                // replaced by the app's shell or kept in its precache.
+                navigateFallbackDenylist: [/^\/landing(?:\/|$)/u],
+                globIgnores: ["landing*.html", "landing/og-*.png"],
+              },
+            }),
+          ]),
       ...(useSentryVitePlugin
         ? [
             sentryVitePlugin({

@@ -183,7 +183,10 @@ function StackedStory() {
 
 export function LandingFeatureStory() {
   const { t } = useLandingTranslation()
-  const wide = useMediaQuery("(min-width: 64rem)")
+  // Narrow until hydrated, as the prerendered page is (landing/0002).
+  const wide = useMediaQuery("(min-width: 64rem)", {
+    initializeWithValue: false,
+  })
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">

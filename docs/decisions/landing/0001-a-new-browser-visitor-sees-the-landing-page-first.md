@@ -18,7 +18,8 @@ onboarding.
 ## Decision
 
 Where the terminal layout sends a device without an account to onboarding,
-it sends it to `/landing` instead when all of these hold: it is not the
+it sends it to the landing page instead, in the language landing/0002
+picks, when all of these hold: it is not the
 Capacitor app, it is not an installed PWA (`display-mode: standalone`, or
 `navigator.standalone` on iOS), and this browser has never opened
 onboarding. Onboarding marks the browser in `localStorage` as soon as it

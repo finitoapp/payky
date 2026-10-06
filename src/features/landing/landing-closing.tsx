@@ -1,17 +1,12 @@
-import { Link } from "@tanstack/react-router"
 import {
   GlobeIcon,
   type LucideIcon,
   SmartphoneIcon,
   ZapIcon,
 } from "lucide-react"
-import { Suspense } from "react"
 
 import { buttonVariants } from "@/components/ui/button.tsx"
-import {
-  LandingContactForm,
-  LandingContactFormSkeleton,
-} from "@/features/landing/landing-contact-form.tsx"
+import { LandingContactForm } from "@/features/landing/landing-contact-form.tsx"
 import { Reveal } from "@/features/landing/landing-parts.tsx"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -68,10 +63,11 @@ function GetOptionAction({ option }: { readonly option: GetOption }) {
   }
 
   return (
-    <Link to="/onboarding" className={actionClassName}>
+    // A plain link: the app is another document than this prerendered page.
+    <a href="/onboarding" className={actionClassName}>
       <GlobeIcon aria-hidden="true" data-icon="inline-start" />
       {t(option.action)}
-    </Link>
+    </a>
   )
 }
 
@@ -92,9 +88,7 @@ function HelpYou() {
           {t("landing.closing.contact.body")}
         </p>
       </div>
-      <Suspense fallback={<LandingContactFormSkeleton />}>
-        <LandingContactForm />
-      </Suspense>
+      <LandingContactForm />
     </article>
   )
 }

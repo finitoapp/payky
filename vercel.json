@@ -5,6 +5,9 @@
       "source": "/.well-known/lnurlp/donate",
       "destination": "/api/lnurlp/donate"
     },
+    { "source": "/landing", "destination": "/landing-cs.html" },
+    { "source": "/landing/en", "destination": "/landing-en.html" },
+    { "source": "/landing/sk", "destination": "/landing-sk.html" },
     {
       "source": "/((?!.*\\.).*)",
       "destination": "/index.html"

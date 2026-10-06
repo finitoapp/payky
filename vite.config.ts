@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from "node:child_process"
+import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { sentryVitePlugin } from "@sentry/vite-plugin"
@@ -11,23 +11,32 @@ import { VitePWA } from "vite-plugin-pwa"
 import type { ViteUserConfigFnObject } from "vitest/config"
 import { defaultExclude } from "vitest/config"
 
+import { releaseCommitSubject } from "./bin/release-version.ts"
 import packageJson from "./package.json" with { type: "json" }
 
 /**
- * Sentry's `release`, which is what ties an event to its source maps. The
- * commit is the precise answer, but it is unavailable in exactly the builds
- * hardest to reproduce afterwards — a source tarball, a Docker build context,
- * a shallow export — so fall back to the package version rather than to
- * `"unknown"`, which groups every such build together.
+ * The version the app shows and Sentry's `release`, which is what ties an
+ * event to its source maps (`docs/releases.md`). The release commit
+ * `bin/release.ts` makes builds as the `package.json` version itself; every
+ * other commit — edge.payky.me, a local build — is that last release plus its
+ * commit, so two edge builds never share a release. Without git (a source
+ * tarball, a Docker build context) only the version is known.
  */
 function getAppVersion(): string {
+  const { version } = packageJson
   try {
-    return execSync("git rev-parse --short HEAD", {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim()
+    const [sha, subject] = execFileSync(
+      "git",
+      ["log", "-1", "--format=%h%n%s"],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
+    )
+      .trim()
+      .split("\n")
+    return subject === releaseCommitSubject(version)
+      ? version
+      : `${version}-edge.${sha}`
   } catch {
-    return packageJson.version
+    return version
   }
 }
 
@@ -172,10 +181,11 @@ export default (({ command, isSsrBuild }: ConfigEnv) => {
   // The server bundle `bin/prerender-landing.ts` renders the landing page
   // with; it ships nothing, so it needs no worker, snapshot or upload.
   const isLandingServerBuild = isSsrBuild === true
+  const appVersion = getAppVersion()
 
   return {
     define: {
-      __APP_VERSION__: JSON.stringify(getAppVersion()),
+      __APP_VERSION__: JSON.stringify(appVersion),
       // Keeps the e2e seed bridge (src/components/e2e-test-bridge.tsx) alive
       // in the one production build `bun run test:e2e:preview` produces, since
       // `import.meta.env.DEV` is false in every `vite build` output
@@ -244,6 +254,7 @@ export default (({ command, isSsrBuild }: ConfigEnv) => {
               org: process.env.SENTRY_ORG,
               project: process.env.SENTRY_PROJECT,
               authToken: sentryAuthToken,
+              release: { name: appVersion },
               sourcemaps: {
                 filesToDeleteAfterUpload: ["**/*.js.map"],
               },

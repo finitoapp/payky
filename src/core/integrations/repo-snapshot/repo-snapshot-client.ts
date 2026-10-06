@@ -19,7 +19,7 @@ const repoSnapshotUrl = (): string =>
     : "/repo-snapshot.json"
 
 const RepoSnapshotSchema = z.object({
-  /** The commit the snapshot was built from, as `__APP_VERSION__`. */
+  /** The version the snapshot was built from, as `__APP_VERSION__`. */
   version: z.string(),
   /** The text of every file, by its path in the repository. */
   files: z.record(z.string(), z.string()),

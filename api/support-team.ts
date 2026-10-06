@@ -41,7 +41,7 @@ const RelayListSchema = z
   .transform((value) => value.split(",").map((url) => url.trim()))
   .pipe(z.array(z.url({ protocol: /^wss?$/u })).min(1))
 
-const NpubListSchema = z
+export const NpubListSchema = z
   .string()
   .transform((value) =>
     value
@@ -86,7 +86,8 @@ const env = createEnv({
   emptyStringAsUndefined: true,
 })
 
-const currentTeam: SupportTeamResponse = {
+/** The team as configured for this deploy; `api/contact.ts` writes to it too. */
+export const currentTeam: SupportTeamResponse = {
   pubkeys: env.PAYKY_SUPPORT_NPUBS,
   formerTeams: env.PAYKY_SUPPORT_FORMER_TEAMS,
   relays: env.PAYKY_SUPPORT_RELAYS,

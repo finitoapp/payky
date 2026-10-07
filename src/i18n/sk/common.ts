@@ -121,9 +121,9 @@ export const skCommon = {
   "station.settings.employee.title": "Predáva",
   "station.settings.number": "Pokladňa č. {number}",
   "station.waiting.description":
-    "Pokladňa sa nastaví sama, hneď ako bude zariadenie majiteľa online a pošle jej nastavenia. Nechajte túto obrazovku otvorenú.",
+    "Nastavenia zvyčajne prídu do pár sekúnd. Ak nie, otvorte Payky na zariadení majiteľa a pošlú sa znova. Nechajte túto obrazovku otvorenú.",
   "station.waiting.id": "ID pokladne",
-  "station.waiting.title": "Čaká sa na majiteľa",
+  "station.waiting.title": "Nastavuje sa pokladňa",
   "tables.seatCount": "{value} miest",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Voľný",

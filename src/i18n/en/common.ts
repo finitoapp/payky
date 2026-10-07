@@ -119,9 +119,9 @@ export const enCommon = {
   "station.settings.employee.title": "Selling now",
   "station.settings.number": "PoS no. {number}",
   "station.waiting.description":
-    "The PoS sets itself up once the owner's device is online and sends it the settings. Keep this screen open.",
+    "The settings usually arrive within a few seconds. If they don't, open Payky on the owner's device and they'll be sent again. Keep this screen open.",
   "station.waiting.id": "PoS ID",
-  "station.waiting.title": "Waiting for the owner",
+  "station.waiting.title": "Setting up this PoS",
   "tables.seatCount": "{value} seats",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Free",

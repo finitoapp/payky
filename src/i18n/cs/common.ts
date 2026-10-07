@@ -119,9 +119,9 @@ export const csCommon = {
   "station.settings.employee.title": "Prodává",
   "station.settings.number": "Pokladna č. {number}",
   "station.waiting.description":
-    "Pokladna se nastaví sama, jakmile bude zařízení majitele online a pošle jí nastavení. Nechte tuto obrazovku otevřenou.",
+    "Nastavení obvykle dorazí během pár sekund. Pokud ne, otevřete Payky na zařízení majitele a pošle se znovu. Nechte tuto obrazovku otevřenou.",
   "station.waiting.id": "ID pokladny",
-  "station.waiting.title": "Čeká se na majitele",
+  "station.waiting.title": "Nastavuje se pokladna",
   "tables.seatCount": "{value} míst",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Volný",

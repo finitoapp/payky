@@ -138,11 +138,12 @@ export type CreateAccountTransactionInput = Simplify<
   Omit<InsertValues<typeof accountTransaction>, "kind"> & {
     readonly id?: AccountTransactionId
     /**
-     * Only for the kinds that have no detail table of their own — every
-     * other kind is implied by its `iban`/`spark`/`onchain` input and
-     * overrides this.
+     * Only for a transaction with no detail row: the kinds that have no
+     * detail table of their own, and a bank transfer confirmed by hand, which
+     * has no statement line behind it. Any `iban`/`spark`/`onchain` input
+     * implies the kind and overrides this.
      */
-    readonly kind?: "cashRegister" | "cardSwitchio"
+    readonly kind?: "cashRegister" | "cardSwitchio" | "iban"
     readonly source: Omit<
       InsertValues<typeof accountTransactionSource>,
       "id" | "accountTransactionId" | "recordedAt"

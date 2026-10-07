@@ -532,7 +532,9 @@ export type StationPaymentSnapshotRow = InferRow<
 
 /**
  * Station Lightning payments still waiting for their money, created since
- * `createdSince`, for the station to ask Spark about (station/0003).
+ * `createdSince`, for the station to ask Spark about (station/0003), with
+ * the wallet secret to ask with. The account may be disabled since: an
+ * invoice already handed out can still be paid.
  */
 export const stationLightningWatchQuery = (createdSince: DateIso) =>
   createQuery((db) =>
@@ -540,11 +542,13 @@ export const stationLightningWatchQuery = (createdSince: DateIso) =>
       .selectFrom("payment")
       .innerJoin("paymentBtc", "paymentBtc.id", "payment.id")
       .innerJoin("paymentBtcLightning", "paymentBtcLightning.id", "payment.id")
+      .innerJoin("accountSpark", "accountSpark.id", "paymentBtc.accountId")
       .select([
         "payment.id",
         "payment.createdAt",
         "payment.expiresAt",
         "paymentBtc.accountId",
+        "accountSpark.secret",
         "paymentBtc.amountSats",
         "paymentBtcLightning.lnInvoice",
         "paymentBtcLightning.lightningReceiveRequestId",
@@ -560,6 +564,8 @@ export const stationLightningWatchQuery = (createdSince: DateIso) =>
       .where("paymentBtc.amountSats", "is not", null)
       .where("paymentBtcLightning.lnInvoice", "is not", null)
       .where("paymentBtcLightning.lightningReceiveRequestId", "is not", null)
+      .where("accountSpark.isDeleted", "is not", sqliteTrue)
+      .where("accountSpark.secret", "is not", null)
       .where((eb) =>
         eb.not(
           eb.exists(
@@ -580,6 +586,7 @@ export const stationLightningWatchQuery = (createdSince: DateIso) =>
       .$narrowType<{
         createdAt: KyselyNotNull
         accountId: KyselyNotNull
+        secret: KyselyNotNull
         amountSats: KyselyNotNull
         lnInvoice: KyselyNotNull
         lightningReceiveRequestId: KyselyNotNull

@@ -8,8 +8,10 @@ import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.
 import { activeEmployeesQuery } from "@/core/modules/employee/employee-queries.ts"
 import {
   createPayment,
+  markPaymentPaidCash,
   markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
+import { paymentClaimsQuery } from "@/core/modules/payment/payment-queries.ts"
 import {
   createRowId,
   runMutationWithCompletion,
@@ -17,7 +19,9 @@ import {
 import { deriveDefaultSparkWalletSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
   NonEmptyString255,
+  NonEmptyStringSchema,
   NonNegativeInteger,
+  PositiveNumberSchema,
   Sha256Hex,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -31,6 +35,7 @@ import {
   createStationTestContext,
   createTestStationConfigMessage,
   ownerSparkIdentityPubkey,
+  type StationTestContext,
 } from "./station-test-fixtures.ts"
 
 describe("applyStationConfig", () => {
@@ -240,6 +245,145 @@ describe("applyStationSettlement", () => {
       )
     )
     expect(settlements).toEqual([{ amount: 5_000 }])
+  })
+})
+
+describe("a payment taken before the owner disabled its method", () => {
+  const createStationPayment = (
+    context: StationTestContext,
+    method: Pick<
+      Parameters<typeof createPayment>[0],
+      "cashRegister" | "iban" | "spark"
+    >
+  ) =>
+    createPayment({
+      deviceId: null,
+      billId: null,
+      tableId: null,
+      amount: NonNegativeInteger(5_000),
+      currency: "CZK",
+      tipAmount: NonNegativeInteger(0),
+      canceledAt: null,
+      expiresAt: null,
+      stationId: context.stationId,
+      employeeId: context.employeeId,
+      ...method,
+    })
+
+  test("settles the bank transfer the owner confirmed", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.stationDeps)
+    await run.orThrow(
+      applyStationConfig(createTestStationConfigMessage(context))
+    )
+    const paymentId = await run.orThrow(
+      createStationPayment(context, {
+        iban: {
+          accountId: context.ibanAccountId,
+          variableSymbol: null,
+          specificSymbol: null,
+        },
+      })
+    )
+    await run.orThrow(
+      applyStationConfig(
+        createTestStationConfigMessage(context, {
+          version: 2,
+          disabledMethods: ["iban"],
+        })
+      )
+    )
+
+    await run(
+      applyStationSettlement({
+        v: 1,
+        type: "settled",
+        paymentId,
+        method: "iban",
+        occurredAt: TimestampMsSchema.decode(1_780_000_300_000),
+        sparkTransferId: null,
+      })
+    )
+
+    expect(
+      await context.stationDeps.evolu.loadQuery(paymentClaimsQuery(paymentId))
+    ).toHaveLength(1)
+  })
+
+  test("settles the Lightning payment the owner received", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.stationDeps)
+    await run.orThrow(
+      applyStationConfig(createTestStationConfigMessage(context))
+    )
+    const paymentId = await run.orThrow(
+      createStationPayment(context, {
+        spark: {
+          accountId: context.sparkAccountId,
+          amountSats: NonNegativeInteger(2_000),
+          exchangeRate: PositiveNumberSchema.decode(2_500_000),
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: TimestampMsSchema.decode(1_780_000_000_000),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc20u1station"),
+            lightningReceiveRequestId: NonEmptyStringSchema.decode("request-1"),
+          },
+        },
+      })
+    )
+    await run.orThrow(
+      applyStationConfig(
+        createTestStationConfigMessage(context, {
+          version: 2,
+          disabledMethods: ["spark"],
+        })
+      )
+    )
+
+    await run(
+      applyStationSettlement({
+        v: 1,
+        type: "settled",
+        paymentId,
+        method: "spark",
+        occurredAt: TimestampMsSchema.decode(1_780_000_300_000),
+        sparkTransferId: NonEmptyStringSchema.decode("transfer-1"),
+      })
+    )
+
+    expect(
+      await context.stationDeps.evolu.loadQuery(paymentClaimsQuery(paymentId))
+    ).toHaveLength(1)
+  })
+
+  test("lets the station mark the cash it took paid", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.stationDeps)
+    await run.orThrow(
+      applyStationConfig(createTestStationConfigMessage(context))
+    )
+    const paymentId = await run.orThrow(
+      createStationPayment(context, {
+        cashRegister: { accountId: context.cashAccountId },
+      })
+    )
+    await run.orThrow(
+      applyStationConfig(
+        createTestStationConfigMessage(context, {
+          version: 2,
+          disabledMethods: ["cash"],
+        })
+      )
+    )
+
+    expect(
+      await run(
+        markPaymentPaidCash({ paymentId, accountId: context.cashAccountId })
+      )
+    ).toEqual({ ok: true, value: paymentId })
+    expect(
+      await context.stationDeps.evolu.loadQuery(paymentClaimsQuery(paymentId))
+    ).toHaveLength(1)
   })
 })
 

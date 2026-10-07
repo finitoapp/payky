@@ -553,7 +553,9 @@ interface MarkPaymentPaidInput {
 
 /**
  * Records staff confirming that money for a payment arrived on one of their
- * own accounts, as an `accountTransaction` claimed against that payment.
+ * own accounts, as an `accountTransaction` claimed against that payment. The
+ * account may have been disabled since the payment was made: that stops new
+ * charges, not the settling of ones already paid into it.
  *
  * The account kind is the only thing that varies: which query finds it, which
  * not-found error it reports, and the prefix of the transaction's id. That id
@@ -702,7 +704,8 @@ export const markPaymentPaidCash =
       markPaymentPaid({
         ...input,
         accountKind: "cashRegister",
-        accountQuery: cashRegisterAccountByIdQuery,
+        accountQuery: (id) =>
+          cashRegisterAccountByIdQuery(id, { includeDisabled: true }),
         notFoundError: createCashRegisterAccountNotFoundError({
           id: input.accountId,
         }),
@@ -728,7 +731,7 @@ export const markPaymentPaidIban = (
     ...input,
     accountKind: "iban",
     accountTransactionKind: "iban",
-    accountQuery: ibanAccountByIdQuery,
+    accountQuery: (id) => ibanAccountByIdQuery(id, { includeDisabled: true }),
     notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
     transactionIdPrefix: "accountTransaction:iban:manual:payment:",
   })

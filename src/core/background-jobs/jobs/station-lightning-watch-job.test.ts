@@ -82,4 +82,65 @@ describe("station lightning watch job", () => {
     expect(asked.every((id) => id === "request-1")).toBe(true)
     expect(context.errors).toEqual([])
   })
+
+  test("still records an invoice paid after the owner disabled Bitcoin", async () => {
+    await using context = await createStationTestContext({
+      stationWallet: createFakeSparkWallet({
+        getLightningReceiveRequest: async () => ({
+          status: "TRANSFER_COMPLETED",
+          paymentPreimage: "preimage-1",
+          sparkTransferId: "transfer-1",
+        }),
+      }),
+    })
+    await using run = testCreateRun(context.stationDeps)
+    await run.orThrow(
+      applyStationConfig(createTestStationConfigMessage(context))
+    )
+    const now = context.clock.date.now().getTime()
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(10_000),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: TimestampMsSchema.decode(now + 15 * 60_000),
+        stationId: context.stationId,
+        employeeId: null,
+        spark: {
+          accountId: context.sparkAccountId,
+          amountSats: NonNegativeInteger(4_000),
+          exchangeRate: PositiveNumberSchema.decode(2_500_000),
+          exchangeRateSource: "yadio",
+          exchangeRateFetchedAt: TimestampMsSchema.decode(now),
+          lightning: {
+            lnInvoice: NonEmptyStringSchema.decode("lnbc40u1station"),
+            lightningReceiveRequestId: NonEmptyStringSchema.decode("request-1"),
+          },
+        },
+      })
+    )
+    await run.orThrow(
+      applyStationConfig(
+        createTestStationConfigMessage(context, {
+          version: 2,
+          disabledMethods: ["spark"],
+        })
+      )
+    )
+
+    const job = await run.ok(
+      createStationLightningWatchJob({ pollIntervalMs: 20 })
+    )
+    await expect
+      .poll(() =>
+        context.stationDeps.evolu.loadQuery(paymentClaimsQuery(paymentId))
+      )
+      .toHaveLength(1)
+    await job[Symbol.asyncDispose]()
+    expect(context.errors).toEqual([])
+  })
 })

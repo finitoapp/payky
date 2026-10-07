@@ -1,4 +1,9 @@
-import { testCreateConsole, testCreateRun } from "@evolu/common"
+import {
+  sqliteFalse,
+  sqliteTrue,
+  testCreateConsole,
+  testCreateRun,
+} from "@evolu/common"
 
 import type { AppBackgroundJobContext } from "@/core/background-jobs/background-job-types.ts"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
@@ -182,17 +187,27 @@ export const createTestStationConfigMessage = (
   {
     version = 1,
     employees = [{ id: context.employeeId, name: NonEmptyString255("Anna") }],
+    disabledMethods = [],
   }: {
     readonly version?: number
     readonly employees?: ReadonlyArray<{
       readonly id: StationTestContext["employeeId"]
       readonly name: NonEmptyString255
     }>
+    /** The methods the owner turned off for the station. */
+    readonly disabledMethods?: ReadonlyArray<"cash" | "iban" | "spark">
   } = {}
 ) => {
+  const enabled = (method: "cash" | "iban" | "spark") =>
+    disabledMethods.includes(method) ? sqliteFalse : sqliteTrue
   const { configJson, hash } = serializeStationConfig(
     buildStationConfig({
-      station: context.station,
+      station: {
+        ...context.station,
+        cashEnabled: enabled("cash"),
+        ibanEnabled: enabled("iban"),
+        sparkEnabled: enabled("spark"),
+      },
       settings: {
         fiatCurrency: "CZK",
         tipsEnabled: 1,

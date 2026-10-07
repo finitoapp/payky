@@ -3,7 +3,6 @@ import { subDays } from "date-fns"
 
 import type { StationJob } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
-import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import { DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS } from "@/core/modules/payment/payment-status-utils.ts"
 import { recordAutomaticAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -83,13 +82,8 @@ export const createStationLightningWatchJob =
         GRACE_MS
 
     const check = async (row: StationLightningWatchRow): Promise<void> => {
-      const [account] = await evolu.loadQuery(
-        activeSparkAccountByIdQuery(row.accountId)
-      )
-      if (account === undefined) return
-
       const request = await (
-        await walletFor(account.secret)
+        await walletFor(row.secret)
       ).getLightningReceiveRequest(row.lightningReceiveRequestId)
       checkedOnce.add(row.id)
       if (request?.status !== PAID_STATUS || request.sparkTransferId === null) {

@@ -22,7 +22,18 @@ export const liveAccountIdsQuery = createQuery((db) =>
   db.selectFrom("account").select("id").where("isDeleted", "is not", sqliteTrue)
 )
 
-export const cashRegisterAccountByIdQuery = (idValue: AccountId) =>
+interface AccountByIdOptions {
+  /**
+   * Finds the account even when it is disabled (soft-deleted), as settling a
+   * payment made into it before does.
+   */
+  readonly includeDisabled?: boolean
+}
+
+export const cashRegisterAccountByIdQuery = (
+  idValue: AccountId,
+  { includeDisabled = false }: AccountByIdOptions = {}
+) =>
   createQuery((db) =>
     db
       .selectFrom("account")
@@ -35,7 +46,9 @@ export const cashRegisterAccountByIdQuery = (idValue: AccountId) =>
       ])
       .where("account.id", "=", idValue)
       .where("account.kind", "=", "cashRegister")
-      .where("account.isDeleted", "is not", 1)
+      .$if(!includeDisabled, (query) =>
+        query.where("account.isDeleted", "is not", 1)
+      )
       .where("accountCashRegister.isDeleted", "is not", 1)
       .where("accountCashRegister.currency", "is not", null)
       .$narrowType<{
@@ -68,7 +81,10 @@ export const cardSwitchioAccountByIdQuery = (idValue: AccountId) =>
       }>()
   )
 
-export const ibanAccountByIdQuery = (idValue: AccountId) =>
+export const ibanAccountByIdQuery = (
+  idValue: AccountId,
+  { includeDisabled = false }: AccountByIdOptions = {}
+) =>
   createQuery((db) =>
     db
       .selectFrom("account")
@@ -83,7 +99,9 @@ export const ibanAccountByIdQuery = (idValue: AccountId) =>
       ])
       .where("account.id", "=", idValue)
       .where("account.kind", "=", "iban")
-      .where("account.isDeleted", "is not", 1)
+      .$if(!includeDisabled, (query) =>
+        query.where("account.isDeleted", "is not", 1)
+      )
       .where("accountIban.isDeleted", "is not", 1)
       .where("accountIban.iban", "is not", null)
       .where("accountIban.currency", "is not", null)

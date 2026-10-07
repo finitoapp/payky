@@ -1,10 +1,17 @@
 import { describe, expect, test } from "vitest"
 
+import { setupRunWithEvoluDeps } from "@/core/evolu/cli-client.ts"
 import {
+  activeAccountQuery,
   appOwnerIdPlaceholder,
+  createOrSelectAccount,
+  createOrSelectStationAccount,
   defaultEvoluTransportUrls,
   resolveTransportUrl,
 } from "@/core/evolu/device-account.ts"
+import { createDeviceEvolu } from "@/core/evolu/device-client.ts"
+import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
+import { NostrPubkeyHex } from "@/core/modules/shared/schema.ts"
 
 // Shaped like a real one: 22 Base64Url characters.
 const appOwnerId = "Vu6kLCCtCCwfgw5M7Kq6Fg"
@@ -51,5 +58,52 @@ describe("defaultEvoluTransportUrls", () => {
     expect(resolved.slice("wss://live-relay.payky.me/".length)).toMatch(
       /^[A-Za-z0-9_-]+$/u
     )
+  })
+})
+
+describe("createOrSelectStationAccount", () => {
+  const stationKey = MasterKey("0f0e0d0c0b0a09080706050403020100")
+  const ownerPubkey = NostrPubkeyHex("ab".repeat(32))
+
+  test("opens a station as an account of its own, trusting its owner", async () => {
+    await using setup = await setupRunWithEvoluDeps("memory")
+    await using deviceEvolu = await setup.run.ok(createDeviceEvolu)
+    await createOrSelectAccount(
+      deviceEvolu,
+      MasterKey("000102030405060708090a0b0c0d0e0f")
+    )
+
+    const opened = await createOrSelectStationAccount(deviceEvolu, {
+      masterKey: stationKey,
+      ownerPubkey,
+    })
+
+    expect(opened.created).toBe(true)
+    await expect
+      .poll(() => deviceEvolu.loadQuery(activeAccountQuery))
+      .toMatchObject([
+        {
+          id: opened.accountId,
+          masterKey: stationKey,
+          kind: "station",
+          stationOwnerPubkey: ownerPubkey,
+        },
+      ])
+  })
+
+  test("selects the account a link made before", async () => {
+    await using setup = await setupRunWithEvoluDeps("memory")
+    await using deviceEvolu = await setup.run.ok(createDeviceEvolu)
+    const first = await createOrSelectStationAccount(deviceEvolu, {
+      masterKey: stationKey,
+      ownerPubkey,
+    })
+
+    expect(
+      await createOrSelectStationAccount(deviceEvolu, {
+        masterKey: stationKey,
+        ownerPubkey,
+      })
+    ).toEqual({ accountId: first.accountId, created: false })
   })
 })

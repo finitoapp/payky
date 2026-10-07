@@ -12,6 +12,7 @@ import {
   type AccountEvoluTransportId,
   type AccountId,
   createDeviceQuery,
+  type DeviceAccountKind,
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -19,13 +20,20 @@ import {
   createMasterKey,
   type MasterKey,
 } from "@/core/modules/shared/key-derivation.ts"
-import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
+import {
+  NonEmptyString255,
+  type NostrPubkeyHex,
+  WssUrl,
+} from "@/core/modules/shared/schema.ts"
 import { createRandomDisplayName } from "@/lib/random-name.ts"
 
 export interface DeviceAccount {
   readonly id: AccountId
   readonly masterKey: MasterKey
   readonly name: string
+  /** `null` is an owner account written before the column existed. */
+  readonly kind: DeviceAccountKind | null
+  readonly stationOwnerPubkey: NostrPubkeyHex | null
   readonly device: {
     readonly id: DeviceId
     readonly name: string
@@ -43,6 +51,8 @@ export const activeAccountQuery = createDeviceQuery((db) =>
       "account.id as id",
       "account.masterKey as masterKey",
       "account.name as name",
+      "account.kind as kind",
+      "account.stationOwnerPubkey as stationOwnerPubkey",
 
       evoluJsonObjectFrom(
         eb
@@ -115,6 +125,7 @@ export const accountListQuery = createDeviceQuery((db) =>
     .select([
       "account.id",
       "account.name",
+      "account.kind",
       "account.createdAt",
       "account.lastUseAt",
     ])
@@ -222,15 +233,20 @@ export const upsertAccountEvoluWebsocketTransport = (
 export const insertAccount = (
   deviceEvolu: DeviceEvolu,
   masterKey: MasterKey,
-  accountName?: string | undefined
+  accountName?: string | undefined,
+  station?: { readonly ownerPubkey: NostrPubkeyHex }
 ): DeviceAccount => {
   const name = accountName
     ? NonEmptyString255(accountName)
     : createRandomAccountName()
+  const kind = station === undefined ? "owner" : "station"
+  const stationOwnerPubkey = station?.ownerPubkey ?? null
   const { id: accountId } = deviceEvolu.insert("account", {
     name,
     masterKey,
     lastUseAt: Date.now(),
+    kind,
+    stationOwnerPubkey,
   })
   for (const url of defaultEvoluTransportUrls) {
     upsertAccountEvoluWebsocketTransport(deviceEvolu, {
@@ -244,6 +260,8 @@ export const insertAccount = (
     id: accountId,
     masterKey,
     name,
+    kind,
+    stationOwnerPubkey,
     device: null,
     // Mirrors what the upserts above wrote, so the account syncs in the
     // session that created it rather than only after the next reload.
@@ -274,6 +292,42 @@ export async function createOrSelectAccount(
   }
 
   const account = insertAccount(deviceEvolu, masterKey)
+  return { accountId: account.id, created: true }
+}
+
+/**
+ * Opens the PoS station a link carries (station/0001): its own account, keyed
+ * by the station's master key like any other, marked as a station of the
+ * owner whose messages it will trust. A link opened again selects the
+ * account it made before.
+ */
+export async function createOrSelectStationAccount(
+  deviceEvolu: DeviceEvolu,
+  {
+    masterKey,
+    ownerPubkey,
+  }: {
+    readonly masterKey: MasterKey
+    readonly ownerPubkey: NostrPubkeyHex
+  }
+): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
+  const [existingAccount] = await deviceEvolu.loadQuery(
+    accountByMasterKeyQuery(masterKey)
+  )
+
+  if (existingAccount !== undefined) {
+    deviceEvolu.update("account", {
+      id: existingAccount.id,
+      lastUseAt: Date.now(),
+      kind: "station",
+      stationOwnerPubkey: ownerPubkey,
+    })
+    return { accountId: existingAccount.id, created: false }
+  }
+
+  const account = insertAccount(deviceEvolu, masterKey, undefined, {
+    ownerPubkey,
+  })
   return { accountId: account.id, created: true }
 }
 

@@ -111,6 +111,10 @@ class FakeSparkWallet {
     this.transfers = transfers
   }
 
+  async getIdentityPublicKey(): Promise<string> {
+    throw new Error("not implemented")
+  }
+
   async getTransfers(limit = 20, offset = 0, createdAfter?: Date) {
     this.getTransfersCalls.push({ limit, offset, createdAfter })
 

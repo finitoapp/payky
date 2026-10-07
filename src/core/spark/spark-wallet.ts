@@ -71,13 +71,31 @@ export interface SparkWalletBalance {
   readonly availableSats: number
 }
 
+/**
+ * A Lightning receive request as its creator sees it. `sparkTransferId` is
+ * the transfer that delivered the money, once there is one.
+ */
+export interface SparkLightningReceiveStatus {
+  readonly status: string
+  readonly paymentPreimage: string | null
+  readonly sparkTransferId: string | null
+}
+
 export interface SparkPaymentWallet extends AsyncDisposable {
   readonly createLightningInvoice: (params: {
     readonly amountSats: number
     readonly memo?: string
     readonly expirySeconds?: number
     readonly includeSparkInvoice?: boolean
+    /**
+     * The wallet the invoice pays into, when not this one: a PoS station's
+     * invoices pay its owner's wallet (station/0003).
+     */
+    readonly receiverIdentityPubkey?: string
   }) => Promise<SparkLightningInvoice>
+  readonly getLightningReceiveRequest: (
+    id: string
+  ) => Promise<SparkLightningReceiveStatus | null>
   readonly getWalletSettings: () => Promise<SparkWalletSettings | undefined>
   readonly setPrivacyEnabled: (
     privacyEnabled: boolean
@@ -110,6 +128,19 @@ export const createSparkWalletDep = () => {
     },
   }
 }
+
+/** The pooled wallet the sync jobs read, for a Task that reads it too. */
+export type SparkSyncWalletDep = {
+  readonly sparkSyncWallet: {
+    readonly create: (secret: SparkSecret) => Promise<SharedSparkSyncWallet>
+  }
+}
+
+export const createSparkSyncWalletDep = (): SparkSyncWalletDep => ({
+  sparkSyncWallet: {
+    create: (secret) => createSharedSparkSyncWallet(secret),
+  },
+})
 
 const toFeeEstimate = (
   userFee: { readonly originalValue: number },
@@ -189,6 +220,8 @@ export interface SharedSparkSyncWallet extends AsyncDisposable {
     createdBefore?: Date
   ) => ReturnType<SparkWallet["getTransfers"]>
   readonly getTransfer: (id: string) => ReturnType<SparkWallet["getTransfer"]>
+  /** The wallet's identity key, what an invoice names as its receiver. */
+  readonly getIdentityPublicKey: () => Promise<string>
   /** Subscribes to sync-relevant events on the shared instance; returns an unsubscribe function. */
   readonly subscribe: (
     handlers: SharedSparkSyncWalletEventHandlers
@@ -209,6 +242,7 @@ export const createSharedSparkSyncWallet = async (
     getTransfers: (limit, offset, createdAfter, createdBefore) =>
       wallet.getTransfers(limit, offset, createdAfter, createdBefore),
     getTransfer: (id) => wallet.getTransfer(id),
+    getIdentityPublicKey: () => wallet.getIdentityPublicKey(),
     subscribe: (handlers) => {
       const entries = SUPPORTED_SYNC_EVENTS.flatMap((event) => {
         const listener = handlers[event]
@@ -244,6 +278,16 @@ export const createDefaultSparkPaymentWallet = async (
 
   return {
     createLightningInvoice: (params) => wallet.createLightningInvoice(params),
+    getLightningReceiveRequest: async (id) => {
+      const request = await wallet.getLightningReceiveRequest(id)
+      if (request === null) return null
+
+      return {
+        status: request.status,
+        paymentPreimage: request.paymentPreimage ?? null,
+        sparkTransferId: request.transfer?.sparkId ?? null,
+      }
+    },
     getWalletSettings: () => wallet.getWalletSettings(),
     setPrivacyEnabled: (privacyEnabled) =>
       wallet.setPrivacyEnabled(privacyEnabled),

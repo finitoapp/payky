@@ -8,6 +8,7 @@ export const createFakeSparkWallet = (
   overrides: Partial<SparkPaymentWallet>
 ): SparkPaymentWallet => ({
   createLightningInvoice: notImplemented,
+  getLightningReceiveRequest: notImplemented,
   getWalletSettings: notImplemented,
   setPrivacyEnabled: notImplemented,
   getBalance: notImplemented,

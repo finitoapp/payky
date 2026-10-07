@@ -4,7 +4,6 @@ import {
   testCreateConsole,
   testCreateRun,
 } from "@evolu/common"
-
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
@@ -48,6 +47,7 @@ import {
   NonNegativeInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import type { StationId } from "@/core/modules/station/station-types.ts"
 import { createTestDateDep, type TestDateDep } from "@/test/date-dep.ts"
 import {
   createFakeEetResponder,
@@ -195,12 +195,14 @@ export const createTestPayment = async (
     tipAmount = 0,
     currency = "CZK",
     billId = null,
+    stationId = null,
   }: {
     readonly deviceId?: DeviceId | null
     readonly amount?: number
     readonly tipAmount?: number
     readonly currency?: FiatCurrency
     readonly billId?: BillId | null
+    readonly stationId?: StationId | null
   } = {}
 ): Promise<PaymentId> => {
   await using run = testCreateRun(context.deps)
@@ -214,6 +216,7 @@ export const createTestPayment = async (
       tipAmount: NonNegativeInteger(tipAmount),
       canceledAt: null,
       expiresAt: null,
+      stationId,
     })
   )
 }

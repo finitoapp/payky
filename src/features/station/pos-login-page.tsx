@@ -1,3 +1,4 @@
+import { useEventListener } from "@dedalik/use-react"
 import { useNavigate } from "@tanstack/react-router"
 import { useAtomValue } from "jotai"
 import { StoreIcon, TriangleAlert } from "lucide-react"
@@ -31,21 +32,31 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
+const wipeFragment = () => {
+  if (window.location.hash === "") return
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${window.location.pathname}${window.location.search}`
+  )
+}
+
 /**
  * Opens the PoS station a link carries (station/0001). The fragment holds
- * the station's secret, so it is read once and wiped from the address bar.
+ * the station's secret, so it is read and wiped from the address bar, and so
+ * is every later one opened in the same tab, which loads no new page.
  */
 export function PosLoginPage() {
-  const [link] = useState(() => decodeStationLinkFragment(window.location.hash))
+  const [link, setLink] = useState(() =>
+    decodeStationLinkFragment(window.location.hash)
+  )
 
-  useEffect(() => {
+  useEffect(wipeFragment, [])
+  useEventListener("hashchange", () => {
     if (window.location.hash === "") return
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${window.location.pathname}${window.location.search}`
-    )
-  }, [])
+    setLink(decodeStationLinkFragment(window.location.hash))
+    wipeFragment()
+  })
 
   return (
     <main className="min-h-svh bg-background text-foreground">

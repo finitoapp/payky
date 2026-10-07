@@ -1,4 +1,4 @@
-import { testCreateRun } from "@evolu/common"
+import { sqliteFalse, sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createQuery } from "@/core/evolu/schema.ts"
@@ -10,6 +10,10 @@ import {
   createPayment,
   markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import { deriveDefaultSparkWalletSecret } from "@/core/modules/shared/key-derivation.ts"
 import {
   NonEmptyString255,
@@ -102,6 +106,66 @@ describe("applyStationConfig", () => {
     })
     expect(await evolu.loadQuery(activeEmployeesQuery)).toEqual([])
     expect(await evolu.loadQuery(currentEmployeeQuery)).toEqual([])
+  })
+
+  test("repairs a damaged mirror of the owner's wallet with the next config", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.stationDeps)
+    const { evolu, evoluOwnerId } = context.stationDeps
+    await run.orThrow(
+      applyStationConfig(createTestStationConfigMessage(context))
+    )
+    // What the derived-id migration once made of it: the mirror retired and
+    // the station's own wallet put in its place, paying the station.
+    const strayId = createRowId<"Account">()
+    await runMutationWithCompletion((batch) => {
+      const options = { ...batch, ownerId: evoluOwnerId }
+      evolu.update(
+        "account",
+        { id: context.sparkAccountId, isDeleted: sqliteTrue },
+        options
+      )
+      evolu.upsert(
+        "accountSpark",
+        {
+          id: strayId,
+          secret: deriveDefaultSparkWalletSecret(context.station.masterKey),
+        },
+        options
+      )
+      evolu.upsert(
+        "account",
+        {
+          id: strayId,
+          deviceId: null,
+          name: NonEmptyString255("Spark account"),
+          kind: "spark",
+          isDeleted: sqliteFalse,
+        },
+        options
+      )
+    })
+
+    await run.orThrow(
+      applyStationConfig(
+        createTestStationConfigMessage(context, { version: 2 })
+      )
+    )
+
+    expect(
+      (await evolu.loadQuery(enabledPaymentMethodAccountsQuery))
+        .map((account) => account.id)
+        .toSorted()
+    ).toEqual(
+      [
+        context.cashAccountId,
+        context.ibanAccountId,
+        context.sparkAccountId,
+      ].toSorted()
+    )
+    expect(
+      await evolu.loadQuery(activeSparkAccountByIdQuery(context.sparkAccountId))
+    ).toMatchObject([{ receiverIdentityPubkey: ownerSparkIdentityPubkey }])
   })
 
   test("refuses a config whose JSON is not what its hash names", async () => {

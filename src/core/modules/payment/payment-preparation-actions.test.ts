@@ -997,6 +997,59 @@ describe("payment preparation actions", () => {
       ])
     })
 
+    test("refuses an invoice that would not pay the owner's wallet", async () => {
+      const invoiceParams: unknown[] = []
+      await using context = await createStationTestContext({
+        stationWallet: createFakeSparkWallet({
+          createLightningInvoice: async (params) => {
+            invoiceParams.push(params)
+            throw new Error("The station must not create this invoice.")
+          },
+        }),
+      })
+      const { evolu, evoluOwnerId } = context.stationDeps
+      await using run = testCreateRun({
+        ...context.stationDeps,
+        ...createYadioApiDep(),
+      })
+      await run.orThrow(
+        applyStationConfig(createTestStationConfigMessage(context))
+      )
+      await runMutationWithCompletion((options) =>
+        evolu.update(
+          "accountSpark",
+          { id: context.sparkAccountId, receiverIdentityPubkey: null },
+          { ...options, ownerId: evoluOwnerId }
+        )
+      )
+      const id = await run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(12_900),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+          stationId: context.stationId,
+        })
+      )
+
+      const result = await run(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: { accountId: context.sparkAccountId },
+        })
+      )
+
+      expect(result).toMatchObject({
+        ok: false,
+        error: { type: "AccountSparkNotFound", id: context.sparkAccountId },
+      })
+      expect(invoiceParams).toEqual([])
+    })
+
     test("puts the station number before the date in the specific symbol", async () => {
       await using context = await createStationTestContext()
       await using run = testCreateRun({

@@ -31,7 +31,11 @@ station reports: the normal sync already sees the transfer with its invoice.
 
 ## Consequences
 
-The station's Lightning works only while it can reach Spark. The owner's
+A station refuses to create an invoice from a Spark account without the
+owner's identity key rather than pay its own wallet. The station's Spark
+account keeps the owner's account id although its secret would derive
+another, so the derived-id migration leaves any Spark account with a
+receiver alone. The station's Lightning works only while it can reach Spark. The owner's
 wallet settles a station payment whenever it next syncs; it does not have to
 be online at the moment of payment.
 
@@ -40,3 +44,6 @@ be online at the moment of payment.
 - `src/core/modules/payment/payment-preparation-actions.test.ts > payment preparation actions > at a PoS station > pays the owner's wallet and leaves the Spark invoice out`
 - `src/core/background-jobs/jobs/station-lightning-watch-job.test.ts > station lightning watch job > records an invoice paid once its transfer completes, not when its id shows`
 - `src/core/modules/station/station-config-actions.test.ts > applyStationConfig > sets the station up on the owner's accounts, employees and settings`
+- `src/core/modules/station/station-config-actions.test.ts > applyStationConfig > repairs a damaged mirror of the owner's wallet with the next config`
+- `src/core/modules/payment/payment-preparation-actions.test.ts > payment preparation actions > at a PoS station > refuses an invoice that would not pay the owner's wallet`
+- `src/core/migrations/account-derived-id-migration.test.ts > leaves a PoS station's mirror of the owner's wallet under the owner's id`

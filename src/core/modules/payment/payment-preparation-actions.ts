@@ -135,6 +135,7 @@ const createSparkLightningInvoice =
     readonly includeSparkInvoice?: boolean
   }): Task<
     PaymentBtcInput,
+    | AccountSparkNotFoundError
     | ZeroAmountNotPayableError
     | PaymentPreparationFailedError
     | YadioHttpError
@@ -150,6 +151,15 @@ const createSparkLightningInvoice =
     // let "0" through — it only checks that the amount parses — which is how
     // this is reachable at all.
     if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
+
+    // A station's invoice that does not name the owner would pay the
+    // station's own wallet (station/0003), so its account counts as missing.
+    if (receiverIdentityPubkey === null) {
+      const [stationConfig] = await run.deps.evolu.loadQuery(stationConfigQuery)
+      if (stationConfig !== undefined) {
+        return err(createAccountSparkNotFoundError({ id: accountId }))
+      }
+    }
 
     const quote = await run(fetchYadioBtcExchangeRate(currency))
     if (!quote.ok) return quote

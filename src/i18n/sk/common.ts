@@ -1,6 +1,27 @@
 import type { enCommon } from "@/i18n/en/common.ts"
 
 export const skCommon = {
+  "activity.stations.byEmployee": "Podľa zamestnancov",
+  "activity.stations.countAndTips": "Platby: {count} · Prepitné: {tips}",
+  "activity.stations.empty":
+    "Zatiaľ žiadne pokladne. Pridáte ich v Nastaveniach.",
+  "activity.stations.lastReport": "Posledné hlásenie {time}",
+  "activity.stations.noEmployee": "Bez zamestnanca",
+  "activity.stations.noPayments": "V tomto období žiadne zaplatené platby.",
+  "activity.stations.noReports": "Zatiaľ žiadne hlásenie",
+  "activity.stations.openSettings": "Otvoriť nastavenia pokladne {name}",
+  "activity.stations.range.last30Days": "30 dní",
+  "activity.stations.range.last7Days": "7 dní",
+  "activity.stations.range.today": "Dnes",
+  "activity.stations.range.yesterday": "Včera",
+  "activity.stations.showPayments": "Zobraziť platby",
+  "activity.stations.warning.brokenLinks":
+    "Hlásenia, ktoré nenadväzujú na predchádzajúce: {reports}",
+  "activity.stations.warning.conflicts":
+    "Hlásenia prijaté v dvoch verziách: {reports}",
+  "activity.stations.warning.missing": "Chýbajúce hlásenia: {reports}",
+  "activity.stations.warning.unconfirmed":
+    "Nahlásené ako zaplatené, zatiaľ nepotvrdené: {count}",
   "activity.tabs.bills": "Účty",
   "activity.tabs.payments": "Platby",
   "activity.tabs.stations": "Pokladne",

@@ -273,6 +273,23 @@ export const csSettings = {
   "settings.eet.unconfirmed.empty": "EET potvrdila všechny tržby.",
   "settings.eet.unconfirmed.reversal": "Storno {amount}",
   "settings.eet.unconfirmed.title": "Nepotvrzené tržby",
+  "settings.employees.add": "Přidat",
+  "settings.employees.add.label": "Nový zaměstnanec",
+  "settings.employees.add.placeholder": "Jméno",
+  "settings.employees.description": "Kdo u vašich pokladen přijímá platby",
+  "settings.employees.empty": "Zatím žádní zaměstnanci.",
+  "settings.employees.intro":
+    "Personál si na pokladně vybere své jméno a každá platba, kterou přijme, ho ponese.",
+  "settings.employees.name.invalid": "Zadejte jméno.",
+  "settings.employees.remove": "Odebrat {name}",
+  "settings.employees.remove.confirm.cancel": "Zrušit",
+  "settings.employees.remove.confirm.confirm": "Odebrat",
+  "settings.employees.remove.confirm.description":
+    "Zmizí ze všech pokladen. Už přijaté platby si jméno ponechají.",
+  "settings.employees.remove.confirm.title": "Odebrat {name}?",
+  "settings.employees.rename": "Přejmenovat {name}",
+  "settings.employees.rename.input": "Nové jméno pro {name}",
+  "settings.employees.title": "Zaměstnanci",
   "settings.evoluExport.action": "Exportovat",
   "settings.evoluExport.action.pending": "Exportuji...",
   "settings.evoluExport.confirm.description":
@@ -557,6 +574,7 @@ export const csSettings = {
     "Přidat do generovaných čísel plateb krátký dvouciferný rok",
   "settings.paymentNumberSeries.year.short.title": "Krátký rok",
   "settings.payments": "PLATBY",
+  "settings.posGroup": "POKLADNY A PERSONÁL",
   "settings.privacy.errorReporting.description":
     "Odesílat hlášení pádů a chyb, aby se daly snadněji opravit. Ve výchozím stavu vypnuto — nic se neodesílá, dokud to nezapnete.",
   "settings.privacy.errorReporting.disable": "Vypnout",
@@ -698,6 +716,61 @@ export const csSettings = {
     "Peníze zůstanou v současné peněžence a tady už nebudou vidět. Nejdřív je vyberte, nebo si uschovejte její mnemonic.",
   "settings.sparkAccount.wallet.warning.invoices":
     "Nezaplacené faktury současné peněženky se už nezaznamenají.",
+  "settings.stations.add": "Přidat pokladnu",
+  "settings.stations.description":
+    "Telefony a tablety, které za vás přijímají platby",
+  "settings.stations.detail.card.title": "Údaje",
+  "settings.stations.detail.notFound": "Tato pokladna neexistuje.",
+  "settings.stations.detail.title": "Pokladna",
+  "settings.stations.empty.description":
+    "Přidejte pokladnu a otevřete její odkaz na jiném telefonu nebo tabletu. Bude přijímat platby na vaše účty a každou vám nahlásí.",
+  "settings.stations.empty.title": "Zatím žádné pokladny",
+  "settings.stations.lastSeen": "Naposledy online {time}",
+  "settings.stations.link.copied": "Odkaz zkopírován",
+  "settings.stations.link.copy": "Kopírovat odkaz",
+  "settings.stations.link.copyFailed": "Odkaz se nepodařilo zkopírovat",
+  "settings.stations.link.description":
+    "Otevřete tento odkaz na telefonu nebo tabletu, který má přijímat platby. Kdokoli s odkazem může přijímat platby jako tato pokladna, proto ho nesdílejte nikam jinam.",
+  "settings.stations.link.hideQr": "Skrýt QR kód",
+  "settings.stations.link.qrAria":
+    "Přihlašovací odkaz jako QR kód. Klepnutím odkaz zkopírujete.",
+  "settings.stations.link.share": "Sdílet",
+  "settings.stations.link.showQr": "Zobrazit QR kód",
+  "settings.stations.link.title": "Přihlašovací odkaz",
+  "settings.stations.methods.description":
+    "Které z vašich platebních metod tato pokladna nabízí. Peníze jdou vždy na vaše vlastní účty.",
+  "settings.stations.methods.notSetUp":
+    "Nejdřív tuto metodu nastavte v Platebních účtech.",
+  "settings.stations.methods.title": "Platební metody",
+  "settings.stations.name.invalid": "Zadejte název.",
+  "settings.stations.name.label": "Název",
+  "settings.stations.name.placeholder": "např. Bar",
+  "settings.stations.neverSeen": "Zatím nepřipojená",
+  "settings.stations.new.card.description":
+    "Pojmenujte ji podle místa, kde stojí, třeba Bar nebo Terasa. Přihlašovací odkaz dostanete v dalším kroku.",
+  "settings.stations.new.card.title": "Údaje",
+  "settings.stations.new.numbersExhausted":
+    "Všech 9999 čísel pokladen je už použito.",
+  "settings.stations.new.submit": "Vytvořit pokladnu",
+  "settings.stations.new.title": "Nová pokladna",
+  "settings.stations.number.description":
+    "Je na začátku specifického symbolu bankovních převodů této pokladny, takže poznáte, odkud převod přišel.",
+  "settings.stations.number.label": "Číslo",
+  "settings.stations.revoke": "Zrušit pokladnu",
+  "settings.stations.revoke.confirm.cancel": "Zpět",
+  "settings.stations.revoke.confirm.confirm": "Zrušit pokladnu",
+  "settings.stations.revoke.confirm.description":
+    "Pokladna se odhlásí a její odkaz přestane fungovat. Platby, které ještě nenahlásila, už k vám nedorazí. Tuto akci nelze vrátit.",
+  "settings.stations.revoke.confirm.title": "Zrušit pokladnu {name}?",
+  "settings.stations.revoked": "Zrušená",
+  "settings.stations.status.config": "Nastavení",
+  "settings.stations.status.config.delivered": "Aktuální",
+  "settings.stations.status.config.pending": "Zatím nedoručeno",
+  "settings.stations.status.lastReport": "Poslední hlášení",
+  "settings.stations.status.lastSeen": "Naposledy online",
+  "settings.stations.status.never": "Nikdy",
+  "settings.stations.status.title": "Stav",
+  "settings.stations.title": "Pokladny",
   "settings.supportChat.teamUnavailable":
     "Podpora je teď nedostupná. Zkontrolujte připojení a zkuste to znovu.",
   "settings.supportChat.inbox.unverified":

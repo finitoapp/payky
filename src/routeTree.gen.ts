@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TerminalRouteImport } from './routes/_terminal'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PosRouteImport } from './routes/pos'
 import { Route as RecoveryRouteImport } from './routes/recovery'
 import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
@@ -20,6 +21,7 @@ import { Route as TerminalBillRouteImport } from './routes/_terminal.bill'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
 import { Route as TerminalActivityBillsRouteImport } from './routes/_terminal.activity_.bills'
+import { Route as TerminalActivityStationsRouteImport } from './routes/_terminal.activity_.stations'
 import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payment.tip'
 import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
@@ -31,6 +33,7 @@ import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_term
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEetRouteImport } from './routes/_terminal.settings.eet'
+import { Route as TerminalSettingsEmployeesRouteImport } from './routes/_terminal.settings.employees'
 import { Route as TerminalSettingsEvoluExportRouteImport } from './routes/_terminal.settings.evolu-export'
 import { Route as TerminalSettingsHomeScreenRouteImport } from './routes/_terminal.settings.home-screen'
 import { Route as TerminalSettingsItemsRouteImport } from './routes/_terminal.settings.items'
@@ -40,6 +43,7 @@ import { Route as TerminalSettingsPaymentAccountsRouteImport } from './routes/_t
 import { Route as TerminalSettingsPaymentNumberSeriesRouteImport } from './routes/_terminal.settings.payment-number-series'
 import { Route as TerminalSettingsProfileRouteImport } from './routes/_terminal.settings.profile'
 import { Route as TerminalSettingsSecurityRouteImport } from './routes/_terminal.settings.security'
+import { Route as TerminalSettingsStationsRouteImport } from './routes/_terminal.settings.stations'
 import { Route as TerminalSettingsSupportRouteImport } from './routes/_terminal.settings.support'
 import { Route as TerminalSettingsTablesRouteImport } from './routes/_terminal.settings.tables'
 import { Route as TerminalSettingsTaxRatesRouteImport } from './routes/_terminal.settings.tax-rates'
@@ -59,6 +63,9 @@ import { Route as TerminalSettingsPaymentAccountsIndexRouteImport } from './rout
 import { Route as TerminalSettingsPaymentAccountsCardSwitchioRouteImport } from './routes/_terminal.settings.payment-accounts.card-switchio'
 import { Route as TerminalSettingsPaymentAccountsIbanRouteImport } from './routes/_terminal.settings.payment-accounts.iban'
 import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './routes/_terminal.settings.payment-accounts.spark'
+import { Route as TerminalSettingsStationsIndexRouteImport } from './routes/_terminal.settings.stations.index'
+import { Route as TerminalSettingsStationsStationIdRouteImport } from './routes/_terminal.settings.stations.$stationId'
+import { Route as TerminalSettingsStationsNewRouteImport } from './routes/_terminal.settings.stations.new'
 import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
 import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_terminal.settings.tables.$tableId'
 import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_terminal.settings.tables.new'
@@ -79,6 +86,11 @@ const ErrorRoute = ErrorRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosRoute = PosRouteImport.update({
+  id: '/pos',
+  path: '/pos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecoveryRoute = RecoveryRouteImport.update({
@@ -122,6 +134,12 @@ const TerminalActivityBillsRoute = TerminalActivityBillsRouteImport.update({
   path: '/activity/bills',
   getParentRoute: () => TerminalRoute,
 } as any)
+const TerminalActivityStationsRoute =
+  TerminalActivityStationsRouteImport.update({
+    id: '/activity_/stations',
+    path: '/activity/stations',
+    getParentRoute: () => TerminalRoute,
+  } as any)
 const TerminalPaymentTipRoute = TerminalPaymentTipRouteImport.update({
   id: '/payment/tip',
   path: '/payment/tip',
@@ -184,6 +202,12 @@ const TerminalSettingsEetRoute = TerminalSettingsEetRouteImport.update({
   path: '/eet',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
+const TerminalSettingsEmployeesRoute =
+  TerminalSettingsEmployeesRouteImport.update({
+    id: '/employees',
+    path: '/employees',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsEvoluExportRoute =
   TerminalSettingsEvoluExportRouteImport.update({
     id: '/evolu-export',
@@ -234,6 +258,12 @@ const TerminalSettingsSecurityRoute =
   TerminalSettingsSecurityRouteImport.update({
     id: '/security',
     path: '/security',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsStationsRoute =
+  TerminalSettingsStationsRouteImport.update({
+    id: '/stations',
+    path: '/stations',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsSupportRoute = TerminalSettingsSupportRouteImport.update({
@@ -346,6 +376,24 @@ const TerminalSettingsPaymentAccountsSparkRoute =
     path: '/spark',
     getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
   } as any)
+const TerminalSettingsStationsIndexRoute =
+  TerminalSettingsStationsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsStationsRoute,
+  } as any)
+const TerminalSettingsStationsStationIdRoute =
+  TerminalSettingsStationsStationIdRouteImport.update({
+    id: '/$stationId',
+    path: '/$stationId',
+    getParentRoute: () => TerminalSettingsStationsRoute,
+  } as any)
+const TerminalSettingsStationsNewRoute =
+  TerminalSettingsStationsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => TerminalSettingsStationsRoute,
+  } as any)
 const TerminalSettingsTablesIndexRoute =
   TerminalSettingsTablesIndexRouteImport.update({
     id: '/',
@@ -393,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/pos': typeof PosRoute
   '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
@@ -400,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof TerminalSettingsRouteWithChildren
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/activity/bills': typeof TerminalActivityBillsRoute
+  '/activity/stations': typeof TerminalActivityStationsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -410,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/eet': typeof TerminalSettingsEetRoute
+  '/settings/employees': typeof TerminalSettingsEmployeesRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/home-screen': typeof TerminalSettingsHomeScreenRoute
   '/settings/items': typeof TerminalSettingsItemsRouteWithChildren
@@ -419,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/settings/profile': typeof TerminalSettingsProfileRoute
   '/settings/security': typeof TerminalSettingsSecurityRoute
+  '/settings/stations': typeof TerminalSettingsStationsRouteWithChildren
   '/settings/support': typeof TerminalSettingsSupportRoute
   '/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -435,12 +487,15 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
+  '/settings/stations/$stationId': typeof TerminalSettingsStationsStationIdRoute
+  '/settings/stations/new': typeof TerminalSettingsStationsNewRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
   '/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items/': typeof TerminalSettingsItemsIndexRoute
   '/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
+  '/settings/stations/': typeof TerminalSettingsStationsIndexRoute
   '/settings/tables/': typeof TerminalSettingsTablesIndexRoute
   '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
   '/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
@@ -450,6 +505,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/pos': typeof PosRoute
   '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
@@ -457,6 +513,7 @@ export interface FileRoutesByTo {
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/activity/bills': typeof TerminalActivityBillsRoute
+  '/activity/stations': typeof TerminalActivityStationsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRoute
@@ -465,6 +522,7 @@ export interface FileRoutesByTo {
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/eet': typeof TerminalSettingsEetRoute
+  '/settings/employees': typeof TerminalSettingsEmployeesRoute
   '/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/settings/home-screen': typeof TerminalSettingsHomeScreenRoute
   '/settings/language': typeof TerminalSettingsLanguageRoute
@@ -485,12 +543,15 @@ export interface FileRoutesByTo {
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
+  '/settings/stations/$stationId': typeof TerminalSettingsStationsStationIdRoute
+  '/settings/stations/new': typeof TerminalSettingsStationsNewRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
   '/settings/categories': typeof TerminalSettingsCategoriesIndexRoute
   '/settings/items': typeof TerminalSettingsItemsIndexRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsIndexRoute
+  '/settings/stations': typeof TerminalSettingsStationsIndexRoute
   '/settings/tables': typeof TerminalSettingsTablesIndexRoute
   '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
   '/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
@@ -502,6 +563,7 @@ export interface FileRoutesById {
   '/_terminal': typeof TerminalRouteWithChildren
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
+  '/pos': typeof PosRoute
   '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/_terminal/activity': typeof TerminalActivityRoute
@@ -510,6 +572,7 @@ export interface FileRoutesById {
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/activity_/bills': typeof TerminalActivityBillsRoute
+  '/_terminal/activity_/stations': typeof TerminalActivityStationsRoute
   '/_terminal/payment/tip': typeof TerminalPaymentTipRoute
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
@@ -520,6 +583,7 @@ export interface FileRoutesById {
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/eet': typeof TerminalSettingsEetRoute
+  '/_terminal/settings/employees': typeof TerminalSettingsEmployeesRoute
   '/_terminal/settings/evolu-export': typeof TerminalSettingsEvoluExportRoute
   '/_terminal/settings/home-screen': typeof TerminalSettingsHomeScreenRoute
   '/_terminal/settings/items': typeof TerminalSettingsItemsRouteWithChildren
@@ -529,6 +593,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-number-series': typeof TerminalSettingsPaymentNumberSeriesRoute
   '/_terminal/settings/profile': typeof TerminalSettingsProfileRoute
   '/_terminal/settings/security': typeof TerminalSettingsSecurityRoute
+  '/_terminal/settings/stations': typeof TerminalSettingsStationsRouteWithChildren
   '/_terminal/settings/support': typeof TerminalSettingsSupportRoute
   '/_terminal/settings/tables': typeof TerminalSettingsTablesRouteWithChildren
   '/_terminal/settings/tax-rates': typeof TerminalSettingsTaxRatesRoute
@@ -545,12 +610,15 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
   '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
+  '/_terminal/settings/stations/$stationId': typeof TerminalSettingsStationsStationIdRoute
+  '/_terminal/settings/stations/new': typeof TerminalSettingsStationsNewRoute
   '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/_terminal/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
   '/_terminal/settings/categories/': typeof TerminalSettingsCategoriesIndexRoute
   '/_terminal/settings/items/': typeof TerminalSettingsItemsIndexRoute
   '/_terminal/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
+  '/_terminal/settings/stations/': typeof TerminalSettingsStationsIndexRoute
   '/_terminal/settings/tables/': typeof TerminalSettingsTablesIndexRoute
   '/_terminal/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
   '/_terminal/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
@@ -563,6 +631,7 @@ export interface FileRouteTypes {
     | '/'
     | '/error'
     | '/onboarding'
+    | '/pos'
     | '/recovery'
     | '/restore-account'
     | '/activity'
@@ -570,6 +639,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/activity/$paymentId'
     | '/activity/bills'
+    | '/activity/stations'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/about'
@@ -580,6 +650,7 @@ export interface FileRouteTypes {
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/eet'
+    | '/settings/employees'
     | '/settings/evolu-export'
     | '/settings/home-screen'
     | '/settings/items'
@@ -589,6 +660,7 @@ export interface FileRouteTypes {
     | '/settings/payment-number-series'
     | '/settings/profile'
     | '/settings/security'
+    | '/settings/stations'
     | '/settings/support'
     | '/settings/tables'
     | '/settings/tax-rates'
@@ -605,12 +677,15 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/card-switchio'
     | '/settings/payment-accounts/iban'
     | '/settings/payment-accounts/spark'
+    | '/settings/stations/$stationId'
+    | '/settings/stations/new'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about/'
     | '/settings/categories/'
     | '/settings/items/'
     | '/settings/payment-accounts/'
+    | '/settings/stations/'
     | '/settings/tables/'
     | '/settings/payment-accounts/iban/fio-plugin'
     | '/settings/payment-accounts/spark/withdraw'
@@ -620,6 +695,7 @@ export interface FileRouteTypes {
   to:
     | '/error'
     | '/onboarding'
+    | '/pos'
     | '/recovery'
     | '/restore-account'
     | '/activity'
@@ -627,6 +703,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activity/$paymentId'
     | '/activity/bills'
+    | '/activity/stations'
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/accounts'
@@ -635,6 +712,7 @@ export interface FileRouteTypes {
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/eet'
+    | '/settings/employees'
     | '/settings/evolu-export'
     | '/settings/home-screen'
     | '/settings/language'
@@ -655,12 +733,15 @@ export interface FileRouteTypes {
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
     | '/settings/payment-accounts/card-switchio'
+    | '/settings/stations/$stationId'
+    | '/settings/stations/new'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about'
     | '/settings/categories'
     | '/settings/items'
     | '/settings/payment-accounts'
+    | '/settings/stations'
     | '/settings/tables'
     | '/settings/payment-accounts/iban/fio-plugin'
     | '/settings/payment-accounts/spark/withdraw'
@@ -671,6 +752,7 @@ export interface FileRouteTypes {
     | '/_terminal'
     | '/error'
     | '/onboarding'
+    | '/pos'
     | '/recovery'
     | '/restore-account'
     | '/_terminal/activity'
@@ -679,6 +761,7 @@ export interface FileRouteTypes {
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
     | '/_terminal/activity_/bills'
+    | '/_terminal/activity_/stations'
     | '/_terminal/payment/tip'
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
@@ -689,6 +772,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/eet'
+    | '/_terminal/settings/employees'
     | '/_terminal/settings/evolu-export'
     | '/_terminal/settings/home-screen'
     | '/_terminal/settings/items'
@@ -698,6 +782,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-number-series'
     | '/_terminal/settings/profile'
     | '/_terminal/settings/security'
+    | '/_terminal/settings/stations'
     | '/_terminal/settings/support'
     | '/_terminal/settings/tables'
     | '/_terminal/settings/tax-rates'
@@ -714,12 +799,15 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/card-switchio'
     | '/_terminal/settings/payment-accounts/iban'
     | '/_terminal/settings/payment-accounts/spark'
+    | '/_terminal/settings/stations/$stationId'
+    | '/_terminal/settings/stations/new'
     | '/_terminal/settings/tables/$tableId'
     | '/_terminal/settings/tables/new'
     | '/_terminal/settings/about/'
     | '/_terminal/settings/categories/'
     | '/_terminal/settings/items/'
     | '/_terminal/settings/payment-accounts/'
+    | '/_terminal/settings/stations/'
     | '/_terminal/settings/tables/'
     | '/_terminal/settings/payment-accounts/iban/fio-plugin'
     | '/_terminal/settings/payment-accounts/spark/withdraw'
@@ -731,6 +819,7 @@ export interface RootRouteChildren {
   TerminalRoute: typeof TerminalRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   OnboardingRoute: typeof OnboardingRoute
+  PosRoute: typeof PosRoute
   RecoveryRoute: typeof RecoveryRoute
   RestoreAccountRoute: typeof RestoreAccountRoute
 }
@@ -756,6 +845,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos': {
+      id: '/pos'
+      path: '/pos'
+      fullPath: '/pos'
+      preLoaderRoute: typeof PosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recovery': {
@@ -812,6 +908,13 @@ declare module '@tanstack/react-router' {
       path: '/activity/bills'
       fullPath: '/activity/bills'
       preLoaderRoute: typeof TerminalActivityBillsRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/activity_/stations': {
+      id: '/_terminal/activity_/stations'
+      path: '/activity/stations'
+      fullPath: '/activity/stations'
+      preLoaderRoute: typeof TerminalActivityStationsRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/payment/tip': {
@@ -891,6 +994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsEetRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
+    '/_terminal/settings/employees': {
+      id: '/_terminal/settings/employees'
+      path: '/employees'
+      fullPath: '/settings/employees'
+      preLoaderRoute: typeof TerminalSettingsEmployeesRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/evolu-export': {
       id: '/_terminal/settings/evolu-export'
       path: '/evolu-export'
@@ -952,6 +1062,13 @@ declare module '@tanstack/react-router' {
       path: '/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof TerminalSettingsSecurityRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/stations': {
+      id: '/_terminal/settings/stations'
+      path: '/stations'
+      fullPath: '/settings/stations'
+      preLoaderRoute: typeof TerminalSettingsStationsRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/support': {
@@ -1086,6 +1203,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/payment-accounts/spark'
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
+    '/_terminal/settings/stations/': {
+      id: '/_terminal/settings/stations/'
+      path: '/'
+      fullPath: '/settings/stations/'
+      preLoaderRoute: typeof TerminalSettingsStationsIndexRouteImport
+      parentRoute: typeof TerminalSettingsStationsRoute
+    }
+    '/_terminal/settings/stations/$stationId': {
+      id: '/_terminal/settings/stations/$stationId'
+      path: '/$stationId'
+      fullPath: '/settings/stations/$stationId'
+      preLoaderRoute: typeof TerminalSettingsStationsStationIdRouteImport
+      parentRoute: typeof TerminalSettingsStationsRoute
+    }
+    '/_terminal/settings/stations/new': {
+      id: '/_terminal/settings/stations/new'
+      path: '/new'
+      fullPath: '/settings/stations/new'
+      preLoaderRoute: typeof TerminalSettingsStationsNewRouteImport
+      parentRoute: typeof TerminalSettingsStationsRoute
     }
     '/_terminal/settings/tables/': {
       id: '/_terminal/settings/tables/'
@@ -1253,6 +1391,25 @@ const TerminalSettingsPaymentAccountsRouteWithChildren =
     TerminalSettingsPaymentAccountsRouteChildren,
   )
 
+interface TerminalSettingsStationsRouteChildren {
+  TerminalSettingsStationsStationIdRoute: typeof TerminalSettingsStationsStationIdRoute
+  TerminalSettingsStationsNewRoute: typeof TerminalSettingsStationsNewRoute
+  TerminalSettingsStationsIndexRoute: typeof TerminalSettingsStationsIndexRoute
+}
+
+const TerminalSettingsStationsRouteChildren: TerminalSettingsStationsRouteChildren =
+  {
+    TerminalSettingsStationsStationIdRoute:
+      TerminalSettingsStationsStationIdRoute,
+    TerminalSettingsStationsNewRoute: TerminalSettingsStationsNewRoute,
+    TerminalSettingsStationsIndexRoute: TerminalSettingsStationsIndexRoute,
+  }
+
+const TerminalSettingsStationsRouteWithChildren =
+  TerminalSettingsStationsRoute._addFileChildren(
+    TerminalSettingsStationsRouteChildren,
+  )
+
 interface TerminalSettingsTablesRouteChildren {
   TerminalSettingsTablesTableIdRoute: typeof TerminalSettingsTablesTableIdRoute
   TerminalSettingsTablesNewRoute: typeof TerminalSettingsTablesNewRoute
@@ -1280,6 +1437,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEetRoute: typeof TerminalSettingsEetRoute
+  TerminalSettingsEmployeesRoute: typeof TerminalSettingsEmployeesRoute
   TerminalSettingsEvoluExportRoute: typeof TerminalSettingsEvoluExportRoute
   TerminalSettingsHomeScreenRoute: typeof TerminalSettingsHomeScreenRoute
   TerminalSettingsItemsRoute: typeof TerminalSettingsItemsRouteWithChildren
@@ -1289,6 +1447,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsPaymentNumberSeriesRoute: typeof TerminalSettingsPaymentNumberSeriesRoute
   TerminalSettingsProfileRoute: typeof TerminalSettingsProfileRoute
   TerminalSettingsSecurityRoute: typeof TerminalSettingsSecurityRoute
+  TerminalSettingsStationsRoute: typeof TerminalSettingsStationsRouteWithChildren
   TerminalSettingsSupportRoute: typeof TerminalSettingsSupportRoute
   TerminalSettingsTablesRoute: typeof TerminalSettingsTablesRouteWithChildren
   TerminalSettingsTaxRatesRoute: typeof TerminalSettingsTaxRatesRoute
@@ -1306,6 +1465,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEetRoute: TerminalSettingsEetRoute,
+  TerminalSettingsEmployeesRoute: TerminalSettingsEmployeesRoute,
   TerminalSettingsEvoluExportRoute: TerminalSettingsEvoluExportRoute,
   TerminalSettingsHomeScreenRoute: TerminalSettingsHomeScreenRoute,
   TerminalSettingsItemsRoute: TerminalSettingsItemsRouteWithChildren,
@@ -1317,6 +1477,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
     TerminalSettingsPaymentNumberSeriesRoute,
   TerminalSettingsProfileRoute: TerminalSettingsProfileRoute,
   TerminalSettingsSecurityRoute: TerminalSettingsSecurityRoute,
+  TerminalSettingsStationsRoute: TerminalSettingsStationsRouteWithChildren,
   TerminalSettingsSupportRoute: TerminalSettingsSupportRoute,
   TerminalSettingsTablesRoute: TerminalSettingsTablesRouteWithChildren,
   TerminalSettingsTaxRatesRoute: TerminalSettingsTaxRatesRoute,
@@ -1335,6 +1496,7 @@ interface TerminalRouteChildren {
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
   TerminalActivityBillsRoute: typeof TerminalActivityBillsRoute
+  TerminalActivityStationsRoute: typeof TerminalActivityStationsRoute
   TerminalPaymentTipRoute: typeof TerminalPaymentTipRoute
   TerminalPaymentPaymentIdRoute: typeof TerminalPaymentPaymentIdRoute
   TerminalActivityBillsBillIdRoute: typeof TerminalActivityBillsBillIdRoute
@@ -1347,6 +1509,7 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
   TerminalActivityBillsRoute: TerminalActivityBillsRoute,
+  TerminalActivityStationsRoute: TerminalActivityStationsRoute,
   TerminalPaymentTipRoute: TerminalPaymentTipRoute,
   TerminalPaymentPaymentIdRoute: TerminalPaymentPaymentIdRoute,
   TerminalActivityBillsBillIdRoute: TerminalActivityBillsBillIdRoute,
@@ -1360,6 +1523,7 @@ const rootRouteChildren: RootRouteChildren = {
   TerminalRoute: TerminalRouteWithChildren,
   ErrorRoute: ErrorRoute,
   OnboardingRoute: OnboardingRoute,
+  PosRoute: PosRoute,
   RecoveryRoute: RecoveryRoute,
   RestoreAccountRoute: RestoreAccountRoute,
 }

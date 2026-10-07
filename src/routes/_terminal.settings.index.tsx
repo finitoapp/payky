@@ -39,6 +39,8 @@ import { homeModeLabelKeys } from "@/features/settings/home-screen/home-screen-s
 import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
+import { StationSettingsPage } from "@/features/station/station-settings-page.tsx"
+import { useIsStation } from "@/hooks/use-account-kind.ts"
 import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
@@ -46,13 +48,18 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const Route = createFileRoute("/_terminal/settings/")({
-  component: SettingsPage,
+  component: SettingsRoute,
   staticData: {
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },
   },
 })
+
+/** A PoS station has settings of its own; the owner's are not its to see. */
+function SettingsRoute() {
+  return useIsStation() ? <StationSettingsPage /> : <SettingsPage />
+}
 
 /**
  * A row shows either a `description` of what the page is for or, for pages

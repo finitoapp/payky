@@ -19,7 +19,15 @@ export const createVariableSymbolFromSerialNumber = (
   serialNumber: number
 ): VariableSymbol => VariableSymbol(String(serialNumber))
 
+/**
+ * A PoS station's payments carry its number before the date
+ * (station/0007): stations number their payments on their own, so without
+ * it a station's payment and the owner's could quote the same symbols.
+ */
 export const createSpecificSymbolFromDate = (
-  date: DateString
+  date: DateString,
+  stationNumber: number | null = null
 ): SpecificSymbol =>
-  SpecificSymbol(`${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`)
+  SpecificSymbol(
+    `${stationNumber ?? ""}${date.slice(2, 4)}${date.slice(5, 7)}${date.slice(8, 10)}`
+  )

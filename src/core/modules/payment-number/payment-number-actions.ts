@@ -127,6 +127,19 @@ export const upsertPaymentNumberRows = (
   )
 }
 
+/**
+ * Upserts a `paymentNumber` someone else assigned, such as a PoS station
+ * whose report the owner imports. It leaves `paymentLastNumber` alone: the
+ * number is not from this series. Joins the caller's mutation batch.
+ */
+export const upsertPaymentNumberRow = (
+  evolu: EvoluDep["evolu"],
+  paymentNumber: PaymentNumberRow,
+  options: MutationOptions
+): void => {
+  evolu.upsert("paymentNumber", paymentNumber, options)
+}
+
 export const createNextPaymentNumber =
   ({
     id,

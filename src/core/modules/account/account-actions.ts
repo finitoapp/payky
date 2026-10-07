@@ -29,6 +29,7 @@ import type {
   BankQrFormat,
   FiatCurrency,
   Iban,
+  SparkIdentityPubkey,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import {
@@ -47,6 +48,7 @@ import {
   cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
   fiatBankAccountQuery,
+  liveAccountIdsQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
 import { sparkAccountSyncPointerByAccountIdQuery } from "./account-spark-queries.ts"
@@ -681,3 +683,119 @@ export const saveCardSwitchioAccount =
 
     return ok(id)
   }
+
+/** The ids of every live account, for {@link upsertStationPaymentAccountRows}. */
+export const loadLiveAccountIds =
+  (): Task<ReadonlyArray<AccountId>, never, EvoluDep> => async (run) =>
+    ok(
+      (await run.deps.evolu.loadQuery(liveAccountIdsQuery)).map((row) => row.id)
+    )
+
+/**
+ * Makes a PoS station's accounts the ones its owner's config names, under
+ * the owner's ids: the station takes payments into the owner's cash
+ * register, bank account and — through `receiverIdentityPubkey` — Spark
+ * wallet (station/0003). Every other account in `currentIds` is retired.
+ * Joins the caller's mutation batch.
+ */
+export const upsertStationPaymentAccountRows = (
+  evolu: EvoluDep["evolu"],
+  {
+    cashRegister,
+    iban,
+    spark,
+    currentIds,
+  }: {
+    readonly cashRegister: {
+      readonly id: AccountId
+      readonly currency: FiatCurrency
+    } | null
+    readonly iban: {
+      readonly id: AccountId
+      readonly iban: Iban
+      readonly currency: FiatCurrency
+      readonly name: NonEmptyString255
+      readonly defaultQrFormat: BankQrFormat
+    } | null
+    readonly spark: {
+      readonly id: AccountId
+      readonly secret: SparkSecret
+      readonly receiverIdentityPubkey: SparkIdentityPubkey
+    } | null
+    readonly currentIds: ReadonlyArray<AccountId>
+  },
+  options: MutationOptions
+): void => {
+  const keptIds = new Set(
+    [cashRegister?.id, iban?.id, spark?.id].filter((id) => id !== undefined)
+  )
+  for (const id of currentIds) {
+    if (!keptIds.has(id)) {
+      evolu.update("account", { id, isDeleted: sqliteTrue }, options)
+    }
+  }
+
+  if (cashRegister !== null) {
+    evolu.upsert(
+      "accountCashRegister",
+      { id: cashRegister.id, currency: cashRegister.currency },
+      options
+    )
+    evolu.upsert(
+      "account",
+      {
+        id: cashRegister.id,
+        deviceId: null,
+        name: NonEmptyString255("Cash register"),
+        kind: "cashRegister",
+        isDeleted: sqliteFalse,
+      },
+      options
+    )
+  }
+  if (iban !== null) {
+    evolu.upsert(
+      "accountIban",
+      {
+        id: iban.id,
+        iban: iban.iban,
+        currency: iban.currency,
+        defaultQrFormat: iban.defaultQrFormat,
+      },
+      options
+    )
+    evolu.upsert(
+      "account",
+      {
+        id: iban.id,
+        deviceId: null,
+        name: iban.name,
+        kind: "iban",
+        isDeleted: sqliteFalse,
+      },
+      options
+    )
+  }
+  if (spark !== null) {
+    evolu.upsert(
+      "accountSpark",
+      {
+        id: spark.id,
+        secret: spark.secret,
+        receiverIdentityPubkey: spark.receiverIdentityPubkey,
+      },
+      options
+    )
+    evolu.upsert(
+      "account",
+      {
+        id: spark.id,
+        deviceId: null,
+        name: NonEmptyString255("Spark account"),
+        kind: "spark",
+        isDeleted: sqliteFalse,
+      },
+      options
+    )
+  }
+}

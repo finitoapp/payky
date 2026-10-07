@@ -4,6 +4,7 @@ import { z } from "zod"
 import { AccountId } from "@/core/modules/account/account-types.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
+import { EmployeeId } from "@/core/modules/employee/employee-types.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   FiatCurrencySchema,
@@ -16,6 +17,7 @@ import {
   TimestampMsSchema,
   VariableSymbolSchema,
 } from "@/core/modules/shared/schema.ts"
+import { StationId } from "@/core/modules/station/station-types.ts"
 import { TableId } from "@/core/modules/table/table-types.ts"
 
 export const payment = {
@@ -41,6 +43,15 @@ export const payment = {
    */
   excessAcknowledgedAt: TimestampMsSchema.nullable(),
   expiresAt: TimestampMsSchema.nullable(),
+  /** The PoS station that took the payment (station/0009). */
+  stationId: StationId.nullable(),
+  /** Who took it at the station. */
+  employeeId: EmployeeId.nullable(),
+  /**
+   * When the station took it. On the owner `createdAt` is when its report
+   * arrived, which Evolu sets and nothing can backdate.
+   */
+  originCreatedAt: TimestampMsSchema.nullable(),
 } as const
 
 export const paymentCashRegister = {
@@ -118,6 +129,10 @@ export const paymentIndexes = ((create) => [
   create("payment_billId").on("payment").column("billId"),
   create("payment_tableId").on("payment").column("tableId"),
   create("payment_createdAt").on("payment").column("createdAt"),
+  create("payment_stationId_originCreatedAt")
+    .on("payment")
+    .columns(["stationId", "originCreatedAt"]),
+  create("payment_employeeId").on("payment").column("employeeId"),
   create("paymentCashRegister_accountId")
     .on("paymentCashRegister")
     .column("accountId"),

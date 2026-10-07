@@ -41,6 +41,7 @@ import {
   eetSaleConfirmation,
   eetSettings,
 } from "@/core/modules/eet/eet.ts"
+import { employee } from "@/core/modules/employee/employee.ts"
 import {
   fioPlugin,
   fioPluginIndexes,
@@ -77,6 +78,14 @@ import {
   refundIndexes,
   refundLine,
 } from "@/core/modules/refund/refund.ts"
+import {
+  station,
+  stationConfig,
+  stationIndexes,
+  stationOutbox,
+  stationReport,
+  stationSession,
+} from "@/core/modules/station/station.ts"
 import { table } from "@/core/modules/table/table.ts"
 import { taxRate, taxRateIndexes } from "@/core/modules/tax-rate/tax-rate.ts"
 
@@ -127,6 +136,12 @@ export const AppSchema = {
   eetReversalConfirmation,
   refund,
   refundLine,
+  employee,
+  station,
+  stationReport,
+  stationConfig,
+  stationSession,
+  stationOutbox,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)
@@ -146,6 +161,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...fioPluginIndexes(create),
   ...eetIndexes(create),
   ...refundIndexes(create),
+  ...stationIndexes(create),
 ]
 
 export type EvoluSchema = typeof AppSchema

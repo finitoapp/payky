@@ -15,6 +15,12 @@ import {
   NonNegativeInteger,
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
+import { applyStationConfig } from "@/core/modules/station/station-config-actions.ts"
+import {
+  createStationTestContext,
+  createTestStationConfigMessage,
+  ownerSparkIdentityPubkey,
+} from "@/core/modules/station/station-test-fixtures.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
@@ -934,4 +940,100 @@ describe("payment preparation actions", () => {
       .poll(() => evolu.loadQuery(paymentWithDetailsByIdQuery(idResult.value)))
       .toMatchObject([{ id: idResult.value, expiresAt: null }])
   }, 15_000)
+
+  describe("at a PoS station", () => {
+    test("pays the owner's wallet and leaves the Spark invoice out", async () => {
+      const invoiceParams: unknown[] = []
+      await using context = await createStationTestContext({
+        stationWallet: createFakeSparkWallet({
+          createLightningInvoice: async (params) => {
+            invoiceParams.push(params)
+            return {
+              id: "request-1",
+              invoice: { encodedInvoice: "lnbc1station", paymentHash: "hash" },
+              sparkInvoice: null,
+            }
+          },
+        }),
+      })
+      const deps = {
+        ...context.stationDeps,
+        fetch: async () =>
+          new Response(
+            JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
+          ),
+        ...createYadioApiDep(),
+      }
+      await using run = testCreateRun(deps)
+      await run.orThrow(
+        applyStationConfig(createTestStationConfigMessage(context))
+      )
+      const id = await run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(12_900),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+          stationId: context.stationId,
+        })
+      )
+
+      await run.orThrow(
+        preparePaymentMethod({
+          paymentId: id,
+          spark: { accountId: context.sparkAccountId },
+        })
+      )
+
+      expect(invoiceParams).toEqual([
+        expect.objectContaining({
+          receiverIdentityPubkey: ownerSparkIdentityPubkey,
+          includeSparkInvoice: false,
+        }),
+      ])
+    })
+
+    test("puts the station number before the date in the specific symbol", async () => {
+      await using context = await createStationTestContext()
+      await using run = testCreateRun({
+        ...context.stationDeps,
+        ...createYadioApiDep(),
+      })
+      await run.orThrow(
+        applyStationConfig(createTestStationConfigMessage(context))
+      )
+      const id = await run.orThrow(
+        createPayment({
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          amount: NonNegativeInteger(12_900),
+          currency: "CZK",
+          tipAmount: NonNegativeInteger(0),
+          canceledAt: null,
+          expiresAt: null,
+          stationId: context.stationId,
+        })
+      )
+
+      await run.orThrow(
+        preparePaymentMethod({
+          paymentId: id,
+          bank: { accountId: context.ibanAccountId },
+        })
+      )
+
+      await expect
+        .poll(() =>
+          context.stationDeps.evolu.loadQuery(paymentWithDetailsByIdQuery(id))
+        )
+        .toMatchObject([
+          { iban: { variableSymbol: "1", specificSymbol: "1260605" } },
+        ])
+    })
+  })
 })

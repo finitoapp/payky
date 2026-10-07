@@ -1,5 +1,6 @@
 import {
   err,
+  type MutationOptions,
   ok,
   sqliteFalse,
   sqliteTrue,
@@ -140,3 +141,48 @@ export const setEnabledHomeModes =
       })
     )
   }
+
+/**
+ * Writes a PoS station's whole settings row from its owner's config: the
+ * keypad only, and the owner's currency, tips and method order. The row
+ * existing is what marks the station's account as set up. Joins the
+ * caller's mutation batch.
+ */
+export const upsertStationSettingsRow = (
+  evolu: EvoluDep["evolu"],
+  {
+    fiatCurrency,
+    tips,
+    paymentMethodOrder,
+  }: {
+    readonly fiatCurrency: FiatCurrency
+    readonly tips: {
+      readonly enabled: boolean
+      readonly percentages: ReadonlyArray<number>
+      readonly fixedAmounts: ReadonlyArray<number>
+    }
+    readonly paymentMethodOrder: ReadonlyArray<DefaultPaymentMethod>
+  },
+  options: MutationOptions
+): void => {
+  const defaults = createDefaultSettings()
+  evolu.upsert(
+    "appSettings",
+    {
+      ...defaults,
+      onboardingCompleted: sqliteTrue,
+      fiatCurrency,
+      tipsEnabled: tips.enabled ? sqliteTrue : sqliteFalse,
+      presetTipPercentagesJson: stringifyTipPercentages(tips.percentages),
+      presetTipFixedAmountsJson: stringifyTipFixedAmounts(tips.fixedAmounts),
+      paymentMethodOrderJson: z.encode(
+        PaymentMethodOrderJson,
+        paymentMethodOrder
+      ),
+      defaultPaymentMethod:
+        paymentMethodOrder[0] ?? defaults.defaultPaymentMethod,
+      enabledHomeModesJson: z.encode(EnabledHomeModesJson, ["numpad"]),
+    },
+    options
+  )
+}

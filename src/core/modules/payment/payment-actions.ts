@@ -38,9 +38,11 @@ import type {
 import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
+import type { paymentNumber } from "@/core/modules/payment-number/payment-number.ts"
 import {
   createPaymentNumberDate,
   loadNextPaymentNumber,
+  upsertPaymentNumberRow,
   upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
@@ -339,6 +341,92 @@ export const createPayment =
           id,
         }),
         { ...options, ownerId: evoluOwnerId }
+      )
+    })
+
+    return ok(id)
+  }
+
+/**
+ * Writes a payment another Evolu database created — a PoS station's, from
+ * its report — under the same id, with its details and number, in one
+ * batch. Nothing here settles it. A cancellation is only ever written, never
+ * cleared, and `confirmedPaidAt`/`excessAcknowledgedAt` are left to this
+ * database's own staff.
+ */
+export const importPayment =
+  ({
+    id,
+    number,
+    cashRegister,
+    iban,
+    spark,
+    canceledAt,
+    ...input
+  }: Omit<
+    InsertValues<typeof payment>,
+    | "deviceId"
+    | "billId"
+    | "tableId"
+    | "canceledAt"
+    | "confirmedPaidAt"
+    | "excessAcknowledgedAt"
+  > & {
+    readonly id: PaymentId
+    readonly canceledAt: TimestampMs | null
+    readonly number: Omit<InsertValues<typeof paymentNumber>, "id"> | null
+    readonly cashRegister: Omit<
+      InsertValues<typeof paymentCashRegister>,
+      "id"
+    > | null
+    readonly iban: Omit<InsertValues<typeof paymentIban>, "id"> | null
+    readonly spark: PaymentBtcInput | null
+  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    assertHasSparkIdentifier(
+      spark ?? undefined,
+      "Spark payment requires lnInvoice or sparkInvoice."
+    )
+    const { evolu } = run.deps
+
+    await runMutationWithCompletion((batch) => {
+      const options = { ...batch, ownerId: run.deps.evoluOwnerId }
+
+      if (number !== null) {
+        upsertPaymentNumberRow(
+          evolu,
+          { ...number, id, date: number.date ?? null },
+          options
+        )
+      }
+      if (cashRegister !== null) {
+        evolu.upsert(
+          "paymentCashRegister",
+          removeUndefinedValues({ ...cashRegister, id }),
+          options
+        )
+      }
+      if (iban !== null) {
+        evolu.upsert(
+          "paymentIban",
+          removeUndefinedValues({ ...iban, id }),
+          options
+        )
+      }
+      if (spark !== null) {
+        upsertPaymentSparkDetails(evolu, id, spark, options)
+      }
+      evolu.upsert(
+        "payment",
+        removeUndefinedValues({
+          ...input,
+          id,
+          deviceId: null,
+          billId: null,
+          tableId: null,
+          ...(canceledAt === null ? {} : { canceledAt }),
+        }),
+        options
       )
     })
 

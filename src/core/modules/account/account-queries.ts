@@ -17,6 +17,11 @@ export const accountByIdQuery = (idValue: AccountId) =>
       }>()
   )
 
+/** Every account not deleted, by id only. */
+export const liveAccountIdsQuery = createQuery((db) =>
+  db.selectFrom("account").select("id").where("isDeleted", "is not", sqliteTrue)
+)
+
 export const cashRegisterAccountByIdQuery = (idValue: AccountId) =>
   createQuery((db) =>
     db

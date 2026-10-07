@@ -16,6 +16,7 @@ export const createFakeNostrRelay = ({
   readonly accepts?: (event: Event) => boolean
 } = {}) => {
   const stored: Event[] = []
+  let accepting = true
   const subscriptions = new Set<{
     readonly filter: Filter
     readonly params: SubscribeManyParams
@@ -25,7 +26,9 @@ export const createFakeNostrRelay = ({
     get: async () => null,
     publish: (relays, event) =>
       relays.map(async () => {
-        if (!accepts(event)) return "connection failure: refused"
+        if (!accepting || !accepts(event)) {
+          return "connection failure: refused"
+        }
         stored.push(event)
         for (const subscription of subscriptions) {
           if (matchFilter(subscription.filter, event)) {
@@ -60,6 +63,10 @@ export const createFakeNostrRelay = ({
   return {
     nostr: { relays: ["wss://relay.test"], pool },
     stored,
+    /** Takes the relay offline (`false`) or back. */
+    setAccepting: (value: boolean) => {
+      accepting = value
+    },
     /** Drops every subscription as a relay going away would. */
     dropSubscriptions: () => {
       for (const subscription of [...subscriptions]) {

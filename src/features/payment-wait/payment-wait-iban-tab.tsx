@@ -16,6 +16,7 @@ import {
 import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type { IbanPaidTabProps } from "@/features/payment-wait/payment-wait-types.ts"
+import { useIsStation } from "@/hooks/use-account-kind.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
@@ -50,6 +51,7 @@ export function IbanPaymentTab({
   readonly onSelectQrFormat: (format: BankQrFormat) => void
 } & IbanPaidTabProps) {
   const { t } = useTranslation()
+  const isStation = useIsStation()
   const activeQrFormat = selectedQrFormat ?? defaultQrFormat
   const [detailsVisible, setDetailsVisible] = useState(false)
   const hasDetails = iban !== null || ibanVariableSymbol !== null
@@ -128,23 +130,31 @@ export function IbanPaymentTab({
             {detailsVisible ? <EyeOffIcon /> : <EyeIcon />}
           </Button>
         ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          disabled={!canMarkIbanPaid || ibanPaymentPending}
-          onClick={onMarkIbanPaid}
-        >
-          {ibanPaymentPending ? (
-            <LoaderCircleIcon className="animate-spin" />
-          ) : (
-            <CheckIcon />
-          )}
-          {ibanPaymentPending
-            ? t("paymentWait.ibanPaid.pending")
-            : t("paymentWait.ibanPaid.action")}
-        </Button>
+        {/* The owner settles a station's transfer (station/0011). */}
+        {isStation ? null : (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            disabled={!canMarkIbanPaid || ibanPaymentPending}
+            onClick={onMarkIbanPaid}
+          >
+            {ibanPaymentPending ? (
+              <LoaderCircleIcon className="animate-spin" />
+            ) : (
+              <CheckIcon />
+            )}
+            {ibanPaymentPending
+              ? t("paymentWait.ibanPaid.pending")
+              : t("paymentWait.ibanPaid.action")}
+          </Button>
+        )}
       </div>
+      {isStation ? (
+        <p className="max-w-xs text-center text-sm text-muted-foreground">
+          {t("station.ibanAwaitingOwner")}
+        </p>
+      ) : null}
       {ibanPaymentErrorKey ? (
         <p className="text-sm font-medium text-destructive">
           {t(ibanPaymentErrorKey)}

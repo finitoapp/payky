@@ -176,6 +176,9 @@ export function AccountsSettingsPage() {
                       </span>
                     </span>
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                      {account.kind === "station" ? (
+                        <Badge variant="outline">{t("station.badge")}</Badge>
+                      ) : null}
                       {account.id === activeAccount.id ? (
                         <Badge variant="secondary">
                           {t("settings.accounts.list.active")}

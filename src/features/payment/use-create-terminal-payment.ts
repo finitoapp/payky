@@ -1,9 +1,10 @@
 import { useNavigate } from "@tanstack/react-router"
-import { useStore } from "jotai"
+import { useSetAtom, useStore } from "jotai"
 import { useCallback } from "react"
 import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
+import { employeePickerOpenAtom } from "@/atoms/employee-picker.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import { createPreparedPayment } from "@/core/modules/payment/payment-preparation-actions.ts"
 import type {
@@ -12,6 +13,7 @@ import type {
 } from "@/core/modules/shared/schema.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
+import { useStationPaymentTags } from "@/hooks/use-station-payment-tags.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
@@ -19,6 +21,9 @@ import { useTranslation } from "@/hooks/use-translation.ts"
  * rather than signalled back: all three callers wanted the same toast, so the
  * boolean bought nothing and a fourth caller forgetting to check it would have
  * failed silently.
+ *
+ * On a PoS station the payment is tagged with the station and the employee
+ * selling (station/0009); with nobody picked, the picker opens instead.
  */
 export function useCreateTerminalPayment() {
   const appRun = useAppRun()
@@ -26,6 +31,12 @@ export function useCreateTerminalPayment() {
   const navigate = useNavigate()
   const jotaiStore = useStore()
   const { t } = useTranslation()
+  const stationTags = useStationPaymentTags()
+  const stationId = stationTags?.stationId ?? null
+  const employeeId = stationTags?.employeeId ?? null
+  const employeeMissing =
+    stationTags?.employeeRequired === true && employeeId === null
+  const openEmployeePicker = useSetAtom(employeePickerOpenAtom)
 
   return useCallback(
     async ({
@@ -39,6 +50,11 @@ export function useCreateTerminalPayment() {
       readonly tipAmount: NonNegativeInteger
       readonly billId?: BillId | null
     }): Promise<void> => {
+      if (employeeMissing) {
+        openEmployeePicker(true)
+        return
+      }
+
       const { device } = await jotaiStore.get(accountAtom)
 
       await using run = appRun()
@@ -52,6 +68,8 @@ export function useCreateTerminalPayment() {
           currency,
           tipAmount,
           canceledAt: null,
+          stationId,
+          employeeId,
         })
       )
 
@@ -68,6 +86,16 @@ export function useCreateTerminalPayment() {
         },
       })
     },
-    [appRun, console, jotaiStore, navigate, t]
+    [
+      appRun,
+      console,
+      jotaiStore,
+      navigate,
+      employeeId,
+      employeeMissing,
+      openEmployeePicker,
+      stationId,
+      t,
+    ]
   )
 }

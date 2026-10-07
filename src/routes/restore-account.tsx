@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Navigate } from "@tanstack/react-router"
 import { z } from "zod"
 
 import { AccountId } from "@/core/evolu/device-client.ts"
 import { RestoreSyncPage } from "@/features/account/restore-sync-page.tsx"
+import { useIsStation } from "@/hooks/use-account-kind.ts"
 
 // Every field falls back instead of throwing: a `validateSearch` throw on a
 // stale link would escape to the global error boundary, and a missing
@@ -19,5 +20,9 @@ export const Route = createFileRoute("/restore-account")({
 })
 
 function RestoreAccountRoute() {
-  return <RestoreSyncPage {...Route.useSearch()} />
+  const { source, previous, created } = Route.useSearch()
+  if (useIsStation()) return <Navigate to="/" replace />
+  return (
+    <RestoreSyncPage source={source} previous={previous} created={created} />
+  )
 }

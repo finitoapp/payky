@@ -1,8 +1,11 @@
 import { sqliteTrue } from "@evolu/common"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { useSetAtom } from "jotai"
 import { Calculator, Clock3, LayoutGrid, Settings } from "lucide-react"
 import { LayoutGroup, motion } from "motion/react"
 import { Suspense } from "react"
+
+import { employeePickerOpenAtom } from "@/atoms/employee-picker.ts"
 import {
   SlidingPillSegmentContent,
   slidingPillLayout,
@@ -19,12 +22,15 @@ import {
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
+import { StationHeaderStatus } from "@/features/station/station-header-status.tsx"
 import { PosOverviewPage } from "@/features/terminal-home/pos-overview-page.tsx"
 import { TerminalPaymentKeypad } from "@/features/terminal-home/terminal-payment-keypad.tsx"
+import { useIsStation } from "@/hooks/use-account-kind.ts"
 import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
+import { useStationPaymentTags } from "@/hooks/use-station-payment-tags.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -45,7 +51,7 @@ const homeModeItems = [
   { mode: "pos", icon: LayoutGrid, label: "nav.pos" },
 ] as const
 
-const Header = () => {
+const Header = ({ isStation }: { readonly isStation: boolean }) => {
   const { t } = useTranslation()
   const {
     mode: terminalHomeMode,
@@ -56,6 +62,7 @@ const Header = () => {
 
   return (
     <header className="px-4 flex items-center justify-between">
+      {isStation ? <StationHeaderStatus /> : null}
       {/*
        * Both modes stay on screen so the control reads as a switch rather
        * than a mystery icon; only the active one spells out its label, which
@@ -122,12 +129,20 @@ const Header = () => {
 function TerminalPaymentKeypadLoader() {
   const navigate = useNavigate()
   const createTerminalPayment = useCreateTerminalPayment()
+  const stationTags = useStationPaymentTags()
+  const openEmployeePicker = useSetAtom(employeePickerOpenAtom)
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
 
   const handleCharge = async (money: Money) => {
     const amount = NonNegativeInteger(money.value)
     const currency = FiatCurrencySchema.parse(money.currency)
+
+    // Asked before the tip page, so nobody picks a tip twice.
+    if (stationTags?.employeeRequired && stationTags.employeeId === null) {
+      openEmployeePicker(true)
+      return
+    }
 
     if (settings?.tipsEnabled === sqliteTrue) {
       await navigate({
@@ -163,12 +178,14 @@ function TerminalHomePage() {
   useScreenWakeLock(true)
   const navigate = useNavigate()
   const isConfirmDialogOpen = useIsConfirmDialogOpen()
+  const isStation = useIsStation()
   // A scan in either mode starts a new bill without a table; `BillPage`
   // then adds the item exactly as if it had been scanned there. The
   // scanner's capture-phase listener also keeps the code's closing Enter
-  // from reaching the keypad as a charge.
+  // from reaching the keypad as a charge. A station has no bills to scan
+  // into.
   useHardwareScanner({
-    enabled: !isConfirmDialogOpen,
+    enabled: !isConfirmDialogOpen && !isStation,
     onScan: (code) =>
       void navigate({
         to: "/bill",
@@ -180,7 +197,7 @@ function TerminalHomePage() {
 
   return (
     <div className={"flex flex-1 flex-col"}>
-      <Header />
+      <Header isStation={isStation} />
 
       <Suspense fallback={null}>
         {isNumpadMode ? <TerminalPaymentKeypadLoader /> : <PosOverviewPage />}

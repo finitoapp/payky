@@ -74,8 +74,36 @@ export const enCommon = {
   "scanner.error.unsupported": "Scanning isn't supported on this device.",
   "scanner.torch.off": "Turn off flashlight",
   "scanner.torch.on": "Turn on flashlight",
+  "station.badge": "PoS",
+  "station.employeePicker.description":
+    "Payments are recorded under the person you pick.",
+  "station.employeePicker.title": "Who's selling?",
+  "station.header.chooseEmployee": "Who's selling?",
+  "station.header.undelivered": "{count} not yet delivered to the owner",
+  "station.ibanAwaitingOwner":
+    "The owner confirms the transfer once it reaches their account.",
+  "station.leave.action": "Leave PoS mode",
+  "station.leave.confirm.cancel": "Stay",
+  "station.leave.confirm.confirm": "Leave",
+  "station.leave.confirm.description":
+    "This device stops being a PoS. To bring it back, open the link from the owner again.",
+  "station.leave.confirm.title": "Leave PoS mode?",
+  "station.leave.confirm.undelivered":
+    "Not yet delivered to the owner: {count}. These payments are sent only once this PoS is opened from its link again.",
   "station.revoked.toast":
     "This PoS was revoked by its owner, so it has logged out.",
+  "station.settings.delivery.allDelivered": "Everything delivered",
+  "station.settings.delivery.lastAck": "Last confirmed by the owner",
+  "station.settings.delivery.never": "Not yet",
+  "station.settings.delivery.title": "DELIVERY TO THE OWNER",
+  "station.settings.delivery.undelivered": "Not yet delivered",
+  "station.settings.employee.none": "Nobody picked",
+  "station.settings.employee.title": "Selling now",
+  "station.settings.number": "PoS no. {number}",
+  "station.waiting.description":
+    "The PoS sets itself up once the owner's device is online and sends it the settings. Keep this screen open.",
+  "station.waiting.id": "PoS ID",
+  "station.waiting.title": "Waiting for the owner",
   "tables.seatCount": "{value} seats",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Free",

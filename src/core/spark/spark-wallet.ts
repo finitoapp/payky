@@ -7,6 +7,7 @@ import type {
   ExitSpeed,
   SparkCoopExitRequestStatus,
 } from "@buildonspark/spark-sdk/types"
+import { appEnv } from "@/core/app-env.ts"
 import {
   type SparkSecret,
   sparkSecretToMnemonic,
@@ -154,7 +155,7 @@ const toFeeEstimate = (
 /**
  * Instances are keyed by mnemonic + network and shared across every consumer
  * (domain actions, direct UI reads, and the Spark account sync job — all of
- * which use the default `MAINNET` network). Sharing is ref-counted through
+ * which use the network `VITE_PAYKY_SPARK_NETWORK` names). Sharing is ref-counted through
  * {@link createRefCountedResourcePool}: each `acquire()` call returns its own
  * disposable lease, and the underlying instance is only torn down once every
  * acquirer has disposed its lease (e.g. a short-lived action's `finally`
@@ -230,7 +231,7 @@ export interface SharedSparkSyncWallet extends AsyncDisposable {
 
 export const createSharedSparkSyncWallet = async (
   secret: SparkSecret,
-  network: SparkNetwork = "MAINNET"
+  network: SparkNetwork = appEnv.VITE_PAYKY_SPARK_NETWORK
 ): Promise<SharedSparkSyncWallet> => {
   const lease = sparkWalletPool.acquire({
     network,
@@ -268,7 +269,7 @@ export const createSharedSparkSyncWallet = async (
 
 export const createDefaultSparkPaymentWallet = async (
   secret: SparkSecret,
-  network: SparkNetwork = "MAINNET"
+  network: SparkNetwork = appEnv.VITE_PAYKY_SPARK_NETWORK
 ): Promise<SparkPaymentWallet> => {
   const lease = sparkWalletPool.acquire({
     network,

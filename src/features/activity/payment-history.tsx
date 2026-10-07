@@ -1,5 +1,6 @@
 import type { InferRow } from "@evolu/common"
 import { ReceiptIcon } from "lucide-react"
+import { useCallback } from "react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import {
   calculateClaimedSum,
@@ -18,6 +19,7 @@ import {
 import { refundSummariesQuery } from "@/core/modules/refund/refund-queries.ts"
 import { summarizeRefundsByPayment } from "@/core/modules/refund/refund-utils.ts"
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
+import type { ActivityFilter } from "@/features/activity/activity-filters.tsx"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import {
   ActivityAmount,
@@ -188,15 +190,24 @@ const resolvePaymentTitle = (
   return t("paymentHistory.payment")
 }
 
-export const PaymentHistory = () => {
+export const PaymentHistory = ({
+  filter,
+}: {
+  readonly filter: ActivityFilter
+}) => {
   const { t } = useTranslation()
   const locale = useLocale()
+  const { stationId, employeeId } = filter
+  const createPageQuery = useCallback(
+    (limit: number) => latestPaymentsQuery(limit, { stationId, employeeId }),
+    [stationId, employeeId]
+  )
   const {
     rows: items,
     hasMore,
     isPending,
     sentinelRef,
-  } = useInfiniteEvoluQuery([], latestPaymentsQuery)
+  } = useInfiniteEvoluQuery([stationId, employeeId], createPageQuery)
   const { data: refunds } = useEvoluQuery(refundSummariesQuery)
   const refundsByPayment = summarizeRefundsByPayment(refunds)
   // Nothing writes a row when a payment expires, so the clock has to tick on
@@ -297,6 +308,12 @@ export const PaymentHistory = () => {
                       </span>
                       {item.tableName !== null && (
                         <span>· {item.tableName}</span>
+                      )}
+                      {item.stationName !== null && (
+                        <span>· {item.stationName}</span>
+                      )}
+                      {item.employeeName !== null && (
+                        <span>· {item.employeeName}</span>
                       )}
                       {item.tipAmount > 0 && (
                         <span>

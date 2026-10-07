@@ -17,9 +17,11 @@ import {
   ShoppingBag,
   Sparkles,
   Stamp,
+  StoreIcon,
   SunMoon,
   Table2Icon,
   UserRound,
+  UsersRound,
 } from "lucide-react"
 import type { ComponentProps } from "react"
 
@@ -199,6 +201,23 @@ function SettingsPage() {
     ],
     t
   )
+  const posItems = createSettingsNavItems(
+    [
+      {
+        icon: StoreIcon,
+        title: "settings.stations.title",
+        description: "settings.stations.description",
+        to: "/settings/stations",
+      },
+      {
+        icon: UsersRound,
+        title: "settings.employees.title",
+        description: "settings.employees.description",
+        to: "/settings/employees",
+      },
+    ],
+    t
+  )
   const taxItems = createSettingsNavItems(
     [
       {
@@ -315,6 +334,7 @@ function SettingsPage() {
 
       <VerticalNav title={t("settings.catalog")} items={catalogItems} />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
+      <VerticalNav title={t("settings.posGroup")} items={posItems} />
       <VerticalNav title={t("settings.taxesGroup")} items={taxItems} />
       <VerticalNav title={t("settings.accountAndSync")} items={accountItems} />
       <VerticalNav title={t("settings.appearance")} items={appearanceItems} />

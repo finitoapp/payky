@@ -41,6 +41,7 @@ import {
 import { Separator } from "@/components/ui/separator.tsx"
 import { Skeleton } from "@/components/ui/skeleton.tsx"
 import type { EetDeliveryOutcome } from "@/core/integrations/eet/eet-client.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { claimedPaymentsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
@@ -61,10 +62,12 @@ import {
 import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
+  markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
 import { deriveReceivedTipAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import {
   paymentDetailQuery,
+  paymentIbanDetailsByIdQuery,
   paymentReconciliationsQuery,
 } from "@/core/modules/payment/payment-queries.ts"
 import {
@@ -77,6 +80,7 @@ import {
   calculatePaymentExcess,
   sumDistinctClaimedAmounts,
 } from "@/core/modules/shared/claimed-amount.ts"
+import type { Money } from "@/core/modules/shared/money.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
@@ -108,7 +112,9 @@ import {
   useEetRecordingDeviceWait,
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
+import { useIsStation } from "@/hooks/use-account-kind.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -162,6 +168,10 @@ function PaymentDetailContent({
   const { data: payments } = useEvoluQuery(query)
   const { data: reconciliations } = useEvoluQuery(reconciliationsQuery)
   const { data: paymentNumbers } = useEvoluQuery(paymentNumberQuery)
+  const [ibanDetails] = useEvoluQuery(
+    paymentIbanDetailsByIdQuery(paymentId)
+  ).data
+  const isStation = useIsStation()
   const payment = payments[0]
   const paymentNumber = paymentNumbers[0]
   // Read before the early return below, so the hook order stays stable.
@@ -180,6 +190,9 @@ function PaymentDetailContent({
     now,
   })
   const isPending = paymentStatus === "pending"
+  // A PoS station's payment, seen by the owner: the station collects it, and
+  // only the owner can say a bank transfer for it arrived (station/0006).
+  const isFromStation = !isStation && payment.stationId !== null
   // The collision docs/bill-payment-states.md calls out: a multi-device
   // merge can leave a payment canceled with an active claim (real money) at
   // the same time — `derivePaymentStatus` still shows it as Canceled until
@@ -258,7 +271,15 @@ function PaymentDetailContent({
 
   return (
     <div className="flex flex-col gap-4">
-      {isPending ? (
+      {isPending && isFromStation && ibanDetails !== undefined ? (
+        <ConfirmStationBankTransfer
+          paymentId={paymentId}
+          accountId={ibanDetails.accountId}
+          money={{ value: ibanDetails.amount, currency: ibanDetails.currency }}
+          variableSymbol={ibanDetails.variableSymbol}
+        />
+      ) : null}
+      {isPending && !isFromStation ? (
         <div className="flex flex-col gap-1">
           <Button
             className="h-12"
@@ -357,6 +378,30 @@ function PaymentDetailContent({
             )}
           </div>
 
+          {payment.stationId === null ? null : (
+            <div className="flex flex-col gap-2">
+              {payment.stationName === null ? null : (
+                <PaymentDetailRow
+                  label={t("paymentDetail.station")}
+                  value={payment.stationName}
+                />
+              )}
+              <PaymentDetailRow
+                label={t("paymentDetail.employee")}
+                value={payment.employeeName ?? t("paymentDetail.emptyValue")}
+              />
+              {payment.originCreatedAt === null ? null : (
+                <PaymentDetailRow
+                  label={t("paymentDetail.stationTakenAt")}
+                  value={formatDateTime(
+                    new Date(payment.originCreatedAt),
+                    locale
+                  )}
+                />
+              )}
+            </div>
+          )}
+
           {hasCancellationCollision ? (
             <CollisionAlert
               title={t("paymentDetail.collision.title")}
@@ -403,16 +448,18 @@ function PaymentDetailContent({
         </CardContent>
       </Card>
 
-      <PaymentDetailRefunds
-        payment={payment}
-        excess={excess}
-        isPaid={paymentStatus === "paid"}
-        defaultMethod={
-          paymentMethodKinds.includes("cashRegister")
-            ? "cashRegister"
-            : "outside"
-        }
-      />
+      {isStation ? null : (
+        <PaymentDetailRefunds
+          payment={payment}
+          excess={excess}
+          isPaid={paymentStatus === "paid"}
+          defaultMethod={
+            paymentMethodKinds.includes("cashRegister")
+              ? "cashRegister"
+              : "outside"
+          }
+        />
+      )}
 
       {payment.billId !== null ? (
         <PaymentDetailBillCard
@@ -555,6 +602,73 @@ function PaymentDetailContent({
         )}
       </PaymentDetailTechnical>
     </div>
+  )
+}
+
+function ConfirmStationBankTransfer({
+  paymentId,
+  accountId,
+  money,
+  variableSymbol,
+}: {
+  readonly paymentId: PaymentId
+  readonly accountId: AccountId
+  readonly money: Money
+  readonly variableSymbol: string | null
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const confirm = useConfirmDialog()
+  const runToast = useRunToast()
+  const deviceId = useAtomValue(accountAtom).device.id
+  const [pending, setPending] = useState(false)
+  const amount = formatMoney(money, locale)
+
+  const handleConfirm = async () => {
+    const confirmed = await confirm({
+      title: t("paymentDetail.confirmBankTransfer.confirm.title"),
+      description: t("paymentDetail.confirmBankTransfer.confirm.description", {
+        amount,
+      }),
+      confirmLabel: t("paymentDetail.confirmBankTransfer.confirm.confirm"),
+      cancelLabel: t("paymentDetail.confirmBankTransfer.confirm.cancel"),
+    })
+    if (!confirmed) return
+
+    setPending(true)
+    await runToast(async (run) => {
+      const result = await run(
+        markPaymentPaidIban({ paymentId, accountId, deviceId })
+      )
+      if (!result.ok) return "paymentDetail.confirmBankTransfer.error"
+    })
+    setPending(false)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("paymentDetail.confirmBankTransfer.title")}</CardTitle>
+        <CardDescription>
+          {t("paymentDetail.confirmBankTransfer.description", { amount })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {variableSymbol === null ? null : (
+          <PaymentDetailRow
+            label={t("paymentDetail.transaction.variableSymbol")}
+            value={variableSymbol}
+          />
+        )}
+        <Button
+          className="h-12"
+          disabled={pending}
+          onClick={() => void handleConfirm()}
+        >
+          {t("paymentDetail.confirmBankTransfer")}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -579,7 +579,7 @@ const markPaymentPaid =
     note,
   }: MarkPaymentPaidInput & {
     readonly accountKind: PaymentAccountKind
-    readonly accountTransactionKind?: "cardSwitchio"
+    readonly accountTransactionKind?: "iban" | "cardSwitchio"
     readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
     readonly notFoundError: TNotFoundError
     readonly transactionIdPrefix: string
@@ -727,6 +727,7 @@ export const markPaymentPaidIban = (
   markPaymentPaid({
     ...input,
     accountKind: "iban",
+    accountTransactionKind: "iban",
     accountQuery: ibanAccountByIdQuery,
     notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
     transactionIdPrefix: "accountTransaction:iban:manual:payment:",

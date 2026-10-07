@@ -272,6 +272,23 @@ export const enSettings = {
   "settings.eet.unconfirmed.empty": "EET has confirmed every sale.",
   "settings.eet.unconfirmed.reversal": "Reversal {amount}",
   "settings.eet.unconfirmed.title": "Unconfirmed sales",
+  "settings.employees.add": "Add",
+  "settings.employees.add.label": "New employee",
+  "settings.employees.add.placeholder": "Name",
+  "settings.employees.description": "Who takes payments at your PoS",
+  "settings.employees.empty": "No employees yet.",
+  "settings.employees.intro":
+    "Staff pick their name at the PoS, and every payment they take carries it.",
+  "settings.employees.name.invalid": "Enter a name.",
+  "settings.employees.remove": "Remove {name}",
+  "settings.employees.remove.confirm.cancel": "Cancel",
+  "settings.employees.remove.confirm.confirm": "Remove",
+  "settings.employees.remove.confirm.description":
+    "They will disappear from every PoS. Payments they already took keep their name.",
+  "settings.employees.remove.confirm.title": "Remove {name}?",
+  "settings.employees.rename": "Rename {name}",
+  "settings.employees.rename.input": "New name for {name}",
+  "settings.employees.title": "Employees",
   "settings.evoluExport.action": "Export",
   "settings.evoluExport.action.pending": "Exporting...",
   "settings.evoluExport.confirm.description":
@@ -555,6 +572,7 @@ export const enSettings = {
     "Include the short two-digit year in generated payment numbers",
   "settings.paymentNumberSeries.year.short.title": "Short year",
   "settings.payments": "PAYMENTS",
+  "settings.posGroup": "POS & STAFF",
   "settings.privacy.errorReporting.description":
     "Send crash reports and error details to help fix bugs. Off by default — nothing is sent unless you turn this on.",
   "settings.privacy.errorReporting.disable": "Disable",
@@ -695,6 +713,60 @@ export const enSettings = {
     "Its funds stay in the current wallet and are no longer shown here. Withdraw them first, or keep its mnemonic.",
   "settings.sparkAccount.wallet.warning.invoices":
     "Unpaid invoices from the current wallet will no longer be detected.",
+  "settings.stations.add": "Add PoS",
+  "settings.stations.description":
+    "Phones and tablets that take payments for you",
+  "settings.stations.detail.card.title": "Details",
+  "settings.stations.detail.notFound": "This PoS doesn't exist.",
+  "settings.stations.detail.title": "PoS",
+  "settings.stations.empty.description":
+    "Add one and open its link on another phone or tablet. It takes payments into your accounts and reports each one back to you.",
+  "settings.stations.empty.title": "No PoS yet",
+  "settings.stations.lastSeen": "Last seen {time}",
+  "settings.stations.link.copied": "Link copied",
+  "settings.stations.link.copy": "Copy link",
+  "settings.stations.link.copyFailed": "Couldn't copy the link",
+  "settings.stations.link.description":
+    "Open this link on the phone or tablet that should take payments. Anyone with it can take payments as this PoS, so keep it to that device.",
+  "settings.stations.link.hideQr": "Hide QR code",
+  "settings.stations.link.qrAria":
+    "Login link as a QR code. Tap to copy the link.",
+  "settings.stations.link.share": "Share",
+  "settings.stations.link.showQr": "Show QR code",
+  "settings.stations.link.title": "Login link",
+  "settings.stations.methods.description":
+    "Which of your payment methods this PoS offers. The money always goes to your own accounts.",
+  "settings.stations.methods.notSetUp":
+    "Set this method up in Payment Accounts first.",
+  "settings.stations.methods.title": "Payment methods",
+  "settings.stations.name.invalid": "Enter a name.",
+  "settings.stations.name.label": "Name",
+  "settings.stations.name.placeholder": "e.g. Bar",
+  "settings.stations.neverSeen": "Not connected yet",
+  "settings.stations.new.card.description":
+    "Name it after where it stands, like Bar or Terrace. Its login link comes next.",
+  "settings.stations.new.card.title": "Details",
+  "settings.stations.new.numbersExhausted": "All 9999 PoS numbers are used up.",
+  "settings.stations.new.submit": "Create PoS",
+  "settings.stations.new.title": "New PoS",
+  "settings.stations.number.description":
+    "It starts the specific symbol of this PoS's bank transfers, so you can tell where each transfer came from.",
+  "settings.stations.number.label": "Number",
+  "settings.stations.revoke": "Revoke PoS",
+  "settings.stations.revoke.confirm.cancel": "Cancel",
+  "settings.stations.revoke.confirm.confirm": "Revoke",
+  "settings.stations.revoke.confirm.description":
+    "It will be logged out and its link will stop working. Payments it hasn't reported yet will never reach you. This can't be undone.",
+  "settings.stations.revoke.confirm.title": "Revoke {name}?",
+  "settings.stations.revoked": "Revoked",
+  "settings.stations.status.config": "Settings",
+  "settings.stations.status.config.delivered": "Up to date",
+  "settings.stations.status.config.pending": "Not delivered yet",
+  "settings.stations.status.lastReport": "Last report",
+  "settings.stations.status.lastSeen": "Last seen",
+  "settings.stations.status.never": "Never",
+  "settings.stations.status.title": "Status",
+  "settings.stations.title": "PoS",
   "settings.supportChat.teamUnavailable":
     "Support is unavailable right now. Check your connection and try again.",
   "settings.supportChat.inbox.unverified":

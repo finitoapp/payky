@@ -1,4 +1,24 @@
 export const enCommon = {
+  "activity.stations.byEmployee": "By employee",
+  "activity.stations.countAndTips": "Payments: {count} · Tips: {tips}",
+  "activity.stations.empty": "No PoS yet. Add one in Settings.",
+  "activity.stations.lastReport": "Last report {time}",
+  "activity.stations.noEmployee": "No employee",
+  "activity.stations.noPayments": "No paid payments in this period.",
+  "activity.stations.noReports": "No reports yet",
+  "activity.stations.openSettings": "Open {name} settings",
+  "activity.stations.range.last30Days": "30 days",
+  "activity.stations.range.last7Days": "7 days",
+  "activity.stations.range.today": "Today",
+  "activity.stations.range.yesterday": "Yesterday",
+  "activity.stations.showPayments": "Show payments",
+  "activity.stations.warning.brokenLinks":
+    "Reports that don't follow on from the previous one: {reports}",
+  "activity.stations.warning.conflicts":
+    "Reports received in two versions: {reports}",
+  "activity.stations.warning.missing": "Missing reports: {reports}",
+  "activity.stations.warning.unconfirmed":
+    "Reported as paid, not yet confirmed: {count}",
   "activity.tabs.bills": "Bills",
   "activity.tabs.payments": "Payments",
   "activity.tabs.stations": "PoS",

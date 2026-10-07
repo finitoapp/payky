@@ -5,21 +5,10 @@ import {
   GiftWrap,
   PrivateDirectMessage,
   Reaction,
-  Seal,
 } from "nostr-tools/kinds"
-import { decrypt, getConversationKey } from "nostr-tools/nip44"
 import { createRumor, createSeal, createWrap } from "nostr-tools/nip59"
-import {
-  type Event,
-  type EventTemplate,
-  finalizeEvent,
-  getEventHash,
-  getPublicKey,
-  type VerifiedEvent,
-  verifyEvent,
-} from "nostr-tools/pure"
+import { type Event, finalizeEvent, getPublicKey } from "nostr-tools/pure"
 import { normalizeURL } from "nostr-tools/utils"
-import { z } from "zod"
 
 import type { DateDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
@@ -35,10 +24,16 @@ import {
   RELAY_MAX_WAIT_MS,
 } from "@/core/integrations/nostr/nostr-client.ts"
 import {
+  authSigner,
+  subscribeGiftWraps,
+  unwrapVerifiedRumor,
+  type VerifiedRumor,
+  WRAP_BACKDATE_SECONDS,
+} from "@/core/integrations/nostr/nostr-gift-wrap.ts"
+import {
   deriveNostrSecretKey,
   type NostrSecretKey,
 } from "@/core/modules/shared/key-derivation.ts"
-import { jsonCodec } from "@/zod-utils.ts"
 
 /**
  * The support chat is one NIP-17 group per account: the account's own Nostr
@@ -123,29 +118,6 @@ export const appendClientTrailer = (
 export const stripClientTrailer = (text: string): string =>
   text.replace(trailerPattern, "")
 
-const EventSchema = z.object({
-  id: z.string(),
-  pubkey: z.string(),
-  created_at: z.number().int(),
-  kind: z.number().int(),
-  tags: z.array(z.array(z.string())),
-  content: z.string(),
-})
-const SealSchema = EventSchema.extend({ sig: z.string() })
-const EventJson = jsonCodec(EventSchema)
-const SealJson = jsonCodec(SealSchema)
-
-/** A NIP-17 rumor: an unsigned kind 14 event. */
-type NostrRumor = z.output<typeof EventSchema>
-
-const decryptJson = <T>(
-  codec: z.ZodType<T, string>,
-  payload: string,
-  secretKey: NostrSecretKey,
-  pubkey: string
-) =>
-  z.safeDecode(codec, decrypt(payload, getConversationKey(secretKey, pubkey)))
-
 const pTagValues = (tags: ReadonlyArray<ReadonlyArray<string>>) =>
   tags.flatMap(([name, value]) =>
     name === "p" && value !== undefined ? [value] : []
@@ -158,48 +130,8 @@ const chatKindTypes: Readonly<Record<number, SupportMessageType>> = {
   [EventDeletion]: "deletion",
 }
 
-/**
- * The rumor inside a gift wrap addressed to `secretKey` — a message or a
- * reaction — or `null`.
- * nostr-tools' `unwrapEvent` checks nothing, so this verifies the seal's
- * signature, that the seal and the rumor share their author and that the
- * rumor's id is its hash: without that anyone could post a message "from
- * support" asking for the recovery phrase.
- */
-const unwrapVerifiedRumor = ({
-  wrap,
-  secretKey,
-}: {
-  readonly wrap: Event
-  readonly secretKey: NostrSecretKey
-}): NostrRumor | null => {
-  if (wrap.kind !== GiftWrap) return null
-  try {
-    const seal = decryptJson(SealJson, wrap.content, secretKey, wrap.pubkey)
-    if (!seal.success || seal.data.kind !== Seal || !verifyEvent(seal.data)) {
-      return null
-    }
-    const parsed = decryptJson(
-      EventJson,
-      seal.data.content,
-      secretKey,
-      seal.data.pubkey
-    )
-    if (!parsed.success) return null
-    const rumor = parsed.data
-    return chatKindTypes[rumor.kind] !== undefined &&
-      rumor.pubkey === seal.data.pubkey &&
-      getEventHash(rumor) === rumor.id
-      ? rumor
-      : null
-  } catch {
-    // Not encrypted to this key.
-    return null
-  }
-}
-
 /** A NIP-17 room: the rumor's author and every `p` tag. */
-const rumorRoom = (rumor: NostrRumor): ReadonlySet<string> =>
+const rumorRoom = (rumor: VerifiedRumor): ReadonlySet<string> =>
   new Set([rumor.pubkey, ...pTagValues(rumor.tags)])
 
 /**
@@ -284,11 +216,6 @@ const queryWithAuth = (
       onauth: authSigner(secretKey),
     })
   })
-
-const authSigner =
-  (secretKey: NostrSecretKey) =>
-  async (template: EventTemplate): Promise<VerifiedEvent> =>
-    finalizeEvent(template, secretKey)
 
 const unique = (relays: ReadonlyArray<string>): ReadonlyArray<string> => [
   ...new Set(relays),
@@ -432,9 +359,6 @@ export const publishDmRelayList =
     return err(createNostrPublishRejectedError({ reasons }))
   }
 
-/** How far back NIP-59 may date a gift wrap, so how far back to listen. */
-const WRAP_BACKDATE_SECONDS = 2 * 24 * 60 * 60
-
 /** How much of the conversation is loaded when the chat opens. */
 const HISTORY_SECONDS = 90 * 24 * 60 * 60
 
@@ -532,33 +456,17 @@ export const subscribeSupportMessages = (
   }
 ): (() => void) => {
   const secretKey = deriveNostrSecretKey(masterKey)
-  let closedByCaller = false
-  const subscription = nostr.pool.subscribeMany(
-    [...readRelays(team, inbox)],
-    {
-      kinds: [GiftWrap],
-      "#p": [getPublicKey(secretKey)],
-      since: Math.floor(date.now().getTime() / 1000) - WRAP_BACKDATE_SECONDS,
+  return subscribeGiftWraps(nostr, {
+    secretKey,
+    relays: readRelays(team, inbox),
+    sinceSeconds:
+      Math.floor(date.now().getTime() / 1000) - WRAP_BACKDATE_SECONDS,
+    onWrap: (wrap) => {
+      const message = decodeSupportWrap({ wrap, secretKey, team })
+      if (message !== null) onMessage(message)
     },
-    {
-      onevent: (wrap) => {
-        const message = decodeSupportWrap({
-          wrap,
-          secretKey,
-          team,
-        })
-        if (message !== null) onMessage(message)
-      },
-      onclose: () => {
-        if (!closedByCaller) onClose()
-      },
-      onauth: authSigner(secretKey),
-    }
-  )
-  return () => {
-    closedByCaller = true
-    subscription.close()
-  }
+    onClose,
+  })
 }
 
 const createSupportNotReachedError = defineError("SupportNotReachedError")<{

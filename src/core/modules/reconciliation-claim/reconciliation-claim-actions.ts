@@ -6,8 +6,15 @@ import {
 } from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
-import type { CreateAccountTransactionInput } from "@/core/modules/account-transaction/account-transaction-actions.ts"
-import { accountTransactionAmountByIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
+import {
+  type CreateAccountTransactionInput,
+  computeAccountTransactionRows,
+  upsertAccountTransactionRows,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  accountTransactionAmountByIdQuery,
+  accountTransactionSparkByTransferIdQuery,
+} from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { upsertBillClosedAt } from "@/core/modules/bill/bill-actions.ts"
 import { loadBillClosedAtIfCovered } from "@/core/modules/bill/bill-guards.ts"
@@ -315,4 +322,85 @@ export const reconcileAccountTransaction =
     )
 
     return ok(candidate.paymentId)
+  }
+
+/**
+ * Records money a sync found on one of the accounts and claims it for the
+ * payment it matches, if any, in one batch with the bill closing it may
+ * cause. Money already recorded is only offered to reconciliation again: a
+ * sync that crashed after recording it would otherwise never claim it.
+ */
+export const recordAutomaticAccountTransaction =
+  (
+    input: CreateAccountTransactionInput
+  ): Task<
+    {
+      readonly accountTransactionId: AccountTransactionId
+      readonly paymentId: PaymentId | null
+      readonly created: boolean
+    },
+    never,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const { evolu, evoluOwnerId } = run.deps
+    const accountTransaction = computeAccountTransactionRows(
+      input,
+      run.deps.date.now()
+    )
+    const existingId = input.spark
+      ? (
+          await evolu.loadQuery(
+            accountTransactionSparkByTransferIdQuery(
+              input.spark.sparkTransferId
+            )
+          )
+        )[0]?.id
+      : (
+            await evolu.loadQuery(
+              accountTransactionAmountByIdQuery(accountTransaction.id)
+            )
+          ).length > 0
+        ? accountTransaction.id
+        : undefined
+    if (existingId !== undefined) {
+      const paymentId = await run.ok(reconcileAccountTransaction(existingId))
+      return ok({ accountTransactionId: existingId, paymentId, created: false })
+    }
+
+    const claim = await run.ok(
+      loadAutomaticReconciliationClaimForNewAccountTransaction(
+        input,
+        accountTransaction.id
+      )
+    )
+    const billClosing =
+      claim === null
+        ? null
+        : await run.ok(
+            loadBillClosedAtForPayment(claim.paymentId, {
+              id: accountTransaction.id,
+              amount: accountTransaction.input.amount,
+              currency: accountTransaction.input.currency,
+            })
+          )
+
+    await runMutationWithCompletion((options) => {
+      upsertAccountTransactionRows(evolu, accountTransaction, {
+        ...options,
+        ownerId: evoluOwnerId,
+      })
+      if (claim !== null) {
+        upsertReconciliationClaimRows(evolu, claim, billClosing, {
+          ...options,
+          ownerId: evoluOwnerId,
+        })
+      }
+    })
+
+    return ok({
+      accountTransactionId: accountTransaction.id,
+      paymentId: claim?.paymentId ?? null,
+      created: true,
+    })
   }

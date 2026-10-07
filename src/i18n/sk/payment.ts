@@ -7,6 +7,16 @@ export const skPayment = {
   "payment.status.paid": "Zaplatené",
   "payment.status.pending": "Čaká",
   "paymentDetail.cashReceived": "Prijaté v hotovosti {amount}",
+  "paymentDetail.confirmBankTransfer": "Potvrdiť prijatie prevodu",
+  "paymentDetail.confirmBankTransfer.confirm.cancel": "Zrušiť",
+  "paymentDetail.confirmBankTransfer.confirm.confirm": "Potvrdiť",
+  "paymentDetail.confirmBankTransfer.confirm.description":
+    "Potvrďte, iba ak vidíte {amount} na svojom účte. Platba sa označí ako zaplatená.",
+  "paymentDetail.confirmBankTransfer.confirm.title": "Prišiel prevod?",
+  "paymentDetail.confirmBankTransfer.description":
+    "Pokladňa sama prevod potvrdiť nemôže. Keď uvidíte {amount} na svojom účte, potvrďte ho tu.",
+  "paymentDetail.confirmBankTransfer.error": "Prevod sa nepodarilo potvrdiť.",
+  "paymentDetail.confirmBankTransfer.title": "Čaká sa na bankový prevod",
   "paymentDetail.eet.amount": "Odoslaná suma",
   "paymentDetail.eet.cashRegister": "Označenie pokladnice",
   "paymentDetail.eet.eic": "EIČ",
@@ -54,6 +64,7 @@ export const skPayment = {
   "paymentDetail.eet.unsupported":
     "EET prijíma len tržby v českých korunách, preto táto tržba nebola odoslaná.",
   "paymentDetail.eet.warning": "Varovanie EET {code}",
+  "paymentDetail.employee": "Zamestnanec",
   "paymentDetail.number": "Platba č. {number}",
   "paymentDetail.refunds.action": "Vrátiť peniaze",
   "paymentDetail.refunds.method.cashRegister": "Z pokladne",
@@ -61,6 +72,8 @@ export const skPayment = {
   "paymentDetail.refunds.title": "Vrátenia",
   "paymentDetail.refunds.tipAction": "Vrátiť sprepitné ({amount})",
   "paymentDetail.refunds.tip": "Sprepitné",
+  "paymentDetail.station": "Pokladňa",
+  "paymentDetail.stationTakenAt": "Prijaté na pokladni",
   "paymentDetail.tipIncluded": "Z toho tringelt {amount}",
   "paymentDetail.canceledAtValue": "Zrušené {date}",
   "paymentDetail.expiresAt": "Vyprší o {time}",
@@ -145,6 +158,8 @@ export const skPayment = {
   "paymentHistory.empty.description":
     "Vytvorené platobné žiadosti sa zobrazia tu.",
   "paymentHistory.empty.title": "Zatiaľ žiadne platby",
+  "paymentHistory.filter.allEmployees": "Všetci zamestnanci",
+  "paymentHistory.filter.allStations": "Všetky pokladne",
   "paymentHistory.payment": "Platba",
   "paymentHistory.paymentNumber": "Platba č. {number}",
   "paymentHistory.tip": "vr. prepitného {amount}",

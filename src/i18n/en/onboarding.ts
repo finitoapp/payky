@@ -73,6 +73,17 @@ export const enOnboarding = {
     "Enter the SLIP-39 recovery phrase for the account you want to restore.",
   "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
+  "posLogin.cancel": "Cancel",
+  "posLogin.confirm": "Open PoS",
+  "posLogin.description":
+    "This device becomes a PoS of the business that sent you the link. It takes payments for the owner and passes every sale on to them.",
+  "posLogin.invalid.description":
+    "The link may be cut short. Ask the owner to send it again and open it whole.",
+  "posLogin.invalid.home": "Go to the app",
+  "posLogin.invalid.title": "This PoS link doesn't work",
+  "posLogin.otherAccounts":
+    "This device holds other accounts. Anyone at this PoS can leave PoS mode and open them.",
+  "posLogin.title": "Open this PoS",
   "recovery.accounts.description": "Switching reboots the app on that account.",
   "recovery.description":
     "This page works even when the app itself cannot start. It reads only this device's own database, never an account's data.",

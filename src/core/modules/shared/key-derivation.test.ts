@@ -1,3 +1,4 @@
+import { getPublicKey } from "nostr-tools/pure"
 import { Slip39 } from "slip39-ts"
 import { describe, expect, test } from "vitest"
 import {
@@ -5,6 +6,8 @@ import {
   defaultSparkWalletDerivationPath,
   deriveDefaultSparkWalletSecret,
   deriveEvoluOwnerSecret,
+  deriveNostrSecretKey,
+  deriveStationCommsSecretKey,
   evoluOwnerDerivationPath,
   MasterKey,
   MasterKeySchema,
@@ -14,6 +17,7 @@ import {
   SparkMnemonicSchema,
   sparkMnemonicToSecret,
   sparkSecretToMnemonic,
+  stationCommsNostrKeyDerivationPath,
 } from "./key-derivation.ts"
 
 const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
@@ -23,6 +27,18 @@ describe("key derivation", () => {
     expect(defaultCashuDerivationPath).toBe("m/83696968'/39'/0'/24'/0'")
     expect(evoluOwnerDerivationPath).toBe("m/83696968'/39'/0'/24'/1'")
     expect(defaultSparkWalletDerivationPath).toBe("m/83696968'/39'/0'/12'/0'")
+  })
+
+  test("talks to stations under NIP-06 account 1, apart from the account's own Nostr key", () => {
+    const commsKey = deriveStationCommsSecretKey(masterKey)
+
+    expect(stationCommsNostrKeyDerivationPath).toBe("m/44'/1237'/1'/0/0")
+    expect(getPublicKey(commsKey)).toBe(
+      "a5ec214de21d14de2ea908b0d1ab3d771a2a1d091c70b4f80a31f498b7367744"
+    )
+    expect(getPublicKey(commsKey)).not.toBe(
+      getPublicKey(deriveNostrSecretKey(masterKey))
+    )
   })
 
   test("derives the documented Evolu owner secret", () => {

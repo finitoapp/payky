@@ -42,6 +42,25 @@ export const NonEmptyString255Schema =
 export type NonEmptyString255 = z.output<typeof NonEmptyString255Schema>
 export const NonEmptyString255 = NonEmptyString255Schema.decode
 
+const Hex64Schema = z.string().regex(/^[0-9a-f]{64}$/u)
+
+/** A Nostr public key, as hex: the x-only secp256k1 key. */
+export const NostrPubkeyHexSchema = Hex64Schema.brand<"NostrPubkeyHex">()
+export type NostrPubkeyHex = z.output<typeof NostrPubkeyHexSchema>
+export const NostrPubkeyHex = NostrPubkeyHexSchema.decode
+
+export const Sha256HexSchema = Hex64Schema.brand<"Sha256Hex">()
+export type Sha256Hex = z.output<typeof Sha256HexSchema>
+export const Sha256Hex = Sha256HexSchema.decode
+
+/** A Spark wallet's identity key, as compressed secp256k1 hex. */
+export const SparkIdentityPubkeySchema = z
+  .string()
+  .regex(/^0[23][0-9a-f]{64}$/u)
+  .brand<"SparkIdentityPubkey">()
+export type SparkIdentityPubkey = z.output<typeof SparkIdentityPubkeySchema>
+export const SparkIdentityPubkey = SparkIdentityPubkeySchema.decode
+
 export const SqliteBoolSchema = z.union([z.literal(0), z.literal(1)])
 export const SqliteTrueSchema = z.literal(1)
 

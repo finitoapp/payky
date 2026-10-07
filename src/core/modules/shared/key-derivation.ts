@@ -89,6 +89,12 @@ export const defaultSparkWalletDerivationPath = DerivationPath(
  * `NOSTR_VECTOR` in `key-derivation-cross-app.test.ts`.
  */
 export const nostrKeyDerivationPath = DerivationPath("m/44'/1237'/0'/0/0")
+/**
+ * NIP-06 account 1: the owner's key for talking to its PoS stations
+ * (station/0002), apart from account 0, which Linky and the support chat use.
+ */
+export const stationCommsNostrKeyDerivationPath =
+  DerivationPath("m/44'/1237'/1'/0/0")
 
 const bipEntropyHmacKey = new TextEncoder().encode("bip-entropy-from-k")
 
@@ -107,9 +113,12 @@ const deriveEntropy = (
   return hmac(sha512, bipEntropyHmacKey, privateKey).slice(0, 32)
 }
 
-export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey => {
+const deriveNip06SecretKey = (
+  masterKey: MasterKey,
+  path: DerivationPath
+): NostrSecretKey => {
   const privateKey = HDKey.fromMasterSeed(hexToBytes(masterKey)).derive(
-    nostrKeyDerivationPath
+    path
   ).privateKey
 
   if (privateKey === null) {
@@ -118,6 +127,14 @@ export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey => {
 
   return NostrSecretKey(new Uint8Array(privateKey))
 }
+
+export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey =>
+  deriveNip06SecretKey(masterKey, nostrKeyDerivationPath)
+
+export const deriveStationCommsSecretKey = (
+  masterKey: MasterKey
+): NostrSecretKey =>
+  deriveNip06SecretKey(masterKey, stationCommsNostrKeyDerivationPath)
 
 export const createMasterKey = (): MasterKey =>
   MasterKey(bytesToHex(createRandomBytes().create(16)))

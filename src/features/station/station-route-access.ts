@@ -3,7 +3,7 @@ import type { FileRouteTypes } from "@/routeTree.gen.ts"
 type RouteId = FileRouteTypes["id"]
 
 /**
- * What a PoS station may open (station/0011): the keypad and the payment it
+ * What a PoS station may open (station/0013): the keypad and the payment it
  * starts, its own history, and the settings that are the device's own. Every
  * other screen belongs to the owner.
  */

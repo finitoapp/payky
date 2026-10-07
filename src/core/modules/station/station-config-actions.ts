@@ -166,7 +166,7 @@ export const applyStationConfig =
   }
 
 /**
- * Records what the owner settled for a station payment (station/0006): a
+ * Records what the owner settled for a station payment (station/0012): a
  * bank transfer it received, or a Lightning transfer into its wallet. Then
  * the payment is reported again, now paid.
  */

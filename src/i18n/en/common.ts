@@ -100,8 +100,6 @@ export const enCommon = {
   "station.employeePicker.title": "Who's selling?",
   "station.header.chooseEmployee": "Who's selling?",
   "station.header.undelivered": "{count} not yet delivered to the owner",
-  "station.ibanAwaitingOwner":
-    "The owner confirms the transfer once it reaches their account.",
   "station.leave.action": "Leave PoS mode",
   "station.leave.confirm.cancel": "Stay",
   "station.leave.confirm.confirm": "Leave",

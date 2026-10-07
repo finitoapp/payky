@@ -14,7 +14,7 @@ export const skPayment = {
     "Potvrďte, iba ak vidíte {amount} na svojom účte. Platba sa označí ako zaplatená.",
   "paymentDetail.confirmBankTransfer.confirm.title": "Prišiel prevod?",
   "paymentDetail.confirmBankTransfer.description":
-    "Pokladňa sama prevod potvrdiť nemôže. Keď uvidíte {amount} na svojom účte, potvrďte ho tu.",
+    "Pokladňa tento prevod zatiaľ nepotvrdila. Keď uvidíte {amount} na svojom účte, môžete ho potvrdiť tu.",
   "paymentDetail.confirmBankTransfer.error": "Prevod sa nepodarilo potvrdiť.",
   "paymentDetail.confirmBankTransfer.title": "Čaká sa na bankový prevod",
   "paymentDetail.eet.amount": "Odoslaná suma",

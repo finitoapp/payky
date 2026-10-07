@@ -240,7 +240,7 @@ export type StationPaymentInRangeRow = InferRow<
 /**
  * Station payments the owner holds bank or Lightning money for while the
  * station's newest report does not say paid: the station is to hear it
- * settled (station/0006).
+ * settled (station/0012).
  */
 export const stationSettlementNoticesQuery = createQuery((db) =>
   db

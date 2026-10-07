@@ -3,16 +3,20 @@ import { describe, expect, test } from "vitest"
 import type { z } from "zod"
 
 import { createQuery } from "@/core/evolu/schema.ts"
+import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
-import {
-  paymentByIdQuery,
-  paymentClaimsQuery,
-} from "@/core/modules/payment/payment-queries.ts"
+import { paymentByIdQuery } from "@/core/modules/payment/payment-queries.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { recordAutomaticAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
 import {
+  IntegerSchema,
+  NonEmptyString255,
   NonNegativeInteger,
   PositiveInteger,
   Sha256Hex,
+  TimestampMsSchema,
+  VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import {
   type StationPaymentSnapshot,
@@ -31,6 +35,33 @@ import {
 const stationReportsQuery = createQuery((db) =>
   db.selectFrom("stationReport").select(["seq", "paymentId", "stationPaid"])
 )
+
+/** Every claim on a payment, with the money it points at. */
+const claimsQuery = (paymentId: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("reconciliationClaim")
+      .innerJoin(
+        "accountTransaction",
+        "accountTransaction.id",
+        "reconciliationClaim.accountTransactionId"
+      )
+      .select([
+        "reconciliationClaim.source",
+        "accountTransaction.kind",
+        "accountTransaction.occurredAt",
+      ])
+      .where("reconciliationClaim.paymentId", "=", paymentId)
+      .where("reconciliationClaim.isDeleted", "is not", 1)
+  )
+
+const accountTransactionsQuery = (accountId: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransaction")
+      .select(["id"])
+      .where("accountId", "=", accountId)
+  )
 
 const snapshotOf = (
   context: StationTestContext,
@@ -204,8 +235,39 @@ describe("receiveStationReports", () => {
   })
 })
 
+const ibanSnapshotOf = (
+  context: StationTestContext,
+  overrides: Partial<z.input<typeof StationPaymentSnapshotSchema>> = {}
+): StationPaymentSnapshot =>
+  snapshotOf(context, {
+    iban: {
+      accountId: context.ibanAccountId,
+      variableSymbol: "123456",
+      specificSymbol: null,
+    },
+    ...overrides,
+  })
+
+/** What the owner's FIO sync records for the customer's transfer. */
+const bankSyncFinds = (context: StationTestContext) =>
+  recordAutomaticAccountTransaction({
+    accountId: context.ibanAccountId,
+    amount: IntegerSchema.decode(10_000),
+    currency: "CZK",
+    occurredAt: TimestampMsSchema.decode(1_780_000_300_000),
+    note: null,
+    internalTransferGroupId: null,
+    source: { deviceId: null, source: "auto" },
+    iban: {
+      variableSymbol: VariableSymbol("123456"),
+      constantSymbol: null,
+      specificSymbol: null,
+      bankReference: NonEmptyString255("fio-1"),
+    },
+  })
+
 describe("projectStationReport", () => {
-  test("settles cash from the report, but bank and Lightning only from the owner's own sync", async () => {
+  test("settles cash and a hand-confirmed bank transfer from the report, but Lightning only from the owner's own sync", async () => {
     await using context = await createStationTestContext()
     await using run = testCreateRun(context.ownerDeps)
     const { evolu } = context.ownerDeps
@@ -213,14 +275,7 @@ describe("projectStationReport", () => {
       cash: { accountId: context.cashAccountId, receivedAmount: null },
       settlements: [settled("cashRegister")],
     })
-    const iban = snapshotOf(context, {
-      iban: {
-        accountId: context.ibanAccountId,
-        variableSymbol: null,
-        specificSymbol: null,
-      },
-      settlements: [settled("iban")],
-    })
+    const iban = ibanSnapshotOf(context, { settlements: [settled("iban")] })
     const spark = snapshotOf(context, {
       spark: {
         accountId: context.sparkAccountId,
@@ -242,19 +297,96 @@ describe("projectStationReport", () => {
       })
     )
 
+    expect(await evolu.loadQuery(claimsQuery(cash.paymentId))).toEqual([
+      { source: "manual", kind: "cashRegister", occurredAt: 1_780_000_100_000 },
+    ])
+    expect(await evolu.loadQuery(claimsQuery(iban.paymentId))).toEqual([
+      { source: "manual", kind: "iban", occurredAt: 1_780_000_100_000 },
+    ])
+    expect(await evolu.loadQuery(claimsQuery(spark.paymentId))).toEqual([])
+  })
+
+  test("records a reported bank transfer once, however often it is reported", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.ownerDeps)
+    const { evolu } = context.ownerDeps
+    const paid = ibanSnapshotOf(context, { settlements: [settled("iban")] })
+    const paidAgain = snapshotOf(context, {
+      ...paid,
+      settlements: [{ ...settled("iban"), occurredAt: 1_780_000_200_000 }],
+    })
+
+    await run(
+      receiveStationReports({
+        stationId: context.stationId,
+        message: reportsMessage([paid]),
+      })
+    )
+    await run(
+      receiveStationReports({
+        stationId: context.stationId,
+        message: reportsMessage([paid, paidAgain]),
+      })
+    )
+
+    expect(await evolu.loadQuery(claimsQuery(paid.paymentId))).toEqual([
+      { source: "manual", kind: "iban", occurredAt: 1_780_000_100_000 },
+    ])
     expect(
-      await evolu.loadQuery(paymentClaimsQuery(cash.paymentId))
+      await evolu.loadQuery(accountTransactionsQuery(context.ibanAccountId))
     ).toHaveLength(1)
-    expect(await evolu.loadQuery(paymentClaimsQuery(iban.paymentId))).toEqual(
-      []
+  })
+
+  test("adds nothing to a bank transfer the owner's bank sync already settled", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.ownerDeps)
+    const { evolu } = context.ownerDeps
+    const pending = ibanSnapshotOf(context)
+    const paid = snapshotOf(context, {
+      ...pending,
+      settlements: [settled("iban")],
+    })
+
+    await run(
+      receiveStationReports({
+        stationId: context.stationId,
+        message: reportsMessage([pending]),
+      })
     )
-    expect(await evolu.loadQuery(paymentClaimsQuery(spark.paymentId))).toEqual(
-      []
+    expect(await run.ok(bankSyncFinds(context))).toMatchObject({
+      paymentId: pending.paymentId,
+    })
+    await run(
+      receiveStationReports({
+        stationId: context.stationId,
+        message: reportsMessage([pending, paid]),
+      })
     )
-    expect(await evolu.loadQuery(stationReportsQuery)).toEqual(
-      expect.arrayContaining([
-        { seq: 2, paymentId: iban.paymentId, stationPaid: 1 },
-      ])
+
+    expect(await evolu.loadQuery(claimsQuery(pending.paymentId))).toEqual([
+      { source: "auto", kind: "iban", occurredAt: 1_780_000_300_000 },
+    ])
+  })
+
+  test("leaves the transfer the bank sync finds later unclaimed, as after the owner's own confirmation", async () => {
+    await using context = await createStationTestContext()
+    await using run = testCreateRun(context.ownerDeps)
+    const { evolu } = context.ownerDeps
+    const paid = ibanSnapshotOf(context, { settlements: [settled("iban")] })
+
+    await run(
+      receiveStationReports({
+        stationId: context.stationId,
+        message: reportsMessage([paid]),
+      })
     )
+
+    expect(await run.ok(bankSyncFinds(context))).toMatchObject({
+      paymentId: null,
+      created: true,
+    })
+    expect(await evolu.loadQuery(claimsQuery(paid.paymentId))).toEqual([
+      { source: "manual", kind: "iban", occurredAt: 1_780_000_100_000 },
+    ])
   })
 })

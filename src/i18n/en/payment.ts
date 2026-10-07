@@ -12,7 +12,7 @@ export const enPayment = {
     "Confirm only if you can see {amount} on your account. The payment will be marked as paid.",
   "paymentDetail.confirmBankTransfer.confirm.title": "Did the transfer arrive?",
   "paymentDetail.confirmBankTransfer.description":
-    "The PoS can't confirm a bank transfer itself. Once {amount} is on your account, confirm it here.",
+    "The PoS hasn't confirmed this transfer yet. Once {amount} is on your account, you can confirm it here.",
   "paymentDetail.confirmBankTransfer.error": "Couldn't confirm the transfer.",
   "paymentDetail.confirmBankTransfer.title": "Waiting for a bank transfer",
   "paymentDetail.eet.amount": "Amount sent",

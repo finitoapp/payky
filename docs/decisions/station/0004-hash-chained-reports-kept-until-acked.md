@@ -27,7 +27,7 @@ payment silently.
 
 The outbox and the owner's report table grow forever. A station only reports
 payments taken in the last week again on its own; an older one is reported
-again when the owner settles it (station/0006).
+again when the owner settles it (station/0012).
 
 ## Enforced by
 

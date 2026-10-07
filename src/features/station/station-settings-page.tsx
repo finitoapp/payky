@@ -54,7 +54,7 @@ function RowLabel({
 }
 
 /**
- * The settings a PoS station offers (station/0011): who is selling, whether
+ * The settings a PoS station offers (station/0013): who is selling, whether
  * the owner has its payments, the device's language and theme, and the way
  * out of PoS mode. Everything else is the owner's.
  */

@@ -53,7 +53,7 @@ const MINUTE_MS = 60_000
  * It listens while any station exists, takes reports only from a known,
  * unrevoked station (station/0005) and acks them; keeps every station's
  * config current and resends it until the station applies it
- * (station/0008); tells stations what the owner settled (station/0006); and
+ * (station/0008); tells stations what the owner settled (station/0012); and
  * tells a revoked station so.
  */
 export const createOwnerStationJob =

@@ -46,8 +46,8 @@ export const ownerStationBackgroundJobs = [
 ] satisfies ReadonlyArray<OwnerStationJob>
 
 /**
- * All a PoS station runs: it settles nothing itself, so no FIO, Spark sync
- * or EET (station/0006, station/0010).
+ * All a PoS station runs: it watches no bank account or wallet, so no FIO,
+ * Spark sync or EET (station/0012, station/0010).
  */
 export const stationBackgroundJobs = [
   startStationCommsJob,

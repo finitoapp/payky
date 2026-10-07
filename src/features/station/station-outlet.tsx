@@ -5,7 +5,7 @@ import { isRouteAllowedForStation } from "@/features/station/station-route-acces
 
 /**
  * The terminal's outlet on a PoS station: an owner-only screen sends the
- * station home instead (station/0011), and the "who's selling" picker is
+ * station home instead (station/0013), and the "who's selling" picker is
  * hosted here so every station screen can open it.
  */
 export function StationOutlet() {

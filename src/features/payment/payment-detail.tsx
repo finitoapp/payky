@@ -191,7 +191,7 @@ function PaymentDetailContent({
   })
   const isPending = paymentStatus === "pending"
   // A PoS station's payment, seen by the owner: the station collects it, and
-  // only the owner can say a bank transfer for it arrived (station/0006).
+  // the owner can confirm its bank transfer too (station/0012).
   const isFromStation = !isStation && payment.stationId !== null
   // The collision docs/bill-payment-states.md calls out: a multi-device
   // merge can leave a payment canceled with an active claim (real money) at

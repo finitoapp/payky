@@ -103,8 +103,6 @@ export const skCommon = {
   "station.employeePicker.title": "Kto predáva?",
   "station.header.chooseEmployee": "Kto predáva?",
   "station.header.undelivered": "Nedoručené majiteľovi: {count}",
-  "station.ibanAwaitingOwner":
-    "Platbu potvrdí majiteľ, keď mu prevod príde na účet.",
   "station.leave.action": "Opustiť režim pokladne",
   "station.leave.confirm.cancel": "Zostať",
   "station.leave.confirm.confirm": "Opustiť",

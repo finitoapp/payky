@@ -13,8 +13,10 @@ import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   importPayment,
   markPaymentPaidCash,
+  markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
 import { paymentByIdQuery } from "@/core/modules/payment/payment-queries.ts"
+import { activeReconciliationClaimsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import {
@@ -133,8 +135,11 @@ export const receiveStationReports =
  * station and employee (station/0009). Only the station's own payment is
  * written: an owner payment of the same id, or another station's, is left
  * alone (station/0005), and a method naming no owner account of its kind is
- * left out. A cash settlement is recorded on the owner from the report; bank
- * and Lightning money only ever from the owner's own sync (station/0006).
+ * left out. A cash settlement, and a bank transfer staff confirmed by hand,
+ * are recorded on the owner from the report the way the owner's own
+ * confirmation records them; Lightning money only ever from the owner's own
+ * sync (station/0012). A bank transfer the owner already holds a claim for
+ * is not recorded again.
  */
 export const projectStationReport =
   ({
@@ -179,6 +184,12 @@ export const projectStationReport =
       (await isOwnAccount(snapshot.spark.accountId, "spark"))
         ? snapshot.spark
         : null
+    const alreadyClaimed =
+      (
+        await evolu.loadQuery(
+          activeReconciliationClaimsByPaymentIdQuery(snapshot.paymentId)
+        )
+      ).length > 0
 
     await run.ok(
       importPayment({
@@ -228,6 +239,25 @@ export const projectStationReport =
       )
       if (!result.ok) {
         run.deps.console.warn("[station] Could not record a cash settlement.", {
+          paymentId: snapshot.paymentId,
+          error: result.error,
+        })
+      }
+    }
+
+    const ibanSettlement = snapshot.settlements.find(
+      (settlement) => settlement.kind === "iban"
+    )
+    if (iban !== null && ibanSettlement !== undefined && !alreadyClaimed) {
+      const result = await run(
+        markPaymentPaidIban({
+          paymentId: snapshot.paymentId,
+          accountId: iban.accountId,
+          occurredAt: ibanSettlement.occurredAt,
+        })
+      )
+      if (!result.ok) {
+        run.deps.console.warn("[station] Could not record a bank settlement.", {
           paymentId: snapshot.paymentId,
           error: result.error,
         })

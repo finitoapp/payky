@@ -14,7 +14,7 @@ export const csPayment = {
     "Potvrďte, jen pokud vidíte {amount} na svém účtu. Platba se označí jako zaplacená.",
   "paymentDetail.confirmBankTransfer.confirm.title": "Dorazil převod?",
   "paymentDetail.confirmBankTransfer.description":
-    "Pokladna sama převod potvrdit nemůže. Až uvidíte {amount} na svém účtu, potvrďte ho tady.",
+    "Pokladna tento převod zatím nepotvrdila. Až uvidíte {amount} na svém účtu, můžete ho potvrdit tady.",
   "paymentDetail.confirmBankTransfer.error": "Převod se nepodařilo potvrdit.",
   "paymentDetail.confirmBankTransfer.title": "Čeká se na bankovní převod",
   "paymentDetail.eet.amount": "Odeslaná částka",

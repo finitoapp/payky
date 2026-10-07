@@ -215,7 +215,7 @@ export interface StationPaymentSummary {
       readonly currency: FiatCurrency
     }
   >
-  /** Payments the station reported paid that the owner holds no money for. */
+  /** Payments the station reported paid that the owner holds no claim for. */
   readonly reportedPaidUnconfirmed: number
 }
 

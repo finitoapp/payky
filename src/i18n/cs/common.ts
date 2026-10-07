@@ -101,8 +101,6 @@ export const csCommon = {
   "station.employeePicker.title": "Kdo prodává?",
   "station.header.chooseEmployee": "Kdo prodává?",
   "station.header.undelivered": "Nedoručeno majiteli: {count}",
-  "station.ibanAwaitingOwner":
-    "Platbu potvrdí majitel, až mu převod dorazí na účet.",
   "station.leave.action": "Opustit režim pokladny",
   "station.leave.confirm.cancel": "Zůstat",
   "station.leave.confirm.confirm": "Opustit",

@@ -1,6 +1,6 @@
 # 0011 A station offers only the keypad, its own history and its device settings
 
-Status: accepted
+Status: superseded by station/0013
 Date: 2026-10-07
 
 ## Context

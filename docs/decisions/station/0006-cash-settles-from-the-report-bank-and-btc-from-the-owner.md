@@ -1,6 +1,6 @@
 # 0006 Cash settles on the owner from the report; bank and Lightning only from the owner's own sync
 
-Status: accepted
+Status: superseded by station/0012
 Date: 2026-10-07
 
 ## Context

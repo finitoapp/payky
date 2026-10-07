@@ -1,6 +1,7 @@
 export const enCommon = {
   "activity.tabs.bills": "Bills",
   "activity.tabs.payments": "Payments",
+  "activity.tabs.stations": "PoS",
   "activity.title": "Activity",
   "app.name": "Payky",
   "appError.copied": "Copied",
@@ -73,6 +74,8 @@ export const enCommon = {
   "scanner.error.unsupported": "Scanning isn't supported on this device.",
   "scanner.torch.off": "Turn off flashlight",
   "scanner.torch.on": "Turn on flashlight",
+  "station.revoked.toast":
+    "This PoS was revoked by its owner, so it has logged out.",
   "tables.seatCount": "{value} seats",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Free",

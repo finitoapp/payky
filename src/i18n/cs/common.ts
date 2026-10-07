@@ -3,6 +3,7 @@ import type { enCommon } from "@/i18n/en/common.ts"
 export const csCommon = {
   "activity.tabs.bills": "Účty",
   "activity.tabs.payments": "Platby",
+  "activity.tabs.stations": "Pokladny",
   "activity.title": "Aktivita",
   "app.name": "Payky",
   "appError.copied": "Zkopírováno",
@@ -74,6 +75,7 @@ export const csCommon = {
   "scanner.error.unsupported": "Skenování není na tomto zařízení podporováno.",
   "scanner.torch.off": "Vypnout svítilnu",
   "scanner.torch.on": "Zapnout svítilnu",
+  "station.revoked.toast": "Majitel tuto pokladnu zrušil, proto se odhlásila.",
   "tables.seatCount": "{value} míst",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Volný",

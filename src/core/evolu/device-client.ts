@@ -73,6 +73,11 @@ const deviceEvoluSchema = {
     name: NonEmptyString255Schema,
     masterKey: MasterKeySchema,
     lastUseAt: TimestampMsSchema,
+    /**
+     * The account's Nostr picture as last seen while it was active, so the
+     * account list shows it without asking relays about inactive accounts.
+     */
+    nostrPicture: z.string().max(2048).nullable(),
   },
   accountEvoluTransport: {
     id: AccountEvoluTransportId,

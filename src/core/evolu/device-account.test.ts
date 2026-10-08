@@ -8,6 +8,7 @@ import {
   deriveDeviceAccountId,
   removeDeviceAccount,
   resolveTransportUrl,
+  storableNostrPicture,
 } from "@/core/evolu/device-account.ts"
 import {
   type AccountId,
@@ -190,5 +191,19 @@ describe("createOrSelectAccount", () => {
     expect(await loadTransportUrls(deviceEvolu, accountId)).toEqual([
       "wss://custom.example",
     ])
+  })
+})
+
+describe("storableNostrPicture", () => {
+  test("keeps an https picture and drops data, http and overlong ones", () => {
+    const picture = "https://image.example/a.png"
+
+    expect(storableNostrPicture(picture)).toBe(picture)
+    expect(storableNostrPicture("data:image/png;base64,AAAA")).toBeNull()
+    expect(storableNostrPicture("http://image.example/a.png")).toBeNull()
+    expect(
+      storableNostrPicture(`https://image.example/${"a".repeat(2048)}`)
+    ).toBeNull()
+    expect(storableNostrPicture(null)).toBeNull()
   })
 })

@@ -4,7 +4,10 @@ import { ChevronRight } from "lucide-react"
 import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
 import { shortenNpub } from "@/core/integrations/nostr/nostr-client.ts"
 import { ProfileAvatar } from "@/features/settings/profile/profile-avatar.tsx"
-import { useNostrIdentity, useNostrProfile } from "@/hooks/use-nostr-profile.ts"
+import {
+  useActiveNostrProfile,
+  useNostrIdentity,
+} from "@/hooks/use-nostr-profile.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -15,7 +18,7 @@ import { cn } from "@/lib/utils.ts"
 export function ProfileCard() {
   const { t } = useTranslation()
   const identity = useNostrIdentity()
-  const profile = useNostrProfile(identity.pubkey)
+  const profile = useActiveNostrProfile()
   const name = profile.data?.name ?? null
 
   return (

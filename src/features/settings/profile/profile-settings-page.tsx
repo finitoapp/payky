@@ -37,8 +37,8 @@ import { readProfilePicture } from "@/features/settings/profile/profile-picture.
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import {
   nostrProfileQueryKey,
+  useActiveNostrProfile,
   useNostrIdentity,
-  useNostrProfile,
 } from "@/hooks/use-nostr-profile.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -53,7 +53,7 @@ import { copyToClipboard } from "@/lib/clipboard.ts"
 export function ProfileSettingsPage() {
   const { t } = useTranslation()
   const identity = useNostrIdentity()
-  const profile = useNostrProfile(identity.pubkey)
+  const profile = useActiveNostrProfile()
 
   return (
     <>

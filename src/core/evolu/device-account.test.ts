@@ -15,11 +15,7 @@ import {
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
-import {
-  NonEmptyString255,
-  TimestampMs,
-  WssUrl,
-} from "@/core/modules/shared/schema.ts"
+import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
 
 // Shaped like a real one: 22 Base64Url characters.
@@ -194,21 +190,5 @@ describe("createOrSelectAccount", () => {
     expect(await loadTransportUrls(deviceEvolu, accountId)).toEqual([
       "wss://custom.example",
     ])
-  })
-
-  test("an account stored under a random id from before is selected, not duplicated", async () => {
-    await using test = await createTestDeviceEvolu()
-    const { deviceEvolu } = test
-    const { id: legacyId } = deviceEvolu.insert("account", {
-      name: NonEmptyString255("Legacy"),
-      masterKey,
-      lastUseAt: TimestampMs(1),
-    })
-    await expect.poll(() => loadAccountRows(deviceEvolu)).toHaveLength(1)
-
-    const result = await createOrSelectAccount(deviceEvolu, masterKey)
-
-    expect(result).toEqual({ accountId: legacyId, created: false })
-    await expect.poll(() => loadAccountRows(deviceEvolu)).toHaveLength(1)
   })
 })

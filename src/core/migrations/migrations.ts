@@ -2,6 +2,7 @@ import { ok, type Task } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
+import { deviceAccountDerivedIdMigration } from "@/core/migrations/device-account-derived-id-migration.ts"
 import { migrateLegacyFioPlugins } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { hasLegacyFioPluginQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type {
@@ -119,7 +120,9 @@ export const appMigrations: ReadonlyArray<AppMigration> = [
  * account and its app database always start from migrated device data. In
  * order, like `appMigrations`, and always before them.
  */
-export const deviceMigrations: ReadonlyArray<DeviceMigration> = []
+export const deviceMigrations: ReadonlyArray<DeviceMigration> = [
+  deviceAccountDerivedIdMigration,
+]
 
 /**
  * The migrations with something left to do. Separate from `runMigrations` so

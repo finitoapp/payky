@@ -97,21 +97,16 @@ export const activeAccountQuery = createDeviceQuery((db) =>
 )
 
 /**
- * The account `masterKey` belongs to, a removed one included: re-adding it
- * revives that row instead of adding a second one (account/0002). A live row
- * wins over a removed one, then the most recently used — a device may hold
- * several rows from before ids were derived.
+ * The device account under `id`, a removed one included: re-adding it
+ * revives that row instead of adding a second one (account/0003).
  */
-export const accountByMasterKeyQuery = (masterKey: MasterKey) =>
+const accountByIdQuery = (id: AccountId) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("account")
       .select(["account.id", "account.isDeleted"])
-      .where("account.masterKey", "=", masterKey)
+      .where("account.id", "=", id)
       .where("account.name", "is not", null)
-      .orderBy("account.isDeleted", "asc")
-      .orderBy("account.lastUseAt", "desc")
-      .limit(1)
   )
 
 export const accountListQuery = createDeviceQuery((db) =>
@@ -237,7 +232,7 @@ export interface NewAccountOptions {
 /**
  * A device account's id, the same on every device and every time the
  * account is added, so adding it twice — even in two concurrent calls —
- * writes one row (account/0002). Derived from the app owner id, which sync
+ * writes one row (account/0003). Derived from the app owner id, which sync
  * URLs carry anyway, not from the master key: the id travels in URLs such as
  * `/restore-account?previous=`.
  */
@@ -295,6 +290,8 @@ export async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {
  * Selects the account `masterKey` belongs to, reviving it if it was removed,
  * or adds it. An account already stored keeps its name and transports; one
  * that was removed counts as `created`, since it was not on the device.
+ * Every account sits at its derived id, rows from before moved there by
+ * `deviceAccountDerivedIdMigration`.
  */
 export async function createOrSelectAccount(
   deviceEvolu: DeviceEvolu,
@@ -302,7 +299,7 @@ export async function createOrSelectAccount(
   options?: NewAccountOptions
 ): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
   const [existingAccount] = await deviceEvolu.loadQuery(
-    accountByMasterKeyQuery(masterKey)
+    accountByIdQuery(deriveDeviceAccountId(masterKey))
   )
 
   if (existingAccount !== undefined) {

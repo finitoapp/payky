@@ -1,6 +1,6 @@
 # 0002 An account is one row per device
 
-Status: accepted
+Status: superseded by account/0003
 Date: 2026-10-08
 
 ## Context

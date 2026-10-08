@@ -1,10 +1,11 @@
 import {
+  createAppOwner,
   createIdFromString,
   evoluJsonArrayFrom,
   evoluJsonObjectFrom,
   type KyselyNotNull,
   type MutationOptions,
-  type sqliteFalse,
+  sqliteFalse,
   sqliteTrue,
 } from "@evolu/common"
 
@@ -17,6 +18,7 @@ import {
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   createMasterKey,
+  deriveEvoluOwnerSecret,
   type MasterKey,
 } from "@/core/modules/shared/key-derivation.ts"
 import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
@@ -94,19 +96,22 @@ export const activeAccountQuery = createDeviceQuery((db) =>
     }>()
 )
 
+/**
+ * The account `masterKey` belongs to, a removed one included: re-adding it
+ * revives that row instead of adding a second one (account/0002). A live row
+ * wins over a removed one, then the most recently used — a device may hold
+ * several rows from before ids were derived.
+ */
 export const accountByMasterKeyQuery = (masterKey: MasterKey) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("account")
-      .select(["account.id", "account.masterKey", "account.name"])
-      .where("account.isDeleted", "is not", sqliteTrue)
+      .select(["account.id", "account.isDeleted"])
       .where("account.masterKey", "=", masterKey)
       .where("account.name", "is not", null)
+      .orderBy("account.isDeleted", "asc")
+      .orderBy("account.lastUseAt", "desc")
       .limit(1)
-      .$narrowType<{
-        name: KyselyNotNull
-        masterKey: KyselyNotNull
-      }>()
   )
 
 export const accountListQuery = createDeviceQuery((db) =>
@@ -229,6 +234,18 @@ export interface NewAccountOptions {
   readonly transports?: ReadonlyArray<WssUrl> | undefined
 }
 
+/**
+ * A device account's id, the same on every device and every time the
+ * account is added, so adding it twice — even in two concurrent calls —
+ * writes one row (account/0002). Derived from the app owner id, which sync
+ * URLs carry anyway, not from the master key: the id travels in URLs such as
+ * `/restore-account?previous=`.
+ */
+export const deriveDeviceAccountId = (masterKey: MasterKey): AccountId =>
+  createIdFromString<"DeviceAccountId">(
+    `payky-device-account:${createAppOwner(deriveEvoluOwnerSecret(masterKey)).id}`
+  )
+
 export const insertAccount = (
   deviceEvolu: DeviceEvolu,
   masterKey: MasterKey,
@@ -239,10 +256,13 @@ export const insertAccount = (
     options.transports !== undefined && options.transports.length > 0
       ? options.transports
       : defaultEvoluTransportUrls
-  const { id: accountId } = deviceEvolu.insert("account", {
+  const accountId = deriveDeviceAccountId(masterKey)
+  deviceEvolu.upsert("account", {
+    id: accountId,
     name,
     masterKey,
     lastUseAt: Date.now(),
+    isDeleted: sqliteFalse,
   })
   for (const url of transportUrls) {
     upsertAccountEvoluWebsocketTransport(deviceEvolu, {
@@ -271,20 +291,28 @@ export async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {
   return data[0] ?? null
 }
 
-/** Selecting an existing account leaves its name and transports alone. */
+/**
+ * Selects the account `masterKey` belongs to, reviving it if it was removed,
+ * or adds it. An account already stored keeps its name and transports; one
+ * that was removed counts as `created`, since it was not on the device.
+ */
 export async function createOrSelectAccount(
   deviceEvolu: DeviceEvolu,
   masterKey: MasterKey,
   options?: NewAccountOptions
 ): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
-  const existingAccounts = await deviceEvolu.loadQuery(
+  const [existingAccount] = await deviceEvolu.loadQuery(
     accountByMasterKeyQuery(masterKey)
   )
-  const existingAccount = existingAccounts[0]
 
   if (existingAccount !== undefined) {
-    selectAccount(deviceEvolu, existingAccount.id)
-    return { accountId: existingAccount.id, created: false }
+    const removed = existingAccount.isDeleted === sqliteTrue
+    deviceEvolu.update("account", {
+      id: existingAccount.id,
+      lastUseAt: Date.now(),
+      ...(removed ? { isDeleted: sqliteFalse } : {}),
+    })
+    return { accountId: existingAccount.id, created: removed }
   }
 
   const account = insertAccount(deviceEvolu, masterKey, options)

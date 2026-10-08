@@ -4,10 +4,16 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
 import { migrateLegacyFioPlugins } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { hasLegacyFioPluginQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import type {
+  DeviceEvoluDep,
+  EvoluDep,
+} from "@/core/modules/shared/evolu-deps.ts"
 
 /**
- * One data migration, and the two things the runner needs from it.
+ * One data migration over the database its deps `D` open, and the two things
+ * the runner needs from it. Two registries use it: `deviceMigrations` over
+ * the device database, run before an account is chosen, and `appMigrations`
+ * over the active account's app database, run once it is open.
  *
  * There is deliberately no table recording which migrations have run. In a
  * local-first database a "this already happened" flag is a claim about time,
@@ -28,11 +34,21 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
  *   partial run, so a crash halfway through simply leaves `hasWork` true and
  *   the next start does it again.
  */
-export interface AppMigration {
+export interface Migration<D> {
   readonly name: string
-  readonly hasWork: Task<boolean, never, EvoluDep>
-  readonly run: Task<unknown, never, EvoluDep & EvoluOwnerIdDep>
+  readonly hasWork: Task<boolean, never, D>
+  readonly run: Task<unknown, never, D>
 }
+
+export type AppMigration = Migration<EvoluDep & EvoluOwnerIdDep>
+
+/**
+ * A migration of the device database. The device database is not synced
+ * today (`createDeviceEvolu`), so a "this ran" flag would hold there — but
+ * the same `hasWork` contract applies anyway: one model for both registries,
+ * and it stays right if device sync is ever turned on.
+ */
+export type DeviceMigration = Migration<DeviceEvoluDep>
 
 declare global {
   interface Window {
@@ -99,17 +115,24 @@ export const appMigrations: ReadonlyArray<AppMigration> = [
 ]
 
 /**
+ * Run before the active account is read (`deviceMigrationsAtom`), so the
+ * account and its app database always start from migrated device data. In
+ * order, like `appMigrations`, and always before them.
+ */
+export const deviceMigrations: ReadonlyArray<DeviceMigration> = []
+
+/**
  * The migrations with something left to do. Separate from `runMigrations` so
  * the UI can find out whether there is any work *before* it opens a popup
  * about it — on the overwhelming majority of starts the answer is none, and
  * nothing should flash.
  */
 export const loadPendingMigrations =
-  (
-    migrations: ReadonlyArray<AppMigration>
-  ): Task<ReadonlyArray<AppMigration>, never, EvoluDep> =>
+  <D>(
+    migrations: ReadonlyArray<Migration<D>>
+  ): Task<ReadonlyArray<Migration<D>>, never, D> =>
   async (run) => {
-    const pending: AppMigration[] = []
+    const pending: Migration<D>[] = []
 
     for (const migration of migrations) {
       if (await run.ok(migration.hasWork)) pending.push(migration)
@@ -120,9 +143,7 @@ export const loadPendingMigrations =
 
 /** Runs the given migrations in order, one after another. */
 export const runMigrations =
-  (
-    migrations: ReadonlyArray<AppMigration>
-  ): Task<number, never, EvoluDep & EvoluOwnerIdDep> =>
+  <D>(migrations: ReadonlyArray<Migration<D>>): Task<number, never, D> =>
   async (run) => {
     for (const migration of migrations) {
       await run.ok(migration.run)

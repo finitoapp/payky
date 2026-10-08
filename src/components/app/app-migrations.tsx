@@ -1,6 +1,7 @@
+import { useAtomValue } from "jotai"
 import { LoaderCircleIcon } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
-
+import { deviceMigrationsAtom } from "@/atoms/device-migrations.ts"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +30,9 @@ type MigrationState =
 
 /**
  * Runs the pending data migrations before the rest of the app starts, and
- * reports on them in a modal the user dismisses.
+ * reports on them in a modal the user dismisses. The device database's own
+ * migrations have already run by then (`deviceMigrationsAtom`, which the
+ * active account waits for); their outcome joins this one report.
  *
  * `children` — the background jobs — mount only once migrations have settled,
  * so a job never reads a half-migrated database. A failure still lets them
@@ -48,6 +51,7 @@ export function AppMigrations({ children }: { readonly children: ReactNode }) {
   const { t } = useTranslation()
   const [state, setState] = useState<MigrationState>({ status: "checking" })
   const [dismissed, setDismissed] = useState(false)
+  const deviceReport = useAtomValue(deviceMigrationsAtom)
   const started = useRef(false)
 
   useEffect(() => {
@@ -78,10 +82,11 @@ export function AppMigrations({ children }: { readonly children: ReactNode }) {
   }, [appRun, console])
 
   const isRunning = state.status === "running"
-  const hasReport =
-    state.status === "failed" ||
-    (state.status === "finished" && state.migrated > 0)
-  const hasFailed = state.status === "failed"
+  const settled = state.status === "finished" || state.status === "failed"
+  const hasFailed = state.status === "failed" || deviceReport.failed
+  const migrated =
+    (state.status === "finished" ? state.migrated : 0) + deviceReport.migrated
+  const hasReport = settled && (hasFailed || migrated > 0)
 
   return (
     <>

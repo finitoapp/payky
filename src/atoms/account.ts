@@ -2,6 +2,7 @@ import { createId, createRandomBytes } from "@evolu/common"
 import { atom } from "jotai"
 import { UAParser } from "ua-parser-js"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
+import { deviceMigrationsAtom } from "@/atoms/device-migrations.ts"
 import { evoluCounterAtom } from "@/atoms/evolu-counter.ts"
 import {
   createAccountMasterKey,
@@ -48,6 +49,9 @@ const getDevice = () => {
 const activeAccountRowAtom = atom(async (get) => {
   get(evoluCounterAtom) // We want to reload evolu when counter is increased
   const deviceEvolu = await get(deviceEvoluAtom)
+  // The account is read from migrated device data, never from rows a pending
+  // migration is about to rewrite.
+  await get(deviceMigrationsAtom)
   const activeAccountRow = await loadActiveAccountRow(deviceEvolu)
 
   return (

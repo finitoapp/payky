@@ -8,9 +8,12 @@ import {
 import { describe, expect, test } from "vitest"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { createDeviceQuery } from "@/core/evolu/device-client.ts"
 import {
   type AppMigration,
   appMigrations,
+  type DeviceMigration,
+  deviceMigrations,
   loadPendingMigrations,
   runMigrations,
 } from "@/core/migrations/migrations.ts"
@@ -20,10 +23,13 @@ import {
   createRowId,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
+import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 import {
   NonEmptyString255,
   PositiveInteger,
+  TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
 import { createEvoluTest } from "../evolu/cli-client"
 
 /**
@@ -243,4 +249,73 @@ describe("app migrations", () => {
       await dispose()
     }
   }, 15_000)
+})
+
+/** Accounts still carrying the name a test migration renames. */
+const legacyNamedAccountsQuery = createDeviceQuery((db) =>
+  db
+    .selectFrom("account")
+    .select("id")
+    .where("name", "=", NonEmptyString255("legacy"))
+    .where("isDeleted", "is not", sqliteTrue)
+)
+
+/** Renames every "legacy" account: real device rows, so real device writes. */
+const renameLegacyAccounts: DeviceMigration = {
+  name: "test-rename-legacy-accounts",
+  hasWork: async (run) =>
+    ok(
+      (await run.deps.deviceEvolu.loadQuery(legacyNamedAccountsQuery)).length >
+        0
+    ),
+  run: async (run) => {
+    const { deviceEvolu } = run.deps
+    const rows = await deviceEvolu.loadQuery(legacyNamedAccountsQuery)
+    await runMutationWithCompletion((options) => {
+      for (const { id } of rows) {
+        deviceEvolu.update(
+          "account",
+          { id, name: NonEmptyString255("renamed") },
+          options
+        )
+      }
+    })
+    return ok(undefined)
+  },
+}
+
+describe("device migrations", () => {
+  test("run over the device database and leave no work behind", async () => {
+    await using testDevice = await createTestDeviceEvolu()
+    const { deviceEvolu } = testDevice
+    await runMutationWithCompletion((options) => {
+      deviceEvolu.insert(
+        "account",
+        {
+          name: NonEmptyString255("legacy"),
+          masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
+          lastUseAt: TimestampMs(1),
+        },
+        options
+      )
+    })
+    await using run = testCreateRun({ deviceEvolu })
+
+    const pending = await run.ok(loadPendingMigrations([renameLegacyAccounts]))
+    expect(pending.map(({ name }) => name)).toEqual([
+      "test-rename-legacy-accounts",
+    ])
+    expect(await run.ok(runMigrations(pending))).toBe(1)
+
+    expect(await run.ok(loadPendingMigrations([renameLegacyAccounts]))).toEqual(
+      []
+    )
+  })
+
+  test("the registry has no work on a fresh device", async () => {
+    await using testDevice = await createTestDeviceEvolu()
+    await using run = testCreateRun({ deviceEvolu: testDevice.deviceEvolu })
+
+    expect(await run.ok(loadPendingMigrations(deviceMigrations))).toEqual([])
+  })
 })

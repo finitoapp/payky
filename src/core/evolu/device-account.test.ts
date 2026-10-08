@@ -1,7 +1,6 @@
 import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import { setupRunWithEvoluDeps } from "@/core/evolu/cli-client.ts"
 import {
   appOwnerIdPlaceholder,
   createOrSelectAccount,
@@ -12,7 +11,6 @@ import {
 } from "@/core/evolu/device-account.ts"
 import {
   type AccountId,
-  createDeviceEvolu,
   createDeviceQuery,
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
@@ -22,6 +20,7 @@ import {
   TimestampMs,
   WssUrl,
 } from "@/core/modules/shared/schema.ts"
+import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
 
 // Shaped like a real one: 22 Base64Url characters.
 const appOwnerId = "Vu6kLCCtCCwfgw5M7Kq6Fg"
@@ -70,17 +69,6 @@ describe("defaultEvoluTransportUrls", () => {
     )
   })
 })
-
-const createTestDeviceEvolu = async () => {
-  await using disposer = new AsyncDisposableStack()
-  const { run } = disposer.use(await setupRunWithEvoluDeps("memory"))
-  const deviceEvolu = disposer.use(await run.ok(createDeviceEvolu))
-  const disposables = disposer.move()
-  return {
-    deviceEvolu,
-    [Symbol.asyncDispose]: () => disposables.disposeAsync(),
-  }
-}
 
 /** Every account row, removed ones included. */
 const loadAccountRows = (deviceEvolu: DeviceEvolu) =>

@@ -1,14 +1,27 @@
+import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
+import { setupRunWithEvoluDeps } from "@/core/evolu/cli-client.ts"
 import {
   appOwnerIdPlaceholder,
   createOrSelectAccount,
   defaultEvoluTransportUrls,
+  deriveDeviceAccountId,
+  removeDeviceAccount,
   resolveTransportUrl,
 } from "@/core/evolu/device-account.ts"
-import type { DeviceEvolu } from "@/core/evolu/device-client.ts"
+import {
+  type AccountId,
+  createDeviceEvolu,
+  createDeviceQuery,
+  type DeviceEvolu,
+} from "@/core/evolu/device-client.ts"
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
-import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
+import {
+  NonEmptyString255,
+  TimestampMs,
+  WssUrl,
+} from "@/core/modules/shared/schema.ts"
 
 // Shaped like a real one: 22 Base64Url characters.
 const appOwnerId = "Vu6kLCCtCCwfgw5M7Kq6Fg"
@@ -58,31 +71,62 @@ describe("defaultEvoluTransportUrls", () => {
   })
 })
 
-/** Records what `createOrSelectAccount` writes; `existing` is what it finds. */
-const createFakeDeviceEvolu = (existing: ReadonlyArray<object> = []) => {
-  const writes: {
-    readonly method: string
-    readonly table: string
-    readonly values: object
-  }[] = []
-  const record = (method: string) => (table: string, values: object) => {
-    writes.push({ method, table, values })
-    return { ok: true, value: { id: "account-1" }, id: "account-1" }
+const createTestDeviceEvolu = async () => {
+  await using disposer = new AsyncDisposableStack()
+  const { run } = disposer.use(await setupRunWithEvoluDeps("memory"))
+  const deviceEvolu = disposer.use(await run.ok(createDeviceEvolu))
+  const disposables = disposer.move()
+  return {
+    deviceEvolu,
+    [Symbol.asyncDispose]: () => disposables.disposeAsync(),
   }
-  const deviceEvolu = {
-    insert: record("insert"),
-    upsert: record("upsert"),
-    update: record("update"),
-    loadQuery: async () => existing,
-  } as unknown as DeviceEvolu
-  return { deviceEvolu, writes }
 }
+
+/** Every account row, removed ones included. */
+const loadAccountRows = (deviceEvolu: DeviceEvolu) =>
+  deviceEvolu.loadQuery(
+    createDeviceQuery((db) =>
+      db.selectFrom("account").select(["id", "name", "masterKey", "isDeleted"])
+    )
+  )
+
+const loadTransportUrls = (deviceEvolu: DeviceEvolu, accountId: AccountId) =>
+  deviceEvolu
+    .loadQuery(
+      createDeviceQuery((db) =>
+        db
+          .selectFrom("accountEvoluTransport")
+          .innerJoin(
+            "accountEvoluTransportWebsocket",
+            "accountEvoluTransportWebsocket.id",
+            "accountEvoluTransport.id"
+          )
+          .select("accountEvoluTransportWebsocket.url")
+          .where("accountEvoluTransport.accountId", "=", accountId)
+      )
+    )
+    .then((rows) => rows.map(({ url }) => url))
 
 const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
 
+describe("deriveDeviceAccountId", () => {
+  test("is the same for a master key every time, and differs between keys", () => {
+    expect(deriveDeviceAccountId(masterKey)).toMatchInlineSnapshot(
+      `"6BTqCU03OKZ5KYiV0QDioQ"`
+    )
+    expect(deriveDeviceAccountId(masterKey)).toBe(
+      deriveDeviceAccountId(masterKey)
+    )
+    expect(
+      deriveDeviceAccountId(MasterKey("0f0e0d0c0b0a09080706050403020100"))
+    ).not.toBe(deriveDeviceAccountId(masterKey))
+  })
+})
+
 describe("createOrSelectAccount", () => {
   test("creates a transferred account with its name and stored transports", async () => {
-    const { deviceEvolu, writes } = createFakeDeviceEvolu()
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
     const transports = [
       WssUrl("wss://custom.example"),
       WssUrl(`wss://room.example/${appOwnerIdPlaceholder}`),
@@ -93,36 +137,90 @@ describe("createOrSelectAccount", () => {
       transports,
     })
 
-    expect(result.created).toBe(true)
-    expect(writes[0]).toMatchObject({
-      method: "insert",
-      table: "account",
-      values: { name: "Shop", masterKey },
+    expect(result).toEqual({
+      accountId: deriveDeviceAccountId(masterKey),
+      created: true,
     })
-    expect(
-      writes
-        .filter(({ table }) => table === "accountEvoluTransportWebsocket")
-        .map(({ values }) => values)
-    ).toMatchObject(transports.map((url) => ({ url })))
+    await expect
+      .poll(() => loadAccountRows(deviceEvolu))
+      .toMatchObject([{ id: result.accountId, name: "Shop", masterKey }])
+    expect(await loadTransportUrls(deviceEvolu, result.accountId)).toEqual(
+      expect.arrayContaining(transports)
+    )
   })
 
   test("selecting an existing account leaves its name and transports alone", async () => {
-    const { deviceEvolu, writes } = createFakeDeviceEvolu([
-      { id: "account-0", masterKey, name: "Old" },
-    ])
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
+    const first = await createOrSelectAccount(deviceEvolu, masterKey, {
+      name: NonEmptyString255("Old"),
+    })
+    await expect.poll(() => loadAccountRows(deviceEvolu)).toHaveLength(1)
 
-    const result = await createOrSelectAccount(deviceEvolu, masterKey, {
+    const second = await createOrSelectAccount(deviceEvolu, masterKey, {
       name: NonEmptyString255("Shop"),
       transports: [WssUrl("wss://custom.example")],
     })
 
-    expect(result).toEqual({ accountId: "account-0", created: false })
-    expect(writes).toHaveLength(1)
-    expect(writes[0]).toMatchObject({
-      method: "update",
-      table: "account",
-      values: { id: "account-0" },
+    expect(second).toEqual({ accountId: first.accountId, created: false })
+    await expect
+      .poll(() => loadAccountRows(deviceEvolu))
+      .toMatchObject([{ id: first.accountId, name: "Old" }])
+    expect(await loadTransportUrls(deviceEvolu, first.accountId)).not.toContain(
+      "wss://custom.example"
+    )
+  })
+
+  test("adding the same account twice at once writes one row", async () => {
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
+
+    await Promise.all([
+      createOrSelectAccount(deviceEvolu, masterKey),
+      createOrSelectAccount(deviceEvolu, masterKey),
+    ])
+
+    await expect.poll(() => loadAccountRows(deviceEvolu)).toHaveLength(1)
+  })
+
+  test("re-adding a removed account revives its row, name and transports", async () => {
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
+    const { accountId } = await createOrSelectAccount(deviceEvolu, masterKey, {
+      name: NonEmptyString255("Shop"),
+      transports: [WssUrl("wss://custom.example")],
     })
-    expect(writes[0]?.values).not.toHaveProperty("name")
+    removeDeviceAccount(deviceEvolu, accountId)
+    await expect
+      .poll(() => loadAccountRows(deviceEvolu))
+      .toMatchObject([{ id: accountId, isDeleted: sqliteTrue }])
+
+    const readded = await createOrSelectAccount(deviceEvolu, masterKey, {
+      name: NonEmptyString255("Other"),
+    })
+
+    expect(readded).toEqual({ accountId, created: true })
+    await expect
+      .poll(() => loadAccountRows(deviceEvolu))
+      .toMatchObject([{ id: accountId, name: "Shop", isDeleted: sqliteFalse }])
+    expect(await loadTransportUrls(deviceEvolu, accountId)).toEqual([
+      "wss://custom.example",
+    ])
+  })
+
+  test("an account stored under a random id from before is selected, not duplicated", async () => {
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
+    const { id: legacyId } = deviceEvolu.insert("account", {
+      name: NonEmptyString255("Legacy"),
+      masterKey,
+      lastUseAt: TimestampMs(1),
+    })
+    await expect.poll(() => loadAccountRows(deviceEvolu)).toHaveLength(1)
+
+    const result = await createOrSelectAccount(deviceEvolu, masterKey)
+
+    expect(result).toEqual({ accountId: legacyId, created: false })
+    await expect.poll(() => loadAccountRows(deviceEvolu)).toHaveLength(1)
   })
 })

@@ -154,6 +154,8 @@ export const eetPaymentsToReportQuery = createQuery((db) =>
           ]
         })
         .where("payment.isDeleted", "is not", sqliteTrue)
+        // A PoS station's sales are not the owner's to report (station/0010).
+        .where("payment.stationId", "is", null)
         .where("payment.amount", "is not", null)
         .where("payment.tipAmount", "is not", null)
         .where("payment.currency", "is not", null)
@@ -247,6 +249,7 @@ export const eetExtraClaimsQuery = createQuery((db) =>
     .where("accountTransaction.currency", "is not", null)
     .where("account.kind", "is not", null)
     .where("payment.isDeleted", "is not", sqliteTrue)
+    .where("payment.stationId", "is", null)
     .where("payment.amount", "is not", null)
     .where("payment.currency", "is not", null)
     .where("eetSettings.enabledAt", "is not", null)

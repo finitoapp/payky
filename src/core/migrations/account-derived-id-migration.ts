@@ -64,6 +64,7 @@ const accountIdentitiesQuery = createQuery((db) =>
       "accountIban.currency as ibanCurrency",
       "accountIban.defaultQrFormat as ibanDefaultQrFormat",
       "accountSpark.secret as sparkSecret",
+      "accountSpark.receiverIdentityPubkey as sparkReceiverIdentityPubkey",
       "accountCashRegister.currency as cashRegisterCurrency",
       "sparkAccountSyncPointer.lastSyncedAt as sparkLastSyncedAt",
     ])
@@ -82,8 +83,10 @@ const accountIdentitiesQuery = createQuery((db) =>
 type AccountIdentityRow = InferRow<typeof accountIdentitiesQuery>
 
 /**
- * The id an account's detail values derive to, or `null` when the detail row
- * its kind needs is missing and there is nothing to derive from.
+ * The id an account's detail values derive to, or `null` when there is
+ * nothing to derive from: the detail row its kind needs is missing, or it is
+ * a PoS station's mirror of the owner's wallet, which keeps the owner's id
+ * while holding the station's own secret (station/0003).
  */
 const deriveAccountId = (row: AccountIdentityRow): AccountId | null => {
   if (row.kind === "iban") {
@@ -92,7 +95,7 @@ const deriveAccountId = (row: AccountIdentityRow): AccountId | null => {
       : createIbanAccountId({ iban: row.iban, currency: row.ibanCurrency })
   }
   if (row.kind === "spark") {
-    return row.sparkSecret === null
+    return row.sparkSecret === null || row.sparkReceiverIdentityPubkey !== null
       ? null
       : createSparkAccountId(row.sparkSecret)
   }

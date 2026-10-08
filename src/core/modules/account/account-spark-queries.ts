@@ -32,7 +32,11 @@ export const activeSparkAccountByIdQuery = (accountId: AccountId) =>
     db
       .selectFrom("account")
       .innerJoin("accountSpark", "accountSpark.id", "account.id")
-      .select(["account.id", "accountSpark.secret"])
+      .select([
+        "account.id",
+        "accountSpark.secret",
+        "accountSpark.receiverIdentityPubkey",
+      ])
       .where("account.id", "=", accountId)
       .where("account.kind", "=", "spark")
       .where("account.isDeleted", "is not", 1)

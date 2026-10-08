@@ -1,4 +1,4 @@
-import { sqliteTrue, testCreateRun } from "@evolu/common"
+import { createIdFromString, sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { AppBackgroundJobContext } from "@/core/background-jobs/background-job-types.ts"
@@ -310,6 +310,23 @@ describe("eet reporting job: sale records", () => {
     const paymentId = await createTestPayment(context, { deviceId: null })
 
     await settleByTransfer(context, paymentId)
+    context.clock.advance(1_000)
+    await settleLater(300)
+
+    await expect(saleOf(context, paymentId)).resolves.toEqual([])
+    expect(context.responder.requests).toEqual([])
+    expect(job.errors).toEqual([])
+  })
+
+  test("does not report a payment taken at a station", async () => {
+    await using context = await createEetTestContext()
+    await configureEet(context)
+    await using job = await startJob(context, { priorityPeriodMs: 100 })
+    const paymentId = await createTestPayment(context, {
+      stationId: createIdFromString<"Station">("station-1"),
+    })
+
+    await settleInCash(context, paymentId)
     context.clock.advance(1_000)
     await settleLater(300)
 

@@ -14,6 +14,7 @@ import {
   accountByIdQuery,
   fiatBankAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
+import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   createCashRegisterAccountId,
@@ -35,6 +36,12 @@ import {
   PositiveInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import { applyStationConfig } from "@/core/modules/station/station-config-actions.ts"
+import {
+  createStationTestContext,
+  createTestStationConfigMessage,
+  ownerSparkIdentityPubkey,
+} from "@/core/modules/station/station-test-fixtures.ts"
 import { createEvoluTest } from "../evolu/cli-client"
 
 const accountWithDetailsByIdQuery = (id: AccountId) =>
@@ -219,4 +226,23 @@ test("moves legacy accounts onto their derived ids", async () => {
     ok: true,
     value: false,
   })
+}, 15_000)
+
+test("leaves a PoS station's mirror of the owner's wallet under the owner's id", async () => {
+  await using context = await createStationTestContext()
+  await using run = testCreateRun(context.stationDeps)
+  await run.orThrow(applyStationConfig(createTestStationConfigMessage(context)))
+
+  await expect(run(accountDerivedIdMigration.hasWork)).resolves.toEqual({
+    ok: true,
+    value: false,
+  })
+  await run.ok(accountDerivedIdMigration.run)
+  await expect(
+    context.stationDeps.evolu.loadQuery(
+      activeSparkAccountByIdQuery(context.sparkAccountId)
+    )
+  ).resolves.toMatchObject([
+    { receiverIdentityPubkey: ownerSparkIdentityPubkey },
+  ])
 }, 15_000)

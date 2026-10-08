@@ -13,6 +13,7 @@ import { z } from "zod"
 import { defineError } from "@/core/error.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { MasterKey } from "@/core/modules/shared/key-derivation.ts"
+import type { NostrPubkeyHex } from "@/core/modules/shared/schema.ts"
 import { jsonCodec } from "@/zod-utils.ts"
 
 export interface FetchDep {
@@ -302,6 +303,16 @@ export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }
 export type MasterKeyDep = { readonly masterKey: MasterKey }
 
 export type DeviceIdDep = { readonly deviceId: DeviceId }
+
+/** What a PoS station's account knows of its owner (station/0001). */
+export type StationAccountDep = {
+  readonly stationAccount: {
+    /** The owner's comms key: only its messages are trusted. */
+    readonly ownerPubkey: NostrPubkeyHex
+    /** Leaves the station, once its owner revoked it (station/0005). */
+    readonly onRevoked: () => Promise<void>
+  }
+}
 
 export type ConnectivityDep = {
   readonly connectivity: {

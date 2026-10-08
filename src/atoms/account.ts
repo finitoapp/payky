@@ -77,6 +77,8 @@ export const accountAtom = atom(async (get) => {
     id: row.id,
     masterKey: row.masterKey,
     name: row.name,
+    kind: row.kind ?? "owner",
+    stationOwnerPubkey: row.stationOwnerPubkey,
     transports: row.transports,
     device,
   }

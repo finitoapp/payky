@@ -19,6 +19,7 @@ import { MasterKeySchema } from "@/core/modules/shared/key-derivation.ts"
 import {
   type InferTable,
   NonEmptyString255Schema,
+  NostrPubkeyHexSchema,
   SqliteBoolSchema,
   TimestampMsSchema,
   WssUrlSchema,
@@ -42,6 +43,14 @@ export type DeviceSettingsId = typeof DeviceSettingsIdRaw.Output
 export const deviceSettingsId = createIdFromString<"DeviceSettings">(
   "payky-device-settings"
 )
+
+/**
+ * An owner account is the merchant's own; a station account is a PoS station
+ * joined through its link (station/0001). `null` is an owner: rows written
+ * before the column existed.
+ */
+export const DeviceAccountKindSchema = z.enum(["owner", "station"])
+export type DeviceAccountKind = z.output<typeof DeviceAccountKindSchema>
 
 const DeviceLanguageSchema = z.enum(["en", "cs", "sk"])
 const DeviceThemeSchema = z.enum(["system", "light", "dark"])
@@ -73,6 +82,9 @@ const deviceEvoluSchema = {
     name: NonEmptyString255Schema,
     masterKey: MasterKeySchema,
     lastUseAt: TimestampMsSchema,
+    kind: DeviceAccountKindSchema.nullable(),
+    /** A station's owner, whose messages alone it trusts. */
+    stationOwnerPubkey: NostrPubkeyHexSchema.nullable(),
   },
   accountEvoluTransport: {
     id: AccountEvoluTransportId,

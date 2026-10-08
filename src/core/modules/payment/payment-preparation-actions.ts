@@ -43,6 +43,7 @@ import {
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
+import { stationConfigQuery } from "@/core/modules/station/station-queries.ts"
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { fiatMinorUnitsToSats } from "../shared/money.ts"
 import {
@@ -108,9 +109,16 @@ const createSparkLightningInvoice =
     memo,
     expirySeconds,
     includeSparkInvoice,
+    receiverIdentityPubkey,
   }: {
     readonly accountId: AccountId
     readonly secret: SparkSecret
+    /**
+     * The owner's wallet, for a PoS station's account (station/0003). A Spark
+     * invoice is then left out: paid over Spark, it would reach the owner
+     * without the station ever seeing the request settle.
+     */
+    readonly receiverIdentityPubkey: string | null
     readonly currency: FiatCurrency
     readonly amount: number
     readonly memo?: string
@@ -127,6 +135,7 @@ const createSparkLightningInvoice =
     readonly includeSparkInvoice?: boolean
   }): Task<
     PaymentBtcInput,
+    | AccountSparkNotFoundError
     | ZeroAmountNotPayableError
     | PaymentPreparationFailedError
     | YadioHttpError
@@ -142,6 +151,15 @@ const createSparkLightningInvoice =
     // let "0" through — it only checks that the amount parses — which is how
     // this is reachable at all.
     if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
+
+    // A station's invoice that does not name the owner would pay the
+    // station's own wallet (station/0003), so its account counts as missing.
+    if (receiverIdentityPubkey === null) {
+      const [stationConfig] = await run.deps.evolu.loadQuery(stationConfigQuery)
+      if (stationConfig !== undefined) {
+        return err(createAccountSparkNotFoundError({ id: accountId }))
+      }
+    }
 
     const quote = await run(fetchYadioBtcExchangeRate(currency))
     if (!quote.ok) return quote
@@ -161,7 +179,9 @@ const createSparkLightningInvoice =
           amountSats,
           memo,
           expirySeconds,
-          includeSparkInvoice: includeSparkInvoice ?? true,
+          ...(receiverIdentityPubkey === null
+            ? { includeSparkInvoice: includeSparkInvoice ?? true }
+            : { includeSparkInvoice: false, receiverIdentityPubkey }),
         })
       )
       // A `paymentBtcSpark` row only exists when the SDK actually returned an
@@ -256,6 +276,7 @@ export const createPreparedPayment =
         memo: spark.memo,
         expirySeconds,
         includeSparkInvoice: spark.includeSparkInvoice,
+        receiverIdentityPubkey: sparkAccount.receiverIdentityPubkey,
       })
     )
     if (!sparkPaymentResult.ok) return sparkPaymentResult
@@ -365,8 +386,12 @@ const prepareIbanMethod =
     })
     if (!accountResult.ok) return accountResult
 
+    const [paymentNumberRows, [stationConfig]] = await Promise.all([
+      run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
+      run.deps.evolu.loadQuery(stationConfigQuery),
+    ])
     const paymentNumberResult = getFirstOr(
-      await run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
+      paymentNumberRows,
       createPaymentNumberNotFoundError({ paymentId })
     )
     if (!paymentNumberResult.ok) return paymentNumberResult
@@ -380,7 +405,10 @@ const prepareIbanMethod =
         variableSymbol: createVariableSymbolFromSerialNumber(
           paymentNumber.serialNumber
         ),
-        specificSymbol: createSpecificSymbolFromDate(paymentNumber.date),
+        specificSymbol: createSpecificSymbolFromDate(
+          paymentNumber.date,
+          stationConfig?.number ?? null
+        ),
       })
     )
   }
@@ -432,6 +460,7 @@ const prepareSparkMethod =
         memo: spark.memo,
         expirySeconds,
         includeSparkInvoice: spark.includeSparkInvoice,
+        receiverIdentityPubkey: sparkAccount.receiverIdentityPubkey,
       })
     )
     if (!sparkInvoiceResult.ok) return sparkInvoiceResult

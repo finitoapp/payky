@@ -5,7 +5,9 @@ import {
 } from "@evolu/common"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import type { EmployeeId } from "@/core/modules/employee/employee-types.ts"
 import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import type { StationId } from "@/core/modules/station/station-types.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**
@@ -280,9 +282,16 @@ export const paymentDetailQuery = (paymentId: PaymentId) =>
           .onRef("paymentCashRegister.id", "=", "payment.id")
           .on("paymentCashRegister.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("station", "station.id", "payment.stationId")
+      .leftJoin("employee", "employee.id", "payment.employeeId")
       .select([
         "payment.id",
         "payment.deviceId",
+        "payment.stationId",
+        "payment.employeeId",
+        "payment.originCreatedAt",
+        "station.name as stationName",
+        "employee.name as employeeName",
         "payment.billId",
         "payment.tableId",
         "payment.amount",
@@ -419,10 +428,22 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
  * `limit: pageSize + 1` and slice off the extra row to detect whether more
  * payments remain without a separate count query.
  */
-export const latestPaymentsQuery = (limit: number) =>
+export const latestPaymentsQuery = (
+  limit: number,
+  /**
+   * Narrows to one PoS station's or employee's payments; `null` to the
+   * payments of none.
+   */
+  filter: {
+    readonly stationId?: StationId | null
+    readonly employeeId?: EmployeeId | null
+  } = {}
+) =>
   createQuery((db) =>
     db
       .selectFrom("payment")
+      .leftJoin("station", "station.id", "payment.stationId")
+      .leftJoin("employee", "employee.id", "payment.employeeId")
       // The row's title and context in the activity list: which bill/table
       // it paid, or its sequential number for a standalone payment.
       .leftJoin("bill", (join) =>
@@ -455,6 +476,11 @@ export const latestPaymentsQuery = (limit: number) =>
         "payment.excessAcknowledgedAt",
         "payment.expiresAt",
         "payment.createdAt",
+        "payment.stationId",
+        "payment.employeeId",
+        "payment.originCreatedAt",
+        "station.name as stationName",
+        "employee.name as employeeName",
       ])
       .select((eb) => [
         evoluJsonArrayFrom(
@@ -619,6 +645,24 @@ export const latestPaymentsQuery = (limit: number) =>
       .where("payment.currency", "is not", null)
       .where("payment.tipAmount", "is not", null)
       .where("payment.createdAt", "is not", null)
+      .where((eb) =>
+        eb.and([
+          ...(filter.stationId === undefined
+            ? []
+            : [
+                filter.stationId === null
+                  ? eb("payment.stationId", "is", null)
+                  : eb("payment.stationId", "=", filter.stationId),
+              ]),
+          ...(filter.employeeId === undefined
+            ? []
+            : [
+                filter.employeeId === null
+                  ? eb("payment.employeeId", "is", null)
+                  : eb("payment.employeeId", "=", filter.employeeId),
+              ]),
+        ])
+      )
       .orderBy("payment.createdAt", "desc")
       .limit(limit)
       .$narrowType<{

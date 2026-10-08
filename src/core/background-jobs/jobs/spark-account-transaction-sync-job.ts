@@ -14,17 +14,11 @@ import {
   sparkAccountSyncPointerByAccountIdQuery,
 } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import {
-  type CreateAccountTransactionInput,
-  computeAccountTransactionRows,
-  upsertAccountTransactionRows,
-} from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import type { CreateAccountTransactionInput } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionSparkByTransferIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import {
-  loadAutomaticReconciliationClaimForNewAccountTransaction,
-  loadBillClosedAtForPayment,
   reconcileAccountTransaction,
-  upsertReconciliationClaimRows,
+  recordAutomaticAccountTransaction,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
   removeUndefinedValues,
@@ -295,27 +289,6 @@ const createSparkAccountSyncSession = ({
         }
 
         const sparkTransferId = NonEmptyStringSchema.decode(transfer.id)
-        const existing = await run.deps.evolu.loadQuery(
-          accountTransactionSparkByTransferIdQuery(sparkTransferId)
-        )
-        const existingAccountTransactionId = existing[0]?.id
-        if (existingAccountTransactionId !== undefined) {
-          run.deps.console.debug("Skipped already recorded Spark transfer.", {
-            accountId: account.id,
-            sparkTransferId,
-            existingCount: existing.length,
-          })
-          // A prior sync may have recorded the transaction but crashed or
-          // failed before claiming it, and this transfer would then never be
-          // downloaded again to give reconciliation another chance —
-          // `reconcileAccountTransaction` itself is the guard against
-          // redoing work for one already claimed.
-          await run.ok(
-            reconcileAccountTransaction(existingAccountTransactionId)
-          )
-          return "duplicate"
-        }
-
         const input = createSparkTransactionInput(
           account.id,
           sparkTransferId,
@@ -323,6 +296,15 @@ const createSparkAccountSyncSession = ({
           run.deps.date.now()
         )
         if (!input.ok) {
+          // A transfer already recorded still gets its reconciliation
+          // retried: a prior sync may have crashed before claiming it.
+          const [existing] = await run.deps.evolu.loadQuery(
+            accountTransactionSparkByTransferIdQuery(sparkTransferId)
+          )
+          if (existing !== undefined) {
+            await run.ok(reconcileAccountTransaction(existing.id))
+            return "duplicate"
+          }
           run.deps.console.debug("Ignored incomplete Spark transfer.", {
             accountId: account.id,
             reason: input.error,
@@ -331,46 +313,22 @@ const createSparkAccountSyncSession = ({
           return "ignored"
         }
 
-        const accountTransaction = computeAccountTransactionRows(
-          input.value,
-          run.deps.date.now()
+        const recorded = await run.ok(
+          recordAutomaticAccountTransaction(input.value)
         )
-        const claim = await run.ok(
-          loadAutomaticReconciliationClaimForNewAccountTransaction(
-            input.value,
-            accountTransaction.id
-          )
-        )
-        const billClosing =
-          claim === null
-            ? null
-            : await run.ok(
-                loadBillClosedAtForPayment(claim.paymentId, {
-                  id: accountTransaction.id,
-                  amount: accountTransaction.input.amount,
-                  currency: accountTransaction.input.currency,
-                })
-              )
-
-        await runMutationWithCompletion((options) => {
-          upsertAccountTransactionRows(run.deps.evolu, accountTransaction, {
-            ...options,
-            ownerId: run.deps.evoluOwnerId,
+        if (!recorded.created) {
+          run.deps.console.debug("Skipped already recorded Spark transfer.", {
+            accountId: account.id,
+            sparkTransferId,
           })
-          if (claim !== null) {
-            upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
-              ...options,
-              ownerId: run.deps.evoluOwnerId,
-            })
-          }
-        })
-        const accountTransactionId = accountTransaction.id
-        const paymentId = claim?.paymentId ?? null
+          return "duplicate"
+        }
+
         run.deps.console.info("Created Spark account transaction.", {
           accountId: account.id,
-          accountTransactionId,
+          accountTransactionId: recorded.accountTransactionId,
           amount: getTransferAmount(transfer),
-          paymentId,
+          paymentId: recorded.paymentId,
           sparkTransferId,
         })
         return "created"

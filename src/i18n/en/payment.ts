@@ -5,6 +5,16 @@ export const enPayment = {
   "payment.status.paid": "Paid",
   "payment.status.pending": "Pending",
   "paymentDetail.cashReceived": "Received in cash {amount}",
+  "paymentDetail.confirmBankTransfer": "Confirm bank transfer received",
+  "paymentDetail.confirmBankTransfer.confirm.cancel": "Cancel",
+  "paymentDetail.confirmBankTransfer.confirm.confirm": "Confirm",
+  "paymentDetail.confirmBankTransfer.confirm.description":
+    "Confirm only if you can see {amount} on your account. The payment will be marked as paid.",
+  "paymentDetail.confirmBankTransfer.confirm.title": "Did the transfer arrive?",
+  "paymentDetail.confirmBankTransfer.description":
+    "The PoS hasn't confirmed this transfer yet. Once {amount} is on your account, you can confirm it here.",
+  "paymentDetail.confirmBankTransfer.error": "Couldn't confirm the transfer.",
+  "paymentDetail.confirmBankTransfer.title": "Waiting for a bank transfer",
   "paymentDetail.eet.amount": "Amount sent",
   "paymentDetail.eet.cashRegister": "Cash register ID",
   "paymentDetail.eet.eic": "EIČ",
@@ -54,6 +64,7 @@ export const enPayment = {
   "paymentDetail.eet.unsupported":
     "EET accepts sales in Czech crowns only, so this sale was not sent.",
   "paymentDetail.eet.warning": "EET warning {code}",
+  "paymentDetail.employee": "Employee",
   "paymentDetail.number": "Payment #{number}",
   "paymentDetail.refunds.action": "Refund money",
   "paymentDetail.refunds.method.cashRegister": "From the cash register",
@@ -61,6 +72,8 @@ export const enPayment = {
   "paymentDetail.refunds.title": "Refunds",
   "paymentDetail.refunds.tipAction": "Refund the tip ({amount})",
   "paymentDetail.refunds.tip": "Tip",
+  "paymentDetail.station": "PoS",
+  "paymentDetail.stationTakenAt": "Taken at the PoS",
   "paymentDetail.tipIncluded": "Includes {amount} tip",
   "paymentDetail.canceledAtValue": "Canceled {date}",
   "paymentDetail.expiresAt": "Expires at {time}",
@@ -144,6 +157,8 @@ export const enPayment = {
   "paymentHistory.empty.description":
     "Created payment requests will appear here.",
   "paymentHistory.empty.title": "No payments yet",
+  "paymentHistory.filter.allEmployees": "All employees",
+  "paymentHistory.filter.allStations": "All PoS",
   "paymentHistory.payment": "Payment",
   "paymentHistory.paymentNumber": "Payment #{number}",
   "paymentHistory.tip": "incl. {amount} tip",

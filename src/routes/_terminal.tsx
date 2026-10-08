@@ -22,6 +22,9 @@ import {
   shouldRedirectToLanding,
 } from "@/features/shared/landing-redirect.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
+import { StationOutlet } from "@/features/station/station-outlet.tsx"
+import { StationWaitingForSetup } from "@/features/station/station-waiting-for-setup.tsx"
+import { useIsStation } from "@/hooks/use-account-kind.ts"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -35,6 +38,7 @@ function TerminalLayout() {
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
   const { isSandboxActive } = useEetSettings()
+  const isStation = useIsStation()
   const terminalLayout = useMatches({
     select: (matches) => {
       for (let index = matches.length - 1; index >= 0; index -= 1) {
@@ -49,11 +53,12 @@ function TerminalLayout() {
       return undefined
     },
   })
-  // The appSettings row's existence marks the account as onboarded.
+  // The appSettings row's existence marks the account as onboarded. A
+  // station gets it with the owner's first config, never from onboarding.
   const onboarded = settings !== undefined
 
   if (!onboarded) {
-    return <NotOnboarded />
+    return isStation ? <StationWaitingForSetup /> : <NotOnboarded />
   }
 
   return (
@@ -66,7 +71,7 @@ function TerminalLayout() {
     >
       {isSandboxActive ? <EetSandboxBanner /> : null}
       <PhoneViewport className={terminalLayout?.viewportClassName}>
-        <Outlet />
+        {isStation ? <StationOutlet /> : <Outlet />}
       </PhoneViewport>
     </main>
   )

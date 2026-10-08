@@ -1,10 +1,15 @@
 import type {
   AppBackgroundJob,
   BackgroundJob,
+  OwnerStationJob,
+  StationJob,
 } from "@/core/background-jobs/background-job-types.ts"
 import { startEetReportingJob } from "@/core/background-jobs/jobs/eet-reporting-job.ts"
 import { startFioAccountTransactionSyncJob } from "@/core/background-jobs/jobs/fio-account-transaction-sync-job.ts"
+import { startOwnerStationJob } from "@/core/background-jobs/jobs/owner-station-job.ts"
 import { startSparkAccountTransactionSyncJob } from "@/core/background-jobs/jobs/spark-account-transaction-sync-job.ts"
+import { startStationCommsJob } from "@/core/background-jobs/jobs/station-comms-job.ts"
+import { startStationLightningWatchJob } from "@/core/background-jobs/jobs/station-lightning-watch-job.ts"
 
 /**
  * Right for the CLI.
@@ -34,3 +39,17 @@ export function getBackgroundJobsForRuntime(
 ): ReadonlyArray<AppBackgroundJob> {
   return isNativePlatform ? nativeBackgroundJobs : browserBackgroundJobs
 }
+
+/** What an owner account runs on top of its runtime's jobs. */
+export const ownerStationBackgroundJobs = [
+  startOwnerStationJob,
+] satisfies ReadonlyArray<OwnerStationJob>
+
+/**
+ * All a PoS station runs: it watches no bank account or wallet, so no FIO,
+ * Spark sync or EET (station/0012, station/0010).
+ */
+export const stationBackgroundJobs = [
+  startStationCommsJob,
+  startStationLightningWatchJob,
+] satisfies ReadonlyArray<StationJob>

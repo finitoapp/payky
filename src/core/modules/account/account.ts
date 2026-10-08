@@ -10,6 +10,7 @@ import {
   IbanSchema,
   type InferTable,
   NonEmptyString255Schema,
+  SparkIdentityPubkeySchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
@@ -30,6 +31,11 @@ export const accountIban = {
 export const accountSpark = {
   id: AccountId,
   secret: SparkSecretSchema,
+  /**
+   * The wallet invoices pay into when it is not this one: a PoS station's
+   * invoices pay the owner's wallet straight away (station/0003).
+   */
+  receiverIdentityPubkey: SparkIdentityPubkeySchema.nullable(),
 } as const
 
 /**

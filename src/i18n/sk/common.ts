@@ -1,8 +1,30 @@
 import type { enCommon } from "@/i18n/en/common.ts"
 
 export const skCommon = {
+  "activity.stations.byEmployee": "Podľa zamestnancov",
+  "activity.stations.countAndTips": "Platby: {count} · Prepitné: {tips}",
+  "activity.stations.empty":
+    "Zatiaľ žiadne pokladne. Pridáte ich v Nastaveniach.",
+  "activity.stations.lastReport": "Posledné hlásenie {time}",
+  "activity.stations.noEmployee": "Bez zamestnanca",
+  "activity.stations.noPayments": "V tomto období žiadne zaplatené platby.",
+  "activity.stations.noReports": "Zatiaľ žiadne hlásenie",
+  "activity.stations.openSettings": "Otvoriť nastavenia pokladne {name}",
+  "activity.stations.range.last30Days": "30 dní",
+  "activity.stations.range.last7Days": "7 dní",
+  "activity.stations.range.today": "Dnes",
+  "activity.stations.range.yesterday": "Včera",
+  "activity.stations.showPayments": "Zobraziť platby",
+  "activity.stations.warning.brokenLinks":
+    "Hlásenia, ktoré nenadväzujú na predchádzajúce: {reports}",
+  "activity.stations.warning.conflicts":
+    "Hlásenia prijaté v dvoch verziách: {reports}",
+  "activity.stations.warning.missing": "Chýbajúce hlásenia: {reports}",
+  "activity.stations.warning.unconfirmed":
+    "Nahlásené ako zaplatené, zatiaľ nepotvrdené: {count}",
   "activity.tabs.bills": "Účty",
   "activity.tabs.payments": "Platby",
+  "activity.tabs.stations": "Pokladne",
   "activity.title": "Aktivita",
   "app.name": "Payky",
   "appError.copied": "Skopírované",
@@ -75,6 +97,33 @@ export const skCommon = {
     "Skenovanie nie je na tomto zariadení podporované.",
   "scanner.torch.off": "Vypnúť svetlo",
   "scanner.torch.on": "Zapnúť svetlo",
+  "station.badge": "Pokladňa",
+  "station.employeePicker.description":
+    "Platby sa zapíšu na toho, koho vyberiete.",
+  "station.employeePicker.title": "Kto predáva?",
+  "station.header.chooseEmployee": "Kto predáva?",
+  "station.header.undelivered": "Nedoručené majiteľovi: {count}",
+  "station.leave.action": "Opustiť režim pokladne",
+  "station.leave.confirm.cancel": "Zostať",
+  "station.leave.confirm.confirm": "Opustiť",
+  "station.leave.confirm.description":
+    "Toto zariadenie prestane byť pokladňou. Vrátiť ho môžete opätovným otvorením odkazu od majiteľa.",
+  "station.leave.confirm.title": "Opustiť režim pokladne?",
+  "station.leave.confirm.undelivered":
+    "Nedoručené majiteľovi: {count}. Tieto platby sa odošlú, až keď pokladňu znova otvoríte z jej odkazu.",
+  "station.revoked.toast": "Majiteľ túto pokladňu zrušil, preto sa odhlásila.",
+  "station.settings.delivery.allDelivered": "Všetko doručené",
+  "station.settings.delivery.lastAck": "Naposledy potvrdil majiteľ",
+  "station.settings.delivery.never": "Zatiaľ nie",
+  "station.settings.delivery.title": "DORUČOVANIE MAJITEĽOVI",
+  "station.settings.delivery.undelivered": "Zatiaľ nedoručené",
+  "station.settings.employee.none": "Nikto nevybraný",
+  "station.settings.employee.title": "Predáva",
+  "station.settings.number": "Pokladňa č. {number}",
+  "station.waiting.description":
+    "Nastavenia zvyčajne prídu do pár sekúnd. Ak nie, otvorte Payky na zariadení majiteľa a pošlú sa znova. Nechajte túto obrazovku otvorenú.",
+  "station.waiting.id": "ID pokladne",
+  "station.waiting.title": "Nastavuje sa pokladňa",
   "tables.seatCount": "{value} miest",
   "tables.tile.billNumber": "#{number}",
   "tables.tile.free": "Voľný",

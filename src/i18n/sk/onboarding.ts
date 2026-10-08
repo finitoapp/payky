@@ -75,6 +75,17 @@ export const skOnboarding = {
     "Zadajte SLIP-39 recovery phrase účtu, ktorý chcete obnoviť.",
   "onboarding.restore.title": "Obnovenie existujúceho účtu",
   "onboarding.title": "Nastavenie Payky",
+  "posLogin.cancel": "Zrušiť",
+  "posLogin.confirm": "Otvoriť pokladňu",
+  "posLogin.description":
+    "Z tohto zariadenia sa stane pokladňa podniku, ktorý vám poslal odkaz. Bude prijímať platby pre majiteľa a každý predaj mu odovzdá.",
+  "posLogin.invalid.description":
+    "Odkaz je možno skrátený. Požiadajte majiteľa, nech ho pošle znova, a otvorte ho celý.",
+  "posLogin.invalid.home": "Prejsť do aplikácie",
+  "posLogin.invalid.title": "Tento odkaz na pokladňu nefunguje",
+  "posLogin.otherAccounts":
+    "V zariadení sú aj iné účty. Ktokoľvek pri tejto pokladni môže režim pokladne opustiť a otvoriť ich.",
+  "posLogin.title": "Otvoriť pokladňu",
   "recovery.accounts.description":
     "Prepnutím sa aplikácia restartuje na danom účte.",
   "recovery.description":

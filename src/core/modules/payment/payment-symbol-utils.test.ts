@@ -33,4 +33,13 @@ describe("createSpecificSymbolFromDate", () => {
       createSpecificSymbolFromDate(DateStringSchema.decode("2000-12-31"))
     ).toBe("001231")
   })
+
+  test("puts a station's number before the date", () => {
+    expect(
+      createSpecificSymbolFromDate(DateStringSchema.decode("2026-01-09"), 42)
+    ).toBe("42260109")
+    expect(
+      createSpecificSymbolFromDate(DateStringSchema.decode("2026-01-09"), 9999)
+    ).toBe("9999260109")
+  })
 })

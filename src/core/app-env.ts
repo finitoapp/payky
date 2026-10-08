@@ -8,6 +8,8 @@ export const appEnv = createEnv({
     // no /api of its own to resolve a relative path against.
     VITE_PAYKY_API_BASE_URL: z.url().default("https://payky.me"),
     VITE_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
+    // REGTEST runs the app against Spark's test network with faucet sats.
+    VITE_PAYKY_SPARK_NETWORK: z.enum(["MAINNET", "REGTEST"]).default("MAINNET"),
     // Where the account's Nostr profile is read from and published to.
     // Linky's defaults, so both apps see the same profile.
     VITE_PAYKY_NOSTR_RELAYS: z

@@ -41,7 +41,11 @@ import {
 } from "@/features/settings/support/support-chat-timeline.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
-import { useNostrIdentity, useNostrProfile } from "@/hooks/use-nostr-profile.ts"
+import {
+  useActiveNostrProfile,
+  useNostrIdentity,
+  useNostrProfile,
+} from "@/hooks/use-nostr-profile.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import {
   supportMessagesQueryKey,
@@ -150,7 +154,7 @@ function useSendSupportMessage({
   const runToast = useRunToast()
   const queryClient = useQueryClient()
   const identity = useNostrIdentity()
-  const profile = useNostrProfile(identity.pubkey)
+  const profile = useActiveNostrProfile()
   const [pending, setPending] = useState<ReadonlyArray<ChatEntry>>([])
 
   const send = async (text: string) => {

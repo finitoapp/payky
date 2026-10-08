@@ -117,6 +117,7 @@ export const accountListQuery = createDeviceQuery((db) =>
       "account.name",
       "account.createdAt",
       "account.lastUseAt",
+      "account.nostrPicture",
     ])
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
@@ -345,6 +346,29 @@ export function updateAccountName(
     },
     options
   )
+}
+
+const NOSTR_PICTURE_MAX_LENGTH = 2048
+
+/**
+ * What of an account's Nostr picture its device row keeps: an https URL of
+ * sane length. A `data:` picture is left out, so the device database does not
+ * grow by whole images; the account then shows its initial.
+ */
+export const storableNostrPicture = (picture: string | null): string | null => {
+  if (picture === null) return null
+  return picture.startsWith("https://") &&
+    picture.length <= NOSTR_PICTURE_MAX_LENGTH
+    ? picture
+    : null
+}
+
+export function updateAccountNostrPicture(
+  deviceEvolu: DeviceEvolu,
+  accountId: AccountId,
+  picture: string | null
+) {
+  deviceEvolu.update("account", { id: accountId, nostrPicture: picture })
 }
 
 export function removeDeviceAccount(

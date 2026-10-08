@@ -37,6 +37,7 @@ import { RestoreAccountForm } from "@/features/account/restore-account-form.tsx"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
+import { useActiveNostrProfile } from "@/hooks/use-nostr-profile.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime } from "@/lib/format-utils.ts"
@@ -68,6 +69,9 @@ export function AccountsSettingsPage() {
     restore,
   } = useRestoreAccount()
   const pending = busy || restoring
+  // Only the active account asks relays; the others show the picture it last
+  // had while active (account/0004).
+  const activeProfile = useActiveNostrProfile()
 
   const activateAccount = (accountId: AccountId) => {
     if (accountId === activeAccount.id) return
@@ -158,17 +162,16 @@ export function AccountsSettingsPage() {
                       active && "bg-primary/5"
                     )}
                   >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "flex size-9 shrink-0 items-center justify-center rounded-full font-semibold uppercase",
+                    <AccountAvatar
+                      name={account.name}
+                      active={active}
+                      picture={
                         active
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {account.name.slice(0, 1)}
-                    </span>
+                          ? (activeProfile.data?.picture ??
+                            account.nostrPicture)
+                          : account.nostrPicture
+                      }
+                    />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm font-medium">
                         {account.name}
@@ -288,5 +291,50 @@ export function AccountsSettingsPage() {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+/**
+ * The account's Nostr picture, or its initial when it has none, it is still
+ * loading or the image fails to load.
+ */
+function AccountAvatar({
+  name,
+  active,
+  picture,
+}: {
+  readonly name: string
+  readonly active: boolean
+  readonly picture: string | null
+}) {
+  const [failedPicture, setFailedPicture] = useState<string | null>(null)
+
+  if (picture !== null && picture !== failedPicture) {
+    return (
+      <img
+        src={picture}
+        alt=""
+        referrerPolicy="no-referrer"
+        className={cn(
+          "size-9 shrink-0 rounded-full bg-muted object-cover",
+          active && "ring-2 ring-primary"
+        )}
+        onError={() => setFailedPicture(picture)}
+      />
+    )
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-full font-semibold uppercase",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-muted-foreground"
+      )}
+    >
+      {name.slice(0, 1)}
+    </span>
   )
 }

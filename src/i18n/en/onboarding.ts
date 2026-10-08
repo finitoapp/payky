@@ -21,6 +21,104 @@ export const enOnboarding = {
   "accountRestore.setupNew.confirm.title": "Set up without the account data?",
   "accountRestore.syncing": "Syncing account data…",
   "accountRestore.title": "Restoring account",
+  "accountTransfer.cancel": "Cancel",
+  "accountTransfer.close": "Close",
+  "accountTransfer.done": "Done",
+  "accountTransfer.settings.source.description":
+    "Open this account on a phone or another computer without typing the recovery phrase.",
+  "accountTransfer.settings.source.title": "Sign in on another device",
+  "accountTransfer.source.code.confirm": "Confirm and transfer",
+  "accountTransfer.source.code.connected": "A device connected.",
+  "accountTransfer.source.code.instructions":
+    "Type the 6-digit code shown on the new device.",
+  "accountTransfer.source.code.label": "Code from the new device",
+  "accountTransfer.source.code.mismatch":
+    "The code does not match. Check it and try again. Attempts left: {count}.",
+  "accountTransfer.source.code.warning":
+    "Only copy it from the screen of the device in your hand. If someone is reading a code to you, cancel.",
+  "accountTransfer.source.done.acked":
+    "The new device received the account. Finish on the new device. Nothing changes on this device.",
+  "accountTransfer.source.done.sent": "Sent. Finish on the new device.",
+  "accountTransfer.source.done.title": "Account sent",
+  "accountTransfer.source.failed.cancelled":
+    "The transfer was cancelled on the new device.",
+  "accountTransfer.source.failed.codeMismatch":
+    "The code didn't match three times.",
+  "accountTransfer.source.failed.conflict":
+    "More than one device answered the code, so the transfer was stopped for safety. If the other one wasn't yours, someone may have seen your screen.",
+  "accountTransfer.source.failed.network":
+    "Couldn't reach the transfer server. Check your internet connection.",
+  "accountTransfer.source.failed.nothingSent": "Nothing was sent.",
+  "accountTransfer.source.failed.timeout":
+    "The new device didn't finish in time.",
+  "accountTransfer.source.failed.title": "Transfer stopped",
+  "accountTransfer.source.qr.expired": "This code has expired.",
+  "accountTransfer.source.qr.instructions":
+    "On the new device open Payky, choose “Transfer from another device” and scan this code.",
+  "accountTransfer.source.qr.label": "QR code for the new device",
+  "accountTransfer.source.qr.reassurance":
+    "The code expires in two minutes and works for one device only.",
+  "accountTransfer.source.qr.renew": "Create a new code",
+  "accountTransfer.source.qr.validFor": "Valid for {time}",
+  "accountTransfer.source.qr.waiting": "Waiting for the new device…",
+  "accountTransfer.source.sending": "Sending the account…",
+  "accountTransfer.source.start": "Show QR code",
+  "accountTransfer.source.startAgain": "Start again",
+  "accountTransfer.source.step.code": "Type the code from the new device here.",
+  "accountTransfer.source.step.scan": "Scan the QR code with the new device.",
+  "accountTransfer.source.step.transfer": "The account moves over, encrypted.",
+  "accountTransfer.source.title": "Sign in on another device",
+  "accountTransfer.source.warning.description":
+    "The new device gets full access to this account, including the money in the Bitcoin wallet. Only continue with a device you are holding. Payky support will never ask you to do this.",
+  "accountTransfer.source.warning.title": "Full access to the account",
+  "accountTransfer.target.added":
+    "Account “{name}” was added to this device and is now active. Loading your data…",
+  "accountTransfer.target.alreadyAdded":
+    "This account was already on this device; it is now active.",
+  "accountTransfer.target.code.instructions":
+    "Type this code on your other device.",
+  "accountTransfer.target.code.waiting": "Waiting for confirmation…",
+  "accountTransfer.target.code.warning":
+    "The code confirms the account is going to this device. Don't share it with anyone.",
+  "accountTransfer.target.confirm.cancel": "Cancel",
+  "accountTransfer.target.confirm.confirm": "Add and switch",
+  "accountTransfer.target.confirm.description":
+    "Add account “{name}” to this device and switch to it? Payments you take will then go to this account.",
+  "accountTransfer.target.confirm.title": "Add account “{name}”?",
+  "accountTransfer.target.connecting": "Connecting to your other device…",
+  "accountTransfer.target.description":
+    "Scan a QR code on a device where you already use Payky.",
+  "accountTransfer.target.error.InvalidPaykyUri":
+    "The code is damaged. Generate a new one.",
+  "accountTransfer.target.error.NotPaykyUri": "This is not a Payky code.",
+  "accountTransfer.target.error.UnknownPaykyUriType":
+    "This Payky code is for something else, or for a newer Payky. Update the app.",
+  "accountTransfer.target.error.UnsupportedPaykyUriVersion":
+    "This code was made by a newer Payky. Update the app.",
+  "accountTransfer.target.error.WrongPaykyUriType":
+    "This Payky code is for something else.",
+  "accountTransfer.target.failed.cancelled":
+    "The transfer was cancelled on the other device.",
+  "accountTransfer.target.failed.codeMismatch":
+    "The code was typed wrong three times on the other device.",
+  "accountTransfer.target.failed.conflict":
+    "More than one device answered the code, so the transfer was stopped for safety.",
+  "accountTransfer.target.failed.invalid":
+    "The other device sent data this device can't use. Nothing was added.",
+  "accountTransfer.target.failed.network":
+    "Couldn't reach the transfer server. Check your internet connection.",
+  "accountTransfer.target.failed.timeout":
+    "The other device didn't finish in time.",
+  "accountTransfer.target.failed.title": "Transfer stopped",
+  "accountTransfer.target.fallback":
+    "Can't scan? Restore with your recovery phrase.",
+  "accountTransfer.target.instructions":
+    "On the device that has your account, open Settings → Accounts → Sign in on another device, then scan the QR code it shows.",
+  "accountTransfer.target.scanAgain": "Scan again",
+  "accountTransfer.target.title": "Transfer from another device",
+  "accountTransfer.target.warning.description":
+    "Only scan a code from your own device that you are looking at right now. A code from someone else would put their account on this device, and payments you take would go to them.",
+  "accountTransfer.target.warning.title": "Only your own device",
   "onboarding.account.description":
     "Save the phrase below somewhere safe. You will need it to open this account on another device.",
   "onboarding.account.mnemonic.confirm":
@@ -30,12 +128,15 @@ export const enOnboarding = {
   "onboarding.account.title": "Back up your account",
   "onboarding.accountChoice.description":
     "Create a new account for this device or restore one you already use.",
-  "onboarding.accountChoice.new.description":
+  "accountChoice.new.description":
     "Generate a new recovery phrase and start with an empty account.",
-  "onboarding.accountChoice.new.title": "Create a new account",
-  "onboarding.accountChoice.restore.description":
+  "accountChoice.new.title": "Create a new account",
+  "accountChoice.restore.description":
     "Use a recovery phrase to open your existing account data.",
-  "onboarding.accountChoice.restore.title": "Restore an existing account",
+  "accountChoice.restore.title": "Restore an existing account",
+  "accountChoice.transfer.description":
+    "Scan a QR code on a device where you already use Payky.",
+  "accountChoice.transfer.title": "Transfer from another device",
   "onboarding.accountChoice.title": "Choose an account",
   "onboarding.back": "Back",
   "onboarding.cancelSetup": "Cancel account creation",

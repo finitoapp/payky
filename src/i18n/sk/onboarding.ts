@@ -23,6 +23,104 @@ export const skOnboarding = {
   "accountRestore.setupNew.confirm.title": "Nastaviť bez údajov účtu?",
   "accountRestore.syncing": "Synchronizácia údajov účtu…",
   "accountRestore.title": "Obnovovanie účtu",
+  "accountTransfer.cancel": "Zrušiť",
+  "accountTransfer.close": "Zavrieť",
+  "accountTransfer.done": "Hotovo",
+  "accountTransfer.settings.source.description":
+    "Otvorte tento účet na telefóne alebo inom počítači bez prepisovania obnovovacej frázy.",
+  "accountTransfer.settings.source.title": "Prihlásiť účet na inom zariadení",
+  "accountTransfer.source.code.confirm": "Potvrdiť a preniesť",
+  "accountTransfer.source.code.connected": "Pripojilo sa zariadenie.",
+  "accountTransfer.source.code.instructions":
+    "Opíšte šesťmiestny kód, ktorý teraz vidíte na novom zariadení.",
+  "accountTransfer.source.code.label": "Kód z nového zariadenia",
+  "accountTransfer.source.code.mismatch":
+    "Kód nesedí. Skontrolujte ho a skúste to znova. Zostávajúce pokusy: {count}.",
+  "accountTransfer.source.code.warning":
+    "Opisujte ho len z displeja zariadenia, ktoré držíte v ruke. Ak vám kód niekto diktuje, prenos zrušte.",
+  "accountTransfer.source.done.acked":
+    "Nové zariadenie účet prijalo. Dokončite prenos na novom zariadení. Na tomto zariadení sa nič nemení.",
+  "accountTransfer.source.done.sent":
+    "Odoslané. Dokončite prenos na novom zariadení.",
+  "accountTransfer.source.done.title": "Účet odoslaný",
+  "accountTransfer.source.failed.cancelled":
+    "Prenos bol zrušený na novom zariadení.",
+  "accountTransfer.source.failed.codeMismatch": "Kód trikrát nesedel.",
+  "accountTransfer.source.failed.conflict":
+    "Na kód odpovedalo viac zariadení, a preto bol prenos z bezpečnostných dôvodov zastavený. Ak to druhé nebolo vaše, mohol niekto vidieť vašu obrazovku.",
+  "accountTransfer.source.failed.network":
+    "Nepodarilo sa spojiť s prenosovým serverom. Skontrolujte pripojenie na internet.",
+  "accountTransfer.source.failed.nothingSent": "Nič nebolo odoslané.",
+  "accountTransfer.source.failed.timeout":
+    "Nové zariadenie nestihlo prenos dokončiť.",
+  "accountTransfer.source.failed.title": "Prenos zastavený",
+  "accountTransfer.source.qr.expired": "Platnosť kódu vypršala.",
+  "accountTransfer.source.qr.instructions":
+    "Na novom zariadení otvorte Payky, zvoľte „Preniesť z iného zariadenia“ a naskenujte tento kód.",
+  "accountTransfer.source.qr.label": "QR kód pre nové zariadenie",
+  "accountTransfer.source.qr.reassurance":
+    "Kód platí dve minúty a len pre jedno zariadenie.",
+  "accountTransfer.source.qr.renew": "Vytvoriť nový kód",
+  "accountTransfer.source.qr.validFor": "Platí ešte {time}",
+  "accountTransfer.source.qr.waiting": "Čakám na nové zariadenie…",
+  "accountTransfer.source.sending": "Odosielam účet…",
+  "accountTransfer.source.start": "Zobraziť QR kód",
+  "accountTransfer.source.startAgain": "Začať znova",
+  "accountTransfer.source.step.code": "Kód z nového zariadenia opíšete sem.",
+  "accountTransfer.source.step.scan": "Novým zariadením naskenujete QR kód.",
+  "accountTransfer.source.step.transfer": "Účet sa šifrovane prenesie.",
+  "accountTransfer.source.title": "Prihlásiť účet na inom zariadení",
+  "accountTransfer.source.warning.description":
+    "Nové zariadenie získa plný prístup k účtu vrátane peňazí v bitcoinovej peňaženke. Pokračujte len so zariadením, ktoré máte pri sebe. Podpora Payky vás o to nikdy nežiada.",
+  "accountTransfer.source.warning.title": "Plný prístup k účtu",
+  "accountTransfer.target.added":
+    "Účet „{name}“ bol pridaný do tohto zariadenia a je teraz aktívny. Načítavam dáta…",
+  "accountTransfer.target.alreadyAdded":
+    "Tento účet už na zariadení bol; teraz je aktívny.",
+  "accountTransfer.target.code.instructions":
+    "Opíšte tento kód na pôvodnom zariadení.",
+  "accountTransfer.target.code.waiting": "Čakám na potvrdenie…",
+  "accountTransfer.target.code.warning":
+    "Kód potvrdzuje, že sa účet prenáša práve do tohto zariadenia. Nikomu ho neprezrádzajte.",
+  "accountTransfer.target.confirm.cancel": "Zrušiť",
+  "accountTransfer.target.confirm.confirm": "Pridať a prepnúť",
+  "accountTransfer.target.confirm.description":
+    "Pridať účet „{name}“ do tohto zariadenia a prepnúť naň? Prijaté platby potom pôjdu na tento účet.",
+  "accountTransfer.target.confirm.title": "Pridať účet „{name}“?",
+  "accountTransfer.target.connecting": "Pripájam sa k pôvodnému zariadeniu…",
+  "accountTransfer.target.description":
+    "Naskenujte QR kód na zariadení, kde už Payky používate.",
+  "accountTransfer.target.error.InvalidPaykyUri":
+    "Kód je poškodený. Vytvorte nový.",
+  "accountTransfer.target.error.NotPaykyUri": "Toto nie je kód Payky.",
+  "accountTransfer.target.error.UnknownPaykyUriType":
+    "Tento kód Payky slúži na niečo iné, alebo je z novšej verzie. Aktualizujte aplikáciu.",
+  "accountTransfer.target.error.UnsupportedPaykyUriVersion":
+    "Kód vytvorila novšia verzia Payky. Aktualizujte aplikáciu.",
+  "accountTransfer.target.error.WrongPaykyUriType":
+    "Tento kód Payky slúži na niečo iné.",
+  "accountTransfer.target.failed.cancelled":
+    "Prenos bol zrušený na pôvodnom zariadení.",
+  "accountTransfer.target.failed.codeMismatch":
+    "Kód bol na pôvodnom zariadení trikrát opísaný nesprávne.",
+  "accountTransfer.target.failed.conflict":
+    "Na kód odpovedalo viac zariadení, a preto bol prenos z bezpečnostných dôvodov zastavený.",
+  "accountTransfer.target.failed.invalid":
+    "Pôvodné zariadenie poslalo dáta, ktoré tu nemožno použiť. Nič nebolo pridané.",
+  "accountTransfer.target.failed.network":
+    "Nepodarilo sa spojiť s prenosovým serverom. Skontrolujte pripojenie na internet.",
+  "accountTransfer.target.failed.timeout":
+    "Pôvodné zariadenie nestihlo prenos dokončiť.",
+  "accountTransfer.target.failed.title": "Prenos zastavený",
+  "accountTransfer.target.fallback":
+    "Nedá sa to naskenovať? Obnovte účet obnovovacou frázou.",
+  "accountTransfer.target.instructions":
+    "Na zariadení, kde účet máte, otvorte Nastavenia → Účty → Prihlásiť účet na inom zariadení a naskenujte zobrazený QR kód.",
+  "accountTransfer.target.scanAgain": "Skenovať znova",
+  "accountTransfer.target.title": "Preniesť z iného zariadenia",
+  "accountTransfer.target.warning.description":
+    "Skenujte len kód z vlastného zariadenia, ktoré máte práve pred sebou. Kód od niekoho iného by sem pridal jeho účet a prijaté platby by išli jemu.",
+  "accountTransfer.target.warning.title": "Len vlastné zariadenie",
   "onboarding.account.description":
     "Uložte si frázu nižšie na bezpečné miesto. Budete ju potrebovať, keď budete chcieť účet otvoriť na inom zariadení.",
   "onboarding.account.mnemonic.confirm":
@@ -32,12 +130,15 @@ export const skOnboarding = {
   "onboarding.account.title": "Zálohovanie účtu",
   "onboarding.accountChoice.description":
     "Vytvorte nový účet pre toto zariadenie alebo obnovte účet, ktorý už používate.",
-  "onboarding.accountChoice.new.description":
+  "accountChoice.new.description":
     "Vygenerujte novú recovery phrase a začnite s prázdnym účtom.",
-  "onboarding.accountChoice.new.title": "Vytvoriť nový účet",
-  "onboarding.accountChoice.restore.description":
+  "accountChoice.new.title": "Vytvoriť nový účet",
+  "accountChoice.restore.description":
     "Pomocou recovery phrase otvorte dáta svojho existujúceho účtu.",
-  "onboarding.accountChoice.restore.title": "Obnoviť existujúci účet",
+  "accountChoice.restore.title": "Obnoviť existujúci účet",
+  "accountChoice.transfer.description":
+    "Naskenujte QR kód na zariadení, kde už Payky používate.",
+  "accountChoice.transfer.title": "Preniesť z iného zariadenia",
   "onboarding.accountChoice.title": "Výber účtu",
   "onboarding.back": "Späť",
   "onboarding.cancelSetup": "Zrušiť vytváranie účtu",

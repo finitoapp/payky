@@ -23,24 +23,19 @@ export const csSettings = {
   "settings.about.terms.title": "Podmínky používání",
   "settings.about.title": "O aplikaci",
   "settings.accountAndSync": "ÚČET A SYNCHRONIZACE",
-  "settings.accounts.create.action": "Vytvořit účet",
+  "settings.accounts.add.title": "Přidat účet",
+  "settings.accounts.elsewhere.title": "Tento účet na jiném zařízení",
   "settings.accounts.create.confirm.cancel": "Zrušit",
   "settings.accounts.create.confirm.confirm": "Vytvořit účet",
   "settings.accounts.create.confirm.description":
     "Přepnete se z účtu {name} a založíte úplně nový účet s vlastní recovery phrase.",
   "settings.accounts.create.confirm.title": "Vytvořit nový účet?",
-  "settings.accounts.create.description":
-    "Vygenerovat novou recovery phrase a přepnout se na tento účet.",
-  "settings.accounts.create.title": "Nový účet",
   "settings.accounts.list.active": "Aktivní",
   "settings.accounts.list.createdAt": "Vytvořeno",
-  "settings.accounts.list.current": "Aktuální",
-  "settings.accounts.list.description":
-    "Tyto účty jsou uložené jen v profilu tohoto zařízení.",
   "settings.accounts.list.empty": "Na tomto zařízení nejsou uložené účty.",
   "settings.accounts.list.remove": "Odebrat",
   "settings.accounts.list.switch": "Přepnout",
-  "settings.accounts.list.title": "Účty v zařízení",
+  "settings.accounts.list.title": "V tomto zařízení",
   "settings.accounts.nav.description":
     "Vyberte, který uživatelský účet je na tomto zařízení aktivní",
   "settings.accounts.nav.title": "Přepnutí uživatelského účtu",
@@ -49,9 +44,6 @@ export const csSettings = {
   "settings.accounts.remove.confirm.description":
     "Zařízení tento účet i jeho data zapomene. Vrátit ho zpět jde jen pomocí jeho recovery phrase — bez ní je vše v účtu nadobro ztracené.",
   "settings.accounts.remove.confirm.title": "Odebrat účet {name}?",
-  "settings.accounts.restore.action": "Použít recovery phrase",
-  "settings.accounts.restore.description":
-    "Vložte existující recovery phrase pro otevření jejích aplikačních dat na tomto zařízení.",
   "settings.accounts.restore.mnemonic.description":
     "Mezery se před validací sjednotí.",
   "settings.accounts.restore.mnemonic.invalid":
@@ -60,7 +52,6 @@ export const csSettings = {
   "settings.accounts.restore.mnemonic.placeholder":
     "academic acid academic agency ...",
   "settings.accounts.restore.mnemonic.required": "Recovery phrase je povinná.",
-  "settings.accounts.restore.title": "Existující účet",
   "settings.accounts.title": "Účet aplikace",
   "settings.appVersion": "Verze aplikace:",
   "settings.appVersionCode": "Kód verze:",

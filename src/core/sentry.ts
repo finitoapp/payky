@@ -7,6 +7,9 @@ const SENSITIVE_TEXT_PATTERNS: ReadonlyArray<RegExp> = [
   /(?:\b[a-z]+\b[ \t]+){11,}\b[a-z]+\b/g,
   // IBAN-like bank account numbers.
   /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g,
+  // Hex secrets: a master key or a transfer session secret (32), an
+  // ephemeral Nostr key (64).
+  /\b[0-9a-fA-F]{32,}\b/g,
 ]
 
 function scrubText(text: string): string {
@@ -41,7 +44,9 @@ function scrubValue(value: unknown, depth: number): unknown {
   return value
 }
 
-function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb {
+export function scrubBreadcrumb(
+  breadcrumb: Sentry.Breadcrumb
+): Sentry.Breadcrumb {
   return {
     ...breadcrumb,
     message:
@@ -55,7 +60,7 @@ function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb {
   }
 }
 
-function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
+export function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
   return {
     ...event,
     message: event.message === undefined ? undefined : scrubText(event.message),
@@ -76,10 +81,14 @@ function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
       event.extra === undefined
         ? undefined
         : (scrubValue(event.extra, 0) as Sentry.ErrorEvent["extra"]),
+    // `trace` holds hex ids Sentry needs intact, and nothing of ours.
     contexts:
       event.contexts === undefined
         ? undefined
-        : (scrubValue(event.contexts, 0) as Sentry.ErrorEvent["contexts"]),
+        : {
+            ...(scrubValue(event.contexts, 0) as Sentry.ErrorEvent["contexts"]),
+            trace: event.contexts.trace,
+          },
   }
 }
 

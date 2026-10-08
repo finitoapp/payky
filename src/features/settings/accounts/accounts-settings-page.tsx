@@ -1,29 +1,25 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useAtomValue } from "jotai"
-import { Check, KeyRound, Plus, Trash2, UserRound } from "lucide-react"
-import { useId, useState } from "react"
+import { Check, MonitorSmartphone, Trash2 } from "lucide-react"
+import { useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card.tsx"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog.tsx"
 import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field.tsx"
+  VerticalNav,
+  verticalNavShellClassName,
+  verticalNavTitleClassName,
+} from "@/components/vertical-nav.tsx"
 import {
   accountListQuery,
   createAccountMasterKey,
@@ -32,13 +28,25 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import type { AccountId } from "@/core/evolu/device-client.ts"
+import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
+import {
+  type AccountChoice,
+  AccountTypeChoice,
+} from "@/features/account/account-type-choice.tsx"
+import { RestoreAccountForm } from "@/features/account/restore-account-form.tsx"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime } from "@/lib/format-utils.ts"
+import { cn } from "@/lib/utils.ts"
 
+/**
+ * Three questions, one section each: which accounts this device has (and
+ * which one is active), how to add another — the same choice onboarding
+ * offers — and how to open this one on another device.
+ */
 export function AccountsSettingsPage() {
   const { language, t } = useTranslation()
   const navigate = useNavigate()
@@ -47,13 +55,10 @@ export function AccountsSettingsPage() {
   const reloadAppEvolu = useReloadAppEvolu()
   const confirm = useConfirmDialog()
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
-  const [pendingAccountId, setPendingAccountId] = useState<AccountId | null>(
-    null
-  )
-  const [removingAccountId, setRemovingAccountId] = useState<AccountId | null>(
-    null
-  )
-  const [creating, setCreating] = useState(false)
+  const [busy, setBusy] = useState(false)
+  // The kind outlives `dialogOpen`, so the content stays while it animates out.
+  const [dialog, setDialog] = useState<"restore" | "transfer">("restore")
+  const [dialogOpen, setDialogOpen] = useState(false)
   const {
     mnemonic,
     pending: restoring,
@@ -62,26 +67,16 @@ export function AccountsSettingsPage() {
     setMnemonic,
     restore,
   } = useRestoreAccount()
-  const mnemonicInputId = useId()
+  const pending = busy || restoring
 
   const activateAccount = (accountId: AccountId) => {
-    if (accountId === activeAccount.id) {
-      return
-    }
-
-    setPendingAccountId(accountId)
-    try {
-      selectAccount(deviceEvolu, accountId)
-      reloadAppEvolu()
-    } finally {
-      setPendingAccountId(null)
-    }
+    if (accountId === activeAccount.id) return
+    selectAccount(deviceEvolu, accountId)
+    reloadAppEvolu()
   }
 
   const removeAccount = async (accountId: AccountId, name: string) => {
-    if (accountId === activeAccount.id) {
-      return
-    }
+    if (accountId === activeAccount.id) return
 
     // Confirmed because there is no undo: the row is only soft-deleted, every
     // query filters it out, and the only way back is re-entering the recovery
@@ -94,14 +89,7 @@ export function AccountsSettingsPage() {
       cancelLabel: t("settings.accounts.remove.confirm.cancel"),
       variant: "destructive",
     })
-    if (!confirmed) return
-
-    setRemovingAccountId(accountId)
-    try {
-      removeDeviceAccount(deviceEvolu, accountId)
-    } finally {
-      setRemovingAccountId(null)
-    }
+    if (confirmed) removeDeviceAccount(deviceEvolu, accountId)
   }
 
   const createNewAccount = async () => {
@@ -115,58 +103,73 @@ export function AccountsSettingsPage() {
     })
     if (!confirmed) return
 
-    clearError()
-    setCreating(true)
+    setBusy(true)
     try {
       await createOrSelectAccount(deviceEvolu, createAccountMasterKey())
       reloadAppEvolu()
     } finally {
-      setCreating(false)
+      setBusy(false)
     }
   }
 
   const restoreAccount = async () => {
     const restored = await restore()
-
-    if (restored !== null) {
-      await navigate({
-        to: "/restore-account",
-        search: { source: "settings", ...restored },
-      })
-    }
+    if (restored === null) return
+    setDialogOpen(false)
+    await navigate({
+      to: "/restore-account",
+      search: { source: "settings", ...restored },
+    })
   }
 
-  const pending =
-    pendingAccountId !== null ||
-    removingAccountId !== null ||
-    creating ||
-    restoring
+  const chooseAccountType = (choice: AccountChoice) => {
+    if (choice === "new") {
+      void createNewAccount()
+      return
+    }
+    clearError()
+    setDialog(choice)
+    setDialogOpen(true)
+  }
 
   return (
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.accounts.title")} />
-      <div className="flex flex-col gap-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.accounts.list.title")}</CardTitle>
-            <CardDescription>
-              {t("settings.accounts.list.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {accounts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("settings.accounts.list.empty")}
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-3" data-testid="account-list">
-                {accounts.map((account) => (
+      <div className="flex flex-col gap-6">
+        <section className={verticalNavShellClassName}>
+          <h2 className={verticalNavTitleClassName}>
+            {t("settings.accounts.list.title")}
+          </h2>
+          {accounts.length === 0 ? (
+            <p className="px-4 pb-4 text-sm text-muted-foreground">
+              {t("settings.accounts.list.empty")}
+            </p>
+          ) : (
+            <ul className="divide-y" data-testid="account-list">
+              {accounts.map((account) => {
+                const active = account.id === activeAccount.id
+
+                return (
                   <li
                     key={account.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3",
+                      active && "bg-primary/5"
+                    )}
                   >
-                    <span className="flex min-w-0 flex-col gap-1">
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "flex size-9 shrink-0 items-center justify-center rounded-full font-semibold uppercase",
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {account.name.slice(0, 1)}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm font-medium">
                         {account.name}
                       </span>
@@ -175,121 +178,115 @@ export function AccountsSettingsPage() {
                         {formatDateTime(new Date(account.createdAt), language)}
                       </span>
                     </span>
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                      {account.id === activeAccount.id ? (
-                        <Badge variant="secondary">
-                          {t("settings.accounts.list.active")}
-                        </Badge>
-                      ) : null}
-                      <Button
-                        type="button"
-                        variant={
-                          account.id === activeAccount.id
-                            ? "secondary"
-                            : "outline"
-                        }
-                        size="sm"
-                        disabled={pending || account.id === activeAccount.id}
-                        onClick={() => {
-                          activateAccount(account.id)
-                        }}
-                      >
-                        {account.id === activeAccount.id ? (
-                          <Check data-icon="inline-start" />
-                        ) : (
-                          <UserRound data-icon="inline-start" />
-                        )}
-                        {account.id === activeAccount.id
-                          ? t("settings.accounts.list.current")
-                          : t("settings.accounts.list.switch")}
-                      </Button>
-                      {account.id !== activeAccount.id ? (
+                    {active ? (
+                      <Badge variant="secondary">
+                        <Check data-icon="inline-start" />
+                        {t("settings.accounts.list.active")}
+                      </Badge>
+                    ) : (
+                      <span className="flex shrink-0 items-center gap-1">
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           disabled={pending}
+                          onClick={() => activateAccount(account.id)}
+                        >
+                          {t("settings.accounts.list.switch")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={pending}
+                          aria-label={t("settings.accounts.list.remove")}
                           onClick={() => {
                             void removeAccount(account.id, account.name)
                           }}
                         >
-                          <Trash2 data-icon="inline-start" />
-                          {t("settings.accounts.list.remove")}
+                          <Trash2 />
                         </Button>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.accounts.create.title")}</CardTitle>
-            <CardDescription>
-              {t("settings.accounts.create.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="justify-end">
-            <Button type="button" disabled={pending} onClick={createNewAccount}>
-              <Plus data-icon="inline-start" />
-              {t("settings.accounts.create.action")}
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.accounts.restore.title")}</CardTitle>
-            <CardDescription>
-              {t("settings.accounts.restore.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault()
-                void restoreAccount()
-              }}
-            >
-              <FieldGroup>
-                <Field data-invalid={error !== null}>
-                  <FieldLabel htmlFor={mnemonicInputId}>
-                    {t("settings.accounts.restore.mnemonic.label")}
-                  </FieldLabel>
-                  <PasswordTextarea
-                    id={mnemonicInputId}
-                    value={mnemonic}
-                    hideLabel={t("passwordTextarea.hide")}
-                    showLabel={t("passwordTextarea.show")}
-                    disabled={pending}
-                    aria-invalid={error !== null}
-                    autoComplete="off"
-                    placeholder={t(
-                      "settings.accounts.restore.mnemonic.placeholder"
+                      </span>
                     )}
-                    onChange={(event) => {
-                      setMnemonic(event.currentTarget.value)
-                    }}
-                  />
-                  <FieldDescription>
-                    {t("settings.accounts.restore.mnemonic.description")}
-                  </FieldDescription>
-                  <FieldError>{error ? t(error) : null}</FieldError>
-                </Field>
-              </FieldGroup>
-              <div className="mt-4 flex justify-end">
-                <Button type="submit" disabled={pending}>
-                  <KeyRound data-icon="inline-start" />
-                  {t("settings.accounts.restore.action")}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <AccountTypeChoice
+          title={t("settings.accounts.add.title")}
+          pending={pending}
+          onSelect={chooseAccountType}
+        />
+
+        <VerticalNav
+          title={t("settings.accounts.elsewhere.title")}
+          items={[
+            {
+              id: "transfer",
+              kind: "link",
+              to: "/settings/accounts/transfer",
+              icon: <MonitorSmartphone className="text-muted-foreground" />,
+              label: (
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold">
+                    {t("accountTransfer.settings.source.title")}
+                  </span>
+                  <span className="text-xs leading-snug text-muted-foreground">
+                    {t("accountTransfer.settings.source.description")}
+                  </span>
+                </span>
+              ),
+            },
+          ]}
+        />
       </div>
+
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!restoring) setDialogOpen(open)
+        }}
+      >
+        <DialogContent>
+          {dialog === "restore" ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("accountChoice.restore.title")}</DialogTitle>
+                <DialogDescription>
+                  {t("onboarding.restore.description")}
+                </DialogDescription>
+              </DialogHeader>
+              <RestoreAccountForm
+                error={error}
+                mnemonic={mnemonic}
+                pending={restoring}
+                onMnemonicChange={setMnemonic}
+                onRestore={() => {
+                  void restoreAccount()
+                }}
+              />
+            </>
+          ) : null}
+          {dialog === "transfer" && dialogOpen ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>{t("accountTransfer.target.title")}</DialogTitle>
+                <DialogDescription>
+                  {t("accountTransfer.target.description")}
+                </DialogDescription>
+              </DialogHeader>
+              <AccountTransferTarget
+                source="settings"
+                confirmBeforeAdding
+                onRestoreWithPhrase={() => setDialog("restore")}
+              />
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

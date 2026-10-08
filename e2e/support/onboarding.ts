@@ -131,7 +131,7 @@ export async function submitRestorePhrase(
 ): Promise<void> {
   await page
     .getByRole("button", {
-      name: translate(language, "onboarding.accountChoice.restore.title"),
+      name: translate(language, "accountChoice.restore.title"),
     })
     .click()
   await page.getByRole("textbox").fill(mnemonic)
@@ -162,7 +162,7 @@ export async function completeOnboarding(
     .waitFor()
   await page
     .getByRole("button", {
-      name: translate(language, "onboarding.accountChoice.new.title"),
+      name: translate(language, "accountChoice.new.title"),
     })
     .click()
   await chooseOnboardingCountry(page, language, "country.cz")
@@ -217,7 +217,7 @@ export async function completeOnboardingDefaults(
     .waitFor()
   await page
     .getByRole("button", {
-      name: translate(language, "onboarding.accountChoice.new.title"),
+      name: translate(language, "accountChoice.new.title"),
     })
     .click()
   await chooseOnboardingCountry(page, language, "country.cz")

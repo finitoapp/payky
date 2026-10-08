@@ -22,24 +22,19 @@ export const enSettings = {
   "settings.about.terms.title": "Terms of Service",
   "settings.about.title": "About",
   "settings.accountAndSync": "ACCOUNT & SYNC",
-  "settings.accounts.create.action": "Create account",
+  "settings.accounts.add.title": "Add an account",
+  "settings.accounts.elsewhere.title": "This account on another device",
   "settings.accounts.create.confirm.cancel": "Cancel",
   "settings.accounts.create.confirm.confirm": "Create account",
   "settings.accounts.create.confirm.description":
     "You'll switch away from {name} and set up a brand new account with its own recovery phrase.",
   "settings.accounts.create.confirm.title": "Create a new account?",
-  "settings.accounts.create.description":
-    "Generate a new recovery phrase and switch to that account.",
-  "settings.accounts.create.title": "New account",
   "settings.accounts.list.active": "Active",
   "settings.accounts.list.createdAt": "Created",
-  "settings.accounts.list.current": "Current",
-  "settings.accounts.list.description":
-    "These accounts are stored only in this device profile.",
   "settings.accounts.list.empty": "No accounts saved on this device.",
   "settings.accounts.list.remove": "Remove",
   "settings.accounts.list.switch": "Switch",
-  "settings.accounts.list.title": "Device accounts",
+  "settings.accounts.list.title": "On this device",
   "settings.accounts.nav.description":
     "Choose which user account is active on this device",
   "settings.accounts.nav.title": "Switch User Account",
@@ -48,9 +43,6 @@ export const enSettings = {
   "settings.accounts.remove.confirm.description":
     "This device forgets the account and its data. Only its recovery phrase can bring it back — without it, everything in the account is gone for good.",
   "settings.accounts.remove.confirm.title": "Remove {name}?",
-  "settings.accounts.restore.action": "Use recovery phrase",
-  "settings.accounts.restore.description":
-    "Paste an existing recovery phrase to open its app data on this device.",
   "settings.accounts.restore.mnemonic.description":
     "Whitespace is normalized before validation.",
   "settings.accounts.restore.mnemonic.invalid":
@@ -59,7 +51,6 @@ export const enSettings = {
   "settings.accounts.restore.mnemonic.placeholder":
     "academic acid academic agency ...",
   "settings.accounts.restore.mnemonic.required": "Recovery phrase is required.",
-  "settings.accounts.restore.title": "Existing account",
   "settings.accounts.title": "App Account",
   "settings.appVersion": "App version:",
   "settings.appVersionCode": "Version code:",

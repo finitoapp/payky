@@ -219,20 +219,32 @@ export const upsertAccountEvoluWebsocketTransport = (
   return id
 }
 
+/**
+ * What an account brought from another device keeps: its name, and its
+ * transports in their stored form, so one on a custom sync server syncs here
+ * too. Without them the account gets a random name and the defaults.
+ */
+export interface NewAccountOptions {
+  readonly name?: NonEmptyString255 | undefined
+  readonly transports?: ReadonlyArray<WssUrl> | undefined
+}
+
 export const insertAccount = (
   deviceEvolu: DeviceEvolu,
   masterKey: MasterKey,
-  accountName?: string | undefined
+  options: NewAccountOptions = {}
 ): DeviceAccount => {
-  const name = accountName
-    ? NonEmptyString255(accountName)
-    : createRandomAccountName()
+  const name = options.name ?? createRandomAccountName()
+  const transportUrls =
+    options.transports !== undefined && options.transports.length > 0
+      ? options.transports
+      : defaultEvoluTransportUrls
   const { id: accountId } = deviceEvolu.insert("account", {
     name,
     masterKey,
     lastUseAt: Date.now(),
   })
-  for (const url of defaultEvoluTransportUrls) {
+  for (const url of transportUrls) {
     upsertAccountEvoluWebsocketTransport(deviceEvolu, {
       accountId,
       isActive: sqliteTrue,
@@ -247,7 +259,7 @@ export const insertAccount = (
     device: null,
     // Mirrors what the upserts above wrote, so the account syncs in the
     // session that created it rather than only after the next reload.
-    transports: defaultEvoluTransportUrls.map((url) => ({
+    transports: transportUrls.map((url) => ({
       type: "WebSocket" as const,
       url,
     })),
@@ -259,9 +271,11 @@ export async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {
   return data[0] ?? null
 }
 
+/** Selecting an existing account leaves its name and transports alone. */
 export async function createOrSelectAccount(
   deviceEvolu: DeviceEvolu,
-  masterKey: MasterKey
+  masterKey: MasterKey,
+  options?: NewAccountOptions
 ): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
   const existingAccounts = await deviceEvolu.loadQuery(
     accountByMasterKeyQuery(masterKey)
@@ -273,7 +287,7 @@ export async function createOrSelectAccount(
     return { accountId: existingAccount.id, created: false }
   }
 
-  const account = insertAccount(deviceEvolu, masterKey)
+  const account = insertAccount(deviceEvolu, masterKey, options)
   return { accountId: account.id, created: true }
 }
 

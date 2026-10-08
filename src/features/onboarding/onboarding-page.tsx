@@ -15,7 +15,14 @@ import {
   StepperSeparator,
 } from "@/components/reui/stepper.tsx"
 import { Button } from "@/components/ui/button.tsx"
-import { Card, CardFooter } from "@/components/ui/card.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
 import {
   accountListQuery,
   removeDeviceAccount,
@@ -35,6 +42,7 @@ import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queri
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
 import { seedTaxRatesForCountry } from "@/core/modules/tax-rate/tax-rate-actions.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import {
   getOnboardingSteps,
@@ -456,10 +464,50 @@ export function OnboardingPage({
               />
             ) : null}
 
+            {step === "transfer" ? (
+              <>
+                <CardHeader>
+                  <CardTitle>{t("accountTransfer.target.title")}</CardTitle>
+                  <CardDescription>
+                    {t("accountTransfer.target.description")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AccountTransferTarget
+                    source="onboarding"
+                    // An account being set up from Settings has another one
+                    // to fall back to; a first-run device has nothing to
+                    // replace, so it asks nothing.
+                    confirmBeforeAdding={fallbackAccount !== undefined}
+                    onRestoreWithPhrase={() => {
+                      setForm((current) => ({
+                        ...current,
+                        accountType: "restore",
+                        step: "restore",
+                      }))
+                    }}
+                  />
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={pending}
+                    onClick={goBack}
+                  >
+                    <ChevronLeft data-icon="inline-start" />
+                    {t("onboarding.back")}
+                  </Button>
+                </CardFooter>
+              </>
+            ) : null}
+
             {/* The account choice advances on click, so it carries no footer
                 at all — and being the first step, it has nowhere to go back
                 to either. */}
-            {step === "restore" || step === "accountChoice" ? null : (
+            {step === "restore" ||
+            step === "transfer" ||
+            step === "accountChoice" ? null : (
               <CardFooter className="flex items-center justify-between gap-3">
                 <Button
                   type="button"

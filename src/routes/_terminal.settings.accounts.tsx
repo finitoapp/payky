@@ -1,12 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { AccountsSettingsPage } from "@/features/settings/accounts/accounts-settings-page.tsx"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/_terminal/settings/accounts")({
-  component: AccountsSettingsPage,
-  staticData: {
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
-  },
+  component: AccountsLayout,
 })
+
+function AccountsLayout() {
+  return <Outlet />
+}

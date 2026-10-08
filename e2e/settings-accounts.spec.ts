@@ -16,7 +16,7 @@ test("create, switch, and remove a device account", async ({
   await test.step("create a second account", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "settings.accounts.create.action"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await page
@@ -46,9 +46,9 @@ test("create, switch, and remove a device account", async ({
       })
     ).toBeVisible()
     await expect(
-      secondCreatedRow.getByRole("button", {
-        name: translate("en", "settings.accounts.list.current"),
-      })
+      secondCreatedRow.getByText(
+        translate("en", "settings.accounts.list.active")
+      )
     ).toBeVisible()
   })
 
@@ -59,9 +59,9 @@ test("create, switch, and remove a device account", async ({
       })
       .click()
     await expect(
-      firstCreatedRow.getByRole("button", {
-        name: translate("en", "settings.accounts.list.current"),
-      })
+      firstCreatedRow.getByText(
+        translate("en", "settings.accounts.list.active")
+      )
     ).toBeVisible()
     await expect(
       secondCreatedRow.getByRole("button", {
@@ -106,7 +106,7 @@ test("canceling the create-account confirmation stays on the current account", a
   await test.step("start creating a new account, then cancel the confirmation", async () => {
     await page
       .getByRole("button", {
-        name: translate("en", "settings.accounts.create.action"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await page
@@ -137,7 +137,7 @@ test("canceling setup from onboarding discards the new account and switches back
     await gotoPage(page, "/settings/accounts", "en", "settings.accounts.title")
     await page
       .getByRole("button", {
-        name: translate("en", "settings.accounts.create.action"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await page

@@ -74,7 +74,7 @@ test("the payment methods step reports a missing or invalid IBAN on Next", async
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await chooseOnboardingCountry(page, "en", "country.cz")
@@ -254,7 +254,7 @@ test("finish reports an unconfirmed recovery phrase, which can be copied", async
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await chooseOnboardingCountry(page, "en", "country.cz")
@@ -317,7 +317,7 @@ test("the currency step defaults to the chosen country's currency, not the UI la
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await chooseOnboardingCountry(page, "en", "country.cz")
@@ -346,7 +346,7 @@ test("changing the language after picking a currency does not reset that choice"
       .waitFor()
     await page
       .getByRole("button", {
-        name: translate("en", "onboarding.accountChoice.new.title"),
+        name: translate("en", "accountChoice.new.title"),
       })
       .click()
     await chooseOnboardingCountry(page, "en", "country.cz")

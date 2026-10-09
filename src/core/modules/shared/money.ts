@@ -73,15 +73,15 @@ const normalizeDecimalSeparators = (value: string): string => {
   return `${integerPart}.${fractionPart}`
 }
 
-export const decimalAmountToMinorUnits = ({
-  currency,
-  value,
-}: {
-  readonly currency: Currency
-  readonly value: string
-}): Integer | null => {
-  const normalized = normalizeDecimalSeparators(value.trim())
-  const parts = /^(\d+)(?:\.(\d*))?$/u.exec(normalized)
+/**
+ * A decimal with "." as its only separator to minor units, or `null` when it
+ * is not one or carries more fraction digits than `currency` has.
+ */
+const decimalToMinorUnits = (
+  currency: Currency,
+  value: string
+): number | null => {
+  const parts = /^(\d+)(?:\.(\d*))?$/u.exec(value)
   if (parts === null) return null
 
   const wholePart = parts[1]
@@ -91,13 +91,55 @@ export const decimalAmountToMinorUnits = ({
   const fractionDigits = currencyFractionDigits[currency]
   if (fractionPart.length > fractionDigits) return null
 
-  const minorUnitFactor = 10 ** fractionDigits
   const amount =
-    Number(wholePart) * minorUnitFactor +
+    Number(wholePart) * 10 ** fractionDigits +
     Number(fractionPart.padEnd(fractionDigits, "0"))
-  if (!Number.isSafeInteger(amount) || amount <= 0) return null
+  return Number.isSafeInteger(amount) ? amount : null
+}
+
+export const decimalAmountToMinorUnits = ({
+  currency,
+  value,
+}: {
+  readonly currency: Currency
+  readonly value: string
+}): Integer | null => {
+  const amount = decimalToMinorUnits(
+    currency,
+    normalizeDecimalSeparators(value.trim())
+  )
+  if (amount === null || amount <= 0) return null
 
   return Integer(amount)
+}
+
+/**
+ * A machine-formatted amount, such as a bank statement's, to minor units.
+ * Unlike `decimalAmountToMinorUnits`, which reads what a person typed, it
+ * keeps the sign (an outgoing movement is negative) and zero, and accepts no
+ * thousands grouping: one "." or "," decimal separator at most, so a grouped
+ * or otherwise ambiguous value is refused rather than guessed at. A JSON
+ * number is first rounded to the currency's fraction digits.
+ */
+export const signedDecimalAmountToMinorUnits = ({
+  currency,
+  value,
+}: {
+  readonly currency: Currency
+  readonly value: string | number
+}): Integer | null => {
+  const text =
+    typeof value === "number"
+      ? value.toFixed(currencyFractionDigits[currency])
+      : value.trim().replace(",", ".")
+  const isNegative = text.startsWith("-")
+  const amount = decimalToMinorUnits(
+    currency,
+    isNegative ? text.slice(1) : text
+  )
+  if (amount === null) return null
+
+  return Integer(isNegative && amount !== 0 ? -amount : amount)
 }
 
 export const SATS_PER_BTC = 100_000_000

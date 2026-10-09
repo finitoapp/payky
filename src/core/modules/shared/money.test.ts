@@ -8,6 +8,7 @@ import {
   minorUnitsToDecimalString,
   minorUnitsToFixedDecimalString,
   satsToFiat,
+  signedDecimalAmountToMinorUnits,
 } from "./money.ts"
 
 describe("minorUnitsToDecimalString", () => {
@@ -183,5 +184,36 @@ describe("satsToFiat", () => {
         exchangeRate,
       })
     ).toBe(fiatAmount)
+  })
+})
+
+describe("signedDecimalAmountToMinorUnits", () => {
+  test("keeps the sign and zero, which a typed amount refuses", () => {
+    expect(
+      signedDecimalAmountToMinorUnits({ currency: "CZK", value: "-199,50" })
+    ).toBe(-19_950)
+    expect(
+      signedDecimalAmountToMinorUnits({ currency: "CZK", value: "0" })
+    ).toBe(0)
+    expect(
+      signedDecimalAmountToMinorUnits({ currency: "CZK", value: "-0" })
+    ).toBe(0)
+  })
+
+  test("rounds a JSON number to the currency's fraction digits", () => {
+    expect(
+      signedDecimalAmountToMinorUnits({ currency: "EUR", value: 199.5 })
+    ).toBe(19_950)
+    expect(
+      signedDecimalAmountToMinorUnits({ currency: "BTC", value: 0.5 })
+    ).toBe(50_000_000)
+  })
+
+  test("refuses grouping and more fraction digits than the currency has", () => {
+    for (const value of ["1,234.56", "1 234,56", "199.555", "abc", ""]) {
+      expect(signedDecimalAmountToMinorUnits({ currency: "CZK", value })).toBe(
+        null
+      )
+    }
   })
 })

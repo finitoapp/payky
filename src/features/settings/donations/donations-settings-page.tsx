@@ -29,12 +29,15 @@ import { fetchYadioBtcExchangeRate } from "@/core/integrations/yadio/yadio-clien
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   currencyFractionDigits,
-  fiatToSats,
+  decimalAmountToMinorUnits,
+  fiatMinorUnitsToSats,
+  minorUnitsToDecimalString,
   satsToFiat,
 } from "@/core/modules/shared/money.ts"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
+  Integer,
 } from "@/core/modules/shared/schema.ts"
 import { DonationHistory } from "@/features/settings/donations/donation-history.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -58,14 +61,6 @@ type DonationLoadState =
       readonly metadata: LnurlPayMetadata
     }
 
-const parseDecimalInput = (value: string): number | null => {
-  const normalized = value.trim().replace(",", ".")
-  if (normalized.length === 0) return null
-
-  const amount = Number(normalized)
-  return Number.isFinite(amount) && amount > 0 ? amount : null
-}
-
 const parseSatsInput = (value: string): number | null => {
   const amount = Number(value.trim())
   const parsed = DonationAmountSchema.safeParse(amount)
@@ -76,11 +71,13 @@ const parseSatsInput = (value: string): number | null => {
 const formatFiatInput = (
   fiatAmount: number,
   currency: FiatCurrencyType
-): string => {
-  const fractionDigits = currencyFractionDigits[currency]
-
-  return fiatAmount.toFixed(fractionDigits).replace(/\.?0+$/u, "")
-}
+): string =>
+  minorUnitsToDecimalString({
+    value: Integer(
+      Math.round(fiatAmount * 10 ** currencyFractionDigits[currency])
+    ),
+    currency,
+  })
 
 const getDonationAddress = (): string =>
   import.meta.env.VITE_PAYKY_DONATE_LUD16_ADDRESS ??
@@ -182,13 +179,15 @@ export function DonationsSettingsPage() {
     if (exchangeRate === null) return
 
     if (editedAmount === "fiat") {
-      const fiatAmount = parseDecimalInput(fiatInput)
-      if (fiatAmount === null) {
+      const amount = decimalAmountToMinorUnits({ currency, value: fiatInput })
+      if (amount === null) {
         setSatsInput("")
         return
       }
 
-      setSatsInput(String(fiatToSats({ fiatAmount, exchangeRate })))
+      setSatsInput(
+        String(fiatMinorUnitsToSats({ amount, exchangeRate, currency }))
+      )
       return
     }
 

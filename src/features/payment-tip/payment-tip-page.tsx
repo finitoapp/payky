@@ -112,7 +112,7 @@ function PaymentTipForm({
       : (selection?.tipAmount ?? null)
   const hasTipPresets = percentages.length > 0 || fixedAmounts.length > 0
 
-  const formatAmount = (value: NonNegativeIntegerValue) =>
+  const formatMinor = (value: NonNegativeIntegerValue) =>
     formatMoney({ value, currency }, locale)
 
   const selectTip = (nextSelection: TipSelection | null) => {
@@ -158,7 +158,7 @@ function PaymentTipForm({
             {t("paymentTip.orderTotal")}
           </p>
           <h1 className="text-4xl font-semibold tracking-tight tabular-nums">
-            {formatAmount(amount)}
+            {formatMinor(amount)}
           </h1>
         </section>
 
@@ -219,7 +219,7 @@ function PaymentTipForm({
                             })}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            {formatAmount(totalAmount)}
+                            {formatMinor(totalAmount)}
                           </span>
                         </ToggleGroupItem>
                       )
@@ -267,10 +267,10 @@ function PaymentTipForm({
                           className={tipOptionClassName}
                         >
                           <span className="font-semibold">
-                            +{formatAmount(tipAmount)}
+                            +{formatMinor(tipAmount)}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            {formatAmount(totalAmount)}
+                            {formatMinor(totalAmount)}
                           </span>
                         </ToggleGroupItem>
                       )
@@ -327,7 +327,7 @@ function PaymentTipForm({
               >
                 <span className="font-semibold">{t("paymentTip.none")}</span>
                 <span className="text-sm text-muted-foreground">
-                  {formatAmount(amount)}
+                  {formatMinor(amount)}
                 </span>
               </ToggleGroupItem>
             </ToggleGroup>

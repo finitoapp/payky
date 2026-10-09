@@ -1,5 +1,6 @@
 import { differenceInCalendarDays } from "date-fns"
 import {
+  currencyFractionDigits,
   type Money,
   minorUnitsToDecimalString,
   SATS_PER_BTC,
@@ -27,7 +28,9 @@ export function formatAmount(
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
-      minimumFractionDigits: 2,
+      ...(currency === undefined
+        ? {}
+        : { minimumFractionDigits: currencyFractionDigits[currency] }),
     }).format(amount)
   } catch (_error) {
     return `${amount.toLocaleString()}${currency ? ` ${currency}` : ""}`

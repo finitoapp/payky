@@ -1,6 +1,7 @@
 import {
   createIdFromString,
   err,
+  type InferRow,
   ok,
   type Result,
   sqliteFalse,
@@ -26,14 +27,9 @@ import {
   createPaymentNotFoundError,
   type PaymentNotFoundError,
 } from "@/core/modules/payment/payment-errors.ts"
-import {
-  paymentClaimsQuery,
-  paymentDetailQuery,
-} from "@/core/modules/payment/payment-queries.ts"
-import {
-  derivePaymentStatus,
-  type PaymentStatus,
-} from "@/core/modules/payment/payment-status-utils.ts"
+import { loadPaymentStatus } from "@/core/modules/payment/payment-guards.ts"
+import { paymentDetailQuery } from "@/core/modules/payment/payment-queries.ts"
+import type { PaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import { activeClaimedTransactionsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
@@ -61,6 +57,7 @@ import {
   createRowId,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   type FiatCurrency,
   Integer,
@@ -176,27 +173,27 @@ const loadRefundLines = async (
   return ok(values)
 }
 
-const loadPaidPayment = async (
-  evolu: EvoluDep["evolu"],
-  { paymentId, now }: { readonly paymentId: PaymentId; readonly now: Date }
-) => {
-  const [payment] = await evolu.loadQuery(paymentDetailQuery(paymentId))
-  if (payment === undefined) {
-    return err(createPaymentNotFoundError({ id: paymentId }))
+const loadPaidPayment =
+  (
+    paymentId: PaymentId
+  ): Task<
+    InferRow<ReturnType<typeof paymentDetailQuery>>,
+    PaymentNotFoundError | RefundPaymentNotPaidError,
+    EvoluDep & DateDep
+  > =>
+  async (run) => {
+    const paymentResult = getFirstOr(
+      await run.deps.evolu.loadQuery(paymentDetailQuery(paymentId)),
+      createPaymentNotFoundError({ id: paymentId })
+    )
+    if (!paymentResult.ok) return paymentResult
+    const payment = paymentResult.value
+    const status = await run.ok(loadPaymentStatus(payment))
+    if (status !== "paid") {
+      return err(createRefundPaymentNotPaidError({ paymentId, status }))
+    }
+    return ok(payment)
   }
-  const claims = await evolu.loadQuery(paymentClaimsQuery(paymentId))
-  const status = derivePaymentStatus({
-    canceledAt: payment.canceledAt,
-    confirmedPaidAt: payment.confirmedPaidAt,
-    expiresAt: payment.expiresAt,
-    hasActiveClaim: claims.length > 0,
-    now,
-  })
-  if (status !== "paid") {
-    return err(createRefundPaymentNotPaidError({ paymentId, status }))
-  }
-  return ok(payment)
-}
 
 const prepareCashRefund = async (
   evolu: EvoluDep["evolu"],
@@ -267,7 +264,7 @@ export const refundPayment =
   async (run) => {
     const { evolu, evoluOwnerId } = run.deps
     const now = run.deps.date.now()
-    const paymentResult = await loadPaidPayment(evolu, { paymentId, now })
+    const paymentResult = await run(loadPaidPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
     const payment = paymentResult.value
 
@@ -386,7 +383,7 @@ export const refundPaymentTip =
   async (run) => {
     const { evolu, evoluOwnerId } = run.deps
     const now = run.deps.date.now()
-    const paymentResult = await loadPaidPayment(evolu, { paymentId, now })
+    const paymentResult = await run(loadPaidPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
     const payment = paymentResult.value
 

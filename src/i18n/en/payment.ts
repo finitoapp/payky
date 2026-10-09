@@ -158,6 +158,7 @@ export const enPayment = {
   "paymentTip.custom.label": "Custom tip",
   "paymentTip.custom.placeholder": "e.g. 20.00",
   "paymentTip.fixedAmounts": "Fixed amount tips",
+  "paymentTip.invalidLink": "Invalid tip link.",
   "paymentTip.none": "No tip",
   "paymentTip.orderTotal": "Order total",
   "paymentTip.percentages": "Percentage tips",

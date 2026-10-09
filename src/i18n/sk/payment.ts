@@ -158,6 +158,7 @@ export const skPayment = {
   "paymentTip.custom.label": "Vlastné prepitné",
   "paymentTip.custom.placeholder": "napr. 20,00",
   "paymentTip.fixedAmounts": "Prepitné pevnou sumou",
+  "paymentTip.invalidLink": "Neplatný odkaz na prepitné.",
   "paymentTip.none": "Bez prepitného",
   "paymentTip.orderTotal": "Cena objednávky",
   "paymentTip.percentages": "Prepitné v percentách",

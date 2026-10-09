@@ -1,17 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Suspense } from "react"
 import { z } from "zod"
+import { RouteMessage } from "@/components/route-message.tsx"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   FiatCurrencySchema,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import { PaymentTipPage } from "@/features/payment-tip/payment-tip-page.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
 
+// Every field falls back instead of throwing: a `validateSearch` throw on a
+// stale or hand-typed link escapes to the global error boundary (see
+// `_terminal.bill.tsx`). No amount or currency means there is nothing to tip
+// on, which the component shows; a broken `billId` only loses the bill link.
 const PaymentTipSearchSchema = z.object({
-  amount: z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER),
-  currency: FiatCurrencySchema,
-  billId: BillId.optional(),
+  amount: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .optional()
+    .catch(undefined),
+  currency: FiatCurrencySchema.optional().catch(undefined),
+  billId: BillId.optional().catch(undefined),
 })
 
 export const Route = createFileRoute("/_terminal/payment/tip")({
@@ -27,7 +39,12 @@ export const Route = createFileRoute("/_terminal/payment/tip")({
 })
 
 function PaymentTipRoute() {
+  const { t } = useTranslation()
   const { amount, currency, billId } = Route.useSearch()
+
+  if (amount === undefined || currency === undefined) {
+    return <RouteMessage>{t("paymentTip.invalidLink")}</RouteMessage>
+  }
 
   return (
     <Suspense fallback={null}>

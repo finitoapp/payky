@@ -138,3 +138,16 @@ test("charge with no tip then mark cash paid", async ({ seededPage: page }) => {
     ).toBeVisible()
   })
 })
+
+test("a malformed tip link shows a message instead of the error screen", async ({
+  seededPage: page,
+}) => {
+  await page.goto("/payment/tip?amount=abc&currency=CZK", {
+    waitUntil: "domcontentloaded",
+  })
+  await expect(
+    page.getByText(translate("en", "paymentTip.invalidLink"))
+  ).toBeVisible()
+  // This used to throw out of `validateSearch` into the global error boundary.
+  await expect(page.getByText(translate("en", "appError.title"))).toHaveCount(0)
+})

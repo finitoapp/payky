@@ -854,6 +854,10 @@ export const csSettings = {
   "access.action.aiAccess": "Změnit přístup AI k datům",
   "access.action.cancelPayment": "Zrušit platbu",
   "access.action.changePin": "Změnit PIN",
+  "access.action.confirmClosedDespiteCancellation":
+    "Označit zahozený účet jako uzavřený",
+  "access.action.confirmPaidDespiteCancellation":
+    "Označit zrušenou platbu jako zaplacenou",
   "access.action.createItem": "Vytvořit položku katalogu",
   "access.action.disable": "Vypnout řízení přístupu",
   "access.action.discardBill": "Zahodit účet",

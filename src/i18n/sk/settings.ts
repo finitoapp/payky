@@ -858,6 +858,10 @@ export const skSettings = {
   "access.action.aiAccess": "Zmeniť prístup AI k dátam",
   "access.action.cancelPayment": "Zrušiť platbu",
   "access.action.changePin": "Zmeniť PIN",
+  "access.action.confirmClosedDespiteCancellation":
+    "Označiť zahodený účet ako uzavretý",
+  "access.action.confirmPaidDespiteCancellation":
+    "Označiť zrušenú platbu ako zaplatenú",
   "access.action.createItem": "Vytvoriť položku katalógu",
   "access.action.disable": "Vypnúť riadenie prístupu",
   "access.action.discardBill": "Zahodiť účet",

@@ -1,20 +1,27 @@
 import { SparkWallet } from "@buildonspark/spark-sdk"
-import { z } from "zod"
+import { createEnv } from "@t3-oss/env-core"
 
-const DonateWalletEnvSchema = z.object({
-  PAYKY_DONATE_SPARK_MNEMONIC: z.string().trim().min(1),
-})
+import {
+  DonateSparkMnemonicSchema,
+  loadServerEnv,
+  throwInvalidServerEnv,
+} from "./server-env.ts"
 
 export interface DonateWalletConfig {
   readonly mnemonic: string
 }
 
 export const loadDonateWalletConfig = (): DonateWalletConfig | null => {
-  const parsedEnv = DonateWalletEnvSchema.safeParse(process.env)
+  const env = loadServerEnv(() =>
+    createEnv({
+      server: { PAYKY_DONATE_SPARK_MNEMONIC: DonateSparkMnemonicSchema },
+      runtimeEnv: process.env,
+      emptyStringAsUndefined: true,
+      onValidationError: throwInvalidServerEnv,
+    })
+  )
 
-  if (!parsedEnv.success) return null
-
-  return { mnemonic: parsedEnv.data.PAYKY_DONATE_SPARK_MNEMONIC }
+  return env === null ? null : { mnemonic: env.PAYKY_DONATE_SPARK_MNEMONIC }
 }
 
 export type DonateWallet = Awaited<

@@ -103,3 +103,32 @@ describe("LNURL-pay origin handling", () => {
     expect(cleanup).toHaveBeenCalledOnce()
   })
 })
+
+describe("LNURL-pay configuration", () => {
+  test.each([
+    {
+      overrides: { PAYKY_DONATE_SPARK_MNEMONIC: undefined },
+      shape: "no mnemonic",
+    },
+    {
+      overrides: { PAYKY_DONATE_MIN_SATS: "abc" },
+      shape: "a non-numeric minimum",
+    },
+    {
+      overrides: { PAYKY_DONATE_MIN_SATS: "500", PAYKY_DONATE_MAX_SATS: "100" },
+      shape: "a minimum above the maximum",
+    },
+  ])("answers $shape as not configured", async ({ overrides }) => {
+    stubEnv(overrides)
+
+    const body = (await (await GET(spoofedRequest())).json()) as {
+      readonly status: string
+      readonly reason: string
+    }
+
+    expect(body).toMatchObject({
+      status: "ERROR",
+      reason: "Donation endpoint is not configured.",
+    })
+  })
+})

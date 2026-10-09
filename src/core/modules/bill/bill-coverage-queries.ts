@@ -9,12 +9,12 @@ import type { BillId } from "./bill-types.ts"
  * canceled/expired display status (see `derivePaymentStatus`). A payment can
  * appear more than once here if it carries more than one active claim.
  *
- * This only tells you *which* payments are claimed (used to build a
- * `Set<PaymentId>` via `claimedPaymentIdSet`, e.g. for the pending-payment
- * lock) — it can't tell you *how much* has actually been claimed, since it
- * doesn't carry the underlying transaction amounts. For coverage math, use
- * `claimedTransactionsByBillIdQuery` with `calculateClaimedSum` instead. See
- * docs/bill-payment-states.md.
+ * This only tells you *which* payments carry a claim, for display: the bill
+ * page and the payment detail list them. It is the looser reading — a claim
+ * counts even when its transaction is gone — so the pending-payment lock
+ * (`claimedPaymentIdSet`) and coverage math deliberately read
+ * `claimedTransactionsByBillIdQuery` instead; see `claimedPaymentIdSet`'s
+ * doc comment and docs/bill-payment-states.md.
  */
 export const claimedPaymentsByBillIdQuery = (billId: BillId) =>
   createQuery((db) =>

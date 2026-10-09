@@ -11,6 +11,7 @@ import {
   loadServerEnv,
   throwInvalidServerEnv,
 } from "../../src/core/server/server-env.js"
+import { jsonApi } from "../_http.js"
 
 const MSATS_PER_SAT = 1_000
 const DEFAULT_MIN_SENDABLE_SATS = 1
@@ -90,11 +91,12 @@ const lnurlError = (kind: LnurlErrorKind, reason: string): LnurlError => ({
   reason,
 })
 
-const jsonHeaders = {
-  "access-control-allow-origin": "*",
-  "cache-control": "no-store",
-  "content-type": "application/json; charset=utf-8",
-} as const
+const { jsonResponse, preflightResponse } = jsonApi<
+  LnurlPayMetadata | LnurlPayInvoice | LnurlVerifyResponse | LnurlError
+>({
+  cacheControl: "no-store",
+  methods: "GET",
+})
 
 /**
  * The request's own URL, never `x-forwarded-proto`/`x-forwarded-host`. Those
@@ -143,18 +145,6 @@ const loadConfig = (request: Request): Result<DonateConfig, LnurlError> => {
     invoiceExpirySeconds: env.PAYKY_DONATE_INVOICE_EXPIRY_SECONDS,
   })
 }
-
-const jsonResponse = (
-  body: LnurlPayMetadata | LnurlPayInvoice | LnurlVerifyResponse | LnurlError,
-  init?: ResponseInit
-): Response =>
-  Response.json(body, {
-    ...init,
-    headers: {
-      ...jsonHeaders,
-      ...init?.headers,
-    },
-  })
 
 const createMetadata = (config: DonateConfig): LnurlPayMetadata => ({
   tag: "payRequest",
@@ -299,15 +289,7 @@ const verifyInvoice = async (
 }
 
 const handleRequest = async (request: Request): Promise<Response> => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        ...jsonHeaders,
-        "access-control-allow-methods": "GET, OPTIONS",
-        "access-control-allow-headers": "content-type",
-      },
-    })
-  }
+  if (request.method === "OPTIONS") return preflightResponse()
 
   if (request.method !== "GET") {
     return jsonResponse(

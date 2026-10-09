@@ -1,6 +1,7 @@
 import { createEnv } from "@t3-oss/env-core"
 import { decode } from "nostr-tools/nip19"
 import { z } from "zod"
+import { jsonApi } from "./_http.js"
 
 /**
  * The support chat's team (support/0001), served so it can change with a
@@ -94,35 +95,19 @@ export const currentTeam: SupportTeamResponse = {
   indexerRelays: env.PAYKY_SUPPORT_INDEXER_RELAYS,
 }
 
-const jsonHeaders = {
-  "access-control-allow-origin": "*",
-  // A deploy reaches every app within five minutes.
-  "cache-control": "public, max-age=300",
-  "content-type": "application/json; charset=utf-8",
-} as const
-
-const jsonResponse = (
-  body: SupportTeamResponse | SupportTeamError,
-  init?: ResponseInit
-): Response =>
-  Response.json(body, {
-    ...init,
-    headers: { ...jsonHeaders, ...init?.headers },
-  })
+// A deploy reaches every app within five minutes.
+const { jsonResponse, preflightResponse } = jsonApi<
+  SupportTeamResponse | SupportTeamError
+>({
+  cacheControl: "public, max-age=300",
+  methods: "GET",
+})
 
 export const handleSupportTeamRequest = (
   request: Request,
   team: SupportTeamResponse = currentTeam
 ): Response => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        ...jsonHeaders,
-        "access-control-allow-methods": "GET, OPTIONS",
-        "access-control-allow-headers": "content-type",
-      },
-    })
-  }
+  if (request.method === "OPTIONS") return preflightResponse()
 
   if (request.method !== "GET") {
     return jsonResponse(

@@ -1,4 +1,5 @@
 import { unzipSync } from "fflate"
+import { jsonApi } from "../_http.js"
 
 export const PLAYGROUND_CERTIFICATES_ARCHIVE_URL =
   "https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/CAEET_Playground_2026_v1.zip"
@@ -20,20 +21,12 @@ interface PlaygroundCertificatesError {
   readonly reason: string
 }
 
-const jsonHeaders = {
-  "access-control-allow-origin": "*",
-  "cache-control": "public, max-age=3600",
-  "content-type": "application/json; charset=utf-8",
-} as const
-
-const jsonResponse = (
-  body: PlaygroundCertificatesResponse | PlaygroundCertificatesError,
-  init?: ResponseInit
-): Response =>
-  Response.json(body, {
-    ...init,
-    headers: { ...jsonHeaders, ...init?.headers },
-  })
+const { jsonResponse, preflightResponse } = jsonApi<
+  PlaygroundCertificatesResponse | PlaygroundCertificatesError
+>({
+  cacheControl: "public, max-age=3600",
+  methods: "GET",
+})
 
 const upstreamFailure = (): Response =>
   jsonResponse(
@@ -74,15 +67,7 @@ export const handlePlaygroundCertificatesRequest = async (
   request: Request,
   fetchArchive: typeof fetch = fetch
 ): Promise<Response> => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        ...jsonHeaders,
-        "access-control-allow-methods": "GET, OPTIONS",
-        "access-control-allow-headers": "content-type",
-      },
-    })
-  }
+  if (request.method === "OPTIONS") return preflightResponse()
 
   if (request.method !== "GET") {
     return jsonResponse(

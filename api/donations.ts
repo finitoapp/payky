@@ -6,6 +6,7 @@ import {
   loadDonateWalletConfig,
 } from "../src/core/server/donate-wallet.js"
 import { jsonCodec } from "../src/zod-utils.js"
+import { jsonApi } from "./_http.js"
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
@@ -48,23 +49,12 @@ export interface DonateTransferSource {
   ) => Promise<DonateTransferPage>
 }
 
-const jsonHeaders = {
-  "access-control-allow-origin": "*",
-  "cache-control": "no-store",
-  "content-type": "application/json; charset=utf-8",
-} as const
-
-const jsonResponse = (
-  body: DonationsResponse | DonationsError,
-  init?: ResponseInit
-): Response =>
-  Response.json(body, {
-    ...init,
-    headers: {
-      ...jsonHeaders,
-      ...init?.headers,
-    },
-  })
+const { jsonResponse, preflightResponse } = jsonApi<
+  DonationsResponse | DonationsError
+>({
+  cacheControl: "no-store",
+  methods: "GET",
+})
 
 const CursorJson = jsonCodec(
   z.object({
@@ -156,15 +146,7 @@ const createDefaultTransferSource = (
 })
 
 const handleRequest = async (request: Request): Promise<Response> => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        ...jsonHeaders,
-        "access-control-allow-methods": "GET, OPTIONS",
-        "access-control-allow-headers": "content-type",
-      },
-    })
-  }
+  if (request.method === "OPTIONS") return preflightResponse()
 
   if (request.method !== "GET") {
     return jsonResponse(

@@ -48,10 +48,7 @@ import {
   loadBillClosedAtForPayment,
   upsertReconciliationClaimRows,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
-import {
-  activeClaimedTransactionsByPaymentIdQuery,
-  activeReconciliationClaimsByPaymentIdQuery,
-} from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
+import { activeClaimedTransactionsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import { deriveManualReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-utils.ts"
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -97,7 +94,6 @@ import {
   createPaymentNotClaimedError,
   createPaymentNotFoundError,
   createPaymentNotOverpaidError,
-  createPaymentNotPayableError,
   createSwitchioAttemptUnresolvedError,
   createSwitchioRestoredResultUnmatchedError,
   type MarkPaymentPaidCashError,
@@ -113,12 +109,15 @@ import {
   type SettleRestoredSwitchioCardPaymentError,
 } from "./payment-errors.ts"
 import {
+  loadPaymentHasActiveClaim,
+  requirePayablePayment,
+} from "./payment-guards.ts"
+import {
   paymentByIdQuery,
   paymentCardSwitchioByIdQuery,
   paymentCardSwitchioByTransactionIdQuery,
   paymentSparkDetailsByIdQuery,
 } from "./payment-queries.ts"
-import { derivePaymentStatus } from "./payment-status-utils.ts"
 import { createVariableSymbolFromSerialNumber } from "./payment-symbol-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 /**
@@ -801,24 +800,13 @@ export const payPaymentWithSwitchioCard =
     })
     if (!accountResult.ok) return accountResult
 
-    const [activeClaims, cardRows, paymentNumbers] = await Promise.all([
-      run.deps.evolu.loadQuery(
-        activeReconciliationClaimsByPaymentIdQuery(paymentId)
-      ),
+    const payable = await run(requirePayablePayment(payment))
+    if (!payable.ok) return payable
+
+    const [cardRows, paymentNumbers] = await Promise.all([
       run.deps.evolu.loadQuery(paymentCardSwitchioByIdQuery(paymentId)),
       run.deps.evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
     ])
-
-    const status = derivePaymentStatus({
-      canceledAt: payment.canceledAt,
-      confirmedPaidAt: payment.confirmedPaidAt,
-      expiresAt: payment.expiresAt,
-      hasActiveClaim: activeClaims.length > 0,
-      now: run.deps.date.now(),
-    })
-    if (status !== "pending") {
-      return err(createPaymentNotPayableError({ id: paymentId, status }))
-    }
 
     const unresolvedTransactionId = cardRows[0]?.unresolvedTransactionId
     if (
@@ -900,23 +888,12 @@ export const payPaymentWithBoltCard =
     if (!paymentResult.ok) return paymentResult
 
     const payment = paymentResult.value
-    const [activeClaims, sparkRows] = await Promise.all([
-      run.deps.evolu.loadQuery(
-        activeReconciliationClaimsByPaymentIdQuery(paymentId)
-      ),
-      run.deps.evolu.loadQuery(paymentSparkDetailsByIdQuery(paymentId)),
-    ])
+    const payable = await run(requirePayablePayment(payment))
+    if (!payable.ok) return payable
 
-    const status = derivePaymentStatus({
-      canceledAt: payment.canceledAt,
-      confirmedPaidAt: payment.confirmedPaidAt,
-      expiresAt: payment.expiresAt,
-      hasActiveClaim: activeClaims.length > 0,
-      now: run.deps.date.now(),
-    })
-    if (status !== "pending") {
-      return err(createPaymentNotPayableError({ id: paymentId, status }))
-    }
+    const sparkRows = await run.deps.evolu.loadQuery(
+      paymentSparkDetailsByIdQuery(paymentId)
+    )
 
     const spark = sparkRows[0]
     if (spark?.lnInvoice === null || spark?.lnInvoice === undefined) {
@@ -992,10 +969,7 @@ export const cancelPayment =
     // a single device's check; that residual case is resolved by
     // `derivePaymentStatus`'s precedence, not by this guard. See
     // docs/bill-payment-states.md.
-    const activeClaims = await run.deps.evolu.loadQuery(
-      activeReconciliationClaimsByPaymentIdQuery(paymentId)
-    )
-    if (activeClaims.length > 0) {
+    if (await run.ok(loadPaymentHasActiveClaim(paymentId))) {
       return err(createPaymentAlreadyPaidError({ id: paymentId }))
     }
 
@@ -1049,10 +1023,7 @@ export const confirmPaymentPaidDespiteCancellation =
       return err(createPaymentNotCanceledError({ id: paymentId }))
     }
 
-    const activeClaims = await run.deps.evolu.loadQuery(
-      activeReconciliationClaimsByPaymentIdQuery(paymentId)
-    )
-    if (activeClaims.length === 0) {
+    if (!(await run.ok(loadPaymentHasActiveClaim(paymentId)))) {
       return err(createPaymentNotClaimedError({ id: paymentId }))
     }
 

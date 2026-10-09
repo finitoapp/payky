@@ -716,6 +716,51 @@ describe("payment actions", () => {
       .toMatchObject([{ id, canceledAt: null }])
   }, 15_000)
 
+  // A claim whose transaction was deleted is not money that arrived: every
+  // screen shows the payment as pending and locks its bill, so cancelling it
+  // has to work, or nothing ever unlocks the bill.
+  test("cancels a payment whose claimed transaction was deleted", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      evolu,
+      evoluOwnerId: evolu.appOwner.id,
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId } = await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+      })
+    )
+    await run.orThrow(
+      markPaymentPaidCash({ paymentId: id, accountId: cashRegisterAccountId })
+    )
+    const [transaction] = await evolu.loadQuery(
+      createQuery((db) => db.selectFrom("accountTransaction").select(["id"]))
+    )
+    if (transaction === undefined) throw new Error("no account transaction")
+    await run.ok(deleteAccountTransaction(transaction.id))
+
+    await expect(run(cancelPayment(id))).resolves.toMatchObject({
+      ok: true,
+      value: id,
+    })
+    await expect
+      .poll(() => evolu.loadQuery(paymentByIdQuery(id)))
+      .toSatisfy((rows) => rows[0]?.canceledAt !== null)
+  }, 15_000)
+
   test("resolves a canceled+claimed collision back to paid via confirmPaymentPaidDespiteCancellation", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

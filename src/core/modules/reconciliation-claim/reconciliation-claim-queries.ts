@@ -13,7 +13,12 @@ import type {
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 
-/** Whether a payment has been claimed by a matched incoming transaction. */
+/**
+ * A payment's claim rows as stored, whether or not their transaction still
+ * exists. Not an answer to "has money arrived": that is
+ * `loadPaymentHasActiveClaim` (`payment-guards.ts`), which skips a claim whose
+ * transaction was deleted.
+ */
 export const activeReconciliationClaimsByPaymentIdQuery = (
   paymentId: PaymentId
 ) =>

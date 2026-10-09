@@ -1,10 +1,10 @@
 import { createEnv } from "@t3-oss/env-core"
 import { PrivateDirectMessage } from "nostr-tools/kinds"
-import { decode } from "nostr-tools/nip19"
 import { createRumor, createSeal, createWrap } from "nostr-tools/nip59"
 import { SimplePool } from "nostr-tools/pool"
 import { type Event, generateSecretKey } from "nostr-tools/pure"
 import { z } from "zod"
+import { npubToHex } from "../src/core/integrations/nostr/npub.js"
 import {
   ContactMessageSchema,
   contactMessageSubject,
@@ -61,15 +61,6 @@ const { jsonResponse, preflightResponse } = jsonApi<
 
 const ContactMessageJson = jsonCodec(ContactMessageSchema)
 
-const hexPubkey = (npub: string): string | null => {
-  try {
-    const decoded = decode(npub)
-    return decoded.type === "npub" ? decoded.data : null
-  } catch {
-    return null
-  }
-}
-
 const publishToRelays: Publish = async (relays, event) => {
   const pool = new SimplePool()
   try {
@@ -120,7 +111,7 @@ export const handleContactRequest = async (
     return jsonResponse({ status: "OK" })
   }
 
-  const pubkeys = recipients.map(hexPubkey)
+  const pubkeys = recipients.map(npubToHex)
   if (!pubkeys.every((pubkey) => pubkey !== null)) {
     return jsonResponse(
       { status: "ERROR", reason: "The contact recipients are misconfigured." },

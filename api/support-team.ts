@@ -1,6 +1,6 @@
 import { createEnv } from "@t3-oss/env-core"
-import { decode } from "nostr-tools/nip19"
 import { z } from "zod"
+import { npubToHex } from "../src/core/integrations/nostr/npub.js"
 import { jsonApi } from "./_http.js"
 
 /**
@@ -29,13 +29,7 @@ interface SupportTeamError {
   readonly reason: string
 }
 
-const isNpub = (value: string): boolean => {
-  try {
-    return decode(value).type === "npub"
-  } catch {
-    return false
-  }
-}
+const isNpub = (value: string): boolean => npubToHex(value) !== null
 
 const RelayListSchema = z
   .string()

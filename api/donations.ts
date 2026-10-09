@@ -1,5 +1,9 @@
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { z } from "zod"
+import type {
+  DonationHistoryItem,
+  DonationHistoryPage,
+} from "../src/core/integrations/donations/donation-history.js"
 import {
   createDonateWallet,
   type DonateWallet,
@@ -13,16 +17,6 @@ const MAX_LIMIT = 50
 const MAX_PAGES_PER_REQUEST = 20
 const COMPLETED_TRANSFER_STATUS = "TRANSFER_STATUS_COMPLETED"
 const INCOMING_TRANSFER_DIRECTION = "INCOMING"
-
-export interface DonationItem {
-  readonly amountSats: number
-  readonly occurredAt: number
-}
-
-export interface DonationsResponse {
-  readonly items: readonly DonationItem[]
-  readonly nextCursor: string | null
-}
 
 interface DonationsError {
   readonly status: "ERROR"
@@ -50,7 +44,7 @@ export interface DonateTransferSource {
 }
 
 const { jsonResponse, preflightResponse } = jsonApi<
-  DonationsResponse | DonationsError
+  DonationHistoryPage | DonationsError
 >({
   cacheControl: "no-store",
   methods: "GET",
@@ -88,7 +82,9 @@ export const isDonation = (transfer: DonateTransfer): boolean =>
   transfer.totalValue > 0 &&
   transfer.transferDirection === INCOMING_TRANSFER_DIRECTION
 
-export const toDonationItem = (transfer: DonateTransfer): DonationItem => ({
+export const toDonationItem = (
+  transfer: DonateTransfer
+): DonationHistoryItem => ({
   amountSats: transfer.totalValue,
   occurredAt: (
     transfer.updatedTime ??
@@ -113,8 +109,8 @@ export const toDonationItem = (transfer: DonateTransfer): DonationItem => ({
 export const collectDonationsPage = async (
   source: DonateTransferSource,
   { limit, offset }: { readonly limit: number; readonly offset: number }
-): Promise<DonationsResponse> => {
-  const items: DonationItem[] = []
+): Promise<DonationHistoryPage> => {
+  const items: DonationHistoryItem[] = []
   let currentOffset = offset
 
   for (let page = 0; page < MAX_PAGES_PER_REQUEST; page += 1) {

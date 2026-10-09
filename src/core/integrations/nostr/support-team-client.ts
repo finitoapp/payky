@@ -1,5 +1,4 @@
 import type { Task } from "@evolu/common"
-import { decode } from "nostr-tools/nip19"
 import { z } from "zod"
 
 import { appEnv } from "@/core/app-env.ts"
@@ -10,6 +9,7 @@ import {
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { SupportTeam } from "@/core/integrations/nostr/nostr-support-chat.ts"
+import { npubToHex } from "@/core/integrations/nostr/npub.ts"
 
 const SUPPORT_TEAM_URL = new URL(
   "/api/support-team",
@@ -18,12 +18,8 @@ const SUPPORT_TEAM_URL = new URL(
 
 /** An npub as the hex pubkey the chat compares and tags. */
 const NpubSchema = z.string().transform((value, context) => {
-  try {
-    const decoded = decode(value)
-    if (decoded.type === "npub") return decoded.data
-  } catch {
-    // Reported below with every other non-npub value.
-  }
+  const hex = npubToHex(value)
+  if (hex !== null) return hex
   context.addIssue({ code: "custom", message: `Not an npub: ${value}` })
   return z.NEVER
 })

@@ -1,5 +1,4 @@
 import type { Task } from "@evolu/common"
-import { z } from "zod"
 import { appEnv } from "@/core/app-env.ts"
 import {
   type FetchDep,
@@ -7,6 +6,10 @@ import {
   fetchAndValidateJson,
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import {
+  type DonationHistoryPage,
+  DonationHistoryResponseSchema,
+} from "@/core/integrations/donations/donation-history.ts"
 
 const DONATIONS_URL = new URL(
   "/api/donations",
@@ -17,26 +20,6 @@ const buildDonationsUrl = (cursor: string | undefined): string =>
   cursor === undefined
     ? DONATIONS_URL
     : `${DONATIONS_URL}?cursor=${encodeURIComponent(cursor)}`
-
-export interface DonationHistoryItem {
-  readonly amountSats: number
-  readonly occurredAt: number
-}
-
-export interface DonationHistoryPage {
-  readonly items: readonly DonationHistoryItem[]
-  readonly nextCursor: string | null
-}
-
-const DonationHistoryResponseSchema = z.object({
-  items: z.array(
-    z.object({
-      amountSats: z.number().int().positive(),
-      occurredAt: z.number().int().nonnegative(),
-    })
-  ),
-  nextCursor: z.string().trim().min(1).nullable(),
-})
 
 const createDonationsHttpError = defineError("DonationsHttpError")<{
   readonly message: string

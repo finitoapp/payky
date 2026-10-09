@@ -165,9 +165,6 @@ export const skWithdraw = {
   "withdraw.review.warning":
     "Bitcoinové transakcie nemožno vrátiť. Pred potvrdením cieľ dôkladne skontrolujte.",
   "withdraw.sats": "{amount} satov",
-  "withdraw.scan.close": "Zavrieť",
-  "withdraw.scan.error":
-    "Nepodarilo sa získať prístup ku kamere. Zadajte cieľ ručne.",
   "withdraw.scan.title": "Naskenovať cieľ",
   "withdraw.status.done": "Dokončené",
   "withdraw.status.failed": "Zlyhalo",

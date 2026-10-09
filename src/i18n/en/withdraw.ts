@@ -164,9 +164,6 @@ export const enWithdraw = {
   "withdraw.review.warning":
     "Bitcoin transactions cannot be reversed. Double-check the destination before confirming.",
   "withdraw.sats": "{amount} sats",
-  "withdraw.scan.close": "Close",
-  "withdraw.scan.error":
-    "Couldn't access the camera. Enter the destination manually.",
   "withdraw.scan.title": "Scan destination",
   "withdraw.status.done": "Completed",
   "withdraw.status.failed": "Failed",

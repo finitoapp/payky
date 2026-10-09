@@ -1,5 +1,6 @@
 import { usePermission } from "@dedalik/use-react"
 import { useQuery } from "@tanstack/react-query"
+import type { BarcodeFormat } from "barcode-detector"
 import {
   ClipboardPasteIcon,
   LoaderCircleIcon,
@@ -7,7 +8,6 @@ import {
 } from "lucide-react"
 import { type FormEvent, useState } from "react"
 import { toast } from "sonner"
-
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -40,6 +40,7 @@ import {
   type WithdrawDestination,
 } from "@/core/modules/withdraw/withdraw-destination-utils.ts"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@/core/modules/withdraw/withdraw-utils.ts"
+import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -55,7 +56,9 @@ import {
   type WithdrawRequest,
 } from "./withdraw-flow.ts"
 import { LightningAddress } from "./withdraw-lightning-address.tsx"
-import { WithdrawQrScanner } from "./withdraw-qr-scanner.tsx"
+
+/** A destination is always a QR code; one stable array, not one per render. */
+const DESTINATION_SCAN_FORMATS: Array<BarcodeFormat> = ["qr_code"]
 
 const destinationKindKeys = {
   onchain: "withdraw.destination.kind.onchain",
@@ -483,15 +486,13 @@ export function WithdrawFormStep({
         </Card>
       </form>
 
-      {scannerOpen ? (
-        <WithdrawQrScanner
-          onScan={(raw) => {
-            changeDestination(raw.trim())
-            setScannerOpen(false)
-          }}
-          onClose={() => setScannerOpen(false)}
-        />
-      ) : null}
+      <ScanCodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        title={t("withdraw.scan.title")}
+        formats={DESTINATION_SCAN_FORMATS}
+        onScan={(raw) => changeDestination(raw.trim())}
+      />
     </>
   )
 }

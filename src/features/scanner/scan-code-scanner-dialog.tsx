@@ -1,3 +1,4 @@
+import type { BarcodeFormat } from "barcode-detector"
 import {
   Dialog,
   DialogContent,
@@ -15,10 +16,15 @@ export function ScanCodeScannerDialog({
   open,
   onOpenChange,
   onScan,
+  title,
+  formats,
 }: {
   readonly open: boolean
   readonly onOpenChange: (open: boolean) => void
   readonly onScan: (rawValue: string) => void
+  /** Defaults to the generic "scan a code". */
+  readonly title?: string
+  readonly formats?: Array<BarcodeFormat>
 }) {
   const { t } = useTranslation()
 
@@ -26,11 +32,12 @@ export function ScanCodeScannerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("scanner.dialog.title")}</DialogTitle>
+          <DialogTitle>{title ?? t("scanner.dialog.title")}</DialogTitle>
         </DialogHeader>
         <div className="relative h-80 overflow-hidden rounded-lg bg-black">
           {open && (
             <ScanCodeScanner
+              formats={formats}
               onScan={(rawValue) => {
                 onScan(rawValue)
                 onOpenChange(false)

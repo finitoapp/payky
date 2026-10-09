@@ -78,11 +78,14 @@ export function ScanCodeScanner({
   onScan,
   paused = false,
   repeatDelayMs = DEFAULT_REPEAT_DELAY_MS,
+  formats = SCAN_FORMATS,
   className,
 }: {
   readonly onScan: (rawValue: string) => void
   readonly paused?: boolean
   readonly repeatDelayMs?: number
+  /** Narrower than the default when only one kind can mean anything, as a withdrawal destination is always a QR code. */
+  readonly formats?: Array<BarcodeFormat>
   readonly className?: string
 }) {
   const { t } = useTranslation()
@@ -148,7 +151,7 @@ export function ScanCodeScanner({
           width: { ideal: 1280 },
           height: { ideal: 720 },
         }}
-        formats={SCAN_FORMATS}
+        formats={formats}
         allowMultiple
         scanDelay={0}
         retryDelay={150}

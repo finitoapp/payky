@@ -1,10 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useAtomValue } from "jotai"
 import { useEffect, useState } from "react"
 
-import { accountAtom } from "@/atoms/account.ts"
-import { createDateDep } from "@/core/deps.ts"
-import { createNostrDep } from "@/core/integrations/nostr/nostr-client.ts"
 import {
   type DmInbox,
   fetchSupportMessages,
@@ -124,7 +120,6 @@ export const useSupportMessages = ({
 }) => {
   const appRun = useAppRun()
   const queryClient = useQueryClient()
-  const { masterKey } = useAtomValue(accountAtom)
   const queryKey = supportMessagesQueryKey(pubkey)
 
   useEffect(() => {
@@ -137,32 +132,33 @@ export const useSupportMessages = ({
           mergeSupportMessages(current, [message])
       )
 
+    // One run for as long as the effect listens, so the subscription gets
+    // the same deps every Task here does; disposed with it below.
+    const run = appRun()
     let close = () => {}
     let retry: ReturnType<typeof setTimeout> | undefined
     const listen = () => {
-      close = subscribeSupportMessages(
-        { ...createNostrDep(), ...createDateDep(), masterKey },
-        {
-          team,
-          inbox,
-          onMessage: add,
-          // Every relay dropped it: catch up on the history, listen again.
-          onClose: () => {
-            retry = setTimeout(() => {
-              void queryClient.invalidateQueries({ queryKey: key })
-              listen()
-            }, RESUBSCRIBE_DELAY_MS)
-          },
-        }
-      )
+      close = subscribeSupportMessages(run.deps, {
+        team,
+        inbox,
+        onMessage: add,
+        // Every relay dropped it: catch up on the history, listen again.
+        onClose: () => {
+          retry = setTimeout(() => {
+            void queryClient.invalidateQueries({ queryKey: key })
+            listen()
+          }, RESUBSCRIBE_DELAY_MS)
+        },
+      })
     }
     listen()
 
     return () => {
       clearTimeout(retry)
       close()
+      void run[Symbol.asyncDispose]()
     }
-  }, [inbox, masterKey, pubkey, queryClient, team])
+  }, [appRun, inbox, pubkey, queryClient, team])
 
   return useQuery({
     queryKey,

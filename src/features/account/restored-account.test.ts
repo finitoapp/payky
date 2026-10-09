@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest"
 
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import { planRestoreCleanup } from "@/features/account/restored-account.ts"
 
-const active = "active-account" as AccountId
-const previous = "previous-account" as AccountId
+const active = "active-account" as DeviceAccountId
+const previous = "previous-account" as DeviceAccountId
 
 describe("planRestoreCleanup", () => {
   test.each(["onboarding", "settings"] as const)(

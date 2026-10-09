@@ -11,8 +11,8 @@ import {
   upsertAccountEvoluWebsocketTransport,
 } from "@/core/evolu/device-account.ts"
 import {
-  type AccountId,
   createDeviceQuery,
+  type DeviceAccountId,
 } from "@/core/evolu/device-client.ts"
 import type { DeviceMigration } from "@/core/migrations/migrations.ts"
 import type { DeviceEvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -70,16 +70,16 @@ const transportRowsQuery = createDeviceQuery((db) =>
 
 /** One account's move onto its derived id. */
 interface AccountMove {
-  readonly id: AccountId
+  readonly id: DeviceAccountId
   readonly name: NonEmptyString255
   readonly masterKey: MasterKey
   readonly lastUseAt: AccountRow["lastUseAt"]
   /** Removed when every row of the account was. */
   readonly isDeleted: boolean
   /** The row whose name and transports the derived row takes over. */
-  readonly sourceId: AccountId
+  readonly sourceId: DeviceAccountId
   /** Live rows under other ids, removed once the derived row exists. */
-  readonly retiredIds: ReadonlyArray<AccountId>
+  readonly retiredIds: ReadonlyArray<DeviceAccountId>
 }
 
 const newestFirst = (rows: ReadonlyArray<AccountRow>) =>

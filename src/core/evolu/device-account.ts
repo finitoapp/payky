@@ -11,8 +11,8 @@ import {
 
 import {
   type AccountEvoluTransportId,
-  type AccountId,
   createDeviceQuery,
+  type DeviceAccountId,
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -25,7 +25,7 @@ import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
 import { createRandomDisplayName } from "@/lib/random-name.ts"
 
 export interface DeviceAccount {
-  readonly id: AccountId
+  readonly id: DeviceAccountId
   readonly masterKey: MasterKey
   readonly name: string
   readonly device: {
@@ -100,7 +100,7 @@ export const activeAccountQuery = createDeviceQuery((db) =>
  * The device account under `id`, a removed one included: re-adding it
  * revives that row instead of adding a second one (account/0003).
  */
-const accountByIdQuery = (id: AccountId) =>
+const accountByIdQuery = (id: DeviceAccountId) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("account")
@@ -171,7 +171,7 @@ const createAccountEvoluTransportId = ({
   type,
   url,
 }: {
-  readonly accountId: AccountId
+  readonly accountId: DeviceAccountId
   readonly type: "WebSocket"
   readonly url: WssUrl
 }): AccountEvoluTransportId =>
@@ -186,7 +186,7 @@ export const upsertAccountEvoluWebsocketTransport = (
     isActive,
     url,
   }: {
-    readonly accountId: AccountId
+    readonly accountId: DeviceAccountId
     readonly isActive: typeof sqliteFalse | typeof sqliteTrue
     readonly url: WssUrl
   },
@@ -236,7 +236,7 @@ export interface NewAccountOptions {
  * writes one row (account/0003). Derived from the app owner id, which sync
  * URLs carry anyway, not from the master key: the id may end up in logs.
  */
-export const deriveDeviceAccountId = (masterKey: MasterKey): AccountId =>
+export const deriveDeviceAccountId = (masterKey: MasterKey): DeviceAccountId =>
   createIdFromString<"DeviceAccountId">(
     `payky-device-account:${createAppOwner(deriveEvoluOwnerSecret(masterKey)).id}`
   )
@@ -297,7 +297,7 @@ export async function createOrSelectAccount(
   deviceEvolu: DeviceEvolu,
   masterKey: MasterKey,
   options?: NewAccountOptions
-): Promise<{ readonly accountId: AccountId; readonly created: boolean }> {
+): Promise<{ readonly accountId: DeviceAccountId; readonly created: boolean }> {
   const [existingAccount] = await deviceEvolu.loadQuery(
     accountByIdQuery(deriveDeviceAccountId(masterKey))
   )
@@ -318,7 +318,7 @@ export async function createOrSelectAccount(
 
 export function selectAccount(
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId,
+  accountId: DeviceAccountId,
   options?: MutationOptions
 ) {
   deviceEvolu.update(
@@ -333,7 +333,7 @@ export function selectAccount(
 
 export function updateAccountName(
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId,
+  accountId: DeviceAccountId,
   name: string,
   options?: MutationOptions
 ) {
@@ -364,7 +364,7 @@ export const storableNostrPicture = (picture: string | null): string | null => {
 
 export function updateAccountNostrPicture(
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId,
+  accountId: DeviceAccountId,
   picture: string | null
 ) {
   deviceEvolu.update("account", { id: accountId, nostrPicture: picture })
@@ -372,7 +372,7 @@ export function updateAccountNostrPicture(
 
 export function removeDeviceAccount(
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId
+  accountId: DeviceAccountId
 ) {
   deviceEvolu.update("account", {
     id: accountId,

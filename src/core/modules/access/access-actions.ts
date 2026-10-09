@@ -10,7 +10,7 @@ import { z } from "zod"
 
 import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import {
   applyPinUnblockToken,
   loadPinAttemptLog,
@@ -137,7 +137,7 @@ const createWrongPinError = defineError("WrongPin")<{
 export type WrongPinError = ReturnType<typeof createWrongPinError>
 
 export interface PinEntryTarget {
-  readonly accountId: AccountId
+  readonly accountId: DeviceAccountId
   readonly deviceId: DeviceId
   /** What the attempt tried to unlock, for the owner to read (rule 9). */
   readonly target: string
@@ -221,7 +221,7 @@ export const enterRecoveryPhrase =
     accountId,
   }: {
     readonly phrase: string
-    readonly accountId: AccountId
+    readonly accountId: DeviceAccountId
   }): Task<
     ReadonlyArray<PinAttemptRow>,
     WrongRecoveryPhraseError,
@@ -246,7 +246,7 @@ export const clearPinAttemptLog =
     accountId,
     deviceId,
   }: {
-    readonly accountId: AccountId
+    readonly accountId: DeviceAccountId
     readonly deviceId: DeviceId
   }): Task<void, never, PinEntryDeps> =>
   async (run) =>
@@ -274,7 +274,7 @@ export const applyPinUnblock =
     deviceId,
     token,
   }: {
-    readonly accountId: AccountId
+    readonly accountId: DeviceAccountId
     readonly deviceId: DeviceId
     readonly token: string
   }): Task<void, never, PinEntryDeps> =>

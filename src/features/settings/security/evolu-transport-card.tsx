@@ -8,11 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 interface EvoluTransportCardProps {
-  readonly accountId: AccountId
+  readonly accountId: DeviceAccountId
 }
 
 export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {

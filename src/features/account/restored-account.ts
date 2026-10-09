@@ -1,12 +1,12 @@
 import { atom } from "jotai"
 
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 
 export interface RestoredAccount {
   /** Whether the phrase's account was new to this device, not just selected. */
   readonly created: boolean
   /** The account that was active before the restore. */
-  readonly previous: AccountId
+  readonly previous: DeviceAccountId
 }
 
 /**
@@ -20,11 +20,11 @@ export const restoredAccountAtom = atom<RestoredAccount | null>(null)
 
 export interface RestoreCleanup {
   /** Removed once the restored account's settings arrive, or on "set up as new". */
-  readonly discardOnSuccess: AccountId | undefined
+  readonly discardOnSuccess: DeviceAccountId | undefined
   /** Removed on "use another phrase": the restored account, when it was new. */
-  readonly removeOnCancel: AccountId | undefined
+  readonly removeOnCancel: DeviceAccountId | undefined
   /** Selected again on "use another phrase". */
-  readonly selectOnCancel: AccountId | undefined
+  readonly selectOnCancel: DeviceAccountId | undefined
 }
 
 export function planRestoreCleanup({
@@ -33,7 +33,7 @@ export function planRestoreCleanup({
   source,
 }: {
   readonly restored: RestoredAccount | null
-  readonly activeAccountId: AccountId
+  readonly activeAccountId: DeviceAccountId
   readonly source: "onboarding" | "settings"
 }): RestoreCleanup {
   if (restored === null) {

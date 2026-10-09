@@ -11,8 +11,8 @@ import {
   storableNostrPicture,
 } from "@/core/evolu/device-account.ts"
 import {
-  type AccountId,
   createDeviceQuery,
+  type DeviceAccountId,
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
@@ -75,7 +75,10 @@ const loadAccountRows = (deviceEvolu: DeviceEvolu) =>
     )
   )
 
-const loadTransportUrls = (deviceEvolu: DeviceEvolu, accountId: AccountId) =>
+const loadTransportUrls = (
+  deviceEvolu: DeviceEvolu,
+  accountId: DeviceAccountId
+) =>
   deviceEvolu
     .loadQuery(
       createDeviceQuery((db) =>

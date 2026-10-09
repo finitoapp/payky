@@ -7,8 +7,8 @@ import { TransportSyncStatus } from "@/components/evolu-transports/transport-syn
 import { Switch } from "@/components/ui/switch.tsx"
 import { appOwnerIdPlaceholder } from "@/core/evolu/device-account.ts"
 import {
-  type AccountId,
   createDeviceQuery,
+  type DeviceAccountId,
 } from "@/core/evolu/device-client.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
@@ -17,7 +17,7 @@ import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 
-const accountTransportsQuery = (accountId: AccountId) =>
+const accountTransportsQuery = (accountId: DeviceAccountId) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("accountEvoluTransport")
@@ -45,7 +45,7 @@ const accountTransportsQuery = (accountId: AccountId) =>
   )
 
 interface TransportToggleListProps {
-  readonly accountId: AccountId
+  readonly accountId: DeviceAccountId
 }
 
 export function TransportToggleList({ accountId }: TransportToggleListProps) {

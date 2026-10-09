@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import { loadPinAttemptLog } from "@/core/evolu/device-pin-attempts.ts"
 import type { Evolu } from "@/core/evolu/schema.ts"
 import {
@@ -34,7 +34,7 @@ import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
 
-const accountId: AccountId = createIdFromString("test-account")
+const accountId: DeviceAccountId = createIdFromString("test-account")
 const deviceId: DeviceId = createIdFromString("test-device")
 const otherDeviceId: DeviceId = createIdFromString("test-other-device")
 const ownerPin = PinSchema.parse("4821")
@@ -184,7 +184,8 @@ describe("enterPin", () => {
       await env.run(tryPin(pin))
     }
 
-    const otherAccount: AccountId = createIdFromString("test-other-account")
+    const otherAccount: DeviceAccountId =
+      createIdFromString("test-other-account")
     await expect(
       env.run(
         enterPin({

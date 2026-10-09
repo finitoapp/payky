@@ -27,7 +27,7 @@ import {
   removeDeviceAccount,
   selectAccount,
 } from "@/core/evolu/device-account.ts"
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
 import {
   type AccountChoice,
@@ -77,14 +77,14 @@ export function AccountsSettingsPage() {
 
   // Both governed by the active account's `admin` (access/0002); the other
   // account's PIN is never asked.
-  const activateAccount = async (accountId: AccountId) => {
+  const activateAccount = async (accountId: DeviceAccountId) => {
     if (accountId === activeAccount.id) return
     if (!(await require("admin", "access.action.switchAccount"))) return
     selectAccount(deviceEvolu, accountId)
     reloadAppEvolu()
   }
 
-  const removeAccount = async (accountId: AccountId, name: string) => {
+  const removeAccount = async (accountId: DeviceAccountId, name: string) => {
     if (accountId === activeAccount.id) return
     if (!(await require("admin", "access.action.removeAccount"))) return
 

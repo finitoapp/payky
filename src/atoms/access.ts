@@ -1,6 +1,6 @@
 import { atom } from "jotai"
 
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import type { Permission } from "@/core/modules/access/access-types.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -9,7 +9,7 @@ import type { TranslationKey } from "@/i18n/resources.ts"
  * account it was entered for, so switching account ends it.
  */
 export const accessSessionAtom = atom<{
-  readonly accountId: AccountId
+  readonly accountId: DeviceAccountId
 } | null>(null)
 
 /**

@@ -12,6 +12,7 @@ import { type ReactNode, useState } from "react"
 import { toast } from "sonner"
 import { accountAtom } from "@/atoms/account.ts"
 import { CollisionAlert } from "@/components/collision-alert.tsx"
+import { DetailRow } from "@/components/detail-row.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import {
   Timeline,
@@ -458,7 +459,7 @@ function PaymentDetailContent({
                   <TimelineSeparator />
                   <TimelineContent>
                     <div className="mt-2 flex flex-col gap-2 rounded-lg border bg-muted/20 p-3">
-                      <PaymentDetailRow
+                      <DetailRow
                         label={t("paymentDetail.transaction.amount")}
                         value={formatMoney(
                           {
@@ -484,7 +485,7 @@ function PaymentDetailContent({
                         value={reconciliation.transactionNote}
                       />
                       <PaymentDetailTechnical>
-                        <PaymentDetailRow
+                        <DetailRow
                           label={t("paymentDetail.transaction.occurredAt")}
                           value={formatDateTime(
                             new Date(reconciliation.transactionOccurredAt),
@@ -493,7 +494,7 @@ function PaymentDetailContent({
                         />
                         {reconciliation.transactionRecordedAt ===
                         null ? null : (
-                          <PaymentDetailRow
+                          <DetailRow
                             label={t("paymentDetail.transaction.recordedAt")}
                             value={formatDateTime(
                               new Date(reconciliation.transactionRecordedAt),
@@ -502,7 +503,7 @@ function PaymentDetailContent({
                           />
                         )}
                         {reconciliation.transactionSource === null ? null : (
-                          <PaymentDetailRow
+                          <DetailRow
                             label={t("paymentDetail.transaction.source")}
                             value={t(
                               claimSourceLabelKey[
@@ -551,7 +552,7 @@ function PaymentDetailContent({
           value={payment.deviceId}
         />
         {payment.updatedAt === null ? null : (
-          <PaymentDetailRow
+          <DetailRow
             label={t("paymentDetail.updatedAt")}
             value={formatDateTime(new Date(payment.updatedAt), locale)}
           />
@@ -753,7 +754,7 @@ function PaymentDetailBillCard({
 
         <Separator />
 
-        <PaymentDetailRow
+        <DetailRow
           label={t("paymentDetail.bill.total")}
           value={formatMoney(
             { value: totalAmountWithTip, currency: bill.currency },
@@ -994,7 +995,7 @@ function PaymentDetailEetSaleCard({
             })}
           </p>
         )}
-        <PaymentDetailRow
+        <DetailRow
           label={t("paymentDetail.eet.amount")}
           value={formatMoney(
             { value: sale.amount, currency: sale.currency },
@@ -1006,13 +1007,13 @@ function PaymentDetailEetSaleCard({
           value={sale.pok}
         />
         {sale.receivedAt === null ? null : (
-          <PaymentDetailRow
+          <DetailRow
             label={t("paymentDetail.eet.receivedAt")}
             value={formatDateTime(parseISO(sale.receivedAt), locale)}
           />
         )}
         {warnings.map((warning) => (
-          <PaymentDetailRow
+          <DetailRow
             key={warning.code}
             label={t("paymentDetail.eet.warning", {
               code: String(warning.code),
@@ -1021,7 +1022,7 @@ function PaymentDetailEetSaleCard({
           />
         ))}
         {lastError === null ? null : (
-          <PaymentDetailRow
+          <DetailRow
             label={t("paymentDetail.eet.lastError")}
             value={lastError}
           />
@@ -1039,15 +1040,12 @@ function PaymentDetailEetSaleCard({
           </Button>
         ) : null}
         <PaymentDetailTechnical>
-          <PaymentDetailRow
+          <DetailRow
             label={t("paymentDetail.eet.saleAt")}
             value={formatDateTime(parseISO(sale.saleAt), locale)}
           />
-          <PaymentDetailRow
-            label={t("paymentDetail.eet.eic")}
-            value={sale.eic}
-          />
-          <PaymentDetailRow
+          <DetailRow label={t("paymentDetail.eet.eic")} value={sale.eic} />
+          <DetailRow
             label={t("paymentDetail.eet.establishment")}
             value={sale.establishmentId}
           />
@@ -1137,39 +1135,5 @@ function PaymentDetailOptionalRow({
 }) {
   if (value === null) return null
 
-  return <PaymentDetailRow label={label} value={value} />
-}
-
-export function PaymentDetailRow({
-  label,
-  value,
-  stacked,
-  emphasize,
-  children,
-}: {
-  readonly label: string
-  readonly value?: string
-  readonly stacked?: boolean
-  readonly emphasize?: boolean
-  readonly children?: ReactNode
-}) {
-  return (
-    <div
-      className={
-        stacked
-          ? "flex flex-col gap-1 text-sm"
-          : "flex items-start justify-between gap-4 text-sm"
-      }
-    >
-      <span className="text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          stacked ? undefined : "max-w-56 break-all text-right",
-          emphasize ? "font-semibold" : "font-medium"
-        )}
-      >
-        {children ?? value}
-      </span>
-    </div>
-  )
+  return <DetailRow label={label} value={value} />
 }

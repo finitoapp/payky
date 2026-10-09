@@ -3,7 +3,11 @@ import {
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
-import { testCreateConsole, testCreateRun } from "@evolu/common"
+import {
+  createIdFromString,
+  testCreateConsole,
+  testCreateRun,
+} from "@evolu/common"
 import { subHours } from "date-fns"
 import { describe, expect, test, vi } from "vitest"
 
@@ -15,12 +19,19 @@ import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import { createTestInvoice } from "@/core/modules/shared/lightning-invoice-test-fixtures.ts"
 import {
   Integer,
   NonEmptyString255,
   NonEmptyStringSchema,
   NonNegativeInteger,
+  PositiveInteger,
   PositiveNumber,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
@@ -83,7 +94,9 @@ const reconciliationClaimsByAccountIdQuery = (accountId: AccountId) =>
 interface FakeTransfer {
   readonly id: string
   readonly status: string
-  readonly totalValue: number
+  readonly type: string
+  readonly valueSentByWallet: number
+  readonly valueReceivedByWallet: number
   readonly transferDirection: string
   readonly updatedTime: Date | undefined
   readonly createdTime: Date | undefined
@@ -200,7 +213,9 @@ const createCompletedTransfer = (
 ): FakeTransfer => ({
   id: "spark-transfer-1",
   status: "TRANSFER_STATUS_COMPLETED",
-  totalValue: 1234,
+  type: "TRANSFER",
+  valueSentByWallet: 0,
+  valueReceivedByWallet: 1234,
   transferDirection: "INCOMING",
   updatedTime: new Date("2026-05-27T10:00:00Z"),
   createdTime: new Date("2026-05-27T09:59:00Z"),
@@ -511,7 +526,8 @@ describe("spark account transaction sync job", () => {
     const wallet = new FakeSparkWallet([
       createCompletedTransfer({
         id: transferId,
-        totalValue: 2100,
+        valueSentByWallet: 2100,
+        valueReceivedByWallet: 0,
         transferDirection: "OUTGOING",
       }),
     ])
@@ -830,6 +846,288 @@ describe("spark account transaction sync job", () => {
     expect(
       await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
     ).toEqual([])
+    expect(errors).toEqual([])
+  })
+})
+
+describe("spark account transaction sync job, withdrawals", () => {
+  const sourcesQuery = (accountId: AccountId) =>
+    createQuery((db) =>
+      db
+        .selectFrom("accountTransactionSource")
+        .innerJoin(
+          "accountTransaction",
+          "accountTransaction.id",
+          "accountTransactionSource.accountTransactionId"
+        )
+        .select(["accountTransactionSource.id"])
+        .where("accountTransaction.accountId", "=", accountId)
+    )
+
+  const recordLightningWithdrawal = async (
+    evolu: EvoluDep["evolu"],
+    accountId: AccountId,
+    sparkTransferId: string
+  ) => {
+    const id = createRowId<"Withdrawal">()
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+      evolu.upsert(
+        "withdrawal",
+        {
+          id,
+          accountId,
+          deviceId: null,
+          amountSats: PositiveInteger(1000),
+          accountTransactionId: createIdFromString<"AccountTransaction">(
+            `accountTransaction:spark:${sparkTransferId}`
+          ),
+          failedAt: null,
+          failureReason: null,
+        },
+        mutationOptions
+      )
+      evolu.upsert(
+        "withdrawalLightning",
+        {
+          id,
+          lightningAddress: null,
+          lnInvoice: NonEmptyStringSchema.decode("lnbc1invoice"),
+          sparkTransferId: NonEmptyStringSchema.decode(sparkTransferId),
+          maxFeeSats: NonNegativeInteger(13),
+        },
+        mutationOptions
+      )
+    })
+  }
+
+  const startJob = async (
+    transfers: ReadonlyArray<FakeTransfer>,
+    {
+      recheckIntervalMs = 10,
+      withdrawalRecheckIntervalMs,
+    }: {
+      readonly recheckIntervalMs?: number
+      readonly withdrawalRecheckIntervalMs?: number
+    } = {}
+  ) => {
+    const testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    const secret = createUniqueSecret()
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Spark account"),
+        spark: { secret },
+      })
+    )
+    const errors: unknown[] = []
+    const wallet = new FakeSparkWallet(transfers)
+    const start = async () => {
+      const jobRun = testCreateRun({
+        console: testCreateConsole(),
+        evolu,
+        evoluOwnerId: evolu.appOwner.id,
+        ...createTestDateDep(),
+        fetch: unimplementedFetch,
+        lockManager: createInProcessLockManager(),
+        onError: (error: unknown) => {
+          errors.push(error)
+        },
+      })
+      const job = await jobRun.ok(
+        createSparkAccountTransactionSyncJob({
+          walletFactory: createFakeWalletFactory(secret, wallet),
+          recheckIntervalMs,
+          withdrawalRecheckIntervalMs,
+        })
+      )
+      return {
+        async [Symbol.asyncDispose]() {
+          await job[Symbol.asyncDispose]()
+          await jobRun[Symbol.asyncDispose]()
+        },
+      }
+    }
+    return { testEvolu, evolu, accountId, errors, start }
+  }
+
+  const invoice = createTestInvoice({ hrp: "lnbc10u" })
+
+  const outgoing = (override: Partial<FakeTransfer>): FakeTransfer =>
+    createCompletedTransfer({
+      transferDirection: "OUTGOING",
+      valueSentByWallet: 1013,
+      valueReceivedByWallet: 0,
+      sparkInvoice: undefined,
+      ...override,
+    })
+
+  test("records an outgoing Lightning payment with its preimage once, fee included, under its transfer id", async () => {
+    const transferId = "0192f7a4-0000-7000-8000-00000000000a"
+    const setup = await startJob([
+      outgoing({
+        id: transferId,
+        userRequest: {
+          encodedInvoice: invoice,
+          paymentPreimage: "preimage-out",
+          status: "PREIMAGE_PROVIDED",
+        },
+      }),
+    ])
+    await using _ = setup.testEvolu
+    const { evolu, accountId, errors } = setup
+    await using _job = await setup.start()
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([
+        {
+          amount: -1013,
+          sparkTransferId: transferId,
+          lnInvoice: invoice,
+          preImage: "preimage-out",
+          paymentHash: "11".repeat(32),
+        },
+      ])
+    const [row] = await evolu.loadQuery(
+      createQuery((db) =>
+        db
+          .selectFrom("accountTransaction")
+          .select(["id"])
+          .where("accountId", "=", accountId)
+      )
+    )
+    expect(row?.id).toBe(
+      createIdFromString(`accountTransaction:spark:${transferId}`)
+    )
+    expect(errors).toEqual([])
+  })
+
+  test("skips an outgoing Lightning payment without a preimage", async () => {
+    const setup = await startJob([
+      outgoing({
+        id: "0192f7a4-0000-7000-8000-00000000000b",
+        userRequest: { encodedInvoice: invoice, status: "PENDING" },
+      }),
+    ])
+    await using _ = setup.testEvolu
+    const { evolu, accountId } = setup
+    await using _job = await setup.start()
+
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(
+      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
+    ).toEqual([])
+  })
+
+  test("records a bare Spark-fallback withdrawal through the withdrawal check, once", async () => {
+    const transferId = "0192f7a4-0000-7000-8000-00000000000c"
+    const setup = await startJob([
+      outgoing({ id: transferId, userRequest: undefined }),
+    ])
+    await using _ = setup.testEvolu
+    const { evolu, accountId, errors } = setup
+    await recordLightningWithdrawal(evolu, accountId, transferId)
+    await using _job = await setup.start()
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([
+        {
+          amount: -1013,
+          sparkTransferId: transferId,
+          lnInvoice: null,
+          sparkInvoice: null,
+        },
+      ])
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(await evolu.loadQuery(sourcesQuery(accountId))).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+
+  test("records a Spark-fallback withdrawal with a Spark invoice once, between the sweep and the check", async () => {
+    const transferId = "0192f7a4-0000-7000-8000-00000000000d"
+    const setup = await startJob([
+      outgoing({
+        id: transferId,
+        sparkInvoice: "spark-invoice-out",
+        userRequest: undefined,
+      }),
+    ])
+    await using _ = setup.testEvolu
+    const { evolu, accountId, errors } = setup
+    await recordLightningWithdrawal(evolu, accountId, transferId)
+    await using _job = await setup.start()
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([
+        { sparkTransferId: transferId, sparkInvoice: "spark-invoice-out" },
+      ])
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(
+      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
+    ).toHaveLength(1)
+    expect(await evolu.loadQuery(sourcesQuery(accountId))).toHaveLength(1)
+    expect(errors).toEqual([])
+  })
+
+  test("records a Lightning withdrawal whose transfer is older than the sweep's window", async () => {
+    const transferId = "0192f7a4-0000-7000-8000-00000000000e"
+    const setup = await startJob([
+      outgoing({
+        id: transferId,
+        createdTime: subHours(testFixedDate, 24 * 5),
+        updatedTime: testFixedDate,
+        userRequest: {
+          encodedInvoice: invoice,
+          paymentPreimage: "late-preimage",
+        },
+      }),
+    ])
+    await using _ = setup.testEvolu
+    const { evolu, accountId, errors } = setup
+    await runMutationWithCompletion((options) =>
+      evolu.upsert(
+        "sparkAccountSyncPointer",
+        { id: accountId, lastSyncedAt: TimestampMs(testFixedDate.getTime()) },
+        { ...options, ownerId: evolu.appOwner.id }
+      )
+    )
+    await recordLightningWithdrawal(evolu, accountId, transferId)
+    await using _job = await setup.start()
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([
+        { sparkTransferId: transferId, preImage: "late-preimage" },
+      ])
+    expect(errors).toEqual([])
+  })
+
+  test("checks a withdrawal made after the sweep without waiting for the next one", async () => {
+    const transferId = "0192f7a4-0000-7000-8000-00000000000f"
+    const setup = await startJob(
+      [outgoing({ id: transferId, userRequest: undefined })],
+      { recheckIntervalMs: 60_000, withdrawalRecheckIntervalMs: 10 }
+    )
+    await using _ = setup.testEvolu
+    const { evolu, accountId, errors } = setup
+    await using _job = await setup.start()
+    // Let the first sweep pass and skip the bare transfer.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(
+      await evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId))
+    ).toEqual([])
+
+    await recordLightningWithdrawal(evolu, accountId, transferId)
+
+    await expect
+      .poll(() => evolu.loadQuery(sparkTransactionsByAccountIdQuery(accountId)))
+      .toMatchObject([{ sparkTransferId: transferId }])
     expect(errors).toEqual([])
   })
 })

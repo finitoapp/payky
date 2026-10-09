@@ -1,11 +1,13 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { FetchDep } from "@/core/deps.ts"
+import type { DateDep, FetchDep } from "@/core/deps.ts"
 import type {
   LnurlHttpError,
   LnurlResponseError,
 } from "@/core/integrations/lnurl/lnurl-client.ts"
+import { createTestInvoice } from "@/core/modules/shared/lightning-invoice-test-fixtures.ts"
+import { createTestDateDep } from "@/test/date-dep.ts"
 import {
   createLud16MetadataUrl,
   fetchLnurlPayInvoice,
@@ -31,6 +33,10 @@ const metadata: LnurlPayMetadata = {
   minSendableSats: 1,
   maxSendableSats: 100_000,
 }
+
+// 21 sats = 21 000 msat = 210 nano-BTC.
+const invoiceFor21Sats = createTestInvoice({ hrp: "lnbc210n" })
+const beforeExpiry = createTestDateDep(new Date(1_780_000_000 * 1000))
 
 describe("lnurl pay client", () => {
   test("creates a LUD-16 metadata URL", () => {
@@ -71,11 +77,33 @@ describe("lnurl pay client", () => {
         callback: "https://pay.example.test/callback",
         minSendableSats: 1,
         maxSendableSats: 100_000,
+        text: "Donate",
       },
     })
     expect(requestedUrls).toEqual([
       "https://payky.me/.well-known/lnurlp/donate",
     ])
+  })
+
+  test("rejects a callback that is not https", async () => {
+    const deps = {
+      fetch: async () =>
+        Response.json({
+          tag: "payRequest",
+          callback: "http://pay.example.test/callback",
+          minSendable: 1_000,
+          maxSendable: 100_000_000,
+          metadata: '[["text/plain","Donate"]]',
+        }),
+    } satisfies FetchDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayMetadata({ address: "donate@payky.me" }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "LightningAddressInvoiceMismatch" },
+    })
   })
 
   test("rounds msat bounds that do not land on whole sats inwards", async () => {
@@ -203,21 +231,23 @@ describe("lnurl pay client", () => {
       fetch: async (input) => {
         requestedUrls.push(inputToString(input))
         return Response.json({
-          pr: "lnbc21invoice",
+          pr: invoiceFor21Sats,
           routes: [],
           verify: "https://pay.example.test/verify/1",
         })
       },
-    } satisfies FetchDep
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
     await using run = testCreateRun(deps)
 
     await expect(
       run(fetchLnurlPayInvoice({ amountSats: 21, metadata }))
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       ok: true,
       value: {
-        pr: "lnbc21invoice",
+        pr: invoiceFor21Sats,
         verify: "https://pay.example.test/verify/1",
+        invoice: { amountSats: 21 },
       },
     })
     expect(requestedUrls).toEqual([
@@ -225,10 +255,80 @@ describe("lnurl pay client", () => {
     ])
   })
 
+  test("accepts an invoice whatever its description_hash", async () => {
+    const pr = createTestInvoice({
+      hrp: "lnbc210n",
+      descriptionHash: "ff".repeat(32),
+    })
+    const deps = {
+      fetch: async () => Response.json({ pr, routes: [] }),
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayInvoice({ amountSats: 21, metadata }))
+    ).resolves.toMatchObject({ ok: true, value: { pr } })
+  })
+
+  test("rejects an invoice for a different amount", async () => {
+    const deps = {
+      fetch: async () =>
+        Response.json({
+          pr: createTestInvoice({ hrp: "lnbc220n" }),
+          routes: [],
+        }),
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayInvoice({ amountSats: 21, metadata }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "LightningAddressInvoiceMismatch" },
+    })
+  })
+
+  test("rejects a non-mainnet invoice", async () => {
+    const deps = {
+      fetch: async () =>
+        Response.json({
+          pr: createTestInvoice({ hrp: "lntb210n" }),
+          routes: [],
+        }),
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayInvoice({ amountSats: 21, metadata }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "LightningAddressInvoiceMismatch" },
+    })
+  })
+
+  test("rejects an expired invoice", async () => {
+    const deps = {
+      fetch: async () => Response.json({ pr: invoiceFor21Sats, routes: [] }),
+      ...createTestDateDep(new Date((1_780_000_000 + 3600) * 1000)),
+    } satisfies FetchDep & DateDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayInvoice({ amountSats: 21, metadata }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "LightningAddressInvoiceMismatch" },
+    })
+  })
+
   test("returns a typed error for a malformed invoice response", async () => {
     const deps = {
       fetch: async () => Response.json({ pr: "" }),
-    } satisfies FetchDep
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
     await using run = testCreateRun(deps)
 
     await expect(

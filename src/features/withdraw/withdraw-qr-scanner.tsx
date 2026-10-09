@@ -6,10 +6,6 @@ import {
 import { XIcon } from "lucide-react"
 import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
-import {
-  parseScannedBitcoinAddress,
-  type ScannedBitcoinAddress,
-} from "@/core/modules/shared/bitcoin-uri-utils.ts"
 import { ScannerTorchButton } from "@/features/scanner/scanner-torch-button.tsx"
 import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -18,7 +14,8 @@ export function WithdrawQrScanner({
   onScan,
   onClose,
 }: {
-  readonly onScan: (result: ScannedBitcoinAddress) => void
+  /** The raw code; the form recognizes it as it does typed input. */
+  readonly onScan: (rawValue: string) => void
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -33,7 +30,7 @@ export function WithdrawQrScanner({
     const [first] = detectedCodes
     if (!first) return
 
-    onScan(parseScannedBitcoinAddress(first.rawValue))
+    onScan(first.rawValue)
   }
 
   return (

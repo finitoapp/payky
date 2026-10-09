@@ -840,7 +840,7 @@ export const enSettings = {
   "settings.tips.title": "Tips",
   "settings.title": "Settings",
   "settings.withdrawals.description":
-    "Send Bitcoin from a Spark account to an on-chain address",
+    "Send bitcoin from a Spark account on-chain or over Lightning",
   "settings.withdrawals.title": "Withdrawals",
   "settings.taxesGroup": "TAXES & DOCUMENTS",
   "settings.tips.nav.on": "On",

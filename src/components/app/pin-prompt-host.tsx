@@ -69,6 +69,14 @@ function PinPrompt({
   return (
     <>
       <DialogTitle className="sr-only">{t(request.action)}</DialogTitle>
+      {request.detail === undefined ? null : (
+        <p
+          className="text-center text-sm font-medium break-words"
+          data-testid="pin-prompt-detail"
+        >
+          {request.detail}
+        </p>
+      )}
       <PinScreen
         permission={request.permission}
         action={request.action}

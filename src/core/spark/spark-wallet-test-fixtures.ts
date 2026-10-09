@@ -13,6 +13,11 @@ export const createFakeSparkWallet = (
   getBalance: notImplemented,
   getWithdrawalFeeQuote: notImplemented,
   withdraw: notImplemented,
+  getLightningSendFeeEstimate: notImplemented,
+  payLightningInvoice: notImplemented,
+  getTransfer: notImplemented,
+  getIdentityPublicKey: notImplemented,
+  getCoopExitRequest: notImplemented,
   [Symbol.asyncDispose]: async () => {},
   ...overrides,
 })

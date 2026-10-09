@@ -49,7 +49,9 @@ export function useAccess() {
  * the session grants it, and otherwise raises the one-shot PIN prompt, which
  * answers that one action and starts no session. `requirePin(action)` asks
  * for the PIN whatever the device grants: changing the PIN, turning access
- * control off and unblocking a device always do (access/0001).
+ * control off and unblocking a device always do (access/0001), and so does
+ * withdrawing money (access/0007), whose `detail` names the amount and where
+ * it goes.
  */
 export function useRequirePermission() {
   const { effective } = useAccess()
@@ -61,11 +63,11 @@ export function useRequirePermission() {
   const setQueue = useSetAtom(pinPromptQueueAtom)
 
   const prompt = useCallback(
-    (permission: Permission | null, action: TranslationKey) =>
+    (permission: Permission | null, action: TranslationKey, detail?: string) =>
       new Promise<boolean>((resolve) => {
         setQueue((queue) => [
           ...queue,
-          { id: crypto.randomUUID(), permission, action, resolve },
+          { id: crypto.randomUUID(), permission, action, detail, resolve },
         ])
       }),
     [setQueue]
@@ -78,7 +80,7 @@ export function useRequirePermission() {
   )
 
   const requirePin = useCallback(
-    (action: TranslationKey) => prompt(null, action),
+    (action: TranslationKey, detail?: string) => prompt(null, action, detail),
     [prompt]
   )
 

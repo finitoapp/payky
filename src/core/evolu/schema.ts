@@ -80,6 +80,12 @@ import {
 } from "@/core/modules/refund/refund.ts"
 import { table } from "@/core/modules/table/table.ts"
 import { taxRate, taxRateIndexes } from "@/core/modules/tax-rate/tax-rate.ts"
+import {
+  withdrawal,
+  withdrawalIndexes,
+  withdrawalLightning,
+  withdrawalOnchain,
+} from "@/core/modules/withdraw/withdraw.ts"
 
 export const AppSchema = {
   accessControl,
@@ -129,6 +135,9 @@ export const AppSchema = {
   eetReversalConfirmation,
   refund,
   refundLine,
+  withdrawal,
+  withdrawalOnchain,
+  withdrawalLightning,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)
@@ -148,6 +157,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...fioPluginIndexes(create),
   ...eetIndexes(create),
   ...refundIndexes(create),
+  ...withdrawalIndexes(create),
 ]
 
 export type EvoluSchema = typeof AppSchema

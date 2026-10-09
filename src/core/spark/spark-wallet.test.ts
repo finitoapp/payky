@@ -3,10 +3,30 @@ import { ExitSpeed } from "@buildonspark/spark-sdk/types"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
 
-const { initializeMock } = vi.hoisted(() => ({ initializeMock: vi.fn() }))
+const { initializeMock, FakeUUID, FakeSparkValidationError } = vi.hoisted(
+  () => {
+    class FakeUUID {
+      readonly value: string
+      constructor(value: string) {
+        this.value = value
+      }
+      static parse(value: string) {
+        return new FakeUUID(value)
+      }
+    }
+    class FakeSparkValidationError extends Error {}
+    return {
+      initializeMock: vi.fn(),
+      FakeUUID,
+      FakeSparkValidationError,
+    }
+  }
+)
 
 vi.mock("@buildonspark/spark-sdk", () => ({
   SparkWallet: { initialize: initializeMock },
+  UUID: FakeUUID,
+  SparkValidationError: FakeSparkValidationError,
   SparkWalletEvent: {
     TransferClaimed: "transfer:claimed",
     BalanceUpdate: "balance:update",
@@ -33,12 +53,17 @@ const createFakeSdkWallet = (
     readonly getBalance: () => Promise<unknown>
     readonly getWithdrawalFeeQuote: () => Promise<unknown>
     readonly withdraw: () => Promise<unknown>
+    readonly payLightningInvoice: (params: unknown) => Promise<unknown>
+    readonly getTransfer: (id: string) => Promise<unknown>
   }> = {}
 ) => ({
   getBalance: vi.fn(async () => ({ satsBalance: { available: 0n } })),
   getWithdrawalFeeQuote: vi.fn(async () => null),
   withdraw: vi.fn(async () => null),
   createLightningInvoice: vi.fn(),
+  payLightningInvoice: vi.fn(
+    async (_params: unknown): Promise<unknown> => ({})
+  ),
   getWalletSettings: vi.fn(),
   setPrivacyEnabled: vi.fn(),
   getTransfers: vi.fn(),
@@ -146,25 +171,136 @@ describe("createDefaultSparkPaymentWallet", () => {
     })
 
     expect(result).toEqual({
+      kind: "sent",
       id: "withdrawal-1",
       status: "SUCCEEDED",
       txid: "txid-1",
     })
   })
 
-  test("returns null when the SDK rejects the withdrawal", async () => {
+  test("throws when the SDK returns no coop exit request", async () => {
     const fakeWallet = createFakeSdkWallet()
     initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
 
     await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
-    const result = await wallet.withdraw({
-      onchainAddress: "bc1qexample",
-      exitSpeed: "slow",
-      feeQuoteId: "quote-1",
-      feeAmountSats: 5,
+
+    await expect(
+      wallet.withdraw({
+        onchainAddress: "bc1qexample",
+        exitSpeed: "slow",
+        feeQuoteId: "quote-1",
+        feeAmountSats: 5,
+      })
+    ).rejects.toThrow()
+  })
+
+  test("reports a SparkValidationError from withdraw as rejected", async () => {
+    const fakeWallet = createFakeSdkWallet({
+      withdraw: vi.fn(async () => {
+        throw new FakeSparkValidationError("Fee quote expired")
+      }),
+    })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
+
+    await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
+
+    expect(
+      await wallet.withdraw({
+        onchainAddress: "bc1qexample",
+        exitSpeed: "slow",
+        feeQuoteId: "quote-1",
+        feeAmountSats: 5,
+      })
+    ).toEqual({ kind: "rejected", message: "Fee quote expired" })
+  })
+
+  test("pays a Lightning invoice preferring Spark, with the transfer id as an SDK UUID", async () => {
+    const payLightningInvoice = vi.fn(async (_params: unknown) => ({}))
+    const fakeWallet = createFakeSdkWallet({ payLightningInvoice })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
+
+    await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
+    const result = await wallet.payLightningInvoice({
+      invoice: "lnbc1test",
+      maxFeeSats: 13,
+      transferId: "0192f7a4-0000-7000-8000-000000000001",
     })
 
-    expect(result).toBeNull()
+    expect(result).toEqual({ kind: "sent" })
+    const [params] = payLightningInvoice.mock.calls[0] ?? []
+    expect(params).toMatchObject({
+      invoice: "lnbc1test",
+      maxFeeSats: 13,
+      preferSpark: true,
+    })
+    expect((params as { transferId: unknown }).transferId).toBeInstanceOf(
+      FakeUUID
+    )
+  })
+
+  test("reports a SparkValidationError from a Lightning payment as rejected", async () => {
+    const fakeWallet = createFakeSdkWallet({
+      payLightningInvoice: vi.fn(async () => {
+        throw new FakeSparkValidationError("maxFeeSats does not cover fee")
+      }),
+    })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
+
+    await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
+
+    expect(
+      await wallet.payLightningInvoice({
+        invoice: "lnbc1test",
+        maxFeeSats: 1,
+        transferId: "0192f7a4-0000-7000-8000-000000000001",
+      })
+    ).toEqual({ kind: "rejected", message: "maxFeeSats does not cover fee" })
+  })
+
+  test("lets any other Lightning payment error through", async () => {
+    const fakeWallet = createFakeSdkWallet({
+      payLightningInvoice: vi.fn(async () => {
+        throw new Error("network down")
+      }),
+    })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
+
+    await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
+
+    await expect(
+      wallet.payLightningInvoice({
+        invoice: "lnbc1test",
+        maxFeeSats: 1,
+        transferId: "0192f7a4-0000-7000-8000-000000000001",
+      })
+    ).rejects.toThrow("network down")
+  })
+
+  test("getTransfer answers whether the transfer exists", async () => {
+    const fakeWallet = createFakeSdkWallet({
+      getTransfer: vi.fn(async (id: string) =>
+        id === "known" ? { id } : undefined
+      ),
+    })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
+
+    await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
+
+    expect(await wallet.getTransfer("known")).toBe(true)
+    expect(await wallet.getTransfer("unknown")).toBe(false)
+  })
+
+  test("getTransfer throws on an SDK error instead of answering false", async () => {
+    const fakeWallet = createFakeSdkWallet({
+      getTransfer: vi.fn(async () => {
+        throw new Error("unavailable")
+      }),
+    })
+    initializeMock.mockResolvedValueOnce({ wallet: fakeWallet })
+
+    await using wallet = await createDefaultSparkPaymentWallet(nextSecret())
+
+    await expect(wallet.getTransfer("known")).rejects.toThrow("unavailable")
   })
 })
 

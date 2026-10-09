@@ -1,14 +1,12 @@
 import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
-import { err, ok, type Result, type Run } from "@evolu/common"
+import { err, ok, type Result, type Run, type Task } from "@evolu/common"
 import { subHours } from "date-fns"
 import { z } from "zod"
 
-import type {
-  BackgroundJob,
-  BackgroundJobContext,
-} from "@/core/background-jobs/background-job-types.ts"
+import type { BackgroundJobContext } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { reconcileAccountSyncSessions } from "@/core/background-jobs/reconcile-account-sync-sessions.ts"
+import type { DeviceIdDep } from "@/core/deps.ts"
 import {
   activeSparkAccountsQuery,
   sparkAccountSyncPointerByAccountIdQuery,
@@ -31,18 +29,25 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import { parseLightningInvoice } from "@/core/modules/shared/lightning-invoice-utils.ts"
 import {
   IntegerSchema,
   type NonEmptyString,
   NonEmptyStringSchema,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
+import { checkPendingWithdrawals } from "@/core/modules/withdraw/withdraw-check-actions.ts"
 import {
   createSharedSparkSyncWallet,
   type SharedSparkSyncWallet,
+  SPARK_TRANSFER_STATUS_COMPLETED,
 } from "@/core/spark/spark-wallet.ts"
 
 const DEFAULT_RECHECK_INTERVAL_MS = 60_000
+// Pending withdrawals are checked on their own, far more often than the
+// history sweep: the merchant is usually watching the withdrawal's detail.
+// Without pending withdrawals a tick is one local query.
+const DEFAULT_WITHDRAWAL_RECHECK_INTERVAL_MS = 10_000
 const TRANSFER_PAGE_SIZE = 50
 // Bounds the periodic full rescan's `createdAfter` overlap: how long a
 // completed transfer's own `createdTime` may lag behind when the SDK first
@@ -53,13 +58,15 @@ const TRANSFER_PAGE_SIZE = 50
 // rescan) are the primary way a transfer gets recorded promptly; this window
 // is only the safety net's reach when those are missed.
 const SPARK_SYNC_LOOKBACK_HOURS = 72
-const COMPLETED_TRANSFER_STATUS = "TRANSFER_STATUS_COMPLETED"
 const OUTGOING_TRANSFER_DIRECTION = "OUTGOING"
 
 interface SparkTransfer {
   readonly id: string
   readonly status: WalletTransfer["status"]
-  readonly totalValue: number
+  readonly type: WalletTransfer["type"]
+  /** What this wallet sent, fee included; `totalValue` is deprecated. */
+  readonly valueSentByWallet: number
+  readonly valueReceivedByWallet: number
   readonly transferDirection: WalletTransfer["transferDirection"]
   readonly updatedTime: Date | undefined
   readonly createdTime: Date | undefined
@@ -75,6 +82,7 @@ type SparkWalletFactory = (
 interface SparkAccountTransactionSyncJobOptions {
   readonly walletFactory?: SparkWalletFactory
   readonly recheckIntervalMs?: number
+  readonly withdrawalRecheckIntervalMs?: number
 }
 
 interface SparkAccountRow {
@@ -85,7 +93,7 @@ interface SparkAccountRow {
 interface SparkTransactionDetails {
   readonly lnInvoice: string
   readonly preImage: string
-  readonly paymentHash: string
+  readonly paymentHash: string | null
 }
 
 interface SparkTransactionPayload {
@@ -100,13 +108,36 @@ type RecordTransferResult =
   | "lock-unavailable"
 
 type SparkTransactionInput = CreateAccountTransactionInput
-type SparkTransactionInputError = "missing-spark-identifier"
+type SparkTransactionInputError =
+  | "missing-spark-identifier"
+  | "missing-preimage"
+
+/**
+ * The CLI runs this job too, and has no device: `deviceId` is there only in
+ * the app. Without it every withdrawal counts as another device's.
+ */
+type SparkSyncJobContext = BackgroundJobContext & Partial<DeviceIdDep>
+
+interface RecordTransferOptions {
+  /**
+   * Record a transfer with neither a Lightning nor a Spark invoice. Only the
+   * withdrawal check passes it: it knows the transfer is our own withdrawal
+   * paid over a bare Spark fallback (withdraw/0002). The history sweep keeps
+   * skipping such transfers.
+   */
+  readonly allowWithoutInvoice?: boolean
+}
 
 export const createSparkAccountTransactionSyncJob =
   ({
     walletFactory = createSharedSparkSyncWallet,
     recheckIntervalMs = DEFAULT_RECHECK_INTERVAL_MS,
-  }: SparkAccountTransactionSyncJobOptions = {}): BackgroundJob =>
+    withdrawalRecheckIntervalMs = DEFAULT_WITHDRAWAL_RECHECK_INTERVAL_MS,
+  }: SparkAccountTransactionSyncJobOptions = {}): Task<
+    AsyncDisposable,
+    never,
+    SparkSyncJobContext
+  > =>
   (run) => {
     // A fresh `run.create()` scope, not the Task's own `run`: that one is
     // disposed the instant this Task function returns, but the sessions
@@ -125,6 +156,7 @@ export const createSparkAccountTransactionSyncJob =
       createSparkAccountSyncManager({
         run: jobRun,
         recheckIntervalMs,
+        withdrawalRecheckIntervalMs,
         walletFactory,
       })
     )
@@ -138,10 +170,12 @@ export const startSparkAccountTransactionSyncJob =
 const createSparkAccountSyncManager = ({
   run,
   recheckIntervalMs,
+  withdrawalRecheckIntervalMs,
   walletFactory,
 }: {
-  readonly run: Run<BackgroundJobContext>
+  readonly run: Run<SparkSyncJobContext>
   readonly recheckIntervalMs: number
+  readonly withdrawalRecheckIntervalMs: number
   readonly walletFactory: SparkWalletFactory
 }): AsyncDisposable => {
   const sessions = new Map<
@@ -149,6 +183,7 @@ const createSparkAccountSyncManager = ({
     AsyncDisposable & {
       readonly secret: SparkSecret
       syncHistorySoon: () => void
+      checkWithdrawalsSoon: () => void
     }
   >()
   const refreshQueue = createKeyedTaskQueue<"refresh">({
@@ -203,6 +238,12 @@ const createSparkAccountSyncManager = ({
     }
   }, recheckIntervalMs)
   ;(recheckTimer as { readonly unref?: () => void }).unref?.()
+  const withdrawalRecheckTimer = setInterval(() => {
+    for (const session of sessions.values()) {
+      session.checkWithdrawalsSoon()
+    }
+  }, withdrawalRecheckIntervalMs)
+  ;(withdrawalRecheckTimer as { readonly unref?: () => void }).unref?.()
 
   run.deps.console.info("Started Spark account transaction sync job.")
   refreshSoon()
@@ -212,6 +253,7 @@ const createSparkAccountSyncManager = ({
       if (refreshQueue.isDisposed) return
 
       clearInterval(recheckTimer)
+      clearInterval(withdrawalRecheckTimer)
       unsubscribeAccounts()
       await refreshQueue[Symbol.asyncDispose]()
 
@@ -230,11 +272,12 @@ const createSparkAccountSyncSession = ({
   walletFactory,
 }: {
   readonly account: SparkAccountRow
-  readonly run: Run<BackgroundJobContext>
+  readonly run: Run<SparkSyncJobContext>
   readonly walletFactory: SparkWalletFactory
 }): AsyncDisposable & {
   readonly secret: SparkSecret
   syncHistorySoon: () => void
+  checkWithdrawalsSoon: () => void
 } => {
   let wallet: SharedSparkSyncWallet | undefined
   let unsubscribeEvents: (() => void) | undefined
@@ -242,7 +285,9 @@ const createSparkAccountSyncSession = ({
   let isInitializing = false
   let pendingHistorySync = false
   const pendingTransferIds = new Set<string>()
-  const queue = createKeyedTaskQueue<"history" | `transfer:${string}`>({
+  const queue = createKeyedTaskQueue<
+    "history" | "withdrawals" | `transfer:${string}`
+  >({
     onError: (error) => run.deps.onError(error),
   })
 
@@ -271,7 +316,8 @@ const createSparkAccountSyncSession = ({
   }
 
   const recordTransfer = async (
-    transfer: SparkTransfer
+    transfer: SparkTransfer,
+    { allowWithoutInvoice = false }: RecordTransferOptions = {}
   ): Promise<RecordTransferResult> => {
     if (!shouldRecordTransfer(transfer)) {
       run.deps.console.debug("Ignored Spark transfer.", {
@@ -320,7 +366,8 @@ const createSparkAccountSyncSession = ({
           account.id,
           sparkTransferId,
           transfer,
-          run.deps.date.now()
+          run.deps.date.now(),
+          allowWithoutInvoice
         )
         if (!input.ok) {
           run.deps.console.debug("Ignored incomplete Spark transfer.", {
@@ -376,6 +423,25 @@ const createSparkAccountSyncSession = ({
         return "created"
       }
     )
+  }
+
+  /**
+   * Settles our pending Lightning withdrawals and records the ones that
+   * finished, outside the sweep's window (withdraw/0002, withdraw/0003).
+   */
+  const checkWithdrawals = async (
+    currentWallet: SharedSparkSyncWallet
+  ): Promise<void> => {
+    const toRecord = await run.ok(
+      checkPendingWithdrawals({
+        accountId: account.id,
+        deviceId: run.deps.deviceId ?? null,
+        getTransfer: (id) => currentWallet.getTransfer(id),
+      })
+    )
+    for (const transfer of toRecord) {
+      await recordTransfer(transfer, { allowWithoutInvoice: true })
+    }
   }
 
   const syncTransferById = async (transferId: string): Promise<void> => {
@@ -469,6 +535,7 @@ const createSparkAccountSyncSession = ({
     // covered less than `[createdAfter, now)` and must not claim it did.
     if (!queue.isDisposed) {
       await saveSparkSyncPointer(run, account.id, startedAt)
+      await checkWithdrawals(currentWallet)
     }
 
     run.deps.console.info("Finished Spark transfer history sync.", {
@@ -585,6 +652,11 @@ const createSparkAccountSyncSession = ({
       return account.secret
     },
     syncHistorySoon,
+    checkWithdrawalsSoon: () => {
+      const currentWallet = wallet
+      if (currentWallet === undefined || queue.isDisposed) return
+      queue.enqueue("withdrawals", () => checkWithdrawals(currentWallet))
+    },
     async [Symbol.asyncDispose]() {
       if (disposed) return
 
@@ -617,7 +689,7 @@ const createSparkAccountSyncSession = ({
 }
 
 const saveSparkSyncPointer = async (
-  run: Run<BackgroundJobContext>,
+  run: Run<SparkSyncJobContext>,
   accountId: AccountId,
   lastSyncedAt: Date
 ): Promise<void> => {
@@ -641,14 +713,24 @@ const createSparkTransactionInput = (
   accountId: AccountId,
   sparkTransferId: NonEmptyString,
   transfer: SparkTransfer,
-  now: Date
+  now: Date,
+  allowWithoutInvoice: boolean
 ): Result<SparkTransactionInput, SparkTransactionInputError> => {
-  const payload = getSparkTransactionPayload(transfer.userRequest)
+  // An outgoing Lightning payment over the SSP counts only once its preimage
+  // proves it went through; until then it is skipped, and a later pass
+  // records it (withdraw/0002).
+  const send = LightningSendRequestSchema.safeParse(transfer.userRequest)
+  if (send.success && !send.data.paymentPreimage) {
+    return err("missing-preimage")
+  }
+  const payload = send.success
+    ? getLightningSendPayload(send.data)
+    : getSparkTransactionPayload(transfer.userRequest)
   const lnInvoice = nullableNonEmptyString(
     transfer.lnInvoice ?? payload?.details.lnInvoice
   )
   const sparkInvoice = nullableNonEmptyString(transfer.sparkInvoice)
-  if (lnInvoice === null && sparkInvoice === null) {
+  if (lnInvoice === null && sparkInvoice === null && !allowWithoutInvoice) {
     return err("missing-spark-identifier")
   }
 
@@ -671,7 +753,9 @@ const createSparkTransactionInput = (
           : {
               lnInvoice,
               preImage: nullableNonEmptyString(payload?.details.preImage),
-              paymentHash: nullableNonEmptyString(payload?.details.paymentHash),
+              paymentHash: nullableNonEmptyString(
+                payload?.details.paymentHash ?? undefined
+              ),
             },
       sparkInvoice:
         sparkInvoice === null
@@ -684,12 +768,13 @@ const createSparkTransactionInput = (
 }
 
 const shouldRecordTransfer = (transfer: SparkTransfer): boolean =>
-  transfer.status === COMPLETED_TRANSFER_STATUS && transfer.totalValue > 0
+  transfer.status === SPARK_TRANSFER_STATUS_COMPLETED &&
+  getTransferAmount(transfer) !== 0
 
 const getTransferAmount = (transfer: SparkTransfer): number =>
   transfer.transferDirection === OUTGOING_TRANSFER_DIRECTION
-    ? -transfer.totalValue
-    : transfer.totalValue
+    ? -transfer.valueSentByWallet
+    : transfer.valueReceivedByWallet
 
 const getTransferOccurredAt = (transfer: SparkTransfer, now: Date): number =>
   (transfer.updatedTime ?? transfer.createdTime ?? now).getTime()
@@ -725,5 +810,27 @@ const getSparkTransactionPayload = (
       paymentHash: invoice.paymentHash,
     },
     memo: invoice.memo ?? "",
+  }
+}
+
+// The SDK's `LightningSendRequest`: the invoice sits at the top level, unlike
+// a receive request's `invoice.encodedInvoice`.
+const LightningSendRequestSchema = z.looseObject({
+  encodedInvoice: z.string().min(1),
+  paymentPreimage: z.string().nullish(),
+})
+
+const getLightningSendPayload = ({
+  encodedInvoice,
+  paymentPreimage,
+}: z.output<typeof LightningSendRequestSchema>): SparkTransactionPayload => {
+  const invoice = parseLightningInvoice(encodedInvoice)
+  return {
+    details: {
+      lnInvoice: encodedInvoice,
+      preImage: paymentPreimage ?? "",
+      paymentHash: invoice.ok ? invoice.value.paymentHash : null,
+    },
+    memo: "",
   }
 }

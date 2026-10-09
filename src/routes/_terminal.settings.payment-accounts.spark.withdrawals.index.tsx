@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { WithdrawPage } from "@/features/withdraw/withdraw-page.tsx"
+import { WithdrawHistoryPage } from "@/features/withdraw/withdraw-history-page.tsx"
 
 export const Route = createFileRoute(
-  "/_terminal/settings/payment-accounts/spark/withdraw"
+  "/_terminal/settings/payment-accounts/spark/withdrawals/"
 )({
-  component: WithdrawPage,
+  component: WithdrawHistoryPage,
   staticData: {
     access: "admin",
     terminalLayout: {

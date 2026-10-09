@@ -5,7 +5,10 @@ import {
 } from "@evolu/common"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import type {
+  NonEmptyString,
+  NonEmptyString255,
+} from "@/core/modules/shared/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**
@@ -714,5 +717,19 @@ export const paymentClaimsQuery = (paymentId: PaymentId) =>
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
       .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+      .limit(1)
+  )
+
+/**
+ * Payments of ours this Lightning invoice belongs to. A withdrawal refuses to
+ * pay one (withdraw/0006). Invoices are stored as the SDK returns them,
+ * lowercase.
+ */
+export const paymentIdsByLnInvoiceQuery = (lnInvoice: NonEmptyString) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentBtcLightning")
+      .select(["paymentBtcLightning.id"])
+      .where("paymentBtcLightning.lnInvoice", "=", lnInvoice)
       .limit(1)
   )

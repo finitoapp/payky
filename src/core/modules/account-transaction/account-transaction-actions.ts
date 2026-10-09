@@ -20,10 +20,7 @@ import {
   type NonEmptyString255,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-import {
-  assertHasSparkIdentifier,
-  type WithSparkDetails,
-} from "@/core/spark/spark-details.ts"
+import type { WithSparkDetails } from "@/core/spark/spark-details.ts"
 import type {
   AccountTransactionRow,
   accountTransaction,
@@ -65,6 +62,18 @@ type AccountTransactionSparkUpdateInput = WithSparkDetails<
 >
 
 /**
+ * The id a Spark transfer's movement is recorded under. Exported because a
+ * Lightning withdrawal records, before it sends, the id the Spark sync job
+ * will later write its movement under.
+ */
+export const deriveSparkAccountTransactionId = (
+  sparkTransferId: NonEmptyString
+): AccountTransactionId =>
+  createIdFromString<"AccountTransaction">(
+    `accountTransaction:spark:${sparkTransferId}`
+  )
+
+/**
  * The id a money movement is recorded under — derived from whatever uniquely
  * identifies it at its source, so re-recording the same movement (a retried
  * write, a sync that replays a statement) lands on the row already there
@@ -77,14 +86,15 @@ type AccountTransactionSparkUpdateInput = WithSparkDetails<
  *
  * An IBAN row without a `bankReference` is the same situation: only the bank's
  * own reference makes a transfer identifiable, and a manually entered one has
- * none.
+ * none. So is an on-chain row without a `coopExitRequestId`, which an
+ * operator's "the money left" confirmation writes (withdraw/0002).
  */
 const deriveAccountTransactionId = (
   accountId: AccountTransactionRow["accountId"],
   detail: {
     readonly iban?: { readonly bankReference?: NonEmptyString255 | null }
     readonly spark?: { readonly sparkTransferId: NonEmptyString }
-    readonly onchain?: { readonly coopExitRequestId: NonEmptyString }
+    readonly onchain?: { readonly coopExitRequestId?: NonEmptyString | null }
   }
 ): AccountTransactionId | undefined => {
   const { iban, spark, onchain } = detail
@@ -97,12 +107,14 @@ const deriveAccountTransactionId = (
       `accountTransaction:iban:${accountId}:${iban.bankReference}`
     )
   }
-  if (spark) {
-    return createIdFromString<"AccountTransaction">(
-      `accountTransaction:spark:${spark.sparkTransferId}`
-    )
-  }
+  if (spark) return deriveSparkAccountTransactionId(spark.sparkTransferId)
   if (onchain) {
+    if (
+      onchain.coopExitRequestId === null ||
+      onchain.coopExitRequestId === undefined
+    ) {
+      return undefined
+    }
     return createIdFromString<"AccountTransaction">(
       `accountTransaction:onchain:${onchain.coopExitRequestId}`
     )
@@ -184,11 +196,9 @@ export const computeAccountTransactionRows = (
   }: CreateAccountTransactionInput,
   now: Date
 ) => {
-  assertHasSparkIdentifier(
-    spark,
-    "Spark account transaction requires lnInvoice or sparkInvoice."
-  )
-
+  // A Spark movement may carry only its `sparkTransferId`: a withdrawal paid
+  // over a bare Spark fallback has no invoice (withdraw/0002). Payments still
+  // require one.
   const id =
     providedId ??
     deriveAccountTransactionId(input.accountId, { iban, spark, onchain }) ??

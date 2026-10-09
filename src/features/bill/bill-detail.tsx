@@ -1,5 +1,6 @@
 import type { InferRow } from "@evolu/common"
 import { Link } from "@tanstack/react-router"
+import { DetailRow } from "@/components/detail-row.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -43,7 +44,6 @@ import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts
 import { useBillStatus } from "@/features/bill/use-bill-status.ts"
 import {
   PaymentDetailCopyRow,
-  PaymentDetailRow,
   PaymentDetailTechnical,
 } from "@/features/payment/payment-detail.tsx"
 import {
@@ -163,7 +163,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
            * fact staff should read, not a missing value. "—" stays for a
            * tableId whose table row is gone (deleted since).
            */}
-          <PaymentDetailRow label={t("billDetail.table")}>
+          <DetailRow label={t("billDetail.table")}>
             {bill.tableId === null ? (
               <span className="text-muted-foreground">
                 {t("billDetail.noTable")}
@@ -171,7 +171,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
             ) : (
               (table?.name ?? t("billDetail.emptyValue"))
             )}
-          </PaymentDetailRow>
+          </DetailRow>
 
           {billStatus.hasCancellationCollision ? (
             <BillCancellationCollisionPanel billId={billId} />
@@ -280,7 +280,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
           value={bill.deviceId}
         />
         {bill.updatedAt === null ? null : (
-          <PaymentDetailRow
+          <DetailRow
             label={t("paymentDetail.updatedAt")}
             value={formatDateTime(new Date(bill.updatedAt), locale)}
           />

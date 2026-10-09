@@ -67,7 +67,11 @@ import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_termina
 import { Route as TerminalSettingsPaymentAccountsIbanIndexRouteImport } from './routes/_terminal.settings.payment-accounts.iban.index'
 import { Route as TerminalSettingsPaymentAccountsIbanFioPluginRouteImport } from './routes/_terminal.settings.payment-accounts.iban.fio-plugin'
 import { Route as TerminalSettingsPaymentAccountsSparkIndexRouteImport } from './routes/_terminal.settings.payment-accounts.spark.index'
-import { Route as TerminalSettingsPaymentAccountsSparkWithdrawRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdraw'
+import { Route as TerminalSettingsPaymentAccountsSparkTransactionsRouteImport } from './routes/_terminal.settings.payment-accounts.spark.transactions'
+import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals'
+import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals.index'
+import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals.$withdrawalId'
+import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsNewRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals.new'
 
 const TerminalRoute = TerminalRouteImport.update({
   id: '/_terminal',
@@ -396,11 +400,38 @@ const TerminalSettingsPaymentAccountsSparkIndexRoute =
     path: '/',
     getParentRoute: () => TerminalSettingsPaymentAccountsSparkRoute,
   } as any)
-const TerminalSettingsPaymentAccountsSparkWithdrawRoute =
-  TerminalSettingsPaymentAccountsSparkWithdrawRouteImport.update({
-    id: '/withdraw',
-    path: '/withdraw',
+const TerminalSettingsPaymentAccountsSparkTransactionsRoute =
+  TerminalSettingsPaymentAccountsSparkTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
     getParentRoute: () => TerminalSettingsPaymentAccountsSparkRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsSparkWithdrawalsRoute =
+  TerminalSettingsPaymentAccountsSparkWithdrawalsRouteImport.update({
+    id: '/withdrawals',
+    path: '/withdrawals',
+    getParentRoute: () => TerminalSettingsPaymentAccountsSparkRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute =
+  TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsPaymentAccountsSparkWithdrawalsRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute =
+  TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRouteImport.update(
+    {
+      id: '/$withdrawalId',
+      path: '/$withdrawalId',
+      getParentRoute: () =>
+        TerminalSettingsPaymentAccountsSparkWithdrawalsRoute,
+    } as any,
+  )
+const TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute =
+  TerminalSettingsPaymentAccountsSparkWithdrawalsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => TerminalSettingsPaymentAccountsSparkWithdrawalsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -459,9 +490,13 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables/': typeof TerminalSettingsTablesIndexRoute
   '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
-  '/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  '/settings/payment-accounts/spark/transactions': typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
+  '/settings/payment-accounts/spark/withdrawals': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren
   '/settings/payment-accounts/iban/': typeof TerminalSettingsPaymentAccountsIbanIndexRoute
   '/settings/payment-accounts/spark/': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
+  '/settings/payment-accounts/spark/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
+  '/settings/payment-accounts/spark/withdrawals/new': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
+  '/settings/payment-accounts/spark/withdrawals/': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
 }
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
@@ -510,9 +545,12 @@ export interface FileRoutesByTo {
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables': typeof TerminalSettingsTablesIndexRoute
   '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
-  '/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  '/settings/payment-accounts/spark/transactions': typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanIndexRoute
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
+  '/settings/payment-accounts/spark/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
+  '/settings/payment-accounts/spark/withdrawals/new': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
+  '/settings/payment-accounts/spark/withdrawals': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -572,9 +610,13 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/_terminal/settings/tables/': typeof TerminalSettingsTablesIndexRoute
   '/_terminal/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
-  '/_terminal/settings/payment-accounts/spark/withdraw': typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  '/_terminal/settings/payment-accounts/spark/transactions': typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
+  '/_terminal/settings/payment-accounts/spark/withdrawals': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren
   '/_terminal/settings/payment-accounts/iban/': typeof TerminalSettingsPaymentAccountsIbanIndexRoute
   '/_terminal/settings/payment-accounts/spark/': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
+  '/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
+  '/_terminal/settings/payment-accounts/spark/withdrawals/new': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
+  '/_terminal/settings/payment-accounts/spark/withdrawals/': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -634,9 +676,13 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/'
     | '/settings/tables/'
     | '/settings/payment-accounts/iban/fio-plugin'
-    | '/settings/payment-accounts/spark/withdraw'
+    | '/settings/payment-accounts/spark/transactions'
+    | '/settings/payment-accounts/spark/withdrawals'
     | '/settings/payment-accounts/iban/'
     | '/settings/payment-accounts/spark/'
+    | '/settings/payment-accounts/spark/withdrawals/$withdrawalId'
+    | '/settings/payment-accounts/spark/withdrawals/new'
+    | '/settings/payment-accounts/spark/withdrawals/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/error'
@@ -685,9 +731,12 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts'
     | '/settings/tables'
     | '/settings/payment-accounts/iban/fio-plugin'
-    | '/settings/payment-accounts/spark/withdraw'
+    | '/settings/payment-accounts/spark/transactions'
     | '/settings/payment-accounts/iban'
     | '/settings/payment-accounts/spark'
+    | '/settings/payment-accounts/spark/withdrawals/$withdrawalId'
+    | '/settings/payment-accounts/spark/withdrawals/new'
+    | '/settings/payment-accounts/spark/withdrawals'
   id:
     | '__root__'
     | '/_terminal'
@@ -746,9 +795,13 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/'
     | '/_terminal/settings/tables/'
     | '/_terminal/settings/payment-accounts/iban/fio-plugin'
-    | '/_terminal/settings/payment-accounts/spark/withdraw'
+    | '/_terminal/settings/payment-accounts/spark/transactions'
+    | '/_terminal/settings/payment-accounts/spark/withdrawals'
     | '/_terminal/settings/payment-accounts/iban/'
     | '/_terminal/settings/payment-accounts/spark/'
+    | '/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId'
+    | '/_terminal/settings/payment-accounts/spark/withdrawals/new'
+    | '/_terminal/settings/payment-accounts/spark/withdrawals/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1166,12 +1219,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkIndexRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
     }
-    '/_terminal/settings/payment-accounts/spark/withdraw': {
-      id: '/_terminal/settings/payment-accounts/spark/withdraw'
-      path: '/withdraw'
-      fullPath: '/settings/payment-accounts/spark/withdraw'
-      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawRouteImport
+    '/_terminal/settings/payment-accounts/spark/transactions': {
+      id: '/_terminal/settings/payment-accounts/spark/transactions'
+      path: '/transactions'
+      fullPath: '/settings/payment-accounts/spark/transactions'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkTransactionsRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
+    }
+    '/_terminal/settings/payment-accounts/spark/withdrawals': {
+      id: '/_terminal/settings/payment-accounts/spark/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/settings/payment-accounts/spark/withdrawals'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsSparkRoute
+    }
+    '/_terminal/settings/payment-accounts/spark/withdrawals/': {
+      id: '/_terminal/settings/payment-accounts/spark/withdrawals/'
+      path: '/'
+      fullPath: '/settings/payment-accounts/spark/withdrawals/'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRoute
+    }
+    '/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId': {
+      id: '/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId'
+      path: '/$withdrawalId'
+      fullPath: '/settings/payment-accounts/spark/withdrawals/$withdrawalId'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRoute
+    }
+    '/_terminal/settings/payment-accounts/spark/withdrawals/new': {
+      id: '/_terminal/settings/payment-accounts/spark/withdrawals/new'
+      path: '/new'
+      fullPath: '/settings/payment-accounts/spark/withdrawals/new'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRoute
     }
   }
 }
@@ -1262,15 +1343,39 @@ const TerminalSettingsPaymentAccountsIbanRouteWithChildren =
     TerminalSettingsPaymentAccountsIbanRouteChildren,
   )
 
+interface TerminalSettingsPaymentAccountsSparkWithdrawalsRouteChildren {
+  TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
+  TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
+  TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
+}
+
+const TerminalSettingsPaymentAccountsSparkWithdrawalsRouteChildren: TerminalSettingsPaymentAccountsSparkWithdrawalsRouteChildren =
+  {
+    TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute:
+      TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute,
+    TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute:
+      TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute,
+    TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute:
+      TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute,
+  }
+
+const TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren =
+  TerminalSettingsPaymentAccountsSparkWithdrawalsRoute._addFileChildren(
+    TerminalSettingsPaymentAccountsSparkWithdrawalsRouteChildren,
+  )
+
 interface TerminalSettingsPaymentAccountsSparkRouteChildren {
-  TerminalSettingsPaymentAccountsSparkWithdrawRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawRoute
+  TerminalSettingsPaymentAccountsSparkTransactionsRoute: typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
+  TerminalSettingsPaymentAccountsSparkWithdrawalsRoute: typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren
   TerminalSettingsPaymentAccountsSparkIndexRoute: typeof TerminalSettingsPaymentAccountsSparkIndexRoute
 }
 
 const TerminalSettingsPaymentAccountsSparkRouteChildren: TerminalSettingsPaymentAccountsSparkRouteChildren =
   {
-    TerminalSettingsPaymentAccountsSparkWithdrawRoute:
-      TerminalSettingsPaymentAccountsSparkWithdrawRoute,
+    TerminalSettingsPaymentAccountsSparkTransactionsRoute:
+      TerminalSettingsPaymentAccountsSparkTransactionsRoute,
+    TerminalSettingsPaymentAccountsSparkWithdrawalsRoute:
+      TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren,
     TerminalSettingsPaymentAccountsSparkIndexRoute:
       TerminalSettingsPaymentAccountsSparkIndexRoute,
   }

@@ -5,6 +5,7 @@ export const csCommon = {
   "activity.tabs.payments": "Platby",
   "activity.title": "Aktivita",
   "app.name": "Payky",
+  "app.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
   "appError.copied": "Zkopírováno",
   "appError.copy": "Zkopírovat detail",
   "appError.copyFailed": "Kopírování selhalo",

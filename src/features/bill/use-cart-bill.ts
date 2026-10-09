@@ -52,7 +52,7 @@ const showCartMutationErrorToast = (
   error: { readonly type: string }
 ): void => {
   toast.error(
-    error.type === "BillLocked" ? t("bill.locked") : t("settings.saveFailed")
+    error.type === "BillLocked" ? t("bill.locked") : t("app.saveFailed")
   )
 }
 
@@ -161,7 +161,7 @@ export function useCartBill({
         return await operation()
       } catch (error) {
         console.error("Cart mutation failed", error)
-        toast.error(t("settings.saveFailed"))
+        toast.error(t("app.saveFailed"))
 
         return false
       }

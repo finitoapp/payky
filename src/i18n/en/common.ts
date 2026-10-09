@@ -3,6 +3,7 @@ export const enCommon = {
   "activity.tabs.payments": "Payments",
   "activity.title": "Activity",
   "app.name": "Payky",
+  "app.saveFailed": "Could not save the change. Please try again.",
   "appError.copied": "Copied",
   "appError.copy": "Copy detail",
   "appError.copyFailed": "Copy failed",

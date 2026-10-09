@@ -46,7 +46,7 @@ export const useInlineSave = <T,>(
       }
       flashSaved()
     } catch {
-      toast.error(t("settings.saveFailed"))
+      toast.error(t("app.saveFailed"))
     }
   }
 

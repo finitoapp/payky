@@ -33,7 +33,7 @@ export function useRunToast() {
         }
         return true
       } catch {
-        toast.error(t("settings.saveFailed"))
+        toast.error(t("app.saveFailed"))
         return false
       }
     },

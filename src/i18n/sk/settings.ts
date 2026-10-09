@@ -592,7 +592,6 @@ export const skSettings = {
     "Žiadny Nostr relay profil neprijal. Skúste to neskôr.",
   "settings.profile.setName": "Nastavte svoje meno",
   "settings.profile.title": "Profil",
-  "settings.saveFailed": "Zmenu sa nepodarilo uložiť. Skúste to prosím znova.",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",
   "settings.security.mnemonic.copy": "Kopírovať",

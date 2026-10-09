@@ -1,4 +1,5 @@
-import type { AbortError } from "@evolu/common"
+import { usePermission } from "@dedalik/use-react"
+import { useQuery } from "@tanstack/react-query"
 import {
   ClipboardPasteIcon,
   LoaderCircleIcon,
@@ -26,115 +27,262 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import { fetchLnurlPayMetadata } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import type { ScannedBitcoinAddress } from "@/core/modules/shared/bitcoin-uri-utils.ts"
+import { PositiveIntegerSchema } from "@/core/modules/shared/schema.ts"
 import {
-  type BitcoinAddress,
-  BitcoinAddressSchema,
-  PositiveIntegerSchema,
-} from "@/core/modules/shared/schema.ts"
-import {
-  type QuoteWithdrawalError,
   quoteWithdrawal,
   type WithdrawalQuote,
 } from "@/core/modules/withdraw/withdraw-actions.ts"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import {
+  parseWithdrawDestination,
+  type WithdrawDestination,
+} from "@/core/modules/withdraw/withdraw-destination-utils.ts"
+import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@/core/modules/withdraw/withdraw-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatSatsAmount } from "@/lib/format-utils.ts"
+import { useBtcFiat } from "./use-btc-fiat.ts"
+import {
+  destinationErrorKeys,
+  draftAmountSats,
+  quoteErrorMessage,
+  type WithdrawDraft,
+  type WithdrawRequest,
+} from "./withdraw-flow.ts"
+import { LightningAddress } from "./withdraw-lightning-address.tsx"
 import { WithdrawQrScanner } from "./withdraw-qr-scanner.tsx"
 
-const quoteErrorKeys = {
-  AbortError: "withdraw.quoteError.generic",
-  WithdrawalAccountNotFound: "withdraw.error.accountNotFound",
-  InvalidBitcoinAddress: "withdraw.address.invalid",
-  InsufficientWithdrawalBalance: "withdraw.error.insufficientBalance",
-  WithdrawalQuoteFailed: "withdraw.quoteError.generic",
-} satisfies Record<(QuoteWithdrawalError | AbortError)["type"], TranslationKey>
+const destinationKindKeys = {
+  onchain: "withdraw.destination.kind.onchain",
+  "lightning-invoice": "withdraw.destination.kind.lightningInvoice",
+  "lightning-address": "withdraw.destination.kind.lightningAddress",
+  unsupported: "withdraw.destination.invalid",
+} satisfies Record<WithdrawDestination["kind"], TranslationKey>
+
+const unsupportedKeys = {
+  spark: "withdraw.error.sparkDestinationNotSupported",
+  lnurl: "withdraw.error.lnurlNotSupported",
+} satisfies Record<
+  Extract<WithdrawDestination, { kind: "unsupported" }>["reason"],
+  TranslationKey
+>
+
+/** What the destination field says under itself while the merchant types. */
+const describeDestination = (
+  raw: string,
+  parsed: ReturnType<typeof parseWithdrawDestination>
+): {
+  readonly hint: TranslationKey | null
+  readonly error: TranslationKey | null
+} => {
+  if (raw.trim() === "") return { hint: null, error: null }
+  if (!parsed.ok) {
+    // An address half typed is not an error yet; a wrong network stays one.
+    return parsed.error.type === "LightningInvoiceWrongNetwork"
+      ? { hint: null, error: destinationErrorKeys[parsed.error.type] }
+      : { hint: null, error: null }
+  }
+  if (parsed.value.kind === "unsupported") {
+    return { hint: null, error: unsupportedKeys[parsed.value.reason] }
+  }
+  return { hint: destinationKindKeys[parsed.value.kind], error: null }
+}
+
+/** Why "Withdraw all" is off for this destination, or `null` when it is offered. */
+const withdrawAllUnavailableKey = (
+  destination: WithdrawDestination | null
+): TranslationKey | null => {
+  if (destination?.kind === "lightning-address") {
+    return "withdraw.all.unavailableAddress"
+  }
+  if (
+    destination?.kind === "lightning-invoice" &&
+    destination.amountSats !== null
+  ) {
+    return "withdraw.all.unavailableInvoice"
+  }
+  return null
+}
+
+const isSupportedDestination = (raw: string): boolean => {
+  const parsed = parseWithdrawDestination(raw)
+  return parsed.ok && parsed.value.kind !== "unsupported"
+}
+
+/**
+ * A destination already on the clipboard, read only when the browser grants
+ * clipboard access without asking: reading on open must never raise a
+ * permission prompt.
+ */
+const useClipboardDestination = (current: string): string | null => {
+  const permission = usePermission("clipboard-read" as PermissionName)
+  const { data: suggestion = null } = useQuery({
+    queryKey: ["withdraw", "clipboard-destination"],
+    queryFn: async () => {
+      const text = (await navigator.clipboard.readText()).trim()
+      return isSupportedDestination(text) ? text : null
+    },
+    enabled: permission === "granted",
+    retry: false,
+  })
+
+  return suggestion !== null && suggestion !== current.trim()
+    ? suggestion
+    : null
+}
+
+const shortened = (value: string): string =>
+  value.length <= 28 ? value : `${value.slice(0, 16)}…${value.slice(-8)}`
 
 export function WithdrawFormStep({
   accountId,
   availableSats,
+  draft,
+  onDraftChange,
   onReview,
 }: {
   readonly accountId: AccountId
   readonly availableSats: number | null
-  readonly onReview: (address: BitcoinAddress, quote: WithdrawalQuote) => void
+  readonly draft: WithdrawDraft
+  readonly onDraftChange: (draft: WithdrawDraft) => void
+  readonly onReview: (request: WithdrawRequest, quote: WithdrawalQuote) => void
 }) {
   const appRun = useAppRun()
   const { t } = useTranslation()
   const locale = useLocale()
-  const [address, setAddress] = useState("")
-  const [addressError, setAddressError] = useState<TranslationKey | null>(null)
-  const [amountInput, setAmountInput] = useState("")
-  const [withdrawAll, setWithdrawAll] = useState(false)
+  const fiat = useBtcFiat()
   const [scannerOpen, setScannerOpen] = useState(false)
-  const {
-    pending: quotePending,
-    error: quoteError,
-    setError: setQuoteError,
-    submit,
-  } = useSettingsForm()
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  const clipboardDestination = useClipboardDestination(draft.destination)
 
-  const applyScannedAddress = (scanned: ScannedBitcoinAddress) => {
-    setAddress(scanned.address)
-    setAddressError(null)
-    if (scanned.amountSats !== undefined) {
-      setWithdrawAll(false)
-      setAmountInput(String(scanned.amountSats))
-    }
-    setScannerOpen(false)
+  const update = (patch: Partial<WithdrawDraft>) => {
+    setSubmitError(null)
+    onDraftChange({ ...draft, ...patch })
   }
 
-  const pasteAddress = async () => {
+  const parsed = parseWithdrawDestination(draft.destination)
+  const destination = parsed.ok ? parsed.value : null
+  const { hint, error: destinationError } = describeDestination(
+    draft.destination,
+    parsed
+  )
+  const invoiceAmountSats =
+    destination?.kind === "lightning-invoice" ? destination.amountSats : null
+  const withdrawAllUnavailable = withdrawAllUnavailableKey(destination)
+  const effectiveWithdrawAll =
+    draft.withdrawAll && withdrawAllUnavailable === null
+  const typedSats = draftAmountSats(draft, fiat)
+
+  const lightningAddress = useDebouncedValue(
+    destination?.kind === "lightning-address" ? destination.address : null,
+    500
+  )
+  const metadataQuery = useQuery({
+    queryKey: ["withdraw", "lnurl-metadata", lightningAddress],
+    queryFn: async () => {
+      await using run = appRun()
+      const result = await run(
+        fetchLnurlPayMetadata({ address: lightningAddress ?? "" })
+      )
+      if (!result.ok) throw result.error
+      return result.value
+    },
+    enabled: lightningAddress !== null,
+    retry: false,
+  })
+  const addressSettled =
+    destination?.kind === "lightning-address" &&
+    lightningAddress === destination.address
+  const checkingAddress =
+    destination?.kind === "lightning-address" &&
+    (!addressSettled || metadataQuery.isFetching)
+  const range =
+    addressSettled && !metadataQuery.isFetching
+      ? (metadataQuery.data ?? null)
+      : null
+  const addressUnavailable =
+    addressSettled && !metadataQuery.isFetching && metadataQuery.isError
+  const outOfRange =
+    range !== null &&
+    typedSats !== null &&
+    (typedSats < range.minSendableSats || typedSats > range.maxSendableSats)
+  const belowOnchainMinimum =
+    destination?.kind === "onchain" &&
+    !effectiveWithdrawAll &&
+    typedSats !== null &&
+    typedSats < ONCHAIN_WITHDRAWAL_MIN_SATS
+
+  const changeDestination = (value: string) => {
+    const next = parseWithdrawDestination(value)
+    if (next.ok && next.value.kind === "onchain" && next.value.amountSats) {
+      update({
+        destination: value,
+        withdrawAll: false,
+        unit: "sats",
+        amount: String(next.value.amountSats),
+      })
+      return
+    }
+    update({ destination: value })
+  }
+
+  const pasteDestination = async () => {
     try {
-      const clipboardText = await navigator.clipboard.readText()
-      setAddress(clipboardText.trim())
-      setAddressError(null)
+      changeDestination((await navigator.clipboard.readText()).trim())
     } catch {
-      toast.error(t("withdraw.address.pasteError"))
+      toast.error(t("withdraw.destination.pasteError"))
     }
   }
 
   const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setAddressError(null)
-    setQuoteError(null)
+    setSubmitError(null)
 
-    const trimmedAddressResult = BitcoinAddressSchema.safeParse(address.trim())
-    if (trimmedAddressResult.error) {
-      setAddressError("withdraw.address.invalid")
+    if (destination === null || destination.kind === "unsupported") {
+      setSubmitError(t(destinationError ?? "withdraw.destination.invalid"))
       return
     }
 
-    const amountResult = withdrawAll
-      ? null
-      : PositiveIntegerSchema.safeParse(Math.trunc(Number(amountInput)))
-    if (!withdrawAll && (!amountInput || !amountResult?.success)) {
-      setQuoteError("withdraw.amount.invalid")
-      return
-    }
-
-    await submit(async () => {
-      await using run = appRun()
-      const quoteResult = await run(
-        quoteWithdrawal({
-          accountId,
-          onchainAddress: trimmedAddressResult.data,
-          amountSats: amountResult?.success ? amountResult.data : undefined,
-        })
-      )
-
-      if (!quoteResult.ok) {
-        setQuoteError(quoteErrorKeys[quoteResult.error.type])
-        return false
+    let amountSats: WithdrawRequest["amountSats"]
+    if (invoiceAmountSats === null && !effectiveWithdrawAll) {
+      const amount = PositiveIntegerSchema.safeParse(typedSats)
+      if (!amount.success) {
+        setSubmitError(t("withdraw.amount.invalid"))
+        return
       }
+      amountSats = amount.data
+    }
 
-      onReview(trimmedAddressResult.data, quoteResult.value)
-    })
+    const request: WithdrawRequest = { destination, amountSats }
+    setPending(true)
+    try {
+      await using run = appRun()
+      const result = await run(quoteWithdrawal({ accountId, ...request }))
+      if (!result.ok) {
+        setSubmitError(quoteErrorMessage(result.error, t))
+        return
+      }
+      onReview(request, result.value)
+    } catch {
+      setSubmitError(t("withdraw.quoteError.generic"))
+    } finally {
+      setPending(false)
+    }
   }
+
+  const sats = (amount: number) => formatSatsAmount(amount, locale)
+  const equivalent =
+    typedSats === null
+      ? null
+      : draft.unit === "sats"
+        ? fiat.approx(typedSats)
+        : t("withdraw.sats", { amount: sats(typedSats) })
 
   return (
     <>
@@ -147,26 +295,25 @@ export function WithdrawFormStep({
           <CardContent>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="withdraw-address">
-                  {t("withdraw.address.label")}
+                <FieldLabel htmlFor="withdraw-destination">
+                  {t("withdraw.destination.label")}
                 </FieldLabel>
                 <div className="flex gap-2">
                   <Input
-                    id="withdraw-address"
-                    value={address}
-                    placeholder={t("withdraw.address.placeholder")}
-                    aria-invalid={addressError !== null}
-                    onChange={(event) => {
-                      setAddress(event.target.value)
-                      setAddressError(null)
-                    }}
+                    id="withdraw-destination"
+                    value={draft.destination}
+                    placeholder={t("withdraw.destination.placeholder")}
+                    autoComplete="off"
+                    spellCheck={false}
+                    aria-invalid={destinationError !== null}
+                    onChange={(event) => changeDestination(event.target.value)}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    aria-label={t("withdraw.address.paste")}
-                    onClick={() => void pasteAddress()}
+                    aria-label={t("withdraw.destination.paste")}
+                    onClick={() => void pasteDestination()}
                   >
                     <ClipboardPasteIcon />
                   </Button>
@@ -174,35 +321,133 @@ export function WithdrawFormStep({
                     type="button"
                     variant="outline"
                     size="icon"
-                    aria-label={t("withdraw.address.scan")}
+                    aria-label={t("withdraw.destination.scan")}
                     onClick={() => setScannerOpen(true)}
                   >
                     <ScanLineIcon />
                   </Button>
                 </div>
-                <FieldError>{addressError ? t(addressError) : null}</FieldError>
+                {clipboardDestination !== null ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-fit max-w-full"
+                    onClick={() => changeDestination(clipboardDestination)}
+                  >
+                    <ClipboardPasteIcon />
+                    <span className="truncate">
+                      {t("withdraw.clipboard.use", {
+                        value: shortened(clipboardDestination),
+                      })}
+                    </span>
+                  </Button>
+                ) : null}
+                {destination?.kind === "lightning-address" ? (
+                  <FieldDescription>
+                    <LightningAddress address={destination.address} />
+                  </FieldDescription>
+                ) : null}
+                {hint !== null ? (
+                  <FieldDescription>{t(hint)}</FieldDescription>
+                ) : null}
+                {checkingAddress ? (
+                  <FieldDescription className="flex items-center gap-1">
+                    <LoaderCircleIcon className="size-3 animate-spin" />
+                    {t("withdraw.destination.checkingAddress")}
+                  </FieldDescription>
+                ) : null}
+                <FieldError>
+                  {destinationError
+                    ? t(destinationError)
+                    : addressUnavailable
+                      ? t("withdraw.error.lightningAddressUnavailable")
+                      : null}
+                </FieldError>
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="withdraw-amount">
-                  {t("withdraw.amount.label")}
-                </FieldLabel>
+                <div className="flex items-center justify-between gap-2">
+                  <FieldLabel htmlFor="withdraw-amount">
+                    {t("withdraw.amount.label")}
+                  </FieldLabel>
+                  {invoiceAmountSats === null ? (
+                    <ToggleGroup<WithdrawDraft["unit"]>
+                      value={[draft.unit]}
+                      onValueChange={([unit]) => {
+                        if (unit) update({ unit, amount: "" })
+                      }}
+                      variant="outline"
+                      size="sm"
+                      aria-label={t("withdraw.amount.unit")}
+                      disabled={effectiveWithdrawAll}
+                    >
+                      <ToggleGroupItem value="sats">
+                        {t("withdraw.amount.unitSats")}
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="fiat"
+                        disabled={fiat.rate === null}
+                      >
+                        {fiat.currency}
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  ) : null}
+                </div>
                 <Input
                   id="withdraw-amount"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1}
-                  disabled={withdrawAll}
-                  value={amountInput}
-                  placeholder={t("withdraw.amount.placeholder")}
-                  onChange={(event) => setAmountInput(event.target.value)}
+                  inputMode={draft.unit === "sats" ? "numeric" : "decimal"}
+                  disabled={effectiveWithdrawAll || invoiceAmountSats !== null}
+                  aria-invalid={outOfRange || belowOnchainMinimum}
+                  value={
+                    invoiceAmountSats !== null
+                      ? String(invoiceAmountSats)
+                      : draft.amount
+                  }
+                  placeholder={
+                    draft.unit === "sats"
+                      ? t("withdraw.amount.placeholder")
+                      : t("withdraw.amount.placeholderFiat", {
+                          currency: fiat.currency,
+                        })
+                  }
+                  onChange={(event) => update({ amount: event.target.value })}
                 />
+                {invoiceAmountSats !== null ? (
+                  <FieldDescription>
+                    {t("withdraw.amount.fromInvoice")}{" "}
+                    {fiat.approx(invoiceAmountSats)}
+                  </FieldDescription>
+                ) : equivalent !== null && !effectiveWithdrawAll ? (
+                  <FieldDescription>{equivalent}</FieldDescription>
+                ) : null}
+                {range !== null ? (
+                  <FieldDescription
+                    className={outOfRange ? "text-destructive" : undefined}
+                  >
+                    {t("withdraw.amount.range", {
+                      min: sats(range.minSendableSats),
+                      max: sats(range.maxSendableSats),
+                    })}
+                  </FieldDescription>
+                ) : null}
+                {destination?.kind === "onchain" ? (
+                  <FieldDescription
+                    className={
+                      belowOnchainMinimum ? "text-destructive" : undefined
+                    }
+                  >
+                    {t("withdraw.amount.onchainMinimum", {
+                      amount: sats(ONCHAIN_WITHDRAWAL_MIN_SATS),
+                    })}
+                  </FieldDescription>
+                ) : null}
                 {availableSats !== null ? (
                   <FieldDescription>
                     {t("withdraw.amount.available", {
-                      amount: formatSatsAmount(availableSats, locale),
-                    })}
+                      amount: sats(availableSats),
+                    })}{" "}
+                    {fiat.approx(availableSats)}
                   </FieldDescription>
                 ) : null}
               </Field>
@@ -210,9 +455,10 @@ export function WithdrawFormStep({
               <Field orientation="horizontal">
                 <Checkbox
                   id="withdraw-all"
-                  checked={withdrawAll}
+                  checked={effectiveWithdrawAll}
+                  disabled={withdrawAllUnavailable !== null}
                   onCheckedChange={(checked) =>
-                    setWithdrawAll(checked === true)
+                    update({ withdrawAll: checked === true })
                   }
                 />
                 <FieldContent>
@@ -220,22 +466,18 @@ export function WithdrawFormStep({
                     {t("withdraw.all.label")}
                   </FieldLabel>
                   <FieldDescription>
-                    {t("withdraw.all.description")}
+                    {t(withdrawAllUnavailable ?? "withdraw.all.description")}
                   </FieldDescription>
                 </FieldContent>
               </Field>
 
-              <FieldError>{quoteError ? t(quoteError) : null}</FieldError>
+              <FieldError>{submitError}</FieldError>
             </FieldGroup>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={quotePending}>
-              {quotePending ? (
-                <LoaderCircleIcon className="animate-spin" />
-              ) : null}
-              {quotePending
-                ? t("withdraw.quotePending")
-                : t("withdraw.continue")}
+            <Button type="submit" disabled={pending}>
+              {pending ? <LoaderCircleIcon className="animate-spin" /> : null}
+              {pending ? t("withdraw.quotePending") : t("withdraw.continue")}
             </Button>
           </CardFooter>
         </Card>
@@ -243,7 +485,10 @@ export function WithdrawFormStep({
 
       {scannerOpen ? (
         <WithdrawQrScanner
-          onScan={applyScannedAddress}
+          onScan={(raw) => {
+            changeDestination(raw.trim())
+            setScannerOpen(false)
+          }}
           onClose={() => setScannerOpen(false)}
         />
       ) : null}

@@ -843,7 +843,7 @@ export const csSettings = {
   "settings.tips.title": "Spropitné",
   "settings.title": "Nastavení",
   "settings.withdrawals.description":
-    "Odeslat Bitcoin ze Spark účtu na on-chain adresu",
+    "Odeslat bitcoin ze Spark účtu on-chain nebo přes Lightning",
   "settings.withdrawals.title": "Výběry",
   "settings.taxesGroup": "DANĚ A DOKLADY",
   "settings.tips.nav.on": "Zapnuto",

@@ -103,15 +103,6 @@ export const decimalAmountToMinorUnits = ({
 export const SATS_PER_BTC = 100_000_000
 
 /**
- * Whole BTC to satoshis, for a value that already arrived denominated in BTC
- * — a BIP21 URI's `amount` parameter, say. No exchange rate and no floor: the
- * caller asked for a specific amount of bitcoin, so an amount that rounds to
- * zero sats really is zero.
- */
-export const btcToSats = (amountBtc: number): number =>
-  Math.round(amountBtc * SATS_PER_BTC)
-
-/**
  * A fiat amount in minor units to satoshis at `exchangeRate` (fiat per BTC).
  *
  * Floored at one sat. One minor unit is worth a fraction of a sat at any

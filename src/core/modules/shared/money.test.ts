@@ -2,13 +2,11 @@ import { describe, expect, test } from "vitest"
 
 import { Integer } from "@/core/modules/shared/schema.ts"
 import {
-  btcToSats,
   decimalAmountToMinorUnits,
   fiatMinorUnitsToSats,
   fiatToSats,
   minorUnitsToDecimalString,
   minorUnitsToFixedDecimalString,
-  SATS_PER_BTC,
   satsToFiat,
 } from "./money.ts"
 
@@ -129,17 +127,6 @@ describe("decimalAmountToMinorUnits", () => {
         value: "90071992547409.92",
       })
     ).toBe(null)
-  })
-})
-
-describe("btcToSats", () => {
-  test("converts whole and fractional BTC", () => {
-    expect(btcToSats(1)).toBe(SATS_PER_BTC)
-    expect(btcToSats(0.000_012_34)).toBe(1234)
-  })
-
-  test("does not floor — an amount below half a sat is zero", () => {
-    expect(btcToSats(0.000_000_004)).toBe(0)
   })
 })
 

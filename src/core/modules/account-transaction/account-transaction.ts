@@ -67,7 +67,8 @@ export const accountTransactionLightning = {
 export const accountTransactionOnchain = {
   id: AccountTransactionId,
   onchainAddress: BitcoinAddressSchema,
-  coopExitRequestId: NonEmptyStringSchema,
+  /** `null` when an operator confirmed a withdrawal by hand (withdraw/0002). */
+  coopExitRequestId: NonEmptyStringSchema.nullable(),
   exitSpeed: AccountTransactionOnchainExitSpeedSchema,
   feeSats: IntegerSchema,
   txid: NonEmptyStringSchema.nullable(),

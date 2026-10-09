@@ -33,6 +33,12 @@ export type SparkExitSpeed = "fast" | "medium" | "slow"
 export type SparkNetwork = NetworkType
 
 /**
+ * The SDK's `TransferStatus.TRANSFER_STATUS_COMPLETED`, as a literal for the
+ * same reason `exitSpeedToSdk` mirrors `ExitSpeed`.
+ */
+export const SPARK_TRANSFER_STATUS_COMPLETED = "TRANSFER_STATUS_COMPLETED"
+
+/**
  * Mirrors the SDK's `ExitSpeed` enum values ("FAST"/"MEDIUM"/"SLOW") as
  * literals instead of importing the enum itself, so this module doesn't pull
  * in the Spark SDK's runtime code just to read three constant strings — see
@@ -67,6 +73,29 @@ export interface SparkWithdrawalRequest {
   readonly txid: string | null
 }
 
+/**
+ * The SDK threw `SparkValidationError`. That usually means it refused before
+ * sending anything, but it is not guaranteed, so a caller confirms it before
+ * treating the money as unsent.
+ */
+export interface SparkSendRejected {
+  readonly kind: "rejected"
+  readonly message: string
+}
+
+export type SparkWithdrawResult =
+  | ({ readonly kind: "sent" } & SparkWithdrawalRequest)
+  | SparkSendRejected
+
+/**
+ * `sent` covers both routes the SDK may take: over the SSP and, for an
+ * invoice with a Spark fallback, a plain Spark transfer. The caller knows the
+ * transfer id up front and does not need to tell them apart.
+ */
+export type SparkLightningPayResult =
+  | { readonly kind: "sent" }
+  | SparkSendRejected
+
 export interface SparkWalletBalance {
   readonly availableSats: number
 }
@@ -87,6 +116,7 @@ export interface SparkPaymentWallet extends AsyncDisposable {
     readonly amountSats: number
     readonly withdrawalAddress: string
   }) => Promise<SparkWithdrawalFeeQuote | null>
+  /** Throws when the SDK returns no coop exit request: whether money left is then unknown. */
   readonly withdraw: (params: {
     readonly onchainAddress: string
     readonly exitSpeed: SparkExitSpeed
@@ -94,7 +124,30 @@ export interface SparkPaymentWallet extends AsyncDisposable {
     readonly feeAmountSats: number
     readonly amountSats?: number
     readonly deductFeeFromWithdrawalAmount?: boolean
-  }) => Promise<SparkWithdrawalRequest | null>
+  }) => Promise<SparkWithdrawResult>
+  readonly getLightningSendFeeEstimate: (params: {
+    readonly invoice: string
+    readonly amountSats?: number
+  }) => Promise<number>
+  /**
+   * Pays with `preferSpark: true`. `transferId` (a UUID string) becomes the
+   * Spark transfer's id on every route, and the SSP's idempotency key.
+   */
+  readonly payLightningInvoice: (params: {
+    readonly invoice: string
+    readonly maxFeeSats: number
+    readonly amountSatsToSend?: number
+    readonly transferId: string
+  }) => Promise<SparkLightningPayResult>
+  /**
+   * Whether a transfer with this id exists. A failed lookup throws rather
+   * than answering `false`: "not found" must mean not found.
+   */
+  readonly getTransfer: (transferId: string) => Promise<boolean>
+  readonly getIdentityPublicKey: () => Promise<string>
+  readonly getCoopExitRequest: (
+    coopExitRequestId: string
+  ) => Promise<{ readonly txid: string | null } | null>
 }
 
 export type SparkWalletDep = {
@@ -119,6 +172,21 @@ const toFeeEstimate = (
   l1BroadcastFeeSats: l1BroadcastFee.originalValue,
   totalFeeSats: userFee.originalValue + l1BroadcastFee.originalValue,
 })
+
+/** Only this wrapper knows the SDK's `SparkValidationError`; see {@link SparkSendRejected}. */
+const catchRejection = async <T>(
+  send: () => Promise<T>
+): Promise<T | SparkSendRejected> => {
+  try {
+    return await send()
+  } catch (error) {
+    const { SparkValidationError } = await import("@buildonspark/spark-sdk")
+    if (error instanceof SparkValidationError) {
+      return { kind: "rejected", message: error.message }
+    }
+    throw error
+  }
+}
 
 /**
  * Instances are keyed by mnemonic + network and shared across every consumer
@@ -270,22 +338,54 @@ export const createDefaultSparkPaymentWallet = async (
       feeAmountSats,
       amountSats,
       deductFeeFromWithdrawalAmount,
-    }) => {
-      const result = await wallet.withdraw({
-        onchainAddress,
-        exitSpeed: exitSpeedToSdk[exitSpeed],
-        feeQuoteId,
-        feeAmountSats,
-        amountSats,
-        deductFeeFromWithdrawalAmount,
-      })
-      if (!result) return null
+    }) =>
+      await catchRejection(async () => {
+        const result = await wallet.withdraw({
+          onchainAddress,
+          exitSpeed: exitSpeedToSdk[exitSpeed],
+          feeQuoteId,
+          feeAmountSats,
+          amountSats,
+          deductFeeFromWithdrawalAmount,
+        })
+        if (!result) throw new Error("The SDK returned no coop exit request.")
 
-      return {
-        id: result.id,
-        status: result.status,
-        txid: result.coopExitTxid ?? null,
-      }
+        return {
+          kind: "sent",
+          id: result.id,
+          status: result.status,
+          txid: result.coopExitTxid || null,
+        }
+      }),
+    getLightningSendFeeEstimate: ({ invoice, amountSats }) =>
+      wallet.getLightningSendFeeEstimate({
+        encodedInvoice: invoice,
+        amountSats,
+      }),
+    payLightningInvoice: async ({
+      invoice,
+      maxFeeSats,
+      amountSatsToSend,
+      transferId,
+    }) => {
+      const { UUID } = await import("@buildonspark/spark-sdk")
+      return await catchRejection(async () => {
+        await wallet.payLightningInvoice({
+          invoice,
+          maxFeeSats,
+          amountSatsToSend,
+          preferSpark: true,
+          transferId: UUID.parse(transferId),
+        })
+        return { kind: "sent" }
+      })
+    },
+    getTransfer: async (transferId) =>
+      (await wallet.getTransfer(transferId)) !== undefined,
+    getIdentityPublicKey: () => wallet.getIdentityPublicKey(),
+    getCoopExitRequest: async (coopExitRequestId) => {
+      const request = await wallet.getCoopExitRequest(coopExitRequestId)
+      return request === null ? null : { txid: request.coopExitTxid || null }
     },
     [Symbol.asyncDispose]: lease[Symbol.asyncDispose],
   }

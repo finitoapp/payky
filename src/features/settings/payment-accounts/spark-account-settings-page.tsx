@@ -226,7 +226,7 @@ export function SparkAccountSettingsPage() {
           items={[
             {
               kind: "link",
-              to: "/settings/payment-accounts/spark/withdraw",
+              to: "/settings/payment-accounts/spark/withdrawals",
               icon: <ArrowUpFromLine className="text-muted-foreground" />,
               label: (
                 <span className="flex flex-col gap-1">

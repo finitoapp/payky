@@ -847,7 +847,7 @@ export const skSettings = {
   "settings.tips.title": "Tringelty",
   "settings.title": "Nastavenia",
   "settings.withdrawals.description":
-    "Odoslať Bitcoin zo Spark účtu na on-chain adresu",
+    "Odoslať bitcoin zo Spark účtu on-chain alebo cez Lightning",
   "settings.withdrawals.title": "Výbery",
   "settings.taxesGroup": "DANE A DOKLADY",
   "settings.tips.nav.on": "Zapnuté",

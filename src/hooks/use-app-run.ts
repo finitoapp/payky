@@ -9,6 +9,7 @@ import { createEetApiDep } from "@/core/integrations/eet/eet-client.ts"
 import { createNostrDep } from "@/core/integrations/nostr/nostr-client.ts"
 import { createYadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import { createSwitchioTerminalDep } from "@/core/native/switchio.ts"
+import { createE2eSparkWalletDep } from "@/core/spark/e2e-spark-wallet.ts"
 import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -55,7 +56,7 @@ export const useAppRun = () => {
         lockManager: navigator.locks,
         ...dateDep,
         ...fetchDep,
-        ...createSparkWalletDep(),
+        ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
         ...createYadioApiDep(),
         ...createSwitchioTerminalDep(),
         ...createEetApiDep({ ...dateDep, ...fetchDep }),

@@ -1,4 +1,9 @@
-import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
+import {
+  createIdFromString,
+  evoluJsonObjectFrom,
+  sqliteTrue,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
@@ -224,6 +229,49 @@ describe("account transaction actions", () => {
     await expect
       .poll(() => evolu.loadQuery(accountTransactionsQuery))
       .toEqual([{ id: firstId, accountId, amount: -10_500, kind: "onchain" }])
+  })
+
+  test("gives an on-chain transaction without a coopExitRequestId a random id", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = createDeps(evolu)
+    await using run = testCreateRun(deps)
+    const accountId = await run.ok(
+      createAccount({
+        deviceId: null,
+        name: NonEmptyString255("Spark account"),
+        spark: {
+          secret: SparkSecret("42373a7543db65ae0228ead6c9cbffcc"),
+        },
+      })
+    )
+
+    const id = await run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(-10_500),
+        currency: "BTC",
+        occurredAt: Date.parse("2026-05-27T10:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: { deviceId: null, source: "manual" },
+        onchain: {
+          onchainAddress: BitcoinAddress(
+            "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
+          ),
+          coopExitRequestId: null,
+          exitSpeed: "medium",
+          feeSats: Integer(500),
+          txid: null,
+        },
+      })
+    )
+
+    expect(id).not.toBe(
+      createIdFromString<"AccountTransaction">(
+        "accountTransaction:onchain:null"
+      )
+    )
   })
 
   test("gives a detail-less transaction a fresh id every time", async () => {

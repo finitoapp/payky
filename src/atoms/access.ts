@@ -24,6 +24,8 @@ export interface PinPromptRequest {
   readonly permission: Permission | null
   /** What is being attempted, shown on the prompt and logged on a wrong PIN. */
   readonly action: TranslationKey
+  /** What exactly the PIN approves, already translated (an amount and where it goes). */
+  readonly detail?: string
   readonly resolve: (granted: boolean) => void
 }
 

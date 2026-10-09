@@ -4,9 +4,7 @@ import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import {
   type BillStatus,
-  calculateClaimedSum,
-  deriveBillCoverage,
-  deriveBillStatus,
+  deriveBillHistoryItemSummary,
 } from "@/core/modules/bill/bill-utils.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
@@ -52,25 +50,12 @@ export function useBillStatus(
   return useMemo(() => {
     if (bill === undefined) return undefined
 
-    const billTotal = deriveBillSummaryTotal(summaries)
-    const claimedSum = calculateClaimedSum(claimedTransactions)
-    const coverage = deriveBillCoverage(billTotal, claimedSum)
-    const hasActiveClaim = claimedTransactions.length > 0
-
-    const status = deriveBillStatus({
+    const { status, hasCancellationCollision } = deriveBillHistoryItemSummary({
       canceledAt: bill.canceledAt,
       confirmedClosedAt: bill.confirmedClosedAt,
-      hasActiveClaim,
-      coverage,
+      billTotal: deriveBillSummaryTotal(summaries),
+      claimedTransactions,
     })
-
-    return {
-      status,
-      hasCancellationCollision:
-        bill.canceledAt !== null &&
-        bill.confirmedClosedAt === null &&
-        hasActiveClaim &&
-        coverage !== "underpaid",
-    }
+    return { status, hasCancellationCollision }
   }, [bill, summaries, claimedTransactions])
 }

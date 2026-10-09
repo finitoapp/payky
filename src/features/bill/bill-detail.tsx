@@ -25,7 +25,10 @@ import {
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { eetSalesByBillIdQuery } from "@/core/modules/eet/eet-queries.ts"
 import { paymentsWithClaimsByBillIdQuery } from "@/core/modules/payment/payment-queries.ts"
-import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
+import {
+  derivePaymentHasCancellationCollision,
+  derivePaymentStatus,
+} from "@/core/modules/payment/payment-status-utils.ts"
 import { refundSummariesByBillIdQuery } from "@/core/modules/refund/refund-queries.ts"
 import {
   type PaymentRefundSummary,
@@ -311,14 +314,11 @@ function BillDetailPaymentRow({
     hasActiveClaim: claimCount > 0,
     now,
   })
-  // The collision docs/bill-payment-states.md calls out: a multi-device
-  // merge can leave this payment canceled with an active claim (real money)
-  // at the same time. Mirrors `payment-history.tsx`'s
-  // `resolveHasCancellationCollision`.
-  const hasCancellationCollision =
-    payment.canceledAt !== null &&
-    payment.confirmedPaidAt === null &&
-    claimCount > 0
+  const hasCancellationCollision = derivePaymentHasCancellationCollision({
+    canceledAt: payment.canceledAt,
+    confirmedPaidAt: payment.confirmedPaidAt,
+    hasActiveClaim: claimCount > 0,
+  })
 
   return (
     <Link

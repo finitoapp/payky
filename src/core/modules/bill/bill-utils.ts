@@ -146,11 +146,9 @@ export interface BillHistoryItemSummary {
 /**
  * Combines a bill's `canceledAt`/`confirmedClosedAt`, its precomputed
  * `billTotal` (from `calculateBillLineSummaries`), and its claimed
- * transactions into the same derived status/coverage shape
- * `useBillStatus`/`useBillCoverage` compute per bill on the detail page —
- * reused by `latestBillsQuery`'s list rendering (`BillHistory`) so both
- * places agree on the same pure logic instead of duplicating it. See
- * docs/bill-payment-states.md.
+ * transactions into its derived status, coverage and cancellation collision.
+ * The history list (`BillHistory`) and the detail screens (`useBillStatus`)
+ * both read it, so they cannot disagree. See docs/bill-payment-states.md.
  */
 export const deriveBillHistoryItemSummary = ({
   canceledAt,

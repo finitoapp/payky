@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url"
 import { bundle } from "@remotion/bundler"
 import { renderMedia, selectComposition } from "@remotion/renderer"
 import { paykyWebpackOverride } from "../remotion/webpack-override.ts"
+import { docEnv } from "./doc-env.ts"
 
 /**
  * Renders the raw Playwright captures produced by generate-doc-videos.ts
@@ -18,9 +19,7 @@ const outputDirectory = `${projectRoot}/docs/videos/cs`
 const language = "cs"
 const scenarioNames = ["payment", "bill"] as const
 
-const requestedScenarioNames = process.env.PAYKY_VIDEO_SCENARIOS?.split(",")
-  .map((name) => name.trim())
-  .filter((name) => name !== "")
+const requestedScenarioNames = docEnv.PAYKY_VIDEO_SCENARIOS
 
 const selectedScenarioNames =
   requestedScenarioNames === undefined

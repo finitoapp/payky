@@ -1,4 +1,5 @@
 import { err, ok, type Result, type Task } from "@evolu/common"
+import type { JsonValue } from "type-fest"
 import { z } from "zod"
 
 import {
@@ -6,6 +7,7 @@ import {
   type FetchDep,
   type FetchError,
   type FetchJsonError,
+  validateJsonResponse,
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import { signedDecimalAmountToMinorUnits } from "@/core/modules/shared/money.ts"
@@ -56,7 +58,9 @@ export const createFioApiDep = ({
 
 const createFioApiError = defineError("FioApiError")<{
   readonly message: string
-  readonly cause?: unknown
+  readonly status: number
+  readonly responseBody: string
+  readonly cause: unknown
 }>()
 export type FioApiError = ReturnType<typeof createFioApiError>
 
@@ -277,11 +281,19 @@ export const setFioLastDate =
   ({ date }: { readonly date: DateString }): FioTask<string> =>
   async (run) => {
     const response = await run(
-      requestFioApi(
+      fetchFioApi(
         `/v1/rest/set-last-date/${getEncodedFioToken(run.deps)}/${date}/`
       )
     )
     if (!response.ok) return response
+    if (!response.value.ok) {
+      return err(
+        toFioHttpError({
+          status: response.value.status,
+          responseBody: response.value.text,
+        })
+      )
+    }
 
     return ok(response.value.text)
   }
@@ -292,32 +304,24 @@ const getFioStatement =
   ): FioTask<FioAccountStatement> =>
   async (run) => {
     const response = await run(
-      requestFioApi(createPath(getEncodedFioToken(run.deps)))
+      fetchFioApi(createPath(getEncodedFioToken(run.deps)))
     )
     if (!response.ok) return response
 
-    if (!response.value.json.ok) {
-      return err(
+    const parsed = validateJsonResponse(response.value, {
+      schema: FioAccountStatementSchema,
+      onHttpError: toFioHttpError,
+      onResponseError: ({ status, responseBody, cause }) =>
         createFioApiError({
           message: "Invalid FIO account statement response.",
-          cause: response.value.json.error,
-        })
-      )
-    }
+          status,
+          responseBody,
+          cause,
+        }),
+    })
+    if (!parsed.ok) return parsed
 
-    const parsed = FioAccountStatementSchema.safeParse(
-      response.value.json.value
-    )
-    if (!parsed.success) {
-      return err(
-        createFioApiError({
-          message: "Invalid FIO account statement response.",
-          cause: parsed.error,
-        })
-      )
-    }
-
-    const statement = parsed.data.accountStatement
+    const statement = parsed.value.accountStatement
 
     return ok({
       iban: statement.info.iban,
@@ -326,21 +330,20 @@ const getFioStatement =
     })
   }
 
-const requestFioApi =
+const fetchFioApi =
   (
     path: string
   ): Task<
-    { readonly text: string; readonly json: Result<unknown, FetchJsonError> },
-    | FioHttpError
-    | FioRateLimitError
-    | FioStrongAuthorizationRequiredError
-    | FetchError,
+    Pick<Response, "ok" | "status"> & {
+      readonly text: string
+      readonly json: Result<JsonValue, FetchJsonError>
+    },
+    FetchError,
     FioApiDep & FetchDep
   > =>
-  async (run) => {
-    const url = new URL(path, run.deps.fioApi.baseUrl)
-    const responseResult = await run(
-      appFetchAsJson(url, {
+  (run) =>
+    run(
+      appFetchAsJson(new URL(path, run.deps.fioApi.baseUrl), {
         method: "GET",
         headers: {
           Accept: "application/json, text/plain",
@@ -348,45 +351,37 @@ const requestFioApi =
       })
     )
 
-    if (!responseResult.ok) return responseResult
-
-    const response = responseResult.value
-    if (!response.ok) {
-      const responseBody = response.text
-      if (
-        isFioStrongAuthorizationRequiredResponse(response.status, responseBody)
-      ) {
-        return err(
-          createFioStrongAuthorizationRequiredError({
-            message:
-              "FIO API requires strong authorization to provide the requested data.",
-            status: 422,
-            responseBody,
-          })
-        )
-      }
-      if (response.status === 409) {
-        return err(
-          createFioRateLimitError({
-            message:
-              "FIO API request failed because the interval between requests was not respected.",
-            status: 409,
-            responseBody,
-          })
-        )
-      }
-
-      return err(
-        createFioHttpError({
-          message: `FIO API request failed with HTTP ${response.status}.`,
-          status: response.status,
-          responseBody,
-        })
-      )
-    }
-
-    return ok({ text: response.text, json: response.json })
+/** FIO's failed HTTP responses, two of which it explains in its own way. */
+const toFioHttpError = ({
+  status,
+  responseBody,
+}: {
+  readonly status: number
+  readonly responseBody: string
+}): FioHttpError | FioRateLimitError | FioStrongAuthorizationRequiredError => {
+  if (isFioStrongAuthorizationRequiredResponse(status, responseBody)) {
+    return createFioStrongAuthorizationRequiredError({
+      message:
+        "FIO API requires strong authorization to provide the requested data.",
+      status: 422,
+      responseBody,
+    })
   }
+  if (status === 409) {
+    return createFioRateLimitError({
+      message:
+        "FIO API request failed because the interval between requests was not respected.",
+      status: 409,
+      responseBody,
+    })
+  }
+
+  return createFioHttpError({
+    message: `FIO API request failed with HTTP ${status}.`,
+    status,
+    responseBody,
+  })
+}
 
 const isFioStrongAuthorizationRequiredResponse = (
   responseStatus: number,

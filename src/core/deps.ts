@@ -81,7 +81,7 @@ const parseJsonBody = (text: string): Result<JsonValue, FetchJsonError> => {
  * a Result. A non-JSON body is represented as a {@link FetchJsonError} on the
  * `json` Result so each client can turn it into its own typed parse error
  * (carrying `status` and `responseBody`) after it has handled HTTP-level
- * failures, matching the FIO client convention.
+ * failures — which {@link validateJsonResponse} does for every client.
  */
 export const appFetchAsJson =
   (

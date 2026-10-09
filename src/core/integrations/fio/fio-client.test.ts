@@ -261,6 +261,8 @@ describe("fio client", () => {
       error: {
         type: "FioApiError",
         message: "Invalid FIO account statement response.",
+        status: 200,
+        responseBody: expect.stringContaining("accountStatement"),
       } satisfies Partial<FioApiError>,
     })
   })

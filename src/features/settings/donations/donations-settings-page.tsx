@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { appEnv } from "@/core/app-env.ts"
 import {
   fetchLnurlPayInvoice,
   fetchLnurlPayMetadata,
@@ -45,8 +46,6 @@ import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-
-const DEFAULT_DONATE_LUD16_ADDRESS = "donate@payky.me"
 
 const DonationAmountSchema = z.number().int().positive().safe()
 
@@ -79,10 +78,6 @@ const formatFiatInput = (
     currency,
   })
 
-const getDonationAddress = (): string =>
-  import.meta.env.VITE_PAYKY_DONATE_LUD16_ADDRESS ??
-  DEFAULT_DONATE_LUD16_ADDRESS
-
 export function DonationsSettingsPage() {
   const console = useConsole()
   const appRun = useAppRun()
@@ -91,7 +86,7 @@ export function DonationsSettingsPage() {
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
   const currency = settings?.fiatCurrency ?? FiatCurrency.CZK
-  const donationAddress = getDonationAddress()
+  const donationAddress = appEnv.VITE_PAYKY_DONATE_LUD16_ADDRESS
   const [fiatInput, setFiatInput] = useState("")
   const [satsInput, setSatsInput] = useState("")
   const [editedAmount, setEditedAmount] = useState<EditedAmount>("fiat")

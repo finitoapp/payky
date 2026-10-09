@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/react"
 
-const dsn = import.meta.env.VITE_SENTRY_DSN
+import { appEnv } from "@/core/app-env.ts"
+
+const dsn = appEnv.VITE_SENTRY_DSN
 
 const SENSITIVE_TEXT_PATTERNS: ReadonlyArray<RegExp> = [
   // Recovery phrases: 11 or more consecutive lowercase words.
@@ -122,7 +124,7 @@ export function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
 let enabled = false
 
 export function isErrorReportingAvailable(): boolean {
-  return typeof dsn === "string" && dsn.length > 0
+  return dsn !== undefined
 }
 
 export function enableErrorReporting(): void {

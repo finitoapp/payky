@@ -8,6 +8,8 @@ export const appEnv = createEnv({
     // no /api of its own to resolve a relative path against.
     VITE_PAYKY_API_BASE_URL: z.url().default("https://payky.me"),
     VITE_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
+    // Where the donations page sends sats.
+    VITE_PAYKY_DONATE_LUD16_ADDRESS: z.string().default("donate@payky.me"),
     // Where the account's Nostr profile is read from and published to.
     // Linky's defaults, so both apps see the same profile.
     VITE_PAYKY_NOSTR_RELAYS: z
@@ -20,6 +22,8 @@ export const appEnv = createEnv({
         "wss://relay.0xchat.com",
         "wss://nostr.linky.fit",
       ]),
+    // Unset leaves error reporting unavailable, whatever the device opted.
+    VITE_SENTRY_DSN: z.string().optional(),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

@@ -140,9 +140,14 @@ Run checks individually:
 ```bash
 bun run check:lint
 bun run check:ts
+bun run check:decisions
 bun run check:tests
 bun run check:coverage
 ```
+
+`check:decisions` verifies that every business decision in `docs/decisions`
+names the tests that hold it. End-to-end tests are not part of `check`; run
+them with `bun run test:e2e`.
 
 Format files with Biome:
 
@@ -163,7 +168,8 @@ bun run test:watch
 - `src/routes` contains file-based route definitions.
 - `src/components/ui` contains reusable shadcn-style UI primitives built on
   Base UI.
-- `src/i18n/resources.ts` contains English and Czech translation resources.
+- `src/i18n` contains the English, Czech and Slovak translations, one
+  `<lang>/<group>.ts` file per group of keys.
 - `src/core/evolu` creates the Evolu client and composes the application schema.
 - `src/core/modules` contains domain modules for accounts, transactions,
   catalog items, bills, payments, tables, reconciliation claims, settings,
@@ -279,6 +285,8 @@ PAYKY_AI_BASE_URL=http://localhost:11434/v1 PAYKY_AI_MODEL=qwen3 \
 
 ## Internationalization
 
-All user-facing React text should come from `src/i18n/resources.ts`. Add keys for
-both `en` and `cs`, and use stable, feature-scoped names such as
-`bill.save`, `settings.items.title`, or `activity.empty`.
+All user-facing React text goes through `t(key)`. Add each key to the group file
+its namespace belongs to — `src/i18n/en/<group>.ts`, then the same file under
+`cs/` and `sk/` — and use stable, feature-scoped names such as `bill.save`,
+`settings.items.title`, or `activity.empty`. `bun run check:ts` fails while a
+key is missing from any language.

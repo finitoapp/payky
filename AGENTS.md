@@ -110,7 +110,7 @@
 - In tests, create a concrete deps object with fakes for external services and run Task actions with `await using run = testCreateRun(deps)` followed by `await run(action(...))`.
 - When a Task calls another Task, compose it with `await run(otherTask(...))` and propagate non-ok results directly when the error type is part of the caller's error union.
 - Keep direct dependency calls for non-Task services, for example `run.deps.evolu.loadQuery(...)` or `run.deps.sparkWallet.create(...)`.
-- Define action input object types inline in function parameters; avoid separate `CreateXInput` or `UpdateXInput` aliases.
+- Define an action's input object type inline in its parameter when only that one function takes it; a single-use `CreateXInput`/`UpdateXInput` alias only sends the reader elsewhere. Name the type when several functions or modules share it (`MarkPaymentPaidInput` across the three `markPaymentPaid*` actions, `CreateAccountTransactionInput` across modules) or when it is a composed type a field would otherwise repeat — not `Parameters<typeof fn>[0]` at the call sites, which ties them to one function's shape.
 - For CRDT actions, write tombstones and updates directly without preloading rows, unless current data is required for a domain invariant.
 - Pass Evolu mutation payloads through `removeUndefinedValues` to avoid extra or undefined fields.
 - When code must wait for an Evolu mutation to complete before running follow-up work, use `runMutationWithCompletion` from `src/core/modules/shared/evolu-utils.ts` instead of hand-rolled `onComplete` promises.

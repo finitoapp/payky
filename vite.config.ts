@@ -15,6 +15,8 @@ import { z } from "zod"
 
 import { releaseCommitSubject } from "./bin/release-version.ts"
 import packageJson from "./package.json" with { type: "json" }
+import { isAndroidWebView } from "./src/core/native/runtime.ts"
+import { installOneTabLocks } from "./src/polyfills/one-tab-locks.ts"
 
 /** A build switch: on only when set to exactly "1". */
 const BuildFlagSchema = z
@@ -65,36 +67,17 @@ function getAppVersion(): string {
   }
 }
 
-const evoluAndroidWebViewWorkerLocksShim = `
-const __paykyIsAndroidWebView = /Android/i.test(globalThis.navigator.userAgent) && /; wv\\)|\\bwv\\b/i.test(globalThis.navigator.userAgent);
-if (__paykyIsAndroidWebView && globalThis.navigator.locks) {
-  const __paykyNativeLockManager = globalThis.navigator.locks;
-  const __paykyEvoluOneTabSharedWorkerPolyfillLock = "evolu-one-tab-sharedworker-polyfill";
-  Object.defineProperty(globalThis.navigator, "locks", {
-    configurable: true,
-    value: {
-      request(name, optionsOrCallback, maybeCallback) {
-        const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : maybeCallback;
-        if (
-          name === __paykyEvoluOneTabSharedWorkerPolyfillLock &&
-          typeof optionsOrCallback !== "function" &&
-          optionsOrCallback.ifAvailable === true &&
-          callback
-        ) {
-          return Promise.resolve(callback({ mode: optionsOrCallback.mode ?? "exclusive", name }));
-        }
-        if (typeof optionsOrCallback === "function") {
-          return __paykyNativeLockManager.request(name, optionsOrCallback);
-        }
-        if (!callback) return Promise.reject(new TypeError("LockManager.request requires a callback."));
-        return __paykyNativeLockManager.request(name, optionsOrCallback, callback);
-      },
-      query() {
-        return __paykyNativeLockManager.query();
-      },
-    },
-  });
-}
+/**
+ * Evolu's workers get the same lock fix as the main thread
+ * (`src/polyfills/one-tab-locks.ts`), from the same source: both
+ * functions are self-contained, so their source text runs as is. The workers
+ * have no Capacitor to ask, so the user agent alone decides there.
+ */
+// Wrapped, so its names cannot meet the worker chunk's own top-level ones.
+const evoluAndroidWebViewWorkerLocksShim = `(() => {
+${isAndroidWebView}
+if (isAndroidWebView()) (${installOneTabLocks})();
+})();
 `
 
 function evoluAndroidWebViewWorkerLocksPlugin(): PluginOption {

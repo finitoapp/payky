@@ -8,6 +8,7 @@ import {
   type FetchJsonError,
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import { signedDecimalAmountToMinorUnits } from "@/core/modules/shared/money.ts"
 import {
   ConstantSymbolSchema,
   type DateString,
@@ -143,37 +144,6 @@ const FioOptionalStringSchema = z
     return normalized.length > 0 ? normalized : null
   })
 
-const moneyToMinorUnits = (value: string | number): number => {
-  const normalized =
-    typeof value === "number"
-      ? value.toFixed(2)
-      : value.trim().replace(",", ".")
-  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(normalized)
-
-  if (!match) {
-    throw new Error(`Invalid FIO amount: ${String(value)}`)
-  }
-
-  const sign = match[1] === "-" ? -1 : 1
-  const whole = match[2]
-  const fraction = (match[3] ?? "").padEnd(2, "0")
-
-  return sign * (Number(whole) * 100 + Number(fraction))
-}
-
-const FioAmountMinorSchema = FioValueSchema.transform((value, ctx): number => {
-  try {
-    return moneyToMinorUnits(value)
-  } catch (error) {
-    ctx.issues.push({
-      code: "custom",
-      message: error instanceof Error ? error.message : "Invalid FIO amount.",
-      input: value,
-    })
-    return z.NEVER
-  }
-})
-
 const nullableParse =
   <TSchema extends z.ZodType>(schema: TSchema) =>
   (value: string | null): z.output<TSchema> | null => {
@@ -187,7 +157,7 @@ const FioTransactionSchema = z
   .looseObject({
     "ID pohybu": FioValueSchema.transform((value) => String(value)),
     Datum: FioDateSchema,
-    Objem: FioAmountMinorSchema,
+    Objem: FioValueSchema,
     Měna: FiatCurrencySchema,
     Protiúčet: FioOptionalStringSchema,
     "Název protiúčtu": FioOptionalStringSchema,
@@ -201,24 +171,39 @@ const FioTransactionSchema = z
     Typ: FioOptionalStringSchema,
     "ID pokynu": FioOptionalStringSchema,
   })
-  .transform((transaction) => ({
-    id: transaction["ID pohybu"],
-    bookedDate: transaction.Datum,
-    amountMinor: transaction.Objem,
-    currency: transaction.Měna,
-    counterAccountNumber: transaction.Protiúčet,
-    counterAccountName: transaction["Název protiúčtu"],
-    counterBankCode: transaction["Kód banky"],
-    counterBankName: transaction["Název banky"],
-    constantSymbol: nullableParse(ConstantSymbolSchema)(transaction.KS),
-    variableSymbol: nullableParse(VariableSymbolSchema)(transaction.VS),
-    specificSymbol: nullableParse(SpecificSymbolSchema)(transaction.SS),
-    userIdentification: transaction["Uživatelská identifikace"],
-    recipientMessage: transaction["Zpráva pro příjemce"],
-    type: transaction.Typ,
-    instructionId: transaction["ID pokynu"],
-    raw: transaction,
-  }))
+  .transform((transaction, ctx) => {
+    const amountMinor = signedDecimalAmountToMinorUnits({
+      currency: transaction.Měna,
+      value: transaction.Objem,
+    })
+    if (amountMinor === null) {
+      ctx.issues.push({
+        code: "custom",
+        message: `Invalid FIO amount: ${String(transaction.Objem)}`,
+        input: transaction.Objem,
+      })
+      return z.NEVER
+    }
+
+    return {
+      id: transaction["ID pohybu"],
+      bookedDate: transaction.Datum,
+      amountMinor,
+      currency: transaction.Měna,
+      counterAccountNumber: transaction.Protiúčet,
+      counterAccountName: transaction["Název protiúčtu"],
+      counterBankCode: transaction["Kód banky"],
+      counterBankName: transaction["Název banky"],
+      constantSymbol: nullableParse(ConstantSymbolSchema)(transaction.KS),
+      variableSymbol: nullableParse(VariableSymbolSchema)(transaction.VS),
+      specificSymbol: nullableParse(SpecificSymbolSchema)(transaction.SS),
+      userIdentification: transaction["Uživatelská identifikace"],
+      recipientMessage: transaction["Zpráva pro příjemce"],
+      type: transaction.Typ,
+      instructionId: transaction["ID pokynu"],
+      raw: transaction,
+    }
+  })
 
 const FioTransactionListSchema = z.object({
   transaction: z

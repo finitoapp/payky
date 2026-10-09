@@ -1,8 +1,8 @@
-import type { OwnerId } from "@evolu/common"
+import type { Name, OwnerId } from "@evolu/common"
 import {
   type RelaySyncState,
   type SyncState,
-  syncStateToOwnerSyncStates,
+  syncStateToRelaySyncStates,
 } from "@evolu/common/local-first"
 
 /**
@@ -15,24 +15,20 @@ const transportLabel = (url: string): string => {
 }
 
 /**
- * The relay state of `url` for `ownerId`, or null while the shared worker has
- * not reported it — before it connects, or right after a transport change
- * reopens the app database.
+ * The relay state of `url` for `ownerId` in the database `name`, or null
+ * while the shared worker has not reported it — before it connects, or right
+ * after a transport change reopens the app database.
  */
 export const findRelaySyncState = (
   state: SyncState | null,
+  name: Name,
   ownerId: OwnerId,
   url: string
 ): RelaySyncState | null => {
-  if (state === null) return null
-
   const label = transportLabel(url)
-
-  for (const owner of syncStateToOwnerSyncStates(state)) {
-    if (owner.ownerId !== ownerId) continue
-    const relay = owner.relays.find((relay) => relay.transport.label === label)
-    if (relay) return relay
-  }
-
-  return null
+  return (
+    syncStateToRelaySyncStates(state, name, ownerId).find(
+      (relay) => relay.transport.label === label
+    ) ?? null
+  )
 }

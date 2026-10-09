@@ -1,7 +1,9 @@
 import type { Millis } from "@evolu/common"
-import type {
-  RelaySyncState,
-  SyncRouteErrorType,
+import {
+  type RelaySyncState,
+  type RelaySyncStatus,
+  relaySyncStateToStatus,
+  type SyncRouteError,
 } from "@evolu/common/local-first"
 import { isSameDay } from "date-fns"
 import { useAtomValue } from "jotai"
@@ -56,6 +58,9 @@ const routeErrorKeys = {
   ProtocolWriteKeyError: "settings.security.transports.status.errors.writeKey",
   ProtocolQuotaError: "settings.security.transports.status.errors.quota",
   StorageQuotaError: "settings.security.transports.status.errors.quota",
+  UnknownError: "settings.security.transports.status.errors.generic",
+  ProtocolChangeTooLargeError:
+    "settings.security.transports.status.errors.generic",
   DecryptWithXChaCha20Poly1305Error:
     "settings.security.transports.status.errors.decrypt",
   ProtocolInvalidDataError:
@@ -66,12 +71,26 @@ const routeErrorKeys = {
     "settings.security.transports.status.errors.generic",
   WriteFailed: "settings.security.transports.status.errors.generic",
   SyncFailed: "settings.security.transports.status.errors.generic",
-} satisfies Record<SyncRouteErrorType, TranslationKey>
+} satisfies Record<SyncRouteError["type"], TranslationKey>
 
-const toKind = (relay: RelaySyncState | null): TransportSyncKind => {
-  if (relay === null) return "connecting"
-  if (relay.status !== "offline") return relay.status
-  return relay.transport.readyState === "connecting" ? "connecting" : "offline"
+/** Evolu's `Syncing` covers a first connection too, which this line tells apart. */
+const toKind = (
+  relay: RelaySyncState | null,
+  status: RelaySyncStatus | null
+): TransportSyncKind => {
+  if (relay === null || status === null) return "connecting"
+  switch (status.type) {
+    case "Error":
+      return "error"
+    case "Synced":
+      return "synced"
+    case "Offline":
+      return "offline"
+    case "Syncing":
+      return relay.transport.connection.type === "Connecting"
+        ? "connecting"
+        : "syncing"
+  }
 }
 
 interface TransportSyncStatusProps {
@@ -94,12 +113,14 @@ export function TransportSyncStatus({ url }: TransportSyncStatusProps) {
   const relay = useDebouncedValue(
     findRelaySyncState(
       state,
+      evolu.name,
       evolu.appOwner.id,
       resolveTransportUrl(url, evolu.appOwner.id)
     ),
     400
   )
-  const kind = toKind(relay)
+  const status = relay === null ? null : relaySyncStateToStatus(relay)
+  const kind = toKind(relay, status)
   const { label, dot } = kindPresentation[kind]
 
   const formatAt = (millis: Millis) => {
@@ -111,11 +132,14 @@ export function TransportSyncStatus({ url }: TransportSyncStatusProps) {
 
   const detail = ((): string | null => {
     if (relay === null) return null
-    const { route, transport } = relay
+    const { route } = relay
+    const { connection } = relay.transport
 
     switch (kind) {
       case "error":
-        return route.error ? t(routeErrorKeys[route.error.type]) : null
+        return status?.type === "Error"
+          ? t(routeErrorKeys[status.error.type])
+          : null
       case "synced":
         return route.completeAt === null ? null : formatAt(route.completeAt)
       case "syncing":
@@ -124,7 +148,7 @@ export function TransportSyncStatus({ url }: TransportSyncStatusProps) {
           : null
       case "connecting":
       case "offline":
-        if (transport.error) {
+        if (connection.type !== "Connecting" && connection.error !== null) {
           return t("settings.security.transports.status.unreachable")
         }
         if (route.completeAt !== null) {
@@ -132,11 +156,11 @@ export function TransportSyncStatus({ url }: TransportSyncStatusProps) {
             time: formatAt(route.completeAt),
           })
         }
-        return transport.closedAt === null
-          ? null
-          : t("settings.security.transports.status.offlineSince", {
-              time: formatAt(transport.closedAt),
+        return connection.type === "Disconnected"
+          ? t("settings.security.transports.status.offlineSince", {
+              time: formatAt(connection.disconnectedAt),
             })
+          : null
     }
   })()
 

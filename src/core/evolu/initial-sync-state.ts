@@ -1,9 +1,9 @@
-import type { OwnerId } from "@evolu/common"
+import type { Name, OwnerId } from "@evolu/common"
 import {
-  type OwnerSyncState,
   type RelaySyncState,
+  relaySyncStateToStatus,
   type SyncState,
-  syncStateToOwnerSyncStates,
+  syncStateToRelaySyncStates,
 } from "@evolu/common/local-first"
 
 /**
@@ -23,30 +23,63 @@ export const initialSyncIdleLimitMs = 20_000
  */
 export type InitialSyncOutcome = "waiting" | "restored" | "empty" | "failed"
 
-/** The sync state of `ownerId`, or null before the shared worker reports it. */
-export const findOwnerSyncState = (
+/** The relays of one owner in one database, each a transport and its route. */
+export type OwnerRelays = ReadonlyArray<RelaySyncState>
+
+/**
+ * The relays of `ownerId` in the database `name`, or null while the shared
+ * worker has not reported the owner. `syncStateToRelaySyncStates` alone
+ * answers an empty list for an owner it does not know yet, which would read
+ * as an owner with no relays and end the wait for its first sync.
+ */
+export const findOwnerRelays = (
   state: SyncState | null,
+  name: Name,
   ownerId: OwnerId
-): OwnerSyncState | null => {
-  if (state === null) return null
+): OwnerRelays | null => {
+  const registered =
+    state?.tenants.some(
+      (tenant) =>
+        tenant.type === "Active" &&
+        tenant.name === name &&
+        tenant.owners.some(
+          (owner) => owner.type === "Writable" && owner.ownerId === ownerId
+        )
+    ) === true
+  return registered ? syncStateToRelaySyncStates(state, name, ownerId) : null
+}
+
+/**
+ * Whether the relay is transferring. Only over an open connection: Evolu
+ * also calls a first connection still being attempted `Syncing`, but that
+ * one counts towards the idle limit, or a host that drops packets would keep
+ * a restore waiting until the platform gives up on it.
+ */
+export const isRelaySyncing = (relay: RelaySyncState): boolean =>
+  relaySyncStateToStatus(relay).type === "Syncing" &&
+  relay.transport.connection.type === "Open"
+
+const isRelaySynced = (relay: RelaySyncState): boolean =>
+  relaySyncStateToStatus(relay).type === "Synced"
+
+const isRelayFailed = (relay: RelaySyncState): boolean => {
+  const status = relaySyncStateToStatus(relay).type
+  const { connection } = relay.transport
   return (
-    syncStateToOwnerSyncStates(state).find(
-      (owner) => owner.ownerId === ownerId
-    ) ?? null
+    status === "Error" ||
+    (status === "Offline" &&
+      connection.type === "Disconnected" &&
+      connection.error !== null)
   )
 }
 
-const isRelayFailed = (relay: RelaySyncState): boolean =>
-  relay.status === "error" ||
-  (relay.status === "offline" && relay.transport.error !== null)
-
 export const evaluateInitialSync = ({
-  owner,
+  relays,
   hasSettings,
   online,
   idleForMs,
 }: {
-  readonly owner: OwnerSyncState | null
+  readonly relays: OwnerRelays | null
   readonly hasSettings: boolean
   readonly online: boolean
   /** Time since a relay of the owner was last seen syncing, or since the start. */
@@ -55,16 +88,15 @@ export const evaluateInitialSync = ({
   if (hasSettings) return "restored"
   if (!online) return "failed"
 
-  const relays = owner?.relays ?? []
-  if (relays.some((relay) => relay.status === "syncing")) return "waiting"
+  const known = relays ?? []
+  if (known.some(isRelaySyncing)) return "waiting"
 
-  const allSynced =
-    relays.length > 0 && relays.every((relay) => relay.status === "synced")
+  const allSynced = known.length > 0 && known.every(isRelaySynced)
   if (allSynced) return "empty"
 
   const settled =
-    relays.length > 0 &&
-    relays.every((relay) => relay.status === "synced" || isRelayFailed(relay))
+    known.length > 0 &&
+    known.every((relay) => isRelaySynced(relay) || isRelayFailed(relay))
   if (settled || idleForMs >= initialSyncIdleLimitMs) return "failed"
 
   return "waiting"
@@ -75,6 +107,6 @@ export const evaluateInitialSync = ({
  * none has ever completed. Until it is false, a missing `appSettings` row
  * says nothing about whether the account has any.
  */
-export const isInitialSyncPending = (owner: OwnerSyncState): boolean =>
-  owner.syncedAt === null &&
-  owner.relays.some((relay) => relay.status === "syncing")
+export const isInitialSyncPending = (relays: OwnerRelays): boolean =>
+  relays.every((relay) => relay.route.completeAt === null) &&
+  relays.some(isRelaySyncing)

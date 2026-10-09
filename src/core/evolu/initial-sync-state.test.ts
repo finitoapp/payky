@@ -1,77 +1,134 @@
 import {
   createId,
+  createIdFromString,
   Millis,
   testAppOwner,
   testCreateDeps,
   testName,
 } from "@evolu/common"
 import type {
-  OwnerSyncState,
   RelaySyncState,
-  RelaySyncStatus,
+  SyncConnection,
+  SyncRoute,
+  SyncState,
 } from "@evolu/common/local-first"
 import { describe, expect, test } from "vitest"
 
 import {
   evaluateInitialSync,
+  findOwnerRelays,
   initialSyncIdleLimitMs,
   isInitialSyncPending,
+  type OwnerRelays,
 } from "@/core/evolu/initial-sync-state.ts"
 
 const deps = testCreateDeps()
 
+type RelayKind = "synced" | "syncing" | "connecting" | "error" | "unreachable"
+
+const open: SyncConnection = {
+  type: "Open",
+  openedAt: Millis.orThrow(1),
+  error: null,
+}
+
 const relay = (
-  status: RelaySyncStatus,
-  { unreachable = false }: { readonly unreachable?: boolean } = {}
+  kind: RelayKind,
+  { completedBefore = false }: { readonly completedBefore?: boolean } = {}
 ): RelaySyncState => {
-  const id = createId<"SyncTransport">(deps)
-  const complete = status === "synced"
+  const transportId = createId<"SyncTransport">(deps)
+  const connection: SyncConnection =
+    kind === "connecting"
+      ? { type: "Connecting" }
+      : kind === "unreachable"
+        ? {
+            type: "Disconnected",
+            disconnectedAt: Millis.orThrow(2),
+            openedAt: null,
+            error: { type: "WebSocketConnectError", at: Millis.orThrow(2) },
+          }
+        : open
+  const route: SyncRoute =
+    kind === "synced"
+      ? {
+          type: "Complete",
+          transportId,
+          completeAt: Millis.orThrow(1000),
+          lastSentAt: Millis.orThrow(900),
+          lastReceivedAt: Millis.orThrow(1000),
+        }
+      : {
+          type: "Pending",
+          transportId,
+          failure:
+            kind === "error"
+              ? { type: "SyncFailed", at: Millis.orThrow(3) }
+              : null,
+          skippedError: null,
+          completeAt: completedBefore ? Millis.orThrow(1000) : null,
+          lastSentAt: null,
+          lastReceivedAt: null,
+        }
   return {
-    status,
     transport: {
-      id,
-      label: `wss://${id}.example`,
-      readyState: status === "offline" ? "connecting" : "open",
-      openedAt: null,
-      closedAt: null,
-      error: unreachable
-        ? { type: "WebSocketConnectError", at: Millis.orThrow(1) }
-        : null,
+      type: "WebSocket",
+      id: transportId,
+      label: `wss://${transportId}.example`,
+      connection,
     },
-    route: {
-      transportId: id,
-      complete,
-      completeAt: complete ? Millis.orThrow(1000) : null,
-      lastSentAt: null,
-      lastReceivedAt: null,
-      error:
-        status === "error"
-          ? { type: "ProtocolSyncError", at: Millis.orThrow(1) }
-          : null,
-    },
+    route,
   }
 }
 
-const owner = (
-  relays: ReadonlyArray<RelaySyncState>,
-  syncedAt: Millis | null = null
-): OwnerSyncState => ({
-  name: testName,
-  ownerId: testAppOwner.id,
-  status: "initial",
-  syncedAt,
-  error: null,
-  relays,
-})
-
 const evaluate = (input: Partial<Parameters<typeof evaluateInitialSync>[0]>) =>
   evaluateInitialSync({
-    owner: null,
+    relays: null,
     hasSettings: false,
     online: true,
     idleForMs: 0,
     ...input,
   })
+
+describe("findOwnerRelays", () => {
+  const stateWith = (relays: OwnerRelays): SyncState => ({
+    transports: relays.map(({ transport }) => transport),
+    tenants: [
+      {
+        type: "Active",
+        name: testName,
+        owners: [
+          {
+            type: "Writable",
+            ownerId: testAppOwner.id,
+            routes: relays.map(({ route }) => route),
+          },
+        ],
+      },
+    ],
+  })
+
+  test("pairs the owner's routes with their transports", () => {
+    const synced = relay("synced")
+
+    expect(
+      findOwnerRelays(stateWith([synced]), testName, testAppOwner.id)
+    ).toEqual([synced])
+  })
+
+  test("is null until the worker reports the owner, unlike an owner with no relays", () => {
+    expect(findOwnerRelays(null, testName, testAppOwner.id)).toBeNull()
+    expect(
+      findOwnerRelays(
+        stateWith([]),
+        testName,
+        createIdFromString<"OwnerId">("other")
+      )
+    ).toBeNull()
+    expect(findOwnerRelays(stateWith([]), testName, testAppOwner.id)).toEqual(
+      []
+    )
+  })
+})
 
 describe("evaluateInitialSync", () => {
   test("local settings win over any relay state", () => {
@@ -79,7 +136,7 @@ describe("evaluateInitialSync", () => {
   })
 
   test("fails right away while offline", () => {
-    expect(evaluate({ owner: owner([relay("syncing")]), online: false })).toBe(
+    expect(evaluate({ relays: [relay("syncing")], online: false })).toBe(
       "failed"
     )
   })
@@ -87,40 +144,35 @@ describe("evaluateInitialSync", () => {
   test("waits while any relay syncs, however long it takes", () => {
     expect(
       evaluate({
-        owner: owner([relay("synced"), relay("syncing")]),
+        relays: [relay("synced"), relay("syncing")],
         idleForMs: initialSyncIdleLimitMs * 10,
       })
     ).toBe("waiting")
   })
 
   test("is empty once every relay synced without settings", () => {
-    expect(evaluate({ owner: owner([relay("synced"), relay("synced")]) })).toBe(
+    expect(evaluate({ relays: [relay("synced"), relay("synced")] })).toBe(
       "empty"
     )
   })
 
   test("fails when a relay failed and the rest synced empty", () => {
-    expect(evaluate({ owner: owner([relay("synced"), relay("error")]) })).toBe(
+    expect(evaluate({ relays: [relay("synced"), relay("error")] })).toBe(
       "failed"
     )
-    expect(
-      evaluate({
-        owner: owner([
-          relay("synced"),
-          relay("offline", { unreachable: true }),
-        ]),
-      })
-    ).toBe("failed")
+    expect(evaluate({ relays: [relay("synced"), relay("unreachable")] })).toBe(
+      "failed"
+    )
   })
 
   test("waits on a relay still connecting until the idle limit", () => {
-    const connecting = owner([relay("synced"), relay("offline")])
+    const connecting = [relay("synced"), relay("connecting")]
 
-    expect(evaluate({ owner: connecting })).toBe("waiting")
+    expect(evaluate({ relays: connecting })).toBe("waiting")
     expect(
-      evaluate({ owner: connecting, idleForMs: initialSyncIdleLimitMs })
+      evaluate({ relays: connecting, idleForMs: initialSyncIdleLimitMs })
     ).toBe("failed")
-    expect(evaluate({ owner: null, idleForMs: initialSyncIdleLimitMs })).toBe(
+    expect(evaluate({ relays: null, idleForMs: initialSyncIdleLimitMs })).toBe(
       "failed"
     )
   })
@@ -128,13 +180,13 @@ describe("evaluateInitialSync", () => {
 
 describe("isInitialSyncPending", () => {
   test("is pending while the first sync transfers", () => {
-    expect(isInitialSyncPending(owner([relay("syncing")]))).toBe(true)
+    expect(isInitialSyncPending([relay("syncing")])).toBe(true)
   })
 
   test("is settled after a completed sync or with no open relay", () => {
     expect(
-      isInitialSyncPending(owner([relay("syncing")], Millis.orThrow(1000)))
+      isInitialSyncPending([relay("syncing", { completedBefore: true })])
     ).toBe(false)
-    expect(isInitialSyncPending(owner([relay("offline")]))).toBe(false)
+    expect(isInitialSyncPending([relay("connecting")])).toBe(false)
   })
 })

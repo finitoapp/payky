@@ -29,6 +29,7 @@ import {
 import {
   evaluateInitialSync,
   type InitialSyncOutcome,
+  isRelaySyncing,
 } from "@/core/evolu/initial-sync-state.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
@@ -75,11 +76,10 @@ const outcomePresentation = {
  * syncing, and on `restart`.
  */
 function useInitialSyncOutcome(hasSettings: boolean) {
-  const owner = useAppOwnerSyncState()
+  const relays = useAppOwnerSyncState()
   const online = useOnline()
   const now = useTimestamp({ interval: 1000 })
-  const syncing =
-    owner?.relays.some((relay) => relay.status === "syncing") === true
+  const syncing = relays?.some(isRelaySyncing) === true
   const [idle, setIdle] = useState(() => ({ syncing, since: Date.now() }))
   if (idle.syncing !== syncing) {
     setIdle({ syncing, since: Date.now() })
@@ -89,7 +89,7 @@ function useInitialSyncOutcome(hasSettings: boolean) {
   // ends; settling the outcome keeps a transient mix from flashing an error.
   const outcome = useDebouncedValue(
     evaluateInitialSync({
-      owner,
+      relays,
       hasSettings,
       online,
       idleForMs: now - idle.since,

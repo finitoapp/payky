@@ -19,37 +19,27 @@ import { findRelaySyncState } from "@/components/evolu-transports/transport-sync
 const deps = testCreateDeps()
 
 const transport: SyncTransport = {
+  type: "WebSocket",
   id: createId<"SyncTransport">(deps),
   label: "wss://relay.example/room",
-  readyState: "open",
-  openedAt: null,
-  closedAt: null,
-  error: null,
+  connection: { type: "Open", openedAt: Millis.orThrow(800), error: null },
 }
 
 const route: SyncRoute = {
+  type: "Complete",
   transportId: transport.id,
-  complete: true,
   completeAt: Millis.orThrow(1000),
   lastSentAt: Millis.orThrow(900),
   lastReceivedAt: Millis.orThrow(1000),
-  error: null,
 }
 
 const stateFor = (ownerId: OwnerId): SyncState => ({
   transports: [transport],
   tenants: [
     {
+      type: "Active",
       name: testName,
-      refused: false,
-      owners: [
-        {
-          ownerId,
-          writable: true,
-          transportIds: [transport.id],
-          routes: [route],
-        },
-      ],
+      owners: [{ type: "Writable", ownerId, routes: [route] }],
     },
   ],
 })
@@ -58,12 +48,12 @@ describe("findRelaySyncState", () => {
   test("matches the configured url, ignoring its query", () => {
     const relay = findRelaySyncState(
       stateFor(testAppOwner.id),
+      testName,
       testAppOwner.id,
       "wss://relay.example/room?ownerId=x"
     )
 
-    expect(relay?.status).toBe("synced")
-    expect(relay?.transport.id).toBe(transport.id)
+    expect(relay).toEqual({ transport, route })
   })
 
   test("ignores another owner's relay and an unknown url", () => {
@@ -72,6 +62,7 @@ describe("findRelaySyncState", () => {
     expect(
       findRelaySyncState(
         stateFor(otherOwnerId),
+        testName,
         testAppOwner.id,
         transport.label
       )
@@ -79,12 +70,13 @@ describe("findRelaySyncState", () => {
     expect(
       findRelaySyncState(
         stateFor(testAppOwner.id),
+        testName,
         testAppOwner.id,
         "wss://other.example"
       )
     ).toBeNull()
     expect(
-      findRelaySyncState(null, testAppOwner.id, transport.label)
+      findRelaySyncState(null, testName, testAppOwner.id, transport.label)
     ).toBeNull()
   })
 })

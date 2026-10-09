@@ -1,47 +1,43 @@
 import { LightningReceiveRequestStatus } from "@buildonspark/spark-sdk/types"
 import { err, ok, type Result } from "@evolu/common"
+import { createEnv } from "@t3-oss/env-core"
 import { z } from "zod"
 import {
   createDonateWallet,
   type DonateWallet,
 } from "../../src/core/server/donate-wallet.js"
+import {
+  DonateSparkMnemonicSchema,
+  loadServerEnv,
+  throwInvalidServerEnv,
+} from "../../src/core/server/server-env.js"
 
 const MSATS_PER_SAT = 1_000
 const DEFAULT_MIN_SENDABLE_SATS = 1
 const DEFAULT_MAX_SENDABLE_SATS = 1_000_000
 const DEFAULT_INVOICE_EXPIRY_SECONDS = 600
 
-const EnvSchema = z
-  .object({
-    PAYKY_DONATE_SPARK_MNEMONIC: z.string().trim().min(1),
-    PAYKY_DONATE_MIN_SATS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(DEFAULT_MIN_SENDABLE_SATS),
-    PAYKY_DONATE_MAX_SATS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(DEFAULT_MAX_SENDABLE_SATS),
-    PAYKY_DONATE_DESCRIPTION: z
-      .string()
-      .trim()
-      .min(1)
-      .default("Donate to Payky"),
-    PAYKY_DONATE_IDENTIFIER: z.string().trim().min(1).optional(),
-    PAYKY_DONATE_CALLBACK_URL: z.string().trim().url().optional(),
-    PAYKY_DONATE_INVOICE_EXPIRY_SECONDS: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(DEFAULT_INVOICE_EXPIRY_SECONDS),
-  })
-  .refine((env) => env.PAYKY_DONATE_MIN_SATS <= env.PAYKY_DONATE_MAX_SATS, {
-    message:
-      "PAYKY_DONATE_MIN_SATS must be lower than or equal to PAYKY_DONATE_MAX_SATS.",
-    path: ["PAYKY_DONATE_MIN_SATS"],
-  })
+const donateEnvShape = {
+  PAYKY_DONATE_SPARK_MNEMONIC: DonateSparkMnemonicSchema,
+  PAYKY_DONATE_MIN_SATS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(DEFAULT_MIN_SENDABLE_SATS),
+  PAYKY_DONATE_MAX_SATS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(DEFAULT_MAX_SENDABLE_SATS),
+  PAYKY_DONATE_DESCRIPTION: z.string().trim().min(1).default("Donate to Payky"),
+  PAYKY_DONATE_IDENTIFIER: z.string().trim().min(1).optional(),
+  PAYKY_DONATE_CALLBACK_URL: z.string().trim().url().optional(),
+  PAYKY_DONATE_INVOICE_EXPIRY_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(DEFAULT_INVOICE_EXPIRY_SECONDS),
+}
 
 interface DonateConfig {
   readonly mnemonic: string
@@ -117,13 +113,19 @@ const getRequestOrigin = (request: Request): string =>
   new URL(request.url).origin
 
 const loadConfig = (request: Request): Result<DonateConfig, LnurlError> => {
-  const parsedEnv = EnvSchema.safeParse(process.env)
+  const env = loadServerEnv(() =>
+    createEnv({
+      server: donateEnvShape,
+      runtimeEnv: process.env,
+      emptyStringAsUndefined: true,
+      onValidationError: throwInvalidServerEnv,
+    })
+  )
 
-  if (!parsedEnv.success) {
+  if (env === null || env.PAYKY_DONATE_MIN_SATS > env.PAYKY_DONATE_MAX_SATS) {
     return err(lnurlError("config", "Donation endpoint is not configured."))
   }
 
-  const env = parsedEnv.data
   const callbackUrl =
     env.PAYKY_DONATE_CALLBACK_URL ??
     `${getRequestOrigin(request)}/.well-known/lnurlp/donate`

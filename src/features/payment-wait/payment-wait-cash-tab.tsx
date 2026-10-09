@@ -44,7 +44,7 @@ export function CashPaymentTab({
     parsedReceived === null || parsedReceived < leastReceivedAmount
       ? null
       : NonNegativeInteger(parsedReceived)
-  const formatAmount = (value: number) =>
+  const formatMinor = (value: number) =>
     formatMoney({ value: Integer(value), currency }, locale)
 
   return (
@@ -68,13 +68,13 @@ export function CashPaymentTab({
         {receivedAmount === null ? (
           <FieldError>
             {t("paymentWait.cashPaid.receivedTooLow", {
-              amount: formatAmount(leastReceivedAmount),
+              amount: formatMinor(leastReceivedAmount),
             })}
           </FieldError>
         ) : receivedAmount === amount ? null : (
           <FieldDescription>
             {t("paymentWait.cashPaid.difference", {
-              amount: formatAmount(receivedAmount - amount),
+              amount: formatMinor(receivedAmount - amount),
             })}
           </FieldDescription>
         )}

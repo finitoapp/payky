@@ -175,7 +175,7 @@ export function PaymentDetailRefunds({
       : deriveRefundableLines(paymentLines, refundLines)
   const canRefund = isPaid && remainingAmount > 0
   const canRefundTip = isPaid && refundableTipAmount > 0
-  const formatAmount = (value: NonNegativeInteger) =>
+  const formatMinor = (value: NonNegativeInteger) =>
     formatMoney({ value, currency: payment.currency }, locale)
 
   if (refunds.length === 0 && !canRefund && !canRefundTip) return null
@@ -203,7 +203,7 @@ export function PaymentDetailRefunds({
           >
             <Undo2Icon data-icon="inline-start" />
             {t("paymentDetail.refunds.tipAction", {
-              amount: formatAmount(refundableTipAmount),
+              amount: formatMinor(refundableTipAmount),
             })}
           </Button>
         ) : null}
@@ -238,7 +238,7 @@ export function PaymentDetailRefunds({
                 >
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-semibold">
-                      {formatAmount(refund.amount)}
+                      {formatMinor(refund.amount)}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {isTipRefund(refund)
@@ -340,7 +340,7 @@ function RefundDialog({
     Readonly<Partial<Record<PaymentLineId, number>>>
   >({})
   const [pending, setPending] = useState(false)
-  const formatAmount = (value: NonNegativeInteger) =>
+  const formatMinor = (value: NonNegativeInteger) =>
     formatMoney({ value, currency }, locale)
 
   const parsedAmount = decimalAmountToMinorUnits({
@@ -434,7 +434,7 @@ function RefundDialog({
         <div className="flex flex-col gap-5">
           {tipAmount > 0 ? (
             <p className="text-sm text-muted-foreground">
-              {t("refund.dialog.tipHint", { amount: formatAmount(tipAmount) })}
+              {t("refund.dialog.tipHint", { amount: formatMinor(tipAmount) })}
             </p>
           ) : null}
           {refundableLines.length > 0 ? (
@@ -477,7 +477,7 @@ function RefundDialog({
               <FieldError>
                 {typedAmount === null
                   ? t("refund.dialog.amount.invalid", {
-                      amount: formatAmount(remainingAmount),
+                      amount: formatMinor(remainingAmount),
                     })
                   : null}
               </FieldError>
@@ -567,7 +567,7 @@ function RefundDialog({
             {refundAmount === null
               ? t("refund.dialog.confirmEmpty")
               : t("refund.dialog.confirm", {
-                  amount: formatAmount(refundAmount),
+                  amount: formatMinor(refundAmount),
                 })}
           </Button>
         </DialogFooter>

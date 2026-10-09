@@ -1,6 +1,5 @@
 import type { Query } from "@evolu/common"
 import {
-  createIdFromString,
   err,
   type InsertValues,
   type MutationOptions,
@@ -23,6 +22,7 @@ import {
   computeAccountTransactionRows,
   upsertAccountTransactionRows,
 } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import { deriveManualPaymentAccountTransactionId } from "@/core/modules/account-transaction/account-transaction-utils.ts"
 import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-guards.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -52,6 +52,7 @@ import {
   activeClaimedTransactionsByPaymentIdQuery,
   activeReconciliationClaimsByPaymentIdQuery,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
+import { deriveManualReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-utils.ts"
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -470,11 +471,8 @@ interface MarkPaymentPaidInput {
  * The account kind is the only thing that varies: which query finds it, which
  * not-found error it reports, and the prefix of the transaction's id. That id
  * is content-derived so a retried confirmation re-uses the row instead of
- * recording the money twice — the two prefixes are deliberately passed in
- * verbatim rather than assembled from `accountKind`, because they are *not*
- * symmetrical (the IBAN one carries a `manual` segment, the cash one does
- * not) and changing either would duplicate a settlement for every payment
- * already confirmed.
+ * recording the money twice; `deriveManualPaymentAccountTransactionId` owns
+ * the prefixes.
  */
 const markPaymentPaid =
   <TRow extends { readonly currency: FiatCurrency }, TNotFoundError>({
@@ -482,7 +480,6 @@ const markPaymentPaid =
     accountQuery,
     notFoundError,
     accountTransactionKind,
-    transactionIdPrefix,
     receivedCashAmount,
     paymentId,
     accountId,
@@ -494,7 +491,6 @@ const markPaymentPaid =
     readonly accountTransactionKind?: "cardSwitchio"
     readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
     readonly notFoundError: TNotFoundError
-    readonly transactionIdPrefix: string
     readonly receivedCashAmount?: NonNegativeInteger
   }): Task<
     PaymentId,
@@ -525,9 +521,11 @@ const markPaymentPaid =
     // there permanently).
     const accountTransaction = computeAccountTransactionRows(
       {
-        id: createIdFromString<"AccountTransaction">(
-          `${transactionIdPrefix}${paymentId}:${accountId}`
-        ),
+        id: deriveManualPaymentAccountTransactionId({
+          accountKind,
+          paymentId,
+          accountId,
+        }),
         accountId,
         kind: accountTransactionKind,
         amount: payment.amount,
@@ -544,9 +542,7 @@ const markPaymentPaid =
       run.deps.date.now()
     )
     const claim = {
-      id: createIdFromString<"ReconciliationClaim">(
-        `reconciliationClaim:manual:${paymentId}:${accountTransaction.id}`
-      ),
+      id: deriveManualReconciliationClaimId(paymentId, accountTransaction.id),
       deviceId: deviceId ?? null,
       paymentId,
       accountTransactionId: accountTransaction.id,
@@ -618,7 +614,6 @@ export const markPaymentPaidCash =
         notFoundError: createCashRegisterAccountNotFoundError({
           id: input.accountId,
         }),
-        transactionIdPrefix: "accountTransaction:cashRegister:payment:",
         receivedCashAmount: receivedAmount,
       })
     )
@@ -641,7 +636,6 @@ export const markPaymentPaidIban = (
     accountKind: "iban",
     accountQuery: ibanAccountByIdQuery,
     notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
-    transactionIdPrefix: "accountTransaction:iban:manual:payment:",
   })
 
 /**
@@ -730,7 +724,6 @@ const recordSwitchioTerminalOutcome =
         notFoundError: createCardSwitchioAccountNotFoundError({
           id: accountId,
         }),
-        transactionIdPrefix: "accountTransaction:cardSwitchio:payment:",
       })
     )
     if (!settleResult.ok) return settleResult

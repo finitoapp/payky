@@ -14,6 +14,7 @@ import { translate, translateValue } from "../e2e/support/i18n.ts"
 import { seedOnboarding } from "../e2e/support/onboarding.ts"
 import { pageHeight, pageWidth } from "../e2e/support/viewport.ts"
 import type { TranslationKey } from "../src/i18n/resources.ts"
+import { docEnv } from "./doc-env.ts"
 import type { CaptionTimelineFile } from "./video/captions.ts"
 import {
   type CaptionTimeline,
@@ -354,9 +355,7 @@ async function captureScenario(
   await saveCapture(scenario.name, video, timeline)
 }
 
-const requestedScenarioNames = process.env.PAYKY_VIDEO_SCENARIOS?.split(",")
-  .map((name) => name.trim())
-  .filter((name) => name !== "")
+const requestedScenarioNames = docEnv.PAYKY_VIDEO_SCENARIOS
 
 const selectedScenarios =
   requestedScenarioNames === undefined

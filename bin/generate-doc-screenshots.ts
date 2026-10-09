@@ -19,6 +19,7 @@ import {
   resources,
   type TranslationKey,
 } from "../src/i18n/resources.ts"
+import { docEnv } from "./doc-env.ts"
 import {
   contentBottomInset,
   contentTopInset,
@@ -341,11 +342,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
   },
 ]
 
-const requestedScenarioNames = process.env.PAYKY_SCREENSHOT_SCENARIOS?.split(
-  ","
-)
-  .map((name) => name.trim())
-  .filter((name) => name !== "")
+const requestedScenarioNames = docEnv.PAYKY_SCREENSHOT_SCENARIOS
 
 const selectedScenarios =
   requestedScenarioNames === undefined

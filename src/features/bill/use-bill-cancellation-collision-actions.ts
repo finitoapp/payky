@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-actions.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
@@ -19,7 +19,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
  */
 export function useBillCancellationCollisionActions(billId: BillId) {
   const { t } = useTranslation()
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { require } = useRequirePermission()
   const [pending, setPending] = useState(false)
 
@@ -32,16 +32,11 @@ export function useBillCancellationCollisionActions(billId: BillId) {
     )
       return
     setPending(true)
-    try {
-      await using run = appRun()
+    await runToast(async (run) => {
       const result = await run(confirmBillClosedDespiteCancellation(billId))
-
-      if (!result.ok) {
-        toast.error(t("bill.collision.markClosed.error"))
-      }
-    } finally {
-      setPending(false)
-    }
+      if (!result.ok) return "bill.collision.markClosed.error"
+    })
+    setPending(false)
   }
 
   const refund = () => {

@@ -11,7 +11,6 @@ import {
 } from "lucide-react"
 import { LayoutGroup, motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -78,6 +77,7 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -120,6 +120,7 @@ export function PaymentWaitPage({ paymentId }: { readonly paymentId: string }) {
 
 function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const appRun = useAppRun()
+  const runToast = useRunToast()
   const { require } = useRequirePermission()
   const deviceId = useAtomValue(accountAtom).device.id
   const console = useConsole()
@@ -508,9 +509,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
     setCashPaymentErrorKey(null)
     setCashPaymentPending(true)
-    try {
-      await using run = appRun()
-
+    // A refused confirmation shows inline; `runToast` only catches the
+    // unexpected, which would otherwise surface nowhere.
+    await runToast(async (run) => {
       const result = await run(
         markPaymentPaidCash({
           paymentId,
@@ -524,9 +525,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         console.error("Failed to mark cash payment paid", result.error)
         setCashPaymentErrorKey("paymentWait.cashPaid.error")
       }
-    } finally {
-      setCashPaymentPending(false)
-    }
+    })
+    setCashPaymentPending(false)
   }
 
   const handleMarkIbanPaid = async () => {
@@ -535,9 +535,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
     setIbanPaymentErrorKey(null)
     setIbanPaymentPending(true)
-    try {
-      await using run = appRun()
-
+    await runToast(async (run) => {
       const result = await run(
         markPaymentPaidIban({
           paymentId,
@@ -550,9 +548,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         console.error("Failed to mark bank transfer paid", result.error)
         setIbanPaymentErrorKey("paymentWait.ibanPaid.error")
       }
-    } finally {
-      setIbanPaymentPending(false)
-    }
+    })
+    setIbanPaymentPending(false)
   }
 
   const handlePayCard = async () => {
@@ -578,9 +575,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
     setCardPaymentErrorKey(null)
     setCardPaymentPending(true)
-    try {
-      await using run = appRun()
-
+    await runToast(async (run) => {
       const result = await run(
         payPaymentWithSwitchioCard({
           paymentId,
@@ -594,9 +589,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         console.error("Failed to take the card payment", result.error)
         setCardPaymentErrorKey(cardPaymentErrorKeys[result.error.type])
       }
-    } finally {
-      setCardPaymentPending(false)
-    }
+    })
+    setCardPaymentPending(false)
   }
 
   const handleCancelPayment = async () => {
@@ -604,14 +598,12 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     if (!(await require("discard", "access.action.cancelPayment"))) return
 
     setCancelPending(true)
-    try {
-      await using run = appRun()
+    await runToast(async (run) => {
       const result = await run(cancelPayment(paymentId))
 
       if (!result.ok) {
         console.error("Failed to cancel payment", result.error)
-        toast.error(t("paymentWait.cancelError"))
-        return
+        return "paymentWait.cancelError"
       }
 
       // Only a bill payment has a cart to go back to. Sending a keypad
@@ -622,9 +614,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       await (payment.billId === null
         ? navigate({ to: "/" })
         : navigate({ to: "/bill", search: { billId: payment.billId } }))
-    } finally {
-      setCancelPending(false)
-    }
+    })
+    setCancelPending(false)
   }
 
   if (closedOnOpen) return null

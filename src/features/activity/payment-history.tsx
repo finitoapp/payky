@@ -11,6 +11,7 @@ import {
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { latestPaymentsQuery } from "@/core/modules/payment/payment-queries.ts"
 import {
+  derivePaymentHasCancellationCollision,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
   type PaymentStatus,
@@ -70,22 +71,6 @@ const resolvePaymentStatus = (
  */
 const toSettledClaimCount = (payment: PaymentHistoryRow): number =>
   payment.ownClaimedTransactions.length
-
-/**
- * The canceled+claimed collision described in docs/bill-payment-states.md:
- * `derivePaymentStatus` still shows the payment as Canceled until staff
- * resolves it via `confirmPaymentPaidDespiteCancellation` on the detail
- * page, but the list should surface it too so it isn't only discoverable by
- * opening every canceled payment.
- */
-const resolveHasCancellationCollision = (payment: {
-  readonly canceledAt: PaymentHistoryRow["canceledAt"]
-  readonly confirmedPaidAt: PaymentHistoryRow["confirmedPaidAt"]
-  readonly claimCount: number
-}): boolean =>
-  payment.canceledAt !== null &&
-  payment.confirmedPaidAt === null &&
-  payment.claimCount > 0
 
 interface PaymentHistoryIssueFlags {
   readonly hasCancellationCollision: boolean
@@ -257,11 +242,12 @@ export const PaymentHistory = () => {
             items={group.items.map((item) => {
               const claimCount = toSettledClaimCount(item)
               const paymentStatus = statusOf(item)
-              const hasCancellationCollision = resolveHasCancellationCollision({
-                canceledAt: item.canceledAt,
-                confirmedPaidAt: item.confirmedPaidAt,
-                claimCount,
-              })
+              const hasCancellationCollision =
+                derivePaymentHasCancellationCollision({
+                  canceledAt: item.canceledAt,
+                  confirmedPaidAt: item.confirmedPaidAt,
+                  hasActiveClaim: claimCount > 0,
+                })
               const issueFlags = resolvePaymentHistoryIssueFlags(
                 item,
                 hasCancellationCollision

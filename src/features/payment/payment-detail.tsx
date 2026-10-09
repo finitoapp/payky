@@ -72,6 +72,7 @@ import {
   paymentReconciliationsQuery,
 } from "@/core/modules/payment/payment-queries.ts"
 import {
+  derivePaymentHasCancellationCollision,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
@@ -190,10 +191,11 @@ function PaymentDetailContent({
   // merge can leave a payment canceled with an active claim (real money) at
   // the same time — `derivePaymentStatus` still shows it as Canceled until
   // staff explicitly resolves it via `confirmPaymentPaidDespiteCancellation`.
-  const hasCancellationCollision =
-    payment.canceledAt !== null &&
-    payment.confirmedPaidAt === null &&
-    reconciliations.length > 0
+  const hasCancellationCollision = derivePaymentHasCancellationCollision({
+    canceledAt: payment.canceledAt,
+    confirmedPaidAt: payment.confirmedPaidAt,
+    hasActiveClaim: reconciliations.length > 0,
+  })
   // The duplicate-settlement collision from docs/bill-payment-states.md: two
   // offline devices can each independently claim this payment through a
   // different method — both real money, so the sum of its distinct claimed

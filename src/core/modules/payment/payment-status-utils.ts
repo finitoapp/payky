@@ -64,6 +64,23 @@ export const derivePaymentStatus = ({
 }
 
 /**
+ * The canceled+claimed collision from docs/bill-payment-states.md: a
+ * multi-device merge can leave a payment canceled while money claimed against
+ * it arrived. `derivePaymentStatus` still shows it as Canceled until staff
+ * resolves it through `confirmPaymentPaidDespiteCancellation`, which sets
+ * `confirmedPaidAt`.
+ */
+export const derivePaymentHasCancellationCollision = ({
+  canceledAt,
+  confirmedPaidAt,
+  hasActiveClaim,
+}: {
+  readonly canceledAt: TimestampMs | null
+  readonly confirmedPaidAt: TimestampMs | null
+  readonly hasActiveClaim: boolean
+}): boolean => canceledAt !== null && confirmedPaidAt === null && hasActiveClaim
+
+/**
  * Computes a payment's `expiresAt` from a payment method's own expiry
  * window (e.g. a Lightning invoice's `expirySeconds`). `undefined` (no
  * expiry window given, e.g. cash or IBAN) maps to `null` — the payment

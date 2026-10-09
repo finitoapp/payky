@@ -6,6 +6,7 @@ import {
 import {
   computePaymentExpiresAt,
   DEFAULT_LIGHTNING_INVOICE_EXPIRY_SECONDS,
+  derivePaymentHasCancellationCollision,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
 } from "./payment-status-utils.ts"
@@ -107,6 +108,47 @@ describe("derivePaymentStatus", () => {
         now,
       })
     ).toBe("paid")
+  })
+})
+
+describe("derivePaymentHasCancellationCollision", () => {
+  const canceledAt = TimestampMs(now.getTime())
+
+  test("a canceled payment with money claimed against it collides", () => {
+    expect(
+      derivePaymentHasCancellationCollision({
+        canceledAt,
+        confirmedPaidAt: null,
+        hasActiveClaim: true,
+      })
+    ).toBe(true)
+  })
+
+  test("staff confirming it paid resolves the collision", () => {
+    expect(
+      derivePaymentHasCancellationCollision({
+        canceledAt,
+        confirmedPaidAt: TimestampMs(now.getTime() + 1),
+        hasActiveClaim: true,
+      })
+    ).toBe(false)
+  })
+
+  test("a canceled payment with no claim, or a claimed one never canceled, does not", () => {
+    expect(
+      derivePaymentHasCancellationCollision({
+        canceledAt,
+        confirmedPaidAt: null,
+        hasActiveClaim: false,
+      })
+    ).toBe(false)
+    expect(
+      derivePaymentHasCancellationCollision({
+        canceledAt: null,
+        confirmedPaidAt: null,
+        hasActiveClaim: true,
+      })
+    ).toBe(false)
   })
 })
 

@@ -9,6 +9,7 @@ import {
   turnOnAccessControl,
   typePin,
 } from "./support/access.ts"
+import { injectScanCode } from "./support/bill.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
 import { gotoPage } from "./support/navigation.ts"
@@ -138,5 +139,38 @@ test("an invoice expiring during PIN entry leaves the review with an error and a
       page.getByRole("button", { name: en("withdraw.review.newQuote") })
     ).toBeVisible()
     await expect(page.getByText(en("withdraw.review.title"))).toBeVisible()
+  })
+})
+
+test("scanning a destination fills it in and closes the scanner", async ({
+  page,
+}) => {
+  await fakeSparkWallet(page)
+  await seedOnboarding(page, "en", { spark: true })
+  await gotoPage(
+    page,
+    "/settings/payment-accounts/spark/withdrawals/new",
+    "en",
+    "withdraw.form.title"
+  )
+  const invoice = invoiceIssuedAt(Date.now())
+
+  await test.step("open the scanner", async () => {
+    await page
+      .getByRole("button", { name: en("withdraw.destination.scan") })
+      .click()
+    await expect(
+      page.getByRole("dialog", { name: en("withdraw.scan.title") })
+    ).toBeVisible()
+  })
+
+  await test.step("a scanned code lands in the destination", async () => {
+    await injectScanCode(page, invoice)
+    await expect(
+      page.getByRole("dialog", { name: en("withdraw.scan.title") })
+    ).toBeHidden()
+    await expect(page.getByLabel(en("withdraw.destination.label"))).toHaveValue(
+      invoice
+    )
   })
 })

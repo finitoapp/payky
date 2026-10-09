@@ -164,9 +164,6 @@ export const csWithdraw = {
   "withdraw.review.warning":
     "Bitcoinové transakce nelze vrátit. Před potvrzením cíl pečlivě zkontrolujte.",
   "withdraw.sats": "{amount} satů",
-  "withdraw.scan.close": "Zavřít",
-  "withdraw.scan.error":
-    "Nepodařilo se získat přístup ke kameře. Zadejte cíl ručně.",
   "withdraw.scan.title": "Naskenovat cíl",
   "withdraw.status.done": "Dokončeno",
   "withdraw.status.failed": "Selhalo",

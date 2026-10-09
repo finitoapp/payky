@@ -7,6 +7,7 @@ import {
 } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { defineError } from "@/core/error.ts"
 import type { CatalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
 import { lastCatalogItemSortOrderQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -16,6 +17,16 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { CatalogItemId } from "./catalog-item-types.ts"
+
+/** A catalog item that is not there, for whoever looked it up. */
+export const createCatalogItemNotFoundError = defineError(
+  "CatalogItemNotFound"
+)<{
+  readonly id: CatalogItemId
+}>()
+export type CatalogItemNotFoundError = ReturnType<
+  typeof createCatalogItemNotFoundError
+>
 
 export const createCatalogItem =
   (

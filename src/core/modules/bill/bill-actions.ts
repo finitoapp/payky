@@ -25,8 +25,11 @@ import {
   calculateBillLineSummaries,
   createBillLineSummaryId,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  type CatalogItemNotFoundError,
+  createCatalogItemNotFoundError,
+} from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { ItemRow, item } from "@/core/modules/item/item.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import {
@@ -67,14 +70,6 @@ import {
 import { lastBillDisplayNumberQuery, openBillsQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 
-export const createCatalogItemNotFoundError = defineError(
-  "CatalogItemNotFound"
-)<{
-  readonly id: CatalogItemId
-}>()
-export type CatalogItemNotFoundError = ReturnType<
-  typeof createCatalogItemNotFoundError
->
 const createBillLineSummaryMissingError = defineError(
   "BillLineSummaryMissing"
 )<{

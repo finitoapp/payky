@@ -11,6 +11,7 @@ import {
   formatContactMessage,
 } from "../src/core/modules/contact/contact-message.js"
 import { jsonCodec } from "../src/zod-utils.js"
+import { jsonApi } from "./_http.js"
 import { currentTeam, NpubListSchema } from "./support-team.js"
 
 /**
@@ -51,20 +52,12 @@ interface ContactError {
   readonly reason: string
 }
 
-const jsonHeaders = {
-  "access-control-allow-origin": "*",
-  "cache-control": "no-store",
-  "content-type": "application/json; charset=utf-8",
-} as const
-
-const jsonResponse = (
-  body: ContactResponse | ContactError,
-  init?: ResponseInit
-): Response =>
-  Response.json(body, {
-    ...init,
-    headers: { ...jsonHeaders, ...init?.headers },
-  })
+const { jsonResponse, preflightResponse } = jsonApi<
+  ContactResponse | ContactError
+>({
+  cacheControl: "no-store",
+  methods: "POST",
+})
 
 const ContactMessageJson = jsonCodec(ContactMessageSchema)
 
@@ -104,15 +97,7 @@ export const handleContactRequest = async (
     readonly now?: () => number
   } = {}
 ): Promise<Response> => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        ...jsonHeaders,
-        "access-control-allow-methods": "POST, OPTIONS",
-        "access-control-allow-headers": "content-type",
-      },
-    })
-  }
+  if (request.method === "OPTIONS") return preflightResponse()
 
   if (request.method !== "POST") {
     return jsonResponse(

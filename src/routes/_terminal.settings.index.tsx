@@ -11,6 +11,7 @@ import {
   Landmark,
   Languages,
   LifeBuoy,
+  LockKeyhole,
   Percent,
   ReceiptText,
   ShieldCheck,
@@ -48,6 +49,7 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 export const Route = createFileRoute("/_terminal/settings/")({
   component: SettingsPage,
   staticData: {
+    access: "free",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },
@@ -234,6 +236,12 @@ function SettingsPage() {
         title: "settings.security.title",
         description: "settings.security.description",
         to: "/settings/security",
+      },
+      {
+        icon: LockKeyhole,
+        title: "access.title",
+        description: "access.nav.description",
+        to: "/settings/access",
       },
     ],
     t

@@ -13,6 +13,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export const Route = createFileRoute("/_terminal/settings/about/terms")({
   component: TermsPage,
   staticData: {
+    access: "free",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

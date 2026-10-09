@@ -1,14 +1,17 @@
 import { QueryClientProvider } from "@tanstack/react-query"
 import { CatchBoundary, RouterProvider } from "@tanstack/react-router"
-import { createStore, Provider } from "jotai"
+import { Provider } from "jotai"
 import { LoaderCircleIcon } from "lucide-react"
 import { Suspense, useEffect } from "react"
+import { jotaiStore } from "@/atoms/store.ts"
 import { AppBackgroundJobs } from "@/components/app/app-background-jobs.tsx"
 import { AppLoaderCleanup } from "@/components/app/app-loader-cleanup.tsx"
 import { AppMigrations } from "@/components/app/app-migrations.tsx"
 import { ConfirmDialogHost } from "@/components/app/confirm-dialog-host.tsx"
+import { DeviceRegistration } from "@/components/app/device-registration.tsx"
 import { AppErrorBoundary } from "@/components/app/error-boundary.tsx"
 import { NativeBackButtonHandler } from "@/components/app/native-back-button-handler.tsx"
+import { PinPromptHost } from "@/components/app/pin-prompt-host.tsx"
 import { PwaUpdateToast } from "@/components/app/pwa-update-toast.tsx"
 import { SentryController } from "@/components/app/sentry-controller.tsx"
 import { SwitchioRestoredResult } from "@/components/app/switchio-restored-result.tsx"
@@ -18,8 +21,6 @@ import { Toaster } from "@/components/ui/sonner.tsx"
 import { queryClient } from "@/core/query-client.ts"
 import { captureReportedError } from "@/core/sentry.ts"
 import { router } from "@/router.tsx"
-
-const jotaiStore = createStore()
 
 /**
  * Renders before `ThemeProvider` has mounted (it's suspended in the same
@@ -78,10 +79,8 @@ export function App() {
                * Isolated, because both read the active account's app Evolu
                * client: one that throws would otherwise take the shell
                * down with it, and one that never finishes opening would
-               * suspend the shell forever — in both cases including
-               * `/recovery`, the one screen that can still switch
-               * accounts, since it needs only the device database. Both of
-               * these are best-effort; losing them costs sync, not the UI.
+               * suspend the shell forever. Both of these are best-effort;
+               * losing them costs sync, not the UI.
                */}
               <CatchBoundary
                 getResetKey={() => "app-evolu-consumers"}
@@ -97,6 +96,7 @@ export function App() {
                   <AppMigrations>
                     <AppBackgroundJobs />
                     <SwitchioRestoredResult />
+                    <DeviceRegistration />
                   </AppMigrations>
                   <E2eTestBridge />
                 </Suspense>
@@ -105,6 +105,7 @@ export function App() {
               <PwaUpdateToast />
               <Toaster />
               <ConfirmDialogHost />
+              <PinPromptHost />
             </ThemeProvider>
           </Suspense>
         </CatchBoundary>

@@ -234,8 +234,7 @@ export interface NewAccountOptions {
  * A device account's id, the same on every device and every time the
  * account is added, so adding it twice — even in two concurrent calls —
  * writes one row (account/0003). Derived from the app owner id, which sync
- * URLs carry anyway, not from the master key: the id travels in URLs such as
- * `/restore-account?previous=`.
+ * URLs carry anyway, not from the master key: the id may end up in logs.
  */
 export const deriveDeviceAccountId = (masterKey: MasterKey): AccountId =>
   createIdFromString<"DeviceAccountId">(

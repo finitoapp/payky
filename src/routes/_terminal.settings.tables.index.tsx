@@ -5,6 +5,7 @@ import { TablesSettingsPage } from "@/features/settings/tables/tables-settings-p
 export const Route = createFileRoute("/_terminal/settings/tables/")({
   component: TablesSettingsPage,
   staticData: {
+    access: "settings",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

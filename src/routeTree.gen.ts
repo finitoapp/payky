@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TerminalRouteImport } from './routes/_terminal'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as RecoveryRouteImport } from './routes/recovery'
 import { Route as RestoreAccountRouteImport } from './routes/restore-account'
 import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
@@ -24,6 +23,7 @@ import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payme
 import { Route as TerminalPaymentPaymentIdRouteImport } from './routes/_terminal.payment_.$paymentId'
 import { Route as TerminalSettingsIndexRouteImport } from './routes/_terminal.settings.index'
 import { Route as TerminalSettingsAboutRouteImport } from './routes/_terminal.settings.about'
+import { Route as TerminalSettingsAccessRouteImport } from './routes/_terminal.settings.access'
 import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal.settings.accounts'
 import { Route as TerminalSettingsAssistantRouteImport } from './routes/_terminal.settings.assistant'
 import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_terminal.settings.categories'
@@ -49,8 +49,8 @@ import { Route as TerminalActivityBillsBillIdRouteImport } from './routes/_termi
 import { Route as TerminalSettingsAboutIndexRouteImport } from './routes/_terminal.settings.about.index'
 import { Route as TerminalSettingsAboutPrivacyRouteImport } from './routes/_terminal.settings.about.privacy'
 import { Route as TerminalSettingsAboutTermsRouteImport } from './routes/_terminal.settings.about.terms'
+import { Route as TerminalSettingsAccessAddDeviceRouteImport } from './routes/_terminal.settings.access_.add-device'
 import { Route as TerminalSettingsAccountsIndexRouteImport } from './routes/_terminal.settings.accounts.index'
-import { Route as TerminalSettingsAccountsTransferRouteImport } from './routes/_terminal.settings.accounts.transfer'
 import { Route as TerminalSettingsCategoriesIndexRouteImport } from './routes/_terminal.settings.categories.index'
 import { Route as TerminalSettingsCategoriesCatalogCategoryIdRouteImport } from './routes/_terminal.settings.categories.$catalogCategoryId'
 import { Route as TerminalSettingsCategoriesNewRouteImport } from './routes/_terminal.settings.categories.new'
@@ -81,11 +81,6 @@ const ErrorRoute = ErrorRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecoveryRoute = RecoveryRouteImport.update({
-  id: '/recovery',
-  path: '/recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RestoreAccountRoute = RestoreAccountRouteImport.update({
@@ -143,6 +138,11 @@ const TerminalSettingsIndexRoute = TerminalSettingsIndexRouteImport.update({
 const TerminalSettingsAboutRoute = TerminalSettingsAboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => TerminalSettingsRoute,
+} as any)
+const TerminalSettingsAccessRoute = TerminalSettingsAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
   getParentRoute: () => TerminalSettingsRoute,
 } as any)
 const TerminalSettingsAccountsRoute =
@@ -288,16 +288,16 @@ const TerminalSettingsAboutTermsRoute =
     path: '/terms',
     getParentRoute: () => TerminalSettingsAboutRoute,
   } as any)
+const TerminalSettingsAccessAddDeviceRoute =
+  TerminalSettingsAccessAddDeviceRouteImport.update({
+    id: '/access_/add-device',
+    path: '/access/add-device',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsAccountsIndexRoute =
   TerminalSettingsAccountsIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => TerminalSettingsAccountsRoute,
-  } as any)
-const TerminalSettingsAccountsTransferRoute =
-  TerminalSettingsAccountsTransferRouteImport.update({
-    id: '/transfer',
-    path: '/transfer',
     getParentRoute: () => TerminalSettingsAccountsRoute,
   } as any)
 const TerminalSettingsCategoriesIndexRoute =
@@ -407,7 +407,6 @@ export interface FileRoutesByFullPath {
   '/': typeof TerminalIndexRoute
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
-  '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/bill': typeof TerminalBillRoute
@@ -417,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/settings/about': typeof TerminalSettingsAboutRouteWithChildren
+  '/settings/access': typeof TerminalSettingsAccessRoute
   '/settings/accounts': typeof TerminalSettingsAccountsRouteWithChildren
   '/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
@@ -442,7 +442,7 @@ export interface FileRoutesByFullPath {
   '/activity/bills/$billId': typeof TerminalActivityBillsBillIdRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
-  '/settings/accounts/transfer': typeof TerminalSettingsAccountsTransferRoute
+  '/settings/access/add-device': typeof TerminalSettingsAccessAddDeviceRoute
   '/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
@@ -466,7 +466,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
-  '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/bill': typeof TerminalBillRoute
@@ -475,6 +474,7 @@ export interface FileRoutesByTo {
   '/activity/bills': typeof TerminalActivityBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
   '/payment/$paymentId': typeof TerminalPaymentPaymentIdRoute
+  '/settings/access': typeof TerminalSettingsAccessRoute
   '/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
@@ -495,7 +495,7 @@ export interface FileRoutesByTo {
   '/activity/bills/$billId': typeof TerminalActivityBillsBillIdRoute
   '/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
-  '/settings/accounts/transfer': typeof TerminalSettingsAccountsTransferRoute
+  '/settings/access/add-device': typeof TerminalSettingsAccessAddDeviceRoute
   '/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
   '/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
@@ -519,7 +519,6 @@ export interface FileRoutesById {
   '/_terminal': typeof TerminalRouteWithChildren
   '/error': typeof ErrorRoute
   '/onboarding': typeof OnboardingRoute
-  '/recovery': typeof RecoveryRoute
   '/restore-account': typeof RestoreAccountRoute
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/bill': typeof TerminalBillRoute
@@ -530,6 +529,7 @@ export interface FileRoutesById {
   '/_terminal/payment/tip': typeof TerminalPaymentTipRoute
   '/_terminal/payment_/$paymentId': typeof TerminalPaymentPaymentIdRoute
   '/_terminal/settings/about': typeof TerminalSettingsAboutRouteWithChildren
+  '/_terminal/settings/access': typeof TerminalSettingsAccessRoute
   '/_terminal/settings/accounts': typeof TerminalSettingsAccountsRouteWithChildren
   '/_terminal/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/_terminal/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
@@ -555,7 +555,7 @@ export interface FileRoutesById {
   '/_terminal/activity_/bills_/$billId': typeof TerminalActivityBillsBillIdRoute
   '/_terminal/settings/about/privacy': typeof TerminalSettingsAboutPrivacyRoute
   '/_terminal/settings/about/terms': typeof TerminalSettingsAboutTermsRoute
-  '/_terminal/settings/accounts/transfer': typeof TerminalSettingsAccountsTransferRoute
+  '/_terminal/settings/access_/add-device': typeof TerminalSettingsAccessAddDeviceRoute
   '/_terminal/settings/categories/$catalogCategoryId': typeof TerminalSettingsCategoriesCatalogCategoryIdRoute
   '/_terminal/settings/categories/new': typeof TerminalSettingsCategoriesNewRoute
   '/_terminal/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
@@ -582,7 +582,6 @@ export interface FileRouteTypes {
     | '/'
     | '/error'
     | '/onboarding'
-    | '/recovery'
     | '/restore-account'
     | '/activity'
     | '/bill'
@@ -592,6 +591,7 @@ export interface FileRouteTypes {
     | '/payment/tip'
     | '/payment/$paymentId'
     | '/settings/about'
+    | '/settings/access'
     | '/settings/accounts'
     | '/settings/assistant'
     | '/settings/categories'
@@ -617,7 +617,7 @@ export interface FileRouteTypes {
     | '/activity/bills/$billId'
     | '/settings/about/privacy'
     | '/settings/about/terms'
-    | '/settings/accounts/transfer'
+    | '/settings/access/add-device'
     | '/settings/categories/$catalogCategoryId'
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
@@ -641,7 +641,6 @@ export interface FileRouteTypes {
   to:
     | '/error'
     | '/onboarding'
-    | '/recovery'
     | '/restore-account'
     | '/activity'
     | '/bill'
@@ -650,6 +649,7 @@ export interface FileRouteTypes {
     | '/activity/bills'
     | '/payment/tip'
     | '/payment/$paymentId'
+    | '/settings/access'
     | '/settings/assistant'
     | '/settings/debug-console'
     | '/settings/donations'
@@ -670,7 +670,7 @@ export interface FileRouteTypes {
     | '/activity/bills/$billId'
     | '/settings/about/privacy'
     | '/settings/about/terms'
-    | '/settings/accounts/transfer'
+    | '/settings/access/add-device'
     | '/settings/categories/$catalogCategoryId'
     | '/settings/categories/new'
     | '/settings/items/$catalogItemId'
@@ -693,7 +693,6 @@ export interface FileRouteTypes {
     | '/_terminal'
     | '/error'
     | '/onboarding'
-    | '/recovery'
     | '/restore-account'
     | '/_terminal/activity'
     | '/_terminal/bill'
@@ -704,6 +703,7 @@ export interface FileRouteTypes {
     | '/_terminal/payment/tip'
     | '/_terminal/payment_/$paymentId'
     | '/_terminal/settings/about'
+    | '/_terminal/settings/access'
     | '/_terminal/settings/accounts'
     | '/_terminal/settings/assistant'
     | '/_terminal/settings/categories'
@@ -729,7 +729,7 @@ export interface FileRouteTypes {
     | '/_terminal/activity_/bills_/$billId'
     | '/_terminal/settings/about/privacy'
     | '/_terminal/settings/about/terms'
-    | '/_terminal/settings/accounts/transfer'
+    | '/_terminal/settings/access_/add-device'
     | '/_terminal/settings/categories/$catalogCategoryId'
     | '/_terminal/settings/categories/new'
     | '/_terminal/settings/items/$catalogItemId'
@@ -755,7 +755,6 @@ export interface RootRouteChildren {
   TerminalRoute: typeof TerminalRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   OnboardingRoute: typeof OnboardingRoute
-  RecoveryRoute: typeof RecoveryRoute
   RestoreAccountRoute: typeof RestoreAccountRoute
 }
 
@@ -780,13 +779,6 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recovery': {
-      id: '/recovery'
-      path: '/recovery'
-      fullPath: '/recovery'
-      preLoaderRoute: typeof RecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/restore-account': {
@@ -864,6 +856,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/settings/about'
       preLoaderRoute: typeof TerminalSettingsAboutRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/access': {
+      id: '/_terminal/settings/access'
+      path: '/access'
+      fullPath: '/settings/access'
+      preLoaderRoute: typeof TerminalSettingsAccessRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/accounts': {
@@ -1041,18 +1040,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsAboutTermsRouteImport
       parentRoute: typeof TerminalSettingsAboutRoute
     }
+    '/_terminal/settings/access_/add-device': {
+      id: '/_terminal/settings/access_/add-device'
+      path: '/access/add-device'
+      fullPath: '/settings/access/add-device'
+      preLoaderRoute: typeof TerminalSettingsAccessAddDeviceRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/accounts/': {
       id: '/_terminal/settings/accounts/'
       path: '/'
       fullPath: '/settings/accounts/'
       preLoaderRoute: typeof TerminalSettingsAccountsIndexRouteImport
-      parentRoute: typeof TerminalSettingsAccountsRoute
-    }
-    '/_terminal/settings/accounts/transfer': {
-      id: '/_terminal/settings/accounts/transfer'
-      path: '/transfer'
-      fullPath: '/settings/accounts/transfer'
-      preLoaderRoute: typeof TerminalSettingsAccountsTransferRouteImport
       parentRoute: typeof TerminalSettingsAccountsRoute
     }
     '/_terminal/settings/categories/': {
@@ -1195,14 +1194,11 @@ const TerminalSettingsAboutRouteWithChildren =
   )
 
 interface TerminalSettingsAccountsRouteChildren {
-  TerminalSettingsAccountsTransferRoute: typeof TerminalSettingsAccountsTransferRoute
   TerminalSettingsAccountsIndexRoute: typeof TerminalSettingsAccountsIndexRoute
 }
 
 const TerminalSettingsAccountsRouteChildren: TerminalSettingsAccountsRouteChildren =
   {
-    TerminalSettingsAccountsTransferRoute:
-      TerminalSettingsAccountsTransferRoute,
     TerminalSettingsAccountsIndexRoute: TerminalSettingsAccountsIndexRoute,
   }
 
@@ -1328,6 +1324,7 @@ const TerminalSettingsTablesRouteWithChildren =
 
 interface TerminalSettingsRouteChildren {
   TerminalSettingsAboutRoute: typeof TerminalSettingsAboutRouteWithChildren
+  TerminalSettingsAccessRoute: typeof TerminalSettingsAccessRoute
   TerminalSettingsAccountsRoute: typeof TerminalSettingsAccountsRouteWithChildren
   TerminalSettingsAssistantRoute: typeof TerminalSettingsAssistantRoute
   TerminalSettingsCategoriesRoute: typeof TerminalSettingsCategoriesRouteWithChildren
@@ -1350,10 +1347,12 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsThemeRoute: typeof TerminalSettingsThemeRoute
   TerminalSettingsTipsRoute: typeof TerminalSettingsTipsRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
+  TerminalSettingsAccessAddDeviceRoute: typeof TerminalSettingsAccessAddDeviceRoute
 }
 
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAboutRoute: TerminalSettingsAboutRouteWithChildren,
+  TerminalSettingsAccessRoute: TerminalSettingsAccessRoute,
   TerminalSettingsAccountsRoute: TerminalSettingsAccountsRouteWithChildren,
   TerminalSettingsAssistantRoute: TerminalSettingsAssistantRoute,
   TerminalSettingsCategoriesRoute: TerminalSettingsCategoriesRouteWithChildren,
@@ -1378,6 +1377,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsThemeRoute: TerminalSettingsThemeRoute,
   TerminalSettingsTipsRoute: TerminalSettingsTipsRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
+  TerminalSettingsAccessAddDeviceRoute: TerminalSettingsAccessAddDeviceRoute,
 }
 
 const TerminalSettingsRouteWithChildren =
@@ -1415,7 +1415,6 @@ const rootRouteChildren: RootRouteChildren = {
   TerminalRoute: TerminalRouteWithChildren,
   ErrorRoute: ErrorRoute,
   OnboardingRoute: OnboardingRoute,
-  RecoveryRoute: RecoveryRoute,
   RestoreAccountRoute: RestoreAccountRoute,
 }
 export const routeTree = rootRouteImport

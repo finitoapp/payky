@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core"
 import { format } from "date-fns"
 
-export type EvoluExportDatabase = "app" | "device"
+export type EvoluExportDatabase = "app"
 
 interface EvoluExportFile {
   readonly database: EvoluExportDatabase

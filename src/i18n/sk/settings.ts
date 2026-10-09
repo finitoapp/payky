@@ -274,11 +274,6 @@ export const skSettings = {
   "settings.evoluExport.confirm.label":
     "Rozumiem, že export môže obsahovať citlivé dáta.",
   "settings.evoluExport.database.app": "Aplikačná databáza",
-  "settings.evoluExport.database.app.description":
-    "Business dáta, záznamy platieb, metadata peňaženky, nastavenia účtu a konfigurácia pluginov pre aktívny účet.",
-  "settings.evoluExport.database.device": "Databáza zariadenia",
-  "settings.evoluExport.database.device.description":
-    "Lokálny profil zariadenia, aplikačné účty, recovery phrase a nastavenia synchronizačných transportov uložené na tomto zariadení.",
   "settings.evoluExport.description":
     "Export lokálnych Evolu databáz pre zálohu a podporu",
   "settings.evoluExport.destination.capacitor":
@@ -290,7 +285,6 @@ export const skSettings = {
   "settings.evoluExport.options.description":
     "Vyberte, ktoré lokálne databázy sa majú zahrnúť.",
   "settings.evoluExport.options.format": "Formát",
-  "settings.evoluExport.options.scope": "Rozsah exportu",
   "settings.evoluExport.options.title": "Nastavenia exportu",
   "settings.evoluExport.status.createdAt": "Vytvorené {createdAt}",
   "settings.evoluExport.status.error": "Export zlyhal.",
@@ -860,4 +854,123 @@ export const skSettings = {
   "settings.tips.nav.off": "Vypnuté",
   "settings.paymentAccounts.nav.none": "Žiadne",
   "settings.taxRates.nav.description": "Sadzby DPH pre vaše položky",
+  "access.action.acknowledgeExcess": "Potvrdiť preplatok",
+  "access.action.aiAccess": "Zmeniť prístup AI k dátam",
+  "access.action.cancelPayment": "Zrušiť platbu",
+  "access.action.changePin": "Zmeniť PIN",
+  "access.action.createItem": "Vytvoriť položku katalógu",
+  "access.action.disable": "Vypnúť riadenie prístupu",
+  "access.action.discardBill": "Zahodiť účet",
+  "access.action.enable": "Zapnúť riadenie prístupu so súčasným PINom",
+  "access.action.markCashPaid": "Potvrdiť prijatie hotovosti",
+  "access.action.markIbanPaid": "Potvrdiť príchod prevodu",
+  "access.action.refund": "Vrátiť peniaze",
+  "access.action.removeAccount": "Odobrať účet z tohto zariadenia",
+  "access.action.removeLines": "Odobrať položky z účtu",
+  "access.action.switchAccount": "Prepnúť účet",
+  "access.action.unblock": "Odblokovať zariadenie",
+  "access.action.withdraw": "Vybrať prostriedky",
+  "access.attempts.continue": "Pokračovať",
+  "access.attempts.title":
+    "Nesprávne PINy zadané na tomto zariadení od posledného správneho: {count}",
+  "access.cancel": "Zrušiť",
+  "access.changePin": "Zmeniť PIN",
+  "access.description":
+    "Jeden PIN majiteľa zamyká nastavenia a riskantné akcie. Každé zariadenie si drží oprávnenia, ktoré mu dáte; PIN odomkne všetko ostatné. Chráni pred personálom a zákazníkmi pri pokladni — nie pred útočníkom.",
+  "access.device.adminWarning":
+    "S oprávneniami Majiteľ toto zariadenie nepotrebuje PIN na nič okrem zmeny PINu, vypnutia riadenia prístupu a odblokovania zariadenia.",
+  "access.device.blocked": "PIN zablokovaný",
+  "access.device.name": "Názov zariadenia",
+  "access.device.permissions": "Oprávnenia",
+  "access.device.permissions.description":
+    "Čo toto zariadenie smie bez PINu. Vyberte predvoľbu a potom ju upravte.",
+  "access.device.preset": "Oprávnenia zariadenia {name}",
+  "access.device.remove": "Odobrať",
+  "access.device.remove.confirm": "Odobrať zariadenie",
+  "access.device.remove.description":
+    "Jeho oprávnenia sa zmažú. Ak sa zariadenie ďalej používa, objaví sa znova bez oprávnení.",
+  "access.device.remove.title": "Odobrať {name}?",
+  "access.device.rename": "Premenovať",
+  "access.device.this": "Toto zariadenie",
+  "access.device.unblock": "Odblokovať",
+  "access.devices.add": "Pridať zariadenie",
+  "access.devices.description":
+    "Zariadenia tohto účtu a čo každé smie bez PINu. Zariadenie sa objaví, keď sa zosynchronizuje.",
+  "access.devices.title": "Zariadenia",
+  "access.nav.description": "PIN majiteľa a oprávnenia zariadení",
+  "access.newPin.description":
+    "4–8 číslic. Nepoužívajte PIN z platobnej karty ani telefónu: jeho hash je uložený na každom zariadení účtu a v každom exporte databázy.",
+  "access.newPin.label": "Nový PIN",
+  "access.newPin.mismatch": "PINy sa nezhodujú.",
+  "access.newPin.repeat": "Zopakujte PIN",
+  "access.permission.activity": "História",
+  "access.permission.activity.description":
+    "História platieb a účtov, detail platby, opakovanie EET, AI asistent",
+  "access.permission.admin": "Správa",
+  "access.permission.admin.description":
+    "Platobné účty, účty, profil, zabezpečenie, EET, export dát, ladiaca konzola, prístup AI k dátam, riadenie prístupu",
+  "access.permission.confirm": "Potvrdzovanie platieb",
+  "access.permission.confirm.description":
+    "Ručne potvrdiť, že dorazila hotovosť alebo prevod",
+  "access.permission.discard": "Rušenie",
+  "access.permission.discard.description":
+    "Zahodiť účet, odobrať z neho položky, zrušiť platbu",
+  "access.permission.refund": "Vratky",
+  "access.permission.refund.description": "Vratky a potvrdenie preplatku",
+  "access.permission.sell": "Predaj",
+  "access.permission.sell.description":
+    "Domovská obrazovka, účty, rozdelenie účtu, platby a sprepitné",
+  "access.permission.settings": "Nastavenia",
+  "access.permission.settings.description":
+    "Katalóg, stoly, údaje o firme, dane, číselné rady, sprepitné, domovská obrazovka, podpora",
+  "access.phrase.back": "Späť na PIN",
+  "access.phrase.description":
+    "Fráza na obnovenie účtu odomkne na tomto zariadení všetko a zruší blokáciu PINu.",
+  "access.phrase.label": "Fráza na obnovenie",
+  "access.phrase.setNewPin": "Nastaviť nový PIN",
+  "access.phrase.submit": "Odomknúť",
+  "access.phrase.warning":
+    "Písanie frázy na obnovenie pri pokladni ju môže prezradiť kamerám a ľuďom okolo. Otvára celý účet. Lepšie je odblokovať zariadenie z iného zariadenia v Nastavenia → Prístup.",
+  "access.phrase.wrong": "Toto nie je fráza na obnovenie tohto účtu.",
+  "access.pin.blocked.description":
+    "Príliš veľa nesprávnych PINov. Majiteľ môže toto zariadenie odblokovať z iného zariadenia v Nastavenia → Prístup, alebo tu frázou na obnovenie. Zariadenie si medzitým drží svoje oprávnenia.",
+  "access.pin.blocked.title":
+    "Zadávanie PINu je na tomto zariadení zablokované",
+  "access.pin.cancel": "Zrušiť",
+  "access.pin.entered": "Zadaných číslic: {count}",
+  "access.pin.erase": "Zmazať",
+  "access.pin.forgot": "Zabudnutý PIN",
+  "access.pin.help":
+    "Nepoznáte PIN? Požiadajte majiteľa, aby ho zadal, alebo aby na tomto zariadení povolil {permission}.",
+  "access.pin.submit": "OK",
+  "access.pin.title": "Zadajte PIN",
+  "access.pin.why.action": "{action} vyžaduje PIN",
+  "access.pin.why.route": "Táto obrazovka vyžaduje {permission}",
+  "access.pin.wrong":
+    "Nesprávny PIN. Zostávajúce pokusy do zablokovania zariadenia: {count}",
+  "access.preset.basic": "Základ",
+  "access.preset.custom": "Vlastné",
+  "access.preset.manager": "Manažér",
+  "access.preset.none": "Nič",
+  "access.preset.owner": "Majiteľ",
+  "access.preset.shiftLead": "Vedúci zmeny",
+  "access.preset.staff": "Obsluha",
+  "access.save": "Uložiť",
+  "access.status.off": "Riadenie prístupu je vypnuté",
+  "access.status.on": "Riadenie prístupu je zapnuté",
+  "access.title": "Prístup",
+  "access.turnOff": "Vypnúť",
+  "access.turnOn": "Zapnúť",
+  "access.webWarning":
+    "V prehliadači na počítači je tento zámok len kozmetický: kto otvorí vývojárske nástroje, obíde ho. Zmysel má len v aplikácii pre Android, ideálne v kiosk režime.",
+  "access.wizard.back": "Späť",
+  "access.wizard.devices.description":
+    "Čo smie každé zariadenie bez PINu. Zariadenie, ktoré sa ešte nezosynchronizovalo, tu nie je a začne bez oprávnení.",
+  "access.wizard.devices.title": "Predvolené oprávnenia zariadení",
+  "access.wizard.keepPin": "Použiť súčasný PIN",
+  "access.wizard.next": "Ďalej",
+  "access.wizard.noPin": "Nastavte nový PIN; žiadny súčasný nie je.",
+  "access.wizard.pin.description":
+    "PIN majiteľa odomkne všetko. Mal by ho poznať len majiteľ.",
+  "access.wizard.pin.title": "PIN majiteľa",
 } satisfies Record<keyof typeof enSettings, string>

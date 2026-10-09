@@ -96,6 +96,7 @@ import { useCartBill } from "@/features/bill/use-cart-bill.ts"
 import { usePendingPayments } from "@/features/bill/use-pending-payments.ts"
 import { CategoryFilterBar } from "@/features/catalog/category-filter-bar.tsx"
 import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useBillInsertMode } from "@/hooks/use-bill-insert-mode.ts"
 import { useChangePulse } from "@/hooks/use-change-pulse.ts"
@@ -106,6 +107,7 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -148,6 +150,7 @@ export function BillPage({
 }) {
   useScreenWakeLock(true)
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
   const fallbackCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
@@ -181,9 +184,24 @@ export function BillPage({
   const summaries = useBillLineSummaries(billId)
   const pendingPaymentIds = usePendingPayments(billId)
   const billStatus = useBillStatus(billId)
+  // A cancellation collision stays: confirming the bill despite it is `sell`.
+  const closedOnOpen = useRedirectIfClosedOnOpen(
+    bill !== undefined &&
+      billStatus?.status !== "open" &&
+      billStatus?.hasCancellationCollision !== true,
+    () => {
+      void navigate({
+        to: "/activity/bills/$billId",
+        params: { billId },
+        replace: true,
+      })
+    }
+  )
 
   let content: ReactNode
-  if (bill !== undefined && billStatus?.status !== "open") {
+  if (closedOnOpen) {
+    content = null
+  } else if (bill !== undefined && billStatus?.status !== "open") {
     content = billStatus?.hasCancellationCollision ? (
       <BillCancellationCollisionMessage
         billId={bill.id}
@@ -406,6 +424,7 @@ function BillCartView({
   const navigate = useNavigate()
   const router = useRouter()
   const appRun = useAppRun()
+  const { require } = useRequirePermission()
   const jotaiStore = useStore()
   const confirm = useConfirmDialog()
   const console = useConsole()
@@ -582,6 +601,7 @@ function BillCartView({
       variant: "destructive",
     })
     if (!confirmed) return
+    if (!(await require("discard", "access.action.discardBill"))) return
 
     await using run = appRun()
     const result = await run(cancelBill(billId))

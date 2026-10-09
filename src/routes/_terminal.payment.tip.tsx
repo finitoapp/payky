@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_terminal/payment/tip")({
   component: PaymentTipRoute,
   validateSearch: (search) => PaymentTipSearchSchema.parse(search),
   staticData: {
+    access: "sell",
     terminalLayout: {
       viewportClassName:
         "h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-var(--terminal-banner-height,0px))] px-6 py-6",

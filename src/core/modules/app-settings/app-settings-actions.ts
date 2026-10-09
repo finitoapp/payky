@@ -22,6 +22,7 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import { settingsQuery } from "./app-settings-queries.ts"
 import {
   stringifyTipFixedAmounts,
   stringifyTipPercentages,
@@ -34,6 +35,22 @@ import {
   terminalHomeModes,
 } from "./app-settings-utils.ts"
 
+const createAlreadyOnboardedError = defineError("AlreadyOnboarded")()
+export type AlreadyOnboardedError = ReturnType<
+  typeof createAlreadyOnboardedError
+>
+
+/**
+ * Refuses an account that already has its appSettings row: onboarding writes
+ * last-write-wins singletons (the bank account among them), so running it
+ * again on an onboarded account would overwrite them (account/0005).
+ */
+export const requireNotOnboarded =
+  (): Task<void, AlreadyOnboardedError, EvoluDep> => async (run) => {
+    const rows = await run.deps.evolu.loadQuery(settingsQuery)
+    return rows.length === 0 ? ok() : err(createAlreadyOnboardedError())
+  }
+
 /**
  * Creates the appSettings row when onboarding finishes. The row's existence
  * marks the account as onboarded; `onboardingCompleted` is still written for
@@ -44,9 +61,14 @@ export const completeOnboarding =
     readonly fiatCurrency: FiatCurrency
     readonly defaultPaymentMethod: DefaultPaymentMethod
     readonly paymentMethodOrderJson: string
-  }): Task<AppSettingsId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AppSettingsId, AlreadyOnboardedError, EvoluDep & EvoluOwnerIdDep> =>
   async (run) => {
     const { evoluOwnerId } = run.deps
+
+    // The last line of defence; `finishOnboarding` checks before its first
+    // write already.
+    const notOnboarded = await run(requireNotOnboarded())
+    if (!notOnboarded.ok) return notOnboarded
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(

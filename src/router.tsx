@@ -1,5 +1,7 @@
 import { createRouter } from "@tanstack/react-router"
 
+import { jotaiStore } from "@/atoms/store.ts"
+import type { RouteAccess } from "@/core/modules/access/access-types.ts"
 import { routeTree } from "@/routeTree.gen.ts"
 
 const normalizePath = (pathname: string | undefined) =>
@@ -30,6 +32,7 @@ const stackDepth = (pathname: string) => {
 
 export const router = createRouter({
   routeTree,
+  context: { jotaiStore },
   // Android-style slide between screens, driven by CSS in index.css. Anything
   // that is not a push or a pop within one stack returns false and swaps
   // instantly, as before — including every `replace: true` navigation, which
@@ -52,6 +55,12 @@ declare module "@tanstack/react-router" {
   }
 
   interface StaticDataRouteOption {
+    /**
+     * What a `_terminal` route needs (access/0003): a permission, or `free`.
+     * Every one declares it, layouts included; a unit test over the route
+     * tree fails on one that does not.
+     */
+    readonly access?: RouteAccess
     readonly terminalLayout?: {
       readonly mainClassName?: string
       readonly viewportClassName?: string

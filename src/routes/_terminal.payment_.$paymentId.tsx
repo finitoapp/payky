@@ -6,6 +6,7 @@ import { PaymentWaitPage } from "@/features/payment-wait/payment-wait-page.tsx"
 export const Route = createFileRoute("/_terminal/payment_/$paymentId")({
   component: PaymentWaitRoute,
   staticData: {
+    access: "sell",
     terminalLayout: {
       viewportClassName: "px-7",
     },

@@ -9,40 +9,24 @@ import {
   insertAccount,
   loadActiveAccountRow,
 } from "@/core/evolu/device-account.ts"
-import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { masterKeyToMnemonic } from "@/core/modules/shared/key-derivation.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { createRandomDisplayName } from "@/lib/random-name.ts"
-
-const getDeviceId = () => {
-  const id = (localStorage.getItem("payky.deviceId") ??
-    createId({
-      randomBytes: createRandomBytes(),
-    })) as DeviceId
-  localStorage.setItem("payky.deviceId", id)
-
-  return id
-}
 
 const toOptionalDeviceLabel = (value: string | undefined) =>
   value === undefined || value === ""
     ? null
     : NonEmptyString255(value.slice(0, 255))
 
-const getDevice = () => {
+/** What this device is, for the device rows; read fresh on every start. */
+const getDeviceLabels = () => {
   const uap = new UAParser()
 
-  const device = uap.getDevice()
-  const browser = uap.getBrowser()
-  const os = uap.getOS()
-
   return {
-    id: getDeviceId(),
-    name: NonEmptyString255(createRandomDisplayName()),
-    deviceType: toOptionalDeviceLabel(device.type),
-    deviceVendor: toOptionalDeviceLabel(device.vendor),
-    browserName: toOptionalDeviceLabel(browser.name),
-    osName: toOptionalDeviceLabel(os.name),
+    deviceType: toOptionalDeviceLabel(uap.getDevice().type),
+    deviceVendor: toOptionalDeviceLabel(uap.getDevice().vendor),
+    browserName: toOptionalDeviceLabel(uap.getBrowser().name),
+    osName: toOptionalDeviceLabel(uap.getOS().name),
   }
 }
 
@@ -69,10 +53,21 @@ export const accountAtom = atom(async (get) => {
     )
   }
 
+  // The device id lives in the device database (access/0004); a new one is
+  // a new device, which starts with no permissions.
+  const labels = getDeviceLabels()
   const device =
     row.device !== null
-      ? { id: row.device.id, name: NonEmptyString255(row.device.name) }
-      : getDevice()
+      ? {
+          id: row.device.id,
+          name: NonEmptyString255(row.device.name),
+          ...labels,
+        }
+      : {
+          id: createId<"Device">({ randomBytes: createRandomBytes() }),
+          name: NonEmptyString255(createRandomDisplayName()),
+          ...labels,
+        }
   if (row.device === null) {
     deviceEvolu.upsert("device", device)
   }

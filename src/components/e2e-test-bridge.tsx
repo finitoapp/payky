@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { z } from "zod"
 
 import { accountAtom } from "@/atoms/account.ts"
+import { accountListQuery } from "@/core/evolu/device-account.ts"
 import {
   saveCashRegisterAccount,
   saveFiatBankAccount,
@@ -24,6 +25,13 @@ import {
   loadCalculatedBillLineSummaries,
 } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  registerDevice,
+  setDevicePinBlocked,
+  unblockDevice,
+} from "@/core/modules/device/device-actions.ts"
+import { deviceByIdQuery } from "@/core/modules/device/device-queries.ts"
+import { DeviceId } from "@/core/modules/device/device-types.ts"
 import { createEetSale } from "@/core/modules/eet/eet-actions.ts"
 import { toEetCashRegisterId } from "@/core/modules/eet/eet-utils.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
@@ -49,6 +57,7 @@ import {
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
+  NonEmptyString255,
   NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeInteger,
@@ -79,6 +88,15 @@ declare global {
       minutesAgo: number
     ) => Promise<string>
     __e2eSeedLegacyFioPlugin?: () => Promise<void>
+    __e2eSeedDevice?: (options: {
+      readonly name: string
+      readonly blocked: boolean
+    }) => Promise<string>
+    __e2eReadDevice?: (
+      id: string
+    ) => Promise<{ readonly pinUnblockToken: string | null } | null>
+    __e2eUnblockThisDevice?: () => Promise<void>
+    __e2eDeviceAccountIds?: () => Promise<ReadonlyArray<string>>
   }
 }
 
@@ -163,7 +181,14 @@ declare global {
  * `e2e/migrations.spec.ts` needs before the migration popup will appear at
  * all.
  *
- * All nine are dead code in any real production build: kept alive only in
+ * Also exposes `window.__e2eSeedDevice`, `window.__e2eReadDevice` and
+ * `window.__e2eUnblockThisDevice` for access control (access/0006): a second
+ * device of the account, and the unblock another device would sync to this
+ * one — e2e runs without a relay, so a second device cannot sync for real.
+ * And `window.__e2eDeviceAccountIds`, the ids a typed `/restore-account` URL
+ * must not be able to remove (account/0005).
+ *
+ * All of them are dead code in any real production build: kept alive only in
  * dev (`import.meta.env.DEV`) and in the one production build
  * `bun run test:e2e:build` produces via the `PAYKY_E2E_BUILD`-gated
  * `__E2E_TEST_BUILD__` define (see vite.config.ts) — `import.meta.env.DEV`
@@ -193,7 +218,7 @@ export function E2eTestBridge() {
           currency: fiatCurrency,
         })
       )
-      await run.ok(
+      await run.orThrow(
         completeOnboarding({
           fiatCurrency,
           defaultPaymentMethod: "cashRegister",
@@ -563,7 +588,46 @@ export function E2eTestBridge() {
       return toEetCashRegisterId(otherDeviceId)
     }
 
+    window.__e2eSeedDevice = async ({ name, blocked }) => {
+      const id = createRowId<"Device">()
+      await using run = appRun()
+      await run.ok(
+        registerDevice({
+          id,
+          name: NonEmptyString255(name),
+          deviceType: NonEmptyString255("tablet"),
+          browserName: null,
+          osName: NonEmptyString255("Android"),
+        })
+      )
+      if (blocked) await run.ok(setDevicePinBlocked({ id, blocked: true }))
+      return id
+    }
+
+    window.__e2eReadDevice = async (id) => {
+      await using run = appRun()
+      const [row] = await run.deps.evolu.loadQuery(
+        deviceByIdQuery(DeviceId.parse(id))
+      )
+      return row === undefined ? null : { pinUnblockToken: row.pinUnblockToken }
+    }
+
+    window.__e2eDeviceAccountIds = async () => {
+      await using run = appRun()
+      const accounts = await run.deps.deviceEvolu.loadQuery(accountListQuery)
+      return accounts.map((account) => account.id)
+    }
+
+    window.__e2eUnblockThisDevice = async () => {
+      await using run = appRun()
+      await run.ok(unblockDevice(deviceId))
+    }
+
     return () => {
+      delete window.__e2eSeedDevice
+      delete window.__e2eDeviceAccountIds
+      delete window.__e2eReadDevice
+      delete window.__e2eUnblockThisDevice
       delete window.__e2eSeedOnboarding
       delete window.__e2eMarkSparkPaid
       delete window.__e2eMarkIbanPaid

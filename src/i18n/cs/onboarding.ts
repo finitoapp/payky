@@ -27,8 +27,8 @@ export const csOnboarding = {
   "accountTransfer.close": "Zavřít",
   "accountTransfer.done": "Hotovo",
   "accountTransfer.settings.source.description":
-    "Otevřete tento účet na telefonu nebo jiném počítači bez opisování obnovovací fráze.",
-  "accountTransfer.settings.source.title": "Přihlásit účet na jiném zařízení",
+    "Otevřete tento účet na telefonu nebo jiném počítači bez obnovovací fráze. Najdete to v Nastavení → Přístup, vedle oprávnění zařízení.",
+  "accountTransfer.settings.source.title": "Přidat zařízení k tomuto účtu",
   "accountTransfer.source.code.confirm": "Potvrdit a přenést",
   "accountTransfer.source.code.connected": "Připojilo se zařízení.",
   "accountTransfer.source.code.instructions":
@@ -54,6 +54,8 @@ export const csOnboarding = {
   "accountTransfer.source.failed.timeout":
     "Nové zařízení nestihlo přenos dokončit.",
   "accountTransfer.source.failed.title": "Přenos zastaven",
+  "accountTransfer.source.permissions":
+    "Nové zařízení začne bez oprávnění. Nastavte mu je v Nastavení → Přístup, jakmile se tam objeví.",
   "accountTransfer.source.qr.expired": "Platnost kódu vypršela.",
   "accountTransfer.source.qr.instructions":
     "Na novém zařízení otevřete Payky, zvolte „Přenést z jiného zařízení“ a naskenujte tento kód.",
@@ -69,7 +71,7 @@ export const csOnboarding = {
   "accountTransfer.source.step.code": "Kód z nového zařízení opíšete sem.",
   "accountTransfer.source.step.scan": "Novým zařízením naskenujete QR kód.",
   "accountTransfer.source.step.transfer": "Účet se šifrovaně přenese.",
-  "accountTransfer.source.title": "Přihlásit účet na jiném zařízení",
+  "accountTransfer.source.title": "Přidat zařízení",
   "accountTransfer.source.warning.description":
     "Nové zařízení získá plný přístup k účtu včetně peněz v bitcoinové peněžence. Pokračujte jen se zařízením, které máte u sebe. Podpora Payky vás o to nikdy nežádá.",
   "accountTransfer.source.warning.title": "Plný přístup k účtu",
@@ -115,7 +117,7 @@ export const csOnboarding = {
   "accountTransfer.target.fallback":
     "Nejde to naskenovat? Obnovte účet obnovovací frází.",
   "accountTransfer.target.instructions":
-    "Na zařízení, kde účet máte, otevřete Nastavení → Účty → Přihlásit účet na jiném zařízení a naskenujte zobrazený QR kód.",
+    "Na zařízení, kde účet máte, otevřete Nastavení → Přístup → Přidat zařízení a naskenujte zobrazený QR kód.",
   "accountTransfer.target.scanAgain": "Skenovat znovu",
   "accountTransfer.target.title": "Přenést z jiného zařízení",
   "accountTransfer.target.warning.description":
@@ -141,6 +143,7 @@ export const csOnboarding = {
   "accountChoice.transfer.title": "Přenést z jiného zařízení",
   "onboarding.accountChoice.title": "Výběr účtu",
   "onboarding.back": "Zpět",
+  "onboarding.alreadyOnboarded": "Tento účet už je nastavený.",
   "onboarding.cancelSetup": "Zrušit vytváření účtu",
   "onboarding.cancelSetup.confirm.cancel": "Pokračovat v nastavení",
   "onboarding.cancelSetup.confirm.confirm": "Zrušit vytváření účtu",
@@ -176,12 +179,4 @@ export const csOnboarding = {
     "Zadejte SLIP-39 recovery phrase účtu, který chcete obnovit.",
   "onboarding.restore.title": "Obnovení existujícího účtu",
   "onboarding.title": "Nastavení Payky",
-  "recovery.accounts.description":
-    "Přepnutím se aplikace restartuje na daném účtu.",
-  "recovery.description":
-    "Tato stránka funguje i tehdy, když se aplikace nedokáže spustit. Čte jen databázi tohoto zařízení, nikdy data účtu.",
-  "recovery.export.description":
-    "Kopie účtů a nastavení zařízení uložených na tomto zařízení — ne účtenky nebo platby některého účtu.",
-  "recovery.switch.error": "Účet se nepodařilo přepnout.",
-  "recovery.title": "Obnovení přístupu",
 } satisfies Record<keyof typeof enOnboarding, string>

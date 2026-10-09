@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { useAtomValue } from "jotai"
+import { useAtomValue, useSetAtom } from "jotai"
 import { LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -26,6 +26,7 @@ import {
   parsePairUri,
   type WrongPaykyUriTypeError,
 } from "@/core/payky-uri.ts"
+import { restoredAccountAtom } from "@/features/account/restored-account.ts"
 import { ScanCodeScanner } from "@/features/scanner/scan-code-scanner.tsx"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
@@ -82,6 +83,7 @@ export function AccountTransferTarget({
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const activeAccount = useAtomValue(accountAtom)
   const reloadAppEvolu = useReloadAppEvolu()
+  const setRestoredAccount = useSetAtom(restoredAccountAtom)
   const [view, setView] = useState<View>({ phase: "scan", error: null })
   const cancelRef = useRef<(() => void) | null>(null)
   useScreenWakeLock(view.phase === "connecting" || view.phase === "code")
@@ -113,6 +115,7 @@ export function AccountTransferTarget({
       payload.masterKey,
       { name: payload.accountName, transports: payload.transports }
     )
+    setRestoredAccount({ created, previous })
     reloadAppEvolu()
     toast.success(
       created
@@ -121,7 +124,7 @@ export function AccountTransferTarget({
     )
     await navigate({
       to: "/restore-account",
-      search: { source, previous, created },
+      search: { source },
     })
   }
 

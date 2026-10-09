@@ -16,6 +16,7 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 export const Route = createFileRoute("/_terminal/settings/theme")({
   component: ThemePage,
   staticData: {
+    access: "free",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

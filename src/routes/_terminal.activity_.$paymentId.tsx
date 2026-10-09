@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export const Route = createFileRoute("/_terminal/activity_/$paymentId")({
   component: PaymentDetailPage,
   staticData: {
+    access: "activity",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

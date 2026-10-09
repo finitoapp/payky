@@ -8,6 +8,7 @@ import {
 import { LoaderCircleIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import { AccessGate } from "@/components/access-gate.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import {
   initialSyncIdleLimitMs,
@@ -29,6 +30,7 @@ import { cn } from "@/lib/utils.ts"
 
 export const Route = createFileRoute("/_terminal")({
   component: TerminalLayout,
+  staticData: { access: "free" },
 })
 
 function TerminalLayout() {
@@ -66,7 +68,9 @@ function TerminalLayout() {
     >
       {isSandboxActive ? <EetSandboxBanner /> : null}
       <PhoneViewport className={terminalLayout?.viewportClassName}>
-        <Outlet />
+        <AccessGate>
+          <Outlet />
+        </AccessGate>
       </PhoneViewport>
     </main>
   )

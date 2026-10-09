@@ -271,11 +271,6 @@ export const csSettings = {
   "settings.evoluExport.confirm.label":
     "Rozumím, že export může obsahovat citlivá data.",
   "settings.evoluExport.database.app": "Aplikační databáze",
-  "settings.evoluExport.database.app.description":
-    "Business data, záznamy plateb, metadata peněženky, nastavení účtu a konfigurace pluginů pro aktivní účet.",
-  "settings.evoluExport.database.device": "Databáze zařízení",
-  "settings.evoluExport.database.device.description":
-    "Lokální profil zařízení, aplikační účty, recovery phrase a nastavení synchronizačních transportů uložené na tomto zařízení.",
   "settings.evoluExport.description":
     "Export lokálních Evolu databází pro zálohu a podporu",
   "settings.evoluExport.destination.capacitor":
@@ -287,7 +282,6 @@ export const csSettings = {
   "settings.evoluExport.options.description":
     "Vyberte, které lokální databáze se mají zahrnout.",
   "settings.evoluExport.options.format": "Formát",
-  "settings.evoluExport.options.scope": "Rozsah exportu",
   "settings.evoluExport.options.title": "Nastavení exportu",
   "settings.evoluExport.status.createdAt": "Vytvořeno {createdAt}",
   "settings.evoluExport.status.error": "Export selhal.",
@@ -856,4 +850,122 @@ export const csSettings = {
   "settings.tips.nav.off": "Vypnuto",
   "settings.paymentAccounts.nav.none": "Žádné",
   "settings.taxRates.nav.description": "Sazby DPH pro vaše položky",
+  "access.action.acknowledgeExcess": "Potvrdit přeplatek",
+  "access.action.aiAccess": "Změnit přístup AI k datům",
+  "access.action.cancelPayment": "Zrušit platbu",
+  "access.action.changePin": "Změnit PIN",
+  "access.action.createItem": "Vytvořit položku katalogu",
+  "access.action.disable": "Vypnout řízení přístupu",
+  "access.action.discardBill": "Zahodit účet",
+  "access.action.enable": "Zapnout řízení přístupu se současným PINem",
+  "access.action.markCashPaid": "Potvrdit přijetí hotovosti",
+  "access.action.markIbanPaid": "Potvrdit příchod převodu",
+  "access.action.refund": "Vrátit peníze",
+  "access.action.removeAccount": "Odebrat účet z tohoto zařízení",
+  "access.action.removeLines": "Odebrat položky z účtu",
+  "access.action.switchAccount": "Přepnout účet",
+  "access.action.unblock": "Odblokovat zařízení",
+  "access.action.withdraw": "Vybrat prostředky",
+  "access.attempts.continue": "Pokračovat",
+  "access.attempts.title":
+    "Špatné PINy zadané na tomto zařízení od posledního správného: {count}",
+  "access.cancel": "Zrušit",
+  "access.changePin": "Změnit PIN",
+  "access.description":
+    "Jeden PIN majitele zamyká nastavení a riskantní akce. Každé zařízení si drží oprávnění, která mu dáte; PIN odemkne vše ostatní. Chrání před personálem a zákazníky u pokladny — ne před útočníkem.",
+  "access.device.adminWarning":
+    "S oprávněními Majitel toto zařízení nepotřebuje PIN na nic kromě změny PINu, vypnutí řízení přístupu a odblokování zařízení.",
+  "access.device.blocked": "PIN zablokován",
+  "access.device.name": "Název zařízení",
+  "access.device.permissions": "Oprávnění",
+  "access.device.permissions.description":
+    "Co toto zařízení smí bez PINu. Vyberte předvolbu a pak ji upravte.",
+  "access.device.preset": "Oprávnění zařízení {name}",
+  "access.device.remove": "Odebrat",
+  "access.device.remove.confirm": "Odebrat zařízení",
+  "access.device.remove.description":
+    "Jeho oprávnění se smažou. Pokud se zařízení dál používá, objeví se znovu bez oprávnění.",
+  "access.device.remove.title": "Odebrat {name}?",
+  "access.device.rename": "Přejmenovat",
+  "access.device.this": "Toto zařízení",
+  "access.device.unblock": "Odblokovat",
+  "access.devices.add": "Přidat zařízení",
+  "access.devices.description":
+    "Zařízení tohoto účtu a co každé smí bez PINu. Zařízení se objeví, jakmile se synchronizuje.",
+  "access.devices.title": "Zařízení",
+  "access.nav.description": "PIN majitele a oprávnění zařízení",
+  "access.newPin.description":
+    "4–8 číslic. Nepoužívejte PIN z platební karty ani telefonu: jeho hash je uložen na každém zařízení účtu a v každém exportu databáze.",
+  "access.newPin.label": "Nový PIN",
+  "access.newPin.mismatch": "PINy se neshodují.",
+  "access.newPin.repeat": "Zopakujte PIN",
+  "access.permission.activity": "Historie",
+  "access.permission.activity.description":
+    "Historie plateb a účtů, detail platby, opakování EET, AI asistent",
+  "access.permission.admin": "Správa",
+  "access.permission.admin.description":
+    "Platební účty, účty, profil, zabezpečení, EET, export dat, ladicí konzole, přístup AI k datům, řízení přístupu",
+  "access.permission.confirm": "Potvrzování plateb",
+  "access.permission.confirm.description":
+    "Ručně potvrdit, že dorazila hotovost nebo převod",
+  "access.permission.discard": "Rušení",
+  "access.permission.discard.description":
+    "Zahodit účet, odebrat z něj položky, zrušit platbu",
+  "access.permission.refund": "Vratky",
+  "access.permission.refund.description": "Vratky a potvrzení přeplatku",
+  "access.permission.sell": "Prodej",
+  "access.permission.sell.description":
+    "Domovská obrazovka, účty, rozdělení účtu, platby a spropitné",
+  "access.permission.settings": "Nastavení",
+  "access.permission.settings.description":
+    "Katalog, stoly, údaje o firmě, daně, číselné řady, spropitné, domovská obrazovka, podpora",
+  "access.phrase.back": "Zpět na PIN",
+  "access.phrase.description":
+    "Fráze pro obnovení účtu odemkne na tomto zařízení vše a zruší blokaci PINu.",
+  "access.phrase.label": "Fráze pro obnovení",
+  "access.phrase.setNewPin": "Nastavit nový PIN",
+  "access.phrase.submit": "Odemknout",
+  "access.phrase.warning":
+    "Psaní fráze pro obnovení u pokladny ji může prozradit kamerám a lidem okolo. Otevírá celý účet. Lepší je odblokovat zařízení z jiného zařízení v Nastavení → Přístup.",
+  "access.phrase.wrong": "Tohle není fráze pro obnovení tohoto účtu.",
+  "access.pin.blocked.description":
+    "Příliš mnoho špatných PINů. Majitel může toto zařízení odblokovat z jiného zařízení v Nastavení → Přístup, nebo tady frází pro obnovení. Zařízení si mezitím drží svá oprávnění.",
+  "access.pin.blocked.title": "Zadávání PINu je na tomto zařízení zablokované",
+  "access.pin.cancel": "Zrušit",
+  "access.pin.entered": "Zadaných číslic: {count}",
+  "access.pin.erase": "Smazat",
+  "access.pin.forgot": "Zapomenutý PIN",
+  "access.pin.help":
+    "Neznáte PIN? Požádejte majitele, aby ho zadal, nebo aby na tomto zařízení povolil {permission}.",
+  "access.pin.submit": "OK",
+  "access.pin.title": "Zadejte PIN",
+  "access.pin.why.action": "{action} vyžaduje PIN",
+  "access.pin.why.route": "Tato obrazovka vyžaduje {permission}",
+  "access.pin.wrong":
+    "Špatný PIN. Zbývající pokusy do zablokování zařízení: {count}",
+  "access.preset.basic": "Základ",
+  "access.preset.custom": "Vlastní",
+  "access.preset.manager": "Manažer",
+  "access.preset.none": "Nic",
+  "access.preset.owner": "Majitel",
+  "access.preset.shiftLead": "Vedoucí směny",
+  "access.preset.staff": "Obsluha",
+  "access.save": "Uložit",
+  "access.status.off": "Řízení přístupu je vypnuté",
+  "access.status.on": "Řízení přístupu je zapnuté",
+  "access.title": "Přístup",
+  "access.turnOff": "Vypnout",
+  "access.turnOn": "Zapnout",
+  "access.webWarning":
+    "V prohlížeči na počítači je tento zámek jen kosmetický: kdo otevře vývojářské nástroje, obejde ho. Smysl má jen v aplikaci pro Android, ideálně v kiosk režimu.",
+  "access.wizard.back": "Zpět",
+  "access.wizard.devices.description":
+    "Co smí každé zařízení bez PINu. Zařízení, které se ještě nesynchronizovalo, tu není a začne bez oprávnění.",
+  "access.wizard.devices.title": "Výchozí oprávnění zařízení",
+  "access.wizard.keepPin": "Použít současný PIN",
+  "access.wizard.next": "Dál",
+  "access.wizard.noPin": "Nastavte nový PIN; žádný současný není.",
+  "access.wizard.pin.description":
+    "PIN majitele odemkne vše. Měl by ho znát jen majitel.",
+  "access.wizard.pin.title": "PIN majitele",
 } satisfies Record<keyof typeof enSettings, string>

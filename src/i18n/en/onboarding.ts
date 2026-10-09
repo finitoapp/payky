@@ -25,8 +25,8 @@ export const enOnboarding = {
   "accountTransfer.close": "Close",
   "accountTransfer.done": "Done",
   "accountTransfer.settings.source.description":
-    "Open this account on a phone or another computer without typing the recovery phrase.",
-  "accountTransfer.settings.source.title": "Sign in on another device",
+    "Open this account on a phone or another computer without the recovery phrase. It lives in Settings → Access, next to the device permissions.",
+  "accountTransfer.settings.source.title": "Add a device to this account",
   "accountTransfer.source.code.confirm": "Confirm and transfer",
   "accountTransfer.source.code.connected": "A device connected.",
   "accountTransfer.source.code.instructions":
@@ -52,6 +52,8 @@ export const enOnboarding = {
   "accountTransfer.source.failed.timeout":
     "The new device didn't finish in time.",
   "accountTransfer.source.failed.title": "Transfer stopped",
+  "accountTransfer.source.permissions":
+    "The new device starts with no permissions. Set them in Settings → Access once it appears there.",
   "accountTransfer.source.qr.expired": "This code has expired.",
   "accountTransfer.source.qr.instructions":
     "On the new device open Payky, choose “Transfer from another device” and scan this code.",
@@ -67,7 +69,7 @@ export const enOnboarding = {
   "accountTransfer.source.step.code": "Type the code from the new device here.",
   "accountTransfer.source.step.scan": "Scan the QR code with the new device.",
   "accountTransfer.source.step.transfer": "The account moves over, encrypted.",
-  "accountTransfer.source.title": "Sign in on another device",
+  "accountTransfer.source.title": "Add a device",
   "accountTransfer.source.warning.description":
     "The new device gets full access to this account, including the money in the Bitcoin wallet. Only continue with a device you are holding. Payky support will never ask you to do this.",
   "accountTransfer.source.warning.title": "Full access to the account",
@@ -113,7 +115,7 @@ export const enOnboarding = {
   "accountTransfer.target.fallback":
     "Can't scan? Restore with your recovery phrase.",
   "accountTransfer.target.instructions":
-    "On the device that has your account, open Settings → Accounts → Sign in on another device, then scan the QR code it shows.",
+    "On the device that has your account, open Settings → Access → Add a device, then scan the QR code it shows.",
   "accountTransfer.target.scanAgain": "Scan again",
   "accountTransfer.target.title": "Transfer from another device",
   "accountTransfer.target.warning.description":
@@ -139,6 +141,7 @@ export const enOnboarding = {
   "accountChoice.transfer.title": "Transfer from another device",
   "onboarding.accountChoice.title": "Choose an account",
   "onboarding.back": "Back",
+  "onboarding.alreadyOnboarded": "This account is already set up.",
   "onboarding.cancelSetup": "Cancel account creation",
   "onboarding.cancelSetup.confirm.cancel": "Keep setting up",
   "onboarding.cancelSetup.confirm.confirm": "Cancel account creation",
@@ -174,11 +177,4 @@ export const enOnboarding = {
     "Enter the SLIP-39 recovery phrase for the account you want to restore.",
   "onboarding.restore.title": "Restore existing account",
   "onboarding.title": "Set up Payky",
-  "recovery.accounts.description": "Switching reboots the app on that account.",
-  "recovery.description":
-    "This page works even when the app itself cannot start. It reads only this device's own database, never an account's data.",
-  "recovery.export.description":
-    "A copy of the accounts and device settings stored on this device — not an account's bills or payments.",
-  "recovery.switch.error": "Could not switch the account.",
-  "recovery.title": "Recover access",
 } as const

@@ -1,16 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { AccountId } from "@/core/evolu/device-client.ts"
 import { RestoreSyncPage } from "@/features/account/restore-sync-page.tsx"
 
-// Every field falls back instead of throwing: a `validateSearch` throw on a
-// stale link would escape to the global error boundary, and a missing
-// `previous` only means nothing gets cleaned up.
+// Falls back instead of throwing: a `validateSearch` throw on a stale link
+// would escape to the global error boundary. Only `source` lives here; which
+// account to remove or select never comes from the URL (account/0005).
 const RestoreAccountSearchSchema = z.object({
   source: z.enum(["onboarding", "settings"]).catch("settings"),
-  previous: AccountId.optional().catch(undefined),
-  created: z.boolean().catch(false),
 })
 
 export const Route = createFileRoute("/restore-account")({

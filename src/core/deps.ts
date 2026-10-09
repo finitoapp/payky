@@ -303,6 +303,11 @@ export type MasterKeyDep = { readonly masterKey: MasterKey }
 
 export type DeviceIdDep = { readonly deviceId: DeviceId }
 
+/** The browser's `localStorage`, for the one migration that still reads it. */
+export type LocalStorageDep = {
+  readonly localStorage: Pick<Storage, "getItem" | "removeItem">
+}
+
 export type ConnectivityDep = {
   readonly connectivity: {
     readonly onOnline: (listener: () => void) => () => void

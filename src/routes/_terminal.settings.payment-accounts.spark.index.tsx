@@ -7,6 +7,7 @@ export const Route = createFileRoute(
 )({
   component: SparkAccountSettingsPage,
   staticData: {
+    access: "admin",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

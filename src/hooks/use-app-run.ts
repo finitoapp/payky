@@ -3,6 +3,7 @@ import { useAtomValue } from "jotai"
 import { useMemo } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { createDateDep, createFetchDep } from "@/core/deps.ts"
 import { createEetApiDep } from "@/core/integrations/eet/eet-client.ts"
 import { createNostrDep } from "@/core/integrations/nostr/nostr-client.ts"
@@ -16,8 +17,9 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
  * Composition root for running Task actions from React.
  *
  * Returns a stable factory that creates a disposable Run wired with the full
- * superset of app dependencies (console, evolu, evoluOwnerId, date, fetch,
- * sparkWallet, yadioApi, switchioTerminal, eetApi, nostr, lockManager). Task
+ * superset of app dependencies (console, evolu, deviceEvolu, evoluOwnerId,
+ * date, fetch, sparkWallet, yadioApi, switchioTerminal, eetApi, nostr,
+ * lockManager). Task
  * dependency typing is structural, so Tasks that need only a subset are
  * unaffected by the extra deps.
  *
@@ -37,6 +39,7 @@ export const useAppRun = () => {
   const console = useConsole()
   const evolu = useEvolu()
   const account = useAtomValue(accountAtom)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
 
   return useMemo(() => {
     return () => {
@@ -46,6 +49,7 @@ export const useAppRun = () => {
       return createRun({
         console,
         evolu,
+        deviceEvolu,
         evoluOwnerId: evolu.appOwner.id,
         masterKey: account.masterKey,
         lockManager: navigator.locks,
@@ -58,5 +62,5 @@ export const useAppRun = () => {
         ...createNostrDep(),
       })
     }
-  }, [account.masterKey, console, evolu])
+  }, [account.masterKey, console, deviceEvolu, evolu])
 }

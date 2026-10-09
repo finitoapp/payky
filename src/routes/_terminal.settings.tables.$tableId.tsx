@@ -5,6 +5,7 @@ import { EditTablePage } from "@/features/settings/tables/table-form-page.tsx"
 export const Route = createFileRoute("/_terminal/settings/tables/$tableId")({
   component: RouteComponent,
   staticData: {
+    access: "settings",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

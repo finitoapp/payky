@@ -1,8 +1,9 @@
 import { ok, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerIdDep, LocalStorageDep } from "@/core/deps.ts"
 import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
 import { deviceAccountDerivedIdMigration } from "@/core/migrations/device-account-derived-id-migration.ts"
+import { deviceIdMigration } from "@/core/migrations/device-id-migration.ts"
 import { migrateLegacyFioPlugins } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { hasLegacyFioPluginQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import type {
@@ -49,7 +50,7 @@ export type AppMigration = Migration<EvoluDep & EvoluOwnerIdDep>
  * the same `hasWork` contract applies anyway: one model for both registries,
  * and it stays right if device sync is ever turned on.
  */
-export type DeviceMigration = Migration<DeviceEvoluDep>
+export type DeviceMigration = Migration<DeviceEvoluDep & LocalStorageDep>
 
 declare global {
   interface Window {
@@ -122,6 +123,7 @@ export const appMigrations: ReadonlyArray<AppMigration> = [
  */
 export const deviceMigrations: ReadonlyArray<DeviceMigration> = [
   deviceAccountDerivedIdMigration,
+  deviceIdMigration,
 ]
 
 /**

@@ -87,6 +87,7 @@ import {
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
@@ -319,6 +320,7 @@ function RefundDialog({
   const { t } = useTranslation()
   const locale = useLocale()
   const runToast = useRunToast()
+  const { require } = useRequirePermission()
   const jotaiStore = useStore()
   const [mode, setMode] = useState<RefundMode>("amount")
   const [method, setMethod] = useState<RefundMethod>(defaultMethod)
@@ -383,6 +385,9 @@ function RefundDialog({
 
   const confirm = async () => {
     if (refundAmount === null || pending) return
+    // Here rather than where the dialog opens: every refund, the one offered
+    // on a collision included, ends in this confirm (access/0002).
+    if (!(await require("refund", "access.action.refund"))) return
     setPending(true)
     const { device } = await jotaiStore.get(accountAtom)
     const refunded = await runToast(async (run) => {

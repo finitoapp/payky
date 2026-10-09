@@ -5,6 +5,7 @@ import { ItemsSettingsPage } from "@/features/settings/items/items-settings-page
 export const Route = createFileRoute("/_terminal/settings/items/")({
   component: ItemsSettingsPage,
   staticData: {
+    access: "settings",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

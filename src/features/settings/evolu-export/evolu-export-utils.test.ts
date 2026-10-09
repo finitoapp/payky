@@ -37,14 +37,6 @@ describe("createEvoluExportFilename", () => {
       "payky-evolu-app-export-2026-01-05-090307.sqlite"
     )
   })
-
-  test("supports the device database", () => {
-    const createdAt = new Date(2026, 11, 31, 23, 59, 59)
-
-    expect(createEvoluExportFilename({ createdAt, database: "device" })).toBe(
-      "payky-evolu-device-export-2026-12-31-235959.sqlite"
-    )
-  })
 })
 
 describe("formatExportCreatedAt", () => {

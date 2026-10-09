@@ -108,6 +108,7 @@ import {
   useEetRecordingDeviceWait,
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -154,6 +155,7 @@ function PaymentDetailContent({
   const { t } = useTranslation()
   const locale = useLocale()
   const appRun = useAppRun()
+  const { require } = useRequirePermission()
   const [resolvePending, setResolvePending] = useState(false)
   const [excessResolvePending, setExcessResolvePending] = useState(false)
   const query = paymentDetailQuery(paymentId)
@@ -234,6 +236,7 @@ function PaymentDetailContent({
   }
 
   const handleAcknowledgeExcessSettlement = async () => {
+    if (!(await require("refund", "access.action.acknowledgeExcess"))) return
     setExcessResolvePending(true)
     try {
       await using run = appRun()

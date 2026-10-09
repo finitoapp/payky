@@ -14,7 +14,6 @@ export const csCommon = {
   "appError.message": "Zpráva",
   "appError.name": "Název",
   "appError.nonError": "Vyhozená hodnota není objekt Error.",
-  "appError.recovery": "Obnovení přístupu",
   "appError.reload": "Načíst aplikaci znovu",
   "appError.repair": "Vymazat cache a načíst znovu",
   "appError.title": "Něco se pokazilo",

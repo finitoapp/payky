@@ -26,6 +26,7 @@ import {
   WssUrl,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
+import { createTestLocalStorage } from "@/test/local-storage.ts"
 
 const shopKey = MasterKey("000102030405060708090a0b0c0d0e0f")
 const cafeKey = MasterKey("0f0e0d0c0b0a09080706050403020100")
@@ -106,12 +107,18 @@ const loadTransportUrls = async (
   ).map(({ url }) => url)
 
 const migrate = async (deviceEvolu: DeviceEvolu) => {
-  await using run = testCreateRun({ deviceEvolu })
+  await using run = testCreateRun({
+    deviceEvolu,
+    localStorage: createTestLocalStorage(),
+  })
   return await run.ok(runMigrations([deviceAccountDerivedIdMigration]))
 }
 
 const hasWork = async (deviceEvolu: DeviceEvolu) => {
-  await using run = testCreateRun({ deviceEvolu })
+  await using run = testCreateRun({
+    deviceEvolu,
+    localStorage: createTestLocalStorage(),
+  })
   return await run.ok(deviceAccountDerivedIdMigration.hasWork)
 }
 
@@ -215,7 +222,10 @@ describe("device account derived id migration", () => {
       name: "Shop",
       lastUseAt: 1,
     })
-    await using run = testCreateRun({ deviceEvolu })
+    await using run = testCreateRun({
+      deviceEvolu,
+      localStorage: createTestLocalStorage(),
+    })
 
     const pending = await run.ok(loadPendingMigrations(deviceMigrations))
     expect(pending).toContain(deviceAccountDerivedIdMigration)

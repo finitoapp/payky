@@ -5,6 +5,7 @@ import { NewCatalogCategoryPage } from "@/features/settings/categories/category-
 export const Route = createFileRoute("/_terminal/settings/categories/new")({
   component: NewCatalogCategoryPage,
   staticData: {
+    access: "settings",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

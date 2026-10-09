@@ -30,6 +30,7 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
+import { createTestLocalStorage } from "@/test/local-storage.ts"
 import { createEvoluTest } from "../evolu/cli-client"
 
 /**
@@ -299,7 +300,10 @@ describe("device migrations", () => {
         options
       )
     })
-    await using run = testCreateRun({ deviceEvolu })
+    await using run = testCreateRun({
+      deviceEvolu,
+      localStorage: createTestLocalStorage(),
+    })
 
     const pending = await run.ok(loadPendingMigrations([renameLegacyAccounts]))
     expect(pending.map(({ name }) => name)).toEqual([
@@ -314,7 +318,10 @@ describe("device migrations", () => {
 
   test("the registry has no work on a fresh device", async () => {
     await using testDevice = await createTestDeviceEvolu()
-    await using run = testCreateRun({ deviceEvolu: testDevice.deviceEvolu })
+    await using run = testCreateRun({
+      deviceEvolu: testDevice.deviceEvolu,
+      localStorage: createTestLocalStorage(),
+    })
 
     expect(await run.ok(loadPendingMigrations(deviceMigrations))).toEqual([])
   })

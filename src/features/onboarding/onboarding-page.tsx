@@ -29,21 +29,12 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
-import {
-  saveCashRegisterAccount,
-  saveFiatBankAccount,
-  saveSparkAccount,
-} from "@/core/modules/account/account-actions.ts"
-import { completeOnboarding } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
-import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
-import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
-import { seedTaxRatesForCountry } from "@/core/modules/tax-rate/tax-rate-actions.ts"
-import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
+import { finishOnboarding as finishOnboardingTask } from "@/features/onboarding/finish-onboarding.ts"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
@@ -237,51 +228,16 @@ export function OnboardingPage({
       // forth while reading never leaves the wrong regional format applied.
       setLocale(getDeviceLocaleForLanguage(language))
 
-      // A restored account can still reach onboarding with data on a relay
-      // this device has not synced yet — `_terminal.tsx` gives up waiting
-      // for an owner the shared worker never reports, and the restore page
-      // lets the merchant set up a phrase whose relays were unreachable.
-      // Guard these two against that data arriving later: unlike the
-      // singleton account upserts below, `setLegalEntity` would overwrite an
-      // already-synced row via last-write-wins, and `seedTaxRatesForCountry`
-      // has no upsert semantics at all — it would insert a duplicate set of
-      // rates.
-      const [existingLegalEntity, existingTaxRates] = await Promise.all([
-        run.deps.evolu.loadQuery(legalEntityQuery),
-        run.deps.evolu.loadQuery(taxRatesQuery),
-      ])
-
-      const persistedCountry =
-        selectedCountry === "OTHER" ? null : selectedCountry
-      if (existingLegalEntity.length === 0) {
-        await run.ok(
-          setLegalEntity({ country: persistedCountry, vatPayer: false })
-        )
-      }
-      if (existingTaxRates.length === 0) {
-        await run.ok(seedTaxRatesForCountry(persistedCountry))
-      }
-      await run.ok(
-        saveCashRegisterAccount({
-          enabled: selectedPaymentMethods.has("cash"),
+      const finished = await run(
+        finishOnboardingTask({
+          country: selectedCountry === "OTHER" ? null : selectedCountry,
           currency: selectedCurrency,
-        })
-      )
-      await run.ok(
-        saveSparkAccount({
-          enabled: selectedPaymentMethods.has("btc"),
-        })
-      )
-      await run.ok(
-        saveFiatBankAccount({
-          enabled: ibanEnabled,
-          iban: ibanParseResult?.success ? ibanParseResult.data : undefined,
-          currency: selectedCurrency,
-        })
-      )
-      await run.ok(
-        completeOnboarding({
-          fiatCurrency: selectedCurrency,
+          cash: selectedPaymentMethods.has("cash"),
+          btc: selectedPaymentMethods.has("btc"),
+          iban:
+            ibanEnabled && ibanParseResult?.success
+              ? ibanParseResult.data
+              : null,
           defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
             selectedPaymentMethods
           ),
@@ -291,6 +247,8 @@ export function OnboardingPage({
           ),
         })
       )
+      // An onboarded account leaves through the redirect effect above.
+      if (!finished.ok) return "onboarding.alreadyOnboarded"
     })
 
     setFinishing(false)
@@ -301,17 +259,12 @@ export function OnboardingPage({
   }
 
   const restoreExistingAccount = async () => {
-    const restored = await restore()
-
-    if (restored === null) {
+    if (!(await restore())) {
       return
     }
 
     setForm(initialOnboardingFormState)
-    await navigate({
-      to: "/restore-account",
-      search: { source: "onboarding", ...restored },
-    })
+    await navigate({ to: "/restore-account", search: { source: "onboarding" } })
   }
 
   const cancelSetup = async () => {

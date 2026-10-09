@@ -20,6 +20,7 @@ import {
   executeWithdrawal,
 } from "@/core/modules/withdraw/withdraw-actions.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -41,6 +42,7 @@ const confirmErrorKeys = {
 
 export function WithdrawPage() {
   const appRun = useAppRun()
+  const { require } = useRequirePermission()
   const jotaiStore = useStore()
   const { t } = useTranslation()
   const locale = useLocale()
@@ -90,6 +92,7 @@ export function WithdrawPage() {
 
   const confirmWithdrawal = async () => {
     if (state.step !== "review") return
+    if (!(await require("admin", "access.action.withdraw"))) return
 
     dispatch({ type: "CONFIRM_STARTED" })
     try {

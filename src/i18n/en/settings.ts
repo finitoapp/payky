@@ -270,11 +270,6 @@ export const enSettings = {
   "settings.evoluExport.confirm.label":
     "I understand that the export may contain sensitive data.",
   "settings.evoluExport.database.app": "App database",
-  "settings.evoluExport.database.app.description":
-    "Business data, payment records, wallet metadata, account settings, and plugin configuration for the active account.",
-  "settings.evoluExport.database.device": "Device database",
-  "settings.evoluExport.database.device.description":
-    "Local device profile, app accounts, recovery phrases, and sync transport settings stored on this device.",
   "settings.evoluExport.description":
     "Export local Evolu databases for backup and support",
   "settings.evoluExport.destination.capacitor":
@@ -287,7 +282,6 @@ export const enSettings = {
   "settings.evoluExport.options.description":
     "Choose which local databases should be included.",
   "settings.evoluExport.options.format": "Format",
-  "settings.evoluExport.options.scope": "Export scope",
   "settings.evoluExport.options.title": "Export settings",
   "settings.evoluExport.status.createdAt": "Created at {createdAt}",
   "settings.evoluExport.status.error": "Export failed.",
@@ -853,4 +847,123 @@ export const enSettings = {
   "settings.tips.nav.off": "Off",
   "settings.paymentAccounts.nav.none": "None",
   "settings.taxRates.nav.description": "VAT rates for your items",
+  "access.action.acknowledgeExcess": "Acknowledge the excess payment",
+  "access.action.aiAccess": "Change AI data access",
+  "access.action.cancelPayment": "Cancel the payment",
+  "access.action.changePin": "Change the PIN",
+  "access.action.createItem": "Create a catalog item",
+  "access.action.disable": "Turn access control off",
+  "access.action.discardBill": "Discard the bill",
+  "access.action.enable": "Turn access control on with the current PIN",
+  "access.action.markCashPaid": "Confirm the cash was received",
+  "access.action.markIbanPaid": "Confirm the transfer arrived",
+  "access.action.refund": "Refund",
+  "access.action.removeAccount": "Remove the account from this device",
+  "access.action.removeLines": "Remove items from the bill",
+  "access.action.switchAccount": "Switch account",
+  "access.action.unblock": "Unblock a device",
+  "access.action.withdraw": "Withdraw funds",
+  "access.attempts.continue": "Continue",
+  "access.attempts.title":
+    "Wrong PINs entered on this device since the last correct one: {count}",
+  "access.cancel": "Cancel",
+  "access.changePin": "Change PIN",
+  "access.description":
+    "One owner PIN locks settings and risky actions. Each device keeps the permissions you give it; the PIN unlocks everything else. This keeps staff and customers at the counter out — it is not protection against an attacker.",
+  "access.device.adminWarning":
+    "With Owner permissions this device needs no PIN for anything except changing the PIN, turning access control off and unblocking a device.",
+  "access.device.blocked": "PIN blocked",
+  "access.device.name": "Device name",
+  "access.device.permissions": "Permissions",
+  "access.device.permissions.description":
+    "What this device may do without the PIN. Pick a preset, then adjust it.",
+  "access.device.preset": "Permissions of {name}",
+  "access.device.remove": "Remove",
+  "access.device.remove.confirm": "Remove device",
+  "access.device.remove.description":
+    "Its permissions are cleared. If the device is still in use, it shows up again with no permissions.",
+  "access.device.remove.title": "Remove {name}?",
+  "access.device.rename": "Rename",
+  "access.device.this": "This device",
+  "access.device.unblock": "Unblock",
+  "access.devices.add": "Add a device",
+  "access.devices.description":
+    "Devices of this account and what each may do without the PIN. A device appears once it has synced.",
+  "access.devices.title": "Devices",
+  "access.nav.description": "Owner PIN and device permissions",
+  "access.newPin.description":
+    "4–8 digits. Don't reuse a PIN from a bank card or phone: its hash is stored on every device of this account and in every database export.",
+  "access.newPin.label": "New PIN",
+  "access.newPin.mismatch": "The PINs don't match.",
+  "access.newPin.repeat": "Repeat the PIN",
+  "access.permission.activity": "History",
+  "access.permission.activity.description":
+    "Payment and bill history, payment detail, EET retries, the AI assistant",
+  "access.permission.admin": "Administration",
+  "access.permission.admin.description":
+    "Payment accounts, accounts, profile, security, EET, data export, debug console, AI data access, access control",
+  "access.permission.confirm": "Confirm payments",
+  "access.permission.confirm.description":
+    "Confirm by hand that cash or a bank transfer arrived",
+  "access.permission.discard": "Discard",
+  "access.permission.discard.description":
+    "Discard a bill, remove items from it, cancel a payment",
+  "access.permission.refund": "Refunds",
+  "access.permission.refund.description":
+    "Refunds and acknowledging an excess payment",
+  "access.permission.sell": "Sell",
+  "access.permission.sell.description":
+    "Home screen, bills, splitting a bill, payments and tips",
+  "access.permission.settings": "Settings",
+  "access.permission.settings.description":
+    "Catalog, tables, business details, taxes, number series, tips, home screen, support chat",
+  "access.phrase.back": "Back to PIN",
+  "access.phrase.description":
+    "The account's recovery phrase unlocks everything on this device and clears its PIN block.",
+  "access.phrase.label": "Recovery phrase",
+  "access.phrase.setNewPin": "Set a new PIN",
+  "access.phrase.submit": "Unlock",
+  "access.phrase.warning":
+    "Typing the recovery phrase at the counter can expose it to cameras and people around. It opens the whole account. Unblocking from another device in Settings → Access is the better way.",
+  "access.phrase.wrong": "This is not the recovery phrase of this account.",
+  "access.pin.blocked.description":
+    "Too many wrong PINs. The owner can unblock this device from another device in Settings → Access, or with the recovery phrase here. Meanwhile the device keeps its own permissions.",
+  "access.pin.blocked.title": "PIN entry is blocked on this device",
+  "access.pin.cancel": "Cancel",
+  "access.pin.entered": "Digits entered: {count}",
+  "access.pin.erase": "Erase",
+  "access.pin.forgot": "Forgot PIN",
+  "access.pin.help":
+    "Don't know the PIN? Ask the owner to enter it, or to allow {permission} on this device.",
+  "access.pin.submit": "OK",
+  "access.pin.title": "Enter the PIN",
+  "access.pin.why.action": "{action} needs the PIN",
+  "access.pin.why.route": "This screen needs {permission}",
+  "access.pin.wrong":
+    "Wrong PIN. Attempts left before this device blocks: {count}",
+  "access.preset.basic": "Basic",
+  "access.preset.custom": "Custom",
+  "access.preset.manager": "Manager",
+  "access.preset.none": "None",
+  "access.preset.owner": "Owner",
+  "access.preset.shiftLead": "Shift lead",
+  "access.preset.staff": "Staff",
+  "access.save": "Save",
+  "access.status.off": "Access control is off",
+  "access.status.on": "Access control is on",
+  "access.title": "Access",
+  "access.turnOff": "Turn off",
+  "access.turnOn": "Turn on",
+  "access.webWarning":
+    "In a desktop browser this lock is cosmetic: anyone who opens the developer tools can get around it. It means something only in the Android app, ideally in kiosk mode.",
+  "access.wizard.back": "Back",
+  "access.wizard.devices.description":
+    "What each device may do without the PIN. A device that has not synced yet is not listed and starts with no permissions.",
+  "access.wizard.devices.title": "Device default permissions",
+  "access.wizard.keepPin": "Use the current PIN",
+  "access.wizard.next": "Next",
+  "access.wizard.noPin": "Set a new PIN; there is no current one.",
+  "access.wizard.pin.description":
+    "The owner PIN unlocks everything. Only the owner should know it.",
+  "access.wizard.pin.title": "Owner PIN",
 } as const

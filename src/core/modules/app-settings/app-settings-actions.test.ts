@@ -27,7 +27,7 @@ describe("tip settings actions", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun(createDeps(evolu))
 
-    await run.ok(
+    await run.orThrow(
       completeOnboarding({
         fiatCurrency: "CZK",
         defaultPaymentMethod,
@@ -73,7 +73,7 @@ describe("setEnabledHomeModes", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun(createDeps(evolu))
 
-    await run.ok(onboard)
+    await run.orThrow(onboard)
 
     await expect
       .poll(() => evolu.loadQuery(settingsQuery))
@@ -85,7 +85,7 @@ describe("setEnabledHomeModes", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun(createDeps(evolu))
 
-    await run.ok(onboard)
+    await run.orThrow(onboard)
     await run.orThrow(setEnabledHomeModes(["pos", "numpad", "pos"]))
 
     await expect
@@ -100,7 +100,7 @@ describe("setEnabledHomeModes", () => {
     const { evolu } = testEvolu
     await using run = testCreateRun(createDeps(evolu))
 
-    await run.ok(onboard)
+    await run.orThrow(onboard)
     await run.orThrow(setEnabledHomeModes(["pos"]))
     const result = await run(setEnabledHomeModes([]))
 

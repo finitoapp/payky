@@ -1,6 +1,7 @@
 import { type Evolu as BaseEvolu, createQueryBuilder } from "@evolu/common"
 import type { IndexesConfig } from "@evolu/common/local-first"
 
+import { accessControl } from "@/core/modules/access/access.ts"
 import {
   account,
   accountCardSwitchio,
@@ -81,6 +82,7 @@ import { table } from "@/core/modules/table/table.ts"
 import { taxRate, taxRateIndexes } from "@/core/modules/tax-rate/tax-rate.ts"
 
 export const AppSchema = {
+  accessControl,
   device,
   account,
   accountIban,

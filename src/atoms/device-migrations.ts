@@ -18,8 +18,8 @@ export interface DeviceMigrationReport {
  * Runs the pending device-database migrations once per app start, before
  * `activeAccountRowAtom` reads the active account — a migration may change
  * the account rows themselves. Never rejects: a failure is logged and
- * reported in `AppMigrations`' dialog, and the app starts anyway, since
- * `/recovery` hangs off the same account read and must stay reachable.
+ * reported in `AppMigrations`' dialog, and the app starts anyway: a device
+ * that cannot boot is worse than one running on unmigrated data.
  */
 export const deviceMigrationsAtom = atom(
   async (get): Promise<DeviceMigrationReport> => {
@@ -27,7 +27,7 @@ export const deviceMigrationsAtom = atom(
     const console = get(consoleAtom)
 
     try {
-      await using run = createRun({ console, deviceEvolu })
+      await using run = createRun({ console, deviceEvolu, localStorage })
       const pending = await run.ok(loadPendingMigrations(deviceMigrations))
       if (pending.length === 0) return { migrated: 0, failed: false }
 

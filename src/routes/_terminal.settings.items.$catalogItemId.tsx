@@ -7,6 +7,7 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
   staticData: {
+    access: "settings",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

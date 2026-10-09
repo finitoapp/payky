@@ -1,6 +1,6 @@
 import { useOnline, useTimestamp } from "@dedalik/use-react"
 import { useNavigate } from "@tanstack/react-router"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import {
   KeyRound,
   LoaderCircleIcon,
@@ -26,12 +26,15 @@ import {
   removeDeviceAccount,
   selectAccount,
 } from "@/core/evolu/device-account.ts"
-import type { AccountId } from "@/core/evolu/device-client.ts"
 import {
   evaluateInitialSync,
   type InitialSyncOutcome,
 } from "@/core/evolu/initial-sync-state.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import {
+  planRestoreCleanup,
+  restoredAccountAtom,
+} from "@/features/account/restored-account.ts"
 import {
   initialOnboardingFormState,
   onboardingFormAtom,
@@ -106,10 +109,6 @@ function useInitialSyncOutcome(hasSettings: boolean) {
 interface RestoreSyncPageProps {
   /** Where the restore started, and so where "use another phrase" returns. */
   readonly source: "onboarding" | "settings"
-  /** The account active before the restore. */
-  readonly previous: AccountId | undefined
-  /** Whether the restore added the account to this device. */
-  readonly created: boolean
 }
 
 /**
@@ -118,11 +117,7 @@ interface RestoreSyncPageProps {
  * relays that could not be synced with. The last two let the merchant fix the
  * relay list, try another phrase, or set this one up as a new account.
  */
-export function RestoreSyncPage({
-  source,
-  previous,
-  created,
-}: RestoreSyncPageProps) {
+export function RestoreSyncPage({ source }: RestoreSyncPageProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
@@ -131,27 +126,32 @@ export function RestoreSyncPage({
   const confirm = useConfirmDialog()
   const setOnboardingForm = useSetAtom(onboardingFormAtom)
   const { data } = useEvoluQuery(settingsQuery)
-  const restored = data[0] !== undefined
-  const { outcome, online, restart } = useInitialSyncOutcome(restored)
+  const hasSettings = data[0] !== undefined
+  const { outcome, online, restart } = useInitialSyncOutcome(hasSettings)
   const [addingRelay, setAddingRelay] = useState(false)
   const settled = outcome === "empty" || outcome === "failed"
 
-  // The account active in onboarding is never onboarded itself — usually the
-  // random one the first start created — so once the merchant has moved on to
-  // the restored phrase it is an empty leftover. From Settings the previous
-  // account is a real one and stays.
-  const previousToDiscard =
-    source === "onboarding" && previous !== undefined && previous !== account.id
-      ? previous
-      : undefined
+  // Taken once and the atom emptied, so the restore is cleaned up after at
+  // most once: a later visit to this URL finds nothing to remove or select.
+  const [restoredAccount, setRestoredAccount] = useAtom(restoredAccountAtom)
+  const [restored] = useState(() => restoredAccount)
+  useEffect(() => {
+    setRestoredAccount(null)
+  }, [setRestoredAccount])
+  const cleanup = planRestoreCleanup({
+    restored,
+    activeAccountId: account.id,
+    source,
+  })
+  const previousToDiscard = cleanup.discardOnSuccess
 
   useEffect(() => {
-    if (!restored) return
+    if (!hasSettings) return
     if (previousToDiscard !== undefined) {
       removeDeviceAccount(deviceEvolu, previousToDiscard)
     }
     void navigate({ to: "/", replace: true })
-  }, [deviceEvolu, navigate, previousToDiscard, restored])
+  }, [deviceEvolu, navigate, previousToDiscard, hasSettings])
 
   const retry = () => {
     reloadAppEvolu()
@@ -159,11 +159,11 @@ export function RestoreSyncPage({
   }
 
   const switchToAnotherPhrase = () => {
-    if (created) {
-      removeDeviceAccount(deviceEvolu, account.id)
+    if (cleanup.removeOnCancel !== undefined) {
+      removeDeviceAccount(deviceEvolu, cleanup.removeOnCancel)
     }
-    if (previous !== undefined && previous !== account.id) {
-      selectAccount(deviceEvolu, previous)
+    if (cleanup.selectOnCancel !== undefined) {
+      selectAccount(deviceEvolu, cleanup.selectOnCancel)
     }
     if (source === "onboarding") {
       setOnboardingForm({

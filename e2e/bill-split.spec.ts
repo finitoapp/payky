@@ -220,7 +220,14 @@ test("select all merges a bill fully into an existing open bill", async ({
     await page.goto(`/bill?billId=${sourceBillId}`, {
       waitUntil: "domcontentloaded",
     })
-    await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
+    // The bill screen serves only an open bill (access/0002).
+    await page.waitForURL(/\/activity\/bills\//u)
+    await page
+      .getByRole("heading", { name: translate("en", "billDetail.title") })
+      .waitFor()
+    await expect(
+      page.getByText(translate("en", "bill.status.canceled"), { exact: true })
+    ).toBeVisible()
   })
 })
 

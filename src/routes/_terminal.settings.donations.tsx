@@ -5,6 +5,7 @@ import { DonationsSettingsPage } from "@/features/settings/donations/donations-s
 export const Route = createFileRoute("/_terminal/settings/donations")({
   component: DonationsSettingsPage,
   staticData: {
+    access: "free",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

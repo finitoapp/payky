@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { scrubBreadcrumb, scrubEvent } from "@/core/sentry.ts"
+import { pinPadAttribute, scrubBreadcrumb, scrubEvent } from "@/core/sentry.ts"
 
 const masterKey = "000102030405060708090a0b0c0d0e0f"
 const secretKey =
@@ -27,7 +27,31 @@ describe("sentry scrubbing", () => {
       data: { key: secretKey },
     })
 
-    expect(breadcrumb.message).toBe("s=[redacted]")
-    expect(breadcrumb.data).toEqual({ key: "[redacted]" })
+    expect(breadcrumb?.message).toBe("s=[redacted]")
+    expect(breadcrumb?.data).toEqual({ key: "[redacted]" })
+  })
+
+  /** A DOM target sitting inside, or outside, an element with `attribute`. */
+  const targetIn = (attribute: string | null) => ({
+    closest: (selector: string) =>
+      attribute !== null && selector === `[${attribute}]` ? {} : null,
+  })
+
+  test("drops a click inside the PIN pad, so its selectors cannot spell the PIN", () => {
+    expect(
+      scrubBreadcrumb(
+        { category: "ui.click", message: "button.digit" },
+        { event: { target: targetIn(pinPadAttribute) } }
+      )
+    ).toBeNull()
+  })
+
+  test("keeps clicks elsewhere", () => {
+    expect(
+      scrubBreadcrumb(
+        { category: "ui.click", message: "button.charge" },
+        { event: { target: targetIn(null) } }
+      )
+    ).toEqual(expect.objectContaining({ message: "button.charge" }))
   })
 })

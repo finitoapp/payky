@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export const Route = createFileRoute("/_terminal/settings/security")({
   component: SecuritySettingsPage,
   staticData: {
+    access: "admin",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

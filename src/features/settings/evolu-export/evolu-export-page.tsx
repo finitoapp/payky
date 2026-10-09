@@ -1,10 +1,8 @@
 import { Capacitor } from "@capacitor/core"
-import { useAtomValue } from "jotai"
 import { AlertTriangle, Database, Download, Smartphone } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
-import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -27,7 +25,6 @@ import {
 } from "@/components/ui/field.tsx"
 import {
   createEvoluExportFilename,
-  type EvoluExportDatabase,
   formatBytes,
   formatExportCreatedAt,
   type SavedEvoluExportFile,
@@ -35,7 +32,6 @@ import {
 } from "@/features/settings/evolu-export/evolu-export-utils.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface ExportState {
   readonly createdAt: Date
@@ -47,30 +43,13 @@ type ExportStatus =
   | { readonly kind: "pending" }
   | { readonly kind: "error"; readonly message: string }
 
-interface ExportSelection {
-  readonly app: boolean
-  readonly device: boolean
-}
-
-const databaseLabels = {
-  app: "settings.evoluExport.database.app",
-  device: "settings.evoluExport.database.device",
-} satisfies Record<EvoluExportDatabase, TranslationKey>
-
 export function EvoluExportPage() {
   const { t } = useTranslation()
   const appEvolu = useEvolu()
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const [selection, setSelection] = useState<ExportSelection>({
-    app: true,
-    device: true,
-  })
   const [acceptedWarning, setAcceptedWarning] = useState(false)
   const [status, setStatus] = useState<ExportStatus>({ kind: "idle" })
   const [lastExport, setLastExport] = useState<ExportState | null>(null)
-  const selectedDatabases = getSelectedDatabases(selection)
-  const canExport =
-    acceptedWarning && selectedDatabases.length > 0 && status.kind !== "pending"
+  const canExport = acceptedWarning && status.kind !== "pending"
 
   const handleExport = async () => {
     if (!canExport) return
@@ -79,22 +58,13 @@ export function EvoluExportPage() {
     setStatus({ kind: "pending" })
 
     try {
-      const files = await Promise.all(
-        selectedDatabases.map(async (database) => {
-          const bytes =
-            database === "app"
-              ? await appEvolu.exportDatabase()
-              : await deviceEvolu.exportDatabase()
+      const file = await saveEvoluExportFile({
+        database: "app",
+        bytes: await appEvolu.exportDatabase(),
+        filename: createEvoluExportFilename({ createdAt, database: "app" }),
+      })
 
-          return saveEvoluExportFile({
-            database,
-            bytes,
-            filename: createEvoluExportFilename({ createdAt, database }),
-          })
-        })
-      )
-
-      setLastExport({ createdAt, files })
+      setLastExport({ createdAt, files: [file] })
       setStatus({ kind: "idle" })
       toast.success(t("settings.evoluExport.status.success"))
     } catch (exportError) {
@@ -137,52 +107,6 @@ export function EvoluExportPage() {
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <FieldSet>
-              <FieldLegend>
-                {t("settings.evoluExport.options.scope")}
-              </FieldLegend>
-              <Field orientation="horizontal">
-                <Checkbox
-                  id="evolu-export-app"
-                  checked={selection.app}
-                  onCheckedChange={(checked) => {
-                    setSelection((value) => ({
-                      ...value,
-                      app: checked === true,
-                    }))
-                  }}
-                />
-                <FieldContent>
-                  <FieldLabel htmlFor="evolu-export-app">
-                    {t("settings.evoluExport.database.app")}
-                  </FieldLabel>
-                  <FieldDescription>
-                    {t("settings.evoluExport.database.app.description")}
-                  </FieldDescription>
-                </FieldContent>
-              </Field>
-              <Field orientation="horizontal">
-                <Checkbox
-                  id="evolu-export-device"
-                  checked={selection.device}
-                  onCheckedChange={(checked) => {
-                    setSelection((value) => ({
-                      ...value,
-                      device: checked === true,
-                    }))
-                  }}
-                />
-                <FieldContent>
-                  <FieldLabel htmlFor="evolu-export-device">
-                    {t("settings.evoluExport.database.device")}
-                  </FieldLabel>
-                  <FieldDescription>
-                    {t("settings.evoluExport.database.device.description")}
-                  </FieldDescription>
-                </FieldContent>
-              </Field>
-            </FieldSet>
-
             <FieldSet>
               <FieldLegend>
                 {t("settings.evoluExport.options.format")}
@@ -272,7 +196,9 @@ function ExportedFileRow({ file }: { readonly file: SavedEvoluExportFile }) {
         <Icon className="mt-0.5 text-muted-foreground" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{t(databaseLabels[file.database])}</Badge>
+            <Badge variant="outline">
+              {t("settings.evoluExport.database.app")}
+            </Badge>
             <span className="text-sm text-muted-foreground">
               {formatBytes(file.bytes.byteLength)}
             </span>
@@ -289,17 +215,6 @@ function ExportedFileRow({ file }: { readonly file: SavedEvoluExportFile }) {
       </div>
     </article>
   )
-}
-
-function getSelectedDatabases(
-  selection: ExportSelection
-): ReadonlyArray<EvoluExportDatabase> {
-  const databases: EvoluExportDatabase[] = []
-
-  if (selection.app) databases.push("app")
-  if (selection.device) databases.push("device")
-
-  return databases
 }
 
 function formatExportError(error: unknown): string {

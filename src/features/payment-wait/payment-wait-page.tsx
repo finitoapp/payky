@@ -70,12 +70,14 @@ import type {
   PaymentMethodTab,
 } from "@/features/payment-wait/payment-wait-types.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
+import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -118,6 +120,7 @@ export function PaymentWaitPage({ paymentId }: { readonly paymentId: string }) {
 
 function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const appRun = useAppRun()
+  const { require } = useRequirePermission()
   const deviceId = useAtomValue(accountAtom).device.id
   const console = useConsole()
   const { t } = useTranslation()
@@ -176,6 +179,16 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   // docs/bill-payment-states.md), so `isPaid` here can never be true for a
   // payment that also has `canceledAt` set — unlike the old `claims.length >
   // 0` check, which ignored cancellation entirely.
+  const closedOnOpen = useRedirectIfClosedOnOpen(
+    paymentStatus === "paid" || paymentStatus === "canceled",
+    () => {
+      void navigate({
+        to: "/activity/$paymentId",
+        params: { paymentId },
+        replace: true,
+      })
+    }
+  )
   const isPaid = paymentStatus === "paid"
   const wakeLockEnabled = payment !== undefined && paymentStatus === "pending"
   const { supported: wakeLockSupported } = useScreenWakeLock(wakeLockEnabled)
@@ -491,6 +504,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
   const handleMarkCashPaid = async (receivedAmount: NonNegativeInteger) => {
     if (!canMarkCashPaid) return
+    if (!(await require("confirm", "access.action.markCashPaid"))) return
 
     setCashPaymentErrorKey(null)
     setCashPaymentPending(true)
@@ -517,6 +531,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
   const handleMarkIbanPaid = async () => {
     if (!canMarkIbanPaid) return
+    if (!(await require("confirm", "access.action.markIbanPaid"))) return
 
     setIbanPaymentErrorKey(null)
     setIbanPaymentPending(true)
@@ -586,6 +601,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
   const handleCancelPayment = async () => {
     if (!canCancelPayment) return
+    if (!(await require("discard", "access.action.cancelPayment"))) return
 
     setCancelPending(true)
     try {
@@ -610,6 +626,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       setCancelPending(false)
     }
   }
+
+  if (closedOnOpen) return null
 
   return (
     <>

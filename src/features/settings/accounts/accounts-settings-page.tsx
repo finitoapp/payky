@@ -35,6 +35,7 @@ import {
 } from "@/features/account/account-type-choice.tsx"
 import { RestoreAccountForm } from "@/features/account/restore-account-form.tsx"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useActiveNostrProfile } from "@/hooks/use-nostr-profile.ts"
@@ -55,6 +56,7 @@ export function AccountsSettingsPage() {
   const activeAccount = useAtomValue(accountAtom)
   const reloadAppEvolu = useReloadAppEvolu()
   const confirm = useConfirmDialog()
+  const { require } = useRequirePermission()
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [busy, setBusy] = useState(false)
   // The kind outlives `dialogOpen`, so the content stays while it animates out.
@@ -73,14 +75,18 @@ export function AccountsSettingsPage() {
   // had while active (account/0004).
   const activeProfile = useActiveNostrProfile()
 
-  const activateAccount = (accountId: AccountId) => {
+  // Both governed by the active account's `admin` (access/0002); the other
+  // account's PIN is never asked.
+  const activateAccount = async (accountId: AccountId) => {
     if (accountId === activeAccount.id) return
+    if (!(await require("admin", "access.action.switchAccount"))) return
     selectAccount(deviceEvolu, accountId)
     reloadAppEvolu()
   }
 
   const removeAccount = async (accountId: AccountId, name: string) => {
     if (accountId === activeAccount.id) return
+    if (!(await require("admin", "access.action.removeAccount"))) return
 
     // Confirmed because there is no undo: the row is only soft-deleted, every
     // query filters it out, and the only way back is re-entering the recovery
@@ -117,13 +123,9 @@ export function AccountsSettingsPage() {
   }
 
   const restoreAccount = async () => {
-    const restored = await restore()
-    if (restored === null) return
+    if (!(await restore())) return
     setDialogOpen(false)
-    await navigate({
-      to: "/restore-account",
-      search: { source: "settings", ...restored },
-    })
+    await navigate({ to: "/restore-account", search: { source: "settings" } })
   }
 
   const chooseAccountType = (choice: AccountChoice) => {
@@ -193,7 +195,7 @@ export function AccountsSettingsPage() {
                           variant="outline"
                           size="sm"
                           disabled={pending}
-                          onClick={() => activateAccount(account.id)}
+                          onClick={() => void activateAccount(account.id)}
                         >
                           {t("settings.accounts.list.switch")}
                         </Button>
@@ -230,7 +232,7 @@ export function AccountsSettingsPage() {
             {
               id: "transfer",
               kind: "link",
-              to: "/settings/accounts/transfer",
+              to: "/settings/access/add-device",
               icon: <MonitorSmartphone className="text-muted-foreground" />,
               label: (
                 <span className="flex flex-col gap-1">

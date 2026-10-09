@@ -57,8 +57,9 @@ account, before a transferred one is added and made active.
   warns against both, and neither side offers *Copy* or *Paste* for the URI.
 - A QR naming a hostile relay learns the target's IP address and the time of
   the attempt, nothing else.
-- Anyone at an unlocked source device can start a transfer, as they can
-  already read the recovery phrase; both belong behind a future app lock.
+- Starting a transfer, like reading the recovery phrase, needs `admin`
+  once access control is on (access/0002); without it, anyone at the
+  source device can.
 - Sessions need a reachable Nostr relay; with none, the transfer fails and
   the recovery phrase remains the way in.
 

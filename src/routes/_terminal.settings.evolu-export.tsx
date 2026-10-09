@@ -7,6 +7,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export const Route = createFileRoute("/_terminal/settings/evolu-export")({
   component: EvoluExportSettingsPage,
   staticData: {
+    access: "admin",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

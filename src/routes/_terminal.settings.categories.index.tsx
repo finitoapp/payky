@@ -5,6 +5,7 @@ import { CategoriesSettingsPage } from "@/features/settings/categories/categorie
 export const Route = createFileRoute("/_terminal/settings/categories/")({
   component: CategoriesSettingsPage,
   staticData: {
+    access: "settings",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

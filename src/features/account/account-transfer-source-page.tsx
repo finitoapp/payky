@@ -59,6 +59,7 @@ import {
   NonEmptyString255,
   WssUrlSchema,
 } from "@/core/modules/shared/schema.ts"
+import { useAccess } from "@/hooks/use-access.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -108,6 +109,9 @@ export function AccountTransferSourcePage() {
   const { t } = useTranslation()
   const router = useRouter()
   const account = useAtomValue(accountAtom)
+  // A new device holds no permissions (access/0004); the owner sets them in
+  // Settings → Access, the page this one is reached from.
+  const { enabled: accessControlOn } = useAccess()
   const [state, setState] = useState<TransferSourceState | null>(null)
   const [code, setCode] = useState("")
   const sessionRef = useRef<TransferSource | null>(null)
@@ -215,6 +219,11 @@ export function AccountTransferSourcePage() {
                   {t("accountTransfer.source.warning.description")}
                 </AlertDescription>
               </Alert>
+              {accessControlOn ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("accountTransfer.source.permissions")}
+                </p>
+              ) : null}
             </>
           ) : null}
 
@@ -341,6 +350,9 @@ export function AccountTransferSourcePage() {
                       ? "accountTransfer.source.done.acked"
                       : "accountTransfer.source.done.sent"
                   )}
+                  {accessControlOn
+                    ? ` ${t("accountTransfer.source.permissions")}`
+                    : null}
                 </AlertDescription>
               </Alert>
             ) : null}

@@ -18,7 +18,6 @@ import {
 } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import type { BillLineRow } from "@/core/modules/bill-line/bill-line.ts"
 import { billLinesByBillIdQuery } from "@/core/modules/bill-line/bill-line-queries.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { getBillLineSummaryUnitAmount } from "@/core/modules/bill-line/bill-line-utils.ts"
@@ -30,6 +29,12 @@ import {
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
+import {
+  type CartLine,
+  invertLine,
+  linesNeedDiscard,
+} from "@/features/bill/cart-lines.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -51,18 +56,7 @@ const showCartMutationErrorToast = (
   )
 }
 
-type CartLine = Omit<BillLineRow, "id">
 type CartHistoryEntry = ReadonlyArray<CartLine>
-
-/**
- * Undoing/redoing a bill-line append is always just re-appending the same
- * line with its `kind` flipped — the append-only ledger design makes this
- * exact and needs no separate undo table.
- */
-const invertLine = (line: CartLine): CartLine => ({
-  ...line,
-  kind: line.kind === "add" ? "remove" : "add",
-})
 
 /**
  * Owns the mutation side of a cart: lazily creating the bill row on the
@@ -104,6 +98,11 @@ export function useCartBill({
   const evolu = useEvolu()
   const jotaiStore = useStore()
   const { t } = useTranslation()
+  const { require } = useRequirePermission()
+  /** The one place the cart checks `discard`, on the lines about to be written. */
+  const mayWrite = async (lines: ReadonlyArray<Pick<CartLine, "kind">>) =>
+    !linesNeedDiscard(lines) ||
+    (await require("discard", "access.action.removeLines"))
   // The stacks live in refs, with only the two derived booleans in state to
   // drive re-renders. They're read from callbacks that outlive the render
   // that created them — `bill-page.tsx`'s undo toast is clicked seconds
@@ -294,6 +293,7 @@ export function useCartBill({
     totalAmount: NonNegativeInteger
   ) =>
     runQueued(async () => {
+      if (!(await mayWrite([{ kind: "remove" }]))) return false
       const { device } = await jotaiStore.get(accountAtom)
       await using run = appRun()
       const result = await run(
@@ -354,6 +354,7 @@ export function useCartBill({
         totalAmount: summary.totalAmount,
       }))
 
+      if (!(await mayWrite(lines))) return false
       await using run = appRun()
       const result = await run(appendGuardedBillLines(billId, lines))
       if (!result.ok) {
@@ -405,10 +406,10 @@ export function useCartBill({
       const entry = undoStackRef.current.at(-1)
       if (entry === undefined) return false
 
+      const lines = entry.map(invertLine)
+      if (!(await mayWrite(lines))) return false
       await using run = appRun()
-      const result = await run(
-        appendGuardedBillLines(billId, entry.map(invertLine))
-      )
+      const result = await run(appendGuardedBillLines(billId, lines))
       if (!result.ok) {
         console.error("Failed to undo cart change", result.error)
         showCartMutationErrorToast(t, result.error)
@@ -429,6 +430,7 @@ export function useCartBill({
       const entry = redoStackRef.current.at(-1)
       if (entry === undefined) return false
 
+      if (!(await mayWrite(entry))) return false
       await using run = appRun()
       const result = await run(appendGuardedBillLines(billId, entry))
       if (!result.ok) {

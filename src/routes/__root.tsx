@@ -1,8 +1,14 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router"
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
+
+import type { jotaiStore } from "@/atoms/store.ts"
 
 import { AppErrorBoundary } from "@/components/app/error-boundary.tsx"
 
-export const Route = createRootRoute({
+export interface RouterContext {
+  readonly jotaiStore: typeof jotaiStore
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
   errorComponent: AppErrorBoundary,
 })

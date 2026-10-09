@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import type { AiAssistantAccess } from "@/core/evolu/device-client.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import {
   useAiAssistantAccess,
   useSetAiAssistantAccess,
@@ -47,6 +48,7 @@ export function AiAssistantCard() {
   const { t } = useTranslation()
   const access = useAiAssistantAccess()
   const setAccess = useSetAiAssistantAccess()
+  const { require } = useRequirePermission()
 
   return (
     <Card>
@@ -65,7 +67,14 @@ export function AiAssistantCard() {
             title: t(option.title),
             description: t(option.description),
           }))}
-          onChange={setAccess}
+          // It decides what leaves the device, on a `free` page (access/0002).
+          onChange={(next) => {
+            void (async () => {
+              if (await require("admin", "access.action.aiAccess")) {
+                setAccess(next)
+              }
+            })()
+          }}
         />
       </CardContent>
     </Card>

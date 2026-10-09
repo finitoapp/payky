@@ -43,6 +43,7 @@ import {
   filterSelectableTaxRates,
   taxRatePercentageToDecimalString,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -75,6 +76,7 @@ export function CreateCatalogItemDialog({
   readonly onCreated: (item: CatalogItemRow) => void
 }) {
   const appRun = useAppRun()
+  const { require } = useRequirePermission()
   const evolu = useEvolu()
   const { t } = useTranslation()
   const formId = useId()
@@ -178,6 +180,10 @@ export function CreateCatalogItemDialog({
               : null
 
             void (async () => {
+              // The same synced write as Settings → Items (access/0002).
+              if (!(await require("settings", "access.action.createItem"))) {
+                return
+              }
               setPending(true)
               try {
                 await using run = appRun()

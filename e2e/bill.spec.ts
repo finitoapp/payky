@@ -289,12 +289,15 @@ test("shows the right message for a closed or missing bill", async ({
       .waitFor()
   })
 
-  await test.step("the closed bill shows the closed message", async () => {
+  await test.step("the closed bill opens as its activity detail", async () => {
     await page.goto(`/bill?billId=${billId}`, {
       waitUntil: "domcontentloaded",
     })
-    await page.getByRole("heading", { name: /^Bill #/ }).waitFor()
-    await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
+    // The bill screen serves only an open bill (access/0002).
+    await page.waitForURL(/\/activity\/bills\//u)
+    await page
+      .getByRole("heading", { name: translate("en", "billDetail.title") })
+      .waitFor()
   })
 
   await test.step("a never-issued bill id opens as a fresh, empty cart", async () => {
@@ -539,10 +542,15 @@ test("locks a bill while its payment is pending, and unlocks it once that paymen
     ).toBeVisible()
   })
 
-  await test.step("the canceled payment's own page shows it as canceled, not paid", async () => {
+  await test.step("the canceled payment's own page hands it to its activity detail, canceled, not paid", async () => {
     await page.goto(paymentPageUrl, { waitUntil: "domcontentloaded" })
+    // The payment screen serves only an open payment (access/0002).
+    await page.waitForURL(/\/activity\/[^/]+$/u)
+    await page
+      .getByRole("heading", { name: translate("en", "paymentDetail.title") })
+      .waitFor()
     await expect(
-      page.getByText(translate("en", "paymentWait.canceled"))
+      page.getByText(translate("en", "payment.status.canceled")).first()
     ).toBeVisible()
     // The success ("paid") panel must not render at all for a canceled
     // payment — `isPaid` is now derived from `derivePaymentStatus`, which
@@ -551,21 +559,7 @@ test("locks a bill while its payment is pending, and unlocks it once that paymen
     await expect(page.getByTestId("payment-paid-panel")).toHaveCount(0)
   })
 
-  await test.step("the canceled payment page is not a dead end: its header's back arrow goes home", async () => {
-    await page
-      .getByRole("button", { name: translate("en", "nav.back") })
-      .click()
-
-    // Home, not the bill page that sits behind this one in history: the
-    // dead-end states use their own handler instead of the header's default
-    // `router.history.back()`, since a cold load of a stale payment link
-    // lands here with no history entry to go back to.
-    await expect(
-      page.getByRole("button", { name: translate("en", "nav.activity") })
-    ).toBeVisible()
-
-    // Navigated with `replace`, so the browser's back button can't drop the
-    // user into the dead end again.
+  await test.step("the redirect replaced the payment screen in history", async () => {
     await page.goBack()
     await expect(page).not.toHaveURL(/\/payment\//)
   })
@@ -919,10 +913,15 @@ test("a bill canceled while its payment is pending, then confirmed anyway, is fl
 
   await test.step("the bill cart page no longer shows the collision", async () => {
     await page.goto(`/bill?billId=${billId}`, { waitUntil: "domcontentloaded" })
+    // Resolved, the bill is closed, which the bill screen no longer serves.
+    // The bill screen serves only an open bill (access/0002).
+    await page.waitForURL(/\/activity\/bills\//u)
+    await page
+      .getByRole("heading", { name: translate("en", "billDetail.title") })
+      .waitFor()
     await expect(
       page.getByText(translate("en", "bill.collision.title"))
     ).toBeHidden()
-    await expect(page.getByText(translate("en", "bill.closed"))).toBeVisible()
     await page.screenshot({
       path: `${screenshotDir}/bill-page-resolved.png`,
       fullPage: true,

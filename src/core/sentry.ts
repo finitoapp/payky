@@ -44,9 +44,36 @@ function scrubValue(value: unknown, depth: number): unknown {
   return value
 }
 
+/**
+ * Marks the PIN keypad (access/0006). Sentry's `ui.*` breadcrumbs record the
+ * clicked element's selector, so a click inside it could spell out the PIN;
+ * the marker, not the route, decides, since the one-shot prompt is a dialog
+ * over another route.
+ */
+export const pinPadAttribute = "data-pin-pad"
+
+interface ClosestTarget {
+  readonly closest: (selector: string) => unknown
+}
+
+const isInsidePinPad = (hint: Sentry.BreadcrumbHint | undefined): boolean => {
+  const target: unknown = hint?.event?.target
+  return (
+    typeof target === "object" &&
+    target !== null &&
+    "closest" in target &&
+    typeof target.closest === "function" &&
+    (target as ClosestTarget).closest(`[${pinPadAttribute}]`) !== null
+  )
+}
+
 export function scrubBreadcrumb(
-  breadcrumb: Sentry.Breadcrumb
-): Sentry.Breadcrumb {
+  breadcrumb: Sentry.Breadcrumb,
+  hint?: Sentry.BreadcrumbHint
+): Sentry.Breadcrumb | null {
+  if (breadcrumb.category?.startsWith("ui.") === true && isInsidePinPad(hint)) {
+    return null
+  }
   return {
     ...breadcrumb,
     message:

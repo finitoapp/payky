@@ -5,6 +5,7 @@ import { PaymentAccountsSettingsPage } from "@/features/settings/payment-account
 export const Route = createFileRoute("/_terminal/settings/payment-accounts/")({
   component: PaymentAccountsSettingsPage,
   staticData: {
+    access: "admin",
     terminalLayout: {
       viewportClassName: "px-3 py-6",
     },

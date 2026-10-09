@@ -12,7 +12,6 @@ export const enCommon = {
   "appError.message": "Message",
   "appError.name": "Name",
   "appError.nonError": "The thrown value is not an Error object.",
-  "appError.recovery": "Recover access",
   "appError.reload": "Reload app",
   "appError.repair": "Clear cache and reload",
   "appError.title": "Something went wrong",

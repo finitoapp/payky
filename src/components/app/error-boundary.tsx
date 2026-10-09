@@ -1,15 +1,10 @@
 import type { ErrorComponentProps } from "@tanstack/react-router"
 import { useSetAtom } from "jotai"
-import {
-  AlertTriangleIcon,
-  ChevronDownIcon,
-  CopyIcon,
-  LifeBuoyIcon,
-} from "lucide-react"
+import { AlertTriangleIcon, ChevronDownIcon, CopyIcon } from "lucide-react"
 import * as React from "react"
 import { reloadAppEvoluAtom } from "@/atoms/evolu-counter.ts"
 import { AppLoaderCleanup } from "@/components/app/app-loader-cleanup.tsx"
-import { Button, buttonVariants } from "@/components/ui/button.tsx"
+import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
   CardContent,
@@ -26,7 +21,6 @@ import {
 import { getPreferredDeviceLanguage } from "@/core/modules/device/device-utils.ts"
 import { captureReportedError } from "@/core/sentry.ts"
 import { resources, type TranslationKey } from "@/i18n/resources.ts"
-import { cn } from "@/lib/utils.ts"
 
 /**
  * Deliberately does not use `useTranslation()`/`useDeviceSettings()`: those
@@ -182,18 +176,6 @@ export function AppErrorBoundary({
           </Button>
         </CardContent>
         <CardFooter className="flex flex-wrap justify-end gap-2">
-          {/*
-           * A plain anchor, not a router `Link`: this card also stands in
-           * for a crash from before the router mounted, and the page it
-           * points at deliberately needs only the device database.
-           */}
-          <a
-            className={cn(buttonVariants({ variant: "ghost" }), "mr-auto")}
-            href="/recovery"
-          >
-            <LifeBuoyIcon data-icon="inline-start" aria-hidden="true" />
-            {t("appError.recovery")}
-          </a>
           <Button variant="outline" onClick={tryAgain}>
             {t("appError.tryAgain")}
           </Button>

@@ -1,0 +1,86 @@
+import { useAtomValue, useSetAtom } from "jotai"
+import { useCallback, useMemo, useRef } from "react"
+import { accessSessionAtom, pinPromptQueueAtom } from "@/atoms/access.ts"
+import { accountAtom } from "@/atoms/account.ts"
+import { accessControlQuery } from "@/core/modules/access/access-queries.ts"
+import type { Permission } from "@/core/modules/access/access-types.ts"
+import {
+  decodePermissions,
+  effectivePermissions,
+} from "@/core/modules/access/access-utils.ts"
+import { deviceByIdQuery } from "@/core/modules/device/device-queries.ts"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
+
+/**
+ * What this device may do on the active account right now (access/0001):
+ * whether access control is on, the device's defaults, whether a PIN session
+ * runs, and the effective permissions those make.
+ */
+export function useAccess() {
+  const account = useAtomValue(accountAtom)
+  const { data: control } = useEvoluQuery(accessControlQuery)
+  const { data: deviceRows } = useEvoluQuery(deviceByIdQuery(account.device.id))
+  const sessionState = useAtomValue(accessSessionAtom)
+  const [device] = deviceRows
+  const enabled = control[0]?.enabled === 1
+  const storedDefaults =
+    device === undefined || device.isDeleted === 1
+      ? null
+      : device.defaultPermissions
+  const session = sessionState?.accountId === account.id
+
+  return useMemo(() => {
+    const defaults = decodePermissions(storedDefaults)
+    return {
+      enabled,
+      defaults,
+      session,
+      effective: effectivePermissions({ enabled, defaults, session }),
+      accountId: account.id,
+      deviceId: account.device.id,
+    }
+  }, [account.device.id, account.id, enabled, session, storedDefaults])
+}
+
+/**
+ * Gates an action that has no route of its own (access/0002, rule 15).
+ * `require(permission, action)` resolves `true` at once when the device or
+ * the session grants it, and otherwise raises the one-shot PIN prompt, which
+ * answers that one action and starts no session. `requirePin(action)` asks
+ * for the PIN whatever the device grants: changing the PIN, turning access
+ * control off and unblocking a device always do (access/0001).
+ */
+export function useRequirePermission() {
+  const { effective } = useAccess()
+  // Read when `require` runs, not when it was created: callers keep it in
+  // callbacks that outlive their render (an undo toast tapped seconds later),
+  // and a session may have ended since.
+  const effectiveRef = useRef(effective)
+  effectiveRef.current = effective
+  const setQueue = useSetAtom(pinPromptQueueAtom)
+
+  const prompt = useCallback(
+    (permission: Permission | null, action: TranslationKey) =>
+      new Promise<boolean>((resolve) => {
+        setQueue((queue) => [
+          ...queue,
+          { id: crypto.randomUUID(), permission, action, resolve },
+        ])
+      }),
+    [setQueue]
+  )
+
+  const require = useCallback(
+    async (permission: Permission, action: TranslationKey) =>
+      effectiveRef.current.has(permission) ? true : prompt(permission, action),
+    [prompt]
+  )
+
+  const requirePin = useCallback(
+    (action: TranslationKey) => prompt(null, action),
+    [prompt]
+  )
+
+  return { require, requirePin }
+}

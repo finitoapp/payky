@@ -14,7 +14,6 @@ export const skCommon = {
   "appError.message": "Správa",
   "appError.name": "Názov",
   "appError.nonError": "Vyhodená hodnota nie je objekt Error.",
-  "appError.recovery": "Obnovenie prístupu",
   "appError.reload": "Načítať aplikáciu znova",
   "appError.repair": "Vymazať cache a načítať znova",
   "appError.title": "Niečo sa pokazilo",

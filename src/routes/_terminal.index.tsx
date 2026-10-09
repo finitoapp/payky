@@ -31,6 +31,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export const Route = createFileRoute("/_terminal/")({
   component: TerminalHomePage,
   staticData: {
+    access: "sell",
     terminalLayout: {
       // Matches /settings's own top-level page width instead of a wider,
       // home-only inset — the tables/bills grid otherwise reads as wider

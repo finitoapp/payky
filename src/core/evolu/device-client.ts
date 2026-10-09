@@ -19,6 +19,7 @@ import { MasterKeySchema } from "@/core/modules/shared/key-derivation.ts"
 import {
   type InferTable,
   NonEmptyString255Schema,
+  NonNegativeIntegerSchema,
   SqliteBoolSchema,
   TimestampMsSchema,
   WssUrlSchema,
@@ -38,6 +39,14 @@ export type AccountEvoluTransportId = typeof AccountEvoluTransportIdRaw.Output
 export const DeviceSettingsIdRaw = id("DeviceSettings")
 export const DeviceSettingsId = standardSchemaToZod(DeviceSettingsIdRaw)
 export type DeviceSettingsId = typeof DeviceSettingsIdRaw.Output
+
+export const PinAttemptIdRaw = id("PinAttempt")
+export const PinAttemptId = standardSchemaToZod(PinAttemptIdRaw)
+export type PinAttemptId = typeof PinAttemptIdRaw.Output
+
+export const PinAttemptBaseIdRaw = id("PinAttemptBase")
+export const PinAttemptBaseId = standardSchemaToZod(PinAttemptBaseIdRaw)
+export type PinAttemptBaseId = typeof PinAttemptBaseIdRaw.Output
 
 export const deviceSettingsId = createIdFromString<"DeviceSettings">(
   "payky-device-settings"
@@ -96,6 +105,27 @@ const deviceEvoluSchema = {
     deviceVendor: z.string().nullable(),
     browserName: z.string().nullable(),
     osName: z.string().nullable(),
+  },
+  /**
+   * The failed PIN attempt log, per account (access/0006): local to this
+   * device, so blocking on one account leaves its other accounts alone.
+   */
+  pinAttempt: {
+    id: PinAttemptId,
+    accountId: AccountId,
+    attemptedAt: TimestampMsSchema,
+    /** What the attempt tried to unlock: a route path or an action key. */
+    target: NonEmptyString255Schema,
+  },
+  /**
+   * Per account: the last unblock token applied and the log length at that
+   * point. Only attempts after it count towards the block (access/0006).
+   */
+  pinAttemptBase: {
+    id: PinAttemptBaseId,
+    accountId: AccountId,
+    unblockToken: NonEmptyString255Schema.nullable(),
+    baseCount: NonNegativeIntegerSchema,
   },
   deviceSettings: {
     id: DeviceSettingsId,

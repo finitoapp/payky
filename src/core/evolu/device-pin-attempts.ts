@@ -6,8 +6,8 @@ import {
 } from "@evolu/common"
 
 import {
-  type AccountId,
   createDeviceQuery,
+  type DeviceAccountId,
   type DeviceEvolu,
   type PinAttemptBaseId,
 } from "@/core/evolu/device-client.ts"
@@ -23,7 +23,7 @@ import {
  * oldest first. Read and written only by the PIN screen and by applying an
  * unblock token.
  */
-export const pinAttemptsQuery = (accountId: AccountId) =>
+export const pinAttemptsQuery = (accountId: DeviceAccountId) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("pinAttempt")
@@ -39,10 +39,10 @@ export const pinAttemptsQuery = (accountId: AccountId) =>
 
 export type PinAttemptRow = InferRow<ReturnType<typeof pinAttemptsQuery>>
 
-const pinAttemptBaseId = (accountId: AccountId): PinAttemptBaseId =>
+const pinAttemptBaseId = (accountId: DeviceAccountId): PinAttemptBaseId =>
   createIdFromString<"PinAttemptBase">(`payky-pin-attempt-base:${accountId}`)
 
-export const pinAttemptBaseQuery = (accountId: AccountId) =>
+export const pinAttemptBaseQuery = (accountId: DeviceAccountId) =>
   createDeviceQuery((db) =>
     db
       .selectFrom("pinAttemptBase")
@@ -59,7 +59,7 @@ export interface PinAttemptLog {
 
 export const loadPinAttemptLog = async (
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId
+  accountId: DeviceAccountId
 ): Promise<PinAttemptLog> => {
   const [attempts, [base]] = await Promise.all([
     deviceEvolu.loadQuery(pinAttemptsQuery(accountId)),
@@ -76,7 +76,7 @@ export const loadPinAttemptLog = async (
 export const recordPinAttempt = (
   deviceEvolu: DeviceEvolu,
   attempt: {
-    readonly accountId: AccountId
+    readonly accountId: DeviceAccountId
     readonly attemptedAt: TimestampMs
     readonly target: string
   }
@@ -102,7 +102,7 @@ export const recordPinAttempt = (
  */
 export const removePinAttempts = async (
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId,
+  accountId: DeviceAccountId,
   ids: ReadonlyArray<PinAttemptRow["id"]>,
   { resetBase }: { readonly resetBase: boolean }
 ): Promise<void> => {
@@ -131,7 +131,7 @@ export const removePinAttempts = async (
  */
 export const applyPinUnblockToken = (
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId,
+  accountId: DeviceAccountId,
   token: string,
   logLength: number
 ) =>

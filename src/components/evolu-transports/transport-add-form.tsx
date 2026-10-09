@@ -17,7 +17,7 @@ import {
   defaultEvoluTransportUrls,
   upsertAccountEvoluWebsocketTransport,
 } from "@/core/evolu/device-account.ts"
-import type { AccountId } from "@/core/evolu/device-client.ts"
+import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
@@ -26,7 +26,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface TransportAddFormProps {
-  readonly accountId: AccountId
+  readonly accountId: DeviceAccountId
 }
 
 /**

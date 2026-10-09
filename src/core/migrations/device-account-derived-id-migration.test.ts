@@ -8,8 +8,8 @@ import {
   upsertAccountEvoluWebsocketTransport,
 } from "@/core/evolu/device-account.ts"
 import {
-  type AccountId,
   createDeviceQuery,
+  type DeviceAccountId,
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
 import { deviceAccountDerivedIdMigration } from "@/core/migrations/device-account-derived-id-migration.ts"
@@ -47,7 +47,7 @@ const insertLegacyAccount = async (
     readonly transports?: ReadonlyArray<string>
     readonly removed?: boolean
   }
-): Promise<AccountId> =>
+): Promise<DeviceAccountId> =>
   runMutationWithCompletion((options) => {
     const { id } = deviceEvolu.insert(
       "account",
@@ -88,7 +88,7 @@ const loadLiveAccountRows = async (deviceEvolu: DeviceEvolu) =>
 
 const loadTransportUrls = async (
   deviceEvolu: DeviceEvolu,
-  accountId: AccountId
+  accountId: DeviceAccountId
 ) =>
   (
     await deviceEvolu.loadQuery(

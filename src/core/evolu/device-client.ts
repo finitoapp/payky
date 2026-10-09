@@ -26,9 +26,9 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
-export const AccountIdRaw = id("DeviceAccountId")
-export const AccountId = standardSchemaToZod(AccountIdRaw)
-export type AccountId = typeof AccountIdRaw.Output
+export const DeviceAccountIdRaw = id("DeviceAccountId")
+export const DeviceAccountId = standardSchemaToZod(DeviceAccountIdRaw)
+export type DeviceAccountId = typeof DeviceAccountIdRaw.Output
 
 export const AccountEvoluTransportIdRaw = id("DeviceAccountEvoluTransportId")
 export const AccountEvoluTransportId = standardSchemaToZod(
@@ -78,7 +78,7 @@ export interface DeviceSettings {
 
 const deviceEvoluSchema = {
   account: {
-    id: AccountId,
+    id: DeviceAccountId,
     name: NonEmptyString255Schema,
     masterKey: MasterKeySchema,
     lastUseAt: TimestampMsSchema,
@@ -90,7 +90,7 @@ const deviceEvoluSchema = {
   },
   accountEvoluTransport: {
     id: AccountEvoluTransportId,
-    accountId: AccountId,
+    accountId: DeviceAccountId,
     type: z.enum(["WebSocket"]),
     isActive: SqliteBoolSchema,
   },
@@ -112,7 +112,7 @@ const deviceEvoluSchema = {
    */
   pinAttempt: {
     id: PinAttemptId,
-    accountId: AccountId,
+    accountId: DeviceAccountId,
     attemptedAt: TimestampMsSchema,
     /** What the attempt tried to unlock: a route path or an action key. */
     target: NonEmptyString255Schema,
@@ -123,7 +123,7 @@ const deviceEvoluSchema = {
    */
   pinAttemptBase: {
     id: PinAttemptBaseId,
-    accountId: AccountId,
+    accountId: DeviceAccountId,
     unblockToken: NonEmptyString255Schema.nullable(),
     baseCount: NonNegativeIntegerSchema,
   },

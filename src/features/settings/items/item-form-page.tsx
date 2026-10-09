@@ -58,7 +58,7 @@ import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
 import {
   filterSelectableTaxRates,
-  taxRatePercentageToDecimalString,
+  formatTaxRateLabel,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
 import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import {
@@ -69,14 +69,14 @@ import {
 } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
+import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
+import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
+import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import {
   type CatalogItemFormErrors,
   createPriceCodec,
   parseCatalogItemForm,
-} from "@/features/settings/items/catalog-item-form-schema.ts"
-import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
-import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+} from "@/features/shared/catalog-item-form-schema.ts"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
@@ -188,7 +188,7 @@ const useCatalogItemOptions = (currentTaxRateId?: TaxRateId | null) => {
       { value: NO_OPTION, label: t("settings.items.form.taxRate.none") },
       ...selectableTaxRates.map((taxRate) => ({
         value: taxRate.id,
-        label: `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)${
+        label: `${formatTaxRateLabel(taxRate)}${
           taxRate.deactivatedAt !== null
             ? ` — ${t("settings.taxRates.archived.title")}`
             : ""

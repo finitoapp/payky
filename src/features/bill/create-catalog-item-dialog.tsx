@@ -31,23 +31,19 @@ import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import { createCatalogItemAtEnd } from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import { decimalAmountToMinorUnits } from "@/core/modules/shared/money.ts"
-import {
-  type FiatCurrency as FiatCurrencyType,
-  NonEmptyString255Schema,
-  NonNegativeInteger,
-} from "@/core/modules/shared/schema.ts"
+import type { FiatCurrency as FiatCurrencyType } from "@/core/modules/shared/schema.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import type { TaxRateId } from "@/core/modules/tax-rate/tax-rate-types.ts"
 import {
   filterSelectableTaxRates,
-  taxRatePercentageToDecimalString,
+  formatTaxRateLabel,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
+import { parseCatalogItemForm } from "@/features/shared/catalog-item-form-schema.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import type { useProductLookup } from "@/hooks/use-product-lookup.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -75,7 +71,7 @@ export function CreateCatalogItemDialog({
   readonly categories: ReadonlyArray<CatalogCategoryRow>
   readonly onCreated: (item: CatalogItemRow) => void
 }) {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { require } = useRequirePermission()
   const evolu = useEvolu()
   const { t } = useTranslation()
@@ -148,36 +144,29 @@ export function CreateCatalogItemDialog({
             setDescriptionError(null)
             setPriceError(null)
 
-            const trimmedName = name.trim()
-            const nameResult = NonEmptyString255Schema.safeParse(trimmedName)
-            if (!nameResult.success) {
-              setNameError("settings.items.form.name.invalid")
+            const parsed = parseCatalogItemForm(
+              {
+                name,
+                price,
+                description,
+                internalName: "",
+                internalDescription: "",
+                sku: "",
+                scanCode,
+              },
+              currency
+            )
+            if (!parsed.ok) {
+              setNameError(parsed.error.name ?? null)
+              setDescriptionError(parsed.error.description ?? null)
+              setPriceError(parsed.error.price ?? null)
+              // The scanned code has no field here to show it under.
+              if (parsed.error.scanCode !== undefined) {
+                toast.error(t(parsed.error.scanCode))
+              }
               return
             }
-
-            const trimmedDescription = description.trim()
-            const descriptionResult = trimmedDescription
-              ? NonEmptyString255Schema.safeParse(trimmedDescription)
-              : null
-            if (descriptionResult !== null && !descriptionResult.success) {
-              setDescriptionError("settings.items.form.description.invalid")
-              return
-            }
-
-            const priceAmount = decimalAmountToMinorUnits({
-              currency,
-              value: price,
-            })
-            if (priceAmount === null) {
-              setPriceError("settings.items.form.price.invalid")
-              return
-            }
-            const unitAmount = NonNegativeInteger(priceAmount)
-
-            const trimmedScanCode = scanCode.trim()
-            const scanCodeResult = trimmedScanCode
-              ? NonEmptyString255Schema.safeParse(trimmedScanCode)
-              : null
+            const values = parsed.value
 
             void (async () => {
               // The same synced write as Settings → Items (access/0002).
@@ -185,36 +174,29 @@ export function CreateCatalogItemDialog({
                 return
               }
               setPending(true)
-              try {
-                await using run = appRun()
+              await runToast(async (run) => {
                 const id = await run.ok(
                   createCatalogItemAtEnd({
                     deviceId: null,
                     categoryId: categoryId === "none" ? null : categoryId,
-                    name: nameResult.data,
-                    description: descriptionResult?.data ?? null,
+                    name: values.name,
+                    description: values.description,
                     currency,
-                    unitAmount,
-                    scanCode: scanCodeResult?.data ?? null,
+                    unitAmount: values.price,
+                    scanCode: values.scanCode,
                     taxRateId: taxRateId === "none" ? null : taxRateId,
                   })
                 )
                 const [created] = await evolu.loadQuery(
                   catalogItemByIdQuery(id)
                 )
-                if (created === undefined) {
-                  toast.error(t("settings.saveFailed"))
-                  return
-                }
+                if (created === undefined) return "settings.saveFailed"
 
                 resetForm()
                 onOpenChange(false)
                 onCreated(created)
-              } catch {
-                toast.error(t("settings.saveFailed"))
-              } finally {
-                setPending(false)
-              }
+              })
+              setPending(false)
             })()
           }}
         >
@@ -333,7 +315,7 @@ export function CreateCatalogItemDialog({
                   ...Object.fromEntries(
                     selectableTaxRates.map((taxRate) => [
                       taxRate.id,
-                      `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)`,
+                      formatTaxRateLabel(taxRate),
                     ])
                   ),
                 }}
@@ -353,9 +335,7 @@ export function CreateCatalogItemDialog({
                     </SelectItem>
                     {selectableTaxRates.map((taxRate) => (
                       <SelectItem key={taxRate.id} value={taxRate.id}>
-                        {taxRate.name} (
-                        {taxRatePercentageToDecimalString(taxRate.rate)}
-                        %)
+                        {formatTaxRateLabel(taxRate)}
                       </SelectItem>
                     ))}
                   </SelectGroup>

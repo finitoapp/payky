@@ -24,6 +24,13 @@ export const taxRatePercentageToDecimalString = (
   return `${whole}.${hundredths.toString().padStart(2, "0")}`
 }
 
+/** How a tax rate is offered in a picker: its name and the rate, "VAT (21%)". */
+export const formatTaxRateLabel = (taxRate: {
+  readonly name: string
+  readonly rate: TaxRatePercentageType
+}): string =>
+  `${taxRate.name} (${taxRatePercentageToDecimalString(taxRate.rate)}%)`
+
 /**
  * Parses a user-typed decimal percentage (comma or dot separator, up to two
  * decimal places) into a `TaxRatePercentage`. Returns `null` for anything

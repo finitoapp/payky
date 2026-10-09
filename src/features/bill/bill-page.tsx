@@ -109,6 +109,7 @@ import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -425,6 +426,7 @@ function BillCartView({
   const navigate = useNavigate()
   const router = useRouter()
   const appRun = useAppRun()
+  const runToast = useRunToast()
   const { require } = useRequirePermission()
   const jotaiStore = useStore()
   const confirm = useConfirmDialog()
@@ -604,15 +606,15 @@ function BillCartView({
     if (!confirmed) return
     if (!(await require("discard", "access.action.discardBill"))) return
 
-    await using run = appRun()
-    const result = await run(cancelBill(billId))
-    if (!result.ok) {
-      console.error("Failed to discard cart", result.error)
-      toast.error(t("settings.saveFailed"))
-      return
-    }
+    await runToast(async (run) => {
+      const result = await run(cancelBill(billId))
+      if (!result.ok) {
+        console.error("Failed to discard cart", result.error)
+        return "settings.saveFailed"
+      }
 
-    router.history.back()
+      router.history.back()
+    })
   }
 
   const handleSplitError = (error: SplitBillError) => {

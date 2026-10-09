@@ -114,7 +114,6 @@ import {
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
 import { useRequirePermission } from "@/hooks/use-access.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
@@ -159,7 +158,7 @@ function PaymentDetailContent({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { require } = useRequirePermission()
   const [resolvePending, setResolvePending] = useState(false)
   const [excessResolvePending, setExcessResolvePending] = useState(false)
@@ -233,31 +232,21 @@ function PaymentDetailContent({
     )
       return
     setResolvePending(true)
-    try {
-      await using run = appRun()
+    await runToast(async (run) => {
       const result = await run(confirmPaymentPaidDespiteCancellation(paymentId))
-
-      if (!result.ok) {
-        toast.error(t("paymentDetail.collision.markPaid.error"))
-      }
-    } finally {
-      setResolvePending(false)
-    }
+      if (!result.ok) return "paymentDetail.collision.markPaid.error"
+    })
+    setResolvePending(false)
   }
 
   const handleAcknowledgeExcessSettlement = async () => {
     if (!(await require("refund", "access.action.acknowledgeExcess"))) return
     setExcessResolvePending(true)
-    try {
-      await using run = appRun()
+    await runToast(async (run) => {
       const result = await run(acknowledgePaymentExcessSettlement(paymentId))
-
-      if (!result.ok) {
-        toast.error(t("paymentDetail.excessCollision.acknowledge.error"))
-      }
-    } finally {
-      setExcessResolvePending(false)
-    }
+      if (!result.ok) return "paymentDetail.excessCollision.acknowledge.error"
+    })
+    setExcessResolvePending(false)
   }
 
   const handleRefund = () => {

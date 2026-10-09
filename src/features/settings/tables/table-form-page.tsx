@@ -217,6 +217,7 @@ function CreateTableForm() {
  */
 function EditTableForm({ table }: { readonly table: TableRow }) {
   const appRun = useAppRun()
+  const runToast = useRunToast()
   const confirm = useConfirmDialog()
   const router = useRouter()
   const { t } = useTranslation()
@@ -246,16 +247,19 @@ function EditTableForm({ table }: { readonly table: TableRow }) {
     })
     if (!confirmed) return
 
-    await using run = appRun()
-    const result = await run(deleteTable(table.id))
-    if (!result.ok) {
-      toast.error(
-        t("settings.tables.delete.hasOpenBills", { name: table.name })
-      )
-      return
-    }
+    await runToast(async (run) => {
+      const result = await run(deleteTable(table.id))
+      if (!result.ok) {
+        // Toasted here, not returned: the message needs the table's name,
+        // and `runToast` takes a bare key.
+        toast.error(
+          t("settings.tables.delete.hasOpenBills", { name: table.name })
+        )
+        return
+      }
 
-    router.history.back()
+      router.history.back()
+    })
   }
 
   return (

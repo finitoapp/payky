@@ -181,8 +181,10 @@ export type WithdrawalOutcomeUnknownError = ReturnType<
   typeof createWithdrawalOutcomeUnknownError
 >
 
+// `id`, not `withdrawalId`: that key is reserved for the errors above, whose
+// withdrawal does exist (see `executeWithdrawal`).
 const createWithdrawalNotFoundError = defineError("WithdrawalNotFound")<{
-  readonly withdrawalId: WithdrawalId
+  readonly id: WithdrawalId
 }>()
 export type WithdrawalNotFoundError = ReturnType<
   typeof createWithdrawalNotFoundError
@@ -829,7 +831,7 @@ export const confirmOnchainWithdrawalSent =
       withdrawalForResolutionQuery(withdrawalId)
     )
     if (withdrawal === undefined) {
-      return err(createWithdrawalNotFoundError({ withdrawalId }))
+      return err(createWithdrawalNotFoundError({ id: withdrawalId }))
     }
     const existing = await run.deps.evolu.loadQuery(
       accountTransactionExistsQuery(withdrawal.accountTransactionId)

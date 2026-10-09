@@ -10,8 +10,8 @@ import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils
  * they carry most of the module's doc comments about the lifecycle in
  * docs/bill-payment-states.md, and they are what every other module reaches
  * for. The errors live here too, since a guard is what raises them —
- * `catalogItemNotFound` and `billLineSummaryMissing` stay with the mutations
- * that produce them.
+ * `billLineSummaryMissing` stays with the mutations that produce it, and
+ * `CatalogItemNotFound` with the catalog-item module whose row is missing.
  */
 
 import { err, ok, type Result, type Task } from "@evolu/common"

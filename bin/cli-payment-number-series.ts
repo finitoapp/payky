@@ -49,7 +49,7 @@ export const registerPaymentNumberSeriesCommand =
           opts: {},
           async action() {
             const series = await run.ok(loadPaymentNumberSeries())
-            run.deps.console.table([series])
+            console.table([series])
           },
         })
       )

@@ -205,9 +205,7 @@ export const registerAccountTransfersCommand =
             const accountTransfers = await evolu.loadQuery(
               accountTransfersWithDetailsQuery
             )
-            run.deps.console.table(
-              formatAccountTransferListRows(accountTransfers)
-            )
+            console.table(formatAccountTransferListRows(accountTransfers))
           },
         })
       )
@@ -221,7 +219,7 @@ export const registerAccountTransfersCommand =
             id: AccountTransactionId.describe("Account transfer id"),
           },
           async action(_, options) {
-            run.deps.console.table(
+            console.table(
               await evolu.loadQuery(
                 accountTransferWithDetailsByIdQuery(options.id)
               )

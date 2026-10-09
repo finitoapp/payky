@@ -21,6 +21,7 @@ import {
 import {
   createEvoluDeps,
   type DbWorkerInit,
+  type DevicePersistence,
   initSharedWorker,
   type SharedWorkerInput,
   type SharedWorkerOutput,
@@ -103,6 +104,10 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
 
   const consoleStoreOutput = createConsoleStoreOutput()
   const console = createConsole({ level: "warn" })
+  // One for both sides, like `navigator.locks` in a browser: a DbWorker stops
+  // once it can take the lock its shared worker holds, so on a lock manager
+  // of its own it would stop at once.
+  const lockManager = testCreateLockManager()
 
   const run = disposer.use(
     createRun({
@@ -112,7 +117,13 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       createMessageChannel: testCreateMessageChannel,
       createMessagePort: createMessagePort,
       createWebSocket: testCreateWebSocket({ throwOnCreate: true }),
-      lockManager: testCreateLockManager(),
+      lockManager,
+      // What the shared worker may promise about stored databases: a file
+      // persists, memory does not.
+      getDevicePersistence: () =>
+        Promise.resolve<DevicePersistence>(
+          mode === "memory" ? "NotPersisted" : "Persisted"
+        ),
     })
   )
 
@@ -126,7 +137,7 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       consoleStoreOutputEntry: consoleStoreOutput.entry,
       createBroadcastChannel: testCreateBroadcastChannel,
       createMessagePort,
-      lockManager: testCreateLockManager(),
+      lockManager,
       createSqliteDriver: () => () => ok(driver),
     })
   )

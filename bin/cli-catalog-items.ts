@@ -38,7 +38,7 @@ export const registerCatalogItemsCommand =
           opts: {},
           async action() {
             const results = await evolu.loadQuery(catalogItemsQuery)
-            run.deps.console.table(results)
+            console.table(results)
           },
         })
       )
@@ -110,7 +110,7 @@ export const registerCatalogItemsCommand =
             const results = await evolu.loadQuery(
               catalogItemByIdQuery(options.id)
             )
-            run.deps.console.table(results)
+            console.table(results)
           },
         })
       )

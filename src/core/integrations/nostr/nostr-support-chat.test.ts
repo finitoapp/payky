@@ -104,7 +104,9 @@ const createFakeNostrDep = ({
           return {
             close: () => {
               subscription.closed = true
-              params.onclose?.(["closed by caller"])
+              params.onclose?.([
+                { url: "wss://relay.test", reason: "closed by caller" },
+              ])
             },
           }
         },
@@ -617,7 +619,9 @@ describe("support chat", () => {
       },
     })
 
-    fake.subscriptions[0]?.params.onclose?.(["connection lost"])
+    fake.subscriptions[0]?.params.onclose?.([
+      { url: "wss://relay.test", reason: "connection lost" },
+    ])
     expect(closes).toBe(1)
     close()
     expect(fake.subscriptions[0]?.closed).toBe(true)

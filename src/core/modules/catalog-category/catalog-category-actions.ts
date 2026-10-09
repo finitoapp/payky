@@ -26,11 +26,11 @@ export const createCatalogCategory =
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert(
         "catalogCategory",
-        {
+        removeUndefinedValues({
           deviceId: input.deviceId,
           name: input.name,
           sortOrder: input.sortOrder,
-        },
+        }),
         { ...options, ownerId: evoluOwnerId }
       )
     )

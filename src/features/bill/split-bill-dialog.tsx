@@ -31,7 +31,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
-import { useChangePulse } from "@/hooks/use-change-pulse.ts"
+import { useChangePulse } from "@/features/bill/use-change-pulse.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

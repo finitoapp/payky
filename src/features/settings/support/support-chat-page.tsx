@@ -39,6 +39,13 @@ import {
   type TimelineItem,
   toChatEntries,
 } from "@/features/settings/support/support-chat-timeline.ts"
+import {
+  supportMessagesQueryKey,
+  useDmInbox,
+  usePublishDmRelayList,
+  useSupportMessages,
+  useSupportTeam,
+} from "@/features/settings/support/use-support-chat.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import {
@@ -47,13 +54,6 @@ import {
   useNostrProfile,
 } from "@/hooks/use-nostr-profile.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
-import {
-  supportMessagesQueryKey,
-  useDmInbox,
-  usePublishDmRelayList,
-  useSupportMessages,
-  useSupportTeam,
-} from "@/hooks/use-support-chat.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatRelativeDate, formatTime } from "@/lib/format-utils.ts"

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { sentryVitePlugin } from "@sentry/vite-plugin"
+import { createEnv } from "@t3-oss/env-core"
 import tailwindcss from "@tailwindcss/vite"
 import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import basicSsl from "@vitejs/plugin-basic-ssl"
@@ -10,9 +11,33 @@ import type { ConfigEnv, PluginOption } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 import type { ViteUserConfigFnObject } from "vitest/config"
 import { defaultExclude } from "vitest/config"
+import { z } from "zod"
 
 import { releaseCommitSubject } from "./bin/release-version.ts"
 import packageJson from "./package.json" with { type: "json" }
+
+/** A build switch: on only when set to exactly "1". */
+const BuildFlagSchema = z
+  .string()
+  .optional()
+  .transform((value) => value === "1")
+
+const buildEnv = createEnv({
+  server: {
+    // `bun run cap:sync`'s build for the native app.
+    PAYKY_CAPACITOR_BUILD: BuildFlagSchema,
+    // Turns the dev server's self-signed HTTPS off, for Android live reload.
+    PAYKY_DISABLE_BASIC_SSL: BuildFlagSchema,
+    // `bun run test:e2e:preview`'s one-off build, see `__E2E_TEST_BUILD__`.
+    PAYKY_E2E_BUILD: BuildFlagSchema,
+    // Source map upload; unset skips it (see `.env.example`).
+    SENTRY_AUTH_TOKEN: z.string().optional(),
+    SENTRY_ORG: z.string().optional(),
+    SENTRY_PROJECT: z.string().optional(),
+  },
+  runtimeEnv: process.env,
+  emptyStringAsUndefined: true,
+})
 
 /**
  * The version the app shows and Sentry's `release`, which is what ties an
@@ -166,16 +191,16 @@ function landingPagesPlugin(): PluginOption {
 }
 
 function isNativeAndroidWebViewBuild(command: string): boolean {
-  return command === "build" && process.env.PAYKY_CAPACITOR_BUILD === "1"
+  return command === "build" && buildEnv.PAYKY_CAPACITOR_BUILD
 }
 
 // https://vite.dev/config/
 export default (({ command, isSsrBuild }: ConfigEnv) => {
   const useAndroidWebViewWorkerLocksPlugin =
     isNativeAndroidWebViewBuild(command)
-  const isCapacitorBuild = process.env.PAYKY_CAPACITOR_BUILD === "1"
-  const useBasicSsl = process.env.PAYKY_DISABLE_BASIC_SSL !== "1"
-  const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
+  const isCapacitorBuild = buildEnv.PAYKY_CAPACITOR_BUILD
+  const useBasicSsl = !buildEnv.PAYKY_DISABLE_BASIC_SSL
+  const sentryAuthToken = buildEnv.SENTRY_AUTH_TOKEN
   const useSentryVitePlugin =
     command === "build" && !isSsrBuild && Boolean(sentryAuthToken)
   // The server bundle `bin/prerender-landing.ts` renders the landing page
@@ -192,7 +217,7 @@ export default (({ command, isSsrBuild }: ConfigEnv) => {
       // regardless of how it's later served. Real production builds never
       // set PAYKY_E2E_BUILD, so this stays false (and the bridge dead code)
       // for anything actually shipped.
-      __E2E_TEST_BUILD__: JSON.stringify(process.env.PAYKY_E2E_BUILD === "1"),
+      __E2E_TEST_BUILD__: JSON.stringify(buildEnv.PAYKY_E2E_BUILD),
     },
     build: {
       sourcemap: useSentryVitePlugin,
@@ -257,8 +282,8 @@ export default (({ command, isSsrBuild }: ConfigEnv) => {
       ...(useSentryVitePlugin
         ? [
             sentryVitePlugin({
-              org: process.env.SENTRY_ORG,
-              project: process.env.SENTRY_PROJECT,
+              org: buildEnv.SENTRY_ORG,
+              project: buildEnv.SENTRY_PROJECT,
               authToken: sentryAuthToken,
               release: { name: appVersion },
               sourcemaps: {

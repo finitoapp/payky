@@ -115,7 +115,12 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark")
       root.classList.add(resolvedTheme)
-      localStorage.setItem(THEME_HINT_STORAGE_KEY, resolvedTheme)
+      try {
+        localStorage.setItem(THEME_HINT_STORAGE_KEY, resolvedTheme)
+      } catch {
+        // Only a first-paint hint: blocked storage (private browsing, quota)
+        // must not take the app root down with it.
+      }
 
       if (restoreTransitions) {
         restoreTransitions()

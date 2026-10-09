@@ -17,6 +17,7 @@ import {
   computeAccountTransactionRows,
   upsertAccountTransactionRows,
 } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import { deriveCashRefundAccountTransactionId } from "@/core/modules/account-transaction/account-transaction-utils.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
@@ -230,9 +231,7 @@ const prepareCashRefund = async (
   return ok(
     computeAccountTransactionRows(
       {
-        id: createIdFromString<"AccountTransaction">(
-          `accountTransaction:cashRegister:refund:${refundId}`
-        ),
+        id: deriveCashRefundAccountTransactionId(refundId),
         accountId,
         amount: Integer(-amount),
         currency,

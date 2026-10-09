@@ -15,6 +15,7 @@ import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { paymentBillCoverageByIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import { deriveManualReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
@@ -245,8 +246,9 @@ export const claimManualReconciliation =
     readonly deviceId: DeviceId | null
   }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
   async (run) => {
-    const id = createIdFromString<"ReconciliationClaim">(
-      `reconciliationClaim:manual:${paymentId}:${accountTransactionId}`
+    const id = deriveManualReconciliationClaimId(
+      paymentId,
+      accountTransactionId
     )
 
     await run.ok(

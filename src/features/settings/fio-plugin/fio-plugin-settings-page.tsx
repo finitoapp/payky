@@ -58,6 +58,7 @@ import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -241,7 +242,7 @@ interface FioPluginTokenListProps {
  * token. See `addFioPluginToken`.
  */
 function FioPluginTokenForm({ fioPluginId }: FioPluginTokenListProps) {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { t } = useTranslation()
   const tokenInputId = useId()
   const [token, setToken] = useState("")
@@ -277,13 +278,14 @@ function FioPluginTokenForm({ fioPluginId }: FioPluginTokenListProps) {
           return
         }
 
-        void submit(async () => {
-          await using run = appRun()
-          await run.ok(
-            addFioPluginToken({ fioPluginId, token: tokenResult.data })
-          )
-          setToken("")
-        })
+        void submit(() =>
+          runToast(async (run) => {
+            await run.ok(
+              addFioPluginToken({ fioPluginId, token: tokenResult.data })
+            )
+            setToken("")
+          })
+        )
       }}
     >
       <FieldGroup>
@@ -316,7 +318,7 @@ function FioPluginTokenForm({ fioPluginId }: FioPluginTokenListProps) {
 }
 
 function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
-  const appRun = useAppRun()
+  const runToast = useRunToast()
   const { t } = useTranslation()
   const tokensQuery = fioPluginTokensByPluginIdQuery(fioPluginId)
   const { data: tokens } = useEvoluQuery(tokensQuery)
@@ -361,13 +363,10 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
                     disabled={pendingTokenId !== null}
                     onClick={async () => {
                       setPendingTokenId(token.id)
-                      try {
-                        await using run = appRun()
-
+                      await runToast(async (run) => {
                         await run.ok(deleteFioPluginToken(token.id))
-                      } finally {
-                        setPendingTokenId(null)
-                      }
+                      })
+                      setPendingTokenId(null)
                     }}
                   >
                     <Trash2 data-icon="inline-start" />

@@ -21,6 +21,7 @@ import type { AccountId } from "@/core/evolu/device-client.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { WssUrlSchema } from "@/core/modules/shared/schema.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -36,6 +37,7 @@ export function TransportAddForm({ accountId }: TransportAddFormProps) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reloadAppEvolu = useReloadAppEvolu()
+  const runToast = useRunToast()
   const urlInputId = useId()
   const [url, setUrl] = useState<string>("")
   const [pending, setPending] = useState(false)
@@ -57,7 +59,7 @@ export function TransportAddForm({ accountId }: TransportAddFormProps) {
         }
 
         setPending(true)
-        try {
+        await runToast(async () => {
           await runMutationWithCompletion((options) =>
             upsertAccountEvoluWebsocketTransport(
               deviceEvolu,
@@ -73,9 +75,8 @@ export function TransportAddForm({ accountId }: TransportAddFormProps) {
           reloadAppEvolu()
           setUrl("")
           setSaved(true)
-        } finally {
-          setPending(false)
-        }
+        })
+        setPending(false)
       }}
     >
       <FieldGroup>

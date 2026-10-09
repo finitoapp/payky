@@ -1,7 +1,6 @@
 import { type KyselyNotNull, sqliteFalse, sqliteTrue } from "@evolu/common"
 import { useAtomValue } from "jotai"
 import { useState } from "react"
-import { toast } from "sonner"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { TransportSyncStatus } from "@/components/evolu-transports/transport-sync-status.tsx"
@@ -14,6 +13,7 @@ import {
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
+import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -52,6 +52,7 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reloadAppEvolu = useReloadAppEvolu()
+  const runToast = useRunToast()
   const { data: transports } = useDeviceEvoluQuery(
     accountTransportsQuery(accountId)
   )
@@ -77,7 +78,7 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
           url={transport.url}
           onToggle={async (isActive) => {
             setPendingTransportId(transport.id)
-            try {
+            await runToast(async () => {
               await runMutationWithCompletion((options) =>
                 deviceEvolu.update(
                   "accountEvoluTransport",
@@ -89,11 +90,8 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
                 )
               )
               reloadAppEvolu()
-            } catch {
-              toast.error(t("settings.saveFailed"))
-            } finally {
-              setPendingTransportId(null)
-            }
+            })
+            setPendingTransportId(null)
           }}
         />
       ))}

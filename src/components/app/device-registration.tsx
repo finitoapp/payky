@@ -6,6 +6,7 @@ import { applyPinUnblock } from "@/core/modules/access/access-actions.ts"
 import { registerDevice } from "@/core/modules/device/device-actions.ts"
 import { deviceByIdQuery } from "@/core/modules/device/device-queries.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 /**
@@ -15,32 +16,43 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
  */
 export function DeviceRegistration() {
   const appRun = useAppRun()
+  const console = useConsole()
   const { id: accountId, device } = useAtomValue(accountAtom)
   const { data } = useEvoluQuery(deviceByIdQuery(device.id))
   const token = data[0]?.pinUnblockToken ?? null
 
+  // Nothing on screen waits for these, so a failure is logged, as
+  // `AppMigrations` does, rather than left to escape as an unhandled rejection.
   useEffect(() => {
     void (async () => {
-      await using run = appRun()
-      await run.ok(
-        registerDevice({
-          id: device.id,
-          name: device.name,
-          deviceType: device.deviceType,
-          browserName: device.browserName,
-          osName: device.osName,
-        })
-      )
+      try {
+        await using run = appRun()
+        await run.ok(
+          registerDevice({
+            id: device.id,
+            name: device.name,
+            deviceType: device.deviceType,
+            browserName: device.browserName,
+            osName: device.osName,
+          })
+        )
+      } catch (error) {
+        console.error("Device registration failed.", error)
+      }
     })()
-  }, [appRun, device])
+  }, [appRun, console, device])
 
   useEffect(() => {
     if (token === null) return
     void (async () => {
-      await using run = appRun()
-      await run.ok(applyPinUnblock({ accountId, deviceId: device.id, token }))
+      try {
+        await using run = appRun()
+        await run.ok(applyPinUnblock({ accountId, deviceId: device.id, token }))
+      } catch (error) {
+        console.error("Applying the PIN unblock failed.", error)
+      }
     })()
-  }, [accountId, appRun, device.id, token])
+  }, [accountId, appRun, console, device.id, token])
 
   return null
 }

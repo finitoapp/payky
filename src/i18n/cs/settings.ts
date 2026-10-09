@@ -589,7 +589,6 @@ export const csSettings = {
     "Žádný Nostr relay profil nepřijal. Zkuste to později.",
   "settings.profile.setName": "Nastavte své jméno",
   "settings.profile.title": "Profil",
-  "settings.saveFailed": "Změnu se nepodařilo uložit. Zkuste to prosím znovu.",
   "settings.security.description": "Správa synchronizace a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase zkopírována.",
   "settings.security.mnemonic.copy": "Kopírovat",

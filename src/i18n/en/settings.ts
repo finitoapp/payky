@@ -587,7 +587,6 @@ export const enSettings = {
     "No Nostr relay accepted the profile. Try again later.",
   "settings.profile.setName": "Set your name",
   "settings.profile.title": "Profile",
-  "settings.saveFailed": "Could not save the change. Please try again.",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.mnemonic.copied": "Recovery phrase copied.",
   "settings.security.mnemonic.copy": "Copy",

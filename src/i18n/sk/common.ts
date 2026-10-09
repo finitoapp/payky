@@ -5,6 +5,7 @@ export const skCommon = {
   "activity.tabs.payments": "Platby",
   "activity.title": "Aktivita",
   "app.name": "Payky",
+  "app.saveFailed": "Zmenu sa nepodarilo uložiť. Skúste to prosím znova.",
   "appError.copied": "Skopírované",
   "appError.copy": "Skopírovať detail",
   "appError.copyFailed": "Kopírovanie zlyhalo",

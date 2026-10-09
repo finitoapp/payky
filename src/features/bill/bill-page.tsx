@@ -610,7 +610,7 @@ function BillCartView({
       const result = await run(cancelBill(billId))
       if (!result.ok) {
         console.error("Failed to discard cart", result.error)
-        return "settings.saveFailed"
+        return "app.saveFailed"
       }
 
       router.history.back()

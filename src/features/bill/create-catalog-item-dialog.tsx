@@ -190,7 +190,7 @@ export function CreateCatalogItemDialog({
                 const [created] = await evolu.loadQuery(
                   catalogItemByIdQuery(id)
                 )
-                if (created === undefined) return "settings.saveFailed"
+                if (created === undefined) return "app.saveFailed"
 
                 resetForm()
                 onOpenChange(false)

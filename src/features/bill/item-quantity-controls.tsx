@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { PositiveNumber } from "@/core/modules/shared/schema.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
-import { useChangePulse } from "@/hooks/use-change-pulse.ts"
+import { useChangePulse } from "@/features/bill/use-change-pulse.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 

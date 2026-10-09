@@ -40,7 +40,7 @@ export const registerTablesCommand =
           args: {},
           opts: {},
           async action() {
-            run.deps.console.table(await evolu.loadQuery(tablesQuery))
+            console.table(await evolu.loadQuery(tablesQuery))
           },
         })
       )
@@ -54,9 +54,7 @@ export const registerTablesCommand =
             id: TableId.describe("Table id"),
           },
           async action(_, options) {
-            run.deps.console.table(
-              await evolu.loadQuery(tableByIdQuery(options.id))
-            )
+            console.table(await evolu.loadQuery(tableByIdQuery(options.id)))
           },
         })
       )

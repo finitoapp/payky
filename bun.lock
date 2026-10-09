@@ -18,7 +18,7 @@
         "@evolu/common": "8.19.0",
         "@evolu/nodejs": "4.2.0",
         "@evolu/react-web": "3.2.0",
-        "@evolu/sqlite-wasm": "2.2.4",
+        "@evolu/sqlite-wasm": "3.53.4-build1",
         "@evolu/web": "3.5.0",
         "@finitoapp/eet-client": "0.3.0",
         "@noble/hashes": "2.4.0",
@@ -46,7 +46,7 @@
         "input-otp": "1.5.0",
         "jotai": "3.0.1",
         "kysely": "0.29.6",
-        "lucide-react": "1.53.0",
+        "lucide-react": "1.54.0",
         "motion": "14.0.0",
         "nostr-tools": "2.25.2",
         "qrcode.react": "4.2.0",
@@ -413,7 +413,7 @@
 
     "@evolu/react-web": ["@evolu/react-web@3.2.0", "", { "peerDependencies": { "@evolu/common": "^8.14.0", "@evolu/web": "^3.4.0", "react": ">=19", "react-dom": ">=19" } }, "sha512-WR31jU2JSGK2zK1R7ran6JPikPVzAXuuSphvhu/PT0k4yorM7hnI6shRsAqLD6V4NHVO5fCT3YH4u0xKHJRCKQ=="],
 
-    "@evolu/sqlite-wasm": ["@evolu/sqlite-wasm@2.2.4", "", { "bin": { "sqlite-wasm": "bin/index.js" } }, "sha512-/JOYGFN93QspD2C8HVxVgBUlFWqJ1IpaVuIhEB53u4+ZvE+D3LjpNHDYiwZgf0n7VaH2U85OY5eV3wUrWc3scg=="],
+    "@evolu/sqlite-wasm": ["@evolu/sqlite-wasm@3.53.4-build1", "", { "dependencies": { "@awasm/noble": "0.1.4" }, "peerDependencies": { "@evolu/common": "^8.19.0" } }, "sha512-9AsjNP13e88h0oP8jYnInFY4J164m2KXpK7j1D1kml7UBhAtNSbFsePZjqvn7bS3oBDcPFC9+MvfMvFjXLg+0A=="],
 
     "@evolu/web": ["@evolu/web@3.5.0", "", { "dependencies": { "@evolu/sqlite-wasm": "3.53.4-build1" }, "peerDependencies": { "@evolu/common": "^8.19.0" } }, "sha512-dn3XqriqhtTJSaW/oBhmKMl+ezcEwlP+t0h9XLWN4WYTh8IEKtpS5yx/5eq8TKBjPswT0YpT/1LZqCOY1d1tvQ=="],
 
@@ -1747,7 +1747,7 @@
 
     "lru-cache": ["lru-cache@6.0.0", "", { "dependencies": { "yallist": "^4.0.0" } }, "sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA=="],
 
-    "lucide-react": ["lucide-react@1.53.0", "", { "peerDependencies": { "@types/react": "*", "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-OxJ7elNku+iqVzOolk5caxq2LM8Mck6lhA6uZx3g2PlZ53+FvBnT6PlJxGCukCa6oF5wQwgSatn9cH1b4olWmQ=="],
+    "lucide-react": ["lucide-react@1.54.0", "", { "peerDependencies": { "@types/react": "*", "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-kVmnVCBoLztTGe3S76xu8utwxijRLOinknNq9e8btZ0R2fm6WCgxY+weaLiA50odo/yi+apm/4B2A/LsFZhTrw=="],
 
     "lzma1": ["lzma1@0.4.0", "", {}, "sha512-6AP1zxycZ2bmfaX1GDex1k4eme5NINXvsViA15oZNCvyzc1F9408YwxC/jW5w8uqs6+h1jZeziB444xykOrK7A=="],
 
@@ -2620,8 +2620,6 @@
     "@evolu/nodejs/better-sqlite3": ["better-sqlite3@12.11.1", "", { "dependencies": { "bindings": "^1.5.0", "prebuild-install": "^7.1.1" } }, "sha512-dq9AtApgg5PGFtBzPFSBl3HZQjHok5gaQCM6zh2Yk0aSmDCs1CbnVI8/HgASQkNKsWFpseIO9beg5xxpYhbIfA=="],
 
     "@evolu/nodejs/ws": ["ws@8.21.3", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw=="],
-
-    "@evolu/web/@evolu/sqlite-wasm": ["@evolu/sqlite-wasm@3.53.4-build1", "", { "dependencies": { "@awasm/noble": "0.1.4" }, "peerDependencies": { "@evolu/common": "^8.19.0" } }, "sha512-9AsjNP13e88h0oP8jYnInFY4J164m2KXpK7j1D1kml7UBhAtNSbFsePZjqvn7bS3oBDcPFC9+MvfMvFjXLg+0A=="],
 
     "@ionic/utils-fs/fs-extra": ["fs-extra@9.1.0", "", { "dependencies": { "at-least-node": "^1.0.0", "graceful-fs": "^4.2.0", "jsonfile": "^6.0.1", "universalify": "^2.0.0" } }, "sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ=="],
 

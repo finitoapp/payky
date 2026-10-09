@@ -80,7 +80,7 @@ export const registerBillsCommand =
           async action() {
             const results = await run.ok(listOpenBills())
 
-            run.deps.console.table(
+            console.table(
               results.map(({ bill, items }) => ({
                 ...bill,
                 itemCount: items.length,
@@ -105,8 +105,8 @@ export const registerBillsCommand =
           async action(_, options) {
             const bill = await run.orThrow(loadBill(options.id))
 
-            run.deps.console.table([bill])
-            run.deps.console.table(
+            console.table([bill])
+            console.table(
               await run.ok(loadCalculatedBillLineSummaries(options.id))
             )
           },
@@ -202,7 +202,7 @@ export const registerBillsCommand =
               })
             )
 
-            run.deps.console.table([lineSummary])
+            console.table([lineSummary])
           },
         })
       )
@@ -231,7 +231,7 @@ export const registerBillsCommand =
               })
             )
 
-            run.deps.console.table([lineSummary])
+            console.table([lineSummary])
           },
         })
       )
@@ -259,7 +259,7 @@ export const registerBillsCommand =
               })
             )
 
-            run.deps.console.table([lineSummary])
+            console.table([lineSummary])
           },
         })
       )
@@ -309,7 +309,7 @@ export const registerBillsCommand =
               })
             )
 
-            run.deps.console.table(
+            console.table(
               updatedLineSummary === null ? [] : [updatedLineSummary]
             )
           },
@@ -352,8 +352,8 @@ export const registerBillsCommand =
               })
             )
 
-            run.deps.console.table([result.bill])
-            run.deps.console.table(result.items)
+            console.table([result.bill])
+            console.table(result.items)
           },
         })
       )

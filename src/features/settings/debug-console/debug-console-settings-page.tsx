@@ -147,13 +147,6 @@ const methodClassNames = {
   info: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
   warn: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   error: "bg-destructive/15 text-destructive",
-  dir: defaultMethodClassName,
-  table: defaultMethodClassName,
-  time: defaultMethodClassName,
-  timeLog: defaultMethodClassName,
-  timeEnd: defaultMethodClassName,
-  count: defaultMethodClassName,
-  countReset: defaultMethodClassName,
 } satisfies Record<ConsoleOutputHistoryEntry["method"], string>
 
 function formatConsoleArgs(args: ReadonlyArray<unknown>): string {

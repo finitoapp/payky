@@ -236,9 +236,7 @@ export const registerPaymentsCommand =
               )
             )
 
-            run.deps.console.table(
-              await evolu.loadQuery(paymentsWithDetailsQuery)
-            )
+            console.table(await evolu.loadQuery(paymentsWithDetailsQuery))
           },
         })
       )
@@ -252,7 +250,7 @@ export const registerPaymentsCommand =
             id: PaymentId.describe("Payment id"),
           },
           async action(_, options) {
-            run.deps.console.table(
+            console.table(
               await evolu.loadQuery(paymentWithDetailsByIdQuery(options.id))
             )
           },

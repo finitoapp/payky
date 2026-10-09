@@ -123,9 +123,7 @@ export const registerAccountsCommand =
           args: {},
           opts: {},
           async action() {
-            run.deps.console.table(
-              await evolu.loadQuery(accountsWithDetailsQuery)
-            )
+            console.table(await evolu.loadQuery(accountsWithDetailsQuery))
           },
         })
       )
@@ -139,7 +137,7 @@ export const registerAccountsCommand =
             id: AccountId.describe("Account id"),
           },
           async action(_, options) {
-            run.deps.console.table(
+            console.table(
               await evolu.loadQuery(accountWithDetailsByIdQuery(options.id))
             )
           },

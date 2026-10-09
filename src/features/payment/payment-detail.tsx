@@ -49,7 +49,10 @@ import {
   calculateTaxRecap,
   hasTaxableLines,
 } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
-import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  deriveBillSummaryTotal,
+  getBillLineSummaryUnitAmount,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import {
   type DeliverEetSaleError,
   retryEetSale,
@@ -712,9 +715,7 @@ function PaymentDetailBillCard({
                     {summary.quantity} ×{" "}
                     {formatMoney(
                       {
-                        value: NonNegativeInteger(
-                          summary.totalAmount / summary.quantity
-                        ),
+                        value: getBillLineSummaryUnitAmount(summary),
                         currency: summary.currency,
                       },
                       locale

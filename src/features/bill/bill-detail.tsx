@@ -19,7 +19,10 @@ import {
   calculateTaxRecap,
   hasTaxableLines,
 } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
-import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
+import {
+  deriveBillSummaryTotal,
+  getBillLineSummaryUnitAmount,
+} from "@/core/modules/bill-line/bill-line-utils.ts"
 import { eetSalesByBillIdQuery } from "@/core/modules/eet/eet-queries.ts"
 import { paymentsWithClaimsByBillIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
@@ -28,7 +31,6 @@ import {
   type PaymentRefundSummary,
   summarizeRefundsByPayment,
 } from "@/core/modules/refund/refund-utils.ts"
-import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { PaymentMethodIcons } from "@/features/activity/activity-row.tsx"
@@ -198,9 +200,7 @@ function BillDetailContent({ billId }: { readonly billId: BillId }) {
                       {summary.quantity} ×{" "}
                       {formatMoney(
                         {
-                          value: NonNegativeInteger(
-                            summary.totalAmount / summary.quantity
-                          ),
+                          value: getBillLineSummaryUnitAmount(summary),
                           currency: summary.currency,
                         },
                         locale

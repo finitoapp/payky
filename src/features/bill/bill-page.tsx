@@ -58,6 +58,7 @@ import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary
 import {
   deriveBillSummaryStats,
   deriveBillSummaryTotal,
+  getBillLineSummaryUnitAmount,
   getLatestCatalogItemSummary,
 } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
@@ -987,7 +988,7 @@ function SummaryRow({
           ×{" "}
           {formatMoney(
             {
-              value: NonNegativeInteger(summary.totalAmount / summary.quantity),
+              value: getBillLineSummaryUnitAmount(summary),
               currency: summary.currency,
             },
             locale

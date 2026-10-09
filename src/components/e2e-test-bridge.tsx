@@ -177,7 +177,7 @@ declare global {
  * token keyed to that same id. Written directly rather than through
  * `saveFioPlugin`/`addFioPluginToken`, because those two now only ever write
  * the fixed id — reproducing the old shape is the whole point. Gives
- * `migrateLegacyFioPlugins` something to migrate, which is what
+ * `fioPluginFixedIdMigration` something to migrate, which is what
  * `e2e/migrations.spec.ts` needs before the migration popup will appear at
  * all.
  *

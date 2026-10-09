@@ -5,7 +5,7 @@ import {
   NonEmptyString255,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
-import { createPriceCodec } from "@/features/settings/items/catalog-item-form-schema.ts"
+import { createPriceCodec } from "@/features/shared/catalog-item-form-schema.ts"
 import {
   NO_OPTION,
   optionalIdCodec,

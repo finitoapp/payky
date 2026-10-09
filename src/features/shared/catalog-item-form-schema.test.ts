@@ -4,7 +4,7 @@ import { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import {
   type CatalogItemFormInput,
   parseCatalogItemForm,
-} from "@/features/settings/items/catalog-item-form-schema.ts"
+} from "@/features/shared/catalog-item-form-schema.ts"
 
 const validInput: CatalogItemFormInput = {
   name: "Coffee",

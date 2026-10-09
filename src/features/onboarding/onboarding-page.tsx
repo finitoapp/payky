@@ -29,12 +29,12 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
+import { finishOnboarding as finishOnboardingTask } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
 import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
-import { finishOnboarding as finishOnboardingTask } from "@/features/onboarding/finish-onboarding.ts"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,

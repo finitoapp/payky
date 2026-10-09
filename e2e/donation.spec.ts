@@ -116,3 +116,21 @@ test("donation amount is validated against the LNURL sendable range", async ({
     ).toBeEnabled()
   })
 })
+
+test("a donation invoice link with a malformed verify URL still opens the page", async ({
+  seededPage: page,
+}) => {
+  await page.goto(
+    "/settings/donations-invoice?invoice=lnbc1&verify=not-a-url",
+    {
+      waitUntil: "domcontentloaded",
+    }
+  )
+  await expect(
+    page.getByRole("heading", {
+      name: translate("en", "settings.donations.invoice.title"),
+    })
+  ).not.toHaveCount(0)
+  // This used to throw out of `validateSearch` into the global error boundary.
+  await expect(page.getByText(translate("en", "appError.title"))).toHaveCount(0)
+})

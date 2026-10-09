@@ -3,8 +3,11 @@ import { z } from "zod"
 
 import { DonationsInvoiceSettingsPage } from "@/features/settings/donations/donations-invoice-settings-page.tsx"
 
+// Falls back to "" instead of throwing, which the page already treats as
+// "nothing given": a `validateSearch` throw on a stale or hand-typed link
+// escapes to the global error boundary (see `_terminal.bill.tsx`).
 const DonateInvoiceSearchSchema = z.object({
-  invoice: z.string().trim().min(1).optional().default(""),
+  invoice: z.string().trim().min(1).optional().default("").catch(""),
   verify: z
     .string()
     .trim()
@@ -13,7 +16,8 @@ const DonateInvoiceSearchSchema = z.object({
       "Expected a valid verify URL."
     )
     .optional()
-    .default(""),
+    .default("")
+    .catch(""),
 })
 
 export const Route = createFileRoute("/_terminal/settings/donations-invoice")({

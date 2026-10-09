@@ -158,6 +158,7 @@ export const csPayment = {
   "paymentTip.custom.label": "Vlastní spropitné",
   "paymentTip.custom.placeholder": "např. 20,00",
   "paymentTip.fixedAmounts": "Spropitné pevnou částkou",
+  "paymentTip.invalidLink": "Neplatný odkaz na spropitné.",
   "paymentTip.none": "Bez spropitného",
   "paymentTip.orderTotal": "Cena objednávky",
   "paymentTip.percentages": "Spropitné v procentech",

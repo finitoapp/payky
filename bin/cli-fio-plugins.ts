@@ -10,6 +10,7 @@ import {
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
+import { printCliError } from "@/core/cli/cli-errors.ts"
 import { createFetchDep, type EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
@@ -247,10 +248,17 @@ export const registerFioPluginsCommand =
             )
             const firstToken = tokens[0]
             if (firstToken === undefined) {
-              throw new Error(`FIO plugin ${options.id} has no active token.`)
+              printCliError(
+                run.deps.console,
+                `FIO plugin ${options.id} has no active token.`
+              )
+              return
             }
 
-            const fioRun = createRun({
+            // Its own run: the FIO dep carries this plugin's tokens, which
+            // the root run cannot know when it is built.
+            await using fioRun = createRun({
+              console: run.deps.console,
               ...createFetchDep(),
               ...createFioApiDep({
                 tokens: [
@@ -259,9 +267,7 @@ export const registerFioPluginsCommand =
                 ],
               }),
             })
-            run.deps.console.log("ok")
             await fioRun.orThrow(setFioLastDate({ date: options.date }))
-            run.deps.console.log("ok2")
 
             run.deps.console.log(
               `Set FIO cursor for plugin ${options.id} to ${options.date}`

@@ -12,10 +12,20 @@ import { cliEnv } from "@/core/cli/cli-env.ts"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
   createDateDep,
+  createFetchDep,
   type DateDep,
   type EvoluOwnerIdDep,
+  type FetchDep,
 } from "@/core/deps.ts"
+import {
+  createYadioApiDep,
+  type YadioApiDep,
+} from "@/core/integrations/yadio/yadio-client.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  createSparkWalletDep,
+  type SparkWalletDep,
+} from "@/core/spark/spark-wallet.ts"
 import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { registerAccountTransfersCommand } from "./cli-account-transfers"
 import { registerAccountsCommand } from "./cli-accounts"
@@ -37,7 +47,14 @@ const commands: ((
 ) => Task<
   void,
   never,
-  EvoluDep & EvoluOwnerIdDep & ConsoleDep & DateDep & AiModelDep
+  EvoluDep &
+    EvoluOwnerIdDep &
+    ConsoleDep &
+    DateDep &
+    AiModelDep &
+    FetchDep &
+    SparkWalletDep &
+    YadioApiDep
 >)[] = [
   registerCatalogItemsCommand,
   registerBillsCommand,
@@ -76,6 +93,9 @@ const main = async () => {
     evoluOwnerId,
     console,
     ...createDateDep(),
+    ...createFetchDep(),
+    ...createSparkWalletDep(),
+    ...createYadioApiDep(),
     ...createAiModelDep({
       baseURL: cliEnv.PAYKY_AI_BASE_URL,
       ownerId: evoluOwnerId,

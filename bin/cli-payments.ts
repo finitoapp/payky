@@ -1,16 +1,12 @@
-import { createRun, evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
+import { evoluJsonObjectFrom, ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import {
-  createDateDep,
-  createFetchDep,
-  type EvoluOwnerIdDep,
-} from "@/core/deps.ts"
-import { createYadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
+import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { YadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createSparkWalletDep } from "@/core/spark/spark-wallet.ts"
+import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import { AccountId } from "../src/core/modules/account/account-types"
 import { BillId } from "../src/core/modules/bill/bill-types"
@@ -211,9 +207,20 @@ const parseIbanInput = (options: {
 }
 
 export const registerPaymentsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (
+    program: Command
+  ): Task<
+    void,
+    never,
+    EvoluDep &
+      EvoluOwnerIdDep &
+      DateDep &
+      FetchDep &
+      SparkWalletDep &
+      YadioApiDep
+  > =>
   (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu } = run.deps
 
     const paymentsCommand = createCommand("payments").description(
       "Manage payment requests and receipts."
@@ -300,16 +307,7 @@ export const registerPaymentsCommand =
               return
             }
 
-            const sparkRun = createRun({
-              ...createDateDep(),
-              ...createFetchDep(),
-              ...createSparkWalletDep(),
-              ...createYadioApiDep(),
-              evolu,
-              evoluOwnerId,
-            })
-
-            const paymentId = await sparkRun.orThrow(
+            const paymentId = await run.orThrow(
               createPreparedPayment({
                 deviceId: options.deviceId ?? null,
                 billId: options.billId ?? null,

@@ -147,7 +147,7 @@ describe("app migrations", () => {
 
   /**
    * The tests above exercise the runner with synthetic migrations, and
-   * `fio-plugin-actions.test.ts` covers `migrateLegacyFioPlugins` on its own.
+   * `fio-plugin-fixed-id-migration.test.ts` covers that migration on its own.
    * Nothing tied the two together: the registry's one real entry could have
    * been dropped from `appMigrations` and `bun run check` would have stayed
    * green. This runs the real registry against the row shape the migration

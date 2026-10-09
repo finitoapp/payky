@@ -36,7 +36,7 @@ export const createCardSwitchioAccountId = (
 
 /**
  * The fixed id the fiat bank account had before ids were derived from its
- * IBAN and currency. `migrateLegacyFioPlugins` matches the legacy plugin rows
+ * IBAN and currency. `fioPluginFixedIdMigration` matches the legacy plugin rows
  * that still point at it, and the Fio plugin is saved against it while no
  * fiat bank account exists yet — `saveFiatBankAccount` re-points the plugin
  * once one does, and `accountDerivedIdMigration` once a legacy one is migrated.

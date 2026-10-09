@@ -4,8 +4,7 @@ import type { EvoluOwnerIdDep, LocalStorageDep } from "@/core/deps.ts"
 import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
 import { deviceAccountDerivedIdMigration } from "@/core/migrations/device-account-derived-id-migration.ts"
 import { deviceIdMigration } from "@/core/migrations/device-id-migration.ts"
-import { migrateLegacyFioPlugins } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
-import { hasLegacyFioPluginQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
+import { fioPluginFixedIdMigration } from "@/core/migrations/fio-plugin-fixed-id-migration.ts"
 import type {
   DeviceEvoluDep,
   EvoluDep,
@@ -105,12 +104,7 @@ const e2eHoldMigration: AppMigration = {
  */
 export const appMigrations: ReadonlyArray<AppMigration> = [
   e2eHoldMigration,
-  {
-    name: "2026-09-14-fio-plugin-fixed-id",
-    hasWork: async (run) =>
-      ok((await run.deps.evolu.loadQuery(hasLegacyFioPluginQuery)).length > 0),
-    run: migrateLegacyFioPlugins(),
-  },
+  fioPluginFixedIdMigration,
   // After the Fio one: a legacy plugin it adopts can still point at the
   // legacy fiat bank account, and this is what re-points it.
   accountDerivedIdMigration,

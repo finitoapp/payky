@@ -72,8 +72,11 @@ migration of stored sets.
 - End-to-end tests hold the gates where staff take money: removing,
   clearing and undoing in the cart, discarding a bill, cancelling a payment,
   confirming cash and a transfer by hand, and refunds. The remaining action
-  gates (excess settlement, the bill page's create-item dialog, switching
-  and removing accounts, withdraw, AI data access) are held by review.
+  gates (excess settlement, confirming a payment or bill despite a
+  cancellation, the bill page's create-item dialog, switching and removing
+  accounts, withdraw, AI data access) are held by review. No preset grants
+  `activity` without `sell`, so the cancellation gates matter only to a
+  device whose permissions were edited by hand.
 
 ## Enforced by
 

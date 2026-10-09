@@ -223,6 +223,10 @@ function PaymentDetailContent({
   })
 
   const handleConfirmPaidDespiteCancellation = async () => {
+    if (
+      !(await require("sell", "access.action.confirmPaidDespiteCancellation"))
+    )
+      return
     setResolvePending(true)
     try {
       await using run = appRun()

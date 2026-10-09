@@ -3,6 +3,7 @@ import { toast } from "sonner"
 
 import { confirmBillClosedDespiteCancellation } from "@/core/modules/bill/bill-actions.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
+import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
@@ -19,9 +20,17 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export function useBillCancellationCollisionActions(billId: BillId) {
   const { t } = useTranslation()
   const appRun = useAppRun()
+  const { require } = useRequirePermission()
   const [pending, setPending] = useState(false)
 
+  // Here, not at the call sites: the activity detail renders this under an
+  // `activity` route, and confirming despite a cancellation is `sell`
+  // (access/0002).
   const confirmClosed = async () => {
+    if (
+      !(await require("sell", "access.action.confirmClosedDespiteCancellation"))
+    )
+      return
     setPending(true)
     try {
       await using run = appRun()

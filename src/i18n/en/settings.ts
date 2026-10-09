@@ -851,6 +851,10 @@ export const enSettings = {
   "access.action.aiAccess": "Change AI data access",
   "access.action.cancelPayment": "Cancel the payment",
   "access.action.changePin": "Change the PIN",
+  "access.action.confirmClosedDespiteCancellation":
+    "Mark the discarded bill as closed",
+  "access.action.confirmPaidDespiteCancellation":
+    "Mark the canceled payment as paid",
   "access.action.createItem": "Create a catalog item",
   "access.action.disable": "Turn access control off",
   "access.action.discardBill": "Discard the bill",

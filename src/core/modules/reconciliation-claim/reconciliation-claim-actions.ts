@@ -1,9 +1,4 @@
-import {
-  createIdFromString,
-  type MutationOptions,
-  ok,
-  type Task,
-} from "@evolu/common"
+import { type MutationOptions, ok, type Task } from "@evolu/common"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { CreateAccountTransactionInput } from "@/core/modules/account-transaction/account-transaction-actions.ts"
@@ -15,7 +10,11 @@ import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { paymentBillCoverageByIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import { deriveManualReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-utils.ts"
+import type { ReconciliationClaimWrite } from "@/core/modules/reconciliation-claim/reconciliation-claim-types.ts"
+import {
+  createAutomaticReconciliationClaim,
+  deriveManualReconciliationClaimId,
+} from "@/core/modules/reconciliation-claim/reconciliation-claim-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   removeUndefinedValues,
@@ -24,7 +23,6 @@ import {
 import {
   type Currency,
   NonNegativeInteger,
-  type SyncSource,
   type TimestampMs,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
@@ -36,7 +34,6 @@ import {
   sparkReconciliationCandidateByAccountTransactionIdQuery,
   sparkReconciliationCandidateByValuesQuery,
 } from "./reconciliation-claim-queries.ts"
-import type { ReconciliationClaimId } from "./reconciliation-claim-types.ts"
 
 /**
  * Given a payment about to gain a claim, checks whether its bill's
@@ -81,30 +78,6 @@ export const loadBillClosedAtForPayment =
       await run.ok(loadBillClosedAtIfCovered(paymentRow, claimedTransaction))
     )
   }
-
-export interface ReconciliationClaimWrite {
-  readonly id: ReconciliationClaimId
-  readonly deviceId: DeviceId | null
-  readonly paymentId: PaymentId
-  readonly accountTransactionId: AccountTransactionId
-  readonly source: SyncSource
-  readonly claimedAt: TimestampMs
-}
-
-const createAutomaticReconciliationClaim = (
-  paymentId: PaymentId,
-  accountTransactionId: AccountTransactionId,
-  now: Date
-): ReconciliationClaimWrite => ({
-  id: createIdFromString<"ReconciliationClaim">(
-    `reconciliationClaim:automatic:${paymentId}:${accountTransactionId}`
-  ),
-  deviceId: null,
-  paymentId,
-  accountTransactionId,
-  source: "auto",
-  claimedAt: TimestampMsSchema.decode(now.getTime()),
-})
 
 /**
  * Finds the automatic claim a newly discovered FIO or Spark transaction

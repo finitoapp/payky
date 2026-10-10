@@ -55,7 +55,6 @@ import {
 } from "../shared/schema.ts"
 import {
   createPayment,
-  loadAccountWithCurrencyCheck,
   loadPayment,
   type PaymentBtcInput,
   upsertPaymentSparkDetails,
@@ -79,6 +78,7 @@ import {
   type PreparePaymentMethodError,
   type ZeroAmountNotPayableError,
 } from "./payment-errors.ts"
+import { loadAccountWithCurrencyCheck } from "./payment-guards.ts"
 import { paymentNonExpiringMethodsByIdQuery } from "./payment-queries.ts"
 import {
   createSpecificSymbolFromDate,

@@ -32,6 +32,7 @@ import type {
   accountTransactionSparkInvoice,
 } from "./account-transaction.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
+import { deriveSparkAccountTransactionId } from "./account-transaction-utils.ts"
 
 type AccountTransactionSparkInput = WithSparkDetails<
   InsertValues<typeof accountTransactionSpark>,
@@ -60,18 +61,6 @@ type AccountTransactionSparkUpdateInput = WithSparkDetails<
   Omit<UpdateValues<typeof accountTransactionLightning>, "id">,
   Omit<UpdateValues<typeof accountTransactionSparkInvoice>, "id">
 >
-
-/**
- * The id a Spark transfer's movement is recorded under. Exported because a
- * Lightning withdrawal records, before it sends, the id the Spark sync job
- * will later write its movement under.
- */
-export const deriveSparkAccountTransactionId = (
-  sparkTransferId: NonEmptyString
-): AccountTransactionId =>
-  createIdFromString<"AccountTransaction">(
-    `accountTransaction:spark:${sparkTransferId}`
-  )
 
 /**
  * The id a money movement is recorded under — derived from whatever uniquely

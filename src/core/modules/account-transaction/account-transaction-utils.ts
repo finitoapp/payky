@@ -5,6 +5,7 @@ import type { AccountTransactionId } from "@/core/modules/account-transaction/ac
 import type { PaymentAccountKind } from "@/core/modules/payment/payment-errors.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { RefundId } from "@/core/modules/refund/refund-types.ts"
+import type { NonEmptyString } from "@/core/modules/shared/schema.ts"
 
 /**
  * Written out verbatim, not assembled from the kind: they are not symmetrical
@@ -42,4 +43,16 @@ export const deriveCashRefundAccountTransactionId = (
 ): AccountTransactionId =>
   createIdFromString<"AccountTransaction">(
     `accountTransaction:cashRegister:refund:${refundId}`
+  )
+
+/**
+ * The id a Spark transfer's movement is recorded under. Exported because a
+ * Lightning withdrawal records, before it sends, the id the Spark sync job
+ * will later write its movement under.
+ */
+export const deriveSparkAccountTransactionId = (
+  sparkTransferId: NonEmptyString
+): AccountTransactionId =>
+  createIdFromString<"AccountTransaction">(
+    `accountTransaction:spark:${sparkTransferId}`
   )

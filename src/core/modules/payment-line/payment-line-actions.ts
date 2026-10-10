@@ -1,37 +1,11 @@
-import { createIdFromString, type MutationOptions } from "@evolu/common"
+import type { MutationOptions } from "@evolu/common"
 
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
-import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import type { ItemId } from "@/core/modules/item/item-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { removeUndefinedValues } from "@/core/modules/shared/evolu-utils.ts"
-import type { ItemLineType } from "@/core/modules/shared/schema.ts"
 import type { PaymentLineRow } from "./payment-line.ts"
-import type { PaymentLineId } from "./payment-line-types.ts"
-
-interface PaymentLineIdentityInput {
-  readonly paymentId: PaymentId
-  readonly catalogItemId: CatalogItemId | null
-  readonly itemId: ItemId
-  readonly type: ItemLineType
-}
-
-/**
- * Deterministic, not random — re-snapshotting the same payment (e.g. a
- * retried write) reproduces the same row ids instead of duplicating lines.
- */
-export const createPaymentLineId = (
-  input: PaymentLineIdentityInput
-): PaymentLineId =>
-  createIdFromString<"PaymentLine">(
-    JSON.stringify({
-      paymentId: input.paymentId,
-      catalogItemId: input.catalogItemId,
-      itemId: input.itemId,
-      type: input.type,
-    })
-  )
+import { createPaymentLineId } from "./payment-line-utils.ts"
 
 /**
  * Inserts already-computed payment line rows. Takes the caller's own

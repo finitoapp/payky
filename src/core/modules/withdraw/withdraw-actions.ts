@@ -18,11 +18,11 @@ import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spar
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   computeAccountTransactionRows,
-  deriveSparkAccountTransactionId,
   upsertAccountTransactionRows,
 } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionExistsQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import { deriveSparkAccountTransactionId } from "@/core/modules/account-transaction/account-transaction-utils.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { paymentIdsByLnInvoiceQuery } from "@/core/modules/payment/payment-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"

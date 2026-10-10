@@ -1,12 +1,10 @@
 import { createIdFromString } from "@evolu/common"
-import { format } from "date-fns"
 
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentNumberRow } from "@/core/modules/payment-number/payment-number.ts"
 import type { PaymentNumberSeriesRow } from "@/core/modules/payment-number-series/payment-number-series.ts"
 import {
   type DateString,
-  DateStringSchema,
   NonNegativeInteger,
   type NonNegativeInteger as NonNegativeIntegerType,
 } from "@/core/modules/shared/schema.ts"
@@ -28,9 +26,6 @@ const getNumberingPeriod = (
   if (series.monthFormat !== "hidden") return date.slice(0, 7)
   return date.slice(0, 4)
 }
-
-export const createPaymentNumberDate = (date: Date): DateString =>
-  DateStringSchema.decode(format(date, "yyyy-MM-dd"))
 
 export const createNextPaymentNumberValues = ({
   id,

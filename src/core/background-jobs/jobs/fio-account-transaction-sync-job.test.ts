@@ -14,6 +14,10 @@ import {
 import type { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
 import { createPayment } from "@/core/modules/payment/payment-actions.ts"
 import {
+  dateStringToDate,
+  dateToDateString,
+} from "@/core/modules/shared/date-string-utils.ts"
+import {
   DateStringSchema,
   IbanSchema,
   Integer,
@@ -28,8 +32,6 @@ import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   createFioAccountTransactionSyncJob,
-  dateStringToDate,
-  dateToDateString,
   getFioRetryBackoffMs,
 } from "./fio-account-transaction-sync-job.ts"
 

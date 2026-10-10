@@ -1,5 +1,5 @@
 import { ok, type Run } from "@evolu/common"
-import { format, parseISO, subDays, subMonths } from "date-fns"
+import { format, subDays, subMonths } from "date-fns"
 
 import type {
   BackgroundJob,
@@ -7,7 +7,6 @@ import type {
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { reconcileAccountSyncSessions } from "@/core/background-jobs/reconcile-account-sync-sessions.ts"
-import type { DateDep, FetchDep } from "@/core/deps.ts"
 import {
   createFioApiDep,
   type FioApiDep,
@@ -33,6 +32,10 @@ import {
   upsertReconciliationClaimRows,
 } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import {
+  dateStringToDate,
+  dateToDateString,
+} from "@/core/modules/shared/date-string-utils.ts"
+import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
@@ -45,7 +48,7 @@ import {
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 
-type Context = BackgroundJobContext & FetchDep & DateDep
+type Context = BackgroundJobContext
 
 const FIO_FIRST_SYNC_LOOKBACK_MONTHS = 2
 const FIO_MAX_RETRY_BACKOFF_MS = 15 * 60 * 1000
@@ -548,17 +551,6 @@ const getFioFirstSyncDate = (now: Date): DateString => {
     format(subMonths(now, FIO_FIRST_SYNC_LOOKBACK_MONTHS), "yyyy-MM-dd")
   )
 }
-
-/**
- * Inverses, and they have to stay that way: `getSyncPeriod` round-trips a
- * stored pointer through both to walk the window back. Both work on the local
- * clock — `format` always did, and parsing as UTC used to shift the date a day
- * in negative offsets, landing `from` a day early.
- */
-export const dateToDateString = (date: Date): DateString =>
-  DateStringSchema.decode(format(date, "yyyy-MM-dd"))
-
-export const dateStringToDate = (date: DateString): Date => parseISO(date)
 
 const getUniqueBankReferences = (
   transactions: ReadonlyArray<FioTransaction>

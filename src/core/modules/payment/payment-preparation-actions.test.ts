@@ -18,6 +18,7 @@ import {
 import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import { createPayment } from "./payment-actions.ts"
 import {
@@ -693,8 +694,7 @@ describe("payment preparation actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       // Spark and Yadio are wired up but never reached: every case below
       // fails its account check first.
       fetch: async () =>
@@ -823,8 +823,7 @@ describe("payment preparation actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       // `preparePaymentMethod` declares these even for a bank-only call.
       fetch: async () => new Response("{}"),
       sparkWallet: { create: async () => createFakeSparkWallet({}) },

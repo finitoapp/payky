@@ -36,6 +36,7 @@ import {
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   claimManualReconciliation,
   reconcileAccountTransaction,
@@ -149,8 +150,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -207,8 +207,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -279,8 +278,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -339,8 +337,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -399,8 +396,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -454,8 +450,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -483,8 +478,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -510,8 +504,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -590,8 +583,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -666,8 +658,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -737,8 +728,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -826,8 +816,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -893,8 +882,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -988,8 +976,7 @@ describe("reconciliation claim actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)

@@ -21,6 +21,7 @@ import {
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   createAccountTransaction,
   deleteAccountTransaction,
@@ -30,8 +31,7 @@ import type { AccountTransactionId } from "./account-transaction-types.ts"
 
 const createDeps = (evolu: EvoluDep["evolu"]) =>
   ({
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     ...createTestDateDep(),
   }) satisfies EvoluDep & EvoluOwnerIdDep & DateDep
 

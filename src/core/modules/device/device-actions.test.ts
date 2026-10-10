@@ -14,6 +14,7 @@ import {
 } from "@/core/modules/device/device-queries.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 
 const deviceId: DeviceId = createIdFromString("test-device")
 
@@ -30,7 +31,7 @@ describe("device rows", () => {
   test("registering again keeps the name and permissions the owner set", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.ok(register("Random Otter"))
     await run.ok(
@@ -54,7 +55,7 @@ describe("device rows", () => {
   test("removing a device clears its permissions, so it comes back with none", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     await run.ok(register("Till"))
     await run.ok(
       setDeviceDefaultPermissions({

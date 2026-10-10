@@ -30,6 +30,7 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createTestLocalStorage } from "@/test/local-storage.ts"
 import { createEvoluTest } from "../evolu/cli-client"
 
@@ -63,7 +64,7 @@ const createDeps = async (): Promise<{
   const { evolu } = testEvolu
 
   return {
-    deps: { evolu, evoluOwnerId: evolu.appOwner.id },
+    deps: evoluTestDeps(evolu),
     dispose: () => testEvolu[Symbol.asyncDispose](),
   }
 }

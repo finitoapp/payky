@@ -33,6 +33,7 @@ import {
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 
 const accountId: DeviceAccountId = createIdFromString("test-account")
 const deviceId: DeviceId = createIdFromString("test-device")
@@ -45,8 +46,7 @@ const setUp = async () => {
   const { deviceEvolu } = disposer.use(await createTestDeviceEvolu())
   const masterKey = createMasterKey()
   const deps = {
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     deviceEvolu,
     masterKey,
     lockManager: createInProcessLockManager(),
@@ -111,8 +111,7 @@ describe("enableAccessControl", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     })
 
     await expect(

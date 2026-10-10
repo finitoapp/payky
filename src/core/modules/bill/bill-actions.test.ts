@@ -29,6 +29,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   addCatalogItemToBill,
@@ -132,8 +133,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -196,8 +196,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -236,8 +235,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -271,8 +269,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -332,8 +329,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -443,8 +439,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -466,8 +461,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -508,8 +502,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -608,8 +601,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -636,8 +628,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -693,8 +684,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -761,8 +751,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -808,8 +797,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -846,8 +834,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -898,8 +885,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -925,8 +911,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -984,8 +969,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1033,8 +1017,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1086,8 +1069,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1146,8 +1128,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1187,8 +1168,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1266,8 +1246,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1313,8 +1292,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1339,8 +1317,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1384,8 +1361,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1429,8 +1405,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1462,8 +1437,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1494,8 +1468,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1526,8 +1499,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1582,8 +1554,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1648,8 +1619,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1710,8 +1680,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1766,8 +1735,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1817,8 +1785,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)
@@ -1838,8 +1805,7 @@ describe("bill actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
     await using run = testCreateRun(deps)

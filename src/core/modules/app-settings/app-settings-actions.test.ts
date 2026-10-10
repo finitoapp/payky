@@ -1,7 +1,6 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import {
   cashRegisterAccountQuery,
@@ -9,10 +8,10 @@ import {
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   completeOnboarding,
   finishOnboarding,
@@ -25,17 +24,11 @@ import {
   defaultPaymentMethodOrder,
 } from "./app-settings-utils.ts"
 
-const createDeps = (evolu: EvoluDep["evolu"]) =>
-  ({
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
-  }) satisfies EvoluDep & EvoluOwnerIdDep
-
 describe("tip settings actions", () => {
   test("persists each tip setting through Evolu", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.orThrow(
       completeOnboarding({
@@ -81,7 +74,7 @@ describe("setEnabledHomeModes", () => {
   test("onboarding leaves the home modes unset, which means all of them", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.orThrow(onboard)
 
@@ -93,7 +86,7 @@ describe("setEnabledHomeModes", () => {
   test("saves the enabled modes in their fixed order", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.orThrow(onboard)
     await run.orThrow(setEnabledHomeModes(["pos", "numpad", "pos"]))
@@ -108,7 +101,7 @@ describe("setEnabledHomeModes", () => {
   test("refuses to disable every mode and keeps the stored set", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.orThrow(onboard)
     await run.orThrow(setEnabledHomeModes(["pos"]))
@@ -139,8 +132,7 @@ describe("finishOnboarding", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
     })
 
@@ -155,8 +147,7 @@ describe("finishOnboarding", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
     })
     await run.orThrow(

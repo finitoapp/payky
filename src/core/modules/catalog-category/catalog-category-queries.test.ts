@@ -7,6 +7,7 @@ import {
 } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import { createCatalogCategoryAtEnd } from "./catalog-category-actions.ts"
 
@@ -15,8 +16,7 @@ describe("catalogCategoriesPageQuery", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -46,8 +46,7 @@ describe("catalogCategoriesPageQuery", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -89,8 +88,7 @@ describe("catalogCategoriesExistQuery", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 

@@ -5,6 +5,7 @@ import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import type { ItemRow } from "./item.ts"
 import { createOrReuseItemSnapshot } from "./item-actions.ts"
@@ -32,8 +33,7 @@ describe("item actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -58,8 +58,7 @@ describe("item actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -76,8 +75,7 @@ describe("item actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 

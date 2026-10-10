@@ -1,15 +1,14 @@
 import { createIdFromString, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { updatePaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   DateStringSchema,
   NonNegativeInteger,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   createNextPaymentNumber,
   updatePaymentLastNumber,
@@ -20,12 +19,6 @@ import {
 } from "./payment-number-queries.ts"
 import { paymentLastNumberId } from "./payment-number-utils.ts"
 
-const createDeps = (evolu: EvoluDep["evolu"]) =>
-  ({
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
-  }) satisfies EvoluDep & EvoluOwnerIdDep
-
 const dateString = DateStringSchema.decode
 const paymentId = (value: string) => createIdFromString<"Payment">(value)
 
@@ -33,7 +26,7 @@ describe("payment number actions", () => {
   test("starts with serial number 1 when no previous number exists", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     const row = await run.ok(
@@ -67,7 +60,7 @@ describe("payment number actions", () => {
   test("increments serial number within the same day", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -92,7 +85,7 @@ describe("payment number actions", () => {
   test("resets serial number on a new day when day format is visible", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -126,7 +119,7 @@ describe("payment number actions", () => {
   test("increments across days within the same month when day format is hidden and month format is visible", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -160,7 +153,7 @@ describe("payment number actions", () => {
   test("resets serial number on a new month when month format is visible", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -194,7 +187,7 @@ describe("payment number actions", () => {
   test("increments across months within the same year when day and month formats are hidden", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -228,7 +221,7 @@ describe("payment number actions", () => {
   test("resets serial number on a new year when day and month formats are hidden", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -262,7 +255,7 @@ describe("payment number actions", () => {
   test("uses last generated state instead of newest historical payment number", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -302,7 +295,7 @@ describe("payment number actions", () => {
   test("uses manually adjusted last number as the next serial source", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(

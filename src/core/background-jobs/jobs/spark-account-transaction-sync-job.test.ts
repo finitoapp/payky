@@ -2,7 +2,6 @@ import {
   SparkWalletEvent,
   type SparkWalletEvents,
 } from "@buildonspark/spark-sdk"
-import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import {
   createIdFromString,
   testCreateConsole,
@@ -10,7 +9,6 @@ import {
 } from "@evolu/common"
 import { subHours } from "date-fns"
 import { describe, expect, test, vi } from "vitest"
-
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import type { FetchDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
@@ -35,6 +33,7 @@ import {
   PositiveNumber,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import type { SparkWalletTransfer } from "@/core/spark/spark-wallet.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
 import { createSparkAccountTransactionSyncJob } from "./spark-account-transaction-sync-job.ts"
 
@@ -145,9 +144,9 @@ class FakeSparkWallet {
 
     return {
       // FakeTransfer intentionally implements only the subset of
-      // WalletTransfer that the sync job reads (see its own narrower
+      // SparkWalletTransfer that the sync job reads (see its own narrower
       // `SparkTransfer` interface).
-      transfers: transfers as unknown as WalletTransfer[],
+      transfers: transfers as unknown as SparkWalletTransfer[],
       offset: nextOffset,
     }
   }
@@ -155,7 +154,7 @@ class FakeSparkWallet {
   async getTransfer(id: string) {
     this.getTransferIds.push(id)
     return this.transfers.find((transfer) => transfer.id === id) as
-      | WalletTransfer
+      | SparkWalletTransfer
       | undefined
   }
 

@@ -50,7 +50,6 @@ export const csWithdraw = {
   "withdraw.detail.invoice": "Faktura",
   "withdraw.detail.invoiceRenewHint":
     "Lightning fakturu lze zaplatit jen jednou. Požádejte příjemce o novou.",
-  "withdraw.detail.lightningAddress": "Lightning adresa",
   "withdraw.detail.manualConfirmed":
     "Potvrzeno ručně, transakce není dohledaná.",
   "withdraw.detail.markNotSent": "Peníze neodešly",
@@ -79,7 +78,6 @@ export const csWithdraw = {
     "Čeká se na výsledek. Výběr založilo jiné zařízení; když platba neodejde, označí se jako neodeslaný nejpozději do 24 hodin.",
   "withdraw.detail.preimage": "Preimage",
   "withdraw.detail.sparkTransferId": "ID Spark převodu",
-  "withdraw.detail.status": "Stav",
   "withdraw.detail.technical": "Technické údaje",
   "withdraw.detail.title": "Výběr",
   "withdraw.detail.total": "Celkem odepsáno",
@@ -139,7 +137,6 @@ export const csWithdraw = {
     "Výběr se nepodařilo zahájit. Zkuste to znovu.",
   "withdraw.review.error.interrupted":
     "Výběr byl přerušen před dokončením. Zkuste to znovu.",
-  "withdraw.review.expiresAt": "Faktura platí do",
   "withdraw.review.expiresIn": "Faktura platí ještě",
   "withdraw.review.fee": "Odhadovaný síťový poplatek",
   "withdraw.review.invoiceDescription": "Popis faktury",

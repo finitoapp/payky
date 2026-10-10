@@ -55,12 +55,7 @@ export const enSettings = {
   "settings.appVersion": "App version:",
   "settings.appVersionCode": "Version code:",
   "settings.appearance": "APPEARANCE & LANGUAGE",
-  "settings.cashRegisterAccount.enabled.description":
-    "Cash payments can be attached to prepared payments when enabled.",
   "settings.cashRegisterAccount.enabled.label": "Enable cash register",
-  "settings.cashRegisterAccount.form.description":
-    "Cash register payments use the currently selected fiat currency.",
-  "settings.cashRegisterAccount.form.title": "Cash register",
   "settings.cardSwitchioAccount.enabled.label": "Enable card terminal",
   "settings.cardSwitchioAccount.info.contract":
     "a signed contract with a payment solution provider, for example Comgate.",
@@ -306,8 +301,6 @@ export const enSettings = {
   "settings.fiatBankAccount.currency.description":
     "Payments in this currency can use this bank account.",
   "settings.fiatBankAccount.currency.label": "Bank account currency",
-  "settings.fiatBankAccount.enabled.description":
-    "Disabled accounts stay stored but are ignored by payment flows.",
   "settings.fiatBankAccount.enabled.label": "Enable fiat bank account",
   "settings.fiatBankAccount.form.description":
     "This app currently uses one deterministic fiat bank account.",
@@ -450,8 +443,6 @@ export const enSettings = {
   "settings.items.search": "Search items...",
   "settings.items.search.clear.aria": "Clear search",
   "settings.items.title": "Items",
-  "settings.language.czech.title": "Czech",
-  "settings.language.english.title": "English",
   "settings.language.locale.czech.title": "Czechia",
   "settings.language.locale.description":
     "Choose the regional format used for dates, numbers, and currencies.",
@@ -461,7 +452,6 @@ export const enSettings = {
   "settings.language.mode.description":
     "Choose which language the app should use.",
   "settings.language.mode.title": "App language",
-  "settings.language.slovak.title": "Slovak",
   "settings.language.title": "Language & Region",
   "settings.legalEntity.country.label": "Country",
   "settings.legalEntity.country.placeholder": "Select a country",
@@ -634,8 +624,6 @@ export const enSettings = {
     "Only secure WebSocket URLs starting with wss: are accepted.",
   "settings.security.transports.url.invalid": "Enter a valid wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
-  "settings.sparkAccount.enabled.description":
-    "Disabled Spark accounts stay stored but are ignored by payment flows.",
   "settings.sparkAccount.enabled.label": "Enable Spark account",
   "settings.sparkAccount.advanced": "Advanced options",
   "settings.sparkAccount.form.customDescription":

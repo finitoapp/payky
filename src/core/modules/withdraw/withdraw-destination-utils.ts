@@ -1,10 +1,6 @@
 import { err, ok, type Result } from "@evolu/common"
 import { defineError } from "@/core/error.ts"
 import {
-  normalizeBitcoinAddress,
-  parseScannedBitcoinAddress,
-} from "@/core/modules/shared/bitcoin-uri-utils.ts"
-import {
   decodeBech32Bytes,
   type LightningInvoice,
   type ParseLightningInvoiceError,
@@ -14,6 +10,10 @@ import {
   type BitcoinAddress,
   BitcoinAddressSchema,
 } from "@/core/modules/shared/schema.ts"
+import {
+  normalizeBitcoinAddress,
+  parseScannedBitcoinAddress,
+} from "@/core/modules/withdraw/bitcoin-uri-utils.ts"
 
 export type LightningInvoiceDestination = {
   readonly kind: "lightning-invoice"

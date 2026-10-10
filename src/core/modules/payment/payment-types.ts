@@ -4,3 +4,5 @@ import { standardSchemaToZod } from "@/zod-utils.ts"
 export const PaymentIdRaw = id("Payment")
 export const PaymentId = standardSchemaToZod(PaymentIdRaw)
 export type PaymentId = typeof PaymentIdRaw.Output
+
+export type PaymentStatus = "canceled" | "paid" | "expired" | "pending"

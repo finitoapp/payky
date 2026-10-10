@@ -4,6 +4,7 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import { AccountKindSchema } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createQuery } from "../src/core/evolu/schema"
 import { AccountId } from "../src/core/modules/account/account-types"
@@ -15,7 +16,6 @@ import {
 import { AccountTransactionId } from "../src/core/modules/account-transaction/account-transaction-types"
 import { DeviceId } from "../src/core/modules/device/device-types"
 import {
-  AccountKindSchema,
   ConstantSymbolSchema,
   CurrencySchema,
   IntegerFromStringSchema,

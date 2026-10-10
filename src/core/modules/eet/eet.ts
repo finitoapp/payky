@@ -1,7 +1,7 @@
 import { SqliteBoolean } from "@evolu/common"
 import type { IndexesConfig } from "@evolu/common/local-first"
 import { z } from "zod"
-
+import { AccountKindSchema } from "@/core/modules/account/account-types.ts"
 import { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -24,7 +24,6 @@ import {
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { RefundId } from "@/core/modules/refund/refund-types.ts"
 import {
-  AccountKindSchema,
   FiatCurrencySchema,
   type InferTable,
   IntegerSchema,

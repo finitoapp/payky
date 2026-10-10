@@ -4,10 +4,9 @@ import {
   type Payment as PayBySquarePayment,
   PaymentOptions,
 } from "bysquare/pay"
-
+import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { minorUnitsToFixedDecimalString } from "@/core/modules/shared/money.ts"
 import {
-  type BankQrFormat,
   type Currency,
   Integer,
   type NonEmptyString,

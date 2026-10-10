@@ -10,6 +10,7 @@ import {
 import type { RequireExactlyOne, Simplify } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
+import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { updateFioPluginAccountRow } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { fioPluginByIdQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
 import { fioPluginId } from "@/core/modules/fio-plugin/fio-plugin-utils.ts"
@@ -26,7 +27,6 @@ import {
 } from "@/core/modules/shared/key-derivation.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import type {
-  BankQrFormat,
   FiatCurrency,
   Iban,
   TimestampMs,

@@ -3,10 +3,9 @@ import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import { createBillLineSummaryId } from "@/core/modules/bill-line/bill-line-utils.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
-import type { ItemId } from "@/core/modules/item/item-types.ts"
+import type { ItemId, ItemLineType } from "@/core/modules/item/item-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type {
-  ItemLineType,
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"

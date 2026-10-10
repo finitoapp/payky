@@ -1,3 +1,7 @@
+import type {
+  BillCoverage,
+  BillStatus,
+} from "@/core/modules/bill/bill-types.ts"
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
@@ -8,10 +12,6 @@ import {
   NonNegativeInteger,
   type TimestampMs,
 } from "@/core/modules/shared/schema.ts"
-
-export type BillCoverage = "paid" | "underpaid" | "overpaid"
-
-export type BillStatus = "open" | "closed" | "canceled"
 
 /**
  * Derives a bill's display status, in precedence order (first match wins):

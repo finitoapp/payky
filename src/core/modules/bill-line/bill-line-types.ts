@@ -1,4 +1,6 @@
 import { type Brand, type Id, id } from "@evolu/common"
+import { z } from "zod"
+
 import { standardSchemaToZod } from "@/zod-utils.ts"
 
 export const BillLineIdRaw = id("BillLine")
@@ -11,3 +13,7 @@ export type BillLineId = typeof BillLineIdRaw.Output
  * `id("...")`-declared table id.
  */
 export type BillLineSummaryId = Id & Brand<"BillLineSummary">
+
+export const BillLineTagSchema = z.enum(["add", "remove"])
+
+export type BillLineTag = z.output<typeof BillLineTagSchema>

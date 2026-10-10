@@ -1,14 +1,15 @@
 import type { IndexesConfig } from "@evolu/common/local-first"
 
 import { BillId } from "@/core/modules/bill/bill-types.ts"
-import { BillLineId } from "@/core/modules/bill-line/bill-line-types.ts"
+import {
+  BillLineId,
+  BillLineTagSchema,
+} from "@/core/modules/bill-line/bill-line-types.ts"
 import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
-import { ItemId } from "@/core/modules/item/item-types.ts"
+import { ItemId, ItemLineTypeSchema } from "@/core/modules/item/item-types.ts"
 import {
-  BillLineTagSchema,
   type InferTable,
-  ItemLineTypeSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
 } from "@/core/modules/shared/schema.ts"

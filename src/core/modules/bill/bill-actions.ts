@@ -32,6 +32,7 @@ import {
 import { catalogItemByIdQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
 import type { ItemRow, item } from "@/core/modules/item/item.ts"
 import { upsertItemSnapshot } from "@/core/modules/item/item-actions.ts"
+import type { ItemLineType } from "@/core/modules/item/item-types.ts"
 import {
   createCatalogItemSnapshot,
   createStandaloneItemSnapshot,
@@ -43,7 +44,6 @@ import {
 } from "@/core/modules/shared/evolu-utils.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
-  type ItemLineType,
   NonNegativeInteger,
   PositiveInteger,
   PositiveNumber,

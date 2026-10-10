@@ -4,11 +4,11 @@ import { z } from "zod"
 import { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   AccountTransactionId,
+  AccountTransactionKindSchema,
   AccountTransactionSourceId,
 } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
-  AccountTransactionKindSchema,
   BitcoinAddressSchema,
   ConstantSymbolSchema,
   CurrencySchema,

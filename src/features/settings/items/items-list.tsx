@@ -3,10 +3,8 @@ import { useCallback, useMemo } from "react"
 
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import { catalogItemsPageQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import {
-  type CategoryFilter,
-  getStaffDisplayName,
-} from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import { Integer } from "@/core/modules/shared/schema.ts"
 import { SettingsEntityList } from "@/features/settings/settings-entity-list.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"

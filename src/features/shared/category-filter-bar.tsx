@@ -2,7 +2,7 @@ import { useMemo } from "react"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
-import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import { cn } from "@/lib/utils.ts"
 
 export function CategoryFilterBar({

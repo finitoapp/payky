@@ -1,11 +1,9 @@
 import { AlertTriangleIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge.tsx"
+import type { AccountTransactionKind } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
-import {
-  type AccountTransactionKind,
-  NonNegativeInteger,
-} from "@/core/modules/shared/schema.ts"
+import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
   paymentMethodIcon,
   paymentMethodLabelKey,

@@ -19,6 +19,7 @@ import type {
   EetSigningCertificate,
   EetSubmission,
 } from "@/core/integrations/eet/eet-client.ts"
+import type { AccountKind } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
@@ -73,7 +74,6 @@ import {
 } from "@/core/modules/shared/evolu-utils.ts"
 import { minorUnitsToFixedDecimalString } from "@/core/modules/shared/money.ts"
 import {
-  type AccountKind,
   type FiatCurrency,
   Integer,
   NonEmptyString255,

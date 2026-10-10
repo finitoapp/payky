@@ -14,8 +14,8 @@ import {
   derivePaymentHasCancellationCollision,
   derivePaymentHasExcessSettlement,
   derivePaymentStatus,
-  type PaymentStatus,
 } from "@/core/modules/payment/payment-status-utils.ts"
+import type { PaymentStatus } from "@/core/modules/payment/payment-types.ts"
 import { refundSummariesQuery } from "@/core/modules/refund/refund-queries.ts"
 import { summarizeRefundsByPayment } from "@/core/modules/refund/refund-utils.ts"
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"

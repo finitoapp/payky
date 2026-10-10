@@ -29,8 +29,10 @@ import {
 } from "@/core/modules/payment/payment-errors.ts"
 import { loadPaymentStatus } from "@/core/modules/payment/payment-guards.ts"
 import { paymentDetailQuery } from "@/core/modules/payment/payment-queries.ts"
-import type { PaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
-import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type {
+  PaymentId,
+  PaymentStatus,
+} from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import { activeClaimedTransactionsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import {

@@ -13,3 +13,7 @@ export type BillId = typeof BillIdRaw.Output
  * `ensureBillExists`).
  */
 export const createRandomBillId = (): BillId => createRowId<"Bill">()
+
+export type BillCoverage = "paid" | "underpaid" | "overpaid"
+
+export type BillStatus = "open" | "closed" | "canceled"

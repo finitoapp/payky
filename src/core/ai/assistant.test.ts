@@ -7,6 +7,7 @@ import {
   NonEmptyString255,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../evolu/cli-client"
 import { askAssistant, createDataTools, recentMessages } from "./assistant.ts"
 
@@ -60,8 +61,7 @@ describe("askAssistant", () => {
       ],
     })
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       console: createConsole(),
       aiModel,
     })
@@ -96,8 +96,7 @@ describe("askAssistant", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       console: createConsole(),
       aiModel: new MockLanguageModelV4({
         doStream: () => Promise.reject(new Error("connection refused")),
@@ -122,8 +121,7 @@ describe("askAssistant", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       console: createConsole(),
       aiModel: new MockLanguageModelV4({
         doStream: {

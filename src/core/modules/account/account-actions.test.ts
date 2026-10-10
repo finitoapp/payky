@@ -15,6 +15,7 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import { saveFioPlugin } from "../fio-plugin/fio-plugin-actions.ts"
 import { fioPluginByIdQuery } from "../fio-plugin/fio-plugin-queries.ts"
@@ -109,8 +110,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -232,8 +232,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -285,8 +284,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -334,8 +332,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const firstIban = IbanSchema.decode("CZ6508000000192000145399")
@@ -416,8 +413,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const iban = IbanSchema.decode("CZ6508000000192000145399")
@@ -453,8 +449,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -499,8 +494,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       masterKey,
     })
 
@@ -523,8 +517,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       masterKey,
     })
 
@@ -552,8 +545,7 @@ describe("account actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -621,8 +613,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       masterKey,
       ...createTestDateDep(),
     })

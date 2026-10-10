@@ -24,6 +24,7 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { markWithdrawalFailed } from "./withdraw-actions.ts"
 import {
   toWithdrawalView,
@@ -35,8 +36,7 @@ const setUp = async () => {
   const testEvolu = await createEvoluTest()
   const { evolu } = testEvolu
   const deps = {
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     ...createTestDateDep(),
   }
   await using run = testCreateRun(deps)

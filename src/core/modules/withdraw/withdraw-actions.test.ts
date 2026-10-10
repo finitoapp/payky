@@ -23,6 +23,7 @@ import type {
 } from "@/core/spark/spark-wallet.ts"
 import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   confirmOnchainWithdrawalSent,
   executeWithdrawal,
@@ -56,8 +57,7 @@ const setUp = async (wallet: Partial<SparkPaymentWallet>) => {
   const testEvolu = await createEvoluTest()
   const { evolu } = testEvolu
   const deps = {
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     lockManager: createInProcessLockManager(),
     fetch: async (): Promise<Response> => {
       throw new Error("unexpected fetch")

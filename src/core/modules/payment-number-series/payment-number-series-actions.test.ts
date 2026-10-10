@@ -1,13 +1,12 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   loadPaymentNumberSeries,
   updatePaymentNumberSeries,
@@ -15,17 +14,11 @@ import {
 import { paymentNumberSeriesQuery } from "./payment-number-series-queries.ts"
 import { paymentNumberSeriesId } from "./payment-number-series-utils.ts"
 
-const createDeps = (evolu: EvoluDep["evolu"]) =>
-  ({
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
-  }) satisfies EvoluDep & EvoluOwnerIdDep
-
 describe("payment number series actions", () => {
   test("returns the default series without storing it", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     const series = await run.ok(loadPaymentNumberSeries())
@@ -51,7 +44,7 @@ describe("payment number series actions", () => {
   test("returns the existing deterministic series without overwriting it", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     await run.ok(
@@ -79,7 +72,7 @@ describe("payment number series actions", () => {
   test("updates the deterministic series and preserves omitted values", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    const deps = createDeps(evolu)
+    const deps = evoluTestDeps(evolu)
     await using run = testCreateRun(deps)
 
     const firstUpdateId = await run.ok(

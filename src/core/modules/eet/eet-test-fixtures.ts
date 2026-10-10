@@ -57,6 +57,7 @@ import {
   createTestCertificate,
   type TestCertificate,
 } from "@/test/eet-test-certificates.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 
 export const eetTestEic = "CZ1234567890" as EetEic
 
@@ -123,8 +124,7 @@ export const createEetTestContext = async ({
   const clock = createTestDateDep(now)
   const responder = await createFakeEetResponder({ now: clock.date.now })
   const baseDeps = {
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     date: clock.date,
     fetch: responder.fetch,
     lockManager: createInProcessLockManager(),

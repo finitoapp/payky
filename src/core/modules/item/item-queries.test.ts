@@ -21,6 +21,7 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { insertPaymentLineRows } from "@/core/modules/payment-line/payment-line-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 
 const snapshot = (name: string, unitAmount: number): ItemRow =>
@@ -53,8 +54,7 @@ describe("scoped item queries", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -82,8 +82,7 @@ describe("scoped item queries", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -107,8 +106,7 @@ describe("scoped item queries", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -153,8 +151,7 @@ describe("scoped item queries", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 

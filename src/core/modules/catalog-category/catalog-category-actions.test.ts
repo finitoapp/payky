@@ -10,6 +10,7 @@ import {
   NonEmptyString255,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createCatalogCategory,
@@ -23,8 +24,7 @@ describe("catalog category actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -73,8 +73,7 @@ describe("catalog category actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 
@@ -103,8 +102,7 @@ describe("catalog category actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
 

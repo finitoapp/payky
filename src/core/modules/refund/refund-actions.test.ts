@@ -32,6 +32,7 @@ import {
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { refundPayment, refundPaymentTip } from "./refund-actions.ts"
 import {
   refundablePaymentLinesQuery,
@@ -63,8 +64,7 @@ const createRefundContext = async () => {
   const { evolu } = testEvolu
   const clock = createTestDateDep()
   const deps = {
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     ...clock,
   } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
   const accounts = await createPaymentAccounts(deps)

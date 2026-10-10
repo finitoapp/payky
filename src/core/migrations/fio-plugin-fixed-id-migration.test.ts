@@ -24,6 +24,7 @@ import {
   NonEmptyString255,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   fioPluginFixedIdMigration,
   hasLegacyFioPluginQuery,
@@ -117,8 +118,7 @@ describe("fioPluginFixedIdMigration", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     const legacy = await seedLegacyFioPlugin(evolu)
@@ -193,8 +193,7 @@ describe("fioPluginFixedIdMigration", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     const deps = {
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
     } satisfies EvoluDep & EvoluOwnerIdDep
     await using run = testCreateRun(deps)
     await seedLegacyFioPlugin(evolu)

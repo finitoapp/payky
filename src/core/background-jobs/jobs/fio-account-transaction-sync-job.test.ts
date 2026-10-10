@@ -25,6 +25,7 @@ import {
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   createFioAccountTransactionSyncJob,
   dateStringToDate,
@@ -131,8 +132,7 @@ describe("fio account transaction sync job", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     })
     const errors: unknown[] = []
@@ -181,8 +181,7 @@ describe("fio account transaction sync job", () => {
     const upsertSpy = vi.spyOn(evolu, "upsert")
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)
@@ -246,8 +245,7 @@ describe("fio account transaction sync job", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     })
     const errors: unknown[] = []
@@ -318,8 +316,7 @@ describe("fio account transaction sync job", () => {
     )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)
@@ -362,7 +359,7 @@ describe("fio account transaction sync job", () => {
   test("uses local sync pointer and configured lookback for the next period", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     const errors: unknown[] = []
     const requestedUrls: string[] = []
     const accountId = await run.ok(
@@ -399,8 +396,7 @@ describe("fio account transaction sync job", () => {
     )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)
@@ -439,7 +435,7 @@ describe("fio account transaction sync job", () => {
   test("does not advance the sync pointer when a transaction lock is held", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     const errors: unknown[] = []
     const console = testCreateConsole()
     const accountId = await run.ok(
@@ -489,8 +485,7 @@ describe("fio account transaction sync job", () => {
     try {
       await using jobRun = testCreateRun({
         console,
-        evolu,
-        evoluOwnerId: evolu.appOwner.id,
+        ...evoluTestDeps(evolu),
         lockManager,
         onError: (error: unknown) => {
           errors.push(error)
@@ -524,7 +519,7 @@ describe("fio account transaction sync job", () => {
   test("logs FIO rate limiting without reporting a job error", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     const errors: unknown[] = []
     const console = testCreateConsole()
     const accountId = await run.ok(
@@ -552,8 +547,7 @@ describe("fio account transaction sync job", () => {
     )
     await using jobRun = testCreateRun({
       console,
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)
@@ -586,7 +580,7 @@ describe("fio account transaction sync job", () => {
   test("rotates FIO tokens between sync cycles", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     const errors: unknown[] = []
     const requestedUrls: string[] = []
     const accountId = await run.ok(
@@ -620,8 +614,7 @@ describe("fio account transaction sync job", () => {
     )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)
@@ -650,7 +643,7 @@ describe("fio account transaction sync job", () => {
   test("switches to a replacement token set without restarting the job", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     const errors: unknown[] = []
     const requestedUrls: string[] = []
     const accountId = await run.ok(
@@ -678,8 +671,7 @@ describe("fio account transaction sync job", () => {
     )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)
@@ -734,7 +726,7 @@ describe("fio account transaction sync job", () => {
   test("skips statements for a different IBAN", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+    await using run = testCreateRun(evoluTestDeps(evolu))
     const errors: unknown[] = []
     const accountId = await run.ok(
       createAccount({
@@ -761,8 +753,7 @@ describe("fio account transaction sync job", () => {
     )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       lockManager: createInProcessLockManager(),
       onError: (error: unknown) => {
         errors.push(error)

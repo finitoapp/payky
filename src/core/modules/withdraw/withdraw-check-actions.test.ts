@@ -23,6 +23,7 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { checkPendingWithdrawals } from "./withdraw-check-actions.ts"
 import type { WithdrawalId } from "./withdraw-types.ts"
 import type { PendingWithdrawalTransfer } from "./withdraw-utils.ts"
@@ -47,7 +48,7 @@ const failuresQuery = createQuery((db) =>
 const setUp = async () => {
   const testEvolu = await createEvoluTest()
   const { evolu } = testEvolu
-  await using run = testCreateRun({ evolu, evoluOwnerId: evolu.appOwner.id })
+  await using run = testCreateRun(evoluTestDeps(evolu))
   const accountId = await run.ok(
     createAccount({
       deviceId: null,
@@ -139,8 +140,7 @@ const check = async ({
 }) => {
   const requested: string[] = []
   await using run = testCreateRun({
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
+    ...evoluTestDeps(evolu),
     lockManager,
     ...createTestDateDep(new Date(at)),
   })
@@ -359,8 +359,7 @@ describe("checkPendingWithdrawals", () => {
       failedAt: TimestampMs(1),
     })
     await using run = testCreateRun({
-      evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      ...evoluTestDeps(evolu),
       ...createTestDateDep(),
     })
     await run.ok(

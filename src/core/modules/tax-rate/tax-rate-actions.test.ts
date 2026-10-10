@@ -1,10 +1,9 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createDateDep } from "@/core/deps.ts"
 import { createEvoluTest } from "@/core/evolu/cli-client.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   activateTaxRate,
   archiveTaxRate,
@@ -16,17 +15,11 @@ import {
 import { activeTaxRatesQuery, taxRatesQuery } from "./tax-rate-queries.ts"
 import { TaxRatePercentage } from "./tax-rate-types.ts"
 
-const createDeps = (evolu: EvoluDep["evolu"]) =>
-  ({
-    evolu,
-    evoluOwnerId: evolu.appOwner.id,
-  }) satisfies EvoluDep & EvoluOwnerIdDep
-
 describe("tax rate actions", () => {
   test("creates tax rates with an increasing sortOrder and only one default", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     const standardId = await run.ok(
       createTaxRate({
@@ -55,7 +48,7 @@ describe("tax rate actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      ...createDeps(evolu),
+      ...evoluTestDeps(evolu),
       ...createDateDep(),
     })
 
@@ -92,7 +85,7 @@ describe("tax rate actions", () => {
   test("renaming a tax rate never touches its rate", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     const id = await run.ok(
       createTaxRate({
@@ -114,7 +107,7 @@ describe("tax rate actions", () => {
   test("setDefaultTaxRate keeps exactly one default", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     const firstId = await run.ok(
       createTaxRate({
@@ -144,7 +137,7 @@ describe("tax rate actions", () => {
   test("setDefaultTaxRate(null) clears the default so none is default", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     const id = await run.ok(
       createTaxRate({
@@ -165,7 +158,7 @@ describe("tax rate actions", () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
-      ...createDeps(evolu),
+      ...evoluTestDeps(evolu),
       ...createDateDep(),
     })
 
@@ -194,7 +187,7 @@ describe("tax rate actions", () => {
   test("seeds the Czech preset rates", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.ok(seedTaxRatesForCountry("CZ"))
 
@@ -210,7 +203,7 @@ describe("tax rate actions", () => {
   test("seeding an unknown country creates no rates", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
-    await using run = testCreateRun(createDeps(evolu))
+    await using run = testCreateRun(evoluTestDeps(evolu))
 
     await run.ok(seedTaxRatesForCountry(null))
 

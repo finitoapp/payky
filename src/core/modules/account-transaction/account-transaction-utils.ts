@@ -2,8 +2,10 @@ import { createIdFromString } from "@evolu/common"
 
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
-import type { PaymentAccountKind } from "@/core/modules/payment/payment-errors.ts"
-import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type {
+  PaymentAccountKind,
+  PaymentId,
+} from "@/core/modules/payment/payment-types.ts"
 import type { RefundId } from "@/core/modules/refund/refund-types.ts"
 import type { NonEmptyString } from "@/core/modules/shared/schema.ts"
 

@@ -17,14 +17,7 @@ import type {
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import type { SwitchioPaymentError } from "@/core/native/switchio.ts"
-import type { PaymentId } from "./payment-types.ts"
-
-/**
- * The account kinds a payment can be settled against and whose currency must
- * therefore match the payment's own. Spark is absent on purpose: a BTC
- * wallet has no fiat currency to compare.
- */
-export type PaymentAccountKind = "cashRegister" | "iban" | "cardSwitchio"
+import type { PaymentAccountKind, PaymentId } from "./payment-types.ts"
 
 export type CreatePaymentError = BillNotFoundError | BillStatusNotAllowedError
 

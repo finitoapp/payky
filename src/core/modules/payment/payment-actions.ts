@@ -37,6 +37,7 @@ import type {
 } from "@/core/modules/payment/payment.ts"
 import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
+import type { PaymentAccountKind } from "@/core/modules/payment/payment-types.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
   loadNextPaymentNumber,
@@ -97,7 +98,6 @@ import {
   createSwitchioRestoredResultUnmatchedError,
   type MarkPaymentPaidCashError,
   type MarkPaymentPaidIbanError,
-  type PaymentAccountKind,
   type PaymentAlreadyPaidError,
   type PaymentNotCanceledError,
   type PaymentNotClaimedError,

@@ -21,6 +21,7 @@ import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { countryLabelKey } from "@/i18n/settings-labels.ts"
 
 /**
  * The settings page's own choice, distinct from the persisted
@@ -80,7 +81,7 @@ export function LegalEntitySettingsPage() {
               options={countryOptions.map((option) => ({
                 value: option,
                 label: t(
-                  `country.${option.toLowerCase() as "cz" | "sk" | "other"}`
+                  countryLabelKey(option === OTHER_COUNTRY ? null : option)
                 ),
               }))}
               onSave={(country) => save({ country, vatPayer })}

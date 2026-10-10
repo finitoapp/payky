@@ -142,18 +142,16 @@ export type DeviceSettingsRow = InferTable<
   (typeof deviceEvoluSchema)["deviceSettings"]
 >
 
+const deviceLocaleByLanguage = {
+  en: "en-US",
+  cs: "cs-CZ",
+  sk: "sk-SK",
+} satisfies Record<DeviceLanguage, DeviceLocale>
+
 export function getDeviceLocaleForLanguage(
   language: DeviceLanguage
 ): DeviceLocale {
-  if (language === "cs") {
-    return "cs-CZ"
-  }
-
-  if (language === "sk") {
-    return "sk-SK"
-  }
-
-  return "en-US"
+  return deviceLocaleByLanguage[language]
 }
 
 export function createDefaultDeviceSettings(

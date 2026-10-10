@@ -45,13 +45,9 @@ const activeAccountRowAtom = atom(async (get) => {
 
 export const accountAtom = atom(async (get) => {
   const deviceEvolu = await get(deviceEvoluAtom)
+  // Never empty: `activeAccountRowAtom` inserts an account when none is
+  // active, so there is no "no account" state to handle here.
   const row = await get(activeAccountRowAtom)
-
-  if (row === null) {
-    throw new Error(
-      "No active account found in device Evolu. Complete onboarding first."
-    )
-  }
 
   // The device id lives in the device database (access/0004); a new one is
   // a new device, which starts with no permissions.

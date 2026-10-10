@@ -61,16 +61,16 @@ import {
 import { currencyNumericCodes } from "@/core/modules/shared/money.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
+  assertHasSparkIdentifier,
+  type WithSparkDetails,
+} from "@/core/modules/shared/spark-details.ts"
+import {
   interpretSwitchioPaymentResult,
   type SwitchioCardPaymentResult,
   type SwitchioNativePayResult,
   type SwitchioPaymentError,
   type SwitchioTerminalDep,
 } from "@/core/native/switchio.ts"
-import {
-  assertHasSparkIdentifier,
-  type WithSparkDetails,
-} from "@/core/spark/spark-details.ts"
 import {
   type FiatCurrency,
   type NonEmptyString,

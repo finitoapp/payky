@@ -6,6 +6,7 @@ import type {
 import type {
   ExitSpeed,
   SparkCoopExitRequestStatus,
+  WalletTransfer,
 } from "@buildonspark/spark-sdk/types"
 import {
   type SparkSecret,
@@ -248,6 +249,13 @@ const SUPPORTED_SYNC_EVENTS = [
 export type SharedSparkSyncWalletEventHandlers = Partial<
   Pick<SparkWalletEvents, (typeof SUPPORTED_SYNC_EVENTS)[number]>
 >
+
+/**
+ * A transfer as `SharedSparkSyncWallet.getTransfers` returns it. Named here
+ * so code outside the wrapper never imports the SDK's types itself, and an
+ * SDK upgrade that reshapes it shows up in one place.
+ */
+export type SparkWalletTransfer = WalletTransfer
 
 export interface SharedSparkSyncWallet extends AsyncDisposable {
   readonly getTransfers: (

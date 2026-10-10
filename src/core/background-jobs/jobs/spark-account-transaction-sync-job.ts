@@ -1,8 +1,6 @@
-import type { WalletTransfer } from "@buildonspark/spark-sdk/types"
 import { err, ok, type Result, type Run, type Task } from "@evolu/common"
 import { subHours } from "date-fns"
 import { z } from "zod"
-
 import type { BackgroundJobContext } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { reconcileAccountSyncSessions } from "@/core/background-jobs/reconcile-account-sync-sessions.ts"
@@ -37,6 +35,7 @@ import {
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import { checkPendingWithdrawals } from "@/core/modules/withdraw/withdraw-check-actions.ts"
+import type { SparkWalletTransfer } from "@/core/spark/spark-wallet.ts"
 import {
   createSharedSparkSyncWallet,
   type SharedSparkSyncWallet,
@@ -62,12 +61,12 @@ const OUTGOING_TRANSFER_DIRECTION = "OUTGOING"
 
 interface SparkTransfer {
   readonly id: string
-  readonly status: WalletTransfer["status"]
-  readonly type: WalletTransfer["type"]
+  readonly status: SparkWalletTransfer["status"]
+  readonly type: SparkWalletTransfer["type"]
   /** What this wallet sent, fee included; `totalValue` is deprecated. */
   readonly valueSentByWallet: number
   readonly valueReceivedByWallet: number
-  readonly transferDirection: WalletTransfer["transferDirection"]
+  readonly transferDirection: SparkWalletTransfer["transferDirection"]
   readonly updatedTime: Date | undefined
   readonly createdTime: Date | undefined
   readonly lnInvoice?: string | undefined

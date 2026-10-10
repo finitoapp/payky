@@ -20,7 +20,7 @@ import {
   type NonEmptyString255,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-import type { WithSparkDetails } from "@/core/spark/spark-details.ts"
+import type { WithSparkDetails } from "@/core/modules/shared/spark-details.ts"
 import type {
   AccountTransactionRow,
   accountTransaction,

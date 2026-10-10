@@ -22,12 +22,9 @@ export const settingsId =
 
 export const defaultPaymentMethod: DefaultPaymentMethod = "spark"
 
-export const defaultPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> = [
-  "cashRegister",
-  "spark",
-  "iban",
-  "cardSwitchio",
-]
+/** The enum's own order is the order a new account starts with. */
+export const defaultPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> =
+  DefaultPaymentMethodSchema.options
 
 /** `paymentMethodOrderJson` as stored. */
 export const PaymentMethodOrderJson = jsonCodec(

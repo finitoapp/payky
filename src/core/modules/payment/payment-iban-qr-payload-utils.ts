@@ -4,7 +4,10 @@ import {
   type Payment as PayBySquarePayment,
   PaymentOptions,
 } from "bysquare/pay"
-import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
+import {
+  type BankQrFormat,
+  BankQrFormatSchema,
+} from "@/core/modules/account/account-types.ts"
 import { minorUnitsToFixedDecimalString } from "@/core/modules/shared/money.ts"
 import {
   type Currency,
@@ -20,17 +23,12 @@ export interface BankQrPayload {
   readonly payload: NonEmptyString
 }
 
-export const bankQrFormats = [
-  "spayd",
-  "payBySquare1_0_0",
-  "payBySquare1_2_0",
-] as const satisfies ReadonlyArray<BankQrFormat>
+export const bankQrFormats: ReadonlyArray<BankQrFormat> =
+  BankQrFormatSchema.options
 
 export const isBankQrFormat = (
   value: string | undefined
-): value is BankQrFormat =>
-  value !== undefined &&
-  (bankQrFormats as ReadonlyArray<string>).includes(value)
+): value is BankQrFormat => BankQrFormatSchema.safeParse(value).success
 
 const createSpaydQrPayload = ({
   iban,

@@ -4,7 +4,7 @@ import { FadeHeader } from "@/components/fade-header.tsx"
 import {
   PaymentDetail,
   PaymentDetailSkeleton,
-} from "@/features/payment/payment-detail.tsx"
+} from "@/features/activity/payment-detail.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/activity_/$paymentId")({

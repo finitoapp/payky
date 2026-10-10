@@ -30,7 +30,7 @@ import {
 import {
   PaymentStatusIcon,
   paymentStatusLabelKey,
-} from "@/features/payment/payment-status-display.tsx"
+} from "@/features/activity/payment-status-display.tsx"
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"

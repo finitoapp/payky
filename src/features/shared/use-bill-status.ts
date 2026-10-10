@@ -7,7 +7,7 @@ import {
   deriveBillHistoryItemSummary,
 } from "@/core/modules/bill/bill-utils.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
-import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
 import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 interface BillStatusInfo {

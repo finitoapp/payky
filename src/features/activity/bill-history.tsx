@@ -26,7 +26,7 @@ import {
   formatActivityDayTitle,
   PaymentMethodIcons,
 } from "@/features/activity/activity-row.tsx"
-import { billStatusLabelKey } from "@/features/bill/bill-status-display.ts"
+import { billStatusLabelKey } from "@/features/activity/bill-status-display.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"

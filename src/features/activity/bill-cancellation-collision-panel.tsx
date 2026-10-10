@@ -1,7 +1,7 @@
 import { CollisionAlert } from "@/components/collision-alert.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import { useBillCancellationCollisionActions } from "@/features/bill/use-bill-cancellation-collision-actions.ts"
+import { useBillCancellationCollisionActions } from "@/features/shared/use-bill-cancellation-collision-actions.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**

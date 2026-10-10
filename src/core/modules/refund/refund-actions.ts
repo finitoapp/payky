@@ -3,7 +3,6 @@ import {
   err,
   type InferRow,
   ok,
-  type Result,
   sqliteFalse,
   sqliteTrue,
   type Task,
@@ -122,9 +121,8 @@ interface RefundLineValues extends RefundLineInput {
   readonly amount: NonNegativeInteger
 }
 
-const loadRefundLines = async (
-  evolu: EvoluDep["evolu"],
-  {
+const loadRefundLines =
+  ({
     paymentId,
     billId,
     lines,
@@ -132,48 +130,48 @@ const loadRefundLines = async (
     readonly paymentId: PaymentId
     readonly billId: BillId | null
     readonly lines: ReadonlyArray<RefundLineInput>
-  }
-): Promise<
-  Result<
+  }): Task<
     ReadonlyArray<RefundLineValues>,
-    RefundItemsUnavailableError | RefundLineUnavailableError
-  >
-> => {
-  const otherClaimedPayments = await evolu.loadQuery(
-    otherClaimedPaymentOfBillQuery(paymentId)
-  )
-  if (billId === null || otherClaimedPayments.length > 0) {
-    return err(createRefundItemsUnavailableError({ paymentId }))
-  }
-
-  const [paymentLines, refundedLines] = await Promise.all([
-    evolu.loadQuery(refundablePaymentLinesQuery(paymentId)),
-    evolu.loadQuery(refundLinesByPaymentIdQuery(paymentId)),
-  ])
-  const refundableLines = deriveRefundableLines(paymentLines, refundedLines)
-  const values: RefundLineValues[] = []
-  for (const { paymentLineId, quantity } of lines) {
-    const refundable = refundableLines.find(
-      ({ line }) => line.id === paymentLineId
+    RefundItemsUnavailableError | RefundLineUnavailableError,
+    EvoluDep
+  > =>
+  async (run) => {
+    const { evolu } = run.deps
+    const otherClaimedPayments = await evolu.loadQuery(
+      otherClaimedPaymentOfBillQuery(paymentId)
     )
-    const isRepeated = values.some(
-      (value) => value.paymentLineId === paymentLineId
-    )
-    if (
-      refundable === undefined ||
-      isRepeated ||
-      quantity > refundable.remainingQuantity
-    ) {
-      return err(createRefundLineUnavailableError({ paymentLineId }))
+    if (billId === null || otherClaimedPayments.length > 0) {
+      return err(createRefundItemsUnavailableError({ paymentId }))
     }
-    values.push({
-      paymentLineId,
-      quantity,
-      amount: calculateRefundLineAmount(refundable, quantity),
-    })
+
+    const [paymentLines, refundedLines] = await Promise.all([
+      evolu.loadQuery(refundablePaymentLinesQuery(paymentId)),
+      evolu.loadQuery(refundLinesByPaymentIdQuery(paymentId)),
+    ])
+    const refundableLines = deriveRefundableLines(paymentLines, refundedLines)
+    const values: RefundLineValues[] = []
+    for (const { paymentLineId, quantity } of lines) {
+      const refundable = refundableLines.find(
+        ({ line }) => line.id === paymentLineId
+      )
+      const isRepeated = values.some(
+        (value) => value.paymentLineId === paymentLineId
+      )
+      if (
+        refundable === undefined ||
+        isRepeated ||
+        quantity > refundable.remainingQuantity
+      ) {
+        return err(createRefundLineUnavailableError({ paymentLineId }))
+      }
+      values.push({
+        paymentLineId,
+        quantity,
+        amount: calculateRefundLineAmount(refundable, quantity),
+      })
+    }
+    return ok(values)
   }
-  return ok(values)
-}
 
 const loadPaidPayment =
   (
@@ -197,9 +195,8 @@ const loadPaidPayment =
     return ok(payment)
   }
 
-const prepareCashRefund = async (
-  evolu: EvoluDep["evolu"],
-  {
+const prepareCashRefund =
+  ({
     refundId,
     currency,
     amount,
@@ -213,36 +210,34 @@ const prepareCashRefund = async (
     readonly deviceId: DeviceId | null
     readonly refundedAt: TimestampMs
     readonly now: Date
-  }
-): Promise<
-  Result<
+  }): Task<
     ReturnType<typeof computeAccountTransactionRows>,
-    CashRegisterAccountNotFoundError
-  >
-> => {
-  const accountId = createCashRegisterAccountId(currency)
-  const [account] = await evolu.loadQuery(
-    cashRegisterAccountByIdQuery(accountId)
-  )
-  if (account === undefined) {
-    return err(createCashRegisterAccountNotFoundError({ id: accountId }))
-  }
-  return ok(
-    computeAccountTransactionRows(
-      {
-        id: deriveCashRefundAccountTransactionId(refundId),
-        accountId,
-        amount: Integer(-amount),
-        currency,
-        occurredAt: refundedAt,
-        note: null,
-        internalTransferGroupId: null,
-        source: { deviceId, source: "manual" },
-      },
-      now
+    CashRegisterAccountNotFoundError,
+    EvoluDep
+  > =>
+  async (run) => {
+    const accountId = createCashRegisterAccountId(currency)
+    const account = getFirstOr(
+      await run.deps.evolu.loadQuery(cashRegisterAccountByIdQuery(accountId)),
+      createCashRegisterAccountNotFoundError({ id: accountId })
     )
-  )
-}
+    if (!account.ok) return account
+    return ok(
+      computeAccountTransactionRows(
+        {
+          id: deriveCashRefundAccountTransactionId(refundId),
+          accountId,
+          amount: Integer(-amount),
+          currency,
+          occurredAt: refundedAt,
+          note: null,
+          internalTransferGroupId: null,
+          source: { deviceId, source: "manual" },
+        },
+        now
+      )
+    )
+  }
 
 export const refundPayment =
   ({
@@ -272,11 +267,13 @@ export const refundPayment =
 
     let refundLines: ReadonlyArray<RefundLineValues> = []
     if (lines !== undefined) {
-      const linesResult = await loadRefundLines(evolu, {
-        paymentId,
-        billId: payment.billId,
-        lines,
-      })
+      const linesResult = await run(
+        loadRefundLines({
+          paymentId,
+          billId: payment.billId,
+          lines,
+        })
+      )
       if (!linesResult.ok) return linesResult
       refundLines = linesResult.value
     }
@@ -311,14 +308,16 @@ export const refundPayment =
       typeof computeAccountTransactionRows
     > | null = null
     if (method === "cashRegister") {
-      const cashResult = await prepareCashRefund(evolu, {
-        refundId: id,
-        currency: payment.currency,
-        amount: refundAmount,
-        deviceId,
-        refundedAt,
-        now,
-      })
+      const cashResult = await run(
+        prepareCashRefund({
+          refundId: id,
+          currency: payment.currency,
+          amount: refundAmount,
+          deviceId,
+          refundedAt,
+          now,
+        })
+      )
       if (!cashResult.ok) return cashResult
       cashTransaction = cashResult.value
     }
@@ -401,14 +400,16 @@ export const refundPaymentTip =
       typeof computeAccountTransactionRows
     > | null = null
     if (method === "cashRegister") {
-      const cashResult = await prepareCashRefund(evolu, {
-        refundId: id,
-        currency: payment.currency,
-        amount: tipAmount,
-        deviceId,
-        refundedAt,
-        now,
-      })
+      const cashResult = await run(
+        prepareCashRefund({
+          refundId: id,
+          currency: payment.currency,
+          amount: tipAmount,
+          deviceId,
+          refundedAt,
+          now,
+        })
+      )
       if (!cashResult.ok) return cashResult
       cashTransaction = cashResult.value
     }

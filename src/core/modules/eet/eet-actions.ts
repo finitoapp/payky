@@ -73,6 +73,7 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import { minorUnitsToFixedDecimalString } from "@/core/modules/shared/money.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   type FiatCurrency,
   Integer,
@@ -622,8 +623,12 @@ export const deliverEetSale =
         if (lock === null) return err(createEetSaleBusyError({ id }))
 
         const { evolu, evoluOwnerId } = run.deps
-        const [sale] = await evolu.loadQuery(eetSaleByIdQuery(id))
-        if (sale === undefined) return err(createEetSaleNotFoundError({ id }))
+        const saleResult = getFirstOr(
+          await evolu.loadQuery(eetSaleByIdQuery(id)),
+          createEetSaleNotFoundError({ id })
+        )
+        if (!saleResult.ok) return saleResult
+        const sale = saleResult.value
         if (sale.pok !== null) {
           return err(createEetSaleAlreadyConfirmedError({ id }))
         }
@@ -631,10 +636,12 @@ export const deliverEetSale =
           return err(createEetSaleUnsupportedError({ id }))
         }
 
-        const [certificate] = await evolu.loadQuery(eetSigningCertificateQuery)
-        if (certificate === undefined) {
-          return err(createEetSigningCertificateMissingError())
-        }
+        const certificateResult = getFirstOr(
+          await evolu.loadQuery(eetSigningCertificateQuery),
+          createEetSigningCertificateMissingError()
+        )
+        if (!certificateResult.ok) return certificateResult
+        const certificate = certificateResult.value
 
         const now = run.deps.date.now()
         const attemptedAt = TimestampMs(now.getTime())
@@ -691,8 +698,12 @@ export const retryEetSale =
   > =>
   async (run) => {
     const { evolu, evoluOwnerId } = run.deps
-    const [sale] = await evolu.loadQuery(eetSaleByIdQuery(id))
-    if (sale === undefined) return err(createEetSaleNotFoundError({ id }))
+    const saleResult = getFirstOr(
+      await evolu.loadQuery(eetSaleByIdQuery(id)),
+      createEetSaleNotFoundError({ id })
+    )
+    if (!saleResult.ok) return saleResult
+    const sale = saleResult.value
 
     const settings = await loadEetSettings(evolu)
     const eic = settings?.eic ?? null
@@ -841,10 +852,12 @@ export const deliverEetReversal =
         if (lock === null) return err(createEetSaleBusyError({ id }))
 
         const { evolu, evoluOwnerId } = run.deps
-        const [reversal] = await evolu.loadQuery(eetReversalByIdQuery(id))
-        if (reversal === undefined) {
-          return err(createEetSaleNotFoundError({ id }))
-        }
+        const reversalResult = getFirstOr(
+          await evolu.loadQuery(eetReversalByIdQuery(id)),
+          createEetSaleNotFoundError({ id })
+        )
+        if (!reversalResult.ok) return reversalResult
+        const reversal = reversalResult.value
         if (reversal.pok !== null) {
           return err(createEetSaleAlreadyConfirmedError({ id }))
         }
@@ -855,10 +868,12 @@ export const deliverEetReversal =
           return err(createEetReversalWaitingForSaleError({ id }))
         }
 
-        const [certificate] = await evolu.loadQuery(eetSigningCertificateQuery)
-        if (certificate === undefined) {
-          return err(createEetSigningCertificateMissingError())
-        }
+        const certificateResult = getFirstOr(
+          await evolu.loadQuery(eetSigningCertificateQuery),
+          createEetSigningCertificateMissingError()
+        )
+        if (!certificateResult.ok) return certificateResult
+        const certificate = certificateResult.value
 
         const now = run.deps.date.now()
         const attemptedAt = TimestampMs(now.getTime())

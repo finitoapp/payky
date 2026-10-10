@@ -1,13 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Suspense } from "react"
-import { FadeHeader } from "@/components/fade-header.tsx"
-import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
-import { ActivityTabs } from "@/features/activity/activity-tabs.tsx"
-import { BillHistory } from "@/features/activity/bill-history.tsx"
-import { useTranslation } from "@/hooks/use-translation.ts"
+
+import { BillHistoryPage } from "@/features/activity/activity-pages.tsx"
 
 export const Route = createFileRoute("/_terminal/activity_/bills")({
-  component: ActivityBillsPage,
+  component: BillHistoryPage,
   staticData: {
     access: "activity",
     terminalLayout: {
@@ -15,21 +11,3 @@ export const Route = createFileRoute("/_terminal/activity_/bills")({
     },
   },
 })
-
-function ActivityBillsPage() {
-  const { t } = useTranslation()
-
-  return (
-    <>
-      <div className="h-6" />
-      <FadeHeader title={t("activity.title")} />
-
-      <section className="flex flex-col gap-8">
-        <ActivityTabs active="bills" />
-        <Suspense fallback={<ActivityHistorySkeleton />}>
-          <BillHistory />
-        </Suspense>
-      </section>
-    </>
-  )
-}

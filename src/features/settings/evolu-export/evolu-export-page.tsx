@@ -2,7 +2,7 @@ import { Capacitor } from "@capacitor/core"
 import { AlertTriangle, Database, Download, Smartphone } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-
+import { FadeHeader } from "@/components/fade-header.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -44,6 +44,20 @@ type ExportStatus =
   | { readonly kind: "error"; readonly message: string }
 
 export function EvoluExportPage() {
+  const { t } = useTranslation()
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.evoluExport.title")} />
+      <div className="mt-8">
+        <EvoluExportPanel />
+      </div>
+    </>
+  )
+}
+
+function EvoluExportPanel() {
   const { t } = useTranslation()
   const appEvolu = useEvolu()
   const [acceptedWarning, setAcceptedWarning] = useState(false)

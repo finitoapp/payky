@@ -6,6 +6,7 @@ import type { ReactNode } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { DetailRow } from "@/components/detail-row.tsx"
+import { FadeHeader } from "@/components/fade-header.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
@@ -61,11 +62,23 @@ const failureKeys = {
   "not-created": "withdraw.detail.failed.notCreated",
 } satisfies Record<FailureReason, TranslationKey>
 
-export function WithdrawDetail({
+export function WithdrawDetailPage({
   withdrawalId,
 }: {
   readonly withdrawalId: string
 }) {
+  const { t } = useTranslation()
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("withdraw.detail.title")} />
+      <WithdrawDetail withdrawalId={withdrawalId} />
+    </>
+  )
+}
+
+function WithdrawDetail({ withdrawalId }: { readonly withdrawalId: string }) {
   const parsed = WithdrawalId.safeParse(withdrawalId)
   if (!parsed.success) {
     return <NotFoundCard messageKey="withdraw.detail.notFound" />

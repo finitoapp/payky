@@ -23,7 +23,7 @@ const hourRow = (utcHour: string, gross = 100): SalesByHourRow => ({
 describe("statsPeriodRanges", () => {
   const now = new Date("2026-10-10T14:00:00+02:00") // a Saturday
 
-  test("today runs to local midnight and compares with a week earlier", () => {
+  test("today runs to local midnight and compares with a week earlier up to the same time", () => {
     expect(statsPeriodRanges({ kind: "today" }, now)).toEqual({
       range: {
         fromIso: "2026-10-09T22:00:00.000Z",
@@ -31,7 +31,7 @@ describe("statsPeriodRanges", () => {
       },
       comparison: {
         fromIso: "2026-10-02T22:00:00.000Z",
-        toIso: "2026-10-03T22:00:00.000Z",
+        toIso: "2026-10-03T12:00:00.000Z",
       },
       bucket: "hour",
     })
@@ -62,7 +62,7 @@ describe("statsPeriodRanges", () => {
     })
   })
 
-  test("month to date compares with the same span of the previous month", () => {
+  test("month to date compares with the previous month up to the same moment", () => {
     expect(statsPeriodRanges({ kind: "monthToDate" }, now)).toEqual({
       range: {
         fromIso: "2026-09-30T22:00:00.000Z",
@@ -70,7 +70,7 @@ describe("statsPeriodRanges", () => {
       },
       comparison: {
         fromIso: "2026-08-31T22:00:00.000Z",
-        toIso: "2026-09-10T22:00:00.000Z",
+        toIso: "2026-09-10T12:00:00.000Z",
       },
       bucket: "day",
     })
@@ -108,7 +108,7 @@ describe("statsPeriodRanges", () => {
     })
   })
 
-  test("today on a DST day compares with a whole normal day", () => {
+  test("today on a DST day compares up to the same wall-clock time", () => {
     expect(
       statsPeriodRanges({ kind: "today" }, new Date("2026-10-25T12:00:00Z"))
     ).toEqual({
@@ -118,7 +118,8 @@ describe("statsPeriodRanges", () => {
       },
       comparison: {
         fromIso: "2026-10-17T22:00:00.000Z",
-        toIso: "2026-10-18T22:00:00.000Z",
+        // 13:00 winter time today, 13:00 summer time a week earlier.
+        toIso: "2026-10-18T11:00:00.000Z",
       },
       bucket: "hour",
     })
@@ -179,6 +180,21 @@ describe("salesBuckets", () => {
       { date: 6, gross: 50 },
       { date: 7, gross: 0 },
     ])
+  })
+
+  test("keep a range's partial last hour", () => {
+    const { comparison } = statsPeriodRanges(
+      { kind: "today" },
+      new Date("2026-10-10T14:20:00+02:00")
+    )
+    const buckets = salesBuckets({
+      rows: [hourRow("2026-10-03T12")],
+      currency: "CZK",
+      range: comparison,
+      unit: "hour",
+    })
+    expect(buckets).toHaveLength(15)
+    expect(buckets.at(-1)).toMatchObject({ gross: 100 })
   })
 
   test("keep to the one currency asked for", () => {

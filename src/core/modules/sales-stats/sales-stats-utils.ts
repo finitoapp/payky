@@ -49,6 +49,11 @@ export interface StatsPeriodRanges {
  * *7 days* with the 7 days before, *Month* with the same day span of the
  * previous month (`subMonths`), *Custom* with the equally long span right
  * before it. Custom spans are not capped.
+ *
+ * The two "to date" presets, *Today* and *Month*, compare like for like: the
+ * comparison stops at the equivalent of `now` (a week or a month earlier),
+ * not at the end of that day, or every morning would show a steep drop
+ * against a whole finished day. The others compare whole spans.
  */
 export const statsPeriodRanges = (
   period: StatsPeriod,
@@ -64,7 +69,10 @@ export const statsPeriodRanges = (
 
   switch (period.kind) {
     case "today":
-      return weekBefore(today, tomorrow)
+      return {
+        ...weekBefore(today, tomorrow),
+        comparison: toRange(subDays(today, 7), subDays(now, 7)),
+      }
     case "yesterday":
       return weekBefore(subDays(today, 1), today)
     case "last7Days":
@@ -73,7 +81,7 @@ export const statsPeriodRanges = (
       const from = startOfMonth(now)
       return {
         range: toRange(from, tomorrow),
-        comparison: toRange(subMonths(from, 1), subMonths(tomorrow, 1)),
+        comparison: toRange(subMonths(from, 1), subMonths(now, 1)),
         bucket: "day",
       }
     }
@@ -122,7 +130,9 @@ const addTotals = (a: SalesTotals, b: SalesTotals): SalesTotals => ({
 /**
  * One currency's hourly rows as chart buckets over the whole range, empty
  * ones filled with zeros. Hours step by the clock, not the wall: a spring
- * DST day has 23 hourly buckets and an autumn one 25.
+ * DST day has 23 hourly buckets and an autumn one 25. A range ending
+ * mid-hour or mid-day (*Today*'s comparison, which stops at the same time a
+ * week earlier) keeps its last, partial bucket.
  */
 export const salesBuckets = ({
   rows,
@@ -150,7 +160,7 @@ export const salesBuckets = ({
   const starts =
     unit === "hour"
       ? Array.from(
-          { length: Math.round((to.getTime() - from.getTime()) / 3_600_000) },
+          { length: Math.ceil((to.getTime() - from.getTime()) / 3_600_000) },
           (_, index) => addHours(from, index)
         )
       : eachDayOfInterval({ start: from, end: new Date(to.getTime() - 1) })

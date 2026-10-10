@@ -20,6 +20,10 @@ import type { DateDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { BillRow } from "@/core/modules/bill/bill.ts"
+import type {
+  BillCoverage,
+  BillStatus,
+} from "@/core/modules/bill/bill-types.ts"
 import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -39,8 +43,6 @@ import {
 import { billByIdQuery } from "./bill-queries.ts"
 import type { BillId } from "./bill-types.ts"
 import {
-  type BillCoverage,
-  type BillStatus,
   type ClaimedTransaction,
   calculateClaimedSum,
   claimedPaymentIdSet,

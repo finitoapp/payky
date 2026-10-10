@@ -1,11 +1,8 @@
 import { useMemo } from "react"
 import { claimedTransactionsByBillIdQuery } from "@/core/modules/bill/bill-coverage-queries.ts"
 import { billByIdQuery } from "@/core/modules/bill/bill-queries.ts"
-import type { BillId } from "@/core/modules/bill/bill-types.ts"
-import {
-  type BillStatus,
-  deriveBillHistoryItemSummary,
-} from "@/core/modules/bill/bill-utils.ts"
+import type { BillId, BillStatus } from "@/core/modules/bill/bill-types.ts"
+import { deriveBillHistoryItemSummary } from "@/core/modules/bill/bill-utils.ts"
 import { deriveBillSummaryTotal } from "@/core/modules/bill-line/bill-line-utils.ts"
 import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
 import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"

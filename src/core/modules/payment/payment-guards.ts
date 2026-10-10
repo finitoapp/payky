@@ -9,6 +9,7 @@ import { err, ok, type Result, type Task } from "@evolu/common"
 
 import type { DateDep } from "@/core/deps.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import type { PaymentStatus } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
@@ -21,10 +22,7 @@ import {
   type PaymentNotPayableError,
 } from "./payment-errors.ts"
 import { paymentClaimsQuery } from "./payment-queries.ts"
-import {
-  derivePaymentStatus,
-  type PaymentStatus,
-} from "./payment-status-utils.ts"
+import { derivePaymentStatus } from "./payment-status-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**

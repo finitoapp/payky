@@ -1,8 +1,10 @@
 import type { KyselyNotNull } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
-import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import type {
+  CatalogItemId,
+  CategoryFilter,
+} from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import { buildDiacriticInsensitiveSearchCondition } from "@/lib/sql-text-search.ts"
 

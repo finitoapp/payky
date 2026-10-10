@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import type { ReactNode } from "react"
 
-import type { PaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
+import type { PaymentStatus } from "@/core/modules/payment/payment-types.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 

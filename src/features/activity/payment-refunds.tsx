@@ -43,6 +43,7 @@ import {
   getEetReversalStartsAt,
   parseEetDateTime,
 } from "@/core/modules/eet/eet-utils.ts"
+import type { ItemLineType } from "@/core/modules/item/item-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import {
@@ -76,7 +77,6 @@ import {
 import {
   type FiatCurrency,
   Integer,
-  type ItemLineType,
   type NonEmptyString255,
   NonNegativeInteger,
   PositiveNumber,

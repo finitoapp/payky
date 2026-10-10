@@ -1,7 +1,4 @@
-import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
-
-export type CategoryFilter = "all" | "uncategorized" | CatalogCategoryId
 
 /**
  * The name to show staff in the app (catalog list, item picker, scan

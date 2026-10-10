@@ -7,10 +7,8 @@ import {
   catalogItemsQuery,
   catalogItemUsedCategoryIdsQuery,
 } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import {
-  type CategoryFilter,
-  findCatalogItemsByScanCode,
-} from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { findCatalogItemsByScanCode } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import { ItemsList } from "@/features/settings/items/items-list.tsx"
 import { SettingsListPage } from "@/features/settings/settings-list-page.tsx"
 import { CategoryFilterBar } from "@/features/shared/category-filter-bar.tsx"

@@ -5,6 +5,7 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { AccountKindSchema } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 import { createQuery } from "../src/core/evolu/schema"
@@ -24,7 +25,6 @@ import {
   sparkSecretToMnemonic,
 } from "../src/core/modules/shared/key-derivation"
 import {
-  AccountKindSchema,
   DateStringSchema,
   FiatCurrencySchema,
   IbanSchema,

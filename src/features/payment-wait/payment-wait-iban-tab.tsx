@@ -9,11 +9,11 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import {
   type BankQrPayload,
   isBankQrFormat,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type { IbanPaidTabProps } from "@/features/payment-wait/payment-wait-types.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

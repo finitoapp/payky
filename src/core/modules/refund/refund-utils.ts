@@ -1,6 +1,7 @@
 import { sqliteTrue } from "@evolu/common"
 
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import type { ItemLineType } from "@/core/modules/item/item-types.ts"
 import {
   deriveReceivedTipAmount,
   roundCashAmount,
@@ -16,7 +17,6 @@ import { currencyFractionDigits } from "@/core/modules/shared/money.ts"
 import {
   type Currency,
   type FiatCurrency,
-  type ItemLineType,
   NonNegativeInteger,
   type PositiveNumber,
 } from "@/core/modules/shared/schema.ts"

@@ -1,5 +1,5 @@
+import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
-import type { BankQrFormat } from "@/core/modules/shared/schema.ts"
 import { BoltCardReader } from "@/features/payment-wait/payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "@/features/payment-wait/payment-wait-card-tab.tsx"
 import { CashPaymentTab } from "@/features/payment-wait/payment-wait-cash-tab.tsx"

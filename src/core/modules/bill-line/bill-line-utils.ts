@@ -3,8 +3,8 @@ import { createIdFromString } from "@evolu/common"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
+import type { ItemLineType } from "@/core/modules/item/item-types.ts"
 import {
-  type ItemLineType,
   NonNegativeInteger,
   PositiveNumber,
 } from "@/core/modules/shared/schema.ts"

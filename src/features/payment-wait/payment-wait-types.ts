@@ -1,10 +1,11 @@
 import type { ReactNode } from "react"
-
-import type { AccountId } from "@/core/modules/account/account-types.ts"
+import type {
+  AccountId,
+  BankQrFormat,
+} from "@/core/modules/account/account-types.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import type { BankQrPayload } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import type {
-  BankQrFormat,
   FiatCurrency,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"

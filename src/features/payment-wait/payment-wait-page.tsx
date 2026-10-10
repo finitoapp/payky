@@ -29,6 +29,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
 import { enabledPaymentMethodAccountsQuery } from "@/core/modules/account/account-queries.ts"
+import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { getPaymentMethodOrder } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
@@ -50,7 +51,6 @@ import {
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
-  type BankQrFormat,
   Currency,
   type NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"

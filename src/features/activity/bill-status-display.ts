@@ -1,4 +1,4 @@
-import type { BillStatus } from "@/core/modules/bill/bill-utils.ts"
+import type { BillStatus } from "@/core/modules/bill/bill-types.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**

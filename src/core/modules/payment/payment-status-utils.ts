@@ -1,10 +1,9 @@
+import type { PaymentStatus } from "@/core/modules/payment/payment-types.ts"
 import {
   type NonNegativeInteger,
   type TimestampMs,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
-
-export type PaymentStatus = "canceled" | "paid" | "expired" | "pending"
 
 /**
  * Default expiry window for a Lightning invoice prepared for a terminal

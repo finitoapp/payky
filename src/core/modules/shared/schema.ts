@@ -131,24 +131,6 @@ export type Currency = ValueOf<typeof Currency>
 
 export const FiatCurrencySchema = z.enum(Object.values(FiatCurrency))
 export const CurrencySchema = z.enum(Object.values(Currency))
-export const AccountKindSchema = z.enum([
-  "iban",
-  "spark",
-  "cashRegister",
-  "cardSwitchio",
-])
-export const AccountTransactionKindSchema = z.enum([
-  ...AccountKindSchema.options,
-  "onchain",
-])
-export const BankQrFormatSchema = z.enum([
-  "spayd",
-  "payBySquare1_0_0",
-  "payBySquare1_2_0",
-])
-export type BankQrFormat = z.output<typeof BankQrFormatSchema>
-export const ItemLineTypeSchema = z.enum(["catalogItem", "manualAmount", "tip"])
-export const BillLineTagSchema = z.enum(["add", "remove"])
 export const SyncSourceSchema = z.enum(["manual", "auto"])
 export const IbanSchema = z
   .string()
@@ -197,12 +179,6 @@ export const SpecificSymbolSchema = z
 export const SpecificSymbol = SpecificSymbolSchema.decode
 export type SpecificSymbol = z.output<typeof SpecificSymbolSchema>
 
-export type AccountKind = z.output<typeof AccountKindSchema>
-export type AccountTransactionKind = z.output<
-  typeof AccountTransactionKindSchema
->
-export type ItemLineType = z.output<typeof ItemLineTypeSchema>
-export type BillLineTag = z.output<typeof BillLineTagSchema>
 export type SyncSource = z.output<typeof SyncSourceSchema>
 export type Integer = z.output<typeof IntegerSchema>
 export type FloatString = z.output<typeof NumberStringSchema>

@@ -10,13 +10,13 @@ import type {
   BillNotFoundError,
   BillStatusNotAllowedError,
 } from "@/core/modules/bill/bill-guards.ts"
+import type { PaymentStatus } from "@/core/modules/payment/payment-types.ts"
 import type {
   FiatCurrency,
   NonEmptyString255,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
 import type { SwitchioPaymentError } from "@/core/native/switchio.ts"
-import type { PaymentStatus } from "./payment-status-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**

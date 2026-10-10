@@ -1,7 +1,7 @@
 import { createIdFromString } from "@evolu/common"
 import { addDays, addHours, format, parseISO } from "date-fns"
 import { z } from "zod"
-
+import type { AccountKind } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
@@ -35,7 +35,6 @@ import {
   toPaymentCurrencyAmount,
 } from "@/core/modules/shared/claimed-amount.ts"
 import {
-  type AccountKind,
   type FiatCurrency,
   NonNegativeInteger,
   TimestampMs,

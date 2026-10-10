@@ -2,12 +2,11 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 
 import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import { ItemId } from "@/core/modules/item/item-types.ts"
+import { ItemId, ItemLineTypeSchema } from "@/core/modules/item/item-types.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { PaymentLineId } from "@/core/modules/payment-line/payment-line-types.ts"
 import {
   type InferTable,
-  ItemLineTypeSchema,
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
 } from "@/core/modules/shared/schema.ts"

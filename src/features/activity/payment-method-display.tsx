@@ -7,7 +7,7 @@ import {
   ZapIcon,
 } from "lucide-react"
 
-import type { AccountTransactionKind } from "@/core/modules/shared/schema.ts"
+import type { AccountTransactionKind } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**

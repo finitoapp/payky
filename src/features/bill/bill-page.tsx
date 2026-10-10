@@ -67,10 +67,8 @@ import {
   catalogItemsPageQuery,
   catalogItemsQuery,
 } from "@/core/modules/catalog-item/catalog-item-queries.ts"
-import {
-  type CategoryFilter,
-  getStaffDisplayName,
-} from "@/core/modules/catalog-item/catalog-item-utils.ts"
+import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
   FiatCurrency,

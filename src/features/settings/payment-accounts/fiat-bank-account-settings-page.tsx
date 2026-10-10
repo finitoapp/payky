@@ -19,6 +19,8 @@ import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { saveFiatBankAccount } from "@/core/modules/account/account-actions.ts"
 import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
+import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
+import { BankQrFormatSchema } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import {
@@ -28,8 +30,6 @@ import {
 } from "@/core/modules/shared/iban-utils.ts"
 import {
   BankAccountInputIbanSchema,
-  type BankQrFormat,
-  BankQrFormatSchema,
   FiatCurrency,
   FiatCurrencySchema,
   type FiatCurrency as FiatCurrencyType,

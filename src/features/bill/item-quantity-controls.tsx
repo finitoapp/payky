@@ -17,7 +17,6 @@ import { PositiveNumber } from "@/core/modules/shared/schema.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { useChangePulse } from "@/features/bill/use-change-pulse.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { cn } from "@/lib/utils.ts"
 
 /**
  * The "-" / quantity / "+" cluster and its custom-quantity dialog, shared by
@@ -37,14 +36,12 @@ import { cn } from "@/lib/utils.ts"
 export function ItemQuantityControls({
   name,
   quantity,
-  inCart,
   onAdd,
   onAddQuantity,
   onRemove,
 }: {
   readonly name: string
   readonly quantity: number
-  readonly inCart: boolean
   readonly onAdd: () => void
   readonly onAddQuantity: (quantity: PositiveNumber) => void
   readonly onRemove: () => void
@@ -67,12 +64,7 @@ export function ItemQuantityControls({
 
   return (
     <>
-      <div
-        className={cn(
-          "flex items-center justify-end gap-1 self-end rounded-md bg-muted p-1",
-          inCart && "bg-primary-foreground/15"
-        )}
-      >
+      <div className="flex items-center justify-end gap-1 self-end rounded-md bg-muted p-1">
         <Button
           variant="ghost"
           size="icon"

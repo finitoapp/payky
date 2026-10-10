@@ -97,11 +97,14 @@ export const catalogItemsPageQuery = ({
   search,
   categoryFilter,
   currency,
+  catalogItemIds,
   limit,
 }: {
   readonly search: string
   readonly categoryFilter: CategoryFilter
   readonly currency?: FiatCurrency
+  /** Only these items, as the bill's "on the bill" filter asks for. */
+  readonly catalogItemIds?: ReadonlyArray<CatalogItemId>
   readonly limit: number
 }) =>
   createQuery((db) => {
@@ -139,6 +142,14 @@ export const catalogItemsPageQuery = ({
       query = query.where("categoryId", "is", null)
     } else if (categoryFilter !== "all") {
       query = query.where("categoryId", "=", categoryFilter)
+    }
+
+    if (catalogItemIds !== undefined) {
+      // `in ()` is not valid SQL; an id is never null, so none match.
+      query =
+        catalogItemIds.length === 0
+          ? query.where("id", "is", null)
+          : query.where("id", "in", catalogItemIds)
     }
 
     return query.orderBy("sortOrder", "asc").limit(limit)

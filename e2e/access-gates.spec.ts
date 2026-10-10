@@ -105,6 +105,8 @@ test("every cart write that takes items off the bill asks a Basic device for the
   })
 
   await test.step("discarding the bill asks for the PIN", async () => {
+    // The open summary dims the items; closing it uncovers them again.
+    await summaryTrigger.click()
     await addCoffee.click()
     await itemsCount(1)
     await page

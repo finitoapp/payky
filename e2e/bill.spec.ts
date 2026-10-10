@@ -111,6 +111,9 @@ test("build a cart, save it, resume it, and discard it", async ({
   })
 
   await test.step("closing the bill returns to the bills list, where the saved cart appears", async () => {
+    // A tap outside the open summary only closes it.
+    await page.getByTestId("bill-summary-backdrop").click()
+    await expect(summaryPanel).toBeHidden()
     await page
       .getByRole("button", { name: translate("en", "nav.back") })
       .click()
@@ -140,6 +143,50 @@ test("build a cart, save it, resume it, and discard it", async ({
     await expect(page.getByTestId("no-table-tile")).toContainText(
       translate("en", "tables.tile.free")
     )
+  })
+})
+
+test("the on-the-bill filter shows only the items the bill holds", async ({
+  seededPage: page,
+}) => {
+  await test.step("add two items", async () => {
+    await addCatalogItem(page, "en", { name: "Coffee", price: "5" })
+    await addCatalogItem(page, "en", { name: "Tea", price: "3" })
+  })
+
+  await test.step("open the cart", async () => {
+    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await startNewBill(page, "en")
+  })
+
+  const addCoffee = page.getByRole("button", {
+    name: nameParam("bill.brick.add.aria", "Coffee"),
+  })
+  const addTea = page.getByRole("button", {
+    name: nameParam("bill.brick.add.aria", "Tea"),
+  })
+  const inBillFilter = page.getByRole("button", {
+    name: translate("en", "bill.filter.inBill"),
+  })
+
+  await test.step("an empty bill says so", async () => {
+    await inBillFilter.click()
+    await expect(
+      page.getByText(translate("en", "bill.filter.inBill.empty"))
+    ).toBeVisible()
+  })
+
+  await test.step("only the item added is listed", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "bill.category.all") })
+      .click()
+    await addCoffee.click()
+    await expect(page.getByTestId("bill-summary-trigger")).toContainText(
+      translateValue("en", "bill.itemsCount", 1)
+    )
+    await inBillFilter.click()
+    await expect(addCoffee).toBeVisible()
+    await expect(addTea).toBeHidden()
   })
 })
 

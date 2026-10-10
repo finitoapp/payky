@@ -1,5 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
+import { isSameDay } from "date-fns"
 import { useStore } from "jotai"
 import {
   AlertTriangleIcon,
@@ -111,8 +112,11 @@ import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatMoney } from "@/lib/format-utils.ts"
+import { formatDateTime, formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
+
+/** The category filters, plus "on the bill": only what the bill holds. */
+type BillItemFilter = CategoryFilter | "inBill"
 
 const splitBillErrorKeys = {
   BillNotFound: "bill.split.error",
@@ -177,7 +181,7 @@ export function BillPage({
     onTableSeedChange: setPendingTableId,
   })
   const [search, setSearch] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all")
+  const [categoryFilter, setCategoryFilter] = useState<BillItemFilter>("all")
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [scanMode, setScanMode] = useBillInsertMode()
 
@@ -241,8 +245,42 @@ export function BillPage({
     bill === undefined
       ? undefined
       : (bill.label ?? t("bill.list.label", { number: bill.displayNumber }))
+  const subtitle = useBillSubtitle(bill, pendingTableId)
 
-  return <BillPageLayout title={title}>{content}</BillPageLayout>
+  return (
+    <BillPageLayout title={title} subtitle={subtitle}>
+      {content}
+    </BillPageLayout>
+  )
+}
+
+/**
+ * Where the bill is and since when, under its title: staff keep their
+ * bearings without scrolling down to the table button.
+ */
+function useBillSubtitle(
+  bill:
+    | { readonly tableId: TableId | null; readonly createdAt: string }
+    | undefined,
+  pendingTableId: TableId | null
+): string | undefined {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const { data: tables } = useEvoluQuery(tablesQuery)
+  const tableId = bill === undefined ? pendingTableId : bill.tableId
+  const tableName = tables.find((table) => table.id === tableId)?.name
+  const openedAt = bill === undefined ? undefined : new Date(bill.createdAt)
+  const opened =
+    openedAt === undefined
+      ? undefined
+      : t("bill.openedAt", {
+          time: isSameDay(openedAt, new Date())
+            ? formatTime(openedAt, locale)
+            : formatDateTime(openedAt, locale),
+        })
+  const parts = [tableName, opened].filter((part) => part !== undefined)
+
+  return parts.length === 0 ? undefined : parts.join(" · ")
 }
 
 /**
@@ -255,17 +293,31 @@ export function BillPage({
  */
 function BillPageLayout({
   title,
+  subtitle,
   children,
 }: {
   readonly title?: string
+  readonly subtitle?: string
   readonly children: ReactNode
 }) {
   const { t } = useTranslation()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="h-6" />
-      <FadeHeader title={title ?? t("bill.title")} />
+      {/* The fixed header is a line taller with a subtitle. */}
+      <div className={subtitle === undefined ? "h-6" : "h-11"} />
+      <FadeHeader
+        title={
+          <>
+            <span className="block">{title ?? t("bill.title")}</span>
+            {subtitle === undefined ? null : (
+              <span className="block truncate text-sm font-normal text-muted-foreground">
+                {subtitle}
+              </span>
+            )}
+          </>
+        }
+      />
       {children}
     </div>
   )
@@ -386,8 +438,8 @@ interface SharedCartViewProps {
   readonly cart: CartApi
   readonly search: string
   readonly onSearchChange: (value: string) => void
-  readonly categoryFilter: CategoryFilter
-  readonly onCategoryFilterChange: (value: CategoryFilter) => void
+  readonly categoryFilter: BillItemFilter
+  readonly onCategoryFilterChange: (value: BillItemFilter) => void
   readonly summaryOpen: boolean
   readonly onSummaryOpenChange: (open: boolean) => void
   readonly scanMode: boolean
@@ -483,15 +535,36 @@ function BillCartView({
   const searchForQuery = useDebouncedValue(search, 250, { transition: true })
   const categoryFilterForQuery = useDeferredValue(categoryFilter)
   const currencyForQuery = useDeferredValue(currency)
+  const inBillItemIds = useMemo(
+    () => [
+      ...new Set(
+        summaries.flatMap((summary) =>
+          summary.catalogItemId !== null && summary.quantity > 0
+            ? [summary.catalogItemId]
+            : []
+        )
+      ),
+    ],
+    [summaries]
+  )
+  const inBillItemIdsForQuery = useDeferredValue(inBillItemIds)
+  const showOnlyInBill = categoryFilterForQuery === "inBill"
   const createGridPageQuery = useCallback(
     (limit: number) =>
       catalogItemsPageQuery({
         search: searchForQuery,
-        categoryFilter: categoryFilterForQuery,
+        categoryFilter: showOnlyInBill ? "all" : categoryFilterForQuery,
         currency: currencyForQuery,
+        ...(showOnlyInBill ? { catalogItemIds: inBillItemIdsForQuery } : {}),
         limit,
       }),
-    [searchForQuery, categoryFilterForQuery, currencyForQuery]
+    [
+      searchForQuery,
+      categoryFilterForQuery,
+      currencyForQuery,
+      showOnlyInBill,
+      inBillItemIdsForQuery,
+    ]
   )
   const {
     rows: pagedItems,
@@ -499,7 +572,12 @@ function BillCartView({
     isPending: isLoadingMoreItems,
     sentinelRef: itemsSentinelRef,
   } = useInfiniteEvoluQuery(
-    [searchForQuery, categoryFilterForQuery, currencyForQuery],
+    [
+      searchForQuery,
+      categoryFilterForQuery,
+      currencyForQuery,
+      showOnlyInBill ? inBillItemIdsForQuery.join() : "",
+    ],
     createGridPageQuery
   )
 
@@ -741,6 +819,9 @@ function BillCartView({
             onValueChange={onCategoryFilterChange}
             allLabel={t("bill.category.all")}
             uncategorizedLabel={t("bill.category.uncategorized")}
+            extraOptions={[
+              { value: "inBill" as const, label: t("bill.filter.inBill") },
+            ]}
           />
         )}
       </div>
@@ -762,7 +843,11 @@ function BillCartView({
           <BillEmptyCatalog />
         ) : pagedItems.length === 0 ? (
           <p className="mt-10 text-center text-muted-foreground">
-            {t("bill.emptySearch")}
+            {t(
+              showOnlyInBill && search === ""
+                ? "bill.filter.inBill.empty"
+                : "bill.emptySearch"
+            )}
           </p>
         ) : (
           <>
@@ -791,8 +876,23 @@ function BillCartView({
         )}
       </section>
 
-      <Card className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-xl rounded-none rounded-t-xl p-0">
-        <CardContent className="pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+      {summaryOpen && (
+        // Dims the items while the summary is open; a tap on them closes it.
+        <div
+          aria-hidden
+          data-testid="bill-summary-backdrop"
+          className="fixed inset-0 z-10 bg-black/40"
+          onClick={() => onSummaryOpenChange(false)}
+        />
+      )}
+      {/*
+       * In the page's flex column rather than fixed over it, so the items
+       * scroll above it however tall the open summary makes it: fixed, it
+       * covered the last row of items. The negative margins reach the
+       * viewport's padded edges.
+       */}
+      <Card className="relative z-20 -mx-3 -mb-6 shrink-0 rounded-none rounded-t-xl p-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.35)]">
+        <CardContent className="pb-4">
           <Collapsible open={summaryOpen} onOpenChange={onSummaryOpenChange}>
             <CollapsibleTrigger
               data-testid="bill-summary-trigger"
@@ -858,7 +958,8 @@ function BillCartView({
                   <div className={"gap-1 flex"}>
                     <Button
                       variant="outline"
-                      size={"xs"}
+                      size="sm"
+                      className="h-11 px-3"
                       disabled={!cart.canUndo || cart.pending}
                       onClick={() => void cart.undo()}
                     >
@@ -867,7 +968,8 @@ function BillCartView({
                     </Button>
                     <Button
                       variant="outline"
-                      size={"xs"}
+                      size="sm"
+                      className="h-11 px-3"
                       disabled={!cart.canRedo || cart.pending}
                       onClick={() => void cart.redo()}
                     >
@@ -877,7 +979,8 @@ function BillCartView({
                   </div>
                   <Button
                     variant="outline"
-                    size={"xs"}
+                    size="sm"
+                    className="h-11 px-3"
                     disabled={summaries.length === 0 || cart.pending}
                     onClick={async () => {
                       if (await cart.clear(summaries)) {
@@ -896,7 +999,8 @@ function BillCartView({
             <Button
               variant="outline"
               size="icon"
-              className="h-12 w-12 shrink-0 text-destructive"
+              // Kept apart from the everyday buttons beside it.
+              className="mr-3 h-12 w-12 shrink-0 text-destructive"
               disabled={!billExists}
               aria-label={t("bill.discard")}
               onClick={() => void handleDiscard()}
@@ -1044,25 +1148,15 @@ function ItemBrick({
     <Card
       className={cn(
         "relative gap-3 p-3",
-        inCart && "bg-primary text-primary-foreground"
+        inCart && "border-l-4 border-l-primary pl-2"
       )}
     >
-      <div
-        className={cn(
-          "absolute top-3 right-3 flex size-9 items-center justify-center bg-muted text-muted-foreground rounded-sm",
-          inCart && "bg-primary-foreground/15 text-primary-foreground"
-        )}
-      >
+      <div className="absolute top-3 right-3 flex size-9 items-center justify-center bg-muted text-muted-foreground rounded-sm">
         <Package className="size-5" />
       </div>
       <div className="min-w-0 pr-11">
         <p className="font-medium">{getStaffDisplayName(catalogItem)}</p>
-        <p
-          className={cn(
-            "text-sm text-muted-foreground",
-            inCart && "text-primary-foreground/80"
-          )}
-        >
+        <p className="text-sm text-muted-foreground">
           {formatMoney(
             { value: catalogItem.unitAmount, currency: catalogItem.currency },
             locale
@@ -1072,7 +1166,6 @@ function ItemBrick({
       <ItemQuantityControls
         name={getStaffDisplayName(catalogItem)}
         quantity={quantity}
-        inCart={inCart}
         onAdd={onAdd}
         onAddQuantity={onAddQuantity}
         onRemove={() => {

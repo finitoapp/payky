@@ -82,16 +82,30 @@ export const verifyPin = async (
 ): Promise<boolean> =>
   (await derive(pin, stored.salt, stored.iterations)) === stored.hash
 
-/** A device's default permissions as stored in `device.defaultPermissions`. */
-export const PermissionsJson = jsonCodec(z.array(PermissionSchema))
+/**
+ * A device's default permissions as stored in `device.defaultPermissions`.
+ * Plain strings, not `PermissionSchema`, so a permission a newer build added
+ * does not fail the whole set on an older one.
+ */
+export const PermissionsJson = jsonCodec(z.array(z.string()))
 
-/** `null`, or anything that does not decode, is no permissions (rule 3). */
+/**
+ * `null`, or anything that is not a list of strings, is no permissions
+ * (rule 3). A value this build does not know is dropped and the known ones
+ * kept, so it fails closed for that permission only.
+ */
 export const decodePermissions = (
   stored: string | null
 ): ReadonlySet<Permission> => {
   if (stored === null) return new Set()
   const decoded = z.safeDecode(PermissionsJson, stored)
-  return new Set(decoded.success ? decoded.data : [])
+  if (!decoded.success) return new Set()
+  return new Set(
+    decoded.data.flatMap((value) => {
+      const permission = PermissionSchema.safeParse(value)
+      return permission.success ? [permission.data] : []
+    })
+  )
 }
 
 /** Kept in the canonical order, so equal sets store equal strings. */

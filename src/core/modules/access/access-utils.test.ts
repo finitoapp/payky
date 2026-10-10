@@ -68,8 +68,16 @@ describe("device permissions", () => {
     expect(decodePermissions(null)).toEqual(new Set())
   })
 
-  test("an unknown permission voids the whole set", () => {
-    expect(decodePermissions('["sell","fly"]')).toEqual(new Set())
+  test("an unknown permission is dropped and the known ones kept", () => {
+    expect(decodePermissions('["sell","fly","refund"]')).toEqual(
+      new Set(["sell", "refund"])
+    )
+  })
+
+  test("anything that is not a list of strings is no permissions", () => {
+    expect(decodePermissions("[")).toEqual(new Set())
+    expect(decodePermissions('["sell",1]')).toEqual(new Set())
+    expect(decodePermissions('{"sell":true}')).toEqual(new Set())
   })
 
   test("encodes in canonical order, and nothing as null", () => {

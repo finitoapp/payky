@@ -1,9 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
-import { fetchYadioBtcExchangeRate } from "@/core/integrations/yadio/yadio-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { satsToFiat } from "@/core/modules/shared/money.ts"
 import { FiatCurrency } from "@/core/modules/shared/schema.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useBtcExchangeRate } from "@/hooks/use-btc-exchange-rate.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { formatAmount } from "@/lib/format-utils.ts"
@@ -15,21 +13,10 @@ import { formatAmount } from "@/lib/format-utils.ts"
  * Yadio is unreachable.
  */
 export function useBtcFiat() {
-  const appRun = useAppRun()
   const locale = useLocale()
   const { data } = useEvoluQuery(settingsQuery)
   const currency = data[0]?.fiatCurrency ?? FiatCurrency.CZK
-  const rateQuery = useQuery({
-    queryKey: ["withdraw", "btc-rate", currency],
-    queryFn: async () => {
-      await using run = appRun()
-      const result = await run(fetchYadioBtcExchangeRate(currency))
-      if (!result.ok) throw result.error
-      return result.value.exchangeRate
-    },
-    staleTime: 60_000,
-    retry: false,
-  })
+  const rateQuery = useBtcExchangeRate(currency)
   const rate = rateQuery.data ?? null
 
   return {

@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import { fetchLnurlPayMetadata } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { PositiveIntegerSchema } from "@/core/modules/shared/schema.ts"
 import {
@@ -43,6 +42,7 @@ import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@/core/modules/withdraw/withdraw-ut
 import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
+import { useLnurlPayMetadata } from "@/hooks/use-lnurl-pay-metadata.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -186,19 +186,7 @@ export function WithdrawFormStep({
     destination?.kind === "lightning-address" ? destination.address : null,
     500
   )
-  const metadataQuery = useQuery({
-    queryKey: ["withdraw", "lnurl-metadata", lightningAddress],
-    queryFn: async () => {
-      await using run = appRun()
-      const result = await run(
-        fetchLnurlPayMetadata({ address: lightningAddress ?? "" })
-      )
-      if (!result.ok) throw result.error
-      return result.value
-    },
-    enabled: lightningAddress !== null,
-    retry: false,
-  })
+  const metadataQuery = useLnurlPayMetadata(lightningAddress)
   const addressSettled =
     destination?.kind === "lightning-address" &&
     lightningAddress === destination.address

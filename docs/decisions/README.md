@@ -11,7 +11,11 @@ can. `bun run check` runs `check:decisions`, which fails when a decision has
 no accepted or superseded status, or an accepted decision names no test and
 gives no reason, or names a test that vitest or playwright does not list.
 Renaming or deleting a test a decision relies on therefore fails the check
-until the decision is updated. Whether a named test really holds its
+until the decision is updated. It also fails when a file is not `<domain>/NNNN-title.md`
+or its heading carries a different number, when two records share a
+number, when a record has no `Date:` line, when a "superseded by" points at a
+record that does not exist, or when the domain list above and the
+directories disagree. Whether a named test really holds its
 decision is for review to judge.
 
 ## Format

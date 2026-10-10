@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest"
 
-import { findDecisionProblems, readDecisionRecord } from "./decisions.ts"
+import {
+  type DecisionRecord,
+  findDecisionProblems,
+  findDecisionStructureProblems,
+  readDecisionRecord,
+} from "./decisions.ts"
 
 const decision = (
   status: string,
@@ -41,6 +46,9 @@ describe("readDecisionRecord", () => {
     ).toEqual({
       file: "docs/decisions/0001-cash.md",
       status: "accepted",
+      supersededBy: null,
+      headingNumber: "0001",
+      date: "2026-09-28",
       testIds: [...knownTestIds],
       untestableReason: null,
     })
@@ -66,18 +74,19 @@ describe("readDecisionRecord", () => {
     expect(
       readDecisionRecord(
         "docs/decisions/0003-old.md",
-        decision("superseded by 0009", "")
+        decision("superseded by eet/0009", "")
       )
-    ).toMatchObject({ status: "superseded" })
+    ).toMatchObject({ status: "superseded", supersededBy: "eet/0009" })
   })
 })
 
 describe("findDecisionProblems", () => {
-  const record = (
-    overrides: Partial<ReturnType<typeof readDecisionRecord>>
-  ) => ({
+  const record = (overrides: Partial<DecisionRecord>): DecisionRecord => ({
     file: "docs/decisions/0001-cash.md",
-    status: "accepted" as const,
+    status: "accepted",
+    supersededBy: null,
+    headingNumber: "0001",
+    date: "2026-09-28",
     testIds: [...knownTestIds],
     untestableReason: null,
     ...overrides,
@@ -130,5 +139,75 @@ describe("findDecisionProblems", () => {
         knownTestIds
       )
     ).toEqual([])
+  })
+})
+
+describe("findDecisionStructureProblems", () => {
+  const record = (overrides: Partial<DecisionRecord>): DecisionRecord => ({
+    file: "docs/decisions/eet/0001-cash.md",
+    status: "accepted",
+    supersededBy: null,
+    headingNumber: "0001",
+    date: "2026-09-28",
+    testIds: [],
+    untestableReason: null,
+    ...overrides,
+  })
+  const layout = { readme: "Domains: `eet/`.", domains: ["eet"] }
+
+  test("accepts records whose files, headings and links agree", () => {
+    expect(
+      findDecisionStructureProblems(
+        [
+          record({}),
+          record({
+            file: "docs/decisions/eet/0002-old.md",
+            headingNumber: "0002",
+            status: "superseded",
+            supersededBy: "eet/0001",
+          }),
+        ],
+        layout
+      )
+    ).toEqual([])
+  })
+
+  test("names a heading numbered unlike its file, a duplicate id and a missing date", () => {
+    expect(
+      findDecisionStructureProblems(
+        [
+          record({ headingNumber: "0007" }),
+          record({ file: "docs/decisions/eet/0001-copy.md", date: null }),
+        ],
+        layout
+      )
+    ).toEqual([
+      "docs/decisions/eet/0001-cash.md: its heading is not numbered 0001 like the file",
+      "docs/decisions/eet/0001-copy.md: another decision is already eet/0001",
+      'docs/decisions/eet/0001-copy.md: has no "Date: YYYY-MM-DD" line',
+    ])
+  })
+
+  test("names a superseded record that points nowhere", () => {
+    expect(
+      findDecisionStructureProblems(
+        [record({ status: "superseded", supersededBy: "eet/0099" })],
+        layout
+      )
+    ).toEqual([
+      "docs/decisions/eet/0001-cash.md: is superseded by eet/0099, which does not exist",
+    ])
+  })
+
+  test("names a domain the README leaves out or lists without a directory", () => {
+    expect(
+      findDecisionStructureProblems([record({})], {
+        readme: "Domains: `eet/`, `gone/`.",
+        domains: ["eet", "payment"],
+      })
+    ).toEqual([
+      "docs/decisions/README.md: does not list payment/",
+      "docs/decisions/README.md: lists gone/, which has no directory",
+    ])
   })
 })

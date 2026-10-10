@@ -272,7 +272,7 @@ export const latestBillsQuery = (limit: number) =>
             .innerJoin("reconciliationClaim", (join) =>
               join
                 .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-                .on("reconciliationClaim.isDeleted", "is not", 1)
+                .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
             )
             .innerJoin(
               "accountTransaction",
@@ -282,7 +282,7 @@ export const latestBillsQuery = (limit: number) =>
             .leftJoin("paymentBtc", (join) =>
               join
                 .onRef("paymentBtc.id", "=", "payment.id")
-                .on("paymentBtc.isDeleted", "is not", 1)
+                .on("paymentBtc.isDeleted", "is not", sqliteTrue)
             )
             .select([
               "payment.id as paymentId",
@@ -296,12 +296,12 @@ export const latestBillsQuery = (limit: number) =>
               "accountTransaction.currency",
             ])
             .whereRef("payment.billId", "=", "bill.id")
-            .where("payment.isDeleted", "is not", 1)
+            .where("payment.isDeleted", "is not", sqliteTrue)
             .where("payment.tipAmount", "is not", null)
             .where("payment.amount", "is not", null)
             .where("payment.currency", "is not", null)
             .where("reconciliationClaim.accountTransactionId", "is not", null)
-            .where("accountTransaction.isDeleted", "is not", 1)
+            .where("accountTransaction.isDeleted", "is not", sqliteTrue)
             .where("accountTransaction.amount", "is not", null)
             .where("accountTransaction.currency", "is not", null)
             .where("accountTransaction.kind", "is not", null)

@@ -30,8 +30,8 @@ export const cashRegisterAccountByIdQuery = (idValue: AccountId) =>
       ])
       .where("account.id", "=", idValue)
       .where("account.kind", "=", "cashRegister")
-      .where("account.isDeleted", "is not", 1)
-      .where("accountCashRegister.isDeleted", "is not", 1)
+      .where("account.isDeleted", "is not", sqliteTrue)
+      .where("accountCashRegister.isDeleted", "is not", sqliteTrue)
       .where("accountCashRegister.currency", "is not", null)
       .$narrowType<{
         name: KyselyNotNull
@@ -53,8 +53,8 @@ export const cardSwitchioAccountByIdQuery = (idValue: AccountId) =>
       ])
       .where("account.id", "=", idValue)
       .where("account.kind", "=", "cardSwitchio")
-      .where("account.isDeleted", "is not", 1)
-      .where("accountCardSwitchio.isDeleted", "is not", 1)
+      .where("account.isDeleted", "is not", sqliteTrue)
+      .where("accountCardSwitchio.isDeleted", "is not", sqliteTrue)
       .where("accountCardSwitchio.currency", "is not", null)
       .$narrowType<{
         name: KyselyNotNull
@@ -78,8 +78,8 @@ export const ibanAccountByIdQuery = (idValue: AccountId) =>
       ])
       .where("account.id", "=", idValue)
       .where("account.kind", "=", "iban")
-      .where("account.isDeleted", "is not", 1)
-      .where("accountIban.isDeleted", "is not", 1)
+      .where("account.isDeleted", "is not", sqliteTrue)
+      .where("accountIban.isDeleted", "is not", sqliteTrue)
       .where("accountIban.iban", "is not", null)
       .where("accountIban.currency", "is not", null)
       .$narrowType<{
@@ -117,7 +117,7 @@ export const fiatBankAccountQuery = createQuery((db) =>
       "accountIban.defaultQrFormat",
     ])
     .where("account.kind", "=", "iban")
-    .where("accountIban.isDeleted", "is not", 1)
+    .where("accountIban.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountIban.iban", "is not", null)
@@ -147,7 +147,7 @@ export const sparkAccountQuery = createQuery((db) =>
       "accountSpark.secret",
     ])
     .where("account.kind", "=", "spark")
-    .where("accountSpark.isDeleted", "is not", 1)
+    .where("accountSpark.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountSpark.secret", "is not", null)
@@ -175,7 +175,7 @@ export const cashRegisterAccountQuery = createQuery((db) =>
       "accountCashRegister.currency",
     ])
     .where("account.kind", "=", "cashRegister")
-    .where("accountCashRegister.isDeleted", "is not", 1)
+    .where("accountCashRegister.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountCashRegister.currency", "is not", null)
@@ -202,7 +202,7 @@ export const cardSwitchioAccountQuery = createQuery((db) =>
       "accountCardSwitchio.currency",
     ])
     .where("account.kind", "=", "cardSwitchio")
-    .where("accountCardSwitchio.isDeleted", "is not", 1)
+    .where("accountCardSwitchio.isDeleted", "is not", sqliteTrue)
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
     .where("accountCardSwitchio.currency", "is not", null)

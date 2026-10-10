@@ -1,4 +1,4 @@
-import { evoluJsonObjectFrom, testCreateRun } from "@evolu/common"
+import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
@@ -40,12 +40,12 @@ export const paymentWithDetailsByIdQuery = (id: PaymentId) =>
             .leftJoin("paymentBtcLightning", (join) =>
               join
                 .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
-                .on("paymentBtcLightning.isDeleted", "is not", 1)
+                .on("paymentBtcLightning.isDeleted", "is not", sqliteTrue)
             )
             .leftJoin("paymentBtcSpark", (join) =>
               join
                 .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
-                .on("paymentBtcSpark.isDeleted", "is not", 1)
+                .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
             )
             .select([
               "paymentBtc.id",

@@ -1,4 +1,5 @@
 import type { KyselyNotNull } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -32,7 +33,7 @@ export const accountTransactionAmountByIdQuery = (id: AccountTransactionId) =>
       .selectFrom("accountTransaction")
       .select(["accountTransaction.amount", "accountTransaction.currency"])
       .where("accountTransaction.id", "=", id)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .where("accountTransaction.amount", "is not", null)
       .where("accountTransaction.currency", "is not", null)
       .$narrowType<{
@@ -59,7 +60,7 @@ export const accountTransactionsByAccountQuery = (accountId: AccountId) =>
         "accountTransaction.note",
       ])
       .where("accountTransaction.accountId", "=", accountId)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .where("accountTransaction.amount", "is not", null)
       .where("accountTransaction.occurredAt", "is not", null)
       .where("accountTransaction.kind", "is not", null)

@@ -53,7 +53,7 @@ const ibanTransactionsByAccountIdQuery = (accountId: AccountId) =>
         "accountTransactionIban.bankReference",
       ])
       .where("accountTransaction.accountId", "=", accountId)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
   )
 
 const fioPluginSyncPointerQuery = (fioPluginId: FioPluginId) =>
@@ -76,7 +76,7 @@ const reconciliationClaimsByAccountIdQuery = (accountId: AccountId) =>
       )
       .select(["reconciliationClaim.paymentId"])
       .where("accountTransaction.accountId", "=", accountId)
-      .where("reconciliationClaim.isDeleted", "is not", 1)
+      .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
   )
 
 const fioTransaction = {

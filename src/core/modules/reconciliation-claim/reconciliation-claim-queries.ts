@@ -1,4 +1,5 @@
 import type { KyselyNotNull } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type {
@@ -27,7 +28,7 @@ export const activeReconciliationClaimsByPaymentIdQuery = (
       .selectFrom("reconciliationClaim")
       .selectAll()
       .where("paymentId", "=", paymentId)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
   )
 
 export const activeReconciliationClaimByAccountTransactionIdQuery = (
@@ -38,7 +39,7 @@ export const activeReconciliationClaimByAccountTransactionIdQuery = (
       .selectFrom("reconciliationClaim")
       .selectAll()
       .where("accountTransactionId", "=", accountTransactionId)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
   )
 
 /**
@@ -64,7 +65,7 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
       .leftJoin("paymentBtc", (join) =>
         join
           .onRef("paymentBtc.id", "=", "payment.id")
-          .on("paymentBtc.isDeleted", "is not", 1)
+          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
       )
       .select([
         "reconciliationClaim.accountTransactionId",
@@ -75,9 +76,9 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
         "paymentBtc.amountSats as paymentAmountSats",
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
-      .where("reconciliationClaim.isDeleted", "is not", 1)
+      .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
       .where("reconciliationClaim.accountTransactionId", "is not", null)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .where("accountTransaction.amount", "is not", null)
       .where("accountTransaction.currency", "is not", null)
       .where("payment.amount", "is not", null)
@@ -133,11 +134,11 @@ export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
       .select(["payment.id as paymentId"])
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "iban")
-      .where("accountTransaction.isDeleted", "is not", 1)
-      .where("accountTransactionIban.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+      .where("accountTransactionIban.isDeleted", "is not", sqliteTrue)
       .where("accountTransactionIban.variableSymbol", "is not", null)
-      .where("paymentIban.isDeleted", "is not", 1)
-      .where("payment.isDeleted", "is not", 1)
+      .where("paymentIban.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .whereRef("payment.amount", "=", "accountTransaction.amount")
       .whereRef("payment.currency", "=", "accountTransaction.currency")
       .where("reconciliationClaim.id", "is", null)
@@ -172,8 +173,8 @@ export const ibanReconciliationCandidateByValuesQuery = ({
       .where("paymentIban.accountId", "=", accountId)
       .where("paymentIban.variableSymbol", "=", variableSymbol)
       .where("paymentIban.specificSymbol", "is", specificSymbol)
-      .where("paymentIban.isDeleted", "is not", 1)
-      .where("payment.isDeleted", "is not", 1)
+      .where("paymentIban.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .where("payment.amount", "=", amount)
       .where("payment.currency", "=", currency)
       .where("reconciliationClaim.id", "is", null)
@@ -206,9 +207,9 @@ export const cashRegisterReconciliationCandidateByAccountTransactionIdQuery = (
       .select(["payment.id as paymentId"])
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "cashRegister")
-      .where("accountTransaction.isDeleted", "is not", 1)
-      .where("paymentCashRegister.isDeleted", "is not", 1)
-      .where("payment.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+      .where("paymentCashRegister.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .whereRef("payment.amount", "=", "accountTransaction.amount")
       .whereRef("payment.currency", "=", "accountTransaction.currency")
       .where("reconciliationClaim.id", "is", null)
@@ -246,12 +247,12 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
       .leftJoin("paymentBtcLightning", (join) =>
         join
           .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
-          .on("paymentBtcLightning.isDeleted", "is not", 1)
+          .on("paymentBtcLightning.isDeleted", "is not", sqliteTrue)
       )
       .leftJoin("paymentBtcSpark", (join) =>
         join
           .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
-          .on("paymentBtcSpark.isDeleted", "is not", 1)
+          .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
       )
       .innerJoin("payment", "payment.id", "paymentBtc.id")
       .leftJoin(
@@ -263,15 +264,15 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "spark")
       .where("accountTransaction.currency", "=", "BTC")
-      .where("accountTransaction.isDeleted", "is not", 1)
-      .where("accountTransactionSpark.isDeleted", "is not", 1)
-      .where("paymentBtc.isDeleted", "is not", 1)
-      .where("payment.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+      .where("accountTransactionSpark.isDeleted", "is not", sqliteTrue)
+      .where("paymentBtc.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .whereRef("paymentBtc.amountSats", "=", "accountTransaction.amount")
       .where((eb) =>
         eb.or([
           eb.and([
-            eb("accountTransactionLightning.isDeleted", "is not", 1),
+            eb("accountTransactionLightning.isDeleted", "is not", sqliteTrue),
             eb("paymentBtcLightning.lnInvoice", "is not", null),
             eb("accountTransactionLightning.lnInvoice", "is not", null),
             eb(
@@ -281,7 +282,11 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
             ),
           ]),
           eb.and([
-            eb("accountTransactionSparkInvoice.isDeleted", "is not", 1),
+            eb(
+              "accountTransactionSparkInvoice.isDeleted",
+              "is not",
+              sqliteTrue
+            ),
             eb("paymentBtcSpark.sparkInvoice", "is not", null),
             eb("accountTransactionSparkInvoice.sparkInvoice", "is not", null),
             eb(
@@ -316,12 +321,12 @@ export const sparkReconciliationCandidateByValuesQuery = ({
       .leftJoin("paymentBtcLightning", (join) =>
         join
           .onRef("paymentBtcLightning.id", "=", "paymentBtc.id")
-          .on("paymentBtcLightning.isDeleted", "is not", 1)
+          .on("paymentBtcLightning.isDeleted", "is not", sqliteTrue)
       )
       .leftJoin("paymentBtcSpark", (join) =>
         join
           .onRef("paymentBtcSpark.id", "=", "paymentBtc.id")
-          .on("paymentBtcSpark.isDeleted", "is not", 1)
+          .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
       )
       .innerJoin("payment", "payment.id", "paymentBtc.id")
       .leftJoin(
@@ -332,8 +337,8 @@ export const sparkReconciliationCandidateByValuesQuery = ({
       .select(["payment.id as paymentId"])
       .where("paymentBtc.accountId", "=", accountId)
       .where("paymentBtc.amountSats", "=", amount)
-      .where("paymentBtc.isDeleted", "is not", 1)
-      .where("payment.isDeleted", "is not", 1)
+      .where("paymentBtc.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .where((eb) =>
         eb.or([
           ...(lnInvoice === null

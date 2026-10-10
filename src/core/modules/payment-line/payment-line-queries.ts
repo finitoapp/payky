@@ -1,4 +1,5 @@
 import type { KyselyNotNull } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -16,7 +17,7 @@ export const paymentLinesByPaymentIdQuery = (paymentId: PaymentId) =>
       .selectFrom("paymentLine")
       .selectAll()
       .where("paymentId", "=", paymentId)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
       .where("billId", "is not", null)
       .where("itemId", "is not", null)
       .where("type", "is not", null)

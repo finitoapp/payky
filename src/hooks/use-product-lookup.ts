@@ -48,7 +48,7 @@ export function useProductLookup(code: string | null) {
       if (code === null) return null
       await using run = appRun()
       const result = await run(lookupOpenFactsProduct({ code, language }))
-      if (!result.ok) throw new Error(result.error.type)
+      if (!result.ok) throw result.error
       return result.value
     },
   })

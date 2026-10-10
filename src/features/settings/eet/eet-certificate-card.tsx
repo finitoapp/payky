@@ -266,7 +266,7 @@ function EetOfficialTestCertificates() {
     queryFn: async () => {
       await using run = appRun()
       const result = await run(fetchPlaygroundCertificates())
-      if (!result.ok) throw new Error(result.error.type)
+      if (!result.ok) throw result.error
       return result.value
     },
   })

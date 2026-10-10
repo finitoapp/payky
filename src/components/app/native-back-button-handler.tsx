@@ -50,7 +50,6 @@ export function NativeBackButtonHandler() {
   useEffect(() => {
     if (Capacitor.getPlatform() !== "android") return undefined
 
-    let disposed = false
     const listener = CapacitorApp.addListener("backButton", async () => {
       if (closeTopLayerElement()) {
         return
@@ -70,12 +69,9 @@ export function NativeBackButtonHandler() {
     })
 
     return () => {
-      disposed = true
       void (async () => {
         const handle = await listener
-        if (disposed) {
-          void handle.remove()
-        }
+        await handle.remove()
       })()
     }
   }, [])

@@ -16,7 +16,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/en.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

@@ -1,6 +1,7 @@
 import {
   type ConsoleDep,
   err,
+  type InferRow,
   type LockManagerDep,
   ok,
   type Result,
@@ -31,6 +32,7 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { LightningInvoice } from "@/core/modules/shared/lightning-invoice-utils.ts"
+import { getFirstOr } from "@/core/modules/shared/result.ts"
 import {
   type BitcoinAddress,
   Integer,
@@ -215,15 +217,19 @@ export type ExecuteWithdrawalError =
   | WithdrawalRejectedError
   | WithdrawalOutcomeUnknownError
 
-const loadSparkAccount = async (
-  evolu: EvoluDep["evolu"],
-  accountId: AccountId
-) => {
-  const [sparkAccount] = await evolu.loadQuery(
-    activeSparkAccountByIdQuery(accountId)
-  )
-  return sparkAccount
-}
+const loadSparkAccount =
+  (
+    accountId: AccountId
+  ): Task<
+    InferRow<ReturnType<typeof activeSparkAccountByIdQuery>>,
+    WithdrawalAccountNotFoundError,
+    EvoluDep
+  > =>
+  async (run) =>
+    getFirstOr(
+      await run.deps.evolu.loadQuery(activeSparkAccountByIdQuery(accountId)),
+      createWithdrawalAccountNotFoundError({ accountId })
+    )
 
 const isExpired = (expiresAt: number, now: Date): boolean =>
   expiresAt - WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS <= now.getTime()
@@ -425,10 +431,9 @@ export const quoteWithdrawal =
     EvoluDep & SparkWalletDep & FetchDep & DateDep
   > =>
   async (run) => {
-    const sparkAccount = await loadSparkAccount(run.deps.evolu, accountId)
-    if (!sparkAccount) {
-      return err(createWithdrawalAccountNotFoundError({ accountId }))
-    }
+    const sparkAccountResult = await run(loadSparkAccount(accountId))
+    if (!sparkAccountResult.ok) return sparkAccountResult
+    const sparkAccount = sparkAccountResult.value
 
     const priceWith = async (
       price: (wallet: SparkPaymentWallet) => Promise<QuoteResult>
@@ -600,10 +605,9 @@ export const executeWithdrawal =
     ExecuteDeps
   > =>
   async (run) => {
-    const sparkAccount = await loadSparkAccount(run.deps.evolu, accountId)
-    if (!sparkAccount) {
-      return err(createWithdrawalAccountNotFoundError({ accountId }))
-    }
+    const sparkAccountResult = await run(loadSparkAccount(accountId))
+    if (!sparkAccountResult.ok) return sparkAccountResult
+    const sparkAccount = sparkAccountResult.value
 
     const now = run.deps.date.now()
     if (quote.kind === "lightning") {
@@ -827,12 +831,14 @@ export const confirmOnchainWithdrawalSent =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    const [withdrawal] = await run.deps.evolu.loadQuery(
-      withdrawalForResolutionQuery(withdrawalId)
+    const withdrawalResult = getFirstOr(
+      await run.deps.evolu.loadQuery(
+        withdrawalForResolutionQuery(withdrawalId)
+      ),
+      createWithdrawalNotFoundError({ id: withdrawalId })
     )
-    if (withdrawal === undefined) {
-      return err(createWithdrawalNotFoundError({ id: withdrawalId }))
-    }
+    if (!withdrawalResult.ok) return withdrawalResult
+    const withdrawal = withdrawalResult.value
     const existing = await run.deps.evolu.loadQuery(
       accountTransactionExistsQuery(withdrawal.accountTransactionId)
     )

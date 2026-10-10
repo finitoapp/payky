@@ -935,6 +935,9 @@ export const enSettings = {
   "access.permission.settings": "Settings",
   "access.permission.settings.description":
     "Catalog, tables, business details, taxes, number series, tips, home screen, support chat",
+  "access.permission.stats": "Statistics",
+  "access.permission.stats.description":
+    "Sales statistics: revenue, payment methods, top items, expected cash",
   "access.phrase.back": "Back to PIN",
   "access.phrase.description":
     "The account's recovery phrase unlocks everything on this device and clears its PIN block.",

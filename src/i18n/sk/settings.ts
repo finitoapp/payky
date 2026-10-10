@@ -941,6 +941,9 @@ export const skSettings = {
   "access.permission.settings": "Nastavenia",
   "access.permission.settings.description":
     "Katalóg, stoly, údaje o firme, dane, číselné rady, sprepitné, domovská obrazovka, podpora",
+  "access.permission.stats": "Štatistiky",
+  "access.permission.stats.description":
+    "Štatistiky predaja: tržby, spôsoby platby, najpredávanejšie položky, očakávaná hotovosť",
   "access.phrase.back": "Späť na PIN",
   "access.phrase.description":
     "Fráza na obnovenie účtu odomkne na tomto zariadení všetko a zruší blokáciu PINu.",

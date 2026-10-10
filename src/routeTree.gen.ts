@@ -17,6 +17,7 @@ import { Route as TerminalIndexRouteImport } from './routes/_terminal.index'
 import { Route as TerminalActivityRouteImport } from './routes/_terminal.activity'
 import { Route as TerminalBillRouteImport } from './routes/_terminal.bill'
 import { Route as TerminalSettingsRouteImport } from './routes/_terminal.settings'
+import { Route as TerminalStatsRouteImport } from './routes/_terminal.stats'
 import { Route as TerminalActivityPaymentIdRouteImport } from './routes/_terminal.activity_.$paymentId'
 import { Route as TerminalActivityBillsRouteImport } from './routes/_terminal.activity_.bills'
 import { Route as TerminalPaymentTipRouteImport } from './routes/_terminal.payment.tip'
@@ -111,6 +112,11 @@ const TerminalBillRoute = TerminalBillRouteImport.update({
 const TerminalSettingsRoute = TerminalSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => TerminalRoute,
+} as any)
+const TerminalStatsRoute = TerminalStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => TerminalRoute,
 } as any)
 const TerminalActivityPaymentIdRoute =
@@ -449,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof TerminalActivityRoute
   '/bill': typeof TerminalBillRoute
   '/settings': typeof TerminalSettingsRouteWithChildren
+  '/stats': typeof TerminalStatsRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/activity/bills': typeof TerminalActivityBillsRoute
   '/payment/tip': typeof TerminalPaymentTipRoute
@@ -512,6 +519,7 @@ export interface FileRoutesByTo {
   '/restore-account': typeof RestoreAccountRoute
   '/activity': typeof TerminalActivityRoute
   '/bill': typeof TerminalBillRoute
+  '/stats': typeof TerminalStatsRoute
   '/': typeof TerminalIndexRoute
   '/activity/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/activity/bills': typeof TerminalActivityBillsRoute
@@ -570,6 +578,7 @@ export interface FileRoutesById {
   '/_terminal/activity': typeof TerminalActivityRoute
   '/_terminal/bill': typeof TerminalBillRoute
   '/_terminal/settings': typeof TerminalSettingsRouteWithChildren
+  '/_terminal/stats': typeof TerminalStatsRoute
   '/_terminal/': typeof TerminalIndexRoute
   '/_terminal/activity_/$paymentId': typeof TerminalActivityPaymentIdRoute
   '/_terminal/activity_/bills': typeof TerminalActivityBillsRoute
@@ -638,6 +647,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/bill'
     | '/settings'
+    | '/stats'
     | '/activity/$paymentId'
     | '/activity/bills'
     | '/payment/tip'
@@ -701,6 +711,7 @@ export interface FileRouteTypes {
     | '/restore-account'
     | '/activity'
     | '/bill'
+    | '/stats'
     | '/'
     | '/activity/$paymentId'
     | '/activity/bills'
@@ -758,6 +769,7 @@ export interface FileRouteTypes {
     | '/_terminal/activity'
     | '/_terminal/bill'
     | '/_terminal/settings'
+    | '/_terminal/stats'
     | '/_terminal/'
     | '/_terminal/activity_/$paymentId'
     | '/_terminal/activity_/bills'
@@ -880,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof TerminalSettingsRouteImport
+      parentRoute: typeof TerminalRoute
+    }
+    '/_terminal/stats': {
+      id: '/_terminal/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof TerminalStatsRouteImport
       parentRoute: typeof TerminalRoute
     }
     '/_terminal/activity_/$paymentId': {
@@ -1514,6 +1533,7 @@ interface TerminalRouteChildren {
   TerminalActivityRoute: typeof TerminalActivityRoute
   TerminalBillRoute: typeof TerminalBillRoute
   TerminalSettingsRoute: typeof TerminalSettingsRouteWithChildren
+  TerminalStatsRoute: typeof TerminalStatsRoute
   TerminalIndexRoute: typeof TerminalIndexRoute
   TerminalActivityPaymentIdRoute: typeof TerminalActivityPaymentIdRoute
   TerminalActivityBillsRoute: typeof TerminalActivityBillsRoute
@@ -1526,6 +1546,7 @@ const TerminalRouteChildren: TerminalRouteChildren = {
   TerminalActivityRoute: TerminalActivityRoute,
   TerminalBillRoute: TerminalBillRoute,
   TerminalSettingsRoute: TerminalSettingsRouteWithChildren,
+  TerminalStatsRoute: TerminalStatsRoute,
   TerminalIndexRoute: TerminalIndexRoute,
   TerminalActivityPaymentIdRoute: TerminalActivityPaymentIdRoute,
   TerminalActivityBillsRoute: TerminalActivityBillsRoute,

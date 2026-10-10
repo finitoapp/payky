@@ -1,5 +1,5 @@
 import type { DisposableRun, TestRunDefaultDeps } from "@evolu/common"
-import { testCreateRun } from "@evolu/common"
+import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
@@ -52,7 +52,7 @@ const reconciliationClaimsQuery = createQuery((db) =>
   db
     .selectFrom("reconciliationClaim")
     .select(["paymentId", "accountTransactionId", "source"])
-    .where("isDeleted", "is not", 1)
+    .where("isDeleted", "is not", sqliteTrue)
 )
 
 const createIbanAccount = async (run: TestRun): Promise<AccountId> =>

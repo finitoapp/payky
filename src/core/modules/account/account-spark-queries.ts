@@ -1,4 +1,5 @@
 import type { KyselyNotNull } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -9,8 +10,8 @@ export const activeSparkAccountsQuery = createQuery((db) =>
     .innerJoin("accountSpark", "accountSpark.id", "account.id")
     .select(["account.id", "accountSpark.secret"])
     .where("account.kind", "=", "spark")
-    .where("account.isDeleted", "is not", 1)
-    .where("accountSpark.isDeleted", "is not", 1)
+    .where("account.isDeleted", "is not", sqliteTrue)
+    .where("accountSpark.isDeleted", "is not", sqliteTrue)
     .where("account.id", "is not", null)
     .where("accountSpark.secret", "is not", null)
     .$narrowType<{
@@ -35,8 +36,8 @@ export const activeSparkAccountByIdQuery = (accountId: AccountId) =>
       .select(["account.id", "accountSpark.secret"])
       .where("account.id", "=", accountId)
       .where("account.kind", "=", "spark")
-      .where("account.isDeleted", "is not", 1)
-      .where("accountSpark.isDeleted", "is not", 1)
+      .where("account.isDeleted", "is not", sqliteTrue)
+      .where("accountSpark.isDeleted", "is not", sqliteTrue)
       .where("accountSpark.secret", "is not", null)
       .$narrowType<{
         id: KyselyNotNull
@@ -51,7 +52,7 @@ export const sparkAccountSyncPointerByAccountIdQuery = (accountId: AccountId) =>
       .select(["id", "lastSyncedAt"])
       .where("id", "=", accountId)
       .where("lastSyncedAt", "is not", null)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
       .$narrowType<{
         lastSyncedAt: KyselyNotNull
       }>()

@@ -1,4 +1,8 @@
-import { evoluJsonArrayFrom, type KyselyNotNull } from "@evolu/common"
+import {
+  evoluJsonArrayFrom,
+  type KyselyNotNull,
+  sqliteTrue,
+} from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -16,7 +20,7 @@ export const fioPluginByIdQuery = (idValue: FioPluginId) =>
       .where("numberOfSecondsBetweenChecks", "is not", null)
       .where("syncLookbackDays", "is not", null)
       .where("isActive", "is not", null)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
       .$narrowType<{
         accountId: KyselyNotNull
         numberOfSecondsBetweenChecks: KyselyNotNull
@@ -32,7 +36,7 @@ export const fioPluginTokensByPluginIdQuery = (fioPluginId: FioPluginId) =>
       .selectAll()
       .where("fioPluginId", "=", fioPluginId)
       .where("token", "is not", null)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
       .$narrowType<{
         fioPluginId: KyselyNotNull
         token: KyselyNotNull
@@ -50,7 +54,7 @@ export const fiatBankAccountFioPluginQuery = createQuery((db) =>
     .where("accountId", "is not", null)
     .where("numberOfSecondsBetweenChecks", "is not", null)
     .where("isActive", "is not", null)
-    .where("isDeleted", "is not", 1)
+    .where("isDeleted", "is not", sqliteTrue)
     .orderBy("createdAt", "desc")
     .limit(1)
     .$narrowType<{
@@ -67,7 +71,7 @@ export const fioPluginSyncPointerByPluginIdQuery = (fioPluginId: FioPluginId) =>
       .selectAll()
       .where("id", "=", fioPluginId)
       .where("lastSyncedDate", "is not", null)
-      .where("isDeleted", "is not", 1)
+      .where("isDeleted", "is not", sqliteTrue)
       .$narrowType<{
         lastSyncedDate: KyselyNotNull
       }>()
@@ -90,7 +94,7 @@ export const activeFioPluginsQuery = createQuery((db) =>
           .select(["fioPluginToken.token"])
           .whereRef("fioPluginToken.fioPluginId", "=", "fioPlugin.id")
           .where("fioPluginToken.token", "is not", null)
-          .where("fioPluginToken.isDeleted", "is not", 1)
+          .where("fioPluginToken.isDeleted", "is not", sqliteTrue)
           // `(ownerId, id)` after `createdAt` for the same reason
           // `billLinesByBillIdQuery` needs it: tokens written in one batch
           // share a `createdAt`, and the sync job compares token *order* to
@@ -106,10 +110,10 @@ export const activeFioPluginsQuery = createQuery((db) =>
       ).as("tokens"),
     ])
     .where("fioPlugin.isActive", "=", 1)
-    .where("fioPlugin.isDeleted", "is not", 1)
+    .where("fioPlugin.isDeleted", "is not", sqliteTrue)
     .where("account.kind", "=", "iban")
-    .where("account.isDeleted", "is not", 1)
-    .where("accountIban.isDeleted", "is not", 1)
+    .where("account.isDeleted", "is not", sqliteTrue)
+    .where("accountIban.isDeleted", "is not", sqliteTrue)
     .where("fioPlugin.id", "is not", null)
     .where("fioPlugin.accountId", "is not", null)
     .where("fioPlugin.numberOfSecondsBetweenChecks", "is not", null)
@@ -142,7 +146,7 @@ export const existingFioTransactionBankReferencesQuery = ({
         "accountTransactionIban.id as accountTransactionId",
       ])
       .where("accountTransaction.accountId", "=", accountId)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .where("accountTransactionIban.bankReference", "in", bankReferences)
       .where("accountTransactionIban.bankReference", "is not", null)
       .$narrowType<{

@@ -1,4 +1,5 @@
 import type { KyselyNotNull } from "@evolu/common"
+import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { BillId } from "./bill-types.ts"
@@ -23,11 +24,11 @@ export const claimedPaymentsByBillIdQuery = (billId: BillId) =>
       .innerJoin("reconciliationClaim", (join) =>
         join
           .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-          .on("reconciliationClaim.isDeleted", "is not", 1)
+          .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
       )
       .select(["payment.id", "payment.amount", "payment.tipAmount"])
       .where("payment.billId", "=", billId)
-      .where("payment.isDeleted", "is not", 1)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .where("payment.amount", "is not", null)
       .where("payment.tipAmount", "is not", null)
       .$narrowType<{
@@ -59,7 +60,7 @@ export const claimedTransactionsByBillIdQuery = (billId: BillId) =>
       .innerJoin("reconciliationClaim", (join) =>
         join
           .onRef("reconciliationClaim.paymentId", "=", "payment.id")
-          .on("reconciliationClaim.isDeleted", "is not", 1)
+          .on("reconciliationClaim.isDeleted", "is not", sqliteTrue)
       )
       .innerJoin(
         "accountTransaction",
@@ -69,7 +70,7 @@ export const claimedTransactionsByBillIdQuery = (billId: BillId) =>
       .leftJoin("paymentBtc", (join) =>
         join
           .onRef("paymentBtc.id", "=", "payment.id")
-          .on("paymentBtc.isDeleted", "is not", 1)
+          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
       )
       .select([
         "payment.id as paymentId",
@@ -82,12 +83,12 @@ export const claimedTransactionsByBillIdQuery = (billId: BillId) =>
         "accountTransaction.currency",
       ])
       .where("payment.billId", "=", billId)
-      .where("payment.isDeleted", "is not", 1)
+      .where("payment.isDeleted", "is not", sqliteTrue)
       .where("payment.tipAmount", "is not", null)
       .where("payment.amount", "is not", null)
       .where("payment.currency", "is not", null)
       .where("reconciliationClaim.accountTransactionId", "is not", null)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .where("accountTransaction.amount", "is not", null)
       .where("accountTransaction.currency", "is not", null)
       .$narrowType<{
@@ -112,5 +113,5 @@ export const paymentsByBillIdQuery = (billId: BillId) =>
       .selectFrom("payment")
       .select(["payment.id", "payment.canceledAt", "payment.expiresAt"])
       .where("payment.billId", "=", billId)
-      .where("payment.isDeleted", "is not", 1)
+      .where("payment.isDeleted", "is not", sqliteTrue)
   )

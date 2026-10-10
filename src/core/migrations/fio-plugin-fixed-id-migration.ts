@@ -43,7 +43,7 @@ export const hasLegacyFioPluginQuery = createQuery((db) =>
     .where("id", "is not", null)
     .where("numberOfSecondsBetweenChecks", "is not", null)
     .where("isActive", "is not", null)
-    .where("isDeleted", "is not", 1)
+    .where("isDeleted", "is not", sqliteTrue)
     .limit(1)
 )
 
@@ -70,7 +70,7 @@ export const legacyFioPluginsQuery = createQuery((db) =>
           .select(["fioPluginToken.id", "fioPluginToken.token"])
           .whereRef("fioPluginToken.fioPluginId", "=", "fioPlugin.id")
           .where("fioPluginToken.token", "is not", null)
-          .where("fioPluginToken.isDeleted", "is not", 1)
+          .where("fioPluginToken.isDeleted", "is not", sqliteTrue)
           .$narrowType<{
             token: KyselyNotNull
           }>()
@@ -81,7 +81,7 @@ export const legacyFioPluginsQuery = createQuery((db) =>
     .where("fioPlugin.id", "is not", null)
     .where("fioPlugin.numberOfSecondsBetweenChecks", "is not", null)
     .where("fioPlugin.isActive", "is not", null)
-    .where("fioPlugin.isDeleted", "is not", 1)
+    .where("fioPlugin.isDeleted", "is not", sqliteTrue)
     .orderBy("fioPlugin.createdAt", "desc")
     .$narrowType<{
       id: KyselyNotNull

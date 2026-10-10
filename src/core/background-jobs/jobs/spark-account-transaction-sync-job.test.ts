@@ -4,6 +4,7 @@ import {
 } from "@buildonspark/spark-sdk"
 import {
   createIdFromString,
+  sqliteTrue,
   testCreateConsole,
   testCreateRun,
 } from "@evolu/common"
@@ -73,7 +74,7 @@ const sparkTransactionsByAccountIdQuery = (accountId: AccountId) =>
         "accountTransactionLightning.paymentHash",
       ])
       .where("accountTransaction.accountId", "=", accountId)
-      .where("accountTransaction.isDeleted", "is not", 1)
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
   )
 
 const reconciliationClaimsByAccountIdQuery = (accountId: AccountId) =>
@@ -87,7 +88,7 @@ const reconciliationClaimsByAccountIdQuery = (accountId: AccountId) =>
       )
       .select(["reconciliationClaim.paymentId"])
       .where("accountTransaction.accountId", "=", accountId)
-      .where("reconciliationClaim.isDeleted", "is not", 1)
+      .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
   )
 
 interface FakeTransfer {

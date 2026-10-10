@@ -39,7 +39,7 @@ const accountTransactionsQuery = createQuery((db) =>
   db
     .selectFrom("accountTransaction")
     .select(["id", "accountId", "amount", "kind"])
-    .where("isDeleted", "is not", 1)
+    .where("isDeleted", "is not", sqliteTrue)
     .orderBy("id")
 )
 
@@ -47,7 +47,7 @@ const accountTransactionSourcesQuery = createQuery((db) =>
   db
     .selectFrom("accountTransactionSource")
     .select(["accountTransactionId", "source"])
-    .where("isDeleted", "is not", 1)
+    .where("isDeleted", "is not", sqliteTrue)
     .orderBy("accountTransactionId")
 )
 
@@ -81,7 +81,11 @@ const accountTransactionWithDetailsByIdQuery = (id: AccountTransactionId) =>
                   "=",
                   "accountTransactionSpark.id"
                 )
-                .on("accountTransactionLightning.isDeleted", "is not", 1)
+                .on(
+                  "accountTransactionLightning.isDeleted",
+                  "is not",
+                  sqliteTrue
+                )
             )
             .leftJoin("accountTransactionSparkInvoice", (join) =>
               join
@@ -90,7 +94,11 @@ const accountTransactionWithDetailsByIdQuery = (id: AccountTransactionId) =>
                   "=",
                   "accountTransactionSpark.id"
                 )
-                .on("accountTransactionSparkInvoice.isDeleted", "is not", 1)
+                .on(
+                  "accountTransactionSparkInvoice.isDeleted",
+                  "is not",
+                  sqliteTrue
+                )
             )
             .select([
               "accountTransactionSpark.sparkTransferId",

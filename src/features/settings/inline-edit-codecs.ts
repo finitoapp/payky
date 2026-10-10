@@ -89,7 +89,7 @@ export const optionalDateCodec = z.codec(
  * For `<Input type="date">` fields backing a precise `TimestampMs` instead of
  * a `DateString` — decodes to local midnight of the chosen day, the same
  * local-clock convention `dateToDateString`/`dateStringToDate`
- * (`fio-account-transaction-sync-job.ts`) use for date-only values.
+ * (`core/modules/shared/date-string-utils.ts`) use for date-only values.
  */
 export const timestampMsDateCodec = z.codec(z.string(), TimestampMsSchema, {
   decode: (value) => parseISO(value.trim()).getTime(),

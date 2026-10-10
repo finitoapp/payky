@@ -1,6 +1,4 @@
-export interface KeyedTaskQueueDeps {
-  readonly onError: (error: unknown) => void
-}
+import type { BackgroundJobOnErrorDep } from "@/core/background-jobs/background-job-types.ts"
 
 export interface KeyedTaskQueue<TKey extends string = string>
   extends AsyncDisposable,
@@ -10,7 +8,7 @@ export interface KeyedTaskQueue<TKey extends string = string>
 }
 
 export const createKeyedTaskQueue = <TKey extends string = string>(
-  deps: KeyedTaskQueueDeps
+  deps: BackgroundJobOnErrorDep
 ): KeyedTaskQueue<TKey> => {
   const queue = new Map<TKey, () => Promise<void>>()
   const keyOrder: TKey[] = []

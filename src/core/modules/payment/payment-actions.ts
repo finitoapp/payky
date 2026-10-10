@@ -44,7 +44,6 @@ import {
   upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
-import { createPaymentNumberDate } from "@/core/modules/payment-number/payment-number-utils.ts"
 import {
   loadBillClosedAtForPayment,
   upsertReconciliationClaimRows,
@@ -52,6 +51,7 @@ import {
 import { activeClaimedTransactionsByPaymentIdQuery } from "@/core/modules/reconciliation-claim/reconciliation-claim-queries.ts"
 import { deriveManualReconciliationClaimId } from "@/core/modules/reconciliation-claim/reconciliation-claim-utils.ts"
 import { sumDistinctClaimedAmounts } from "@/core/modules/shared/claimed-amount.ts"
+import { dateToDateString } from "@/core/modules/shared/date-string-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -60,6 +60,15 @@ import {
 } from "@/core/modules/shared/evolu-utils.ts"
 import { currencyNumericCodes } from "@/core/modules/shared/money.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
+import {
+  type FiatCurrency,
+  type NonEmptyString,
+  NonEmptyString255,
+  NonEmptyString255Schema,
+  type NonNegativeInteger,
+  type TimestampMs,
+  TimestampMsSchema,
+} from "@/core/modules/shared/schema.ts"
 import {
   assertHasSparkIdentifier,
   type WithSparkDetails,
@@ -71,15 +80,6 @@ import {
   type SwitchioPaymentError,
   type SwitchioTerminalDep,
 } from "@/core/native/switchio.ts"
-import {
-  type FiatCurrency,
-  type NonEmptyString,
-  NonEmptyString255,
-  NonEmptyString255Schema,
-  type NonNegativeInteger,
-  type TimestampMs,
-  TimestampMsSchema,
-} from "../shared/schema.ts"
 import {
   type AccountCurrencyMismatchError,
   type CardSwitchioAccountNotFoundError,
@@ -248,7 +248,7 @@ export const createPayment =
     const paymentNumber = await run.ok(
       loadNextPaymentNumber({
         id,
-        date: createPaymentNumberDate(run.deps.date.now()),
+        date: dateToDateString(run.deps.date.now()),
       })
     )
 

@@ -15,13 +15,14 @@ export const accessControlId = createIdFromString<"AccessControl">(
   "payky-access-control"
 )
 
-/** What a device's defaults are made of (access/0002). The PIN grants all. */
+/** What a device's defaults are made of (access/0008). The PIN grants all. */
 export const PermissionSchema = z.enum([
   "sell",
   "activity",
   "discard",
   "refund",
   "confirm",
+  "stats",
   "settings",
   "admin",
 ])
@@ -50,7 +51,7 @@ export const accessPresets = {
   basic,
   staff,
   shiftLead,
-  manager: [...shiftLead, "settings"],
+  manager: [...shiftLead, "stats", "settings"],
   owner: permissions,
 } satisfies Record<AccessPreset, ReadonlyArray<Permission>>
 

@@ -937,6 +937,9 @@ export const csSettings = {
   "access.permission.settings": "Nastavení",
   "access.permission.settings.description":
     "Katalog, stoly, údaje o firmě, daně, číselné řady, spropitné, domovská obrazovka, podpora",
+  "access.permission.stats": "Statistiky",
+  "access.permission.stats.description":
+    "Statistiky prodeje: tržby, způsoby platby, nejprodávanější položky, očekávaná hotovost",
   "access.phrase.back": "Zpět na PIN",
   "access.phrase.description":
     "Fráze pro obnovení účtu odemkne na tomto zařízení vše a zruší blokaci PINu.",

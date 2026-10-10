@@ -1,6 +1,12 @@
 import { sqliteTrue } from "@evolu/common"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { Calculator, Clock3, LayoutGrid, Settings } from "lucide-react"
+import {
+  Calculator,
+  ChartColumn,
+  Clock3,
+  LayoutGrid,
+  Settings,
+} from "lucide-react"
 import { LayoutGroup, motion } from "motion/react"
 import { Suspense } from "react"
 import {
@@ -95,6 +101,13 @@ const Header = () => {
           render={<Link aria-label={t("nav.activity")} to="/activity" />}
         >
           <Clock3 className={"size-6"} strokeWidth={3} />
+        </Button>
+        <Button
+          nativeButton={false}
+          variant={"ghost"}
+          render={<Link aria-label={t("nav.stats")} to="/stats" />}
+        >
+          <ChartColumn className={"size-6"} strokeWidth={3} />
         </Button>
         <Button
           nativeButton={false}

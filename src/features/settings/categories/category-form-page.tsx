@@ -201,7 +201,7 @@ function EditCatalogCategoryForm({
               errorKey="settings.categories.form.name.invalid"
               onSave={async (name) => {
                 await using run = appRun()
-                await run(updateCatalogCategory({ id: category.id, name }))
+                await run.ok(updateCatalogCategory({ id: category.id, name }))
               }}
             />
           </FieldGroup>

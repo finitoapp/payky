@@ -111,7 +111,7 @@ function LastNumberCard() {
     readonly date: typeof date
   }) => {
     await using run = appRun()
-    await run(updatePaymentLastNumber(values))
+    await run.ok(updatePaymentLastNumber(values))
   }
 
   return (
@@ -176,7 +176,7 @@ function SeriesFormatCard() {
    */
   const save = async (changed: Partial<PaymentNumberSeriesRow>) => {
     await using run = appRun()
-    await run(
+    await run.ok(
       updatePaymentNumberSeries({
         serialNumberDigits: series.serialNumberDigits,
         prefix: series.prefix,

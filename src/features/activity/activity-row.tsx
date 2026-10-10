@@ -7,7 +7,7 @@ import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
   paymentMethodIcon,
   paymentMethodLabelKey,
-} from "@/features/activity/payment-method-display.tsx"
+} from "@/features/shared/payment-method-display.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney, formatRelativeDate } from "@/lib/format-utils.ts"

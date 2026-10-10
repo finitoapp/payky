@@ -6,8 +6,5 @@ export const Route = createFileRoute("/_terminal/settings/tax-rates")({
   component: TaxRatesSettingsPage,
   staticData: {
     access: "settings",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

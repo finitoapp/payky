@@ -4,9 +4,5 @@ export const Route = createFileRoute(
   "/_terminal/settings/payment-accounts/spark"
 )({
   staticData: { access: "admin" },
-  component: SparkAccountLayout,
+  component: Outlet,
 })
-
-function SparkAccountLayout() {
-  return <Outlet />
-}

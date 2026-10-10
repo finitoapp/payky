@@ -6,8 +6,5 @@ export const Route = createFileRoute("/_terminal/settings/legal-entity")({
   component: LegalEntitySettingsPage,
   staticData: {
     access: "settings",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

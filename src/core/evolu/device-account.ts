@@ -220,6 +220,21 @@ export const upsertAccountEvoluWebsocketTransport = (
   return id
 }
 
+/** Turns one of an account's sync transports on or off. */
+export const setAccountEvoluTransportActive = (
+  deviceEvolu: DeviceEvolu,
+  {
+    id,
+    isActive,
+  }: {
+    readonly id: AccountEvoluTransportId
+    readonly isActive: typeof sqliteFalse | typeof sqliteTrue
+  },
+  options?: MutationOptions
+): void => {
+  deviceEvolu.update("accountEvoluTransport", { id, isActive }, options)
+}
+
 /**
  * What an account brought from another device keeps: its name, and its
  * transports in their stored form, so one on a custom sync server syncs here

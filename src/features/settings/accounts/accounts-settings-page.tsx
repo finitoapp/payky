@@ -28,13 +28,13 @@ import {
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
-import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
+import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
 import {
   type AccountChoice,
   AccountTypeChoice,
-} from "@/features/account/account-type-choice.tsx"
-import { RestoreAccountForm } from "@/features/account/restore-account-form.tsx"
-import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
+} from "@/features/shared/account/account-type-choice.tsx"
+import { RestoreAccountForm } from "@/features/shared/account/restore-account-form.tsx"
+import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"

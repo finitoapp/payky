@@ -19,7 +19,7 @@ import type { TableId } from "@/core/modules/table/table-types.ts"
 import {
   OccupiedTableSummary,
   TableTileShell,
-} from "@/features/tables/table-tile.tsx"
+} from "@/features/shared/table-tile.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"

@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from "react"
 import { z } from "zod"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
+import { ScanCodeScannerDialog } from "@/components/scan-code-scanner-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -60,7 +61,6 @@ import {
   filterSelectableTaxRates,
   formatTaxRateLabel,
 } from "@/core/modules/tax-rate/tax-rate-utils.ts"
-import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import {
   NO_OPTION,
   optionalIdCodec,
@@ -71,7 +71,6 @@ import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import {
   type CatalogItemFormErrors,
   createPriceCodec,
@@ -84,6 +83,7 @@ import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
+import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 const categoryCodec = optionalIdCodec<CatalogCategoryId>()

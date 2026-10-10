@@ -7,7 +7,7 @@ import {
 import {
   type AccountChoice,
   AccountTypeChoice,
-} from "@/features/account/account-type-choice.tsx"
+} from "@/features/shared/account/account-type-choice.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export function AccountChoiceStep({

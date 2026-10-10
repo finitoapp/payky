@@ -15,7 +15,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { RecoveryPhraseFields } from "@/features/settings/security/recovery-phrase-card.tsx"
+import { RecoveryPhraseFields } from "@/features/shared/recovery-phrase-card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 

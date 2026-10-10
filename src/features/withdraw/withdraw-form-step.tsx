@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { type FormEvent, useState } from "react"
 import { toast } from "sonner"
+import { ScanCodeScannerDialog } from "@/components/scan-code-scanner-dialog.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
   Card,
@@ -39,7 +40,6 @@ import {
   type WithdrawDestination,
 } from "@/core/modules/withdraw/withdraw-destination-utils.ts"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@/core/modules/withdraw/withdraw-utils.ts"
-import { ScanCodeScannerDialog } from "@/features/scanner/scan-code-scanner-dialog.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useLnurlPayMetadata } from "@/hooks/use-lnurl-pay-metadata.ts"

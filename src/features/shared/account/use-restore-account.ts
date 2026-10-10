@@ -9,9 +9,9 @@ import {
   mnemonicToMasterKey,
   RecoveryMnemonicSchema,
 } from "@/core/modules/shared/key-derivation.ts"
-import { restoredAccountAtom } from "@/features/account/restored-account.ts"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
+import { restoredAccountAtom } from "@/features/shared/account/restored-account.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
+import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface RestoreAccount {

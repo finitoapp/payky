@@ -4,7 +4,7 @@ import { useAtomValue } from "jotai"
 import { accountAtom, recoveryMnemonicAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { EvoluTransportCard } from "@/features/settings/security/evolu-transport-card.tsx"
-import { RecoveryPhraseCard } from "@/features/settings/security/recovery-phrase-card.tsx"
+import { RecoveryPhraseCard } from "@/features/shared/recovery-phrase-card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/settings/security")({

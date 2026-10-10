@@ -1,11 +1,11 @@
 import type { BarcodeFormat } from "barcode-detector"
+import { ScanCodeScanner } from "@/components/scan-code-scanner.tsx"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx"
-import { ScanCodeScanner } from "@/features/scanner/scan-code-scanner.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**

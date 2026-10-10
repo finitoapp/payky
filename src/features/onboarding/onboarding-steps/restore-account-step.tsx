@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { RestoreAccountForm } from "@/features/account/restore-account-form.tsx"
+import { RestoreAccountForm } from "@/features/shared/account/restore-account-form.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 

@@ -11,6 +11,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/reui/alert.tsx"
+import { ScanCodeScanner } from "@/components/scan-code-scanner.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { createDateDep } from "@/core/deps.ts"
 import { createOrSelectAccount } from "@/core/evolu/device-account.ts"
@@ -26,8 +27,7 @@ import {
   parsePairUri,
   type WrongPaykyUriTypeError,
 } from "@/core/payky-uri.ts"
-import { restoredAccountAtom } from "@/features/account/restored-account.ts"
-import { ScanCodeScanner } from "@/features/scanner/scan-code-scanner.tsx"
+import { restoredAccountAtom } from "@/features/shared/account/restored-account.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"

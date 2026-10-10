@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
-import { planRestoreCleanup } from "@/features/account/restored-account.ts"
+import { planRestoreCleanup } from "@/features/shared/account/restored-account.ts"
 
 const active = "active-account" as DeviceAccountId
 const previous = "previous-account" as DeviceAccountId

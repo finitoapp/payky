@@ -33,13 +33,13 @@ import {
 } from "@/core/evolu/initial-sync-state.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
-  planRestoreCleanup,
-  restoredAccountAtom,
-} from "@/features/account/restored-account.ts"
-import {
   initialOnboardingFormState,
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
+import {
+  planRestoreCleanup,
+  restoredAccountAtom,
+} from "@/features/shared/account/restored-account.ts"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"

@@ -53,6 +53,6 @@ database, which is exactly when the access-control data cannot be read.
 
 ## Enforced by
 
-- `src/features/account/restored-account.test.ts > planRestoreCleanup > an empty atom removes and selects no account from %s`
+- `src/features/shared/account/restored-account.test.ts > planRestoreCleanup > an empty atom removes and selects no account from %s`
 - `src/core/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > writes no row on an onboarded account`
 - `e2e/access-gates.spec.ts > a typed URL neither removes an account nor reopens onboarding`

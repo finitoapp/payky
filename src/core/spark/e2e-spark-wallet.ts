@@ -2,6 +2,7 @@ import type {
   SparkPaymentWallet,
   SparkWalletDep,
 } from "@/core/spark/spark-wallet.ts"
+import { createFakeSparkWallet } from "@/core/spark/spark-wallet-test-fixtures.ts"
 
 declare global {
   interface Window {
@@ -11,10 +12,6 @@ declare global {
      */
     __e2eSparkWallet?: Partial<SparkPaymentWallet>
   }
-}
-
-const notImplemented = (): never => {
-  throw new Error("Not faked by the e2e spec.")
 }
 
 /**
@@ -30,21 +27,7 @@ export const createE2eSparkWalletDep = (): SparkWalletDep | null => {
 
   return {
     sparkWallet: {
-      create: async () => ({
-        createLightningInvoice: notImplemented,
-        getWalletSettings: notImplemented,
-        setPrivacyEnabled: notImplemented,
-        getBalance: notImplemented,
-        getWithdrawalFeeQuote: notImplemented,
-        withdraw: notImplemented,
-        getLightningSendFeeEstimate: notImplemented,
-        payLightningInvoice: notImplemented,
-        getTransfer: notImplemented,
-        getIdentityPublicKey: notImplemented,
-        getCoopExitRequest: notImplemented,
-        ...overrides,
-        [Symbol.asyncDispose]: async () => {},
-      }),
+      create: async () => createFakeSparkWallet(overrides),
     },
   }
 }

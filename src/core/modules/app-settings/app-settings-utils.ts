@@ -40,13 +40,24 @@ export const EnabledHomeModesJson = jsonCodec(
  * `enabledHomeModesJson` is left out: `null` already means every mode, which
  * also offers a mode added later to anyone who never narrowed the set.
  */
+/** The fiat currency an account works in before its settings row exists. */
+export const defaultFiatCurrency = FiatCurrency.CZK
+
+/**
+ * The account's fiat currency, or the default while its settings row has not
+ * loaded or synced yet.
+ */
+export const getFiatCurrency = (
+  settings: { readonly fiatCurrency: FiatCurrency | null } | undefined
+): FiatCurrency => settings?.fiatCurrency ?? defaultFiatCurrency
+
 export const createDefaultSettings = (): Omit<
   AppSettingsRow,
   "enabledHomeModesJson"
 > => ({
   id: settingsId,
   onboardingCompleted: null,
-  fiatCurrency: FiatCurrency.CZK,
+  fiatCurrency: defaultFiatCurrency,
   tipsEnabled: sqliteTrue,
   presetTipPercentagesJson: stringifyTipPercentages(defaultTipPercentages),
   presetTipFixedAmountsJson: stringifyTipFixedAmounts(defaultTipFixedAmounts),

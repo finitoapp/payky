@@ -4,6 +4,7 @@ import { Integer } from "@/core/modules/shared/schema.ts"
 import {
   formatAddressGroups,
   formatAmount,
+  formatCountdown,
   formatDate,
   formatDateTime,
   formatElapsed,
@@ -11,6 +12,7 @@ import {
   formatRelativeDate,
   formatSatsAmount,
   formatTime,
+  shortenMiddle,
 } from "./format-utils.ts"
 
 /**
@@ -160,5 +162,27 @@ describe("formatRelativeDate", () => {
     expect(formatRelativeDate(tomorrow, now, "en-US")).toBe(
       formatDate(tomorrow, "en-US")
     )
+  })
+})
+
+describe("formatCountdown", () => {
+  test("shows m:ss under an hour and h:mm:ss from an hour up", () => {
+    expect(formatCountdown(65_000)).toBe("1:05")
+    expect(formatCountdown(3_723_000)).toBe("1:02:03")
+  })
+
+  test("rounds a part second up and never goes below zero", () => {
+    expect(formatCountdown(400)).toBe("0:01")
+    expect(formatCountdown(-5_000)).toBe("0:00")
+  })
+})
+
+describe("shortenMiddle", () => {
+  test("cuts the middle to an ellipsis", () => {
+    expect(shortenMiddle("abcdefghijklmnop", 4, 3)).toBe("abcd…nop")
+  })
+
+  test("leaves a value whole when cutting would not make it shorter", () => {
+    expect(shortenMiddle("abcdefgh", 4, 3)).toBe("abcdefgh")
   })
 })

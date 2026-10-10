@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { catalogCategoriesQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
 import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts"
@@ -51,7 +52,6 @@ import {
   getStaffDisplayName,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import {
-  FiatCurrency,
   FiatCurrencySchema,
   type FiatCurrency as FiatCurrencyType,
 } from "@/core/modules/shared/schema.ts"
@@ -105,7 +105,7 @@ export function NewCatalogItemPage({
       <div className="h-6" />
       <FadeHeader title={t("settings.items.form.title.create")} />
       <CreateCatalogItemForm
-        defaultCurrency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+        defaultCurrency={getFiatCurrency(settings)}
         initialScanCode={initialScanCode ?? ""}
       />
     </>

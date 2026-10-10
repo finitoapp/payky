@@ -13,6 +13,7 @@ import {
   deriveNostrSecretKey,
   type MasterKey,
 } from "@/core/modules/shared/key-derivation.ts"
+import { shortenMiddle } from "@/lib/format-utils.ts"
 import { jsonCodec } from "@/zod-utils.ts"
 
 const PROFILE_KIND = 0
@@ -61,8 +62,7 @@ export const getNostrIdentity = (masterKey: MasterKey): NostrIdentity => {
 }
 
 /** `npub1abcd…wxyz` for labels; the full npub stays in the copy action. */
-export const shortenNpub = (npub: string): string =>
-  npub.length <= 20 ? npub : `${npub.slice(0, 12)}…${npub.slice(-6)}`
+export const shortenNpub = (npub: string): string => shortenMiddle(npub, 12, 6)
 
 /** What Payky shows and edits of a kind-0 profile. */
 export interface NostrProfile {

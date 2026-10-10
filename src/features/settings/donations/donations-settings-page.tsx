@@ -26,6 +26,7 @@ import {
   type LnurlPayMetadata,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
   currencyFractionDigits,
   decimalAmountToMinorUnits,
@@ -34,7 +35,6 @@ import {
   satsToFiat,
 } from "@/core/modules/shared/money.ts"
 import {
-  FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
   Integer,
 } from "@/core/modules/shared/schema.ts"
@@ -85,7 +85,7 @@ export function DonationsSettingsPage() {
   const { t } = useTranslation()
   const { data } = useEvoluQuery(settingsQuery)
   const [settings] = data
-  const currency = settings?.fiatCurrency ?? FiatCurrency.CZK
+  const currency = getFiatCurrency(settings)
   const donationAddress = appEnv.VITE_PAYKY_DONATE_LUD16_ADDRESS
   const [fiatInput, setFiatInput] = useState("")
   const [satsInput, setSatsInput] = useState("")

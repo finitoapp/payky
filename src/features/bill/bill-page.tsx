@@ -42,6 +42,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
   cancelBill,
   type SplitBillError,
@@ -71,7 +72,6 @@ import type { CategoryFilter } from "@/core/modules/catalog-item/catalog-item-ty
 import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
-  FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
   NonNegativeInteger,
   type PositiveNumber,
@@ -153,7 +153,7 @@ export function BillPage({
   const navigate = useNavigate()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
   const [settings] = settingsData
-  const fallbackCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
+  const fallbackCurrency = getFiatCurrency(settings)
 
   // Only meaningful before the bill row exists: it seeds the table the
   // lazily created row is assigned to. Once the row exists, `bill.tableId`

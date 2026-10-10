@@ -24,7 +24,11 @@ import {
 import type { SparkExitSpeed } from "@/core/spark/spark-wallet.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatAddressGroups, formatSatsAmount } from "@/lib/format-utils.ts"
+import {
+  formatAddressGroups,
+  formatCountdown,
+  formatSatsAmount,
+} from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
 import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"
@@ -60,16 +64,6 @@ const exitSpeedOptions: ReadonlyArray<{
 
 /** Under this much time left the countdown turns into a warning. */
 const EXPIRY_WARNING_MS = 60_000
-
-const formatCountdown = (ms: number): string => {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const hours = Math.floor(total / 3600)
-  const minutes = Math.floor((total % 3600) / 60)
-  const seconds = String(total % 60).padStart(2, "0")
-  return hours > 0
-    ? `${hours}:${String(minutes).padStart(2, "0")}:${seconds}`
-    : `${minutes}:${seconds}`
-}
 
 function OnchainReview({
   quote,

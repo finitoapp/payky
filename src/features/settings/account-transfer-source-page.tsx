@@ -63,6 +63,7 @@ import { useAccess } from "@/hooks/use-access.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
+import { formatCountdown } from "@/lib/format-utils.ts"
 
 type FailureReason = Extract<TransferSourceState, { phase: "failed" }>["reason"]
 
@@ -93,11 +94,6 @@ const introSteps = [
 }>
 
 const TRANSFER_CODE_LENGTH = 6
-
-const formatRemaining = (ms: number) => {
-  const seconds = Math.max(0, Math.ceil(ms / 1000))
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
-}
 
 /**
  * The source half of account/0001, S1–S4: the device with the account shows
@@ -238,7 +234,7 @@ export function AccountTransferSourcePage() {
               </p>
               <p className="text-sm text-muted-foreground tabular-nums">
                 {t("accountTransfer.source.qr.validFor", {
-                  time: formatRemaining(state.expiresAt - now),
+                  time: formatCountdown(state.expiresAt - now),
                 })}
               </p>
             </>

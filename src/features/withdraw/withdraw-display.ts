@@ -3,6 +3,7 @@ import type {
   WithdrawalView,
 } from "@/core/modules/withdraw/withdraw-queries.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
+import { shortenMiddle } from "@/lib/format-utils.ts"
 
 export const withdrawalKindKeys = {
   onchain: "withdraw.kind.onchain",
@@ -27,15 +28,10 @@ export const withdrawalDestination = (target: WithdrawalTarget): string =>
     ? target.onchainAddress
     : (target.lightningAddress ?? target.lnInvoice)
 
-const shorten = (value: string, head: number, tail: number): string =>
-  value.length <= head + tail + 1
-    ? value
-    : `${value.slice(0, head)}…${value.slice(-tail)}`
-
 export const shortWithdrawalDestination = (target: WithdrawalTarget): string =>
   target.kind === "lightning" && target.lightningAddress !== null
     ? target.lightningAddress
-    : shorten(withdrawalDestination(target), 10, 6)
+    : shortenMiddle(withdrawalDestination(target), 10, 6)
 
 /** Tinted like the activity badges, so a state reads at a glance as well as in words. */
 export const withdrawalStatusBadgeClassName = (

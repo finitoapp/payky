@@ -11,7 +11,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { createAiModelDep } from "@/core/ai/ai-model.ts"
 import { askAssistant } from "@/core/ai/assistant.ts"
-import { appEnv } from "@/core/app-env.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import type { AiAssistantAccess } from "@/core/evolu/device-client.ts"
 import {
   type AssistantTurn,
@@ -30,12 +30,6 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
-
-/** Payky's AI proxy (ai/0001), which holds the provider and its key. */
-const AI_PROXY_URL = new URL(
-  "/api/ai/v1",
-  appEnv.VITE_PAYKY_API_BASE_URL
-).toString()
 
 /** What the assistant may read, as its empty state says and suggests. */
 type Access = Exclude<AiAssistantAccess, "off">
@@ -211,7 +205,11 @@ function useAssistantConversation(access: Access) {
             lookingUp: Object.hasOwn(repoTools, toolName) ? "docs" : "data",
           })),
       }),
-      { ...run.deps, ...createAiModelDep({ baseURL: AI_PROXY_URL, ownerId }) }
+      {
+        ...run.deps,
+        // Payky's AI proxy (ai/0001), which holds the provider and its key.
+        ...createAiModelDep({ baseURL: apiUrl("/api/ai/v1"), ownerId }),
+      }
     )
     // The run's signal cannot tell: a settled fiber's run is disposed, which
     // aborts it too.

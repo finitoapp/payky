@@ -1,5 +1,5 @@
 import type { Task } from "@evolu/common"
-import { appEnv } from "@/core/app-env.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import {
   type FetchDep,
   type FetchError,
@@ -11,15 +11,10 @@ import {
   DonationHistoryResponseSchema,
 } from "@/core/integrations/donations/donation-history.ts"
 
-const DONATIONS_URL = new URL(
-  "/api/donations",
-  appEnv.VITE_PAYKY_API_BASE_URL
-).toString()
-
 const buildDonationsUrl = (cursor: string | undefined): string =>
   cursor === undefined
-    ? DONATIONS_URL
-    : `${DONATIONS_URL}?cursor=${encodeURIComponent(cursor)}`
+    ? apiUrl("/api/donations")
+    : `${apiUrl("/api/donations")}?cursor=${encodeURIComponent(cursor)}`
 
 const createDonationsHttpError = defineError("DonationsHttpError")<{
   readonly message: string

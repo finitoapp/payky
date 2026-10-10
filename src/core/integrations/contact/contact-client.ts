@@ -1,7 +1,7 @@
 import type { Task } from "@evolu/common"
 import { z } from "zod"
 
-import { appEnv } from "@/core/app-env.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import {
   type FetchDep,
   type FetchError,
@@ -13,11 +13,6 @@ import {
   ContactMessageSchema,
 } from "@/core/modules/contact/contact-message.ts"
 import { jsonCodec } from "@/zod-utils.ts"
-
-const CONTACT_URL = new URL(
-  "/api/contact",
-  appEnv.VITE_PAYKY_API_BASE_URL
-).toString()
 
 const ContactMessageJson = jsonCodec(ContactMessageSchema)
 
@@ -51,7 +46,7 @@ export const sendContactMessage =
   (run) =>
     run(
       fetchAndValidateJson({
-        url: CONTACT_URL,
+        url: apiUrl("/api/contact"),
         init: {
           method: "POST",
           headers: { "content-type": "application/json" },

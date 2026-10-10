@@ -1,12 +1,13 @@
+import { Capacitor } from "@capacitor/core"
 import { createEnv } from "@t3-oss/env-core"
 import { z } from "zod"
 
 export const appEnv = createEnv({
   clientPrefix: "VITE_",
   client: {
-    // Absolute, because the native app's origin is https://localhost and has
-    // no /api of its own to resolve a relative path against.
-    VITE_PAYKY_API_BASE_URL: z.url().default("https://payky.me"),
+    // Origin of the /api serverless functions, read through `apiUrl`. Unset
+    // means the page's own origin, so every deployment calls its own /api.
+    VITE_PAYKY_API_BASE_URL: z.url().optional(),
     VITE_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
     // Where the donations page sends sats.
     VITE_PAYKY_DONATE_LUD16_ADDRESS: z.string().default("donate@payky.me"),
@@ -28,3 +29,19 @@ export const appEnv = createEnv({
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,
 })
+
+/**
+ * An absolute URL of `path` on this app's own API. The web calls the
+ * deployment it was served from; the native app, whose origin is
+ * https://localhost with no /api of its own, and code running without a page
+ * (Vitest, the landing prerender) call payky.me. `VITE_PAYKY_API_BASE_URL`
+ * overrides both, which is how `bun run dev`, served without /api, reaches one.
+ */
+export const apiUrl = (path: string): string =>
+  new URL(
+    path,
+    appEnv.VITE_PAYKY_API_BASE_URL ??
+      (Capacitor.isNativePlatform() || typeof window === "undefined"
+        ? "https://payky.me"
+        : window.location.origin)
+  ).toString()

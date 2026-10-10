@@ -1,7 +1,7 @@
 import { err, ok, type Task } from "@evolu/common"
 import { z } from "zod"
 
-import { appEnv } from "@/core/app-env.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import {
   type DateDep,
   type FetchDep,
@@ -16,11 +16,6 @@ import {
   type EetCertificateFile,
   readEetCertificateFile,
 } from "./eet-certificate.ts"
-
-const PLAYGROUND_CERTIFICATES_URL = new URL(
-  "/api/eet/playground-certificates",
-  appEnv.VITE_PAYKY_API_BASE_URL
-).toString()
 
 const PlaygroundCertificatesResponseSchema = z.object({
   password: z.string().min(1),
@@ -74,7 +69,7 @@ export const fetchPlaygroundCertificates =
   async (run) => {
     const response = await run(
       fetchAndValidateJson({
-        url: PLAYGROUND_CERTIFICATES_URL,
+        url: apiUrl("/api/eet/playground-certificates"),
         schema: PlaygroundCertificatesResponseSchema,
         // Both errors leave the body out on purpose. A successful body is
         // the test certificates and their password, so one that failed

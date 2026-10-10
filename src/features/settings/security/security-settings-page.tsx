@@ -17,7 +17,10 @@ export function SecuritySettingsPage() {
       <FadeHeader title={t("settings.security.title")} />
       <div className="flex flex-col gap-5">
         <RecoveryPhraseCard mnemonic={recoveryMnemonic} />
-        <EvoluTransportCard accountId={account.id} />
+        <EvoluTransportCard
+          accountId={account.id}
+          isDemo={account.demo !== null}
+        />
       </div>
     </>
   )

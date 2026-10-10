@@ -17,10 +17,16 @@ import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
-  const deviceId = useAtomValue(accountAtom).device.id
+  const account = useAtomValue(accountAtom)
+  const deviceId = account.device.id
+  // Every job talks to an outside service (EET, the bank, the Spark wallet),
+  // and a demo account's data is fictional: none may run (demo-data/0001).
+  const isDemo = account.demo !== null
   const console = useConsole()
 
   useEffect(() => {
+    if (isDemo) return
+
     const disposeJobs = async (disposable: AsyncDisposable): Promise<void> => {
       await disposable[Symbol.asyncDispose]()
     }
@@ -77,7 +83,7 @@ export function AppBackgroundJobs() {
         }
       })()
     }
-  }, [console, deviceId, evolu])
+  }, [console, deviceId, evolu, isDemo])
 
   return null
 }

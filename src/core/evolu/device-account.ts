@@ -12,6 +12,7 @@ import {
 import {
   type AccountEvoluTransportId,
   createDeviceQuery,
+  type DemoAccountState,
   type DeviceAccountId,
   type DeviceEvolu,
 } from "@/core/evolu/device-client.ts"
@@ -28,6 +29,8 @@ export interface DeviceAccount {
   readonly id: DeviceAccountId
   readonly masterKey: MasterKey
   readonly name: string
+  /** Not null on a demo account, which never syncs (demo-data/0001). */
+  readonly demo: DemoAccountState | null
   readonly device: {
     readonly id: DeviceId
     readonly name: string
@@ -45,6 +48,7 @@ export const activeAccountQuery = createDeviceQuery((db) =>
       "account.id as id",
       "account.masterKey as masterKey",
       "account.name as name",
+      "account.demo as demo",
 
       evoluJsonObjectFrom(
         eb
@@ -286,6 +290,7 @@ export const insertAccount = (
     id: accountId,
     masterKey,
     name,
+    demo: null,
     device: null,
     // Mirrors what the upserts above wrote, so the account syncs in the
     // session that created it rather than only after the next reload.
@@ -294,6 +299,50 @@ export const insertAccount = (
       url,
     })),
   }
+}
+
+/**
+ * Adds a demo account and makes it the active one (demo-data/0001). Its
+ * transports are stored switched off, so the settings show the relays it
+ * does not use; `evoluAtom` keeps it off the network regardless. Its history
+ * is generated once the app reloads into it, while `demo` is `pending`.
+ */
+export const insertDemoAccount = (
+  deviceEvolu: DeviceEvolu,
+  name: NonEmptyString255,
+  options?: MutationOptions
+): DeviceAccountId => {
+  const masterKey = createAccountMasterKey()
+  const accountId = deriveDeviceAccountId(masterKey)
+  deviceEvolu.upsert(
+    "account",
+    {
+      id: accountId,
+      name,
+      masterKey,
+      lastUseAt: Date.now(),
+      demo: "pending",
+      isDeleted: sqliteFalse,
+    },
+    options
+  )
+  for (const url of defaultEvoluTransportUrls) {
+    upsertAccountEvoluWebsocketTransport(
+      deviceEvolu,
+      { accountId, isActive: sqliteFalse, url },
+      options
+    )
+  }
+
+  return accountId
+}
+
+export function markDemoAccountSeeded(
+  deviceEvolu: DeviceEvolu,
+  accountId: DeviceAccountId,
+  options?: MutationOptions
+) {
+  deviceEvolu.update("account", { id: accountId, demo: "seeded" }, options)
 }
 
 export async function loadActiveAccountRow(deviceEvolu: DeviceEvolu) {

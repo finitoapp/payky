@@ -133,5 +133,8 @@
     "esbuild",
     "msgpackr-extract",
     "protobufjs"
-  ]
+  ],
+  "patchedDependencies": {
+    "@evolu/common@8.19.0": "patches/@evolu%2Fcommon@8.19.0.patch"
+  }
 }

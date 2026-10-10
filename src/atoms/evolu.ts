@@ -18,10 +18,15 @@ export const evoluAtom = atom(async (get, { signal }) => {
   // The stored URLs may carry `${appOwnerId}` for a relay that addresses a
   // room by path. This is the first point where the owner those rows describe
   // actually exists, so it is where the placeholder turns into an id.
-  const transports = account.transports.map((transport) => ({
-    ...transport,
-    url: resolveTransportUrl(transport.url, evolu.appOwner.id),
-  }))
+  // A demo account never syncs, whatever its transport rows say: its
+  // fictional history must not reach a relay (demo-data/0001).
+  const transports =
+    account.demo === null
+      ? account.transports.map((transport) => ({
+          ...transport,
+          url: resolveTransportUrl(transport.url, evolu.appOwner.id),
+        }))
+      : []
 
   const unuse = isNonEmptyArray(transports)
     ? // biome-ignore lint/correctness/useHookAtTopLevel: This is not react hook

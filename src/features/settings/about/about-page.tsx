@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import {
   Bug,
   DatabaseBackup,
+  DatabaseZap,
   GitFork,
   type Info,
   ScrollText,
@@ -56,6 +57,12 @@ const developerRows: ReadonlyArray<AboutRow> = [
     title: "settings.evoluExport.title",
     description: "settings.evoluExport.description",
     target: { kind: "link", to: "/settings/evolu-export" },
+  },
+  {
+    icon: DatabaseZap,
+    title: "settings.demoData.title",
+    description: "settings.demoData.description",
+    target: { kind: "link", to: "/settings/demo-data" },
   },
   {
     icon: Bug,

@@ -2,10 +2,13 @@ import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import {
+  activeAccountQuery,
   appOwnerIdPlaceholder,
   createOrSelectAccount,
   defaultEvoluTransportUrls,
   deriveDeviceAccountId,
+  insertDemoAccount,
+  markDemoAccountSeeded,
   removeDeviceAccount,
   resolveTransportUrl,
   storableNostrPicture,
@@ -208,5 +211,42 @@ describe("storableNostrPicture", () => {
       storableNostrPicture(`https://image.example/${"a".repeat(2048)}`)
     ).toBeNull()
     expect(storableNostrPicture(null)).toBeNull()
+  })
+})
+
+describe("insertDemoAccount", () => {
+  test("adds an active demo account whose relays are all switched off", async () => {
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
+    await createOrSelectAccount(deviceEvolu, masterKey)
+
+    const accountId = insertDemoAccount(deviceEvolu, NonEmptyString255("Demo"))
+
+    await expect
+      .poll(() => deviceEvolu.loadQuery(activeAccountQuery))
+      .toMatchObject([
+        {
+          id: accountId,
+          name: "Demo",
+          demo: "pending",
+          transports: [],
+        },
+      ])
+    const transports = await deviceEvolu.loadQuery(
+      createDeviceQuery((db) =>
+        db
+          .selectFrom("accountEvoluTransport")
+          .select("isActive")
+          .where("accountId", "=", accountId)
+      )
+    )
+    expect(transports).toEqual(
+      defaultEvoluTransportUrls.map(() => ({ isActive: sqliteFalse }))
+    )
+
+    markDemoAccountSeeded(deviceEvolu, accountId)
+    await expect
+      .poll(() => deviceEvolu.loadQuery(activeAccountQuery))
+      .toMatchObject([{ id: accountId, demo: "seeded" }])
   })
 })

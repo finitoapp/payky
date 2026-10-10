@@ -108,6 +108,31 @@ export const skSettings = {
   "settings.debugConsole.pause": "Pozastaviť",
   "settings.debugConsole.resume": "Pokračovať",
   "settings.debugConsole.title": "Debug Console",
+  "settings.demoData.accountName": "Demo kaviareň",
+  "settings.demoData.action": "Vytvoriť demo účet",
+  "settings.demoData.action.pending": "Vytvára sa…",
+  "settings.demoData.confirm.cancel": "Zrušiť",
+  "settings.demoData.confirm.confirm": "Vytvoriť a vygenerovať",
+  "settings.demoData.confirm.description":
+    "Aplikácia sa prepne na nový demo účet a naplní ho fiktívnymi dátami. Vrátiť to ide len odobratím demo účtu.",
+  "settings.demoData.confirm.title": "Vytvoriť demo účet?",
+  "settings.demoData.current.description":
+    "Všetko v ňom je fiktívne a nikdy sa nesynchronizuje. Na skutočný účet sa prepnete v sekcii Účty.",
+  "settings.demoData.current.title": "Ste v demo účte",
+  "settings.demoData.description":
+    "Naplniť samostatný demo účet fiktívnymi predajmi",
+  "settings.demoData.title": "Demo dáta",
+  "settings.demoData.warning.duration":
+    "Generovanie začne dneškom a postupuje deň po dni do minulosti. Tri mesiace trvajú asi pol hodiny, na telefóne dlhšie, ale môžete ho kedykoľvek zastaviť: rozpracovaný deň sa dokončí a doterajšia história zostane.",
+  "settings.demoData.warning.irreversible":
+    "Demo účet sa nenávratne naplní až tromi mesiacmi fiktívneho katalógu, stolov, platieb a refundácií. Nedajú sa mazať po jednom, len spolu s celým demo účtom.",
+  "settings.demoData.warning.newAccount":
+    "Na zariadení vznikne nový účet „{name}“ a stane sa aktívnym. Váš súčasný účet a jeho dáta zostanú nedotknuté; prepnete sa naň späť v sekcii Účty.",
+  "settings.demoData.warning.relays":
+    "Synchronizačné relaye sú pre demo účet vypnuté a nedajú sa zapnúť, takže sa fiktívne dáta nikdy nedostanú na relay ani do iného zariadenia.",
+  "settings.demoData.warning.services":
+    "Nič sa neodosiela do banky, platobného terminálu ani do siete Lightning: všetky vonkajšie služby sú simulované. EET zostáva vypnuté.",
+  "settings.demoData.warning.title": "Prečítajte si pred generovaním",
   "settings.developers": "VÝVOJÁRI",
   "settings.donations.amount.invalid": "Zadajte kladný celý počet sats.",
   "settings.donations.amount.range": "Suma je mimo povolený rozsah daru.",
@@ -597,6 +622,8 @@ export const skSettings = {
     "Ak túto frázu stratíte, tento účet a jeho dáta už nikdy nepôjde obnoviť – nepodarí sa to ani nám.",
   "settings.security.title": "Bezpečnosť a synchronizácia",
   "settings.security.transports.add": "Pridať transport",
+  "settings.security.transports.demo":
+    "Toto je demo účet: nikdy sa nesynchronizuje, takže jeho relaye zostávajú vypnuté.",
   "settings.security.transports.description":
     "Nastavenie Evolu WebSocket endpointov pre tento device účet.",
   "settings.security.transports.empty": "Nie sú uložené žiadne transporty.",

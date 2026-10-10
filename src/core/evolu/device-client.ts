@@ -20,11 +20,13 @@ import {
   type InferTable,
   NonEmptyString255Schema,
   NonNegativeIntegerSchema,
-  SqliteBoolSchema,
   TimestampMsSchema,
   WssUrlSchema,
 } from "@/core/modules/shared/schema.ts"
 import { standardSchemaToZod } from "@/zod-utils.ts"
+
+/** SQLite's 0/1 boolean, as the device tables store their flags. */
+const SqliteBoolSchema = z.union([z.literal(0), z.literal(1)])
 
 export const DeviceAccountIdRaw = id("DeviceAccountId")
 export const DeviceAccountId = standardSchemaToZod(DeviceAccountIdRaw)

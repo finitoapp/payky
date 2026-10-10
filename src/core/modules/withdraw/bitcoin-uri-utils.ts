@@ -28,7 +28,7 @@ export const normalizeBitcoinAddress = (address: string): string =>
  * whole sats, or a `req-` parameter, which BIP21 makes mandatory to
  * understand — and this app understands none.
  *
- * Separate from `bitcoin-address-utils.ts` on purpose: `schema.ts` imports
+ * Separate from `shared/bitcoin-address-utils.ts` on purpose: `schema.ts` imports
  * that file for its address refinement, so anything reaching back into
  * `money.ts` — as this does for `decimalAmountToMinorUnits` — would close a
  * cycle through `money.ts` -> `schema.ts`.

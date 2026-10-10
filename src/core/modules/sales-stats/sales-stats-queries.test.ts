@@ -41,6 +41,7 @@ import {
   confirmPaymentPaidDespiteCancellation,
   createPayment,
   markPaymentPaidCash,
+  markPaymentPaidIban,
 } from "@/core/modules/payment/payment-actions.ts"
 import {
   paymentByIdQuery,
@@ -198,14 +199,12 @@ const createStatsContext = async () => {
     await r.orThrow(markPaymentPaidCash({ paymentId, accountId }))
   }
 
-  /**
-   * A transfer confirmed by hand, as an `iban` transaction claimed
-   * manually. Not `markPaymentPaidIban`: it records the transaction as
-   * `kind = "cashRegister"` (it passes no `iban` detail to
-   * `computeAccountTransactionRows`), which this module reads as cash.
-   */
-  const settleByTransfer = async (paymentId: PaymentId, amount: number) => {
-    await claimExtra({ paymentId, accountId: accounts.ibanAccountId, amount })
+  /** A transfer confirmed by hand. */
+  const settleByTransfer = async (paymentId: PaymentId) => {
+    await using r = run()
+    await r.orThrow(
+      markPaymentPaidIban({ paymentId, accountId: accounts.ibanAccountId })
+    )
   }
 
   /** A second, independent settlement: a duplicate across devices. */
@@ -238,9 +237,7 @@ const createStatsContext = async () => {
                 ),
               },
             }
-          : accountId === accounts.ibanAccountId
-            ? { iban: {} }
-            : { kind: "cashRegister" as const }),
+          : { kind: "cashRegister" as const }),
       })
     )
     await r.ok(
@@ -442,7 +439,7 @@ describe("a paid payment", () => {
     context.at("2026-06-05T20:00:00.000Z")
     const paymentId = await context.createTestPayment({ amount: 500 })
     context.at("2026-06-06T09:00:00.000Z")
-    await context.settleByTransfer(paymentId, 500)
+    await context.settleByTransfer(paymentId)
 
     await expect(context.load(salesByHourQuery(june5))).resolves.toMatchObject([
       { count: 1, gross: 500 },
@@ -534,7 +531,7 @@ describe("payment method", () => {
     await context.pay({ amount: 5_500, tipAmount: 500 })
     // Settled twice across devices: by transfer and in cash.
     const duplicate = await context.createTestPayment({ amount: 10_000 })
-    await context.settleByTransfer(duplicate, 10_000)
+    await context.settleByTransfer(duplicate)
     await context.claimExtra({
       paymentId: duplicate,
       accountId: context.cashRegisterAccountId,
@@ -627,7 +624,7 @@ describe("expected cash", () => {
     context.at("2026-06-05T10:00:00.000Z")
     const paymentId = await context.pay({ amount: 11_000, tipAmount: 1_000 })
     const byTransfer = await context.createTestPayment({ amount: 4_000 })
-    await context.settleByTransfer(byTransfer, 4_000)
+    await context.settleByTransfer(byTransfer)
     await using r = context.run()
     await r.orThrow(
       refundPayment({
@@ -977,8 +974,7 @@ describe("signals", () => {
     await r.orThrow(cancelBill(await context.createTestBill())) // empty
 
     await context.settleByTransfer(
-      await context.createTestPayment({ amount: 4_000 }),
-      4_000
+      await context.createTestPayment({ amount: 4_000 })
     )
     await context.pay({ amount: 5_000 }) // cash by hand is normal
     context.at("2026-06-06T10:00:00.000Z")

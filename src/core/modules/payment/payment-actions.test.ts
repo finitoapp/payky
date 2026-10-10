@@ -1653,7 +1653,7 @@ describe("payment actions", () => {
         createQuery((db) =>
           db
             .selectFrom("accountTransaction")
-            .select(["id", "accountId", "amount"])
+            .select(["id", "accountId", "amount", "kind"])
             .where("id", "=", id as never)
         )
       )
@@ -1666,7 +1666,13 @@ describe("payment actions", () => {
           )
         )
       )
-      .toMatchObject([{ accountId: cashRegisterAccountId, amount: 1_000 }])
+      .toMatchObject([
+        {
+          accountId: cashRegisterAccountId,
+          amount: 1_000,
+          kind: "cashRegister",
+        },
+      ])
     await expect
       .poll(() =>
         transactionById(
@@ -1675,7 +1681,11 @@ describe("payment actions", () => {
           )
         )
       )
-      .toMatchObject([{ accountId: ibanAccountId, amount: 1_000 }])
+      // Recorded as the transfer it is, not as cash: Activity's "Paid by"
+      // and the sales statistics read the method from this kind.
+      .toMatchObject([
+        { accountId: ibanAccountId, amount: 1_000, kind: "iban" },
+      ])
 
     // And exactly those two rows — no stray settlement under another id.
     await expect(

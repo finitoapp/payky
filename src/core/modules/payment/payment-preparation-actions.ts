@@ -42,9 +42,8 @@ import {
   runMutationWithCompletion,
 } from "@/core/modules/shared/evolu-utils.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
+import { fiatMinorUnitsToSats } from "@/core/modules/shared/money.ts"
 import { getFirstOr } from "@/core/modules/shared/result.ts"
-import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
-import { fiatMinorUnitsToSats } from "../shared/money.ts"
 import {
   type FiatCurrency,
   type NonEmptyString,
@@ -52,7 +51,8 @@ import {
   NonNegativeIntegerSchema,
   PositiveNumberSchema,
   TimestampMsSchema,
-} from "../shared/schema.ts"
+} from "@/core/modules/shared/schema.ts"
+import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 import {
   createPayment,
   loadPayment,

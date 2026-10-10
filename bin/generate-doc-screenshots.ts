@@ -4,6 +4,11 @@ import { mkdir, rm } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import { chromium, expect, type Page } from "@playwright/test"
 import sharp from "sharp"
+import {
+  type Language,
+  resources,
+  type TranslationKey,
+} from "@/i18n/resources.ts"
 import { addCatalogItem, addTable, startNewBill } from "../e2e/support/bill.ts"
 import { translate } from "../e2e/support/i18n.ts"
 import { gotoPosOverview } from "../e2e/support/navigation.ts"
@@ -14,11 +19,6 @@ import {
   markCashPaid,
 } from "../e2e/support/payment.ts"
 import { pageHeight, pageWidth } from "../e2e/support/viewport.ts"
-import {
-  type Language,
-  resources,
-  type TranslationKey,
-} from "../src/i18n/resources.ts"
 import { docEnv } from "./doc-env.ts"
 import {
   contentBottomInset,

@@ -5,32 +5,34 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
-import { AccountKindSchema } from "@/core/modules/account/account-types.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
-import { createQuery } from "../src/core/evolu/schema"
+import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createAccount,
   deleteAccount,
   loadAccount,
   updateAccount,
   updateSparkAccountSyncPointer,
-} from "../src/core/modules/account/account-actions"
-import { AccountId } from "../src/core/modules/account/account-types"
-import { DeviceId } from "../src/core/modules/device/device-types"
+} from "@/core/modules/account/account-actions.ts"
+import {
+  AccountId,
+  AccountKindSchema,
+} from "@/core/modules/account/account-types.ts"
+import { DeviceId } from "@/core/modules/device/device-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createMasterKey,
   deriveDefaultSparkWalletSecret,
   SparkSecretSchema,
   sparkSecretToMnemonic,
-} from "../src/core/modules/shared/key-derivation"
+} from "@/core/modules/shared/key-derivation.ts"
 import {
   DateStringSchema,
   FiatCurrencySchema,
   IbanSchema,
   NonEmptyString255Schema,
   TimestampMsSchema,
-} from "../src/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
+import { createDefaultSparkPaymentWallet } from "@/core/spark/spark-wallet.ts"
 
 const accountsWithDetailsQuery = createQuery((db) =>
   db

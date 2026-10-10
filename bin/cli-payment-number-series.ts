@@ -3,15 +3,15 @@ import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   loadPaymentNumberSeries,
   updatePaymentNumberSeries,
-} from "../src/core/modules/payment-number-series/payment-number-series-actions"
+} from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
-} from "../src/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
 
 const YearFormatSchema = z.enum(["default", "short"])
 const DatePartFormatSchema = z.enum(["default", "hidden"])

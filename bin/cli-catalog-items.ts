@@ -2,22 +2,22 @@ import { ok, sqliteTrue, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { zodCommand } from "zod-commander/zod4"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
-import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createCatalogItem,
   updateCatalogItem,
-} from "../src/core/modules/catalog-item/catalog-item-actions"
+} from "@/core/modules/catalog-item/catalog-item-actions.ts"
 import {
   catalogItemByIdQuery,
   catalogItemsQuery,
-} from "../src/core/modules/catalog-item/catalog-item-queries"
-import { removeUndefinedValues } from "../src/core/modules/shared/evolu-utils.ts"
+} from "@/core/modules/catalog-item/catalog-item-queries.ts"
+import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { removeUndefinedValues } from "@/core/modules/shared/evolu-utils.ts"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
-} from "../src/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
 
 export const registerCatalogItemsCommand =
   (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>

@@ -7,7 +7,16 @@ import {
 import { describe, expect, test } from "vitest"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
+import { saveFioPlugin } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
+import { fioPluginByIdQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
+import { fioPluginId } from "@/core/modules/fio-plugin/fio-plugin-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import {
+  deriveDefaultSparkWalletSecret,
+  MasterKey,
+  SparkSecret,
+  sparkSecretToMnemonic,
+} from "@/core/modules/shared/key-derivation.ts"
 import {
   IbanSchema,
   NonEmptyString255,
@@ -17,15 +26,6 @@ import {
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
 import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { saveFioPlugin } from "../fio-plugin/fio-plugin-actions.ts"
-import { fioPluginByIdQuery } from "../fio-plugin/fio-plugin-queries.ts"
-import { fioPluginId } from "../fio-plugin/fio-plugin-utils.ts"
-import {
-  deriveDefaultSparkWalletSecret,
-  MasterKey,
-  SparkSecret,
-  sparkSecretToMnemonic,
-} from "../shared/key-derivation.ts"
 import {
   createAccount,
   deleteAccount,

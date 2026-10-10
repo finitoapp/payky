@@ -12,26 +12,26 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import { createFetchDep, type EvoluOwnerIdDep } from "@/core/deps.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createQuery } from "../src/core/evolu/schema"
+import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createFioApiDep,
   setFioLastDate,
-} from "../src/core/integrations/fio/fio-client"
-import { AccountId } from "../src/core/modules/account/account-types"
+} from "@/core/integrations/fio/fio-client.ts"
+import { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   addFioPluginToken,
   deleteFioPlugin,
   loadFioPlugin,
   saveFioPlugin,
-} from "../src/core/modules/fio-plugin/fio-plugin-actions"
-import { fioPluginTokensByPluginIdQuery } from "../src/core/modules/fio-plugin/fio-plugin-queries"
-import { FioPluginId } from "../src/core/modules/fio-plugin/fio-plugin-types"
+} from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
+import { fioPluginTokensByPluginIdQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
+import { FioPluginId } from "@/core/modules/fio-plugin/fio-plugin-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   DateStringSchema,
   NonEmptyString255Schema,
   PositiveIntegerFromStringSchema,
-} from "../src/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
 
 const SqliteBooleanFromStringSchema = z
   .enum(["true", "false", "1", "0"])

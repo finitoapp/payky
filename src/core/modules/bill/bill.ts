@@ -54,6 +54,9 @@ export const billIndexes = ((create) => [
     .on("bill")
     .columns(["canceledAt", "closedAt"]),
   create("bill_createdAt").on("bill").column("createdAt"),
+  // The sales statistics' item sales range over the day a bill closed;
+  // `bill_canceledAt_closedAt` cannot serve that, it leads with `canceledAt`.
+  create("bill_closedAt").on("bill").column("closedAt"),
   create("bill_displayNumber").on("bill").column("displayNumber"),
 ]) satisfies IndexesConfig
 

@@ -40,6 +40,8 @@ export const refundLine = {
 export const refundIndexes = ((create) => [
   create("refund_paymentId").on("refund").column("paymentId"),
   create("refund_deviceId").on("refund").column("deviceId"),
+  // The sales statistics count a refund on the day it was paid out.
+  create("refund_refundedAt").on("refund").column("refundedAt"),
   create("refundLine_paymentId").on("refundLine").column("paymentId"),
 ]) satisfies IndexesConfig
 

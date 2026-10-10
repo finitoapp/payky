@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { HeartHandshakeIcon, LoaderCircleIcon } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -23,10 +23,8 @@ import { Input } from "@/components/ui/input.tsx"
 import { appEnv } from "@/core/app-env.ts"
 import {
   fetchLnurlPayInvoice,
-  fetchLnurlPayMetadata,
   type LnurlPayMetadata,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
-import { fetchYadioBtcExchangeRate } from "@/core/integrations/yadio/yadio-client.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import {
   currencyFractionDigits,
@@ -42,8 +40,10 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import { DonationHistory } from "@/features/settings/donations/donation-history.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useBtcExchangeRate } from "@/hooks/use-btc-exchange-rate.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLnurlPayMetadata } from "@/hooks/use-lnurl-pay-metadata.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -91,38 +91,8 @@ export function DonationsSettingsPage() {
   const [satsInput, setSatsInput] = useState("")
   const [editedAmount, setEditedAmount] = useState<EditedAmount>("fiat")
 
-  const exchangeRateQuery = useQuery({
-    queryKey: ["donations", "exchange-rate", currency],
-    queryFn: async () => {
-      await using run = appRun()
-
-      const result = await run(fetchYadioBtcExchangeRate(currency))
-
-      if (!result.ok) {
-        console.error("Failed to load donation exchange rate", result.error)
-        throw result.error
-      }
-
-      return result.value
-    },
-  })
-  const metadataQuery = useQuery({
-    queryKey: ["donations", "lnurl-metadata", donationAddress],
-    queryFn: async () => {
-      await using run = appRun()
-
-      const result = await run(
-        fetchLnurlPayMetadata({ address: donationAddress })
-      )
-
-      if (!result.ok) {
-        console.error("Failed to load donation LNURL metadata", result.error)
-        throw result.error
-      }
-
-      return result.value
-    },
-  })
+  const exchangeRateQuery = useBtcExchangeRate(currency)
+  const metadataQuery = useLnurlPayMetadata(donationAddress)
   const donationLoadState: DonationLoadState = exchangeRateQuery.isError
     ? { status: "error", key: "settings.donations.rate.error" }
     : metadataQuery.isError
@@ -130,7 +100,7 @@ export function DonationsSettingsPage() {
       : exchangeRateQuery.data !== undefined && metadataQuery.data !== undefined
         ? {
             status: "ready",
-            exchangeRate: exchangeRateQuery.data.exchangeRate,
+            exchangeRate: exchangeRateQuery.data,
             metadata: metadataQuery.data,
           }
         : { status: "loading" }

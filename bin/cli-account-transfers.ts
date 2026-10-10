@@ -4,17 +4,19 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
-import { AccountKindSchema } from "@/core/modules/account/account-types.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createQuery } from "../src/core/evolu/schema"
-import { AccountId } from "../src/core/modules/account/account-types"
+import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  AccountId,
+  AccountKindSchema,
+} from "@/core/modules/account/account-types.ts"
 import {
   createAccountTransaction,
   deleteAccountTransaction,
   updateAccountTransaction,
-} from "../src/core/modules/account-transaction/account-transaction-actions"
-import { AccountTransactionId } from "../src/core/modules/account-transaction/account-transaction-types"
-import { DeviceId } from "../src/core/modules/device/device-types"
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import { DeviceId } from "@/core/modules/device/device-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   ConstantSymbolSchema,
   CurrencySchema,
@@ -24,7 +26,7 @@ import {
   SpecificSymbolSchema,
   TimestampMsSchema,
   VariableSymbolSchema,
-} from "../src/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
 
 const TimestampMsFromStringSchema = z.string().transform((value, ctx) => {
   const trimmed = value.trim()

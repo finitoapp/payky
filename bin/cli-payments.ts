@@ -4,20 +4,19 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import { createQuery } from "@/core/evolu/schema.ts"
 import type { YadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
-import { createQuery } from "../src/core/evolu/schema"
-import { AccountId } from "../src/core/modules/account/account-types"
-import { BillId } from "../src/core/modules/bill/bill-types"
-import { DeviceId } from "../src/core/modules/device/device-types"
+import { AccountId } from "@/core/modules/account/account-types.ts"
+import { BillId } from "@/core/modules/bill/bill-types.ts"
+import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   deletePayment,
   loadPayment,
   updatePayment,
-} from "../src/core/modules/payment/payment-actions"
-import { createPreparedPayment } from "../src/core/modules/payment/payment-preparation-actions"
-import { PaymentId } from "../src/core/modules/payment/payment-types"
+} from "@/core/modules/payment/payment-actions.ts"
+import { createPreparedPayment } from "@/core/modules/payment/payment-preparation-actions.ts"
+import { PaymentId } from "@/core/modules/payment/payment-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   FiatCurrencySchema,
   NonEmptyStringSchema,
@@ -26,8 +25,9 @@ import {
   SpecificSymbolSchema,
   TimestampMsSchema,
   VariableSymbolSchema,
-} from "../src/core/modules/shared/schema"
-import { TableId } from "../src/core/modules/table/table-types"
+} from "@/core/modules/shared/schema.ts"
+import { TableId } from "@/core/modules/table/table-types.ts"
+import type { SparkWalletDep } from "@/core/spark/spark-wallet.ts"
 
 const TimestampMsFromStringSchema = z.string().transform((value, ctx) => {
   const trimmed = value.trim()

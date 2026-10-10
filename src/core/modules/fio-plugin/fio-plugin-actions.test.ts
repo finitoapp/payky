@@ -11,14 +11,14 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { createEvoluTest } from "@/test/evolu.ts"
-import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   DateStringSchema,
   IbanSchema,
   NonEmptyString255,
   PositiveInteger,
-} from "../shared/schema.ts"
+} from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
+import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   addFioPluginToken,
   deleteFioPlugin,

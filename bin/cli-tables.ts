@@ -2,25 +2,25 @@ import { ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { zodCommand } from "zod-commander/zod4"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-import { DeviceId } from "../src/core/modules/device/device-types"
-import { removeUndefinedValues } from "../src/core/modules/shared/evolu-utils.ts"
+import { removeUndefinedValues } from "@/core/modules/shared/evolu-utils.ts"
 import {
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
   PositiveIntegerFromStringSchema,
-} from "../src/core/modules/shared/schema"
+} from "@/core/modules/shared/schema.ts"
 import {
   createTable,
   deleteTable,
   updateTable,
-} from "../src/core/modules/table/table-actions"
+} from "@/core/modules/table/table-actions.ts"
 import {
   tableByIdQuery,
   tablesQuery,
-} from "../src/core/modules/table/table-queries"
-import { TableId } from "../src/core/modules/table/table-types"
-import { generateTableCode } from "../src/core/modules/table/table-utils"
+} from "@/core/modules/table/table-queries.ts"
+import { TableId } from "@/core/modules/table/table-types.ts"
+import { generateTableCode } from "@/core/modules/table/table-utils.ts"
 
 export const registerTablesCommand =
   (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>

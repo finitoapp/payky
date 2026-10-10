@@ -4,7 +4,6 @@ import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   addCatalogItemToBill,
   addManualAmountToBill,
@@ -17,22 +16,23 @@ import {
   listOpenBills,
   removeTableFromBill,
   splitBill,
-} from "../src/core/modules/bill/bill-actions"
-import { loadBill } from "../src/core/modules/bill/bill-guards"
-import { BillId } from "../src/core/modules/bill/bill-types"
-import { loadCalculatedBillLineSummaries } from "../src/core/modules/bill-line/bill-line-actions"
-import type { BillLineSummary } from "../src/core/modules/bill-line/bill-line-summary"
-import type { BillLineSummaryId } from "../src/core/modules/bill-line/bill-line-types"
-import { CatalogItemId } from "../src/core/modules/catalog-item/catalog-item-types"
-import { DeviceId } from "../src/core/modules/device/device-types"
+} from "@/core/modules/bill/bill-actions.ts"
+import { loadBill } from "@/core/modules/bill/bill-guards.ts"
+import { BillId } from "@/core/modules/bill/bill-types.ts"
+import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
+import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import type { BillLineSummaryId } from "@/core/modules/bill-line/bill-line-types.ts"
+import { CatalogItemId } from "@/core/modules/catalog-item/catalog-item-types.ts"
+import { DeviceId } from "@/core/modules/device/device-types.ts"
+import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   FiatCurrencySchema,
   NonEmptyString255Schema,
   NonNegativeIntegerFromStringSchema,
   PositiveIntegerFromStringSchema,
   PositiveNumberFromStringSchema,
-} from "../src/core/modules/shared/schema"
-import { TableId } from "../src/core/modules/table/table-types"
+} from "@/core/modules/shared/schema.ts"
+import { TableId } from "@/core/modules/table/table-types.ts"
 
 const LineSummaryIdsFromStringSchema = z
   .string()

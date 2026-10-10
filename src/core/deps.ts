@@ -1,4 +1,9 @@
-import { Capacitor, type HttpHeaders, type HttpOptions } from "@capacitor/core"
+import {
+  Capacitor,
+  CapacitorHttp,
+  type HttpHeaders,
+  type HttpOptions,
+} from "@capacitor/core"
 import {
   AbortError,
   err,
@@ -202,20 +207,6 @@ export const fetchAndValidateJson =
     })
   }
 
-let capacitorHttpPromise:
-  | Promise<{
-      readonly CapacitorHttp: typeof import("@capacitor/core").CapacitorHttp
-    }>
-  | undefined
-
-const getCapacitorHttp = async () => {
-  capacitorHttpPromise ??= import("@capacitor/core").then(
-    ({ CapacitorHttp }) => ({ CapacitorHttp })
-  )
-
-  return capacitorHttpPromise
-}
-
 const getRequestHeaders = (request: Request): HttpHeaders => {
   const headers: HttpHeaders = {}
 
@@ -264,14 +255,11 @@ const capacitorFetch: typeof globalThis.fetch = async (input, init) => {
   const request = new Request(input, init)
   throwIfAborted(request.signal)
 
-  const [capacitorHttp, requestData] = await Promise.all([
-    getCapacitorHttp(),
-    getRequestData(request),
-  ])
+  const requestData = await getRequestData(request)
 
   throwIfAborted(request.signal)
 
-  const response = await capacitorHttp.CapacitorHttp.request({
+  const response = await CapacitorHttp.request({
     url: request.url,
     method: request.method,
     headers: getRequestHeaders(request),

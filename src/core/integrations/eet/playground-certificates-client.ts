@@ -76,6 +76,12 @@ export const fetchPlaygroundCertificates =
       fetchAndValidateJson({
         url: PLAYGROUND_CERTIFICATES_URL,
         schema: PlaygroundCertificatesResponseSchema,
+        // Both errors leave the body out on purpose. A successful body is
+        // the test certificates and their password, so one that failed
+        // validation may still carry them, and an error's payload can reach
+        // the debug console or Sentry. The HTTP-error body is only this
+        // app's own error JSON, left out the same way so neither path ever
+        // has to be checked again.
         onHttpError: ({ status }) =>
           createPlaygroundCertificatesHttpError({
             message: `Official EET test certificates request failed: ${status}`,

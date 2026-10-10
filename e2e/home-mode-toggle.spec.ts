@@ -1,5 +1,6 @@
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
+import { toggleInlineSwitch } from "./support/inline-edit.ts"
 import { gotoPage } from "./support/navigation.ts"
 
 test("toggling the home icon switches between numpad and tables, and the choice survives a reload", async ({
@@ -78,7 +79,9 @@ test("disabling a home mode in settings hides the switch, falls back to the firs
   })
 
   await test.step("disabling tables mode leaves the keypad without a switch", async () => {
-    await posSwitch.click()
+    // Waits for the save, not just the switch: it flips before the write
+    // lands, and the reload below would otherwise read the old modes.
+    await toggleInlineSwitch(page, "nav.pos")
     await expect(posSwitch).not.toBeChecked()
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(payButton).toBeVisible()
@@ -97,7 +100,7 @@ test("disabling a home mode in settings hides the switch, falls back to the firs
   })
 
   await test.step("re-enabling tables mode brings the remembered mode back", async () => {
-    await posSwitch.click()
+    await toggleInlineSwitch(page, "nav.pos")
     await expect(posSwitch).toBeChecked()
     await page.goto("/", { waitUntil: "domcontentloaded" })
     await expect(noTableTile).toBeVisible()

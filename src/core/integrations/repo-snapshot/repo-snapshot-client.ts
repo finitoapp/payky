@@ -1,22 +1,12 @@
-import { Capacitor } from "@capacitor/core"
 import type { Task } from "@evolu/common"
 import { z } from "zod"
-import { appEnv } from "@/core/app-env.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import {
   type FetchDep,
   type FetchError,
   fetchAndValidateJson,
 } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
-
-/**
- * The snapshot only the web build carries (ai/0003): the web reads its own
- * deployment's, the native app, which has none, the one of payky.me.
- */
-const repoSnapshotUrl = (): string =>
-  Capacitor.isNativePlatform()
-    ? new URL("/repo-snapshot.json", appEnv.VITE_PAYKY_API_BASE_URL).toString()
-    : "/repo-snapshot.json"
 
 const RepoSnapshotSchema = z.object({
   /** The version the snapshot was built from, as `__APP_VERSION__`. */
@@ -56,7 +46,9 @@ export const fetchRepoSnapshot =
   (): Task<RepoSnapshot, RepoSnapshotError, FetchDep> => (run) =>
     run(
       fetchAndValidateJson({
-        url: repoSnapshotUrl(),
+        // Only the web build carries it (ai/0003), so the native app reads
+        // payky.me's.
+        url: apiUrl("/repo-snapshot.json"),
         schema: RepoSnapshotSchema,
         onHttpError: ({ status, responseBody }) =>
           createRepoSnapshotHttpError({

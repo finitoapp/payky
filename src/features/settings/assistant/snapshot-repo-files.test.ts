@@ -46,8 +46,8 @@ describe("createSnapshotRepoFilesLoader", () => {
     expect((await loadFiles()).paths).toEqual(["src/app.ts"])
     expect((await loadFiles()).paths).toEqual(["src/app.ts"])
     expect(requestedUrls).toEqual([
-      "/repo-snapshot.json",
-      "/repo-snapshot.json",
+      "https://payky.me/repo-snapshot.json",
+      "https://payky.me/repo-snapshot.json",
     ])
   })
 })

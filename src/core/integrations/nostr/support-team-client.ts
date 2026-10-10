@@ -1,7 +1,7 @@
 import type { Task } from "@evolu/common"
 import { z } from "zod"
 
-import { appEnv } from "@/core/app-env.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import {
   type FetchDep,
   type FetchError,
@@ -10,11 +10,6 @@ import {
 import { defineError } from "@/core/error.ts"
 import type { SupportTeam } from "@/core/integrations/nostr/nostr-support-chat.ts"
 import { npubToHex } from "@/core/integrations/nostr/npub.ts"
-
-const SUPPORT_TEAM_URL = new URL(
-  "/api/support-team",
-  appEnv.VITE_PAYKY_API_BASE_URL
-).toString()
 
 /** An npub as the hex pubkey the chat compares and tags. */
 const NpubSchema = z.string().transform((value, context) => {
@@ -62,7 +57,7 @@ export const fetchSupportTeam =
   (): Task<SupportTeam, SupportTeamError, FetchDep> => (run) =>
     run(
       fetchAndValidateJson({
-        url: SUPPORT_TEAM_URL,
+        url: apiUrl("/api/support-team"),
         schema: SupportTeamResponseSchema,
         onHttpError: ({ status, responseBody }) =>
           createSupportTeamHttpError({

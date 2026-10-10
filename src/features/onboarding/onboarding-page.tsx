@@ -33,6 +33,7 @@ import { finishOnboarding as finishOnboardingTask } from "@/core/modules/app-set
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
+import { LanguageSelect } from "@/features/onboarding/language-select.tsx"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
@@ -53,7 +54,6 @@ import {
 import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
 import { markAppEntered } from "@/features/shared/landing-redirect.ts"
-import { LanguageSelect } from "@/features/shared/language-select.tsx"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

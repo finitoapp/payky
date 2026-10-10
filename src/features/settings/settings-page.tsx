@@ -36,7 +36,6 @@ import {
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
-import { homeModeLabelKeys } from "@/features/settings/home-screen/home-screen-settings-page.tsx"
 import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
@@ -45,6 +44,7 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
+import { countryLabelKey, homeModeLabelKeys } from "@/i18n/settings-labels.ts"
 
 /**
  * A row shows either a `description` of what the page is for or, for pages
@@ -128,11 +128,7 @@ export function SettingsPage() {
   const businessValue =
     legalEntity === undefined
       ? fiatCurrency
-      : `${t(
-          legalEntity.country === null
-            ? "country.other"
-            : `country.${legalEntity.country.toLowerCase() as "cz" | "sk"}`
-        )} · ${fiatCurrency}`
+      : `${t(countryLabelKey(legalEntity.country))} · ${fiatCurrency}`
 
   const catalogItems = createSettingsNavItems(
     [

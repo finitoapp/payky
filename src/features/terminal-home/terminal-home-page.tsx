@@ -27,10 +27,11 @@ import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { homeModeLabelKeys } from "@/i18n/settings-labels.ts"
 
 const homeModeItems = [
-  { mode: "numpad", icon: Calculator, label: "nav.numpad" },
-  { mode: "pos", icon: LayoutGrid, label: "nav.pos" },
+  { mode: "numpad", icon: Calculator, label: homeModeLabelKeys.numpad },
+  { mode: "pos", icon: LayoutGrid, label: homeModeLabelKeys.pos },
 ] as const
 
 const Header = () => {

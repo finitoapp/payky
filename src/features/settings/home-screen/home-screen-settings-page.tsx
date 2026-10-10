@@ -15,11 +15,7 @@ import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-
-export const homeModeLabelKeys = {
-  numpad: "nav.numpad",
-  pos: "nav.pos",
-} satisfies Record<TerminalHomeMode, TranslationKey>
+import { homeModeLabelKeys } from "@/i18n/settings-labels.ts"
 
 const homeModeDescriptionKeys = {
   numpad: "settings.homeScreen.numpad.description",

@@ -11,8 +11,8 @@ import {
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
+import { type PairUri, parsePairUri } from "@/core/modules/shared/payky-uri.ts"
 import { NonEmptyString255, WssUrl } from "@/core/modules/shared/schema.ts"
-import { type PairUri, parsePairUri } from "@/core/payky-uri.ts"
 
 import {
   computeHelloProof,

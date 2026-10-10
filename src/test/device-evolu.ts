@@ -1,4 +1,4 @@
-import { setupRunWithEvoluDeps } from "@/core/evolu/cli-client.ts"
+import { setupRunWithEvoluDeps } from "@/core/cli/cli-evolu.ts"
 import { createDeviceEvolu } from "@/core/evolu/device-client.ts"
 
 /** A device database in memory, disposed with the returned object. */

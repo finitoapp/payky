@@ -7,7 +7,6 @@ import {
 import { describe, expect, test } from "vitest"
 
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -21,6 +20,7 @@ import {
   VariableSymbol,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   createAccountTransaction,

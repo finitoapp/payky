@@ -7,7 +7,6 @@ import {
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import type { EetCertificateFile } from "@/core/integrations/eet/eet-certificate.ts"
 import {
   createEetApiDep,
@@ -57,6 +56,7 @@ import {
   createTestCertificate,
   type TestCertificate,
 } from "@/test/eet-test-certificates.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 
 export const eetTestEic = "CZ1234567890" as EetEic

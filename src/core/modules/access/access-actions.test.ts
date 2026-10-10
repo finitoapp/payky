@@ -2,7 +2,6 @@ import { createIdFromString, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import { loadPinAttemptLog } from "@/core/evolu/device-pin-attempts.ts"
 import type { Evolu } from "@/core/evolu/schema.ts"
@@ -33,6 +32,7 @@ import {
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 
 const accountId: DeviceAccountId = createIdFromString("test-account")

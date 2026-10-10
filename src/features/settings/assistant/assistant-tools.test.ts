@@ -1,7 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import { createDataTools } from "@/core/ai/assistant.ts"
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { createAssistantTools } from "./assistant-tools.ts"
 
 describe("createAssistantTools", () => {

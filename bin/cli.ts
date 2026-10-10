@@ -9,6 +9,7 @@ import { type Command, createCommand } from "commander"
 import type { AiModelDep } from "@/core/ai/ai-model.ts"
 import { createAiModelDep } from "@/core/ai/ai-model.ts"
 import { cliEnv } from "@/core/cli/cli-env.ts"
+import { createCliEvolu } from "@/core/cli/cli-evolu.ts"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {
   createDateDep,
@@ -26,7 +27,6 @@ import {
   createSparkWalletDep,
   type SparkWalletDep,
 } from "@/core/spark/spark-wallet.ts"
-import { createEvoluCli } from "../src/core/evolu/cli-client"
 import { registerAccountTransfersCommand } from "./cli-account-transfers"
 import { registerAccountsCommand } from "./cli-accounts"
 import { registerAiCommand } from "./cli-ai"
@@ -81,7 +81,7 @@ const main = async () => {
   }
   navigatorWithLocks.locks ??= createInProcessLockManager()
 
-  await using evoluCli = await createEvoluCli()
+  await using evoluCli = await createCliEvolu()
   const { evolu } = evoluCli
   const evoluOwnerId = evolu.appOwner.id
   const console = createConsole({

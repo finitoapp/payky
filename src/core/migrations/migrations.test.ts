@@ -30,9 +30,9 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDeviceEvolu } from "@/test/device-evolu.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { createTestLocalStorage } from "@/test/local-storage.ts"
-import { createEvoluTest } from "../evolu/cli-client"
 
 /**
  * A migration whose work is a plain flag rather than rows, so the runner can

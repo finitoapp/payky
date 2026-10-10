@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest"
 
-import { encodePairUri, parsePairUri, parsePaykyUri } from "@/core/payky-uri.ts"
+import {
+  encodePairUri,
+  parsePairUri,
+  parsePaykyUri,
+} from "@/core/modules/shared/payky-uri.ts"
 
 const pk = "7e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e"
 const s = "3f9a0c51d2e84b7a96c0e1f2a3b4c5d6"

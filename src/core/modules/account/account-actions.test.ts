@@ -15,8 +15,8 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../../evolu/cli-client"
 import { saveFioPlugin } from "../fio-plugin/fio-plugin-actions.ts"
 import { fioPluginByIdQuery } from "../fio-plugin/fio-plugin-queries.ts"
 import { fioPluginId } from "../fio-plugin/fio-plugin-utils.ts"

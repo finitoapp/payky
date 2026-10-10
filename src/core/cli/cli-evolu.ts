@@ -182,7 +182,13 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
   } as const
 }
 
-export const createCliEvolu = async (mode: "memory" | string) => {
+/**
+ * The app Evolu on a Node SQLite database: the CLI's own file by default, or
+ * `"memory"` for a test (`src/test/evolu.ts`'s `createEvoluTest`).
+ */
+export const createCliEvolu = async (
+  mode: "memory" | string = cliEnv.PAYKY_SQLITE_PATH
+) => {
   await using disposer = new AsyncDisposableStack()
 
   const { run } = disposer.use(await setupRunWithEvoluDeps(mode))
@@ -198,8 +204,3 @@ export const createCliEvolu = async (mode: "memory" | string) => {
     [Symbol.asyncDispose]: () => disposables.disposeAsync(),
   } as const
 }
-
-export const createEvoluCli = (mode = cliEnv.PAYKY_SQLITE_PATH) =>
-  createCliEvolu(mode)
-
-export const createEvoluTest = () => createCliEvolu("memory")

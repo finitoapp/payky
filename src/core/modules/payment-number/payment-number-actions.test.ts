@@ -1,13 +1,12 @@
 import { createIdFromString, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { updatePaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import {
   DateStringSchema,
   NonNegativeInteger,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   createNextPaymentNumber,

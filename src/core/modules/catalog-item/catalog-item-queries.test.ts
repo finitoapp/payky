@@ -10,8 +10,8 @@ import {
   NonEmptyString255,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../../evolu/cli-client"
 import { createCatalogItemAtEnd } from "./catalog-item-actions.ts"
 
 describe("catalogItemsPageQuery", () => {

@@ -7,8 +7,8 @@ import {
 } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../../evolu/cli-client"
 import { createCatalogCategoryAtEnd } from "./catalog-category-actions.ts"
 
 describe("catalogCategoriesPageQuery", () => {

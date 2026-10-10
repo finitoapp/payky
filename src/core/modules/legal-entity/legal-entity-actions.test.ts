@@ -1,7 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { setLegalEntity } from "./legal-entity-actions.ts"
 import { legalEntityQuery } from "./legal-entity-queries.ts"

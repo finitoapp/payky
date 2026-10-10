@@ -23,11 +23,11 @@ import {
   RELAY_MAX_WAIT_MS,
 } from "@/core/integrations/nostr/nostr-client.ts"
 import { MasterKeySchema } from "@/core/modules/shared/key-derivation.ts"
+import { encodePairUri, type PairUri } from "@/core/modules/shared/payky-uri.ts"
 import {
   NonEmptyString255Schema,
   WssUrlSchema,
 } from "@/core/modules/shared/schema.ts"
-import { encodePairUri, type PairUri } from "@/core/payky-uri.ts"
 import { jsonCodec } from "@/zod-utils.ts"
 
 /**

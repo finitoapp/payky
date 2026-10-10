@@ -2,11 +2,8 @@ import { type ConsoleDep, ok, type Task } from "@evolu/common"
 import type { Command } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import {
-  type AiModelDep,
-  askAssistant,
-  createDataTools,
-} from "@/core/ai/assistant.ts"
+import type { AiModelDep } from "@/core/ai/ai-model.ts"
+import { askAssistant, createDataTools } from "@/core/ai/assistant.ts"
 import { createRepoAiTools } from "@/core/ai/repo-ai-tools.ts"
 import { printCliError } from "@/core/cli/cli-errors.ts"
 import { createGitRepoFiles } from "@/core/cli/git-repo-files.ts"

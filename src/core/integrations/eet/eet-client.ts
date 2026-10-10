@@ -72,8 +72,15 @@ const EET_REQUEST_TIMEOUT_MS = 10_000
 
 const EET_ERROR_CODE_TYPE = "EetErrorCode"
 
-export const isEetProductionConfigured =
-  appEnv.VITE_PAYKY_EET_PRODUCTION_URL !== undefined
+/**
+ * The production endpoint this build is configured with, the default of
+ * `createEetApiDep`. The settings UI reads `isEetProductionConfigured` from
+ * the same value, so the screen and the actions agree on whether production
+ * exists; only a test that injects its own `productionUrl` departs from it.
+ */
+export const eetProductionUrl = appEnv.VITE_PAYKY_EET_PRODUCTION_URL
+
+export const isEetProductionConfigured = eetProductionUrl !== undefined
 
 const RETRYABLE_EET_ERROR_CODES: ReadonlyArray<number> = [-1, 8]
 
@@ -183,7 +190,7 @@ const requestBodyText = (body: BodyInit | null | undefined): string | null => {
 export const createEetApiDep = (
   deps: FetchDep & DateDep,
   {
-    productionUrl = appEnv.VITE_PAYKY_EET_PRODUCTION_URL,
+    productionUrl = eetProductionUrl,
     timeoutMs = EET_REQUEST_TIMEOUT_MS,
   }: {
     readonly productionUrl?: string | undefined

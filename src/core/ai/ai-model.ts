@@ -1,6 +1,10 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import type { OwnerId } from "@evolu/common"
-import type { AiModelDep } from "@/core/ai/assistant.ts"
+import type { LanguageModel } from "ai"
+
+export interface AiModelDep {
+  readonly aiModel: LanguageModel
+}
 
 /**
  * The model behind Payky's AI proxy (ai/0001), or any OpenAI-compatible

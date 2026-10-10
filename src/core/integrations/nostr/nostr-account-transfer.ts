@@ -352,9 +352,10 @@ export const startTransferSource = (
       abortAll([pubkey], "timeout")
       finish({ phase: "failed", reason: "timeout" })
     })
-    void channel.send(pubkey, { t: "ready" }).then((accepted) => {
+    void (async () => {
+      const accepted = await channel.send(pubkey, { t: "ready" })
       if (!accepted && !isOver()) finish({ phase: "failed", reason: "network" })
-    })
+    })()
   }
 
   const channel = createChannel(deps, {
@@ -412,19 +413,21 @@ export const startTransferSource = (
 
     codeConfirmed = true
     emit({ phase: "sending" })
-    void channel
-      .send(target, { t: "payload", data: payload })
-      .then((accepted) => {
-        if (isOver()) return
-        if (!accepted) {
-          finish({ phase: "failed", reason: "network" })
-          return
-        }
-        payloadSent = true
-        after(ACK_WAIT_MS, () => {
-          if (!isOver()) finish({ phase: "done", acked: false })
-        })
+    void (async () => {
+      const accepted = await channel.send(target, {
+        t: "payload",
+        data: payload,
       })
+      if (isOver()) return
+      if (!accepted) {
+        finish({ phase: "failed", reason: "network" })
+        return
+      }
+      payloadSent = true
+      after(ACK_WAIT_MS, () => {
+        if (!isOver()) finish({ phase: "done", acked: false })
+      })
+    })()
   }
 
   const cancel = () => {
@@ -524,14 +527,13 @@ export const startTransferTarget = (
   timer = setTimeout(() => {
     if (!isOver()) finish({ phase: "failed", reason: "timeout" })
   }, TARGET_PAYLOAD_WAIT_MS)
-  void channel
-    .send(pair.pk, {
+  void (async () => {
+    const accepted = await channel.send(pair.pk, {
       t: "hello",
       proof: computeHelloProof(sessionSecret, pair.pk, channel.pubkey),
     })
-    .then((accepted) => {
-      if (!accepted && !isOver()) finish({ phase: "failed", reason: "network" })
-    })
+    if (!accepted && !isOver()) finish({ phase: "failed", reason: "network" })
+  })()
 
   return {
     cancel: () => {

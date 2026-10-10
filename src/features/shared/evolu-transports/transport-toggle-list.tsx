@@ -4,7 +4,10 @@ import { useState } from "react"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { Switch } from "@/components/ui/switch.tsx"
-import { appOwnerIdPlaceholder } from "@/core/evolu/device-account.ts"
+import {
+  appOwnerIdPlaceholder,
+  setAccountEvoluTransportActive,
+} from "@/core/evolu/device-account.ts"
 import {
   createDeviceQuery,
   type DeviceAccountId,
@@ -80,12 +83,9 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
             setPendingTransportId(transport.id)
             await runToast(async () => {
               await runMutationWithCompletion((options) =>
-                deviceEvolu.update(
-                  "accountEvoluTransport",
-                  {
-                    id: transport.id,
-                    isActive,
-                  },
+                setAccountEvoluTransportActive(
+                  deviceEvolu,
+                  { id: transport.id, isActive },
                   options
                 )
               )

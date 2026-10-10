@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { FadeHeader } from "@/components/fade-header.tsx"
-import { WithdrawDetail } from "@/features/withdraw/withdraw-detail-page.tsx"
-import { useTranslation } from "@/hooks/use-translation.ts"
+import { WithdrawDetailPage } from "@/features/withdraw/withdraw-detail-page.tsx"
 
 export const Route = createFileRoute(
   "/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId"
@@ -17,14 +15,7 @@ export const Route = createFileRoute(
 })
 
 function WithdrawDetailRoute() {
-  const { t } = useTranslation()
   const { withdrawalId } = Route.useParams()
 
-  return (
-    <>
-      <div className="h-6" />
-      <FadeHeader title={t("withdraw.detail.title")} />
-      <WithdrawDetail withdrawalId={withdrawalId} />
-    </>
-  )
+  return <WithdrawDetailPage withdrawalId={withdrawalId} />
 }

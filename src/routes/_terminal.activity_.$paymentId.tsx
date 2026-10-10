@@ -1,14 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Suspense } from "react"
-import { FadeHeader } from "@/components/fade-header.tsx"
-import {
-  PaymentDetail,
-  PaymentDetailSkeleton,
-} from "@/features/activity/payment-detail.tsx"
-import { useTranslation } from "@/hooks/use-translation.ts"
+
+import { PaymentDetailPage } from "@/features/activity/activity-pages.tsx"
 
 export const Route = createFileRoute("/_terminal/activity_/$paymentId")({
-  component: PaymentDetailPage,
+  component: PaymentDetailRoute,
   staticData: {
     access: "activity",
     terminalLayout: {
@@ -17,19 +12,8 @@ export const Route = createFileRoute("/_terminal/activity_/$paymentId")({
   },
 })
 
-function PaymentDetailPage() {
-  const { t } = useTranslation()
+function PaymentDetailRoute() {
   const { paymentId } = Route.useParams()
 
-  return (
-    <>
-      <FadeHeader title={t("paymentDetail.title")} />
-
-      <section className="pt-16">
-        <Suspense fallback={<PaymentDetailSkeleton />}>
-          <PaymentDetail paymentId={paymentId} />
-        </Suspense>
-      </section>
-    </>
-  )
+  return <PaymentDetailPage paymentId={paymentId} />
 }

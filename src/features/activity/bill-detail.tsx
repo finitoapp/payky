@@ -37,27 +37,27 @@ import {
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
 import { PaymentMethodIcons } from "@/features/activity/activity-row.tsx"
-import { BillCancellationCollisionPanel } from "@/features/bill/bill-cancellation-collision-panel.tsx"
-import { BillCoverageWarning } from "@/features/bill/bill-coverage-warning.tsx"
+import { BillCancellationCollisionPanel } from "@/features/activity/bill-cancellation-collision-panel.tsx"
+import { BillCoverageWarning } from "@/features/activity/bill-coverage-warning.tsx"
 import {
   billStatusBadgeClassName,
   billStatusLabelKey,
-} from "@/features/bill/bill-status-display.ts"
-import { TaxRecap } from "@/features/bill/tax-recap.tsx"
-import { useBillCoverage } from "@/features/bill/use-bill-coverage.ts"
-import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
-import { useBillStatus } from "@/features/bill/use-bill-status.ts"
+} from "@/features/activity/bill-status-display.ts"
 import {
   PaymentDetailCopyRow,
   PaymentDetailTechnical,
-} from "@/features/payment/payment-detail.tsx"
+} from "@/features/activity/payment-detail.tsx"
 import {
   PaymentStatusIcon,
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
-} from "@/features/payment/payment-status-display.tsx"
+} from "@/features/activity/payment-status-display.tsx"
+import { TaxRecap } from "@/features/activity/tax-recap.tsx"
+import { useBillCoverage } from "@/features/activity/use-bill-coverage.ts"
 import { EetSaleStatusBadge } from "@/features/shared/eet-sale-status.tsx"
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
+import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
+import { useBillStatus } from "@/features/shared/use-bill-status.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"

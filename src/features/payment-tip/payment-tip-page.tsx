@@ -29,7 +29,7 @@ import {
   NonNegativeInteger,
   type NonNegativeInteger as NonNegativeIntegerValue,
 } from "@/core/modules/shared/schema.ts"
-import { useCreateTerminalPayment } from "@/features/payment/use-create-terminal-payment.ts"
+import { useCreateTerminalPayment } from "@/hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

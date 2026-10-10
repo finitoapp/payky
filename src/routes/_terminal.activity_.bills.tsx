@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
 import { ActivityTabs } from "@/features/activity/activity-tabs.tsx"
-import { BillHistory } from "@/features/bill/bill-history.tsx"
+import { BillHistory } from "@/features/activity/bill-history.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 export const Route = createFileRoute("/_terminal/activity_/bills")({

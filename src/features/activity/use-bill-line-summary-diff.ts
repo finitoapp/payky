@@ -9,7 +9,7 @@ import { itemsByPaymentIdQuery } from "@/core/modules/item/item-queries.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { paymentLinesByPaymentIdQuery } from "@/core/modules/payment-line/payment-line-queries.ts"
 import { paymentLinesToBillLineSummaries } from "@/core/modules/payment-line/payment-line-utils.ts"
-import { useBillLineSummaries } from "@/features/bill/use-bill-line-summaries.ts"
+import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 /**

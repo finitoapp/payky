@@ -32,6 +32,11 @@ export const reconciliationClaimIndexes = ((create) => [
   create("reconciliationClaim_source")
     .on("reconciliationClaim")
     .column("source"),
+  // The sales statistics' "IBAN confirmed by hand" signal ranges over it;
+  // `source = "manual"` alone matches every cash payment ever.
+  create("reconciliationClaim_claimedAt")
+    .on("reconciliationClaim")
+    .column("claimedAt"),
 ]) satisfies IndexesConfig
 
 export type ReconciliationClaimRow = InferTable<typeof reconciliationClaim>

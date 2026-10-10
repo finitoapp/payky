@@ -118,6 +118,8 @@ export const paymentIndexes = ((create) => [
   create("payment_billId").on("payment").column("billId"),
   create("payment_tableId").on("payment").column("tableId"),
   create("payment_createdAt").on("payment").column("createdAt"),
+  // The sales statistics' cancelled-payments signal ranges over it.
+  create("payment_canceledAt").on("payment").column("canceledAt"),
   create("paymentCashRegister_accountId")
     .on("paymentCashRegister")
     .column("accountId"),

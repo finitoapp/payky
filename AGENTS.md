@@ -95,6 +95,7 @@
   status are read. Guards read and return `Result`; they never write. Errors
   belong with the half that raises them, which is also what keeps the two
   files from importing each other.
+- A module whose errors are raised across several files (actions, guards, preparation) may keep them in one `*-errors.ts`, as `payment-errors.ts` does, together with the Task error unions those files share. A smaller module keeps each error with the half that raises it.
 - Keep tests beside the module they cover as `*.test.ts`.
 - For aggregate detail/extension tables sharing the root id, keep root and detail table ownership in the same module, and soft delete only the root row — unless the detail clearly owns a separate lifecycle.
 - An actions file writes only to tables its own module owns. To write another module's table, compose that module's Task instead of upserting directly, as `bill-actions.ts` does with `bill-line` and `item` actions.

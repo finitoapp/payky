@@ -14,7 +14,7 @@ import type {
 } from "@evolu/common/local-first"
 import { describe, expect, test } from "vitest"
 
-import { findRelaySyncState } from "@/components/evolu-transports/transport-sync-state.ts"
+import { findRelaySyncState } from "@/features/shared/evolu-transports/transport-sync-state.ts"
 
 const deps = testCreateDeps()
 

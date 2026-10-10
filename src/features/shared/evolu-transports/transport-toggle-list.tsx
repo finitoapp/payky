@@ -3,7 +3,6 @@ import { useAtomValue } from "jotai"
 import { useState } from "react"
 
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { TransportSyncStatus } from "@/components/evolu-transports/transport-sync-status.tsx"
 import { Switch } from "@/components/ui/switch.tsx"
 import { appOwnerIdPlaceholder } from "@/core/evolu/device-account.ts"
 import {
@@ -11,6 +10,7 @@ import {
   type DeviceAccountId,
 } from "@/core/evolu/device-client.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
+import { TransportSyncStatus } from "@/features/shared/evolu-transports/transport-sync-status.tsx"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"

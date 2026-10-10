@@ -12,8 +12,6 @@ import { useEffect, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { TransportAddForm } from "@/components/evolu-transports/transport-add-form.tsx"
-import { TransportToggleList } from "@/components/evolu-transports/transport-toggle-list.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -40,6 +38,8 @@ import {
   planRestoreCleanup,
   restoredAccountAtom,
 } from "@/features/shared/account/restored-account.ts"
+import { TransportAddForm } from "@/features/shared/evolu-transports/transport-add-form.tsx"
+import { TransportToggleList } from "@/features/shared/evolu-transports/transport-toggle-list.tsx"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"

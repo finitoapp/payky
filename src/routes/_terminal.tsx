@@ -8,7 +8,7 @@ import {
 import { LoaderCircleIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import { AccessGate } from "@/components/access-gate.tsx"
+import { AccessGate } from "@/components/app/access-gate.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import {
   initialSyncIdleLimitMs,

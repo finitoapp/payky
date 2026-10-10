@@ -3,8 +3,8 @@ import { useAtom, useSetAtom, useStore } from "jotai"
 import { type ReactNode, useEffect } from "react"
 
 import { accessLastActivityAtom, accessSessionAtom } from "@/atoms/access.ts"
+import { PinScreen } from "@/components/app/pin-screen.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { PinScreen } from "@/components/pin-screen.tsx"
 import {
   type Permission,
   sessionIdleTimeoutMs,

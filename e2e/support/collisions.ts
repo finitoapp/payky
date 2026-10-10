@@ -17,7 +17,7 @@ import {
 /**
  * Simulates the CRDT merge race documented in docs/bill-payment-states.md
  * via `window.__e2eSimulateCancelAfterClaim` (see
- * src/components/e2e-test-bridge.tsx): cancels the current (already-claimed)
+ * src/components/app/e2e-test-bridge.tsx): cancels the current (already-claimed)
  * payment directly, bypassing `cancelPayment`'s guard, so it ends up
  * canceled+claimed — the collision the payment-detail/payment-history UI
  * surfaces via `confirmPaymentPaidDespiteCancellation`. Assumes the page is
@@ -57,7 +57,7 @@ export async function simulateCancelAfterClaim(
  * Simulates a second offline device independently settling the current
  * (already cash-claimed) payment through its other prepared method — IBAN —
  * via `window.__e2eSimulateDuplicateSettlement` (see
- * src/components/e2e-test-bridge.tsx). Produces the duplicate-settlement
+ * src/components/app/e2e-test-bridge.tsx). Produces the duplicate-settlement
  * collision: the payment ends up claimed for more than its own amount.
  * Assumes the page is still on the `/payment/$paymentId` URL for that
  * payment (e.g. right after `markCashPaid`), and that the payment was
@@ -79,7 +79,7 @@ export async function simulateDuplicateSettlement(page: Page): Promise<void> {
  * Simulates another, still-offline device editing `billId`'s line items
  * while a payment against it is in flight, via
  * `window.__e2eSimulateBillModifiedDuringPayment` (see
- * src/components/e2e-test-bridge.tsx) — bypasses `requireEditableBill`'s
+ * src/components/app/e2e-test-bridge.tsx) — bypasses `requireEditableBill`'s
  * lock, which only prevents this on the *same* device the pending payment
  * is visible on. `mode: "add"` grows the bill's total past the payment's
  * already-fixed amount (underpaid once claimed); `mode: "removeAll"`
@@ -104,7 +104,7 @@ export async function simulateBillModifiedDuringPayment(
 /**
  * Creates and pays a *second*, independent payment for `billId` via
  * `window.__e2eCreateAndPaySecondPayment` (see
- * src/components/e2e-test-bridge.tsx) — the real `createPayment`/
+ * src/components/app/e2e-test-bridge.tsx) — the real `createPayment`/
  * `markPaymentPaidCash` actions, not a bypass. Split payments are an
  * intended capability, but a second device is needed to start one
  * concurrently with the current payment. Produces a genuine overpaid bill
@@ -125,7 +125,7 @@ export async function createAndPaySecondPayment(
 
 /**
  * Cancels `billId` directly via `window.__e2eCancelBill` (see
- * src/components/e2e-test-bridge.tsx) — the real `cancelBill` action,
+ * src/components/app/e2e-test-bridge.tsx) — the real `cancelBill` action,
  * called directly because the bill page's own UI hides the cart's discard
  * button while a payment is pending, making this transition (allowed by the
  * domain guard, not by the UI) hard to trigger by clicking through. Unlike

@@ -1,5 +1,3 @@
-import { TransportAddForm } from "@/components/evolu-transports/transport-add-form.tsx"
-import { TransportToggleList } from "@/components/evolu-transports/transport-toggle-list.tsx"
 import {
   Card,
   CardContent,
@@ -9,6 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
+import { TransportAddForm } from "@/features/shared/evolu-transports/transport-add-form.tsx"
+import { TransportToggleList } from "@/features/shared/evolu-transports/transport-toggle-list.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 interface EvoluTransportCardProps {

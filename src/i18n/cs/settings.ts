@@ -108,6 +108,31 @@ export const csSettings = {
   "settings.debugConsole.pause": "Pauza",
   "settings.debugConsole.resume": "Pokračovat",
   "settings.debugConsole.title": "Debug Console",
+  "settings.demoData.accountName": "Demo kavárna",
+  "settings.demoData.action": "Vytvořit demo účet",
+  "settings.demoData.action.pending": "Vytváří se…",
+  "settings.demoData.confirm.cancel": "Zrušit",
+  "settings.demoData.confirm.confirm": "Vytvořit a vygenerovat",
+  "settings.demoData.confirm.description":
+    "Aplikace se přepne na nový demo účet a naplní ho fiktivními daty. Vrátit to jde jen odebráním demo účtu.",
+  "settings.demoData.confirm.title": "Vytvořit demo účet?",
+  "settings.demoData.current.description":
+    "Všechno v něm je fiktivní a nikdy se nesynchronizuje. Na skutečný účet se přepnete v sekci Účty.",
+  "settings.demoData.current.title": "Jste v demo účtu",
+  "settings.demoData.description":
+    "Naplnit samostatný demo účet fiktivními prodeji",
+  "settings.demoData.title": "Demo data",
+  "settings.demoData.warning.duration":
+    "Generování začne dneškem a postupuje den po dni do minulosti. Tři měsíce trvají asi půl hodiny, na telefonu déle, ale můžete ho kdykoli zastavit: rozpracovaný den se dokončí a dosavadní historie zůstane.",
+  "settings.demoData.warning.irreversible":
+    "Demo účet se nenávratně naplní až třemi měsíci fiktivního katalogu, stolů, plateb a refundací. Nejde je mazat po jednom, jen spolu s celým demo účtem.",
+  "settings.demoData.warning.newAccount":
+    "Na zařízení vznikne nový účet „{name}“ a stane se aktivním. Váš současný účet a jeho data zůstanou nedotčené; přepnete se na něj zpět v sekci Účty.",
+  "settings.demoData.warning.relays":
+    "Synchronizační relaye jsou pro demo účet vypnuté a nejde je zapnout, takže se fiktivní data nikdy nedostanou na relay ani do jiného zařízení.",
+  "settings.demoData.warning.services":
+    "Nic se neodesílá do banky, platebního terminálu ani do sítě Lightning: všechny vnější služby jsou simulované. EET zůstává vypnuté.",
+  "settings.demoData.warning.title": "Přečtěte si před generováním",
   "settings.developers": "VÝVOJÁŘI",
   "settings.donations.amount.invalid": "Zadejte kladný celý počet sats.",
   "settings.donations.amount.range": "Částka je mimo povolený rozsah daru.",
@@ -594,6 +619,8 @@ export const csSettings = {
     "Pokud tuto frázi ztratíte, tento účet a jeho data už nikdy nepůjde obnovit – ani nám se to nepodaří.",
   "settings.security.title": "Bezpečnost a synchronizace",
   "settings.security.transports.add": "Přidat transport",
+  "settings.security.transports.demo":
+    "Toto je demo účet: nikdy se nesynchronizuje, takže jeho relaye zůstávají vypnuté.",
   "settings.security.transports.description":
     "Nastavení Evolu WebSocket endpointů pro tento device účet.",
   "settings.security.transports.empty": "Nejsou uložené žádné transporty.",

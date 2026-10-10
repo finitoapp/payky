@@ -13,9 +13,14 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 
 interface EvoluTransportCardProps {
   readonly accountId: DeviceAccountId
+  /** A demo account never syncs, so its relays cannot be switched on. */
+  readonly isDemo: boolean
 }
 
-export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
+export function EvoluTransportCard({
+  accountId,
+  isDemo,
+}: EvoluTransportCardProps) {
   const { t } = useTranslation()
 
   return (
@@ -28,8 +33,13 @@ export function EvoluTransportCard({ accountId }: EvoluTransportCardProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-5">
-          <TransportToggleList accountId={accountId} />
-          <TransportAddForm accountId={accountId} />
+          {isDemo ? (
+            <p className="text-sm text-muted-foreground">
+              {t("settings.security.transports.demo")}
+            </p>
+          ) : null}
+          <TransportToggleList accountId={accountId} disabled={isDemo} />
+          {isDemo ? null : <TransportAddForm accountId={accountId} />}
         </div>
       </CardContent>
       <CardFooter>

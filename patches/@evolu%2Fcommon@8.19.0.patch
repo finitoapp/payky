@@ -1,0 +1,106 @@
+diff --git a/node_modules/@evolu/common/.bun-tag-d577faac293bce b/.bun-tag-d577faac293bce
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/dist/src/local-first/Db.js b/dist/src/local-first/Db.js
+index 7b8e8e304416fa4bdf74693ebee6622abf650826..ae20535e8644938e90c94bc6564ee52f47f69667 100644
+--- a/dist/src/local-first/Db.js
++++ b/dist/src/local-first/Db.js
+@@ -808,6 +808,13 @@ const createClientStorage = (deps) => {
+         },
+     };
+ };
++/**
++ * Payky patch: the last backdated timestamp per owner, so backdated changes
++ * stay unique and ordered. A change dated before it starts that clock again
++ * at its own time: the caller jumps back only into a span it has not written
++ * yet. In memory only — one generator run per worker.
++ */
++const backdatedClockByOwnerId = new Map();
+ const handleMutation = (deps) => (message, now) => getOk(deps.sqlite.transaction(() => {
+     const messagesByOwnerId = new Map();
+     let clockTimestamp = deps.clock.get();
+@@ -816,6 +823,25 @@ const handleMutation = (deps) => (message, now) => getOk(deps.sqlite.transaction
+             applyLocalOnlyChange(deps)(change, now);
+             continue;
+         }
++        // Payky patch: a backdated change gets a timestamp at its own millis
++        // from a separate per-owner clock and never advances the real clock.
++        if (change.backdatedMillis != null) {
++            const { ownerId, backdatedMillis, ...dbChange } = change;
++            const last = backdatedClockByOwnerId.get(ownerId);
++            const previous = last !== undefined && last.millis <= backdatedMillis
++                ? last
++                : { millis: 0, counter: 0, nodeId: clockTimestamp.nodeId };
++            const next = sendTimestamp(deps)(previous, backdatedMillis);
++            const timestamp = next.ok ? next.value : next.error.timestamp;
++            backdatedClockByOwnerId.set(ownerId, timestamp);
++            const message = { timestamp, change: dbChange };
++            const messages = messagesByOwnerId.get(ownerId);
++            if (messages)
++                messages.push(message);
++            else
++                messagesByOwnerId.set(ownerId, [message]);
++            continue;
++        }
+         // A drifted change still receives the next timestamp; applyMessages
+         // stores it in quarantine instead of its table.
+         const nextTimestamp = sendTimestamp(deps)(clockTimestamp, now);
+diff --git a/dist/src/local-first/Evolu.d.ts b/dist/src/local-first/Evolu.d.ts
+index ae3c43564ad77afeb9729dcf3df2259808971073..061f85b504edfa6c2aa36bfb0b62ba342d381520 100644
+--- a/dist/src/local-first/Evolu.d.ts
++++ b/dist/src/local-first/Evolu.d.ts
+@@ -427,6 +427,16 @@ export interface Evolu<S extends EvoluSchema = EvoluSchema> extends AsyncDisposa
+      * @see {@link Mutation}
+      */
+     readonly upsert: Mutation<S, "upsert">;
++    /**
++     * Payky patch. While set, every mutation is stamped at these millis
++     * instead of the current time, so its `createdAt`/`updatedAt` lie in the
++     * past. Later millis, or the same ones again, stay unique and ordered per
++     * owner; earlier millis start that ordering over, so jump back only into
++     * a span not written yet. The real clock is not advanced. Only for
++     * generating demo data into an owner that never syncs; pass `null` to
++     * stop.
++     */
++    readonly setMutationBackdate: (millis: number | null) => void;
+     /**
+      * Returns the size of a mutation of `table` with `values`, measured as
+      * {@link maxMutationSize} describes.
+diff --git a/dist/src/local-first/Evolu.js b/dist/src/local-first/Evolu.js
+index 4181032e0235d89ecb94973430a9f2853e06fada..4ab111d6fcabfb28f5ff7036824717384268ba81 100644
+--- a/dist/src/local-first/Evolu.js
++++ b/dist/src/local-first/Evolu.js
+@@ -462,6 +462,7 @@ export const createEvolu = (schema, config) => async (run) => {
+                 return;
+             postMessage({ type: "UseOwner", actions });
+         }));
++        let mutationBackdatedMillis = null;
+         const createMutation = (kind) => (table, values, options) => {
+             const { id = createId(run.deps), isDeleted, ...changeValues } = values;
+             const dbChange = {
+@@ -520,7 +521,14 @@ export const createEvolu = (schema, config) => async (run) => {
+                 });
+             }
+             mutateBatch.push({
+-                change: { ...dbChange, ownerId: options?.ownerId ?? appOwner.id },
++                change: {
++                    ...dbChange,
++                    ownerId: options?.ownerId ?? appOwner.id,
++                    // Payky patch: see setMutationBackdate.
++                    ...(mutationBackdatedMillis === null
++                        ? {}
++                        : { backdatedMillis: mutationBackdatedMillis }),
++                },
+                 onComplete: options?.onComplete,
+             });
+             return { id };
+@@ -586,6 +594,9 @@ export const createEvolu = (schema, config) => async (run) => {
+             insert: createMutation("insert"),
+             update: createMutation("update"),
+             upsert: createMutation("upsert"),
++            setMutationBackdate: (millis) => {
++                mutationBackdatedMillis = millis;
++            },
+             getMutationSize: (table, values) => measureMutation(String(table), values),
+             loadQuery,
+             loadQueries: (queries) => queries.map((query) => loadQuery(query)),

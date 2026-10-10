@@ -8,6 +8,7 @@ import { AppBackgroundJobs } from "@/components/app/app-background-jobs.tsx"
 import { AppLoaderCleanup } from "@/components/app/app-loader-cleanup.tsx"
 import { AppMigrations } from "@/components/app/app-migrations.tsx"
 import { ConfirmDialogHost } from "@/components/app/confirm-dialog-host.tsx"
+import { DemoDataSeed } from "@/components/app/demo-data-seed.tsx"
 import { DeviceRegistration } from "@/components/app/device-registration.tsx"
 import { E2eTestBridge } from "@/components/app/e2e-test-bridge.tsx"
 import { AppErrorBoundary } from "@/components/app/error-boundary.tsx"
@@ -94,6 +95,7 @@ export function App() {
                    * the first place.
                    */}
                   <AppMigrations>
+                    <DemoDataSeed />
                     <AppBackgroundJobs />
                     <SwitchioRestoredResult />
                     <DeviceRegistration />

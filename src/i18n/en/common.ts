@@ -25,6 +25,20 @@ export const enCommon = {
   "country.cz": "Czech Republic",
   "country.other": "Other",
   "country.sk": "Slovakia",
+  "demoData.close": "Close",
+  "demoData.failed.description":
+    "The demo account may be incomplete. Remove it under Accounts and create a new one.",
+  "demoData.failed.title": "Demo data could not be generated",
+  "demoData.finished.description":
+    "The demo account now holds {days} days of history with {payments} fictional payments.",
+  "demoData.finished.title": "Demo data ready",
+  "demoData.running.description":
+    "Filling the demo account with fictional sales, from today back. Stop whenever there is enough.",
+  "demoData.running.progress":
+    "{done} of up to {total} days, going back from today",
+  "demoData.running.title": "Generating demo data",
+  "demoData.running.stopping": "Finishing the current day, then stopping…",
+  "demoData.stop": "Stop",
   "eet.sandbox.banner":
     "EET sandbox: sales are not reported to the tax administrator",
   "eet.status.confirmed": "EET confirmed",

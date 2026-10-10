@@ -27,6 +27,21 @@ export const skCommon = {
   "country.cz": "Česká republika",
   "country.other": "Iná krajina",
   "country.sk": "Slovensko",
+  "demoData.close": "Zavrieť",
+  "demoData.failed.description":
+    "Demo účet môže byť neúplný. Odoberte ho v sekcii Účty a vytvorte nový.",
+  "demoData.failed.title": "Demo dáta sa nepodarilo vygenerovať",
+  "demoData.finished.description":
+    "Demo účet teraz obsahuje {days} dní histórie a {payments} fiktívnych platieb.",
+  "demoData.finished.title": "Demo dáta sú pripravené",
+  "demoData.running.description":
+    "Demo účet sa plní fiktívnymi predajmi od dneška do minulosti. Zastavte, keď bude história stačiť.",
+  "demoData.running.progress":
+    "{done} z najviac {total} dní, od dneška do minulosti",
+  "demoData.running.title": "Generujú sa demo dáta",
+  "demoData.running.stopping":
+    "Dokončuje sa rozpracovaný deň, potom sa generovanie zastaví…",
+  "demoData.stop": "Zastaviť",
   "eet.sandbox.banner": "EET sandbox: tržby sa neevidujú u finančnej správy",
   "eet.status.confirmed": "EET potvrdené",
   "eet.status.overdue": "po lehote",

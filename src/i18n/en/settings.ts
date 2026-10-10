@@ -104,6 +104,31 @@ export const enSettings = {
   "settings.debugConsole.pause": "Pause",
   "settings.debugConsole.resume": "Resume",
   "settings.debugConsole.title": "Debug Console",
+  "settings.demoData.accountName": "Demo café",
+  "settings.demoData.action": "Create demo account",
+  "settings.demoData.action.pending": "Creating…",
+  "settings.demoData.confirm.cancel": "Cancel",
+  "settings.demoData.confirm.confirm": "Create and generate",
+  "settings.demoData.confirm.description":
+    "The app switches to a new demo account and fills it with fictional data. The only way back is removing the demo account.",
+  "settings.demoData.confirm.title": "Create a demo account?",
+  "settings.demoData.current.description":
+    "Everything in it is fictional and it never syncs. Switch back to your real account under Accounts.",
+  "settings.demoData.current.title": "You are in a demo account",
+  "settings.demoData.description":
+    "Fill a separate demo account with fictional sales",
+  "settings.demoData.title": "Demo data",
+  "settings.demoData.warning.duration":
+    "Generating starts with today and goes back one day at a time. Three months take about half an hour, longer on a phone, but you can stop at any time: the day in progress is finished and the history so far stays.",
+  "settings.demoData.warning.irreversible":
+    "The demo account is irreversibly filled with up to three months of fictional catalog, tables, payments and refunds. They cannot be removed one by one, only together with the whole demo account.",
+  "settings.demoData.warning.newAccount":
+    "A new account, “{name}”, is created on this device and becomes the active one. Your current account and its data are not touched; switch back to it under Accounts.",
+  "settings.demoData.warning.relays":
+    "Sync relays are switched off for the demo account and cannot be switched on, so the fictional data never reaches a relay or another device.",
+  "settings.demoData.warning.services":
+    "Nothing is sent to the bank, the card terminal or the Lightning network: every outside service is simulated. EET stays off.",
+  "settings.demoData.warning.title": "Read before you generate",
   "settings.developers": "DEVELOPERS",
   "settings.donations.amount.invalid": "Enter a positive whole number of sats.",
   "settings.donations.amount.range":
@@ -591,6 +616,8 @@ export const enSettings = {
     "If you lose this phrase, this account and its data can never be recovered — not even by us.",
   "settings.security.title": "Security & Sync",
   "settings.security.transports.add": "Add transport",
+  "settings.security.transports.demo":
+    "This is a demo account: it never syncs, so its relays stay off.",
   "settings.security.transports.description":
     "Configure Evolu WebSocket sync endpoints for this device account.",
   "settings.security.transports.empty": "No transports saved.",

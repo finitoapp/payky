@@ -28,6 +28,7 @@ import { Route as TerminalSettingsAccountsRouteImport } from './routes/_terminal
 import { Route as TerminalSettingsAssistantRouteImport } from './routes/_terminal.settings.assistant'
 import { Route as TerminalSettingsCategoriesRouteImport } from './routes/_terminal.settings.categories'
 import { Route as TerminalSettingsDebugConsoleRouteImport } from './routes/_terminal.settings.debug-console'
+import { Route as TerminalSettingsDemoDataRouteImport } from './routes/_terminal.settings.demo-data'
 import { Route as TerminalSettingsDonationsRouteImport } from './routes/_terminal.settings.donations'
 import { Route as TerminalSettingsDonationsInvoiceRouteImport } from './routes/_terminal.settings.donations-invoice'
 import { Route as TerminalSettingsEetRouteImport } from './routes/_terminal.settings.eet'
@@ -171,6 +172,12 @@ const TerminalSettingsDebugConsoleRoute =
   TerminalSettingsDebugConsoleRouteImport.update({
     id: '/debug-console',
     path: '/debug-console',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
+const TerminalSettingsDemoDataRoute =
+  TerminalSettingsDemoDataRouteImport.update({
+    id: '/demo-data',
+    path: '/demo-data',
     getParentRoute: () => TerminalSettingsRoute,
   } as any)
 const TerminalSettingsDonationsRoute =
@@ -452,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
+  '/settings/demo-data': typeof TerminalSettingsDemoDataRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/eet': typeof TerminalSettingsEetRoute
@@ -512,6 +520,7 @@ export interface FileRoutesByTo {
   '/settings/access': typeof TerminalSettingsAccessRoute
   '/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
+  '/settings/demo-data': typeof TerminalSettingsDemoDataRoute
   '/settings/donations': typeof TerminalSettingsDonationsRoute
   '/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/settings/eet': typeof TerminalSettingsEetRoute
@@ -572,6 +581,7 @@ export interface FileRoutesById {
   '/_terminal/settings/assistant': typeof TerminalSettingsAssistantRoute
   '/_terminal/settings/categories': typeof TerminalSettingsCategoriesRouteWithChildren
   '/_terminal/settings/debug-console': typeof TerminalSettingsDebugConsoleRoute
+  '/_terminal/settings/demo-data': typeof TerminalSettingsDemoDataRoute
   '/_terminal/settings/donations': typeof TerminalSettingsDonationsRoute
   '/_terminal/settings/donations-invoice': typeof TerminalSettingsDonationsInvoiceRoute
   '/_terminal/settings/eet': typeof TerminalSettingsEetRoute
@@ -638,6 +648,7 @@ export interface FileRouteTypes {
     | '/settings/assistant'
     | '/settings/categories'
     | '/settings/debug-console'
+    | '/settings/demo-data'
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/eet'
@@ -698,6 +709,7 @@ export interface FileRouteTypes {
     | '/settings/access'
     | '/settings/assistant'
     | '/settings/debug-console'
+    | '/settings/demo-data'
     | '/settings/donations'
     | '/settings/donations-invoice'
     | '/settings/eet'
@@ -757,6 +769,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/assistant'
     | '/_terminal/settings/categories'
     | '/_terminal/settings/debug-console'
+    | '/_terminal/settings/demo-data'
     | '/_terminal/settings/donations'
     | '/_terminal/settings/donations-invoice'
     | '/_terminal/settings/eet'
@@ -944,6 +957,13 @@ declare module '@tanstack/react-router' {
       path: '/debug-console'
       fullPath: '/settings/debug-console'
       preLoaderRoute: typeof TerminalSettingsDebugConsoleRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
+    '/_terminal/settings/demo-data': {
+      id: '/_terminal/settings/demo-data'
+      path: '/demo-data'
+      fullPath: '/settings/demo-data'
+      preLoaderRoute: typeof TerminalSettingsDemoDataRouteImport
       parentRoute: typeof TerminalSettingsRoute
     }
     '/_terminal/settings/donations': {
@@ -1434,6 +1454,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsAssistantRoute: typeof TerminalSettingsAssistantRoute
   TerminalSettingsCategoriesRoute: typeof TerminalSettingsCategoriesRouteWithChildren
   TerminalSettingsDebugConsoleRoute: typeof TerminalSettingsDebugConsoleRoute
+  TerminalSettingsDemoDataRoute: typeof TerminalSettingsDemoDataRoute
   TerminalSettingsDonationsRoute: typeof TerminalSettingsDonationsRoute
   TerminalSettingsDonationsInvoiceRoute: typeof TerminalSettingsDonationsInvoiceRoute
   TerminalSettingsEetRoute: typeof TerminalSettingsEetRoute
@@ -1462,6 +1483,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsAssistantRoute: TerminalSettingsAssistantRoute,
   TerminalSettingsCategoriesRoute: TerminalSettingsCategoriesRouteWithChildren,
   TerminalSettingsDebugConsoleRoute: TerminalSettingsDebugConsoleRoute,
+  TerminalSettingsDemoDataRoute: TerminalSettingsDemoDataRoute,
   TerminalSettingsDonationsRoute: TerminalSettingsDonationsRoute,
   TerminalSettingsDonationsInvoiceRoute: TerminalSettingsDonationsInvoiceRoute,
   TerminalSettingsEetRoute: TerminalSettingsEetRoute,

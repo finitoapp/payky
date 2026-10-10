@@ -54,6 +54,9 @@ export const deviceSettingsId = createIdFromString<"DeviceSettings">(
   "payky-device-settings"
 )
 
+const DemoAccountStateSchema = z.enum(["pending", "seeded"])
+export type DemoAccountState = z.output<typeof DemoAccountStateSchema>
+
 const DeviceLanguageSchema = z.enum(["en", "cs", "sk"])
 const DeviceThemeSchema = z.enum(["system", "light", "dark"])
 const DeviceLocaleSchema = z.enum(["cs-CZ", "en-US", "sk-SK"])
@@ -89,6 +92,12 @@ const deviceEvoluSchema = {
      * account list shows it without asking relays about inactive accounts.
      */
     nostrPicture: z.string().max(2048).nullable(),
+    /**
+     * Set only on a demo account (demo-data/0001): `pending` until its
+     * fictional history has been generated, then `seeded`. A demo account
+     * never syncs and runs no background jobs.
+     */
+    demo: DemoAccountStateSchema.nullable(),
   },
   accountEvoluTransport: {
     id: AccountEvoluTransportId,

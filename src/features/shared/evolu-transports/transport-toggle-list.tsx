@@ -49,9 +49,13 @@ const accountTransportsQuery = (accountId: DeviceAccountId) =>
 
 interface TransportToggleListProps {
   readonly accountId: DeviceAccountId
+  readonly disabled?: boolean
 }
 
-export function TransportToggleList({ accountId }: TransportToggleListProps) {
+export function TransportToggleList({
+  accountId,
+  disabled = false,
+}: TransportToggleListProps) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reloadAppEvolu = useReloadAppEvolu()
@@ -77,7 +81,7 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
         <TransportListItem
           key={transport.id}
           isActive={transport.isActive}
-          pendingTransportId={pendingTransportId}
+          disabled={disabled || pendingTransportId !== null}
           url={transport.url}
           onToggle={async (isActive) => {
             setPendingTransportId(transport.id)
@@ -101,14 +105,14 @@ export function TransportToggleList({ accountId }: TransportToggleListProps) {
 
 interface TransportListItemProps {
   readonly isActive: 0 | 1
-  readonly pendingTransportId: string | null
+  readonly disabled: boolean
   readonly url: string
   readonly onToggle: (isActive: 0 | 1) => Promise<void>
 }
 
 function TransportListItem({
   isActive,
-  pendingTransportId,
+  disabled,
   url,
   onToggle,
 }: TransportListItemProps) {
@@ -135,7 +139,7 @@ function TransportListItem({
         <Switch
           aria-label={t("settings.security.transports.toggle", { url })}
           checked={active}
-          disabled={pendingTransportId !== null}
+          disabled={disabled}
           onCheckedChange={(checked) => {
             void onToggle(checked ? sqliteTrue : sqliteFalse)
           }}

@@ -6,8 +6,8 @@ import {
 } from "@evolu/common"
 import { installPolyfills } from "@evolu/common/polyfills"
 import { type Command, createCommand } from "commander"
+import type { AiModelDep } from "@/core/ai/ai-model.ts"
 import { createAiModelDep } from "@/core/ai/ai-model.ts"
-import type { AiModelDep } from "@/core/ai/assistant.ts"
 import { cliEnv } from "@/core/cli/cli-env.ts"
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
 import {

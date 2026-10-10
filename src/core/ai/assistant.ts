@@ -1,13 +1,13 @@
 import { type ConsoleDep, err, ok, type Run, type Task } from "@evolu/common"
 import {
   isStepCount,
-  type LanguageModel,
   type ModelMessage,
   streamText,
   type ToolSet,
   tool,
 } from "ai"
 import { z } from "zod"
+import type { AiModelDep } from "@/core/ai/ai-model.ts"
 import { defineError } from "@/core/error.ts"
 import { listOpenBills } from "@/core/modules/bill/bill-actions.ts"
 import { loadBill } from "@/core/modules/bill/bill-guards.ts"
@@ -15,10 +15,6 @@ import { BillId } from "@/core/modules/bill/bill-types.ts"
 import { loadCalculatedBillLineSummaries } from "@/core/modules/bill-line/bill-line-actions.ts"
 import { latestPaymentsQuery } from "@/core/modules/payment/payment-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
-
-export interface AiModelDep {
-  readonly aiModel: LanguageModel
-}
 
 /** The model endpoint failed: unreachable, rejected the key, or broke off. */
 const createAiRequestError = defineError("AiRequestError")<{

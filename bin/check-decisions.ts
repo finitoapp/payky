@@ -6,7 +6,11 @@ import { z } from "zod"
 
 import { jsonCodec } from "@/zod-utils.ts"
 
-import { findDecisionProblems, readDecisionRecord } from "./decisions.ts"
+import {
+  findDecisionProblems,
+  findDecisionStructureProblems,
+  readDecisionRecord,
+} from "./decisions.ts"
 
 const decisionsDirectory = "docs/decisions"
 
@@ -87,10 +91,19 @@ const [records, unitTestIds, endToEndTestIds] = await Promise.all([
   listUnitTestIds(),
   listEndToEndTestIds(),
 ])
-const problems = findDecisionProblems(
-  records,
-  new Set([...unitTestIds, ...endToEndTestIds])
-)
+const domains = (await readdir(decisionsDirectory, { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+const problems = [
+  ...findDecisionStructureProblems(records, {
+    readme: await readFile(join(decisionsDirectory, "README.md"), "utf8"),
+    domains,
+  }),
+  ...findDecisionProblems(
+    records,
+    new Set([...unitTestIds, ...endToEndTestIds])
+  ),
+]
 
 if (problems.length > 0) {
   for (const problem of problems) {

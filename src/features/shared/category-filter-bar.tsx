@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import type { CatalogCategoryId } from "@/core/modules/catalog-category/catalog-category-types.ts"
@@ -38,13 +38,13 @@ export function CategoryFilterBar<Extra extends string = never>({
     [categories, usedCategoryIds]
   )
   const showUncategorized = usedCategoryIds.has(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const [overflow, setOverflow] = useState({ start: false, end: false })
 
   // Fades whichever edge hides more chips, so a row cut off at the screen
-  // edge reads as one that scrolls.
-  useEffect(() => {
-    const element = scrollRef.current
+  // edge reads as one that scrolls. A callback ref, so it attaches whenever
+  // the row is rendered — it is not while there are no chips — and watches
+  // the chips too, whose width changes without the row's.
+  const trackOverflow = useCallback((element: HTMLDivElement | null) => {
     if (element === null) return
     const update = () => {
       const { scrollLeft, scrollWidth, clientWidth } = element
@@ -56,13 +56,15 @@ export function CategoryFilterBar<Extra extends string = never>({
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)
+    if (element.firstElementChild !== null) {
+      observer.observe(element.firstElementChild)
+    }
     element.addEventListener("scroll", update, { passive: true })
     return () => {
       observer.disconnect()
       element.removeEventListener("scroll", update)
     }
-    // Re-attached once there are chips: with none, nothing was rendered.
-  }, [availableCategories.length, extraOptions.length])
+  }, [])
 
   if (availableCategories.length === 0 && extraOptions.length === 0) {
     return null
@@ -77,7 +79,7 @@ export function CategoryFilterBar<Extra extends string = never>({
 
   return (
     <div
-      ref={scrollRef}
+      ref={trackOverflow}
       // A thin scrollbar for a mouse, which has no other way to reach the
       // chips past the edge; a finger swipes, so touch screens hide it.
       className={cn(

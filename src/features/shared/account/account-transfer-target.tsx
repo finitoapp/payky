@@ -26,7 +26,7 @@ import {
   type PaykyUriError,
   parsePairUri,
   type WrongPaykyUriTypeError,
-} from "@/core/payky-uri.ts"
+} from "@/core/modules/shared/payky-uri.ts"
 import { restoredAccountAtom } from "@/features/shared/account/restored-account.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"

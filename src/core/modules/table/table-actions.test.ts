@@ -15,8 +15,8 @@ import {
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../../evolu/cli-client"
 import {
   createTable,
   createTableAtEnd,

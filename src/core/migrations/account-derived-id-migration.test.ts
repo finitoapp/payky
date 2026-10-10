@@ -35,8 +35,8 @@ import {
   PositiveInteger,
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../evolu/cli-client"
 
 const accountWithDetailsByIdQuery = (id: AccountId) =>
   createQuery((db) =>

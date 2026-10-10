@@ -29,8 +29,8 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
 import { createTestDateDep, testFixedDate } from "@/test/date-dep.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../../evolu/cli-client"
 import {
   addCatalogItemToBill,
   addManualAmountToBill,

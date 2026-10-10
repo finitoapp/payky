@@ -1,7 +1,5 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
@@ -24,6 +22,7 @@ import {
   TimestampMs,
 } from "@/core/modules/shared/schema.ts"
 import { createTestDateDep } from "@/test/date-dep.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import { markWithdrawalFailed } from "./withdraw-actions.ts"
 import {

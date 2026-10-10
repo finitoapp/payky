@@ -7,8 +7,8 @@ import type { ItemRow } from "@/core/modules/item/item.ts"
 import { createOrReuseItemSnapshot } from "@/core/modules/item/item-actions.ts"
 import { createStandaloneItemSnapshot } from "@/core/modules/item/item-utils.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
-import { createEvoluTest } from "../../evolu/cli-client"
 import type { BillLineRow } from "./bill-line.ts"
 import {
   appendBillLines,

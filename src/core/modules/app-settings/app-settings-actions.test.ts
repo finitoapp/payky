@@ -1,7 +1,5 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import {
   cashRegisterAccountQuery,
   fiatBankAccountQuery,
@@ -11,6 +9,7 @@ import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queri
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
 import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   completeOnboarding,

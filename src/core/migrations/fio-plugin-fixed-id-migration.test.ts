@@ -7,7 +7,6 @@ import {
 import { describe, expect, test } from "vitest"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import { saveFioPlugin } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
@@ -24,6 +23,7 @@ import {
   NonEmptyString255,
   PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 import {
   fioPluginFixedIdMigration,

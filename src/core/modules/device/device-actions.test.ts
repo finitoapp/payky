@@ -1,7 +1,5 @@
 import { createIdFromString, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-
-import { createEvoluTest } from "@/core/evolu/cli-client.ts"
 import {
   registerDevice,
   removeDevice,
@@ -14,6 +12,7 @@ import {
 } from "@/core/modules/device/device-queries.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 import { evoluTestDeps } from "@/test/evolu-deps.ts"
 
 const deviceId: DeviceId = createIdFromString("test-device")

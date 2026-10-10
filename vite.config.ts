@@ -288,12 +288,7 @@ export default (({ command, isSsrBuild }: ConfigEnv) => {
       },
     },
     optimizeDeps: {
-      exclude: [
-        "@evolu/web",
-        "@evolu/react-web",
-        "@evolu/react",
-        "@evolu/common",
-      ],
+      exclude: ["@evolu/web", "@evolu/react-web", "@evolu/common"],
     },
     test: {
       exclude: [...defaultExclude, "e2e/**"],

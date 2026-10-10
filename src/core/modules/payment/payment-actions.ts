@@ -440,7 +440,6 @@ const markPaymentPaid =
     accountKind,
     accountQuery,
     notFoundError,
-    accountTransactionKind,
     receivedCashAmount,
     paymentId,
     accountId,
@@ -449,7 +448,6 @@ const markPaymentPaid =
     note,
   }: MarkPaymentPaidInput & {
     readonly accountKind: PaymentAccountKind
-    readonly accountTransactionKind?: "cardSwitchio"
     readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
     readonly notFoundError: TNotFoundError
     readonly receivedCashAmount?: NonNegativeInteger
@@ -488,7 +486,10 @@ const markPaymentPaid =
           accountId,
         }),
         accountId,
-        kind: accountTransactionKind,
+        // The money landed on an account of this kind, and nothing else
+        // records the movement: there is no bank statement row behind a
+        // hand-confirmed transfer, so no `iban` detail implies the kind.
+        kind: accountKind,
         amount: payment.amount,
         currency: payment.currency,
         occurredAt:
@@ -680,7 +681,6 @@ const recordSwitchioTerminalOutcome =
         accountId,
         deviceId,
         accountKind: "cardSwitchio",
-        accountTransactionKind: "cardSwitchio",
         accountQuery: cardSwitchioAccountByIdQuery,
         notFoundError: createCardSwitchioAccountNotFoundError({
           id: accountId,

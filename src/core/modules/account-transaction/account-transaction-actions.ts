@@ -9,6 +9,7 @@ import {
 } from "@evolu/common"
 import type { RequireOneOrNone, Simplify } from "type-fest"
 import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { PaymentAccountKind } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   createRowId,
@@ -139,11 +140,12 @@ export type CreateAccountTransactionInput = Simplify<
   Omit<InsertValues<typeof accountTransaction>, "kind"> & {
     readonly id?: AccountTransactionId
     /**
-     * Only for the kinds that have no detail table of their own — every
-     * other kind is implied by its `iban`/`spark`/`onchain` input and
+     * For a movement written without a detail row: the kinds that have no
+     * detail table of their own, and a hand-confirmed IBAN transfer, which
+     * has no bank statement to fill one. A detail input implies its kind and
      * overrides this.
      */
-    readonly kind?: "cashRegister" | "cardSwitchio"
+    readonly kind?: PaymentAccountKind
     readonly source: Omit<
       InsertValues<typeof accountTransactionSource>,
       "id" | "accountTransactionId" | "recordedAt"

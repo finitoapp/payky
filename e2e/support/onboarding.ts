@@ -50,7 +50,7 @@ export async function chooseOnboardingCurrency(
  */
 /**
  * Seeds onboarding for whichever account is currently active on the page via
- * `window.__e2eSeedOnboarding` (see src/components/e2e-test-bridge.tsx),
+ * `window.__e2eSeedOnboarding` (see src/components/app/e2e-test-bridge.tsx),
  * which writes the same account/settings rows `completeOnboarding` produces
  * (cash + IBAN enabled, USD, tips on defaults), then waits for the app's own
  * reactive redirect off the onboarding page. Assumes the app has already

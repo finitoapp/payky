@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest"
 /**
  * Holds AGENTS.md's rule that a feature never imports a sibling feature's
  * folder: what two features need lives in `src/features/shared` (or
- * `src/components`, `src/hooks`). Nothing else enforced it, and 38 such
+ * `src/components`, `src/hooks`, which in turn import no feature). Nothing else enforced it, and 38 such
  * imports with three folder cycles had piled up before they were cleaned out.
  */
 
@@ -53,6 +53,26 @@ const crossFeatureImports = sourceFiles.flatMap((file) => {
   )
 })
 
+/**
+ * `src/components` and `src/hooks` sit below the features: a feature uses
+ * them, never the other way round.
+ */
+const layerImports = (["components", "hooks"] as const).flatMap((layer) => {
+  const layerDir = path.join(featuresDir, "..", layer)
+  return readdirSync(layerDir, { recursive: true })
+    .map(String)
+    .filter((file) => /\.tsx?$/u.test(file))
+    .flatMap((file) => {
+      const absolute = path.join(layerDir, file)
+      return importSpecifiers(readFileSync(absolute, "utf8")).flatMap(
+        (specifier) =>
+          targetFeature(absolute, specifier) === null
+            ? []
+            : [`src/${layer}/${file} imports ${specifier}`]
+      )
+    })
+})
+
 describe("feature boundaries", () => {
   test("finds the feature sources", () => {
     expect(sourceFiles.length).toBeGreaterThan(100)
@@ -60,5 +80,9 @@ describe("feature boundaries", () => {
 
   test("no feature imports another feature's folder", () => {
     expect(crossFeatureImports).toEqual([])
+  })
+
+  test("src/components and src/hooks import no feature", () => {
+    expect(layerImports).toEqual([])
   })
 })

@@ -6,7 +6,7 @@ import {
   type PinPromptRequest,
   pinPromptQueueAtom,
 } from "@/atoms/access.ts"
-import { PinScreen, type UnlockedVia } from "@/components/pin-screen.tsx"
+import { PinScreen, type UnlockedVia } from "@/components/app/pin-screen.tsx"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx"
 import { useAccess } from "@/hooks/use-access.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

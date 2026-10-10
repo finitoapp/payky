@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test"
 /**
  * Writes the row shape the versions before the Fio plugin became a singleton
  * left behind — a plugin at a generated id, with a token keyed to it — via
- * `window.__e2eSeedLegacyFioPlugin` (see src/components/e2e-test-bridge.tsx).
+ * `window.__e2eSeedLegacyFioPlugin` (see src/components/app/e2e-test-bridge.tsx).
  *
  * That is what gives the migration runner something to do: its `hasWork`
  * check reads exactly these rows, so without them the next load finds nothing

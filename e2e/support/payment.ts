@@ -122,7 +122,7 @@ export function getPaymentIdFromUrl(page: Page): string {
 
 /**
  * Simulates an incoming Spark transfer settling the current payment via
- * `window.__e2eMarkSparkPaid` (see src/components/e2e-test-bridge.tsx) —
+ * `window.__e2eMarkSparkPaid` (see src/components/app/e2e-test-bridge.tsx) —
  * there is no real counterparty to pay the Lightning invoice in a test run.
  */
 export async function markSparkPaid(
@@ -161,7 +161,7 @@ export async function prepareIbanPayment(
 
 /**
  * Simulates an incoming bank transaction settling the current IBAN payment
- * via `window.__e2eMarkIbanPaid` (see src/components/e2e-test-bridge.tsx) —
+ * via `window.__e2eMarkIbanPaid` (see src/components/app/e2e-test-bridge.tsx) —
  * there is no real bank transfer in a test run.
  */
 export async function markIbanPaid(

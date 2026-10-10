@@ -19,9 +19,9 @@ import { cn } from "@/lib/utils.ts"
  * plain name/subtitle rather than a `TableRow` so a non-table tile can
  * reuse it without faking a table row.
  *
- * Occupied is a tint and an accent ring, not a solid fill: on a busy floor
- * most tiles are occupied, and a wall of solid color stops telling them
- * apart — the solid accent is left for what needs attention inside a tile.
+ * Occupied is an accent border on the left, as an item on the bill is in
+ * the bill's grid, not a solid fill: on a busy floor most tiles are
+ * occupied, and a wall of color stops telling them apart.
  * `icon` defaults to the table glyph; pass `null` for none.
  */
 export function TableTileShell({
@@ -43,7 +43,7 @@ export function TableTileShell({
     <Card
       className={cn(
         "h-full gap-3 p-4",
-        occupied && "bg-primary/15 ring-primary/60",
+        occupied && "border-l-4 border-l-primary pl-3",
         selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >

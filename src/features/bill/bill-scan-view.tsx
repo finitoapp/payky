@@ -76,17 +76,12 @@ export function BillScanView({
           <Card
             className={cn(
               "gap-3 p-3",
-              quantity > 0 && "bg-primary text-primary-foreground"
+              quantity > 0 && "border-l-4 border-l-primary pl-2"
             )}
           >
             <div className="min-w-0">
               <p className="font-medium">{getStaffDisplayName(lastScanned)}</p>
-              <p
-                className={cn(
-                  "text-sm text-muted-foreground",
-                  quantity > 0 && "text-primary-foreground/80"
-                )}
-              >
+              <p className="text-sm text-muted-foreground">
                 {formatMoney(
                   {
                     value: lastScanned.unitAmount,
@@ -99,7 +94,6 @@ export function BillScanView({
             <ItemQuantityControls
               name={getStaffDisplayName(lastScanned)}
               quantity={quantity}
-              inCart={quantity > 0}
               onAdd={() => onAdd(lastScanned)}
               onAddQuantity={(nextQuantity) =>
                 onAddQuantity(lastScanned, nextQuantity)

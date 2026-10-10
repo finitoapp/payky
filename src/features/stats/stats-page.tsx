@@ -11,13 +11,19 @@ import type { StatsPeriod } from "@/core/modules/sales-stats/sales-stats-types.t
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
+import { DeviceBreakdown } from "./device-breakdown.tsx"
 import { KpiTiles } from "./kpi-tiles.tsx"
 import { ExpectedCashSummary, MethodBreakdown } from "./method-breakdown.tsx"
 import { OpenBillsSummary } from "./open-bills-summary.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
 import { RevenueChart } from "./revenue-chart.tsx"
+import { SalesHeatmap } from "./sales-heatmap.tsx"
+import { Signals } from "./signals.tsx"
 import { type StatsSearch, statsPeriodFromSearch } from "./stats-search.ts"
+import { TopCategories } from "./top-categories.tsx"
+import { TopItems } from "./top-items.tsx"
 import { useSalesStats, useStatsNow } from "./use-sales-stats.ts"
+import { VatRecap } from "./vat-recap.tsx"
 
 /**
  * The sales statistics screen (access/0008), header included: the period
@@ -84,6 +90,14 @@ function PeriodStats({
       )}
       <MethodBreakdown methods={stats.methods} />
       <ExpectedCashSummary cash={stats.cash} />
+      <TopItems stats={stats} />
+      <TopCategories stats={stats} />
+      <DeviceBreakdown stats={stats} />
+      {primary === undefined ? null : (
+        <SalesHeatmap stats={stats} currency={primary.currency} />
+      )}
+      <Signals stats={stats} />
+      <VatRecap stats={stats} />
     </>
   )
 }

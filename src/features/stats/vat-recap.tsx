@@ -1,0 +1,56 @@
+import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
+import { hasTaxableLines } from "@/core/modules/bill-line/bill-line-tax-utils.ts"
+import { taxRecapQuery } from "@/core/modules/sales-stats/sales-stats-queries.ts"
+import { salesTaxRecap } from "@/core/modules/sales-stats/sales-stats-utils.ts"
+import { taxRatesQuery } from "@/core/modules/tax-rate/tax-rate-queries.ts"
+import { TaxRecap } from "@/features/shared/tax-recap.tsx"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
+import { cn } from "@/lib/utils.ts"
+import { CurrencyGroup, rowsByCurrency } from "./stats-section.tsx"
+import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
+
+/**
+ * The VAT of what closed bills sold, per rate, through the bill's own
+ * `TaxRecap`. `TaxRecap` titles itself, so the card has no heading of its
+ * own; a shop that is not a VAT payer sees nothing.
+ */
+export function VatRecap({ stats }: { readonly stats: SalesStats }) {
+  const locale = useLocale()
+  const { data: rates } = useEvoluQuery(taxRatesQuery)
+  const rows = useStatsRows(
+    "taxRecap",
+    taxRecapQuery,
+    stats.ranges.range,
+    stats.live
+  )
+
+  if (rows === undefined) return null
+
+  const groups = rowsByCurrency(rows, stats.accountCurrency)
+    .map(({ currency }) => ({
+      currency,
+      recap: salesTaxRecap({ rows, currency, rates }),
+    }))
+    .filter((group) => hasTaxableLines(group.recap))
+
+  if (groups.length === 0) return null
+
+  return (
+    <section className={cn(verticalNavShellClassName, "gap-4 p-4")}>
+      {groups.map((group) => (
+        <CurrencyGroup
+          key={group.currency}
+          currency={group.currency}
+          showCurrency={groups.length > 1}
+        >
+          <TaxRecap
+            rows={group.recap}
+            currency={group.currency}
+            locale={locale}
+          />
+        </CurrencyGroup>
+      ))}
+    </section>
+  )
+}

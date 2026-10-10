@@ -837,21 +837,18 @@ function BillCartView({
                         summary={summary}
                         locale={locale}
                         disabled={cart.pending}
-                        onRemove={(removedSummary) => {
-                          void cart
-                            .removeLine(removedSummary)
-                            .then((removed) => {
-                              // A failed removal already raised its own error
-                              // toast and recorded nothing, so offering to undo
-                              // here would invert the change before it.
-                              if (!removed) return
+                        onRemove={async (removedSummary) => {
+                          const removed = await cart.removeLine(removedSummary)
+                          // A failed removal already raised its own error
+                          // toast and recorded nothing, so offering to undo
+                          // here would invert the change before it.
+                          if (!removed) return
 
-                              showUndoToast(
-                                t("bill.summary.removeLine.toast", {
-                                  name: removedSummary.name,
-                                })
-                              )
+                          showUndoToast(
+                            t("bill.summary.removeLine.toast", {
+                              name: removedSummary.name,
                             })
+                          )
                         }}
                       />
                     ))}
@@ -882,12 +879,10 @@ function BillCartView({
                     variant="outline"
                     size={"xs"}
                     disabled={summaries.length === 0 || cart.pending}
-                    onClick={() => {
-                      void cart.clear(summaries).then((cleared) => {
-                        if (cleared) {
-                          showUndoToast(t("bill.summary.clear.toast"))
-                        }
-                      })
+                    onClick={async () => {
+                      if (await cart.clear(summaries)) {
+                        showUndoToast(t("bill.summary.clear.toast"))
+                      }
                     }}
                   >
                     {t("bill.summary.clear")}

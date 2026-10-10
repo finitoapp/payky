@@ -55,7 +55,7 @@ export function LegalEntitySettingsPage() {
     readonly vatPayer: boolean
   }) => {
     await using run = appRun()
-    await run(setLegalEntity(values))
+    await run.ok(setLegalEntity(values))
   }
 
   return (

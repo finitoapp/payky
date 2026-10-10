@@ -618,13 +618,14 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
   )
 
   // `updateCatalogItem` is a `Task<_, never>`: its only realistic failure is
-  // unexpected infrastructure. Let it throw — the inline-edit controls turn
-  // that into the toast and withhold their saved tick.
+  // unexpected infrastructure. `run.ok` throws on any non-ok result too (a
+  // disposed run), and the inline-edit controls turn the throw into the toast
+  // and withhold their saved tick.
   const saveItem = async (
     values: Omit<Parameters<typeof updateCatalogItem>[0], "id">
   ) => {
     await using run = appRun()
-    await run(updateCatalogItem({ id: item.id, ...values }))
+    await run.ok(updateCatalogItem({ id: item.id, ...values }))
   }
 
   const applyScanCode = (rawValue: string) => {

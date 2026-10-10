@@ -224,11 +224,12 @@ function EditTableForm({ table }: { readonly table: TableRow }) {
   const formId = useId()
 
   // `updateTable` is a `Task<_, never>`: its only realistic failure is
-  // unexpected infrastructure. Let it throw — `InlineEditField` turns that
-  // into the toast and withholds its saved tick.
+  // unexpected infrastructure. `run.ok` throws on any non-ok result too (a
+  // disposed run), and `InlineEditField` turns the throw into the toast and
+  // withholds its saved tick.
   const saveTable = async (values: Omit<UpdateValues<Table>, "id">) => {
     await using run = appRun()
-    await run(updateTable({ id: table.id, ...values }))
+    await run.ok(updateTable({ id: table.id, ...values }))
   }
 
   // Not `useConfirmedRun`: `deleteTable` returns a domain Result (it refuses

@@ -122,7 +122,7 @@ function TaxRateRowItem({ taxRate }: { readonly taxRate: TaxRateRow }) {
           errorKey="settings.taxRates.name.invalid"
           onSave={async (name) => {
             await using run = appRun()
-            await run(renameTaxRate({ id: taxRate.id, name }))
+            await run.ok(renameTaxRate({ id: taxRate.id, name }))
           }}
           onEditFinished={() => {
             setEditing(false)

@@ -22,6 +22,7 @@ import { fiatBankAccountQuery } from "@/core/modules/account/account-queries.ts"
 import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { BankQrFormatSchema } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { bankQrFormats } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
 import {
   czechIbanToBban,
@@ -30,7 +31,6 @@ import {
 } from "@/core/modules/shared/iban-utils.ts"
 import {
   BankAccountInputIbanSchema,
-  FiatCurrency,
   FiatCurrencySchema,
   type FiatCurrency as FiatCurrencyType,
   type Iban,
@@ -120,8 +120,7 @@ export function FiatBankAccountSettingsPage() {
   // Entering the first IBAN is what setting up bank transfers means, so it
   // enables the account; after that the switch on the overview owns it.
   const enabled = account ? account.isDeleted !== 1 : true
-  const currency =
-    account?.currency ?? settings?.fiatCurrency ?? FiatCurrency.CZK
+  const currency = account?.currency ?? getFiatCurrency(settings)
   const defaultQrFormat = account?.defaultQrFormat ?? "spayd"
   const [ibanFormat, setIbanFormat] = useState<BankAccountDisplayFormat>("bban")
 

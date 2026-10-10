@@ -34,8 +34,8 @@ import {
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
-import { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import { homeModeLabelKeys } from "@/features/settings/home-screen/home-screen-settings-page.tsx"
 import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
 import { languageOptions } from "@/features/shared/language-options.ts"
@@ -124,7 +124,7 @@ export function SettingsPage() {
       .map(([, key]) => t(key))
       .join(", ") || t("settings.paymentAccounts.nav.none")
 
-  const fiatCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
+  const fiatCurrency = getFiatCurrency(settings)
   const businessValue =
     legalEntity === undefined
       ? fiatCurrency

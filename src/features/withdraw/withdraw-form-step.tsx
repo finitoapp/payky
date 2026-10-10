@@ -46,7 +46,7 @@ import { useLnurlPayMetadata } from "@/hooks/use-lnurl-pay-metadata.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-import { formatSatsAmount } from "@/lib/format-utils.ts"
+import { formatSatsAmount, shortenMiddle } from "@/lib/format-utils.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
 import {
   destinationErrorKeys,
@@ -138,9 +138,6 @@ const useClipboardDestination = (current: string): string | null => {
     ? suggestion
     : null
 }
-
-const shortened = (value: string): string =>
-  value.length <= 28 ? value : `${value.slice(0, 16)}…${value.slice(-8)}`
 
 export function WithdrawFormStep({
   accountId,
@@ -329,7 +326,7 @@ export function WithdrawFormStep({
                     <ClipboardPasteIcon />
                     <span className="truncate">
                       {t("withdraw.clipboard.use", {
-                        value: shortened(clipboardDestination),
+                        value: shortenMiddle(clipboardDestination, 16, 8),
                       })}
                     </span>
                   </Button>

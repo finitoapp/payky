@@ -1,6 +1,6 @@
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { satsToFiat } from "@/core/modules/shared/money.ts"
-import { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import { useBtcExchangeRate } from "@/hooks/use-btc-exchange-rate.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -15,7 +15,7 @@ import { formatAmount } from "@/lib/format-utils.ts"
 export function useBtcFiat() {
   const locale = useLocale()
   const { data } = useEvoluQuery(settingsQuery)
-  const currency = data[0]?.fiatCurrency ?? FiatCurrency.CZK
+  const currency = getFiatCurrency(data[0])
   const rateQuery = useBtcExchangeRate(currency)
   const rate = rateQuery.data ?? null
 

@@ -11,10 +11,10 @@ import {
 import { Button } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { createRandomBillId } from "@/core/modules/bill/bill-types.ts"
 import type { Money } from "@/core/modules/shared/money.ts"
 import {
-  FiatCurrency,
   FiatCurrencySchema,
   NonNegativeInteger,
 } from "@/core/modules/shared/schema.ts"
@@ -153,7 +153,7 @@ function TerminalPaymentKeypadLoader() {
       <div>&nbsp;</div>
 
       <TerminalPaymentKeypad
-        currency={settings?.fiatCurrency ?? FiatCurrency.CZK}
+        currency={getFiatCurrency(settings)}
         onCharge={handleCharge}
       />
     </div>

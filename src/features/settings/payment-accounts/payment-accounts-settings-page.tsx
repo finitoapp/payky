@@ -31,8 +31,11 @@ import {
 import { setPaymentMethodOrder } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
-import { getPaymentMethodOrder } from "@/core/modules/app-settings/app-settings-utils.ts"
-import { FiatCurrency } from "@/core/modules/shared/schema.ts"
+import {
+  getFiatCurrency,
+  getPaymentMethodOrder,
+} from "@/core/modules/app-settings/app-settings-utils.ts"
+import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import { isSwitchioInstalled } from "@/core/native/switchio.ts"
 import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
@@ -74,7 +77,7 @@ export function PaymentAccountsSettingsPage() {
   const [cash] = cashData
   const [card] = cardData
 
-  const appCurrency = settings?.fiatCurrency ?? FiatCurrency.CZK
+  const appCurrency = getFiatCurrency(settings)
   const bankEnabled = bank !== undefined && bank.isDeleted !== 1
   const sparkEnabled = spark !== undefined && spark.isDeleted !== 1
   const cashEnabled = cash !== undefined && cash.isDeleted !== 1

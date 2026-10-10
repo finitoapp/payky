@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import {
   defaultPaymentMethodOrder,
+  getFiatCurrency,
   getPaymentMethodOrder,
   parseEnabledHomeModes,
   parsePaymentMethodOrder,
@@ -98,5 +99,13 @@ describe("resolveTerminalHomeMode", () => {
   test("falls back to the first enabled mode when the remembered one is disabled", () => {
     expect(resolveTerminalHomeMode("pos", ["numpad"])).toBe("numpad")
     expect(resolveTerminalHomeMode("numpad", ["pos"])).toBe("pos")
+  })
+})
+
+describe("getFiatCurrency", () => {
+  test("takes the account's currency, or CZK before its settings exist", () => {
+    expect(getFiatCurrency({ fiatCurrency: "EUR" })).toBe("EUR")
+    expect(getFiatCurrency({ fiatCurrency: null })).toBe("CZK")
+    expect(getFiatCurrency(undefined)).toBe("CZK")
   })
 })

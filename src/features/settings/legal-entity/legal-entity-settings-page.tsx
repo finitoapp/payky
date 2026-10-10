@@ -9,13 +9,11 @@ import {
 import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
 import { updateSettings } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
+import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { setLegalEntity } from "@/core/modules/legal-entity/legal-entity-actions.ts"
 import { legalEntityQuery } from "@/core/modules/legal-entity/legal-entity-queries.ts"
 import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types.ts"
-import {
-  FiatCurrency,
-  FiatCurrencySchema,
-} from "@/core/modules/shared/schema.ts"
+import { FiatCurrencySchema } from "@/core/modules/shared/schema.ts"
 import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
 import { optionalIdCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
@@ -90,7 +88,7 @@ export function LegalEntitySettingsPage() {
 
             <InlineEditSelect
               label={t("settings.legalEntity.currency.label")}
-              defaultValue={settings?.fiatCurrency ?? FiatCurrency.CZK}
+              defaultValue={getFiatCurrency(settings)}
               codec={FiatCurrencySchema}
               options={fiatCurrencyOptions.map((option) => ({
                 value: option.value,

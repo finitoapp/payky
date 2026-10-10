@@ -8,8 +8,5 @@ export const Route = createFileRoute(
   component: PaymentNumberSeriesSettingsPage,
   staticData: {
     access: "settings",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

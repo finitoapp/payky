@@ -6,8 +6,5 @@ export const Route = createFileRoute("/_terminal/settings/tips")({
   component: TipsSettingsPage,
   staticData: {
     access: "settings",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

@@ -28,6 +28,12 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 
+/**
+ * The viewport padding nearly every terminal screen uses. A route declares
+ * `terminalLayout.viewportClassName` only to differ from it.
+ */
+const defaultViewportClassName = "px-3 py-6"
+
 export const Route = createFileRoute("/_terminal")({
   component: TerminalLayout,
   staticData: { access: "free" },
@@ -67,7 +73,11 @@ function TerminalLayout() {
       )}
     >
       {isSandboxActive ? <EetSandboxBanner /> : null}
-      <PhoneViewport className={terminalLayout?.viewportClassName}>
+      <PhoneViewport
+        className={
+          terminalLayout?.viewportClassName ?? defaultViewportClassName
+        }
+      >
         <AccessGate>
           <Outlet />
         </AccessGate>

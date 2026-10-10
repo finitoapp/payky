@@ -6,8 +6,5 @@ export const Route = createFileRoute("/_terminal/settings/assistant")({
   component: AssistantChatPage,
   staticData: {
     access: "activity",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

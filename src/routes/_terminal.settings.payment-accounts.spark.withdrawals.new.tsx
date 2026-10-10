@@ -15,9 +15,6 @@ export const Route = createFileRoute(
   validateSearch: (search) => WithdrawNewSearchSchema.parse(search),
   staticData: {
     access: "admin",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })
 

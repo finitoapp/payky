@@ -6,8 +6,5 @@ export const Route = createFileRoute("/_terminal/settings/accounts/")({
   component: AccountsSettingsPage,
   staticData: {
     access: "admin",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

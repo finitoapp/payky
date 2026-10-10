@@ -4,9 +4,5 @@ export const Route = createFileRoute(
   "/_terminal/settings/payment-accounts/iban"
 )({
   staticData: { access: "admin" },
-  component: FiatBankAccountLayout,
+  component: Outlet,
 })
-
-function FiatBankAccountLayout() {
-  return <Outlet />
-}

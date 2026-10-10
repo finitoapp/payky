@@ -8,8 +8,5 @@ export const Route = createFileRoute(
   component: SparkTransactionsPage,
   staticData: {
     access: "admin",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })

@@ -5,16 +5,13 @@ import { EditCatalogItemPage } from "@/features/settings/items/item-form-page.ts
 export const Route = createFileRoute(
   "/_terminal/settings/items/$catalogItemId"
 )({
-  component: RouteComponent,
+  component: EditItemRoute,
   staticData: {
     access: "settings",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })
 
-function RouteComponent() {
+function EditItemRoute() {
   const { catalogItemId } = Route.useParams()
 
   return <EditCatalogItemPage catalogItemId={catalogItemId} />

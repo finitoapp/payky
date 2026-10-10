@@ -5,16 +5,13 @@ import { EditCatalogCategoryPage } from "@/features/settings/categories/category
 export const Route = createFileRoute(
   "/_terminal/settings/categories/$catalogCategoryId"
 )({
-  component: RouteComponent,
+  component: EditCategoryRoute,
   staticData: {
     access: "settings",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })
 
-function RouteComponent() {
+function EditCategoryRoute() {
   const { catalogCategoryId } = Route.useParams()
 
   return <EditCatalogCategoryPage catalogCategoryId={catalogCategoryId} />

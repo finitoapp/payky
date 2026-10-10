@@ -6,9 +6,6 @@ export const Route = createFileRoute("/_terminal/activity_/bills_/$billId")({
   component: BillDetailRoute,
   staticData: {
     access: "activity",
-    terminalLayout: {
-      viewportClassName: "px-3 py-6",
-    },
   },
 })
 

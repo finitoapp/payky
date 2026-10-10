@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { AccountTransferSourcePage } from "@/features/account/account-transfer-source-page.tsx"
+import { AccountTransferSourcePage } from "@/features/settings/account-transfer-source-page.tsx"
 
 export const Route = createFileRoute("/_terminal/settings/access_/add-device")({
   component: AccountTransferSourcePage,

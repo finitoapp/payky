@@ -33,8 +33,6 @@ import { finishOnboarding as finishOnboardingTask } from "@/core/modules/app-set
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
-import { AccountTransferTarget } from "@/features/account/account-transfer-target.tsx"
-import { useRestoreAccount } from "@/features/account/use-restore-account.ts"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
@@ -52,6 +50,8 @@ import {
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
+import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
+import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
 import { markAppEntered } from "@/features/shared/landing-redirect.ts"
 import { LanguageSelect } from "@/features/shared/language-select.tsx"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
 
-import { RestoreSyncPage } from "@/features/account/restore-sync-page.tsx"
+import { RestoreSyncPage } from "@/features/onboarding/restore-sync-page.tsx"
 
 // Falls back instead of throwing: a `validateSearch` throw on a stale link
 // would escape to the global error boundary. Only `source` lives here; which

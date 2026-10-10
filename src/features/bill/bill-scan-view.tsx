@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { ScanCodeScanner } from "@/components/scan-code-scanner.tsx"
 import { Card } from "@/components/ui/card.tsx"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
 import { getLatestCatalogItemSummary } from "@/core/modules/bill-line/bill-line-utils.ts"
@@ -6,7 +7,6 @@ import type { CatalogItemRow } from "@/core/modules/catalog-item/catalog-item.ts
 import { getStaffDisplayName } from "@/core/modules/catalog-item/catalog-item-utils.ts"
 import type { PositiveNumber } from "@/core/modules/shared/schema.ts"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
-import { ScanCodeScanner } from "@/features/scanner/scan-code-scanner.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"

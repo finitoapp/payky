@@ -22,7 +22,7 @@ import {
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import { tablesQuery } from "@/core/modules/table/table-queries.ts"
 import type { TableId } from "@/core/modules/table/table-types.ts"
-import { TableTileShell } from "@/features/tables/table-tile.tsx"
+import { TableTileShell } from "@/features/shared/table-tile.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
 import { useLocale } from "@/hooks/use-locale.ts"

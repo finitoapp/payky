@@ -11,9 +11,9 @@ import {
   type CategoryFilter,
   findCatalogItemsByScanCode,
 } from "@/core/modules/catalog-item/catalog-item-utils.ts"
-import { CategoryFilterBar } from "@/features/catalog/category-filter-bar.tsx"
 import { ItemsList } from "@/features/settings/items/items-list.tsx"
 import { SettingsListPage } from "@/features/settings/settings-list-page.tsx"
+import { CategoryFilterBar } from "@/features/shared/category-filter-bar.tsx"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "@/hooks/use-hardware-scanner.ts"

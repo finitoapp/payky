@@ -30,10 +30,10 @@ import {
   PositiveIntegerFromStringSchema,
 } from "@/core/modules/shared/schema.ts"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
-import { useSettingsForm } from "@/features/settings/use-settings-form.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
+import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 

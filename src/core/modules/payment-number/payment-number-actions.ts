@@ -1,5 +1,4 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
-import { format } from "date-fns"
 
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
@@ -8,63 +7,17 @@ import type {
   PaymentNumberRow,
 } from "@/core/modules/payment-number/payment-number.ts"
 import { paymentLastNumberQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
-import { paymentLastNumberId } from "@/core/modules/payment-number/payment-number-utils.ts"
-import type { PaymentNumberSeriesRow } from "@/core/modules/payment-number-series/payment-number-series.ts"
+import {
+  createNextPaymentNumberValues,
+  paymentLastNumberId,
+} from "@/core/modules/payment-number/payment-number-utils.ts"
 import { loadPaymentNumberSeries } from "@/core/modules/payment-number-series/payment-number-series-actions.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
-import {
-  type DateString,
-  DateStringSchema,
-  NonNegativeInteger,
-  type NonNegativeInteger as NonNegativeIntegerType,
+import type {
+  DateString,
+  NonNegativeInteger as NonNegativeIntegerType,
 } from "@/core/modules/shared/schema.ts"
-
-interface PreviousPaymentNumber {
-  readonly date: DateString | null
-  readonly serialNumber: NonNegativeIntegerType
-}
-
-const getNumberingPeriod = (
-  date: DateString,
-  series: PaymentNumberSeriesRow
-): string => {
-  if (series.dayFormat !== "hidden") return date
-  if (series.monthFormat !== "hidden") return date.slice(0, 7)
-  return date.slice(0, 4)
-}
-
-export const createPaymentNumberDate = (date: Date): DateString =>
-  DateStringSchema.decode(format(date, "yyyy-MM-dd"))
-
-export const createNextPaymentNumberValues = ({
-  id,
-  date,
-  series,
-  previous,
-}: {
-  readonly id: PaymentId
-  readonly date: DateString
-  readonly series: PaymentNumberSeriesRow
-  readonly previous?: PreviousPaymentNumber
-}): PaymentNumberRow => {
-  const currentPeriod = getNumberingPeriod(date, series)
-  const previousPeriod =
-    previous?.date === null || previous?.date === undefined
-      ? null
-      : getNumberingPeriod(previous.date, series)
-  const serialNumber = NonNegativeInteger(
-    previous !== undefined && previousPeriod === currentPeriod
-      ? previous.serialNumber + 1
-      : 1
-  )
-
-  return {
-    id,
-    serialNumber,
-    date,
-  }
-}
 
 export const createPaymentLastNumberValues = ({
   serialNumber,

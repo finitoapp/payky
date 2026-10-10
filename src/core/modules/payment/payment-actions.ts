@@ -39,11 +39,11 @@ import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import { calculatePaymentBaseAmount } from "@/core/modules/payment/payment-tip-utils.ts"
 import { snapshotBillLinesForPayment } from "@/core/modules/payment-line/payment-line-actions.ts"
 import {
-  createPaymentNumberDate,
   loadNextPaymentNumber,
   upsertPaymentNumberRows,
 } from "@/core/modules/payment-number/payment-number-actions.ts"
 import { paymentNumberByPaymentIdQuery } from "@/core/modules/payment-number/payment-number-queries.ts"
+import { createPaymentNumberDate } from "@/core/modules/payment-number/payment-number-utils.ts"
 import {
   loadBillClosedAtForPayment,
   upsertReconciliationClaimRows,
@@ -83,7 +83,6 @@ import {
   type AccountCurrencyMismatchError,
   type CardSwitchioAccountNotFoundError,
   type CreatePaymentError,
-  createAccountCurrencyMismatchError,
   createCardSwitchioAccountNotFoundError,
   createCashReceivedBelowChargeError,
   createCashRegisterAccountNotFoundError,
@@ -109,6 +108,7 @@ import {
   type SettleRestoredSwitchioCardPaymentError,
 } from "./payment-errors.ts"
 import {
+  loadAccountWithCurrencyCheck,
   loadPaymentHasActiveClaim,
   requirePayablePayment,
 } from "./payment-guards.ts"
@@ -120,44 +120,6 @@ import {
 } from "./payment-queries.ts"
 import { createVariableSymbolFromSerialNumber } from "./payment-symbol-utils.ts"
 import type { PaymentId } from "./payment-types.ts"
-/**
- * Shared "load the first row or fail, then check its currency matches" step
- * behind both `preparePaymentMethod`'s cash-register/IBAN branches and
- * `markPaymentPaidCash`.
- */
-export const loadAccountWithCurrencyCheck = <
-  TRow extends { readonly currency: FiatCurrency },
-  TNotFoundError,
->({
-  rows,
-  notFoundError,
-  accountKind,
-  accountId,
-  expectedCurrency,
-}: {
-  readonly rows: ReadonlyArray<TRow>
-  readonly notFoundError: TNotFoundError
-  readonly accountKind: PaymentAccountKind
-  readonly accountId: AccountId
-  readonly expectedCurrency: FiatCurrency
-}): Result<TRow, TNotFoundError | AccountCurrencyMismatchError> => {
-  const accountResult = getFirstOr(rows, notFoundError)
-  if (!accountResult.ok) return accountResult
-
-  const account = accountResult.value
-  if (account.currency !== expectedCurrency) {
-    return err(
-      createAccountCurrencyMismatchError({
-        accountKind,
-        id: accountId,
-        accountCurrency: account.currency,
-        paymentCurrency: expectedCurrency,
-      })
-    )
-  }
-
-  return ok(account)
-}
 
 /**
  * Reads an optional 255-char column, dropping an over-long value rather than

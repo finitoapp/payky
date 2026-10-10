@@ -56,12 +56,7 @@ export const csSettings = {
   "settings.appVersion": "Verze aplikace:",
   "settings.appVersionCode": "Kód verze:",
   "settings.appearance": "VZHLED A JAZYK",
-  "settings.cashRegisterAccount.enabled.description":
-    "Když je pokladna povolená, hotovostní platby se mohou přidat k připraveným platbám.",
   "settings.cashRegisterAccount.enabled.label": "Povolit pokladnu",
-  "settings.cashRegisterAccount.form.description":
-    "Hotovostní platby používají aktuálně vybranou fiat měnu.",
-  "settings.cashRegisterAccount.form.title": "Pokladna",
   "settings.cardSwitchioAccount.enabled.label": "Zapnout platební terminál",
   "settings.cardSwitchioAccount.info.contract":
     "uzavřenou smlouvu s poskytovatelem platebního řešení, například Comgate.",
@@ -307,8 +302,6 @@ export const csSettings = {
   "settings.fiatBankAccount.currency.description":
     "Platby v této měně mohou použít tento bankovní účet.",
   "settings.fiatBankAccount.currency.label": "Měna bankovního účtu",
-  "settings.fiatBankAccount.enabled.description":
-    "Vypnutý účet zůstane uložený, ale platební toky ho budou ignorovat.",
   "settings.fiatBankAccount.enabled.label": "Povolit fiat bankovní účet",
   "settings.fiatBankAccount.form.description":
     "Aplikace teď používá jeden deterministický fiat bankovní účet.",
@@ -451,8 +444,6 @@ export const csSettings = {
   "settings.items.search": "Hledat položky...",
   "settings.items.search.clear.aria": "Vymazat hledání",
   "settings.items.title": "Položky",
-  "settings.language.czech.title": "Čeština",
-  "settings.language.english.title": "Angličtina",
   "settings.language.locale.czech.title": "Česko",
   "settings.language.locale.description":
     "Vyberte regionální formát pro data, čísla a měny.",
@@ -462,7 +453,6 @@ export const csSettings = {
   "settings.language.mode.description":
     "Vyberte jazyk, který má aplikace používat.",
   "settings.language.mode.title": "Jazyk aplikace",
-  "settings.language.slovak.title": "Slovenština",
   "settings.language.title": "Jazyk a region",
   "settings.legalEntity.country.label": "Země",
   "settings.legalEntity.country.placeholder": "Vyberte zemi",
@@ -637,8 +627,6 @@ export const csSettings = {
     "Povolené jsou jen zabezpečené WebSocket URL začínající na wss:.",
   "settings.security.transports.url.invalid": "Zadejte platnou wss URL.",
   "settings.security.transports.url.label": "WebSocket URL",
-  "settings.sparkAccount.enabled.description":
-    "Vypnutý Spark účet zůstane uložený, ale platební toky ho budou ignorovat.",
   "settings.sparkAccount.enabled.label": "Povolit Spark účet",
   "settings.sparkAccount.advanced": "Pokročilé volby",
   "settings.sparkAccount.form.customDescription":

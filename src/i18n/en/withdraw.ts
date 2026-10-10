@@ -49,7 +49,6 @@ export const enWithdraw = {
   "withdraw.detail.invoice": "Invoice",
   "withdraw.detail.invoiceRenewHint":
     "A Lightning invoice can be paid only once. Ask the recipient for a new one.",
-  "withdraw.detail.lightningAddress": "Lightning address",
   "withdraw.detail.manualConfirmed":
     "Confirmed by hand; the transaction was not traced.",
   "withdraw.detail.markNotSent": "The money did not leave",
@@ -78,7 +77,6 @@ export const enWithdraw = {
     "Waiting for the result. Another device started this withdrawal; if the payment doesn't leave, it is marked as not sent within 24 hours.",
   "withdraw.detail.preimage": "Preimage",
   "withdraw.detail.sparkTransferId": "Spark transfer ID",
-  "withdraw.detail.status": "Status",
   "withdraw.detail.technical": "Technical details",
   "withdraw.detail.title": "Withdrawal",
   "withdraw.detail.total": "Total deducted",
@@ -139,7 +137,6 @@ export const enWithdraw = {
     "The withdrawal could not be started. Try again.",
   "withdraw.review.error.interrupted":
     "The withdrawal was interrupted before it completed. Try again.",
-  "withdraw.review.expiresAt": "Invoice valid until",
   "withdraw.review.expiresIn": "Invoice valid for",
   "withdraw.review.fee": "Estimated network fee",
   "withdraw.review.invoiceDescription": "Invoice description",

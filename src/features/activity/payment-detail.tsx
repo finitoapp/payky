@@ -94,16 +94,11 @@ import {
   billStatusBadgeClassName,
   billStatusLabelKey,
 } from "@/features/activity/bill-status-display.ts"
-import {
-  paymentMethodIcon,
-  paymentMethodLabelKey,
-} from "@/features/activity/payment-method-display.tsx"
 import { PaymentDetailRefunds } from "@/features/activity/payment-refunds.tsx"
 import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
 } from "@/features/activity/payment-status-display.tsx"
-import { TaxRecap } from "@/features/activity/tax-recap.tsx"
 import { useBillCoverage } from "@/features/activity/use-bill-coverage.ts"
 import { useBillLineSummaryDiff } from "@/features/activity/use-bill-line-summary-diff.ts"
 import {
@@ -111,6 +106,11 @@ import {
   useEetRecordingDeviceWait,
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
+import {
+  paymentMethodIcon,
+  paymentMethodLabelKey,
+} from "@/features/shared/payment-method-display.tsx"
+import { TaxRecap } from "@/features/shared/tax-recap.tsx"
 import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/shared/use-bill-status.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"

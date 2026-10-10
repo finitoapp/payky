@@ -52,10 +52,10 @@ import {
   paymentStatusBadgeClassName,
   paymentStatusLabelKey,
 } from "@/features/activity/payment-status-display.tsx"
-import { TaxRecap } from "@/features/activity/tax-recap.tsx"
 import { useBillCoverage } from "@/features/activity/use-bill-coverage.ts"
 import { EetSaleStatusBadge } from "@/features/shared/eet-sale-status.tsx"
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
+import { TaxRecap } from "@/features/shared/tax-recap.tsx"
 import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/shared/use-bill-status.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

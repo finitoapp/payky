@@ -150,6 +150,7 @@
     - Avoid introducing new `any`. If legacy generic helpers force `any`, keep it local and do not widen public types.
 - Prefer `interface` for object shapes.
     - Use `type` for unions, intersections/compositions, mapped or conditional types, function aliases, branded types, and `z.output<...>` aliases.
+    - The preference pays where a shape is extended (`interface X extends A, B` is checked once and flags conflicting members, where `A & B` silently yields `never`) or shared across modules. A plain object `type` alias that already exists is not worth converting: an `interface` has no implicit index signature, so it stops being assignable to `Record<string, unknown>`, and same-named interfaces merge silently. Choose `interface` for new shapes; don't churn old ones.
 - Prefer `ReadonlyArray<T>` over `T[]` for inputs and read-only collections.
     - Use `T[]` when code intentionally mutates the array, an external/local API requires a mutable array, or a builder/ORM pattern expects mutation.
 - Type empty array declarations explicitly.

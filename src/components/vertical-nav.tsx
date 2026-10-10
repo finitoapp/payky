@@ -1,5 +1,3 @@
-"use client"
-
 import { Link, type LinkProps } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
 import type React from "react"

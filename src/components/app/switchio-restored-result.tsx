@@ -45,7 +45,6 @@ export function SwitchioRestoredResult() {
   useEffect(() => {
     if (Capacitor.getPlatform() !== "android") return undefined
 
-    let disposed = false
     const listener = CapacitorApp.addListener(
       "appRestoredResult",
       async (event) => {
@@ -75,12 +74,9 @@ export function SwitchioRestoredResult() {
     )
 
     return () => {
-      disposed = true
       void (async () => {
         const handle = await listener
-        if (disposed) {
-          void handle.remove()
-        }
+        await handle.remove()
       })()
     }
   }, [appRun, console, deviceId, t])

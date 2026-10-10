@@ -1,0 +1,74 @@
+import { Laptop, Moon, Sun } from "lucide-react"
+import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
+import { type Theme, useTheme } from "@/components/theme-provider.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
+
+interface ThemeOption {
+  readonly value: Theme
+  readonly label: TranslationKey
+  readonly description: TranslationKey
+  readonly icon: typeof Sun
+}
+
+const themeOptions: ReadonlyArray<ThemeOption> = [
+  {
+    value: "light",
+    label: "settings.theme.light.title",
+    description: "settings.theme.light.description",
+    icon: Sun,
+  },
+  {
+    value: "dark",
+    label: "settings.theme.dark.title",
+    description: "settings.theme.dark.description",
+    icon: Moon,
+  },
+  {
+    value: "system",
+    label: "settings.theme.system.title",
+    description: "settings.theme.system.description",
+    icon: Laptop,
+  },
+]
+
+export function ThemeSettingsPage() {
+  const { t } = useTranslation()
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.theme.title")} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.theme.mode.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.theme.mode.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OptionToggleGroup
+            value={theme}
+            options={themeOptions.map((option) => ({
+              value: option.value,
+              icon: option.icon,
+              title: t(option.label),
+              description: t(option.description),
+            }))}
+            onChange={setTheme}
+          />
+        </CardContent>
+      </Card>
+    </>
+  )
+}

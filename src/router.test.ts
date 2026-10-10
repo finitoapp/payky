@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs"
+import path from "node:path"
 import type { AnyRoute } from "@tanstack/react-router"
 import { describe, expect, test } from "vitest"
 
@@ -63,6 +65,33 @@ describe("_terminal route access (access/0003)", () => {
   test("no route has a loader, which would run before the gate", () => {
     expect(
       routes.filter(({ hasLoader }) => hasLoader).map(({ id }) => id)
+    ).toEqual([])
+  })
+})
+
+/**
+ * A route file is thin: it declares the route and hands the screen to a
+ * feature `*Page`, which renders the whole page, header included. A route
+ * drawing `FadeHeader` itself is a page written inline or a wrapper around a
+ * feature component that is not a page after all.
+ */
+describe("route files stay thin", () => {
+  const routesDir = path.join(import.meta.dirname, "routes")
+  const routeFiles = readdirSync(routesDir).filter((file) =>
+    file.endsWith(".tsx")
+  )
+
+  test("finds the route files", () => {
+    expect(routeFiles.length).toBeGreaterThan(40)
+  })
+
+  test("no route renders the page header itself", () => {
+    expect(
+      routeFiles.filter((file) =>
+        readFileSync(path.join(routesDir, file), "utf8").includes(
+          "@/components/fade-header"
+        )
+      )
     ).toEqual([])
   })
 })

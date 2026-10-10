@@ -1,0 +1,89 @@
+import { Globe2, Languages } from "lucide-react"
+import { FadeHeader } from "@/components/fade-header.tsx"
+import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx"
+import type { DeviceLocale } from "@/core/evolu/device-client.ts"
+import { languageOptions } from "@/features/shared/language-options.ts"
+import { useLocale, useSetLocale } from "@/hooks/use-locale.ts"
+import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
+
+interface LocaleOption {
+  readonly value: DeviceLocale
+  readonly label: TranslationKey
+}
+
+const localeOptions: ReadonlyArray<LocaleOption> = [
+  {
+    value: "en-US",
+    label: "settings.language.locale.english.title",
+  },
+  {
+    value: "cs-CZ",
+    label: "settings.language.locale.czech.title",
+  },
+  {
+    value: "sk-SK",
+    label: "settings.language.locale.slovak.title",
+  },
+]
+
+export function LanguageSettingsPage() {
+  const locale = useLocale()
+  const { language, t } = useTranslation()
+  const setLanguage = useSetLanguage()
+  const setLocale = useSetLocale()
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.language.title")} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.language.mode.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.language.mode.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OptionToggleGroup
+            value={language}
+            options={languageOptions.map((option) => ({
+              value: option.value,
+              icon: Languages,
+              title: option.label,
+            }))}
+            onChange={setLanguage}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.language.locale.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.language.locale.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OptionToggleGroup
+            value={locale}
+            options={localeOptions.map((option) => ({
+              value: option.value,
+              icon: Globe2,
+              title: t(option.label),
+            }))}
+            onChange={setLocale}
+          />
+        </CardContent>
+      </Card>
+    </>
+  )
+}

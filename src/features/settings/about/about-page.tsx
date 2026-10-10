@@ -1,0 +1,134 @@
+import { App as CapacitorApp } from "@capacitor/app"
+import { Capacitor } from "@capacitor/core"
+import { useQuery } from "@tanstack/react-query"
+
+import {
+  Bug,
+  DatabaseBackup,
+  GitFork,
+  type Info,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react"
+import { type ComponentProps, useMemo } from "react"
+import { FadeHeader } from "@/components/fade-header.tsx"
+import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
+import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
+
+const appVersion = __APP_VERSION__
+
+type AboutRowTarget =
+  | { readonly kind: "link"; readonly to: NavLinkTo }
+  | { readonly kind: "href"; readonly href: string }
+
+interface AboutRow {
+  readonly icon: typeof Info
+  readonly title: TranslationKey
+  readonly description: TranslationKey
+  readonly target: AboutRowTarget
+}
+
+const aboutRows: ReadonlyArray<AboutRow> = [
+  {
+    icon: ShieldCheck,
+    title: "settings.about.privacy.title",
+    description: "settings.about.privacy.description",
+    target: { kind: "link", to: "/settings/about/privacy" },
+  },
+  {
+    icon: ScrollText,
+    title: "settings.about.terms.title",
+    description: "settings.about.terms.description",
+    target: { kind: "link", to: "/settings/about/terms" },
+  },
+  {
+    icon: GitFork,
+    title: "settings.about.github.title",
+    description: "settings.about.github.description",
+    target: { kind: "href", href: "https://github.com/finitoapp/payky" },
+  },
+]
+
+const developerRows: ReadonlyArray<AboutRow> = [
+  {
+    icon: DatabaseBackup,
+    title: "settings.evoluExport.title",
+    description: "settings.evoluExport.description",
+    target: { kind: "link", to: "/settings/evolu-export" },
+  },
+  {
+    icon: Bug,
+    title: "settings.debugConsole.title",
+    description: "settings.debugConsole.description",
+    target: { kind: "link", to: "/settings/debug-console" },
+  },
+]
+
+function createAboutNavItems(
+  rows: ReadonlyArray<AboutRow>,
+  t: (key: TranslationKey) => string
+): ComponentProps<typeof VerticalNav>["items"] {
+  return rows.map((row) => {
+    const Icon = row.icon
+
+    return {
+      ...row.target,
+      label: (
+        <span className="flex flex-col gap-1">
+          <span className="text-sm font-semibold">{t(row.title)}</span>
+          <span className="text-xs leading-snug text-muted-foreground">
+            {t(row.description)}
+          </span>
+        </span>
+      ),
+      icon: <Icon className="text-muted-foreground" />,
+    }
+  })
+}
+
+export function AboutPage() {
+  const { t } = useTranslation()
+  const aboutItems = useMemo(() => createAboutNavItems(aboutRows, t), [t])
+  const developerItems = useMemo(
+    () => createAboutNavItems(developerRows, t),
+    [t]
+  )
+  const isCapacitorAndroid = Capacitor.getPlatform() === "android"
+  const androidVersionCodeQuery = useQuery({
+    queryKey: ["native", "android-version-code"],
+    queryFn: async () => {
+      const { build } = await CapacitorApp.getInfo()
+      return build
+    },
+    enabled: isCapacitorAndroid,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const androidVersionCode = androidVersionCodeQuery.data
+
+  return (
+    <>
+      <div className="h-6" />
+      <FadeHeader title={t("settings.about.title")} />
+
+      <div className="flex flex-col items-center gap-8 pt-8 pb-4 text-center">
+        <img
+          src="/icon-animated.svg"
+          alt={t("settings.about.app.title")}
+          className="size-40 rounded-3xl shadow"
+        />
+        <p className="text-sm text-muted-foreground">
+          {t("settings.appVersion")} <strong>{appVersion}</strong>
+        </p>
+        {androidVersionCode !== undefined ? (
+          <p className="text-sm text-muted-foreground">
+            {t("settings.appVersionCode")} <strong>{androidVersionCode}</strong>
+          </p>
+        ) : null}
+      </div>
+
+      <VerticalNav title={t("settings.about.app.title")} items={aboutItems} />
+      <VerticalNav title={t("settings.developers")} items={developerItems} />
+    </>
+  )
+}

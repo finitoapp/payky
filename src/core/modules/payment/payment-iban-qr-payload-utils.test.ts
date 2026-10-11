@@ -1,3 +1,4 @@
+import { Version } from "bysquare"
 import { decode as decodePayBySquare, PaymentOptions } from "bysquare/pay"
 import { describe, expect, test } from "vitest"
 
@@ -61,5 +62,25 @@ describe("payment IBAN QR payload utils", () => {
     ).not.toBe(
       payloads.find((payload) => payload.format === "payBySquare1_2_0")?.payload
     )
+  })
+
+  test("writes the chosen Pay by square version into the QR header", () => {
+    const payloads = createBankQrPayloads({
+      beneficiaryName: "Slovak bank account",
+      iban: "SK9611000000002918599669",
+      amount: 12_900,
+      currency: "EUR",
+      variableSymbol: null,
+      specificSymbol: null,
+    })
+    // The payload is base32hex, which parseInt reads as radix 32: its first
+    // two characters are the header's top 10 bits, the version nibble 5..2.
+    const headerVersion = (format: string) => {
+      const payload = payloads.find((p) => p.format === format)?.payload ?? ""
+      return (Number.parseInt(payload.slice(0, 2), 32) >> 2) & 0xf
+    }
+
+    expect(headerVersion("payBySquare1_0_0")).toBe(Version["1.0.0"])
+    expect(headerVersion("payBySquare1_2_0")).toBe(Version["1.2.0"])
   })
 })

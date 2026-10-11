@@ -136,7 +136,7 @@ const createBankQrPayload = ({
         specificSymbol,
         variableSymbol,
         version:
-          format === "payBySquare1_0_0" ? Version["1.0.0"] : Version["1.1.0"],
+          format === "payBySquare1_0_0" ? Version["1.0.0"] : Version["1.2.0"],
       })
 
 export const createBankQrPayloads = (

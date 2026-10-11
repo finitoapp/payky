@@ -3,7 +3,11 @@ import { StrictMode } from "react"
 import { createRoot, hydrateRoot } from "react-dom/client"
 
 import { LandingPage } from "@/features/landing/landing-page.tsx"
-import { landingLanguageFromPath } from "@/features/shared/landing-redirect.ts"
+import {
+  landingAppEntryPath,
+  landingLanguageFromPath,
+  readLandingRedirectEnvironment,
+} from "@/features/shared/landing-redirect.ts"
 import "@/index.css"
 
 // The contact form's `await using` needs `Symbol.asyncDispose`.
@@ -15,15 +19,21 @@ if (rootElement === null) {
   throw new Error("Root element was not found.")
 }
 
+const language = landingLanguageFromPath(location.pathname)
 const page = (
   <StrictMode>
-    <LandingPage language={landingLanguageFromPath(location.pathname)} />
+    <LandingPage language={language} />
   </StrictMode>
 )
 
-// The build prerenders the page (landing/0002); the dev server serves the
-// template, whose root holds only the placeholder comment.
-if (rootElement.firstElementChild !== null) {
+// An app added to the home screen can start at the page it was added from
+// rather than at the manifest's start URL, as iOS has done; installed, it
+// belongs in the app, in this page's language (landing/0005).
+if (readLandingRedirectEnvironment().installedPwa) {
+  location.replace(landingAppEntryPath(language))
+} else if (rootElement.firstElementChild !== null) {
+  // The build prerenders the page (landing/0002); the dev server serves the
+  // template, whose root holds only the placeholder comment.
   hydrateRoot(rootElement, page)
 } else {
   createRoot(rootElement).render(page)

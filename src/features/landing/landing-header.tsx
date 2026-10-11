@@ -1,9 +1,9 @@
 import {
-  ArrowDownIcon,
   LanguagesIcon,
   type LucideIcon,
   MonitorIcon,
   MoonIcon,
+  PlayIcon,
   SunIcon,
 } from "lucide-react"
 
@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/dropdown-menu.tsx"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
 import { useLandingTheme } from "@/features/landing/use-landing-theme.ts"
-import { landingPaths } from "@/features/shared/landing-redirect.ts"
+import {
+  landingAppEntryPath,
+  landingPaths,
+} from "@/features/shared/landing-redirect.ts"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
@@ -79,7 +82,7 @@ function switchTheme(origin: Element, apply: () => void) {
 /**
  * Brand on the left; on the right the one action, the language and the
  * appearance. No section links: the page reads top to bottom, and the
- * action at its end is what the header's button jumps to.
+ * header's button goes straight into the app, as the hero's does.
  */
 export function LandingHeader() {
   const { language, setLanguage, t } = useLandingTranslation()
@@ -101,16 +104,15 @@ export function LandingHeader() {
 
         <div className="flex items-center gap-1">
           <a
-            href="#get-started"
+            // A plain link: the app is another document (landing/0003).
+            href={landingAppEntryPath(language)}
             className={cn(
               buttonVariants({ size: "lg" }),
-              "mr-2 rounded-full px-4 font-semibold max-sm:size-9 max-sm:px-0 has-data-[icon=inline-start]:pl-3.5 max-sm:has-data-[icon=inline-start]:pl-0"
+              "mr-2 rounded-full px-4 font-semibold has-data-[icon=inline-start]:pl-3.5"
             )}
-            aria-label={t("landing.cta.howTo")}
-            title={t("landing.cta.howTo")}
           >
-            <ArrowDownIcon aria-hidden="true" data-icon="inline-start" />
-            <span className="max-sm:sr-only">{t("landing.cta.howTo")}</span>
+            <PlayIcon aria-hidden="true" data-icon="inline-start" />
+            {t("landing.cta.startShort")}
           </a>
 
           <DropdownMenu>

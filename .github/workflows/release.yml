@@ -131,6 +131,8 @@ jobs:
         with:
           name: Payky ${{ github.ref_name }}
           generate_release_notes: true
+          # Only the signed APK: the landing page links its stable
+          # releases/latest/download/app-release-signed.apk address.
           files: |
-            android/app/build/outputs/apk/**/*.apk
+            android/app/build/outputs/apk/**/*-signed.apk
           fail_on_unmatched_files: true

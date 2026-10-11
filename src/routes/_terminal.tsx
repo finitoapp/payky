@@ -19,6 +19,7 @@ import { EetSandboxBanner } from "@/features/shared/eet-sandbox-banner.tsx"
 import {
   landingPaths,
   preferredLandingLanguage,
+  readInstallLanguage,
   readLandingRedirectEnvironment,
   shouldRedirectToLanding,
 } from "@/features/shared/landing-redirect.ts"
@@ -113,11 +114,17 @@ function NotOnboarded() {
 
   useEffect(() => {
     if (!waitingForSync) {
-      if (shouldRedirectToLanding(readLandingRedirectEnvironment())) {
+      const environment = readLandingRedirectEnvironment()
+      if (shouldRedirectToLanding(environment)) {
         // Another document: the landing page is prerendered (landing/0002).
         window.location.replace(landingPaths[preferredLandingLanguage()])
       } else {
-        void navigate({ to: "/onboarding", replace: true })
+        // An app installed from the landing page starts in its language
+        // (landing/0005).
+        const lang = environment.installedPwa
+          ? readInstallLanguage()
+          : undefined
+        void navigate({ to: "/onboarding", search: { lang }, replace: true })
       }
     }
   }, [navigate, waitingForSync])

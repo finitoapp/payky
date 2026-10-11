@@ -2,7 +2,10 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
   landingLanguageFromPath,
+  markAppEntered,
   preferredLandingLanguage,
+  readInstallLanguage,
+  rememberInstallLanguage,
   shouldRedirectToLanding,
 } from "./landing-redirect.ts"
 
@@ -63,5 +66,32 @@ describe("preferredLandingLanguage", () => {
   test("is the language picked on the landing page before", () => {
     stubBrowser(JSON.stringify("sk"))
     expect(preferredLandingLanguage()).toBe("sk")
+  })
+})
+
+describe("install language", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const stubStorage = () => {
+    const items = new Map<string, string>()
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => items.get(key) ?? null,
+      setItem: (key: string, value: string) => items.set(key, value),
+      removeItem: (key: string) => items.delete(key),
+    })
+  }
+
+  test("keeps the language the app was installed in until onboarding opens", () => {
+    stubStorage()
+    expect(readInstallLanguage()).toBeUndefined()
+
+    rememberInstallLanguage("sk")
+    expect(readInstallLanguage()).toBe("sk")
+    expect(readInstallLanguage()).toBe("sk")
+
+    markAppEntered()
+    expect(readInstallLanguage()).toBeUndefined()
   })
 })

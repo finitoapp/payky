@@ -7,6 +7,7 @@ import { jsonCodec } from "@/zod-utils.ts"
 // Presence alone is the marker, so there is no value to decode.
 const appEnteredStorageKey = "payky.appEntered"
 const landingLanguageStorageKey = "payky.landingLanguage"
+const installLanguageStorageKey = "payky.installLanguage"
 
 /** One prerendered page per language (landing/0002). */
 export const landingPaths = {
@@ -64,6 +65,9 @@ function readAppEntered(): boolean {
 export function markAppEntered(): void {
   try {
     localStorage.setItem(appEnteredStorageKey, "1")
+    // Onboarding has its language by now; a language picked there must not
+    // be undone by the installed app's next start (landing/0005).
+    localStorage.removeItem(installLanguageStorageKey)
   } catch {
     // Same as above.
   }
@@ -96,6 +100,37 @@ export function rememberLandingLanguage(language: Language): void {
     // Storage blocked: the next redirect uses the default.
   }
 }
+
+/**
+ * Kept when the app is installed from the landing page, whose start URL
+ * cannot carry the page's language (landing/0005).
+ */
+export function rememberInstallLanguage(language: Language): void {
+  try {
+    localStorage.setItem(
+      installLanguageStorageKey,
+      z.encode(LandingLanguageJson, language)
+    )
+  } catch {
+    // Storage blocked: the installed app starts in the browser's language.
+  }
+}
+
+/** The language the app was installed in, until onboarding has opened. */
+export function readInstallLanguage(): Language | undefined {
+  try {
+    const stored = localStorage.getItem(installLanguageStorageKey)
+    if (stored === null) return undefined
+    const parsed = z.safeDecode(LandingLanguageJson, stored)
+    return parsed.success ? parsed.data : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Where the landing page's ways into the web app lead (landing/0003). */
+export const landingAppEntryPath = (language: Language): string =>
+  `/onboarding?lang=${language}`
 
 /** The language of the landing page at `pathname`, Czech for `/landing`. */
 export function landingLanguageFromPath(pathname: string): Language {

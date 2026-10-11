@@ -15,8 +15,9 @@ browser was then onboarded in English.
 
 ## Decision
 
-The landing page's button into the web app opens `/onboarding?lang=<its
-language>`. Onboarding sets the device's language to it when the device
+Every link from the landing page into the web app (the start buttons in
+its header and hero, and the browser option of its download section) opens
+`/onboarding?lang=<its language>`. Onboarding sets the device's language to it when the device
 has no account yet, then drops the parameter from the address, so a reload
 or Back does not undo a language picked in onboarding meanwhile. A device
 with an account keeps its language and goes on to the app.
@@ -33,7 +34,7 @@ languages, not for the page they simply opened.
 
 ## Consequences
 
-Only the landing page's button carries the language: a visitor who types
+Only the landing page's links carry the language: a visitor who types
 the app's address keeps the browser's language. The device locale follows
 the language when onboarding finishes, as it already did.
 
@@ -41,3 +42,4 @@ the language when onboarding finishes, as it already did.
 
 - `e2e/landing-redirect.spec.ts > the app starts in the language of the landing page it was opened from`
 - `e2e/landing-redirect.spec.ts > a device with an account keeps its language when opened from the landing page`
+- `e2e/landing-redirect.spec.ts > the landing page's start buttons open the app in its language`

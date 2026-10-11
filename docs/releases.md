@@ -16,7 +16,7 @@ Versions are CalVer `YY.M.MICRO` (`26.10.3`); MICRO restarts at 1 each month and
 1. On an up-to-date `main` with a clean working tree, run `bun run release`.
 2. The pushed tag starts `.github/workflows/release.yml`, which checks the tag matches `package.json`, runs `bun run check`, then in parallel:
    - `web` force-pushes the `production` branch to the tag; the `payky` Vercel project deploys it to `payky.me`.
-   - `android` builds the signed APK and AAB, uploads the AAB to Google Play's internal track and creates the GitHub release with the APK.
+   - `android` builds the signed APK and AAB, uploads the AAB to Google Play's internal track and creates the GitHub release with the signed APK. The landing page links it as `https://github.com/finitoapp/payky/releases/latest/download/app-release-signed.apk`, so the file keeps that name and the release stays the latest one (`docs/decisions/landing/0005`).
 
 A failed job is re-run from the Actions page. A tag is never moved: a fix ships as the next version.
 

@@ -1,5 +1,5 @@
 import { ChartColumnIcon } from "lucide-react"
-import { Suspense } from "react"
+import { type ReactNode, Suspense } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
@@ -8,11 +8,13 @@ import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import type { StatsPeriod } from "@/core/modules/sales-stats/sales-stats-types.ts"
+import { statsPeriodRanges } from "@/core/modules/sales-stats/sales-stats-utils.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
+import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
 import { DeviceBreakdown } from "./device-breakdown.tsx"
-import { KpiTiles } from "./kpi-tiles.tsx"
+import { formatStatsRange, KpiTiles } from "./kpi-tiles.tsx"
 import { ExpectedCashSummary, MethodBreakdown } from "./method-breakdown.tsx"
 import { OpenBillsSummary } from "./open-bills-summary.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
@@ -20,16 +22,19 @@ import { RevenueChart } from "./revenue-chart.tsx"
 import { SalesHeatmap } from "./sales-heatmap.tsx"
 import { Signals } from "./signals.tsx"
 import { type StatsSearch, statsPeriodFromSearch } from "./stats-search.ts"
-import { TopCategories } from "./top-categories.tsx"
-import { TopItems } from "./top-items.tsx"
-import { useSalesStats, useStatsNow } from "./use-sales-stats.ts"
+import { TopSales } from "./top-sales.tsx"
+import {
+  useSalesStats,
+  useStatsLoadedAt,
+  useStatsNow,
+} from "./use-sales-stats.ts"
 import { VatRecap } from "./vat-recap.tsx"
 
 /**
  * The sales statistics screen (access/0008), header included: the period
  * selector, then one section per block, top to bottom. A new section is one
- * more component in `PeriodStats` (period-bound, fed by `useSalesStats` or
- * its own `useStatsRows`) or after it (not tied to the period).
+ * more component in `PeriodStats`, fed by `useSalesStats` or its own
+ * `useStatsRows`; one not tied to the period is passed in, as `openBills` is.
  */
 export function StatsPage({
   search,
@@ -48,40 +53,116 @@ export function StatsPage({
       <FadeHeader title={t("stats.title")} />
 
       <div className="flex flex-col gap-6 pb-8">
-        <PeriodSelector period={period} onChange={onSearchChange} />
+        {/*
+         * Stays on screen while the sections scroll under it, so the period
+         * every figure belongs to is always in view. The route's viewport
+         * clips with `overflow-x-clip` so this can stick to the window.
+         */}
+        <div className="sticky top-[calc(env(safe-area-inset-top,0px)+var(--terminal-banner-height,0px))] z-10 -mx-3 flex flex-col gap-2 bg-background px-3 py-2">
+          <PeriodSelector period={period} onChange={onSearchChange} />
+          <PeriodSummary period={period} now={now} />
+        </div>
         <Suspense fallback={<StatsSkeleton />}>
-          <PeriodStats period={period} now={now} />
-        </Suspense>
-        <Suspense fallback={<ListSkeleton rows={1} />}>
-          <OpenBills />
+          <PeriodStats
+            period={period}
+            now={now}
+            openBills={
+              <Suspense fallback={<ListSkeleton rows={1} />}>
+                <OpenBills />
+              </Suspense>
+            }
+          />
         </Suspense>
       </div>
     </>
   )
 }
 
-function PeriodStats({
+/**
+ * The exact range on screen and the one it compares with, then whether the
+ * figures are live (*Today*) or when they loaded (every other period, which
+ * loads once per visit).
+ */
+function PeriodSummary({
   period,
   now,
 }: {
   readonly period: StatsPeriod
   readonly now: Date
 }) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const { range, comparison } = statsPeriodRanges(period, now)
+  const live = period.kind === "today"
+  const loadedAt = useStatsLoadedAt(range)
+
+  return (
+    <div className="flex items-start justify-between gap-3 px-1 text-xs text-muted-foreground">
+      <div className="flex min-w-0 flex-col">
+        <span className="font-medium text-foreground">
+          {formatStatsRange(range, locale)}
+        </span>
+        <span>
+          {t("stats.comparison", {
+            range: formatStatsRange(comparison, locale),
+          })}
+        </span>
+      </div>
+      {live ? (
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="relative flex size-2">
+            <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-60" />
+            <span className="relative size-2 rounded-full bg-success" />
+          </span>
+          {t("stats.live")}
+        </span>
+      ) : loadedAt === undefined ? null : (
+        <span className="shrink-0">
+          {t("stats.loadedAt", {
+            time: new Date(loadedAt).toLocaleTimeString(locale, {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          })}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The period's sections, in the order a shift reads them: the takings, what
+ * is still open, the drawer, then how the day went and what sold.
+ * `openBills` is not tied to the period, so it shows on an empty one too.
+ */
+function PeriodStats({
+  period,
+  now,
+  openBills,
+}: {
+  readonly period: StatsPeriod
+  readonly now: Date
+  readonly openBills: ReactNode
+}) {
   const stats = useSalesStats(period, now)
 
   if (stats === null) return <StatsSkeleton />
-  if (stats.kpis.length === 0) return <StatsEmpty />
+  if (stats.kpis.length === 0) {
+    return (
+      <>
+        <StatsEmpty />
+        {openBills}
+      </>
+    )
+  }
 
   const [primary] = stats.kpis
 
   return (
     <>
-      <KpiTiles
-        kpis={stats.kpis}
-        comparisonKpis={stats.comparisonKpis}
-        comparison={stats.ranges.comparison}
-        methods={stats.methods}
-      />
+      <KpiTiles kpis={stats.kpis} comparisonKpis={stats.comparisonKpis} />
+      {openBills}
+      <ExpectedCashSummary cash={stats.cash} />
       {primary === undefined ? null : (
         <RevenueChart
           hourRows={stats.hourRows}
@@ -91,10 +172,8 @@ function PeriodStats({
           now={now}
         />
       )}
-      <MethodBreakdown methods={stats.methods} />
-      <ExpectedCashSummary cash={stats.cash} />
-      <TopItems stats={stats} />
-      <TopCategories stats={stats} />
+      <MethodBreakdown methods={stats.methods} kpis={stats.kpis} />
+      <TopSales stats={stats} />
       <DeviceBreakdown stats={stats} />
       {primary === undefined ? null : (
         <SalesHeatmap stats={stats} currency={primary.currency} />

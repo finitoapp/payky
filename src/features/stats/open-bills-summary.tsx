@@ -11,7 +11,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
-import { StatsSection } from "./stats-section.tsx"
 
 /**
  * How many bills are open right now and what is on them, whatever the
@@ -45,28 +44,26 @@ export function OpenBillsSummary({
   }, [openBills, accountCurrency])
 
   return (
-    <StatsSection
-      title={t("stats.openBills.title")}
-      className="grid grid-cols-2 gap-2"
-    >
-      <div className="flex flex-col gap-1">
-        <p className="text-xs text-muted-foreground">
-          {t("stats.openBills.count")}
-        </p>
-        <p className="text-base font-semibold tabular-nums">
-          {openBills.length.toLocaleString(locale)}
-        </p>
-      </div>
-      <div className="flex flex-col gap-1">
-        <p className="text-xs text-muted-foreground">
-          {t("stats.openBills.total")}
-        </p>
-        {totals.map(([currency, total]) => (
-          <p key={currency} className="text-base font-semibold tabular-nums">
-            {formatMoney({ value: Integer(total), currency }, locale)}
-          </p>
-        ))}
-      </div>
-    </StatsSection>
+    <section className="flex items-center justify-between gap-3 rounded-md bg-card p-3 shadow">
+      <h2 className="min-w-0 text-sm font-medium">
+        {t("stats.openBills.title")}
+      </h2>
+      <dl className="flex shrink-0 items-baseline gap-2 tabular-nums">
+        <div>
+          <dt className="sr-only">{t("stats.openBills.count")}</dt>
+          <dd className="text-base font-semibold">
+            {openBills.length.toLocaleString(locale)}
+          </dd>
+        </div>
+        <div className="flex items-baseline gap-2 text-sm text-muted-foreground before:content-['·']">
+          <dt className="sr-only">{t("stats.openBills.total")}</dt>
+          {totals.map(([currency, total]) => (
+            <dd key={currency}>
+              {formatMoney({ value: Integer(total), currency }, locale)}
+            </dd>
+          ))}
+        </div>
+      </dl>
+    </section>
   )
 }

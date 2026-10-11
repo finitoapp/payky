@@ -11,6 +11,7 @@ import type {
   ExpectedCash,
   MethodBreakdown as MethodBreakdownRow,
   MethodShare,
+  SalesKpis,
 } from "@/core/modules/sales-stats/sales-stats-utils.ts"
 import { type Currency, Integer } from "@/core/modules/shared/schema.ts"
 import {
@@ -22,6 +23,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
+import { BreakdownLine } from "./kpi-tiles.tsx"
 import { StatsBar, StatsSection, TipsLine } from "./stats-section.tsx"
 
 const useMoney = () => {
@@ -46,13 +48,16 @@ const methodColors = {
 /**
  * Amount and share per method that settled the period's sales, per
  * currency: a donut of the shares with the total inside, then the methods
- * with a bar each, which also serve as the donut's legend. A duplicate settlement makes the methods exceed revenue; the
- * note names the excess.
+ * with a bar each, which also serve as the donut's legend. Under them, how
+ * the total comes out of the same sales as net revenue. A duplicate
+ * settlement makes the methods exceed revenue; the note names the excess.
  */
 export function MethodBreakdown({
   methods,
+  kpis,
 }: {
   readonly methods: ReadonlyArray<MethodBreakdownRow>
+  readonly kpis: ReadonlyArray<SalesKpis>
 }) {
   const { t } = useTranslation()
   const money = useMoney()
@@ -89,9 +94,56 @@ export function MethodBreakdown({
               currency={row.currency}
             />
           ))}
+          <ReceivedBreakdown
+            row={row}
+            kpis={kpis.find((kpi) => kpi.currency === row.currency)}
+          />
         </div>
       ))}
     </StatsSection>
+  )
+}
+
+/**
+ * Sales + tips (+ a duplicate settlement's excess) = the donut's total: the
+ * same sales net revenue starts from, before refunds.
+ */
+function ReceivedBreakdown({
+  row,
+  kpis,
+}: {
+  readonly row: MethodBreakdownRow
+  readonly kpis: SalesKpis | undefined
+}) {
+  const { t } = useTranslation()
+  const money = useMoney()
+
+  if (kpis === undefined) return null
+
+  return (
+    <dl className="mt-1 flex flex-col gap-1 border-t pt-3 text-sm">
+      <BreakdownLine label={t("stats.kpi.breakdown.sales")}>
+        {money(kpis.gross, row.currency)}
+      </BreakdownLine>
+      <BreakdownLine label={`+ ${t("stats.kpi.breakdown.tips")}`}>
+        {money(kpis.tipsReceived, row.currency)}
+      </BreakdownLine>
+      {row.excess === 0 ? null : (
+        <BreakdownLine label={`+ ${t("stats.kpi.breakdown.excess")}`}>
+          {money(row.excess, row.currency)}
+        </BreakdownLine>
+      )}
+      <BreakdownLine label={`= ${t("stats.kpi.breakdown.received")}`} total>
+        {money(kpis.gross + kpis.tipsReceived + row.excess, row.currency)}
+      </BreakdownLine>
+      {kpis.tipRefundAmount === 0 ? null : (
+        <p className="text-xs text-muted-foreground">
+          {t("stats.kpi.breakdown.tipRefunds", {
+            amount: money(kpis.tipRefundAmount, row.currency),
+          })}
+        </p>
+      )}
+    </dl>
   )
 }
 
@@ -284,25 +336,33 @@ export function ExpectedCashSummary({
       note={t("stats.cash.note")}
     >
       {cash.map((row) => (
-        <dl key={row.currency} className="flex flex-col gap-1.5 text-sm">
+        <div key={row.currency} className="flex flex-col gap-3">
           {cash.length > 1 ? (
             <p className="text-xs font-bold text-muted-foreground">
               {row.currency}
             </p>
           ) : null}
-          <CashLine label={t("stats.cash.in")}>
-            {money(row.cashIn, row.currency)}
-          </CashLine>
-          <CashLine label={t("stats.tips.ofWhich")} sub>
-            {money(row.cashTips, row.currency)}
-          </CashLine>
-          <CashLine label={t("stats.cash.refunds")}>
-            {money(-row.cashRefunds, row.currency)}
-          </CashLine>
-          <CashLine label={t("stats.cash.expected")} total>
-            {money(row.expected, row.currency)}
-          </CashLine>
-        </dl>
+          {/* The figure the drawer is counted against, then where it comes from. */}
+          <div className="flex flex-col gap-0.5">
+            <p className="text-xs text-muted-foreground">
+              {t("stats.cash.expected")}
+            </p>
+            <p className="text-3xl font-semibold tabular-nums">
+              {money(row.expected, row.currency)}
+            </p>
+          </div>
+          <dl className="flex flex-col gap-1.5 border-t pt-3 text-sm">
+            <CashLine label={t("stats.cash.in")}>
+              {money(row.cashIn, row.currency)}
+            </CashLine>
+            <CashLine label={t("stats.tips.ofWhich")} sub>
+              {money(row.cashTips, row.currency)}
+            </CashLine>
+            <CashLine label={t("stats.cash.refunds")}>
+              {money(-row.cashRefunds, row.currency)}
+            </CashLine>
+          </dl>
+        </div>
       ))}
     </StatsSection>
   )
@@ -311,20 +371,17 @@ export function ExpectedCashSummary({
 function CashLine({
   label,
   sub = false,
-  total = false,
   children,
 }: {
   readonly label: string
   readonly sub?: boolean
-  readonly total?: boolean
   readonly children: string
 }) {
   return (
     <div
       className={cn(
         "flex justify-between gap-2",
-        sub && "pl-4 text-xs text-muted-foreground",
-        total && "mt-1 border-t pt-2 font-semibold"
+        sub && "pl-4 text-xs text-muted-foreground"
       )}
     >
       <dt>{label}</dt>

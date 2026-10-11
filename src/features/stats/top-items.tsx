@@ -2,10 +2,7 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
-import {
-  type ItemSalesRow,
-  itemSalesQuery,
-} from "@/core/modules/sales-stats/sales-stats-queries.ts"
+import type { ItemSalesRow } from "@/core/modules/sales-stats/sales-stats-queries.ts"
 import type { Currency } from "@/core/modules/shared/schema.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -14,10 +11,8 @@ import {
   CurrencyGroup,
   rowsByCurrency,
   StatsBarRow,
-  StatsSection,
   useStatsMoney,
 } from "./stats-section.tsx"
-import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
 
 export type TopItemsMetric = "quantity" | "amount"
 
@@ -38,27 +33,22 @@ export const rankItems = (
   )
 
 /** What closed bills sold, by revenue or quantity: the top ten, then all. */
-export function TopItems({ stats }: { readonly stats: SalesStats }) {
+export function TopItems({
+  rows,
+  accountCurrency,
+}: {
+  readonly rows: ReadonlyArray<ItemSalesRow>
+  readonly accountCurrency: Currency
+}) {
   const { t } = useTranslation()
-  const rows = useStatsRows(
-    "itemSales",
-    itemSalesQuery,
-    stats.ranges.range,
-    stats.live
-  )
   const [metric, setMetric] = useState<TopItemsMetric>("amount")
   const [showAll, setShowAll] = useState(false)
 
-  if (rows === undefined || rows.length === 0) return null
-
-  const groups = rowsByCurrency(rows, stats.accountCurrency)
+  const groups = rowsByCurrency(rows, accountCurrency)
   const hasMore = groups.some((group) => group.rows.length > topCount)
 
   return (
-    <StatsSection
-      title={t("stats.items.title")}
-      className="flex flex-col gap-4"
-    >
+    <div className="flex flex-col gap-4">
       <ToggleGroup<TopItemsMetric>
         aria-label={t("stats.items.metric")}
         className="grid w-full grid-cols-2"
@@ -103,7 +93,7 @@ export function TopItems({ stats }: { readonly stats: SalesStats }) {
           {showAll ? t("stats.items.showTop") : t("stats.items.showAll")}
         </Button>
       ) : null}
-    </StatsSection>
+    </div>
   )
 }
 

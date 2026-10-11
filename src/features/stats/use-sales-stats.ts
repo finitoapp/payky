@@ -1,5 +1,5 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
-import { useQuery } from "@tanstack/react-query"
+import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo } from "react"
 
 import type { EvoluSchema } from "@/core/evolu/schema.ts"
@@ -75,6 +75,26 @@ export function useStatsRows<R extends Row>(
     refetchOnMount: "always",
   })
   return live ? liveRows : loadedRows
+}
+
+/**
+ * When the period's figures last loaded, epoch ms, `undefined` before the
+ * first load. Reads the sales-by-hour entry, which every non-live period
+ * loads; re-renders whenever any stats load settles.
+ */
+export function useStatsLoadedAt({
+  fromIso,
+  toIso,
+}: StatsRange): number | undefined {
+  const queryClient = useQueryClient()
+  useIsFetching({ queryKey: ["stats"] })
+  const loadedAt = queryClient.getQueryState([
+    "stats",
+    "salesByHour",
+    fromIso,
+    toIso,
+  ])?.dataUpdatedAt
+  return loadedAt === undefined || loadedAt === 0 ? undefined : loadedAt
 }
 
 export interface SalesStats {

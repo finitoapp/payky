@@ -34,10 +34,7 @@ import {
   settleWithLightning,
 } from "@/core/modules/eet/eet-test-fixtures.ts"
 import { toEetCashRegisterId } from "@/core/modules/eet/eet-utils.ts"
-import {
-  cancelPayment,
-  markPaymentPaidIban,
-} from "@/core/modules/payment/payment-actions.ts"
+import { markPaymentPaidIban } from "@/core/modules/payment/payment-actions.ts"
 import {
   paymentClaimsQuery,
   paymentDetailQuery,
@@ -45,7 +42,10 @@ import {
 import { derivePaymentStatus } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { refundPayment } from "@/core/modules/refund/refund-actions.ts"
-import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@/core/modules/shared/evolu-utils.ts"
 import {
   IbanSchema,
   NonEmptyString255,
@@ -322,11 +322,21 @@ describe("eet reporting job: sale records", () => {
     await using context = await createEetTestContext()
     await configureEet(context)
     await using job = await startJob(context)
-    await using run = testCreateRun(context.deps)
     const paymentId = await createTestPayment(context)
-    await run.orThrow(cancelPayment(paymentId))
-
     await settleInCash(context, paymentId)
+    // Canceled after the money was recorded, as a merge from another device
+    // lands: on one device a hand confirmation refuses a canceled payment
+    // (payment/0004).
+    await runMutationWithCompletion((options) =>
+      context.deps.evolu.update(
+        "payment",
+        {
+          id: paymentId,
+          canceledAt: TimestampMs(context.clock.date.now().getTime()),
+        },
+        options
+      )
+    )
 
     await expect.poll(() => saleOf(context, paymentId)).toHaveLength(1)
     expect(job.errors).toEqual([])

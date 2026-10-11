@@ -1,5 +1,6 @@
 import type { KyselyNotNull } from "@evolu/common"
 import { sqliteTrue } from "@evolu/common"
+import type { ExpressionBuilder, Kysely } from "kysely"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type {
@@ -92,6 +93,48 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
       }>()
   )
 
+type AppDb =
+  Parameters<Parameters<typeof createQuery>[0]>[0] extends Pick<
+    Kysely<infer Db>,
+    "selectFrom"
+  >
+    ? Db
+    : never
+
+/**
+ * The candidate queries' "this payment is still waiting for money", in the
+ * same sense as `paymentClaimsQuery`: a tombstoned claim, or one whose
+ * transaction was deleted, no longer holds the payment back from the matcher.
+ * A `NOT EXISTS` rather than a left join, so several claims on one payment
+ * do not multiply its row either.
+ */
+const hasNoActiveClaim = (eb: ExpressionBuilder<AppDb, "payment">) =>
+  eb.not(
+    eb.exists(
+      eb
+        .selectFrom("reconciliationClaim")
+        .innerJoin(
+          "accountTransaction as claimedTransaction",
+          "claimedTransaction.id",
+          "reconciliationClaim.accountTransactionId"
+        )
+        .select("reconciliationClaim.id")
+        .whereRef("reconciliationClaim.paymentId", "=", "payment.id")
+        .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+        .where("claimedTransaction.isDeleted", "is not", sqliteTrue)
+    )
+  )
+
+/**
+ * A canceled payment stays a candidate on purpose: money that arrives after
+ * the cancellation is claimed and surfaces as the canceled+claimed collision
+ * rather than sitting unmatched. It is only the last resort, though — when a
+ * live payment matches the same transaction, the live one takes it
+ * (payment/0004).
+ */
+const liveBeforeCanceled = (eb: ExpressionBuilder<AppDb, "payment">) =>
+  eb("payment.canceledAt", "is not", null)
+
 export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
   accountTransactionId: AccountTransactionId
 ) =>
@@ -126,11 +169,6 @@ export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
           )
       )
       .innerJoin("payment", "payment.id", "paymentIban.id")
-      .leftJoin(
-        "reconciliationClaim",
-        "reconciliationClaim.paymentId",
-        "payment.id"
-      )
       .select(["payment.id as paymentId"])
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "iban")
@@ -141,7 +179,8 @@ export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
       .where("payment.isDeleted", "is not", sqliteTrue)
       .whereRef("payment.amount", "=", "accountTransaction.amount")
       .whereRef("payment.currency", "=", "accountTransaction.currency")
-      .where("reconciliationClaim.id", "is", null)
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
       .orderBy("payment.id")
       .limit(1)
       .$narrowType<{
@@ -164,11 +203,6 @@ export const ibanReconciliationCandidateByValuesQuery = ({
     db
       .selectFrom("paymentIban")
       .innerJoin("payment", "payment.id", "paymentIban.id")
-      .leftJoin(
-        "reconciliationClaim",
-        "reconciliationClaim.paymentId",
-        "payment.id"
-      )
       .select(["payment.id as paymentId"])
       .where("paymentIban.accountId", "=", accountId)
       .where("paymentIban.variableSymbol", "=", variableSymbol)
@@ -177,7 +211,8 @@ export const ibanReconciliationCandidateByValuesQuery = ({
       .where("payment.isDeleted", "is not", sqliteTrue)
       .where("payment.amount", "=", amount)
       .where("payment.currency", "=", currency)
-      .where("reconciliationClaim.id", "is", null)
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
       .orderBy("payment.id")
       .limit(1)
       .$narrowType<{
@@ -199,11 +234,6 @@ export const cashRegisterReconciliationCandidateByAccountTransactionIdQuery = (
         )
       )
       .innerJoin("payment", "payment.id", "paymentCashRegister.id")
-      .leftJoin(
-        "reconciliationClaim",
-        "reconciliationClaim.paymentId",
-        "payment.id"
-      )
       .select(["payment.id as paymentId"])
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "cashRegister")
@@ -212,7 +242,8 @@ export const cashRegisterReconciliationCandidateByAccountTransactionIdQuery = (
       .where("payment.isDeleted", "is not", sqliteTrue)
       .whereRef("payment.amount", "=", "accountTransaction.amount")
       .whereRef("payment.currency", "=", "accountTransaction.currency")
-      .where("reconciliationClaim.id", "is", null)
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
       .orderBy("payment.id")
       .limit(1)
       .$narrowType<{
@@ -255,11 +286,6 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
           .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
       )
       .innerJoin("payment", "payment.id", "paymentBtc.id")
-      .leftJoin(
-        "reconciliationClaim",
-        "reconciliationClaim.paymentId",
-        "payment.id"
-      )
       .select(["payment.id as paymentId"])
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "spark")
@@ -297,7 +323,8 @@ export const sparkReconciliationCandidateByAccountTransactionIdQuery = (
           ]),
         ])
       )
-      .where("reconciliationClaim.id", "is", null)
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
       .orderBy("payment.id")
       .limit(1)
       .$narrowType<{
@@ -329,11 +356,6 @@ export const sparkReconciliationCandidateByValuesQuery = ({
           .on("paymentBtcSpark.isDeleted", "is not", sqliteTrue)
       )
       .innerJoin("payment", "payment.id", "paymentBtc.id")
-      .leftJoin(
-        "reconciliationClaim",
-        "reconciliationClaim.paymentId",
-        "payment.id"
-      )
       .select(["payment.id as paymentId"])
       .where("paymentBtc.accountId", "=", accountId)
       .where("paymentBtc.amountSats", "=", amount)
@@ -359,7 +381,8 @@ export const sparkReconciliationCandidateByValuesQuery = ({
               ]),
         ])
       )
-      .where("reconciliationClaim.id", "is", null)
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
       .orderBy("payment.id")
       .limit(1)
       .$narrowType<{

@@ -44,6 +44,8 @@ export const skSettings = {
   "settings.accounts.remove.confirm.description":
     "Zariadenie tento účet aj jeho údaje zabudne. Vrátiť ho späť ide len pomocou jeho recovery phrase — bez nej je všetko v účte nadobro stratené.",
   "settings.accounts.remove.confirm.title": "Odobrať účet {name}?",
+  "settings.accounts.restore.failed":
+    "Účet sa nepodarilo obnoviť. Skúste to prosím znova.",
   "settings.accounts.restore.mnemonic.description":
     "Medzery sa pred validáciou zjednotia.",
   "settings.accounts.restore.mnemonic.invalid":

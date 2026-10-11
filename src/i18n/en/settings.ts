@@ -43,6 +43,8 @@ export const enSettings = {
   "settings.accounts.remove.confirm.description":
     "This device forgets the account and its data. Only its recovery phrase can bring it back — without it, everything in the account is gone for good.",
   "settings.accounts.remove.confirm.title": "Remove {name}?",
+  "settings.accounts.restore.failed":
+    "Could not restore the account. Please try again.",
   "settings.accounts.restore.mnemonic.description":
     "Whitespace is normalized before validation.",
   "settings.accounts.restore.mnemonic.invalid":

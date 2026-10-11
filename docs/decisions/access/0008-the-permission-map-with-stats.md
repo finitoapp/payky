@@ -29,8 +29,8 @@ complete by `satisfies Record<Permission, TranslationKey>`:
 | `admin` | payment accounts and withdraw, accounts (switch, add, restore, transfer, remove another), profile, security, EET, Evolu export, debug console, AI data access, the Access section |
 
 The Manager preset grants `stats` and Owner grants every permission; Basic,
-Staff and Shift lead do not. The statistics entry in the home header is
-always shown, and the access gate asks for the PIN, as it does for Activity.
+Staff and Shift lead do not. The statistics entry in the Activity header is
+always shown, and the access gate asks for the PIN.
 
 `free` routes: the settings list, language, theme, about (privacy, terms),
 donations, and the layouts above them. Whatever a `free` route writes stays

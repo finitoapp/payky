@@ -68,16 +68,46 @@ export const skLanding = {
     "Na podpore fyzického terminálu pracujeme. Zatiaľ je k dispozícii len aplikácia.",
   "landing.faq.terminal.question": "Máte aj klasický terminál?",
   "landing.faq.title": "Časté otázky",
-  "landing.features.amount.body":
-    "Klávesnica na rýchly predaj, alebo katalóg položiek a stoly pre kaviareň. Podľa toho, čo vám vyhovuje.",
-  "landing.features.amount.title": "Naťukáte sumu",
-  "landing.features.received.body":
-    "Rovno z banky zákazníka do tej vašej. Žiadny sprostredkovateľ, žiadna provízia, žiadne čakanie na výplatu. Označíte platbu ako prijatú a je hotovo.",
-  "landing.features.received.title": "Peniaze prídu na váš účet",
-  "landing.features.scan.body":
+  "landing.flows.amount.audience": "Stánky, trhy, remeselníci a služby",
+  "landing.flows.amount.step1.body":
+    "Žiadne nastavovanie položiek. Otvoríte aplikáciu, zadáte, koľko to robí, a môžete inkasovať.",
+  "landing.flows.amount.step1.title": "Naťukáte sumu",
+  "landing.flows.amount.step2.body":
     "Aplikácia zobrazí QR platbu pre slovenský aj český bankový prevod. Hotovosť a bitcoin máte na jedno ťuknutie.",
-  "landing.features.scan.title": "Zákazník naskenuje a zaplatí",
-  "landing.features.title": "Ako to funguje",
+  "landing.flows.amount.step2.title": "Zákazník naskenuje a zaplatí",
+  "landing.flows.amount.step3.body":
+    "Rovno z banky zákazníka do tej vašej. Žiadny sprostredkovateľ, žiadna provízia, žiadne čakanie na výplatu. Označíte platbu ako prijatú a je hotovo.",
+  "landing.flows.amount.step3.title": "Peniaze prídu na váš účet",
+  "landing.flows.amount.tab": "Zadáte sumu",
+  "landing.flows.bill.audience": "Malé obchody, predajne a kiosky",
+  "landing.flows.bill.step1.body":
+    "Položky s cenou a kategóriou pridáte raz. Stačí naskenovať čiarový kód a názov sa často dohľadá sám.",
+  "landing.flows.bill.step1.title": "Založíte si katalóg",
+  "landing.flows.bill.step2.body":
+    "Ťuknutím alebo skenom skladáte účet. Zákazník vidí presne, čo platí, a vy sa nepreratáte.",
+  "landing.flows.bill.step2.title": "Namarkujete nákup",
+  "landing.flows.bill.step3.body":
+    "Celý účet zákazník zaplatí prevodom, v hotovosti alebo bitcoinom. Vy presne viete, čo sa predalo.",
+  "landing.flows.bill.step3.title": "Zaplatené jedným QR kódom",
+  "landing.flows.bill.tab": "Markujete položky",
+  "landing.flows.label": "Spôsob predaja",
+  "landing.flows.subtitle":
+    "Stánok, obchod, alebo reštaurácia so stolmi? Každý predáva inak a Payky zvládne všetky tri spôsoby platenia. Vyberte si ten svoj.",
+  "landing.flows.tables.audience": "Reštaurácie, bistrá, kaviarne a bary",
+  "landing.flows.tables.step1.body":
+    "Každý stôl vidíte na prvý pohľad: voľný, s otvoreným účtom alebo s rozbehnutou platbou. Pri jednom stole môže byť aj viac účtov naraz.",
+  "landing.flows.tables.step1.title": "Celá prevádzka na jednej obrazovke",
+  "landing.flows.tables.step2.title": "Objednávky rovno na účet stola",
+  "landing.flows.tables.step2.body":
+    "Otvoríte účet pri stole a pridávate, čo si hostia objednajú. Zostane otvorený, kým neodídu.",
+  "landing.flows.tables.step3.body":
+    "Účet rozdelíte podľa položiek, presuniete na iný stôl alebo zlúčite s iným účtom.",
+  "landing.flows.tables.step3.title": "Účty, ako sa hostia dohodnú",
+  "landing.flows.tables.step4.body":
+    "Každý hosť zaplatí svoj účet QR kódom alebo v hotovosti a stôl sa uvoľní, keď je všetko zaplatené.",
+  "landing.flows.tables.step4.title": "Každý zaplatí svoju časť",
+  "landing.flows.tables.tab": "Obsluhujete stoly",
+  "landing.flows.title": "Payky sa prispôsobí vášmu podnikaniu",
   "landing.footer.description": "Platobný terminál pre Slovensko a Česko",
   "landing.footer.discussions": "Diskusie",
   "landing.footer.github": "GitHub",
@@ -88,9 +118,17 @@ export const skLanding = {
   "landing.hero.title": "Platba QR kódom nič nestojí.",
   "landing.hero.titleAccent": "nič nestojí",
   "landing.language.label": "Jazyk",
+  "landing.mockup.bill.alt": "Rozpracovaný účet s namarkovanými položkami",
   "landing.mockup.home.alt": "Klávesnica Payky so zadanou sumou",
+  "landing.mockup.items.alt": "Katalóg položiek s cenami v Payky",
   "landing.mockup.paid.alt": "Payky potvrdzuje prijatú platbu",
   "landing.mockup.payment.alt": "Payky ukazuje QR kód na bankový prevod",
+  "landing.mockup.split.alt": "Rozdelenie účtu podľa položiek",
+  "landing.mockup.stats.alt": "Prehľad tržby v Štatistikách",
+  "landing.mockup.statsCharts.alt":
+    "Graf predajov v čase a podiel spôsobov platby",
+  "landing.mockup.tableBill.alt": "Účet stola s objednanými položkami",
+  "landing.mockup.tables.alt": "Prehľad stolov s otvorenými účtami",
   "landing.more.bitcoin.body":
     "Lightning platby rovno do vašej vlastnej peňaženky, ku ktorej máte kľúče len vy. Čisto dobrovoľne.",
   "landing.more.bitcoin.title": "Bitcoin, keď budete chcieť",
@@ -117,6 +155,15 @@ export const skLanding = {
   "landing.stage.cash": "Hotovosť",
   "landing.stage.eet": "Vyrieši EET",
   "landing.stage.transfer": "Bankový prevod",
+  "landing.stats.body":
+    "Nech predávate akokoľvek, v Štatistikách vidíte, ako sa vám darí. Za dnešok, posledných 7 dní alebo mesiac a v porovnaní s predchádzajúcim obdobím.",
+  "landing.stats.charts.body":
+    "Predaje v čase oproti minulému obdobiu, podiel jednotlivých spôsobov platby, najpredávanejšie položky aj najrušnejšie hodiny v týždni.",
+  "landing.stats.charts.title": "Grafy, ktoré povedia viac",
+  "landing.stats.overview.body":
+    "Čistá tržba, počet a priemer predajov, prepitné zvlášť aj vratky. A koľko má byť v pokladnici.",
+  "landing.stats.overview.title": "Tržba na prvý pohľad",
+  "landing.stats.title": "Viete, ako sa vám darí",
   "landing.theme.label": "Vzhľad",
   "landing.useCases.cafes.alt":
     "Barista podáva kávu zákazníkovi pri stánku s pečivom",
@@ -127,6 +174,7 @@ export const skLanding = {
   "landing.useCases.craftsmen.body":
     "Zaplatené hneď na mieste u zákazníka, bez papierovačiek.",
   "landing.useCases.craftsmen.title": "Remeselníci",
+  "landing.useCases.howItWorks": "Ako to funguje",
   "landing.useCases.salons.alt":
     "Kaderníčka upravuje zákazníčke vlasy v salóne",
   "landing.useCases.salons.body":

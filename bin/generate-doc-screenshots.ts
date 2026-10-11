@@ -11,7 +11,7 @@ import {
 } from "@/i18n/resources.ts"
 import { addCatalogItem, addTable, startNewBill } from "../e2e/support/bill.ts"
 import { translate } from "../e2e/support/i18n.ts"
-import { gotoPosOverview } from "../e2e/support/navigation.ts"
+import { gotoPage, gotoPosOverview } from "../e2e/support/navigation.ts"
 import { completeOnboarding } from "../e2e/support/onboarding.ts"
 import {
   createPayment,
@@ -34,8 +34,23 @@ import {
   outputWidth,
 } from "./phone-frame-geometry.ts"
 
+type ShotName =
+  | "home"
+  | "payment"
+  | "paid"
+  | "settings"
+  | "bill"
+  | "tables"
+  | "table-bill"
+  | "items"
+  | "split"
+  | "stats"
+  | "stats-charts"
+
 interface ScreenshotScenario {
-  readonly name: "home" | "payment" | "paid" | "settings" | "bill" | "tables"
+  readonly name: ShotName
+  /** Every shot `capture` takes, when it is more than the one named after it. */
+  readonly shots?: ReadonlyArray<ShotName>
   readonly capture: (page: Page, language: Language) => Promise<void>
 }
 
@@ -170,6 +185,48 @@ const tablesCartItemByLanguage: Record<Language, CartItem> = {
   sk: { name: "Káva", price: "2.5", quantity: 1 },
 }
 
+/** The split screenshot moves one of each brick off a bill holding all of them. */
+const splitCartByLanguage: Record<Language, ReadonlyArray<CartItem>> = {
+  en: [...billCartByLanguage.en, { name: "Sandwich", price: "6", quantity: 1 }],
+  cs: [...billCartByLanguage.cs, { name: "Sendvič", price: "89", quantity: 1 }],
+  sk: [
+    ...billCartByLanguage.sk,
+    { name: "Sendvič", price: "3.5", quantity: 1 },
+  ],
+}
+
+/** Days of demo history the stats screenshot waits for: its week and a day to compare. */
+const statsHistoryDays = 8
+
+/** Matches `demoData.running.progress`, capturing `{done}`. */
+function demoProgressPattern(language: Language): RegExp {
+  const [before = "", after = ""] = translate(
+    language,
+    "demoData.running.progress"
+  )
+    .replace(/[.*+?^$()|[\]\\]/gu, "\\$&")
+    .split("{done}")
+  return new RegExp(`${before}(\\d+)${after.replace("{total}", "\\d+")}`, "u")
+}
+
+async function addCart(
+  page: Page,
+  language: Language,
+  cart: ReadonlyArray<CartItem>
+): Promise<void> {
+  for (const item of cart) {
+    const addButton = page.getByRole("button", {
+      name: nameParam(language, "bill.brick.add.aria", item.name),
+    })
+    for (let count = 0; count < item.quantity; count += 1) {
+      await addButton.click()
+    }
+  }
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("billId"))
+    .not.toBeNull()
+}
+
 // A koruna amount reads as a real sale; the euro and dollar defaults already do.
 const paymentAmountByLanguage: Record<Language, string> = {
   en: "5.9",
@@ -179,7 +236,7 @@ const paymentAmountByLanguage: Record<Language, string> = {
 
 async function capturePage(
   page: Page,
-  name: ScreenshotScenario["name"],
+  name: ShotName,
   language: Language
 ): Promise<void> {
   await page.screenshot({
@@ -249,18 +306,7 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
       await page.goto("/", { waitUntil: "domcontentloaded" })
       await startNewBill(page, language)
 
-      for (const item of cartItems) {
-        const addButton = page.getByRole("button", {
-          name: nameParam(language, "bill.brick.add.aria", item.name),
-        })
-        for (let count = 0; count < item.quantity; count += 1) {
-          await addButton.click()
-        }
-      }
-
-      await expect
-        .poll(() => new URL(page.url()).searchParams.get("billId"))
-        .not.toBeNull()
+      await addCart(page, language, cartItems)
 
       await page.getByTestId("bill-summary-trigger").click()
       await page.getByTestId("bill-summary-panel").waitFor()
@@ -340,6 +386,145 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
       await capturePage(page, "tables", language)
     },
   },
+  {
+    name: "table-bill",
+    async capture(page, language) {
+      await completeOnboarding(page, language, { baseURL: appUrl })
+      const tableName = tableNamesByLanguage[language][3]
+      await addTable(page, language, { name: tableName, seatCount: "4" })
+      const cart = splitCartByLanguage[language]
+      for (const item of billCatalogByLanguage[language]) {
+        await addCatalogItem(page, language, item)
+      }
+
+      await gotoPosOverview(page, language)
+      await page
+        .getByTestId("table-tile")
+        .filter({ hasText: tableName })
+        .getByRole("link", { name: translate(language, "tables.tile.newBill") })
+        .click()
+      await page
+        .getByRole("heading", { name: translate(language, "bill.title") })
+        .waitFor()
+      await addCart(page, language, cart)
+
+      await page.getByTestId("bill-summary-trigger").click()
+      await page.getByTestId("bill-summary-panel").waitFor()
+      // The same 300ms expand transition as the bill screenshot.
+      await page.waitForTimeout(400)
+      await capturePage(page, "table-bill", language)
+    },
+  },
+  {
+    name: "items",
+    async capture(page, language) {
+      await completeOnboarding(page, language, { baseURL: appUrl })
+      for (const item of billCatalogByLanguage[language]) {
+        await addCatalogItem(page, language, item)
+      }
+      // The form stays open over the list to add another item.
+      await gotoPage(page, "/settings/items", language, "settings.items.title")
+      await capturePage(page, "items", language)
+    },
+  },
+  {
+    name: "split",
+    async capture(page, language) {
+      await completeOnboarding(page, language, { baseURL: appUrl })
+      const cart = splitCartByLanguage[language]
+      for (const item of cart) {
+        await addCatalogItem(page, language, item)
+      }
+
+      await page.goto("/", { waitUntil: "domcontentloaded" })
+      await startNewBill(page, language)
+      await addCart(page, language, cart)
+
+      await page
+        .getByRole("button", {
+          name: translate(language, "bill.split.button.aria"),
+        })
+        .click()
+      await page.getByText(translate(language, "bill.split.title")).waitFor()
+      for (const item of cart.slice(1)) {
+        await page
+          .getByRole("button", {
+            name: nameParam(language, "bill.split.increase.aria", item.name),
+          })
+          .click()
+      }
+      // The dialog slides in; let it settle before the shot.
+      await page.waitForTimeout(400)
+      await capturePage(page, "split", language)
+    },
+  },
+  {
+    name: "stats",
+    shots: ["stats", "stats-charts"],
+    async capture(page, language) {
+      await completeOnboarding(page, language, { baseURL: appUrl })
+      await gotoPage(
+        page,
+        "/settings/demo-data",
+        language,
+        "settings.demoData.title"
+      )
+      await page
+        .getByRole("button", {
+          name: translate(language, "settings.demoData.action"),
+        })
+        .click()
+      await page
+        .getByRole("button", {
+          name: translate(language, "settings.demoData.confirm.confirm"),
+        })
+        .click()
+
+      const running = page.getByRole("alertdialog", {
+        name: translate(language, "demoData.running.title"),
+      })
+      await running.waitFor()
+      const progress = demoProgressPattern(language)
+      await expect
+        .poll(
+          async () =>
+            Number(progress.exec((await running.textContent()) ?? "")?.[1]),
+          { timeout: 600_000, intervals: [1000] }
+        )
+        .toBeGreaterThanOrEqual(statsHistoryDays)
+      await running
+        .getByRole("button", { name: translate(language, "demoData.stop") })
+        .click()
+      const finished = page.getByRole("alertdialog", {
+        name: translate(language, "demoData.finished.title"),
+      })
+      await finished.waitFor({ timeout: 120_000 })
+      await finished
+        .getByRole("button", { name: translate(language, "demoData.close") })
+        .click()
+
+      await gotoPage(page, "/stats?period=last7Days", language, "stats.title")
+      await page
+        .getByText(translate(language, "stats.kpi.netRevenue"))
+        .first()
+        .waitFor()
+      // The revenue chart draws in after the figures.
+      await page.waitForTimeout(1000)
+      await capturePage(page, "stats", language)
+
+      // Lower down, the charts, with the period selector stuck above them.
+      await page
+        .getByText(translate(language, "stats.chart.title"))
+        .first()
+        .evaluate((element) => {
+          // Instant: a smooth scroll would be cut short by the next one.
+          element.scrollIntoView({ block: "start", behavior: "instant" })
+          window.scrollBy({ top: -95, behavior: "instant" })
+        })
+      await page.waitForTimeout(500)
+      await capturePage(page, "stats-charts", language)
+    },
+  },
 ]
 
 const requestedScenarioNames = docEnv.PAYKY_SCREENSHOT_SCENARIOS
@@ -358,7 +543,7 @@ if (selectedScenarios.length === 0) {
 }
 
 async function composeScreenshot(
-  name: ScreenshotScenario["name"],
+  name: ShotName,
   language: Language
 ): Promise<void> {
   const rawPath = `${rawScreenshotsDirectory}/${language}/${name}.png`
@@ -493,7 +678,9 @@ async function run(): Promise<void> {
             await context.close()
           }
 
-          await composeScreenshot(scenario.name, language)
+          for (const shot of scenario.shots ?? [scenario.name]) {
+            await composeScreenshot(shot, language)
+          }
         }
       }
     } finally {

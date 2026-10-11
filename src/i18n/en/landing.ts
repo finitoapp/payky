@@ -62,16 +62,46 @@ export const enLanding = {
     "We're working on support for a physical terminal. For now there's only the app.",
   "landing.faq.terminal.question": "Do you have a terminal too?",
   "landing.faq.title": "Frequently asked questions",
-  "landing.features.amount.body":
-    "A keypad for quick sales, or a catalog of items and tables for a café. Whichever fits your business.",
-  "landing.features.amount.title": "Type the amount",
-  "landing.features.received.body":
-    "Straight from the customer's bank to yours. Nobody in between, no cut, no payout delays. Mark it received and you're done.",
-  "landing.features.received.title": "Money lands on your account",
-  "landing.features.scan.body":
+  "landing.flows.amount.audience": "Stalls, markets, trades and services",
+  "landing.flows.amount.step1.body":
+    "No items to set up. Open the app, type what it comes to, and you're ready to take the payment.",
+  "landing.flows.amount.step1.title": "Type the amount",
+  "landing.flows.amount.step2.body":
     "The app shows a QR code for a bank transfer, in the Czech and Slovak formats. Cash and bitcoin are a tap away.",
-  "landing.features.scan.title": "The customer scans and pays",
-  "landing.features.title": "How it works",
+  "landing.flows.amount.step2.title": "The customer scans and pays",
+  "landing.flows.amount.step3.body":
+    "Straight from the customer's bank to yours. Nobody in between, no cut, no payout delays. Mark it received and you're done.",
+  "landing.flows.amount.step3.title": "Money lands on your account",
+  "landing.flows.amount.tab": "Type the amount",
+  "landing.flows.bill.audience": "Small shops, stores and kiosks",
+  "landing.flows.bill.step1.body":
+    "Add items with a price and category once. Scan a barcode and the name often fills itself in.",
+  "landing.flows.bill.step1.title": "Set up your catalog",
+  "landing.flows.bill.step2.body":
+    "Build the bill with a tap or a scan. The customer sees exactly what they pay for, and you never miscount.",
+  "landing.flows.bill.step2.title": "Ring up the sale",
+  "landing.flows.bill.step3.body":
+    "The customer pays the whole bill by transfer, in cash or in bitcoin. You know exactly what sold.",
+  "landing.flows.bill.step3.title": "Paid with one QR code",
+  "landing.flows.bill.tab": "Ring up items",
+  "landing.flows.label": "How you sell",
+  "landing.flows.subtitle":
+    "A stall, a shop, or a restaurant with tables? Each sells differently, and Payky handles all three ways of getting paid. Pick yours.",
+  "landing.flows.tables.audience": "Restaurants, bistros, cafés and bars",
+  "landing.flows.tables.step1.body":
+    "See every table at a glance: free, with an open bill, or with a payment under way. A table can hold several bills at once.",
+  "landing.flows.tables.step1.title": "Your whole floor on one screen",
+  "landing.flows.tables.step2.title": "Orders straight onto the table's bill",
+  "landing.flows.tables.step2.body":
+    "Open a bill at the table and add whatever the guests order. It stays open until they leave.",
+  "landing.flows.tables.step3.body":
+    "Split a bill by item, move it to another table, or merge it into another bill.",
+  "landing.flows.tables.step3.title": "Bills the way guests want them",
+  "landing.flows.tables.step4.body":
+    "Each guest pays their bill by QR code or in cash, and the table frees up once everything is paid.",
+  "landing.flows.tables.step4.title": "Everyone pays their share",
+  "landing.flows.tables.tab": "Serve tables",
+  "landing.flows.title": "Payky adapts to the way you do business",
   "landing.footer.description": "The payment terminal for Czechia & Slovakia",
   "landing.footer.discussions": "Discussions",
   "landing.footer.github": "GitHub",
@@ -82,9 +112,17 @@ export const enLanding = {
   "landing.hero.title": "Paying by QR code costs nothing.",
   "landing.hero.titleAccent": "costs nothing",
   "landing.language.label": "Language",
+  "landing.mockup.bill.alt": "A bill in progress with items rung up",
   "landing.mockup.home.alt": "Payky keypad with an amount typed in",
+  "landing.mockup.items.alt": "Payky item catalog with prices",
   "landing.mockup.paid.alt": "Payky confirming a received payment",
   "landing.mockup.payment.alt": "Payky showing a QR code for a bank transfer",
+  "landing.mockup.split.alt": "Splitting a bill by item",
+  "landing.mockup.stats.alt": "Revenue overview in Statistics",
+  "landing.mockup.statsCharts.alt":
+    "Charts of sales over time and payment methods",
+  "landing.mockup.tableBill.alt": "A table's bill with the ordered items",
+  "landing.mockup.tables.alt": "Table overview with open bills",
   "landing.more.bitcoin.body":
     "Lightning payments straight to your own wallet. Self-custody, and entirely optional.",
   "landing.more.bitcoin.title": "Bitcoin, if you want",
@@ -111,6 +149,15 @@ export const enLanding = {
   "landing.stage.cash": "Cash",
   "landing.stage.eet": "Handles EET",
   "landing.stage.transfer": "Bank transfer",
+  "landing.stats.body":
+    "However you sell, Statistics shows how you're doing. For today, the last 7 days or the month, compared with the period before.",
+  "landing.stats.charts.body":
+    "Sales over time against the period before, the share of each payment method, best-selling items and your busiest hours of the week.",
+  "landing.stats.charts.title": "Charts that tell you more",
+  "landing.stats.overview.body":
+    "Net revenue, the number and average of sales, tips kept apart, and refunds. Plus what should be in the till.",
+  "landing.stats.overview.title": "Revenue at a glance",
+  "landing.stats.title": "Know how you're doing",
   "landing.theme.label": "Appearance",
   "landing.useCases.cafes.alt":
     "Barista serving coffee to a customer at a bakery stall",
@@ -122,6 +169,7 @@ export const enLanding = {
   "landing.useCases.craftsmen.body":
     "Settle up on the spot at the customer's place, no paperwork.",
   "landing.useCases.craftsmen.title": "Tradespeople",
+  "landing.useCases.howItWorks": "How it works",
   "landing.useCases.salons.alt":
     "Hairdresser styling a customer's hair in a salon",
   "landing.useCases.salons.body":

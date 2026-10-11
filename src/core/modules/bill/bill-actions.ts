@@ -291,8 +291,9 @@ export const addCatalogItemToBill =
         deviceId: input.deviceId ?? null,
         catalogItemId: catalogItemResult.value.id,
         quantity: input.quantity,
+        // `quantity` may be fractional; money has no fractional minor unit.
         totalAmount: NonNegativeInteger(
-          catalogItemResult.value.unitAmount * input.quantity
+          Math.round(catalogItemResult.value.unitAmount * input.quantity)
         ),
       })
     )

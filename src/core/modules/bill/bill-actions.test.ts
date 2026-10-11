@@ -498,6 +498,40 @@ describe("bill actions", () => {
     expect(tipLineSummary.id).not.toBe(manualLineSummary.id)
   }, 15_000)
 
+  test("rounds a catalog line total for a fractional quantity", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const billId = await createOpenBill(deps)
+    const catalogItemId = await run.ok(
+      createCatalogItem({
+        deviceId: null,
+        categoryId: null,
+        name: NonEmptyString255("Cheese"),
+        description: null,
+        currency: "CZK",
+        unitAmount: NonNegativeInteger(1_999),
+        sortOrder: NonNegativeInteger(10),
+        scanCode: null,
+      })
+    )
+
+    const summary = await run.orThrow(
+      addCatalogItemToBill({
+        billId,
+        deviceId: null,
+        catalogItemId,
+        quantity: PositiveNumber(0.7),
+      })
+    )
+
+    expect(summary).toMatchObject({ quantity: 0.7, totalAmount: 1_399 })
+  }, 15_000)
+
   test("adds catalog, manual amount, and tip lines to a bill", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

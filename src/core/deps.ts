@@ -243,13 +243,37 @@ const createResponseBody = (data: unknown): BodyInit | null => {
   return JSON.stringify(data)
 }
 
-const throwIfAborted = (signal: AbortSignal): void => {
-  if (!signal.aborted) return
-
-  throw signal.reason instanceof Error
+const getAbortReason = (signal: AbortSignal): unknown =>
+  signal.reason instanceof Error
     ? signal.reason
     : new DOMException("The operation was aborted.", "AbortError")
+
+const throwIfAborted = (signal: AbortSignal): void => {
+  if (signal.aborted) throw getAbortReason(signal)
 }
+
+/**
+ * `CapacitorHttp.request` cannot be cancelled, so an abort mid-request has to
+ * be raced against it — otherwise a caller enforcing its own timeout through
+ * the signal (the EET client does) waits for as long as the connection stalls.
+ * The native request itself runs on and its late answer is dropped.
+ */
+const raceAbort = <T>(promise: Promise<T>, signal: AbortSignal): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const onAbort = () => {
+      reject(getAbortReason(signal))
+    }
+    signal.addEventListener("abort", onAbort, { once: true })
+    void promise.then(resolve, reject).finally(() => {
+      signal.removeEventListener("abort", onAbort)
+    })
+  })
+
+/**
+ * Backstop for requests that pass no signal: Android's `HttpURLConnection`
+ * defaults to no connect or read timeout at all.
+ */
+const nativeHttpTimeoutMs = 30_000
 
 const capacitorFetch: typeof globalThis.fetch = async (input, init) => {
   const request = new Request(input, init)
@@ -259,15 +283,18 @@ const capacitorFetch: typeof globalThis.fetch = async (input, init) => {
 
   throwIfAborted(request.signal)
 
-  const response = await CapacitorHttp.request({
-    url: request.url,
-    method: request.method,
-    headers: getRequestHeaders(request),
-    responseType: "text",
-    ...requestData,
-  })
-
-  throwIfAborted(request.signal)
+  const response = await raceAbort(
+    CapacitorHttp.request({
+      url: request.url,
+      method: request.method,
+      headers: getRequestHeaders(request),
+      responseType: "text",
+      connectTimeout: nativeHttpTimeoutMs,
+      readTimeout: nativeHttpTimeoutMs,
+      ...requestData,
+    }),
+    request.signal
+  )
 
   return new Response(createResponseBody(response.data), {
     status: response.status,

@@ -19,8 +19,6 @@ type EvoluExportDestination =
     }
   | {
       readonly type: "capacitor"
-      readonly path: string
-      readonly uri: string
     }
 
 const evoluExportMimeType = "application/vnd.sqlite3"
@@ -56,14 +54,17 @@ export function formatExportCreatedAt(date: Date): string {
   }).format(date)
 }
 
+/**
+ * Resolves to `null` when the user dismisses the native share sheet: nothing
+ * left the device, which is neither a success nor a failure.
+ */
 export async function saveEvoluExportFile(
   file: EvoluExportFile
-): Promise<SavedEvoluExportFile> {
+): Promise<SavedEvoluExportFile | null> {
   if (Capacitor.isNativePlatform()) {
-    return {
-      ...file,
-      destination: await saveWithCapacitor(file),
-    }
+    const shared = await shareWithCapacitor(file)
+
+    return shared ? { ...file, destination: { type: "capacitor" } } : null
   }
 
   downloadWithBrowser(file)
@@ -93,26 +94,48 @@ function downloadWithBrowser(file: EvoluExportFile): void {
   URL.revokeObjectURL(href)
 }
 
-async function saveWithCapacitor(
-  file: EvoluExportFile
-): Promise<EvoluExportDestination> {
-  const { Directory, Filesystem } = await import("@capacitor/filesystem")
+/**
+ * The export holds the Spark wallet secret, so it is written to the app's
+ * private cache — never shared storage such as `Documents/`, which any app
+ * with storage access can read — and handed to the system share sheet, where
+ * the user picks the one place it goes. The directory matches the only path
+ * `android/app/src/main/res/xml/file_paths.xml` lets the FileProvider grant;
+ * it is cleared before each export so earlier files do not pile up.
+ */
+async function shareWithCapacitor(file: EvoluExportFile): Promise<boolean> {
+  const [{ Directory, Filesystem }, { Share }] = await Promise.all([
+    import("@capacitor/filesystem"),
+    import("@capacitor/share"),
+  ])
 
-  await Filesystem.requestPermissions()
+  await Filesystem.rmdir({
+    path: evoluExportCacheDirectory,
+    directory: Directory.Cache,
+    recursive: true,
+  }).catch(() => undefined)
 
-  const result = await Filesystem.writeFile({
-    path: file.filename,
+  const { uri } = await Filesystem.writeFile({
+    path: `${evoluExportCacheDirectory}/${file.filename}`,
     data: uint8ArrayToBase64(file.bytes),
-    directory: Directory.Documents,
+    directory: Directory.Cache,
     recursive: true,
   })
 
-  return {
-    type: "capacitor",
-    path: file.filename,
-    uri: result.uri,
+  try {
+    await Share.share({ title: file.filename, files: [uri] })
+    return true
+  } catch (error) {
+    if (error instanceof Error && error.message === shareCanceledMessage) {
+      return false
+    }
+    throw error
   }
 }
+
+const evoluExportCacheDirectory = "evolu-export"
+
+/** The rejection message both native Share implementations use on dismiss. */
+const shareCanceledMessage = "Share canceled"
 
 /**
  * `btoa` wants a binary string, so the bytes go through `String.fromCharCode`

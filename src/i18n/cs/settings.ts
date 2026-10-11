@@ -294,7 +294,7 @@ export const csSettings = {
   "settings.evoluExport.description":
     "Export lokálních Evolu databází pro zálohu a podporu",
   "settings.evoluExport.destination.capacitor":
-    "Soubory se uloží do Documents/ na tomto zařízení.",
+    "Soubor předáte přes nabídku sdílení, kde zvolíte, kam ho poslat.",
   "settings.evoluExport.destination.web": "Soubory stáhne tento prohlížeč.",
   "settings.evoluExport.format.description":
     "Každá vybraná databáze se exportuje jako surový SQLite soubor.",
@@ -305,7 +305,6 @@ export const csSettings = {
   "settings.evoluExport.options.title": "Nastavení exportu",
   "settings.evoluExport.status.createdAt": "Vytvořeno {createdAt}",
   "settings.evoluExport.status.error": "Export selhal.",
-  "settings.evoluExport.status.savedTo": "Uloženo do {path}",
   "settings.evoluExport.status.success": "Export dokončen.",
   "settings.evoluExport.status.title": "Stav exportu",
   "settings.evoluExport.title": "Evolu Export",

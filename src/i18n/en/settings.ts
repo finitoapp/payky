@@ -293,7 +293,7 @@ export const enSettings = {
   "settings.evoluExport.description":
     "Export local Evolu databases for backup and support",
   "settings.evoluExport.destination.capacitor":
-    "Files will be saved to Documents/ on this device.",
+    "The file goes to the share sheet, where you choose where to send it.",
   "settings.evoluExport.destination.web":
     "Files will be downloaded by this browser.",
   "settings.evoluExport.format.description":
@@ -305,7 +305,6 @@ export const enSettings = {
   "settings.evoluExport.options.title": "Export settings",
   "settings.evoluExport.status.createdAt": "Created at {createdAt}",
   "settings.evoluExport.status.error": "Export failed.",
-  "settings.evoluExport.status.savedTo": "Saved to {path}",
   "settings.evoluExport.status.success": "Export completed.",
   "settings.evoluExport.status.title": "Export status",
   "settings.evoluExport.title": "Evolu Export",

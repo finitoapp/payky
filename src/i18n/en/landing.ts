@@ -63,6 +63,7 @@ export const enLanding = {
   "landing.faq.terminal.question": "Do you have a terminal too?",
   "landing.faq.title": "Frequently asked questions",
   "landing.flows.amount.audience": "Stalls, markets, trades and services",
+  "landing.flows.amount.short": "Amount",
   "landing.flows.amount.step1.body":
     "No items to set up. Open the app, type what it comes to, and you're ready to take the payment.",
   "landing.flows.amount.step1.title": "Type the amount",
@@ -74,6 +75,7 @@ export const enLanding = {
   "landing.flows.amount.step3.title": "Money lands on your account",
   "landing.flows.amount.tab": "Type the amount",
   "landing.flows.bill.audience": "Small shops, stores and kiosks",
+  "landing.flows.bill.short": "Items",
   "landing.flows.bill.step1.body":
     "Add items with a price and category once. Scan a barcode and the name often fills itself in.",
   "landing.flows.bill.step1.title": "Set up your catalog",
@@ -88,6 +90,7 @@ export const enLanding = {
   "landing.flows.subtitle":
     "A stall, a shop, or a restaurant with tables? Each sells differently, and Payky handles all three ways of getting paid. Pick yours.",
   "landing.flows.tables.audience": "Restaurants, bistros, cafés and bars",
+  "landing.flows.tables.short": "Tables",
   "landing.flows.tables.step1.body":
     "See every table at a glance: free, with an open bill, or with a payment under way. A table can hold several bills at once.",
   "landing.flows.tables.step1.title": "Your whole floor on one screen",

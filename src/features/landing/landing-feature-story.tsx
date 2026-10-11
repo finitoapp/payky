@@ -5,7 +5,7 @@ import {
   ShoppingBasketIcon,
   UtensilsCrossedIcon,
 } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { type RefObject, useEffect, useRef, useState } from "react"
 
 import {
   Tabs,
@@ -33,7 +33,11 @@ export type FlowId = "amount" | "bill" | "tables"
 interface Flow {
   readonly id: FlowId
   readonly icon: LucideIcon
+  /** The photo on its card, of the kind of place that sells this way. */
+  readonly image: string
   readonly tab: TranslationKey
+  /** Its label in the compact switcher that follows the story down. */
+  readonly short: TranslationKey
   readonly audience: TranslationKey
   readonly steps: ReadonlyArray<Step>
 }
@@ -43,7 +47,9 @@ const flows: ReadonlyArray<Flow> = [
   {
     id: "amount",
     icon: CalculatorIcon,
+    image: "/landing/craftsman.webp",
     tab: "landing.flows.amount.tab",
+    short: "landing.flows.amount.short",
     audience: "landing.flows.amount.audience",
     steps: [
       {
@@ -66,7 +72,9 @@ const flows: ReadonlyArray<Flow> = [
   {
     id: "bill",
     icon: ShoppingBasketIcon,
+    image: "/landing/seller.webp",
     tab: "landing.flows.bill.tab",
+    short: "landing.flows.bill.short",
     audience: "landing.flows.bill.audience",
     steps: [
       {
@@ -89,7 +97,9 @@ const flows: ReadonlyArray<Flow> = [
   {
     id: "tables",
     icon: UtensilsCrossedIcon,
+    image: "/landing/bistro.webp",
     tab: "landing.flows.tables.tab",
+    short: "landing.flows.tables.short",
     audience: "landing.flows.tables.audience",
     steps: [
       {
@@ -349,6 +359,121 @@ function StatsStory({ wide }: { readonly wide: boolean }) {
   )
 }
 
+/**
+ * True once `target` has scrolled up past the header, not while it is still
+ * below the fold: the compact switcher stands in for the cards only then.
+ */
+function useScrolledPast(target: RefObject<HTMLElement | null>) {
+  const [past, setPast] = useState(false)
+  useEffect(() => {
+    const element = target.current
+    if (element === null) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry !== undefined) {
+          setPast(!entry.isIntersecting && entry.boundingClientRect.top < 0)
+        }
+      },
+      // Below the sticky header, so cards hidden behind it count as gone.
+      { rootMargin: "-64px 0px 0px 0px" }
+    )
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [target])
+  return past
+}
+
+/** A photo card per flow: the tab itself, with whom the flow is for. */
+function FlowCard({ flow }: { readonly flow: Flow }) {
+  const { t } = useLandingTranslation()
+  const Icon = flow.icon
+  return (
+    <TabsTrigger
+      id={flowAnchor(flow.id)}
+      value={flow.id}
+      className="group/card relative aspect-4/3 h-auto w-[78vw] flex-none max-w-sm shrink-0 snap-center flex-col items-stretch justify-end overflow-hidden rounded-3xl border-0 p-0 text-left whitespace-normal text-white opacity-70 grayscale-[0.6] transition-[opacity,filter,box-shadow] duration-300 after:hidden hover:text-white hover:opacity-100 hover:grayscale-0 data-active:text-white data-active:opacity-100 data-active:shadow-xl data-active:ring-2 data-active:ring-primary data-active:ring-offset-4 data-active:ring-offset-background data-active:grayscale-0 sm:w-auto sm:max-w-none dark:text-white dark:hover:text-white dark:data-active:text-white scroll-mt-28"
+    >
+      <img
+        src={flow.image}
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover/card:scale-105 group-data-active/card:scale-105"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-black/0"
+      />
+      <span className="relative flex flex-col gap-1 p-5">
+        <span className="mb-2 flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <Icon aria-hidden="true" className="size-4" />
+        </span>
+        <span className="text-xl font-bold tracking-tight text-balance">
+          {t(flow.tab)}
+        </span>
+        <span className="text-sm leading-snug text-pretty text-white/75">
+          {t(flow.audience)}
+        </span>
+      </span>
+    </TabsTrigger>
+  )
+}
+
+/**
+ * The flows again as a small pill that sticks while their story scrolls by,
+ * in the header's empty middle on wide screens and just under it on narrow
+ * ones, so changing flow never means scrolling back up to the cards.
+ */
+function CompactSwitcher({
+  active,
+  visible,
+  onSelect,
+}: {
+  readonly active: FlowId
+  readonly visible: boolean
+  readonly onSelect: (flow: FlowId) => void
+}) {
+  const { t } = useLandingTranslation()
+  const activeIndex = flows.findIndex((flow) => flow.id === active)
+  return (
+    // Takes no room: it only overlays the story while stuck.
+    <div className="pointer-events-none sticky top-18 z-60 h-0 lg:top-0">
+      <div
+        inert={!visible}
+        className={cn(
+          "flex justify-center transition duration-300 lg:h-16 lg:items-center",
+          visible ? "opacity-100" : "-translate-y-2 opacity-0"
+        )}
+      >
+        <fieldset
+          aria-label={t("landing.flows.label")}
+          className="pointer-events-auto relative grid grid-cols-3 rounded-full border bg-background/85 p-1 shadow-lg backdrop-blur-md"
+        >
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-primary transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(${activeIndex * 100}%)` }}
+          />
+          {flows.map((flow) => {
+            const Icon = flow.icon
+            return (
+              <button
+                key={flow.id}
+                type="button"
+                aria-pressed={flow.id === active}
+                onClick={() => onSelect(flow.id)}
+                className="relative flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none aria-pressed:text-primary-foreground sm:px-5"
+              >
+                <Icon aria-hidden="true" className="size-4" />
+                {t(flow.short)}
+              </button>
+            )
+          })}
+        </fieldset>
+      </div>
+    </div>
+  )
+}
+
 export function LandingFeatureStory() {
   const { t } = useLandingTranslation()
   // Narrow until hydrated, as the prerendered page is (landing/0002).
@@ -362,6 +487,22 @@ export function LandingFeatureStory() {
     const linked = flows.find((flow) => hash === `#${flowAnchor(flow.id)}`)
     if (linked !== undefined) setActive(linked.id)
   }, [hash])
+
+  const cards = useRef<HTMLDivElement>(null)
+  const story = useRef<HTMLDivElement>(null)
+  const cardsGone = useScrolledPast(cards)
+  // Narrow, the cards scroll sideways: bring the chosen one into the row.
+  useEffect(() => {
+    const row = cards.current
+    const card = document.getElementById(flowAnchor(active))
+    if (row === null || card === null) return
+    const offset =
+      card.getBoundingClientRect().left - row.getBoundingClientRect().left
+    row.scrollTo({
+      left: row.scrollLeft + offset - (row.clientWidth - card.clientWidth) / 2,
+      behavior: "smooth",
+    })
+  }, [active])
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -382,40 +523,48 @@ export function LandingFeatureStory() {
         }}
       >
         <TabsList
+          ref={cards}
+          variant="line"
           aria-label={t("landing.flows.label")}
-          className="grid h-auto w-full grid-cols-3 rounded-2xl p-1 sm:w-fit"
+          // Narrow: a row that scrolls sideways, padded so the ring shows.
+          className="-mx-4 flex h-auto w-auto snap-x snap-mandatory items-stretch justify-start gap-4 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-6 sm:overflow-visible sm:px-0"
         >
-          {flows.map((flow) => {
-            const Icon = flow.icon
-            return (
-              <TabsTrigger
-                key={flow.id}
-                id={flowAnchor(flow.id)}
-                value={flow.id}
-                className="scroll-mt-28 flex-col gap-1 rounded-xl px-3 py-2.5 text-sm whitespace-normal sm:flex-row sm:gap-2 sm:px-5 sm:text-base"
-              >
-                <Icon aria-hidden="true" />
-                {t(flow.tab)}
-              </TabsTrigger>
-            )
-          })}
+          {flows.map((flow) => (
+            <FlowCard key={flow.id} flow={flow} />
+          ))}
         </TabsList>
-        {flows.map((flow) => (
-          // Every flow stays in the prerendered page, hidden until chosen.
-          <TabsContent
-            key={flow.id}
-            value={flow.id}
-            keepMounted
-            className="text-base"
-          >
-            <p className="mt-6 font-mono text-sm font-semibold tracking-[0.12em] text-(--landing-ink) uppercase">
-              {t(flow.audience)}
-            </p>
-            <div className={wide ? "mt-4" : "mt-10"}>
-              <Story steps={flow.steps} wide={wide} numbered />
-            </div>
-          </TabsContent>
-        ))}
+        <CompactSwitcher
+          active={active}
+          visible={cardsGone}
+          onSelect={(flow) => {
+            setActive(flow)
+            // Deep in one story, the next one starts from its first step.
+            if ((story.current?.getBoundingClientRect().top ?? 0) < 0) {
+              const reduce = window.matchMedia(
+                "(prefers-reduced-motion: reduce)"
+              ).matches
+              story.current?.scrollIntoView({
+                behavior: reduce ? "instant" : "smooth",
+              })
+            }
+          }}
+        />
+        <div ref={story} className="scroll-mt-16 lg:scroll-mt-0">
+          {flows.map((flow) => (
+            // Every flow stays in the prerendered page, hidden until chosen.
+            <TabsContent
+              key={flow.id}
+              value={flow.id}
+              keepMounted
+              className="text-base"
+            >
+              {/* Narrow: room under the stuck switcher after a switch scrolls here. */}
+              <div className={wide ? "mt-4" : "mt-20"}>
+                <Story steps={flow.steps} wide={wide} numbered />
+              </div>
+            </TabsContent>
+          ))}
+        </div>
       </Tabs>
       <StatsStory wide={wide} />
     </section>

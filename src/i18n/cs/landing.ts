@@ -68,6 +68,7 @@ export const csLanding = {
   "landing.faq.terminal.question": "Máte i klasický terminál?",
   "landing.faq.title": "Časté dotazy",
   "landing.flows.amount.audience": "Stánky, trhy, řemeslníci a služby",
+  "landing.flows.amount.short": "Částka",
   "landing.flows.amount.step1.body":
     "Žádné nastavování položek. Otevřete aplikaci, zadáte, kolik to dělá, a můžete inkasovat.",
   "landing.flows.amount.step1.title": "Naťukáte částku",
@@ -79,6 +80,7 @@ export const csLanding = {
   "landing.flows.amount.step3.title": "Peníze dorazí na váš účet",
   "landing.flows.amount.tab": "Zadáte částku",
   "landing.flows.bill.audience": "Malé obchody, prodejny a kiosky",
+  "landing.flows.bill.short": "Položky",
   "landing.flows.bill.step1.body":
     "Položky s cenou a kategorií přidáte jednou. Stačí naskenovat čárový kód a název se často dohledá sám.",
   "landing.flows.bill.step1.title": "Založíte si katalog",
@@ -93,6 +95,7 @@ export const csLanding = {
   "landing.flows.subtitle":
     "Stánek, obchod, nebo restaurace se stoly? Každý prodává jinak a Payky zvládne všechny tři způsoby placení. Vyberte ten svůj.",
   "landing.flows.tables.audience": "Restaurace, bistra, kavárny a bary",
+  "landing.flows.tables.short": "Stoly",
   "landing.flows.tables.step1.body":
     "Každý stůl vidíte na první pohled: volný, s otevřeným účtem nebo s rozběhnutou platbou. U jednoho stolu může být i víc účtů najednou.",
   "landing.flows.tables.step1.title": "Celá provozovna na jedné obrazovce",

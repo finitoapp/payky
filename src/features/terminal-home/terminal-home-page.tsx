@@ -28,6 +28,7 @@ import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { homeModeLabelKeys } from "@/i18n/settings-labels.ts"
+import { cn } from "@/lib/utils.ts"
 
 const homeModeItems = [
   { mode: "numpad", icon: Calculator, label: homeModeLabelKeys.numpad },
@@ -168,7 +169,14 @@ export function TerminalHomePage() {
   const isNumpadMode = terminalHomeMode !== "pos"
 
   return (
-    <div className={"flex flex-1 flex-col"}>
+    <div
+      className={cn(
+        "flex flex-1 flex-col",
+        // Only the pos grid uses a large monitor's width; the keypad keeps
+        // the phone-sized column the route's viewport would otherwise give.
+        isNumpadMode && "lg:mx-auto lg:w-full lg:max-w-xl"
+      )}
+    >
       <Header />
 
       <Suspense fallback={null}>

@@ -133,7 +133,7 @@ export function PosOverviewPage() {
         </div>
       )}
       {visibleTiles.length > 0 ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {visibleTiles.map(({ key, ...tile }) => (
             <OverviewTile key={key} {...tile} />
           ))}

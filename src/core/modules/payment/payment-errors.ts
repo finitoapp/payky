@@ -40,6 +40,17 @@ export type PaymentNotCanceledError = ReturnType<
   typeof createPaymentNotCanceledError
 >
 
+/**
+ * Staff tried to record money for a payment they had already canceled. The
+ * automatic matcher still claims money that arrives after a cancellation
+ * (payment/0004); a person confirming it by hand is contradicting their own
+ * cancellation instead, so that is refused.
+ */
+export const createPaymentCanceledError = defineError("PaymentCanceled")<{
+  readonly id: PaymentId
+}>()
+export type PaymentCanceledError = ReturnType<typeof createPaymentCanceledError>
+
 export const createPaymentNotClaimedError = defineError("PaymentNotClaimed")<{
   readonly id: PaymentId
 }>()
@@ -150,12 +161,14 @@ export type CashReceivedBelowChargeError = ReturnType<
 
 export type MarkPaymentPaidCashError =
   | PaymentNotFoundError
+  | PaymentCanceledError
   | CashRegisterAccountNotFoundError
   | AccountCurrencyMismatchError
   | CashReceivedBelowChargeError
 
 export type MarkPaymentPaidIbanError =
   | PaymentNotFoundError
+  | PaymentCanceledError
   | IbanAccountNotFoundError
   | AccountCurrencyMismatchError
 

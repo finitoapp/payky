@@ -89,6 +89,7 @@ import {
   createCashRegisterAccountNotFoundError,
   createIbanAccountNotFoundError,
   createPaymentAlreadyPaidError,
+  createPaymentCanceledError,
   createPaymentLightningInvoiceNotFoundError,
   createPaymentNotCanceledError,
   createPaymentNotClaimedError,
@@ -99,6 +100,7 @@ import {
   type MarkPaymentPaidCashError,
   type MarkPaymentPaidIbanError,
   type PaymentAlreadyPaidError,
+  type PaymentCanceledError,
   type PaymentNotCanceledError,
   type PaymentNotClaimedError,
   type PaymentNotFoundError,
@@ -541,6 +543,25 @@ const markPaymentPaid =
     return ok(paymentId)
   }
 
+/**
+ * The guard in front of staff confirming money by hand (payment/0004): a
+ * payment they canceled is not one they can then mark paid. Only the manual
+ * cash and IBAN confirmations use it — the automatic matcher and a card
+ * terminal's result record money that really arrived, canceled or not.
+ */
+const loadUncanceledPayment =
+  (
+    paymentId: PaymentId
+  ): Task<PaymentRow, PaymentNotFoundError | PaymentCanceledError, EvoluDep> =>
+  async (run) => {
+    const paymentResult = await run(loadPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+    if (paymentResult.value.canceledAt !== null) {
+      return err(createPaymentCanceledError({ id: paymentId }))
+    }
+    return paymentResult
+  }
+
 export const markPaymentPaidCash =
   ({
     receivedAmount,
@@ -553,10 +574,10 @@ export const markPaymentPaidCash =
     EvoluDep & EvoluOwnerIdDep & DateDep
   > =>
   async (run) => {
-    if (receivedAmount !== undefined) {
-      const paymentResult = await run(loadPayment(input.paymentId))
-      if (!paymentResult.ok) return paymentResult
+    const paymentResult = await run(loadUncanceledPayment(input.paymentId))
+    if (!paymentResult.ok) return paymentResult
 
+    if (receivedAmount !== undefined) {
       const leastReceivedAmount = roundCashAmount(paymentResult.value)
       if (receivedAmount < leastReceivedAmount) {
         return err(
@@ -586,19 +607,27 @@ export const markPaymentPaidCash =
  * they've checked their bank and the transfer for this payment arrived,
  * since the auto-detection sync job only runs in the native app.
  */
-export const markPaymentPaidIban = (
-  input: MarkPaymentPaidInput
-): Task<
-  PaymentId,
-  MarkPaymentPaidIbanError,
-  EvoluDep & EvoluOwnerIdDep & DateDep
-> =>
-  markPaymentPaid({
-    ...input,
-    accountKind: "iban",
-    accountQuery: ibanAccountByIdQuery,
-    notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
-  })
+export const markPaymentPaidIban =
+  (
+    input: MarkPaymentPaidInput
+  ): Task<
+    PaymentId,
+    MarkPaymentPaidIbanError,
+    EvoluDep & EvoluOwnerIdDep & DateDep
+  > =>
+  async (run) => {
+    const paymentResult = await run(loadUncanceledPayment(input.paymentId))
+    if (!paymentResult.ok) return paymentResult
+
+    return await run(
+      markPaymentPaid({
+        ...input,
+        accountKind: "iban",
+        accountQuery: ibanAccountByIdQuery,
+        notFoundError: createIbanAccountNotFoundError({ id: input.accountId }),
+      })
+    )
+  }
 
 /**
  * Records what the SwitchioPay terminal answered for one attempt — shared by

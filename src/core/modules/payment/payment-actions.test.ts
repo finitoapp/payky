@@ -753,6 +753,54 @@ describe("payment actions", () => {
       .toSatisfy((rows) => rows[0]?.canceledAt !== null)
   }, 15_000)
 
+  test("refuses to mark a canceled payment paid by hand", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const { cashRegisterAccountId, ibanAccountId } =
+      await createPaymentAccounts(deps)
+
+    const id = await run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(12_900),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId: cashRegisterAccountId },
+        iban: {
+          accountId: ibanAccountId,
+          variableSymbol: undefined,
+          specificSymbol: null,
+        },
+      })
+    )
+    await run.orThrow(cancelPayment(id))
+
+    const refused = {
+      ok: false,
+      error: { type: "PaymentCanceled", id },
+    }
+    await expect(
+      run(
+        markPaymentPaidCash({ paymentId: id, accountId: cashRegisterAccountId })
+      )
+    ).resolves.toEqual(refused)
+    await expect(
+      run(markPaymentPaidIban({ paymentId: id, accountId: ibanAccountId }))
+    ).resolves.toEqual(refused)
+    await expect(
+      evolu.loadQuery(reconciliationClaimsByPaymentIdQuery(id))
+    ).resolves.toEqual([])
+  }, 15_000)
+
   test("resolves a canceled+claimed collision back to paid via confirmPaymentPaidDespiteCancellation", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

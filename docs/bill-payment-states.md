@@ -100,13 +100,15 @@ in `PaymentStatus`. What differs is how the display got there: priority 3 is
 the ordinary path (a claim exists, nothing else overrides it); priority 1 is
 staff overriding a `Canceled` display that priority 2 would otherwise win.
 
-**Canceled outranks Paid on purpose.** `cancelPayment` itself refuses to
-cancel a payment that already has an active claim (see next section), so in
-the normal, single-device path this conflict cannot arise. But this is a
-CRDT/local-first app: two devices can race — one cancels while another
-records a claim for the same payment — and the merged result can end up with
-both `canceledAt` and a claim set. Rather than trying to make that
-impossible (it isn't, without a central lock), the model accepts it and
+**Canceled outranks Paid on purpose.** A payment can end up with both
+`canceledAt` and an active claim in two ways. Money can arrive after the
+cancellation: a bank transfer or a Lightning payment the customer sent anyway
+is still matched to the canceled payment by the automatic reconciliation
+(payment/0004), on a single device just as well as across several. And this is
+a CRDT/local-first app: two devices can race — one cancels while another
+records a claim for the same payment — and the merged result carries both.
+Rather than trying to make that impossible (it isn't, without a central lock,
+and refusing the money would leave it unmatched), the model accepts it and
 resolves it deterministically: the explicit human decision to cancel is
 treated as authoritative for how the payment itself is *displayed*, so it
 still shows as **Canceled**. The money that arrived anyway is not lost or
@@ -134,10 +136,19 @@ still counts as Paid.
 ### Guard
 
 `cancelPayment` rejects a payment that already has an active
-`reconciliationClaim` — a payment that has been paid cannot be canceled. As
-described above, this guard prevents the conflict on a single device but
-cannot prevent it across a concurrent multi-device merge — that residual case
-is handled by the precedence rule, not by trying to make the guard airtight.
+`reconciliationClaim` — a payment that has been paid cannot be canceled. This
+guard only covers the order "paid, then canceled". It cannot stop money that
+arrives after the cancellation, nor a concurrent multi-device merge — those
+cases are handled by the precedence rule, not by trying to make the guard
+airtight.
+
+The manual confirmations `markPaymentPaidCash` and `markPaymentPaidIban`
+reject a canceled payment with `PaymentCanceledError`: staff confirming money
+by hand on a payment they called off is contradicting their own decision.
+The automatic reconciliation and a card terminal's result do not — they
+record money that really arrived. Among several payments matching one
+incoming transaction, the reconciliation prefers a live one and takes a
+canceled one only when nothing else matches (payment/0004).
 
 `confirmPaymentPaidDespiteCancellation` is the mirror guard for that residual
 case: it requires **both** `canceledAt !== null` and an active claim to

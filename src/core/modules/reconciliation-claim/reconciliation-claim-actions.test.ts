@@ -6,7 +6,10 @@ import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
-import { createAccountTransaction } from "@/core/modules/account-transaction/account-transaction-actions.ts"
+import {
+  createAccountTransaction,
+  deleteAccountTransaction,
+} from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
 import {
   addManualAmountToBill,
@@ -17,7 +20,13 @@ import {
   loadBillCoverage,
   loadBillStatus,
 } from "@/core/modules/bill/bill-guards.ts"
-import { createPayment } from "@/core/modules/payment/payment-actions.ts"
+import {
+  cancelPayment,
+  createPayment,
+  loadPayment,
+} from "@/core/modules/payment/payment-actions.ts"
+import { loadPaymentHasActiveClaim } from "@/core/modules/payment/payment-guards.ts"
+import { derivePaymentHasCancellationCollision } from "@/core/modules/payment/payment-status-utils.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -1044,5 +1053,153 @@ describe("reconciliation claim actions", () => {
     await expect(
       run.orThrow(loadBill(billId)).then((bill) => bill.closedAt)
     ).resolves.toBeNull()
+  })
+})
+
+/**
+ * Which payment a transfer may land on (payment/0004): one whose earlier claim
+ * is gone is waiting for money again, and a canceled one is the last resort
+ * rather than excluded.
+ */
+describe("reconciliation candidates", () => {
+  const ibanSymbols = {
+    variableSymbol: VariableSymbol("123456"),
+    specificSymbol: SpecificSymbol("260605"),
+  }
+
+  const createMatchingIbanPayment = (run: TestRun, accountId: AccountId) =>
+    run.orThrow(
+      createPayment({
+        deviceId: null,
+        billId: null,
+        tableId: null,
+        amount: NonNegativeInteger(19_950),
+        currency: "CZK",
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        iban: { accountId, ...ibanSymbols },
+      })
+    )
+
+  const createMatchingIbanTransfer = (
+    run: TestRun,
+    accountId: AccountId,
+    bankReference: string
+  ) =>
+    run.ok(
+      createAccountTransaction({
+        accountId,
+        amount: Integer(19_950),
+        currency: "CZK",
+        occurredAt: Date.parse("2026-05-26T00:00:00.000Z"),
+        note: null,
+        internalTransferGroupId: null,
+        source: { deviceId: null, source: "auto" },
+        iban: {
+          ...ibanSymbols,
+          constantSymbol: null,
+          bankReference: NonEmptyString255(bankReference),
+        },
+      })
+    )
+
+  test("a payment whose claim was deleted is matched again", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(run)
+    const paymentId = await createMatchingIbanPayment(run, accountId)
+    const firstTransfer = await createMatchingIbanTransfer(run, accountId, "1")
+    await run.ok(reconcileAccountTransaction(firstTransfer))
+    const [claim] = await evolu.loadQuery(
+      createQuery((db) => db.selectFrom("reconciliationClaim").select(["id"]))
+    )
+    if (claim === undefined) throw new Error("no claim")
+    evolu.update("reconciliationClaim", { id: claim.id, isDeleted: sqliteTrue })
+    await expect
+      .poll(() => evolu.loadQuery(reconciliationClaimsQuery))
+      .toEqual([])
+
+    const secondTransfer = await createMatchingIbanTransfer(run, accountId, "2")
+
+    await expect(
+      run(reconcileAccountTransaction(secondTransfer))
+    ).resolves.toEqual({ ok: true, value: paymentId })
+  })
+
+  test("a payment whose claimed transaction was deleted is matched again", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(run)
+    const paymentId = await createMatchingIbanPayment(run, accountId)
+    const firstTransfer = await createMatchingIbanTransfer(run, accountId, "1")
+    await run.ok(reconcileAccountTransaction(firstTransfer))
+    await run.ok(deleteAccountTransaction(firstTransfer))
+
+    const secondTransfer = await createMatchingIbanTransfer(run, accountId, "2")
+
+    await expect(
+      run(reconcileAccountTransaction(secondTransfer))
+    ).resolves.toEqual({ ok: true, value: paymentId })
+  })
+
+  test("a live payment takes the transfer before a canceled one that sorts first", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(run)
+    const first = await createMatchingIbanPayment(run, accountId)
+    const second = await createMatchingIbanPayment(run, accountId)
+    // Ids are random: cancel whichever one `payment.id` would pick, so the
+    // id order alone would hand it the transfer.
+    const [canceled, live] = first < second ? [first, second] : [second, first]
+    await run.orThrow(cancelPayment(canceled))
+    const transfer = await createMatchingIbanTransfer(run, accountId, "1")
+
+    await expect(run(reconcileAccountTransaction(transfer))).resolves.toEqual({
+      ok: true,
+      value: live,
+    })
+  })
+
+  test("a transfer for a canceled payment is still claimed, as a collision", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    await using run = testCreateRun(deps)
+    const accountId = await createIbanAccount(run)
+    const paymentId = await createMatchingIbanPayment(run, accountId)
+    await run.orThrow(cancelPayment(paymentId))
+    const transfer = await createMatchingIbanTransfer(run, accountId, "1")
+
+    await expect(run(reconcileAccountTransaction(transfer))).resolves.toEqual({
+      ok: true,
+      value: paymentId,
+    })
+    const payment = await run.orThrow(loadPayment(paymentId))
+    expect(
+      derivePaymentHasCancellationCollision({
+        canceledAt: payment.canceledAt,
+        confirmedPaidAt: payment.confirmedPaidAt,
+        hasActiveClaim: await run.ok(loadPaymentHasActiveClaim(paymentId)),
+      })
+    ).toBe(true)
   })
 })

@@ -139,6 +139,20 @@ const createStatsContext = async () => {
 
   const run = () => testCreateRun(deps)
 
+  /**
+   * A cancellation that lands after the payment was paid, as a merge from
+   * another device would: on one device `cancelPayment` refuses a paid
+   * payment and a hand confirmation refuses a canceled one (payment/0004).
+   */
+  const cancelAfterPaid = (paymentId: PaymentId) =>
+    runMutationWithCompletion((options) =>
+      evolu.update(
+        "payment",
+        { id: paymentId, canceledAt: TimestampMsSchema.decode(now) },
+        options
+      )
+    )
+
   /** `amount` is `payment.amount`, the tip included. */
   const createTestPayment = async ({
     amount,
@@ -345,6 +359,7 @@ const createStatsContext = async () => {
     at,
     run,
     ...accounts,
+    cancelAfterPaid,
     createTestPayment,
     settleInCash,
     settleByTransfer,
@@ -381,11 +396,11 @@ describe("a paid payment", () => {
     })
     await context.settleInCash(paidAfterExpiry)
     const collision = await context.createTestPayment({ amount: 3200 })
-    await r.orThrow(cancelPayment(collision))
     await context.settleInCash(collision)
+    await context.cancelAfterPaid(collision)
     const confirmed = await context.createTestPayment({ amount: 6400 })
-    await r.orThrow(cancelPayment(confirmed))
     await context.settleInCash(confirmed)
+    await context.cancelAfterPaid(confirmed)
     await r.orThrow(confirmPaymentPaidDespiteCancellation(confirmed))
     const claimOnDeletedTransaction = await context.pay({ amount: 12_800 })
     const [transaction] = await context.load(
@@ -968,8 +983,8 @@ describe("signals", () => {
     )
     // Canceled, then paid and confirmed: not a signal any more.
     const confirmed = await context.createTestPayment({ amount: 900 })
-    await r.orThrow(cancelPayment(confirmed))
     await context.settleInCash(confirmed)
+    await context.cancelAfterPaid(confirmed)
     await r.orThrow(confirmPaymentPaidDespiteCancellation(confirmed))
 
     const coffee = await context.createCatalogEntry({

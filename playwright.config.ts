@@ -36,7 +36,13 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      // The phone-sized viewport after the spread: the device preset's own
+      // 1280×720 would otherwise win and put every spec in the large-monitor
+      // layout (`lg`), which the specs are not written for.
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: pageWidth, height: pageHeight },
+      },
     },
   ],
   webServer: {

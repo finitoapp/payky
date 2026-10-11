@@ -58,6 +58,7 @@ describe("handleAiChatRequest", () => {
           tools: [{ type: "function" }],
           max_tokens: 5000,
           max_completion_tokens: 5000,
+          n: 50,
         },
       }),
       { config, fetch }

@@ -126,8 +126,9 @@ export const handleAiChatRequest = async (
           body.data.max_tokens ?? config.maxTokens,
           config.maxTokens
         ),
-        // Would otherwise get past the cap above.
+        // Would otherwise get past the cap above: `n` multiplies it.
         max_completion_tokens: undefined,
+        n: undefined,
       }),
       signal: request.signal,
     })

@@ -8,6 +8,11 @@ export const Route = createFileRoute("/_terminal/stats")({
   validateSearch: (search) => StatsSearchSchema.parse(search),
   staticData: {
     access: "stats",
+    // `overflow-x-clip` instead of the default `overflow-hidden`, which would
+    // make the viewport a scroll container and stop the period bar sticking.
+    terminalLayout: {
+      viewportClassName: "px-3 py-6 overflow-x-clip overflow-y-visible",
+    },
   },
 })
 

@@ -1,8 +1,6 @@
-import {
-  type CategorySalesRow,
-  categorySalesQuery,
-  type KeypadSalesRow,
-  keypadSalesQuery,
+import type {
+  CategorySalesRow,
+  KeypadSalesRow,
 } from "@/core/modules/sales-stats/sales-stats-queries.ts"
 import type { Currency } from "@/core/modules/shared/schema.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -10,10 +8,8 @@ import {
   CurrencyGroup,
   rowsByCurrency,
   StatsBarRow,
-  StatsSection,
   useStatsMoney,
 } from "./stats-section.tsx"
-import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
 
 export interface CategoryShare {
   readonly key: string
@@ -62,47 +58,40 @@ export const categoryShares = ({
     .sort((a, b) => b.amount - a.amount)
 }
 
-/**
- * Revenue per catalog category, "Uncategorized" and the keypad's sales
- * without items included. The note says why none of it adds up to net
- * revenue.
- */
-export function TopCategories({ stats }: { readonly stats: SalesStats }) {
-  const { t } = useTranslation()
-  const money = useStatsMoney()
-  const categoryRows = useStatsRows(
-    "categorySales",
-    categorySalesQuery,
-    stats.ranges.range,
-    stats.live
-  )
-  const keypadRows = useStatsRows(
-    "keypadSales",
-    keypadSalesQuery,
-    stats.ranges.range,
-    stats.live
-  )
-
-  if (categoryRows === undefined || keypadRows === undefined) return null
-
-  const groups = rowsByCurrency(
-    [...categoryRows, ...keypadRows],
-    stats.accountCurrency
-  )
+/** Per currency, the account currency first, currencies with no row left out. */
+export const categoryGroups = ({
+  categoryRows,
+  keypadRows,
+  accountCurrency,
+}: {
+  readonly categoryRows: ReadonlyArray<CategorySalesRow>
+  readonly keypadRows: ReadonlyArray<KeypadSalesRow>
+  readonly accountCurrency: Currency
+}): ReadonlyArray<{
+  readonly currency: Currency
+  readonly rows: ReadonlyArray<CategoryShare>
+}> =>
+  rowsByCurrency([...categoryRows, ...keypadRows], accountCurrency)
     .map(({ currency }) => ({
       currency,
       rows: categoryShares({ categoryRows, keypadRows, currency }),
     }))
     .filter((group) => group.rows.length > 0)
 
-  if (groups.length === 0) return null
+/**
+ * Revenue per catalog category, "Uncategorized" and the keypad's sales
+ * without items included.
+ */
+export function TopCategories({
+  groups,
+}: {
+  readonly groups: ReturnType<typeof categoryGroups>
+}) {
+  const { t } = useTranslation()
+  const money = useStatsMoney()
 
   return (
-    <StatsSection
-      title={t("stats.categories.title")}
-      className="flex flex-col gap-4"
-      note={t("stats.categories.note")}
-    >
+    <div className="flex flex-col gap-4">
       {groups.map((group) => (
         <CurrencyGroup
           key={group.currency}
@@ -123,6 +112,6 @@ export function TopCategories({ stats }: { readonly stats: SalesStats }) {
           ))}
         </CurrencyGroup>
       ))}
-    </StatsSection>
+    </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useMediaQuery } from "@dedalik/use-react"
 import { sqliteTrue } from "@evolu/common"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { isSameDay } from "date-fns"
@@ -307,6 +308,8 @@ function BillPageLayout({
       {/* The fixed header is a line taller with a subtitle. */}
       <div className={subtitle === undefined ? "h-6" : "h-11"} />
       <FadeHeader
+        // Spans the monitor like the page below it (see `_terminal.bill.tsx`).
+        className="lg:max-w-none lg:px-6"
         title={
           <>
             <span className="block">{title ?? t("bill.title")}</span>
@@ -500,6 +503,9 @@ function BillCartView({
   const [splitDialogOpen, setSplitDialogOpen] = useState(false)
   const splitPendingRef = useRef(false)
   const [splitPending, setSplitPending] = useState(false)
+  // Tailwind's `lg`: the summary becomes a fixed side panel beside the
+  // items, always open, like a till's receipt column.
+  const isWide = useMediaQuery("(min-width: 64rem)")
 
   const currentTable = tables.find((table) => table.id === tableId)
 
@@ -781,265 +787,277 @@ function BillCartView({
         onConfirm={(input) => void handleConfirmSplit(input)}
       />
 
-      <div className="shrink-0">
-        <AssignTableDialog
-          open={tablePickerOpen}
-          onOpenChange={setTablePickerOpen}
-          billId={billId}
-          currentTableId={tableId}
-          onAssign={handleAssignTable}
-        />
+      {/*
+       * One DOM tree for both layouts, switched by classes only, so a resize
+       * never remounts the cart (see `BillPage`'s doc comment).
+       */}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:gap-4">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0">
+            <AssignTableDialog
+              open={tablePickerOpen}
+              onOpenChange={setTablePickerOpen}
+              billId={billId}
+              currentTableId={tableId}
+              onAssign={handleAssignTable}
+            />
 
-        <div className="mt-2 flex gap-2">
-          <SearchInput
-            className="flex-1"
-            value={search}
-            onChange={onSearchChange}
-            placeholder={t("bill.search")}
-            clearAriaLabel={t("bill.search.clear.aria")}
-          />
-          <Button
-            type="button"
-            variant={scanMode ? "default" : "outline"}
-            size="icon"
-            className="size-12 shrink-0"
-            aria-pressed={scanMode}
-            aria-label={t("bill.scan.toggle.aria")}
-            onClick={() => onScanModeChange(!scanMode)}
-          >
-            <ScanLineIcon />
-          </Button>
-        </div>
-        {!scanMode && (
-          <CategoryFilterBar
-            className="mt-2"
-            categories={categories}
-            usedCategoryIds={usedCategoryIds}
-            value={categoryFilter}
-            onValueChange={onCategoryFilterChange}
-            allLabel={t("bill.category.all")}
-            uncategorizedLabel={t("bill.category.uncategorized")}
-            extraOptions={[
-              { value: "inBill" as const, label: t("bill.filter.inBill") },
-            ]}
-          />
-        )}
-      </div>
-      <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain mt-2">
-        {scanMode ? (
-          <BillScanView
-            lastScanned={billScan.lastScanned}
-            paused={billScan.dialogsOpen}
-            onScan={billScan.handleScan}
-            summaries={summaries}
-            locale={locale}
-            onAdd={(catalogItem) => void cart.addOne(catalogItem)}
-            onAddQuantity={(catalogItem, quantity) =>
-              void cart.addQuantity(catalogItem, quantity)
-            }
-            onRemove={(summary) => void cart.removeOne(summary)}
-          />
-        ) : currencyItems.length === 0 ? (
-          <BillEmptyCatalog />
-        ) : pagedItems.length === 0 ? (
-          <p className="mt-10 text-center text-muted-foreground">
-            {t(
-              showOnlyInBill && search === ""
-                ? "bill.filter.inBill.empty"
-                : "bill.emptySearch"
-            )}
-          </p>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-2 pb-4">
-              {pagedItems.map((catalogItem) => (
-                <ItemBrick
-                  key={catalogItem.id}
-                  catalogItem={catalogItem}
-                  summaries={summaries}
-                  locale={locale}
-                  onAdd={() => void cart.addOne(catalogItem)}
-                  onAddQuantity={(quantity) =>
-                    void cart.addQuantity(catalogItem, quantity)
-                  }
-                  onRemove={(summary) => void cart.removeOne(summary)}
-                />
-              ))}
+            <div className="mt-2 flex gap-2">
+              <SearchInput
+                className="flex-1"
+                value={search}
+                onChange={onSearchChange}
+                placeholder={t("bill.search")}
+                clearAriaLabel={t("bill.search.clear.aria")}
+              />
+              <Button
+                type="button"
+                variant={scanMode ? "default" : "outline"}
+                size="icon"
+                className="size-12 shrink-0"
+                aria-pressed={scanMode}
+                aria-label={t("bill.scan.toggle.aria")}
+                onClick={() => onScanModeChange(!scanMode)}
+              >
+                <ScanLineIcon />
+              </Button>
             </div>
-            {hasMoreItems && (
+            {!scanMode && (
+              <CategoryFilterBar
+                className="mt-2"
+                categories={categories}
+                usedCategoryIds={usedCategoryIds}
+                value={categoryFilter}
+                onValueChange={onCategoryFilterChange}
+                allLabel={t("bill.category.all")}
+                uncategorizedLabel={t("bill.category.uncategorized")}
+                extraOptions={[
+                  { value: "inBill" as const, label: t("bill.filter.inBill") },
+                ]}
+              />
+            )}
+          </div>
+          <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain mt-2">
+            {scanMode ? (
+              <BillScanView
+                lastScanned={billScan.lastScanned}
+                paused={billScan.dialogsOpen}
+                onScan={billScan.handleScan}
+                summaries={summaries}
+                locale={locale}
+                onAdd={(catalogItem) => void cart.addOne(catalogItem)}
+                onAddQuantity={(catalogItem, quantity) =>
+                  void cart.addQuantity(catalogItem, quantity)
+                }
+                onRemove={(summary) => void cart.removeOne(summary)}
+              />
+            ) : currencyItems.length === 0 ? (
+              <BillEmptyCatalog />
+            ) : pagedItems.length === 0 ? (
+              <p className="mt-10 text-center text-muted-foreground">
+                {t(
+                  showOnlyInBill && search === ""
+                    ? "bill.filter.inBill.empty"
+                    : "bill.emptySearch"
+                )}
+              </p>
+            ) : (
               <>
-                {isLoadingMoreItems && <ItemBrickGridSkeleton />}
-                <div ref={itemsSentinelRef} aria-hidden className="h-1" />
+                <div className="grid grid-cols-2 gap-2 pb-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {pagedItems.map((catalogItem) => (
+                    <ItemBrick
+                      key={catalogItem.id}
+                      catalogItem={catalogItem}
+                      summaries={summaries}
+                      locale={locale}
+                      onAdd={() => void cart.addOne(catalogItem)}
+                      onAddQuantity={(quantity) =>
+                        void cart.addQuantity(catalogItem, quantity)
+                      }
+                      onRemove={(summary) => void cart.removeOne(summary)}
+                    />
+                  ))}
+                </div>
+                {hasMoreItems && (
+                  <>
+                    {isLoadingMoreItems && <ItemBrickGridSkeleton />}
+                    <div ref={itemsSentinelRef} aria-hidden className="h-1" />
+                  </>
+                )}
               </>
             )}
-          </>
+          </section>
+        </div>
+
+        {summaryOpen && !isWide && (
+          // Dims the items while the summary is open; a tap on them closes it.
+          <div
+            aria-hidden
+            data-testid="bill-summary-backdrop"
+            className="fixed inset-0 z-10 bg-black/40"
+            onClick={() => onSummaryOpenChange(false)}
+          />
         )}
-      </section>
-
-      {summaryOpen && (
-        // Dims the items while the summary is open; a tap on them closes it.
-        <div
-          aria-hidden
-          data-testid="bill-summary-backdrop"
-          className="fixed inset-0 z-10 bg-black/40"
-          onClick={() => onSummaryOpenChange(false)}
-        />
-      )}
-      {/*
-       * In the page's flex column rather than fixed over it, so the items
-       * scroll above it however tall the open summary makes it: fixed, it
-       * covered the last row of items. The negative margins reach the
-       * viewport's padded edges.
-       */}
-      <Card className="relative z-20 -mx-3 -mb-6 shrink-0 rounded-none rounded-t-xl p-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.35)]">
-        <CardContent className="pb-4">
-          <Collapsible open={summaryOpen} onOpenChange={onSummaryOpenChange}>
-            <CollapsibleTrigger
-              data-testid="bill-summary-trigger"
-              className="w-full pt-4 text-left"
-              disabled={summaries.length === 0 && !cart.canUndo}
+        {/*
+         * In the page's flex column rather than fixed over it, so the items
+         * scroll above it however tall the open summary makes it: fixed, it
+         * covered the last row of items. The negative margins reach the
+         * viewport's padded edges.
+         */}
+        <Card className="relative z-20 -mx-3 -mb-6 shrink-0 rounded-none rounded-t-xl p-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.35)] lg:m-0 lg:w-100 lg:rounded-xl lg:shadow-none">
+          <CardContent className="pb-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+            <Collapsible
+              open={isWide || summaryOpen}
+              onOpenChange={onSummaryOpenChange}
+              className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-base text-muted-foreground">
-                  <ShoppingBag className="size-4" />
-                  {t("bill.itemsCount", { value: itemCount })}
-                </div>
-                <div className="flex items-center gap-2 text-base font-semibold">
-                  <motion.span animate={totalAmountPulseControls}>
-                    {formatMoney({ value: totalAmount, currency }, locale)}
-                  </motion.span>
-                  <ChevronDown
-                    className={
-                      summaryOpen
-                        ? "size-4 transition-transform duration-200"
-                        : "size-4 rotate-180 transition-transform duration-200"
-                    }
-                  />
-                </div>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent
-              data-testid="bill-summary-panel"
-              className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-starting-style:h-0 data-ending-style:h-0"
-            >
-              {/*
-               * `grid-template-rows: 0fr -> 1fr` (rather than animating a
-               * measured pixel height) keeps tracking the content's actual
-               * size every frame, so it can't visibly jump if that size
-               * settles a moment after the row is measured.
-               */}
-              <div className="flex min-h-0 flex-col gap-4 pt-4">
-                <div className="max-h-48 overflow-x-hidden overflow-y-auto">
-                  <div className="flex flex-col divide-y">
-                    {summaries.map((summary) => (
-                      <SummaryRow
-                        key={summary.id}
-                        summary={summary}
-                        locale={locale}
-                        disabled={cart.pending}
-                        onRemove={async (removedSummary) => {
-                          const removed = await cart.removeLine(removedSummary)
-                          // A failed removal already raised its own error
-                          // toast and recorded nothing, so offering to undo
-                          // here would invert the change before it.
-                          if (!removed) return
-
-                          showUndoToast(
-                            t("bill.summary.removeLine.toast", {
-                              name: removedSummary.name,
-                            })
-                          )
-                        }}
-                      />
-                    ))}
+              <CollapsibleTrigger
+                data-testid="bill-summary-trigger"
+                className="w-full pt-4 text-left"
+                disabled={isWide || (summaries.length === 0 && !cart.canUndo)}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-base text-muted-foreground">
+                    <ShoppingBag className="size-4" />
+                    {t("bill.itemsCount", { value: itemCount })}
+                  </div>
+                  <div className="flex items-center gap-2 text-base font-semibold lg:text-2xl">
+                    <motion.span animate={totalAmountPulseControls}>
+                      {formatMoney({ value: totalAmount, currency }, locale)}
+                    </motion.span>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 transition-transform duration-200 lg:hidden",
+                        !summaryOpen && "rotate-180"
+                      )}
+                    />
                   </div>
                 </div>
-                <div className="flex items-center justify-between py-2">
-                  <div className={"gap-1 flex"}>
+              </CollapsibleTrigger>
+              <CollapsibleContent
+                data-testid="bill-summary-panel"
+                className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-starting-style:h-0 data-ending-style:h-0 lg:flex lg:h-auto lg:min-h-0 lg:flex-1 lg:flex-col lg:transition-none"
+              >
+                {/*
+                 * `grid-template-rows: 0fr -> 1fr` (rather than animating a
+                 * measured pixel height) keeps tracking the content's actual
+                 * size every frame, so it can't visibly jump if that size
+                 * settles a moment after the row is measured.
+                 */}
+                <div className="flex min-h-0 flex-col gap-4 pt-4 lg:flex-1">
+                  <div className="max-h-48 overflow-x-hidden overflow-y-auto lg:max-h-none lg:flex-1">
+                    <div className="flex flex-col divide-y">
+                      {summaries.map((summary) => (
+                        <SummaryRow
+                          key={summary.id}
+                          summary={summary}
+                          locale={locale}
+                          disabled={cart.pending}
+                          onRemove={async (removedSummary) => {
+                            const removed =
+                              await cart.removeLine(removedSummary)
+                            // A failed removal already raised its own error
+                            // toast and recorded nothing, so offering to undo
+                            // here would invert the change before it.
+                            if (!removed) return
+
+                            showUndoToast(
+                              t("bill.summary.removeLine.toast", {
+                                name: removedSummary.name,
+                              })
+                            )
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div className={"gap-1 flex"}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-11 px-3"
+                        disabled={!cart.canUndo || cart.pending}
+                        onClick={() => void cart.undo()}
+                      >
+                        <Undo2 data-icon="inline-start" />
+                        {t("bill.summary.undo")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-11 px-3"
+                        disabled={!cart.canRedo || cart.pending}
+                        onClick={() => void cart.redo()}
+                      >
+                        <Redo2 data-icon="inline-start" />
+                        {t("bill.summary.redo")}
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
                       className="h-11 px-3"
-                      disabled={!cart.canUndo || cart.pending}
-                      onClick={() => void cart.undo()}
+                      disabled={summaries.length === 0 || cart.pending}
+                      onClick={async () => {
+                        if (await cart.clear(summaries)) {
+                          showUndoToast(t("bill.summary.clear.toast"))
+                        }
+                      }}
                     >
-                      <Undo2 data-icon="inline-start" />
-                      {t("bill.summary.undo")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-11 px-3"
-                      disabled={!cart.canRedo || cart.pending}
-                      onClick={() => void cart.redo()}
-                    >
-                      <Redo2 data-icon="inline-start" />
-                      {t("bill.summary.redo")}
+                      {t("bill.summary.clear")}
                     </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-11 px-3"
-                    disabled={summaries.length === 0 || cart.pending}
-                    onClick={async () => {
-                      if (await cart.clear(summaries)) {
-                        showUndoToast(t("bill.summary.clear.toast"))
-                      }
-                    }}
-                  >
-                    {t("bill.summary.clear")}
-                  </Button>
                 </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+              </CollapsibleContent>
+            </Collapsible>
 
-          <div className="flex items-center gap-2 pt-4">
-            <Button
-              variant="outline"
-              size="icon"
-              // Kept apart from the everyday buttons beside it.
-              className="mr-3 h-12 w-12 shrink-0 text-destructive"
-              disabled={!billExists}
-              aria-label={t("bill.discard")}
-              onClick={() => void handleDiscard()}
-            >
-              <Trash2Icon />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 shrink-0"
-              disabled={summaries.length === 0 || splitPending}
-              aria-label={t("bill.split.button.aria")}
-              onClick={() => setSplitDialogOpen(true)}
-            >
-              <Split />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-12 flex-1 text-sm"
-              aria-label={t("bill.table.aria")}
-              onClick={() => setTablePickerOpen(true)}
-            >
-              <Table2 data-icon="inline-start" />
-              {currentTable?.name ?? t("bill.table.assign")}
-            </Button>
-            <Button
-              variant="default"
-              className="h-12 flex-1 text-sm font-bold"
-              disabled={summaries.length === 0 || chargePending}
-              onClick={() => {
-                vibrateOnButtonPress()
-                void handleCharge()
-              }}
-            >
-              {t("home.pay")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center gap-2 pt-4 lg:flex-wrap">
+              <Button
+                variant="outline"
+                size="icon"
+                // Kept apart from the everyday buttons beside it.
+                className="mr-3 h-12 w-12 shrink-0 text-destructive"
+                disabled={!billExists}
+                aria-label={t("bill.discard")}
+                onClick={() => void handleDiscard()}
+              >
+                <Trash2Icon />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-12 w-12 shrink-0"
+                disabled={summaries.length === 0 || splitPending}
+                aria-label={t("bill.split.button.aria")}
+                onClick={() => setSplitDialogOpen(true)}
+              >
+                <Split />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 flex-1 text-sm"
+                aria-label={t("bill.table.aria")}
+                onClick={() => setTablePickerOpen(true)}
+              >
+                <Table2 data-icon="inline-start" />
+                {currentTable?.name ?? t("bill.table.assign")}
+              </Button>
+              <Button
+                variant="default"
+                className="h-12 flex-1 text-sm font-bold lg:h-14 lg:basis-full lg:text-base"
+                disabled={summaries.length === 0 || chargePending}
+                onClick={() => {
+                  vibrateOnButtonPress()
+                  void handleCharge()
+                }}
+              >
+                {t("home.pay")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </>
   )
 }

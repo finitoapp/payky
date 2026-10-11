@@ -84,6 +84,8 @@ export interface SalesStats {
   readonly accountCurrency: FiatCurrency
   readonly hourRows: ReadonlyArray<SalesByHourRow>
   readonly comparisonHourRows: ReadonlyArray<SalesByHourRow>
+  /** Over `ranges.comparisonWhole`, for the chart. */
+  readonly comparisonWholeHourRows: ReadonlyArray<SalesByHourRow>
   /** Per currency, the account currency first; empty for an empty period. */
   readonly kpis: ReadonlyArray<SalesKpis>
   readonly comparisonKpis: ReadonlyArray<SalesKpis>
@@ -101,7 +103,7 @@ export function useSalesStats(
 ): SalesStats | null {
   const ranges = statsPeriodRanges(period, now)
   const live = period.kind === "today"
-  const { range, comparison } = ranges
+  const { range, comparison, comparisonWhole } = ranges
 
   const {
     data: [settings],
@@ -122,6 +124,13 @@ export function useSalesStats(
     comparison,
     false
   )
+  // The same cache entry as `comparisonHourRows` unless the period is to-date.
+  const comparisonWholeHourRows = useStatsRows(
+    "salesByHour",
+    salesByHourQuery,
+    comparisonWhole,
+    false
+  )
   const comparisonRefundRows = useStatsRows(
     "refunds",
     refundsQuery,
@@ -135,6 +144,7 @@ export function useSalesStats(
       methodRows === undefined ||
       refundRows === undefined ||
       comparisonHourRows === undefined ||
+      comparisonWholeHourRows === undefined ||
       comparisonRefundRows === undefined
     ) {
       return null
@@ -142,6 +152,7 @@ export function useSalesStats(
     return {
       hourRows,
       comparisonHourRows,
+      comparisonWholeHourRows,
       kpis: salesKpis({ hourRows, refundRows, accountCurrency }),
       comparisonKpis: salesKpis({
         hourRows: comparisonHourRows,
@@ -156,6 +167,7 @@ export function useSalesStats(
     methodRows,
     refundRows,
     comparisonHourRows,
+    comparisonWholeHourRows,
     comparisonRefundRows,
     accountCurrency,
   ])

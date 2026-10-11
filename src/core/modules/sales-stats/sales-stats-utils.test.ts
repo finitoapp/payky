@@ -33,6 +33,10 @@ describe("statsPeriodRanges", () => {
         fromIso: "2026-10-02T22:00:00.000Z",
         toIso: "2026-10-03T12:00:00.000Z",
       },
+      comparisonWhole: {
+        fromIso: "2026-10-02T22:00:00.000Z",
+        toIso: "2026-10-03T22:00:00.000Z",
+      },
       bucket: "hour",
     })
   })
@@ -58,6 +62,10 @@ describe("statsPeriodRanges", () => {
         fromIso: "2026-09-26T22:00:00.000Z",
         toIso: "2026-10-03T22:00:00.000Z",
       },
+      comparisonWhole: {
+        fromIso: "2026-09-26T22:00:00.000Z",
+        toIso: "2026-10-03T22:00:00.000Z",
+      },
       bucket: "day",
     })
   })
@@ -71,6 +79,10 @@ describe("statsPeriodRanges", () => {
       comparison: {
         fromIso: "2026-08-31T22:00:00.000Z",
         toIso: "2026-09-10T12:00:00.000Z",
+      },
+      comparisonWhole: {
+        fromIso: "2026-08-31T22:00:00.000Z",
+        toIso: "2026-09-10T22:00:00.000Z",
       },
       bucket: "day",
     })
@@ -89,6 +101,10 @@ describe("statsPeriodRanges", () => {
         toIso: "2026-10-26T23:00:00.000Z",
       },
       comparison: {
+        fromIso: "2026-10-12T22:00:00.000Z",
+        toIso: "2026-10-19T22:00:00.000Z",
+      },
+      comparisonWhole: {
         fromIso: "2026-10-12T22:00:00.000Z",
         toIso: "2026-10-19T22:00:00.000Z",
       },
@@ -120,6 +136,10 @@ describe("statsPeriodRanges", () => {
         fromIso: "2026-10-17T22:00:00.000Z",
         // 13:00 winter time today, 13:00 summer time a week earlier.
         toIso: "2026-10-18T11:00:00.000Z",
+      },
+      comparisonWhole: {
+        fromIso: "2026-10-17T22:00:00.000Z",
+        toIso: "2026-10-18T22:00:00.000Z",
       },
       bucket: "hour",
     })

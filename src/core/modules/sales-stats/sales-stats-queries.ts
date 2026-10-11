@@ -263,6 +263,7 @@ export const salesByDeviceQuery = (range: StatsRange) =>
         "paid.currency",
         kyselySql<number>`count(*)`.as("count"),
         kyselySql<number>`sum("paid"."gross")`.as("gross"),
+        kyselySql<number>`sum("paid"."tipAmount")`.as("tips"),
       ])
       .groupBy(["paid.deviceId", "paid.currency"])
       .orderBy("gross", "desc")

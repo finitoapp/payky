@@ -48,7 +48,9 @@ export function SalesHeatmap({
   )
   if (days < 7) return null
 
-  const max = Math.max(0, ...matrix.flat().map((cell) => cell.gross))
+  const takings = (cell: (typeof matrix)[number][number]) =>
+    cell.gross + cell.tips
+  const max = Math.max(0, ...matrix.flat().map(takings))
   const weekday = (index: number, style: "short" | "long") =>
     addDays(aMonday, index).toLocaleDateString(locale, { weekday: style })
   const hourLabel = (hour: number) =>
@@ -61,15 +63,22 @@ export function SalesHeatmap({
           <div key={weekday(dayIndex, "long")} className="contents">
             <span className="pr-1 leading-4">{weekday(dayIndex, "short")}</span>
             {row.map((cell, hour) => {
-              const label = t("stats.heatmap.cell", {
+              const params = {
                 weekday: weekday(dayIndex, "long"),
                 hour: setHours(aMonday, hour).toLocaleTimeString(locale, {
                   hour: "2-digit",
                   minute: "2-digit",
                 }),
-                amount: money(cell.gross, currency),
+                amount: money(takings(cell), currency),
                 count: cell.count.toLocaleString(locale),
-              })
+              }
+              const label =
+                cell.tips === 0
+                  ? t("stats.heatmap.cell", params)
+                  : t("stats.heatmap.cellTips", {
+                      ...params,
+                      tips: money(cell.tips, currency),
+                    })
               return (
                 <span
                   // biome-ignore lint/suspicious/noArrayIndexKey: fixed 24-hour row
@@ -81,7 +90,7 @@ export function SalesHeatmap({
                 >
                   <span
                     className="absolute inset-0 bg-chart-1"
-                    style={{ opacity: heatmapOpacity(cell.gross, max) }}
+                    style={{ opacity: heatmapOpacity(takings(cell), max) }}
                   />
                 </span>
               )

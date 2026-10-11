@@ -7,6 +7,7 @@ import {
 import { orderCurrencies } from "@/core/modules/sales-stats/sales-stats-utils.ts"
 import { type Currency, Integer } from "@/core/modules/shared/schema.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -81,17 +82,70 @@ export function CurrencyGroup({
 }
 
 /** A labelled figure with a bar for its share, as the payment methods show. */
+/**
+ * "of which tips" under a row whose amount holds them, the same sub-line
+ * the expected cash shows.
+ */
+export function TipsLine({ children }: { readonly children: string }) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="-mt-1 flex justify-between gap-2 pl-6 text-xs text-muted-foreground">
+      <span>{t("stats.tips.ofWhich")}</span>
+      <span className="tabular-nums">{children}</span>
+    </div>
+  )
+}
+
+/**
+ * A row's bar: `share` of the full width, its last `tipsShare` in the
+ * lighter tips shade the revenue chart stacks on top of its bars. Tall
+ * enough for a few-percent tip to show at all.
+ */
+export function StatsBar({
+  share,
+  tipsShare = 0,
+}: {
+  /** 0..1 */
+  readonly share: number
+  /** 0..1 of the bar */
+  readonly tipsShare?: number
+}) {
+  return (
+    <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+      <div
+        className="flex h-full overflow-hidden rounded-full"
+        style={{ width: `${(share * 100).toFixed(1)}%` }}
+      >
+        <div className="h-full flex-1 bg-chart-1" />
+        {tipsShare > 0 ? (
+          <div
+            className="h-full bg-chart-1/45"
+            style={{ width: `${(tipsShare * 100).toFixed(1)}%` }}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 export function StatsBarRow({
   label,
   detail,
   value,
+  tips,
   share,
+  tipsShare,
 }: {
   readonly label: string
   readonly detail?: string
   readonly value: string
+  /** The tips inside `value`, formatted; the line hides for none. */
+  readonly tips?: string
   /** 0..1 */
   readonly share: number
+  /** 0..1, the part of the row's own amount that is tips. */
+  readonly tipsShare?: number
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -106,12 +160,8 @@ export function StatsBarRow({
           {value}
         </span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-chart-1"
-          style={{ width: `${Math.round(share * 100)}%` }}
-        />
-      </div>
+      {tips === undefined ? null : <TipsLine>{tips}</TipsLine>}
+      <StatsBar share={share} tipsShare={tipsShare} />
     </div>
   )
 }

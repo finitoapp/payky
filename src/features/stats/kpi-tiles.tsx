@@ -2,6 +2,7 @@ import { startOfDay, subMilliseconds } from "date-fns"
 
 import type { StatsRange } from "@/core/modules/sales-stats/sales-stats-types.ts"
 import {
+  type MethodBreakdown,
   type SalesKpis,
   statsDelta,
 } from "@/core/modules/sales-stats/sales-stats-utils.ts"
@@ -38,15 +39,22 @@ interface Tile {
   readonly upIsGood: boolean
 }
 
-/** Net revenue, sales, average sale, tips and refunds, one set per currency. */
+/**
+ * Net revenue with how it and the payment methods' total come out of the
+ * same sales, then the number of sales and the average sale — one set per
+ * currency.
+ */
 export function KpiTiles({
   kpis,
   comparisonKpis,
   comparison,
+  methods,
 }: {
   readonly kpis: ReadonlyArray<SalesKpis>
   readonly comparisonKpis: ReadonlyArray<SalesKpis>
   readonly comparison: StatsRange
+  /** For the excess, so "received" matches the methods' donut. */
+  readonly methods: ReadonlyArray<MethodBreakdown>
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -61,6 +69,10 @@ export function KpiTiles({
             (kpi) => kpi.currency === current.currency
           )}
           showCurrency={kpis.length > 1}
+          excess={
+            methods.find((row) => row.currency === current.currency)?.excess ??
+            0
+          }
         />
       ))}
       <p className="px-1 text-xs text-muted-foreground">
@@ -76,24 +88,26 @@ function CurrencyKpis({
   current,
   previous,
   showCurrency,
+  excess,
 }: {
   readonly current: SalesKpis
   readonly previous: SalesKpis | undefined
   readonly showCurrency: boolean
+  readonly excess: number
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const money = (value: number, currency: Currency = current.currency) =>
     formatMoney({ value: Integer(value), currency }, locale)
 
+  const netRevenue: Tile = {
+    label: "stats.kpi.netRevenue",
+    value: money(current.netRevenue),
+    current: current.netRevenue,
+    previous: previous?.netRevenue ?? 0,
+    upIsGood: true,
+  }
   const tiles: ReadonlyArray<Tile> = [
-    {
-      label: "stats.kpi.netRevenue",
-      value: money(current.netRevenue),
-      current: current.netRevenue,
-      previous: previous?.netRevenue ?? 0,
-      upIsGood: true,
-    },
     {
       label: "stats.kpi.salesCount",
       value: current.salesCount.toLocaleString(locale),
@@ -108,23 +122,6 @@ function CurrencyKpis({
       previous: previous?.averageSale ?? 0,
       upIsGood: true,
     },
-    {
-      label: "stats.kpi.tips",
-      value: money(current.tips),
-      current: current.tips,
-      previous: previous?.tips ?? 0,
-      upIsGood: true,
-    },
-    {
-      label: "stats.kpi.refunds",
-      value: t("stats.kpi.refundsValue", {
-        count: current.refundCount.toLocaleString(locale),
-        amount: money(current.refundAmount),
-      }),
-      current: current.refundAmount,
-      previous: previous?.refundAmount ?? 0,
-      upIsGood: false,
-    },
   ]
 
   return (
@@ -135,27 +132,99 @@ function CurrencyKpis({
         </h2>
       ) : null}
       <div className="grid grid-cols-2 gap-2">
-        {tiles.map((tile, index) => (
+        <div className="col-span-2 flex flex-col gap-1 rounded-md bg-card p-3 shadow">
+          <p className="text-xs text-muted-foreground">{t(netRevenue.label)}</p>
+          <p className="text-2xl font-semibold tabular-nums">
+            {netRevenue.value}
+          </p>
+          <DeltaBadge tile={netRevenue} locale={locale} />
+          {/*
+           * Both totals the screen shows, out of the same sales: net revenue
+           * here, and the payment methods' donut, which holds the tips and
+           * has no refunds taken off.
+           */}
+          <dl className="mt-2 flex flex-col gap-3 border-t pt-3 text-sm">
+            <div className="flex flex-col gap-1">
+              <BreakdownLine label={t("stats.kpi.breakdown.sales")}>
+                {money(current.gross)}
+              </BreakdownLine>
+              <BreakdownLine
+                label={`− ${
+                  current.refundCount === 0
+                    ? t("stats.kpi.breakdown.refunds")
+                    : t("stats.kpi.breakdown.refundsCount", {
+                        count: current.refundCount.toLocaleString(locale),
+                      })
+                }`}
+              >
+                {money(current.saleRefundAmount)}
+              </BreakdownLine>
+              <BreakdownLine label={`= ${t(netRevenue.label)}`} total>
+                {netRevenue.value}
+              </BreakdownLine>
+            </div>
+            <div className="flex flex-col gap-1">
+              <BreakdownLine label={t("stats.kpi.breakdown.sales")}>
+                {money(current.gross)}
+              </BreakdownLine>
+              <BreakdownLine label={`+ ${t("stats.kpi.breakdown.tips")}`}>
+                {money(current.tipsReceived)}
+              </BreakdownLine>
+              {excess === 0 ? null : (
+                <BreakdownLine label={`+ ${t("stats.kpi.breakdown.excess")}`}>
+                  {money(excess)}
+                </BreakdownLine>
+              )}
+              <BreakdownLine
+                label={`= ${t("stats.kpi.breakdown.received")}`}
+                total
+              >
+                {money(current.gross + current.tipsReceived + excess)}
+              </BreakdownLine>
+              {current.tipRefundAmount === 0 ? null : (
+                <p className="text-xs text-muted-foreground">
+                  {t("stats.kpi.breakdown.tipRefunds", {
+                    amount: money(current.tipRefundAmount),
+                  })}
+                </p>
+              )}
+            </div>
+          </dl>
+        </div>
+        {tiles.map((tile) => (
           <div
             key={tile.label}
-            className={cn(
-              "flex flex-col gap-1 rounded-md bg-card p-3 shadow",
-              index === 0 && "col-span-2"
-            )}
+            className="flex flex-col gap-1 rounded-md bg-card p-3 shadow"
           >
             <p className="text-xs text-muted-foreground">{t(tile.label)}</p>
-            <p
-              className={cn(
-                "font-semibold tabular-nums",
-                index === 0 ? "text-2xl" : "text-base"
-              )}
-            >
-              {tile.value}
-            </p>
+            <p className="text-base font-semibold tabular-nums">{tile.value}</p>
             <DeltaBadge tile={tile} locale={locale} />
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function BreakdownLine({
+  label,
+  total = false,
+  children,
+}: {
+  readonly label: string
+  /** The line an equation comes to. */
+  readonly total?: boolean
+  readonly children: string
+}) {
+  return (
+    <div
+      className={cn(
+        "flex justify-between gap-3",
+        total ? "font-semibold" : "text-muted-foreground"
+      )}
+    >
+      <dt>{label}</dt>
+      <dd className="tabular-nums">{children}</dd>
     </div>
   )
 }

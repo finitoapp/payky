@@ -44,9 +44,10 @@ export function StatsPage({
 
   return (
     <>
+      <div className="h-6" />
       <FadeHeader title={t("stats.title")} />
 
-      <div className="flex flex-col gap-6 pt-16 pb-8">
+      <div className="flex flex-col gap-6 pb-8">
         <PeriodSelector period={period} onChange={onSearchChange} />
         <Suspense fallback={<StatsSkeleton />}>
           <PeriodStats period={period} now={now} />
@@ -79,13 +80,15 @@ function PeriodStats({
         kpis={stats.kpis}
         comparisonKpis={stats.comparisonKpis}
         comparison={stats.ranges.comparison}
+        methods={stats.methods}
       />
       {primary === undefined ? null : (
         <RevenueChart
           hourRows={stats.hourRows}
-          comparisonHourRows={stats.comparisonHourRows}
+          comparisonHourRows={stats.comparisonWholeHourRows}
           ranges={stats.ranges}
           currency={primary.currency}
+          now={now}
         />
       )}
       <MethodBreakdown methods={stats.methods} />

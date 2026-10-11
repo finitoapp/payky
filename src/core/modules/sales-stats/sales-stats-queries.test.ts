@@ -485,8 +485,11 @@ describe("refunds", () => {
         salesCount: 1,
         averageSale: 10_000,
         tips: 1_000,
+        tipsReceived: 1_000,
         refundCount: 0,
         refundAmount: 0,
+        saleRefundAmount: 0,
+        tipRefundAmount: 0,
       },
     ])
     const june6 = days("2026-06-06")
@@ -516,8 +519,11 @@ describe("refunds", () => {
         salesCount: 0,
         averageSale: 0,
         tips: -1_000,
+        tipsReceived: 0,
         refundCount: 2,
         refundAmount: 4_000,
+        saleRefundAmount: 3_000,
+        tipRefundAmount: 1_000,
       },
     ])
   })
@@ -611,8 +617,9 @@ describe("payment method", () => {
     ).toMatchObject([
       {
         currency: "CZK",
-        total: 21_450 + 10_000 + 6_450 + 700,
-        excess: 38_600 - 28_600,
+        // Tips count in both: the methods' amounts and the takings.
+        total: 21_450 + 500 + 10_000 + 6_450 + 700,
+        excess: 39_100 - 29_100,
       },
     ])
   })
@@ -934,6 +941,7 @@ describe("per device", () => {
         currency: "CZK",
         count: 2,
         gross: 4_500,
+        tips: 500,
       },
       {
         deviceId: null,
@@ -941,6 +949,7 @@ describe("per device", () => {
         currency: "CZK",
         count: 1,
         gross: 1_000,
+        tips: 0,
       },
     ])
   })

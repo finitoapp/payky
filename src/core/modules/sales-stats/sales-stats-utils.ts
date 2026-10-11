@@ -38,6 +38,13 @@ export interface StatsPeriodRanges {
   readonly range: StatsRange
   /** The previous period of the same shape, for every figure's change. */
   readonly comparison: StatsRange
+  /**
+   * The comparison's whole span: for a to-date period (*Today*, *Month*) it
+   * runs to the end of the equivalent day instead of stopping at the
+   * equivalent moment, so the chart can show the rest of the day ahead.
+   * Equal to `comparison` otherwise.
+   */
+  readonly comparisonWhole: StatsRange
   /** Chart bars: per hour for a one-day period, per day otherwise. */
   readonly bucket: "hour" | "day"
 }
@@ -61,11 +68,15 @@ export const statsPeriodRanges = (
 ): StatsPeriodRanges => {
   const today = startOfDay(now)
   const tomorrow = addDays(today, 1)
-  const weekBefore = (from: Date, to: Date): StatsPeriodRanges => ({
-    range: toRange(from, to),
-    comparison: toRange(subDays(from, 7), subDays(to, 7)),
-    bucket: differenceInCalendarDays(to, from) === 1 ? "hour" : "day",
-  })
+  const weekBefore = (from: Date, to: Date): StatsPeriodRanges => {
+    const comparison = toRange(subDays(from, 7), subDays(to, 7))
+    return {
+      range: toRange(from, to),
+      comparison,
+      comparisonWhole: comparison,
+      bucket: differenceInCalendarDays(to, from) === 1 ? "hour" : "day",
+    }
+  }
 
   switch (period.kind) {
     case "today":
@@ -82,6 +93,7 @@ export const statsPeriodRanges = (
       return {
         range: toRange(from, tomorrow),
         comparison: toRange(subMonths(from, 1), subMonths(now, 1)),
+        comparisonWhole: toRange(subMonths(from, 1), subMonths(tomorrow, 1)),
         bucket: "day",
       }
     }
@@ -89,9 +101,11 @@ export const statsPeriodRanges = (
       const from = parseISO(period.from)
       const to = addDays(parseISO(period.to), 1)
       const days = differenceInCalendarDays(to, from)
+      const comparison = toRange(subDays(from, days), from)
       return {
         range: toRange(from, to),
-        comparison: toRange(subDays(from, days), from),
+        comparison,
+        comparisonWhole: comparison,
         bucket: days === 1 ? "hour" : "day",
       }
     }
@@ -224,8 +238,13 @@ export interface SalesKpis {
   readonly averageSale: number
   /** Tips minus tip refunds. */
   readonly tips: number
+  /** Tips as the guests gave them, before any tip refund. */
+  readonly tipsReceived: number
   readonly refundCount: number
   readonly refundAmount: number
+  /** The refunds `netRevenue` subtracts: every one but tip refunds. */
+  readonly saleRefundAmount: number
+  readonly tipRefundAmount: number
 }
 
 /** The KPI tiles, one set per currency, the account currency first. */
@@ -259,15 +278,21 @@ export const salesKpis = ({
       averageSale:
         sales.count === 0 ? 0 : Math.round(sales.gross / sales.count),
       tips: sales.tips - refundSum(1),
+      tipsReceived: sales.tips,
       refundCount: refunds.reduce((sum, row) => sum + row.count, 0),
       refundAmount: refunds.reduce((sum, row) => sum + row.amount, 0),
+      saleRefundAmount: refundSum(0),
+      tipRefundAmount: refundSum(1),
     }
   })
 
 export interface MethodShare {
   readonly method: SalesByMethodRow["method"]
   readonly count: number
+  /** What came in through the method, tips included. */
   readonly amount: number
+  /** The tips inside `amount`. */
+  readonly tips: number
   /** Of the methods' total, 0..1. */
   readonly share: number
 }
@@ -277,7 +302,7 @@ export interface MethodBreakdown {
   readonly methods: ReadonlyArray<MethodShare>
   readonly total: number
   /**
-   * How far the methods exceed gross sales — a duplicate settlement's
+   * How far the methods exceed the takings (sales and tips) — a duplicate settlement's
    * second payment, real money the footnote names. 0 normally.
    */
   readonly excess: number
@@ -297,22 +322,25 @@ export const methodBreakdown = ({
     accountCurrency
   ).map((currency) => {
     const rows = methodRows.filter((row) => row.currency === currency)
-    const total = rows.reduce((sum, row) => sum + row.amount, 0)
-    const gross = hourRows
+    // A multi-claim row's `amount` already holds its tip, with `tips` 0.
+    const amountOf = (row: SalesByMethodRow) => row.amount + row.tips
+    const total = rows.reduce((sum, row) => sum + amountOf(row), 0)
+    const takings = hourRows
       .filter((row) => row.currency === currency)
-      .reduce((sum, row) => sum + row.gross, 0)
+      .reduce((sum, row) => sum + row.gross + row.tips, 0)
     return {
       currency,
       methods: rows
         .map((row) => ({
           method: row.method,
           count: row.count,
-          amount: row.amount,
-          share: total === 0 ? 0 : row.amount / total,
+          amount: amountOf(row),
+          tips: row.tips,
+          share: total === 0 ? 0 : amountOf(row) / total,
         }))
         .sort((a, b) => b.amount - a.amount),
       total,
-      excess: Math.max(0, total - gross),
+      excess: Math.max(0, total - takings),
     }
   })
 

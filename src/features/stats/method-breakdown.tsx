@@ -1,4 +1,11 @@
 import { CircleHelpIcon } from "lucide-react"
+import { Pie, PieChart, type PieSectorShapeProps, Sector } from "recharts"
+
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+} from "@/components/ui/chart.tsx"
 
 import type {
   ExpectedCash,
@@ -12,9 +19,10 @@ import {
 } from "@/features/shared/payment-method-display.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
-import { StatsSection } from "./stats-section.tsx"
+import { StatsBar, StatsSection, TipsLine } from "./stats-section.tsx"
 
 const useMoney = () => {
   const locale = useLocale()
@@ -23,8 +31,22 @@ const useMoney = () => {
 }
 
 /**
+ * One colour per method, the same in every period so a method is
+ * recognisable at a glance.
+ */
+const methodColors = {
+  cashRegister: "var(--chart-1)",
+  cardSwitchio: "var(--chart-2)",
+  iban: "var(--chart-3)",
+  spark: "var(--chart-4)",
+  onchain: "var(--chart-5)",
+  unknown: "var(--muted-foreground)",
+} satisfies Record<MethodShare["method"], string>
+
+/**
  * Amount and share per method that settled the period's sales, per
- * currency. A duplicate settlement makes the methods exceed revenue; the
+ * currency: a donut of the shares with the total inside, then the methods
+ * with a bar each, which also serve as the donut's legend. A duplicate settlement makes the methods exceed revenue; the
  * note names the excess.
  */
 export function MethodBreakdown({
@@ -59,6 +81,7 @@ export function MethodBreakdown({
               {row.currency}
             </p>
           ) : null}
+          <MethodDonut row={row} />
           {row.methods.map((method) => (
             <MethodRow
               key={method.method}
@@ -69,6 +92,130 @@ export function MethodBreakdown({
         </div>
       ))}
     </StatsSection>
+  )
+}
+
+const methodLabelKey = (method: MethodShare["method"]): TranslationKey =>
+  method === "unknown" ? "stats.methods.unknown" : paymentMethodLabelKey[method]
+
+interface DonutSlice {
+  readonly method: MethodShare["method"]
+  readonly amount: number
+  readonly tips: number
+  readonly share: number
+  readonly fill: string
+}
+
+/** A slice; the hovered one stands a little proud of the ring. */
+const DonutSector = (props: PieSectorShapeProps) => (
+  <Sector
+    {...props}
+    outerRadius={props.isActive ? props.outerRadius + 4 : props.outerRadius}
+  />
+)
+
+function MethodDonut({ row }: { readonly row: MethodBreakdownRow }) {
+  const { t } = useTranslation()
+  const money = useMoney()
+  // The keys only feed ChartContainer's colour variables; nothing reads them.
+  const config = Object.fromEntries(
+    row.methods.map((method) => [
+      method.method,
+      { color: methodColors[method.method] },
+    ])
+  ) satisfies ChartConfig
+  const slices: ReadonlyArray<DonutSlice> = row.methods.map((method) => ({
+    method: method.method,
+    amount: method.amount,
+    tips: method.tips,
+    share: method.share,
+    fill: methodColors[method.method],
+  }))
+
+  return (
+    <div className="relative mx-auto size-56">
+      {/* Before the chart, so the tooltip draws over it. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-sm text-muted-foreground">
+          {t("stats.kpi.breakdown.received")}
+        </span>
+        <span className="text-lg font-semibold tabular-nums">
+          {money(row.total, row.currency)}
+        </span>
+      </div>
+      <ChartContainer
+        config={config}
+        className="relative aspect-square size-full"
+      >
+        <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+          <ChartTooltip
+            allowEscapeViewBox={{ x: true, y: true }}
+            content={({ active, payload }) => {
+              const slice: DonutSlice | undefined = payload?.[0]?.payload
+              return active === true && slice !== undefined ? (
+                <MethodTooltip slice={slice} currency={row.currency} />
+              ) : null
+            }}
+          />
+          <Pie
+            data={[...slices]}
+            dataKey="amount"
+            nameKey="method"
+            innerRadius="68%"
+            outerRadius="96%"
+            paddingAngle={row.methods.length > 1 ? 2 : 0}
+            stroke="none"
+            shape={DonutSector}
+            isAnimationActive={false}
+          />
+        </PieChart>
+      </ChartContainer>
+    </div>
+  )
+}
+
+function MethodTooltip({
+  slice,
+  currency,
+}: {
+  readonly slice: DonutSlice
+  readonly currency: Currency
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const money = useMoney()
+
+  return (
+    <div className="grid gap-1 whitespace-nowrap rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+      <div className="flex items-center gap-1.5 font-medium">
+        <span
+          className="size-2.5 shrink-0 rounded-[2px]"
+          style={{ backgroundColor: slice.fill }}
+        />
+        {t(methodLabelKey(slice.method))}
+      </div>
+      <div className="flex justify-between gap-3">
+        <span className="text-muted-foreground">
+          {new Intl.NumberFormat(locale, {
+            style: "percent",
+            maximumFractionDigits: 0,
+          }).format(slice.share)}
+        </span>
+        <span className="font-mono font-semibold tabular-nums">
+          {money(slice.amount, currency)}
+        </span>
+      </div>
+      {slice.tips === 0 ? null : (
+        <div className="flex justify-between gap-3 pl-2">
+          <span className="text-muted-foreground">
+            {t("stats.tips.ofWhich")}
+          </span>
+          <span className="font-mono tabular-nums">
+            {money(slice.tips, currency)}
+          </span>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -90,11 +237,13 @@ function MethodRow({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2 text-sm">
+        <span
+          className="size-2.5 shrink-0 rounded-[2px]"
+          style={{ backgroundColor: methodColors[method.method] }}
+        />
         <Icon className="size-4 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate">
-          {method.method === "unknown"
-            ? t("stats.methods.unknown")
-            : t(paymentMethodLabelKey[method.method])}
+          {t(methodLabelKey(method.method))}
         </span>
         <span className="text-xs text-muted-foreground tabular-nums">
           {new Intl.NumberFormat(locale, {
@@ -106,12 +255,13 @@ function MethodRow({
           {money(method.amount, currency)}
         </span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-chart-1"
-          style={{ width: `${Math.round(method.share * 100)}%` }}
-        />
-      </div>
+      {method.tips === 0 ? null : (
+        <TipsLine>{money(method.tips, currency)}</TipsLine>
+      )}
+      <StatsBar
+        share={method.share}
+        tipsShare={method.amount === 0 ? 0 : method.tips / method.amount}
+      />
     </div>
   )
 }
@@ -143,7 +293,7 @@ export function ExpectedCashSummary({
           <CashLine label={t("stats.cash.in")}>
             {money(row.cashIn, row.currency)}
           </CashLine>
-          <CashLine label={t("stats.cash.tips")} sub>
+          <CashLine label={t("stats.tips.ofWhich")} sub>
             {money(row.cashTips, row.currency)}
           </CashLine>
           <CashLine label={t("stats.cash.refunds")}>

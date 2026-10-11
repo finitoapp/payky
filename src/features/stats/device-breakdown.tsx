@@ -36,7 +36,9 @@ export function DeviceBreakdown({ stats }: { readonly stats: SalesStats }) {
       className="flex flex-col gap-4"
     >
       {groups.map((group) => {
-        const total = group.rows.reduce((sum, row) => sum + row.gross, 0)
+        const takings = (row: (typeof group.rows)[number]) =>
+          row.gross + row.tips
+        const total = group.rows.reduce((sum, row) => sum + takings(row), 0)
         return (
           <CurrencyGroup
             key={group.currency}
@@ -50,8 +52,12 @@ export function DeviceBreakdown({ stats }: { readonly stats: SalesStats }) {
                 detail={t("stats.devices.count", {
                   count: row.count.toLocaleString(locale),
                 })}
-                value={money(row.gross, group.currency)}
-                share={total === 0 ? 0 : row.gross / total}
+                value={money(takings(row), group.currency)}
+                tips={
+                  row.tips === 0 ? undefined : money(row.tips, group.currency)
+                }
+                share={total === 0 ? 0 : takings(row) / total}
+                tipsShare={takings(row) === 0 ? 0 : row.tips / takings(row)}
               />
             ))}
           </CurrencyGroup>

@@ -5,7 +5,6 @@ import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-
 import { deviceAccountDerivedIdMigration } from "@/core/migrations/device-account-derived-id-migration.ts"
 import { deviceIdMigration } from "@/core/migrations/device-id-migration.ts"
 import { fioPluginFixedIdMigration } from "@/core/migrations/fio-plugin-fixed-id-migration.ts"
-import { manualIbanTransactionKindMigration } from "@/core/migrations/manual-iban-transaction-kind-migration.ts"
 import type {
   DeviceEvoluDep,
   EvoluDep,
@@ -109,7 +108,6 @@ export const appMigrations: ReadonlyArray<AppMigration> = [
   // After the Fio one: a legacy plugin it adopts can still point at the
   // legacy fiat bank account, and this is what re-points it.
   accountDerivedIdMigration,
-  manualIbanTransactionKindMigration,
 ]
 
 /**

@@ -60,4 +60,17 @@ describe("renderLandingDocument", () => {
       `<meta property="og:image" content="https://payky.me/landing/og-cs.png"/>`
     )
   })
+
+  test("offers a native and a web-based way into the app", () => {
+    const document = renderLandingDocument(template, "en")
+
+    for (const key of [
+      "landing.closing.get.native.title",
+      "landing.closing.get.native.action",
+      "landing.closing.get.webBased.title",
+      "landing.closing.get.webBased.action",
+    ] as const) {
+      expect(document).toContain(resources.en[key])
+    }
+  })
 })

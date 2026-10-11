@@ -1,8 +1,9 @@
 import type { LucideIcon } from "lucide-react"
 import {
-  ArrowDownIcon,
   BanknoteIcon,
+  DownloadIcon,
   LandmarkIcon,
+  PlayIcon,
   ZapIcon,
 } from "lucide-react"
 
@@ -18,6 +19,7 @@ import {
   percent,
 } from "@/features/landing/landing-parts.tsx"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
+import { landingAppEntryPath } from "@/features/shared/landing-redirect.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
@@ -260,7 +262,7 @@ function AccentedTitle() {
 }
 
 export function LandingHero() {
-  const { t } = useLandingTranslation()
+  const { language, t } = useLandingTranslation()
 
   return (
     <section className="landing-dots relative isolate overflow-hidden">
@@ -270,16 +272,27 @@ export function LandingHero() {
           <p className="landing-rise landing-delay-1 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground sm:text-xl">
             {t("landing.hero.subtitle")}
           </p>
-          <div className="landing-rise landing-delay-2">
+          <div className="landing-rise landing-delay-2 flex flex-wrap gap-3">
             <a
-              href="#get-started"
+              // A plain link: the app is another document (landing/0003).
+              href={landingAppEntryPath(language)}
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "landing-nudge h-12 rounded-full px-7 text-base font-semibold has-data-[icon=inline-end]:pr-6"
+                "landing-nudge h-12 rounded-full px-7 text-base font-semibold has-data-[icon=inline-start]:pl-6"
               )}
             >
-              {t("landing.cta.howTo")}
-              <ArrowDownIcon aria-hidden="true" data-icon="inline-end" />
+              <PlayIcon aria-hidden="true" data-icon="inline-start" />
+              {t("landing.cta.start")}
+            </a>
+            <a
+              href="#download"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-12 rounded-full px-7 text-base font-semibold has-data-[icon=inline-start]:pl-6"
+              )}
+            >
+              <DownloadIcon aria-hidden="true" data-icon="inline-start" />
+              {t("landing.cta.download")}
             </a>
           </div>
         </div>

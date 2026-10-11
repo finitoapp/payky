@@ -2,19 +2,33 @@ import type { enLanding } from "@/i18n/en/landing.ts"
 
 export const skLanding = {
   "landing.closing.contact.body":
-    "Nechajte nám e-mail alebo telefón. Ozveme sa, zodpovieme vaše otázky a pomôžeme s nastavením.",
+    "Nechajte nám e-mail alebo telefón a ozveme sa. Zodpovieme vaše otázky, Payky s vami nastavíme a vyladíme ho pre vašu prevádzku, aby platenie bežalo hladko a bezpečne.",
   "landing.closing.contact.title": "Pomôžeme vám",
-  "landing.closing.get.android.action": "Otvoriť Zapstore",
-  "landing.closing.get.android.body":
-    "Najprv si nainštalujte Zapstore a v ňom vyhľadajte Payky. Cez Zapstore vám potom budú chodiť aj aktualizácie.",
-  "landing.closing.get.android.title": "Android",
+  "landing.closing.get.apk.hint": "Bez automatických aktualizácií",
+  "landing.closing.get.apk.label": "APK z GitHubu",
   "landing.closing.get.body":
-    "Payky je zadarmo a nastavíte ho za minútu. Vyberte si, kde ho chcete používať.",
-  "landing.closing.get.pwa.action": "Otvoriť webovú aplikáciu",
-  "landing.closing.get.pwa.body":
-    "Otvorte payky.me v prehliadači a môžete začať. Na iPhone a iPade ťuknite v Safari na Zdieľať a zvoľte Pridať na plochu — Payky sa potom spúšťa ako bežná aplikácia.",
-  "landing.closing.get.pwa.title": "iPhone, iPad a web",
-  "landing.closing.get.title": "Zvládnem to",
+    "Payky je zadarmo a nainštalujete ho za minútu. Vyberte si, kde ho chcete používať.",
+  "landing.closing.get.install.done":
+    "Payky je nainštalované. Otvorte ho z plochy alebo zo zoznamu aplikácií.",
+  "landing.closing.get.install.hint":
+    "Vlastné okno a ikona, automatické aktualizácie",
+  "landing.closing.get.install.label": "Nainštalovať ako PWA",
+  "landing.closing.get.install.manual":
+    "Na iPhone a iPade ťuknite v Safari na Zdieľať a zvoľte Pridať na plochu. V ostatných prehliadačoch hľadajte v menu voľbu Inštalovať.",
+  "landing.closing.get.native.action": "Stiahnuť pre Android",
+  "landing.closing.get.native.body": "Pre Android, so všetkými funkciami.",
+  "landing.closing.get.native.title": "Natívna aplikácia",
+  "landing.closing.get.recommended": "Odporúčame",
+  "landing.closing.get.title": "Nainštalujte si Payky",
+  "landing.closing.get.web.hint":
+    "Automatické aktualizácie, nič sa neinštaluje",
+  "landing.closing.get.web.label": "Otvoriť v prehliadači",
+  "landing.closing.get.webBased.action": "Spustiť webovú aplikáciu",
+  "landing.closing.get.webBased.body":
+    "Pre Android, iPhone, iPad aj počítač, bez funkcií, ktoré potrebujú natívny kód, napríklad platieb kartou cez terminál.",
+  "landing.closing.get.webBased.title": "Webová aplikácia",
+  "landing.closing.get.zapstore.hint": "Automatické aktualizácie",
+  "landing.closing.get.zapstore.label": "Zapstore (odporúčané)",
   "landing.contact.business.label": "Podnik",
   "landing.contact.channel.email": "E-mail",
   "landing.contact.channel.legend": "Ako sa vám máme ozvať?",
@@ -38,7 +52,9 @@ export const skLanding = {
     "Čoskoro sa vám ozveme na kontakt, ktorý ste nám nechali.",
   "landing.contact.sent.title": "Ďakujeme, máme to.",
   "landing.contact.submit": "Ozvite sa mi",
-  "landing.cta.howTo": "Ako na to",
+  "landing.cta.download": "Stiahnuť",
+  "landing.cta.start": "Spustiť Payky",
+  "landing.cta.startShort": "Spustiť",
   "landing.faq.catch.answer":
     "Len začíname a učíme sa za pochodu. Časom zavedieme poplatky za prémiové funkcie — a chceme zvýhodniť tých, ktorí s nami pôjdu od začiatku a pomôžu nám aplikáciu vyladiť pre potreby obchodníkov.\n\nDo budúcna chystáme aj voliteľné platenie kartou. Pri platbách kartou by sme si potom brali malý podiel z poplatku.",
   "landing.faq.catch.question": "Naozaj je to zadarmo? Z čoho sa budete živiť?",

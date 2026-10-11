@@ -43,6 +43,12 @@ export interface DonateTransferSource {
   ) => Promise<DonateTransferPage>
 }
 
+// Every request boots a mainnet wallet, so the CDN answers repeats of a
+// page for a minute. Errors stay `no-store` so a failed load is not pinned.
+// ponytail: a varied query string still misses the cache; a per-IP rate
+// limit (Vercel Firewall) is the upgrade if the endpoint gets hammered.
+const SUCCESS_CACHE_CONTROL = "public, s-maxage=60"
+
 const { jsonResponse, preflightResponse } = jsonApi<
   DonationHistoryPage | DonationsError
 >({
@@ -180,7 +186,8 @@ const handleRequest = async (request: Request): Promise<Response> => {
       await collectDonationsPage(createDefaultTransferSource(wallet), {
         limit,
         offset,
-      })
+      }),
+      { headers: { "cache-control": SUCCESS_CACHE_CONTROL } }
     )
   } catch {
     return jsonResponse(

@@ -284,6 +284,7 @@ describe("GET/OPTIONS request handling", () => {
     )
 
     expect(response.status).toBe(200)
+    expect(response.headers.get("cache-control")).toBe("public, s-maxage=60")
     expect(await response.json()).toMatchObject({
       items: [{ amountSats: 42 }],
     })
@@ -304,6 +305,7 @@ describe("GET/OPTIONS request handling", () => {
     )
 
     expect(response.status).toBe(502)
+    expect(response.headers.get("cache-control")).toBe("no-store")
     expect(await response.json()).toEqual({
       status: "ERROR",
       reason: "Could not load donation history.",

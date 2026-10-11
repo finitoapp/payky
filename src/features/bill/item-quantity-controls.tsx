@@ -19,13 +19,9 @@ import { useChangePulse } from "@/features/bill/use-change-pulse.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
- * The "-" / quantity / "+" cluster and its custom-quantity dialog, shared by
- * the bill item grid (`ItemBrick`) and the scan-mode last-scanned panel.
- * Confirming the dialog adds `quantity` on top of the current cart quantity
- * — it is not a "set to N" control, matching the "+" button's semantics.
- * The input therefore opens empty rather than pre-filled with what's already
- * in the cart: pre-filling read as "set to N" but behaved as "add N", so
- * confirming an item already at 2 doubled it to 4.
+ * The scan-mode last-scanned panel's "-" / quantity / "+" cluster, its
+ * quantity opening `ItemQuantityDialog`. The bill item grid's `ItemBrick`
+ * lays the same controls out on its own.
  *
  * These controls deliberately have no "busy" disabled state: a button that
  * turns `disabled` between a tap's press and the browser dispatching its
@@ -48,19 +44,7 @@ export function ItemQuantityControls({
 }) {
   const { t } = useTranslation()
   const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
-  const [quantityInput, setQuantityInput] = useState("")
   const quantityPulseControls = useChangePulse(quantity)
-
-  const parsedQuantityInput = Number(quantityInput)
-  const canConfirmQuantity =
-    Number.isInteger(parsedQuantityInput) && parsedQuantityInput > 0
-
-  const handleConfirmQuantity = () => {
-    if (!canConfirmQuantity) return
-
-    onAddQuantity(PositiveNumber(parsedQuantityInput))
-    setQuantityDialogOpen(false)
-  }
 
   return (
     <>
@@ -83,10 +67,7 @@ export function ItemQuantityControls({
           variant="ghost"
           className="h-10 min-w-10 rounded-full px-2 font-semibold tabular-nums"
           aria-label={t("bill.brick.quantity.trigger.aria", { name })}
-          onClick={() => {
-            setQuantityInput("")
-            setQuantityDialogOpen(true)
-          }}
+          onClick={() => setQuantityDialogOpen(true)}
         >
           <motion.span animate={quantityPulseControls}>{quantity}</motion.span>
         </Button>
@@ -104,42 +85,93 @@ export function ItemQuantityControls({
         </Button>
       </div>
 
-      <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{name}</DialogTitle>
-            <DialogDescription>
-              {t("bill.brick.quantity.description")}
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            aria-label={t("bill.brick.quantity.input.aria")}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            value={quantityInput}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              if (/^\d*$/.test(nextValue)) setQuantityInput(nextValue)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") handleConfirmQuantity()
-            }}
-          />
-          <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
-              {t("bill.brick.quantity.cancel")}
-            </DialogClose>
-            <Button
-              disabled={!canConfirmQuantity}
-              onClick={handleConfirmQuantity}
-            >
-              {t("bill.brick.quantity.confirm")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ItemQuantityDialog
+        name={name}
+        open={quantityDialogOpen}
+        onOpenChange={setQuantityDialogOpen}
+        onAddQuantity={onAddQuantity}
+      />
     </>
+  )
+}
+
+/**
+ * Adds a typed number of pieces. Confirming adds `quantity` on top of the
+ * current cart quantity — it is not a "set to N" control, matching the "+"
+ * button's semantics. The input therefore opens empty rather than
+ * pre-filled with what's already in the cart: pre-filling read as "set to
+ * N" but behaved as "add N", so confirming an item already at 2 doubled it
+ * to 4.
+ */
+export function ItemQuantityDialog({
+  name,
+  open,
+  onOpenChange,
+  onAddQuantity,
+}: {
+  readonly name: string
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly onAddQuantity: (quantity: PositiveNumber) => void
+}) {
+  const { t } = useTranslation()
+  const [quantityInput, setQuantityInput] = useState("")
+
+  const parsedQuantityInput = Number(quantityInput)
+  const canConfirmQuantity =
+    Number.isInteger(parsedQuantityInput) && parsedQuantityInput > 0
+
+  const handleConfirmQuantity = () => {
+    if (!canConfirmQuantity) return
+
+    onAddQuantity(PositiveNumber(parsedQuantityInput))
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      // Once the closing animation is over, so the input does not visibly
+      // empty on its way out.
+      onOpenChangeComplete={(nextOpen) => {
+        if (!nextOpen) setQuantityInput("")
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{name}</DialogTitle>
+          <DialogDescription>
+            {t("bill.brick.quantity.description")}
+          </DialogDescription>
+        </DialogHeader>
+        <Input
+          aria-label={t("bill.brick.quantity.input.aria")}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          autoFocus
+          value={quantityInput}
+          onChange={(event) => {
+            const nextValue = event.currentTarget.value
+            if (/^\d*$/.test(nextValue)) setQuantityInput(nextValue)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleConfirmQuantity()
+          }}
+        />
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            {t("bill.brick.quantity.cancel")}
+          </DialogClose>
+          <Button
+            disabled={!canConfirmQuantity}
+            onClick={handleConfirmQuantity}
+          >
+            {t("bill.brick.quantity.confirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

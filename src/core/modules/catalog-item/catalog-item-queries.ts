@@ -1,4 +1,5 @@
 import type { KyselyNotNull } from "@evolu/common"
+import type { ExpressionBuilder, Kysely } from "kysely"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type {
@@ -85,6 +86,25 @@ export const catalogItemUsedCategoryIdsQuery = createQuery((db) =>
     .where("isDeleted", "is", null)
 )
 
+type AppDb =
+  Parameters<Parameters<typeof createQuery>[0]>[0] extends Pick<
+    Kysely<infer Db>,
+    "selectFrom"
+  >
+    ? Db
+    : never
+
+/** A column of the item's category, null when it has none or it is deleted. */
+const liveCategory = (
+  eb: ExpressionBuilder<AppDb, "catalogItem">,
+  column: "sortOrder" | "id"
+) =>
+  eb
+    .selectFrom("catalogCategory")
+    .select(`catalogCategory.${column}`)
+    .whereRef("catalogCategory.id", "=", "catalogItem.categoryId")
+    .where("catalogCategory.isDeleted", "is", null)
+
 /**
  * A page of catalog items, filtered in SQL (not over an already-loaded
  * result set) by free text — case- and diacritic-insensitive across `name`,
@@ -98,6 +118,7 @@ export const catalogItemsPageQuery = ({
   categoryFilter,
   currency,
   catalogItemIds,
+  groupByCategory = false,
   limit,
 }: {
   readonly search: string
@@ -105,6 +126,12 @@ export const catalogItemsPageQuery = ({
   readonly currency?: FiatCurrency
   /** Only these items, as the bill's "on the bill" filter asks for. */
   readonly catalogItemIds?: ReadonlyArray<CatalogItemId>
+  /**
+   * Keeps each category's items together, the categories in their own
+   * order and the uncategorized last, so a list can head every group. An
+   * item whose category was deleted counts as uncategorized.
+   */
+  readonly groupByCategory?: boolean
   readonly limit: number
 }) =>
   createQuery((db) => {
@@ -150,6 +177,15 @@ export const catalogItemsPageQuery = ({
         catalogItemIds.length === 0
           ? query.where("id", "is", null)
           : query.where("id", "in", catalogItemIds)
+    }
+
+    if (groupByCategory) {
+      query = query
+        .orderBy((eb) => eb(liveCategory(eb, "sortOrder"), "is", null))
+        .orderBy((eb) => liveCategory(eb, "sortOrder"))
+        // Two categories may share a `sortOrder`; their items still must
+        // not interleave.
+        .orderBy((eb) => liveCategory(eb, "id"))
     }
 
     return query.orderBy("sortOrder", "asc").limit(limit)

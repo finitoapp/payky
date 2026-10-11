@@ -7,11 +7,11 @@ import { placeholderFadeOpacity } from "@/lib/utils.ts"
  * the column count follows the width instead of fixed breakpoints.
  */
 export const itemBrickGridClassName =
-  "grid grid-cols-2 gap-2 pb-4 lg:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]"
+  "grid grid-cols-2 gap-2 pb-4 lg:grid-cols-[repeat(auto-fill,minmax(12rem,1fr))]"
 
 /**
  * Loading placeholder for the `/bill` cart grid — mirrors `ItemBrick`'s
- * layout (name/price stack, quantity control bar) with `Skeleton` bars,
+ * layout (name row, price row) with `Skeleton` bars,
  * fading out (`count - 1` down to `0.2` opacity) the same way `ListSkeleton`
  * does for vertical lists.
  */
@@ -35,12 +35,13 @@ export function ItemBrickGridSkeleton({
 
 function ItemBrickSkeletonCard({ opacity }: { readonly opacity: number }) {
   return (
-    <Card className="gap-3 p-3" style={{ opacity }}>
-      <div className="min-w-0">
+    <Card className="gap-1 p-3 ring-inset" style={{ opacity }}>
+      <div className="flex h-7 items-center">
         <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="mt-2 h-3 w-1/2" />
       </div>
-      <Skeleton className="h-9 w-full rounded-md" />
+      <div className="flex h-10 items-end pb-1">
+        <Skeleton className="h-3 w-1/2" />
+      </div>
     </Card>
   )
 }

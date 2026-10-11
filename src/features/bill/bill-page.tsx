@@ -5,8 +5,11 @@ import { isSameDay } from "date-fns"
 import { useStore } from "jotai"
 import {
   AlertTriangleIcon,
+  ArrowLeftIcon,
   ChevronDown,
-  Package,
+  Ellipsis,
+  Minus,
+  Plus,
   Redo2,
   ScanLineIcon,
   ShoppingBag,
@@ -43,6 +46,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
@@ -83,7 +92,10 @@ import type { TableId } from "@/core/modules/table/table-types.ts"
 import { vibrateOnButtonPress } from "@/core/native/haptics.ts"
 import { AssignTableDialog } from "@/features/bill/assign-table-dialog.tsx"
 import { BillScanView } from "@/features/bill/bill-scan-view.tsx"
-import { ItemBrickGridSkeleton } from "@/features/bill/item-brick-grid-skeleton.tsx"
+import {
+  ItemBrickGridSkeleton,
+  itemBrickGridClassName,
+} from "@/features/bill/item-brick-grid-skeleton.tsx"
 import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
 import {
   type SplitBillConfirmInput,
@@ -203,7 +215,15 @@ export function BillPage({
     }
   )
 
+  const title =
+    bill === undefined
+      ? undefined
+      : (bill.label ?? t("bill.list.label", { number: bill.displayNumber }))
+  const subtitle = useBillSubtitle(bill, pendingTableId)
+
   let content: ReactNode
+  // Only the cart has a side panel for the title to move into.
+  let titleInPanel = false
   if (closedOnOpen) {
     content = null
   } else if (bill !== undefined && billStatus?.status !== "open") {
@@ -218,8 +238,11 @@ export function BillPage({
   } else if (pendingPaymentIds.length > 0) {
     content = <BillLockedMessage paymentIds={pendingPaymentIds} />
   } else {
+    titleInPanel = true
     content = (
       <BillCartView
+        title={title ?? t("bill.title")}
+        subtitle={subtitle}
         billId={billId}
         billExists={bill !== undefined}
         currency={bill?.currency ?? fallbackCurrency}
@@ -242,14 +265,12 @@ export function BillPage({
     )
   }
 
-  const title =
-    bill === undefined
-      ? undefined
-      : (bill.label ?? t("bill.list.label", { number: bill.displayNumber }))
-  const subtitle = useBillSubtitle(bill, pendingTableId)
-
   return (
-    <BillPageLayout title={title} subtitle={subtitle}>
+    <BillPageLayout
+      title={title}
+      subtitle={subtitle}
+      titleInPanel={titleInPanel}
+    >
       {content}
     </BillPageLayout>
   )
@@ -295,10 +316,16 @@ function useBillSubtitle(
 function BillPageLayout({
   title,
   subtitle,
+  titleInPanel,
   children,
 }: {
   readonly title?: string
   readonly subtitle?: string
+  /**
+   * On a large monitor the cart's side panel heads itself with the title
+   * and its search row carries the back button, so the bar goes away.
+   */
+  readonly titleInPanel: boolean
   readonly children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -306,10 +333,15 @@ function BillPageLayout({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* The fixed header is a line taller with a subtitle. */}
-      <div className={subtitle === undefined ? "h-6" : "h-11"} />
+      <div
+        className={cn(
+          subtitle === undefined ? "h-6" : "h-11",
+          titleInPanel && "lg:hidden"
+        )}
+      />
       <FadeHeader
         // Spans the monitor like the page below it (see `_terminal.bill.tsx`).
-        className="lg:max-w-none lg:px-6"
+        className={titleInPanel ? "lg:hidden" : "lg:max-w-none lg:px-6"}
         title={
           <>
             <span className="block">{title ?? t("bill.title")}</span>
@@ -450,6 +482,8 @@ interface SharedCartViewProps {
 }
 
 function BillCartView({
+  title,
+  subtitle,
   billId,
   billExists,
   currency,
@@ -466,6 +500,9 @@ function BillCartView({
   onScanModeChange,
   initialScanCode,
 }: {
+  /** The bill's heading, which the side panel shows on a large monitor. */
+  readonly title: string
+  readonly subtitle: string | undefined
   readonly billId: BillId
   /** Whether `billId`'s row has been written to Evolu yet. */
   readonly billExists: boolean
@@ -516,6 +553,10 @@ function BillCartView({
     void cart.assignTable(nextTableId)
   }
 
+  const catalogItemsById = useMemo(
+    () => new Map(catalogItems.map((item) => [item.id, item])),
+    [catalogItems]
+  )
   const currencyItems = useMemo(
     () => catalogItems.filter((item) => item.currency === currency),
     [catalogItems, currency]
@@ -675,6 +716,12 @@ function BillCartView({
       },
     })
 
+  const handleClear = async () => {
+    if (await cart.clear(summaries)) {
+      showUndoToast(t("bill.summary.clear.toast"))
+    }
+  }
+
   const handleDiscard = async () => {
     if (!billExists) return
 
@@ -792,7 +839,8 @@ function BillCartView({
        * never remounts the cart (see `BillPage`'s doc comment).
        */}
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:gap-4">
-        <div className="flex min-h-0 flex-1 flex-col">
+        {/* `min-w-0`: the category bar scrolls instead of widening this. */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="shrink-0">
             <AssignTableDialog
               open={tablePickerOpen}
@@ -803,6 +851,20 @@ function BillCartView({
             />
 
             <div className="mt-2 flex gap-2">
+              {/* The header bar's back button, which a large monitor hides. */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="hidden size-12 shrink-0 lg:inline-flex"
+                aria-label={t("nav.back")}
+                onClick={() => router.history.back()}
+              >
+                <ArrowLeftIcon
+                  className="size-5 text-primary"
+                  strokeWidth={3}
+                />
+              </Button>
               <SearchInput
                 className="flex-1"
                 value={search}
@@ -863,7 +925,7 @@ function BillCartView({
               </p>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-2 pb-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                <div className={itemBrickGridClassName}>
                   {pagedItems.map((catalogItem) => (
                     <ItemBrick
                       key={catalogItem.id}
@@ -906,6 +968,59 @@ function BillCartView({
          */}
         <Card className="relative z-20 -mx-3 -mb-6 shrink-0 rounded-none rounded-t-xl p-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.35)] lg:m-0 lg:w-100 lg:rounded-xl lg:shadow-none">
           <CardContent className="pb-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+            <div className="hidden items-start justify-between gap-2 pt-4 lg:flex">
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold">{title}</p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {[subtitle, t("bill.itemsCount", { value: itemCount })]
+                    .filter((part) => part !== undefined)
+                    .join(" · ")}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("bill.summary.undo")}
+                  title={t("bill.summary.undo")}
+                  disabled={!cart.canUndo || cart.pending}
+                  onClick={() => void cart.undo()}
+                >
+                  <Undo2 />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("bill.summary.redo")}
+                  title={t("bill.summary.redo")}
+                  disabled={!cart.canRedo || cart.pending}
+                  onClick={() => void cart.redo()}
+                >
+                  <Redo2 />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("bill.summary.more.aria")}
+                      />
+                    }
+                  >
+                    <Ellipsis />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-40">
+                    <DropdownMenuItem
+                      disabled={summaries.length === 0 || cart.pending}
+                      onClick={() => void handleClear()}
+                    >
+                      {t("bill.summary.clear")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
             <Collapsible
               open={isWide || summaryOpen}
               onOpenChange={onSummaryOpenChange}
@@ -913,7 +1028,7 @@ function BillCartView({
             >
               <CollapsibleTrigger
                 data-testid="bill-summary-trigger"
-                className="w-full pt-4 text-left"
+                className="w-full pt-4 text-left lg:hidden"
                 disabled={isWide || (summaries.length === 0 && !cart.canUndo)}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -921,13 +1036,13 @@ function BillCartView({
                     <ShoppingBag className="size-4" />
                     {t("bill.itemsCount", { value: itemCount })}
                   </div>
-                  <div className="flex items-center gap-2 text-base font-semibold lg:text-2xl">
+                  <div className="flex items-center gap-2 text-base font-semibold">
                     <motion.span animate={totalAmountPulseControls}>
                       {formatMoney({ value: totalAmount, currency }, locale)}
                     </motion.span>
                     <ChevronDown
                       className={cn(
-                        "size-4 transition-transform duration-200 lg:hidden",
+                        "size-4 transition-transform duration-200",
                         !summaryOpen && "rotate-180"
                       )}
                     />
@@ -946,6 +1061,11 @@ function BillCartView({
                  */}
                 <div className="flex min-h-0 flex-col gap-4 pt-4 lg:flex-1">
                   <div className="max-h-48 overflow-x-hidden overflow-y-auto lg:max-h-none lg:flex-1">
+                    {summaries.length === 0 && (
+                      <p className="hidden pt-16 text-center text-sm text-muted-foreground lg:block">
+                        {t("bill.summary.empty")}
+                      </p>
+                    )}
                     <div className="flex flex-col divide-y">
                       {summaries.map((summary) => (
                         <SummaryRow
@@ -953,6 +1073,15 @@ function BillCartView({
                           summary={summary}
                           locale={locale}
                           disabled={cart.pending}
+                          catalogItem={
+                            summary.catalogItemId === null
+                              ? undefined
+                              : catalogItemsById.get(summary.catalogItemId)
+                          }
+                          onAddOne={(catalogItem) =>
+                            void cart.addOne(catalogItem)
+                          }
+                          onRemoveOne={() => void cart.removeOne(summary)}
                           onRemove={async (removedSummary) => {
                             const removed =
                               await cart.removeLine(removedSummary)
@@ -971,7 +1100,7 @@ function BillCartView({
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-2 lg:hidden">
                     <div className={"gap-1 flex"}>
                       <Button
                         variant="outline"
@@ -999,11 +1128,7 @@ function BillCartView({
                       size="sm"
                       className="h-11 px-3"
                       disabled={summaries.length === 0 || cart.pending}
-                      onClick={async () => {
-                        if (await cart.clear(summaries)) {
-                          showUndoToast(t("bill.summary.clear.toast"))
-                        }
-                      }}
+                      onClick={() => void handleClear()}
                     >
                       {t("bill.summary.clear")}
                     </Button>
@@ -1012,6 +1137,17 @@ function BillCartView({
               </CollapsibleContent>
             </Collapsible>
 
+            <div className="hidden items-baseline justify-between border-t pt-4 mt-4 lg:flex">
+              <span className="text-muted-foreground">
+                {t("bill.summary.total")}
+              </span>
+              <motion.span
+                className="text-3xl font-semibold tabular-nums"
+                animate={totalAmountPulseControls}
+              >
+                {formatMoney({ value: totalAmount, currency }, locale)}
+              </motion.span>
+            </div>
             <div className="flex items-center gap-2 pt-4 lg:flex-wrap">
               <Button
                 variant="outline"
@@ -1052,7 +1188,13 @@ function BillCartView({
                   void handleCharge()
                 }}
               >
-                {t("home.pay")}
+                <span>
+                  {t("home.pay")}
+                  <span className="hidden lg:inline">
+                    {" "}
+                    {formatMoney({ value: totalAmount, currency }, locale)}
+                  </span>
+                </span>
               </Button>
             </div>
           </CardContent>
@@ -1086,11 +1228,18 @@ function SummaryRow({
   summary,
   locale,
   disabled,
+  catalogItem,
+  onAddOne,
+  onRemoveOne,
   onRemove,
 }: {
   readonly summary: BillLineSummary
   readonly locale: string
   readonly disabled: boolean
+  /** The line's catalog item, when it still exists to add another of. */
+  readonly catalogItem: CatalogItemRow | undefined
+  readonly onAddOne: (catalogItem: CatalogItemRow) => void
+  readonly onRemoveOne: () => void
   readonly onRemove: (summary: BillLineSummary) => void
 }) {
   const { t } = useTranslation()
@@ -1101,8 +1250,6 @@ function SummaryRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{summary.name}</p>
         <p className="text-xs text-muted-foreground">
-          <motion.span animate={pulseControls}>{summary.quantity}</motion.span>{" "}
-          ×{" "}
           {formatMoney(
             {
               value: getBillLineSummaryUnitAmount(summary),
@@ -1112,7 +1259,45 @@ function SummaryRow({
           )}
         </p>
       </div>
-      <motion.p className="text-sm font-semibold" animate={pulseControls}>
+      {/*
+       * The item grid's "−"/"+" cluster in small. No `disabled`, like
+       * `ItemQuantityControls`: the cart queues taps, and a button disabled
+       * mid-tap drops it.
+       */}
+      <div className="flex shrink-0 items-center gap-0.5 rounded-md bg-muted p-0.5">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-full"
+          aria-label={t("bill.summary.decrement.aria", { name: summary.name })}
+          onClick={onRemoveOne}
+        >
+          <Minus />
+        </Button>
+        <motion.span
+          className="min-w-6 text-center text-sm font-semibold tabular-nums"
+          animate={pulseControls}
+        >
+          {summary.quantity}
+        </motion.span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="rounded-full"
+          aria-label={t("bill.summary.increment.aria", { name: summary.name })}
+          disabled={catalogItem === undefined}
+          onClick={() => {
+            if (catalogItem !== undefined) onAddOne(catalogItem)
+          }}
+        >
+          <Plus />
+        </Button>
+      </div>
+      {/* A fixed column, so the "−"/"+" clusters line up row to row. */}
+      <motion.p
+        className="min-w-20 text-right text-sm font-semibold tabular-nums"
+        animate={pulseControls}
+      >
         {formatMoney(
           { value: summary.totalAmount, currency: summary.currency },
           locale
@@ -1146,6 +1331,7 @@ function ItemBrick({
   readonly onAddQuantity: (quantity: PositiveNumber) => void
   readonly onRemove: (summary: BillLineSummary) => void
 }) {
+  const { t } = useTranslation()
   const matchingSummaries = useMemo(
     () =>
       summaries.filter((summary) => summary.catalogItemId === catalogItem.id),
@@ -1161,6 +1347,9 @@ function ItemBrick({
   )
 
   const inCart = quantity > 0
+  const addLabel = t("bill.brick.add.aria", {
+    name: getStaffDisplayName(catalogItem),
+  })
 
   return (
     <Card
@@ -1169,10 +1358,24 @@ function ItemBrick({
         inCart && "border-l-4 border-l-primary pl-2"
       )}
     >
-      <div className="absolute top-3 right-3 flex size-9 items-center justify-center bg-muted text-muted-foreground rounded-sm">
-        <Package className="size-5" />
-      </div>
-      <div className="min-w-0 pr-11">
+      {/*
+       * A tap anywhere on the tile adds one, as on a till. Until the item is
+       * on the bill this is the tile's only control, so it carries the "add"
+       * label; once the "−"/"+" cluster shows, its "+" is that labelled
+       * button and this one steps out of assistive tech and focus.
+       */}
+      <button
+        type="button"
+        aria-label={inCart ? undefined : addLabel}
+        aria-hidden={inCart || undefined}
+        tabIndex={inCart ? -1 : undefined}
+        className="absolute inset-0 cursor-pointer rounded-xl transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/10"
+        onClick={() => {
+          vibrateOnButtonPress()
+          onAdd()
+        }}
+      />
+      <div className="min-w-0">
         <p className="font-medium">{getStaffDisplayName(catalogItem)}</p>
         <p className="text-sm text-muted-foreground">
           {formatMoney(
@@ -1181,16 +1384,25 @@ function ItemBrick({
           )}
         </p>
       </div>
-      <ItemQuantityControls
-        name={getStaffDisplayName(catalogItem)}
-        quantity={quantity}
-        onAdd={onAdd}
-        onAddQuantity={onAddQuantity}
-        onRemove={() => {
-          if (latestSummary === undefined) return
-          onRemove(latestSummary)
-        }}
-      />
+      {/*
+       * Above the tile-wide button. Kept in the layout but invisible until
+       * the item is on the bill, so a row of tiles does not grow under the
+       * finger when its first item is added.
+       */}
+      <div
+        className={cn("relative z-10 flex justify-end", !inCart && "invisible")}
+      >
+        <ItemQuantityControls
+          name={getStaffDisplayName(catalogItem)}
+          quantity={quantity}
+          onAdd={onAdd}
+          onAddQuantity={onAddQuantity}
+          onRemove={() => {
+            if (latestSummary === undefined) return
+            onRemove(latestSummary)
+          }}
+        />
+      </div>
     </Card>
   )
 }

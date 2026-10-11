@@ -37,9 +37,9 @@ test("a Manager device opens the statistics without the PIN", async ({
   await test.step("turn access control on, this device set to Manager", () =>
     turnOnAccessControl(page, "en", { preset: "manager" }))
 
-  await test.step("the statistics open from the home header", async () => {
+  await test.step("the statistics open from the activity header", async () => {
     // A reload drops the PIN session the wizard started.
-    await page.goto("/", { waitUntil: "domcontentloaded" })
+    await page.goto("/activity", { waitUntil: "domcontentloaded" })
     await page
       .getByRole("button", { name: translate("en", "nav.stats") })
       .click()

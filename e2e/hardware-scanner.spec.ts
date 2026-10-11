@@ -140,6 +140,9 @@ test("a hardware scan fills the item form and finds items from the list", async 
 
   await test.step("an unknown code on the list opens a new item carrying it", async () => {
     await gotoPage(page, "/settings/items", "en", "settings.items.title")
+    // The heading renders before the list, whose body holds the scanner
+    // listener; a scan typed in between reaches no one.
+    await page.getByRole("link", { name: /^Tea/ }).waitFor()
     await typeHardwareScan(page, "11112222")
     await page
       .getByRole("heading", {

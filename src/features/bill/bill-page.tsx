@@ -7,7 +7,7 @@ import {
   AlertTriangleIcon,
   ArrowLeftIcon,
   ChevronDown,
-  Ellipsis,
+  Eraser,
   Minus,
   Plus,
   Redo2,
@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { motion } from "motion/react"
 import {
+  Fragment,
   type ReactNode,
   useCallback,
   useDeferredValue,
@@ -46,12 +47,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu.tsx"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { getFiatCurrency } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
@@ -96,7 +91,7 @@ import {
   ItemBrickGridSkeleton,
   itemBrickGridClassName,
 } from "@/features/bill/item-brick-grid-skeleton.tsx"
-import { ItemQuantityControls } from "@/features/bill/item-quantity-controls.tsx"
+import { ItemQuantityDialog } from "@/features/bill/item-quantity-controls.tsx"
 import {
   type SplitBillConfirmInput,
   SplitBillDialog,
@@ -219,7 +214,10 @@ export function BillPage({
     bill === undefined
       ? undefined
       : (bill.label ?? t("bill.list.label", { number: bill.displayNumber }))
-  const subtitle = useBillSubtitle(bill, pendingTableId)
+  const { tableName, opened } = useBillSubtitleParts(bill, pendingTableId)
+  const subtitleParts = [tableName, opened].filter((part) => part !== undefined)
+  const subtitle =
+    subtitleParts.length === 0 ? undefined : subtitleParts.join(" · ")
 
   let content: ReactNode
   // Only the cart has a side panel for the title to move into.
@@ -242,7 +240,7 @@ export function BillPage({
     content = (
       <BillCartView
         title={title ?? t("bill.title")}
-        subtitle={subtitle}
+        openedAt={opened}
         billId={billId}
         billExists={bill !== undefined}
         currency={bill?.currency ?? fallbackCurrency}
@@ -278,14 +276,18 @@ export function BillPage({
 
 /**
  * Where the bill is and since when, under its title: staff keep their
- * bearings without scrolling down to the table button.
+ * bearings without scrolling down to the table button. The side panel of a
+ * large monitor shows only `opened`, its table button sitting right below.
  */
-function useBillSubtitle(
+function useBillSubtitleParts(
   bill:
     | { readonly tableId: TableId | null; readonly createdAt: string }
     | undefined,
   pendingTableId: TableId | null
-): string | undefined {
+): {
+  readonly tableName: string | undefined
+  readonly opened: string | undefined
+} {
   const { t } = useTranslation()
   const locale = useLocale()
   const { data: tables } = useEvoluQuery(tablesQuery)
@@ -300,9 +302,8 @@ function useBillSubtitle(
             ? formatTime(openedAt, locale)
             : formatDateTime(openedAt, locale),
         })
-  const parts = [tableName, opened].filter((part) => part !== undefined)
 
-  return parts.length === 0 ? undefined : parts.join(" · ")
+  return { tableName, opened }
 }
 
 /**
@@ -483,7 +484,7 @@ interface SharedCartViewProps {
 
 function BillCartView({
   title,
-  subtitle,
+  openedAt,
   billId,
   billExists,
   currency,
@@ -502,7 +503,8 @@ function BillCartView({
 }: {
   /** The bill's heading, which the side panel shows on a large monitor. */
   readonly title: string
-  readonly subtitle: string | undefined
+  /** When the bill was opened, under the side panel's title. */
+  readonly openedAt: string | undefined
   readonly billId: BillId
   /** Whether `billId`'s row has been written to Evolu yet. */
   readonly billExists: boolean
@@ -565,6 +567,18 @@ function BillCartView({
     () => new Set(currencyItems.map((item) => item.categoryId)),
     [currencyItems]
   )
+  const categoriesById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category])),
+    [categories]
+  )
+  // The group an item is headed under; a deleted category's items join the
+  // uncategorized, as `catalogItemsPageQuery` sorts them.
+  const categoryGroupOf = (item: CatalogItemRow | undefined) =>
+    item !== undefined &&
+    item.categoryId !== null &&
+    categoriesById.has(item.categoryId)
+      ? item.categoryId
+      : null
 
   // The grid's own SQL-filtered, paginated read: `currencyItems` above stays
   // the full per-currency list (needed by scan mode's barcode lookup, which
@@ -596,6 +610,9 @@ function BillCartView({
   )
   const inBillItemIdsForQuery = useDeferredValue(inBillItemIds)
   const showOnlyInBill = categoryFilterForQuery === "inBill"
+  // The whole catalog, unsearched: grouped under category headings.
+  const groupByCategory =
+    categoryFilterForQuery === "all" && searchForQuery.trim() === ""
   const createGridPageQuery = useCallback(
     (limit: number) =>
       catalogItemsPageQuery({
@@ -603,9 +620,11 @@ function BillCartView({
         categoryFilter: showOnlyInBill ? "all" : categoryFilterForQuery,
         currency: currencyForQuery,
         ...(showOnlyInBill ? { catalogItemIds: inBillItemIdsForQuery } : {}),
+        groupByCategory,
         limit,
       }),
     [
+      groupByCategory,
       searchForQuery,
       categoryFilterForQuery,
       currencyForQuery,
@@ -627,6 +646,11 @@ function BillCartView({
     ],
     createGridPageQuery
   )
+
+  // A lone group needs no heading to tell it from the others.
+  const showCategoryHeadings =
+    groupByCategory &&
+    new Set(currencyItems.map((item) => categoryGroupOf(item))).size > 1
 
   const addScannedItem = async (catalogItem: CatalogItemRow) => {
     const added = await cart.addOne(catalogItem)
@@ -926,19 +950,35 @@ function BillCartView({
             ) : (
               <>
                 <div className={itemBrickGridClassName}>
-                  {pagedItems.map((catalogItem) => (
-                    <ItemBrick
-                      key={catalogItem.id}
-                      catalogItem={catalogItem}
-                      summaries={summaries}
-                      locale={locale}
-                      onAdd={() => void cart.addOne(catalogItem)}
-                      onAddQuantity={(quantity) =>
-                        void cart.addQuantity(catalogItem, quantity)
-                      }
-                      onRemove={(summary) => void cart.removeOne(summary)}
-                    />
-                  ))}
+                  {pagedItems.map((catalogItem, index) => {
+                    const group = categoryGroupOf(catalogItem)
+                    const startsGroup =
+                      showCategoryHeadings &&
+                      (index === 0 ||
+                        categoryGroupOf(pagedItems[index - 1]) !== group)
+
+                    return (
+                      <Fragment key={catalogItem.id}>
+                        {startsGroup && (
+                          <h3 className="col-span-full px-1 pt-4 text-sm font-semibold text-muted-foreground first:pt-0">
+                            {group === null
+                              ? t("bill.category.uncategorized")
+                              : categoriesById.get(group)?.name}
+                          </h3>
+                        )}
+                        <ItemBrick
+                          catalogItem={catalogItem}
+                          summaries={summaries}
+                          locale={locale}
+                          onAdd={() => void cart.addOne(catalogItem)}
+                          onAddQuantity={(quantity) =>
+                            void cart.addQuantity(catalogItem, quantity)
+                          }
+                          onRemove={(summary) => void cart.removeOne(summary)}
+                        />
+                      </Fragment>
+                    )
+                  })}
                 </div>
                 {hasMoreItems && (
                   <>
@@ -966,16 +1006,16 @@ function BillCartView({
          * covered the last row of items. The negative margins reach the
          * viewport's padded edges.
          */}
-        <Card className="relative z-20 -mx-3 -mb-6 shrink-0 rounded-none rounded-t-xl p-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.35)] lg:m-0 lg:w-100 lg:rounded-xl lg:shadow-none">
+        <Card className="relative z-20 -mx-3 -mb-6 shrink-0 rounded-none rounded-t-xl p-0 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.35)] lg:m-0 lg:w-100 lg:rounded-xl lg:shadow-xl lg:ring-foreground/15 2xl:w-120">
           <CardContent className="pb-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
             <div className="hidden items-start justify-between gap-2 pt-4 lg:flex">
               <div className="min-w-0">
                 <p className="truncate text-lg font-semibold">{title}</p>
-                <p className="truncate text-sm text-muted-foreground">
-                  {[subtitle, t("bill.itemsCount", { value: itemCount })]
-                    .filter((part) => part !== undefined)
-                    .join(" · ")}
-                </p>
+                {openedAt === undefined ? null : (
+                  <p className="truncate text-sm text-muted-foreground">
+                    {openedAt}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 gap-1">
                 <Button
@@ -998,27 +1038,6 @@ function BillCartView({
                 >
                   <Redo2 />
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={t("bill.summary.more.aria")}
-                      />
-                    }
-                  >
-                    <Ellipsis />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-40">
-                    <DropdownMenuItem
-                      disabled={summaries.length === 0 || cart.pending}
-                      onClick={() => void handleClear()}
-                    >
-                      {t("bill.summary.clear")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
             <Collapsible
@@ -1137,9 +1156,14 @@ function BillCartView({
               </CollapsibleContent>
             </Collapsible>
 
-            <div className="hidden items-baseline justify-between border-t pt-4 mt-4 lg:flex">
+            {/* Dashed, as a printed receipt rules off its total. */}
+            <div className="mt-4 hidden items-baseline justify-between border-t border-dashed pt-4 lg:flex">
               <span className="text-muted-foreground">
                 {t("bill.summary.total")}
+                <span className="text-sm">
+                  {" · "}
+                  {t("bill.itemsCount", { value: itemCount })}
+                </span>
               </span>
               <motion.span
                 className="text-3xl font-semibold tabular-nums"
@@ -1163,16 +1187,28 @@ function BillCartView({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 shrink-0"
+                // A large monitor has the room to name it.
+                className="h-12 w-12 shrink-0 lg:w-auto lg:flex-1 lg:gap-1.5 lg:px-3"
                 disabled={summaries.length === 0 || splitPending}
                 aria-label={t("bill.split.button.aria")}
                 onClick={() => setSplitDialogOpen(true)}
               >
                 <Split />
+                {isWide && t("bill.split.button.aria")}
+              </Button>
+              {/* A phone has it inside the expanded summary instead. */}
+              <Button
+                variant="outline"
+                className="hidden h-12 flex-1 lg:inline-flex"
+                disabled={summaries.length === 0 || cart.pending}
+                onClick={() => void handleClear()}
+              >
+                <Eraser data-icon="inline-start" />
+                {t("bill.summary.clear")}
               </Button>
               <Button
                 variant="outline"
-                className="h-12 flex-1 text-sm"
+                className="h-12 flex-1 text-sm lg:basis-full"
                 aria-label={t("bill.table.aria")}
                 onClick={() => setTablePickerOpen(true)}
               >
@@ -1246,18 +1282,22 @@ function SummaryRow({
   const pulseControls = useChangePulse(summary.quantity)
 
   return (
-    <div className="flex items-center justify-between gap-2 py-1">
+    <div className="group flex items-center justify-between gap-2 py-1 lg:py-1.5">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{summary.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {formatMoney(
-            {
-              value: getBillLineSummaryUnitAmount(summary),
-              currency: summary.currency,
-            },
-            locale
-          )}
-        </p>
+        {/* A single piece costs what the line total already says. */}
+        {summary.quantity === 1 ? null : (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {summary.quantity} ×{" "}
+            {formatMoney(
+              {
+                value: getBillLineSummaryUnitAmount(summary),
+                currency: summary.currency,
+              },
+              locale
+            )}
+          </p>
+        )}
       </div>
       {/*
        * The item grid's "−"/"+" cluster in small. No `disabled`, like
@@ -1268,7 +1308,7 @@ function SummaryRow({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="rounded-full"
+          className="rounded-full lg:size-9"
           aria-label={t("bill.summary.decrement.aria", { name: summary.name })}
           onClick={onRemoveOne}
         >
@@ -1283,7 +1323,7 @@ function SummaryRow({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="rounded-full"
+          className="rounded-full lg:size-9"
           aria-label={t("bill.summary.increment.aria", { name: summary.name })}
           disabled={catalogItem === undefined}
           onClick={() => {
@@ -1303,9 +1343,14 @@ function SummaryRow({
           locale
         )}
       </motion.p>
+      {/*
+       * A mouse finds it on hover, which keeps a long bill calm to read; a
+       * finger has no hover, so touch screens always show it.
+       */}
       <Button
         variant="ghost"
         size="icon-sm"
+        className="pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100 lg:size-9"
         aria-label={t("bill.summary.removeLine.aria", { name: summary.name })}
         disabled={disabled}
         onClick={() => onRemove(summary)}
@@ -1346,63 +1391,86 @@ function ItemBrick({
     [catalogItem.id, matchingSummaries]
   )
 
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
+  const quantityPulseControls = useChangePulse(quantity)
+
   const inCart = quantity > 0
-  const addLabel = t("bill.brick.add.aria", {
-    name: getStaffDisplayName(catalogItem),
-  })
+  const name = getStaffDisplayName(catalogItem)
 
   return (
     <Card
       className={cn(
-        "relative gap-3 p-3",
-        inCart && "border-l-4 border-l-primary pl-2"
+        // Inset, so the scrolling grid does not clip the outer columns.
+        "relative gap-1 p-3 ring-inset",
+        inCart && "bg-primary/15"
       )}
     >
       {/*
-       * A tap anywhere on the tile adds one, as on a till. Until the item is
-       * on the bill this is the tile's only control, so it carries the "add"
-       * label; once the "−"/"+" cluster shows, its "+" is that labelled
-       * button and this one steps out of assistive tech and focus.
+       * A tap anywhere on the tile adds one, as on a till; the two corner
+       * controls above it stay clear of the middle, where a tap lands.
        */}
       <button
         type="button"
-        aria-label={inCart ? undefined : addLabel}
-        aria-hidden={inCart || undefined}
-        tabIndex={inCart ? -1 : undefined}
+        aria-label={t("bill.brick.add.aria", { name })}
         className="absolute inset-0 cursor-pointer rounded-xl transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-foreground/10"
         onClick={() => {
           vibrateOnButtonPress()
           onAdd()
         }}
       />
-      <div className="min-w-0">
-        <p className="font-medium">{getStaffDisplayName(catalogItem)}</p>
-        <p className="text-sm text-muted-foreground">
+      {/*
+       * The corner controls are kept in the layout but invisible until the
+       * item is on the bill, so a tile does not reflow under the finger
+       * when its first piece is added. Like `ItemQuantityControls` they have
+       * no `disabled`: the cart queues taps, and a button disabled mid-tap
+       * drops it.
+       */}
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 pt-0.5 font-medium lg:text-base">{name}</p>
+        <Button
+          type="button"
+          size="sm"
+          className={cn(
+            "relative z-10 h-7 min-w-7 shrink-0 rounded-full px-2 font-bold tabular-nums",
+            !inCart && "invisible"
+          )}
+          aria-label={t("bill.brick.quantity.trigger.aria", { name })}
+          onClick={() => setQuantityDialogOpen(true)}
+        >
+          <motion.span animate={quantityPulseControls}>{quantity}</motion.span>
+        </Button>
+      </div>
+      <div className="flex items-end justify-between gap-2">
+        <p className="pb-1 font-semibold text-foreground/70 tabular-nums">
           {formatMoney(
             { value: catalogItem.unitAmount, currency: catalogItem.currency },
             locale
           )}
         </p>
-      </div>
-      {/*
-       * Above the tile-wide button. Kept in the layout but invisible until
-       * the item is on the bill, so a row of tiles does not grow under the
-       * finger when its first item is added.
-       */}
-      <div
-        className={cn("relative z-10 flex justify-end", !inCart && "invisible")}
-      >
-        <ItemQuantityControls
-          name={getStaffDisplayName(catalogItem)}
-          quantity={quantity}
-          onAdd={onAdd}
-          onAddQuantity={onAddQuantity}
-          onRemove={() => {
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className={cn(
+            "relative z-10 size-10 shrink-0 rounded-full",
+            !inCart && "invisible"
+          )}
+          aria-label={t("bill.brick.remove.aria", { name })}
+          onClick={() => {
             if (latestSummary === undefined) return
+            vibrateOnButtonPress()
             onRemove(latestSummary)
           }}
-        />
+        >
+          <Minus />
+        </Button>
       </div>
+      <ItemQuantityDialog
+        name={name}
+        open={quantityDialogOpen}
+        onOpenChange={setQuantityDialogOpen}
+        onAddQuantity={onAddQuantity}
+      />
     </Card>
   )
 }

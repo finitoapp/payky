@@ -81,7 +81,6 @@ export const csBill = {
   "bill.summary.decrement.aria": "Odebrat 1 ks {name}",
   "bill.summary.empty": "Přidejte položky z nabídky vlevo",
   "bill.summary.increment.aria": "Přidat 1 ks {name}",
-  "bill.summary.more.aria": "Další akce",
   "bill.summary.redo": "Znovu",
   "bill.summary.removeLine.aria": "Odebrat {name} z účtu",
   "bill.summary.removeLine.toast": "{name} odebráno",

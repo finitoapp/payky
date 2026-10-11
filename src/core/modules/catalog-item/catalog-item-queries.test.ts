@@ -2,6 +2,10 @@ import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import type { EvoluOwnerIdDep } from "@/core/deps.ts"
 import {
+  createCatalogCategory,
+  deleteCatalogCategory,
+} from "@/core/modules/catalog-category/catalog-category-actions.ts"
+import {
   catalogItemsPageQuery,
   catalogItemUsedCategoryIdsQuery,
 } from "@/core/modules/catalog-item/catalog-item-queries.ts"
@@ -167,6 +171,75 @@ describe("catalogItemsPageQuery", () => {
           ).length
       )
       .toBe(5)
+  }, 15_000)
+  test("groups items by category order, the uncategorized last", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+    } satisfies EvoluDep & EvoluOwnerIdDep
+    await using run = testCreateRun(deps)
+
+    const drinksId = await run.ok(
+      createCatalogCategory({
+        deviceId: null,
+        name: NonEmptyString255("Drinks"),
+        sortOrder: NonNegativeInteger(1),
+      })
+    )
+    const foodId = await run.ok(
+      createCatalogCategory({
+        deviceId: null,
+        name: NonEmptyString255("Food"),
+        sortOrder: NonNegativeInteger(0),
+      })
+    )
+    const deletedId = await run.ok(
+      createCatalogCategory({
+        deviceId: null,
+        name: NonEmptyString255("Gone"),
+        sortOrder: NonNegativeInteger(0),
+      })
+    )
+    await run.ok(deleteCatalogCategory(deletedId))
+
+    const createItem = (name: string, categoryId: typeof drinksId | null) =>
+      run.ok(
+        createCatalogItemAtEnd({
+          deviceId: null,
+          categoryId,
+          name: NonEmptyString255(name),
+          description: null,
+          currency: "CZK",
+          unitAmount: NonNegativeInteger(1000),
+          scanCode: null,
+        })
+      )
+    const water = await createItem("Water", drinksId)
+    const loose = await createItem("Loose", null)
+    const soup = await createItem("Soup", foodId)
+    const beer = await createItem("Beer", drinksId)
+    const orphan = await createItem("Orphan", deletedId)
+    const cake = await createItem("Cake", foodId)
+
+    const loadIds = async (groupByCategory: boolean) =>
+      (
+        await evolu.loadQuery(
+          catalogItemsPageQuery({
+            search: "",
+            categoryFilter: "all",
+            groupByCategory,
+            limit: 10,
+          })
+        )
+      ).map((row) => row.id)
+
+    await expect
+      .poll(() => loadIds(true))
+      .toEqual([soup, cake, water, beer, loose, orphan])
+    await expect
+      .poll(() => loadIds(false))
+      .toEqual([water, loose, soup, beer, orphan, cake])
   }, 15_000)
 })
 

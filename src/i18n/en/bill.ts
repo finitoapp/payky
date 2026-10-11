@@ -80,7 +80,6 @@ export const enBill = {
   "bill.summary.decrement.aria": "Remove one {name}",
   "bill.summary.empty": "Add items from the menu on the left",
   "bill.summary.increment.aria": "Add one {name}",
-  "bill.summary.more.aria": "More actions",
   "bill.summary.redo": "Redo",
   "bill.summary.removeLine.aria": "Remove {name} from bill",
   "bill.summary.removeLine.toast": "{name} removed",

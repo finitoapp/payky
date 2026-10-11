@@ -76,6 +76,27 @@ describe("calculateTaxRecap", () => {
     ])
   })
 
+  test("rounds each line before summing, never the group total", () => {
+    // 1_000 at 21% splits to 826 + 174 per line. Rounding the 3_000 group
+    // total once would give a base of 2_479 instead of 3 × 826.
+    const line = {
+      taxRateId: standardRateId,
+      totalAmount: NonNegativeInteger(1_000),
+    }
+    const rows = calculateTaxRecap([line, line, line], taxRates)
+
+    expect(rows).toEqual([
+      {
+        taxRateId: standardRateId,
+        name: "Standard rate",
+        ratePercentage: 2100,
+        baseAmount: 2_478,
+        taxAmount: 522,
+        grossAmount: 3_000,
+      },
+    ])
+  })
+
   test("groups lines with no tax rate into a nameless row", () => {
     const rows = calculateTaxRecap(
       [{ taxRateId: null, totalAmount: NonNegativeInteger(500) }],

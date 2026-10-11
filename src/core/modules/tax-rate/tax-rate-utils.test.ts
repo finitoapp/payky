@@ -82,6 +82,24 @@ describe("splitInclusiveAmount", () => {
     expect(result.base + result.tax).toBe(5_900)
   })
 
+  test("a zero gross amount splits to zero", () => {
+    const result = splitInclusiveAmount(
+      NonNegativeInteger(0),
+      TaxRatePercentage(2100)
+    )
+    expect(result.base).toBe(0)
+    expect(result.tax).toBe(0)
+  })
+
+  test("a gross amount of 1 rounds its tax away", () => {
+    const result = splitInclusiveAmount(
+      NonNegativeInteger(1),
+      TaxRatePercentage(2100)
+    )
+    expect(result.base).toBe(1)
+    expect(result.tax).toBe(0)
+  })
+
   test("a 0% rate has no tax portion", () => {
     const result = splitInclusiveAmount(
       NonNegativeInteger(5_900),

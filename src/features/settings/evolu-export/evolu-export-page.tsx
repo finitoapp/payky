@@ -78,6 +78,11 @@ function EvoluExportPanel() {
         filename: createEvoluExportFilename({ createdAt, database: "app" }),
       })
 
+      if (file === null) {
+        setStatus({ kind: "idle" })
+        return
+      }
+
       setLastExport({ createdAt, files: [file] })
       setStatus({ kind: "idle" })
       toast.success(t("settings.evoluExport.status.success"))
@@ -218,13 +223,6 @@ function ExportedFileRow({ file }: { readonly file: SavedEvoluExportFile }) {
             </span>
           </div>
           <p className="break-all font-mono text-xs">{file.filename}</p>
-          {file.destination.type === "capacitor" ? (
-            <p className="break-all text-xs text-muted-foreground">
-              {t("settings.evoluExport.status.savedTo", {
-                path: file.destination.path,
-              })}
-            </p>
-          ) : null}
         </div>
       </div>
     </article>

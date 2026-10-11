@@ -67,16 +67,46 @@ export const csLanding = {
     "Na podpoře fyzického terminálu pracujeme. Zatím je k dispozici jen aplikace.",
   "landing.faq.terminal.question": "Máte i klasický terminál?",
   "landing.faq.title": "Časté dotazy",
-  "landing.features.amount.body":
-    "Klávesnice pro rychlý prodej, nebo katalog položek a stoly pro kavárnu. Podle toho, co se vám hodí.",
-  "landing.features.amount.title": "Naťukáte částku",
-  "landing.features.received.body":
-    "Rovnou z banky zákazníka do té vaší. Žádný prostředník, žádná provize, žádné čekání na výplatu. Označíte platbu jako přijatou a je hotovo.",
-  "landing.features.received.title": "Peníze dorazí na váš účet",
-  "landing.features.scan.body":
+  "landing.flows.amount.audience": "Stánky, trhy, řemeslníci a služby",
+  "landing.flows.amount.step1.body":
+    "Žádné nastavování položek. Otevřete aplikaci, zadáte, kolik to dělá, a můžete inkasovat.",
+  "landing.flows.amount.step1.title": "Naťukáte částku",
+  "landing.flows.amount.step2.body":
     "Aplikace zobrazí QR platbu pro český i slovenský bankovní převod. Hotovost a bitcoin máte na jedno klepnutí.",
-  "landing.features.scan.title": "Zákazník naskenuje a zaplatí",
-  "landing.features.title": "Jak to funguje",
+  "landing.flows.amount.step2.title": "Zákazník naskenuje a zaplatí",
+  "landing.flows.amount.step3.body":
+    "Rovnou z banky zákazníka do té vaší. Žádný prostředník, žádná provize, žádné čekání na výplatu. Označíte platbu jako přijatou a je hotovo.",
+  "landing.flows.amount.step3.title": "Peníze dorazí na váš účet",
+  "landing.flows.amount.tab": "Zadáte částku",
+  "landing.flows.bill.audience": "Malé obchody, prodejny a kiosky",
+  "landing.flows.bill.step1.body":
+    "Položky s cenou a kategorií přidáte jednou. Stačí naskenovat čárový kód a název se často dohledá sám.",
+  "landing.flows.bill.step1.title": "Založíte si katalog",
+  "landing.flows.bill.step2.body":
+    "Klepnutím nebo skenem skládáte účet. Zákazník vidí přesně, co platí, a vy se nepřepočítáte.",
+  "landing.flows.bill.step2.title": "Namarkujete nákup",
+  "landing.flows.bill.step3.body":
+    "Celý účet zákazník zaplatí převodem, hotově nebo bitcoinem. Vy přesně víte, co se prodalo.",
+  "landing.flows.bill.step3.title": "Zaplaceno jedním QR kódem",
+  "landing.flows.bill.tab": "Markujete položky",
+  "landing.flows.label": "Způsob prodeje",
+  "landing.flows.subtitle":
+    "Stánek, obchod, nebo restaurace se stoly? Každý prodává jinak a Payky zvládne všechny tři způsoby placení. Vyberte ten svůj.",
+  "landing.flows.tables.audience": "Restaurace, bistra, kavárny a bary",
+  "landing.flows.tables.step1.body":
+    "Každý stůl vidíte na první pohled: volný, s otevřeným účtem nebo s rozběhnutou platbou. U jednoho stolu může být i víc účtů najednou.",
+  "landing.flows.tables.step1.title": "Celá provozovna na jedné obrazovce",
+  "landing.flows.tables.step2.title": "Objednávky rovnou na účet stolu",
+  "landing.flows.tables.step2.body":
+    "Otevřete účet u stolu a přidáváte, co si hosté objednají. Zůstane otevřený, dokud se nezvednou.",
+  "landing.flows.tables.step3.body":
+    "Účet rozdělíte podle položek, přesunete na jiný stůl nebo sloučíte s jiným účtem.",
+  "landing.flows.tables.step3.title": "Účty, jak se hosté domluví",
+  "landing.flows.tables.step4.body":
+    "Každý host zaplatí svůj účet QR kódem nebo hotově a stůl se uvolní, až je všechno zaplaceno.",
+  "landing.flows.tables.step4.title": "Každý zaplatí svou část",
+  "landing.flows.tables.tab": "Obsluhujete stoly",
+  "landing.flows.title": "Payky se přizpůsobí vašemu podnikání",
   "landing.footer.description": "Platební terminál pro Česko a Slovensko",
   "landing.footer.discussions": "Diskuze",
   "landing.footer.github": "GitHub",
@@ -87,9 +117,17 @@ export const csLanding = {
   "landing.hero.title": "Platba QR kódem nic nestojí.",
   "landing.hero.titleAccent": "nic nestojí",
   "landing.language.label": "Jazyk",
+  "landing.mockup.bill.alt": "Rozpracovaný účet s namarkovanými položkami",
   "landing.mockup.home.alt": "Klávesnice Payky se zadanou částkou",
+  "landing.mockup.items.alt": "Katalog položek s cenami v Payky",
   "landing.mockup.paid.alt": "Payky potvrzuje přijatou platbu",
   "landing.mockup.payment.alt": "Payky ukazuje QR kód pro bankovní převod",
+  "landing.mockup.split.alt": "Rozdělení účtu podle položek",
+  "landing.mockup.stats.alt": "Přehled tržby ve Statistikách",
+  "landing.mockup.statsCharts.alt":
+    "Graf prodejů v čase a podíl způsobů platby",
+  "landing.mockup.tableBill.alt": "Účet stolu s objednanými položkami",
+  "landing.mockup.tables.alt": "Přehled stolů s otevřenými účty",
   "landing.more.bitcoin.body":
     "Lightning platby rovnou do vaší vlastní peněženky, ke které máte klíče jen vy. Čistě dobrovolně.",
   "landing.more.bitcoin.title": "Bitcoin, když budete chtít",
@@ -116,6 +154,15 @@ export const csLanding = {
   "landing.stage.cash": "Hotovost",
   "landing.stage.eet": "Vyřeší EET",
   "landing.stage.transfer": "Bankovní převod",
+  "landing.stats.body":
+    "Ať prodáváte jakkoli, ve Statistikách vidíte, jak se vám daří. Za dnešek, posledních 7 dní nebo měsíc a ve srovnání s předchozím obdobím.",
+  "landing.stats.charts.body":
+    "Prodeje v čase proti minulému období, podíl jednotlivých způsobů platby, nejprodávanější položky i nejrušnější hodiny v týdnu.",
+  "landing.stats.charts.title": "Grafy, které řeknou víc",
+  "landing.stats.overview.body":
+    "Čistá tržba, počet a průměr prodejů, spropitné zvlášť i vratky. A kolik má být v pokladně.",
+  "landing.stats.overview.title": "Tržba na první pohled",
+  "landing.stats.title": "Víte, jak se vám daří",
   "landing.theme.label": "Vzhled",
   "landing.useCases.cafes.alt":
     "Barista podává kávu zákazníkovi u stánku s pečivem",
@@ -126,6 +173,7 @@ export const csLanding = {
   "landing.useCases.craftsmen.body":
     "Zaplaceno hned na místě u zákazníka, bez papírování.",
   "landing.useCases.craftsmen.title": "Řemeslníci",
+  "landing.useCases.howItWorks": "Jak to funguje",
   "landing.useCases.salons.alt": "Kadeřnice upravuje zákaznici vlasy v salonu",
   "landing.useCases.salons.body":
     "Zákazník zaplatí hned po ošetření, bez čekání na terminál.",

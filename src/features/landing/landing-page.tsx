@@ -1,4 +1,5 @@
 import {
+  ArrowRightIcon,
   BanknoteIcon,
   ChevronDownIcon,
   CodeIcon,
@@ -19,7 +20,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { LandingClosing } from "@/features/landing/landing-closing.tsx"
-import { LandingFeatureStory } from "@/features/landing/landing-feature-story.tsx"
+import {
+  type FlowId,
+  flowAnchor,
+  LandingFeatureStory,
+} from "@/features/landing/landing-feature-story.tsx"
 import { LandingHeader } from "@/features/landing/landing-header.tsx"
 import { LandingHero } from "@/features/landing/landing-hero.tsx"
 import { Reveal } from "@/features/landing/landing-parts.tsx"
@@ -51,6 +56,8 @@ interface UseCaseCard {
   readonly title: TranslationKey
   readonly body: TranslationKey
   readonly alt: TranslationKey
+  /** The way of selling this audience is shown in "How it works". */
+  readonly flow: FlowId
 }
 
 interface FaqItem {
@@ -99,24 +106,28 @@ const useCaseCards: ReadonlyArray<UseCaseCard> = [
     title: "landing.useCases.cafes.title",
     body: "landing.useCases.cafes.body",
     alt: "landing.useCases.cafes.alt",
+    flow: "tables",
   },
   {
     image: "/landing/seller.webp",
     title: "landing.useCases.shops.title",
     body: "landing.useCases.shops.body",
     alt: "landing.useCases.shops.alt",
+    flow: "bill",
   },
   {
     image: "/landing/service.webp",
     title: "landing.useCases.salons.title",
     body: "landing.useCases.salons.body",
     alt: "landing.useCases.salons.alt",
+    flow: "amount",
   },
   {
     image: "/landing/craftsman.webp",
     title: "landing.useCases.craftsmen.title",
     body: "landing.useCases.craftsmen.body",
     alt: "landing.useCases.craftsmen.alt",
+    flow: "amount",
   },
 ]
 
@@ -233,6 +244,13 @@ function UseCases() {
               <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
                 {t(useCase.body)}
               </p>
+              <a
+                href={`#${flowAnchor(useCase.flow)}`}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-(--landing-ink) hover:underline"
+              >
+                {t("landing.useCases.howItWorks")}
+                <ArrowRightIcon aria-hidden="true" className="size-4" />
+              </a>
             </article>
           </Reveal>
         ))}

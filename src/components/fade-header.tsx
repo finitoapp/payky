@@ -3,12 +3,15 @@ import { ArrowLeftIcon } from "lucide-react"
 import { type FC, type ReactNode, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import { cn } from "@/lib/utils.ts"
 
 export const FadeHeader: FC<{
   title?: ReactNode
   endAddon?: React.ReactNode
   startAddon?: React.ReactNode | null
   customStartAddonOnClick?: () => void
+  /** Widens the bar past the phone column, for a page that does too. */
+  className?: string
 }> = (props) => {
   const divRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -56,7 +59,12 @@ export const FadeHeader: FC<{
       }}
     >
       <div className="relative flex flex-row w-full justify-center">
-        <div className="max-w-xl px-4 py-3 flex flex-1 flex-row justify-between gap-4">
+        <div
+          className={cn(
+            "max-w-xl px-4 py-3 flex flex-1 flex-row justify-between gap-4",
+            props.className
+          )}
+        >
           <div className={"w-10"}>{startAddon}</div>
           <h2 className="flex-1 shrink text-xl font-bold text-foreground m-auto">
             {props.title}

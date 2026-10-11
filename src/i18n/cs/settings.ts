@@ -44,6 +44,8 @@ export const csSettings = {
   "settings.accounts.remove.confirm.description":
     "Zařízení tento účet i jeho data zapomene. Vrátit ho zpět jde jen pomocí jeho recovery phrase — bez ní je vše v účtu nadobro ztracené.",
   "settings.accounts.remove.confirm.title": "Odebrat účet {name}?",
+  "settings.accounts.restore.failed":
+    "Účet se nepodařilo obnovit. Zkuste to prosím znovu.",
   "settings.accounts.restore.mnemonic.description":
     "Mezery se před validací sjednotí.",
   "settings.accounts.restore.mnemonic.invalid":

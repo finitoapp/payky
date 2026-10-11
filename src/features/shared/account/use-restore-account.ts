@@ -21,8 +21,9 @@ interface RestoreAccount {
   readonly clearError: () => void
   readonly setMnemonic: (mnemonic: string) => void
   /**
-   * Resolves to false when the phrase was rejected. On success it leaves
-   * what `/restore-account` cleans up after in `restoredAccountAtom`.
+   * Resolves to false when the phrase was rejected or the restore failed. On
+   * success it leaves what `/restore-account` cleans up after in
+   * `restoredAccountAtom`.
    */
   readonly restore: () => Promise<boolean>
 }
@@ -63,11 +64,17 @@ export function useRestoreAccount(): RestoreAccount {
 
     const previous = activeAccount.id
     let created = false
-    await submit(async () => {
-      const masterKey = await mnemonicToMasterKey(mnemonicResult.data)
-      created = (await createOrSelectAccount(deviceEvolu, masterKey)).created
-      reloadAppEvolu()
-    })
+    try {
+      await submit(async () => {
+        const masterKey = await mnemonicToMasterKey(mnemonicResult.data)
+        created = (await createOrSelectAccount(deviceEvolu, masterKey)).created
+        reloadAppEvolu()
+      })
+    } catch (error) {
+      console.error("Failed to restore account", error)
+      setError("settings.accounts.restore.failed")
+      return false
+    }
 
     setRestoredAccount({ created, previous })
     return true

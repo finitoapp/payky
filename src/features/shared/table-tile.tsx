@@ -54,11 +54,10 @@ export function TableTileShell({
             ? "bg-info/10 ring-info/40"
             : "bg-primary/10 ring-primary/30"
           : "bg-transparent",
-        // Inset, so a scrolling grid does not clip the outer columns; the
-        // selection ring stands off the tile instead.
-        selected
-          ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-          : "ring-inset",
+        // Inset, the selection ring included, so a scrolling grid or
+        // dialog does not clip the outer columns.
+        "ring-inset",
+        selected && "ring-2 ring-primary",
         className
       )}
     >

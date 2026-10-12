@@ -700,6 +700,16 @@ test("adds a bulk quantity through the quantity dialog", async ({
     name: nameParam("bill.brick.quantity.trigger.aria", "Coffee"),
   })
 
+  // The quantity shows, and opens the dialog, once the item is on the bill.
+  await test.step("a tap on the tile puts one on the bill", async () => {
+    await page
+      .getByRole("button", {
+        name: nameParam("bill.brick.add.aria", "Coffee"),
+      })
+      .click()
+    await expect(quantityTrigger).toContainText("1")
+  })
+
   await test.step("cancelling the dialog leaves the cart untouched", async () => {
     await quantityTrigger.click()
     await page
@@ -714,7 +724,7 @@ test("adds a bulk quantity through the quantity dialog", async ({
       })
       .click()
     await expect(page.getByRole("dialog", { name: "Coffee" })).not.toBeVisible()
-    await expect(quantityTrigger).toContainText("0")
+    await expect(quantityTrigger).toContainText("1")
   })
 
   await test.step("confirming adds the whole quantity in one go", async () => {
@@ -731,9 +741,9 @@ test("adds a bulk quantity through the quantity dialog", async ({
       })
       .click()
     await expect(dialog).not.toBeVisible()
-    await expect(quantityTrigger).toContainText("12")
+    await expect(quantityTrigger).toContainText("13")
     await expect(summaryTrigger).toContainText(
-      translateValue("en", "bill.itemsCount", 12)
+      translateValue("en", "bill.itemsCount", 13)
     )
   })
 
@@ -759,7 +769,7 @@ test("adds a bulk quantity through the quantity dialog", async ({
       })
       .click()
     await expect(dialog).not.toBeVisible()
-    await expect(quantityTrigger).toContainText("15")
+    await expect(quantityTrigger).toContainText("16")
   })
 })
 

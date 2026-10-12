@@ -78,7 +78,7 @@ test("shows only the free 'no table' tile when there are no tables or open bills
 }) => {
   await gotoPosOverview(page, "en")
   await expect(page.getByTestId("no-table-tile")).toContainText(
-    translate("en", "tables.tile.free")
+    translate("en", "home.pos.noTable.empty")
   )
   await expect(page.getByTestId("table-tile")).toHaveCount(0)
 })

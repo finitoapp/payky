@@ -19,23 +19,29 @@ import { cn } from "@/lib/utils.ts"
  * plain name/subtitle rather than a `TableRow` so a non-table tile can
  * reuse it without faking a table row.
  *
- * Occupied is an accent border on the left, as an item on the bill is in
- * the bill's grid, not a solid fill: on a busy floor most tiles are
- * occupied, and a wall of color stops telling them apart.
+ * The state is the tile's whole surface, as on a till's floor plan: an
+ * occupied table is tinted, one that needs a look (`attention`: a payment
+ * in flight or partly in) takes the info tone, and a free one is left
+ * bare, an empty slot on the background — so on a busy floor the free
+ * tables are the ones that stand out, which is what seating looks for.
  * `icon` defaults to the table glyph; pass `null` for none.
  */
 export function TableTileShell({
   name,
   subtitle,
   occupied,
+  attention = false,
   selected,
+  className,
   icon = <Table2 className="size-5 shrink-0 text-muted-foreground" />,
   children,
 }: {
   readonly name: string
   readonly subtitle?: ReactNode
   readonly occupied: boolean
+  readonly attention?: boolean
   readonly selected?: boolean
+  readonly className?: string
   readonly icon?: ReactNode
   readonly children: ReactNode
 }) {
@@ -43,13 +49,22 @@ export function TableTileShell({
     <Card
       className={cn(
         "h-full gap-3 p-4",
-        occupied && "border-l-4 border-l-primary pl-3",
-        selected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        occupied
+          ? attention
+            ? "bg-info/10 ring-info/40"
+            : "bg-primary/10 ring-primary/30"
+          : "bg-transparent",
+        // Inset, so a scrolling grid does not clip the outer columns; the
+        // selection ring stands off the tile instead.
+        selected
+          ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+          : "ring-inset",
+        className
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate font-medium">{name}</p>
+          <p className="truncate text-base font-semibold lg:text-lg">{name}</p>
           {subtitle !== undefined && (
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           )}

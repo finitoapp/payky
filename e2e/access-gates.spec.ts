@@ -121,7 +121,7 @@ test("every cart write that takes items off the bill asks a Basic device for the
     await expect(discardPrompt).toBeVisible()
     await typePin(page, "en", ownerPin)
     await expect(page.getByTestId("no-table-tile")).toContainText(
-      translate("en", "tables.tile.free")
+      translate("en", "home.pos.noTable.empty")
     )
   })
 })

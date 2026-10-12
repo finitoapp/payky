@@ -1,0 +1,98 @@
+# Glossary
+
+The words this codebase uses for its domain, and the pairs that are easy to
+mix up. Use these names in code, translation keys and docs. A term links to
+where it is specified; the specification wins over this page.
+
+## App shell
+
+- **Terminal** — the app shell: the `_terminal` layout route that wraps
+  settings, activity, bills and payments alike (hence `useTerminalHomeMode`,
+  `useCreateTerminalPayment`). Not a card terminal; that is **Switchio**.
+- **Home** — the index screen inside the terminal (`_terminal.index.tsx`, the
+  `home.*` keys).
+- **Pos** / **numpad** — the two modes home toggles between: `nav.pos`
+  ("Sales", the table grid, `PosOverviewPage`) and `nav.numpad` ("Keypad",
+  `TerminalPaymentKeypad`). Neither is another name for the terminal.
+
+## Selling
+
+- **Catalog item** (`catalog-item`) — a product in the catalog: price, SKU,
+  scan code, category, sort order. Editable; editing it never changes past
+  sales.
+- **Item** (`item`) — an immutable snapshot of what was sold (name, price,
+  tax rate) that bill lines point at. Its `catalogItemId` is null for a
+  manual amount or a tip.
+- **Bill** (`bill`) — the tab: lines, an optional table, a total. Its status
+  (`open`/`closed`/`canceled`) is derived, never stored
+  (`docs/bill-payment-states.md`). In the UI a canceled bill is
+  **discarded** (`bill.discard`).
+- **Bill line** (`bill-line`) — an append-only ledger entry on a bill, `kind`
+  `add` or `remove`. A bill's total is adds minus removes; a line is never
+  edited in place.
+- **Table** (`table`) — a table in the venue, with a seat count; a bill can be
+  assigned to one, and the pos grid shows them.
+
+## Collecting money
+
+- **Payment** (`payment`) — one attempt to collect money: for a bill, or with
+  no bill at all from the keypad. A bill has zero or more payments. Status
+  (`pending`/`paid`/`canceled`/`expired`) is derived
+  (`docs/bill-payment-states.md`). For EET a payment, not a bill, is the sale
+  (`docs/decisions/eet/0001`).
+- **Payment line** (`payment-line`) — a frozen snapshot of the bill's net lines
+  at the moment a payment was created, so later bill edits show as a diff.
+  Not the same as a bill line.
+- **Account transaction** (`account-transaction`) — money that actually moved
+  on an account: a bank transfer from FIO, a Spark transfer, cash taken, a
+  withdrawal. A payment says money is expected; a transaction says it came.
+- **Reconciliation claim** (`reconciliation-claim`) — the link that says this
+  transaction pays that payment, written by the sync jobs (`source: "auto"`)
+  or by hand (`"manual"`). A payment is paid because a claim exists
+  (`docs/payment-sync.md`).
+- **Coverage** — `paid`/`underpaid`/`overpaid`, derived for a **bill** only
+  by comparing its claimed money with its total. A payment has no coverage.
+- **Refund** (`refund`) — its own record against one payment, never an edit of
+  it (`docs/decisions/refund/0001`); its `refund-line`s point at payment lines.
+- **Withdrawal** (`withdraw`) — money sent out of a Spark wallet. Its record is
+  written before money leaves and its state is derived
+  (`docs/decisions/withdraw/`).
+- **Payment number** (`payment-number`) — a payment's serial number and date.
+  **Payment number series** (`payment-number-series`) is the format it is
+  printed in (prefix, digits, which date parts show).
+
+## Accounts, devices, owners
+
+The word "account" means two unrelated things here.
+
+- **Account** (`src/core/modules/account`, app database) — a place money goes
+  to: `iban`, `spark`, `cashRegister` or `cardSwitchio`. The UI calls these
+  payment methods (`settings.paymentAccounts.*`).
+- **Device account** (`account` in the device database,
+  `src/core/evolu/device-account.ts`) — one merchant's whole synced dataset
+  held on this device, identified by its master key. The UI calls it the app
+  account (`settings.accounts.*`). A **demo account** is a device account
+  that never syncs (`docs/decisions/demo-data/0001`).
+- **Device database** vs **app database** — the device database is local to
+  one device and does not sync (its accounts, settings, PIN attempts). The app
+  database is the active device account's synced data. Both have a `device`
+  table; the app one is what other devices see of this one.
+- **Legal entity** (`legal-entity`) — the merchant's country and VAT-payer
+  status; one row per account.
+- **Owner** — in access control, the person holding the account's one owner
+  PIN (`docs/decisions/access/0001`) and the `owner` preset. Unrelated to an
+  Evolu owner (`evoluOwnerId`), which is the dataset's sync identity.
+- **Permission** / **preset** — a permission (`sell`, `refund`, ...) gates a
+  route or an action; a preset is a named set of them, copied onto a device
+  when chosen and never linked afterward (`access-types.ts`).
+- **Transport** vs **relay** — a transport is a WebSocket URL a device account
+  syncs its Evolu data through; a relay is a nostr server the support chat and
+  the contact form talk to.
+
+## Outside services
+
+- **Spark** — the Bitcoin/Lightning wallet SDK behind `spark` accounts.
+- **FIO** — the Czech bank whose API the IBAN sync job reads.
+- **EET** — Czech electronic registration of sales (`docs/eet.md`).
+- **Switchio** — the SwitchioPay card terminal app, driven through Android
+  intents (`src/core/native/switchio.ts`).

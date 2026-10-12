@@ -67,7 +67,7 @@ export const isOnchainWithdrawAllBelowMinimum = ({
     ONCHAIN_WITHDRAWAL_MIN_SATS
 
 /**
- * The most a Lightning withdrawal may cost (withdraw/0004). The SDK charges a
+ * The most a Lightning withdrawal may cost (withdraw/0009). The SDK charges a
  * fresh estimate when it sends and refuses when that exceeds this, so the
  * reserve only covers the fee rising between review and confirmation.
  */

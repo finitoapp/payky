@@ -186,12 +186,13 @@ function LightningReview({
       <DetailRow label={t("withdraw.review.amount")}>
         <SatsWithFiat sats={quote.amountSats} locale={locale} />
       </DetailRow>
-      <DetailRow label={t("withdraw.review.maxFee")}>
-        {quote.invoice.sparkFallbackIdentity !== null ? (
-          t("withdraw.review.maxFeeSpark", { amount: maxFee })
-        ) : (
-          <SatsWithFiat sats={quote.maxFeeSats} locale={locale} />
-        )}
+      <DetailRow label={t("withdraw.review.lightningFee")}>
+        {quote.invoice.sparkFallbackIdentity !== null
+          ? t("withdraw.review.maxFeeSpark", { amount: maxFee })
+          : t("withdraw.review.feeEstimate", {
+              estimate: formatSatsAmount(quote.feeEstimateSats, locale),
+              max: maxFee,
+            })}
       </DetailRow>
       <DetailRow label={t("withdraw.review.maxTotal")} emphasize>
         <SatsWithFiat
@@ -210,7 +211,7 @@ function LightningReview({
         </span>
       </DetailRow>
       <p className="text-sm text-muted-foreground">
-        {t("withdraw.review.remainder", { amount: maxFee })}
+        {t("withdraw.review.remainder")}
       </p>
       <WithdrawCollapsible label={t("withdraw.review.showInvoice")}>
         <span className="break-all font-mono text-xs">

@@ -1,8 +1,6 @@
 export const enWithdraw = {
   "withdraw.all.description": "Send the entire available balance.",
   "withdraw.all.label": "Withdraw all",
-  "withdraw.all.unavailableAddress":
-    "A Lightning address takes an exact amount, so the fee reserve can't be deducted.",
   "withdraw.all.unavailableInvoice": "The invoice sets the amount.",
   "withdraw.amount.available": "Available: {amount} sats",
   "withdraw.amount.fromInvoice": "The invoice sets the amount.",
@@ -139,8 +137,9 @@ export const enWithdraw = {
     "The withdrawal was interrupted before it completed. Try again.",
   "withdraw.review.expiresIn": "Invoice valid for",
   "withdraw.review.fee": "Estimated network fee",
+  "withdraw.review.feeEstimate": "~{estimate} sats (at most {max} sats)",
   "withdraw.review.invoiceDescription": "Invoice description",
-  "withdraw.review.maxFee": "Maximum fee",
+  "withdraw.review.lightningFee": "Fee",
   "withdraw.review.maxFeeSpark":
     "Usually free (over Spark), at most {amount} sats",
   "withdraw.review.maxTotal": "At most deducted",
@@ -148,7 +147,7 @@ export const enWithdraw = {
   "withdraw.review.pinDetail": "{amount} sats → {destination}",
   "withdraw.review.recipientText": "Text from the recipient",
   "withdraw.review.remainder":
-    "Whatever the fee doesn't use, up to {amount} sats, stays in your wallet.",
+    "Whatever the fee doesn't use stays in your wallet.",
   "withdraw.review.showInvoice": "Show invoice",
   "withdraw.review.speed.fast": "Fast",
   "withdraw.review.speed.fast.hint": "Highest priority",

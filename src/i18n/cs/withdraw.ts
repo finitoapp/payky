@@ -3,8 +3,6 @@ import type { enWithdraw } from "@/i18n/en/withdraw.ts"
 export const csWithdraw = {
   "withdraw.all.description": "Odeslat celý dostupný zůstatek.",
   "withdraw.all.label": "Vybrat vše",
-  "withdraw.all.unavailableAddress":
-    "Lightning adresa chce přesnou částku, rezervu na poplatek nejde odečíst.",
   "withdraw.all.unavailableInvoice": "Částku určuje faktura.",
   "withdraw.amount.available": "Dostupné: {amount} satů",
   "withdraw.amount.fromInvoice": "Částku určuje faktura.",
@@ -139,16 +137,16 @@ export const csWithdraw = {
     "Výběr byl přerušen před dokončením. Zkuste to znovu.",
   "withdraw.review.expiresIn": "Faktura platí ještě",
   "withdraw.review.fee": "Odhadovaný síťový poplatek",
+  "withdraw.review.feeEstimate": "~{estimate} satů (nejvýš {max} satů)",
   "withdraw.review.invoiceDescription": "Popis faktury",
-  "withdraw.review.maxFee": "Nejvyšší poplatek",
+  "withdraw.review.lightningFee": "Poplatek",
   "withdraw.review.maxFeeSpark":
     "Obvykle bez poplatku (přes Spark), nejvýš {amount} satů",
   "withdraw.review.maxTotal": "Odepíše se nejvýš",
   "withdraw.review.newQuote": "Nový odhad",
   "withdraw.review.pinDetail": "{amount} satů → {destination}",
   "withdraw.review.recipientText": "Text od příjemce",
-  "withdraw.review.remainder":
-    "Co poplatek nevyčerpá, zůstane v peněžence – až {amount} satů.",
+  "withdraw.review.remainder": "Co poplatek nevyčerpá, zůstane v peněžence.",
   "withdraw.review.showInvoice": "Zobrazit fakturu",
   "withdraw.review.speed.fast": "Rychlý",
   "withdraw.review.speed.fast.hint": "Nejvyšší priorita",

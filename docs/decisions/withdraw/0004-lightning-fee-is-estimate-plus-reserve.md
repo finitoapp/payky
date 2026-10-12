@@ -1,6 +1,6 @@
 # 0004 A Lightning withdrawal may cost at most its fee estimate plus a reserve
 
-Status: accepted
+Status: superseded by withdraw/0009
 Date: 2026-10-09
 
 ## Context

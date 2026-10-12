@@ -1,3 +1,6 @@
+// An app singleton that belongs in `src/components/app`, but the vendored
+// `src/components/ui/sonner.tsx` imports it from this exact path, and vendored
+// code is never edited (AGENTS.md).
 import * as React from "react"
 import {
   useDeviceSettings,

@@ -14,6 +14,7 @@ import {
   fetchLnurlPayInvoice,
   fetchLnurlPayMetadata,
   type LightningAddressInvoiceMismatchError,
+  type LnurlPayMetadata,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -82,6 +83,8 @@ export interface LightningWithdrawalQuote {
   /** Set only for an amountless invoice. */
   readonly amountSatsToSend: number | undefined
   readonly withdrawAll: boolean
+  /** The SDK's Lightning fee estimate; `maxFeeSats` adds the reserve (withdraw/0009). */
+  readonly feeEstimateSats: number
   readonly maxFeeSats: number
   /** A UUID, minted per quote: the Spark transfer's id once paid. */
   readonly transferId: string
@@ -132,13 +135,6 @@ const createWithdrawalBelowMinimumError = defineError(
 }>()
 export type WithdrawalBelowMinimumError = ReturnType<
   typeof createWithdrawalBelowMinimumError
->
-
-const createWithdrawalAmountRequiredError = defineError(
-  "WithdrawalAmountRequired"
-)()
-export type WithdrawalAmountRequiredError = ReturnType<
-  typeof createWithdrawalAmountRequiredError
 >
 
 const createWithdrawalQuoteFailedError = defineError("WithdrawalQuoteFailed")<{
@@ -197,7 +193,6 @@ export type QuoteWithdrawalError =
   | InsufficientWithdrawalBalanceError
   | WithdrawalAmountOutOfRangeError
   | WithdrawalBelowMinimumError
-  | WithdrawalAmountRequiredError
   | WithdrawalQuoteFailedError
   | SelfWithdrawalError
   | LightningInvoiceExpiredError
@@ -332,7 +327,7 @@ const quoteOnchain = async ({
 /**
  * Prices a Lightning payment. The fee and the balance check use the LN
  * estimate even when the invoice has a Spark fallback: the SDK may fall back
- * to Lightning silently (withdraw/0004).
+ * to Lightning silently (withdraw/0009).
  */
 const quoteLightningInvoice = async ({
   wallet,
@@ -340,6 +335,7 @@ const quoteLightningInvoice = async ({
   amountSats,
   lightningAddress,
   recipientText,
+  addressWithdrawAll,
 }: {
   readonly wallet: SparkPaymentWallet
   readonly invoice: LightningInvoice
@@ -347,6 +343,8 @@ const quoteLightningInvoice = async ({
   readonly amountSats: number | undefined
   readonly lightningAddress: string | null
   readonly recipientText: string | null
+  /** The invoice is a Lightning address's, sized to the balance (withdraw/0009). */
+  readonly addressWithdrawAll: boolean
 }): Promise<QuoteResult> => {
   const { availableSats } = await wallet.getBalance()
   const transferId = crypto.randomUUID()
@@ -375,6 +373,7 @@ const quoteLightningInvoice = async ({
       amountSats: sendSats,
       amountSatsToSend: sendSats,
       withdrawAll: true,
+      feeEstimateSats: estimate,
       maxFeeSats,
       transferId,
     })
@@ -405,16 +404,70 @@ const quoteLightningInvoice = async ({
     recipientText,
     amountSats: sendSats,
     amountSatsToSend,
-    withdrawAll: false,
+    withdrawAll: addressWithdrawAll,
+    feeEstimateSats: estimate,
     maxFeeSats,
     transferId,
   })
 }
 
 /**
- * Prices a withdrawal. `amountSats` is required for a Lightning address,
- * ignored for an invoice that carries its own amount, and `undefined` means
- * "withdraw all" on-chain or to an amountless invoice.
+ * How much a "withdraw all" to a Lightning address sends (withdraw/0009). The
+ * fee needs an invoice and the invoice needs an amount, so a probe invoice
+ * for the whole balance prices the fee; the fee for the smaller final amount
+ * is no higher, and the caller prices that invoice again anyway.
+ */
+const lightningAddressWithdrawAllSats =
+  ({
+    wallet,
+    metadata,
+  }: {
+    readonly wallet: SparkPaymentWallet
+    readonly metadata: LnurlPayMetadata
+  }): Task<
+    PositiveInteger,
+    | InsufficientWithdrawalBalanceError
+    | LightningAddressInvoiceMismatchError
+    | LnurlError,
+    FetchDep & DateDep
+  > =>
+  async (run) => {
+    const { minSendableSats, maxSendableSats } = metadata
+    const { availableSats } = await wallet.getBalance()
+    const probeSats = Math.min(availableSats, maxSendableSats)
+    if (probeSats < minSendableSats || probeSats <= 0) {
+      return err(
+        createInsufficientWithdrawalBalanceError({
+          availableSats,
+          requestedSats: minSendableSats,
+        })
+      )
+    }
+    const probe = await run(
+      fetchLnurlPayInvoice({ amountSats: probeSats, metadata })
+    )
+    if (!probe.ok) return probe
+    const maxFeeSats = lightningMaxFeeSats(
+      await wallet.getLightningSendFeeEstimate({
+        invoice: probe.value.invoice.invoice,
+      })
+    )
+    const sendSats = Math.min(availableSats - maxFeeSats, maxSendableSats)
+    if (sendSats < minSendableSats || sendSats <= 0) {
+      return err(
+        createInsufficientWithdrawalBalanceError({
+          availableSats,
+          requestedSats: minSendableSats + maxFeeSats,
+        })
+      )
+    }
+    return ok(PositiveInteger(sendSats))
+  }
+
+/**
+ * Prices a withdrawal. `amountSats` is ignored for an invoice that carries
+ * its own amount, and `undefined` means "withdraw all": on-chain, to an
+ * amountless invoice, or to a Lightning address.
  */
 export const quoteWithdrawal =
   ({
@@ -435,9 +488,11 @@ export const quoteWithdrawal =
     if (!sparkAccountResult.ok) return sparkAccountResult
     const sparkAccount = sparkAccountResult.value
 
-    const priceWith = async (
-      price: (wallet: SparkPaymentWallet) => Promise<QuoteResult>
-    ): Promise<QuoteResult> => {
+    const priceWith = async <T>(
+      price: (
+        wallet: SparkPaymentWallet
+      ) => Promise<Result<T, QuoteWithdrawalError>>
+    ): Promise<Result<T, QuoteWithdrawalError>> => {
       try {
         await using wallet = await run.deps.sparkWallet.create(
           sparkAccount.secret
@@ -465,20 +520,22 @@ export const quoteWithdrawal =
     let invoice: LightningInvoice
     let recipientText: string | null
     let lightningAddress: string | null = null
+    const addressWithdrawAll =
+      destination.kind === "lightning-address" && amountSats === undefined
 
     if (destination.kind === "lightning-invoice") {
       invoice = destination
       recipientText = destination.description
     } else {
-      if (amountSats === undefined) {
-        return err(createWithdrawalAmountRequiredError())
-      }
       const metadata = await run(
         fetchLnurlPayMetadata({ address: destination.address })
       )
       if (!metadata.ok) return metadata
       const { minSendableSats, maxSendableSats } = metadata.value
-      if (amountSats < minSendableSats || amountSats > maxSendableSats) {
+      if (
+        amountSats !== undefined &&
+        (amountSats < minSendableSats || amountSats > maxSendableSats)
+      ) {
         return err(
           createWithdrawalAmountOutOfRangeError({
             minSats: minSendableSats,
@@ -486,8 +543,21 @@ export const quoteWithdrawal =
           })
         )
       }
+      let sendSats = amountSats
+      if (sendSats === undefined) {
+        const sized = await priceWith((wallet) =>
+          run(
+            lightningAddressWithdrawAllSats({
+              wallet,
+              metadata: metadata.value,
+            })
+          )
+        )
+        if (!sized.ok) return sized
+        sendSats = sized.value
+      }
       const fetched = await run(
-        fetchLnurlPayInvoice({ amountSats, metadata: metadata.value })
+        fetchLnurlPayInvoice({ amountSats: sendSats, metadata: metadata.value })
       )
       if (!fetched.ok) return fetched
       invoice = fetched.value.invoice
@@ -509,6 +579,7 @@ export const quoteWithdrawal =
         amountSats,
         lightningAddress,
         recipientText,
+        addressWithdrawAll,
       })
     })
   }

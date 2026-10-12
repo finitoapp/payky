@@ -141,7 +141,6 @@ const lightningAddressUnavailable = "withdraw.error.lightningAddressUnavailable"
 const fixedQuoteErrorKeys = {
   AbortError: "withdraw.quoteError.generic",
   WithdrawalAccountNotFound: "withdraw.error.accountNotFound",
-  WithdrawalAmountRequired: "withdraw.amount.invalid",
   WithdrawalQuoteFailed: "withdraw.quoteError.generic",
   SelfWithdrawal: "withdraw.error.selfWithdrawal",
   LightningInvoiceExpired: "withdraw.error.lightningInvoiceExpired",

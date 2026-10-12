@@ -180,6 +180,7 @@ const lightningQuote = (
     amountSats: 1000,
     amountSatsToSend: undefined,
     withdrawAll: false,
+    feeEstimateSats: 10,
     maxFeeSats: 13,
     transferId,
     ...overrides,
@@ -356,6 +357,7 @@ describe("quoteWithdrawal", () => {
         amountSats: 1000,
         amountSatsToSend: undefined,
         withdrawAll: false,
+        feeEstimateSats: 10,
         maxFeeSats: 13,
       },
     })
@@ -545,6 +547,120 @@ describe("quoteWithdrawal", () => {
       "https://example.com/.well-known/lnurlp/alice",
       "https://example.com/cb?amount=1000000",
     ])
+  })
+
+  /** A Lightning address whose callback returns an invoice for whatever amount is asked. */
+  const lightningAddressFetch =
+    ({
+      maxSendable,
+      requested,
+    }: {
+      readonly maxSendable: number
+      readonly requested: string[]
+    }) =>
+    async (input: RequestInfo | URL) => {
+      const url = new URL(String(input))
+      requested.push(url.href)
+      if (url.pathname.startsWith("/.well-known/lnurlp/")) {
+        return Response.json({
+          tag: "payRequest",
+          callback: "https://example.com/cb",
+          minSendable: 1_000_000,
+          maxSendable,
+          metadata: "[]",
+        })
+      }
+      const sats = Number(url.searchParams.get("amount")) / 1000
+      return Response.json({
+        pr: validInvoice(`lnbc${sats * 10}n`),
+        routes: [],
+      })
+    }
+
+  test("withdraws all to a Lightning address as the balance minus the most the fee can be", async () => {
+    const requested: string[] = []
+    const { testEvolu, deps, accountId } = await setUp({
+      getBalance: async () => ({ availableSats: 50_000 }),
+      getLightningSendFeeEstimate: async () => 100,
+    })
+    await using _ = testEvolu
+    await using run = testCreateRun({
+      ...deps,
+      fetch: lightningAddressFetch({ maxSendable: 100_000_000, requested }),
+    })
+
+    expect(
+      await run(
+        quoteWithdrawal({
+          accountId,
+          destination: destination("alice@example.com"),
+        })
+      )
+    ).toMatchObject({
+      ok: true,
+      value: {
+        lightningAddress: "alice@example.com",
+        amountSats: 49_890,
+        amountSatsToSend: undefined,
+        withdrawAll: true,
+        feeEstimateSats: 100,
+        maxFeeSats: 110,
+      },
+    })
+    expect(requested).toEqual([
+      "https://example.com/.well-known/lnurlp/alice",
+      "https://example.com/cb?amount=50000000",
+      "https://example.com/cb?amount=49890000",
+    ])
+  })
+
+  test("withdraws all to a Lightning address at most its maxSendable", async () => {
+    const requested: string[] = []
+    const { testEvolu, deps, accountId } = await setUp({
+      getBalance: async () => ({ availableSats: 50_000 }),
+      getLightningSendFeeEstimate: async () => 100,
+    })
+    await using _ = testEvolu
+    await using run = testCreateRun({
+      ...deps,
+      fetch: lightningAddressFetch({ maxSendable: 10_000_000, requested }),
+    })
+
+    expect(
+      await run(
+        quoteWithdrawal({
+          accountId,
+          destination: destination("alice@example.com"),
+        })
+      )
+    ).toMatchObject({
+      ok: true,
+      value: { amountSats: 10_000, withdrawAll: true },
+    })
+  })
+
+  test("refuses to withdraw all to a Lightning address when the balance minus the fee is below its minSendable", async () => {
+    const { testEvolu, deps, accountId } = await setUp({
+      getBalance: async () => ({ availableSats: 1_005 }),
+      getLightningSendFeeEstimate: async () => 10,
+    })
+    await using _ = testEvolu
+    await using run = testCreateRun({
+      ...deps,
+      fetch: lightningAddressFetch({ maxSendable: 100_000_000, requested: [] }),
+    })
+
+    expect(
+      await run(
+        quoteWithdrawal({
+          accountId,
+          destination: destination("alice@example.com"),
+        })
+      )
+    ).toMatchObject({
+      ok: false,
+      error: { type: "InsufficientWithdrawalBalance", requestedSats: 1_013 },
+    })
   })
 
   test("refuses a Lightning address amount outside its range", async () => {

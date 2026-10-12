@@ -100,9 +100,6 @@ const describeDestination = (
 const withdrawAllUnavailableKey = (
   destination: WithdrawDestination | null
 ): TranslationKey | null => {
-  if (destination?.kind === "lightning-address") {
-    return "withdraw.all.unavailableAddress"
-  }
   if (
     destination?.kind === "lightning-invoice" &&
     destination.amountSats !== null
@@ -198,6 +195,7 @@ export function WithdrawFormStep({
     addressSettled && !metadataQuery.isFetching && metadataQuery.isError
   const outOfRange =
     range !== null &&
+    !effectiveWithdrawAll &&
     typedSats !== null &&
     (typedSats < range.minSendableSats || typedSats > range.maxSendableSats)
   const belowOnchainMinimum =

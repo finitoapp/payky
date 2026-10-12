@@ -1345,12 +1345,15 @@ function SummaryRow({
       </motion.p>
       {/*
        * A mouse finds it on hover, which keeps a long bill calm to read; a
-       * finger has no hover, so touch screens always show it.
+       * finger has no hover, so touch screens always show it. Hidden by
+       * negated variants rather than shown back by `group-hover:`: their
+       * `:not()`s outweigh the vendored `disabled:opacity-50`, which made it
+       * flash in while every add or remove briefly disabled it.
        */}
       <Button
         variant="ghost"
         size="icon-sm"
-        className="pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100 lg:size-9"
+        className="pointer-fine:not-group-hover:not-focus-visible:opacity-0 lg:size-9"
         aria-label={t("bill.summary.removeLine.aria", { name: summary.name })}
         disabled={disabled}
         onClick={() => onRemove(summary)}

@@ -141,7 +141,7 @@ test("build a cart, save it, resume it, and discard it", async ({
       })
       .click()
     await expect(page.getByTestId("no-table-tile")).toContainText(
-      translate("en", "tables.tile.free")
+      translate("en", "home.pos.noTable.empty")
     )
   })
 })
@@ -290,7 +290,7 @@ test("discards a resumed cart from the bill page", async ({
 
   await test.step("the cart no longer appears in the saved carts list", async () => {
     await expect(page.getByTestId("no-table-tile")).toContainText(
-      translate("en", "tables.tile.free")
+      translate("en", "home.pos.noTable.empty")
     )
   })
 })
@@ -465,7 +465,7 @@ test("charges a cart and closes it once cash is paid", async ({
   await test.step("verify the paid bill is no longer resumable", async () => {
     await gotoPosOverview(page, "en")
     await expect(page.getByTestId("no-table-tile")).toContainText(
-      translate("en", "tables.tile.free")
+      translate("en", "home.pos.noTable.empty")
     )
   })
 })
@@ -1064,7 +1064,7 @@ test("adding two different items in quick succession lazily creates only one bil
       .click()
     await page.getByTestId("no-table-tile").waitFor()
     await expect(page.getByTestId("no-table-tile")).toContainText(
-      translate("en", "tables.tile.free")
+      translate("en", "home.pos.noTable.empty")
     )
     await expect(
       page.getByTestId("no-table-tile").getByRole("link", { name: /^Bill #/ })

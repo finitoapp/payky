@@ -34,9 +34,9 @@ import {
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
-const zapstoreUrl = "https://zapstore.dev/apps/me.payky"
+export const zapstoreUrl = "https://zapstore.dev/apps/me.payky"
 // The newest release's APK; the release workflow names it (docs/releases.md).
-const apkUrl =
+export const apkUrl =
   "https://github.com/finitoapp/payky/releases/latest/download/app-release-signed.apk"
 
 interface GetOption {

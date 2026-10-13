@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/tabs.tsx"
 import {
   type MockupScreen,
+  mockupHeight,
   mockupsByLanguage,
+  mockupWidth,
 } from "@/features/landing/landing-mockups.ts"
 import { Glow, Reveal } from "@/features/landing/landing-parts.tsx"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
@@ -198,6 +200,8 @@ function PhoneScreen({
       <img
         src={mockupsByLanguage[language][screen]}
         alt={t(mockupAltKeys[screen])}
+        width={mockupWidth}
+        height={mockupHeight}
         className="w-full drop-shadow-2xl"
         loading="lazy"
       />

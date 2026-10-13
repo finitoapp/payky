@@ -43,6 +43,10 @@ export type MockupScreen =
   | "tableBill"
   | "tables"
 
+/** Every mockup's pixel size, so the page reserves its space before it loads. */
+export const mockupWidth = 1164
+export const mockupHeight = 2044
+
 export type LandingMockups = Readonly<Record<MockupScreen, string>>
 
 export const mockupsByLanguage: Readonly<Record<Language, LandingMockups>> = {

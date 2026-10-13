@@ -115,6 +115,10 @@ export const enLanding = {
   "landing.hero.title": "Paying by QR code costs nothing.",
   "landing.hero.titleAccent": "costs nothing",
   "landing.language.label": "Language",
+  "landing.meta.description":
+    "Accept QR code payments with no fees and no contract. Money goes by bank transfer straight to your account. A free till with table bills, cash and EET.",
+  "landing.meta.title":
+    "Payky – free payment terminal on your phone, QR payments",
   "landing.mockup.bill.alt": "A bill in progress with items rung up",
   "landing.mockup.home.alt": "Payky keypad with an amount typed in",
   "landing.mockup.items.alt": "Payky item catalog with prices",

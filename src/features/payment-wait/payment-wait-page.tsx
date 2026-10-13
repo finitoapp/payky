@@ -75,6 +75,7 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
+import { useNostrIdentity, useNostrProfile } from "@/hooks/use-nostr-profile.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
@@ -160,6 +161,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   )
   const payment = payments[0]
   const [settings] = settingsData
+  // The profile name is the recipient the bank QR names (payment/0005). It
+  // comes from relays, so the QR shows at once and takes the name when it
+  // lands rather than waiting on a relay that may be slow or down.
+  const { pubkey } = useNostrIdentity()
+  const profileName = useNostrProfile(pubkey).data?.name ?? null
   // Spark/Lightning payments always carry an `expiresAt`, and nothing writes
   // a row when that moment arrives — so without a ticking clock the expired
   // QR stayed on screen, `wakeLockEnabled` stayed true and Cancel kept
@@ -229,7 +235,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       const availableIbanQrPayloads: ReadonlyArray<BankQrPayload> =
         canCreateIbanQrPayloads
           ? createBankQrPayloads({
-              beneficiaryName: enabledIbanAccount.name,
+              profileName,
+              bankAccountName: enabledIbanAccount.name,
               iban: enabledIbanAccount.iban,
               amount: payment.amount,
               currency: payment.currency,
@@ -302,7 +309,14 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         paymentMethodOrder.indexOf(firstMethod.kind) -
         paymentMethodOrder.indexOf(secondMethod.kind)
     )
-  }, [enabledPaymentMethodAccounts, payment, selectedIbanQrFormat, settings, t])
+  }, [
+    enabledPaymentMethodAccounts,
+    payment,
+    profileName,
+    selectedIbanQrFormat,
+    settings,
+    t,
+  ])
   const selectedPaymentMethodOption =
     selectedPaymentMethod === null
       ? null

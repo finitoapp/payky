@@ -30,13 +30,27 @@ export const isBankQrFormat = (
   value: string | undefined
 ): value is BankQrFormat => BankQrFormatSchema.safeParse(value).success
 
+/**
+ * SPAYD 1.0 caps the recipient name (`RN`) at 35 characters, and no value may
+ * hold `*`, the field separator: the spec percent-encodes it, so `%` has to
+ * be encoded first to stay unambiguous.
+ */
+const spaydRecipientNameMaxLength = 35
+const toSpaydRecipientName = (name: string): string =>
+  name
+    .slice(0, spaydRecipientNameMaxLength)
+    .replaceAll("%", "%25")
+    .replaceAll("*", "%2A")
+
 const createSpaydQrPayload = ({
+  profileName,
   iban,
   amount,
   currency,
   specificSymbol,
   variableSymbol,
 }: {
+  readonly profileName: string | null
   readonly iban: string
   readonly amount: number
   readonly currency: Currency
@@ -55,6 +69,7 @@ const createSpaydQrPayload = ({
       `AM:${minorUnitsToFixedDecimalString({ value: Integer(amount), currency })}`,
       `CC:${currency}`,
       "PT:IP",
+      profileName === null ? null : `RN:${toSpaydRecipientName(profileName)}`,
       variableSymbol ? `X-VS:${variableSymbol}` : null,
       specificSymbol ? `X-SS:${specificSymbol}` : null,
     ]
@@ -63,7 +78,8 @@ const createSpaydQrPayload = ({
   )
 
 const createPayBySquareQrPayload = ({
-  beneficiaryName,
+  profileName,
+  bankAccountName,
   iban,
   amount,
   currency,
@@ -71,7 +87,8 @@ const createPayBySquareQrPayload = ({
   variableSymbol,
   version,
 }: {
-  readonly beneficiaryName: string
+  readonly profileName: string | null
+  readonly bankAccountName: string
   readonly iban: string
   readonly amount: number
   readonly currency: Currency
@@ -92,7 +109,9 @@ const createPayBySquareQrPayload = ({
               })
             ),
             currencyCode: currency,
-            beneficiary: { name: beneficiaryName },
+            // Pay by square requires a beneficiary name, so without a profile
+            // name the payment method's own name stands in.
+            beneficiary: { name: profileName ?? bankAccountName },
             bankAccounts: [{ iban }],
             ...(variableSymbol ? { variableSymbol } : {}),
             ...(specificSymbol ? { specificSymbol } : {}),
@@ -103,8 +122,14 @@ const createPayBySquareQrPayload = ({
     )
   )
 
+/**
+ * The account's profile name is the recipient the customer's banking app
+ * shows (payment/0005); `bankAccountName` is the payment method's name, the
+ * Pay by square fallback.
+ */
 const createBankQrPayload = ({
-  beneficiaryName,
+  profileName,
+  bankAccountName,
   format,
   iban,
   amount,
@@ -112,7 +137,8 @@ const createBankQrPayload = ({
   specificSymbol,
   variableSymbol,
 }: {
-  readonly beneficiaryName: string
+  readonly profileName: string | null
+  readonly bankAccountName: string
   readonly format: BankQrFormat
   readonly iban: string
   readonly amount: number
@@ -122,6 +148,7 @@ const createBankQrPayload = ({
 }): NonEmptyString =>
   format === "spayd"
     ? createSpaydQrPayload({
+        profileName,
         iban,
         amount,
         currency,
@@ -129,7 +156,8 @@ const createBankQrPayload = ({
         variableSymbol,
       })
     : createPayBySquareQrPayload({
-        beneficiaryName,
+        profileName,
+        bankAccountName,
         iban,
         amount,
         currency,

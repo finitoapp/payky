@@ -8,7 +8,8 @@ import { createBankQrPayloads } from "./payment-iban-qr-payload-utils.ts"
 describe("payment IBAN QR payload utils", () => {
   test("creates SPAYD and Pay by square payloads from bank payment data", () => {
     const payloads = createBankQrPayloads({
-      beneficiaryName: "Slovak bank account",
+      profileName: null,
+      bankAccountName: "Slovak bank account",
       iban: "SK9611000000002918599669",
       amount: 12_900,
       currency: "EUR",
@@ -66,7 +67,8 @@ describe("payment IBAN QR payload utils", () => {
 
   test("writes the chosen Pay by square version into the QR header", () => {
     const payloads = createBankQrPayloads({
-      beneficiaryName: "Slovak bank account",
+      profileName: null,
+      bankAccountName: "Slovak bank account",
       iban: "SK9611000000002918599669",
       amount: 12_900,
       currency: "EUR",
@@ -82,5 +84,61 @@ describe("payment IBAN QR payload utils", () => {
 
     expect(headerVersion("payBySquare1_0_0")).toBe(Version["1.0.0"])
     expect(headerVersion("payBySquare1_2_0")).toBe(Version["1.2.0"])
+  })
+
+  describe("recipient name", () => {
+    const createPayloads = (profileName: string | null) =>
+      createBankQrPayloads({
+        profileName,
+        bankAccountName: "Slovak bank account",
+        iban: "SK9611000000002918599669",
+        amount: 12_900,
+        currency: "EUR",
+        variableSymbol: VariableSymbol("1"),
+        specificSymbol: null,
+      })
+    const spaydPayload = (payloads: ReturnType<typeof createPayloads>) =>
+      payloads.find((payload) => payload.format === "spayd")?.payload
+    const payBySquareBeneficiaries = (
+      payloads: ReturnType<typeof createPayloads>
+    ) =>
+      payloads
+        .filter((payload) => payload.format !== "spayd")
+        .map(
+          (payload) =>
+            decodePayBySquare(payload.payload).payments[0]?.beneficiary?.name
+        )
+
+    test("names the profile as the recipient", () => {
+      const payloads = createPayloads("Kavárna U Lípy")
+
+      expect(spaydPayload(payloads)).toBe(
+        "SPD*1.0*ACC:SK9611000000002918599669*AM:129.00*CC:EUR*PT:IP*RN:Kavárna U Lípy*X-VS:1"
+      )
+      expect(payBySquareBeneficiaries(payloads)).toEqual([
+        "Kavárna U Lípy",
+        "Kavárna U Lípy",
+      ])
+    })
+
+    test("leaves SPAYD without a recipient and names the bank account in Pay by square when the profile has no name", () => {
+      const payloads = createPayloads(null)
+
+      expect(spaydPayload(payloads)).not.toContain("RN:")
+      expect(payBySquareBeneficiaries(payloads)).toEqual([
+        "Slovak bank account",
+        "Slovak bank account",
+      ])
+    })
+
+    test("keeps the SPAYD recipient to 35 characters and encodes the field separator", () => {
+      const payloads = createPayloads(
+        "Kavárna U Lípy * 100% arabica, Praha 1, Staré Město"
+      )
+
+      expect(spaydPayload(payloads)).toContain(
+        "*RN:Kavárna U Lípy %2A 100%25 arabica, Prah*X-VS:1"
+      )
+    })
   })
 })

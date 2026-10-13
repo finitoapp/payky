@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 
+import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
 import {
   defaultPaymentMethodOrder,
   getFiatCurrency,
@@ -67,6 +68,16 @@ describe("getPaymentMethodOrder", () => {
 
   test("falls back to the default order without settings", () => {
     expect(getPaymentMethodOrder(undefined)).toEqual(defaultPaymentMethodOrder)
+  })
+
+  test("keeps the stored order when the default method is one this build does not know", () => {
+    expect(
+      getPaymentMethodOrder({
+        paymentMethodOrderJson: '["iban","cashRegister","spark"]',
+        // Written by a build with one more method, as the cashu branch has.
+        defaultPaymentMethod: "cashu" as DefaultPaymentMethod,
+      })
+    ).toEqual(["iban", "cashRegister", "spark", "cardSwitchio"])
   })
 })
 

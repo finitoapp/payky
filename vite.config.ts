@@ -150,7 +150,14 @@ function repoSnapshotPlugin(): PluginOption {
  * language, Czech at `/landing`.
  */
 function landingPagesPlugin(): PluginOption {
-  const landingPath = /^\/landing(?:\/([a-z]{2}))?(\/eet-2-0)?\/?(?:\?.*)?$/u
+  const landingPath =
+    /^\/landing(?:\/([a-z]{2}))?(?:\/(eet-2-0|jak-to-funguje))?\/?(?:\?.*)?$/u
+  // The EET page (landing/0006) and the page on how Payky works (landing/0008)
+  // have a file of their own per language.
+  const documentFiles: Record<string, string> = {
+    "eet-2-0": "-eet",
+    "jak-to-funguje": "-tech",
+  }
   return {
     name: "payky-landing-pages",
     configureServer(server) {
@@ -165,8 +172,7 @@ function landingPagesPlugin(): PluginOption {
       server.middlewares.use((request, _response, next) => {
         const match = request.url?.match(landingPath)
         if (match) {
-          // The EET page (landing/0006) has a file of its own per language.
-          request.url = `/landing${match[2] === undefined ? "" : "-eet"}-${match[1] ?? "cs"}.html`
+          request.url = `/landing${documentFiles[match[2] ?? ""] ?? ""}-${match[1] ?? "cs"}.html`
         }
         next()
       })

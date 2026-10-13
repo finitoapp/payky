@@ -22,7 +22,8 @@ page (landing/0002): Czech at `/landing/eet-2-0`, English at `/landing/en/eet-2-
 Slovak at `/landing/sk/eet-2-0`. Each has its own title, description, canonical
 link, `hreflang` links to the EET page in the other languages, Czech as
 `x-default`, and an `FAQPage` with the page's own questions. It shares the
-home page's header, footer and closing section (install and contact form);
+home page's header and footer (the closing section, install and contact
+form, stays on the home page since landing/0010);
 choosing another language on it moves to the EET page in that language.
 The home page's EET card links to it.
 
@@ -49,7 +50,7 @@ topics.
 `bun run build` writes six files: `landing-<language>.html` and
 `landing-eet-<language>.html`. `vercel.json`, the dev and preview servers
 (`landingPagesPlugin`) and `sitemap.xml` know the three new addresses. A
-change to the shell (header, footer, closing) changes both pages.
+change to the shell (header, footer) changes both pages.
 
 ## Enforced by
 

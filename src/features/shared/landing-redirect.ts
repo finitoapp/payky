@@ -23,6 +23,13 @@ export const landingEetPaths = {
   sk: "/landing/sk/eet-2-0",
 } as const satisfies Record<Language, string>
 
+/** The page on how Payky works, prerendered once per language too (landing/0008). */
+export const landingTechPaths = {
+  cs: "/landing/jak-to-funguje",
+  en: "/landing/en/jak-to-funguje",
+  sk: "/landing/sk/jak-to-funguje",
+} as const satisfies Record<Language, string>
+
 export const LandingLanguageSchema: z.ZodType<Language> = z.enum([
   "cs",
   "en",
@@ -147,6 +154,7 @@ export function landingLanguageFromPath(pathname: string): Language {
   const match = [
     ...Object.entries(landingPaths),
     ...Object.entries(landingEetPaths),
+    ...Object.entries(landingTechPaths),
   ].find(([, path]) => path === normalized)
   return LandingLanguageSchema.catch("cs").parse(match?.[0])
 }
@@ -154,5 +162,11 @@ export function landingLanguageFromPath(pathname: string): Language {
 /** Whether `pathname` is the EET 2.0 page in one of its languages. */
 export const isLandingEetPath = (pathname: string): boolean =>
   Object.values<string>(landingEetPaths).includes(
+    normalizeLandingPath(pathname)
+  )
+
+/** Whether `pathname` is the page on how Payky works in one of its languages. */
+export const isLandingTechPath = (pathname: string): boolean =>
+  Object.values<string>(landingTechPaths).includes(
     normalizeLandingPath(pathname)
   )

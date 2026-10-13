@@ -277,6 +277,7 @@ export const enLanding = {
   "landing.hero.title": "Paying by QR code costs nothing.",
   "landing.hero.titleAccent": "costs nothing",
   "landing.language.label": "Language",
+  "landing.menu.tech": "What makes us different",
   "landing.meta.description":
     "Accept QR code payments with no fees and no contract. Money goes by bank transfer straight to your account. A free till with table bills, cash and EET.",
   "landing.meta.title":
@@ -292,6 +293,7 @@ export const enLanding = {
     "Charts of sales over time and payment methods",
   "landing.mockup.tableBill.alt": "A table's bill with the ordered items",
   "landing.mockup.tables.alt": "Table overview with open bills",
+  "landing.menu.contact": "Contact",
   "landing.menu.eet": "EET 2.0",
   "landing.menu.home": "Home",
   "landing.menu.label": "Menu",
@@ -303,6 +305,7 @@ export const enLanding = {
   "landing.more.cash.title": "Cash too",
   "landing.more.data.body":
     "Items, bills and history live on your phone or tablet. Backup and sync are optional and encrypted.",
+  "landing.more.data.link": "What makes us different",
   "landing.more.data.title": "Your data stays with you",
   "landing.more.eet.body":
     "Czech merchants report sales to EET 2.0 straight from the app, with retries whenever the network is down.",
@@ -331,5 +334,422 @@ export const enLanding = {
     "Net revenue, the number and average of sales, tips kept apart, and refunds. Plus what should be in the till.",
   "landing.stats.overview.title": "Revenue at a glance",
   "landing.stats.title": "Know how you're doing",
+  "landing.tech.account.body":
+    "On first launch, the app creates a cryptographic key, and that key is your account. Think of it as the key to a safe with no locksmith: whoever has it can open the data, and if you lose it, nobody can open it for you.",
+  "landing.tech.account.cost.body":
+    "There's no password reset by email, and we can't give you back the data or the bitcoin, because we don't have them. So write the phrase down and keep it somewhere safe, away from your computer.",
+  "landing.tech.account.cost.title": "Freedom comes with responsibility",
+  "landing.tech.account.eyebrow": "No sign-up",
+  "landing.tech.account.kyc.body":
+    "Payky never holds or forwards your money. A bank transfer goes from the customer's bank straight to your account, which your bank has already verified. Bitcoin lands in a wallet only you hold the keys to. So the app has no money of yours that would require verifying you.",
+  "landing.tech.account.kyc.title":
+    "Why we don't ask for your ID (KYC and AML)",
+  "landing.tech.account.phrase.body":
+    "You can write the key down as a recovery phrase — a list of words. Whoever has it has the account: they can open the data and the bitcoin wallet. To move the account to a new device, you scan a QR code from the current one and confirm a six-digit code. The phrase never leaves the device.",
+  "landing.tech.account.phrase.sample":
+    "This is what a recovery phrase looks like. It's only a sample; yours will be different.",
+  "landing.tech.account.phrase.title": "The recovery phrase",
+  "landing.tech.account.title": "No sign-up, no verification",
+  "landing.tech.account.whatIf.bank": "Money in the bank account",
+  "landing.tech.account.whatIf.bitcoin": "Bitcoin in the wallet",
+  "landing.tech.account.whatIf.data": "Business data",
+  "landing.tech.account.whatIf.kept": "Safe",
+  "landing.tech.account.whatIf.lost": "Lost",
+  "landing.tech.account.whatIf.lostBoth.label":
+    "I lose both the phone and the phrase",
+  "landing.tech.account.whatIf.lostBoth.note":
+    "And the account is on no other device.",
+  "landing.tech.account.whatIf.lostPhone.label": "I lose my phone",
+  "landing.tech.account.whatIf.lostPhone.note":
+    "I enter the phrase on a new device, and the data downloads from the relays.",
+  "landing.tech.account.whatIf.lostPhrase.label": "I lose the recovery phrase",
+  "landing.tech.account.whatIf.lostPhrase.note":
+    "As long as I have the phone, I can copy the phrase again in the settings.",
+  "landing.tech.account.whatIf.topic": "What happens",
+  "landing.tech.account.why.body":
+    "Sign-up is mostly for the provider's benefit. They need to know whose data sits on their server and let only you in. Payky keeps none of your data on a server, so there's no account to create. What lets you in isn't our server, it's your key.",
+  "landing.tech.account.why.title": "Why that works",
+  "landing.tech.backup.body":
+    "Data is encrypted right on your device, and only unreadable noise ever leaves it. Only someone with the key can read it.",
+  "landing.tech.backup.content.body":
+    "Data is encrypted with your key before it ever leaves the device. All the relay stores is unreadable blocks.",
+  "landing.tech.backup.content.title": "It can't see the content",
+  "landing.tech.backup.diagram.caption":
+    "With a cloud app, the provider holds the key to your data. So they can read it, and so can anyone who gets to the server: support, engineers, sales, or an attacker in a breach. With Payky, the relay sees only encrypted noise, and only you have the key. Not even our support can see your data — they only know what you tell them.",
+  "landing.tech.backup.diagram.cloudSees": "What the provider's server sees",
+  "landing.tech.backup.diagram.receipt":
+    "Espresso 2× · CZK 130 · 14:32 · table 3 · QR payment",
+  "landing.tech.backup.diagram.sees": "What a relay sees",
+  "landing.tech.backup.eyebrow": "Backup and sync",
+  "landing.tech.backup.metadata.body":
+    "Only what's on the envelope: an anonymous account identifier, when the data arrived and how much there was. It doesn't know your name, your business or any amounts.",
+  "landing.tech.backup.metadata.title": "It sees metadata",
+  "landing.tech.backup.people.attacker": "Attacker",
+  "landing.tech.backup.people.engineers": "Engineers",
+  "landing.tech.backup.people.sales": "Sales team",
+  "landing.tech.backup.people.support": "Support",
+  "landing.tech.backup.relay.body":
+    "A simple server, built on the open-source Evolu library, that passes encrypted data between your devices. Think of a post office handling sealed envelopes: it knows who got them and when, but can't see inside.",
+  "landing.tech.backup.relay.title": "What a relay is",
+  "landing.tech.backup.restore.body":
+    "On a new device, you enter the recovery phrase or move the account over by QR code. The app connects to the relays, downloads the encrypted data and decrypts it only on your device.",
+  "landing.tech.backup.restore.title": "Restoring",
+  "landing.tech.backup.title": "A backup nobody but you can read",
+  "landing.tech.backup.where.body":
+    "The backup goes to Payky's relay (live-relay.payky.me) and, at the same time, to the relay of Linky (evolu.linky.fit), a friendly project built on the same principles. If one goes down, the other keeps going. In the settings you can turn them off or add your own, for example on your own server.",
+  "landing.tech.backup.where.title": "Two relays at once",
+  "landing.tech.compare.cloud": "A typical cloud app",
+  "landing.tech.compare.cloudFlow.caption":
+    "The app sends everything to the provider's server, and only that server talks to your bank. Meanwhile it holds every merchant's data.",
+  "landing.tech.compare.cloudFlow.title": "A typical cloud app",
+  "landing.tech.compare.code.cloud": "Closed",
+  "landing.tech.compare.code.label": "Source code",
+  "landing.tech.compare.code.payky": "Open (MIT)",
+  "landing.tech.compare.data.cloud": "On the provider's server",
+  "landing.tech.compare.data.label": "Where the data is",
+  "landing.tech.compare.data.payky": "On your device",
+  "landing.tech.compare.eyebrow": "Comparison",
+  "landing.tech.compare.legend.money": "Money",
+  "landing.tech.compare.legend.talk": "The app's communication",
+  "landing.tech.compare.middleman.cloud": "The provider's server",
+  "landing.tech.compare.middleman.label":
+    "Who stands between the customer and you",
+  "landing.tech.compare.middleman.payky": "Nobody of ours",
+  "landing.tech.compare.outage.cloud": "You can't sell",
+  "landing.tech.compare.outage.label": "When the server goes down",
+  "landing.tech.compare.outage.payky": "You keep selling",
+  "landing.tech.compare.payky": "Payky",
+  "landing.tech.compare.paykyFlow.caption":
+    "The money goes straight to your account, and your phone asks your bank about the payment directly.",
+  "landing.tech.compare.paykyFlow.title": "Payky",
+  "landing.tech.compare.reads.cloud":
+    "The provider, and anyone who gets into their database",
+  "landing.tech.compare.reads.label": "Who can read your sales",
+  "landing.tech.compare.reads.payky": "Only you",
+  "landing.tech.compare.shutdown.cloud":
+    "Will you manage to download an export in time?",
+  "landing.tech.compare.shutdown.label": "When the company shuts down",
+  "landing.tech.compare.shutdown.payky": "You keep the app and the data",
+  "landing.tech.compare.signup.cloud": "Email, password, often ID documents",
+  "landing.tech.compare.signup.label": "Sign-up",
+  "landing.tech.compare.signup.payky": "None",
+  "landing.tech.compare.title": "A typical cloud app, or Payky",
+  "landing.tech.compare.topic": "What we compare",
+  "landing.tech.cta.body": "No sign-up, done in a minute. Just open the app.",
+  "landing.tech.cta.experiment.body":
+    "open the app, switch on airplane mode and ring up an espresso. The bill opens, the items add up and the cash goes through.",
+  "landing.tech.cta.experiment.title": "Try this:",
+  "landing.tech.cta.title": "Try it yourself",
+  "landing.tech.exit.body":
+    "Neither selling nor payments depend on our servers. Here's what happens when they go down — and what would happen if Payky shut down.",
+  "landing.tech.exit.code.body":
+    "Anyone can take it, change it and keep it running.",
+  "landing.tech.exit.code.link": "Source code on GitHub",
+  "landing.tech.exit.code.title": "The code is open",
+  "landing.tech.exit.data.body": "The app on your phone keeps working.",
+  "landing.tech.exit.data.title": "Your data is with you",
+  "landing.tech.exit.end": "If Payky ended",
+  "landing.tech.exit.eyebrow": "Looking ahead",
+  "landing.tech.exit.money.body":
+    "The bank account is yours, and you can open the bitcoin wallet with the recovery phrase in another app that supports Spark too.",
+  "landing.tech.exit.money.title": "We don't have your money",
+  "landing.tech.exit.outage.backup.label": "Backup and sync",
+  "landing.tech.exit.outage.backup.state":
+    "Keeps going through the Linky relay, if you have it on",
+  "landing.tech.exit.outage.eet.label": "EET",
+  "landing.tech.exit.outage.eet.state":
+    "Keeps working; sales go straight to the Financial Administration",
+  "landing.tech.exit.outage.extras.label":
+    "AI assistant, support, contact form and donations",
+  "landing.tech.exit.outage.extras.state":
+    "Don't work until the servers are back",
+  "landing.tech.exit.outage.payments.label": "QR payments, bitcoin and cards",
+  "landing.tech.exit.outage.payments.state": "Keep working",
+  "landing.tech.exit.outage.sales.label": "Selling, bills and cash",
+  "landing.tech.exit.outage.sales.state": "Keep working",
+  "landing.tech.exit.outage.state": "What happens",
+  "landing.tech.exit.outage.title": "When our servers go down",
+  "landing.tech.exit.outage.topic": "Feature",
+  "landing.tech.exit.outage.web.label": "Web version",
+  "landing.tech.exit.outage.web.state":
+    "Opens from the browser's storage if you've opened it before. The Android app keeps working.",
+  "landing.tech.exit.sync.body": "Through any available relay, even your own.",
+  "landing.tech.exit.sync.title": "Syncing keeps working",
+  "landing.tech.exit.title": "You don't depend on us",
+  "landing.tech.faq.kyc.answer":
+    "Payky never holds or forwards your money. Payments go straight to your bank account, which your bank has verified, or to your own bitcoin wallet.",
+  "landing.tech.faq.kyc.question": "Why don't you ask for my ID (KYC)?",
+  "landing.tech.faq.lostAll.answer":
+    "Then you lose the data and the bitcoin in the wallet, and we can't restore them, because we don't have them. The money in your bank account isn't affected.",
+  "landing.tech.faq.lostAll.question":
+    "What if I lose my phone and the recovery phrase?",
+  "landing.tech.faq.lostPhone.answer":
+    "You restore the account on another device with the recovery phrase, or move it over from a device that still has it. The data downloads from the relays.",
+  "landing.tech.faq.lostPhone.question": "What if I lose my phone?",
+  "landing.tech.faq.offline.answer":
+    "Selling, bills and cash, yes. Bank confirmations, bitcoin payments and sending sales to EET finish as soon as you're back online.",
+  "landing.tech.faq.offline.question": "Does Payky work without internet?",
+  "landing.tech.faq.openCode.answer":
+    "No. An attacker can see how the lock works, but doesn't have the key — that lives only on your device and in your recovery phrase. Open code, on the other hand, can be read by people who look for bugs so they get fixed.",
+  "landing.tech.faq.openCode.question":
+    "Isn't open code dangerous? An attacker can see how the app works.",
+  "landing.tech.faq.ownRelay.answer":
+    "Yes. Add your own relay in the account settings, and you can turn the default ones off.",
+  "landing.tech.faq.ownRelay.question": "Can I run my own backup server?",
+  "landing.tech.faq.read.answer":
+    "No. Payky's relay holds only encrypted data, and only you have the key. The only exception is what you yourself write to the AI assistant or to support.",
+  "landing.tech.faq.read.question": "Can you read my receipts and sales?",
+  "landing.tech.faq.server.answer":
+    "No. The QR code is made on your phone, the money goes from the customer's bank to your account, and the app asks your bank about the payment directly. A bitcoin payment is processed by the Spark network, not by Payky.",
+  "landing.tech.faq.server.question":
+    "Is there a Payky server between me and the customer?",
+  "landing.tech.faq.signup.answer":
+    "Because Payky has no server with your data that it would need to let you into. Your account is a cryptographic key created right on your device.",
+  "landing.tech.faq.signup.question": "Why don't I have to sign up?",
+  "landing.tech.faq.where.answer":
+    "On your device. Only encrypted data goes out to the relays, for backup and sync.",
+  "landing.tech.faq.where.question": "Where is my data stored?",
+  "landing.tech.hero.body":
+    "Typical payment apps run on the provider's server. Your data lives there, you sign in through it, and payment information flows through it. Payky has no such server. We do run a few — for the encrypted backup and some optional extras — but you can sell and take payments without them.",
+  "landing.tech.hero.eyebrow": "What makes us different",
+  "landing.tech.hero.title": "A payment terminal that doesn't need our server",
+  "landing.tech.journey.encrypt.body":
+    "Still on the phone, it turns into unreadable noise, and only that noise goes to the relay.",
+  "landing.tech.journey.encrypt.title": "The receipt gets encrypted",
+  "landing.tech.journey.pay.body":
+    "The phone creates a QR code for CZK 130 with your account number. The money goes from the customer's bank straight to you. If you bank with Fio, the phone checks for itself that it has arrived.",
+  "landing.tech.journey.pay.title": "The customer pays by QR code",
+  "landing.tech.journey.sale.body":
+    "The bill is saved right on the phone. Nothing waits for the internet.",
+  "landing.tech.journey.sale.title": "You ring up 2× espresso",
+  "landing.tech.journey.sync.body":
+    "The tablet at the bar downloads the noise and decrypts it with your account's key. The relay read nothing on the way.",
+  "landing.tech.journey.sync.title": "It shows up on the second till",
+  "landing.tech.journey.title": "One sale, from the counter to the second till",
+  "landing.tech.local.body":
+    "Your catalog, bills, payments and settings are stored on your own device. The app works with them directly, so it responds instantly and doesn't need the internet to sell. Sync is a handy extra, not a requirement.",
+  "landing.tech.local.devices.body":
+    "Several devices can work on the same data at once, even offline. As soon as they reconnect, the changes merge on their own, and no central server has to decide which one wins.",
+  "landing.tech.local.devices.title": "Several tills at once",
+  "landing.tech.local.eyebrow": "Local-first",
+  "landing.tech.local.offline.body":
+    "EET never keeps a customer waiting: the sale goes to the Financial Administration in the background.",
+  "landing.tech.local.offline.later.bank":
+    "Confirmation of a QR payment from the bank",
+  "landing.tech.local.offline.later.bitcoin": "Bitcoin payments",
+  "landing.tech.local.offline.later.eet": "Sending the sale to EET",
+  "landing.tech.local.offline.later.sync":
+    "Backup and sync with your other devices",
+  "landing.tech.local.offline.later.title": "Finishes once you're back online",
+  "landing.tech.local.offline.now.bill": "Open a bill and ring up items",
+  "landing.tech.local.offline.now.cash": "Take cash and close the bill",
+  "landing.tech.local.offline.now.qr": "Show the customer a QR code to pay",
+  "landing.tech.local.offline.now.title": "Works offline",
+  "landing.tech.local.offline.title": "You sell without internet",
+  "landing.tech.local.speed.body":
+    "Every tap is saved on the device straight away. Nothing waits for a server to answer.",
+  "landing.tech.local.speed.title": "Speed doesn't depend on the connection",
+  "landing.tech.local.title": "No cloud: your data is with you",
+  "landing.tech.meta.description":
+    "A payment terminal that doesn't need our server. Only you have your data, money goes straight to you, and you can sell without the internet. A comparison with a typical cloud app and the full list of connections.",
+  "landing.tech.meta.title":
+    "What makes Payky different: no cloud, no sign-up, no middleman",
+  "landing.tech.money.body":
+    "Money goes straight to your account or your wallet. No Payky server stands in its way.",
+  "landing.tech.money.card.body":
+    "On a device with a Switchio terminal, Payky only hands the amount to the Switchio app. Switchio and the merchant's bank then process the card, just as with any other terminal. Card details never reach Payky.",
+  "landing.tech.money.card.title": "Card",
+  "landing.tech.money.cash.body": "just you and the customer.",
+  "landing.tech.money.cash.title": "Cash:",
+  "landing.tech.money.eyebrow": "Payments",
+  "landing.tech.money.lightning.body":
+    "Lightning is a network for instant bitcoin payments. Payky issues an invoice from your Spark wallet, which runs right inside the app. The payment lands in your wallet, and only your device holds its keys. Transactions are processed by Spark network operators and a Lightning gateway provider — they see the amount and the time. The app gets the exchange rate for your currency from the public Yadio service.",
+  "landing.tech.money.lightning.title": "Bitcoin (Lightning)",
+  "landing.tech.money.qr.arrive":
+    "The money goes from the customer's bank straight to your account, within seconds for an instant payment.",
+  "landing.tech.money.qr.check":
+    "Payky then asks your bank by itself whether the payment has arrived. It uses a token for this — an access key to your bank account that only you have stored.",
+  "landing.tech.money.qr.create":
+    "The phone creates a QR code with your account number, the amount and a variable symbol. No server takes part.",
+  "landing.tech.money.qr.note":
+    "Automatic payment matching only works with Fio banka for now. With other banks, you confirm the payment by hand.",
+  "landing.tech.money.qr.scan":
+    "The customer scans it in their banking app and confirms the payment.",
+  "landing.tech.money.qr.title": "QR bank transfer",
+  "landing.tech.money.title": "We don't stand between you and the customer",
+  "landing.tech.node.account": "Your bank account",
+  "landing.tech.node.app": "Your app",
+  "landing.tech.node.card": "Customer's card",
+  "landing.tech.node.customerBank": "Customer's bank",
+  "landing.tech.node.customerPayment": "Customer's payment",
+  "landing.tech.node.customerWallet": "Customer's wallet",
+  "landing.tech.node.operator": "The app provider's server",
+  "landing.tech.node.otherDevice": "Your other device",
+  "landing.tech.node.outside": "off the money's path",
+  "landing.tech.node.payky": "Payky",
+  "landing.tech.node.phone": "Your phone",
+  "landing.tech.node.serverOrRelay": "Server / relay",
+  "landing.tech.node.spark": "Spark network",
+  "landing.tech.node.switchio": "Switchio and the merchant's bank",
+  "landing.tech.node.wallet": "Your wallet",
+  "landing.tech.security.body":
+    "There's no single place holding every merchant's data, so there's nothing to steal in one go.",
+  "landing.tech.security.diagram.cloud":
+    "One database with every merchant's data: a single breach is enough.",
+  "landing.tech.security.diagram.payky":
+    "Each device on its own, and locked: nothing to attack all at once.",
+  "landing.tech.security.eyebrow": "Security",
+  "landing.tech.security.ownership.body":
+    "Whoever holds your data can analyse it, sell it, hand it over on request or lose it. With Payky, only you can read it, and nobody can make us hand it over, because we don't have it.",
+  "landing.tech.security.ownership.title": "Your data belongs to you",
+  "landing.tech.security.pin.body":
+    "A PIN can lock the settings, refunds and other sensitive actions, so staff can only sell. To be clear: the PIN keeps out the curious at the counter, not an attacker with full access to the device. Real protection comes from the recovery phrase and the phone's own lock.",
+  "landing.tech.security.pin.title": "A PIN for staff",
+  "landing.tech.security.secrets.body":
+    "The recovery phrase, the bank token and the EET certificate are stored in the account data, which only ever syncs encrypted. Your device signs EET sales and sends them itself, with no one in between.",
+  "landing.tech.security.secrets.title": "Sensitive details stay with you",
+  "landing.tech.security.target.body":
+    "A server holding the data of thousands of merchants is an ideal target: one breach and the attacker has everything. And most breaches don't come from cracked encryption, but from a misconfigured database, a stolen admin password or an employee with access to everything. Payky has no such server. An attacker would have to break into each device separately, and on the relays they'd find only encrypted data.",
+  "landing.tech.security.target.title": "No tempting target",
+  "landing.tech.security.title": "We don't have your data, so we can't lose it",
+  "landing.tech.security.tracking.body":
+    "Payky uses no analytics and no tracking services. Error reporting stays off until you turn it on yourself. And when you do, recovery phrases and account numbers are stripped from the report before it's sent.",
+  "landing.tech.security.tracking.title": "No tracking",
+  "landing.tech.services.ai.name": "AI assistant",
+  "landing.tech.services.ai.sent":
+    "Your questions and the assistant's answers. If you allow it, also the bills and payments the assistant reads.",
+  "landing.tech.services.ai.when": "Only when you turn the assistant on.",
+  "landing.tech.services.ai.why":
+    "Our server holds the key to the AI model and passes your questions on to the AI provider. Conversations aren't stored anywhere. The assistant also downloads the app's documentation from us, so it knows how the app works.",
+  "landing.tech.services.bank.name": "Your bank (Fio API)",
+  "landing.tech.services.bank.sent":
+    "Your token and a request for the account's transactions.",
+  "landing.tech.services.bank.when": "When payment matching is on.",
+  "landing.tech.services.body":
+    "Every service Payky talks to: what it sends, when, and for our own servers, why. Sorted by when the connection happens.",
+  "landing.tech.services.boltCard.name":
+    "The issuer of the customer's Bolt Card",
+  "landing.tech.services.boltCard.sent": "A request to pay from the card.",
+  "landing.tech.services.boltCard.when":
+    "When a customer pays by tapping a Bolt Card (Android).",
+  "landing.tech.services.contact.name": "Contact form",
+  "landing.tech.services.contact.sent": "Name, contact and message.",
+  "landing.tech.services.contact.when": "When you send the form.",
+  "landing.tech.services.contact.why":
+    "It passes the message on to the support chat.",
+  "landing.tech.services.donations.name": "Donations",
+  "landing.tech.services.donations.sent": "The amount of the donation.",
+  "landing.tech.services.donations.when": "When you donate.",
+  "landing.tech.services.donations.why": "Issues an invoice for your donation.",
+  "landing.tech.services.eet.name": "Financial Administration (EET)",
+  "landing.tech.services.eet.sent": "Signed sale data.",
+  "landing.tech.services.eet.when": "When EET is on.",
+  "landing.tech.services.eetCertificates.name": "EET test certificates",
+  "landing.tech.services.eetCertificates.sent": "Nothing sensitive.",
+  "landing.tech.services.eetCertificates.when":
+    "When you try the test environment in the EET settings.",
+  "landing.tech.services.eetCertificates.why":
+    "Hands out public test certificates.",
+  "landing.tech.services.eyebrow": "The full list",
+  "landing.tech.services.footer":
+    "None of these services ever gets hold of your money or readable data about your business. The only exception is what you yourself write to the AI assistant or to support.",
+  "landing.tech.services.group.action": "Only for a specific action",
+  "landing.tech.services.group.always": "Whenever you use the app",
+  "landing.tech.services.group.enabled": "Only when you turn it on",
+  "landing.tech.services.highlight":
+    "Until you turn something on or use it, the app talks at most to the payky.me website and two relays — and it sends the relays only encrypted data.",
+  "landing.tech.services.lightningAddress.name":
+    "The recipient's Lightning address",
+  "landing.tech.services.lightningAddress.sent": "A request for an invoice.",
+  "landing.tech.services.lightningAddress.when":
+    "When you withdraw to a Lightning address.",
+  "landing.tech.services.linky.name":
+    "The relay of Linky, a friendly project (evolu.linky.fit)",
+  "landing.tech.services.linky.sent": "The account's encrypted data.",
+  "landing.tech.services.linky.when": "Always, but you can turn it off.",
+  "landing.tech.services.nostr.name": "Nostr relays",
+  "landing.tech.services.nostr.sent":
+    "Encrypted support messages, the account's public profile, and the data for moving an account to another device.",
+  "landing.tech.services.nostr.when":
+    "When you use support, the profile or account transfer.",
+  "landing.tech.services.openFacts.name":
+    "Open Food Facts and Open Beauty Facts",
+  "landing.tech.services.openFacts.sent": "The scanned barcode.",
+  "landing.tech.services.openFacts.when": "When product lookup is on.",
+  "landing.tech.services.owner.payky": "Payky server",
+  "landing.tech.services.owner.third": "Third party",
+  "landing.tech.services.relay.name": "The live-relay.payky.me relay",
+  "landing.tech.services.relay.sent":
+    "The account's encrypted data and an anonymous identifier.",
+  "landing.tech.services.relay.when": "Always, but you can turn it off.",
+  "landing.tech.services.relay.why": "Backup and sync.",
+  "landing.tech.services.sent": "What is sent",
+  "landing.tech.services.sentry.name": "Sentry",
+  "landing.tech.services.sentry.sent":
+    "A technical description of the error, without the phrase or account numbers.",
+  "landing.tech.services.sentry.when": "Only when you turn error reporting on.",
+  "landing.tech.services.spark.name":
+    "Spark network operators and a Lightning gateway",
+  "landing.tech.services.spark.sent": "Bitcoin transactions.",
+  "landing.tech.services.spark.when":
+    "When you have bitcoin payments turned on.",
+  "landing.tech.services.support.name": "Support",
+  "landing.tech.services.support.sent": "Nothing.",
+  "landing.tech.services.support.when": "When you open support.",
+  "landing.tech.services.support.why":
+    "The app finds out whom to deliver support messages to.",
+  "landing.tech.services.switchio.name": "Switchio",
+  "landing.tech.services.switchio.sent": "The payment amount.",
+  "landing.tech.services.switchio.when": "With card payments (Android).",
+  "landing.tech.services.title": "Nothing hidden: every connection, listed",
+  "landing.tech.services.web.name": "The payky.me website",
+  "landing.tech.services.web.sent": "Nothing; the app is just downloaded.",
+  "landing.tech.services.web.when": "When you open the web version.",
+  "landing.tech.services.web.why":
+    "This is where the web version of the app loads from. The Android version is installed right on the phone.",
+  "landing.tech.services.when": "When",
+  "landing.tech.services.why": "Why",
+  "landing.tech.services.yadio.name": "Yadio",
+  "landing.tech.services.yadio.sent": "A request for the exchange rate.",
+  "landing.tech.services.yadio.when":
+    "When converting bitcoin to your currency.",
+  "landing.tech.transparency.body":
+    "Only the key has to stay secret. Cryptographers call this Kerckhoffs's principle, and Payky is built on it: anyone can read the code, but the key — your recovery phrase — is yours alone.",
+  "landing.tech.transparency.build.body":
+    "We can't yet prove that the app on payky.me or on your phone was built from exactly the code on GitHub — that would take so-called reproducible builds, which we don't have. But you don't have to take our word for it: you can build the app yourself from the code on GitHub and run your own copy.",
+  "landing.tech.transparency.build.title":
+    "Don't want to trust even our build?",
+  "landing.tech.transparency.code.body":
+    "The whole app is on GitHub under the MIT license. Anyone can look through it — you, your IT person, even your competitors.",
+  "landing.tech.transparency.code.title": "The code is public",
+  "landing.tech.transparency.diagram.cloud":
+    "You can't see inside, so all you can do is trust.",
+  "landing.tech.transparency.diagram.payky":
+    "You can see how the lock works, and you still can't open it. Only you have the key.",
+  "landing.tech.transparency.diagram.stamp": "Secure. Trust us.",
+  "landing.tech.transparency.eyebrow": "Transparency",
+  "landing.tech.transparency.lead":
+    "A good lock is secure even when everyone knows how it works.",
+  "landing.tech.transparency.limits.body":
+    "The PIN won't stop an attacker, relays see metadata, and Spark network operators see amounts. We say it openly, because security that keeps quiet about its weak spots isn't security — it's advertising.",
+  "landing.tech.transparency.limits.title": "We admit the weak spots",
+  "landing.tech.transparency.proof.claim.body":
+    "On this page we promise: “EET never keeps a customer waiting.”",
+  "landing.tech.transparency.proof.claim.title": "Claim",
+  "landing.tech.transparency.proof.rule.body":
+    "The repository records it as a decision: EET never holds up checkout.",
+  "landing.tech.transparency.proof.rule.title": "Rule",
+  "landing.tech.transparency.proof.test.body":
+    "Checks that the screen appears right after payment, even when EET is down.",
+  "landing.tech.transparency.proof.test.title": "Test",
+  "landing.tech.transparency.proof.title": "How one claim gets checked",
+  "landing.tech.transparency.proof.you.body":
+    "You can read both the rule and the test. And if you know your way around, you can run the test yourself.",
+  "landing.tech.transparency.proof.you.title": "You",
+  "landing.tech.transparency.rules.body":
+    "How the app should behave is written down right in the repository. Each rule says which test guards it, or why it has none. If the code breaks a rule, a test fails.",
+  "landing.tech.transparency.rules.title": "Rules backed by proof",
+  "landing.tech.transparency.title":
+    "We don't say “trust us”. We say “check for yourself”.",
   "landing.theme.label": "Appearance",
 } as const

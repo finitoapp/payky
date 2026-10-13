@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
   isLandingEetPath,
+  isLandingTechPath,
   landingLanguageFromPath,
   markAppEntered,
   preferredLandingLanguage,
@@ -47,6 +48,8 @@ describe("landingLanguageFromPath", () => {
     ["/landing/eet-2-0", "cs"],
     ["/landing/en/eet-2-0", "en"],
     ["/landing/sk/eet-2-0/", "sk"],
+    ["/landing/jak-to-funguje", "cs"],
+    ["/landing/en/jak-to-funguje", "en"],
   ] as const)("reads %s as %s", (pathname, language) => {
     expect(landingLanguageFromPath(pathname)).toBe(language)
   })
@@ -61,6 +64,20 @@ describe("isLandingEetPath", () => {
   ] as const)("reads %s as the EET page: %s", (pathname, isEet) => {
     expect(isLandingEetPath(pathname)).toBe(isEet)
   })
+})
+
+describe("isLandingTechPath", () => {
+  test.each([
+    ["/landing/jak-to-funguje", true],
+    ["/landing/sk/jak-to-funguje/", true],
+    ["/landing/eet-2-0", false],
+    ["/landing", false],
+  ] as const)(
+    "reads %s as the page on how Payky works: %s",
+    (pathname, isTech) => {
+      expect(isLandingTechPath(pathname)).toBe(isTech)
+    }
+  )
 })
 
 describe("preferredLandingLanguage", () => {

@@ -12,7 +12,7 @@ import {
   WifiOffIcon,
   ZapIcon,
 } from "lucide-react"
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useEffect, useMemo, useState } from "react"
 
 import {
   Collapsible,
@@ -32,6 +32,7 @@ import {
 import {
   landingEetPaths,
   landingPaths,
+  landingTechPaths,
   rememberLandingLanguage,
 } from "@/features/shared/landing-redirect.ts"
 import { languageOptions } from "@/features/shared/language-options.ts"
@@ -71,6 +72,7 @@ const moreItems: ReadonlyArray<IconItem> = [
     icon: DatabaseIcon,
     title: "landing.more.data.title",
     body: "landing.more.data.body",
+    link: { label: "landing.more.data.link", href: landingTechPaths },
   },
   {
     icon: ReceiptTextIcon,
@@ -195,12 +197,19 @@ function More() {
 }
 
 /** Questions that open one at a time; their answers stay in the markup. */
-export function Faq({ items }: { readonly items: ReadonlyArray<FaqItem> }) {
+/** `muted` sets the band off, unless the band before it already is. */
+export function Faq({
+  items,
+  muted = true,
+}: {
+  readonly items: ReadonlyArray<FaqItem>
+  readonly muted?: boolean
+}) {
   const { t } = useLandingTranslation()
   const [openFaq, setOpenFaq] = useState<TranslationKey | null>(null)
 
   return (
-    <section className="bg-muted/40">
+    <section className={cn(muted && "bg-muted/40")}>
       <Reveal className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="grid gap-10 lg:grid-cols-[1fr_2fr]">
           <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
@@ -336,6 +345,45 @@ export function LandingShell({
     }),
     [language, paths]
   )
+
+  // Scrolls to the element an address's #anchor names, such as the menu's
+  // #contact. The browser's own jump misses it: where the page is rendered in
+  // the browser (the dev server) the element does not exist yet when it looks,
+  // and inside a Reveal still sliding in it aims at the element's 40px offset.
+  // Measured by layout, which ignores that offset, and redone whenever the page
+  // changes size while it settles, and on load, because until then the browser
+  // keeps redoing its own jump. Stops once the visitor scrolls themselves.
+  useEffect(() => {
+    const id = decodeURIComponent(location.hash.slice(1))
+    const target = id === "" ? null : document.getElementById(id)
+    if (target === null) return
+    const scrollToTarget = () => {
+      let top = 0
+      for (
+        let element: Element | null = target;
+        element instanceof HTMLElement;
+        element = element.offsetParent
+      ) {
+        top += element.offsetTop
+      }
+      window.scrollTo({
+        top: top - Number.parseFloat(getComputedStyle(target).scrollMarginTop),
+      })
+    }
+    const resizes = new ResizeObserver(scrollToTarget)
+    resizes.observe(document.body)
+    window.addEventListener("load", scrollToTarget)
+    const userEvents = ["wheel", "touchstart", "keydown"] as const
+    const stop = () => {
+      resizes.disconnect()
+      window.removeEventListener("load", scrollToTarget)
+      for (const event of userEvents) window.removeEventListener(event, stop)
+      window.clearTimeout(timeout)
+    }
+    for (const event of userEvents) window.addEventListener(event, stop)
+    const timeout = window.setTimeout(stop, 3000)
+    return stop
+  }, [])
 
   return (
     <LandingTranslationContext.Provider value={translation}>

@@ -1,6 +1,6 @@
 /**
  * Writes every landing document prerendered in every language (landing/0002,
- * landing/0006) from
+ * landing/0006, landing/0008) from
  * the client build's `dist/landing.html` and the server bundle
  * `vite build --ssr src/landing-server.tsx` leaves in `dist-ssr`. The
  * template itself is removed, so only the filled pages are served.

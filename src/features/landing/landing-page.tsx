@@ -1,5 +1,4 @@
 import {
-  ArrowRightIcon,
   BanknoteIcon,
   ChevronDownIcon,
   CodeIcon,
@@ -20,11 +19,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { LandingClosing } from "@/features/landing/landing-closing.tsx"
-import {
-  type FlowId,
-  flowAnchor,
-  LandingFeatureStory,
-} from "@/features/landing/landing-feature-story.tsx"
+import { LandingFeatureStory } from "@/features/landing/landing-feature-story.tsx"
 import { LandingHeader } from "@/features/landing/landing-header.tsx"
 import { LandingHero } from "@/features/landing/landing-hero.tsx"
 import { Reveal } from "@/features/landing/landing-parts.tsx"
@@ -49,15 +44,6 @@ interface IconItem {
   readonly icon: LucideIcon
   readonly title: TranslationKey
   readonly body: TranslationKey
-}
-
-interface UseCaseCard {
-  readonly image: string
-  readonly title: TranslationKey
-  readonly body: TranslationKey
-  readonly alt: TranslationKey
-  /** The way of selling this audience is shown in "How it works". */
-  readonly flow: FlowId
 }
 
 interface FaqItem {
@@ -97,37 +83,6 @@ const moreItems: ReadonlyArray<IconItem> = [
     icon: CodeIcon,
     title: "landing.more.free.title",
     body: "landing.more.free.body",
-  },
-]
-
-const useCaseCards: ReadonlyArray<UseCaseCard> = [
-  {
-    image: "/landing/bistro.webp",
-    title: "landing.useCases.cafes.title",
-    body: "landing.useCases.cafes.body",
-    alt: "landing.useCases.cafes.alt",
-    flow: "tables",
-  },
-  {
-    image: "/landing/seller.webp",
-    title: "landing.useCases.shops.title",
-    body: "landing.useCases.shops.body",
-    alt: "landing.useCases.shops.alt",
-    flow: "bill",
-  },
-  {
-    image: "/landing/service.webp",
-    title: "landing.useCases.salons.title",
-    body: "landing.useCases.salons.body",
-    alt: "landing.useCases.salons.alt",
-    flow: "amount",
-  },
-  {
-    image: "/landing/craftsman.webp",
-    title: "landing.useCases.craftsmen.title",
-    body: "landing.useCases.craftsmen.body",
-    alt: "landing.useCases.craftsmen.alt",
-    flow: "amount",
   },
 ]
 
@@ -214,46 +169,6 @@ function More() {
             )
           })}
         </div>
-      </div>
-    </section>
-  )
-}
-
-function UseCases() {
-  const { t } = useLandingTranslation()
-  return (
-    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-      <Reveal>
-        <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
-          {t("landing.useCases.title")}
-        </h2>
-      </Reveal>
-      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {useCaseCards.map((useCase) => (
-          <Reveal key={useCase.title}>
-            <article className="flex flex-col gap-3">
-              <img
-                src={useCase.image}
-                alt={t(useCase.alt)}
-                className="aspect-4/3 w-full rounded-2xl object-cover"
-                loading="lazy"
-              />
-              <h3 className="text-lg font-semibold tracking-tight">
-                {t(useCase.title)}
-              </h3>
-              <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
-                {t(useCase.body)}
-              </p>
-              <a
-                href={`#${flowAnchor(useCase.flow)}`}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-(--landing-ink) hover:underline"
-              >
-                {t("landing.useCases.howItWorks")}
-                <ArrowRightIcon aria-hidden="true" className="size-4" />
-              </a>
-            </article>
-          </Reveal>
-        ))}
       </div>
     </section>
   )
@@ -375,7 +290,6 @@ export function LandingPage({ language }: { readonly language: Language }) {
           <LandingFeatureStory />
           <NotNeeded />
           <More />
-          <UseCases />
           <Faq />
           <LandingClosing />
         </main>

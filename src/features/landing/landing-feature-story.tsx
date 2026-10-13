@@ -28,7 +28,7 @@ interface Step {
   readonly body: TranslationKey
 }
 
-export type FlowId = "amount" | "bill" | "tables"
+type FlowId = "amount" | "bill" | "tables"
 
 interface Flow {
   readonly id: FlowId
@@ -127,7 +127,7 @@ const flows: ReadonlyArray<Flow> = [
 ]
 
 /** The id of a flow's tab, so a link to `#flow-…` scrolls to it and opens it. */
-export const flowAnchor = (flow: FlowId) => `flow-${flow}`
+const flowAnchor = (flow: FlowId) => `flow-${flow}`
 
 /** The statistics screen, its figures first and then its charts further down. */
 const statsSteps: ReadonlyArray<Step> = [

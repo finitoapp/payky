@@ -162,25 +162,4 @@ export const enLanding = {
   "landing.stats.overview.title": "Revenue at a glance",
   "landing.stats.title": "Know how you're doing",
   "landing.theme.label": "Appearance",
-  "landing.useCases.cafes.alt":
-    "Barista serving coffee to a customer at a bakery stall",
-  "landing.useCases.cafes.body":
-    "QR at the counter, cash at the stall, quick settling up between customers.",
-  "landing.useCases.cafes.title": "Cafés, bistros & stalls",
-  "landing.useCases.craftsmen.alt":
-    "Carpenter working with wood in his workshop",
-  "landing.useCases.craftsmen.body":
-    "Settle up on the spot at the customer's place, no paperwork.",
-  "landing.useCases.craftsmen.title": "Tradespeople",
-  "landing.useCases.howItWorks": "How it works",
-  "landing.useCases.salons.alt":
-    "Hairdresser styling a customer's hair in a salon",
-  "landing.useCases.salons.body":
-    "Charge right after the treatment, no waiting on a terminal.",
-  "landing.useCases.salons.title": "Salons & services",
-  "landing.useCases.shops.alt": "Shopkeeper handing groceries to a customer",
-  "landing.useCases.shops.body":
-    "Scan a code or take cash right at the till or the market stand.",
-  "landing.useCases.shops.title": "Small shops & vendors",
-  "landing.useCases.title": "Who it's for",
 } as const

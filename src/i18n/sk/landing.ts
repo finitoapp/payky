@@ -168,24 +168,4 @@ export const skLanding = {
   "landing.stats.overview.title": "Tržba na prvý pohľad",
   "landing.stats.title": "Viete, ako sa vám darí",
   "landing.theme.label": "Vzhľad",
-  "landing.useCases.cafes.alt":
-    "Barista podáva kávu zákazníkovi pri stánku s pečivom",
-  "landing.useCases.cafes.body":
-    "QR kód pri pulte, hotovosť pri stánku a rýchle platenie aj v špičke.",
-  "landing.useCases.cafes.title": "Kaviarne, bistrá a stánky",
-  "landing.useCases.craftsmen.alt": "Stolár pracuje s drevom vo svojej dielni",
-  "landing.useCases.craftsmen.body":
-    "Zaplatené hneď na mieste u zákazníka, bez papierovačiek.",
-  "landing.useCases.craftsmen.title": "Remeselníci",
-  "landing.useCases.howItWorks": "Ako to funguje",
-  "landing.useCases.salons.alt":
-    "Kaderníčka upravuje zákazníčke vlasy v salóne",
-  "landing.useCases.salons.body":
-    "Zákazník zaplatí hneď po ošetrení, bez čakania na terminál.",
-  "landing.useCases.salons.title": "Salóny a služby",
-  "landing.useCases.shops.alt": "Predavač podáva zákazníkovi nákup",
-  "landing.useCases.shops.body":
-    "QR kód alebo hotovosť — pri pokladni aj na trhu.",
-  "landing.useCases.shops.title": "Malé obchody a predajcovia",
-  "landing.useCases.title": "Pre koho je Payky",
 } as const satisfies Record<keyof typeof enLanding, string>

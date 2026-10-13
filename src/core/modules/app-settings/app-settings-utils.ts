@@ -105,8 +105,15 @@ export const getPaymentMethodOrder = (
   const order = parsePaymentMethodOrder(settings?.paymentMethodOrderJson)
   if (settings === undefined) return order
 
-  const first = settings.defaultPaymentMethod
-  return [first, ...order.filter((method) => method !== first)]
+  // The query only checks the column is set, so a value another build of the
+  // app wrote — a branch with one more method, run on the same device — would
+  // otherwise lead the order and crash every screen that keys a lookup by it.
+  // Such a value keeps the stored order instead.
+  const first = DefaultPaymentMethodSchema.safeParse(
+    settings.defaultPaymentMethod
+  )
+  if (!first.success) return order
+  return [first.data, ...order.filter((method) => method !== first.data)]
 }
 
 /** Every home-screen mode, in the fixed order the header lists them. */

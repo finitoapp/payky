@@ -32,6 +32,7 @@ import {
   landingPaths,
   rememberLandingLanguage,
 } from "@/features/shared/landing-redirect.ts"
+import { languageOptions } from "@/features/shared/language-options.ts"
 import {
   type Language,
   resources,
@@ -105,6 +106,8 @@ export const faqItems: ReadonlyArray<FaqItem> = [
     answer: "landing.faq.terminal.answer",
   },
 ]
+
+export const githubUrl = "https://github.com/finitoapp/payky"
 
 const signalGroupUrl =
   "https://signal.group/#CjQKIG6htHfJxD15ue8bEu0uiIM9HZux-Na1TfwTFOv8iepLEhAM0yHv8qkvPC5FC9JhuTEs"
@@ -207,7 +210,12 @@ function Faq() {
                       )}
                     />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="pb-5 leading-relaxed text-pretty whitespace-pre-line text-muted-foreground">
+                  {/* Rendered while closed too: the answers are in the prerendered
+                      page and its FAQ structured data, and Ctrl+F opens them. */}
+                  <CollapsibleContent
+                    hiddenUntilFound
+                    className="pb-5 leading-relaxed text-pretty whitespace-pre-line text-muted-foreground"
+                  >
                     {t(item.answer)}
                   </CollapsibleContent>
                 </Collapsible>
@@ -238,7 +246,7 @@ function FooterLink({
 }
 
 function Footer() {
-  const { t } = useLandingTranslation()
+  const { language, t } = useLandingTranslation()
   return (
     <footer className="bg-muted/50">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-center lg:px-8">
@@ -250,19 +258,35 @@ function Footer() {
           {t("landing.footer.description")}
         </span>
         <div className="flex flex-wrap gap-5 md:ml-auto">
-          <FooterLink href="https://github.com/finitoapp/payky">
-            {t("landing.footer.github")}
-          </FooterLink>
-          <FooterLink href="https://github.com/finitoapp/payky/discussions">
+          <FooterLink href={githubUrl}>{t("landing.footer.github")}</FooterLink>
+          <FooterLink href={`${githubUrl}/discussions`}>
             {t("landing.footer.discussions")}
           </FooterLink>
           <FooterLink href={signalGroupUrl}>
             {t("landing.footer.signal")}
           </FooterLink>
-          <FooterLink href="https://payky.me">
+          <FooterLink href={landingPaths[language]}>
             {t("landing.footer.website")}
           </FooterLink>
         </div>
+        {/* Plain links to the other languages, which a crawler follows and
+            the header's menu, navigating from script, does not offer. */}
+        <nav className="flex gap-4" aria-label={t("landing.language.label")}>
+          {languageOptions
+            .filter((option) => option.value !== language)
+            .map((option) => (
+              <a
+                key={option.value}
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                href={landingPaths[option.value]}
+                hrefLang={option.value}
+                lang={option.value}
+                onClick={() => rememberLandingLanguage(option.value)}
+              >
+                {option.label}
+              </a>
+            ))}
+        </nav>
       </div>
     </footer>
   )

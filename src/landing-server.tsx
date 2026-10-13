@@ -1,6 +1,11 @@
 import { renderToStaticMarkup, renderToString } from "react-dom/server"
 
-import { faqItems, LandingPage } from "@/features/landing/landing-page.tsx"
+import { apkUrl, zapstoreUrl } from "@/features/landing/landing-closing.tsx"
+import {
+  faqItems,
+  githubUrl,
+  LandingPage,
+} from "@/features/landing/landing-page.tsx"
 import { landingPaths } from "@/features/shared/landing-redirect.ts"
 import { type Language, resources } from "@/i18n/resources.ts"
 
@@ -26,21 +31,31 @@ const ogImages = {
 } satisfies Record<Language, string>
 
 /**
- * Structured data for search results: the app with its price, and the
- * page's FAQ, whose answers the page shows too.
+ * Structured data for search results: who makes Payky, the app with its
+ * price and downloads, and the page's FAQ, whose answers the page shows too.
  */
 function structuredData(language: Language): string {
   const t = resources[language]
   const data = [
     {
       "@context": "https://schema.org",
+      "@type": "Organization",
+      name: t["app.name"],
+      url: pageUrl(language),
+      logo: `${siteUrl}/pwa-icon-512.png`,
+      sameAs: [githubUrl],
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       name: t["app.name"],
-      description: t["landing.hero.subtitle"],
+      description: t["landing.meta.description"],
       url: pageUrl(language),
       image: `${siteUrl}${ogImages[language]}`,
       applicationCategory: "FinanceApplication",
       operatingSystem: "Android, Web",
+      downloadUrl: apkUrl,
+      installUrl: zapstoreUrl,
       inLanguage: language,
       offers: { "@type": "Offer", price: "0", priceCurrency: "CZK" },
     },
@@ -62,8 +77,8 @@ function structuredData(language: Language): string {
 /** What a crawler and a link preview read before any script runs. */
 function LandingHead({ language }: { readonly language: Language }) {
   const t = resources[language]
-  const title = `${t["app.name"]} – ${t["landing.hero.title"]}`
-  const description = t["landing.hero.subtitle"]
+  const title = t["landing.meta.title"]
+  const description = t["landing.meta.description"]
 
   return (
     <>

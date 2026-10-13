@@ -121,6 +121,9 @@ export const skLanding = {
   "landing.hero.title": "Platba QR kódom nič nestojí.",
   "landing.hero.titleAccent": "nič nestojí",
   "landing.language.label": "Jazyk",
+  "landing.meta.description":
+    "Prijímajte platby QR kódom bez poplatkov a bez zmluvy. Peniaze idú prevodom rovno na váš účet. Pokladnica s účtami pre stoly aj hotovosťou zadarmo.",
+  "landing.meta.title": "Payky – platobný terminál v mobile zadarmo, QR platby",
   "landing.mockup.bill.alt": "Rozpracovaný účet s namarkovanými položkami",
   "landing.mockup.home.alt": "Klávesnica Payky so zadanou sumou",
   "landing.mockup.items.alt": "Katalóg položiek s cenami v Payky",

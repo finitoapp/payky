@@ -10,7 +10,11 @@ import {
 import { type PointerEvent, useId } from "react"
 
 import { buttonVariants } from "@/components/ui/button.tsx"
-import { mockupsByLanguage } from "@/features/landing/landing-mockups.ts"
+import {
+  mockupHeight,
+  mockupsByLanguage,
+  mockupWidth,
+} from "@/features/landing/landing-mockups.ts"
 import {
   Glow,
   Placed,
@@ -218,6 +222,8 @@ function Stage() {
         <img
           src={mockups.home}
           alt={t("landing.mockup.home.alt")}
+          width={mockupWidth}
+          height={mockupHeight}
           className="w-full opacity-75 drop-shadow-2xl"
           loading="eager"
         />
@@ -226,8 +232,12 @@ function Stage() {
         <img
           src={mockups.payment}
           alt={t("landing.mockup.payment.alt")}
+          width={mockupWidth}
+          height={mockupHeight}
           className="w-full drop-shadow-2xl"
           loading="eager"
+          // The largest thing in the first view.
+          fetchPriority="high"
         />
         {/* Over the QR card of the payment mockup, the same in every language. */}
         <div

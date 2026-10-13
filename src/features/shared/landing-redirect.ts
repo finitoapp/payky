@@ -16,6 +16,13 @@ export const landingPaths = {
   sk: "/landing/sk",
 } as const satisfies Record<Language, string>
 
+/** The EET 2.0 page, prerendered once per language too (landing/0006). */
+export const landingEetPaths = {
+  cs: "/landing/eet-2-0",
+  en: "/landing/en/eet-2-0",
+  sk: "/landing/sk/eet-2-0",
+} as const satisfies Record<Language, string>
+
 export const LandingLanguageSchema: z.ZodType<Language> = z.enum([
   "cs",
   "en",
@@ -132,11 +139,20 @@ export function readInstallLanguage(): Language | undefined {
 export const landingAppEntryPath = (language: Language): string =>
   `/onboarding?lang=${language}`
 
+const normalizeLandingPath = (pathname: string) => pathname.replace(/\/+$/u, "")
+
 /** The language of the landing page at `pathname`, Czech for `/landing`. */
 export function landingLanguageFromPath(pathname: string): Language {
-  const normalized = pathname.replace(/\/+$/u, "")
-  const match = Object.entries(landingPaths).find(
-    ([, path]) => path === normalized
-  )
+  const normalized = normalizeLandingPath(pathname)
+  const match = [
+    ...Object.entries(landingPaths),
+    ...Object.entries(landingEetPaths),
+  ].find(([, path]) => path === normalized)
   return LandingLanguageSchema.catch("cs").parse(match?.[0])
 }
+
+/** Whether `pathname` is the EET 2.0 page in one of its languages. */
+export const isLandingEetPath = (pathname: string): boolean =>
+  Object.values<string>(landingEetPaths).includes(
+    normalizeLandingPath(pathname)
+  )

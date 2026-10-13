@@ -1,4 +1,5 @@
 import {
+  ArrowRightIcon,
   BanknoteIcon,
   ChevronDownIcon,
   CodeIcon,
@@ -11,7 +12,7 @@ import {
   WifiOffIcon,
   ZapIcon,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 
 import {
   Collapsible,
@@ -29,6 +30,7 @@ import {
   useLandingTranslation,
 } from "@/features/landing/landing-translation.ts"
 import {
+  landingEetPaths,
   landingPaths,
   rememberLandingLanguage,
 } from "@/features/shared/landing-redirect.ts"
@@ -45,9 +47,14 @@ interface IconItem {
   readonly icon: LucideIcon
   readonly title: TranslationKey
   readonly body: TranslationKey
+  /** Leads on to the page about it (landing/0006). */
+  readonly link?: {
+    readonly label: TranslationKey
+    readonly href: Readonly<Record<Language, string>>
+  }
 }
 
-interface FaqItem {
+export interface FaqItem {
   readonly question: TranslationKey
   readonly answer: TranslationKey
 }
@@ -69,6 +76,7 @@ const moreItems: ReadonlyArray<IconItem> = [
     icon: ReceiptTextIcon,
     title: "landing.more.eet.title",
     body: "landing.more.eet.body",
+    link: { label: "landing.more.eet.link", href: landingEetPaths },
   },
   {
     icon: BanknoteIcon,
@@ -143,7 +151,7 @@ function NotNeeded() {
 }
 
 function More() {
-  const { t } = useLandingTranslation()
+  const { language, t } = useLandingTranslation()
   return (
     <section className="bg-muted/40">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
@@ -167,6 +175,15 @@ function More() {
                   <p className="leading-relaxed text-pretty text-muted-foreground">
                     {t(item.body)}
                   </p>
+                  {item.link === undefined ? null : (
+                    <a
+                      className="inline-flex items-center gap-1 font-semibold text-(--landing-ink) hover:underline"
+                      href={item.link.href[language]}
+                    >
+                      {t(item.link.label)}
+                      <ArrowRightIcon aria-hidden="true" className="size-4" />
+                    </a>
+                  )}
                 </article>
               </Reveal>
             )
@@ -177,7 +194,8 @@ function More() {
   )
 }
 
-function Faq() {
+/** Questions that open one at a time; their answers stay in the markup. */
+export function Faq({ items }: { readonly items: ReadonlyArray<FaqItem> }) {
   const { t } = useLandingTranslation()
   const [openFaq, setOpenFaq] = useState<TranslationKey | null>(null)
 
@@ -189,7 +207,7 @@ function Faq() {
             {t("landing.faq.title")}
           </h2>
           <div className="flex flex-col gap-3">
-            {faqItems.map((item) => {
+            {items.map((item) => {
               const isOpen = openFaq === item.question
               return (
                 <Collapsible
@@ -246,7 +264,7 @@ function FooterLink({
 }
 
 function Footer() {
-  const { language, t } = useLandingTranslation()
+  const { language, paths, t } = useLandingTranslation()
   return (
     <footer className="bg-muted/50">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-center lg:px-8">
@@ -278,7 +296,7 @@ function Footer() {
               <a
                 key={option.value}
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                href={landingPaths[option.value]}
+                href={paths[option.value]}
                 hrefLang={option.value}
                 lang={option.value}
                 onClick={() => rememberLandingLanguage(option.value)}
@@ -292,33 +310,53 @@ function Footer() {
   )
 }
 
-export function LandingPage({ language }: { readonly language: Language }) {
+/**
+ * What every landing page shares: the language of its address, the header
+ * and the footer. `paths` are the page's addresses in every language
+ * (landing/0002, landing/0006).
+ */
+export function LandingShell({
+  language,
+  paths,
+  children,
+}: {
+  readonly language: Language
+  readonly paths: Readonly<Record<Language, string>>
+  readonly children: ReactNode
+}) {
   const translation = useMemo<LandingTranslation>(
     () => ({
       language,
+      paths,
       setLanguage: (next) => {
         rememberLandingLanguage(next)
-        window.location.assign(landingPaths[next])
+        window.location.assign(paths[next])
       },
       t: (key) => resources[language][key],
     }),
-    [language]
+    [language, paths]
   )
 
   return (
     <LandingTranslationContext.Provider value={translation}>
       <div className="landing min-h-svh bg-background text-foreground">
         <LandingHeader />
-        <main>
-          <LandingHero />
-          <LandingFeatureStory />
-          <NotNeeded />
-          <More />
-          <Faq />
-          <LandingClosing />
-        </main>
+        <main>{children}</main>
         <Footer />
       </div>
     </LandingTranslationContext.Provider>
+  )
+}
+
+export function LandingPage({ language }: { readonly language: Language }) {
+  return (
+    <LandingShell language={language} paths={landingPaths}>
+      <LandingHero />
+      <LandingFeatureStory />
+      <NotNeeded />
+      <More />
+      <Faq items={faqItems} />
+      <LandingClosing />
+    </LandingShell>
   )
 }

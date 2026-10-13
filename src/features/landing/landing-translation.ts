@@ -7,10 +7,12 @@ import type { Language, TranslationKey } from "@/i18n/resources.ts"
  * its address (landing/0002), kept apart from the device setting: a visitor
  * comparing the page in two languages must not switch the app a merchant
  * has set up on the same device. This context carries it to the sections;
- * `setLanguage` moves to that language's page.
+ * `paths` are the addresses of the page being shown, one per language, and
+ * `setLanguage` moves to that language's one.
  */
 export interface LandingTranslation {
   readonly language: Language
+  readonly paths: Readonly<Record<Language, string>>
   readonly setLanguage: (language: Language) => void
   readonly t: (key: TranslationKey) => string
 }

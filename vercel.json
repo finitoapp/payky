@@ -9,6 +9,9 @@
     { "source": "/landing", "destination": "/landing-cs.html" },
     { "source": "/landing/en", "destination": "/landing-en.html" },
     { "source": "/landing/sk", "destination": "/landing-sk.html" },
+    { "source": "/landing/eet-2-0", "destination": "/landing-eet-cs.html" },
+    { "source": "/landing/en/eet-2-0", "destination": "/landing-eet-en.html" },
+    { "source": "/landing/sk/eet-2-0", "destination": "/landing-eet-sk.html" },
     {
       "source": "/((?!.*\\.).*)",
       "destination": "/index.html"

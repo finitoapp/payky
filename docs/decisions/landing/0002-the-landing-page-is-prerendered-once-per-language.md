@@ -57,7 +57,7 @@ short script for it.
 `bun run build` builds the app, then a server bundle of the landing page,
 then writes `landing-cs.html`, `landing-en.html` and `landing-sk.html`;
 `vercel.json` maps the three addresses onto them, and the dev and preview
-servers do the same. The EET page is prerendered the same way (landing/0006). An address with a trailing slash (`/landing/`) is
+servers do the same. The EET page and the page on how Payky works are prerendered the same way (landing/0006, landing/0008). An address with a trailing slash (`/landing/`) is
 redirected to the one without it (`trailingSlash: false`), on Vercel for
 every path, not only the landing page. The native build has no landing page. The landing
 page and the app may show different themes on one device. Anything the page

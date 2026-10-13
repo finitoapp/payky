@@ -277,6 +277,7 @@ export const skLanding = {
   "landing.hero.title": "Platba QR kódom nič nestojí.",
   "landing.hero.titleAccent": "nič nestojí",
   "landing.language.label": "Jazyk",
+  "landing.menu.tech": "Čím sa líšime",
   "landing.meta.description":
     "Prijímajte platby QR kódom bez poplatkov a bez zmluvy. Peniaze idú prevodom rovno na váš účet. Pokladnica s účtami pre stoly aj hotovosťou zadarmo.",
   "landing.meta.title": "Payky – platobný terminál v mobile zadarmo, QR platby",
@@ -291,6 +292,7 @@ export const skLanding = {
     "Graf predajov v čase a podiel spôsobov platby",
   "landing.mockup.tableBill.alt": "Účet stola s objednanými položkami",
   "landing.mockup.tables.alt": "Prehľad stolov s otvorenými účtami",
+  "landing.menu.contact": "Kontakt",
   "landing.menu.eet": "EET 2.0",
   "landing.menu.home": "Úvod",
   "landing.menu.label": "Menu",
@@ -302,6 +304,7 @@ export const skLanding = {
   "landing.more.cash.title": "Hotovosť tiež",
   "landing.more.data.body":
     "Položky, účty aj história zostávajú vo vašom telefóne alebo tablete. Zálohu a synchronizáciu si môžete zapnúť — a sú šifrované.",
+  "landing.more.data.link": "Čím sa líšime",
   "landing.more.data.title": "Dáta zostávajú u vás",
   "landing.more.eet.body":
     "Českí obchodníci odošlú tržby do EET 2.0 priamo z aplikácie. Keď vypadne sieť, aplikácia to skúsi znova sama.",
@@ -330,5 +333,413 @@ export const skLanding = {
     "Čistá tržba, počet a priemer predajov, prepitné zvlášť aj vratky. A koľko má byť v pokladnici.",
   "landing.stats.overview.title": "Tržba na prvý pohľad",
   "landing.stats.title": "Viete, ako sa vám darí",
+  "landing.tech.account.body":
+    "Pri prvom spustení si aplikácia vytvorí kryptografický kľúč a ten je vaším účtom. Je to ako kľúč od trezoru, ku ktorému neexistuje zámočník: kto ho má, dáta otvorí, a kto ho stratí, tomu ich nikto neotvorí.",
+  "landing.tech.account.cost.body":
+    "Heslo si e-mailom obnoviť nedá a dáta ani bitcoiny vám nevrátime, pretože ich nemáme. Frázu si preto zapíšte a schovajte na bezpečné miesto mimo počítača.",
+  "landing.tech.account.cost.title": "Sloboda znamená aj zodpovednosť",
+  "landing.tech.account.eyebrow": "Bez registrácie",
+  "landing.tech.account.kyc.body":
+    "Payky vaše peniaze nikdy nedrží ani nepreposiela. Platba prevodom ide z banky zákazníka rovno na váš účet, ktorý už overila vaša banka. Bitcoiny prijíma peňaženka, ku ktorej máte kľúče len vy. Aplikácia teda u seba nemá žiadne peniaze, kvôli ktorým by vás musela overovať.",
+  "landing.tech.account.kyc.title": "Prečo od vás nechceme doklady (KYC a AML)",
+  "landing.tech.account.phrase.body":
+    "Kľúč si môžete zapísať ako obnovovaciu frázu — rad slov. Kto ju má, má aj účet: otvorí dáta aj bitcoinovú peňaženku. Na nové zariadenie účet prenesiete tak, že naskenujete QR kód zo súčasného zariadenia a potvrdíte šesťmiestny kód. Fráza pritom zariadenie vôbec neopustí.",
+  "landing.tech.account.phrase.sample":
+    "Takto obnovovacia fráza vyzerá. Toto je len ukážka, tá vaša bude iná.",
+  "landing.tech.account.phrase.title": "Obnovovacia fráza",
+  "landing.tech.account.title": "Žiadna registrácia, žiadne overovanie",
+  "landing.tech.account.whatIf.bank": "Peniaze na bankovom účte",
+  "landing.tech.account.whatIf.bitcoin": "Bitcoiny v peňaženke",
+  "landing.tech.account.whatIf.data": "Dáta podniku",
+  "landing.tech.account.whatIf.kept": "Zostanú",
+  "landing.tech.account.whatIf.lost": "Stratené",
+  "landing.tech.account.whatIf.lostBoth.label": "Stratím telefón aj frázu",
+  "landing.tech.account.whatIf.lostBoth.note":
+    "A účet nemám na žiadnom inom zariadení.",
+  "landing.tech.account.whatIf.lostPhone.label": "Stratím telefón",
+  "landing.tech.account.whatIf.lostPhone.note":
+    "Na novom zariadení zadám frázu a dáta sa stiahnu z relayov.",
+  "landing.tech.account.whatIf.lostPhrase.label": "Stratím obnovovaciu frázu",
+  "landing.tech.account.whatIf.lostPhrase.note":
+    "Kým mám telefón, frázu si v nastaveniach znova opíšem.",
+  "landing.tech.account.whatIf.topic": "Čo sa stane",
+  "landing.tech.account.why.body":
+    "Registráciu potrebuje hlavne prevádzkovateľ. Musí vedieť, čie dáta má na serveri, a púšťať k nim len vás. Payky žiadne vaše dáta na serveri nemá, takže vám nemá čo zakladať. K dátam vás nepúšťa náš server, ale kľúč.",
+  "landing.tech.account.why.title": "Prečo to ide",
+  "landing.tech.backup.body":
+    "Dáta sa šifrujú priamo vo vašom zariadení a von odchádza len nečitateľný šum. Prečítať ho dokáže len ten, kto má kľúč.",
+  "landing.tech.backup.content.body":
+    "Dáta sa zašifrujú vaším kľúčom ešte predtým, než opustia zariadenie. Na relayi ležia len nečitateľné bloky.",
+  "landing.tech.backup.content.title": "Obsah nevidí",
+  "landing.tech.backup.diagram.caption":
+    "Pri cloudovej aplikácii má kľúč k dátam prevádzkovateľ. Prečíta ich teda on aj ktokoľvek, kto sa k serveru dostane: podpora, technici, obchodné oddelenie alebo útočník pri úniku. Pri Payky vidí relay len šifrovaný šum a kľúč máte len vy. Ani naša podpora vaše dáta nevidí — pozná len to, čo jej sami napíšete.",
+  "landing.tech.backup.diagram.cloudSees": "Čo vidí server prevádzkovateľa",
+  "landing.tech.backup.diagram.receipt":
+    "Espresso 2× · 130 Kč · 14:32 · stôl 3 · QR platba",
+  "landing.tech.backup.diagram.sees": "Čo vidí relay",
+  "landing.tech.backup.eyebrow": "Záloha a synchronizácia",
+  "landing.tech.backup.metadata.body":
+    "Len to, čo je na obálke: anonymný identifikátor účtu, kedy dáta prišli a koľko ich bolo. Vaše meno, firmu ani sumy nepozná.",
+  "landing.tech.backup.metadata.title": "Vidí metadáta",
+  "landing.tech.backup.people.attacker": "Útočník",
+  "landing.tech.backup.people.engineers": "Technici",
+  "landing.tech.backup.people.sales": "Obchodné oddelenie",
+  "landing.tech.backup.people.support": "Podpora",
+  "landing.tech.backup.relay.body":
+    "Jednoduchý server postavený na open-source knižnici Evolu, ktorý odovzdáva zašifrované dáta medzi vašimi zariadeniami. Funguje ako pošta so zalepenými obálkami: vie, komu a kedy ich doručila, ale dovnútra nevidí.",
+  "landing.tech.backup.relay.title": "Čo je relay",
+  "landing.tech.backup.restore.body":
+    "Na novom zariadení zadáte obnovovaciu frázu, alebo účet prenesiete QR kódom. Aplikácia sa pripojí k relayom, stiahne zašifrované dáta a rozšifruje ich až u vás.",
+  "landing.tech.backup.restore.title": "Obnova",
+  "landing.tech.backup.title": "Záloha, ktorú neprečíta nikto okrem vás",
+  "landing.tech.backup.where.body":
+    "Záloha ide na relay Payky (live-relay.payky.me) a zároveň na relay spriateleného projektu Linky (evolu.linky.fit), ktorý stojí na rovnakých princípoch. Keď jeden vypadne, druhý ide ďalej. V nastaveniach ich môžete vypnúť alebo pridať vlastný, napríklad na svojom serveri.",
+  "landing.tech.backup.where.title": "Dva relaye naraz",
+  "landing.tech.compare.cloud": "Bežná cloudová aplikácia",
+  "landing.tech.compare.cloudFlow.caption":
+    "Aplikácia posiela všetko na server prevádzkovateľa a až ten hovorí s vašou bankou. Pritom drží dáta všetkých obchodníkov.",
+  "landing.tech.compare.cloudFlow.title": "Bežná cloudová aplikácia",
+  "landing.tech.compare.code.cloud": "Uzavretý",
+  "landing.tech.compare.code.label": "Zdrojový kód",
+  "landing.tech.compare.code.payky": "Otvorený (MIT)",
+  "landing.tech.compare.data.cloud": "Na serveri prevádzkovateľa",
+  "landing.tech.compare.data.label": "Kde sú dáta",
+  "landing.tech.compare.data.payky": "Vo vašom zariadení",
+  "landing.tech.compare.eyebrow": "Porovnanie",
+  "landing.tech.compare.legend.money": "Peniaze",
+  "landing.tech.compare.legend.talk": "Komunikácia aplikácie",
+  "landing.tech.compare.middleman.cloud": "Server prevádzkovateľa",
+  "landing.tech.compare.middleman.label": "Kto stojí medzi zákazníkom a vami",
+  "landing.tech.compare.middleman.payky": "Nikto od nás",
+  "landing.tech.compare.outage.cloud": "Nedá sa predávať",
+  "landing.tech.compare.outage.label": "Keď vypadne server",
+  "landing.tech.compare.outage.payky": "Predávate ďalej",
+  "landing.tech.compare.payky": "Payky",
+  "landing.tech.compare.paykyFlow.caption":
+    "Peniaze idú rovno na váš účet a telefón sa na platbu pýta priamo vašej banky.",
+  "landing.tech.compare.paykyFlow.title": "Payky",
+  "landing.tech.compare.reads.cloud":
+    "Prevádzkovateľ a každý, kto sa dostane do jeho databázy",
+  "landing.tech.compare.reads.label": "Kto si prečíta vaše tržby",
+  "landing.tech.compare.reads.payky": "Len vy",
+  "landing.tech.compare.shutdown.cloud": "Stihnete si stiahnuť export?",
+  "landing.tech.compare.shutdown.label": "Keď firma skončí",
+  "landing.tech.compare.shutdown.payky": "Aplikácia aj dáta vám zostanú",
+  "landing.tech.compare.signup.cloud": "E-mail, heslo, často aj doklady",
+  "landing.tech.compare.signup.label": "Registrácia",
+  "landing.tech.compare.signup.payky": "Žiadna",
+  "landing.tech.compare.title": "Bežná cloudová aplikácia, alebo Payky",
+  "landing.tech.compare.topic": "Čo porovnávame",
+  "landing.tech.cta.body":
+    "Bez registrácie, hotovo za minútu. Stačí otvoriť aplikáciu.",
+  "landing.tech.cta.experiment.body":
+    "otvorte aplikáciu, zapnite režim lietadla a nablokujte espresso. Účet sa otvorí, položky pribudnú a hotovosť prejde.",
+  "landing.tech.cta.experiment.title": "Skúste si to:",
+  "landing.tech.cta.title": "Vyskúšajte to sami",
+  "landing.tech.exit.body":
+    "Predaj ani platby na našich serveroch nestoja. Pozrite sa, čo sa stane, keď vypadnú — a čo keby Payky skončilo.",
+  "landing.tech.exit.code.body":
+    "Ktokoľvek si ho môže vziať, upraviť a prevádzkovať ďalej.",
+  "landing.tech.exit.code.link": "Zdrojový kód na GitHube",
+  "landing.tech.exit.code.title": "Kód je otvorený",
+  "landing.tech.exit.data.body": "Aplikácia v telefóne funguje ďalej.",
+  "landing.tech.exit.data.title": "Dáta máte u seba",
+  "landing.tech.exit.end": "Keby Payky skončilo",
+  "landing.tech.exit.eyebrow": "Do budúcna",
+  "landing.tech.exit.money.body":
+    "Bankový účet je váš a bitcoinovú peňaženku otvoríte obnovovacou frázou aj v inej aplikácii, ktorá podporuje Spark.",
+  "landing.tech.exit.money.title": "Peniaze u nás nie sú",
+  "landing.tech.exit.outage.backup.label": "Záloha a synchronizácia",
+  "landing.tech.exit.outage.backup.state":
+    "Ide ďalej cez relay Linky, ak ho máte zapnutý",
+  "landing.tech.exit.outage.eet.label": "EET",
+  "landing.tech.exit.outage.eet.state":
+    "Funguje ďalej, tržby idú rovno finančnej správe",
+  "landing.tech.exit.outage.extras.label":
+    "AI asistent, podpora, kontaktný formulár a dary",
+  "landing.tech.exit.outage.extras.state":
+    "Nefungujú, kým servery znova nenabehnú",
+  "landing.tech.exit.outage.payments.label": "QR platby, bitcoin a karty",
+  "landing.tech.exit.outage.payments.state": "Fungujú ďalej",
+  "landing.tech.exit.outage.sales.label": "Predaj, účty a hotovosť",
+  "landing.tech.exit.outage.sales.state": "Fungujú ďalej",
+  "landing.tech.exit.outage.state": "Čo sa stane",
+  "landing.tech.exit.outage.title": "Keď naše servery vypadnú",
+  "landing.tech.exit.outage.topic": "Funkcia",
+  "landing.tech.exit.outage.web.label": "Webová verzia",
+  "landing.tech.exit.outage.web.state":
+    "Otvorí sa z pamäte prehliadača, ak ste ju už niekedy otvorili. Aplikácia pre Android funguje ďalej.",
+  "landing.tech.exit.sync.body":
+    "Cez akýkoľvek dostupný relay, pokojne aj váš vlastný.",
+  "landing.tech.exit.sync.title": "Synchronizácia funguje ďalej",
+  "landing.tech.exit.title": "Nie ste na nás závislí",
+  "landing.tech.faq.kyc.answer":
+    "Payky vaše peniaze nikdy nedrží ani nepreposiela. Platby chodia rovno na váš bankový účet, ktorý overila vaša banka, alebo do vašej vlastnej bitcoinovej peňaženky.",
+  "landing.tech.faq.kyc.question": "Prečo odo mňa nechcete doklady (KYC)?",
+  "landing.tech.faq.lostAll.answer":
+    "Potom prídete o dáta aj o bitcoiny v peňaženke a my ich obnoviť nevieme, pretože ich nemáme. Peniazom na bankovom účte sa nič nestane.",
+  "landing.tech.faq.lostAll.question":
+    "Čo ak stratím telefón aj obnovovaciu frázu?",
+  "landing.tech.faq.lostPhone.answer":
+    "Účet obnovíte obnovovacou frázou na inom zariadení, alebo ho prenesiete zo zariadenia, kde ho ešte máte. Dáta sa stiahnu z relayov.",
+  "landing.tech.faq.lostPhone.question": "Čo ak stratím telefón?",
+  "landing.tech.faq.offline.answer":
+    "Predaj, účty aj hotovosť áno. Potvrdenie platby z banky, bitcoinové platby a odoslanie do EET sa dokončia, hneď ako budete znova online.",
+  "landing.tech.faq.offline.question": "Funguje Payky bez internetu?",
+  "landing.tech.faq.openCode.answer":
+    "Nie je. Útočník síce vidí, ako zámok funguje, ale kľúč nemá — ten je len vo vašom zariadení a v obnovovacej fráze. Otvorený kód si naopak môžu pozrieť aj ľudia, ktorí chyby hľadajú preto, aby sa opravili.",
+  "landing.tech.faq.openCode.question":
+    "Nie je otvorený kód nebezpečný? Útočník predsa vidí, ako aplikácia funguje.",
+  "landing.tech.faq.ownRelay.answer":
+    "Áno. V nastaveniach účtu pridáte vlastný relay a tie predvolené môžete vypnúť.",
+  "landing.tech.faq.ownRelay.question":
+    "Môžem si prevádzkovať vlastný zálohovací server?",
+  "landing.tech.faq.read.answer":
+    "Nie. Na relayi Payky sú len zašifrované dáta a kľúč máte len vy. Výnimkou je len to, čo sami napíšete AI asistentovi alebo podpore.",
+  "landing.tech.faq.read.question": "Môžete si prečítať moje účtenky a tržby?",
+  "landing.tech.faq.server.answer":
+    "Nie. QR kód vzniká vo vašom telefóne, peniaze idú z banky zákazníka na váš účet a aplikácia sa na platbu pýta priamo vašej banky. Bitcoinovú platbu spracúva sieť Spark, nie Payky.",
+  "landing.tech.faq.server.question":
+    "Stojí medzi mnou a zákazníkom nejaký server Payky?",
+  "landing.tech.faq.signup.answer":
+    "Pretože Payky nemá server s vašimi dátami, ku ktorému by vás musel púšťať. Vaším účtom je kryptografický kľúč, ktorý vznikne priamo vo vašom zariadení.",
+  "landing.tech.faq.signup.question": "Prečo sa nemusím registrovať?",
+  "landing.tech.faq.where.answer":
+    "Vo vašom zariadení. Na relaye kvôli zálohe a synchronizácii odchádzajú len zašifrované.",
+  "landing.tech.faq.where.question": "Kde sú moje dáta uložené?",
+  "landing.tech.hero.body":
+    "Bežné platobné aplikácie stoja na serveri prevádzkovateľa. Ležia na ňom vaše dáta, prihlasujete sa cez neho a tečú cez neho informácie o platbách. Payky žiadny taký server nemá. Pár serverov síce prevádzkujeme — na zašifrovanú zálohu a doplnkové funkcie — ale predávať a prijímať platby môžete aj bez nich.",
+  "landing.tech.hero.eyebrow": "Čím sa líšime",
+  "landing.tech.hero.title": "Platobný terminál, ktorý nepotrebuje náš server",
+  "landing.tech.journey.encrypt.body":
+    "Ešte v telefóne sa z nej stane nečitateľný šum a na relay odíde len ten.",
+  "landing.tech.journey.encrypt.title": "Účtenka sa zašifruje",
+  "landing.tech.journey.pay.body":
+    "Telefón vytvorí QR kód na 130 Kč s číslom vášho účtu. Peniaze idú z banky zákazníka rovno k vám. Ak máte Fio banku, telefón si sám overí, že dorazili.",
+  "landing.tech.journey.pay.title": "Zákazník zaplatí QR kódom",
+  "landing.tech.journey.sale.body":
+    "Účet sa uloží priamo do telefónu. Nič nečaká na internet.",
+  "landing.tech.journey.sale.title": "Nablokujete 2× espresso",
+  "landing.tech.journey.sync.body":
+    "Tablet pri bare si šum stiahne a rozšifruje ho kľúčom vášho účtu. Relay cestou nič neprečítal.",
+  "landing.tech.journey.sync.title": "Objaví sa na druhej pokladnici",
+  "landing.tech.journey.title": "Jedna útrata od pultu až po druhú pokladnicu",
+  "landing.tech.local.body":
+    "Katalóg, účty, platby aj nastavenia máte uložené vo svojom zariadení. Aplikácia s nimi pracuje priamo, a preto reaguje okamžite a na predaj internet nepotrebuje. Synchronizácia je šikovný doplnok, nie podmienka.",
+  "landing.tech.local.devices.body":
+    "Na tých istých dátach môže pracovať viac zariadení naraz, aj bez internetu. Hneď ako sa pripoja, zmeny sa samy spoja a žiadny centrálny server nemusí rozhodovať, ktorá má prednosť.",
+  "landing.tech.local.devices.title": "Viac pokladníc naraz",
+  "landing.tech.local.eyebrow": "Local-first",
+  "landing.tech.local.offline.body":
+    "Kvôli EET zákazník nikdy nečaká: tržba sa finančnej správe pošle na pozadí.",
+  "landing.tech.local.offline.later.bank": "Potvrdenie QR platby z banky",
+  "landing.tech.local.offline.later.bitcoin": "Bitcoinové platby",
+  "landing.tech.local.offline.later.eet": "Odoslanie tržby do EET",
+  "landing.tech.local.offline.later.sync":
+    "Záloha a synchronizácia s ďalšími zariadeniami",
+  "landing.tech.local.offline.later.title": "Dokončí sa, keď budete online",
+  "landing.tech.local.offline.now.bill": "Otvoriť účet a nablokovať položky",
+  "landing.tech.local.offline.now.cash": "Prijať hotovosť a uzavrieť účet",
+  "landing.tech.local.offline.now.qr": "Ukázať zákazníkovi QR kód na platbu",
+  "landing.tech.local.offline.now.title": "Ide aj bez internetu",
+  "landing.tech.local.offline.title": "Predávate aj bez internetu",
+  "landing.tech.local.speed.body":
+    "Každé ťuknutie sa hneď uloží do zariadenia. Nič nečaká na odpoveď zo servera.",
+  "landing.tech.local.speed.title": "Rýchlosť nezávisí od pripojenia",
+  "landing.tech.local.title": "Žiadny cloud: dáta máte u seba",
+  "landing.tech.meta.description":
+    "Platobný terminál, ktorý nepotrebuje náš server. Dáta máte len vy, peniaze idú rovno k vám a predávať môžete aj bez internetu. Porovnanie s bežnou cloudovou aplikáciou a úplný zoznam spojení.",
+  "landing.tech.meta.title":
+    "Čím je Payky iné: bez cloudu, bez registrácie, bez sprostredkovateľa",
+  "landing.tech.money.body":
+    "Peniaze idú rovno na váš účet alebo do vašej peňaženky. Žiadny server Payky im nestojí v ceste.",
+  "landing.tech.money.card.body":
+    "Na zariadení s terminálom Switchio odovzdá Payky aplikácii Switchio len sumu. Kartu potom spracuje Switchio a banka obchodníka, rovnako ako pri každom inom termináli. Údaje z karty sa do Payky vôbec nedostanú.",
+  "landing.tech.money.card.title": "Platba kartou",
+  "landing.tech.money.cash.body": "tu ste len vy a zákazník.",
+  "landing.tech.money.cash.title": "Hotovosť:",
+  "landing.tech.money.eyebrow": "Platby",
+  "landing.tech.money.lightning.body":
+    "Lightning je sieť na okamžité platby bitcoinom. Payky vystaví faktúru z vašej peňaženky Spark, ktorá beží priamo v aplikácii. Platba príde do vašej peňaženky a kľúče k nej má len vaše zariadenie. Transakcie spracúvajú operátori siete Spark a poskytovateľ Lightning brány — tí vidia ich sumu a čas. Kurz na prepočet na korunu berie aplikácia z verejnej služby Yadio.",
+  "landing.tech.money.lightning.title": "Bitcoin (Lightning)",
+  "landing.tech.money.qr.arrive":
+    "Peniaze idú z banky zákazníka rovno na váš účet, pri okamžitej platbe v priebehu niekoľkých sekúnd.",
+  "landing.tech.money.qr.check":
+    "Payky sa potom samo opýta vašej banky, či platba dorazila. Použije na to token — prístupový kľúč k vášmu bankovému účtu, ktorý máte uložený len vy.",
+  "landing.tech.money.qr.create":
+    "Telefón vytvorí QR kód s číslom vášho účtu, sumou a variabilným symbolom. Žiadny server sa na tom nepodieľa.",
+  "landing.tech.money.qr.note":
+    "Automatické párovanie platieb zatiaľ funguje len s Fio bankou. Pri iných bankách zaplatenie potvrdíte ručne.",
+  "landing.tech.money.qr.scan":
+    "Zákazník ho naskenuje v aplikácii svojej banky a platbu potvrdí.",
+  "landing.tech.money.qr.title": "QR platba prevodom",
+  "landing.tech.money.title": "Medzi vami a zákazníkom nestojíme",
+  "landing.tech.node.account": "Váš bankový účet",
+  "landing.tech.node.app": "Vaša aplikácia",
+  "landing.tech.node.card": "Karta zákazníka",
+  "landing.tech.node.customerBank": "Banka zákazníka",
+  "landing.tech.node.customerPayment": "Platba zákazníka",
+  "landing.tech.node.customerWallet": "Peňaženka zákazníka",
+  "landing.tech.node.operator": "Server prevádzkovateľa aplikácie",
+  "landing.tech.node.otherDevice": "Vaše ďalšie zariadenie",
+  "landing.tech.node.outside": "mimo cesty peňazí",
+  "landing.tech.node.payky": "Payky",
+  "landing.tech.node.phone": "Váš telefón",
+  "landing.tech.node.serverOrRelay": "Server / relay",
+  "landing.tech.node.spark": "Sieť Spark",
+  "landing.tech.node.switchio": "Switchio a banka obchodníka",
+  "landing.tech.node.wallet": "Vaša peňaženka",
+  "landing.tech.security.body":
+    "Nikde neležia dáta všetkých obchodníkov pohromade, takže nie je čo ukradnúť naraz.",
+  "landing.tech.security.diagram.cloud":
+    "Jedna databáza s dátami všetkých obchodníkov: stačí jeden prienik.",
+  "landing.tech.security.diagram.payky":
+    "Každé zariadenie zvlášť a zamknuté: nie je na čo zaútočiť naraz.",
+  "landing.tech.security.eyebrow": "Bezpečnosť",
+  "landing.tech.security.ownership.body":
+    "Kto má vaše dáta, môže ich analyzovať, predať, na požiadanie vydať alebo stratiť. Pri Payky ich čítate len vy, a nikto nás nemôže prinútiť ich vydať, pretože ich nemáme.",
+  "landing.tech.security.ownership.title": "Vaše dáta patria vám",
+  "landing.tech.security.pin.body":
+    "PINom môžete zamknúť nastavenia, vratky a ďalšie citlivé akcie, aby obsluha mohla len predávať. Nech je jasno: PIN chráni pred zvedavcami pri pulte, nie pred útočníkom, ktorý má k zariadeniu plný prístup. Skutočnú ochranu dávajú obnovovacia fráza a zámka telefónu.",
+  "landing.tech.security.pin.title": "PIN pre obsluhu",
+  "landing.tech.security.secrets.body":
+    "Obnovovacia fráza, token k banke aj certifikát pre EET sú uložené v dátach účtu, ktoré sa synchronizujú len zašifrované. Tržby do EET podpisuje a odosiela priamo vaše zariadenie, bez sprostredkovateľa.",
+  "landing.tech.security.secrets.title": "Citlivé údaje zostávajú u vás",
+  "landing.tech.security.target.body":
+    "Server s dátami tisícov obchodníkov je pre útočníka ideálny cieľ: stačí jeden prienik a má všetko. A väčšina únikov nevzniká prelomením šifry, ale kvôli zle nastavenej databáze, ukradnutému heslu správcu alebo zamestnancovi, ktorý má prístup ku všetkému. Payky taký server nemá. Útočník by musel napadnúť každé zariadenie zvlášť a na relayoch nájde len zašifrované dáta.",
+  "landing.tech.security.target.title": "Žiadny lákavý cieľ",
+  "landing.tech.security.title": "Nemáme vaše dáta, takže ich nemôžeme stratiť",
+  "landing.tech.security.tracking.body":
+    "Payky nepoužíva analytiku ani žiadne sledovacie služby. Hlásenie chýb je vypnuté, kým si ho sami nezapnete. A keď ho zapnete, obnovovacia fráza a čísla účtov sa z hlásenia odstránia ešte pred odoslaním.",
+  "landing.tech.security.tracking.title": "Bez sledovania",
+  "landing.tech.services.ai.name": "AI asistent",
+  "landing.tech.services.ai.sent":
+    "Vaše otázky a odpovede asistenta. Ak to povolíte, aj účty a platby, ktoré si asistent prečíta.",
+  "landing.tech.services.ai.when": "Len keď asistenta zapnete.",
+  "landing.tech.services.ai.why":
+    "Náš server drží kľúč k AI modelu a otázky odovzdáva poskytovateľovi AI. Konverzácia sa nikam neukladá. Asistent si od nás navyše sťahuje dokumentáciu aplikácie, aby vedel, ako funguje.",
+  "landing.tech.services.bank.name": "Vaša banka (Fio API)",
+  "landing.tech.services.bank.sent": "Váš token a dopyt na pohyby na účte.",
+  "landing.tech.services.bank.when": "Keď máte zapnuté párovanie platieb.",
+  "landing.tech.services.body":
+    "Každá služba, s ktorou Payky hovorí: čo jej posiela, kedy a pri našich serveroch aj prečo. Zoradené podľa toho, kedy k spojeniu dochádza.",
+  "landing.tech.services.boltCard.name": "Vydavateľ Bolt Card zákazníka",
+  "landing.tech.services.boltCard.sent": "Žiadosť o platbu z karty.",
+  "landing.tech.services.boltCard.when":
+    "Keď zákazník zaplatí priložením Bolt Card (Android).",
+  "landing.tech.services.contact.name": "Kontaktný formulár",
+  "landing.tech.services.contact.sent": "Meno, kontakt a správa.",
+  "landing.tech.services.contact.when": "Keď formulár odošlete.",
+  "landing.tech.services.contact.why": "Odovzdá správu do chatu podpory.",
+  "landing.tech.services.donations.name": "Dary",
+  "landing.tech.services.donations.sent": "Výška daru.",
+  "landing.tech.services.donations.when": "Keď prispejete.",
+  "landing.tech.services.donations.why": "Vystaví faktúru na váš dar.",
+  "landing.tech.services.eet.name": "Finančná správa ČR (EET)",
+  "landing.tech.services.eet.sent": "Podpísané údaje o tržbe.",
+  "landing.tech.services.eet.when": "Keď máte zapnutú EET.",
+  "landing.tech.services.eetCertificates.name": "Testovacie certifikáty EET",
+  "landing.tech.services.eetCertificates.sent": "Nič citlivé.",
+  "landing.tech.services.eetCertificates.when":
+    "Keď v nastaveniach EET skúšate testovacie prostredie.",
+  "landing.tech.services.eetCertificates.why":
+    "Vydáva verejné testovacie certifikáty.",
+  "landing.tech.services.eyebrow": "Úplný zoznam",
+  "landing.tech.services.footer":
+    "Žiadna z týchto služieb nedostane do rúk vaše peniaze ani čitateľné dáta vášho podniku. Výnimkou je len to, čo sami napíšete AI asistentovi alebo podpore.",
+  "landing.tech.services.group.action": "Len pri konkrétnej akcii",
+  "landing.tech.services.group.always": "Zakaždým, keď aplikáciu používate",
+  "landing.tech.services.group.enabled": "Len keď si to zapnete",
+  "landing.tech.services.highlight":
+    "Kým nič nezapnete ani nepoužijete, hovorí aplikácia nanajvýš s webom payky.me a s dvoma relaymi. A tým posiela len zašifrované dáta.",
+  "landing.tech.services.lightningAddress.name": "Lightning adresa príjemcu",
+  "landing.tech.services.lightningAddress.sent": "Žiadosť o faktúru.",
+  "landing.tech.services.lightningAddress.when":
+    "Keď vyberáte na Lightning adresu.",
+  "landing.tech.services.linky.name":
+    "Relay spriateleného projektu Linky (evolu.linky.fit)",
+  "landing.tech.services.linky.sent": "Zašifrované dáta účtu.",
+  "landing.tech.services.linky.when": "Stále, ale dá sa vypnúť.",
+  "landing.tech.services.nostr.name": "Nostr relaye",
+  "landing.tech.services.nostr.sent":
+    "Zašifrované správy pre podporu, verejný profil účtu a dáta na prenos účtu na iné zariadenie.",
+  "landing.tech.services.nostr.when":
+    "Keď používate podporu, profil alebo prenos účtu.",
+  "landing.tech.services.openFacts.name": "Open Food Facts a Open Beauty Facts",
+  "landing.tech.services.openFacts.sent": "Naskenovaný čiarový kód.",
+  "landing.tech.services.openFacts.when":
+    "Keď máte zapnuté dohľadávanie produktov.",
+  "landing.tech.services.owner.payky": "Server Payky",
+  "landing.tech.services.owner.third": "Tretia strana",
+  "landing.tech.services.relay.name": "Relay live-relay.payky.me",
+  "landing.tech.services.relay.sent":
+    "Zašifrované dáta účtu a anonymný identifikátor.",
+  "landing.tech.services.relay.when": "Stále, ale dá sa vypnúť.",
+  "landing.tech.services.relay.why": "Záloha a synchronizácia.",
+  "landing.tech.services.sent": "Čo sa odosiela",
+  "landing.tech.services.sentry.name": "Sentry",
+  "landing.tech.services.sentry.sent":
+    "Technický popis chyby bez frázy a čísel účtov.",
+  "landing.tech.services.sentry.when": "Len keď hlásenie chýb zapnete.",
+  "landing.tech.services.spark.name": "Operátori siete Spark a Lightning brána",
+  "landing.tech.services.spark.sent": "Bitcoinové transakcie.",
+  "landing.tech.services.spark.when": "Keď máte zapnuté bitcoinové platby.",
+  "landing.tech.services.support.name": "Podpora",
+  "landing.tech.services.support.sent": "Nič.",
+  "landing.tech.services.support.when": "Pri otvorení podpory.",
+  "landing.tech.services.support.why":
+    "Aplikácia sa dozvie, komu má správy pre podporu doručiť.",
+  "landing.tech.services.switchio.name": "Switchio",
+  "landing.tech.services.switchio.sent": "Suma platby.",
+  "landing.tech.services.switchio.when": "Pri platbe kartou (Android).",
+  "landing.tech.services.title": "Nič neskrývame: úplný zoznam spojení",
+  "landing.tech.services.web.name": "Web payky.me",
+  "landing.tech.services.web.sent": "Nič, len sa stiahne aplikácia.",
+  "landing.tech.services.web.when": "Pri otvorení webovej verzie.",
+  "landing.tech.services.web.why":
+    "Odtiaľto sa načítava webová verzia aplikácie. Verzia pre Android je nainštalovaná priamo v telefóne.",
+  "landing.tech.services.when": "Kedy",
+  "landing.tech.services.why": "Prečo",
+  "landing.tech.services.yadio.name": "Yadio",
+  "landing.tech.services.yadio.sent": "Dopyt na kurz.",
+  "landing.tech.services.yadio.when": "Keď prepočítavate bitcoin na vašu menu.",
+  "landing.tech.transparency.body":
+    "Tajný musí zostať len kľúč. Odborníci na šifrovanie tomu hovoria Kerckhoffsov princíp a Payky na ňom stojí: do kódu sa môže pozrieť ktokoľvek, ale kľúč — vašu obnovovaciu frázu — máte len vy.",
+  "landing.tech.transparency.build.body":
+    "Že aplikácia na payky.me alebo vo vašom telefóne vznikla presne z kódu na GitHube, zatiaľ dokázať nevieme — na to by boli potrebné tzv. reprodukovateľné zostavenia a tie nemáme. Veriť nám v tom ale nemusíte: z kódu na GitHube si aplikáciu môžete zostaviť sami a prevádzkovať vlastnú verziu.",
+  "landing.tech.transparency.build.title":
+    "Nechcete veriť ani nášmu zostaveniu?",
+  "landing.tech.transparency.code.body":
+    "Celá aplikácia je na GitHube pod licenciou MIT. Pozrieť si ju môže ktokoľvek — vy, váš ajťák, pokojne aj konkurencia.",
+  "landing.tech.transparency.code.title": "Kód je verejný",
+  "landing.tech.transparency.diagram.cloud":
+    "Dovnútra nevidíte, môžete len veriť.",
+  "landing.tech.transparency.diagram.payky":
+    "Vidíte, ako zámok funguje, a aj tak ho neotvoríte. Kľúč máte len vy.",
+  "landing.tech.transparency.diagram.stamp": "Bezpečné. Verte nám.",
+  "landing.tech.transparency.eyebrow": "Transparentnosť",
+  "landing.tech.transparency.lead":
+    "Dobrý zámok je bezpečný, aj keď každý vie, ako funguje.",
+  "landing.tech.transparency.limits.body":
+    "PIN útočníka nezastaví, relay vidí metadáta a operátori siete Spark vidia sumy. Píšeme to otvorene, pretože bezpečnosť, ktorá o svojich slabinách mlčí, nie je bezpečnosť, ale reklama.",
+  "landing.tech.transparency.limits.title": "Priznávame aj slabiny",
+  "landing.tech.transparency.proof.claim.body":
+    "Na tejto stránke sľubujeme: „Kvôli EET zákazník nikdy nečaká.“",
+  "landing.tech.transparency.proof.claim.title": "Tvrdenie",
+  "landing.tech.transparency.proof.rule.body":
+    "V repozitári je to zapísané ako rozhodnutie: EET nikdy nezdrží platenie.",
+  "landing.tech.transparency.proof.rule.title": "Pravidlo",
+  "landing.tech.transparency.proof.test.body":
+    "Kontroluje, že sa po zaplatení obrazovka ukáže hneď, aj keď EET práve nefunguje.",
+  "landing.tech.transparency.proof.test.title": "Test",
+  "landing.tech.transparency.proof.title": "Ako sa overuje jedno tvrdenie",
+  "landing.tech.transparency.proof.you.body":
+    "Pravidlo aj test si môžete prečítať. A kto sa v tom vyzná, môže si test sám spustiť.",
+  "landing.tech.transparency.proof.you.title": "Vy",
+  "landing.tech.transparency.rules.body":
+    "Ako sa má aplikácia správať, máme spísané priamo v repozitári. Pri každom pravidle je uvedené, ktorý test ho stráži, alebo prečo žiadny nemá. Keď kód pravidlo poruší, test zlyhá.",
+  "landing.tech.transparency.rules.title": "Pravidlá s dôkazmi",
+  "landing.tech.transparency.title":
+    "Nehovoríme „verte nám“, ale „overte si to“.",
   "landing.theme.label": "Vzhľad",
 } as const satisfies Record<keyof typeof enLanding, string>

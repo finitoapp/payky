@@ -118,10 +118,7 @@ function HelpYou() {
   const { t } = useLandingTranslation()
 
   return (
-    <article
-      id="contact"
-      className="landing-beam grid scroll-mt-24 gap-8 rounded-3xl p-6 shadow-sm sm:p-10 lg:grid-cols-[2fr_3fr] lg:gap-14"
-    >
+    <article className="landing-beam grid gap-8 rounded-3xl p-6 shadow-sm sm:p-10 lg:grid-cols-[2fr_3fr] lg:gap-14">
       <div className="flex flex-col gap-4">
         <h2 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
           {t("landing.closing.contact.title")}
@@ -130,7 +127,10 @@ function HelpYou() {
           {t("landing.closing.contact.body")}
         </p>
       </div>
-      <LandingContactForm />
+      {/* The menu's #contact lands on the form itself, not on the heading above it. */}
+      <div id="contact" className="scroll-mt-24">
+        <LandingContactForm />
+      </div>
     </article>
   )
 }

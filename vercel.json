@@ -13,6 +13,18 @@
     { "source": "/landing/en/eet-2-0", "destination": "/landing-eet-en.html" },
     { "source": "/landing/sk/eet-2-0", "destination": "/landing-eet-sk.html" },
     {
+      "source": "/landing/jak-to-funguje",
+      "destination": "/landing-tech-cs.html"
+    },
+    {
+      "source": "/landing/en/jak-to-funguje",
+      "destination": "/landing-tech-en.html"
+    },
+    {
+      "source": "/landing/sk/jak-to-funguje",
+      "destination": "/landing-tech-sk.html"
+    },
+    {
       "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }

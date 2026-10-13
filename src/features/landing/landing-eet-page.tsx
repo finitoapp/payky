@@ -16,16 +16,22 @@ import {
   XIcon,
 } from "lucide-react"
 
-import type { ReactNode } from "react"
-
 import { buttonVariants } from "@/components/ui/button.tsx"
-import { LandingClosing } from "@/features/landing/landing-closing.tsx"
 import {
   Faq,
   type FaqItem,
   LandingShell,
 } from "@/features/landing/landing-page.tsx"
-import { Eyebrow, Reveal } from "@/features/landing/landing-parts.tsx"
+import {
+  Band,
+  bodyClassName,
+  Eyebrow,
+  type IconCard,
+  IconGrid,
+  primaryActionClassName,
+  Reveal,
+  SectionHeading,
+} from "@/features/landing/landing-parts.tsx"
 import { useLandingTranslation } from "@/features/landing/landing-translation.ts"
 import {
   landingAppEntryPath,
@@ -38,10 +44,6 @@ interface Step {
   readonly title: TranslationKey
   readonly body: TranslationKey
   readonly link?: { readonly label: TranslationKey; readonly href: string }
-}
-
-interface IconStep extends Step {
-  readonly icon: LucideIcon
 }
 
 interface TimelineItem extends Step {
@@ -81,7 +83,7 @@ const notRecorded: ReadonlyArray<TranslationKey> = [
   "landing.eet.scope.no.private",
 ]
 
-const changes: ReadonlyArray<IconStep> = [
+const changes: ReadonlyArray<IconCard> = [
   {
     icon: FileTextIcon,
     title: "landing.eet.changes.data.title",
@@ -146,7 +148,7 @@ const paykySteps: ReadonlyArray<Step> = [
   { title: "landing.eet.setup.on.title", body: "landing.eet.setup.on.body" },
 ]
 
-const handled: ReadonlyArray<IconStep> = [
+const handled: ReadonlyArray<IconCard> = [
   {
     icon: TimerIcon,
     title: "landing.eet.handles.background.title",
@@ -227,59 +229,10 @@ export const eetFaqItems: ReadonlyArray<FaqItem> = [
   },
 ]
 
-const primaryActionClassName = cn(
-  buttonVariants({ size: "lg" }),
-  "h-12 rounded-full px-6 text-base font-semibold has-data-[icon=inline-start]:pl-5"
-)
-
 const secondaryActionClassName = cn(
   buttonVariants({ variant: "outline", size: "lg" }),
   "h-12 rounded-full px-6 text-base font-semibold has-data-[icon=inline-end]:pr-5"
 )
-
-const sectionClassName = "mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24"
-
-const titleClassName =
-  "text-4xl font-extrabold tracking-tight text-balance sm:text-5xl"
-
-const bodyClassName =
-  "text-lg leading-relaxed text-pretty text-muted-foreground"
-
-/** A full-width band of the page, plain or muted to set it off. */
-function Band({
-  id,
-  muted = false,
-  children,
-}: {
-  readonly id?: string
-  readonly muted?: boolean
-  readonly children: ReactNode
-}) {
-  return (
-    <section id={id} className={cn("scroll-mt-16", muted && "bg-muted/40")}>
-      <div className={sectionClassName}>{children}</div>
-    </section>
-  )
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  body,
-}: {
-  readonly eyebrow: TranslationKey
-  readonly title: TranslationKey
-  readonly body?: TranslationKey
-}) {
-  const { t } = useLandingTranslation()
-  return (
-    <Reveal className="flex max-w-3xl flex-col gap-4">
-      <Eyebrow>{t(eyebrow)}</Eyebrow>
-      <h2 className={titleClassName}>{t(title)}</h2>
-      {body === undefined ? null : <p className={bodyClassName}>{t(body)}</p>}
-    </Reveal>
-  )
-}
 
 function Hero() {
   const { language, t } = useLandingTranslation()
@@ -423,32 +376,6 @@ function Scope() {
   )
 }
 
-function IconGrid({ items }: { readonly items: ReadonlyArray<IconStep> }) {
-  const { t } = useLandingTranslation()
-  return (
-    <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((item) => {
-        const Icon = item.icon
-        return (
-          <Reveal key={item.title}>
-            <article className="flex flex-col gap-3">
-              <span className="flex size-11 items-center justify-center rounded-xl bg-accent text-(--landing-ink)">
-                <Icon aria-hidden="true" className="size-5" />
-              </span>
-              <h3 className="text-xl font-semibold tracking-tight">
-                {t(item.title)}
-              </h3>
-              <p className="leading-relaxed text-pretty text-muted-foreground">
-                {t(item.body)}
-              </p>
-            </article>
-          </Reveal>
-        )
-      })}
-    </div>
-  )
-}
-
 function Changes() {
   return (
     <Band>
@@ -586,7 +513,6 @@ export function LandingEetPage({ language }: { readonly language: Language }) {
       <Changes />
       <Faq items={eetFaqItems} />
       <Source />
-      <LandingClosing />
     </LandingShell>
   )
 }

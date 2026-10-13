@@ -4,8 +4,10 @@ import { createRoot, hydrateRoot } from "react-dom/client"
 
 import { LandingEetPage } from "@/features/landing/landing-eet-page.tsx"
 import { LandingPage } from "@/features/landing/landing-page.tsx"
+import { LandingTechPage } from "@/features/landing/landing-tech-page.tsx"
 import {
   isLandingEetPath,
+  isLandingTechPath,
   landingAppEntryPath,
   landingLanguageFromPath,
   readLandingRedirectEnvironment,
@@ -22,7 +24,11 @@ if (rootElement === null) {
 }
 
 const language = landingLanguageFromPath(location.pathname)
-const Page = isLandingEetPath(location.pathname) ? LandingEetPage : LandingPage
+const Page = isLandingEetPath(location.pathname)
+  ? LandingEetPage
+  : isLandingTechPath(location.pathname)
+    ? LandingTechPage
+    : LandingPage
 const page = (
   <StrictMode>
     <Page language={language} />

@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs"
 import { describe, expect, test } from "vitest"
+import { transparencyProof } from "@/features/landing/landing-tech-page.tsx"
 import { resources } from "@/i18n/resources.ts"
 import { renderLandingDocument } from "@/landing-server.tsx"
 
@@ -167,6 +169,112 @@ describe("renderLandingDocument", () => {
     const body = renderLandingDocument(template, "en").split("<body>")[1]
 
     expect(body).toContain(`href="/landing/en/eet-2-0"`)
+  })
+
+  test.each([
+    ["cs", "https://payky.me/landing/jak-to-funguje"],
+    ["en", "https://payky.me/landing/en/jak-to-funguje"],
+    ["sk", "https://payky.me/landing/sk/jak-to-funguje"],
+  ] as const)(
+    "prerenders the page on how Payky works in %s at its own address",
+    (language, url) => {
+      const document = renderLandingDocument(template, language, "tech")
+      // React writes an apostrophe in the copy as an entity.
+      const html = (text: string) => text.replaceAll("'", "&#x27;")
+
+      expect(document).toContain(`<link rel="canonical" href="${url}"/>`)
+      expect(document).toContain(
+        `<title>${html(resources[language]["landing.tech.meta.title"])}</title>`
+      )
+      expect(document).toContain(
+        html(resources[language]["landing.tech.hero.title"])
+      )
+    }
+  )
+
+  test("links the languages of the page on how Payky works to each other", () => {
+    const document = renderLandingDocument(template, "cs", "tech")
+    const body = document.split("<body>")[1]
+
+    expect(document).toContain(
+      `<link rel="alternate" hrefLang="en" href="https://payky.me/landing/en/jak-to-funguje"/>`
+    )
+    expect(document).toContain(
+      `<link rel="alternate" hrefLang="x-default" href="https://payky.me/landing/jak-to-funguje"/>`
+    )
+    expect(body).toContain(`href="/landing/sk/jak-to-funguje" hrefLang="sk"`)
+  })
+
+  test("describes the FAQ of the page on how Payky works for search results and shows its answers", () => {
+    const document = renderLandingDocument(template, "cs", "tech")
+
+    expect(document).toContain(
+      JSON.stringify(resources.cs["landing.tech.faq.signup.question"])
+    )
+    expect(document.split("<body>")[1]).toContain(
+      resources.cs["landing.tech.faq.signup.answer"]
+    )
+  })
+
+  test("lists every service the app talks to on the page on how Payky works", () => {
+    const body = renderLandingDocument(template, "en", "tech").split(
+      "<body>"
+    )[1]
+
+    for (const key of [
+      "landing.tech.services.relay.name",
+      "landing.tech.services.ai.name",
+      "landing.tech.services.linky.name",
+      "landing.tech.services.bank.name",
+      "landing.tech.services.sentry.name",
+    ] as const) {
+      expect(body).toContain(resources.en[key])
+    }
+    expect(body).toContain(`href="https://github.com/finitoapp/payky"`)
+  })
+
+  test("follows a claim of the page on how Payky works to the decision and the test that hold it", () => {
+    const body = renderLandingDocument(template, "en", "tech").split(
+      "<body>"
+    )[1]
+    const enforcedBy = readFileSync(transparencyProof.decision, "utf8").split(
+      "## Enforced by"
+    )[1]
+
+    expect(enforcedBy).toContain(
+      `${transparencyProof.test} > ${transparencyProof.testName}`
+    )
+    expect(body).toContain(
+      `href="https://github.com/finitoapp/payky/blob/main/${transparencyProof.decision}"`
+    )
+    expect(body).toContain(
+      `href="https://github.com/finitoapp/payky/blob/main/${transparencyProof.test}"`
+    )
+  })
+
+  test("ends only the home page with installing and contact, and leads to the contact form from the menu", () => {
+    const home = renderLandingDocument(template, "en").split("<body>")[1]
+    expect(home).toContain(`id="contact"`)
+
+    for (const document of ["eet", "tech"] as const) {
+      const body = renderLandingDocument(template, "en", document).split(
+        "<body>"
+      )[1]
+      expect(body).not.toContain(`id="get-started"`)
+      expect(body).toContain(`href="/landing/en#contact"`)
+    }
+  })
+
+  test("leads from the home page and the menu to the page on how Payky works", () => {
+    const body = renderLandingDocument(template, "en").split("<body>")[1]
+    const techBody = renderLandingDocument(template, "en", "tech").split(
+      "<body>"
+    )[1]
+
+    expect(body).toContain(`href="/landing/en/jak-to-funguje"`)
+    expect(techBody).toContain(
+      `href="/landing/en/jak-to-funguje" aria-current="page"`
+    )
   })
 
   test("offers a menu of the landing pages, marking the one shown", () => {

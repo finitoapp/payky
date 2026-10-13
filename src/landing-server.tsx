@@ -13,8 +13,13 @@ import {
   LandingPage,
 } from "@/features/landing/landing-page.tsx"
 import {
+  LandingTechPage,
+  techFaqItems,
+} from "@/features/landing/landing-tech-page.tsx"
+import {
   landingEetPaths,
   landingPaths,
+  landingTechPaths,
 } from "@/features/shared/landing-redirect.ts"
 import {
   type Language,
@@ -28,10 +33,17 @@ export const landingLanguages = Object.keys(landingPaths) as ReadonlyArray<
   keyof typeof landingPaths
 >
 
-/** The prerendered landing documents: the home page and the EET 2.0 page. */
-export type LandingDocument = "home" | "eet"
+/**
+ * The prerendered landing documents: the home page, the EET 2.0 page and the
+ * page on how Payky works.
+ */
+export type LandingDocument = "home" | "eet" | "tech"
 
-export const landingDocuments: ReadonlyArray<LandingDocument> = ["home", "eet"]
+export const landingDocuments: ReadonlyArray<LandingDocument> = [
+  "home",
+  "eet",
+  "tech",
+]
 
 /** The file each document is written to, which `vercel.json` serves. */
 export const landingFileName = (
@@ -45,6 +57,7 @@ export const landingFileName = (
 const documentPaths = {
   home: landingPaths,
   eet: landingEetPaths,
+  tech: landingTechPaths,
 } satisfies Record<LandingDocument, Record<Language, string>>
 
 const documentMeta = {
@@ -55,6 +68,10 @@ const documentMeta = {
   eet: {
     title: "landing.eet.meta.title",
     description: "landing.eet.meta.description",
+  },
+  tech: {
+    title: "landing.tech.meta.title",
+    description: "landing.tech.meta.description",
   },
 } satisfies Record<
   LandingDocument,
@@ -97,38 +114,40 @@ const faqStructuredData = (
 /**
  * Structured data for search results: who makes Payky, the app with its
  * price and downloads, and the page's FAQ, whose answers the page shows too.
- * The EET page describes only its own FAQ.
+ * The EET page and the page on how Payky works describe only their own FAQ.
  */
 function structuredData(document: LandingDocument, language: Language): string {
   const t = resources[language]
   const data =
     document === "eet"
       ? [faqStructuredData(language, eetFaqItems)]
-      : [
-          {
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            name: t["app.name"],
-            url: pageUrl("home", language),
-            logo: `${siteUrl}/pwa-icon-512.png`,
-            sameAs: [githubUrl],
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            name: t["app.name"],
-            description: t["landing.meta.description"],
-            url: pageUrl("home", language),
-            image: `${siteUrl}${ogImages[language]}`,
-            applicationCategory: "FinanceApplication",
-            operatingSystem: "Android, Web",
-            downloadUrl: apkUrl,
-            installUrl: zapstoreUrl,
-            inLanguage: language,
-            offers: { "@type": "Offer", price: "0", priceCurrency: "CZK" },
-          },
-          faqStructuredData(language, faqItems),
-        ]
+      : document === "tech"
+        ? [faqStructuredData(language, techFaqItems)]
+        : [
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: t["app.name"],
+              url: pageUrl("home", language),
+              logo: `${siteUrl}/pwa-icon-512.png`,
+              sameAs: [githubUrl],
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: t["app.name"],
+              description: t["landing.meta.description"],
+              url: pageUrl("home", language),
+              image: `${siteUrl}${ogImages[language]}`,
+              applicationCategory: "FinanceApplication",
+              operatingSystem: "Android, Web",
+              downloadUrl: apkUrl,
+              installUrl: zapstoreUrl,
+              inLanguage: language,
+              offers: { "@type": "Offer", price: "0", priceCurrency: "CZK" },
+            },
+            faqStructuredData(language, faqItems),
+          ]
   // Inside a <script>, so nothing in the copy may close it.
   return JSON.stringify(data).replaceAll("<", "\\u003c")
 }
@@ -195,6 +214,7 @@ function LandingHead({
 const documentPages = {
   home: LandingPage,
   eet: LandingEetPage,
+  tech: LandingTechPage,
 } satisfies Record<
   LandingDocument,
   (props: { readonly language: Language }) => ReactNode
@@ -202,7 +222,7 @@ const documentPages = {
 
 /**
  * Fills the built `landing.html` with `document` in `language` (landing/0002,
- * landing/0006): `bin/prerender-landing.ts` writes one file per document and
+ * landing/0006, landing/0008): `bin/prerender-landing.ts` writes one file per document and
  * language from it.
  */
 export function renderLandingDocument(

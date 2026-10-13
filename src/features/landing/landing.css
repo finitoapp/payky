@@ -327,6 +327,32 @@
   animation-fill-mode: backwards;
 }
 
+/* A spark in the colour of a provider standing in the way. */
+.landing-pulse-risk {
+  background: var(--destructive);
+  box-shadow: 0 0 12px 2px var(--destructive);
+}
+
+/* A smaller spark: a message of the app's, not money. */
+.landing-pulse-talk {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background: var(--landing-ink);
+  box-shadow: 0 0 8px 1px var(--landing-ink);
+}
+
+/* An icon travelling instead of a spark, centred on its path. */
+.landing-pulse-icon {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-foreground);
+}
+
 @keyframes landing-pulse {
   0% {
     left: var(--from-x);
@@ -341,6 +367,81 @@
     left: var(--to-x);
     top: var(--to-y);
     opacity: 0;
+  }
+}
+
+/*
+ * A spark on a quadratic arc through --via: steady along the axis the arc
+ * spans, easing out to the apex and back in along the axis it bulges on,
+ * which together trace the parabola exactly. The class names the bulge axis.
+ */
+.landing-pulse-arc-x,
+.landing-pulse-arc-y {
+  animation-timing-function: linear;
+}
+
+.landing-pulse-arc-y {
+  animation-name: landing-pulse-left, landing-pulse-arc-top, landing-pulse-fade;
+}
+
+.landing-pulse-arc-x {
+  animation-name: landing-pulse-arc-left, landing-pulse-top, landing-pulse-fade;
+}
+
+@keyframes landing-pulse-left {
+  from {
+    left: var(--from-x);
+  }
+  to {
+    left: var(--to-x);
+  }
+}
+
+@keyframes landing-pulse-top {
+  from {
+    top: var(--from-y);
+  }
+  to {
+    top: var(--to-y);
+  }
+}
+
+@keyframes landing-pulse-arc-left {
+  0% {
+    left: var(--from-x);
+    animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1);
+  }
+  50% {
+    left: var(--via-x);
+    animation-timing-function: cubic-bezier(0.333, 0, 0.667, 0.333);
+  }
+  100% {
+    left: var(--to-x);
+  }
+}
+
+@keyframes landing-pulse-arc-top {
+  0% {
+    top: var(--from-y);
+    animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1);
+  }
+  50% {
+    top: var(--via-y);
+    animation-timing-function: cubic-bezier(0.333, 0, 0.667, 0.333);
+  }
+  100% {
+    top: var(--to-y);
+  }
+}
+
+@keyframes landing-pulse-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
   }
 }
 
@@ -413,7 +514,46 @@
   }
 }
 
+/*
+ * The loupe on the transparency diagram wanders over its safe, and the
+ * gears in the glass safe turn, slowly, the way a mechanism on display does.
+ */
+.landing-loupe {
+  animation: landing-loupe 8s ease-in-out infinite;
+}
+
+@keyframes landing-loupe {
+  0%,
+  100% {
+    translate: -45% -35%;
+  }
+  33% {
+    translate: 45% -20%;
+  }
+  66% {
+    translate: -10% 45%;
+  }
+}
+
+.landing-gear {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: landing-gear 12s linear infinite;
+}
+
+.landing-gear-reverse {
+  animation-direction: reverse;
+}
+
+@keyframes landing-gear {
+  to {
+    rotate: 360deg;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .landing-loupe,
+  .landing-gear,
   .landing-rise,
   .landing-pulse,
   .landing-stamp,

@@ -217,4 +217,25 @@ describe("withdrawal queries", () => {
       deviceName: null,
     })
   })
+
+  test("carries the merchant's comment to the history and the detail", async () => {
+    const { testEvolu, evolu, accountId } = await setUp()
+    await using _ = testEvolu
+    const { id } = await recordWithdrawal(evolu, accountId, "lightning")
+    await runMutationWithCompletion((options) =>
+      evolu.update(
+        "withdrawal",
+        { id, comment: NonEmptyString255("Rent for October") },
+        { ...options, ownerId: evolu.appOwner.id }
+      )
+    )
+
+    const [listed] = await evolu.loadQuery(
+      withdrawalsByAccountQuery(accountId, 50)
+    )
+    const [detail] = await evolu.loadQuery(withdrawalDetailQuery(id))
+
+    expect(listed && toWithdrawalView(listed)?.comment).toBe("Rent for October")
+    expect(detail && toWithdrawalView(detail)?.comment).toBe("Rent for October")
+  })
 })

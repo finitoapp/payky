@@ -48,6 +48,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatSatsAmount, shortenMiddle } from "@/lib/format-utils.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
+import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"
 import {
   destinationErrorKeys,
   draftAmountSats,
@@ -191,6 +192,7 @@ export function WithdrawFormStep({
     addressSettled && !metadataQuery.isFetching
       ? (metadataQuery.data ?? null)
       : null
+  const commentAllowed = range?.commentAllowed ?? 0
   const addressUnavailable =
     addressSettled && !metadataQuery.isFetching && metadataQuery.isError
   const outOfRange =
@@ -245,7 +247,11 @@ export function WithdrawFormStep({
       amountSats = amount.data
     }
 
-    const request: WithdrawRequest = { destination, amountSats }
+    const request: WithdrawRequest = {
+      destination,
+      amountSats,
+      recipientComment: draft.recipientComment,
+    }
     setPending(true)
     try {
       await using run = appRun()
@@ -456,6 +462,50 @@ export function WithdrawFormStep({
                   </FieldDescription>
                 </FieldContent>
               </Field>
+
+              <WithdrawCollapsible
+                label={t("withdraw.options.label")}
+                defaultOpen={
+                  draft.recipientComment !== "" || draft.comment !== ""
+                }
+              >
+                {commentAllowed > 0 ? (
+                  <Field>
+                    <FieldLabel htmlFor="withdraw-recipient-comment">
+                      {t("withdraw.recipientComment.label")}
+                    </FieldLabel>
+                    <Input
+                      id="withdraw-recipient-comment"
+                      value={draft.recipientComment}
+                      maxLength={commentAllowed}
+                      onChange={(event) =>
+                        update({ recipientComment: event.target.value })
+                      }
+                    />
+                    <FieldDescription>
+                      {t("withdraw.recipientComment.hint", {
+                        max: commentAllowed,
+                      })}
+                    </FieldDescription>
+                  </Field>
+                ) : null}
+                <Field>
+                  <FieldLabel htmlFor="withdraw-comment">
+                    {t("withdraw.comment.label")}
+                  </FieldLabel>
+                  <Input
+                    id="withdraw-comment"
+                    value={draft.comment}
+                    maxLength={255}
+                    onChange={(event) =>
+                      update({ comment: event.target.value })
+                    }
+                  />
+                  <FieldDescription>
+                    {t("withdraw.comment.hint")}
+                  </FieldDescription>
+                </Field>
+              </WithdrawCollapsible>
 
               <FieldError>{submitError}</FieldError>
             </FieldGroup>

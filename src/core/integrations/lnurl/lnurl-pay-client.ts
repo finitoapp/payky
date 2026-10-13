@@ -21,6 +21,8 @@ const LnurlPayMetadataSchema = z.object({
   minSendable: z.number().int().positive(),
   maxSendable: z.number().int().positive(),
   metadata: z.string(),
+  // LUD-12: the longest comment the recipient accepts; absent means none.
+  commentAllowed: z.number().int().nonnegative().optional().catch(undefined),
 })
 
 const LnurlPayInvoiceSchema = z.object({
@@ -59,6 +61,8 @@ export interface LnurlPayMetadata {
   readonly maxSendableSats: number
   /** The recipient's `text/plain` entry, shown on review in place of the invoice's description. */
   readonly text?: string | null
+  /** LUD-12: the longest comment the recipient accepts, 0 when it takes none. */
+  readonly commentAllowed?: number
 }
 
 export interface LnurlPayInvoice {
@@ -149,21 +153,41 @@ export const fetchLnurlPayMetadata =
       // the floored maximum is one the recipient would reject.
       minSendableSats: Math.ceil(metadata.value.minSendable / MSATS_PER_SAT),
       maxSendableSats: Math.floor(metadata.value.maxSendable / MSATS_PER_SAT),
+      commentAllowed: metadata.value.commentAllowed ?? 0,
     })
   }
 
 /**
+ * The LUD-12 comment the recipient would get: trimmed, cut to
+ * `commentAllowed` characters, `null` when empty or not accepted.
+ */
+export const lnurlPayComment = (
+  metadata: Pick<LnurlPayMetadata, "commentAllowed">,
+  comment: string | undefined
+): string | null => {
+  const allowed = metadata.commentAllowed ?? 0
+  const trimmed = Array.from(comment?.trim() ?? "")
+    .slice(0, allowed)
+    .join("")
+    .trim()
+  return trimmed === "" ? null : trimmed
+}
+
+/**
  * Fetches an invoice and checks it is the one asked for: the exact msat
  * amount, mainnet, not expired. `description_hash` is deliberately not
- * checked (withdraw/0005).
+ * checked (withdraw/0005). A `comment` goes along as LUD-12's `comment`
+ * only as far as `lnurlPayComment` lets it.
  */
 export const fetchLnurlPayInvoice =
   ({
     amountSats,
     metadata,
+    comment,
   }: {
     readonly amountSats: number
     readonly metadata: LnurlPayMetadata
+    readonly comment?: string
   }): LnurlPayTask<LnurlPayInvoice, FetchDep & DateDep> =>
   async (run) => {
     const amountMsat = amountSats * MSATS_PER_SAT
@@ -176,6 +200,10 @@ export const fetchLnurlPayInvoice =
       )
     }
     callbackUrl.searchParams.set("amount", String(amountMsat))
+    const sentComment = lnurlPayComment(metadata, comment)
+    if (sentComment !== null) {
+      callbackUrl.searchParams.set("comment", sentComment)
+    }
 
     const response = await run(
       fetchLnurlJson(callbackUrl, "LNURL invoice", LnurlPayInvoiceSchema)

@@ -118,6 +118,7 @@ const withdrawalsQuery = (accountId: AccountId) =>
         "withdrawal.accountTransactionId",
         "withdrawal.failedAt",
         "withdrawal.failureReason",
+        "withdrawal.comment",
         "withdrawalOnchain.feeSats",
         "withdrawalOnchain.exitSpeed",
         "withdrawalLightning.sparkTransferId",
@@ -177,6 +178,7 @@ const lightningQuote = (
     invoice: parsed,
     lightningAddress: null,
     recipientText: null,
+    recipientComment: null,
     amountSats: 1000,
     amountSatsToSend: undefined,
     withdrawAll: false,
@@ -554,9 +556,11 @@ describe("quoteWithdrawal", () => {
     ({
       maxSendable,
       requested,
+      commentAllowed,
     }: {
       readonly maxSendable: number
       readonly requested: string[]
+      readonly commentAllowed?: number
     }) =>
     async (input: RequestInfo | URL) => {
       const url = new URL(String(input))
@@ -568,6 +572,7 @@ describe("quoteWithdrawal", () => {
           minSendable: 1_000_000,
           maxSendable,
           metadata: "[]",
+          commentAllowed,
         })
       }
       const sats = Number(url.searchParams.get("amount")) / 1000
@@ -663,6 +668,66 @@ describe("quoteWithdrawal", () => {
     })
   })
 
+  test("sends the recipient comment only with the Lightning address invoice it pays", async () => {
+    const requested: string[] = []
+    const { testEvolu, deps, accountId } = await setUp({
+      getBalance: async () => ({ availableSats: 50_000 }),
+      getLightningSendFeeEstimate: async () => 100,
+    })
+    await using _ = testEvolu
+    await using run = testCreateRun({
+      ...deps,
+      fetch: lightningAddressFetch({
+        maxSendable: 100_000_000,
+        requested,
+        commentAllowed: 20,
+      }),
+    })
+
+    expect(
+      await run(
+        quoteWithdrawal({
+          accountId,
+          destination: destination("alice@example.com"),
+          recipientComment: " Thanks ",
+        })
+      )
+    ).toMatchObject({ ok: true, value: { recipientComment: "Thanks" } })
+    expect(requested).toEqual([
+      "https://example.com/.well-known/lnurlp/alice",
+      "https://example.com/cb?amount=50000000",
+      "https://example.com/cb?amount=49890000&comment=Thanks",
+    ])
+  })
+
+  test("sends no recipient comment to a Lightning address that accepts none", async () => {
+    const requested: string[] = []
+    const { testEvolu, deps, accountId } = await setUp({
+      getBalance: async () => ({ availableSats: 50_000 }),
+      getLightningSendFeeEstimate: async () => 10,
+    })
+    await using _ = testEvolu
+    await using run = testCreateRun({
+      ...deps,
+      fetch: lightningAddressFetch({ maxSendable: 100_000_000, requested }),
+    })
+
+    expect(
+      await run(
+        quoteWithdrawal({
+          accountId,
+          destination: destination("alice@example.com"),
+          amountSats: PositiveInteger(1000),
+          recipientComment: "Thanks",
+        })
+      )
+    ).toMatchObject({ ok: true, value: { recipientComment: null } })
+    expect(requested).toEqual([
+      "https://example.com/.well-known/lnurlp/alice",
+      "https://example.com/cb?amount=1000000",
+    ])
+  })
+
   test("refuses a Lightning address amount outside its range", async () => {
     const { testEvolu, deps, accountId } = await setUp({})
     await using _ = testEvolu
@@ -694,6 +759,35 @@ describe("quoteWithdrawal", () => {
 })
 
 describe("executeWithdrawal", () => {
+  test("records the merchant's comment with the withdrawal", async () => {
+    const { testEvolu, evolu, deps, accountId } = await setUp({
+      withdraw: async () => ({
+        kind: "sent",
+        id: "coop-exit-comment",
+        status: "INITIATED" as SparkWithdrawalStatus,
+        txid: null,
+      }),
+    })
+    await using _ = testEvolu
+    await using run = testCreateRun(deps)
+
+    expect(
+      await run(
+        executeWithdrawal({
+          accountId,
+          quote: onchainQuote(),
+          exitSpeed: "medium",
+          deviceId,
+          comment: NonEmptyString255("Rent for October"),
+        })
+      )
+    ).toMatchObject({ ok: true })
+
+    expect(await evolu.loadQuery(withdrawalsQuery(accountId))).toMatchObject([
+      { comment: "Rent for October" },
+    ])
+  })
+
   test("records an on-chain withdrawal and its movement under the id it named up front", async () => {
     const { testEvolu, evolu, deps, accountId } = await setUp({
       withdraw: async () => ({

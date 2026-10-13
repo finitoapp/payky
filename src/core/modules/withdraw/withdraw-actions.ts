@@ -15,6 +15,7 @@ import {
   fetchLnurlPayMetadata,
   type LightningAddressInvoiceMismatchError,
   type LnurlPayMetadata,
+  lnurlPayComment,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import { activeSparkAccountByIdQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -38,6 +39,7 @@ import {
   type BitcoinAddress,
   Integer,
   type NonEmptyString,
+  type NonEmptyString255,
   NonEmptyStringSchema,
   NonNegativeInteger,
   PositiveInteger,
@@ -78,6 +80,8 @@ export interface LightningWithdrawalQuote {
   readonly lightningAddress: string | null
   /** The recipient's own text: `text/plain` from LNURL metadata, or the invoice's description. */
   readonly recipientText: string | null
+  /** The LUD-12 comment sent along to a Lightning address (withdraw/0010). */
+  readonly recipientComment: string | null
   /** What the recipient gets. */
   readonly amountSats: number
   /** Set only for an amountless invoice. */
@@ -335,6 +339,7 @@ const quoteLightningInvoice = async ({
   amountSats,
   lightningAddress,
   recipientText,
+  recipientComment,
   addressWithdrawAll,
 }: {
   readonly wallet: SparkPaymentWallet
@@ -343,6 +348,7 @@ const quoteLightningInvoice = async ({
   readonly amountSats: number | undefined
   readonly lightningAddress: string | null
   readonly recipientText: string | null
+  readonly recipientComment: string | null
   /** The invoice is a Lightning address's, sized to the balance (withdraw/0009). */
   readonly addressWithdrawAll: boolean
 }): Promise<QuoteResult> => {
@@ -370,6 +376,7 @@ const quoteLightningInvoice = async ({
       invoice,
       lightningAddress,
       recipientText,
+      recipientComment,
       amountSats: sendSats,
       amountSatsToSend: sendSats,
       withdrawAll: true,
@@ -402,6 +409,7 @@ const quoteLightningInvoice = async ({
     invoice,
     lightningAddress,
     recipientText,
+    recipientComment,
     amountSats: sendSats,
     amountSatsToSend,
     withdrawAll: addressWithdrawAll,
@@ -474,10 +482,13 @@ export const quoteWithdrawal =
     accountId,
     destination,
     amountSats,
+    recipientComment,
   }: {
     readonly accountId: AccountId
     readonly destination: SupportedWithdrawDestination
     readonly amountSats?: PositiveInteger
+    /** LUD-12: goes to a Lightning address that accepts one, ignored elsewhere. */
+    readonly recipientComment?: string
   }): Task<
     WithdrawalQuote,
     QuoteWithdrawalError,
@@ -520,6 +531,7 @@ export const quoteWithdrawal =
     let invoice: LightningInvoice
     let recipientText: string | null
     let lightningAddress: string | null = null
+    let sentComment: string | null = null
     const addressWithdrawAll =
       destination.kind === "lightning-address" && amountSats === undefined
 
@@ -556,10 +568,16 @@ export const quoteWithdrawal =
         if (!sized.ok) return sized
         sendSats = sized.value
       }
+      // Only the invoice paid carries the comment, not the probe above.
       const fetched = await run(
-        fetchLnurlPayInvoice({ amountSats: sendSats, metadata: metadata.value })
+        fetchLnurlPayInvoice({
+          amountSats: sendSats,
+          metadata: metadata.value,
+          comment: recipientComment,
+        })
       )
       if (!fetched.ok) return fetched
+      sentComment = lnurlPayComment(metadata.value, recipientComment)
       invoice = fetched.value.invoice
       recipientText = metadata.value.text ?? null
       lightningAddress = destination.address
@@ -579,6 +597,7 @@ export const quoteWithdrawal =
         amountSats,
         lightningAddress,
         recipientText,
+        recipientComment: sentComment,
         addressWithdrawAll,
       })
     })
@@ -664,12 +683,15 @@ export const executeWithdrawal =
     quote,
     exitSpeed,
     deviceId,
+    comment,
   }: {
     readonly accountId: AccountId
     readonly quote: WithdrawalQuote
     /** On-chain only. */
     readonly exitSpeed: SparkExitSpeed
     readonly deviceId: DeviceId | null
+    /** The merchant's own note, never sent anywhere (withdraw/0010). */
+    readonly comment?: NonEmptyString255 | null
   }): Task<
     { readonly withdrawalId: WithdrawalId },
     ExecuteWithdrawalError,
@@ -739,6 +761,7 @@ export const executeWithdrawal =
               accountTransactionId,
               failedAt: null,
               failureReason: null,
+              comment: comment ?? null,
             },
             mutationOptions
           )

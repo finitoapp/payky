@@ -10,13 +10,15 @@ import {
 /** A closed-by-default section for what most merchants never need to read. */
 export function WithdrawCollapsible({
   label,
+  defaultOpen,
   children,
 }: {
   readonly label: string
+  readonly defaultOpen?: boolean
   readonly children: ReactNode
 }) {
   return (
-    <Collapsible>
+    <Collapsible defaultOpen={defaultOpen}>
       <CollapsibleTrigger className="group/withdraw-more flex w-full items-center justify-between text-left text-sm font-medium">
         {label}
         <ChevronDown

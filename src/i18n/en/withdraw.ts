@@ -14,6 +14,8 @@ export const enWithdraw = {
   "withdraw.amount.unit": "Amount unit",
   "withdraw.amount.unitSats": "sats",
   "withdraw.clipboard.use": "Use from clipboard: {value}",
+  "withdraw.comment.hint": "Only you see it, in the withdrawal history.",
+  "withdraw.comment.label": "Note for you",
   "withdraw.continue": "Continue",
   "withdraw.destination.checkingAddress": "Checking the Lightning address…",
   "withdraw.destination.invalid":
@@ -31,6 +33,7 @@ export const enWithdraw = {
   "withdraw.detail.balanceNow":
     "The wallet holds {balance} sats now; this withdrawal would deduct {amount} sats.",
   "withdraw.detail.cancel": "Cancel",
+  "withdraw.detail.comment": "Note",
   "withdraw.detail.copied": "Copied",
   "withdraw.detail.copy": "Copy",
   "withdraw.detail.copyError": "Couldn't copy.",
@@ -124,10 +127,15 @@ export const enWithdraw = {
   "withdraw.noAccount.description":
     "Set up a Spark wallet in Payment accounts before withdrawing.",
   "withdraw.noAccount.title": "No Spark account configured",
+  "withdraw.options.label": "More options",
   "withdraw.quoteError.generic": "Couldn't fetch a fee estimate. Try again.",
   "withdraw.quotePending": "Fetching fee estimate...",
+  "withdraw.recipientComment.hint":
+    "The recipient will see it. At most {max} characters.",
+  "withdraw.recipientComment.label": "Message for the recipient",
   "withdraw.review.amount": "Withdrawal amount",
   "withdraw.review.back": "Back",
+  "withdraw.review.comment": "Note",
   "withdraw.review.confirm": "Confirm withdrawal",
   "withdraw.review.confirming": "Sending...",
   "withdraw.review.destination": "Destination",
@@ -145,6 +153,7 @@ export const enWithdraw = {
   "withdraw.review.maxTotal": "At most deducted",
   "withdraw.review.newQuote": "New estimate",
   "withdraw.review.pinDetail": "{amount} sats → {destination}",
+  "withdraw.review.recipientComment": "Message for the recipient",
   "withdraw.review.recipientText": "Text from the recipient",
   "withdraw.review.remainder":
     "Whatever the fee doesn't use stays in your wallet.",

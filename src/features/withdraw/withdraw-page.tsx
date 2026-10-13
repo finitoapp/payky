@@ -28,6 +28,7 @@ import { formatSatsAmount } from "@/lib/format-utils.ts"
 import { useSparkBalance } from "./use-spark-balance.ts"
 import {
   createWithdrawDraft,
+  draftComment,
   earlyConfirmErrorKeys,
   initialWithdrawState,
   quoteErrorMessage,
@@ -152,6 +153,7 @@ function WithdrawFlow({
           quote: review.quote,
           exitSpeed: review.exitSpeed,
           deviceId: device.id,
+          comment: draftComment(draft),
         })
       )
 
@@ -231,6 +233,7 @@ function WithdrawFlow({
   return (
     <WithdrawReviewStep
       quote={state.quote}
+      comment={draftComment(draft)}
       exitSpeed={state.exitSpeed}
       confirming={state.confirming}
       requoting={requoting}

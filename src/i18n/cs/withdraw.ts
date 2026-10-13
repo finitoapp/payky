@@ -15,6 +15,8 @@ export const csWithdraw = {
   "withdraw.amount.unit": "Jednotka částky",
   "withdraw.amount.unitSats": "saty",
   "withdraw.clipboard.use": "Použít ze schránky: {value}",
+  "withdraw.comment.hint": "Uvidíte ji jen vy, v historii výběrů.",
+  "withdraw.comment.label": "Poznámka pro vás",
   "withdraw.continue": "Pokračovat",
   "withdraw.destination.checkingAddress": "Ověřuji Lightning adresu…",
   "withdraw.destination.invalid":
@@ -32,6 +34,7 @@ export const csWithdraw = {
   "withdraw.detail.balanceNow":
     "V peněžence je teď {balance} satů; tento výběr by odepsal {amount} satů.",
   "withdraw.detail.cancel": "Zrušit",
+  "withdraw.detail.comment": "Poznámka",
   "withdraw.detail.copied": "Zkopírováno",
   "withdraw.detail.copy": "Kopírovat",
   "withdraw.detail.copyError": "Nepodařilo se zkopírovat.",
@@ -123,11 +126,15 @@ export const csWithdraw = {
   "withdraw.noAccount.description":
     "Před výběrem nastavte Spark peněženku v Platebních účtech.",
   "withdraw.noAccount.title": "Není nastaven žádný Spark účet",
+  "withdraw.options.label": "Další možnosti",
   "withdraw.quoteError.generic":
     "Nepodařilo se získat odhad poplatku. Zkuste to znovu.",
   "withdraw.quotePending": "Zjišťuji odhad poplatku...",
+  "withdraw.recipientComment.hint": "Příjemce ji uvidí. Nejvýš {max} znaků.",
+  "withdraw.recipientComment.label": "Zpráva pro příjemce",
   "withdraw.review.amount": "Částka výběru",
   "withdraw.review.back": "Zpět",
+  "withdraw.review.comment": "Poznámka",
   "withdraw.review.confirm": "Potvrdit výběr",
   "withdraw.review.confirming": "Odesílám...",
   "withdraw.review.destination": "Cíl",
@@ -145,6 +152,7 @@ export const csWithdraw = {
   "withdraw.review.maxTotal": "Odepíše se nejvýš",
   "withdraw.review.newQuote": "Nový odhad",
   "withdraw.review.pinDetail": "{amount} satů → {destination}",
+  "withdraw.review.recipientComment": "Zpráva pro příjemce",
   "withdraw.review.recipientText": "Text od příjemce",
   "withdraw.review.remainder": "Co poplatek nevyčerpá, zůstane v peněžence.",
   "withdraw.review.showInvoice": "Zobrazit fakturu",

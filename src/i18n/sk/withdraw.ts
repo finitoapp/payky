@@ -16,6 +16,8 @@ export const skWithdraw = {
   "withdraw.amount.unit": "Jednotka sumy",
   "withdraw.amount.unitSats": "saty",
   "withdraw.clipboard.use": "Použiť zo schránky: {value}",
+  "withdraw.comment.hint": "Uvidíte ju iba vy, v histórii výberov.",
+  "withdraw.comment.label": "Poznámka pre vás",
   "withdraw.continue": "Pokračovať",
   "withdraw.destination.checkingAddress": "Overujem Lightning adresu…",
   "withdraw.destination.invalid":
@@ -33,6 +35,7 @@ export const skWithdraw = {
   "withdraw.detail.balanceNow":
     "V peňaženke je teraz {balance} satov; tento výber by odpísal {amount} satov.",
   "withdraw.detail.cancel": "Zrušiť",
+  "withdraw.detail.comment": "Poznámka",
   "withdraw.detail.copied": "Skopírované",
   "withdraw.detail.copy": "Kopírovať",
   "withdraw.detail.copyError": "Nepodarilo sa skopírovať.",
@@ -124,11 +127,15 @@ export const skWithdraw = {
   "withdraw.noAccount.description":
     "Pred výberom nastavte Spark peňaženku v Platobných účtoch.",
   "withdraw.noAccount.title": "Nie je nastavený žiadny Spark účet",
+  "withdraw.options.label": "Ďalšie možnosti",
   "withdraw.quoteError.generic":
     "Nepodarilo sa získať odhad poplatku. Skúste to znova.",
   "withdraw.quotePending": "Zisťujem odhad poplatku...",
+  "withdraw.recipientComment.hint": "Príjemca ju uvidí. Najviac {max} znakov.",
+  "withdraw.recipientComment.label": "Správa pre príjemcu",
   "withdraw.review.amount": "Suma výberu",
   "withdraw.review.back": "Späť",
+  "withdraw.review.comment": "Poznámka",
   "withdraw.review.confirm": "Potvrdiť výber",
   "withdraw.review.confirming": "Odosielam...",
   "withdraw.review.destination": "Cieľ",
@@ -146,6 +153,7 @@ export const skWithdraw = {
   "withdraw.review.maxTotal": "Odpíše sa najviac",
   "withdraw.review.newQuote": "Nový odhad",
   "withdraw.review.pinDetail": "{amount} satov → {destination}",
+  "withdraw.review.recipientComment": "Správa pre príjemcu",
   "withdraw.review.recipientText": "Text od príjemcu",
   "withdraw.review.remainder": "Čo poplatok nevyčerpá, zostane v peňaženke.",
   "withdraw.review.showInvoice": "Zobraziť faktúru",

@@ -1,12 +1,14 @@
 import {
+  HouseIcon,
   LanguagesIcon,
   type LucideIcon,
+  MenuIcon,
   MonitorIcon,
   MoonIcon,
   PlayIcon,
+  ReceiptTextIcon,
   SunIcon,
 } from "lucide-react"
-
 import { flushSync } from "react-dom"
 
 import type { Theme } from "@/components/theme-provider.tsx"
@@ -14,6 +16,7 @@ import { buttonVariants } from "@/components/ui/button.tsx"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -22,6 +25,7 @@ import { useLandingTranslation } from "@/features/landing/landing-translation.ts
 import { useLandingTheme } from "@/features/landing/use-landing-theme.ts"
 import {
   landingAppEntryPath,
+  landingEetPaths,
   landingPaths,
 } from "@/features/shared/landing-redirect.ts"
 import { languageOptions } from "@/features/shared/language-options.ts"
@@ -46,6 +50,33 @@ const nextTheme = {
   light: "dark",
   dark: "system",
 } satisfies Record<Theme, Theme>
+
+interface MenuLink {
+  readonly label: TranslationKey
+  readonly icon: LucideIcon
+  readonly href: string
+  readonly active: boolean
+}
+
+/** The header's menu: the landing pages, the home page and the EET page (landing/0006). */
+function useMenuLinks(): ReadonlyArray<MenuLink> {
+  const { language, paths } = useLandingTranslation()
+  const onEetPage = paths === landingEetPaths
+  return [
+    {
+      label: "landing.menu.home",
+      icon: HouseIcon,
+      href: landingPaths[language],
+      active: !onEetPage,
+    },
+    {
+      label: "landing.menu.eet",
+      icon: ReceiptTextIcon,
+      href: landingEetPaths[language],
+      active: onEetPage,
+    },
+  ]
+}
 
 const iconButtonClassName = cn(
   buttonVariants({ variant: "ghost", size: "icon-lg" }),
@@ -80,15 +111,17 @@ function switchTheme(origin: Element, apply: () => void) {
 }
 
 /**
- * Brand on the left; on the right the one action, the language and the
- * appearance. No section links: the page reads top to bottom, and the
- * header's button goes straight into the app, as the hero's does.
+ * Brand and menu on the left; on the right the one action, the language and
+ * the appearance. The menu's links sit in the bar on wide screens and behind
+ * a menu button on narrow ones. The header's button goes straight into the
+ * app, as the hero's does.
  */
 export function LandingHeader() {
   const { language, setLanguage, t } = useLandingTranslation()
   const [theme, setTheme] = useLandingTheme()
   const ThemeIcon = themeIcons[theme]
   const themeLabel = `${t("landing.theme.label")}: ${t(themeLabelKeys[theme])}`
+  const menuLinks = useMenuLinks()
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md">
@@ -99,8 +132,32 @@ export function LandingHeader() {
           aria-label={t("app.name")}
         >
           <img src="/pwa-icon.svg" alt="" className="size-8 shrink-0" />
-          <span>{t("app.name")}</span>
+          {/* The smallest phones need the room for the menu button. */}
+          <span className="hidden min-[380px]:inline">{t("app.name")}</span>
         </a>
+
+        <nav
+          aria-label={t("landing.menu.label")}
+          className="mr-auto ml-8 hidden items-center gap-1 md:flex"
+        >
+          {menuLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              aria-current={link.active ? "page" : undefined}
+              data-label={t(link.label)}
+              // The hidden `after` copy reserves the bold label's width, so the
+              // menu is as wide on every page. `before` is the active underline.
+              className={cn(
+                "relative inline-flex flex-col items-center px-3 py-2 text-sm font-medium text-muted-foreground transition-colors after:invisible after:h-0 after:overflow-hidden after:font-semibold after:content-[attr(data-label)] hover:text-foreground",
+                link.active &&
+                  "font-semibold text-foreground before:absolute before:inset-x-3 before:bottom-0.5 before:h-0.5 before:rounded-full before:bg-primary"
+              )}
+            >
+              {t(link.label)}
+            </a>
+          ))}
+        </nav>
 
         <div className="flex items-center gap-1">
           <a
@@ -114,6 +171,52 @@ export function LandingHeader() {
             <PlayIcon aria-hidden="true" data-icon="inline-start" />
             {t("landing.cta.startShort")}
           </a>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(iconButtonClassName, "md:hidden")}
+              aria-label={t("landing.menu.label")}
+              title={t("landing.menu.label")}
+            >
+              <MenuIcon aria-hidden="true" />
+            </DropdownMenuTrigger>
+            {/* Portalled out of the page: `landing` brings its gold along. */}
+            <DropdownMenuContent align="end" className="landing min-w-48">
+              {menuLinks.map((link) => {
+                const Icon = link.icon
+                return (
+                  <DropdownMenuItem
+                    key={link.label}
+                    className={cn(
+                      "gap-2.5 px-2.5 py-2",
+                      link.active && "font-semibold"
+                    )}
+                    render={
+                      <a
+                        href={link.href}
+                        aria-current={link.active ? "page" : undefined}
+                      />
+                    }
+                  >
+                    <Icon
+                      aria-hidden="true"
+                      className={cn(
+                        "text-muted-foreground",
+                        link.active && "text-(--landing-ink)"
+                      )}
+                    />
+                    {t(link.label)}
+                    {link.active ? (
+                      <span
+                        aria-hidden="true"
+                        className="ml-auto size-2 rounded-full bg-primary"
+                      />
+                    ) : null}
+                  </DropdownMenuItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger

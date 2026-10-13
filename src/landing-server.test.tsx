@@ -102,4 +102,79 @@ describe("renderLandingDocument", () => {
       expect(document).toContain(resources.en[key])
     }
   })
+
+  test.each([
+    ["cs", "https://payky.me/landing/eet-2-0"],
+    ["en", "https://payky.me/landing/en/eet-2-0"],
+    ["sk", "https://payky.me/landing/sk/eet-2-0"],
+  ] as const)(
+    "prerenders the EET page in %s at its own address",
+    (language, url) => {
+      const document = renderLandingDocument(template, language, "eet")
+
+      expect(document).toContain(`<html lang="${language}"`)
+      expect(document).toContain(`<link rel="canonical" href="${url}"/>`)
+      expect(document).toContain(
+        `<title>${resources[language]["landing.eet.meta.title"]}</title>`
+      )
+      expect(document).toContain(resources[language]["landing.eet.hero.title"])
+    }
+  )
+
+  test("links the EET page's languages to each other", () => {
+    const document = renderLandingDocument(template, "cs", "eet")
+    const body = document.split("<body>")[1]
+
+    expect(document).toContain(
+      `<link rel="alternate" hrefLang="en" href="https://payky.me/landing/en/eet-2-0"/>`
+    )
+    expect(document).toContain(
+      `<link rel="alternate" hrefLang="x-default" href="https://payky.me/landing/eet-2-0"/>`
+    )
+    expect(body).toContain(`href="/landing/sk/eet-2-0" hrefLang="sk"`)
+  })
+
+  test("describes the EET page's FAQ for search results and shows its answers", () => {
+    const document = renderLandingDocument(template, "cs", "eet")
+    const json = document.match(
+      /<script type="application\/ld\+json">(.*?)<\/script>/su
+    )?.[1]
+    const data: unknown = JSON.parse(json ?? "null")
+
+    expect(data).toEqual([
+      expect.objectContaining({
+        "@type": "FAQPage",
+        mainEntity: expect.arrayContaining([
+          expect.objectContaining({
+            name: resources.cs["landing.eet.faq.offline.question"],
+          }),
+        ]),
+      }),
+    ])
+    expect(document.slice(document.indexOf("<body>"))).toContain(
+      resources.cs["landing.eet.faq.offline.answer"]
+    )
+  })
+
+  test("names where the EET page's facts come from", () => {
+    const body = renderLandingDocument(template, "cs", "eet").split("<body>")[1]
+
+    expect(body).toContain(resources.cs["landing.eet.source"])
+    expect(body).toContain(`href="https://eet.gov.cz"`)
+  })
+
+  test("leads from the home page to the EET page", () => {
+    const body = renderLandingDocument(template, "en").split("<body>")[1]
+
+    expect(body).toContain(`href="/landing/en/eet-2-0"`)
+  })
+
+  test("offers a menu of the landing pages, marking the one shown", () => {
+    const body = renderLandingDocument(template, "sk", "eet").split("<body>")[1]
+
+    expect(body).toContain(
+      `href="/landing/sk" data-label="${resources.sk["landing.menu.home"]}"`
+    )
+    expect(body).toContain(`href="/landing/sk/eet-2-0" aria-current="page"`)
+  })
 })

@@ -55,6 +55,162 @@ export const skLanding = {
   "landing.cta.download": "Stiahnuť",
   "landing.cta.start": "Spustiť Payky",
   "landing.cta.startShort": "Spustiť",
+  "landing.eet.changes.cards.body":
+    "Novo sa evidujú aj bezhotovostné platby prijaté osobne. EET sa tak týka aj tých, ktorí hotovosť vôbec neberú.",
+  "landing.eet.changes.cards.title": "Karty a QR platby tiež",
+  "landing.eet.changes.credit.body":
+    "Podnikateľ – fyzická osoba si ju môže jednorazovo uplatniť za obdobie, v ktorom začne evidovať. Koľko z nej skutočne uplatníte, závisí od podmienok zákona.",
+  "landing.eet.changes.credit.title": "Zľava na dani až 5 000 Kč",
+  "landing.eet.changes.data.body":
+    "Odosiela sa len kto, kde, kedy a koľko: EIČ, evidenčná jednotka, pokladničné zariadenie, poradové číslo, dátum a čas a celková suma vrátane DPH. Žiadne položky ani údaje o zákazníkovi.",
+  "landing.eet.changes.data.title": "Menej údajov",
+  "landing.eet.changes.eyebrow": "Čo sa mení",
+  "landing.eet.changes.offline.body":
+    "Bez internetu predávate ďalej. Tržbu treba odoslať hneď po obnovení spojenia, najneskôr do 48 hodín.",
+  "landing.eet.changes.offline.title": "Výpadok siete nevadí",
+  "landing.eet.changes.receipt.body":
+    "Zákon o evidencii tržieb nevyžaduje bloček tlačiť ani vydávať. Doklad však môže vyžadovať iný predpis, napríklad keď oň zákazník požiada.",
+  "landing.eet.changes.receipt.title": "Bloček nie je povinný",
+  "landing.eet.changes.title": "Čo prináša EET 2.0",
+  "landing.eet.faq.bitcoin.answer":
+    "Áno. Zákon počíta aj s kryptoaktívami, keď zákazník platí osobne. Payky eviduje platbu cez Lightning rovnako ako ostatné, v korunách, za ktoré ste predávali.",
+  "landing.eet.faq.bitcoin.question": "Eviduje sa aj platba v bitcoine?",
+  "landing.eet.faq.card.answer":
+    "Áno, keď zákazník platí osobne u vás. Platby na diaľku – v e‑shope cez platobnú bránu alebo prevodom podľa faktúry – sa neevidujú.",
+  "landing.eet.faq.card.question": "Eviduje sa platba kartou alebo QR kódom?",
+  "landing.eet.faq.certificate.answer":
+    "Pokladničný certifikát vygenerujete v DIS+ zadarmo, ich počet nie je obmedzený a každý platí jeden rok. Payky stačí jeden na účet, všetky jeho zariadenia ho zdieľajú. Na koniec platnosti vás Payky v nastaveniach upozorní tri týždne vopred.",
+  "landing.eet.faq.certificate.question":
+    "Koľko certifikátov potrebujem a ako dlho platia?",
+  "landing.eet.faq.device.answer":
+    "Nie. Zákon nepredpisuje druh zariadenia, stačí telefón, tablet alebo počítač pripojený na internet. Payky beží na Androide aj v prehliadači.",
+  "landing.eet.faq.device.question": "Musím kvôli EET 2.0 kupovať pokladnicu?",
+  "landing.eet.faq.off.answer":
+    "Paušalisti v prvom pásme s príjmami do 1 milióna Kč sa môžu z evidencie vyviazať za príplatok 1 400 Kč mesačne k paušálnej dani. Prihlásiť sa musia do 10. dňa zdaňovacieho obdobia a voľba platí celý rok. Oplatí sa to prepočítať – Payky stojí 0 Kč.",
+  "landing.eet.faq.off.question": "Čo je režim EET OFF?",
+  "landing.eet.faq.offline.answer":
+    "Platbu prijmete normálne. Tržbu treba odoslať hneď po obnovení spojenia, najneskôr do 48 hodín. Payky ju odosiela znova samo, kým ju EET nepotvrdí, a čo nedorazí do 48 hodín, označí pri platbe.",
+  "landing.eet.faq.offline.question": "Čo ak vypadne internet?",
+  "landing.eet.faq.price.answer":
+    "Nič. Evidencia tržieb je súčasťou Payky zadarmo a pokladničný certifikát od finančnej správy je zadarmo tiež.",
+  "landing.eet.faq.price.question": "Koľko EET v Payky stojí?",
+  "landing.eet.faq.receipt.answer":
+    "Zákon o evidencii tržieb to nevyžaduje. Doklad však môže vyžadovať iný predpis, napríklad zákon o ochrane spotrebiteľa, keď oň zákazník požiada.",
+  "landing.eet.faq.receipt.question": "Musím vydávať bloček?",
+  "landing.eet.faq.refund.answer":
+    "Vrátenie zadáte pri platbe v Payky. EET 2.0 nemá storno: vrátené peniaze sa evidujú ako nová tržba so zápornou sumou a tú Payky odošle samo.",
+  "landing.eet.faq.refund.question": "Ako vrátim peniaze zákazníkovi?",
+  "landing.eet.faq.tip.answer":
+    "Prepitné, ktoré je príjmom podniku, je súčasťou tržby. Keď prepitné patrí zamestnancom, nastavíte v Payky, že sa do tržby nezapočíta. Povinný kuvert ani servisný poplatok nie sú prepitné, do tržby patria vždy.",
+  "landing.eet.faq.tip.question": "Eviduje sa prepitné?",
+  "landing.eet.faq.units.answer":
+    "Jeden účet Payky eviduje do jednej evidenčnej jednotky. Pre každú ďalšiu prevádzku si založte ďalší účet, certifikát môžete použiť rovnaký.",
+  "landing.eet.faq.units.question": "Mám viac prevádzok. Ako na to?",
+  "landing.eet.handles.background.body":
+    "Zaplatené je hneď. Tržba sa odošle na pozadí a zákazník na EET nečaká.",
+  "landing.eet.handles.background.title": "Pokladňa nečaká",
+  "landing.eet.handles.certificate.body":
+    "Tri týždne pred koncom platnosti certifikátu vás Payky v nastaveniach upozorní, aby ste ho stihli obnoviť.",
+  "landing.eet.handles.certificate.title": "Stráži certifikát",
+  "landing.eet.handles.code.body":
+    "Pri každej platbe vidíte, či ju EET potvrdila, aj s potvrdzovacím kódom. Nepotvrdené tržby nájdete pokope v nastaveniach.",
+  "landing.eet.handles.code.title": "Potvrdenie pri každej platbe",
+  "landing.eet.handles.devices.body":
+    "Každé zariadenie je samostatná pokladňa. Keď jedno vypadne, jeho tržby po desiatich minútach odošle iné zariadenie účtu.",
+  "landing.eet.handles.devices.title": "Viac telefónov, jedna evidencia",
+  "landing.eet.handles.eyebrow": "Čo Payky stráži",
+  "landing.eet.handles.offline.body":
+    "Keď vypadne sieť, Payky tržbu odosiela znova, kým ju EET nepotvrdí. Čo nedorazí do 48 hodín, označí pri platbe.",
+  "landing.eet.handles.offline.title": "Bez signálu to skúša znova",
+  "landing.eet.handles.refund.body":
+    "Vrátené peniaze sa evidujú ako nová tržba so zápornou sumou. Payky ju odošle samo, len čo vrátenie zadáte.",
+  "landing.eet.handles.refund.title": "Vrátenie ako záporná tržba",
+  "landing.eet.handles.title": "Evidenciu za vás odosiela Payky",
+  "landing.eet.hero.body":
+    "Od 1. januára 2027 Payky každú prijatú platbu odošle do EET samo. Nestojí to nič, rovnako ako pokladničný certifikát od finančnej správy.",
+  "landing.eet.hero.connect": "Ako prepojiť s EET",
+  "landing.eet.hero.eyebrow": "Payky je pripravené na české EET 2.0",
+  "landing.eet.hero.note":
+    "Na prepojenie potrebujete pokladničný certifikát z DIS+, ten dostanete od 1. novembra 2026. Dovtedy si všetko vyskúšate s oficiálnym testovacím certifikátom finančnej správy.",
+  "landing.eet.hero.start": "Začať evidovať zadarmo",
+  "landing.eet.hero.title": "Spustite Payky, prepojte s EET. Hotovo.",
+  "landing.eet.meta.description":
+    "Koho sa české EET 2.0 týka, termíny, certifikát a evidenčná jednotka krok za krokom. V Payky zapnete evidenciu tržieb zadarmo a vyskúšate si ju v sandboxe ešte dnes.",
+  "landing.eet.meta.title":
+    "České EET 2.0 od 1. 1. 2027: čo urobiť a ako na to v Payky zadarmo",
+  "landing.eet.prepare.body":
+    "Všetko sa vybavuje online v Daňovej informačnej schránke (DIS+) na portáli MOJE daně, od 1. novembra 2026.",
+  "landing.eet.prepare.certificate.body":
+    "V záložke Certifikáty (CA EET) vygenerujete pokladničný certifikát zadarmo a stiahnete si súbor .p12 s heslom. Certifikát platí jeden rok.",
+  "landing.eet.prepare.certificate.title": "Vygenerujte pokladničný certifikát",
+  "landing.eet.prepare.dis.body":
+    "Na portáli MOJE daně otvorte Online finanční úřad a prihláste sa Identitou občana, dátovou schránkou alebo prístupom od finančnej správy. Aktivujte DIS+ – môže to trvať až 48 hodín – a zvoľte „Chci začít evidovat“.",
+  "landing.eet.prepare.dis.title": "Prihláste sa do DIS+",
+  "landing.eet.prepare.eyebrow": "Príprava na úrade",
+  "landing.eet.prepare.title": "Tri kroky v DIS+",
+  "landing.eet.prepare.unit.body":
+    "Evidenčnou jednotkou je prevádzka – kamenná aj mobilná, napríklad stánok –, web alebo aplikácia, prípadne vy sami, keď pracujete u zákazníkov. Systém jej pridelí číslo, ktoré sa už nedá zmeniť. To zadáte do Payky.",
+  "landing.eet.prepare.unit.title": "Založte evidenčnú jednotku",
+  "landing.eet.scope.body":
+    "Evidovať musí každý podnikateľ v Česku, fyzická aj právnická osoba, ktorý prijíma evidované tržby. Rozhoduje, ako zákazník platí.",
+  "landing.eet.scope.exemptions":
+    "Z evidencie sú vyňaté napríklad štát a obce, banky a poisťovne, verejná doprava alebo predajné automaty.",
+  "landing.eet.scope.exemptionsLink": "Celý zoznam výnimiek na eet.gov.cz",
+  "landing.eet.scope.eyebrow": "Koho sa týka",
+  "landing.eet.scope.no.eshop": "Platba v e‑shope cez platobnú bránu",
+  "landing.eet.scope.no.invoice": "Prevod podľa faktúry bez osobného kontaktu",
+  "landing.eet.scope.no.private": "Príjmy, ktoré nie sú z podnikania",
+  "landing.eet.scope.no.title": "Neevidujete",
+  "landing.eet.scope.off.body":
+    "Paušalisti v prvom pásme s príjmami do 1 milióna Kč sa môžu z evidencie vyviazať. Zaplatia za to 1 400 Kč mesačne navyše k paušálnej dani, teda 16 800 Kč ročne. Prihlásiť sa musia do 10. dňa zdaňovacieho obdobia a voľba platí celý rok.",
+  "landing.eet.scope.off.title": "Režim EET OFF",
+  "landing.eet.scope.title": "Evidujete, keď vám zákazník platí osobne",
+  "landing.eet.scope.yes.card": "Platba kartou na mieste",
+  "landing.eet.scope.yes.cash": "Hotovosť, vždy",
+  "landing.eet.scope.yes.crypto": "Kryptoaktíva, napríklad bitcoin",
+  "landing.eet.scope.yes.qr": "QR platba a prevod pri osobnom kontakte",
+  "landing.eet.scope.yes.title": "Evidujete",
+  "landing.eet.scope.yes.vouchers":
+    "Stravenky, darčekové poukážky, šeky a predplatené karty",
+  "landing.eet.setup.body": "Všetko nájdete v aplikácii v Nastaveniach → EET.",
+  "landing.eet.setup.certificate.body":
+    "Vyberte súbor .p12 a zadajte heslo. Payky hneď overí heslo, kľúč, EIČ aj platnosť certifikátu.",
+  "landing.eet.setup.certificate.title": "Nahrajte certifikát",
+  "landing.eet.setup.dis.body":
+    "V DIS+ na portáli MOJE daně si založíte evidenčnú jednotku a vygenerujete pokladničný certifikát.",
+  "landing.eet.setup.dis.link": "Ako na to v DIS+",
+  "landing.eet.setup.dis.title": "Získajte certifikát a číslo jednotky",
+  "landing.eet.setup.eyebrow": "Nastavenie v Payky",
+  "landing.eet.setup.on.body":
+    "Odvtedy Payky každú prijatú platbu odošle ako tržbu – hotovosť, QR platbu aj bitcoin.",
+  "landing.eet.setup.on.title": "Zapnite evidenciu",
+  "landing.eet.setup.sandbox.body":
+    "Vlastný certifikát dostanete až od 1. novembra 2026. V sandboxe však namiesto neho použijete oficiálny testovací certifikát finančnej správy a celú evidenciu si prejdete nanečisto.",
+  "landing.eet.setup.sandbox.title": "Vyskúšajte si to ešte dnes",
+  "landing.eet.setup.test.body":
+    "Overovacia správa skontroluje nastavenie a v sandboxe môžete poslať aj testovaciu tržbu. Nič z toho sa neeviduje.",
+  "landing.eet.setup.test.title": "Otestujte spojenie",
+  "landing.eet.setup.tip.body":
+    "Prepitné, ktoré patrí podniku, je súčasťou tržby. Keď patrí zamestnancom, Payky ho do tržby nezapočíta.",
+  "landing.eet.setup.tip.title": "Zvoľte, komu patrí prepitné",
+  "landing.eet.setup.title": "Zapnutie v Payky zaberie pár minút",
+  "landing.eet.setup.unit.body": "Číslo, ktoré vám pridelila DIS+.",
+  "landing.eet.setup.unit.title": "Zadajte číslo evidenčnej jednotky",
+  "landing.eet.source":
+    "Informácie vychádzajú z webu českej finančnej správy, stav k 13. 10. 2026. Nejde o daňové poradenstvo.",
+  "landing.eet.sourceLink": "eet.gov.cz",
+  "landing.eet.timeline.eyebrow": "Termíny",
+  "landing.eet.timeline.note":
+    "Aktivácia DIS+ môže trvať až 48 hodín. Nenechávajte registráciu na poslednú chvíľu.",
+  "landing.eet.timeline.registration.body":
+    "V DIS+ na portáli MOJE daně sa prihlásite k evidencii, založíte evidenčné jednotky a vygenerujete pokladničný certifikát.",
+  "landing.eet.timeline.registration.date": "1. 11. 2026",
+  "landing.eet.timeline.registration.title": "Registrácia a certifikáty",
+  "landing.eet.timeline.start.body":
+    "Tržby sa začínajú evidovať. Január beží v pilotnom režime, už však ide o štandardnú evidenciu.",
+  "landing.eet.timeline.start.date": "1. 1. 2027",
+  "landing.eet.timeline.start.title": "Štart evidencie",
+  "landing.eet.timeline.title": "Na prípravu zostáva pár týždňov",
   "landing.faq.catch.answer":
     "Len začíname a učíme sa za pochodu. Časom zavedieme poplatky za prémiové funkcie — a chceme zvýhodniť tých, ktorí s nami pôjdu od začiatku a pomôžu nám aplikáciu vyladiť pre potreby obchodníkov.\n\nDo budúcna chystáme aj voliteľné platenie kartou. Pri platbách kartou by sme si potom brali malý podiel z poplatku.",
   "landing.faq.catch.question": "Naozaj je to zadarmo? Z čoho sa budete živiť?",
@@ -135,6 +291,9 @@ export const skLanding = {
     "Graf predajov v čase a podiel spôsobov platby",
   "landing.mockup.tableBill.alt": "Účet stola s objednanými položkami",
   "landing.mockup.tables.alt": "Prehľad stolov s otvorenými účtami",
+  "landing.menu.eet": "EET 2.0",
+  "landing.menu.home": "Úvod",
+  "landing.menu.label": "Menu",
   "landing.more.bitcoin.body":
     "Lightning platby rovno do vašej vlastnej peňaženky, ku ktorej máte kľúče len vy. Čisto dobrovoľne.",
   "landing.more.bitcoin.title": "Bitcoin, keď budete chcieť",
@@ -146,6 +305,7 @@ export const skLanding = {
   "landing.more.data.title": "Dáta zostávajú u vás",
   "landing.more.eet.body":
     "Českí obchodníci odošlú tržby do EET 2.0 priamo z aplikácie. Keď vypadne sieť, aplikácia to skúsi znova sama.",
+  "landing.more.eet.link": "Všetko o EET 2.0",
   "landing.more.eet.title": "Aj české EET",
   "landing.more.free.body":
     "Žiadne predplatné, žiadna provízia z tržieb. Zdrojový kód je verejný pod licenciou MIT.",

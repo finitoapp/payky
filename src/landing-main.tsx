@@ -2,8 +2,10 @@ import { installPolyfills } from "@evolu/common/polyfills"
 import { StrictMode } from "react"
 import { createRoot, hydrateRoot } from "react-dom/client"
 
+import { LandingEetPage } from "@/features/landing/landing-eet-page.tsx"
 import { LandingPage } from "@/features/landing/landing-page.tsx"
 import {
+  isLandingEetPath,
   landingAppEntryPath,
   landingLanguageFromPath,
   readLandingRedirectEnvironment,
@@ -20,9 +22,10 @@ if (rootElement === null) {
 }
 
 const language = landingLanguageFromPath(location.pathname)
+const Page = isLandingEetPath(location.pathname) ? LandingEetPage : LandingPage
 const page = (
   <StrictMode>
-    <LandingPage language={language} />
+    <Page language={language} />
   </StrictMode>
 )
 

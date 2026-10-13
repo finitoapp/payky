@@ -5,7 +5,7 @@ import {
   DonateSparkMnemonicSchema,
   loadServerEnv,
   throwInvalidServerEnv,
-} from "./server-env.ts"
+} from "./server-env.js"
 
 export interface DonateWalletConfig {
   readonly mnemonic: string

@@ -57,7 +57,9 @@ short script for it.
 `bun run build` builds the app, then a server bundle of the landing page,
 then writes `landing-cs.html`, `landing-en.html` and `landing-sk.html`;
 `vercel.json` maps the three addresses onto them, and the dev and preview
-servers do the same. The native build has no landing page. The landing
+servers do the same. An address with a trailing slash (`/landing/`) is
+redirected to the one without it (`trailingSlash: false`), on Vercel for
+every path, not only the landing page. The native build has no landing page. The landing
 page and the app may show different themes on one device. Anything the page
 renders must render the same without a browser: a value read from the
 browser shows up after hydration, as the feature story's wide layout and

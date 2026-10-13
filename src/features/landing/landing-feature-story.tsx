@@ -97,7 +97,7 @@ const flows: ReadonlyArray<Flow> = [
   {
     id: "tables",
     icon: UtensilsCrossedIcon,
-    image: "/landing/bistro.webp",
+    image: "/landing/table-service.webp",
     tab: "landing.flows.tables.tab",
     short: "landing.flows.tables.short",
     audience: "landing.flows.tables.audience",

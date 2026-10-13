@@ -78,11 +78,31 @@ describe("lnurl pay client", () => {
         minSendableSats: 1,
         maxSendableSats: 100_000,
         text: "Donate",
+        commentAllowed: 0,
       },
     })
     expect(requestedUrls).toEqual([
       "https://payky.me/.well-known/lnurlp/donate",
     ])
+  })
+
+  test("reads how long a comment the recipient accepts", async () => {
+    const deps = {
+      fetch: async () =>
+        Response.json({
+          tag: "payRequest",
+          callback: "https://pay.example.test/callback",
+          minSendable: 1_000,
+          maxSendable: 100_000_000,
+          metadata: "[]",
+          commentAllowed: 140,
+        }),
+    } satisfies FetchDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlPayMetadata({ address: "donate@payky.me" }))
+    ).resolves.toMatchObject({ ok: true, value: { commentAllowed: 140 } })
   })
 
   test("rejects a callback that is not https", async () => {
@@ -250,6 +270,48 @@ describe("lnurl pay client", () => {
         invoice: { amountSats: 21 },
       },
     })
+    expect(requestedUrls).toEqual([
+      "https://pay.example.test/callback?amount=21000",
+    ])
+  })
+
+  test("sends a comment trimmed and cut to what the recipient accepts", async () => {
+    const requestedUrls: string[] = []
+    const deps = {
+      fetch: async (input) => {
+        requestedUrls.push(inputToString(input))
+        return Response.json({ pr: invoiceFor21Sats, routes: [] })
+      },
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
+    await using run = testCreateRun(deps)
+
+    await run(
+      fetchLnurlPayInvoice({
+        amountSats: 21,
+        metadata: { ...metadata, commentAllowed: 5 },
+        comment: "  Thanks for lunch ",
+      })
+    )
+
+    expect(requestedUrls).toEqual([
+      "https://pay.example.test/callback?amount=21000&comment=Thank",
+    ])
+  })
+
+  test("sends no comment to a recipient that accepts none", async () => {
+    const requestedUrls: string[] = []
+    const deps = {
+      fetch: async (input) => {
+        requestedUrls.push(inputToString(input))
+        return Response.json({ pr: invoiceFor21Sats, routes: [] })
+      },
+      ...beforeExpiry,
+    } satisfies FetchDep & DateDep
+    await using run = testCreateRun(deps)
+
+    await run(fetchLnurlPayInvoice({ amountSats: 21, metadata, comment: "Hi" }))
+
     expect(requestedUrls).toEqual([
       "https://pay.example.test/callback?amount=21000",
     ])

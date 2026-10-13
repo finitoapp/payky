@@ -224,6 +224,7 @@ function LightningReview({
 
 export function WithdrawReviewStep({
   quote,
+  comment,
   exitSpeed,
   confirming,
   requoting,
@@ -235,6 +236,8 @@ export function WithdrawReviewStep({
   locale,
 }: {
   readonly quote: WithdrawalQuote
+  /** The merchant's own note, saved with the withdrawal. */
+  readonly comment: string | null
   readonly exitSpeed: SparkExitSpeed
   readonly confirming: boolean
   readonly requoting: boolean
@@ -281,6 +284,17 @@ export function WithdrawReviewStep({
           ) : (
             <LightningReview quote={quote} msLeft={msLeft} locale={locale} />
           )}
+
+          {quote.kind === "lightning" && quote.recipientComment !== null ? (
+            <DetailRow label={t("withdraw.review.recipientComment")} stacked>
+              <span className="break-words">{quote.recipientComment}</span>
+            </DetailRow>
+          ) : null}
+          {comment !== null ? (
+            <DetailRow label={t("withdraw.review.comment")} stacked>
+              <span className="break-words">{comment}</span>
+            </DetailRow>
+          ) : null}
 
           <p className="text-sm text-muted-foreground">
             {t("withdraw.review.warning")}

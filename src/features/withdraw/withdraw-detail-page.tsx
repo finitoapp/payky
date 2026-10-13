@@ -442,6 +442,11 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
               t("withdraw.destination.kind.lightningInvoice")}
           </DetailRow>
         )}
+        {view.comment !== null ? (
+          <DetailRow label={t("withdraw.detail.comment")} stacked>
+            <span className="break-words">{view.comment}</span>
+          </DetailRow>
+        ) : null}
         <DetailRow label={t("withdraw.detail.amount")}>
           <SatsWithFiat sats={view.amountSats} locale={locale} />
         </DetailRow>

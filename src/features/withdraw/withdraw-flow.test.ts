@@ -59,9 +59,11 @@ describe("withdrawReducer exit speed", () => {
   const request = {
     destination: { kind: "onchain", address: onchainAddress },
     amountSats: undefined,
+    recipientComment: "",
   } satisfies {
     destination: SupportedWithdrawDestination
     amountSats: undefined
+    recipientComment: string
   }
   const open = (availableSats: number) =>
     withdrawReducer(initialWithdrawState, {

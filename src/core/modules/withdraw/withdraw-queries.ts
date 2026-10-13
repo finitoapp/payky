@@ -56,6 +56,7 @@ const selectWithdrawals = (db: QueryDb) =>
       "withdrawal.accountTransactionId",
       "withdrawal.failedAt",
       "withdrawal.failureReason",
+      "withdrawal.comment",
       "withdrawalOnchain.id as onchainId",
       "withdrawalOnchain.onchainAddress",
       "withdrawalOnchain.exitSpeed",
@@ -151,6 +152,8 @@ export interface WithdrawalView {
   readonly deviceName: string | null
   readonly amountSats: number
   readonly accountTransactionId: AccountTransactionId
+  /** The merchant's own note (withdraw/0010). */
+  readonly comment: string | null
   readonly target: WithdrawalTarget
   readonly state: WithdrawalState
 }
@@ -218,6 +221,7 @@ export const toWithdrawalView = (
     deviceName: row.deviceDeleted === sqliteTrue ? null : row.deviceName,
     amountSats: row.amountSats,
     accountTransactionId: row.accountTransactionId,
+    comment: row.comment,
     target,
     state,
   }

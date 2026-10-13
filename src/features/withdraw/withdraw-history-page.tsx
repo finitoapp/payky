@@ -136,6 +136,11 @@ function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
                 <span className="truncate font-mono text-xs">
                   {shortWithdrawalDestination(withdrawal.target)}
                 </span>
+                {withdrawal.comment !== null ? (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {withdrawal.comment}
+                  </span>
+                ) : null}
                 <span className="text-xs text-muted-foreground">
                   {[
                     t(withdrawalKindKeys[withdrawal.target.kind]),

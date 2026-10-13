@@ -7,6 +7,7 @@ import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   BitcoinAddressSchema,
   type InferTable,
+  NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeIntegerSchema,
   PositiveIntegerSchema,
@@ -35,6 +36,8 @@ export const withdrawal = {
   failedAt: TimestampMsSchema.nullable(),
   /** Set together with `failedAt`. */
   failureReason: WithdrawalFailureReasonSchema.nullable(),
+  /** The merchant's own note, never sent to the recipient (withdraw/0010). */
+  comment: NonEmptyString255Schema.nullable(),
 } as const
 
 export const withdrawalOnchain = {

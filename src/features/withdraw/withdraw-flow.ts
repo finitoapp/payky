@@ -3,9 +3,11 @@ import {
   decimalAmountToMinorUnits,
   fiatMinorUnitsToSats,
 } from "@/core/modules/shared/money.ts"
-import type {
-  FiatCurrency,
-  PositiveInteger,
+import {
+  type FiatCurrency,
+  type NonEmptyString255,
+  NonEmptyString255Schema,
+  type PositiveInteger,
 } from "@/core/modules/shared/schema.ts"
 import type {
   ExecuteWithdrawalEarlyError,
@@ -26,6 +28,8 @@ export interface WithdrawRequest {
   readonly destination: SupportedWithdrawDestination
   /** `undefined` means "withdraw all", or an invoice that sets its own amount. */
   readonly amountSats: PositiveInteger | undefined
+  /** LUD-12, for a Lightning address that accepts it; ignored elsewhere. */
+  readonly recipientComment: string
 }
 
 type WithdrawState =
@@ -213,6 +217,9 @@ export interface WithdrawDraft {
   readonly amount: string
   readonly unit: "sats" | "fiat"
   readonly withdrawAll: boolean
+  readonly recipientComment: string
+  /** The merchant's own note, saved with the withdrawal. */
+  readonly comment: string
 }
 
 export const createWithdrawDraft = (destination: string): WithdrawDraft => ({
@@ -220,7 +227,17 @@ export const createWithdrawDraft = (destination: string): WithdrawDraft => ({
   amount: "",
   unit: "sats",
   withdrawAll: false,
+  recipientComment: "",
+  comment: "",
 })
+
+/** The draft's own note as the withdrawal stores it: `null` when blank. */
+export const draftComment = (
+  draft: Pick<WithdrawDraft, "comment">
+): NonEmptyString255 | null => {
+  const comment = NonEmptyString255Schema.safeParse(draft.comment)
+  return comment.success ? comment.data : null
+}
 
 /**
  * The typed amount in sats: whole sats as typed, or fiat (comma or dot, at most

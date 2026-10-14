@@ -8,7 +8,7 @@ import {
   type UpsertValues,
 } from "@evolu/common"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { BillRow, bill } from "@/core/modules/bill/bill.ts"
 import type {
@@ -97,13 +97,13 @@ export const createBill =
       InsertValues<typeof bill>,
       "deviceId" | "displayNumber" | "label" | "tableId" | "currency"
     >
-  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<BillId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert("bill", removeUndefinedValues({ ...input }), {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
 
@@ -137,16 +137,16 @@ export const createBillAtEnd =
       UpsertValues<typeof bill>,
       "id" | "deviceId" | "label" | "tableId" | "currency"
     >
-  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<BillId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const displayNumber = await run.ok(loadNextBillDisplayNumber())
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
         "bill",
         removeUndefinedValues({ ...input, displayNumber }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -155,9 +155,9 @@ export const createBillAtEnd =
 export const assignBillToTable =
   (
     input: Pick<UpdateValues<typeof bill>, "id" | "tableId">
-  ): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<BillId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -166,22 +166,22 @@ export const assignBillToTable =
           id: input.id,
           tableId: input.tableId,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
     return ok(input.id)
   }
 export const removeTableFromBill =
-  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (billId: BillId): Task<BillId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "bill",
         { id: billId, tableId: null },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -204,20 +204,20 @@ const addBillLine =
   ): Task<
     BillLineSummary,
     BillLineSummaryMissingError,
-    EvoluDep & EvoluOwnerIdDep
+    EvoluDep & EvoluOwnerDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) => {
       upsertItemSnapshot(run.deps.evolu, snapshot, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
       insertBillLineRows(
         run.deps.evolu,
         [{ ...line, itemId: snapshot.id, type, kind: "add" }],
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -263,7 +263,7 @@ export const addCatalogItemToBill =
   ): Task<
     BillLineSummary,
     AddBillLineError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     // The catalog lookup depends on nothing the guard reads, so it no longer
@@ -311,7 +311,7 @@ export const addManualAmountToBill =
     | BillNotFoundError
     | BillStatusNotAllowedError
     | BillLockedError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const billResult = await run(requireEditableBill(input.billId))
@@ -349,7 +349,7 @@ export const addTipToBill =
     | BillNotFoundError
     | BillStatusNotAllowedError
     | BillLockedError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const billResult = await run(requireEditableBill(input.billId))
@@ -385,7 +385,7 @@ export const appendRemoveBillLine =
   ): Task<
     BillLineSummary | null,
     BillNotFoundError | BillStatusNotAllowedError | BillLockedError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const billResult = await run(requireEditableBill(input.billId))
@@ -509,7 +509,7 @@ export const splitBill =
   }): Task<
     BillWithItems & { readonly sourceCanceled: boolean },
     SplitBillError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     // Both guards run concurrently; neither depends on the other. The
@@ -538,7 +538,7 @@ export const splitBill =
       input.targetBillId,
       input.items
     )
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     // An empty selection has nothing to write, and an empty batch would
     // never resolve — see `runMutationWithCompletion`. `appendBillLines`
@@ -550,7 +550,7 @@ export const splitBill =
         : await runMutationWithCompletion((options) => {
             insertBillLineRows(run.deps.evolu, lines, {
               ...options,
-              ownerId: evoluOwnerId,
+              owner: evoluOwner,
             })
             return cancelSourceBillIfEmptied(
               run.deps.evolu,
@@ -558,7 +558,7 @@ export const splitBill =
               currentSourceSummaries,
               selectionResult.value,
               TimestampMsSchema.decode(run.deps.date.now().getTime()),
-              { ...options, ownerId: evoluOwnerId }
+              { ...options, owner: evoluOwner }
             )
           })
 
@@ -603,7 +603,7 @@ export const splitBillIntoNewBill =
       readonly targetBillId: BillId
       readonly items: ReadonlyArray<BillLineSummary>
     }
-  ): Task<BillId, SplitBillError, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  ): Task<BillId, SplitBillError, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     // Independent reads run concurrently before the mutation batch starts.
     // The source's summaries come off its own guard result — see `splitBill`.
@@ -621,7 +621,7 @@ export const splitBillIntoNewBill =
     )
     if (!selectionResult.ok) return selectionResult
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const lines = buildSplitLines(
       input.sourceBillId,
       input.targetBillId,
@@ -639,11 +639,11 @@ export const splitBillIntoNewBill =
           currency: input.currency,
           displayNumber,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
       insertBillLineRows(run.deps.evolu, lines, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
       cancelSourceBillIfEmptied(
         run.deps.evolu,
@@ -651,7 +651,7 @@ export const splitBillIntoNewBill =
         currentSourceSummaries,
         selectionResult.value,
         TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -663,13 +663,13 @@ export const cancelBill =
   ): Task<
     BillId,
     BillNotFoundError | BillStatusNotAllowedError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const billResult = await run(requireCancelableBill(billId))
     if (!billResult.ok) return billResult
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -678,7 +678,7 @@ export const cancelBill =
           id: billId,
           canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -717,7 +717,7 @@ export const closeBill =
   ): Task<
     BillId,
     BillNotFoundError | BillStatusNotAllowedError | BillUnderpaidError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const snapshotResult = await run(loadBillStatusSnapshot(billId))
@@ -751,7 +751,7 @@ export const closeBill =
       )
     }
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       upsertBillClosedAt(
@@ -759,7 +759,7 @@ export const closeBill =
         billId,
         billRow.closedAt ??
           TimestampMsSchema.decode(run.deps.date.now().getTime()),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -787,7 +787,7 @@ export const confirmBillClosedDespiteCancellation =
   ): Task<
     BillId,
     ConfirmBillClosedDespiteCancellationError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const snapshotResult = await run(loadBillStatusSnapshot(billId))
@@ -810,7 +810,7 @@ export const confirmBillClosedDespiteCancellation =
       )
     }
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -821,7 +821,7 @@ export const confirmBillClosedDespiteCancellation =
             run.deps.date.now().getTime()
           ),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -841,7 +841,7 @@ export const appendGuardedBillLines =
   ): Task<
     ReadonlyArray<BillLineSummary>,
     BillNotFoundError | BillStatusNotAllowedError | BillLockedError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const billResult = await run(requireEditableBill(billId))

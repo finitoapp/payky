@@ -489,7 +489,7 @@ describe("quoteWithdrawal", () => {
           paymentHash: null,
           paymentPreimage: null,
         },
-        { ...options, ownerId: evolu.appOwner.id }
+        { ...options, owner: evolu.appOwner }
       )
     )
     await using run = testCreateRun(deps)

@@ -15,7 +15,7 @@ import {
   createDateDep,
   createFetchDep,
   type DateDep,
-  type EvoluOwnerIdDep,
+  type EvoluOwnerDep,
   type FetchDep,
 } from "@/core/deps.ts"
 import {
@@ -48,7 +48,7 @@ const commands: ((
   void,
   never,
   EvoluDep &
-    EvoluOwnerIdDep &
+    EvoluOwnerDep &
     ConsoleDep &
     DateDep &
     AiModelDep &
@@ -83,14 +83,14 @@ const main = async () => {
 
   await using evoluCli = await createCliEvolu()
   const { evolu } = evoluCli
-  const evoluOwnerId = evolu.appOwner.id
+  const evoluOwner = evolu.appOwner
   const console = createConsole({
     level: "debug",
   })
 
   await using run = createRun({
     evolu,
-    evoluOwnerId,
+    evoluOwner,
     console,
     ...createDateDep(),
     ...createFetchDep(),
@@ -98,7 +98,7 @@ const main = async () => {
     ...createYadioApiDep(),
     ...createAiModelDep({
       baseURL: cliEnv.PAYKY_AI_BASE_URL,
-      ownerId: evoluOwnerId,
+      ownerId: evoluOwner.id,
       model: cliEnv.PAYKY_AI_MODEL,
     }),
   })

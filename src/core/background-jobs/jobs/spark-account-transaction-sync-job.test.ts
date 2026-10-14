@@ -861,7 +861,7 @@ describe("spark account transaction sync job, withdrawals", () => {
   ) => {
     const id = createRowId<"Withdrawal">()
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+      const mutationOptions = { ...options, owner: evolu.appOwner }
       evolu.upsert(
         "withdrawal",
         {
@@ -1083,7 +1083,7 @@ describe("spark account transaction sync job, withdrawals", () => {
       evolu.upsert(
         "sparkAccountSyncPointer",
         { id: accountId, lastSyncedAt: TimestampMs(testFixedDate.getTime()) },
-        { ...options, ownerId: evolu.appOwner.id }
+        { ...options, owner: evolu.appOwner }
       )
     )
     await recordLightningWithdrawal(evolu, accountId, transferId)

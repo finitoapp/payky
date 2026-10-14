@@ -6,8 +6,8 @@ import {
 } from "@capacitor/core"
 import {
   AbortError,
+  type AppOwner,
   err,
-  type OwnerId,
   ok,
   type Result,
   type Task,
@@ -312,7 +312,7 @@ export const createFetchDep = (): FetchDep => ({
   },
 })
 
-export type EvoluOwnerIdDep = { readonly evoluOwnerId: OwnerId }
+export type EvoluOwnerDep = { readonly evoluOwner: AppOwner }
 
 export type MasterKeyDep = { readonly masterKey: MasterKey }
 

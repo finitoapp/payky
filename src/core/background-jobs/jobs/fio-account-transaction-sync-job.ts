@@ -419,14 +419,14 @@ class FioPluginSync {
           upsertAccountTransactionRows(
             this.run.deps.evolu,
             accountTransaction,
-            { ...options, ownerId: this.run.deps.evoluOwnerId }
+            { ...options, owner: this.run.deps.evoluOwner }
           )
           if (claim !== null) {
             upsertReconciliationClaimRows(
               this.run.deps.evolu,
               claim,
               billClosing,
-              { ...options, ownerId: this.run.deps.evoluOwnerId }
+              { ...options, owner: this.run.deps.evoluOwner }
             )
           }
         })
@@ -536,7 +536,7 @@ class FioPluginSync {
           id: this.plugin.id,
           lastSyncedDate,
         }),
-        { ...options, ownerId: this.run.deps.evoluOwnerId }
+        { ...options, owner: this.run.deps.evoluOwner }
       )
     )
     this.run.deps.console.debug("Saved FIO sync pointer.", {

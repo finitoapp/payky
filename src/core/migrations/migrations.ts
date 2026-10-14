@@ -1,6 +1,6 @@
 import { ok, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep, LocalStorageDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep, LocalStorageDep } from "@/core/deps.ts"
 import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
 import { deviceAccountDerivedIdMigration } from "@/core/migrations/device-account-derived-id-migration.ts"
 import { deviceIdMigration } from "@/core/migrations/device-id-migration.ts"
@@ -41,7 +41,7 @@ export interface Migration<D> {
   readonly run: Task<unknown, never, D>
 }
 
-export type AppMigration = Migration<EvoluDep & EvoluOwnerIdDep>
+export type AppMigration = Migration<EvoluDep & EvoluOwnerDep>
 
 /**
  * A migration of the device database. The device database is not synced

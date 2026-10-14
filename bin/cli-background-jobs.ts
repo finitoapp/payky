@@ -7,14 +7,14 @@ import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.t
 import {
   createDateDep,
   createFetchDep,
-  type EvoluOwnerIdDep,
+  type EvoluOwnerDep,
 } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 
 export const registerBackgroundJobsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
 
     const backgroundJobsCommand = createCommand("background-jobs").description(
       "Run Payky background workers."
@@ -28,7 +28,7 @@ export const registerBackgroundJobsCommand =
           await runMain({
             console: appConsole,
             evolu,
-            evoluOwnerId,
+            evoluOwner,
             ...createDateDep(),
             ...createFetchDep(),
             lockManager: createInProcessLockManager(),

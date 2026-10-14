@@ -1,7 +1,7 @@
 import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   cancelBill,
@@ -40,7 +40,7 @@ describe("table actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const id = await run.ok(
@@ -127,7 +127,7 @@ describe("table actions", () => {
     const deps = {
       ...evoluTestDeps(evolu),
       ...createTestDateDep(),
-    } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+    } satisfies EvoluDep & EvoluOwnerDep & DateDep
     await using run = testCreateRun(deps)
 
     const tableId = await run.ok(
@@ -170,7 +170,7 @@ describe("table actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const secondId = await run.ok(
@@ -225,7 +225,7 @@ describe("table actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const firstId = await run.ok(

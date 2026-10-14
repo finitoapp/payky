@@ -7,7 +7,7 @@ import {
   type Result,
   type Task,
 } from "@evolu/common"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, FetchDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { LnurlError } from "@/core/integrations/lnurl/lnurl-client.ts"
 import {
@@ -629,7 +629,7 @@ const recordOnchainMovement =
     readonly coopExitRequestId: NonEmptyString | null
     readonly txid: NonEmptyString | null
     readonly deviceId: DeviceId | null
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     const now = run.deps.date.now()
     const rows = computeAccountTransactionRows(
@@ -655,14 +655,14 @@ const recordOnchainMovement =
     await runMutationWithCompletion((options) =>
       upsertAccountTransactionRows(run.deps.evolu, rows, {
         ...options,
-        ownerId: run.deps.evoluOwnerId,
+        owner: run.deps.evoluOwner,
       })
     )
     return ok()
   }
 
 type ExecuteDeps = EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   DateDep &
   SparkWalletDep &
   LockManagerDep &
@@ -750,7 +750,7 @@ export const executeWithdrawal =
       `withdrawal-${withdrawalId}`,
       async () => {
         await runMutationWithCompletion((options) => {
-          const mutationOptions = { ...options, ownerId: run.deps.evoluOwnerId }
+          const mutationOptions = { ...options, owner: run.deps.evoluOwner }
           run.deps.evolu.upsert(
             "withdrawal",
             {
@@ -890,7 +890,7 @@ export const markWithdrawalFailed =
   }: {
     readonly withdrawalId: WithdrawalId
     readonly reason: WithdrawalFailureReason
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -900,7 +900,7 @@ export const markWithdrawalFailed =
           failedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
           failureReason: reason,
         },
-        { ...options, ownerId: run.deps.evoluOwnerId }
+        { ...options, owner: run.deps.evoluOwner }
       )
     )
     return ok()
@@ -919,11 +919,7 @@ export const confirmOnchainWithdrawalSent =
   }: {
     readonly withdrawalId: WithdrawalId
     readonly deviceId: DeviceId | null
-  }): Task<
-    void,
-    WithdrawalNotFoundError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
-  > =>
+  }): Task<void, WithdrawalNotFoundError, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     const withdrawalResult = getFirstOr(
       await run.deps.evolu.loadQuery(

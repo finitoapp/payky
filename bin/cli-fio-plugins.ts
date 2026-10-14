@@ -11,7 +11,7 @@ import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import { createFetchDep, type EvoluOwnerIdDep } from "@/core/deps.ts"
+import { createFetchDep, type EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createFioApiDep,
@@ -91,7 +91,7 @@ const fioPluginWithTokensByIdQuery = (id: FioPluginId) =>
   )
 
 export const registerFioPluginsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   (run) => {
     const { evolu } = run.deps
 

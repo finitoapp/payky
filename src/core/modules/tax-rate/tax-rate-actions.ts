@@ -1,5 +1,5 @@
 import { ok, sqliteFalse, sqliteTrue, type Task } from "@evolu/common"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import type { CountryCode } from "@/core/modules/legal-entity/legal-entity-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -26,9 +26,9 @@ export const createTaxRate =
     readonly name: NonEmptyString255Type
     readonly rate: TaxRatePercentage
     readonly isDefault: boolean
-  }): Task<TaxRateId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<TaxRateId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     // The two things this write needs to know, in one round trip: where the
     // list ends, and which rate is default today. Neither wants the rates in
     // between, which is all `taxRatesQuery` would add. `currentDefaults` is
@@ -42,7 +42,7 @@ export const createTaxRate =
       ])
     )
     const nextSortOrder = getNextSortOrder(last)
-    const mutationOptions = { ownerId: evoluOwnerId }
+    const mutationOptions = { owner: evoluOwner }
 
     const { id } = await runMutationWithCompletion((options) => {
       const combinedOptions = { ...options, ...mutationOptions }
@@ -77,15 +77,15 @@ export const renameTaxRate =
   (input: {
     readonly id: TaxRateId
     readonly name: NonEmptyString255Type
-  }): Task<TaxRateId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<TaxRateId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "taxRate",
         { id: input.id, name: input.name },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(input.id)
@@ -99,13 +99,13 @@ export const renameTaxRate =
 export const setDefaultTaxRate =
   (
     id: TaxRateId | null
-  ): Task<TaxRateId | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<TaxRateId | null, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const existing = await run.deps.evolu.loadQuery(taxRatesQuery)
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       for (const rate of existing) {
         const shouldBeDefault = rate.id === id
@@ -126,11 +126,9 @@ export const setDefaultTaxRate =
   }
 
 export const archiveTaxRate =
-  (
-    id: TaxRateId
-  ): Task<TaxRateId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  (id: TaxRateId): Task<TaxRateId, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -140,22 +138,22 @@ export const archiveTaxRate =
           deactivatedAt: TimestampMs(run.deps.date.now().getTime()),
           isDefault: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(id)
   }
 
 export const activateTaxRate =
-  (id: TaxRateId): Task<TaxRateId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (id: TaxRateId): Task<TaxRateId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "taxRate",
         { id, deactivatedAt: null },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(id)
@@ -169,14 +167,14 @@ export const activateTaxRate =
 export const seedTaxRatesForCountry =
   (
     country: CountryCode | null
-  ): Task<ReadonlyArray<TaxRateId>, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<ReadonlyArray<TaxRateId>, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const seeds = getTaxRateSeedForCountry(country)
     if (seeds.length === 0) return ok([])
 
     const ids = await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       return seeds.map(
         (seed, index) =>

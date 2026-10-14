@@ -6,7 +6,7 @@ import {
 } from "@evolu/common"
 
 import { createInProcessLockManager } from "@/core/cli/in-process-lock-manager.ts"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, FetchDep } from "@/core/deps.ts"
 import type { EetCertificateFile } from "@/core/integrations/eet/eet-certificate.ts"
 import {
   createEetApiDep,
@@ -94,7 +94,7 @@ export const getEetTestCertificateFile = async (
 }
 
 export type EetTestDeps = EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   DateDep &
   FetchDep &
   LockManagerDep &

@@ -8,7 +8,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import type { RequireOneOrNone, Simplify } from "type-fest"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import type { PaymentAccountKind } from "@/core/modules/payment/payment-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
@@ -345,14 +345,14 @@ export const upsertAccountTransactionRows = (
 export const createAccountTransaction =
   (
     input: CreateAccountTransactionInput
-  ): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  ): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     const computed = computeAccountTransactionRows(input, run.deps.date.now())
 
     await runMutationWithCompletion((options) =>
       upsertAccountTransactionRows(run.deps.evolu, computed, {
         ...options,
-        ownerId: run.deps.evoluOwnerId,
+        owner: run.deps.evoluOwner,
       })
     )
 
@@ -379,9 +379,9 @@ export const updateAccountTransaction =
         iban: Omit<UpdateValues<typeof accountTransactionIban>, "id">
         spark: AccountTransactionSparkUpdateInput
       }>
-  >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
+  >): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     // Left `undefined` without a detail payload, so a partial update does not
     // reclassify an existing iban/spark transaction — see the helper.
     const kind = deriveAccountTransactionKind({ iban, spark })
@@ -394,7 +394,7 @@ export const updateAccountTransaction =
             ...iban,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -405,7 +405,7 @@ export const updateAccountTransaction =
             sparkTransferId: spark.sparkTransferId,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
         if (spark.lightning) {
           run.deps.evolu.update(
@@ -414,7 +414,7 @@ export const updateAccountTransaction =
               ...spark.lightning,
               id: input.id,
             }),
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         }
         if (spark.sparkInvoice) {
@@ -424,7 +424,7 @@ export const updateAccountTransaction =
               ...spark.sparkInvoice,
               id: input.id,
             }),
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         }
       }
@@ -435,7 +435,7 @@ export const updateAccountTransaction =
           ...input,
           kind,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -445,9 +445,9 @@ export const updateAccountTransaction =
 export const deleteAccountTransaction =
   (
     idValue: AccountTransactionId
-  ): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<AccountTransactionId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -456,7 +456,7 @@ export const deleteAccountTransaction =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 

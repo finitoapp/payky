@@ -401,12 +401,12 @@ const createSparkAccountSyncSession = ({
         await runMutationWithCompletion((options) => {
           upsertAccountTransactionRows(run.deps.evolu, accountTransaction, {
             ...options,
-            ownerId: run.deps.evoluOwnerId,
+            owner: run.deps.evoluOwner,
           })
           if (claim !== null) {
             upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
               ...options,
-              ownerId: run.deps.evoluOwnerId,
+              owner: run.deps.evoluOwner,
             })
           }
         })
@@ -699,7 +699,7 @@ const saveSparkSyncPointer = async (
         id: accountId,
         lastSyncedAt: TimestampMsSchema.decode(lastSyncedAt.getTime()),
       }),
-      { ...options, ownerId: run.deps.evoluOwnerId }
+      { ...options, owner: run.deps.evoluOwner }
     )
   )
   run.deps.console.debug("Saved Spark sync pointer.", {

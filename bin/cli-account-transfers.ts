@@ -3,7 +3,7 @@ import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   AccountId,
@@ -186,7 +186,7 @@ const formatAccountTransferListRows = <Row extends object>(
   })
 
 export const registerAccountTransfersCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   (run) => {
     const { evolu } = run.deps
 

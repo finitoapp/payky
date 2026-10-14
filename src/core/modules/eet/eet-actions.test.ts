@@ -1095,7 +1095,7 @@ describe("createEetReversal", () => {
       context.deps.evolu.update(
         "eetSale",
         { id: saleId, reportedTipAmount: null },
-        { ...options, ownerId: context.deps.evoluOwnerId }
+        { ...options, owner: context.deps.evoluOwner }
       )
     )
 

@@ -1,6 +1,6 @@
 import { ok, type Task, type UpdateValues } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type {
   PaymentNumberSeriesRow,
   paymentNumberSeries,
@@ -42,9 +42,9 @@ export const loadPaymentNumberSeries =
 export const updatePaymentNumberSeries =
   (
     input: Omit<UpdateValues<typeof paymentNumberSeries>, "id">
-  ): Task<PaymentNumberSeriesId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<PaymentNumberSeriesId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
@@ -54,7 +54,7 @@ export const updatePaymentNumberSeries =
           ...input,
           id: paymentNumberSeriesId,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(paymentNumberSeriesId)

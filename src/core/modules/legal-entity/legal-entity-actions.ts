@@ -1,6 +1,6 @@
 import { ok, sqliteFalse, sqliteTrue, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import type { CountryCode } from "./legal-entity-types.ts"
@@ -18,9 +18,9 @@ export const setLegalEntity =
   (input: {
     readonly country: CountryCode | null
     readonly vatPayer: boolean | null
-  }): Task<typeof legalEntityId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<typeof legalEntityId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
@@ -35,7 +35,7 @@ export const setLegalEntity =
                 ? sqliteTrue
                 : sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(legalEntityId)

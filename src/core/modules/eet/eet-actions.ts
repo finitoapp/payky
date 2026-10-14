@@ -9,7 +9,7 @@ import {
 } from "@evolu/common"
 import { z } from "zod"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { EetCertificateFile } from "@/core/integrations/eet/eet-certificate.ts"
 import type {
@@ -174,7 +174,7 @@ interface EetSettingsValues {
 }
 
 const upsertEetSettings = (
-  run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
+  run: { readonly deps: EvoluDep & EvoluOwnerDep },
   values: EetSettingsValues,
   options: MutationOptions
 ): void => {
@@ -185,14 +185,14 @@ const upsertEetSettings = (
       id: eetSettingsId,
       isDeleted: sqliteFalse,
     }),
-    { ...options, ownerId: run.deps.evoluOwnerId }
+    { ...options, owner: run.deps.evoluOwner }
   )
 }
 
 export const saveEetEstablishmentId =
   (
     establishmentId: EetEstablishmentId
-  ): Task<EetEstablishmentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<EetEstablishmentId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     await runMutationWithCompletion((options) =>
       upsertEetSettings(run, { establishmentId }, options)
@@ -201,9 +201,7 @@ export const saveEetEstablishmentId =
   }
 
 export const saveEetTipOwner =
-  (
-    tipOwner: EetTipOwner
-  ): Task<EetTipOwner, never, EvoluDep & EvoluOwnerIdDep> =>
+  (tipOwner: EetTipOwner): Task<EetTipOwner, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     await runMutationWithCompletion((options) =>
       upsertEetSettings(run, { tipOwner }, options)
@@ -217,7 +215,7 @@ export const selectEetEnvironment =
   ): Task<
     EetEnvironment,
     EetProductionUnavailableError | EetTestCertificateBlocksProductionError,
-    EvoluDep & EvoluOwnerIdDep & EetApiDep
+    EvoluDep & EvoluOwnerDep & EetApiDep
   > =>
   async (run) => {
     if (environment === "production") {
@@ -243,9 +241,9 @@ export const storeEetCertificate =
   }: {
     readonly certificate: EetCertificateFile
     readonly isTestCertificate: boolean
-  }): Task<EetCertificateId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<EetCertificateId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const certificateDer = bytesToEetBase64(certificate.certificateDer)
     const id = createEetCertificateId(certificateDer)
     const previousId = (await loadEetSettings(evolu))?.certificateId ?? null
@@ -267,13 +265,13 @@ export const storeEetCertificate =
           isTestCertificate: isTestCertificate ? sqliteTrue : sqliteFalse,
           isDeleted: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
       if (previousId !== null && previousId !== id) {
         evolu.update(
           "eetCertificate",
           { id: previousId, isDeleted: sqliteTrue },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
       upsertEetSettings(run, { certificateId: id }, options)
@@ -286,7 +284,7 @@ export const enableEet =
   (): Task<
     TimestampMs,
     EetConfigurationIncompleteError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const now = run.deps.date.now()
@@ -308,7 +306,7 @@ export const enableEet =
   }
 
 export const disableEet =
-  (): Task<null, never, EvoluDep & EvoluOwnerIdDep> => async (run) => {
+  (): Task<null, never, EvoluDep & EvoluOwnerDep> => async (run) => {
     await runMutationWithCompletion((options) =>
       upsertEetSettings(run, { enabledAt: null }, options)
     )
@@ -342,9 +340,9 @@ const createEetSaleRecord =
     readonly sequenceNumber: string
     readonly receivedAmount: NonNegativeInteger
     readonly tipAmount: NonNegativeInteger
-  }): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> =>
+  }): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerDep & EetApiDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const [existing] = await evolu.loadQuery(eetSaleByIdQuery(id))
     if (existing !== undefined) return ok(id)
 
@@ -399,7 +397,7 @@ const createEetSaleRecord =
           extraFrom,
           isDeleted: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -423,7 +421,7 @@ export const createEetSale = ({
     readonly firstSettlementValue: NonNegativeInteger
   }
   readonly deviceId: DeviceId
-}): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> => {
+}): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerDep & EetApiDep> => {
   return createEetSaleRecord({
     id: createEetSaleId({
       paymentId: payment.id,
@@ -459,7 +457,7 @@ export const createEetExtraSale = ({
   }
   readonly due: EetExtraSaleDue
   readonly deviceId: DeviceId
-}): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerIdDep & EetApiDep> => {
+}): Task<EetSaleId | null, never, EvoluDep & EvoluOwnerDep & EetApiDep> => {
   const id = createEetExtraSaleId({
     paymentId: payment.id,
     extraFrom: due.extraFrom,
@@ -530,7 +528,7 @@ const toEetAttemptValues = (
 }
 
 const recordEetDeliveryOutcome = (
-  run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
+  run: { readonly deps: EvoluDep & EvoluOwnerDep },
   {
     id,
     outcome,
@@ -542,8 +540,8 @@ const recordEetDeliveryOutcome = (
   },
   options: MutationOptions
 ): void => {
-  const { evolu, evoluOwnerId } = run.deps
-  const mutationOptions = { ...options, ownerId: evoluOwnerId }
+  const { evolu, evoluOwner } = run.deps
+  const mutationOptions = { ...options, owner: evoluOwner }
   const { attempt, confirmation } = toEetAttemptValues(outcome, attemptedAt)
 
   evolu.update("eetSale", { id, ...attempt }, mutationOptions)
@@ -557,7 +555,7 @@ const recordEetDeliveryOutcome = (
 }
 
 const recordEetReversalDeliveryOutcome = (
-  run: { readonly deps: EvoluDep & EvoluOwnerIdDep },
+  run: { readonly deps: EvoluDep & EvoluOwnerDep },
   {
     id,
     outcome,
@@ -569,8 +567,8 @@ const recordEetReversalDeliveryOutcome = (
   },
   options: MutationOptions
 ): void => {
-  const { evolu, evoluOwnerId } = run.deps
-  const mutationOptions = { ...options, ownerId: evoluOwnerId }
+  const { evolu, evoluOwner } = run.deps
+  const mutationOptions = { ...options, owner: evoluOwner }
   const { attempt, confirmation } = toEetAttemptValues(outcome, attemptedAt)
 
   evolu.update("eetReversal", { id, ...attempt }, mutationOptions)
@@ -613,7 +611,7 @@ export const deliverEetSale =
   }): Task<
     EetDeliveryOutcome,
     DeliverEetSaleError,
-    EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+    EvoluDep & EvoluOwnerDep & DateDep & EetApiDep & LockManagerDep
   > =>
   async (run) =>
     await run.deps.lockManager.request(
@@ -622,7 +620,7 @@ export const deliverEetSale =
       async (lock) => {
         if (lock === null) return err(createEetSaleBusyError({ id }))
 
-        const { evolu, evoluOwnerId } = run.deps
+        const { evolu, evoluOwner } = run.deps
         const saleResult = getFirstOr(
           await evolu.loadQuery(eetSaleByIdQuery(id)),
           createEetSaleNotFoundError({ id })
@@ -656,7 +654,7 @@ export const deliverEetSale =
           evolu.update(
             "eetSale",
             { id, ...toEetAttemptStartValues(sale, attemptedAt) },
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         )
         const { outcome } = await run.deps.eetApi.submit({
@@ -694,10 +692,10 @@ export const retryEetSale =
   }): Task<
     EetDeliveryOutcome,
     DeliverEetSaleError,
-    EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+    EvoluDep & EvoluOwnerDep & DateDep & EetApiDep & LockManagerDep
   > =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const saleResult = getFirstOr(
       await evolu.loadQuery(eetSaleByIdQuery(id)),
       createEetSaleNotFoundError({ id })
@@ -722,7 +720,7 @@ export const retryEetSale =
         evolu.update(
           "eetSale",
           { id, eic, establishmentId },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       )
     }
@@ -744,13 +742,9 @@ export const createEetReversal =
       readonly saleId: EetSaleId
     }
     readonly deviceId: DeviceId
-  }): Task<
-    EetReversalId | null,
-    never,
-    EvoluDep & EvoluOwnerIdDep & EetApiDep
-  > =>
+  }): Task<EetReversalId | null, never, EvoluDep & EvoluOwnerDep & EetApiDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const id = createEetReversalId(refund.id)
     const [existing] = await evolu.loadQuery(eetReversalByIdQuery(id))
     if (existing !== undefined) return ok(id)
@@ -825,7 +819,7 @@ export const createEetReversal =
           lastGlobalTransactionId: null,
           isDeleted: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -842,7 +836,7 @@ export const deliverEetReversal =
   }): Task<
     EetDeliveryOutcome,
     DeliverEetReversalError,
-    EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+    EvoluDep & EvoluOwnerDep & DateDep & EetApiDep & LockManagerDep
   > =>
   async (run) =>
     await run.deps.lockManager.request(
@@ -851,7 +845,7 @@ export const deliverEetReversal =
       async (lock) => {
         if (lock === null) return err(createEetSaleBusyError({ id }))
 
-        const { evolu, evoluOwnerId } = run.deps
+        const { evolu, evoluOwner } = run.deps
         const reversalResult = getFirstOr(
           await evolu.loadQuery(eetReversalByIdQuery(id)),
           createEetSaleNotFoundError({ id })
@@ -891,7 +885,7 @@ export const deliverEetReversal =
           evolu.update(
             "eetReversal",
             { id, ...toEetAttemptStartValues(reversal, attemptedAt) },
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         )
         const { outcome } = await run.deps.eetApi.submit({

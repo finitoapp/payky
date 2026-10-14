@@ -1,6 +1,6 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 import type { ItemRow } from "./item.ts"
@@ -24,14 +24,14 @@ export const upsertItemSnapshot = (
 }
 
 export const createOrReuseItemSnapshot =
-  (snapshot: ItemRow): Task<ItemRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  (snapshot: ItemRow): Task<ItemRow, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       upsertItemSnapshot(run.deps.evolu, snapshot, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
     return ok(snapshot)

@@ -180,14 +180,14 @@ export const accountDerivedIdMigration: AppMigration = {
   name: "2026-09-23-account-derived-id",
   hasWork: async (run) => ok((await run.ok(loadPlan())) !== null),
   run: async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const plan = await run.ok(loadPlan())
     if (plan === null) return ok(undefined)
 
     const { legacyByDerivedId, existingById, fioPluginAccountId } = plan
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       for (const [id, legacyRows] of legacyByDerivedId) {
         const newest = legacyRows.at(-1)

@@ -4,7 +4,7 @@ import { parseISO } from "date-fns"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createAccount,
@@ -108,7 +108,7 @@ const SparkNetworkSchema = z.enum([
 ])
 
 export const registerAccountsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   (run) => {
     const { evolu } = run.deps
 

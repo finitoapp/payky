@@ -7,7 +7,7 @@ import {
 } from "@evolu/common"
 import { expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { accountDerivedIdMigration } from "@/core/migrations/account-derived-id-migration.ts"
 import {
@@ -80,7 +80,7 @@ test("moves legacy accounts onto their derived ids", async () => {
   const { evolu } = testEvolu
   const deps = {
     ...evoluTestDeps(evolu),
-  } satisfies EvoluDep & EvoluOwnerIdDep
+  } satisfies EvoluDep & EvoluOwnerDep
   await using run = testCreateRun(deps)
   const legacySparkId = createIdFromString<"Account">("payky-spark-account")
   const legacyCashRegisterId = createRowId<"Account">()
@@ -91,7 +91,7 @@ test("moves legacy accounts onto their derived ids", async () => {
   const cashRegisterId = createCashRegisterAccountId("EUR")
 
   await runMutationWithCompletion((options) => {
-    const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+    const mutationOptions = { ...options, owner: evolu.appOwner }
 
     evolu.upsert("accountSpark", { id: legacySparkId, secret }, mutationOptions)
     evolu.upsert(

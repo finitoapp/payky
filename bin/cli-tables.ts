@@ -1,7 +1,7 @@
 import { ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { zodCommand } from "zod-commander/zod4"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import { removeUndefinedValues } from "@/core/modules/shared/evolu-utils.ts"
@@ -23,7 +23,7 @@ import { TableId } from "@/core/modules/table/table-types.ts"
 import { generateTableCode } from "@/core/modules/table/table-utils.ts"
 
 export const registerTablesCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   (run) => {
     const { evolu } = run.deps
 

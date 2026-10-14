@@ -3,7 +3,7 @@ import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import {
   addCatalogItemToBill,
   addManualAmountToBill,
@@ -63,7 +63,7 @@ const findLineSummary = (
   summaries.find((summary) => summary.id === id) ?? null
 
 export const registerBillsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   (run) => {
     const billsCommand = createCommand("bills").description(
       "Manage bills and bill lines."

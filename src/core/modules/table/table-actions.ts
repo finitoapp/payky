@@ -7,7 +7,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import { openBillsByTableIdQuery } from "@/core/modules/bill/bill-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -24,13 +24,13 @@ import { generateTableCode } from "./table-utils.ts"
 export const createTable =
   (
     input: InsertValues<Table>
-  ): Task<TableId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<TableId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert("table", removeUndefinedValues(input), {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
     return ok(id)
@@ -45,7 +45,7 @@ export const createTable =
 export const createTableAtEnd =
   (
     input: Omit<InsertValues<Table>, "sortOrder" | "code">
-  ): Task<TableId, never, EvoluOwnerIdDep & EvoluDep> =>
+  ): Task<TableId, never, EvoluOwnerDep & EvoluDep> =>
   async (run) => {
     const [last] = await run.deps.evolu.loadQuery(lastTableSortOrderQuery)
 
@@ -63,14 +63,14 @@ export const createTableAtEnd =
 export const updateTable =
   (
     input: UpdateValues<Table>
-  ): Task<TableId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<TableId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update("table", removeUndefinedValues(input), {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
     return ok(input.id)
@@ -94,9 +94,9 @@ export type TableHasOpenBillsError = ReturnType<
 export const deleteTable =
   (
     id: TableId
-  ): Task<TableId, TableHasOpenBillsError, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<TableId, TableHasOpenBillsError, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     const openBills = await run.deps.evolu.loadQuery(
       openBillsByTableIdQuery(id)
@@ -113,7 +113,7 @@ export const deleteTable =
         { id, isDeleted: sqliteTrue },
         {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         }
       )
     )

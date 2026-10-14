@@ -1,7 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createBillAtEnd } from "@/core/modules/bill/bill-actions.ts"
 import { latestBillsQuery } from "@/core/modules/bill/bill-queries.ts"
 import {
@@ -55,7 +55,7 @@ describe("scoped item queries", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
@@ -83,7 +83,7 @@ describe("scoped item queries", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
@@ -107,7 +107,7 @@ describe("scoped item queries", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
@@ -133,7 +133,7 @@ describe("scoped item queries", () => {
             totalAmount: 7500,
           } as Omit<Parameters<typeof insertPaymentLineRows>[1][number], never>,
         ],
-        { ...options, ownerId: evolu.appOwner.id }
+        { ...options, owner: evolu.appOwner }
       )
     )
 
@@ -152,7 +152,7 @@ describe("scoped item queries", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = createRandomBillId()

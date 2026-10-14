@@ -7,7 +7,7 @@ import {
 } from "@evolu/common"
 import { bytesToHex, randomBytes } from "@noble/hashes/utils.js"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import type { Evolu } from "@/core/evolu/schema.ts"
 import type { Permission } from "@/core/modules/access/access-types.ts"
 import { encodePermissions } from "@/core/modules/access/access-utils.ts"
@@ -32,9 +32,9 @@ export const registerDevice =
     readonly deviceType: NonEmptyString255 | null
     readonly browserName: NonEmptyString255 | null
     readonly osName: NonEmptyString255 | null
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const [existing] = await evolu.loadQuery(deviceByIdQuery(device.id))
     const labels = {
       id: device.id,
@@ -44,7 +44,7 @@ export const registerDevice =
     }
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
       if (existing === undefined) {
         evolu.upsert(
           "device",
@@ -87,13 +87,13 @@ export const setDeviceDefaultPermissions =
   (device: {
     readonly id: DeviceId
     readonly permissions: Iterable<Permission>
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     await runMutationWithCompletion((options) =>
       updateDeviceDefaultPermissions(evolu, device, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
     return ok()
@@ -106,15 +106,11 @@ export const renameDevice =
   }: {
     readonly id: DeviceId
     readonly name: NonEmptyString255
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     await runMutationWithCompletion((options) =>
-      evolu.update(
-        "device",
-        { id, name },
-        { ...options, ownerId: evoluOwnerId }
-      )
+      evolu.update("device", { id, name }, { ...options, owner: evoluOwner })
     )
     return ok()
   }
@@ -127,9 +123,9 @@ export const setDevicePinBlocked =
   }: {
     readonly id: DeviceId
     readonly blocked: boolean
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId, date } = run.deps
+    const { evolu, evoluOwner, date } = run.deps
     await runMutationWithCompletion((options) =>
       evolu.update(
         "device",
@@ -137,7 +133,7 @@ export const setDevicePinBlocked =
           id,
           pinBlockedAt: blocked ? TimestampMs(date.now().getTime()) : null,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok()
@@ -149,9 +145,9 @@ export const setDevicePinBlocked =
  * make later attempts look older than the unblock.
  */
 export const unblockDevice =
-  (id: DeviceId): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (id: DeviceId): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     await runMutationWithCompletion((options) =>
       evolu.update(
         "device",
@@ -159,7 +155,7 @@ export const unblockDevice =
           id,
           pinUnblockToken: NonEmptyString255(bytesToHex(randomBytes(16))),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok()
@@ -170,14 +166,14 @@ export const unblockDevice =
  * still alive and registers itself again comes back with none (access/0004).
  */
 export const removeDevice =
-  (id: DeviceId): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (id: DeviceId): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     await runMutationWithCompletion((options) =>
       evolu.update(
         "device",
         { id, defaultPermissions: null, isDeleted: sqliteTrue },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok()

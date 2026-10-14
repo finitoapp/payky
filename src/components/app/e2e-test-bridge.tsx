@@ -234,11 +234,11 @@ export function E2eTestBridge() {
 
     window.__e2eSeedLegacyFioPlugin = async () => {
       await using run = appRun()
-      const { evoluOwnerId } = run.deps
+      const { evoluOwner } = run.deps
       const legacyPluginId = createRowId<"FioPlugin">()
 
       await runMutationWithCompletion((options) => {
-        const mutationOptions = { ...options, ownerId: evoluOwnerId }
+        const mutationOptions = { ...options, owner: evoluOwner }
 
         run.deps.evolu.upsert(
           "fioPlugin",
@@ -357,7 +357,7 @@ export function E2eTestBridge() {
     window.__e2eSimulateCancelAfterClaim = async (paymentIdValue) => {
       const parsedPaymentId = PaymentId.parse(paymentIdValue)
       await using run = appRun()
-      const { evoluOwnerId } = run.deps
+      const { evoluOwner } = run.deps
 
       await runMutationWithCompletion((options) =>
         run.deps.evolu.update(
@@ -366,7 +366,7 @@ export function E2eTestBridge() {
             id: parsedPaymentId,
             canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
           },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       )
     }
@@ -419,7 +419,7 @@ export function E2eTestBridge() {
     ) => {
       const parsedBillId = BillId.parse(billIdValue)
       await using run = appRun()
-      const { evoluOwnerId } = run.deps
+      const { evoluOwner } = run.deps
 
       if (mode === "add") {
         const [billRow] = await run.deps.evolu.loadQuery(
@@ -441,7 +441,7 @@ export function E2eTestBridge() {
         await runMutationWithCompletion((options) => {
           upsertItemSnapshot(run.deps.evolu, snapshot, {
             ...options,
-            ownerId: evoluOwnerId,
+            owner: evoluOwner,
           })
           insertBillLineRows(
             run.deps.evolu,
@@ -457,7 +457,7 @@ export function E2eTestBridge() {
                 totalAmount: NonNegativeInteger(300),
               },
             ],
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         })
         return
@@ -479,7 +479,7 @@ export function E2eTestBridge() {
             quantity: summary.quantity,
             totalAmount: summary.totalAmount,
           })),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       })
     }

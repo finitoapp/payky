@@ -6,7 +6,7 @@ import {
 } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -71,7 +71,7 @@ const fioPluginSyncPointerByIdQuery = (id: FioPluginId) =>
   )
 
 const createIbanAccount = async (
-  deps: EvoluDep & EvoluOwnerIdDep
+  deps: EvoluDep & EvoluOwnerDep
 ): Promise<AccountId> => {
   await using run = testCreateRun(deps)
   return await run.ok(
@@ -92,7 +92,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -148,7 +148,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -218,7 +218,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const cashRegisterAccountId = await run.ok(
       createAccount({
@@ -281,7 +281,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -321,7 +321,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -357,7 +357,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -416,7 +416,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -457,7 +457,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -530,7 +530,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 
@@ -595,7 +595,7 @@ describe("fio plugin actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const accountId = await createIbanAccount(deps)
 

@@ -1,7 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import type { ItemRow } from "@/core/modules/item/item.ts"
 import { createOrReuseItemSnapshot } from "@/core/modules/item/item-actions.ts"
@@ -60,7 +60,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     await expect(run.ok(appendBillLines([]))).resolves.toEqual([])
@@ -74,7 +74,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
@@ -114,7 +114,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
@@ -151,7 +151,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const sourceBillId = "bill-source" as BillId
@@ -187,7 +187,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId
@@ -227,7 +227,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const coffeeBillId = "bill-coffee" as BillId
@@ -273,7 +273,7 @@ describe("bill line actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const billId = "bill-1" as BillId

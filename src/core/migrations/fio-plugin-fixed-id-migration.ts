@@ -120,7 +120,7 @@ export const fioPluginFixedIdMigration: AppMigration = {
   hasWork: async (run) =>
     ok((await run.deps.evolu.loadQuery(hasLegacyFioPluginQuery)).length > 0),
   run: async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const legacyPlugins = await evolu.loadQuery(legacyFioPluginsQuery)
     const [newestLegacy] = legacyPlugins
     if (newestLegacy === undefined) return ok(undefined)
@@ -135,7 +135,7 @@ export const fioPluginFixedIdMigration: AppMigration = {
     )
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       if (current === undefined) {
         evolu.upsert(

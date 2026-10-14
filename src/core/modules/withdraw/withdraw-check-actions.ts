@@ -4,7 +4,7 @@ import {
   ok,
   type Task,
 } from "@evolu/common"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -42,7 +42,7 @@ export const checkPendingWithdrawals =
   }): Task<
     ReadonlyArray<TTransfer>,
     never,
-    EvoluDep & EvoluOwnerIdDep & DateDep & LockManagerDep & ConsoleDep
+    EvoluDep & EvoluOwnerDep & DateDep & LockManagerDep & ConsoleDep
   > =>
   async (run) => {
     const now = run.deps.date.now().getTime()

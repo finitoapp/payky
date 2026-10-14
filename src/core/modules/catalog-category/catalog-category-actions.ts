@@ -6,7 +6,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { CatalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
 import { lastCatalogCategorySortOrderQuery } from "@/core/modules/catalog-category/catalog-category-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -20,9 +20,9 @@ import type { CatalogCategoryId } from "./catalog-category-types.ts"
 export const createCatalogCategory =
   (
     input: InsertValues<CatalogCategory>
-  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert(
         "catalogCategory",
@@ -31,7 +31,7 @@ export const createCatalogCategory =
           name: input.name,
           sortOrder: input.sortOrder,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(id)
@@ -40,14 +40,14 @@ export const createCatalogCategory =
 export const updateCatalogCategory =
   (
     input: UpdateValues<CatalogCategory>
-  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update("catalogCategory", removeUndefinedValues(input), {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
     return ok(input.id)
@@ -62,7 +62,7 @@ export const updateCatalogCategory =
 export const createCatalogCategoryAtEnd =
   (
     input: Omit<InsertValues<CatalogCategory>, "sortOrder">
-  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     const [last] = await run.deps.evolu.loadQuery(
       lastCatalogCategorySortOrderQuery
@@ -81,9 +81,9 @@ export const createCatalogCategoryAtEnd =
 export const deleteCatalogCategory =
   (
     id: CatalogCategoryId
-  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogCategoryId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -91,7 +91,7 @@ export const deleteCatalogCategory =
         { id, isDeleted: sqliteTrue },
         {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         }
       )
     )

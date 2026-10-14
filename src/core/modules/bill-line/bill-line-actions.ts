@@ -1,6 +1,6 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { BillId } from "@/core/modules/bill/bill-types.ts"
 import { itemsByBillIdQuery } from "@/core/modules/item/item-queries.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
@@ -43,15 +43,15 @@ export const appendBillLines =
   (
     lines: ReadonlyArray<Omit<BillLineRow, "id">>,
     returnBillId?: BillId
-  ): Task<ReadonlyArray<BillLineSummary>, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<ReadonlyArray<BillLineSummary>, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     if (lines.length > 0) {
       await runMutationWithCompletion((options) =>
         insertBillLineRows(run.deps.evolu, lines, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
       )
     }

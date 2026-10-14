@@ -13,7 +13,7 @@ import {
 import type { MintFailure } from "@/core/cashu/cashu-wallet.ts"
 import type {
   DateDep,
-  EvoluOwnerIdDep,
+  EvoluOwnerDep,
   FetchDep,
   FetchError,
 } from "@/core/deps.ts"
@@ -239,12 +239,7 @@ export const createPreparedPayment =
   }): Task<
     PaymentId,
     CreatePreparedPaymentError,
-    EvoluDep &
-      EvoluOwnerIdDep &
-      DateDep &
-      SparkWalletDep &
-      FetchDep &
-      YadioApiDep
+    EvoluDep & EvoluOwnerDep & DateDep & SparkWalletDep & FetchDep & YadioApiDep
   > =>
   async (run) => {
     if (!spark) {
@@ -481,15 +476,10 @@ export const preparePaymentMethod =
   }): Task<
     PaymentId,
     PreparePaymentMethodError,
-    EvoluDep &
-      EvoluOwnerIdDep &
-      DateDep &
-      SparkWalletDep &
-      FetchDep &
-      YadioApiDep
+    EvoluDep & EvoluOwnerDep & DateDep & SparkWalletDep & FetchDep & YadioApiDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     // Both reads need nothing but `paymentId`, so they go together — see
     // `hasNonExpiringMethod` below for what the second one answers. Reading
     // the stored methods here rather than just before the write is safe
@@ -595,28 +585,28 @@ export const preparePaymentMethod =
       if (cashRegisterValues !== null) {
         run.deps.evolu.upsert("paymentCashRegister", cashRegisterValues, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
       }
 
       if (cardValues !== null) {
         run.deps.evolu.upsert("paymentCardSwitchio", cardValues, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
       }
 
       if (ibanValues !== null) {
         run.deps.evolu.upsert("paymentIban", ibanValues, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
       }
 
       if (sparkValues !== null) {
         upsertPaymentSparkDetails(run.deps.evolu, sparkValues.id, sparkValues, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
         // Unconditional for a Spark preparation: a new invoice always has a
         // new expiry, so keeping the previous `expiresAt` would report a live
@@ -633,7 +623,7 @@ export const preparePaymentMethod =
                 sparkValues.expirySeconds
               ),
             },
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         }
       }
@@ -642,7 +632,7 @@ export const preparePaymentMethod =
         run.deps.evolu.update(
           "payment",
           { id: paymentId, expiresAt: null },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
     })
@@ -681,10 +671,10 @@ export const prepareCashuPaymentMethod =
     | YadioApiError
     | FetchError
     | MintFailure,
-    EvoluDep & EvoluOwnerIdDep & FetchDep & YadioApiDep & CashuTopupDeps
+    EvoluDep & EvoluOwnerDep & FetchDep & YadioApiDep & CashuTopupDeps
   > =>
   async (run) => {
-    const { evolu, evoluOwnerId, cashuShardStore } = run.deps
+    const { evolu, evoluOwner, cashuShardStore } = run.deps
     const [paymentResult, nonExpiringMethods, [account]] = await Promise.all([
       run(loadPayment(paymentId)),
       evolu.loadQuery(paymentNonExpiringMethodsByIdQuery(paymentId)),
@@ -739,7 +729,7 @@ export const prepareCashuPaymentMethod =
         : TimestampMsSchema.decode(quote.value.expiresAtSec * 1000)
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
       evolu.upsert(
         "paymentCashu",
         {

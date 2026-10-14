@@ -1,6 +1,6 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   NonEmptyString255,
@@ -17,7 +17,7 @@ describe("tablesPageQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const terraceId = await run.ok(
@@ -47,7 +47,7 @@ describe("tablesPageQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     for (let index = 0; index < 5; index++) {
@@ -84,7 +84,7 @@ describe("tablesExistQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     await expect.poll(() => evolu.loadQuery(tablesExistQuery)).toEqual([])

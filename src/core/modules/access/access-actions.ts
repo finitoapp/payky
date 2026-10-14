@@ -8,7 +8,7 @@ import {
 } from "@evolu/common"
 import { z } from "zod"
 
-import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { DeviceAccountId } from "@/core/evolu/device-client.ts"
 import {
@@ -63,9 +63,9 @@ export const enableAccessControl =
       readonly id: DeviceId
       readonly permissions: ReadonlyArray<Permission>
     }>
-  }): Task<void, NoPinError, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<void, NoPinError, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     let encodedPin: string | undefined
     if (pin === null) {
       const [row] = await evolu.loadQuery(accessControlQuery)
@@ -77,7 +77,7 @@ export const enableAccessControl =
     }
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
       if (encodedPin === undefined) {
         evolu.update(
           "accessControl",
@@ -100,13 +100,13 @@ export const enableAccessControl =
 
 /** Keeps the PIN: turning access control on again can reuse it (rule 2). */
 export const disableAccessControl =
-  (): Task<void, never, EvoluDep & EvoluOwnerIdDep> => async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+  (): Task<void, never, EvoluDep & EvoluOwnerDep> => async (run) => {
+    const { evolu, evoluOwner } = run.deps
     await runMutationWithCompletion((options) =>
       evolu.update(
         "accessControl",
         { id: accessControlId, enabled: sqliteFalse },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok()
@@ -114,15 +114,15 @@ export const disableAccessControl =
 
 /** Replaces the PIN; it is never cleared (rule 2). */
 export const changePin =
-  (pin: Pin): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (pin: Pin): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const encodedPin = z.encode(PinHashJson, await hashPin(pin))
     await runMutationWithCompletion((options) =>
       evolu.update(
         "accessControl",
         { id: accessControlId, pin: encodedPin },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok()
@@ -144,7 +144,7 @@ export interface PinEntryTarget {
 }
 
 type PinEntryDeps = EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   DeviceEvoluDep &
   LockManagerDep &
   DateDep

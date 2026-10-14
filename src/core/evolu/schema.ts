@@ -27,6 +27,13 @@ import {
   billLine,
   billLineIndexes,
 } from "@/core/modules/bill-line/bill-line.ts"
+import {
+  cashuIndexes,
+  cashuOperation,
+  cashuProof,
+  setting,
+  shardPointer,
+} from "@/core/modules/cashu/cashu.ts"
 import { catalogCategory } from "@/core/modules/catalog-category/catalog-category.ts"
 import {
   catalogItem,
@@ -138,6 +145,11 @@ export const AppSchema = {
   withdrawal,
   withdrawalOnchain,
   withdrawalLightning,
+  // Linky's tables, under Linky's owners only (src/core/modules/cashu/cashu.ts).
+  shardPointer,
+  setting,
+  cashuProof,
+  cashuOperation,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)
@@ -158,6 +170,7 @@ export const createAppIndexes: IndexesConfig = (create) => [
   ...eetIndexes(create),
   ...refundIndexes(create),
   ...withdrawalIndexes(create),
+  ...cashuIndexes(create),
 ]
 
 export type EvoluSchema = typeof AppSchema

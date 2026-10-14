@@ -82,6 +82,14 @@ The word "account" means two unrelated things here.
 - **Owner** — in access control, the person holding the account's one owner
   PIN (`docs/decisions/access/0001`) and the `owner` preset. Unrelated to an
   Evolu owner (`evoluOwnerId`), which is the dataset's sync identity.
+- **Linky owner** — the Evolu identity of Linky, the owner's personal wallet
+  app, derived from the same master key next to Payky's own owner
+  (`deriveLinkyAppOwnerSecret`). Its app owner holds `shardPointer` and
+  `setting`; the shard owners `["cashu", i]` hold the shared Cashu wallet
+  (`cashu.md` §2). Payky's own owner never holds a Linky row.
+- **`setting`** vs **`appSettings`** — `setting` is Linky's synced key/value
+  table under the Linky owner (`defaultMint`, ...), read and written only
+  through the Cashu shard store; `appSettings` is Payky's own.
 - **Permission** / **preset** — a permission (`sell`, `refund`, ...) gates a
   route or an action; a preset is a named set of them, copied onto a device
   when chosen and never linked afterward (`access-types.ts`).
@@ -92,6 +100,10 @@ The word "account" means two unrelated things here.
 ## Outside services
 
 - **Spark** — the Bitcoin/Lightning wallet SDK behind `spark` accounts.
+- **Cashu** — ecash behind `cashu` accounts, in the wallet Payky shares with
+  Linky (`cashu.md`). A **mint** issues and redeems the ecash, named by its
+  normalised URL (`normalizeMintUrl`); a **proof** (`cashuProof`) is one
+  piece of ecash at one mint, worth `amount` sats.
 - **FIO** — the Czech bank whose API the IBAN sync job reads.
 - **EET** — Czech electronic registration of sales (`docs/eet.md`).
 - **Switchio** — the SwitchioPay card terminal app, driven through Android

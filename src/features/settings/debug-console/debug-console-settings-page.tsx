@@ -1,6 +1,6 @@
 import { format } from "date-fns"
 import { Pause, Play, Trash2 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 
 import type { ConsoleOutputHistoryEntry } from "@/atoms/console.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
+import { CashuShardDebugCard } from "@/features/settings/debug-console/cashu-shard-debug-card.tsx"
 import { useConsoleHistory } from "@/hooks/use-console.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
@@ -44,6 +45,12 @@ export function DebugConsoleSettingsPage() {
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.debugConsole.title")} />
+
+      {import.meta.env.DEV ? (
+        <Suspense fallback={null}>
+          <CashuShardDebugCard />
+        </Suspense>
+      ) : null}
 
       <Card className="mt-8">
         <CardHeader>

@@ -99,6 +99,14 @@ export const enSettings = {
   "settings.categories.search": "Search categories...",
   "settings.categories.search.clear.aria": "Clear search",
   "settings.categories.title": "Categories",
+  "settings.debugConsole.cashu.title": "Linky Cashu wallet (development)",
+  "settings.debugConsole.cashu.activeShard": "Active shard: {index}",
+  "settings.debugConsole.cashu.hydrated": "Hydrated: {hydrated}",
+  "settings.debugConsole.cashu.noBalance": "No available proofs.",
+  "settings.debugConsole.cashu.unavailable":
+    "No Linky wallet on a demo account.",
+  "settings.debugConsole.cashu.writeTestSetting":
+    "Write a test setting for Linky",
   "settings.debugConsole.clear": "Clear",
   "settings.debugConsole.description": "Inspect captured app console output",
   "settings.debugConsole.empty": "No console entries captured yet.",

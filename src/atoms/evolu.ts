@@ -2,8 +2,12 @@ import { isNonEmptyArray } from "@evolu/common"
 import { atom } from "jotai"
 import { accountAtom } from "@/atoms/account.ts"
 import { runAtom } from "@/atoms/run.ts"
+import { startCashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
+import { createLinkyOwnerSync } from "@/core/cashu/linky-owners.ts"
+import { createFetchDep } from "@/core/deps.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { resolveTransportUrl } from "@/core/evolu/device-account.ts"
+import { fetchLinkyEvoluRelays } from "@/core/integrations/linky/linky-relays-client.ts"
 
 export const evoluAtom = atom(async (get, { signal }) => {
   const account = await get(accountAtom)
@@ -46,4 +50,29 @@ export const evoluAtom = atom(async (get, { signal }) => {
   )
 
   return evolu
+})
+
+/**
+ * Linky's owners in the app Evolu, next to Payky's own (cashu.md §2): the
+ * store that syncs and writes the shared Cashu wallet, or null for a demo
+ * account. Released with the app Evolu on an account switch.
+ */
+export const cashuShardStoreAtom = atom(async (get, { signal }) => {
+  const account = await get(accountAtom)
+  const evolu = await get(evoluAtom)
+  const run = get(runAtom)
+
+  return startCashuShardStore({
+    evolu,
+    account,
+    ownerSync: createLinkyOwnerSync(run.deps.syncState, evolu.name),
+    fetchRelays: async () => {
+      await using fetchRun = run.create(createFetchDep())
+      const relays = await fetchRun(fetchLinkyEvoluRelays)
+      if (!relays.ok) return null
+      const [first, ...rest] = relays.value
+      return first === undefined ? null : [first, ...rest]
+    },
+    signal,
+  })
 })

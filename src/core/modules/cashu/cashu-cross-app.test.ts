@@ -1,5 +1,16 @@
 import { describe, expect, test } from "vitest"
 
+import { createCashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
+import { deriveLinkyAppOwner } from "@/core/cashu/linky-owners.ts"
+import { createQuery } from "@/core/evolu/schema.ts"
+import {
+  CashuAmount,
+  CashuBolt11,
+  type CashuQuoteId,
+  CashuTokenText,
+  KeysetId,
+  MintUrl,
+} from "@/core/modules/cashu/cashu-types.ts"
 import {
   cashuOperationIdFor,
   cashuProofIdFor,
@@ -8,6 +19,8 @@ import {
   operationKeyOf,
   shardPointerIdFor,
 } from "@/core/modules/cashu/cashu-utils.ts"
+import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
+import { createEvoluTest } from "@/test/evolu.ts"
 
 /**
  * Cross-app Cashu vectors shared between Linky and Payky.
@@ -127,5 +140,202 @@ describe("cross-app Cashu vectors (shared with Linky)", () => {
     expect(linkySettingIdFor("defaultMint")).toBe(
       META_ROW_ID_VECTORS.defaultMintSetting
     )
+  })
+})
+
+/**
+ * The rows Payky's shard store writes, column for column (Evolu's system
+ * columns aside). Linky's twin decodes each with its own codecs
+ * (`toStoredProof`, `toStoredOperation`, the topup record, `LinkySettings`):
+ * a row Linky cannot decode is silently skipped there.
+ */
+const WRITTEN_ROW_VECTORS = {
+  proof: {
+    id: "BZPKWM_sfeFRihXDyPbdLw",
+    mint: "https://cashu.cz",
+    unit: "sat",
+    keysetId: "00ad268c4d1f5826",
+    amount: 8,
+    secret: "407915bc212be61a77e3e6d2aeb4c727980bda51cd06a6afc29e2861768a7837",
+    c: "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
+    state: "available",
+    dleq: null,
+    operationId: null,
+  },
+  topup: {
+    id: "BGlgDe11qmFny9YMFDFEMA",
+    kind: "topup",
+    status: "pending",
+    mint: "https://cashu.cz",
+    unit: "sat",
+    keysetId: "00ad268c4d1f5826",
+    amount: 100,
+    quoteId: "q1",
+    invoice: "lnbc1u1pjexample",
+    locked: 1,
+    expiresAtSec: 1_900_000_000,
+    createdAtSec: 1_800_000_000,
+    feeReserve: null,
+    inputsTotal: null,
+    sourceMint: null,
+    counter: null,
+    tokenText: null,
+    error: null,
+  },
+  receive: {
+    id: "Jp7BJO58G7fLgNCYxFZ5vw",
+    kind: "receive",
+    status: "pending",
+    mint: "https://cashu.cz",
+    unit: "sat",
+    keysetId: "00ad268c4d1f5826",
+    amount: 21,
+    counter: 64,
+    createdAtSec: 1_800_000_000,
+    tokenText: "cashuBabc",
+    feeReserve: null,
+    inputsTotal: null,
+    quoteId: null,
+    invoice: null,
+    sourceMint: null,
+    locked: null,
+    expiresAtSec: null,
+    error: null,
+  },
+  defaultMintSetting: {
+    id: "d1KTr4HXiQVodmiXwSA3ig",
+    key: "defaultMint",
+    value: "https://cashu.cz",
+  },
+} as const
+
+describe("rows Payky writes (decoded by Linky's twin)", () => {
+  test("the shard store writes exactly the pinned rows", async () => {
+    await using evoluTest = await createEvoluTest()
+    const { evolu } = evoluTest
+    using store = createCashuShardStore({
+      evolu,
+      linkyAppOwner: deriveLinkyAppOwner(
+        MasterKey("000102030405060708090a0b0c0d0e0f")
+      ),
+      ownerSync: { isOwnerSynced: () => true, subscribe: () => () => {} },
+      relays: ["wss://evolu.linky.fit"],
+      registerOwner: () => () => {},
+    })
+    const mint = MintUrl("https://cashu.cz")
+    const keysetId = KeysetId("00ad268c4d1f5826")
+
+    await store.insertProofs([
+      {
+        mint,
+        unit: "sat",
+        keysetId,
+        amount: CashuAmount(8),
+        secret: PROOF_ID_VECTOR.secret,
+        C: WRITTEN_ROW_VECTORS.proof.c,
+        dleq: null,
+        state: "available",
+        operationId: null,
+      },
+    ])
+    await store.insertOperation({
+      kind: "topup",
+      status: "pending",
+      mint,
+      unit: "sat",
+      keysetId,
+      amount: CashuAmount(100),
+      feeReserve: null,
+      inputsTotal: null,
+      quoteId: "q1" as CashuQuoteId,
+      invoice: CashuBolt11("lnbc1u1pjexample"),
+      sourceMint: null,
+      counter: null,
+      locked: true,
+      expiresAtSec: 1_900_000_000,
+      createdAtSec: 1_800_000_000,
+      tokenText: null,
+      error: null,
+    })
+    await store.insertOperation({
+      kind: "receive",
+      status: "pending",
+      mint,
+      unit: "sat",
+      keysetId,
+      amount: CashuAmount(21),
+      feeReserve: null,
+      inputsTotal: null,
+      quoteId: null,
+      invoice: null,
+      sourceMint: null,
+      counter: 64,
+      locked: null,
+      expiresAtSec: null,
+      createdAtSec: 1_800_000_000,
+      tokenText: CashuTokenText("cashuBabc"),
+      error: null,
+    })
+    await store.writeSetting("defaultMint", "https://cashu.cz")
+
+    const [proof] = await evolu.loadQuery(
+      createQuery((db) =>
+        db
+          .selectFrom("cashuProof")
+          .select([
+            "id",
+            "mint",
+            "unit",
+            "keysetId",
+            "amount",
+            "secret",
+            "c",
+            "state",
+            "dleq",
+            "operationId",
+          ])
+      )
+    )
+    expect(proof).toEqual(WRITTEN_ROW_VECTORS.proof)
+
+    const operations = await evolu.loadQuery(
+      createQuery((db) =>
+        db
+          .selectFrom("cashuOperation")
+          .select([
+            "id",
+            "kind",
+            "status",
+            "mint",
+            "unit",
+            "keysetId",
+            "amount",
+            "feeReserve",
+            "inputsTotal",
+            "quoteId",
+            "invoice",
+            "sourceMint",
+            "counter",
+            "locked",
+            "expiresAtSec",
+            "createdAtSec",
+            "tokenText",
+            "error",
+          ])
+      )
+    )
+    expect(operations).toEqual(
+      expect.arrayContaining([
+        WRITTEN_ROW_VECTORS.topup,
+        WRITTEN_ROW_VECTORS.receive,
+      ])
+    )
+
+    const [setting] = await evolu.loadQuery(
+      createQuery((db) =>
+        db.selectFrom("setting").select(["id", "key", "value"])
+      )
+    )
+    expect(setting).toEqual(WRITTEN_ROW_VECTORS.defaultMintSetting)
   })
 })

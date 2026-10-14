@@ -101,6 +101,13 @@ export const skSettings = {
   "settings.categories.search": "Hľadať kategórie...",
   "settings.categories.search.clear.aria": "Vymazať hľadanie",
   "settings.categories.title": "Kategórie",
+  "settings.debugConsole.cashu.title": "Cashu peňaženka Linky (vývoj)",
+  "settings.debugConsole.cashu.activeShard": "Aktívny shard: {index}",
+  "settings.debugConsole.cashu.hydrated": "Synchronizované: {hydrated}",
+  "settings.debugConsole.cashu.noBalance": "Žiadne dostupné proofy.",
+  "settings.debugConsole.cashu.unavailable": "Demo účet nemá peňaženku Linky.",
+  "settings.debugConsole.cashu.writeTestSetting":
+    "Zapísať testovacie nastavenie pre Linky",
   "settings.debugConsole.clear": "Vymazať",
   "settings.debugConsole.description":
     "Zobraziť zachytený konzolový výstup aplikácie",

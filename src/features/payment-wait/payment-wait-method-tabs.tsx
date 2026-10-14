@@ -38,10 +38,12 @@ export function PaymentMethodTabContent({
   onMarkCashPaid,
   onMarkIbanPaid,
   onPayCard,
+  cashuPaymentId,
   newCashuQuotePending,
   onNewCashuQuote,
 }: {
   readonly method: PaymentMethodOption
+  readonly cashuPaymentId: PaymentId
   readonly newCashuQuotePending: boolean
   readonly onNewCashuQuote: () => void
   /** Set while a Bolt Card may pay this payment's Lightning invoice. */
@@ -97,6 +99,7 @@ export function PaymentMethodTabContent({
     case "cashu":
       return (
         <CashuPaymentTab
+          paymentId={cashuPaymentId}
           qrPayload={method.qrPayload}
           quoteExpired={method.quoteExpired}
           preparingMessageKey={preparingMessageKey}

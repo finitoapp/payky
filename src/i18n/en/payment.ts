@@ -244,6 +244,28 @@ export const enPayment = {
   "paymentWait.preparing.cashu": "Preparing Cashu request...",
   "paymentWait.cashu.quoteExpired":
     "The mint's invoice expired before it was paid.",
+  "paymentWait.cashu.arrival.receiving":
+    "A token for {amount} sat arrived from {mint}. Receiving it...",
+  "paymentWait.cashu.arrival.withFee":
+    "A token for {amount} sat arrived from {mint}. The mint keeps {fee} sat as its fee.",
+  "paymentWait.cashu.arrival.waitingForMint":
+    "A token for {amount} sat arrived. Waiting for the mint {mint} to answer...",
+  "paymentWait.cashu.arrival.otherMint":
+    "A token for {amount} sat came from {mint}, not from this payment's mint. It does not pay this payment.",
+  "paymentWait.cashu.failure.mintUnreachable":
+    "The mint did not answer. The token will be tried again.",
+  "paymentWait.cashu.failure.mintRejected":
+    "The mint refused the token. The payment stays unpaid.",
+  "paymentWait.cashu.failure.locked":
+    "The token is locked to someone else. The payment stays unpaid.",
+  "paymentWait.cashu.failure.undecodable":
+    "The token could not be read. The payment stays unpaid.",
+  "paymentWait.cashu.failure.alreadyKnown":
+    "The wallet already holds this token. The payment stays unpaid.",
+  "paymentWait.cashu.failure.fee":
+    "The mint's fee would take the whole token. The payment stays unpaid.",
+  "paymentWait.cashu.failure.spent":
+    "The token was already spent. The payment stays unpaid.",
   "paymentWait.cashu.newQuote": "New invoice",
   "paymentWait.method.card": "Payment card",
   "paymentWait.method.cash": "Cash",

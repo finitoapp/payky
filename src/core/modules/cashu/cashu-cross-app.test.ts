@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import {
   buildBip321PaymentUri,
+  encodeNostrPaymentRequest,
   pickBip321PayableLeg,
 } from "@/core/cashu/cashu-payment-request.ts"
 import { createCashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
@@ -19,6 +20,7 @@ import {
   cashuOperationIdFor,
   cashuProofIdFor,
   linkySettingIdFor,
+  normalizeCashuTokenText,
   normalizeMintUrl,
   operationKeyOf,
   shardPointerIdFor,
@@ -152,7 +154,54 @@ const BIP321_VECTORS: ReadonlyArray<{
   },
 ]
 
+/** Linky's `encodeNostrPaymentRequest` of the same arguments. */
+const NUT18_VECTORS = [
+  {
+    args: {
+      amount: 8600,
+      mintUrls: ["https://cashu.cz"],
+      recipientNprofile: "nprofile1qqsxyz",
+      requestId: "pay-1",
+      description: "Coffee",
+    },
+    request:
+      "creqAuQAHYWEZIZhhdWNzYXRhc_VhbYFwaHR0cHM6Ly9jYXNodS5jemF0gbkAA2F0ZW5vc3RyYWFvbnByb2ZpbGUxcXFzeHl6YWeBgmFuYjE3YWllcGF5LTFhZGZDb2ZmZWU",
+  },
+  {
+    args: {
+      amount: 21,
+      mintUrls: ["https://cashu.cz", " "],
+      recipientNprofile: "nprofile1abc",
+      requestId: null,
+      description: "  ",
+    },
+    request:
+      "creqAuQAFYWEVYXVjc2F0YXP1YW2BcGh0dHBzOi8vY2FzaHUuY3phdIG5AANhdGVub3N0cmFhbG5wcm9maWxlMWFiY2FngYJhbmIxNw",
+  },
+]
+
+/** Linky's `normalizeTokenText`: what a receive's operation id hashes. */
+const TOKEN_TEXT_VECTORS: ReadonlyArray<
+  readonly [input: string, tokenText: string | null]
+> = [
+  [
+    '{"id":"pay-1","memo":"Káva","mint":"https://cashu.cz","unit":"sat","proofs":[{"id":"00ad268c4d1f5826","amount":8,"secret":"s1","C":"02aa","dleq":{"e":"x"}},{"amount":2,"id":"00ad268c4d1f5826","secret":"s2","C":"02bb"}]}',
+    "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vY2FzaHUuY3oiLCJwcm9vZnMiOlt7ImlkIjoiMDBhZDI2OGM0ZDFmNTgyNiIsImFtb3VudCI6OCwic2VjcmV0IjoiczEiLCJDIjoiMDJhYSIsImRsZXEiOnsiZSI6IngifX0seyJhbW91bnQiOjIsImlkIjoiMDBhZDI2OGM0ZDFmNTgyNiIsInNlY3JldCI6InMyIiwiQyI6IjAyYmIifV19XSwidW5pdCI6InNhdCJ9",
+  ],
+  ["  cashuBo2FteBhodHRwczovL2NAA  ", "cashuBo2FteBhodHRwczovL2NAA"],
+  ["cashuB with space", null],
+  ["hello", null],
+]
+
 describe("cross-app Cashu vectors (shared with Linky)", () => {
+  test.each(TOKEN_TEXT_VECTORS)("token text of %j", (input, tokenText) => {
+    expect(normalizeCashuTokenText(input)).toBe(tokenText)
+  })
+
+  test.each(NUT18_VECTORS)("NUT-18 request $request", (vector) => {
+    expect(encodeNostrPaymentRequest(vector.args)).toBe(vector.request)
+  })
+
   test.each(BIP321_VECTORS)("BIP-321 $uri", (vector) => {
     expect(buildBip321PaymentUri(vector.legs)).toBe(vector.uri)
     if (vector.uri !== null)

@@ -25,6 +25,7 @@ import {
 import { deriveManualPaymentAccountTransactionId } from "@/core/modules/account-transaction/account-transaction-utils.ts"
 import { requireBillAcceptingPayment } from "@/core/modules/bill/bill-guards.ts"
 import type { BillLineSummary } from "@/core/modules/bill-line/bill-line-summary.ts"
+import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type {
   PaymentRow,
@@ -1091,4 +1092,28 @@ export const acknowledgePaymentExcessSettlement =
     )
 
     return ok(paymentId)
+  }
+
+/**
+ * Makes the payment hold the receive of a token sent for it, before anyone
+ * receives it (cashu.md §5): the id comes from the token text alone, so it is
+ * right whether Payky, a running Linky or another device swaps the token.
+ */
+export const holdCashuReceive =
+  ({
+    paymentId,
+    receiveOperationId,
+  }: {
+    readonly paymentId: PaymentId
+    readonly receiveOperationId: CashuOperationId
+  }): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  async (run) => {
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "paymentCashu",
+        { id: paymentId, receiveOperationId },
+        { ...options, ownerId: run.deps.evoluOwnerId }
+      )
+    )
+    return ok(undefined)
   }

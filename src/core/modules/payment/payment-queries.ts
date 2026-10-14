@@ -761,3 +761,44 @@ export const cashuPaymentQuotesQuery = createQuery((db) =>
     .where("paymentCashu.mintUrl", "is not", null)
     .$narrowType<{ quoteId: KyselyNotNull; mintUrl: KyselyNotNull }>()
 )
+
+/**
+ * The payments a Cashu token may pay (cashu/0006): every one with a Cashu
+ * method, with what decides whether it is still open. Few rows: only
+ * payments a Cashu tab was opened for.
+ */
+export const cashuTokenCandidatePaymentsQuery = createQuery((db) =>
+  db
+    .selectFrom("paymentCashu")
+    .innerJoin("payment", "payment.id", "paymentCashu.id")
+    .select((eb) => [
+      "payment.id as paymentId",
+      "payment.canceledAt",
+      "payment.confirmedPaidAt",
+      "payment.expiresAt",
+      "paymentCashu.mintUrl",
+      "paymentCashu.amountSats",
+      "paymentCashu.receiveOperationId",
+      eb
+        .exists(
+          eb
+            .selectFrom("reconciliationClaim")
+            .innerJoin(
+              "accountTransaction",
+              "accountTransaction.id",
+              "reconciliationClaim.accountTransactionId"
+            )
+            .select("reconciliationClaim.id")
+            .whereRef("reconciliationClaim.paymentId", "=", "payment.id")
+            .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+            .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+        )
+        .$castTo<0 | 1>()
+        .as("hasActiveClaim"),
+    ])
+    .where("paymentCashu.isDeleted", "is not", sqliteTrue)
+    .where("payment.isDeleted", "is not", sqliteTrue)
+    .where("paymentCashu.mintUrl", "is not", null)
+    .where("paymentCashu.amountSats", "is not", null)
+    .$narrowType<{ mintUrl: KyselyNotNull; amountSats: KyselyNotNull }>()
+)

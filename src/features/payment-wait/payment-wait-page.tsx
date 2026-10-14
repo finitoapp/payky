@@ -29,7 +29,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
-import { buildBip321PaymentUri } from "@/core/cashu/cashu-payment-request.ts"
+import { appEnv } from "@/core/app-env.ts"
+import { buildCashuPaymentUri } from "@/core/cashu/cashu-payment-request.ts"
 import { enabledPaymentMethodAccountsQuery } from "@/core/modules/account/account-queries.ts"
 import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
@@ -316,6 +317,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     )
     if (enabledCashuAccount) {
       const cashuInvoice = payment?.cashuLnInvoice ?? null
+      const cashuMint = payment?.cashuMintUrl ?? null
       const quoteExpiresAt = payment?.cashuQuoteExpiresAt ?? null
       paymentMethods.push({
         id: "cashu",
@@ -323,9 +325,16 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         accountId: enabledCashuAccount.id,
         label: t("paymentWait.method.cashu"),
         qrPayload:
-          cashuInvoice === null
+          cashuInvoice === null || cashuMint === null
             ? null
-            : buildBip321PaymentUri({ lightning: cashuInvoice }),
+            : buildCashuPaymentUri({
+                paymentId,
+                lnInvoice: cashuInvoice,
+                amountSats: payment?.cashuAmountSats ?? 0,
+                mintUrl: cashuMint,
+                nostrPubkey: pubkey,
+                relays: appEnv.VITE_PAYKY_NOSTR_RELAYS,
+              }),
         quoteExpired:
           quoteExpiresAt !== null && now.getTime() >= quoteExpiresAt,
         icon: <CoinsIcon />,
@@ -341,7 +350,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     enabledPaymentMethodAccounts,
     now,
     payment,
+    paymentId,
     profileName,
+    pubkey,
     selectedIbanQrFormat,
     settings,
     t,
@@ -851,6 +862,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               }
               onMarkIbanPaid={() => void handleMarkIbanPaid()}
               onPayCard={() => void handlePayCard()}
+              cashuPaymentId={paymentId}
               newCashuQuotePending={newCashuQuotePending}
               onNewCashuQuote={() => void handleNewCashuQuote()}
             />

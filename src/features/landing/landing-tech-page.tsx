@@ -275,6 +275,8 @@ type ServiceId =
   | "web"
   | "relay"
   | "linky"
+  | "cashuMints"
+  | "linkyWallet"
   | "bank"
   | "eet"
   | "spark"
@@ -330,7 +332,16 @@ const serviceGroups: ReadonlyArray<{
   },
   {
     title: "landing.tech.services.group.enabled",
-    ids: ["ai", "bank", "eet", "spark", "sentry", "openFacts"],
+    ids: [
+      "ai",
+      "bank",
+      "eet",
+      "spark",
+      "cashuMints",
+      "linkyWallet",
+      "sentry",
+      "openFacts",
+    ],
   },
   {
     title: "landing.tech.services.group.action",

@@ -1,4 +1,4 @@
-import { type OwnerId, sqliteTrue } from "@evolu/common"
+import { type OwnerId, sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import {
@@ -14,6 +14,7 @@ import {
   deriveLinkyAppOwner,
 } from "@/core/cashu/linky-owners.ts"
 import { createQuery, type Evolu } from "@/core/evolu/schema.ts"
+import { saveCashuAccount } from "@/core/modules/account/account-actions.ts"
 import {
   CashuAmount,
   type CashuQuoteId,
@@ -417,7 +418,7 @@ describe("startCashuShardStore", () => {
     expect(live.size).toBe(0)
   })
 
-  test("an account registers Linky's owners and releases them with the app Evolu", async () => {
+  test("an account syncs Linky's owners only once Cashu is enabled, and releases them with the app Evolu", async () => {
     await using evoluTest = await createEvoluTest()
     const { live, registerOwner } = registrations()
     const controller = new AbortController()
@@ -435,6 +436,16 @@ describe("startCashuShardStore", () => {
     expect(store.linkyAppOwner.id).toBe(linkyAppOwner.id)
     await store.activeIndex()
     await new Promise((resolve) => setTimeout(resolve, 10))
+    // Until Cashu is enabled, no Linky relay is contacted (landing/0009).
+    expect([...live.values()].filter((count) => count > 0)).toEqual([])
+
+    await using run = testCreateRun({
+      evolu: evoluTest.evolu,
+      evoluOwnerId: evoluTest.evolu.appOwner.id,
+      cashuShardStore: store,
+    })
+    await run.ok(saveCashuAccount({ enabled: true }))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(live.get(linkyAppOwner.id)).toBe(1)
     expect(live.get(shard(0).id)).toBe(1)
     expect(live.has(evoluTest.evolu.appOwner.id)).toBe(false)

@@ -18,8 +18,10 @@ skips one that fails. Both apps are the owner's own.
 - Payky derives Linky's app owner (`m/83696968'/39'/0'/24'/1'/0'`) and the
   Cashu wallet seed (`m/83696968'/39'/0'/24'/0'`) exactly as Linky does. The
   seed is always derived; there is no custom Cashu seed.
-- Payky's app Evolu syncs Linky's app owner and every cashu shard
-  `0..active` next to its own owner, over Linky's relays, and holds Linky's
+- While the Cashu account is enabled, Payky's app Evolu syncs Linky's app
+  owner and every cashu shard `0..active` next to its own owner, over
+  Linky's relays; an account that never enabled Cashu contacts none of them
+  (landing/0009). The app database holds Linky's
   four tables (`shardPointer`, `setting`, `cashuProof`, `cashuOperation`)
   column for column. There is no Payky-owned copy of the proofs.
 - Only the Cashu shard store (`src/core/cashu/cashu-shard-store.ts`) writes
@@ -49,8 +51,8 @@ skips one that fails. Both apps are the owner's own.
   are the guard; Linky's `AGENTS.md` names Payky as a second writer.
 - Payky depends on Evolu's internal `evolu_history` for the rotation;
   `evolu-history-shape.test.ts` fails when it changes.
-- Every non-demo account syncs its Linky owners, so a Payky device downloads
-  the owner's whole Linky wallet.
+- Enabling Cashu makes a Payky device download the owner's whole Linky
+  wallet.
 
 ## Enforced by
 
@@ -68,4 +70,5 @@ skips one that fails. Both apps are the owner's own.
 - `src/core/cashu/cashu-shard-store.test.ts > cashu shard store > the active shard rotates past 170 mutations, at most once a minute`
 - `src/core/cashu/cashu-shard-store.test.ts > cashu shard store > repairPointers moves the pointer up to the newest shard holding rows, never down`
 - `src/core/cashu/cashu-shard-store.test.ts > startCashuShardStore > a demo account registers no Linky owner and keeps its rows local`
+- `src/core/cashu/cashu-shard-store.test.ts > startCashuShardStore > an account syncs Linky's owners only once Cashu is enabled, and releases them with the app Evolu`
 - `src/core/evolu/evolu-history-shape.test.ts > evolu_history shape > has the columns, the rowid and the binary owner and id the Cashu code reads`

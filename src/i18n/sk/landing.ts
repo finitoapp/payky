@@ -626,6 +626,15 @@ export const skLanding = {
   "landing.tech.services.boltCard.sent": "Žiadosť o platbu z karty.",
   "landing.tech.services.boltCard.when":
     "Keď zákazník zaplatí priložením Bolt Card (Android).",
+  "landing.tech.services.cashuMints.name": "Cashu minty",
+  "landing.tech.services.cashuMints.sent":
+    "Žiadosti o faktúry, ecash na výmenu a faktúry, na ktoré vyberáte. Mint vidí sumy a časy.",
+  "landing.tech.services.cashuMints.when": "Keď máte zapnuté platby Cashu.",
+  "landing.tech.services.linkyWallet.name":
+    "Relaye Linky pre zdieľanú Cashu peňaženku (evolu.linky.fit, evolu.eu.freedomrelay.dev) a linky.fit",
+  "landing.tech.services.linkyWallet.sent":
+    "Zašifrované dáta peňaženky a žiadosť o zoznam relayí Linky.",
+  "landing.tech.services.linkyWallet.when": "Keď máte zapnuté platby Cashu.",
   "landing.tech.services.contact.name": "Kontaktný formulár",
   "landing.tech.services.contact.sent": "Meno, kontakt a správa.",
   "landing.tech.services.contact.when": "Keď formulár odošlete.",
@@ -661,9 +670,9 @@ export const skLanding = {
   "landing.tech.services.linky.when": "Stále, ale dá sa vypnúť.",
   "landing.tech.services.nostr.name": "Nostr relaye",
   "landing.tech.services.nostr.sent":
-    "Zašifrované správy pre podporu, verejný profil účtu a dáta na prenos účtu na iné zariadenie.",
+    "Zašifrované správy pre podporu, verejný profil účtu, dáta na prenos účtu na iné zariadenie a Cashu tokeny, ktoré posielajú zákazníci.",
   "landing.tech.services.nostr.when":
-    "Keď používate podporu, profil alebo prenos účtu.",
+    "Keď používate podporu, profil alebo prenos účtu, a keď máte zapnuté platby Cashu.",
   "landing.tech.services.openFacts.name": "Open Food Facts a Open Beauty Facts",
   "landing.tech.services.openFacts.sent": "Naskenovaný čiarový kód.",
   "landing.tech.services.openFacts.when":

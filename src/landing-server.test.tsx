@@ -227,6 +227,8 @@ describe("renderLandingDocument", () => {
       "landing.tech.services.linky.name",
       "landing.tech.services.bank.name",
       "landing.tech.services.sentry.name",
+      "landing.tech.services.cashuMints.name",
+      "landing.tech.services.linkyWallet.name",
     ] as const) {
       expect(body).toContain(resources.en[key])
     }

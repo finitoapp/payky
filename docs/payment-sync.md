@@ -1,4 +1,4 @@
-# Payment sync (FIO & Spark)
+# Payment sync (FIO, Spark & Cashu)
 
 How the FIO (bank IBAN) and Spark (Bitcoin/Lightning) background jobs turn
 external activity into local data. Complements `docs/bill-payment-states.md`,
@@ -83,9 +83,29 @@ most one winner) and claim the first match, ties broken by `payment.id`:
 | `iban` | account + variable symbol (+ specific symbol, or both null) + amount + currency | yes |
 | `spark` | account + `BTC` + amount(sats) + Lightning or Spark invoice match | yes |
 | `cashRegister` | account + amount + currency | no — only `markPaymentPaidCash` creates this kind |
+| `cashu` | account + mint + the payment's quote id, or the receive id it holds; never the amount | yes — the Cashu job |
 
 No match = transaction stays unclaimed; not an error. A claim also refreshes
 the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
+
+## Cashu
+
+`background-jobs/jobs/cashu-account-sync-job.ts` serves the Cashu account
+(`cashu.md` §5, the `cashu/` decisions). It runs on native and browser, not
+in the CLI, and only while the Cashu account is enabled. The wallet is
+Linky's own, read and written through `core/cashu/cashu-shard-store.ts`.
+
+| Part | What it does |
+|---|---|
+| Lightning settlement | Every 5 s it polls the pending `topup` operations Payky's payments hold (and recent `autoswap`s) on Linky's schedule — 5 s for 5 minutes, 1 minute up to an hour, then 5 minutes — and claims a paid quote (`claimCashuTopup`). A claim made elsewhere is waited for; after 5 minutes it is reclaimed from the synced counter. |
+| Melts | Melts this device sent that are still `pending` are resumed (`resumeCashuMelt`); a withdrawal's movement or failure follows (`settleCashuWithdrawal`). |
+| Tokens | `core/cashu/cashu-token-listener.ts` reads 1:1 NIP-17 messages with a token (7-day window), matches them to a payment, makes the payment hold the receive id, and receives the token; a message whose mint is down is retried every 30 s. |
+| Booking | `core/cashu/cashu-booking.ts` turns every `done` incoming operation into one `accountTransaction` (+ `accountTransactionCashu`) with the automatic claim in the same batch. It reads only changes newer than the `_cashuBookingCursor` rowid in `evolu_history`; without a cursor it books the last month. Triggered on start, on any wallet change, and every minute. |
+
+Multi-device safety comes from Linky's rules, not locks: operation ids derive
+from the mint and quote (or the token text), the claim stops when someone else
+got there first (`cashu/0004`), and the booked transaction's id derives from
+the operation id.
 
 ## Known limitations
 

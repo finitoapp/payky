@@ -629,6 +629,15 @@ export const csLanding = {
   "landing.tech.services.boltCard.sent": "Žádost o platbu z karty.",
   "landing.tech.services.boltCard.when":
     "Když zákazník zaplatí přiložením Bolt Card (Android).",
+  "landing.tech.services.cashuMints.name": "Cashu minty",
+  "landing.tech.services.cashuMints.sent":
+    "Žádosti o faktury, ecash k výměně a faktury, na které vybíráte. Mint vidí částky a časy.",
+  "landing.tech.services.cashuMints.when": "Když máte zapnuté platby Cashu.",
+  "landing.tech.services.linkyWallet.name":
+    "Relaye Linky pro sdílenou Cashu peněženku (evolu.linky.fit, evolu.eu.freedomrelay.dev) a linky.fit",
+  "landing.tech.services.linkyWallet.sent":
+    "Zašifrovaná data peněženky a žádost o seznam relayí Linky.",
+  "landing.tech.services.linkyWallet.when": "Když máte zapnuté platby Cashu.",
   "landing.tech.services.contact.name": "Kontaktní formulář",
   "landing.tech.services.contact.sent": "Jméno, kontakt a zpráva.",
   "landing.tech.services.contact.when": "Když formulář odešlete.",
@@ -664,9 +673,9 @@ export const csLanding = {
   "landing.tech.services.linky.when": "Pořád, ale dá se vypnout.",
   "landing.tech.services.nostr.name": "Nostr relaye",
   "landing.tech.services.nostr.sent":
-    "Zašifrované zprávy pro podporu, veřejný profil účtu a data pro přenos účtu na jiné zařízení.",
+    "Zašifrované zprávy pro podporu, veřejný profil účtu, data pro přenos účtu na jiné zařízení a Cashu tokeny, které posílají zákazníci.",
   "landing.tech.services.nostr.when":
-    "Když používáte podporu, profil nebo přenos účtu.",
+    "Když používáte podporu, profil nebo přenos účtu, a když máte zapnuté platby Cashu.",
   "landing.tech.services.openFacts.name": "Open Food Facts a Open Beauty Facts",
   "landing.tech.services.openFacts.sent": "Naskenovaný čárový kód.",
   "landing.tech.services.openFacts.when":

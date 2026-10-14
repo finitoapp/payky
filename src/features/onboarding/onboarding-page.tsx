@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
-import { Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { Check, ChevronLeft } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 import { z } from "zod"
 
@@ -32,7 +32,10 @@ import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
 import { finishOnboarding as finishOnboardingTask } from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
-import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
+import {
+  BankAccountInputIbanSchema,
+  FiatCurrency,
+} from "@/core/modules/shared/schema.ts"
 import { LanguageSelect } from "@/features/onboarding/language-select.tsx"
 import {
   getOnboardingSteps,
@@ -41,13 +44,9 @@ import {
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
 import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/account-choice-step.tsx"
-import { AccountStep } from "@/features/onboarding/onboarding-steps/account-step.tsx"
-import { CountryCurrencyStep } from "@/features/onboarding/onboarding-steps/country-currency-step.tsx"
 import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-step.tsx"
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"
 import {
-  getDefaultCountryForLanguage,
-  getDefaultCurrencyForCountry,
   getDefaultPaymentMethodForOnboarding,
   getPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
@@ -78,10 +77,10 @@ export function OnboardingPage({
   const [form, setForm] = useAtom(onboardingFormAtom)
   const [finishing, setFinishing] = useState(false)
   // Steps validate when the merchant tries to leave them, not while they
-  // type or read: bank transfer starts enabled with an empty IBAN, and the
-  // recovery phrase starts unconfirmed, so live validation would greet them
-  // with errors they have not had a chance to answer yet. Reset on every
-  // step change, so a step is never entered already complaining.
+  // type: bank transfer starts enabled with an empty IBAN, so live validation
+  // would greet them with an error they have not had a chance to answer yet.
+  // Reset on every step change, so a step is never entered already
+  // complaining.
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [cancelingSetup, setCancelingSetup] = useState(false)
   const {
@@ -110,18 +109,10 @@ export function OnboardingPage({
     step,
     accountType,
     iban,
-    country,
     paymentMethods: selectedPaymentMethods,
   } = form
   const onboardingSteps = getOnboardingSteps(accountType)
   const pending = finishing || restoring || cancelingSetup
-  // Both defaults are provisional until the merchant answers: the country
-  // follows the language they are reading in, and the currency follows the
-  // country — so switching language on the country screen visibly moves both,
-  // while an explicit pick of either stops following.
-  const selectedCountry = country ?? getDefaultCountryForLanguage(language)
-  const selectedCurrency =
-    form.currency ?? getDefaultCurrencyForCountry(selectedCountry)
 
   const ibanEnabled = selectedPaymentMethods.has("iban")
   const ibanParseResult =
@@ -137,10 +128,6 @@ export function OnboardingPage({
     return null
   }
   const ibanError = getIbanError()
-  const recoveryPhraseError: TranslationKey | null =
-    submitAttempted && !form.recoveryPhraseConfirmed
-      ? "onboarding.account.mnemonic.required"
-      : null
 
   // Having reached the app once, this browser no longer gets the landing
   // page instead of onboarding (landing/0001).
@@ -167,20 +154,6 @@ export function OnboardingPage({
 
   const stepIndex = onboardingSteps.indexOf(step)
   const canGoBack = stepIndex > 0 && !pending
-  const isLastStep = stepIndex === onboardingSteps.length - 1
-
-  const goNext = () => {
-    if (step === "payments") {
-      setSubmitAttempted(true)
-      if (ibanMissing || ibanInvalid) return
-    }
-
-    const nextStep = onboardingSteps[stepIndex + 1]
-    if (nextStep) {
-      setSubmitAttempted(false)
-      setForm((current) => ({ ...current, step: nextStep }))
-    }
-  }
 
   const goBack = () => {
     const previousStep = onboardingSteps[stepIndex - 1]
@@ -206,15 +179,10 @@ export function OnboardingPage({
   }
 
   const finishOnboarding = async () => {
-    // A restored phrase finishes on the payments step, so the IBAN is checked
-    // here too, not only when leaving that step; its phrase is already backed
-    // up, so there is no confirmation to require.
-    const needsRecoveryPhrase = accountType !== "existingMnemonic"
-    if (
-      ibanMissing ||
-      ibanInvalid ||
-      (needsRecoveryPhrase && !form.recoveryPhraseConfirmed)
-    ) {
+    // Onboarding finishes on the payments step, so the IBAN is checked here
+    // rather than when leaving it. The recovery phrase is not asked about:
+    // it stays in Settings > Security (onboarding/0002).
+    if (ibanMissing || ibanInvalid) {
       setSubmitAttempted(true)
       return
     }
@@ -230,8 +198,10 @@ export function OnboardingPage({
 
       const finished = await run(
         finishOnboardingTask({
-          country: selectedCountry === "OTHER" ? null : selectedCountry,
-          currency: selectedCurrency,
+          // Every new account starts Czech (onboarding/0001); anyone else
+          // changes it in Settings.
+          country: "CZ",
+          currency: FiatCurrency.CZK,
           cash: selectedPaymentMethods.has("cash"),
           btc: selectedPaymentMethods.has("btc"),
           iban:
@@ -363,20 +333,6 @@ export function OnboardingPage({
               />
             ) : null}
 
-            {step === "countryCurrency" ? (
-              <CountryCurrencyStep
-                country={selectedCountry}
-                currency={selectedCurrency}
-                pending={pending}
-                onSelectCountry={(nextCountry) => {
-                  setForm((current) => ({ ...current, country: nextCountry }))
-                }}
-                onSelectCurrency={(nextCurrency) => {
-                  setForm((current) => ({ ...current, currency: nextCurrency }))
-                }}
-              />
-            ) : null}
-
             {step === "payments" ? (
               <PaymentsStep
                 iban={iban}
@@ -388,19 +344,6 @@ export function OnboardingPage({
                   setForm((current) => ({ ...current, iban: nextIban }))
                 }}
                 onTogglePaymentMethod={togglePaymentMethod}
-              />
-            ) : null}
-
-            {step === "account" ? (
-              <AccountStep
-                recoveryPhraseConfirmed={form.recoveryPhraseConfirmed}
-                recoveryPhraseError={recoveryPhraseError}
-                onRecoveryPhraseConfirmedChange={(confirmed) => {
-                  setForm((current) => ({
-                    ...current,
-                    recoveryPhraseConfirmed: confirmed,
-                  }))
-                }}
               />
             ) : null}
 
@@ -455,12 +398,9 @@ export function OnboardingPage({
               </>
             ) : null}
 
-            {/* The account choice advances on click, so it carries no footer
-                at all — and being the first step, it has nowhere to go back
-                to either. */}
-            {step === "restore" ||
-            step === "transfer" ||
-            step === "accountChoice" ? null : (
+            {/* Payments is the last step of every path that reaches it; the
+                others carry their own actions, or none at all. */}
+            {step === "payments" ? (
               <CardFooter className="flex items-center justify-between gap-3">
                 <Button
                   type="button"
@@ -471,23 +411,16 @@ export function OnboardingPage({
                   <ChevronLeft data-icon="inline-start" />
                   {t("onboarding.back")}
                 </Button>
-                {isLastStep ? (
-                  <Button
-                    type="button"
-                    disabled={pending}
-                    onClick={finishOnboarding}
-                  >
-                    <Check data-icon="inline-start" />
-                    {t("onboarding.finish")}
-                  </Button>
-                ) : (
-                  <Button type="button" disabled={pending} onClick={goNext}>
-                    {t("onboarding.next")}
-                    <ChevronRight data-icon="inline-end" />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  disabled={pending}
+                  onClick={finishOnboarding}
+                >
+                  <Check data-icon="inline-start" />
+                  {t("onboarding.finish")}
+                </Button>
               </CardFooter>
-            )}
+            ) : null}
           </Card>
 
           <div className="flex justify-end">

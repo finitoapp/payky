@@ -200,7 +200,7 @@ export function RestoreSyncPage({ source }: RestoreSyncPageProps) {
     setOnboardingForm({
       ...initialOnboardingFormState,
       accountType: "existingMnemonic",
-      step: "countryCurrency",
+      step: "payments",
     })
     await navigate({ to: "/onboarding", replace: true })
   }

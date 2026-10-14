@@ -5,43 +5,8 @@ import {
   masterKeyToMnemonic,
 } from "../../src/core/modules/shared/key-derivation.ts"
 import type { FiatCurrency } from "../../src/core/modules/shared/schema.ts"
-import type { Language, TranslationKey } from "../../src/i18n/resources.ts"
+import type { Language } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
-
-/**
- * The country and currency dropdowns on the second onboarding step. Both are
- * `Select`s labeled by their `FieldLabel`, so they are addressed by role and
- * label rather than by the option text the way the old toggle groups were.
- */
-export async function chooseOnboardingCountry(
-  page: Page,
-  language: Language,
-  countryKey: TranslationKey
-): Promise<void> {
-  await page
-    .getByRole("combobox", {
-      name: translate(language, "settings.legalEntity.country.label"),
-    })
-    .click()
-  await page
-    .getByRole("option", { name: translate(language, countryKey) })
-    .click()
-}
-
-export async function chooseOnboardingCurrency(
-  page: Page,
-  language: Language,
-  currencyKey: TranslationKey
-): Promise<void> {
-  await page
-    .getByRole("combobox", {
-      name: translate(language, "onboarding.countryCurrency.currency.label"),
-    })
-    .click()
-  await page
-    .getByRole("option", { name: translate(language, currencyKey) })
-    .click()
-}
 
 /**
  * Runner-agnostic: `bin/generate-doc-screenshots.ts` imports these helpers
@@ -148,12 +113,12 @@ export async function submitRestorePhrase(
     .waitFor()
 }
 
-/** Completes onboarding as a new account and returns its recovery phrase. */
+/** Completes onboarding as a new account, with Spark switched off. */
 export async function completeOnboarding(
   page: Page,
   language: Language,
   options?: { readonly baseURL?: string }
-): Promise<string> {
+): Promise<void> {
   await page.goto(`${options?.baseURL ?? ""}/onboarding`, {
     waitUntil: "domcontentloaded",
   })
@@ -165,10 +130,6 @@ export async function completeOnboarding(
       name: translate(language, "accountChoice.new.title"),
     })
     .click()
-  await chooseOnboardingCountry(page, language, "country.cz")
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
   await page
     .getByRole("checkbox", {
       name: translate(language, "onboarding.payments.btc.title"),
@@ -176,25 +137,11 @@ export async function completeOnboarding(
     .click()
   await page.getByRole("textbox").fill("CZ6508000000192000145399")
   await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  const mnemonic = await page
-    .getByRole("textbox", {
-      name: translate(language, "settings.security.mnemonic.label"),
-    })
-    .inputValue()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.account.mnemonic.confirm"),
-    })
-    .click()
-  await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })
     .click()
   await page
     .getByRole("button", { name: translate(language, "settings.title") })
     .waitFor()
-  return mnemonic
 }
 
 /**
@@ -220,19 +167,7 @@ export async function completeOnboardingDefaults(
       name: translate(language, "accountChoice.new.title"),
     })
     .click()
-  await chooseOnboardingCountry(page, language, "country.cz")
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
   await page.getByRole("textbox").fill("CZ6508000000192000145399")
-  await page
-    .getByRole("button", { name: translate(language, "onboarding.next") })
-    .click()
-  await page
-    .getByRole("checkbox", {
-      name: translate(language, "onboarding.account.mnemonic.confirm"),
-    })
-    .click()
   await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })
     .click()

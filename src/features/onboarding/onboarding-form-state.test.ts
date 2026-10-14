@@ -4,22 +4,14 @@ import { getOnboardingSteps } from "@/features/onboarding/onboarding-form-state.
 
 describe("getOnboardingSteps", () => {
   test("includes the setup steps for a new account", () => {
-    expect(getOnboardingSteps("new")).toEqual([
-      "accountChoice",
-      "countryCurrency",
-      "payments",
-      "account",
-    ])
+    expect(getOnboardingSteps("new")).toEqual(["accountChoice", "payments"])
   })
 
   test("goes directly from account choice to recovery for restoration", () => {
     expect(getOnboardingSteps("restore")).toEqual(["accountChoice", "restore"])
   })
 
-  test("skips the choice and backup steps for an already restored phrase", () => {
-    expect(getOnboardingSteps("existingMnemonic")).toEqual([
-      "countryCurrency",
-      "payments",
-    ])
+  test("skips the choice step for an already restored phrase", () => {
+    expect(getOnboardingSteps("existingMnemonic")).toEqual(["payments"])
   })
 })

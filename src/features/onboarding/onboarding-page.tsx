@@ -48,7 +48,7 @@ import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-st
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"
 import {
   getDefaultPaymentMethodForOnboarding,
-  getPaymentMethodOrder,
+  onboardingPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
 import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
@@ -213,7 +213,7 @@ export function OnboardingPage({
           ),
           paymentMethodOrderJson: z.encode(
             PaymentMethodOrderJson,
-            getPaymentMethodOrder(selectedPaymentMethods)
+            onboardingPaymentMethodOrder
           ),
         })
       )

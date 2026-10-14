@@ -54,11 +54,11 @@
     "@capacitor/share": "8.0.3",
     "@cashu/cashu-ts": "4.5.1",
     "@dedalik/use-react": "1.1.2",
-    "@evolu/common": "8.19.0",
-    "@evolu/nodejs": "4.2.0",
+    "@evolu/common": "8.22.3",
+    "@evolu/nodejs": "4.3.3",
     "@evolu/react-web": "3.2.0",
-    "@evolu/sqlite-wasm": "3.53.4-build1",
-    "@evolu/web": "3.5.0",
+    "@evolu/sqlite-wasm": "3.54.0-build2",
+    "@evolu/web": "3.6.1",
     "@finitoapp/eet-client": "0.3.0",
     "@noble/hashes": "2.4.0",
     "@peculiar/asn1-schema": "2.10.0",
@@ -139,6 +139,6 @@
     "protobufjs"
   ],
   "patchedDependencies": {
-    "@evolu/common@8.19.0": "patches/@evolu%2Fcommon@8.19.0.patch"
+    "@evolu/common@8.22.3": "patches/@evolu%2Fcommon@8.22.3.patch"
   }
 }

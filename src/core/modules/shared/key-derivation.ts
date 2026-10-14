@@ -1,4 +1,9 @@
-import { createRandomBytes, type OwnerSecret } from "@evolu/common"
+import {
+  createRandomBytes,
+  Mnemonic,
+  mnemonicToOwnerSecret,
+  type OwnerSecret,
+} from "@evolu/common"
 import { hmac } from "@noble/hashes/hmac.js"
 import { sha512 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
@@ -6,6 +11,7 @@ import { HDKey } from "@scure/bip32"
 import {
   entropyToMnemonic,
   mnemonicToEntropy,
+  mnemonicToSeedSync,
   validateMnemonic,
 } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
@@ -71,11 +77,18 @@ export const RecoveryMnemonic = RecoveryMnemonicSchema.decode
  * 24 words = 32 bytes, 12 words = 16 bytes.
  */
 /**
- * Reserved for a future cashu wallet secret. Index `0'` is set aside
- * for this and never used by another path — nothing derives from it yet.
+ * The Cashu wallet seed Linky derives (`CASHU_SEED_PATH` in Linky's
+ * `derivationPaths.ts`): one wallet shared by both apps.
  */
-export const defaultCashuDerivationPath = DerivationPath(
+export const cashuWalletSeedDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/24'/0'"
+)
+/**
+ * Linky's app (meta) owner (`META_OWNER_PATH`), a second Evolu identity next
+ * to Payky's own; its shard owners hold the shared Cashu wallet.
+ */
+export const linkyAppOwnerDerivationPath = DerivationPath(
+  "m/83696968'/39'/0'/24'/1'/0'"
 )
 export const evoluOwnerDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/24'/1'"
@@ -118,6 +131,44 @@ export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey => {
 
   return NostrSecretKey(new Uint8Array(privateKey))
 }
+
+/** The 64-byte BIP-39 seed every NUT-13 derivation of the Cashu wallet hangs off. */
+export const CashuWalletSeedSchema = z
+  .instanceof(Uint8Array)
+  .refine((bytes) => bytes.length === 64, {
+    message: "A Cashu wallet seed is exactly 64 bytes.",
+  })
+  .brand<"CashuWalletSeed">()
+export type CashuWalletSeed = z.output<typeof CashuWalletSeedSchema>
+export const CashuWalletSeed = CashuWalletSeedSchema.decode
+
+/**
+ * As Linky: 32 bytes of entropy → 24-word BIP-39 → `mnemonicToSeed` with an
+ * empty passphrase.
+ */
+export const deriveCashuWalletSeed = (masterKey: MasterKey): CashuWalletSeed =>
+  CashuWalletSeed(
+    mnemonicToSeedSync(
+      entropyToMnemonic(
+        deriveEntropy(masterKey, cashuWalletSeedDerivationPath),
+        wordlist
+      )
+    )
+  )
+
+/**
+ * As Linky: the first 16 bytes → 12-word BIP-39 → Evolu's
+ * `mnemonicToOwnerSecret`. Not Payky's own owner secret.
+ */
+export const deriveLinkyAppOwnerSecret = (masterKey: MasterKey): OwnerSecret =>
+  mnemonicToOwnerSecret(
+    Mnemonic.orThrow(
+      entropyToMnemonic(
+        deriveEntropy(masterKey, linkyAppOwnerDerivationPath).slice(0, 16),
+        wordlist
+      )
+    )
+  )
 
 export const createMasterKey = (): MasterKey =>
   MasterKey(bytesToHex(createRandomBytes().create(16)))

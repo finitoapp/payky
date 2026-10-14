@@ -4,7 +4,12 @@ import { useAtomValue } from "jotai"
 import { useEffect } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
-import { evoluAtom } from "@/atoms/evolu.ts"
+import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
+import {
+  cashuShardStoreAtom,
+  cashuWalletDepAtom,
+  evoluAtom,
+} from "@/atoms/evolu.ts"
 import { getBackgroundJobsForRuntime } from "@/core/background-jobs/background-jobs.ts"
 import { runBackgroundJobs } from "@/core/background-jobs/run-background-jobs.ts"
 import {
@@ -18,7 +23,11 @@ import { useConsole } from "@/hooks/use-console.ts"
 export function AppBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
   const account = useAtomValue(accountAtom)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const cashuShardStore = useAtomValue(cashuShardStoreAtom)
+  const cashuWalletDep = useAtomValue(cashuWalletDepAtom)
   const deviceId = account.device.id
+  const { masterKey } = account
   // Every job talks to an outside service (EET, the bank, the Spark wallet),
   // and a demo account's data is fictional: none may run (demo-data/0001).
   const isDemo = account.demo !== null
@@ -43,6 +52,10 @@ export function AppBackgroundJobs() {
       ...fetchDep,
       ...createConnectivityDep(),
       ...createEetApiDep({ ...dateDep, ...fetchDep }),
+      deviceEvolu,
+      masterKey,
+      cashuShardStore,
+      ...cashuWalletDep,
       lockManager: navigator.locks,
       console,
       onError: (error: unknown) => {
@@ -83,7 +96,16 @@ export function AppBackgroundJobs() {
         }
       })()
     }
-  }, [console, deviceId, evolu, isDemo])
+  }, [
+    cashuShardStore,
+    cashuWalletDep,
+    console,
+    deviceEvolu,
+    deviceId,
+    evolu,
+    isDemo,
+    masterKey,
+  ])
 
   return null
 }

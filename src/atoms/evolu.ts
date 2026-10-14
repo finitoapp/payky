@@ -3,11 +3,13 @@ import { atom } from "jotai"
 import { accountAtom } from "@/atoms/account.ts"
 import { runAtom } from "@/atoms/run.ts"
 import { startCashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
+import { createCashuWalletDep } from "@/core/cashu/cashu-wallet.ts"
 import { createLinkyOwnerSync } from "@/core/cashu/linky-owners.ts"
 import { createFetchDep } from "@/core/deps.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
 import { resolveTransportUrl } from "@/core/evolu/device-account.ts"
 import { fetchLinkyEvoluRelays } from "@/core/integrations/linky/linky-relays-client.ts"
+import { deriveCashuWalletSeed } from "@/core/modules/shared/key-derivation.ts"
 
 export const evoluAtom = atom(async (get, { signal }) => {
   const account = await get(accountAtom)
@@ -74,5 +76,31 @@ export const cashuShardStoreAtom = atom(async (get, { signal }) => {
       return first === undefined ? null : [first, ...rest]
     },
     signal,
+  })
+})
+
+/**
+ * The account's cashu-ts wallets, one per mint and kept for the session, so
+ * every run and the background jobs share loaded keysets (`CashuWalletDep`).
+ */
+export const cashuWalletDepAtom = atom(async (get) => {
+  const account = await get(accountAtom)
+  // A demo account reaches no mint (demo-data/0001): it gets the fake one its
+  // history was generated against, which signs with the same keys.
+  const fetch =
+    account.demo === null
+      ? createFetchDep().fetch
+      : await (async () => {
+          const [{ createFakeCashuMint }, { MAIN_MINT_URL }] =
+            await Promise.all([
+              import("@/core/cashu/fake-cashu-mint.ts"),
+              import("@/core/cashu/cashu-mints.ts"),
+            ])
+          return createFakeCashuMint({ url: MAIN_MINT_URL }).fetch
+        })()
+  return createCashuWalletDep({
+    seed: deriveCashuWalletSeed(account.masterKey),
+    deviceAccountId: account.id,
+    fetch,
   })
 })

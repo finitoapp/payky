@@ -2,8 +2,8 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 
 import {
   CashuAmountSchema,
-  CashuBookingCursorId,
   CashuBolt11Schema,
+  CashuBookingCursorId,
   CashuOperationId,
   CashuOperationKindSchema,
   CashuOperationStatusSchema,

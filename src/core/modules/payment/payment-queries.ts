@@ -744,3 +744,20 @@ export const paymentIdsByLnInvoiceQuery = (lnInvoice: NonEmptyString) =>
       .where("paymentBtcLightning.lnInvoice", "=", lnInvoice)
       .limit(1)
   )
+
+/**
+ * The mint quotes of Payky's Cashu payments: which pending `topup`
+ * operations in the shared wallet the Cashu job settles. Linky's own topups
+ * are Linky's to resume.
+ */
+export const cashuPaymentQuotesQuery = createQuery((db) =>
+  db
+    .selectFrom("paymentCashu")
+    .innerJoin("payment", "payment.id", "paymentCashu.id")
+    .select(["paymentCashu.quoteId", "paymentCashu.mintUrl"])
+    .where("paymentCashu.isDeleted", "is not", sqliteTrue)
+    .where("payment.isDeleted", "is not", sqliteTrue)
+    .where("paymentCashu.quoteId", "is not", null)
+    .where("paymentCashu.mintUrl", "is not", null)
+    .$narrowType<{ quoteId: KyselyNotNull; mintUrl: KyselyNotNull }>()
+)

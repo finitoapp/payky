@@ -631,6 +631,17 @@ export const enLanding = {
   "landing.tech.services.boltCard.sent": "A request to pay from the card.",
   "landing.tech.services.boltCard.when":
     "When a customer pays by tapping a Bolt Card (Android).",
+  "landing.tech.services.cashuMints.name": "Cashu mints",
+  "landing.tech.services.cashuMints.sent":
+    "Requests for invoices, ecash to swap, and the invoices you withdraw to. The mint sees amounts and times.",
+  "landing.tech.services.cashuMints.when":
+    "When you have Cashu payments turned on.",
+  "landing.tech.services.linkyWallet.name":
+    "The relays of Linky for the shared Cashu wallet (evolu.linky.fit, evolu.eu.freedomrelay.dev) and linky.fit",
+  "landing.tech.services.linkyWallet.sent":
+    "The wallet's encrypted data, and a request for Linky's list of relays.",
+  "landing.tech.services.linkyWallet.when":
+    "When you have Cashu payments turned on.",
   "landing.tech.services.contact.name": "Contact form",
   "landing.tech.services.contact.sent": "Name, contact and message.",
   "landing.tech.services.contact.when": "When you send the form.",
@@ -668,9 +679,9 @@ export const enLanding = {
   "landing.tech.services.linky.when": "Always, but you can turn it off.",
   "landing.tech.services.nostr.name": "Nostr relays",
   "landing.tech.services.nostr.sent":
-    "Encrypted support messages, the account's public profile, and the data for moving an account to another device.",
+    "Encrypted support messages, the account's public profile, the data for moving an account to another device, and the Cashu tokens customers send.",
   "landing.tech.services.nostr.when":
-    "When you use support, the profile or account transfer.",
+    "When you use support, the profile or account transfer, and while Cashu payments are on.",
   "landing.tech.services.openFacts.name":
     "Open Food Facts and Open Beauty Facts",
   "landing.tech.services.openFacts.sent": "The scanned barcode.",

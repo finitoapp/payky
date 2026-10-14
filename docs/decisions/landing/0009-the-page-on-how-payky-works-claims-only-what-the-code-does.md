@@ -30,6 +30,11 @@ the honest answer is "partly", the page says which part, as these do:
 - EET receipts go from the device to the Financial Administration
   directly.
 - Error reporting is off until turned on; no analytics run.
+- Cashu payments, once turned on, talk to the mints (which see amounts and
+  times), sync the wallet shared with Linky over Linky's relays after
+  fetching their list from linky.fit, and receive tokens over the nostr
+  relays the payment request names (cashu/0001, cashu/0006). Before Cashu
+  is turned on, none of these is contacted.
 
 The section on services lists everything the app talks to, grouped by when
 it happens — whenever the app is used, only once turned on, only for a

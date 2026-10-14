@@ -103,7 +103,13 @@ The word "account" means two unrelated things here.
 - **Cashu** — ecash behind `cashu` accounts, in the wallet Payky shares with
   Linky (`cashu.md`). A **mint** issues and redeems the ecash, named by its
   normalised URL (`normalizeMintUrl`); a **proof** (`cashuProof`) is one
-  piece of ecash at one mint, worth `amount` sats.
+  piece of ecash at one mint, worth `amount` sats. A **token** is proofs
+  encoded as text (`cashuA…`/`cashuB…`) to hand over; a customer sends one
+  over NIP-17 to pay. The **known mints** are those proofs or operations
+  name, plus those this device saw or added (`loadKnownCashuMints`); being
+  known says nothing about trust. **The payment's mint** is
+  `paymentCashu.mintUrl`, the one mint whose tokens can pay that payment
+  (`cashu/0007`).
 - **FIO** — the Czech bank whose API the IBAN sync job reads.
 - **EET** — Czech electronic registration of sales (`docs/eet.md`).
 - **Switchio** — the SwitchioPay card terminal app, driven through Android

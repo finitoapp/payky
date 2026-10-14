@@ -16,6 +16,7 @@ import {
   linkyOwnerTransports,
 } from "@/core/cashu/linky-owners.ts"
 import type { Evolu } from "@/core/evolu/schema.ts"
+import { cashuAccountQuery } from "@/core/modules/account/account-queries.ts"
 import {
   type CashuOperationCopy,
   type CashuProofCopy,
@@ -824,17 +825,20 @@ export const createCashuShardStore = ({
 }
 
 /**
- * The store of the active account's app Evolu. A demo account registers no
- * Linky owner and syncs nothing (demo-data/0001): its Cashu rows stay in the
- * local database, hydrated from the start. Otherwise the store picks up
- * Linky's current relay list and repairs the pointer in the background.
+ * The store of the active account's app Evolu. Linky's owners sync only
+ * while the Cashu account is enabled: an account that never turned Cashu on
+ * talks to none of Linky's relays (landing/0009). A demo account registers
+ * no Linky owner and syncs nothing (demo-data/0001): its Cashu rows stay in
+ * the local database, hydrated from the start.
  */
 export const startCashuShardStore = ({
   evolu,
   account,
   ownerSync,
   fetchRelays,
-  registerOwner,
+  registerOwner = (owner, transports) =>
+    // biome-ignore lint/correctness/useHookAtTopLevel: not a React hook
+    evolu.useOwner(owner, transports),
   signal,
 }: {
   readonly evolu: Evolu
@@ -846,6 +850,27 @@ export const startCashuShardStore = ({
   readonly signal: AbortSignal
 }): CashuShardStore => {
   const demo = account.demo !== null
+
+  // Registrations the store asks for, made only while Cashu is enabled.
+  let active = false
+  const registrations = new Set<{
+    readonly owner: AppOwner | ShardOwner
+    readonly transports: NonEmptyReadonlyArray<OwnerTransport>
+    unuse: (() => void) | null
+  }>()
+  const gatedRegister: RegisterLinkyOwner = (owner, transports) => {
+    const entry = {
+      owner,
+      transports,
+      unuse: active ? registerOwner(owner, transports) : null,
+    }
+    registrations.add(entry)
+    return () => {
+      entry.unuse?.()
+      registrations.delete(entry)
+    }
+  }
+
   const store = createCashuShardStore({
     evolu,
     linkyAppOwner: deriveLinkyAppOwner(account.masterKey),
@@ -853,21 +878,40 @@ export const startCashuShardStore = ({
       ? { isOwnerSynced: () => true, subscribe: () => () => {} }
       : ownerSync,
     relays: fallbackLinkyEvoluRelays,
-    ...(demo
-      ? { registerOwner: () => () => {} }
-      : registerOwner === undefined
-        ? {}
-        : { registerOwner }),
+    registerOwner: demo ? () => () => {} : gatedRegister,
   })
   signal.addEventListener("abort", () => store[Symbol.dispose](), {
     once: true,
   })
   if (demo) return store
-  void fetchRelays().then((relays) => {
-    if (relays !== null && !signal.aborted) store.switchRelays(relays)
+
+  let started = false
+  const setActive = (next: boolean) => {
+    if (next === active || signal.aborted) return
+    active = next
+    for (const entry of registrations) {
+      if (next) entry.unuse = registerOwner(entry.owner, entry.transports)
+      else {
+        entry.unuse?.()
+        entry.unuse = null
+      }
+    }
+    if (!next || started) return
+    started = true
+    void fetchRelays().then((relays) => {
+      if (relays !== null && !signal.aborted) store.switchRelays(relays)
+    })
+    store.repairPointers(signal).catch(() => {
+      // Aborted with the store; the next start repairs again.
+    })
+  }
+  const followAccount = (
+    rows: ReadonlyArray<{ readonly isDeleted: 0 | 1 | null }>
+  ) => setActive(rows.some((row) => row.isDeleted !== sqliteTrue))
+  void evolu.loadQuery(cashuAccountQuery).then(followAccount, () => {})
+  const unsubscribe = evolu.subscribeQuery(cashuAccountQuery)(() => {
+    followAccount(evolu.getQueryRows(cashuAccountQuery))
   })
-  store.repairPointers(signal).catch(() => {
-    // Aborted with the store; the next start repairs again.
-  })
+  signal.addEventListener("abort", unsubscribe, { once: true })
   return store
 }

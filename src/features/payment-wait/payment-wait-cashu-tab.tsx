@@ -1,6 +1,13 @@
 import { RefreshCwIcon } from "lucide-react"
+import { useSyncExternalStore } from "react"
 
 import { Button } from "@/components/ui/button.tsx"
+import type { CashuReceiveError } from "@/core/cashu/cashu-receive.ts"
+import {
+  type CashuTokenArrival,
+  cashuTokenArrivals,
+} from "@/core/cashu/cashu-token-listener.ts"
+import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -10,13 +17,60 @@ import type { TranslationKey } from "@/i18n/resources.ts"
  * invoice. A quote the mint let expire offers a new one; the payment's own
  * status still comes from `payment.expiresAt`.
  */
+const failureKeys = {
+  MintUnreachable: "paymentWait.cashu.failure.mintUnreachable",
+  MintRejected: "paymentWait.cashu.failure.mintRejected",
+  TokenLocked: "paymentWait.cashu.failure.locked",
+  TokenUndecodable: "paymentWait.cashu.failure.undecodable",
+  TokenAlreadyKnown: "paymentWait.cashu.failure.alreadyKnown",
+  AmountConsumedByFee: "paymentWait.cashu.failure.fee",
+  ProofsSpent: "paymentWait.cashu.failure.spent",
+  CounterLockTimeout: "paymentWait.cashu.failure.mintUnreachable",
+} satisfies Record<CashuReceiveError["type"], TranslationKey>
+
+/** What the wait screen says of a token sent for this payment (cashu.md §4). */
+function CashuTokenArrivalNote({
+  arrival,
+}: {
+  readonly arrival: CashuTokenArrival
+}) {
+  const { t } = useTranslation()
+  const params = { amount: arrival.amount, mint: arrival.mint }
+  const text = !arrival.counted
+    ? t("paymentWait.cashu.arrival.otherMint", params)
+    : arrival.state === "failed"
+      ? t(
+          arrival.failure === null
+            ? "paymentWait.cashu.failure.mintRejected"
+            : failureKeys[arrival.failure]
+        )
+      : arrival.state === "waitingForMint"
+        ? t("paymentWait.cashu.arrival.waitingForMint", params)
+        : arrival.fee !== null && arrival.fee > 0
+          ? t("paymentWait.cashu.arrival.withFee", {
+              ...params,
+              fee: arrival.fee,
+            })
+          : t("paymentWait.cashu.arrival.receiving", params)
+  return (
+    <p
+      className="max-w-72 text-balance text-sm text-muted-foreground"
+      role="status"
+    >
+      {text}
+    </p>
+  )
+}
+
 export function CashuPaymentTab({
+  paymentId,
   qrPayload,
   quoteExpired,
   preparingMessageKey,
   newQuotePending,
   onNewQuote,
 }: {
+  readonly paymentId: PaymentId
   readonly qrPayload: string | null
   readonly quoteExpired: boolean
   readonly preparingMessageKey: TranslationKey | null
@@ -24,6 +78,11 @@ export function CashuPaymentTab({
   readonly onNewQuote: () => void
 }) {
   const { t } = useTranslation()
+  const arrival = useSyncExternalStore(cashuTokenArrivals.subscribe, () =>
+    cashuTokenArrivals.get(paymentId)
+  )
+
+  if (arrival !== null) return <CashuTokenArrivalNote arrival={arrival} />
 
   if (quoteExpired)
     return (

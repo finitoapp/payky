@@ -244,6 +244,28 @@ export const skPayment = {
   "paymentWait.preparing.cashu": "Pripravujem Cashu platbu...",
   "paymentWait.cashu.quoteExpired":
     "Faktúra mintu vypršala skôr, než bola zaplatená.",
+  "paymentWait.cashu.arrival.receiving":
+    "Prišiel token na {amount} sat z {mint}. Prijímam ho...",
+  "paymentWait.cashu.arrival.withFee":
+    "Prišiel token na {amount} sat z {mint}. Mint si nechá {fee} sat ako poplatok.",
+  "paymentWait.cashu.arrival.waitingForMint":
+    "Prišiel token na {amount} sat. Čakám, kým odpovie mint {mint}...",
+  "paymentWait.cashu.arrival.otherMint":
+    "Token na {amount} sat prišiel z {mint}, nie z mintu tejto platby. Túto platbu nezaplatí.",
+  "paymentWait.cashu.failure.mintUnreachable":
+    "Mint neodpovedal. Token skúsim znova.",
+  "paymentWait.cashu.failure.mintRejected":
+    "Mint token odmietol. Platba zostáva nezaplatená.",
+  "paymentWait.cashu.failure.locked":
+    "Token je zamknutý pre niekoho iného. Platba zostáva nezaplatená.",
+  "paymentWait.cashu.failure.undecodable":
+    "Token sa nepodarilo prečítať. Platba zostáva nezaplatená.",
+  "paymentWait.cashu.failure.alreadyKnown":
+    "Peňaženka už tento token má. Platba zostáva nezaplatená.",
+  "paymentWait.cashu.failure.fee":
+    "Poplatok mintu by zobral celý token. Platba zostáva nezaplatená.",
+  "paymentWait.cashu.failure.spent":
+    "Token už bol minutý. Platba zostáva nezaplatená.",
   "paymentWait.cashu.newQuote": "Nová faktúra",
   "paymentWait.method.card": "Platobná karta",
   "paymentWait.method.cash": "Hotovosť",

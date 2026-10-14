@@ -6,6 +6,7 @@ import type {
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { bookCashuOperations } from "@/core/cashu/cashu-booking.ts"
+import { createCashuTokenListener } from "@/core/cashu/cashu-token-listener.ts"
 import {
   claimCashuTopup,
   reclaimTopupFromCounter,
@@ -49,7 +50,7 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
     ...taskRun.deps,
     console: taskRun.deps.console.child("cashu-account-sync-job"),
   })
-  const queue = createKeyedTaskQueue<"topups" | "booking">({
+  const queue = createKeyedTaskQueue<"topups" | "booking" | "tokens">({
     onError: (error) => run.deps.onError(error),
   })
   const lastPolledMs = new Map<CashuOperationId, number>()
@@ -130,7 +131,19 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
       run.deps.console.info("Booked Cashu operations.", result.value)
   }
 
-  const settleSoon = () => queue.enqueue("topups", settleTopups)
+  // Tokens over NIP-17: listened for whenever the Cashu account is enabled,
+  // not only while a payment waits (decision 12).
+  const tokens = createCashuTokenListener(run)
+  const tokensSoon = () => queue.enqueue("tokens", tokens.tick)
+  const followAccount = async (): Promise<void> => {
+    if (await isEnabled()) await tokens.start(tokensSoon)
+    else tokens.stop()
+  }
+
+  const settleSoon = () => {
+    queue.enqueue("topups", settleTopups)
+    tokensSoon()
+  }
   const bookSoon = () => queue.enqueue("booking", book)
 
   const unsubscribeStore = run.deps.cashuShardStore.subscribe(bookSoon)
@@ -142,6 +155,7 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
   )
   const unsubscribeAccount = run.deps.evolu.subscribeQuery(cashuAccountQuery)(
     () => {
+      void followAccount()
       settleSoon()
       bookSoon()
     }
@@ -152,6 +166,7 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
   ;(bookingTick as { readonly unref?: () => void }).unref?.()
 
   run.deps.console.info("Started Cashu account sync job.")
+  void followAccount()
   settleSoon()
   bookSoon()
 
@@ -160,6 +175,7 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
       if (queue.isDisposed) return
       clearInterval(tick)
       clearInterval(bookingTick)
+      tokens.stop()
       unsubscribeStore()
       unsubscribeHydration()
       unsubscribeAccount()

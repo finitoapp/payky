@@ -18,6 +18,7 @@ import {
   createFetchDep,
 } from "@/core/deps.ts"
 import { createEetApiDep } from "@/core/integrations/eet/eet-client.ts"
+import { createNostrDep } from "@/core/integrations/nostr/nostr-client.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 
 export function AppBackgroundJobs() {
@@ -54,6 +55,7 @@ export function AppBackgroundJobs() {
       ...createEetApiDep({ ...dateDep, ...fetchDep }),
       deviceEvolu,
       masterKey,
+      ...createNostrDep(),
       cashuShardStore,
       ...cashuWalletDep,
       lockManager: navigator.locks,

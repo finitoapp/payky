@@ -1,15 +1,22 @@
 import { createIdFromString, type OwnerId } from "@evolu/common"
+import { base64urlnopad } from "@scure/base"
+import { z } from "zod"
 
 import type {
   CashuOperationId,
   CashuOperationKind,
   CashuProofId,
   CashuProofState,
+  CashuTokenText,
   LinkySettingId,
   MintUrl,
   ShardPointerId,
 } from "@/core/modules/cashu/cashu-types.ts"
-import { MintUrlSchema } from "@/core/modules/cashu/cashu-types.ts"
+import {
+  CashuTokenTextSchema,
+  MintUrlSchema,
+} from "@/core/modules/cashu/cashu-types.ts"
+import { jsonCodec } from "@/zod-utils.ts"
 
 /**
  * Linky's `normalizeMintUrl` (`apps/web-app/src/utils/mint.ts`) followed by
@@ -128,4 +135,69 @@ export const mergeProofCopies = <
   return [...byId.values()].filter(
     (row) => row.state === "spent" || row.isDeleted !== 1
   )
+}
+
+const JsonValue = jsonCodec(z.unknown())
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const trimmedString = (value: unknown): string | null => {
+  if (typeof value !== "string") return null
+  const trimmed = value.trim()
+  return trimmed === "" ? null : trimmed
+}
+
+const isProofRecord = (value: unknown): value is Record<string, unknown> =>
+  isRecord(value) &&
+  trimmedString(value.secret) !== null &&
+  trimmedString(value.C) !== null &&
+  trimmedString(value.id) !== null &&
+  typeof value.amount === "number" &&
+  Number.isFinite(value.amount)
+
+const flattenProofs = (
+  value: unknown
+): ReadonlyArray<Record<string, unknown>> | null => {
+  if (!Array.isArray(value) || value.length === 0) return null
+  const proofs: Array<Record<string, unknown>> = []
+  const collect = (element: unknown): boolean => {
+    if (isProofRecord(element)) {
+      proofs.push(element)
+      return true
+    }
+    return Array.isArray(element) && element.every(collect)
+  }
+  return value.every(collect) ? proofs : null
+}
+
+/**
+ * Linky's `normalizeTokenText` (`linkshu/src/token/codec.ts`): a bare
+ * `cashu…` text trimmed, with no inner whitespace; a JSON proof bundle — the
+ * NUT-18 payload included — re-serialised as-is into v3 `cashuA` text. The
+ * receive operation's id hashes this text, so both apps must agree on it to
+ * the byte (pinned by the cross-app vectors). Null for anything else.
+ */
+export const normalizeCashuTokenText = (raw: string): CashuTokenText | null => {
+  const trimmed = raw.trim()
+  if (trimmed === "") return null
+  if (trimmed.startsWith("cashu")) {
+    const text = CashuTokenTextSchema.safeParse(trimmed)
+    return /\s/u.test(trimmed) || !text.success ? null : text.data
+  }
+  if (!trimmed.startsWith("{")) return null
+  const parsed = z.safeDecode(JsonValue, trimmed)
+  if (!parsed.success || !isRecord(parsed.data)) return null
+  const mint = trimmedString(parsed.data.mint)
+  const unit = trimmedString(parsed.data.unit)
+  const proofs = flattenProofs(parsed.data.proofs)
+  if (mint === null || proofs === null) return null
+  const json = JSON.stringify({
+    token: [{ mint, proofs }],
+    ...(unit === null ? {} : { unit }),
+  })
+  const text = CashuTokenTextSchema.safeParse(
+    `cashuA${base64urlnopad.encode(new TextEncoder().encode(json))}`
+  )
+  return text.success ? text.data : null
 }

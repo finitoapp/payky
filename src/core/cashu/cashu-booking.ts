@@ -96,12 +96,10 @@ const bookOperation = async (
   accountId: AccountId,
   operation: CashuOperationCopy
 ): Promise<"booked" | "deferred" | "nothing"> => {
-  const amount = await receivedSats(run, operation)
-  if (amount === null) return "deferred"
-  if (amount <= 0) return "nothing"
+  const known = await receivedSats(run, operation)
   const input = {
     accountId,
-    amount: IntegerSchema.decode(amount),
+    amount: IntegerSchema.decode(known ?? operation.amount),
     currency: "BTC" as const,
     occurredAt: TimestampMsSchema.decode(operation.createdAtSec * 1000),
     note: null,
@@ -117,6 +115,13 @@ const bookOperation = async (
   const claim = await run.ok(
     loadAutomaticReconciliationClaimForNewAccountTransaction(input, computed.id)
   )
+  // A payment is credited what arrived, so its token waits for the fee. An
+  // unassigned one from a mint that cannot be asked — often a dead mint
+  // that issued it — is booked at face value rather than holding up every
+  // later booking.
+  if (known === null && claim !== null) return "deferred"
+  const amount = input.amount
+  if (amount <= 0) return "nothing"
   const billClosing =
     claim === null
       ? null

@@ -10,8 +10,12 @@ import { saveCashuAccount } from "@/core/modules/account/account-actions.ts"
 import {
   CashuAmount,
   CashuTokenText,
+  MintUrl,
 } from "@/core/modules/cashu/cashu-types.ts"
-import { createPayment } from "@/core/modules/payment/payment-actions.ts"
+import {
+  createPayment,
+  holdCashuReceive,
+} from "@/core/modules/payment/payment-actions.ts"
 import { prepareCashuPaymentMethod } from "@/core/modules/payment/payment-preparation-actions.ts"
 import { NonNegativeInteger } from "@/core/modules/shared/schema.ts"
 import {
@@ -165,6 +169,79 @@ describe("bookCashuOperations", () => {
 
     const [transaction] = await s.deps.evolu.loadQuery(transactionsQuery)
     expect(transaction?.paymentId).toBe(paymentId)
+  })
+
+  test("a token Linky received first settles the payment that holds its receive", async () => {
+    const s = await setup()
+    await using _ = s.t
+    const { paymentId } = await newPayment(s)
+    await using run = testCreateRun(s.deps)
+    const text = CashuTokenText("cashuBlinkyfirst")
+    const operationId = await s.deps.cashuShardStore.insertOperation({
+      kind: "receive",
+      status: "done",
+      mint: testMintUrl,
+      unit: "sat",
+      keysetId: null,
+      amount: CashuAmount(8_600),
+      feeReserve: null,
+      inputsTotal: null,
+      quoteId: null,
+      invoice: null,
+      sourceMint: null,
+      counter: null,
+      locked: null,
+      expiresAtSec: null,
+      createdAtSec: Math.floor(s.clock.value / 1000),
+      tokenText: text,
+      error: null,
+    })
+    await run.ok(
+      holdCashuReceive({ paymentId, receiveOperationId: operationId })
+    )
+
+    await book(s.deps)
+
+    const transactions = await s.deps.evolu.loadQuery(transactionsQuery)
+    expect(
+      transactions.find((tx) => tx.cashuOperationId === operationId)?.paymentId
+    ).toBe(paymentId)
+  })
+
+  test("a token from another mint never claims the payment that holds its receive", async () => {
+    const s = await setup()
+    await using _ = s.t
+    const { paymentId } = await newPayment(s)
+    await using run = testCreateRun(s.deps)
+    const operationId = await s.deps.cashuShardStore.insertOperation({
+      kind: "receive",
+      status: "done",
+      mint: MintUrl("https://rogue.mint"),
+      unit: "sat",
+      keysetId: null,
+      amount: CashuAmount(8_600),
+      feeReserve: null,
+      inputsTotal: null,
+      quoteId: null,
+      invoice: null,
+      sourceMint: null,
+      counter: null,
+      locked: null,
+      expiresAtSec: null,
+      createdAtSec: Math.floor(s.clock.value / 1000),
+      tokenText: CashuTokenText("cashuBrogue"),
+      error: null,
+    })
+    await run.ok(
+      holdCashuReceive({ paymentId, receiveOperationId: operationId })
+    )
+
+    await book(s.deps)
+
+    const transactions = await s.deps.evolu.loadQuery(transactionsQuery)
+    expect(
+      transactions.find((tx) => tx.cashuOperationId === operationId)?.paymentId
+    ).toBeNull()
   })
 
   test("an operation that arrives late with an old time is still booked, and stays unclaimed when no payment holds it", async () => {

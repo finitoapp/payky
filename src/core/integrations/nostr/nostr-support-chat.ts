@@ -166,7 +166,7 @@ const chatKindTypes: Readonly<Record<number, SupportMessageType>> = {
  * rumor's id is its hash: without that anyone could post a message "from
  * support" asking for the recovery phrase.
  */
-const unwrapVerifiedRumor = ({
+export const unwrapVerifiedRumor = ({
   wrap,
   secretKey,
 }: {
@@ -199,7 +199,7 @@ const unwrapVerifiedRumor = ({
 }
 
 /** A NIP-17 room: the rumor's author and every `p` tag. */
-const rumorRoom = (rumor: NostrRumor): ReadonlySet<string> =>
+export const rumorRoom = (rumor: NostrRumor): ReadonlySet<string> =>
   new Set([rumor.pubkey, ...pTagValues(rumor.tags)])
 
 /**
@@ -269,7 +269,7 @@ export const decodeSupportWrap = ({
  * Every event `relays` hold for `filter`. Relays that keep gift wraps private
  * ask for NIP-42 AUTH, answered with the account's key.
  */
-const queryWithAuth = (
+export const queryWithAuth = (
   pool: NostrDep["nostr"]["pool"],
   relays: ReadonlyArray<string>,
   filter: Parameters<NostrDep["nostr"]["pool"]["subscribeManyEose"]>[1],
@@ -285,7 +285,7 @@ const queryWithAuth = (
     })
   })
 
-const authSigner =
+export const authSigner =
   (secretKey: NostrSecretKey) =>
   async (template: EventTemplate): Promise<VerifiedEvent> =>
     finalizeEvent(template, secretKey)

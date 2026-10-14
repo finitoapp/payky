@@ -351,6 +351,7 @@ export const createCashuShardStore = ({
 
   /** Uses Linky's app owner and every shard `0..active`; unuses nothing else. */
   const reconcileSync = async (): Promise<void> => {
+    if (disposed) return
     const wanted = [linkyAppOwner, ...(await shardIndexes()).map(shardOwner)]
     if (disposed) return
     for (const owner of wanted)
@@ -375,7 +376,8 @@ export const createCashuShardStore = ({
   let hydrationQueue = Promise.resolve()
   const enqueueHydrationCheck = () => {
     hydrationQueue = hydrationQueue.then(async () => {
-      await checkHydration()
+      // A check queued before the store was disposed has nothing to do.
+      if (!disposed) await checkHydration().catch(() => false)
     })
   }
 
@@ -760,17 +762,22 @@ export const createCashuShardStore = ({
   // A pointer moved on another device arrives as a pointer change and
   // subscribes the new shard here (Linky's `followPointers`).
   const pointerQuery = cashuShardPointerQuery(linkyAppOwner.id)
-  void evolu.loadQuery(pointerQuery).then(() => {
-    if (disposed) return
-    cleanups.push(
-      evolu.subscribeQuery(pointerQuery)(() => {
-        void reconcileSync()
-        enqueueHydrationCheck()
-      })
-    )
-  })
+  void evolu.loadQuery(pointerQuery).then(
+    () => {
+      if (disposed) return
+      cleanups.push(
+        evolu.subscribeQuery(pointerQuery)(() => {
+          void reconcileSync().catch(() => {})
+          enqueueHydrationCheck()
+        })
+      )
+    },
+    () => {
+      // The database went away with the store; nothing to follow.
+    }
+  )
   cleanups.push(ownerSync.subscribe(enqueueHydrationCheck))
-  void reconcileSync()
+  void reconcileSync().catch(() => {})
   enqueueHydrationCheck()
 
   return {
@@ -813,9 +820,10 @@ export const createCashuShardStore = ({
 }
 
 /**
- * The store of the active account's app Evolu, or null for a demo account,
- * which registers no Linky owner and syncs nothing (demo-data/0001). Picks
- * up Linky's current relay list and repairs the pointer in the background.
+ * The store of the active account's app Evolu. A demo account registers no
+ * Linky owner and syncs nothing (demo-data/0001): its Cashu rows stay in the
+ * local database, hydrated from the start. Otherwise the store picks up
+ * Linky's current relay list and repairs the pointer in the background.
  */
 export const startCashuShardStore = ({
   evolu,
@@ -832,18 +840,25 @@ export const startCashuShardStore = ({
   readonly fetchRelays: () => Promise<NonEmptyReadonlyArray<string> | null>
   readonly registerOwner?: RegisterLinkyOwner
   readonly signal: AbortSignal
-}): CashuShardStore | null => {
-  if (account.demo !== null) return null
+}): CashuShardStore => {
+  const demo = account.demo !== null
   const store = createCashuShardStore({
     evolu,
     linkyAppOwner: deriveLinkyAppOwner(account.masterKey),
-    ownerSync,
+    ownerSync: demo
+      ? { isOwnerSynced: () => true, subscribe: () => () => {} }
+      : ownerSync,
     relays: fallbackLinkyEvoluRelays,
-    ...(registerOwner === undefined ? {} : { registerOwner }),
+    ...(demo
+      ? { registerOwner: () => () => {} }
+      : registerOwner === undefined
+        ? {}
+        : { registerOwner }),
   })
   signal.addEventListener("abort", () => store[Symbol.dispose](), {
     once: true,
   })
+  if (demo) return store
   void fetchRelays().then((relays) => {
     if (relays !== null && !signal.aborted) store.switchRelays(relays)
   })

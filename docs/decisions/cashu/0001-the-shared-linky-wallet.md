@@ -67,5 +67,5 @@ skips one that fails. Both apps are the owner's own.
 - `src/core/cashu/cashu-shard-store.test.ts > cashu shard store > writes wait until the Linky owners are hydrated`
 - `src/core/cashu/cashu-shard-store.test.ts > cashu shard store > the active shard rotates past 170 mutations, at most once a minute`
 - `src/core/cashu/cashu-shard-store.test.ts > cashu shard store > repairPointers moves the pointer up to the newest shard holding rows, never down`
-- `src/core/cashu/cashu-shard-store.test.ts > startCashuShardStore > a demo account registers no Linky owner`
+- `src/core/cashu/cashu-shard-store.test.ts > startCashuShardStore > a demo account registers no Linky owner and keeps its rows local`
 - `src/core/evolu/evolu-history-shape.test.ts > evolu_history shape > has the columns, the rowid and the binary owner and id the Cashu code reads`

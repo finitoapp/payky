@@ -29,13 +29,12 @@ export function CashuShardDebugCard() {
   const { t } = useTranslation()
   const store = useAtomValue(cashuShardStoreAtom)
   const snapshot = useQuery({
-    queryKey: ["cashuShardDebug", store?.linkyAppOwner.id],
-    queryFn: () => (store === null ? null : loadSnapshot(store)),
+    queryKey: ["cashuShardDebug", store.linkyAppOwner.id],
+    queryFn: () => loadSnapshot(store),
   })
   const { refetch } = snapshot
 
   useEffect(() => {
-    if (store === null) return
     const stopChanges = store.subscribe(() => void refetch())
     const stopHydration = store.subscribeHydration(() => void refetch())
     return () => {
@@ -50,9 +49,7 @@ export function CashuShardDebugCard() {
         <CardTitle>{t("settings.debugConsole.cashu.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-1 font-mono text-xs">
-        {store === null ? (
-          <p>{t("settings.debugConsole.cashu.unavailable")}</p>
-        ) : snapshot.data ? (
+        {snapshot.data ? (
           <>
             <p>
               {t("settings.debugConsole.cashu.activeShard", {

@@ -105,7 +105,6 @@ export const skSettings = {
   "settings.debugConsole.cashu.activeShard": "Aktívny shard: {index}",
   "settings.debugConsole.cashu.hydrated": "Synchronizované: {hydrated}",
   "settings.debugConsole.cashu.noBalance": "Žiadne dostupné proofy.",
-  "settings.debugConsole.cashu.unavailable": "Demo účet nemá peňaženku Linky.",
   "settings.debugConsole.cashu.writeTestSetting":
     "Zapísať testovacie nastavenie pre Linky",
   "settings.debugConsole.clear": "Vymazať",

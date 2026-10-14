@@ -105,7 +105,6 @@ export const csSettings = {
   "settings.debugConsole.cashu.activeShard": "Aktivní shard: {index}",
   "settings.debugConsole.cashu.hydrated": "Synchronizováno: {hydrated}",
   "settings.debugConsole.cashu.noBalance": "Žádné dostupné proofy.",
-  "settings.debugConsole.cashu.unavailable": "Demo účet nemá peněženku Linky.",
   "settings.debugConsole.cashu.writeTestSetting":
     "Zapsat testovací nastavení pro Linky",
   "settings.debugConsole.clear": "Vymazat",

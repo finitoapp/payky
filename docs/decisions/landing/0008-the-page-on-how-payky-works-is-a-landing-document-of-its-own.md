@@ -21,9 +21,9 @@ The page is a third landing document, built and served like the EET page
 with its own title, description, canonical and `hreflang` links, Czech as
 `x-default`, and an `FAQPage` with its own questions. The slug is Czech in
 every language, as `eet-2-0` is one slug for all three. It shares the
-header and footer, not the closing section (landing/0010); the header's menu lists it between
-the home page and the EET page, and the home page's card on data staying
-with the merchant links to it.
+header and footer, not the closing section (landing/0010). The header's
+menu does not list it; the footer of every landing page links to it, and
+the home page's card on data staying with the merchant links to it.
 
 The page reads as what makes Payky different, not as documentation: the
 hero claims the difference, and under it one sale — two espressos paid by
@@ -73,5 +73,5 @@ addresses. The section components the EET page and this page share (`Band`,
 - `src/landing-server.test.tsx > renderLandingDocument > links the languages of the page on how Payky works to each other`
 - `src/landing-server.test.tsx > renderLandingDocument > describes the FAQ of the page on how Payky works for search results and shows its answers`
 - `src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
-- `src/landing-server.test.tsx > renderLandingDocument > leads from the home page and the menu to the page on how Payky works`
+- `src/landing-server.test.tsx > renderLandingDocument > leads from the home page and the footer of every landing page to the page on how Payky works`
 - `src/features/shared/landing-redirect.test.ts > isLandingTechPath > reads %s as the page on how Payky works: %s`

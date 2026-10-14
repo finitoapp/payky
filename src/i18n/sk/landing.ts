@@ -268,16 +268,15 @@ export const skLanding = {
   "landing.flows.tables.tab": "Obsluhujete stoly",
   "landing.flows.title": "Payky sa prispôsobí vášmu podnikaniu",
   "landing.footer.description": "Platobný terminál pre Slovensko a Česko",
-  "landing.footer.discussions": "Diskusie",
   "landing.footer.github": "GitHub",
   "landing.footer.signal": "Signal",
+  "landing.footer.tech": "Čím sa líšime",
   "landing.footer.website": "payky.me",
   "landing.hero.subtitle":
     "Vás ani vašich zákazníkov. Payky premení telefón na platobný terminál: zákazník naskenuje kód a zaplatí prevodom rovno na váš účet. Bez poplatkov, bez zmluvy a bez ďalšieho zariadenia.",
   "landing.hero.title": "Platba QR kódom nič nestojí.",
   "landing.hero.titleAccent": "nič nestojí",
   "landing.language.label": "Jazyk",
-  "landing.menu.tech": "Čím sa líšime",
   "landing.meta.description":
     "Prijímajte platby QR kódom bez poplatkov a bez zmluvy. Peniaze idú prevodom rovno na váš účet. Pokladnica s účtami pre stoly aj hotovosťou zadarmo.",
   "landing.meta.title": "Payky – platobný terminál v mobile zadarmo, QR platby",

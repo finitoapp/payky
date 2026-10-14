@@ -265,16 +265,19 @@ describe("renderLandingDocument", () => {
     }
   })
 
-  test("leads from the home page and the menu to the page on how Payky works", () => {
-    const body = renderLandingDocument(template, "en").split("<body>")[1]
-    const techBody = renderLandingDocument(template, "en", "tech").split(
-      "<body>"
-    )[1]
+  test("leads from the home page and the footer of every landing page to the page on how Payky works", () => {
+    const link = `href="/landing/en/jak-to-funguje"`
 
-    expect(body).toContain(`href="/landing/en/jak-to-funguje"`)
-    expect(techBody).toContain(
-      `href="/landing/en/jak-to-funguje" aria-current="page"`
-    )
+    for (const document of ["home", "eet", "tech"] as const) {
+      const body = renderLandingDocument(template, "en", document).split(
+        "<body>"
+      )[1]
+      const header = body?.split("</header>")[0]
+      const footer = body?.split("<footer")[1]
+
+      expect(header).not.toContain(link)
+      expect(footer).toContain(link)
+    }
   })
 
   test("offers a menu of the landing pages, marking the one shown", () => {

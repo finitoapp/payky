@@ -270,16 +270,15 @@ export const csLanding = {
   "landing.flows.tables.tab": "Obsluhujete stoly",
   "landing.flows.title": "Payky se přizpůsobí vašemu podnikání",
   "landing.footer.description": "Platební terminál pro Česko a Slovensko",
-  "landing.footer.discussions": "Diskuze",
   "landing.footer.github": "GitHub",
   "landing.footer.signal": "Signal",
+  "landing.footer.tech": "Čím se lišíme",
   "landing.footer.website": "payky.me",
   "landing.hero.subtitle":
     "Vás ani vaše zákazníky. Payky promění telefon v platební terminál: zákazník naskenuje kód a zaplatí převodem rovnou na váš účet. Bez poplatků, bez smlouvy a bez dalšího zařízení.",
   "landing.hero.title": "Platba QR kódem nic nestojí.",
   "landing.hero.titleAccent": "nic nestojí",
   "landing.language.label": "Jazyk",
-  "landing.menu.tech": "Čím se lišíme",
   "landing.meta.description":
     "Přijímejte platby QR kódem bez poplatků a bez smlouvy. Peníze jdou převodem rovnou na váš účet. Pokladna s účty ke stolům, hotovostí i EET 2.0 zdarma.",
   "landing.meta.title":

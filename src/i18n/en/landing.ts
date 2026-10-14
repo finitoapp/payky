@@ -268,16 +268,15 @@ export const enLanding = {
   "landing.flows.tables.tab": "Serve tables",
   "landing.flows.title": "Payky adapts to the way you do business",
   "landing.footer.description": "The payment terminal for Czechia & Slovakia",
-  "landing.footer.discussions": "Discussions",
   "landing.footer.github": "GitHub",
   "landing.footer.signal": "Signal",
+  "landing.footer.tech": "What makes us different",
   "landing.footer.website": "payky.me",
   "landing.hero.subtitle":
     "Not you, not your customers. Payky turns your phone into a payment terminal: the customer scans a code and pays by bank transfer straight to your account. No fees, no contract, no hardware.",
   "landing.hero.title": "Paying by QR code costs nothing.",
   "landing.hero.titleAccent": "costs nothing",
   "landing.language.label": "Language",
-  "landing.menu.tech": "What makes us different",
   "landing.meta.description":
     "Accept QR code payments with no fees and no contract. Money goes by bank transfer straight to your account. A free till with table bills, cash and EET.",
   "landing.meta.title":

@@ -18,6 +18,7 @@ import { cashuAccountQuery } from "@/core/modules/account/account-queries.ts"
 import type { CashuOperationCopy } from "@/core/modules/cashu/cashu-queries.ts"
 import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
 import { cashuPaymentQuotesQuery } from "@/core/modules/payment/payment-queries.ts"
+import { settleCashuWithdrawal } from "@/core/modules/withdraw/withdraw-cashu-actions.ts"
 
 /**
  * The Cashu account's sync (cashu.md §5): settles the Lightning leg of
@@ -120,7 +121,16 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
         )
       )
       if (attempt === undefined) continue
-      await run(resumeCashuMelt(operation.id))
+      const resumed = await run(resumeCashuMelt(operation.id))
+      if (resumed.ok && resumed.value.type !== "pending")
+        await run(
+          settleCashuWithdrawal(
+            operation.id,
+            resumed.value.type === "paid"
+              ? resumed.value.receipt.totalSpent
+              : undefined
+          )
+        )
     }
     const due = operations.filter((operation) => {
       const isPaykyTopup =

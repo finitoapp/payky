@@ -95,6 +95,7 @@ import {
   withdrawal,
   withdrawalIndexes,
   withdrawalLightning,
+  withdrawalLightningCashu,
   withdrawalOnchain,
 } from "@/core/modules/withdraw/withdraw.ts"
 
@@ -152,6 +153,7 @@ export const AppSchema = {
   withdrawal,
   withdrawalOnchain,
   withdrawalLightning,
+  withdrawalLightningCashu,
   // Linky's tables, under Linky's owners only (src/core/modules/cashu/cashu.ts).
   shardPointer,
   setting,

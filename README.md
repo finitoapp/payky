@@ -232,15 +232,18 @@ after accounts exist.
 
 | Consumer | Path `P` | Result |
 | --- | --- | --- |
-| Cashu wallet (reserved, unused) | `m/83696968'/39'/0'/24'/0'` | index `0'` is set aside; nothing derives from it yet |
+| Cashu wallet seed (shared with Linky) | `m/83696968'/39'/0'/24'/0'` | `E` → 24-word BIP-39 → `mnemonicToSeed(m, "")`, the 64-byte NUT-13 seed |
 | Evolu master owner | `m/83696968'/39'/0'/24'/1'` | `E` as the 32-byte Evolu owner secret |
 | Default Spark wallet | `m/83696968'/39'/0'/12'/0'` | `E[0:16]` as the 16-byte Spark wallet secret |
+| Linky app (meta) owner | `m/83696968'/39'/0'/24'/1'/0'` | `E[0:16]` → 12-word BIP-39 → Evolu `mnemonicToOwnerSecret`; its `cashu` shard owners hold the shared Cashu wallet |
 
 The Spark wallet secret is stored as hex and used as BIP-39 entropy: wallet
 initialization and the settings UI encode it as a 12-word mnemonic (never the
 raw secret), so the wallet can also be restored in any BIP-39-compatible Spark
-client. There is no Cashu wallet yet — the path is reserved so that when one
-ships, its secret won't collide with an index already used by something else.
+client. The Cashu seed and the Linky owner are Linky's own derivations
+(`packages/identity/src/derivationPaths.ts` there), so a master key moved
+between the two apps opens the same Cashu wallet; the cross-app vectors in
+`key-derivation-cross-app.test.ts` pin them.
 
 `S` itself is backed up as a single [SLIP-39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md)
 20-word recovery mnemonic (`src/core/modules/shared/key-derivation.ts`, via

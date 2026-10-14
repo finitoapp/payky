@@ -1,7 +1,7 @@
 import { Slip39 } from "slip39-ts"
 import { describe, expect, test } from "vitest"
 import {
-  defaultCashuDerivationPath,
+  cashuWalletSeedDerivationPath,
   defaultSparkWalletDerivationPath,
   deriveDefaultSparkWalletSecret,
   deriveEvoluOwnerSecret,
@@ -20,7 +20,7 @@ const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
 
 describe("key derivation", () => {
   test("uses the documented Payky derivation paths", () => {
-    expect(defaultCashuDerivationPath).toBe("m/83696968'/39'/0'/24'/0'")
+    expect(cashuWalletSeedDerivationPath).toBe("m/83696968'/39'/0'/24'/0'")
     expect(evoluOwnerDerivationPath).toBe("m/83696968'/39'/0'/24'/1'")
     expect(defaultSparkWalletDerivationPath).toBe("m/83696968'/39'/0'/12'/0'")
   })

@@ -8,6 +8,8 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import type { RequireExactlyOne, Simplify } from "type-fest"
+import { seedCashuDefaultMint } from "@/core/cashu/cashu-mints.ts"
+import type { CashuShardStoreDep } from "@/core/cashu/cashu-shard-store.ts"
 import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
@@ -46,6 +48,7 @@ import {
   accountByIdQuery,
   cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
+  cashuAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
@@ -54,6 +57,7 @@ import type { AccountId } from "./account-types.ts"
 import {
   createCardSwitchioAccountId,
   createCashRegisterAccountId,
+  createCashuAccountId,
   createIbanAccountId,
   createSparkAccountId,
 } from "./account-utils.ts"
@@ -678,6 +682,61 @@ export const saveCardSwitchioAccount =
         mutationOptions
       )
     })
+
+    return ok(id)
+  }
+
+/**
+ * Enables or disables Cashu payments (cashu.md §4). The account's id derives
+ * from Linky's app owner, so every device writes the same row. Enabling seeds
+ * Linky's default mint into the shared wallet when it has none yet, as Linky's
+ * onboarding does. Returns `null` when disabling an account that never existed.
+ */
+export const saveCashuAccount =
+  ({
+    enabled,
+  }: {
+    readonly enabled: boolean
+  }): Task<
+    AccountId | null,
+    never,
+    EvoluDep & EvoluOwnerIdDep & CashuShardStoreDep
+  > =>
+  async (run) => {
+    const { evolu, evoluOwnerId, cashuShardStore } = run.deps
+    const [current] = await evolu.loadQuery(cashuAccountQuery)
+    if (!enabled && current === undefined) return ok(null)
+
+    const id = createCashuAccountId(cashuShardStore.linkyAppOwner.id)
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      evolu.upsert("accountCashu", { id }, mutationOptions)
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
+        )
+      }
+      return evolu.upsert(
+        "account",
+        {
+          id,
+          deviceId: null,
+          name: NonEmptyString255("Cashu"),
+          kind: "cashu",
+          isDeleted: enabled ? sqliteFalse : sqliteTrue,
+        },
+        mutationOptions
+      )
+    })
+
+    // The shared wallet waits for Linky's owners to sync; the account does not.
+    if (enabled)
+      seedCashuDefaultMint(cashuShardStore).catch(() => {
+        // Best effort: without the row, payments use Linky's default anyway.
+      })
 
     return ok(id)
   }

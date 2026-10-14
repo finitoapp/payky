@@ -248,6 +248,21 @@ export type SettleRestoredSwitchioCardPaymentError =
   | AccountCurrencyMismatchError
   | SwitchioPaymentError
 
+export const createCashuAccountNotFoundError = defineError(
+  "CashuAccountNotFound"
+)<{ readonly id: AccountId }>()
+export type CashuAccountNotFoundError = ReturnType<
+  typeof createCashuAccountNotFoundError
+>
+
+/** Linky's owners did not sync in time: the shared wallet cannot be written. */
+export const createCashuWalletNotSyncedError = defineError(
+  "CashuWalletNotSynced"
+)()
+export type CashuWalletNotSyncedError = ReturnType<
+  typeof createCashuWalletNotSyncedError
+>
+
 export type PreparePaymentMethodError =
   | PaymentNotFoundError
   | ZeroAmountNotPayableError

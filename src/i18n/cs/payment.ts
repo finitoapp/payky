@@ -116,6 +116,7 @@ export const csPayment = {
   "paymentDetail.invalidId": "Neplatné id platby.",
   "paymentDetail.notFound": "Platba nebyla nalezena.",
   "paymentDetail.paymentMethod.card": "Platební kartou",
+  "paymentDetail.paymentMethod.cashu": "Cashu",
   "paymentDetail.paymentMethod.cash": "Hotově",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.onchain": "On-chain",

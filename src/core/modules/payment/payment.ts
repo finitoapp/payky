@@ -3,6 +3,11 @@ import { z } from "zod"
 
 import { AccountId } from "@/core/modules/account/account-types.ts"
 import { BillId } from "@/core/modules/bill/bill-types.ts"
+import {
+  CashuOperationId,
+  CashuQuoteIdSchema,
+  MintUrlSchema,
+} from "@/core/modules/cashu/cashu-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import {
@@ -114,6 +119,29 @@ export const paymentIban = {
   specificSymbol: SpecificSymbolSchema.nullable(),
 } as const
 
+/**
+ * A payment's Cashu method (cashu.md §4, cashu/0003): its own detail table,
+ * not an extension of `paymentBtc`, so Spark and Cashu prepared on one payment
+ * keep a row each. `quoteId` names the mint quote whose `topup` operation, in
+ * Linky's shards, settles the Lightning leg; `receiveOperationId` is set once
+ * a token for this payment arrived over nostr, before anyone receives it.
+ * `quoteExpiresAt` is the quote's expiry, for the wait screen only: the
+ * payment's own `expiresAt` decides its status.
+ */
+export const paymentCashu = {
+  id: PaymentId,
+  accountId: AccountId,
+  amountSats: NonNegativeIntegerSchema,
+  exchangeRate: PositiveNumberSchema,
+  exchangeRateSource: z.enum(["yadio"]),
+  exchangeRateFetchedAt: TimestampMsSchema,
+  mintUrl: MintUrlSchema,
+  quoteId: CashuQuoteIdSchema,
+  lnInvoice: NonEmptyStringSchema,
+  quoteExpiresAt: TimestampMsSchema.nullable(),
+  receiveOperationId: CashuOperationId.nullable(),
+} as const
+
 export const paymentIndexes = ((create) => [
   create("payment_billId").on("payment").column("billId"),
   create("payment_tableId").on("payment").column("tableId"),
@@ -137,6 +165,10 @@ export const paymentIndexes = ((create) => [
     .on("paymentCardSwitchio")
     .column("transactionId"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
+  create("paymentCashu_quoteId").on("paymentCashu").column("quoteId"),
+  create("paymentCashu_receiveOperationId")
+    .on("paymentCashu")
+    .column("receiveOperationId"),
   create("paymentIban_variableSymbol")
     .on("paymentIban")
     .column("variableSymbol"),
@@ -149,3 +181,4 @@ export type PaymentBtcLightningRow = InferTable<typeof paymentBtcLightning>
 export type PaymentBtcSparkRow = InferTable<typeof paymentBtcSpark>
 export type PaymentIbanRow = InferTable<typeof paymentIban>
 export type PaymentCardSwitchioRow = InferTable<typeof paymentCardSwitchio>
+export type PaymentCashuRow = InferTable<typeof paymentCashu>

@@ -178,6 +178,8 @@ export interface CashuShardStore extends Disposable {
   readonly readSetting: (key: string) => Promise<string | null>
   /** Skips the write when the stored value is the same. */
   readonly writeSetting: (key: string, value: string) => Promise<void>
+  /** Writes only when the setting has no row yet; queued like every write. */
+  readonly writeSettingIfAbsent: (key: string, value: string) => Promise<void>
   /**
    * Once hydrated, moves the pointer up while the next shard holds rows,
    * tombstones included; never down. Waits for each probed shard to sync.
@@ -671,10 +673,11 @@ export const createCashuShardStore = ({
       : (row.value ?? null)
   }
 
-  const writeSetting = (key: string, value: string) =>
+  const writeSetting = (key: string, value: string, onlyIfAbsent = false) =>
     serialized(async () => {
       await beforeWrite()
-      if ((await readSetting(key)) === value) return
+      const current = await readSetting(key)
+      if (current === value || (onlyIfAbsent && current !== null)) return
       await mutate([
         {
           kind: "upsert",
@@ -805,7 +808,8 @@ export const createCashuShardStore = ({
     insertOperation,
     updateOperation,
     readSetting,
-    writeSetting,
+    writeSetting: (key, value) => writeSetting(key, value),
+    writeSettingIfAbsent: (key, value) => writeSetting(key, value, true),
     repairPointers,
     switchRelays,
     subscribe,

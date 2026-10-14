@@ -4,6 +4,10 @@ import { accountAtom } from "@/atoms/account.ts"
 import { runAtom } from "@/atoms/run.ts"
 import { startCashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
 import { createCashuWalletDep } from "@/core/cashu/cashu-wallet.ts"
+import {
+  createE2eCashuMintFetch,
+  isE2eCashu,
+} from "@/core/cashu/e2e-cashu-mint.ts"
 import { createLinkyOwnerSync } from "@/core/cashu/linky-owners.ts"
 import { createFetchDep } from "@/core/deps.ts"
 import { createAppEvolu } from "@/core/evolu/client.ts"
@@ -66,7 +70,8 @@ export const cashuShardStoreAtom = atom(async (get, { signal }) => {
 
   return startCashuShardStore({
     evolu,
-    account,
+    // An e2e run with the fake mint keeps the wallet local, as a demo does.
+    account: isE2eCashu() ? { ...account, demo: "seeded" } : account,
     ownerSync: createLinkyOwnerSync(run.deps.syncState, evolu.name),
     fetchRelays: async () => {
       await using fetchRun = run.create(createFetchDep())
@@ -87,8 +92,9 @@ export const cashuWalletDepAtom = atom(async (get) => {
   const account = await get(accountAtom)
   // A demo account reaches no mint (demo-data/0001): it gets the fake one its
   // history was generated against, which signs with the same keys.
-  const fetch =
-    account.demo === null
+  const fetch = isE2eCashu()
+    ? await createE2eCashuMintFetch()
+    : account.demo === null
       ? createFetchDep().fetch
       : await (async () => {
           const [{ createFakeCashuMint }, { MAIN_MINT_URL }] =

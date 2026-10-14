@@ -1,42 +1,46 @@
 import { describe, expect, test } from "vitest"
+import { z } from "zod"
 
+import {
+  getPaymentMethodOrder,
+  PaymentMethodOrderJson,
+} from "@/core/modules/app-settings/app-settings-utils.ts"
 import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
 import {
   getDefaultPaymentMethodForOnboarding,
-  getPaymentMethodOrder,
+  onboardingPaymentMethodOrder,
 } from "@/features/onboarding/onboarding-utils.ts"
 
 const methods = (...values: ReadonlyArray<OnboardingPaymentMethod>) =>
   new Set(values)
 
-describe("getPaymentMethodOrder", () => {
-  test("orders enabled methods iban, cash, btc regardless of set order", () => {
-    expect(getPaymentMethodOrder(methods("btc", "iban", "cash"))).toEqual([
+/** The order the payment screen shows after onboarding with `enabled`. */
+const orderAfterOnboarding = (enabled: ReadonlySet<OnboardingPaymentMethod>) =>
+  getPaymentMethodOrder({
+    paymentMethodOrderJson: z.encode(
+      PaymentMethodOrderJson,
+      onboardingPaymentMethodOrder
+    ),
+    defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(enabled),
+  })
+
+describe("onboarding payment method order", () => {
+  test("offers bank transfer, card, bitcoin, cash", () => {
+    expect(orderAfterOnboarding(methods("cash", "btc", "iban"))).toEqual([
       "iban",
-      "cashRegister",
+      "cardSwitchio",
       "spark",
-    ])
-    expect(getPaymentMethodOrder(methods("cash", "btc"))).toEqual([
       "cashRegister",
-      "spark",
     ])
   })
 
-  test("omits methods the merchant did not enable", () => {
-    expect(getPaymentMethodOrder(methods("iban"))).toEqual(["iban"])
-    expect(getPaymentMethodOrder(methods())).toEqual([])
-  })
-})
-
-describe("getDefaultPaymentMethodForOnboarding", () => {
-  test("prefers btc, then cash, then iban", () => {
-    expect(
-      getDefaultPaymentMethodForOnboarding(methods("btc", "cash", "iban"))
-    ).toBe("spark")
-    expect(getDefaultPaymentMethodForOnboarding(methods("cash", "iban"))).toBe(
+  test("opens on the first enabled method when bank transfer is off", () => {
+    expect(getDefaultPaymentMethodForOnboarding(methods("cash", "btc"))).toBe(
+      "spark"
+    )
+    expect(getDefaultPaymentMethodForOnboarding(methods("cash"))).toBe(
       "cashRegister"
     )
-    expect(getDefaultPaymentMethodForOnboarding(methods("iban"))).toBe("iban")
   })
 
   test("still decodes to a valid method when nothing is enabled", () => {

@@ -8,7 +8,12 @@ import { createPayment, markCashPaid } from "./support/payment.ts"
 // through a paid payment.
 test("onboarding, cash payment, and marking paid", async ({ page }) => {
   await test.step("complete onboarding", () => completeOnboarding(page, "en"))
-  await test.step("create a cash payment", () => createPayment(page, "en"))
+  await test.step("create a cash payment", async () => {
+    await createPayment(page, "en")
+    await page
+      .getByRole("tab", { name: translate("en", "paymentWait.method.cash") })
+      .click()
+  })
   await test.step("mark the payment as paid", () => markCashPaid(page, "en"))
 
   await test.step("verify the paid confirmation is shown", async () => {

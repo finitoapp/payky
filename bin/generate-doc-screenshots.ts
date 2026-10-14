@@ -276,6 +276,11 @@ const scenarios: ReadonlyArray<ScreenshotScenario> = [
     async capture(page, language) {
       await completeOnboarding(page, language, { baseURL: appUrl })
       await createPayment(page, language)
+      await page
+        .getByRole("tab", {
+          name: translate(language, "paymentWait.method.cash"),
+        })
+        .click()
       await markCashPaid(page, language)
       await page.waitForTimeout(350)
       await capturePage(page, "paid", language)

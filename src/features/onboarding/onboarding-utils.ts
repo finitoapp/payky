@@ -2,39 +2,34 @@ import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-setti
 import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
 
 /**
- * The order the payment-method tabs appear in on the payment screen, derived
- * from what the merchant enabled here. Methods left off are simply absent —
- * `parsePaymentMethodOrder` treats an unlisted method as unavailable.
+ * The order the payment-method tabs appear in on the payment screen, the same
+ * for every new account whatever it enabled: `parsePaymentMethodOrder`
+ * appends any unlisted method anyway, and whether a method is offered at all
+ * comes from its account being enabled, not from this list.
  */
-export function getPaymentMethodOrder(
-  paymentMethods: ReadonlySet<OnboardingPaymentMethod>
-): ReadonlyArray<DefaultPaymentMethod> {
-  const order: DefaultPaymentMethod[] = []
+export const onboardingPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> =
+  ["iban", "cardSwitchio", "spark", "cashRegister"]
 
-  if (paymentMethods.has("iban")) {
-    order.push("iban")
-  }
-
-  if (paymentMethods.has("cash")) {
-    order.push("cashRegister")
-  }
-
-  if (paymentMethods.has("btc")) {
-    order.push("spark")
-  }
-
-  return order
-}
+const onboardingMethodByPaymentMethod: Partial<
+  Record<DefaultPaymentMethod, OnboardingPaymentMethod>
+> = { iban: "iban", spark: "btc", cashRegister: "cash" }
 
 /**
- * Which tab opens first. Independent of `getPaymentMethodOrder`: the default
- * falls back to `iban` even when no method is enabled, so the setting always
- * decodes to a valid `DefaultPaymentMethod`.
+ * Which tab opens first: the first enabled method in
+ * `onboardingPaymentMethodOrder`, because `getPaymentMethodOrder` in
+ * app-settings moves the default to the front. Falls back to `iban` when no
+ * method is enabled, so the setting always decodes to a valid
+ * `DefaultPaymentMethod`.
  */
 export function getDefaultPaymentMethodForOnboarding(
   paymentMethods: ReadonlySet<OnboardingPaymentMethod>
 ): DefaultPaymentMethod {
-  if (paymentMethods.has("btc")) return "spark"
-  if (paymentMethods.has("cash")) return "cashRegister"
-  return "iban"
+  return (
+    onboardingPaymentMethodOrder.find((method) => {
+      const onboardingMethod = onboardingMethodByPaymentMethod[method]
+      return (
+        onboardingMethod !== undefined && paymentMethods.has(onboardingMethod)
+      )
+    }) ?? "iban"
+  )
 }

@@ -9,6 +9,8 @@ export const cliEnv = createEnv({
     PAYKY_AI_BASE_URL: z.url().default("https://payky.me/api/ai/v1"),
     // The proxy picks its own model; another endpoint needs one named.
     PAYKY_AI_MODEL: z.string().trim().min(1).optional(),
+    // Runs the one Cashu test against the public test mint (cashu.md, phase 2).
+    CASHU_LIVE: z.stringbool().default(false),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

@@ -52,6 +52,7 @@
     "@capacitor/haptics": "8.0.2",
     "@capacitor/ios": "8.5.3",
     "@capacitor/share": "8.0.3",
+    "@cashu/cashu-ts": "4.5.1",
     "@dedalik/use-react": "1.1.2",
     "@evolu/common": "8.19.0",
     "@evolu/nodejs": "4.2.0",

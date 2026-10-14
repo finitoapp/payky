@@ -398,7 +398,7 @@ describe("startCashuShardStore", () => {
     }
   }
 
-  test("a demo account registers no Linky owner", async () => {
+  test("a demo account registers no Linky owner and keeps its rows local", async () => {
     await using evoluTest = await createEvoluTest()
     const { live, registerOwner } = registrations()
     const store = startCashuShardStore({
@@ -412,7 +412,8 @@ describe("startCashuShardStore", () => {
       registerOwner,
       signal: new AbortController().signal,
     })
-    expect(store).toBeNull()
+    await store.whenHydrated()
+    await store.writeSetting("defaultMint", "https://cashu.cz")
     expect(live.size).toBe(0)
   })
 
@@ -431,8 +432,8 @@ describe("startCashuShardStore", () => {
       registerOwner,
       signal: controller.signal,
     })
-    expect(store?.linkyAppOwner.id).toBe(linkyAppOwner.id)
-    await store?.activeIndex()
+    expect(store.linkyAppOwner.id).toBe(linkyAppOwner.id)
+    await store.activeIndex()
     await new Promise((resolve) => setTimeout(resolve, 10))
     expect(live.get(linkyAppOwner.id)).toBe(1)
     expect(live.get(shard(0).id)).toBe(1)

@@ -103,8 +103,6 @@ export const enSettings = {
   "settings.debugConsole.cashu.activeShard": "Active shard: {index}",
   "settings.debugConsole.cashu.hydrated": "Hydrated: {hydrated}",
   "settings.debugConsole.cashu.noBalance": "No available proofs.",
-  "settings.debugConsole.cashu.unavailable":
-    "No Linky wallet on a demo account.",
   "settings.debugConsole.cashu.writeTestSetting":
     "Write a test setting for Linky",
   "settings.debugConsole.clear": "Clear",

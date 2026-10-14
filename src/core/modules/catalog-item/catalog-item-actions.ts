@@ -6,7 +6,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { CatalogItem } from "@/core/modules/catalog-item/catalog-item.ts"
 import { lastCatalogItemSortOrderQuery } from "@/core/modules/catalog-item/catalog-item-queries.ts"
@@ -31,9 +31,9 @@ export type CatalogItemNotFoundError = ReturnType<
 export const createCatalogItem =
   (
     input: InsertValues<CatalogItem>
-  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const { id } = await runMutationWithCompletion((options) =>
       run.deps.evolu.insert(
         "catalogItem",
@@ -51,7 +51,7 @@ export const createCatalogItem =
           scanCode: input.scanCode,
           taxRateId: input.taxRateId,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(id)
@@ -60,14 +60,14 @@ export const createCatalogItem =
 export const updateCatalogItem =
   (
     input: UpdateValues<CatalogItem>
-  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update("catalogItem", removeUndefinedValues(input), {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
     return ok(input.id)
@@ -82,7 +82,7 @@ export const updateCatalogItem =
 export const createCatalogItemAtEnd =
   (
     input: Omit<InsertValues<CatalogItem>, "sortOrder">
-  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<CatalogItemId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     const [last] = await run.deps.evolu.loadQuery(lastCatalogItemSortOrderQuery)
 
@@ -97,9 +97,9 @@ export const createCatalogItemAtEnd =
   }
 
 export const deleteCatalogItem =
-  (id: CatalogItemId): Task<CatalogItemId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (id: CatalogItemId): Task<CatalogItemId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -107,7 +107,7 @@ export const deleteCatalogItem =
         { id, isDeleted: sqliteTrue },
         {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         }
       )
     )

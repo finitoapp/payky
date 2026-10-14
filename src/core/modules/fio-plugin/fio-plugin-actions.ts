@@ -8,7 +8,7 @@ import {
   type Task,
 } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type {
@@ -72,10 +72,10 @@ export const saveFioPlugin =
     Partial<Pick<InsertValues<typeof fioPlugin>, "syncLookbackDays">>): Task<
     FioPluginId,
     never,
-    EvoluDep & EvoluOwnerIdDep
+    EvoluDep & EvoluOwnerDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert(
@@ -86,7 +86,7 @@ export const saveFioPlugin =
           syncLookbackDays,
           isDeleted: sqliteFalse,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -115,9 +115,9 @@ export const addFioPluginToken =
   }: {
     readonly fioPluginId: FioPluginId
     readonly token: InsertValues<typeof fioPluginToken>["token"]
-  }): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const id = createFioPluginTokenId({ fioPluginId, token })
 
     await runMutationWithCompletion((options) =>
@@ -132,7 +132,7 @@ export const addFioPluginToken =
           // queries match on `isDeleted is not 1` for the same reason.
           isDeleted: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -146,9 +146,9 @@ export const updateFioPluginSyncPointer =
   }: {
     readonly id: FioPluginId
     readonly lastSyncedDate: DateString | null
-  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<FioPluginId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) => {
       if (lastSyncedDate === null) {
@@ -158,7 +158,7 @@ export const updateFioPluginSyncPointer =
             id,
             isDeleted: sqliteTrue,
           },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -169,7 +169,7 @@ export const updateFioPluginSyncPointer =
           lastSyncedDate,
           isDeleted: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -192,11 +192,9 @@ export const updateFioPluginAccountRow = (
 }
 
 export const deleteFioPlugin =
-  (
-    idValue: FioPluginId
-  ): Task<FioPluginId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (idValue: FioPluginId): Task<FioPluginId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -205,7 +203,7 @@ export const deleteFioPlugin =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -215,9 +213,9 @@ export const deleteFioPlugin =
 export const deleteFioPluginToken =
   (
     idValue: FioPluginTokenId
-  ): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<FioPluginTokenId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -226,7 +224,7 @@ export const deleteFioPluginToken =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 

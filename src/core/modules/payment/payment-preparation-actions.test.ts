@@ -1,6 +1,6 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import {
   createYadioApiDep,
@@ -60,11 +60,11 @@ describe("payment preparation actions", () => {
             }),
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -164,11 +164,11 @@ describe("payment preparation actions", () => {
             }),
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -271,11 +271,11 @@ describe("payment preparation actions", () => {
             },
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -351,11 +351,11 @@ describe("payment preparation actions", () => {
             }),
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -460,11 +460,11 @@ describe("payment preparation actions", () => {
             }),
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -548,11 +548,11 @@ describe("payment preparation actions", () => {
             }),
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -637,11 +637,11 @@ describe("payment preparation actions", () => {
             }),
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &
@@ -705,7 +705,7 @@ describe("payment preparation actions", () => {
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       SparkWalletDep &
       FetchDep &
@@ -830,7 +830,7 @@ describe("payment preparation actions", () => {
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       SparkWalletDep &
       FetchDep &
@@ -859,7 +859,7 @@ describe("payment preparation actions", () => {
           excessAcknowledgedAt: null,
           expiresAt: null,
         },
-        { ...options, ownerId: evolu.appOwner.id }
+        { ...options, owner: evolu.appOwner }
       )
     )
 
@@ -896,11 +896,11 @@ describe("payment preparation actions", () => {
             },
           }),
       },
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       ...createTestDateDep(),
       ...createYadioApiDep(),
     } satisfies EvoluDep &
-      EvoluOwnerIdDep &
+      EvoluOwnerDep &
       DateDep &
       FetchDep &
       SparkWalletDep &

@@ -1,7 +1,7 @@
 import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
@@ -66,7 +66,7 @@ const createRefundContext = async () => {
   const deps = {
     ...evoluTestDeps(evolu),
     ...clock,
-  } satisfies EvoluDep & EvoluOwnerIdDep & DateDep
+  } satisfies EvoluDep & EvoluOwnerDep & DateDep
   const accounts = await createPaymentAccounts(deps)
 
   const createTestPayment = async ({

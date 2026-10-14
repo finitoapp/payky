@@ -1,7 +1,7 @@
 import { ok, sqliteTrue, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { zodCommand } from "zod-commander/zod4"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import {
   createCatalogItem,
   updateCatalogItem,
@@ -20,7 +20,7 @@ import {
 } from "@/core/modules/shared/schema.ts"
 
 export const registerCatalogItemsCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   (run) => {
     const { evolu } = run.deps
 

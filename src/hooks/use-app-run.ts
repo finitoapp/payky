@@ -19,7 +19,7 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
  * Composition root for running Task actions from React.
  *
  * Returns a stable factory that creates a disposable Run wired with the full
- * superset of app dependencies (console, evolu, deviceEvolu, evoluOwnerId,
+ * superset of app dependencies (console, evolu, deviceEvolu, evoluOwner,
  * date, fetch, sparkWallet, yadioApi, switchioTerminal, eetApi, nostr,
  * lockManager, cashuShardStore, cashuWallet). Task
  * dependency typing is structural, so Tasks that need only a subset are
@@ -54,7 +54,7 @@ export const useAppRun = () => {
         console,
         evolu,
         deviceEvolu,
-        evoluOwnerId: evolu.appOwner.id,
+        evoluOwner: evolu.appOwner,
         masterKey: account.masterKey,
         lockManager: navigator.locks,
         ...dateDep,

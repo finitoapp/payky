@@ -81,7 +81,7 @@ The word "account" means two unrelated things here.
   status; one row per account.
 - **Owner** — in access control, the person holding the account's one owner
   PIN (`docs/decisions/access/0001`) and the `owner` preset. Unrelated to an
-  Evolu owner (`evoluOwnerId`), which is the dataset's sync identity.
+  Evolu owner (`evoluOwner`), which is the dataset's sync identity.
 - **Linky owner** — the Evolu identity of Linky, the owner's personal wallet
   app, derived from the same master key next to Payky's own owner
   (`deriveLinkyAppOwnerSecret`). Its app owner holds `shardPointer` and

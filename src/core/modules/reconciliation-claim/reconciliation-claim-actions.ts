@@ -1,6 +1,6 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import type { CreateAccountTransactionInput } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionAmountByIdQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
@@ -198,9 +198,9 @@ export const upsertReconciliationClaimRows = (
 const writeClaimAndCloseBillIfCovered =
   (
     claim: ReconciliationClaimWrite
-  ): Task<void, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  ): Task<void, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     // Unlike the sync jobs and `markPaymentPaid`, this path claims a
     // transaction that already exists, so its amount has to be read back
     // before coverage can be told what the claim is worth.
@@ -221,7 +221,7 @@ const writeClaimAndCloseBillIfCovered =
     await runMutationWithCompletion((options) =>
       upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
 
@@ -237,7 +237,7 @@ export const claimManualReconciliation =
     readonly paymentId: PaymentId
     readonly accountTransactionId: AccountTransactionId
     readonly deviceId: DeviceId | null
-  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  }): Task<PaymentId, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     const id = deriveManualReconciliationClaimId(
       paymentId,
@@ -261,7 +261,7 @@ export const claimManualReconciliation =
 export const reconcileAccountTransaction =
   (
     accountTransactionId: AccountTransactionId
-  ): Task<PaymentId | null, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  ): Task<PaymentId | null, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     const existingClaims = await run.deps.evolu.loadQuery(
       activeReconciliationClaimByAccountTransactionIdQuery(accountTransactionId)

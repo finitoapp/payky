@@ -394,7 +394,7 @@ describe("fio account transaction sync job", () => {
         id: fioPluginId,
         lastSyncedDate: DateStringSchema.decode("2026-05-20"),
       },
-      { ownerId: evolu.appOwner.id }
+      { owner: evolu.appOwner }
     )
     await using jobRun = testCreateRun({
       console: testCreateConsole(),
@@ -470,7 +470,7 @@ describe("fio account transaction sync job", () => {
         id: fioPluginId,
         lastSyncedDate: DateStringSchema.decode("2026-05-20"),
       },
-      { ownerId: evolu.appOwner.id }
+      { owner: evolu.appOwner }
     )
     const lockManager = createInProcessLockManager()
     const lockAcquired = Promise.withResolvers<void>()

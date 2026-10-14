@@ -1,6 +1,6 @@
 import { type MutationOptions, ok, type Task } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import type {
   PaymentLastNumberRow,
@@ -87,15 +87,15 @@ export const createNextPaymentNumber =
   }: {
     readonly id: PaymentId
     readonly date: DateString
-  }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<PaymentNumberRow, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     const paymentNumber = await run.ok(loadNextPaymentNumber({ id, date }))
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       upsertPaymentNumberRows(run.deps.evolu, paymentNumber, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
 
@@ -106,19 +106,19 @@ export const updatePaymentLastNumber =
   (input: {
     readonly serialNumber: NonNegativeIntegerType
     readonly date: DateString | null
-  }): Task<PaymentLastNumberRow, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<PaymentLastNumberRow, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     // Through `createPaymentLastNumberValues`, not a second copy of the same
     // literal: the settings page's manual adjustment has to land on the very
     // row `upsertPaymentNumberRows` writes, or numbering would carry on from
     // a value nobody edited.
     const paymentLastNumber = createPaymentLastNumberValues(input)
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.upsert("paymentLastNumber", paymentLastNumber, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     )
 

@@ -78,7 +78,7 @@ const recordWithdrawal = async (
     `accountTransaction:spark:${sparkTransferId}`
   )
   await runMutationWithCompletion((options) => {
-    const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+    const mutationOptions = { ...options, owner: evolu.appOwner }
     evolu.upsert(
       "withdrawal",
       {

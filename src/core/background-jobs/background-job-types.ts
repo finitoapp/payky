@@ -6,7 +6,7 @@ import type {
   ConnectivityDep,
   DateDep,
   DeviceIdDep,
-  EvoluOwnerIdDep,
+  EvoluOwnerDep,
   FetchDep,
 } from "@/core/deps.ts"
 import type { EetApiDep } from "@/core/integrations/eet/eet-client.ts"
@@ -17,7 +17,7 @@ export interface BackgroundJobOnErrorDep {
 }
 
 export type BackgroundJobContext = EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   ConsoleDep &
   DateDep &
   FetchDep &

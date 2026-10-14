@@ -6,7 +6,7 @@ import {
   type CashuWalletDep,
   loadCashuWallet,
 } from "@/core/cashu/cashu-wallet.ts"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { cashuAccountQuery } from "@/core/modules/account/account-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
@@ -56,7 +56,7 @@ import {
  */
 
 export type CashuBookingDeps = EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   DateDep &
   CashuShardStoreDep &
   CashuWalletDep &
@@ -133,7 +133,7 @@ const bookOperation = async (
           })
         )
   await runMutationWithCompletion((options) => {
-    const mutationOptions = { ...options, ownerId: run.deps.evoluOwnerId }
+    const mutationOptions = { ...options, owner: run.deps.evoluOwner }
     upsertAccountTransactionRows(run.deps.evolu, computed, mutationOptions)
     if (claim !== null)
       upsertReconciliationClaimRows(
@@ -163,7 +163,7 @@ const unbooked = async (
   return operations.filter((operation) => !booked.has(operation.id))
 }
 
-const writeCursor = (deps: EvoluDep & EvoluOwnerIdDep, rowid: number) =>
+const writeCursor = (deps: EvoluDep & EvoluOwnerDep, rowid: number) =>
   runMutationWithCompletion((options) =>
     deps.evolu.upsert(
       "_cashuBookingCursor",
@@ -172,7 +172,7 @@ const writeCursor = (deps: EvoluDep & EvoluOwnerIdDep, rowid: number) =>
         historyRowid: NonNegativeIntSchema.parse(rowid),
         isDeleted: sqliteFalse,
       },
-      { ...options, ownerId: deps.evoluOwnerId }
+      { ...options, owner: deps.evoluOwner }
     )
   )
 

@@ -1,6 +1,6 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import {
   createCatalogCategory,
   deleteCatalogCategory,
@@ -24,7 +24,7 @@ describe("catalogItemsPageQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const beerId = await run.ok(
@@ -80,7 +80,7 @@ describe("catalogItemsPageQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const uncategorizedId = await run.ok(
@@ -125,7 +125,7 @@ describe("catalogItemsPageQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     for (let index = 0; index < 5; index++) {
@@ -177,7 +177,7 @@ describe("catalogItemsPageQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const drinksId = await run.ok(
@@ -249,7 +249,7 @@ describe("catalogItemUsedCategoryIdsQuery", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     await expect

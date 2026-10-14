@@ -1,6 +1,6 @@
 import { evoluJsonObjectFrom, sqliteTrue, testCreateRun } from "@evolu/common"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { createAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -107,7 +107,7 @@ export const accountTransactionsByPaymentIdQuery = (id: PaymentId) =>
   )
 
 export const createPaymentAccounts = async (
-  deps: EvoluDep & EvoluOwnerIdDep
+  deps: EvoluDep & EvoluOwnerDep
 ): Promise<{
   readonly cashRegisterAccountId: AccountId
   readonly sparkAccountId: AccountId

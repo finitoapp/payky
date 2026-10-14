@@ -2,7 +2,7 @@ import { ok, type Task } from "@evolu/common"
 import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import {
   loadPaymentNumberSeries,
   updatePaymentNumberSeries,
@@ -32,7 +32,7 @@ const PrefixOptionSchema = z.string().transform((value, ctx) => {
 })
 
 export const registerPaymentNumberSeriesCommand =
-  (program: Command): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  (program: Command): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   (run) => {
     const paymentNumberSeriesCommand = createCommand(
       "payment-number-series"

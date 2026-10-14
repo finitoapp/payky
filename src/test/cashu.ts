@@ -68,7 +68,7 @@ export const createCashuTest = async ({
   const deviceAccountId = deriveDeviceAccountId(testCashuMasterKey)
   const deps = {
     evolu: appEvolu.evolu,
-    evoluOwnerId: appEvolu.evolu.appOwner.id,
+    evoluOwner: appEvolu.evolu.appOwner,
     deviceEvolu: device.deviceEvolu,
     cashuShardStore,
     lockManager: testCreateLockManager(),

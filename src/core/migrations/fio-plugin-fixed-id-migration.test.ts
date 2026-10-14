@@ -6,7 +6,7 @@ import {
 } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { legacyFiatBankAccountId } from "@/core/modules/account/account-utils.ts"
 import { saveFioPlugin } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
@@ -75,7 +75,7 @@ const seedLegacyFioPlugin = async (evolu: EvoluDep["evolu"]) => {
   const tokenId = createRowId<"FioPluginToken">()
 
   await runMutationWithCompletion((options) => {
-    const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+    const mutationOptions = { ...options, owner: evolu.appOwner }
 
     evolu.upsert(
       "fioPlugin",
@@ -119,7 +119,7 @@ describe("fioPluginFixedIdMigration", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const legacy = await seedLegacyFioPlugin(evolu)
 
@@ -194,7 +194,7 @@ describe("fioPluginFixedIdMigration", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     await seedLegacyFioPlugin(evolu)
 

@@ -5,7 +5,7 @@ import {
   testCreateRun,
 } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { saveFioPlugin } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
 import { fioPluginByIdQuery } from "@/core/modules/fio-plugin/fio-plugin-queries.ts"
@@ -111,7 +111,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const ibanAccountId = await run.ok(
@@ -233,7 +233,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const id = await run.ok(
@@ -285,7 +285,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const id = await run.ok(
@@ -333,7 +333,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const firstIban = IbanSchema.decode("CZ6508000000192000145399")
     const secondIban = IbanSchema.decode("CZ5508000000001234567899")
@@ -414,7 +414,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
     const iban = IbanSchema.decode("CZ6508000000192000145399")
 
@@ -450,7 +450,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     await expect(
@@ -546,7 +546,7 @@ describe("account actions", () => {
     const { evolu } = testEvolu
     const deps = {
       ...evoluTestDeps(evolu),
-    } satisfies EvoluDep & EvoluOwnerIdDep
+    } satisfies EvoluDep & EvoluOwnerDep
     await using run = testCreateRun(deps)
 
     const sparkAccountId = await run.ok(

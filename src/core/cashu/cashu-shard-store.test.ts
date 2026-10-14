@@ -1,4 +1,9 @@
-import { type OwnerId, sqliteTrue, testCreateRun } from "@evolu/common"
+import {
+  type Owner,
+  type OwnerId,
+  sqliteTrue,
+  testCreateRun,
+} from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import {
@@ -143,13 +148,13 @@ const linkyWrite = (
   evolu: Evolu,
   table: "cashuProof" | "shardPointer",
   values: Record<string, unknown>,
-  ownerId: OwnerId
+  owner: Owner
 ) =>
   new Promise<void>((resolve) => {
-    evolu.upsert(table, values as never, { ownerId, onComplete: resolve })
+    evolu.upsert(table, values as never, { owner, onComplete: resolve })
   })
 
-const linkyProof = (secret: string, state: string, ownerId: OwnerId) => ({
+const linkyProof = (secret: string, state: string, owner: Owner) => ({
   values: {
     id: cashuProofIdFor(secret),
     mint,
@@ -160,7 +165,7 @@ const linkyProof = (secret: string, state: string, ownerId: OwnerId) => ({
     c: "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
     state,
   },
-  ownerId,
+  owner,
 })
 
 const movePointer = (evolu: Evolu, index: number) =>
@@ -173,7 +178,7 @@ const movePointer = (evolu: Evolu, index: number) =>
       index,
       rotatedAtMs: 1_700_000_000_000,
     },
-    linkyAppOwner.id
+    linkyAppOwner
   )
 
 const ownersOf = async (
@@ -289,25 +294,25 @@ describe("cashu shard store", () => {
   test("any spent copy wins the merge, even a tombstoned one", async () => {
     await using t = await setup()
     await movePointer(t.evolu, 1)
-    const spentOld = linkyProof("s", "spent", shard(0).id)
-    await linkyWrite(t.evolu, "cashuProof", spentOld.values, spentOld.ownerId)
+    const spentOld = linkyProof("s", "spent", shard(0))
+    await linkyWrite(t.evolu, "cashuProof", spentOld.values, spentOld.owner)
     await linkyWrite(
       t.evolu,
       "cashuProof",
       { ...spentOld.values, isDeleted: sqliteTrue },
-      spentOld.ownerId
+      spentOld.owner
     )
-    const availableNew = linkyProof("s", "available", shard(1).id)
+    const availableNew = linkyProof("s", "available", shard(1))
     await linkyWrite(
       t.evolu,
       "cashuProof",
       availableNew.values,
-      availableNew.ownerId
+      availableNew.owner
     )
-    const plainOld = linkyProof("p", "available", shard(0).id)
-    await linkyWrite(t.evolu, "cashuProof", plainOld.values, plainOld.ownerId)
-    const plainNew = linkyProof("p", "held", shard(1).id)
-    await linkyWrite(t.evolu, "cashuProof", plainNew.values, plainNew.ownerId)
+    const plainOld = linkyProof("p", "available", shard(0))
+    await linkyWrite(t.evolu, "cashuProof", plainOld.values, plainOld.owner)
+    const plainNew = linkyProof("p", "held", shard(1))
+    await linkyWrite(t.evolu, "cashuProof", plainNew.values, plainNew.owner)
 
     const merged = await t.store.loadProofs()
     expect(
@@ -358,15 +363,15 @@ describe("cashu shard store", () => {
 
   test("repairPointers moves the pointer up to the newest shard holding rows, never down", async () => {
     await using t = await setup()
-    const a = linkyProof("a", "available", shard(1).id)
-    await linkyWrite(t.evolu, "cashuProof", a.values, a.ownerId)
-    const b = linkyProof("b", "available", shard(2).id)
-    await linkyWrite(t.evolu, "cashuProof", b.values, b.ownerId)
+    const a = linkyProof("a", "available", shard(1))
+    await linkyWrite(t.evolu, "cashuProof", a.values, a.owner)
+    const b = linkyProof("b", "available", shard(2))
+    await linkyWrite(t.evolu, "cashuProof", b.values, b.owner)
     await linkyWrite(
       t.evolu,
       "cashuProof",
       { ...b.values, isDeleted: sqliteTrue },
-      b.ownerId
+      b.owner
     )
 
     await t.store.repairPointers()
@@ -441,7 +446,7 @@ describe("startCashuShardStore", () => {
 
     await using run = testCreateRun({
       evolu: evoluTest.evolu,
-      evoluOwnerId: evoluTest.evolu.appOwner.id,
+      evoluOwner: evoluTest.evolu.appOwner,
       cashuShardStore: store,
     })
     await run.ok(saveCashuAccount({ enabled: true }))

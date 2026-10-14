@@ -7,7 +7,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import { z } from "zod"
-import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import {
   saveCashRegisterAccount,
@@ -70,9 +70,9 @@ export const completeOnboarding =
     readonly fiatCurrency: FiatCurrency
     readonly defaultPaymentMethod: DefaultPaymentMethod
     readonly paymentMethodOrderJson: string
-  }): Task<AppSettingsId, AlreadyOnboardedError, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AppSettingsId, AlreadyOnboardedError, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     // The last line of defence; `finishOnboarding` checks before its first
     // write already.
@@ -87,7 +87,7 @@ export const completeOnboarding =
           ...input,
           onboardingCompleted: sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(settingsId)
@@ -96,9 +96,9 @@ export const completeOnboarding =
 export const updateSettings =
   (
     input: Omit<UpdateValues<typeof appSettings>, "id">
-  ): Task<AppSettingsId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<AppSettingsId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -107,7 +107,7 @@ export const updateSettings =
           id: settingsId,
           ...input,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
     return ok(settingsId)
@@ -118,7 +118,7 @@ export const updateTipSettings =
     readonly enabled: boolean
     readonly fixedAmounts: ReadonlyArray<number>
     readonly percentages: ReadonlyArray<number>
-  }): Task<AppSettingsId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AppSettingsId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) =>
     await run(
       updateSettings({
@@ -137,7 +137,7 @@ export const updateTipSettings =
 export const setPaymentMethodOrder =
   (
     order: ReadonlyArray<DefaultPaymentMethod>
-  ): Task<AppSettingsId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<AppSettingsId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) =>
     await run(
       updateSettings({
@@ -160,7 +160,7 @@ export type NoHomeModeEnabledError = ReturnType<
 export const setEnabledHomeModes =
   (
     modes: ReadonlyArray<TerminalHomeMode>
-  ): Task<AppSettingsId, NoHomeModeEnabledError, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<AppSettingsId, NoHomeModeEnabledError, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     const enabled = terminalHomeModes.filter((mode) => modes.includes(mode))
     if (enabled.length === 0) return err(createNoHomeModeEnabledError())
@@ -190,7 +190,7 @@ export const finishOnboarding =
   }): Task<
     void,
     AlreadyOnboardedError,
-    EvoluDep & EvoluOwnerIdDep & MasterKeyDep
+    EvoluDep & EvoluOwnerDep & MasterKeyDep
   > =>
   async (run) => {
     const notOnboarded = await run(requireNotOnboarded())

@@ -10,7 +10,7 @@ import {
 import type { RequireExactlyOne, Simplify } from "type-fest"
 import { seedCashuDefaultMint } from "@/core/cashu/cashu-mints.ts"
 import type { CashuShardStoreDep } from "@/core/cashu/cashu-shard-store.ts"
-import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, MasterKeyDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { updateFioPluginAccountRow } from "@/core/modules/fio-plugin/fio-plugin-actions.ts"
@@ -135,9 +135,9 @@ export const createAccount =
           cashRegister: InsertValues<typeof accountCashRegister>
         }>
     >
-  ): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  ): Task<AccountId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const { iban, spark, cashRegister, ...root } = input
     const id = deriveNewAccountId(input)
 
@@ -152,7 +152,7 @@ export const createAccount =
             id,
             defaultQrFormat: iban.defaultQrFormat ?? "spayd",
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -163,7 +163,7 @@ export const createAccount =
             ...spark,
             id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -174,7 +174,7 @@ export const createAccount =
             ...cashRegister,
             id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -186,7 +186,7 @@ export const createAccount =
           kind,
           isDeleted: sqliteFalse,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -215,9 +215,9 @@ export const updateAccount =
           "id" | "currency"
         >
       }>
-  >): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  >): Task<AccountId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     const kind = deriveAccountKind({ iban, spark, cashRegister })
 
@@ -230,7 +230,7 @@ export const updateAccount =
             id: input.id,
             defaultQrFormat: iban.defaultQrFormat ?? "spayd",
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -241,7 +241,7 @@ export const updateAccount =
             ...spark,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -252,7 +252,7 @@ export const updateAccount =
             ...cashRegister,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -264,7 +264,7 @@ export const updateAccount =
           name: input.name,
           kind,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -272,9 +272,9 @@ export const updateAccount =
   }
 
 export const deleteAccount =
-  (idValue: AccountId): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (idValue: AccountId): Task<AccountId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -283,7 +283,7 @@ export const deleteAccount =
           id: idValue,
           isDeleted: sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -310,9 +310,9 @@ export const saveFiatBankAccount =
     readonly iban?: Iban
     readonly currency: FiatCurrency
     readonly defaultQrFormat?: BankQrFormat
-  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
 
     const [current] = await evolu.loadQuery(fiatBankAccountQuery)
     const nextIban = iban ?? current?.iban
@@ -322,7 +322,7 @@ export const saveFiatBankAccount =
     const [fioPlugin] = await evolu.loadQuery(fioPluginByIdQuery(fioPluginId))
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       evolu.upsert(
         "accountIban",
@@ -375,13 +375,9 @@ export const saveSparkAccount =
     enabled,
   }: {
     readonly enabled: boolean
-  }): Task<
-    AccountId | null,
-    never,
-    EvoluDep & EvoluOwnerIdDep & MasterKeyDep
-  > =>
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerDep & MasterKeyDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId, masterKey } = run.deps
+    const { evolu, evoluOwner, masterKey } = run.deps
 
     // Preloaded so enabling Spark keeps the wallet already configured rather
     // than switching back to the default one.
@@ -399,7 +395,7 @@ export const saveSparkAccount =
       upsertSparkAccountRows(
         evolu,
         { id, secret, enabled, replacedId: current?.id },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -459,9 +455,9 @@ const upsertSparkAccountRows = (
 const selectSparkWallet =
   (
     secret: SparkSecret
-  ): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+  ): Task<AccountId, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const id = createSparkAccountId(secret)
     const [current] = await evolu.loadQuery(sparkAccountQuery)
     const [pointer] = await evolu.loadQuery(
@@ -469,7 +465,7 @@ const selectSparkWallet =
     )
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       upsertSparkAccountRows(
         evolu,
@@ -500,7 +496,7 @@ export const selectCustomSparkWallet = ({
   mnemonic,
 }: {
   readonly mnemonic: SparkMnemonic
-}): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep & DateDep> =>
+}): Task<AccountId, never, EvoluDep & EvoluOwnerDep & DateDep> =>
   selectSparkWallet(sparkMnemonicToSecret(mnemonic))
 
 /** Switches Spark payments back to the wallet derived from the master key. */
@@ -508,7 +504,7 @@ export const selectDefaultSparkWallet =
   (): Task<
     AccountId,
     never,
-    EvoluDep & EvoluOwnerIdDep & DateDep & MasterKeyDep
+    EvoluDep & EvoluOwnerDep & DateDep & MasterKeyDep
   > =>
   async (run) =>
     await run(
@@ -528,9 +524,9 @@ export const saveCashRegisterAccount =
   }: {
     readonly enabled: boolean
     readonly currency: FiatCurrency
-  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
 
     const [current] = await evolu.loadQuery(cashRegisterAccountQuery)
 
@@ -541,7 +537,7 @@ export const saveCashRegisterAccount =
         evolu.update(
           "account",
           { id: current.id, isDeleted: sqliteTrue },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       )
 
@@ -551,7 +547,7 @@ export const saveCashRegisterAccount =
     const id = createCashRegisterAccountId(currency)
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       evolu.upsert("accountCashRegister", { id, currency }, mutationOptions)
 
@@ -592,9 +588,9 @@ export const updateSparkAccountSyncPointer =
   }: {
     readonly id: AccountId
     readonly lastSyncedAt: TimestampMs | null
-  }): Task<AccountId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AccountId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) => {
       if (lastSyncedAt === null) {
@@ -604,7 +600,7 @@ export const updateSparkAccountSyncPointer =
             id,
             isDeleted: sqliteTrue,
           },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -615,7 +611,7 @@ export const updateSparkAccountSyncPointer =
           lastSyncedAt,
           isDeleted: sqliteFalse,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -635,9 +631,9 @@ export const saveCardSwitchioAccount =
   }: {
     readonly enabled: boolean
     readonly currency: FiatCurrency
-  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
 
     const [current] = await evolu.loadQuery(cardSwitchioAccountQuery)
 
@@ -648,7 +644,7 @@ export const saveCardSwitchioAccount =
         evolu.update(
           "account",
           { id: current.id, isDeleted: sqliteTrue },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       )
 
@@ -658,7 +654,7 @@ export const saveCardSwitchioAccount =
     const id = createCardSwitchioAccountId(currency)
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
 
       evolu.upsert("accountCardSwitchio", { id, currency }, mutationOptions)
 
@@ -700,17 +696,17 @@ export const saveCashuAccount =
   }): Task<
     AccountId | null,
     never,
-    EvoluDep & EvoluOwnerIdDep & CashuShardStoreDep
+    EvoluDep & EvoluOwnerDep & CashuShardStoreDep
   > =>
   async (run) => {
-    const { evolu, evoluOwnerId, cashuShardStore } = run.deps
+    const { evolu, evoluOwner, cashuShardStore } = run.deps
     const [current] = await evolu.loadQuery(cashuAccountQuery)
     if (!enabled && current === undefined) return ok(null)
 
     const id = createCashuAccountId(cashuShardStore.linkyAppOwner.id)
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
       evolu.upsert("accountCashu", { id }, mutationOptions)
       if (current !== undefined && current.id !== id) {
         evolu.update(

@@ -57,7 +57,7 @@ const recordWithdrawal = async (
   const id = createRowId<"Withdrawal">()
   const accountTransactionId = createRowId<"AccountTransaction">()
   await runMutationWithCompletion((options) => {
-    const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+    const mutationOptions = { ...options, owner: evolu.appOwner }
     evolu.upsert(
       "withdrawal",
       {
@@ -226,7 +226,7 @@ describe("withdrawal queries", () => {
       evolu.update(
         "withdrawal",
         { id, comment: NonEmptyString255("Rent for October") },
-        { ...options, ownerId: evolu.appOwner.id }
+        { ...options, owner: evolu.appOwner }
       )
     )
 

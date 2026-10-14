@@ -47,7 +47,7 @@ export function AppBackgroundJobs() {
     const fetchDep = createFetchDep()
     const run = createRun({
       evolu,
-      evoluOwnerId: evolu.appOwner.id,
+      evoluOwner: evolu.appOwner,
       deviceId,
       ...dateDep,
       ...fetchDep,

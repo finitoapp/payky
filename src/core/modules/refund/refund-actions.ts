@@ -9,7 +9,7 @@ import {
 } from "@evolu/common"
 import type { RequireExactlyOne } from "type-fest"
 
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import { cashRegisterAccountByIdQuery } from "@/core/modules/account/account-queries.ts"
 import { createCashRegisterAccountId } from "@/core/modules/account/account-utils.ts"
@@ -253,13 +253,9 @@ export const refundPayment =
   } & RequireExactlyOne<{
     readonly amount: NonNegativeInteger
     readonly lines: ReadonlyArray<RefundLineInput>
-  }>): Task<
-    RefundId,
-    RefundPaymentError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
-  > =>
+  }>): Task<RefundId, RefundPaymentError, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const now = run.deps.date.now()
     const paymentResult = await run(loadPaidPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
@@ -323,7 +319,7 @@ export const refundPayment =
     }
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
       evolu.upsert(
         "refund",
         {
@@ -379,10 +375,10 @@ export const refundPaymentTip =
   }): Task<
     RefundId,
     RefundPaymentTipError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
-    const { evolu, evoluOwnerId } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const now = run.deps.date.now()
     const paymentResult = await run(loadPaidPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
@@ -415,7 +411,7 @@ export const refundPaymentTip =
     }
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: evoluOwnerId }
+      const mutationOptions = { ...options, owner: evoluOwner }
       evolu.upsert(
         "refund",
         {

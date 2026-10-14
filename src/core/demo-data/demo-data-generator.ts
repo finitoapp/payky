@@ -25,7 +25,7 @@ import {
   demoDeviceNames,
   demoTables,
 } from "@/core/demo-data/demo-data-content.ts"
-import type { EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep, MasterKeyDep } from "@/core/deps.ts"
 import type { DeviceLanguage } from "@/core/evolu/device-client.ts"
 import type { YadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import {
@@ -205,7 +205,7 @@ interface Step {
 }
 
 export type DemoDataDeps = EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   MasterKeyDep &
   ConsoleDep &
   DeviceEvoluDep &

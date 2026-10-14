@@ -1,6 +1,6 @@
 import type { Task } from "@evolu/common"
 import { useCallback } from "react"
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 import {
   type ConfirmDialogOptions,
@@ -22,7 +22,7 @@ export function useConfirmedRun() {
   return useCallback(
     async <T>(
       options: ConfirmDialogOptions,
-      task: Task<T, never, EvoluDep & EvoluOwnerIdDep>
+      task: Task<T, never, EvoluDep & EvoluOwnerDep>
     ): Promise<boolean> => {
       const confirmed = await confirm(options)
       if (!confirmed) return false

@@ -73,6 +73,13 @@ const createSqliteDep = (
         const changes = prepared.run(query.parameters).changes
         return { rows: [], changes }
       },
+      iterate: (query, onRow) => {
+        // A statement of its own, as @evolu/nodejs does: onRow may run
+        // queries that would otherwise reuse the cached one while it is busy.
+        for (const row of db.prepare(query.sql).iterate(query.parameters)) {
+          if (!onRow(row as SqliteRow)) break
+        }
+      },
       export: () => {
         const file = db.serialize()
         const { buffer } = file

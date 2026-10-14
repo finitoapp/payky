@@ -5,7 +5,7 @@ import type {
   AppBackgroundJobContext,
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
-import type { DateDep, EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep } from "@/core/deps.ts"
 import type {
   EetApiDep,
   EetDeliveryOutcome,
@@ -43,7 +43,7 @@ type EetRecordId = EetSaleId | EetReversalId
 type EetDelivery = Task<
   EetDeliveryOutcome,
   DeliverEetReversalError,
-  EvoluDep & EvoluOwnerIdDep & DateDep & EetApiDep & LockManagerDep
+  EvoluDep & EvoluOwnerDep & DateDep & EetApiDep & LockManagerDep
 >
 
 const EET_RETRY_BASE_DELAY_MS = 30_000

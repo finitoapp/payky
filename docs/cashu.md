@@ -188,7 +188,7 @@ share. Both apps use BIP-85 entropy `hmac-sha512("bip-entropy-from-k", node.priv
 ### Compatibility checked from code only
 
 - Linky uses `@evolu/common` 7.4.1, its relay `evolu.linky.fit` included, and
-  Payky uses 8.19.0.
+  Payky uses 8.22.3.
 - Both have `protocolVersion` 1.
 - `deriveShardOwner`, `createSlip21`, `createAppOwner` and `createIdFromString`
   have identical bodies in both, and so does the `evolu_history` table the
@@ -225,7 +225,7 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
   reused. Use Linky's relays: Linky fetches them from
   `https://linky.fit/recommended-relays`, with the bundled fallback
   `wss://evolu.eu.freedomrelay.dev` and `wss://evolu.linky.fit`.
-- Writes name their owner through `MutationOptions.ownerId`.
+- Writes name their owner through `MutationOptions.owner`.
 - Linky's four tables (`shardPointer`, `setting`, `cashuProof`,
   `cashuOperation`) join `AppSchema` in `src/core/evolu/schema.ts`.
   - Column names and types are copied 1:1, and branded ids live in a new
@@ -256,7 +256,7 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
   operation. `paymentCashu` still stores `quoteId` and `receiveOperationId`,
   because the operation lives in a shard and the claim must find it by value.
 - **Payky's own owner never holds a Linky row.** A write without the right
-  `ownerId` lands in Payky's owner and stays invisible to Linky. The shard store
+  `owner` lands in Payky's owner and stays invisible to Linky. The shard store
   is the only writer, so it is the one place that has to get this right, and
   its tests check the owner of every write.
 - **First-time account (decision 8):** with no `shardPointer`, Payky writes to

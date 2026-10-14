@@ -8,7 +8,7 @@ import {
 } from "@/core/cashu/cashu-melt.ts"
 import type { CashuTopupDeps } from "@/core/cashu/cashu-topup.ts"
 import type { MintFailure } from "@/core/cashu/cashu-wallet.ts"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, FetchDep } from "@/core/deps.ts"
 import { defineError } from "@/core/error.ts"
 import type { LnurlError } from "@/core/integrations/lnurl/lnurl-client.ts"
 import {
@@ -192,7 +192,7 @@ export const settleCashuWithdrawal =
   ): Task<
     "done" | "failed" | "pending" | "none",
     never,
-    CashuTopupDeps & EvoluDep & EvoluOwnerIdDep
+    CashuTopupDeps & EvoluDep & EvoluOwnerDep
   > =>
   async (run) => {
     const [withdrawal] = await run.deps.evolu.loadQuery(
@@ -213,7 +213,7 @@ export const settleCashuWithdrawal =
               failedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
               failureReason: "rejected",
             },
-            { ...options, ownerId: run.deps.evoluOwnerId }
+            { ...options, owner: run.deps.evoluOwner }
           )
         )
       return ok("failed")
@@ -246,7 +246,7 @@ export const settleCashuWithdrawal =
     await runMutationWithCompletion((options) =>
       upsertAccountTransactionRows(run.deps.evolu, computed, {
         ...options,
-        ownerId: run.deps.evoluOwnerId,
+        owner: run.deps.evoluOwner,
       })
     )
     return ok("done")
@@ -275,7 +275,7 @@ export const executeCashuWithdrawal =
   }): Task<
     { readonly withdrawalId: WithdrawalId; readonly totalSpent: number },
     ExecuteCashuWithdrawalError,
-    CashuTopupDeps & EvoluDep & EvoluOwnerIdDep & DateDep
+    CashuTopupDeps & EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const quoteId = CashuQuoteIdSchema.safeParse(quote.cost.quoteId)
@@ -284,7 +284,7 @@ export const executeCashuWithdrawal =
     const withdrawalId = createRowId<"Withdrawal">()
 
     await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, ownerId: run.deps.evoluOwnerId }
+      const mutationOptions = { ...options, owner: run.deps.evoluOwner }
       run.deps.evolu.upsert(
         "withdrawal",
         {
@@ -347,7 +347,7 @@ export const executeCashuWithdrawal =
               failedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
               failureReason: "rejected",
             },
-            { ...options, ownerId: run.deps.evoluOwnerId }
+            { ...options, owner: run.deps.evoluOwner }
           )
         )
       return melted

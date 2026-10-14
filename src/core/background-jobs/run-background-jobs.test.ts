@@ -1,5 +1,5 @@
 import {
-  type OwnerId,
+  type AppOwner,
   ok,
   testCreateConsole,
   testCreateRun,
@@ -20,7 +20,7 @@ const createBackgroundJobContext = (
 ): BackgroundJobContext => ({
   console: testCreateConsole(),
   evolu: {} as Evolu,
-  evoluOwnerId: "test-owner-id" as OwnerId,
+  evoluOwner: {} as AppOwner,
   date: { now: () => new Date() },
   fetch: (() => {
     throw new Error("fetch is not implemented in this test.")

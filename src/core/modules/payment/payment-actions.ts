@@ -9,7 +9,7 @@ import {
   type Task,
   type UpdateValues,
 } from "@evolu/common"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, FetchDep } from "@/core/deps.ts"
 import type { EvoluSchema } from "@/core/evolu/schema.ts"
 import { redeemLnurlWithdraw } from "@/core/integrations/lnurl/lnurl-withdraw-client.ts"
 import {
@@ -216,11 +216,7 @@ export const createPayment =
     readonly cashRegister?: Omit<InsertValues<typeof paymentCashRegister>, "id">
     readonly spark?: PaymentBtcInput
     readonly iban?: Omit<InsertValues<typeof paymentIban>, "id">
-  }): Task<
-    PaymentId,
-    CreatePaymentError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
-  > =>
+  }): Task<PaymentId, CreatePaymentError, EvoluDep & EvoluOwnerDep & DateDep> =>
   async (run) => {
     assertHasSparkIdentifier(
       spark,
@@ -247,7 +243,7 @@ export const createPayment =
     }
 
     const id = createRowId<"Payment">()
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const paymentNumber = await run.ok(
       loadNextPaymentNumber({
         id,
@@ -258,7 +254,7 @@ export const createPayment =
     await runMutationWithCompletion((options) => {
       upsertPaymentNumberRows(run.deps.evolu, paymentNumber, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
 
       if (cashRegister) {
@@ -268,14 +264,14 @@ export const createPayment =
             ...cashRegister,
             id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
       if (spark) {
         upsertPaymentSparkDetails(run.deps.evolu, id, spark, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
       }
 
@@ -286,14 +282,14 @@ export const createPayment =
             ...iban,
             id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
       if (billLineSnapshot !== null) {
         snapshotBillLinesForPayment(run.deps.evolu, id, billLineSnapshot, {
           ...options,
-          ownerId: evoluOwnerId,
+          owner: evoluOwner,
         })
       }
 
@@ -303,7 +299,7 @@ export const createPayment =
           ...input,
           id,
         }),
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     })
 
@@ -330,9 +326,9 @@ export const updatePayment =
     readonly cashRegister?: Omit<UpdateValues<typeof paymentCashRegister>, "id">
     readonly spark?: PaymentBtcUpdateInput
     readonly iban?: Omit<UpdateValues<typeof paymentIban>, "id">
-  }): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<PaymentId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) => {
       if (cashRegister) {
@@ -342,7 +338,7 @@ export const updatePayment =
             ...cashRegister,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
@@ -357,7 +353,7 @@ export const updatePayment =
             exchangeRateFetchedAt: spark.exchangeRateFetchedAt,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
         if (spark.lightning) {
           run.deps.evolu.update(
@@ -366,7 +362,7 @@ export const updatePayment =
               ...spark.lightning,
               id: input.id,
             }),
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         }
         if (spark.sparkInvoice) {
@@ -376,7 +372,7 @@ export const updatePayment =
               ...spark.sparkInvoice,
               id: input.id,
             }),
-            { ...options, ownerId: evoluOwnerId }
+            { ...options, owner: evoluOwner }
           )
         }
       }
@@ -388,13 +384,13 @@ export const updatePayment =
             ...iban,
             id: input.id,
           }),
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
 
       return run.deps.evolu.update("payment", removeUndefinedValues(input), {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
     })
 
@@ -402,9 +398,9 @@ export const updatePayment =
   }
 
 export const deletePayment =
-  (paymentId: PaymentId): Task<PaymentId, never, EvoluDep & EvoluOwnerIdDep> =>
+  (paymentId: PaymentId): Task<PaymentId, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -413,7 +409,7 @@ export const deletePayment =
           id: paymentId,
           isDeleted: sqliteTrue,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -457,7 +453,7 @@ const markPaymentPaid =
   }): Task<
     PaymentId,
     PaymentNotFoundError | TNotFoundError | AccountCurrencyMismatchError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const paymentResult = await run(loadPayment(paymentId))
@@ -522,21 +518,21 @@ const markPaymentPaid =
       })
     )
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     await runMutationWithCompletion((options) => {
       upsertAccountTransactionRows(run.deps.evolu, accountTransaction, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
       upsertReconciliationClaimRows(run.deps.evolu, claim, billClosing, {
         ...options,
-        ownerId: evoluOwnerId,
+        owner: evoluOwner,
       })
       if (receivedCashAmount !== undefined) {
         run.deps.evolu.upsert(
           "paymentCashRegister",
           { id: paymentId, accountId, receivedAmount: receivedCashAmount },
-          { ...options, ownerId: evoluOwnerId }
+          { ...options, owner: evoluOwner }
         )
       }
     })
@@ -572,7 +568,7 @@ export const markPaymentPaidCash =
   }): Task<
     PaymentId,
     MarkPaymentPaidCashError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const paymentResult = await run(loadUncanceledPayment(input.paymentId))
@@ -614,7 +610,7 @@ export const markPaymentPaidIban =
   ): Task<
     PaymentId,
     MarkPaymentPaidIbanError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const paymentResult = await run(loadUncanceledPayment(input.paymentId))
@@ -665,10 +661,10 @@ const recordSwitchioTerminalOutcome =
     | CardSwitchioAccountNotFoundError
     | AccountCurrencyMismatchError
     | SwitchioPaymentError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     if (!terminalResult.ok) {
       run.deps.console.warn("[payment] Switchio card payment failed", {
@@ -688,7 +684,7 @@ const recordSwitchioTerminalOutcome =
             run.deps.evolu.update(
               "paymentCardSwitchio",
               { id: paymentId, unresolvedTransactionId: null },
-              { ...options, ownerId: evoluOwnerId }
+              { ...options, owner: evoluOwner }
             )
           )
         }
@@ -735,7 +731,7 @@ const recordSwitchioTerminalOutcome =
           terminalId: optionalNonEmptyString255(result.terminalId),
           terminalDateTime: optionalNonEmptyString255(result.terminalDateTime),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -771,10 +767,10 @@ export const payPaymentWithSwitchioCard =
   }): Task<
     PaymentId,
     PayPaymentWithSwitchioCardError,
-    EvoluDep & EvoluOwnerIdDep & DateDep & SwitchioTerminalDep
+    EvoluDep & EvoluOwnerDep & DateDep & SwitchioTerminalDep
   > =>
   async (run) => {
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
     const paymentResult = await run(loadPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
 
@@ -828,7 +824,7 @@ export const payPaymentWithSwitchioCard =
           transactionId,
           unresolvedTransactionId: transactionId,
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -917,7 +913,7 @@ export const settleRestoredSwitchioCardPayment =
   }): Task<
     PaymentId,
     SettleRestoredSwitchioCardPaymentError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const transactionId = optionalNonEmptyString255(restored.transactionId)
@@ -952,7 +948,7 @@ export const cancelPayment =
   ): Task<
     PaymentId,
     PaymentAlreadyPaidError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     // A payment that already has an active claim (money arrived) cannot be
@@ -965,7 +961,7 @@ export const cancelPayment =
       return err(createPaymentAlreadyPaidError({ id: paymentId }))
     }
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -974,7 +970,7 @@ export const cancelPayment =
           id: paymentId,
           canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -1006,7 +1002,7 @@ export const confirmPaymentPaidDespiteCancellation =
   ): Task<
     PaymentId,
     ConfirmPaymentPaidDespiteCancellationError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const paymentResult = await run(loadPayment(paymentId))
@@ -1019,7 +1015,7 @@ export const confirmPaymentPaidDespiteCancellation =
       return err(createPaymentNotClaimedError({ id: paymentId }))
     }
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -1030,7 +1026,7 @@ export const confirmPaymentPaidDespiteCancellation =
             run.deps.date.now().getTime()
           ),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -1062,7 +1058,7 @@ export const acknowledgePaymentExcessSettlement =
   ): Task<
     PaymentId,
     AcknowledgePaymentExcessSettlementError,
-    EvoluDep & EvoluOwnerIdDep & DateDep
+    EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const paymentResult = await run(loadPayment(paymentId))
@@ -1076,7 +1072,7 @@ export const acknowledgePaymentExcessSettlement =
       return err(createPaymentNotOverpaidError({ id: paymentId }))
     }
 
-    const { evoluOwnerId } = run.deps
+    const { evoluOwner } = run.deps
 
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
@@ -1087,7 +1083,7 @@ export const acknowledgePaymentExcessSettlement =
             run.deps.date.now().getTime()
           ),
         },
-        { ...options, ownerId: evoluOwnerId }
+        { ...options, owner: evoluOwner }
       )
     )
 
@@ -1106,13 +1102,13 @@ export const holdCashuReceive =
   }: {
     readonly paymentId: PaymentId
     readonly receiveOperationId: CashuOperationId
-  }): Task<void, never, EvoluDep & EvoluOwnerIdDep> =>
+  }): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     await runMutationWithCompletion((options) =>
       run.deps.evolu.update(
         "paymentCashu",
         { id: paymentId, receiveOperationId },
-        { ...options, ownerId: run.deps.evoluOwnerId }
+        { ...options, owner: run.deps.evoluOwner }
       )
     )
     return ok(undefined)

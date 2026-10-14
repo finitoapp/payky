@@ -7,7 +7,7 @@ import {
 } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import { createDeviceQuery } from "@/core/evolu/device-client.ts"
 import {
   type AppMigration,
@@ -57,7 +57,7 @@ const createTestMigration = (name: string, hasWorkInitially: boolean) => {
 }
 
 const createDeps = async (): Promise<{
-  readonly deps: EvoluDep & EvoluOwnerIdDep
+  readonly deps: EvoluDep & EvoluOwnerDep
   readonly dispose: () => Promise<void>
 }> => {
   const testEvolu = await createEvoluTest()
@@ -131,7 +131,7 @@ describe("app migrations", () => {
         hasWork: async () => ok(true),
         run: (async () => {
           throw reason
-        }) as Task<unknown, never, EvoluDep & EvoluOwnerIdDep>,
+        }) as Task<unknown, never, EvoluDep & EvoluOwnerDep>,
       }
 
       // Evolu wraps what a Task throws rather than rethrowing it, so the
@@ -164,7 +164,7 @@ describe("app migrations", () => {
       // The pre-singleton shape: a plugin at a generated id rather than the
       // fixed `fioPluginId`, with its token keyed to that same id.
       await runMutationWithCompletion((options) => {
-        const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+        const mutationOptions = { ...options, owner: evolu.appOwner }
 
         evolu.upsert(
           "fioPlugin",
@@ -217,7 +217,7 @@ describe("app migrations", () => {
       // A cash register at a random id, as `createAccount` minted them before
       // ids were derived from the currency.
       await runMutationWithCompletion((options) => {
-        const mutationOptions = { ...options, ownerId: evolu.appOwner.id }
+        const mutationOptions = { ...options, owner: evolu.appOwner }
 
         evolu.upsert(
           "accountCashRegister",

@@ -3,7 +3,7 @@ import { type Command, createCommand } from "commander"
 import { z } from "zod"
 import { zodCommand } from "zod-commander/zod4"
 import { printCliError } from "@/core/cli/cli-errors.ts"
-import type { DateDep, EvoluOwnerIdDep, FetchDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, FetchDep } from "@/core/deps.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { YadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import { AccountId } from "@/core/modules/account/account-types.ts"
@@ -212,12 +212,7 @@ export const registerPaymentsCommand =
   ): Task<
     void,
     never,
-    EvoluDep &
-      EvoluOwnerIdDep &
-      DateDep &
-      FetchDep &
-      SparkWalletDep &
-      YadioApiDep
+    EvoluDep & EvoluOwnerDep & DateDep & FetchDep & SparkWalletDep & YadioApiDep
   > =>
   (run) => {
     const { evolu } = run.deps

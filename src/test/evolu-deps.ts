@@ -1,4 +1,4 @@
-import type { EvoluOwnerIdDep } from "@/core/deps.ts"
+import type { EvoluOwnerDep } from "@/core/deps.ts"
 import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
 
 /**
@@ -8,7 +8,7 @@ import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
  */
 export const evoluTestDeps = (
   evolu: EvoluDep["evolu"]
-): EvoluDep & EvoluOwnerIdDep => ({
+): EvoluDep & EvoluOwnerDep => ({
   evolu,
-  evoluOwnerId: evolu.appOwner.id,
+  evoluOwner: evolu.appOwner,
 })

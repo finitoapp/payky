@@ -429,11 +429,18 @@ export const createCashuShardStore = ({
     return result
   }
 
+  /** Every owner this store writes under: Linky's app owner or a derived shard. */
+  const ownerOf = (id: OwnerId): AppOwner | ShardOwner => {
+    if (id === linkyAppOwner.id) return linkyAppOwner
+    for (const owner of shardOwners.values()) if (owner.id === id) return owner
+    throw new Error(`Not a Linky owner this store derived: ${id}`)
+  }
+
   const mutate = (mutations: ReadonlyArray<Mutation>): Promise<void> => {
     if (mutations.length === 0) return Promise.resolve()
     return runMutationWithCompletion((options: MutationOptions) => {
       for (const mutation of mutations) {
-        const mutationOptions = { ...options, ownerId: mutation.ownerId }
+        const mutationOptions = { ...options, owner: ownerOf(mutation.ownerId) }
         // The values were built from the table's own columns above; Evolu
         // validates them against the schema again.
         const values = mutation.values as never
@@ -836,9 +843,7 @@ export const startCashuShardStore = ({
   account,
   ownerSync,
   fetchRelays,
-  registerOwner = (owner, transports) =>
-    // biome-ignore lint/correctness/useHookAtTopLevel: not a React hook
-    evolu.useOwner(owner, transports),
+  registerOwner = (owner, transports) => evolu.useOwner(owner, transports),
   signal,
 }: {
   readonly evolu: Evolu

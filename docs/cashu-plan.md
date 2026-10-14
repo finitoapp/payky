@@ -153,7 +153,7 @@ Linky, then writes one row Linky reads. Proves Evolu 7.4.1 ↔ 8.19.0.
 
 ### 1.7 First write
 
-- Shard store write path: writes always carry `MutationOptions.ownerId` of
+- Shard store write path: writes always carry `MutationOptions.owner` of
   the active shard (or the Linky app owner for `meta`); update of a row in an
   older shard copies full row + patch into the active shard and tombstones the
   old copy; optional columns left out (`removeUndefinedValues`); `error`

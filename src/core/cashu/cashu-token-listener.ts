@@ -7,7 +7,7 @@ import {
   receiveCashuToken,
 } from "@/core/cashu/cashu-receive.ts"
 import type { CashuTopupDeps } from "@/core/cashu/cashu-topup.ts"
-import type { DateDep, EvoluOwnerIdDep, MasterKeyDep } from "@/core/deps.ts"
+import type { DateDep, EvoluOwnerDep, MasterKeyDep } from "@/core/deps.ts"
 import {
   type CashuTokenMessage,
   fetchCashuTokenMessages,
@@ -41,7 +41,7 @@ import { deriveNostrSecretKey } from "@/core/modules/shared/key-derivation.ts"
 
 export type CashuTokenListenerDeps = CashuTopupDeps &
   EvoluDep &
-  EvoluOwnerIdDep &
+  EvoluOwnerDep &
   NostrDep &
   MasterKeyDep &
   DateDep

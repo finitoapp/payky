@@ -582,7 +582,7 @@ describe("payment method", () => {
       context.evolu.update(
         "payment",
         { id: unknown, confirmedPaidAt: TimestampMsSchema.decode(Date.now()) },
-        { ...options, ownerId: context.deps.evoluOwnerId }
+        { ...options, owner: context.deps.evoluOwner }
       )
     )
 

@@ -3,6 +3,11 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 import { AccountId } from "@/core/modules/account/account-types.ts"
 import { AccountTransactionOnchainExitSpeedSchema } from "@/core/modules/account-transaction/account-transaction.ts"
 import { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import {
+  CashuOperationId,
+  CashuQuoteIdSchema,
+  MintUrlSchema,
+} from "@/core/modules/cashu/cashu-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   BitcoinAddressSchema,
@@ -59,6 +64,23 @@ export const withdrawalLightning = {
   maxFeeSats: NonNegativeIntegerSchema,
 } as const
 
+/**
+ * A Lightning withdrawal paid by melting ecash at one mint of the wallet
+ * shared with Linky (cashu.md §6). Its own detail table: Spark's
+ * `withdrawalLightning` and its required `sparkTransferId` stay untouched.
+ * `meltOperationId` is the melt in Linky's shards, known before anything is
+ * sent because it derives from the mint and the quote.
+ */
+export const withdrawalLightningCashu = {
+  id: WithdrawalId,
+  mintUrl: MintUrlSchema,
+  quoteId: CashuQuoteIdSchema,
+  meltOperationId: CashuOperationId,
+  lnInvoice: NonEmptyStringSchema,
+  /** `null` when paying an invoice directly. */
+  lightningAddress: NonEmptyStringSchema.nullable(),
+} as const
+
 export const withdrawalIndexes = ((create) => [
   create("withdrawal_accountId_createdAt")
     .on("withdrawal")
@@ -66,8 +88,14 @@ export const withdrawalIndexes = ((create) => [
   create("withdrawal_accountTransactionId")
     .on("withdrawal")
     .column("accountTransactionId"),
+  create("withdrawalLightningCashu_meltOperationId")
+    .on("withdrawalLightningCashu")
+    .column("meltOperationId"),
 ]) satisfies IndexesConfig
 
 export type WithdrawalRow = InferTable<typeof withdrawal>
 export type WithdrawalOnchainRow = InferTable<typeof withdrawalOnchain>
 export type WithdrawalLightningRow = InferTable<typeof withdrawalLightning>
+export type WithdrawalLightningCashuRow = InferTable<
+  typeof withdrawalLightningCashu
+>

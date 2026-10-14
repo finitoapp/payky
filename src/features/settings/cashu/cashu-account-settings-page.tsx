@@ -1,4 +1,4 @@
-import { CoinsIcon, LandmarkIcon } from "lucide-react"
+import { ArrowUpFromLine, CoinsIcon, LandmarkIcon } from "lucide-react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
@@ -87,6 +87,21 @@ export function CashuAccountSettingsPage() {
                   </span>
                   <span className="text-xs leading-snug text-muted-foreground">
                     {t("settings.cashuAccount.mintsDescription")}
+                  </span>
+                </span>
+              ),
+            },
+            {
+              kind: "link",
+              to: "/settings/payment-accounts/cashu/withdraw",
+              icon: <ArrowUpFromLine className="text-muted-foreground" />,
+              label: (
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold">
+                    {t("settings.cashuAccount.withdraw")}
+                  </span>
+                  <span className="text-xs leading-snug text-muted-foreground">
+                    {t("settings.cashuAccount.withdrawDescription")}
                   </span>
                 </span>
               ),

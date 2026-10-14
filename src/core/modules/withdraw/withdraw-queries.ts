@@ -3,6 +3,7 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionOnchainExitSpeed } from "@/core/modules/account-transaction/account-transaction.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { WithdrawalFailureReason, WithdrawalId } from "./withdraw-types.ts"
 
@@ -295,4 +296,54 @@ export const withdrawalForResolutionQuery = (id: WithdrawalId) =>
         exitSpeed: KyselyNotNull
         feeSats: KyselyNotNull
       }>()
+  )
+
+/** The withdrawal a Cashu melt pays, for settling it once the melt is decided. */
+export const withdrawalByCashuMeltQuery = (meltOperationId: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("withdrawalLightningCashu")
+      .innerJoin("withdrawal", "withdrawal.id", "withdrawalLightningCashu.id")
+      .select([
+        "withdrawal.id",
+        "withdrawal.accountId",
+        "withdrawal.deviceId",
+        "withdrawal.accountTransactionId",
+        "withdrawal.failedAt",
+      ])
+      .where("withdrawalLightningCashu.meltOperationId", "=", meltOperationId)
+      .where("withdrawal.isDeleted", "is not", sqliteTrue)
+      .$narrowType<{
+        accountId: KyselyNotNull
+        accountTransactionId: KyselyNotNull
+      }>()
+  )
+
+/** The Cashu withdrawals of an account, newest first. */
+export const cashuWithdrawalsQuery = (accountId: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("withdrawalLightningCashu")
+      .innerJoin("withdrawal", "withdrawal.id", "withdrawalLightningCashu.id")
+      .leftJoin("accountTransaction", (join) =>
+        join
+          .onRef(
+            "accountTransaction.id",
+            "=",
+            "withdrawal.accountTransactionId"
+          )
+          .on("accountTransaction.isDeleted", "is not", sqliteTrue)
+      )
+      .select([
+        "withdrawal.id",
+        "withdrawal.amountSats",
+        "withdrawal.failedAt",
+        "withdrawal.createdAt",
+        "withdrawalLightningCashu.mintUrl",
+        "withdrawalLightningCashu.lightningAddress",
+        "accountTransaction.amount as movedAmount",
+      ])
+      .where("withdrawal.accountId", "=", accountId)
+      .where("withdrawal.isDeleted", "is not", sqliteTrue)
+      .orderBy("withdrawal.createdAt", "desc")
   )

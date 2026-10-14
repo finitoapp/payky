@@ -31,6 +31,8 @@ describe("onboarding payment method order", () => {
       "cardSwitchio",
       "spark",
       "cashRegister",
+      // Unlisted by onboarding, so appended: Cashu is enabled in settings.
+      "cashu",
     ])
   })
 

@@ -60,7 +60,8 @@ const newPayment = async ({ deps, accountId }: Setup) => {
   const [operation] = (await deps.cashuShardStore.loadOperations()).filter(
     (op) => op.status === "pending"
   )
-  if (operation?.quoteId == null) throw new Error("no topup")
+  if (operation?.quoteId === null || operation?.quoteId === undefined)
+    throw new Error("no topup")
   return { paymentId, operation }
 }
 

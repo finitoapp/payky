@@ -237,6 +237,11 @@ export const csPayment = {
   "paymentWait.ibanPaid.error": "Převod se nepodařilo potvrdit.",
   "paymentWait.ibanPaid.pending": "Potvrzuji...",
   "paymentWait.invalidId": "Neplatné id platby.",
+  "paymentWait.method.cashu": "Cashu",
+  "paymentWait.preparing.cashu": "Připravuji Cashu platbu...",
+  "paymentWait.cashu.quoteExpired":
+    "Faktura mintu vypršela dřív, než byla zaplacena.",
+  "paymentWait.cashu.newQuote": "Nová faktura",
   "paymentWait.method.card": "Platební karta",
   "paymentWait.method.cash": "Hotovost",
   "paymentWait.method.iban": "Převod",

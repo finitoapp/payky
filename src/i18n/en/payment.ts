@@ -240,6 +240,11 @@ export const enPayment = {
   "paymentWait.ibanPaid.error": "Could not confirm the transfer.",
   "paymentWait.ibanPaid.pending": "Confirming...",
   "paymentWait.invalidId": "Invalid payment id.",
+  "paymentWait.method.cashu": "Cashu",
+  "paymentWait.preparing.cashu": "Preparing Cashu request...",
+  "paymentWait.cashu.quoteExpired":
+    "The mint's invoice expired before it was paid.",
+  "paymentWait.cashu.newQuote": "New invoice",
   "paymentWait.method.card": "Payment card",
   "paymentWait.method.cash": "Cash",
   "paymentWait.method.iban": "Transfer",

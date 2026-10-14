@@ -2,6 +2,7 @@ import { createIdFromString } from "@evolu/common"
 
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
 import type {
   PaymentAccountKind,
   PaymentId,
@@ -57,4 +58,15 @@ export const deriveSparkAccountTransactionId = (
 ): AccountTransactionId =>
   createIdFromString<"AccountTransaction">(
     `accountTransaction:spark:${sparkTransferId}`
+  )
+
+/**
+ * The id a Cashu operation's movement is recorded under: one per operation,
+ * whichever device or app books it (cashu/0005).
+ */
+export const deriveCashuAccountTransactionId = (
+  cashuOperationId: CashuOperationId
+): AccountTransactionId =>
+  createIdFromString<"AccountTransaction">(
+    `accountTransaction:cashu:${cashuOperationId}`
   )

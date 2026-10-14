@@ -240,6 +240,11 @@ export const skPayment = {
   "paymentWait.ibanPaid.error": "Prevod sa nepodarilo potvrdiť.",
   "paymentWait.ibanPaid.pending": "Potvrdzujem...",
   "paymentWait.invalidId": "Neplatné ID platby.",
+  "paymentWait.method.cashu": "Cashu",
+  "paymentWait.preparing.cashu": "Pripravujem Cashu platbu...",
+  "paymentWait.cashu.quoteExpired":
+    "Faktúra mintu vypršala skôr, než bola zaplatená.",
+  "paymentWait.cashu.newQuote": "Nová faktúra",
   "paymentWait.method.card": "Platobná karta",
   "paymentWait.method.cash": "Hotovosť",
   "paymentWait.method.iban": "Prevod",

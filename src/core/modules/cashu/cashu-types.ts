@@ -32,6 +32,10 @@ export const LinkySettingIdRaw = id("Setting")
 export const LinkySettingId = standardSchemaToZod(LinkySettingIdRaw)
 export type LinkySettingId = typeof LinkySettingIdRaw.Output
 
+export const CashuBookingCursorIdRaw = id("CashuBookingCursor")
+export const CashuBookingCursorId = standardSchemaToZod(CashuBookingCursorIdRaw)
+export type CashuBookingCursorId = typeof CashuBookingCursorIdRaw.Output
+
 /** Evolu's `NonEmptyString100`/`NonEmptyString1000`, without trimming. */
 export const LinkyString100Schema = z
   .string()

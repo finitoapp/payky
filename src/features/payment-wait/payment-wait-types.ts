@@ -11,7 +11,7 @@ import type {
 } from "@/core/modules/shared/schema.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-export type PaymentMethodTab = "spark" | "iban" | "cash" | "card"
+export type PaymentMethodTab = "spark" | "iban" | "cash" | "card" | "cashu"
 
 export interface PaymentMethodOptionBase {
   readonly kind: DefaultPaymentMethod
@@ -32,6 +32,13 @@ export type PaymentMethodOption = PaymentMethodOptionBase &
       }
     | { readonly id: "cash"; readonly qrPayload: null }
     | { readonly id: "card"; readonly qrPayload: null }
+    | {
+        readonly id: "cashu"
+        /** The BIP-321 URI with the mint's invoice (and later a NUT-18 request). */
+        readonly qrPayload: string | null
+        /** The mint quote expired: the tab offers a new one. */
+        readonly quoteExpired: boolean
+      }
   )
 
 export interface CashPaymentTabProps {

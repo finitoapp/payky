@@ -666,6 +666,11 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
           .onRef("paymentCardSwitchio.id", "=", "payment.id")
           .on("paymentCardSwitchio.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "payment.id")
+          .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.billId",
@@ -684,6 +689,12 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentCashRegister.accountId as cashRegisterAccountId",
         "paymentCardSwitchio.accountId as cardAccountId",
         "paymentCardSwitchio.unresolvedTransactionId as cardUnresolvedTransactionId",
+        "paymentCashu.accountId as cashuAccountId",
+        "paymentCashu.amountSats as cashuAmountSats",
+        "paymentCashu.lnInvoice as cashuLnInvoice",
+        "paymentCashu.mintUrl as cashuMintUrl",
+        "paymentCashu.quoteExpiresAt as cashuQuoteExpiresAt",
+        "paymentCashu.receiveOperationId as cashuReceiveOperationId",
       ])
       .where("payment.id", "=", paymentId)
       .where("payment.isDeleted", "is not", sqliteTrue)

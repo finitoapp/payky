@@ -7,6 +7,11 @@ import {
   AccountTransactionKindSchema,
   AccountTransactionSourceId,
 } from "@/core/modules/account-transaction/account-transaction-types.ts"
+import {
+  CashuOperationId,
+  CashuQuoteIdSchema,
+  MintUrlSchema,
+} from "@/core/modules/cashu/cashu-types.ts"
 import { DeviceId } from "@/core/modules/device/device-types.ts"
 import {
   BitcoinAddressSchema,
@@ -74,6 +79,19 @@ export const accountTransactionOnchain = {
   txid: NonEmptyStringSchema.nullable(),
 } as const
 
+/**
+ * A movement into the shared Cashu wallet (cashu.md §5, cashu/0005): the
+ * `done` `topup` or `receive` operation it books, by id. `quoteId` and
+ * `mintUrl` are copied from the operation so the automatic claim finds its
+ * payment without reading Linky's tables.
+ */
+export const accountTransactionCashu = {
+  id: AccountTransactionId,
+  cashuOperationId: CashuOperationId,
+  quoteId: CashuQuoteIdSchema.nullable(),
+  mintUrl: MintUrlSchema,
+} as const
+
 export const accountTransactionSource = {
   id: AccountTransactionSourceId,
   deviceId: DeviceId.nullable(),
@@ -95,6 +113,9 @@ export const accountTransactionIndexes = ((create) => [
   create("accountTransactionSpark_sparkTransferId")
     .on("accountTransactionSpark")
     .column("sparkTransferId"),
+  create("accountTransactionCashu_cashuOperationId")
+    .on("accountTransactionCashu")
+    .column("cashuOperationId"),
   create("accountTransactionLightning_lnInvoice")
     .on("accountTransactionLightning")
     .column("lnInvoice"),
@@ -133,6 +154,9 @@ export type AccountTransactionOnchainRow = InferTable<
 >
 export type AccountTransactionOnchainExitSpeed = z.output<
   typeof AccountTransactionOnchainExitSpeedSchema
+>
+export type AccountTransactionCashuRow = InferTable<
+  typeof accountTransactionCashu
 >
 export type AccountTransactionSourceRow = InferTable<
   typeof accountTransactionSource

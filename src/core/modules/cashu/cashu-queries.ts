@@ -1,4 +1,5 @@
 import {
+  createIdFromString,
   kyselySql,
   type NonEmptyReadonlyArray,
   type OwnerId,
@@ -181,6 +182,50 @@ export const cashuShardUsageQuery = (ownerId: OwnerId) =>
         )
       )
       .select(["usage.mutations", "usage.bytes"])
+  )
+
+export const cashuBookingCursorId =
+  createIdFromString<"CashuBookingCursor">("cashu-booking-cursor")
+
+export const cashuBookingCursorQuery = createQuery((db) =>
+  db
+    .selectFrom("_cashuBookingCursor")
+    .select(["historyRowid"])
+    .where("id", "=", cashuBookingCursorId)
+)
+
+/** The newest change this database holds, whatever it changed. */
+export const evoluHistoryMaxRowidQuery = createQuery((db) =>
+  db
+    .selectFrom(
+      kyselySql<{
+        maxRowid: number | null
+      }>`(select max("rowid") as "maxRowid" from "evolu_history")`.as("history")
+    )
+    .select("history.maxRowid")
+)
+
+/**
+ * The operations whose `status` changed on this device after `afterRowid`,
+ * in arrival order, under the given shard owners: what the booking job reads
+ * on every run after its bootstrap. A rowid range, so the cost follows the
+ * new changes only.
+ */
+export const changedCashuOperationIdsQuery = (
+  afterRowid: number,
+  throughRowid: number,
+  ownerIds: NonEmptyReadonlyArray<OwnerId>
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom(
+        kyselySql<{
+          idHex: string
+        }>`(select distinct hex("id") as "idHex" from "evolu_history" where "rowid" > ${afterRowid} and "rowid" <= ${throughRowid} and "table" = 'cashuOperation' and "column" = 'status' and "ownerId" in (${kyselySql.join(ownerIds.map((ownerId) => ownerIdToOwnerIdBytes(ownerId)))}))`.as(
+          "changed"
+        )
+      )
+      .select("changed.idHex")
   )
 
 /*

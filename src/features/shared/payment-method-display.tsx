@@ -1,6 +1,7 @@
 import {
   BanknoteIcon,
   BitcoinIcon,
+  CoinsIcon,
   CreditCardIcon,
   LandmarkIcon,
   type LucideIcon,
@@ -21,6 +22,7 @@ export const paymentMethodLabelKey = {
   onchain: "paymentDetail.paymentMethod.onchain",
   cardSwitchio: "paymentDetail.paymentMethod.card",
   spark: "paymentDetail.paymentMethod.spark",
+  cashu: "paymentDetail.paymentMethod.cashu",
 } satisfies Record<AccountTransactionKind, TranslationKey>
 
 export const paymentMethodIcon = {
@@ -29,4 +31,5 @@ export const paymentMethodIcon = {
   onchain: BitcoinIcon,
   cardSwitchio: CreditCardIcon,
   spark: ZapIcon,
+  cashu: CoinsIcon,
 } satisfies Record<AccountTransactionKind, LucideIcon>

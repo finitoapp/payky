@@ -28,6 +28,7 @@
   --chart-3: oklch(0.6 0.1 12);
   --chart-4: oklch(0.72 0.15 70);
   --chart-5: oklch(0.62 0.11 145);
+  --chart-6: oklch(0.55 0.13 300);
   --border: oklch(0.9 0.01 255);
   --input: oklch(0.93 0.01 255);
   --ring: oklch(0.56 0.167 45);
@@ -82,6 +83,7 @@
   --chart-3: oklch(0.713 0.131 236);
   --chart-4: oklch(0.604 0.186 19.2);
   --chart-5: oklch(0.576 0.119 242.3);
+  --chart-6: oklch(0.68 0.14 305);
   --border: oklch(0.5 0.012 255);
   --input: oklch(0.42 0 89.9);
   --ring: oklch(0.663 0.167 45);
@@ -135,6 +137,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);

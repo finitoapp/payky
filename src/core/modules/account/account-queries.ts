@@ -217,6 +217,34 @@ export const cardSwitchioAccountQuery = createQuery((db) =>
     }>()
 )
 
+/** The Cashu account, enabled or not: there is at most one per shared wallet. */
+export const cashuAccountQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .innerJoin("accountCashu", "accountCashu.id", "account.id")
+    .select(["account.id", "account.name", "account.kind", "account.isDeleted"])
+    .where("account.kind", "=", "cashu")
+    .where("accountCashu.isDeleted", "is not", sqliteTrue)
+    .where("account.name", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
+    .$narrowType<{ name: KyselyNotNull; kind: KyselyNotNull }>()
+)
+
+export const activeCashuAccountByIdQuery = (idValue: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("account")
+      .innerJoin("accountCashu", "accountCashu.id", "account.id")
+      .select(["account.id"])
+      .where("account.id", "=", idValue)
+      .where("account.kind", "=", "cashu")
+      .where("account.isDeleted", "is not", sqliteTrue)
+      .where("accountCashu.isDeleted", "is not", sqliteTrue)
+  )
+
 /**
  * Every non-deleted account with the method-specific columns the payment
  * waiting screen needs to offer a Spark, IBAN, cash-register, or card tab.

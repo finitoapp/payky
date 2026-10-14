@@ -64,6 +64,15 @@ export const accountCardSwitchio = {
   currency: FiatCurrencySchema,
 } as const
 
+/**
+ * The Cashu payment method (cashu.md §4). It has no secret: the wallet is the
+ * one Linky shows, derived from the master key, and its mint is Linky's
+ * synced default mint, read when a payment is prepared.
+ */
+export const accountCashu = {
+  id: AccountId,
+} as const
+
 export const accountIndexes = ((create) => [
   create("account_kind").on("account").column("kind"),
 ]) satisfies IndexesConfig
@@ -76,3 +85,4 @@ export type SparkAccountSyncPointerRow = InferTable<
 >
 export type AccountCashRegisterRow = InferTable<typeof accountCashRegister>
 export type AccountCardSwitchioRow = InferTable<typeof accountCardSwitchio>
+export type AccountCashuRow = InferTable<typeof accountCashu>

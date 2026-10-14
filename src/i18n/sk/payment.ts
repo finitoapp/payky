@@ -117,6 +117,7 @@ export const skPayment = {
   "paymentDetail.invalidId": "Neplatné ID platby.",
   "paymentDetail.notFound": "Platba sa nenašla.",
   "paymentDetail.paymentMethod.card": "Platobnou kartou",
+  "paymentDetail.paymentMethod.cashu": "Cashu",
   "paymentDetail.paymentMethod.cash": "Hotovosť",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.onchain": "On-chain",

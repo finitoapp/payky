@@ -1,4 +1,4 @@
-import { createIdFromString } from "@evolu/common"
+import { createIdFromString, type OwnerId } from "@evolu/common"
 
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { SparkSecret } from "@/core/modules/shared/key-derivation.ts"
@@ -33,6 +33,10 @@ export const createCardSwitchioAccountId = (
   currency: FiatCurrency
 ): AccountId =>
   createIdFromString<"Account">(`account:cardSwitchio:${currency}`)
+
+/** Derived from Linky's app owner: one Cashu account per shared wallet. */
+export const createCashuAccountId = (linkyAppOwnerId: OwnerId): AccountId =>
+  createIdFromString<"Account">(`account:cashu:${linkyAppOwnerId}`)
 
 /**
  * The fixed id the fiat bank account had before ids were derived from its

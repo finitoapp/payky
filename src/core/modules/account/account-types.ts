@@ -12,6 +12,7 @@ export const AccountKindSchema = z.enum([
   "spark",
   "cashRegister",
   "cardSwitchio",
+  "cashu",
 ])
 
 export type AccountKind = z.output<typeof AccountKindSchema>

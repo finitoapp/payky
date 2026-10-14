@@ -42,6 +42,7 @@ const methodColors = {
   iban: "var(--chart-3)",
   spark: "var(--chart-4)",
   onchain: "var(--chart-5)",
+  cashu: "var(--chart-6)",
   unknown: "var(--muted-foreground)",
 } satisfies Record<MethodShare["method"], string>
 

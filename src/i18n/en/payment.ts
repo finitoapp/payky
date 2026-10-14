@@ -116,6 +116,7 @@ export const enPayment = {
   "paymentDetail.invalidId": "Invalid payment id.",
   "paymentDetail.notFound": "Payment was not found.",
   "paymentDetail.paymentMethod.card": "Payment card",
+  "paymentDetail.paymentMethod.cashu": "Cashu",
   "paymentDetail.paymentMethod.cash": "Cash",
   "paymentDetail.paymentMethod.iban": "IBAN",
   "paymentDetail.paymentMethod.onchain": "On-chain",

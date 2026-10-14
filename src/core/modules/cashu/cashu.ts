@@ -2,6 +2,7 @@ import type { IndexesConfig } from "@evolu/common/local-first"
 
 import {
   CashuAmountSchema,
+  CashuBookingCursorId,
   CashuBolt11Schema,
   CashuOperationId,
   CashuOperationKindSchema,
@@ -89,6 +90,19 @@ export const cashuOperation = {
   createdAtSec: PositiveIntSchema,
   tokenText: CashuTokenTextSchema.nullable(),
   error: LinkyString1000Schema.nullable(),
+} as const
+
+/**
+ * Payky's own, local-only (the leading underscore keeps Evolu from syncing
+ * it): the `evolu_history` rowid up to which the booking job has read Cashu
+ * operation changes (cashu.md §5 "Into Payky's books"). A rowid is valid only
+ * for this database file, which is why it lives here and not in the device
+ * database: when this database is rebuilt from sync, the cursor goes with it
+ * and the booking bootstraps again.
+ */
+export const _cashuBookingCursor = {
+  id: CashuBookingCursorId,
+  historyRowid: NonNegativeIntSchema,
 } as const
 
 /** Local indexes only: Linky defines none, and none of these sync. */

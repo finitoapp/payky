@@ -3,6 +3,7 @@ import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { BoltCardReader } from "@/features/payment-wait/payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "@/features/payment-wait/payment-wait-card-tab.tsx"
 import { CashPaymentTab } from "@/features/payment-wait/payment-wait-cash-tab.tsx"
+import { CashuPaymentTab } from "@/features/payment-wait/payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "@/features/payment-wait/payment-wait-iban-tab.tsx"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type {
@@ -37,8 +38,12 @@ export function PaymentMethodTabContent({
   onMarkCashPaid,
   onMarkIbanPaid,
   onPayCard,
+  newCashuQuotePending,
+  onNewCashuQuote,
 }: {
   readonly method: PaymentMethodOption
+  readonly newCashuQuotePending: boolean
+  readonly onNewCashuQuote: () => void
   /** Set while a Bolt Card may pay this payment's Lightning invoice. */
   readonly boltCardPaymentId: PaymentId | null
   readonly preparingMessageKey: TranslationKey | null
@@ -87,6 +92,16 @@ export function PaymentMethodTabContent({
           cashPaymentPending={cashPaymentPending}
           cashRegisterAccountId={cashRegisterAccountId}
           onMarkCashPaid={onMarkCashPaid}
+        />
+      )
+    case "cashu":
+      return (
+        <CashuPaymentTab
+          qrPayload={method.qrPayload}
+          quoteExpired={method.quoteExpired}
+          preparingMessageKey={preparingMessageKey}
+          newQuotePending={newCashuQuotePending}
+          onNewQuote={onNewCashuQuote}
         />
       )
     case "card":

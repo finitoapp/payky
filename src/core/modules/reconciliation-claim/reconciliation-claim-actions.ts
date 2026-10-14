@@ -29,6 +29,8 @@ import {
 import {
   activeReconciliationClaimByAccountTransactionIdQuery,
   cashRegisterReconciliationCandidateByAccountTransactionIdQuery,
+  cashuReconciliationCandidateByAccountTransactionIdQuery,
+  cashuReconciliationCandidateByValuesQuery,
   ibanReconciliationCandidateByAccountTransactionIdQuery,
   ibanReconciliationCandidateByValuesQuery,
   sparkReconciliationCandidateByAccountTransactionIdQuery,
@@ -90,10 +92,28 @@ export const loadAutomaticReconciliationClaimForNewAccountTransaction =
     accountTransactionId: AccountTransactionId
   ): Task<ReconciliationClaimWrite | null, never, EvoluDep & DateDep> =>
   async (run) => {
-    const { iban, spark } = accountTransaction
+    const { iban, spark, cashu } = accountTransaction
     let paymentId: PaymentId | undefined
 
-    if (iban?.variableSymbol !== null && iban?.variableSymbol !== undefined) {
+    if (cashu) {
+      if (
+        accountTransaction.amount < 0 ||
+        accountTransaction.currency !== "BTC"
+      )
+        return ok(null)
+      const candidates = await run.deps.evolu.loadQuery(
+        cashuReconciliationCandidateByValuesQuery({
+          accountId: accountTransaction.accountId,
+          cashuOperationId: cashu.cashuOperationId,
+          quoteId: cashu.quoteId ?? null,
+          mintUrl: cashu.mintUrl,
+        })
+      )
+      paymentId = candidates[0]?.paymentId
+    } else if (
+      iban?.variableSymbol !== null &&
+      iban?.variableSymbol !== undefined
+    ) {
       if (
         accountTransaction.amount < 0 ||
         accountTransaction.currency === "BTC"
@@ -261,22 +281,32 @@ export const reconcileAccountTransaction =
     // short-circuit it replaces therefore skipped nothing the kind filter
     // would not have — it only cost round trips, one per incoming transaction
     // on the sync jobs' hot path.
-    const [ibanCandidates, sparkCandidates, cashRegisterCandidates] =
-      await Promise.all(
-        run.deps.evolu.loadQueries([
-          ibanReconciliationCandidateByAccountTransactionIdQuery(
-            accountTransactionId
-          ),
-          sparkReconciliationCandidateByAccountTransactionIdQuery(
-            accountTransactionId
-          ),
-          cashRegisterReconciliationCandidateByAccountTransactionIdQuery(
-            accountTransactionId
-          ),
-        ])
-      )
+    const [
+      ibanCandidates,
+      sparkCandidates,
+      cashRegisterCandidates,
+      cashuCandidates,
+    ] = await Promise.all(
+      run.deps.evolu.loadQueries([
+        ibanReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+        sparkReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+        cashRegisterReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+        cashuReconciliationCandidateByAccountTransactionIdQuery(
+          accountTransactionId
+        ),
+      ])
+    )
     const candidate =
-      ibanCandidates[0] ?? sparkCandidates[0] ?? cashRegisterCandidates[0]
+      ibanCandidates[0] ??
+      sparkCandidates[0] ??
+      cashRegisterCandidates[0] ??
+      cashuCandidates[0]
     if (!candidate) return ok(null)
 
     await run.ok(

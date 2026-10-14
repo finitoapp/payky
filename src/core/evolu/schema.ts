@@ -14,6 +14,7 @@ import {
 } from "@/core/modules/account/account.ts"
 import {
   accountTransaction,
+  accountTransactionCashu,
   accountTransactionIban,
   accountTransactionIndexes,
   accountTransactionLightning,
@@ -29,6 +30,7 @@ import {
   billLineIndexes,
 } from "@/core/modules/bill-line/bill-line.ts"
 import {
+  _cashuBookingCursor,
   cashuIndexes,
   cashuOperation,
   cashuProof,
@@ -112,6 +114,7 @@ export const AppSchema = {
   accountTransactionSparkInvoice,
   accountTransactionLightning,
   accountTransactionOnchain,
+  accountTransactionCashu,
   accountTransactionSource,
   catalogCategory,
   catalogItem,
@@ -154,6 +157,8 @@ export const AppSchema = {
   setting,
   cashuProof,
   cashuOperation,
+  // Local-only: never synced (src/core/modules/cashu/cashu.ts).
+  _cashuBookingCursor,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)

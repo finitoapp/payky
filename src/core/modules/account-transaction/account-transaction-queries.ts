@@ -3,6 +3,7 @@ import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
 import type { NonEmptyString } from "@/core/modules/shared/schema.ts"
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 
@@ -80,4 +81,20 @@ export const accountTransactionExistsQuery = (id: AccountTransactionId) =>
       .selectFrom("accountTransaction")
       .select(["accountTransaction.id"])
       .where("accountTransaction.id", "=", id)
+  )
+
+/** Which of these Cashu operations already have their movement booked. */
+export const bookedCashuOperationIdsQuery = (
+  cashuOperationIds: ReadonlyArray<CashuOperationId>
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransactionCashu")
+      .select(["cashuOperationId"])
+      .where(
+        "cashuOperationId",
+        "in",
+        cashuOperationIds.length === 0 ? [null] : cashuOperationIds
+      )
+      .where("isDeleted", "is not", sqliteTrue)
   )

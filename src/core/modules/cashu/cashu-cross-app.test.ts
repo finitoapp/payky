@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest"
 
+import {
+  buildBip321PaymentUri,
+  pickBip321PayableLeg,
+} from "@/core/cashu/cashu-payment-request.ts"
 import { createCashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
 import { deriveLinkyAppOwner } from "@/core/cashu/linky-owners.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
@@ -119,7 +123,42 @@ const META_ROW_ID_VECTORS = {
   defaultMintSetting: "d1KTr4HXiQVodmiXwSA3ig",
 }
 
+/** Linky's `buildBip321PaymentUri`, then `pickBip321PayableLeg` of its parse. */
+const BIP321_VECTORS: ReadonlyArray<{
+  readonly legs: { readonly lightning?: string; readonly creq?: string }
+  readonly uri: string | null
+  readonly leg: { readonly kind: string; readonly value: string } | null
+}> = [
+  {
+    legs: { lightning: "lightning:LNBC10N1PXYZ" },
+    uri: "bitcoin:?lightning=LNBC10N1PXYZ",
+    leg: { kind: "lightning", value: "LNBC10N1PXYZ" },
+  },
+  {
+    legs: { lightning: "lnbc10n1pxyz", creq: "creqAabc+/=" },
+    uri: "bitcoin:?lightning=lnbc10n1pxyz&creq=creqAabc%2B%2F%3D",
+    leg: { kind: "cashu-request", value: "creqAabc+/=" },
+  },
+  {
+    legs: { creq: "creqAabc" },
+    uri: "bitcoin:?creq=creqAabc",
+    leg: { kind: "cashu-request", value: "creqAabc" },
+  },
+  { legs: {}, uri: null, leg: null },
+  {
+    legs: { lightning: " lnbc10n1pxyz ", creq: "" },
+    uri: "bitcoin:?lightning=lnbc10n1pxyz",
+    leg: { kind: "lightning", value: "lnbc10n1pxyz" },
+  },
+]
+
 describe("cross-app Cashu vectors (shared with Linky)", () => {
+  test.each(BIP321_VECTORS)("BIP-321 $uri", (vector) => {
+    expect(buildBip321PaymentUri(vector.legs)).toBe(vector.uri)
+    if (vector.uri !== null)
+      expect(pickBip321PayableLeg(vector.uri)).toEqual(vector.leg)
+  })
+
   test.each(MINT_URL_VECTORS)("mint url %j normalises to %j", (input, out) => {
     expect(normalizeMintUrl(input)).toBe(out)
   })

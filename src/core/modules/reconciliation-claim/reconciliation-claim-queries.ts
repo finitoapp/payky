@@ -4,6 +4,7 @@ import type { ExpressionBuilder, Kysely } from "kysely"
 
 import { createQuery } from "@/core/evolu/schema.ts"
 import type {
+  AccountTransactionCashuRow,
   AccountTransactionIbanRow,
   AccountTransactionRow,
 } from "@/core/modules/account-transaction/account-transaction.ts"
@@ -388,4 +389,97 @@ export const sparkReconciliationCandidateByValuesQuery = ({
       .$narrowType<{
         paymentId: KyselyNotNull
       }>()
+  )
+
+/**
+ * The payment a Cashu movement settles (cashu/0005): the one whose
+ * `paymentCashu` names its mint quote, or the token receive it holds at the
+ * same mint (cashu/0007). By id only, never by amount: a token after its
+ * input fee would never match one. A payment that already has money against
+ * it takes nothing more; the movement stays unclaimed.
+ */
+export const cashuReconciliationCandidateByValuesQuery = ({
+  accountId,
+  quoteId,
+  cashuOperationId,
+  mintUrl,
+}: Pick<AccountTransactionRow, "accountId"> &
+  Pick<
+    AccountTransactionCashuRow,
+    "quoteId" | "cashuOperationId" | "mintUrl"
+  >) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentCashu")
+      .innerJoin("payment", "payment.id", "paymentCashu.id")
+      .select(["payment.id as paymentId"])
+      .where("paymentCashu.accountId", "=", accountId)
+      .where("paymentCashu.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where((eb) =>
+        eb.or([
+          ...(quoteId === null
+            ? []
+            : [
+                eb.and([
+                  eb("paymentCashu.quoteId", "=", quoteId),
+                  eb("paymentCashu.mintUrl", "=", mintUrl),
+                ]),
+              ]),
+          eb.and([
+            eb("paymentCashu.receiveOperationId", "=", cashuOperationId),
+            eb("paymentCashu.mintUrl", "=", mintUrl),
+          ]),
+        ])
+      )
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
+      .orderBy("payment.id")
+      .limit(1)
+      .$narrowType<{ paymentId: KyselyNotNull }>()
+  )
+
+export const cashuReconciliationCandidateByAccountTransactionIdQuery = (
+  accountTransactionId: AccountTransactionId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("accountTransaction")
+      .innerJoin(
+        "accountTransactionCashu",
+        "accountTransactionCashu.id",
+        "accountTransaction.id"
+      )
+      .innerJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.accountId", "=", "accountTransaction.accountId")
+          .onRef("paymentCashu.mintUrl", "=", "accountTransactionCashu.mintUrl")
+          .on((eb) =>
+            eb.or([
+              eb(
+                "paymentCashu.quoteId",
+                "=",
+                eb.ref("accountTransactionCashu.quoteId")
+              ),
+              eb(
+                "paymentCashu.receiveOperationId",
+                "=",
+                eb.ref("accountTransactionCashu.cashuOperationId")
+              ),
+            ])
+          )
+      )
+      .innerJoin("payment", "payment.id", "paymentCashu.id")
+      .select(["payment.id as paymentId"])
+      .where("accountTransaction.id", "=", accountTransactionId)
+      .where("accountTransaction.kind", "=", "cashu")
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+      .where("accountTransactionCashu.isDeleted", "is not", sqliteTrue)
+      .where("paymentCashu.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where(hasNoActiveClaim)
+      .orderBy(liveBeforeCanceled)
+      .orderBy("payment.id")
+      .limit(1)
+      .$narrowType<{ paymentId: KyselyNotNull }>()
   )

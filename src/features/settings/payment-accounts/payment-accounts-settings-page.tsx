@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronUp,
+  CoinsIcon,
   CreditCardIcon,
   LandmarkIcon,
   type LucideIcon,
@@ -19,12 +20,14 @@ import { verticalNavShellClassName } from "@/components/vertical-nav.tsx"
 import {
   saveCardSwitchioAccount,
   saveCashRegisterAccount,
+  saveCashuAccount,
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
 import {
   cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
+  cashuAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
@@ -71,17 +74,20 @@ export function PaymentAccountsSettingsPage() {
   const { data: sparkData } = useEvoluQuery(sparkAccountQuery)
   const { data: cashData } = useEvoluQuery(cashRegisterAccountQuery)
   const { data: cardData } = useEvoluQuery(cardSwitchioAccountQuery)
+  const { data: cashuData } = useEvoluQuery(cashuAccountQuery)
   const [settings] = settingsData
   const [bank] = bankData
   const [spark] = sparkData
   const [cash] = cashData
   const [card] = cardData
+  const [cashu] = cashuData
 
   const appCurrency = getFiatCurrency(settings)
   const bankEnabled = bank !== undefined && bank.isDeleted !== 1
   const sparkEnabled = spark !== undefined && spark.isDeleted !== 1
   const cashEnabled = cash !== undefined && cash.isDeleted !== 1
   const cardEnabled = card !== undefined && card.isDeleted !== 1
+  const cashuEnabled = cashu !== undefined && cashu.isDeleted !== 1
   // The SwitchioPay terminal is driven through Android intents, so only the
   // native app can offer it. The account is plain synced data, though, so it
   // stays configurable here for the devices that can.
@@ -182,6 +188,20 @@ export function PaymentAccountsSettingsPage() {
         await run.ok(
           saveCardSwitchioAccount({ enabled, currency: appCurrency })
         )
+      },
+    },
+    cashu: {
+      icon: CoinsIcon,
+      title: "settings.paymentAccounts.method.cashu",
+      switchLabel: "settings.cashuAccount.enabled.label",
+      enabled: cashuEnabled,
+      available: cashuEnabled,
+      canEnable: true,
+      status: null,
+      to: cashu === undefined ? null : "/settings/payment-accounts/cashu",
+      saveEnabled: async (enabled) => {
+        await using run = appRun()
+        await run.ok(saveCashuAccount({ enabled }))
       },
     },
   } satisfies Record<DefaultPaymentMethod, PaymentMethodRowState>

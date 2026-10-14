@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { useAtomValue } from "jotai"
 import {
   BanknoteIcon,
+  CoinsIcon,
   CreditCardIcon,
   LandmarkIcon,
   LoaderCircleIcon,
@@ -28,6 +29,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs.tsx"
+import { buildBip321PaymentUri } from "@/core/cashu/cashu-payment-request.ts"
 import { enabledPaymentMethodAccountsQuery } from "@/core/modules/account/account-queries.ts"
 import type { BankQrFormat } from "@/core/modules/account/account-types.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
@@ -43,7 +45,10 @@ import {
   type BankQrPayload,
   createBankQrPayloads,
 } from "@/core/modules/payment/payment-iban-qr-payload-utils.ts"
-import { preparePaymentMethod } from "@/core/modules/payment/payment-preparation-actions.ts"
+import {
+  prepareCashuPaymentMethod,
+  preparePaymentMethod,
+} from "@/core/modules/payment/payment-preparation-actions.ts"
 import {
   paymentClaimsQuery,
   paymentRequestQuery,
@@ -90,6 +95,7 @@ const preparingPaymentMethodKeys = {
   iban: "paymentWait.preparing.iban",
   cash: "paymentWait.preparing.cash",
   card: "paymentWait.preparing.card",
+  cashu: "paymentWait.preparing.cashu",
 } satisfies Record<PaymentMethodTab, TranslationKey>
 
 /**
@@ -141,6 +147,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const [cardPaymentErrorKey, setCardPaymentErrorKey] =
     useState<TranslationKey | null>(null)
   const [cancelPending, setCancelPending] = useState(false)
+  const [newCashuQuotePending, setNewCashuQuotePending] = useState(false)
   const [paymentMethodPreparationState, setPaymentMethodPreparationState] =
     useState<PaymentMethodPreparationState>({})
   const [paymentMethodPreparationRunner] = useState(
@@ -304,6 +311,27 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       })
     }
 
+    const enabledCashuAccount = enabledPaymentMethodAccounts.find(
+      (account) => account.kind === "cashu"
+    )
+    if (enabledCashuAccount) {
+      const cashuInvoice = payment?.cashuLnInvoice ?? null
+      const quoteExpiresAt = payment?.cashuQuoteExpiresAt ?? null
+      paymentMethods.push({
+        id: "cashu",
+        kind: "cashu",
+        accountId: enabledCashuAccount.id,
+        label: t("paymentWait.method.cashu"),
+        qrPayload:
+          cashuInvoice === null
+            ? null
+            : buildBip321PaymentUri({ lightning: cashuInvoice }),
+        quoteExpired:
+          quoteExpiresAt !== null && now.getTime() >= quoteExpiresAt,
+        icon: <CoinsIcon />,
+      })
+    }
+
     return paymentMethods.toSorted(
       (firstMethod, secondMethod) =>
         paymentMethodOrder.indexOf(firstMethod.kind) -
@@ -311,6 +339,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     )
   }, [
     enabledPaymentMethodAccounts,
+    now,
     payment,
     profileName,
     selectedIbanQrFormat,
@@ -353,7 +382,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         payment.cashRegisterAccountId !== undefined) ||
       (activePaymentMethod.id === "card" &&
         payment.cardAccountId !== null &&
-        payment.cardAccountId !== undefined))
+        payment.cardAccountId !== undefined) ||
+      (activePaymentMethod.id === "cashu" &&
+        payment.cashuLnInvoice !== null &&
+        payment.cashuLnInvoice !== undefined))
 
   const runPaymentMethodPreparation = useCallback(
     async (
@@ -363,25 +395,33 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       try {
         await using run = appRun()
 
-        const result = await run(
-          preparePaymentMethod({
-            paymentId,
-            ...(method.kind === "cashRegister"
-              ? { cashRegister: { accountId: method.accountId } }
-              : {}),
-            ...(method.kind === "cardSwitchio"
-              ? { card: { accountId: method.accountId } }
-              : {}),
-            ...(method.kind === "iban"
-              ? { bank: { accountId: method.accountId } }
-              : {}),
-            ...(method.kind === "spark"
-              ? {
-                  spark: { accountId: method.accountId },
-                }
-              : {}),
-          })
-        )
+        const result =
+          method.kind === "cashu"
+            ? await run(
+                prepareCashuPaymentMethod({
+                  paymentId,
+                  accountId: method.accountId,
+                })
+              )
+            : await run(
+                preparePaymentMethod({
+                  paymentId,
+                  ...(method.kind === "cashRegister"
+                    ? { cashRegister: { accountId: method.accountId } }
+                    : {}),
+                  ...(method.kind === "cardSwitchio"
+                    ? { card: { accountId: method.accountId } }
+                    : {}),
+                  ...(method.kind === "iban"
+                    ? { bank: { accountId: method.accountId } }
+                    : {}),
+                  ...(method.kind === "spark"
+                    ? {
+                        spark: { accountId: method.accountId },
+                      }
+                    : {}),
+                })
+              )
 
         if (!result.ok) {
           console.error("Failed to prepare payment method", result.error)
@@ -507,6 +547,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     cardAccountId !== undefined &&
     paymentStatus === "pending"
   const canCancelPayment = payment.canceledAt === null && !isPaid
+  const activeAmountSats =
+    activePaymentMethod?.id === "cashu"
+      ? (payment.cashuAmountSats ?? null)
+      : payment.amountSats
   // A Bolt Card pays a Lightning invoice, not a Spark one, and only Android
   // has an NFC reader that can wait under the QR for a tap.
   const boltCardPaymentId =
@@ -607,6 +651,24 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     setCardPaymentPending(false)
   }
 
+  // A new quote for an expired one: the old topup stays pending in the
+  // wallet until the mint confirms it unpaid, and still settles if paid.
+  const handleNewCashuQuote = async () => {
+    const cashuAccountId = payment.cashuAccountId
+    if (cashuAccountId === null || cashuAccountId === undefined) return
+    setNewCashuQuotePending(true)
+    await runToast(async (run) => {
+      const result = await run(
+        prepareCashuPaymentMethod({ paymentId, accountId: cashuAccountId })
+      )
+      if (!result.ok) {
+        console.error("Failed to prepare a new Cashu quote", result.error)
+        return "paymentWait.prepareError"
+      }
+    })
+    setNewCashuQuotePending(false)
+  }
+
   const handleCancelPayment = async () => {
     if (!canCancelPayment) return
     if (!(await require("discard", "access.action.cancelPayment"))) return
@@ -654,11 +716,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               )}
             </h1>
             <p className="text-md font-medium text-muted-foreground tabular-nums">
-              {payment.amountSats === null
+              {activeAmountSats === null
                 ? "\u00A0"
                 : `${formatMoney(
                     {
-                      value: payment.amountSats,
+                      value: activeAmountSats,
                       currency: Currency.BTC,
                     },
                     locale
@@ -675,7 +737,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                     value === "spark" ||
                     value === "iban" ||
                     value === "cash" ||
-                    value === "card"
+                    value === "card" ||
+                    value === "cashu"
                   ) {
                     setSelectedPaymentMethod(value)
                   }
@@ -788,6 +851,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               }
               onMarkIbanPaid={() => void handleMarkIbanPaid()}
               onPayCard={() => void handlePayCard()}
+              newCashuQuotePending={newCashuQuotePending}
+              onNewCashuQuote={() => void handleNewCashuQuote()}
             />
           ) : null}
 

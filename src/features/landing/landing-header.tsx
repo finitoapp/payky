@@ -5,7 +5,6 @@ import {
   MailIcon,
   MenuIcon,
   MonitorIcon,
-  MonitorSmartphoneIcon,
   MoonIcon,
   PlayIcon,
   ReceiptTextIcon,
@@ -29,7 +28,6 @@ import {
   landingAppEntryPath,
   landingEetPaths,
   landingPaths,
-  landingTechPaths,
 } from "@/features/shared/landing-redirect.ts"
 import { languageOptions } from "@/features/shared/language-options.ts"
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
@@ -62,9 +60,9 @@ interface MenuLink {
 }
 
 /**
- * The header's menu: the landing pages, the home page, the EET page
- * (landing/0006) and the page on how Payky works (landing/0008), then the
+ * The header's menu: the home page, the EET page (landing/0006) and the
  * home page's contact form, which only the home page carries (landing/0010).
+ * The page on how Payky works is linked from the footer (landing/0008).
  */
 function useMenuLinks(): ReadonlyArray<MenuLink> {
   const { language, paths } = useLandingTranslation()
@@ -74,12 +72,6 @@ function useMenuLinks(): ReadonlyArray<MenuLink> {
       icon: HouseIcon,
       href: landingPaths[language],
       active: paths === landingPaths,
-    },
-    {
-      label: "landing.menu.tech",
-      icon: MonitorSmartphoneIcon,
-      href: landingTechPaths[language],
-      active: paths === landingTechPaths,
     },
     {
       label: "landing.menu.eet",

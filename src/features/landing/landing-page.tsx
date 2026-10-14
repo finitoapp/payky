@@ -285,10 +285,10 @@ function Footer() {
           {t("landing.footer.description")}
         </span>
         <div className="flex flex-wrap gap-5 md:ml-auto">
-          <FooterLink href={githubUrl}>{t("landing.footer.github")}</FooterLink>
-          <FooterLink href={`${githubUrl}/discussions`}>
-            {t("landing.footer.discussions")}
+          <FooterLink href={landingTechPaths[language]}>
+            {t("landing.footer.tech")}
           </FooterLink>
+          <FooterLink href={githubUrl}>{t("landing.footer.github")}</FooterLink>
           <FooterLink href={signalGroupUrl}>
             {t("landing.footer.signal")}
           </FooterLink>

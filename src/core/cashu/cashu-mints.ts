@@ -1,8 +1,21 @@
-import { sqliteTrue } from "@evolu/common"
+import { err, ok, sqliteTrue, type Task } from "@evolu/common"
 import { z } from "zod"
 
-import type { CashuShardStore } from "@/core/cashu/cashu-shard-store.ts"
-import { cashuDeviceKnownMintsQuery } from "@/core/evolu/device-cashu.ts"
+import type {
+  CashuShardStore,
+  CashuShardStoreDep,
+} from "@/core/cashu/cashu-shard-store.ts"
+import {
+  type CashuWalletDep,
+  loadCashuWallet,
+  type MintFailure,
+} from "@/core/cashu/cashu-wallet.ts"
+import { defineError } from "@/core/error.ts"
+import {
+  addCashuMint,
+  cashuDeviceKnownMintsQuery,
+  removeCashuMint,
+} from "@/core/evolu/device-cashu.ts"
 import type {
   DeviceAccountId,
   DeviceEvolu,
@@ -12,6 +25,8 @@ import {
   MintUrl as toMintUrl,
 } from "@/core/modules/cashu/cashu-types.ts"
 import { normalizeMintUrl } from "@/core/modules/cashu/cashu-utils.ts"
+import type { DeviceEvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import { runMutationWithCompletion } from "@/core/modules/shared/evolu-utils.ts"
 
 /**
  * Linky's `knownMints`: the mints stored proofs name (any state), the mints
@@ -95,3 +110,100 @@ export const writeCashuDefaultMint = (
  */
 export const seedCashuDefaultMint = (store: CashuShardStore): Promise<void> =>
   store.writeSettingIfAbsent(DEFAULT_MINT_SETTING_KEY, MAIN_MINT_URL)
+
+const createMintUrlInvalidError = defineError("CashuMintUrlInvalid")()
+export type CashuMintUrlInvalidError = ReturnType<
+  typeof createMintUrlInvalidError
+>
+
+const createMintInUseError = defineError("CashuMintInUse")<{
+  readonly mint: MintUrl
+}>()
+export type CashuMintInUseError = ReturnType<typeof createMintInUseError>
+
+/**
+ * What the merchant typed as a mint URL, as Linky reads it (`MintNewPage`):
+ * `https://` when no scheme is given, a dot in the host, then normalised.
+ */
+export const parseMintUrlInput = (text: string): MintUrl | null => {
+  const trimmed = text.trim()
+  if (trimmed === "") return null
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//iu.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+  try {
+    if (!new URL(withScheme).hostname.includes(".")) return null
+  } catch {
+    return null
+  }
+  return normalizeMintUrl(withScheme)
+}
+
+/**
+ * Adds a mint by URL (cashu.md §7). Unlike Linky, a mint whose info and
+ * keysets do not load is refused, and so is one listing another mint's
+ * keyset; adding changes neither the default nor which tokens pay payments.
+ */
+export const addKnownCashuMint =
+  (
+    text: string
+  ): Task<
+    MintUrl,
+    CashuMintUrlInvalidError | MintFailure,
+    CashuWalletDep & CashuShardStoreDep & DeviceEvoluDep
+  > =>
+  async (run) => {
+    const mint = parseMintUrlInput(text)
+    if (mint === null) return err(createMintUrlInvalidError())
+    const loaded = await run(loadCashuWallet(mint))
+    if (!loaded.ok) return loaded
+    await runMutationWithCompletion((options) =>
+      addCashuMint(
+        run.deps.deviceEvolu,
+        run.deps.cashuWallet.deviceAccountId,
+        mint,
+        options
+      )
+    )
+    return ok(mint)
+  }
+
+/**
+ * Drops a mint from this device's added and seen mints (linkshu's
+ * `removeKnownMint`): refused while a proof that is not spent, or a pending
+ * `deferredReceive` Linky wrote, names it. A proof or operation naming it
+ * later brings it back.
+ */
+export const removeKnownCashuMint =
+  (
+    mint: MintUrl
+  ): Task<
+    void,
+    CashuMintInUseError,
+    CashuWalletDep & CashuShardStoreDep & DeviceEvoluDep
+  > =>
+  async (run) => {
+    const store = run.deps.cashuShardStore
+    const [proofs, operations] = await Promise.all([
+      store.loadProofs(),
+      store.loadOperations(),
+    ])
+    const inUse =
+      proofs.some((proof) => proof.mint === mint && proof.state !== "spent") ||
+      operations.some(
+        (operation) =>
+          operation.kind === "deferredReceive" &&
+          operation.status === "pending" &&
+          operation.mint === mint
+      )
+    if (inUse) return err(createMintInUseError({ mint }))
+    await runMutationWithCompletion((options) =>
+      removeCashuMint(
+        run.deps.deviceEvolu,
+        run.deps.cashuWallet.deviceAccountId,
+        mint,
+        options
+      )
+    )
+    return ok(undefined)
+  }

@@ -40,12 +40,19 @@ export const createCashuTest = async ({
   await using disposer = new AsyncDisposableStack()
   const appEvolu = disposer.use(await createEvoluTest())
   const device = disposer.use(await createTestDeviceEvolu())
+  // A melt at any fake mint pays the invoice wherever it was issued.
+  const payInvoice = (invoice: string) => {
+    for (const fake of [mint, ...others]) fake.payInvoice(invoice)
+  }
   const mint = createFakeCashuMint({
     url: testMintUrl,
+    onInvoicePaid: payInvoice,
     ...(now === undefined ? {} : { now }),
     ...mintOptions,
   })
-  const others = extraMints.map((options) => createFakeCashuMint(options))
+  const others = extraMints.map((options) =>
+    createFakeCashuMint({ onInvoicePaid: payInvoice, ...options })
+  )
   const fetch = realFetch ?? createFakeMintsFetch([mint, ...others])
   const cashuShardStore = disposer.use(
     createCashuShardStore({

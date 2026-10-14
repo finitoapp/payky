@@ -58,3 +58,36 @@ test("enable Cashu, take a payment over the mint's invoice and see it settle", a
     ).toBeVisible({ timeout: 30_000 })
   })
 })
+
+test("the mints screen lists the default mint with its balance", async ({
+  seededPage: page,
+}) => {
+  await test.step("use the fake mint", async () => {
+    await page.addInitScript(() => {
+      window.__e2eCashuMint = true
+    })
+  })
+
+  await test.step("enable Cashu", async () => {
+    await gotoPage(
+      page,
+      "/settings/payment-accounts",
+      "en",
+      "settings.paymentAccounts.title"
+    )
+    await toggleInlineSwitch(page, "settings.cashuAccount.enabled.label")
+  })
+
+  await test.step("open the mints", async () => {
+    await gotoPage(
+      page,
+      "/settings/payment-accounts/cashu/mints",
+      "en",
+      "settings.cashuMints.title"
+    )
+    await expect(page.getByText("cashu.cz")).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "settings.cashuMints.default"))
+    ).toBeVisible()
+  })
+})

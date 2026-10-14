@@ -108,6 +108,50 @@ export const skSettings = {
   "settings.cashuAccount.defaultMint": "Predvolený mint",
   "settings.cashuAccount.syncing": "Synchronizujem peňaženku s Linky...",
   "settings.cashuAccount.empty": "Peňaženka zatiaľ nemá žiadny ecash.",
+  "settings.cashuMints.title": "Minty",
+  "settings.cashuMints.known": "Vaše minty",
+  "settings.cashuMints.suggested": "Odporúčané minty",
+  "settings.cashuMints.empty": "Peňaženka zatiaľ nepozná žiadny mint.",
+  "settings.cashuMints.default": "Predvolený",
+  "settings.cashuMints.add": "Pridať mint",
+  "settings.cashuMints.url": "Adresa mintu",
+  "settings.cashuMints.addDescription":
+    "Mint sa pred pridaním overí. Pridanie nemení predvolený mint ani to, ktoré tokeny platia vaše platby.",
+  "settings.cashuMints.addError.invalid": "Toto nie je adresa mintu.",
+  "settings.cashuMints.addError.unreachable": "Mint neodpovedal.",
+  "settings.cashuMints.addError.rejected":
+    "Mint bol odmietnutý: nenačítal sa, alebo uvádza kľúče iného mintu.",
+  "settings.cashuMints.invalid": "Táto adresa mintu nie je platná.",
+  "settings.cashuMints.infoUnavailable": "Mint neodpovedal.",
+  "settings.cashuMints.balance": "Zostatok: {amount}",
+  "settings.cashuMints.defaultWarning":
+    "Nové platby Cashu použijú tento mint, aj v Linky. Lightning adresa v Linky bude ďalej platiť do starého mintu, kým predvolený mint nezmeníte v Linky.",
+  "settings.cashuMints.setDefault": "Nastaviť ako predvolený",
+  "settings.cashuMints.remove": "Odobrať mint",
+  "settings.cashuMints.removeError.inUse":
+    "Mint ešte drží ecash, preto ho nemožno odobrať.",
+  "settings.cashuMints.move.title": "Presunúť prostriedky",
+  "settings.cashuMints.move.description":
+    "Presunie ecash z tohto mintu do predvoleného mintu {mint} cez Lightning.",
+  "settings.cashuMints.move.amount": "Suma v sat",
+  "settings.cashuMints.move.amountDescription":
+    "Nechajte prázdne, ak chcete presunúť všetko.",
+  "settings.cashuMints.move.estimate": "Odhadnúť náklady",
+  "settings.cashuMints.move.estimateResult":
+    "Dorazí {amount}; z tohto mintu odíde najviac {total}.",
+  "settings.cashuMints.move.confirm": "Presunúť",
+  "settings.cashuMints.movePinDetail": "{amount} do {mint}",
+  "settings.cashuMints.moveError.unreachable":
+    "Niektorý mint neodpovedal. Skúste to neskôr.",
+  "settings.cashuMints.moveError.rejected": "Mint presun odmietol.",
+  "settings.cashuMints.moveError.nothing": "Nie je čo presunúť.",
+  "settings.cashuMints.moveError.insufficient":
+    "Zostatok nepokryje túto sumu a poplatky.",
+  "settings.cashuMints.moveError.pending":
+    "Presun je na ceste a dokončí sa sám.",
+  "settings.cashuAccount.mints": "Minty",
+  "settings.cashuAccount.mintsDescription":
+    "Predvolený mint, zostatky, presun prostriedkov",
   "settings.cashuAccount.enabled.label": "Prijímať Cashu",
   "settings.debugConsole.cashu.title": "Cashu peňaženka Linky (vývoj)",
   "settings.debugConsole.cashu.activeShard": "Aktívny shard: {index}",
@@ -886,6 +930,8 @@ export const skSettings = {
   "settings.taxRates.nav.description": "Sadzby DPH pre vaše položky",
   "access.action.acknowledgeExcess": "Potvrdiť preplatok",
   "access.action.aiAccess": "Zmeniť prístup AI k dátam",
+  "access.action.cashuMints": "Zmeniť minty Cashu",
+  "access.action.moveCashuFunds": "Presunúť prostriedky medzi mintami",
   "access.action.cancelPayment": "Zrušiť platbu",
   "access.action.changePin": "Zmeniť PIN",
   "access.action.confirmClosedDespiteCancellation":

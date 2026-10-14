@@ -106,6 +106,50 @@ export const enSettings = {
   "settings.cashuAccount.defaultMint": "Default mint",
   "settings.cashuAccount.syncing": "Syncing the wallet with Linky...",
   "settings.cashuAccount.empty": "The wallet holds no ecash yet.",
+  "settings.cashuMints.title": "Mints",
+  "settings.cashuMints.known": "Your mints",
+  "settings.cashuMints.suggested": "Suggested mints",
+  "settings.cashuMints.empty": "The wallet knows no mint yet.",
+  "settings.cashuMints.default": "Default",
+  "settings.cashuMints.add": "Add a mint",
+  "settings.cashuMints.url": "Mint URL",
+  "settings.cashuMints.addDescription":
+    "The mint is checked before it is added. Adding it changes neither the default mint nor which tokens pay your payments.",
+  "settings.cashuMints.addError.invalid": "This is not a mint URL.",
+  "settings.cashuMints.addError.unreachable": "The mint did not answer.",
+  "settings.cashuMints.addError.rejected":
+    "The mint was refused: it did not load, or it lists another mint's keys.",
+  "settings.cashuMints.invalid": "This mint URL is not valid.",
+  "settings.cashuMints.infoUnavailable": "The mint did not answer.",
+  "settings.cashuMints.balance": "Balance: {amount}",
+  "settings.cashuMints.defaultWarning":
+    "New Cashu payments will use this mint, in Linky too. Linky's Lightning address keeps paying into the old mint until you change the default in Linky.",
+  "settings.cashuMints.setDefault": "Set as default",
+  "settings.cashuMints.remove": "Remove the mint",
+  "settings.cashuMints.removeError.inUse":
+    "The mint still holds ecash, so it cannot be removed.",
+  "settings.cashuMints.move.title": "Move funds",
+  "settings.cashuMints.move.description":
+    "Moves ecash from this mint to the default mint {mint} over Lightning.",
+  "settings.cashuMints.move.amount": "Amount in sat",
+  "settings.cashuMints.move.amountDescription":
+    "Leave it empty to move everything.",
+  "settings.cashuMints.move.estimate": "Estimate the cost",
+  "settings.cashuMints.move.estimateResult":
+    "{amount} arrives; at most {total} leaves this mint.",
+  "settings.cashuMints.move.confirm": "Move",
+  "settings.cashuMints.movePinDetail": "{amount} to {mint}",
+  "settings.cashuMints.moveError.unreachable":
+    "A mint did not answer. Try again later.",
+  "settings.cashuMints.moveError.rejected": "A mint refused the move.",
+  "settings.cashuMints.moveError.nothing": "There is nothing to move.",
+  "settings.cashuMints.moveError.insufficient":
+    "The balance does not cover this amount and the fees.",
+  "settings.cashuMints.moveError.pending":
+    "The move is on its way; it finishes on its own.",
+  "settings.cashuAccount.mints": "Mints",
+  "settings.cashuAccount.mintsDescription":
+    "Default mint, balances, moving funds",
   "settings.cashuAccount.enabled.label": "Accept Cashu",
   "settings.debugConsole.cashu.title": "Linky Cashu wallet (development)",
   "settings.debugConsole.cashu.activeShard": "Active shard: {index}",
@@ -879,6 +923,8 @@ export const enSettings = {
   "settings.taxRates.nav.description": "VAT rates for your items",
   "access.action.acknowledgeExcess": "Acknowledge the excess payment",
   "access.action.aiAccess": "Change AI data access",
+  "access.action.cashuMints": "Change the Cashu mints",
+  "access.action.moveCashuFunds": "Move funds between mints",
   "access.action.cancelPayment": "Cancel the payment",
   "access.action.changePin": "Change the PIN",
   "access.action.confirmClosedDespiteCancellation":

@@ -240,7 +240,10 @@ export const claimCashuTopup =
     const store = run.deps.cashuShardStore
     // 1. Re-read the synced operation.
     const operation = await store.loadOperation(operationId)
-    if (operation === null || operation.kind !== "topup")
+    if (
+      operation === null ||
+      (operation.kind !== "topup" && operation.kind !== "autoswap")
+    )
       return ok({ type: "done" })
     if (operation.status === "done") return ok({ type: "done" })
     if (operation.status !== "pending") return ok({ type: "expired" })

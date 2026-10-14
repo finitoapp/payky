@@ -1,4 +1,4 @@
-import { CoinsIcon } from "lucide-react"
+import { CoinsIcon, LandmarkIcon } from "lucide-react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
+import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { Currency, Integer } from "@/core/modules/shared/schema.ts"
 import { useCashuWallet } from "@/features/settings/cashu/use-cashu-wallet.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -73,6 +74,25 @@ export function CashuAccountSettingsPage() {
             )}
           </CardContent>
         </Card>
+        <VerticalNav
+          items={[
+            {
+              kind: "link",
+              to: "/settings/payment-accounts/cashu/mints",
+              icon: <LandmarkIcon className="text-muted-foreground" />,
+              label: (
+                <span className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold">
+                    {t("settings.cashuAccount.mints")}
+                  </span>
+                  <span className="text-xs leading-snug text-muted-foreground">
+                    {t("settings.cashuAccount.mintsDescription")}
+                  </span>
+                </span>
+              ),
+            },
+          ]}
+        />
       </div>
     </>
   )

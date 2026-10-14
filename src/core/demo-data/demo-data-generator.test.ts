@@ -4,8 +4,7 @@ import { describe, expect, test } from "vitest"
 import { generateDemoData } from "@/core/demo-data/demo-data-generator.ts"
 import { createQuery } from "@/core/evolu/schema.ts"
 import { MasterKey } from "@/core/modules/shared/key-derivation.ts"
-import { createEvoluTest } from "@/test/evolu.ts"
-import { evoluTestDeps } from "@/test/evolu-deps.ts"
+import { createCashuTest } from "@/test/cashu.ts"
 
 const paymentsQuery = createQuery((db) =>
   db
@@ -25,10 +24,10 @@ const paymentsQuery = createQuery((db) =>
 
 describe("generateDemoData", () => {
   test("records a backdated history whose every payment is settled or canceled, with EET left unset", async () => {
-    await using testEvolu = await createEvoluTest()
-    const { evolu } = testEvolu
+    await using testEvolu = await createCashuTest()
+    const { evolu } = testEvolu.deps
     await using run = testCreateRun({
-      ...evoluTestDeps(evolu),
+      ...testEvolu.deps,
       masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
     })
     const now = new Date("2026-06-05T15:00:00")
@@ -64,10 +63,10 @@ describe("generateDemoData", () => {
   }, 60_000)
 
   test("stopped early, leaves the newest days with bills numbered as if the older ones existed", async () => {
-    await using testEvolu = await createEvoluTest()
-    const { evolu } = testEvolu
+    await using testEvolu = await createCashuTest()
+    const { evolu } = testEvolu.deps
     await using run = testCreateRun({
-      ...evoluTestDeps(evolu),
+      ...testEvolu.deps,
       masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
     })
     const now = new Date("2026-06-05T15:00:00")

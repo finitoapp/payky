@@ -184,8 +184,9 @@ export const cashuShardUsageQuery = (ownerId: OwnerId) =>
       .select(["usage.mutations", "usage.bytes"])
   )
 
-export const cashuBookingCursorId =
-  createIdFromString<"CashuBookingCursor">("cashu-booking-cursor")
+export const cashuBookingCursorId = createIdFromString<"CashuBookingCursor">(
+  "cashu-booking-cursor"
+)
 
 export const cashuBookingCursorQuery = createQuery((db) =>
   db

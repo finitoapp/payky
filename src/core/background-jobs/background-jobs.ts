@@ -1,7 +1,8 @@
 import type {
-  AppBackgroundJob,
   BackgroundJob,
+  CashuBackgroundJob,
 } from "@/core/background-jobs/background-job-types.ts"
+import { startCashuAccountSyncJob } from "@/core/background-jobs/jobs/cashu-account-sync-job.ts"
 import { startEetReportingJob } from "@/core/background-jobs/jobs/eet-reporting-job.ts"
 import { startFioAccountTransactionSyncJob } from "@/core/background-jobs/jobs/fio-account-transaction-sync-job.ts"
 import { startSparkAccountTransactionSyncJob } from "@/core/background-jobs/jobs/spark-account-transaction-sync-job.ts"
@@ -17,7 +18,8 @@ export const cliBackgroundJobs = [
 const nativeBackgroundJobs = [
   ...cliBackgroundJobs,
   startEetReportingJob,
-] satisfies ReadonlyArray<AppBackgroundJob>
+  startCashuAccountSyncJob,
+] satisfies ReadonlyArray<CashuBackgroundJob>
 
 /**
  * A browser or PWA can't reach the FIO API directly, so its sync job is left
@@ -27,10 +29,11 @@ const nativeBackgroundJobs = [
 const browserBackgroundJobs = [
   startSparkAccountTransactionSyncJob,
   startEetReportingJob,
-] satisfies ReadonlyArray<AppBackgroundJob>
+  startCashuAccountSyncJob,
+] satisfies ReadonlyArray<CashuBackgroundJob>
 
 export function getBackgroundJobsForRuntime(
   isNativePlatform: boolean
-): ReadonlyArray<AppBackgroundJob> {
+): ReadonlyArray<CashuBackgroundJob> {
   return isNativePlatform ? nativeBackgroundJobs : browserBackgroundJobs
 }

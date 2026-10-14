@@ -1,4 +1,6 @@
 import type { ConsoleDep, LockManagerDep, Task } from "@evolu/common"
+import type { CashuBookingDeps } from "@/core/cashu/cashu-booking.ts"
+import type { CashuTopupDeps } from "@/core/cashu/cashu-topup.ts"
 import type {
   ConnectivityDep,
   DateDep,
@@ -27,6 +29,17 @@ export type AppBackgroundJobContext = BackgroundJobContext &
   DeviceIdDep &
   ConnectivityDep &
   EetApiDep
+
+/** What the app's own runs add for the shared Cashu wallet. */
+export type CashuBackgroundJobContext = AppBackgroundJobContext &
+  CashuTopupDeps &
+  CashuBookingDeps
+
+export type CashuBackgroundJob = Task<
+  AsyncDisposable,
+  never,
+  CashuBackgroundJobContext
+>
 
 export type AppBackgroundJob = Task<
   AsyncDisposable,

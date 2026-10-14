@@ -1,7 +1,24 @@
-import { type ConsoleDep, ok, sqliteTrue, type Task } from "@evolu/common"
+import {
+  type ConsoleDep,
+  type LockManagerDep,
+  ok,
+  sqliteTrue,
+  type Task,
+} from "@evolu/common"
 import { addDays, addMinutes, format, startOfDay, subDays } from "date-fns"
 import { z } from "zod"
-
+import { bookCashuOperations } from "@/core/cashu/cashu-booking.ts"
+import {
+  MAIN_MINT_URL,
+  writeCashuDefaultMint,
+} from "@/core/cashu/cashu-mints.ts"
+import type { CashuShardStoreDep } from "@/core/cashu/cashu-shard-store.ts"
+import { claimCashuTopup } from "@/core/cashu/cashu-topup.ts"
+import {
+  type CashuWalletDep,
+  createCashuWalletDep,
+} from "@/core/cashu/cashu-wallet.ts"
+import { createFakeCashuMint } from "@/core/cashu/fake-cashu-mint.ts"
 import {
   type DemoCategory,
   demoCategories,
@@ -14,6 +31,7 @@ import type { YadioApiDep } from "@/core/integrations/yadio/yadio-client.ts"
 import {
   saveCardSwitchioAccount,
   saveCashRegisterAccount,
+  saveCashuAccount,
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@/core/modules/account/account-actions.ts"
@@ -45,13 +63,17 @@ import {
 import { roundCashAmount } from "@/core/modules/payment/payment-cash-utils.ts"
 import {
   createPreparedPayment,
+  prepareCashuPaymentMethod,
   preparePaymentMethod,
 } from "@/core/modules/payment/payment-preparation-actions.ts"
 import { paymentSparkDetailsByIdQuery } from "@/core/modules/payment/payment-queries.ts"
 import type { PaymentId } from "@/core/modules/payment/payment-types.ts"
 import { reconcileAccountTransaction } from "@/core/modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import { refundPayment } from "@/core/modules/refund/refund-actions.ts"
-import type { EvoluDep } from "@/core/modules/shared/evolu-deps.ts"
+import type {
+  DeviceEvoluDep,
+  EvoluDep,
+} from "@/core/modules/shared/evolu-deps.ts"
 import { createRowId } from "@/core/modules/shared/evolu-utils.ts"
 import {
   BankAccountInputIbanSchema,
@@ -146,13 +168,14 @@ const closingMinute = 21 * 60 + 30
 const dayPartOf = (minuteOfDay: number) =>
   minuteOfDay < 11 * 60 ? "morning" : minuteOfDay < 15 * 60 ? "noon" : "evening"
 
-type PaymentMethod = "cash" | "card" | "iban" | "spark"
+type PaymentMethod = "cash" | "card" | "iban" | "spark" | "cashu"
 
 const paymentMethodWeights = {
   cash: 0.45,
   card: 0.35,
   iban: 0.1,
-  spark: 0.1,
+  spark: 0.06,
+  cashu: 0.04,
 } satisfies Record<PaymentMethod, number>
 
 interface CatalogEntry {
@@ -184,7 +207,11 @@ interface Step {
 export type DemoDataDeps = EvoluDep &
   EvoluOwnerIdDep &
   MasterKeyDep &
-  ConsoleDep
+  ConsoleDep &
+  DeviceEvoluDep &
+  LockManagerDep &
+  CashuShardStoreDep &
+  CashuWalletDep
 
 export const generateDemoData =
   ({
@@ -287,9 +314,21 @@ export const generateDemoData =
       },
     }
 
+    // The demo's mint: the same keys as the one a demo account gets at
+    // runtime (`cashuWalletDepAtom`), so its proofs stay valid there.
+    const demoMint = createFakeCashuMint({
+      url: MAIN_MINT_URL,
+      now: () => simulatedNow,
+    })
+
     await using demoRun = run.create({
       ...run.deps,
       ...fakeServices,
+      ...createCashuWalletDep({
+        seed: run.deps.cashuWallet.seed,
+        deviceAccountId: run.deps.cashuWallet.deviceAccountId,
+        fetch: demoMint.fetch,
+      }),
       date: { now: () => new Date(simulatedNow) },
     })
 
@@ -353,6 +392,11 @@ export const generateDemoData =
         await demoRun.ok(saveCardSwitchioAccount({ enabled: true, currency })),
         "the card terminal account"
       )
+      const cashuAccount = required(
+        await demoRun.ok(saveCashuAccount({ enabled: true })),
+        "the Cashu account"
+      )
+      await writeCashuDefaultMint(run.deps.cashuShardStore, MAIN_MINT_URL)
       await demoRun.orThrow(
         completeOnboarding({
           fiatCurrency: currency,
@@ -362,6 +406,7 @@ export const generateDemoData =
             "cardSwitchio",
             "iban",
             "spark",
+            "cashu",
           ]),
         })
       )
@@ -503,7 +548,31 @@ export const generateDemoData =
             await settleSpark(paymentId)
             return
           }
+          case "cashu": {
+            await settleCashu(paymentId)
+            return
+          }
         }
+      }
+
+      /** The customer pays the mint's invoice; the Cashu job's half follows. */
+      const settleCashu = async (paymentId: PaymentId) => {
+        await demoRun.orThrow(
+          prepareCashuPaymentMethod({ paymentId, accountId: cashuAccount })
+        )
+        advance(random.int(15, 45) * second)
+        const pending = (
+          await run.deps.cashuShardStore.loadOperations()
+        ).filter(
+          (operation) =>
+            operation.kind === "topup" && operation.status === "pending"
+        )
+        for (const operation of pending) {
+          if (operation.quoteId === null) continue
+          demoMint.payMintQuote(operation.quoteId)
+          await demoRun.orThrow(claimCashuTopup(operation.id))
+        }
+        await demoRun.ok(bookCashuOperations)
       }
 
       const prepareSpark = async (paymentId: PaymentId) =>

@@ -25,6 +25,8 @@ import { createTestInvoice } from "@/core/modules/shared/lightning-invoice-test-
  */
 
 export type FakeMintFailure =
+  /** Answers normally: queued first, it lets a later call fail instead. */
+  | { readonly type: "ok" }
   | { readonly type: "unreachable" }
   | { readonly type: "lostResponse" }
   | { readonly type: "error"; readonly code: number; readonly detail: string }
@@ -95,6 +97,8 @@ export interface FakeCashuMintOptions {
   readonly meltFee?: number
   /** Melt quotes whose invoice decodes to no amount use this. */
   readonly invoiceAmounts?: Map<string, number>
+  /** A melt paid this invoice: the "Lightning network" between fake mints. */
+  readonly onInvoicePaid?: (invoice: string) => void
 }
 
 class FakeMintHttpError extends Error {
@@ -511,6 +515,7 @@ export const createFakeCashuMint = (options: FakeCashuMintOptions) => {
         }
         quote.state = "PAID"
         quote.preimage = "00".repeat(32)
+        options.onInvoicePaid?.(quote.request)
         quote.change = signAll(change)
         return meltQuoteJson(quote)
       },
@@ -572,6 +577,12 @@ export const createFakeCashuMint = (options: FakeCashuMintOptions) => {
       if (quote.state === "UNPAID") quote.state = "PAID"
     },
     mintQuoteState: (quoteId: string) => mintQuotes.get(quoteId)?.state ?? null,
+    /** Someone paid this invoice, if it is one of this mint's quotes. */
+    payInvoice: (invoice: string) => {
+      for (const quote of mintQuotes.values())
+        if (quote.request === invoice && quote.state === "UNPAID")
+          quote.state = "PAID"
+    },
     mintQuoteIds: () => [...mintQuotes.keys()],
     /** The next melt answers this instead of paying. */
     queueMeltOutcome: (outcome: "PAID" | "UNPAID") => {

@@ -6,12 +6,14 @@ import type {
 } from "@/core/background-jobs/background-job-types.ts"
 import { createKeyedTaskQueue } from "@/core/background-jobs/keyed-task-queue.ts"
 import { bookCashuOperations } from "@/core/cashu/cashu-booking.ts"
+import { resumeCashuMelt } from "@/core/cashu/cashu-melt.ts"
 import { createCashuTokenListener } from "@/core/cashu/cashu-token-listener.ts"
 import {
   claimCashuTopup,
   reclaimTopupFromCounter,
 } from "@/core/cashu/cashu-topup.ts"
 import { loadCashuWallet } from "@/core/cashu/cashu-wallet.ts"
+import { cashuClaimAttemptQuery } from "@/core/evolu/device-cashu.ts"
 import { cashuAccountQuery } from "@/core/modules/account/account-queries.ts"
 import type { CashuOperationCopy } from "@/core/modules/cashu/cashu-queries.ts"
 import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
@@ -106,13 +108,30 @@ export const startCashuAccountSyncJob: CashuBackgroundJob = (taskRun) => {
       )
     )
     const nowMs = run.deps.date.now().getTime()
-    const due = (await store.loadOperations()).filter((operation) => {
-      if (
-        operation.kind !== "topup" ||
-        operation.status !== "pending" ||
-        operation.quoteId === null ||
-        !quotes.has(`${operation.mint}|${operation.quoteId}`)
+    const operations = await store.loadOperations()
+    // Payky's interrupted melts (a withdrawal, a move's source) settle by the
+    // mint's answer; resuming one never sends again.
+    for (const operation of operations) {
+      if (operation.kind !== "melt" || operation.status !== "pending") continue
+      const [attempt] = await run.deps.deviceEvolu.loadQuery(
+        cashuClaimAttemptQuery(
+          run.deps.cashuWallet.deviceAccountId,
+          operation.id
+        )
       )
+      if (attempt === undefined) continue
+      await run(resumeCashuMelt(operation.id))
+    }
+    const due = operations.filter((operation) => {
+      const isPaykyTopup =
+        operation.kind === "topup" &&
+        operation.quoteId !== null &&
+        quotes.has(`${operation.mint}|${operation.quoteId}`)
+      // A move between mints; Linky drops an unclaimed one after a day.
+      const isRecentMove =
+        operation.kind === "autoswap" &&
+        nowMs / 1000 - operation.createdAtSec < 24 * 60 * 60
+      if (operation.status !== "pending" || !(isPaykyTopup || isRecentMove))
         return false
       const ageSeconds = nowMs / 1000 - operation.createdAtSec
       const last = lastPolledMs.get(operation.id) ?? 0

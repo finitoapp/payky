@@ -121,13 +121,6 @@ export const enOnboarding = {
   "accountTransfer.target.warning.description":
     "Only scan a code from your own device that you are looking at right now. A code from someone else would put their account on this device, and payments you take would go to them.",
   "accountTransfer.target.warning.title": "Only your own device",
-  "onboarding.account.description":
-    "Save the phrase below somewhere safe. You will need it to open this account on another device.",
-  "onboarding.account.mnemonic.confirm":
-    "I've saved my recovery phrase somewhere safe",
-  "onboarding.account.mnemonic.required":
-    "Confirm you have saved the recovery phrase before finishing.",
-  "onboarding.account.title": "Back up your account",
   "onboarding.accountChoice.description":
     "Create a new account for this device or restore one you already use.",
   "accountChoice.new.description":
@@ -148,17 +141,8 @@ export const enOnboarding = {
   "onboarding.cancelSetup.confirm.description":
     "This new account will be discarded and you'll switch back to {name}.",
   "onboarding.cancelSetup.confirm.title": "Cancel account creation?",
-  "onboarding.countryCurrency.country.description":
-    "Preloads the tax rates your catalog starts with.",
-  "onboarding.countryCurrency.currency.description":
-    "Every amount you enter in the terminal is in this currency.",
-  "onboarding.countryCurrency.currency.label": "Currency",
-  "onboarding.countryCurrency.description":
-    "Both only preset how Payky works for you — you can change either later in Settings.",
-  "onboarding.countryCurrency.title": "Country and currency",
   "onboarding.finish": "Finish",
   "onboarding.language.title": "Choose language",
-  "onboarding.next": "Next",
   "onboarding.payments.btc.description":
     "Accept Bitcoin payments through the Spark Lightning account.",
   "onboarding.payments.btc.title": "Bitcoin",

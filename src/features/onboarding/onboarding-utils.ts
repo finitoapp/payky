@@ -1,53 +1,5 @@
 import type { DefaultPaymentMethod } from "@/core/modules/app-settings/app-settings-types.ts"
-import {
-  FiatCurrency,
-  type FiatCurrency as FiatCurrencyType,
-} from "@/core/modules/shared/schema.ts"
-import type {
-  OnboardingCountryChoice,
-  OnboardingPaymentMethod,
-} from "@/features/onboarding/onboarding-form-state.ts"
-import type { Language } from "@/i18n/resources.ts"
-
-/**
- * The country's default, until the merchant picks one: the language they
- * read the wizard in is the only signal available this early, and it is a
- * good one for the two countries Payky ships tax presets for. Anyone else
- * starts on "other" rather than on a country that would seed wrong rates.
- */
-export const getDefaultCountryForLanguage = (
-  language: Language
-): OnboardingCountryChoice => {
-  if (language === "cs") {
-    return "CZ"
-  }
-
-  if (language === "sk") {
-    return "SK"
-  }
-
-  return "OTHER"
-}
-
-/**
- * The currency's default: derived from the country, not straight from the
- * UI language, so picking a country explicitly overrides what the language
- * implied. See `finishOnboarding` for the device locale (number/money
- * formatting), which is derived from language instead.
- */
-export const getDefaultCurrencyForCountry = (
-  country: OnboardingCountryChoice | null
-): FiatCurrencyType => {
-  if (country === "CZ") {
-    return FiatCurrency.CZK
-  }
-
-  if (country === "SK") {
-    return FiatCurrency.EUR
-  }
-
-  return FiatCurrency.USD
-}
+import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
 
 /**
  * The order the payment-method tabs appear in on the payment screen, derived

@@ -123,13 +123,6 @@ export const skOnboarding = {
   "accountTransfer.target.warning.description":
     "Skenujte len kód z vlastného zariadenia, ktoré máte práve pred sebou. Kód od niekoho iného by sem pridal jeho účet a prijaté platby by išli jemu.",
   "accountTransfer.target.warning.title": "Len vlastné zariadenie",
-  "onboarding.account.description":
-    "Uložte si frázu nižšie na bezpečné miesto. Budete ju potrebovať, keď budete chcieť účet otvoriť na inom zariadení.",
-  "onboarding.account.mnemonic.confirm":
-    "Uložil(a) som si recovery phrase na bezpečné miesto",
-  "onboarding.account.mnemonic.required":
-    "Skôr než nastavenie dokončíte, potvrďte, že máte recovery phrase uloženú.",
-  "onboarding.account.title": "Zálohovanie účtu",
   "onboarding.accountChoice.description":
     "Vytvorte nový účet pre toto zariadenie alebo obnovte účet, ktorý už používate.",
   "accountChoice.new.description":
@@ -150,17 +143,8 @@ export const skOnboarding = {
   "onboarding.cancelSetup.confirm.description":
     "Tento nový účet bude zahodený a prepnete sa späť na {name}.",
   "onboarding.cancelSetup.confirm.title": "Zrušiť vytváranie účtu?",
-  "onboarding.countryCurrency.country.description":
-    "Určuje daňové sadzby, s ktorými katalóg začne.",
-  "onboarding.countryCurrency.currency.description":
-    "Všetky sumy zadané v termináli budú v tejto mene.",
-  "onboarding.countryCurrency.currency.label": "Mena",
-  "onboarding.countryCurrency.description":
-    "Oboje len prednastaví, ako bude Payky fungovať — zmeniť sa to dá kedykoľvek v Nastaveniach.",
-  "onboarding.countryCurrency.title": "Krajina a mena",
   "onboarding.finish": "Dokončiť",
   "onboarding.language.title": "Výber jazyka",
-  "onboarding.next": "Ďalej",
   "onboarding.payments.btc.description":
     "Prijímajte bitcoinové platby cez Spark Lightning účet.",
   "onboarding.payments.btc.title": "Bitcoin",

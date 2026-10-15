@@ -776,7 +776,6 @@ export const cashuTokenCandidatePaymentsQuery = createQuery((db) =>
       "payment.canceledAt",
       "payment.confirmedPaidAt",
       "payment.expiresAt",
-      "paymentCashu.mintUrl",
       "paymentCashu.amountSats",
       "paymentCashu.receiveOperationId",
       eb

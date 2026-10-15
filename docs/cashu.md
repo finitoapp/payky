@@ -25,15 +25,15 @@ withdrawn to Lightning from Payky.
 | # | Question | Decision |
 | --- | --- | --- |
 | 1 | Sharing model | Payky syncs Linky's own Cashu shards live and writes into them in Linky's format. No Payky-owned copy of the proofs. |
-| 1b | Trust in the shared data | The synced data shared by Linky and Payky is trusted: both writers are the owner's own apps. Payky does not defend against a row because Linky wrote it, only against what the row does not mean: a proof at some mint says the wallet received ecash there, not that the owner trusts that mint, because Linky receives tokens from any mint unasked (§5 "Which mints a token may come from"). |
+| 1b | Trust in the shared data | The synced data shared by Linky and Payky is trusted: both writers are the owner's own apps. Payky does not defend against a row because Linky wrote it. Whether a token's mint is trusted is decided once, by whichever app receives it: a `done` incoming operation in the wallet is trusted whatever its mint, Linky's included (§5 "Which mints a token may come from"). |
 | 2 | Library | Own implementation in Payky over `@cashu/cashu-ts` as Evolu Tasks. Do not depend on `@linky-fit/linkshu`/`linksync` or Effect. |
 | 3 | How the customer pays | Payky shows one BIP-321 QR, `bitcoin:?lightning=<bolt11>&creq=<creqA…>`, and the customer scans it. Their wallet pays whichever leg it understands: the Lightning invoice from the mint, or a Cashu token for the NUT-18 request. |
 | 3b | How the token reaches Payky | Over the NUT-18 request's nostr transport: a NIP-17 direct message to Payky's nprofile. Payky never scans the customer's token. No HTTP `post` transport, no paste, no NFC. |
-| 3c | Token without a request id | Linky as a payer sends a bare `cashuB…` token, which names no request. It is matched by mint and amount when exactly one open payment fits; otherwise it is received into the wallet unassigned (§5). |
+| 3c | Token without a request id | Linky as a payer sends a bare `cashuB…` token, which names no request. It is matched by amount when exactly one open payment fits; otherwise it is received into the wallet unassigned (§5). |
 | 4 | Relation to Spark | A separate payment method: its own `AccountKind` `"cashu"`, its own tab on the wait screen, its own payment detail table `paymentCashu` that does not extend `paymentBtc` (§4). It can be enabled next to Spark. |
 | 5 | Mint | The one Linky uses: Linky's synced `defaultMint` setting, else Linky's default. |
 | 5b | Mint management | The same logic as Linky: mint list, add by URL, set as default (synced to Linky), move funds between mints, remove an unused mint (§7). Where Payky deliberately differs, §7 says so. |
-| 5c | Token from another mint | Received into the wallet as Linky does, but matched to a payment automatically only when it comes from that payment's mint (`paymentCashu.mintUrl`). Any other token stays unassigned (§5). A first, deliberately narrow rule; it may widen later. |
+| 5c | Token from another mint | Whoever receives the token decides whether its mint is trusted, and nothing checks the mint again afterwards. Linky receives from any mint. Payky receives only from the current default mint (decision 5); a token from any other mint Payky leaves alone. A token in the wallet pays the payment that holds it, whatever its mint (§5, `cashu/0011`). This is the one receive rule Payky does not copy from Linky. |
 | 5d | Input fee of a received token | As in Linky: the mint's NUT-02 input fee is deducted, and the merchant is credited what actually arrived (§5). |
 | 6 | Withdraw | In scope (melt to a Lightning invoice / Lightning address). |
 | 7 | Linky's `transaction` history | Payky does not write it. A payment Linky happens to settle does appear in Linky's history, because Linky writes its own row when it completes a topup (§5); the others do not. Accepted. |
@@ -352,7 +352,7 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
   mints this device has seen or added. Linky keeps the "seen" set
   device-local, so Payky keeps its own in the device database. Known mints feed
   the mints screen (§7). Being known says nothing about trust: which tokens
-  pay a payment is decided by the payment's own mint alone (§5).
+  pay a payment is decided when they are received (§5, decision 5c).
 
 ### 4. Payment method
 
@@ -430,9 +430,9 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
   Lightning fee reserve.
 - The screen shows a received token's amount, its mint and the input fee as
   soon as the message arrives, before the swap finishes.
-- A token from another mint than the payment's shows as arrived but not
-  counted: it names the mint and the amount and says the payment stays
-  unpaid. Nothing assigns it to the payment (below).
+- A token sent for this payment from a mint other than the default shows as
+  not accepted: it names the mint and the amount and says the payment stays
+  unpaid (§5 "Which mints a token may come from").
 - Phase 3 checks that common Lightning wallets read a `bitcoin:` URI with an
   empty address. If some do not, the tab gets a switch that shows the bare
   bolt11 instead.
@@ -477,8 +477,8 @@ to `nativeBackgroundJobs` and `browserBackgroundJobs` explicitly.
     dedup by operation id makes a repeat harmless. This is the only retry
     mechanism for tokens (decision 12).
   - A message that ended in a final refusal that writes nothing
-    (`TokenLocked`, an undecodable token, `AmountConsumedByFee`, already
-    spent elsewhere) is remembered in memory for the run and skipped. After a
+    (a mint other than the default, `TokenLocked`, an undecodable token,
+    `AmountConsumedByFee`, already spent elsewhere) is remembered in memory for the run and skipped. After a
     restart it is tried once more, which costs at most a state check.
 - A message is one of two forms (`payment-requests.md`, "Taking a payment"):
   - the NUT-18 payload, JSON `{id, memo, mint, unit, proofs}`, sent by most
@@ -495,15 +495,16 @@ to `nativeBackgroundJobs` and `browserBackgroundJobs` explicitly.
   - it is a kind 14 message whose content is one of the two forms above. Any
     other content is someone talking to the owner in Linky, and Payky ignores
     it without logging or storing it.
-- **Matching to a payment (decisions 3c, 5c):**
-  - A token is matched only to a payment whose `paymentCashu.mintUrl` is the
-    token's mint. This holds for every rule below.
-  - A payload goes to the payment its `id` names, if that payment is open, has
-    a Cashu request, and the payload's mint is the payment's. Otherwise it is
-    received unassigned.
-  - A bare token goes to the one open Cashu payment whose mint is the token's
-    mint and whose amount equals the token's face amount. With none or several,
-    it is received unassigned.
+- **Default mint first (decision 5c):** the listener receives a token only
+  when its mint is the current default mint. A token from any other mint is
+  not received, matched or held by any payment; the message stays on the
+  relays, and if Linky receives the token, Payky books it like any other
+  incoming operation (§5 "Into Payky's books"), unassigned.
+- **Matching to a payment (decisions 3c, 5c):** the mint plays no part in it.
+  - A payload goes to the payment its `id` names, if that payment is open and
+    has a Cashu request. Otherwise it is received unassigned.
+  - A bare token goes to the one open Cashu payment whose amount equals the
+    token's face amount. With none or several, it is received unassigned.
   - Unassigned means the swap still happens and the money lands in the wallet
     and in the books as an `accountTransaction` with no claim (decision 13).
     Nothing assigns it to a payment afterwards: there is no new screen for it,
@@ -599,30 +600,26 @@ to `nativeBackgroundJobs` and `browserBackgroundJobs` explicitly.
 - That is fine for a personal wallet, but not for a till. Anyone can run a
   mint, issue ecash on it, pay with tokens worth nothing and walk away with the
   goods.
-- Refusing the token in Payky would protect nothing: Linky shares the nostr
-  key and receives every token it sees, from any mint
-  (`useChatMessageEffects.ts`, `useSaveCashuFromText.ts`; its only mint filter
-  hides test mints). Whether the money lands in the wallet would then depend on
-  whether Linky happens to run.
-- So Payky receives a token from any mint, as Linky does, and decides trust in
-  one place: the match. A token pays a payment automatically only when its
-  mint is that payment's `paymentCashu.mintUrl`, the one mint the request
-  names. An honest wallet sends from it.
-  - Any other token is received unassigned, whoever received it, Payky or
-    Linky. The merchant sees it on the wait screen, and it never pays the
-    payment.
-  - The worthless ecash of a rogue mint only sits in the wallet. It cannot
-    affect other mints: counters are per mint and keyset, and foreign keysets
-    are refused (§3).
-  - A proof at a mint never makes the mint trusted. Linky receives unasked, so
-    a stored proof is no decision of the owner's.
+- Trust is decided once, at the receive, by whichever app receives the token
+  (`cashu/0011`). Nothing checks the mint again afterwards: not the match, not
+  the booking, not the automatic claim.
+  - **Linky receives** from any mint, as it does today
+    (`useChatMessageEffects.ts`, `useSaveCashuFromText.ts`). It is the owner's
+    own app, and the shared data is trusted (decision 1b).
+  - **Payky receives** only from the current default mint, Linky's synced
+    `defaultMint` (decision 5). That check is the one receive rule Payky does
+    not copy from Linky, and the only one it adds. Linky keeps no synced list
+    of trusted mints, so the default is the one mint both apps share.
+  - A token from any other mint Payky does not receive, match or hold a
+    receive id for. If Linky receives it later, it is booked unassigned.
+- A token in the wallet — received by Payky or by Linky — pays the payment
+  that holds its receive id, whatever its mint. A bare token is matched by
+  amount alone (decision 3c).
+  - The worthless ecash of a rogue mint Linky accepted only sits in the wallet
+    and in the books. It cannot affect other mints: counters are per mint and
+    keyset, and foreign keysets are refused (§3).
 - Cost: unused mints collect in the shared wallet and in Linky's mint list, as
   they do in Linky already.
-- Possible later widenings: mints the merchant adds by hand on the mints screen
-  (§7), or receive and immediately autoswap to the default mint (§7), counting
-  the payment only from what arrived there — a mint that melts honestly has
-  paid real sats.
-- Needs a decision record.
 
 **Input fee (decision 5d)**
 - Linky's receipt amount is what reached the wallet after the mint's NUT-02
@@ -693,9 +690,10 @@ to `nativeBackgroundJobs` and `browserBackgroundJobs` explicitly.
     `accountTransaction` only through `reconciliationClaim`
     (`sales-stats-queries.ts`, `eet-queries.ts`, `payment-queries.ts`).
 - In the same batch, when a `paymentCashu` holds the operation — its `quoteId`
-  (Lightning), or its `receiveOperationId` (token) with the operation's mint
-  equal to the payment's `mintUrl` (§5 "Which mints a token may come from") —
-  write the automatic `reconciliationClaim`. It matches by quote or operation
+  at the payment's `mintUrl` (Lightning; a quote id is unique only within its
+  mint), or its `receiveOperationId` (token) at whatever mint — write the
+  automatic `reconciliationClaim`. The token's mint is not checked here: it was
+  trusted by whoever received it (§5 "Which mints a token may come from"). It matches by quote or operation
   id **only**. Unlike Spark's candidate query, it does not compare
   `amountSats` with the transaction amount: a token after its input fee would
   never match.
@@ -796,8 +794,8 @@ Mirror Linky's screens: `apps/web-app/src/pages/MintsPage.tsx`,
   - a mint whose info (NUT-06) and keysets fail to load is refused, and so is
     a mint that lists another mint's keyset;
   - a mint that loads is added to the known mints;
-  - adding does not change the default. It does not make the mint's tokens pay
-    payments either (§5).
+  - adding does not change the default, so Payky still does not receive the
+    mint's tokens (§5).
 - **Detail.** Name and icon, balance, "set as default", "move funds".
 - **Move funds** is Linky's autoswap (`linkshu/docs/autoswap.md`):
   1. Get a topup quote at the target.
@@ -877,10 +875,11 @@ enabled in settings.
   - who settles a topup or a token, and stopping when someone else got there
     first (§5, decision 11);
   - the one BIP-321 QR with a NUT-18 request over nostr, and matching a token
-    to a payment by request id, else by mint and amount (decisions 3, 3b, 3c);
-  - tokens from any mint received, but matched to a payment only from the
-    payment's own mint, and an unassigned token never assigned to one
-    afterwards (decision 5c);
+    to a payment by request id, else by amount (decisions 3, 3b, 3c);
+  - tokens received by Payky only from the default mint, by Linky from any,
+    and a received token paying the payment that holds it whatever its mint;
+    an unassigned token never assigned to one afterwards (decision 5c,
+    `cashu/0011`, superseding `cashu/0007`);
   - every incoming operation is booked, outgoing only for Payky's
     withdrawals (decision 13);
   - no `deferredReceive` in Payky: the NIP-17 message is the queue while the
@@ -959,7 +958,8 @@ enabled in settings.
   switch is the fallback.
 - **Default mint changed in Linky while a payment waits.** The quote is already
   at the old mint, and `paymentCashu.mintUrl` keeps it. Only new payments use
-  the new mint.
+  the new mint. A token for the waiting payment from the old mint is no
+  longer received by Payky (`cashu/0011`); the Lightning leg still pays.
 - **npub.cash drift.** A default mint changed in Payky does not move Linky's
   Lightning address (§7).
 

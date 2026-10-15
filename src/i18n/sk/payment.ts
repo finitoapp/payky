@@ -250,8 +250,8 @@ export const skPayment = {
     "Prišiel token na {amount} sat z {mint}. Mint si nechá {fee} sat ako poplatok.",
   "paymentWait.cashu.arrival.waitingForMint":
     "Prišiel token na {amount} sat. Čakám, kým odpovie mint {mint}...",
-  "paymentWait.cashu.arrival.otherMint":
-    "Token na {amount} sat prišiel z {mint}, nie z mintu tejto platby. Túto platbu nezaplatí.",
+  "paymentWait.cashu.arrival.untrustedMint":
+    "Token na {amount} sat prišiel z {mint}, čo nie je predvolený mint. Nebol prijatý a túto platbu nezaplatí.",
   "paymentWait.cashu.failure.mintUnreachable":
     "Mint neodpovedal. Token skúsim znova.",
   "paymentWait.cashu.failure.mintRejected":

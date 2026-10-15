@@ -393,8 +393,9 @@ export const sparkReconciliationCandidateByValuesQuery = ({
 
 /**
  * The payment a Cashu movement settles (cashu/0005): the one whose
- * `paymentCashu` names its mint quote, or the token receive it holds at the
- * same mint (cashu/0007). By id only, never by amount: a token after its
+ * `paymentCashu` names its mint quote at the payment's mint (a quote id is
+ * unique only within its mint), or the token receive it holds, at whatever
+ * mint: whoever received the token trusted its mint (cashu/0011). By id only, never by amount: a token after its
  * input fee would never match one. A payment that already has money against
  * it takes nothing more; the movement stays unclaimed.
  */
@@ -426,10 +427,7 @@ export const cashuReconciliationCandidateByValuesQuery = ({
                   eb("paymentCashu.mintUrl", "=", mintUrl),
                 ]),
               ]),
-          eb.and([
-            eb("paymentCashu.receiveOperationId", "=", cashuOperationId),
-            eb("paymentCashu.mintUrl", "=", mintUrl),
-          ]),
+          eb("paymentCashu.receiveOperationId", "=", cashuOperationId),
         ])
       )
       .where(hasNoActiveClaim)
@@ -453,14 +451,20 @@ export const cashuReconciliationCandidateByAccountTransactionIdQuery = (
       .innerJoin("paymentCashu", (join) =>
         join
           .onRef("paymentCashu.accountId", "=", "accountTransaction.accountId")
-          .onRef("paymentCashu.mintUrl", "=", "accountTransactionCashu.mintUrl")
           .on((eb) =>
             eb.or([
-              eb(
-                "paymentCashu.quoteId",
-                "=",
-                eb.ref("accountTransactionCashu.quoteId")
-              ),
+              eb.and([
+                eb(
+                  "paymentCashu.quoteId",
+                  "=",
+                  eb.ref("accountTransactionCashu.quoteId")
+                ),
+                eb(
+                  "paymentCashu.mintUrl",
+                  "=",
+                  eb.ref("accountTransactionCashu.mintUrl")
+                ),
+              ]),
               eb(
                 "paymentCashu.receiveOperationId",
                 "=",

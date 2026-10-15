@@ -1,6 +1,6 @@
 # 0007 Tokens from any mint are received, but pay only from the payment's mint
 
-Status: accepted
+Status: superseded by cashu/0011
 Date: 2026-10-14
 
 ## Context

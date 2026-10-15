@@ -1,6 +1,7 @@
 import { type Run, sqliteTrue } from "@evolu/common"
 import { bytesToHex } from "@noble/hashes/utils.js"
 
+import { loadCashuDefaultMint } from "@/core/cashu/cashu-mints.ts"
 import {
   type CashuReceiveError,
   inspectCashuToken,
@@ -32,11 +33,13 @@ import { deriveNostrSecretKey } from "@/core/modules/shared/key-derivation.ts"
  *   down, or that arrived while the app was closed, is simply tried again.
  * - A final refusal that writes nothing is remembered for the run and
  *   skipped; after a restart it costs at most one more check.
- * - Matching (decision 3c, 5c): a token pays only a payment whose mint is
- *   the token's. A NUT-18 payload goes to the payment its id names, if that
- *   payment is open; a bare token to the one open payment of its mint and
- *   face amount. Anything else is received unassigned, and nothing assigns
- *   it afterwards.
+ * - Trust (cashu/0011): Payky receives only from the current default mint.
+ *   A token from any other mint it leaves alone; Linky may still receive it,
+ *   and then it is booked like any other incoming operation.
+ * - Matching (decision 3c): the mint plays no part. A NUT-18 payload goes to
+ *   the payment its id names, if that payment is open; a bare token to the
+ *   one open payment of its face amount. Anything else is received
+ *   unassigned, and nothing assigns it afterwards.
  */
 
 export type CashuTokenListenerDeps = CashuTopupDeps &
@@ -51,9 +54,8 @@ export interface CashuTokenArrival {
   readonly amount: number
   /** The mint's input fee, once the mint was asked. */
   readonly fee: number | null
-  /** False for a token from another mint than the payment's (cashu/0007). */
-  readonly counted: boolean
-  readonly state:
+  readonly state: /** From a mint Payky does not receive from (cashu/0011): not received. */
+    | "untrustedMint"
     | "receiving"
     | "waitingForMint"
     | "received"
@@ -87,24 +89,19 @@ const setArrival = (paymentId: PaymentId, arrival: CashuTokenArrival) => {
 
 export interface CashuTokenCandidate {
   readonly paymentId: PaymentId
-  readonly mintUrl: MintUrl
   readonly amountSats: number
   readonly open: boolean
 }
 
 export type CashuTokenMatch =
   | { readonly type: "payment"; readonly paymentId: PaymentId }
-  /** The payload names this payment, but from another mint: shown, not counted. */
-  | { readonly type: "otherMint"; readonly paymentId: PaymentId }
   | { readonly type: "unassigned" }
 
 export const matchCashuToken = ({
-  mint,
   amount,
   requestId,
   candidates,
 }: {
-  readonly mint: MintUrl
   readonly amount: number
   /** The NUT-18 payload's id, or null for a bare token. */
   readonly requestId: string | null
@@ -114,16 +111,12 @@ export const matchCashuToken = ({
     const named = candidates.find(
       (candidate) => candidate.paymentId === requestId
     )
-    if (named === undefined || !named.open) return { type: "unassigned" }
-    return named.mintUrl === mint
-      ? { type: "payment", paymentId: named.paymentId }
-      : { type: "otherMint", paymentId: named.paymentId }
+    return named === undefined || !named.open
+      ? { type: "unassigned" }
+      : { type: "payment", paymentId: named.paymentId }
   }
   const fitting = candidates.filter(
-    (candidate) =>
-      candidate.open &&
-      candidate.mintUrl === mint &&
-      candidate.amountSats === amount
+    (candidate) => candidate.open && candidate.amountSats === amount
   )
   const [only] = fitting
   return fitting.length === 1 && only !== undefined
@@ -149,7 +142,6 @@ const loadCandidates = async (
   return (await deps.evolu.loadQuery(cashuTokenCandidatePaymentsQuery)).map(
     (row) => ({
       paymentId: row.paymentId,
-      mintUrl: row.mintUrl,
       amountSats: row.amountSats,
       open:
         derivePaymentStatus({
@@ -191,13 +183,11 @@ export const createCashuTokenListener = (run: Run<CashuTokenListenerDeps>) => {
     }
 
     const match = matchCashuToken({
-      mint: token.mint,
       amount: token.amount,
       requestId: message.payload?.requestId ?? null,
       candidates: await loadCandidates(run.deps),
     })
     const arrivalFor = match.type === "unassigned" ? null : match.paymentId
-    const counted = match.type === "payment"
     const report = (
       state: CashuTokenArrival["state"],
       fee: number | null,
@@ -208,10 +198,16 @@ export const createCashuTokenListener = (run: Run<CashuTokenListenerDeps>) => {
           mint: token.mint,
           amount: token.amount,
           fee,
-          counted,
           state,
           failure,
         })
+    }
+
+    // Payky receives only from the current default mint (cashu/0011).
+    if (token.mint !== (await loadCashuDefaultMint(run.deps.cashuShardStore))) {
+      refused.add(message.rumorId)
+      report("untrustedMint", null)
+      return
     }
 
     // The payment holds the receive id before anyone receives the token.

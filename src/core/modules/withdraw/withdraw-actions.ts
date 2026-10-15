@@ -110,7 +110,7 @@ export type WithdrawalAccountNotFoundError = ReturnType<
   typeof createWithdrawalAccountNotFoundError
 >
 
-const createInsufficientWithdrawalBalanceError = defineError(
+export const createInsufficientWithdrawalBalanceError = defineError(
   "InsufficientWithdrawalBalance"
 )<{
   readonly availableSats: number
@@ -122,7 +122,7 @@ export type InsufficientWithdrawalBalanceError = ReturnType<
   typeof createInsufficientWithdrawalBalanceError
 >
 
-const createWithdrawalAmountOutOfRangeError = defineError(
+export const createWithdrawalAmountOutOfRangeError = defineError(
   "WithdrawalAmountOutOfRange"
 )<{
   readonly minSats: number

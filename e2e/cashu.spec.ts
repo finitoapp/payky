@@ -144,14 +144,9 @@ const fundCashuWallet = async (page: Page) => {
   })
 }
 
-test("withdraw from a mint to a Lightning invoice and follow it on its detail", async ({
-  seededPage: page,
-}) => {
-  test.setTimeout(60_000)
-  await fundCashuWallet(page)
-
-  // The fake mint lives in the page: from here on only in-app navigation.
-  await test.step("walk to a new Cashu withdrawal", async () => {
+/** The fake mint lives in the page: only in-app navigation from the paid payment. */
+const walkToNewCashuWithdrawal = (page: Page) =>
+  test.step("walk to a new Cashu withdrawal", async () => {
     await page
       .getByRole("button", { name: translate("en", "paymentWait.back") })
       .click()
@@ -176,6 +171,14 @@ test("withdraw from a mint to a Lightning invoice and follow it on its detail", 
       .click()
   })
 
+test("withdraw from a mint to a Lightning invoice and follow it on its detail", async ({
+  seededPage: page,
+}) => {
+  test.setTimeout(60_000)
+  await fundCashuWallet(page)
+
+  await walkToNewCashuWithdrawal(page)
+
   const destination = page.getByLabel(
     translate("en", "withdraw.destination.label")
   )
@@ -189,10 +192,10 @@ test("withdraw from a mint to a Lightning invoice and follow it on its detail", 
   await test.step("an invoice sets the amount; review the mint's fees", async () => {
     await destination.fill(invoice50())
     await expect(
-      page.getByLabel(translate("en", "withdraw.amount.label"))
+      page.getByLabel(translate("en", "withdraw.amount.label"), { exact: true })
     ).toHaveValue("50")
     await expect(
-      page.getByLabel(translate("en", "withdraw.amount.label"))
+      page.getByLabel(translate("en", "withdraw.amount.label"), { exact: true })
     ).toBeDisabled()
     await page
       .getByRole("button", { name: translate("en", "withdraw.continue") })
@@ -219,6 +222,50 @@ test("withdraw from a mint to a Lightning invoice and follow it on its detail", 
     ).toBeVisible()
     await expect(
       page.getByText(translate("en", "withdraw.kind.cashu"))
+    ).toBeVisible()
+  })
+})
+
+test("withdraw all from a mint to a Lightning address", async ({
+  seededPage: page,
+}) => {
+  test.setTimeout(60_000)
+  await fundCashuWallet(page)
+  await walkToNewCashuWithdrawal(page)
+
+  await test.step("a Lightning address offers withdraw all", async () => {
+    await page
+      .getByLabel(translate("en", "withdraw.destination.label"))
+      .fill("donate@payky.me")
+    await expect(
+      page.getByText(
+        translate("en", "withdraw.destination.kind.lightningAddress"),
+        { exact: true }
+      )
+    ).toBeVisible()
+    await page
+      .getByRole("checkbox", { name: translate("en", "withdraw.all.label") })
+      .check()
+    await expect(
+      page.getByLabel(translate("en", "withdraw.amount.label"), { exact: true })
+    ).toBeDisabled()
+    await page
+      .getByRole("button", { name: translate("en", "withdraw.continue") })
+      .click()
+    await expect(
+      page.getByText(translate("en", "withdraw.review.title"))
+    ).toBeVisible()
+    await expect(
+      page.getByText(translate("en", "withdraw.cashu.review.feeReserve"))
+    ).toBeVisible()
+  })
+
+  await test.step("confirming pays it and opens its detail", async () => {
+    await page
+      .getByRole("button", { name: translate("en", "withdraw.review.confirm") })
+      .click()
+    await expect(
+      page.getByText(translate("en", "withdraw.status.done"))
     ).toBeVisible()
   })
 })

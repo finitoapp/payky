@@ -11,8 +11,10 @@ import {
 } from "@/core/modules/shared/schema.ts"
 import type {
   ExecuteWithdrawalEarlyError,
+  InsufficientWithdrawalBalanceError,
   QuoteWithdrawalError,
   SupportedWithdrawDestination,
+  WithdrawalAmountOutOfRangeError,
   WithdrawalQuote,
 } from "@/core/modules/withdraw/withdraw-actions.ts"
 import type { ParseWithdrawDestinationError } from "@/core/modules/withdraw/withdraw-destination-utils.ts"
@@ -21,7 +23,7 @@ import type { SparkExitSpeed } from "@/core/spark/spark-wallet.ts"
 import type { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
-type Translate = ReturnType<typeof useTranslation>["t"]
+export type Translate = ReturnType<typeof useTranslation>["t"]
 
 /** The wallet a withdrawal leaves: Spark's, or one mint of the shared Cashu wallet. */
 export type WithdrawMethod = "spark" | "cashu"
@@ -166,13 +168,12 @@ const fixedQuoteErrorKeys = {
   TranslationKey
 >
 
-export const quoteErrorMessage = (
-  error: QuoteWithdrawalError | AbortError,
+/** The quote errors that carry amounts, worded alike for Spark and Cashu. */
+export const amountErrorMessage = (
+  error: InsufficientWithdrawalBalanceError | WithdrawalAmountOutOfRangeError,
   t: Translate
 ): string => {
   switch (error.type) {
-    case "WithdrawalBelowMinimum":
-      return t("withdraw.error.belowMinimum", { amount: error.minSats })
     case "InsufficientWithdrawalBalance":
       return error.maxSendableSats === undefined
         ? t("withdraw.error.insufficientBalance")
@@ -184,6 +185,19 @@ export const quoteErrorMessage = (
         min: error.minSats,
         max: error.maxSats,
       })
+  }
+}
+
+export const quoteErrorMessage = (
+  error: QuoteWithdrawalError | AbortError,
+  t: Translate
+): string => {
+  switch (error.type) {
+    case "WithdrawalBelowMinimum":
+      return t("withdraw.error.belowMinimum", { amount: error.minSats })
+    case "InsufficientWithdrawalBalance":
+    case "WithdrawalAmountOutOfRange":
+      return amountErrorMessage(error, t)
     default:
       return t(fixedQuoteErrorKeys[error.type])
   }

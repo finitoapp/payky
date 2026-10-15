@@ -9,30 +9,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { Checkbox } from "@/components/ui/checkbox.tsx"
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field.tsx"
+import { FieldError, FieldGroup } from "@/components/ui/field.tsx"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import { PositiveIntegerSchema } from "@/core/modules/shared/schema.ts"
 import {
   quoteWithdrawal,
   type WithdrawalQuote,
 } from "@/core/modules/withdraw/withdraw-actions.ts"
-import {
-  parseWithdrawDestination,
-  type WithdrawDestination,
-} from "@/core/modules/withdraw/withdraw-destination-utils.ts"
+import { parseWithdrawDestination } from "@/core/modules/withdraw/withdraw-destination-utils.ts"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@/core/modules/withdraw/withdraw-utils.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
+import {
+  WithdrawAllField,
+  withdrawAllUnavailableKey,
+} from "./withdraw-all-field.tsx"
 import { WithdrawAmountField } from "./withdraw-amount-field.tsx"
 import {
   useWithdrawDestination,
@@ -45,19 +37,6 @@ import {
   type WithdrawRequest,
 } from "./withdraw-flow.ts"
 import { WithdrawOptionsFields } from "./withdraw-options-fields.tsx"
-
-/** Why "Withdraw all" is off for this destination, or `null` when it is offered. */
-const withdrawAllUnavailableKey = (
-  destination: WithdrawDestination | null
-): TranslationKey | null => {
-  if (
-    destination?.kind === "lightning-invoice" &&
-    destination.amountSats !== null
-  ) {
-    return "withdraw.all.unavailableInvoice"
-  }
-  return null
-}
 
 export function WithdrawFormStep({
   accountId,
@@ -177,24 +156,11 @@ export function WithdrawFormStep({
               availableSats={availableSats}
             />
 
-            <Field orientation="horizontal">
-              <Checkbox
-                id="withdraw-all"
-                checked={effectiveWithdrawAll}
-                disabled={withdrawAllUnavailable !== null}
-                onCheckedChange={(checked) =>
-                  update({ withdrawAll: checked === true })
-                }
-              />
-              <FieldContent>
-                <FieldLabel htmlFor="withdraw-all">
-                  {t("withdraw.all.label")}
-                </FieldLabel>
-                <FieldDescription>
-                  {t(withdrawAllUnavailable ?? "withdraw.all.description")}
-                </FieldDescription>
-              </FieldContent>
-            </Field>
+            <WithdrawAllField
+              checked={effectiveWithdrawAll}
+              unavailableKey={withdrawAllUnavailable}
+              onChange={(withdrawAll) => update({ withdrawAll })}
+            />
 
             <WithdrawOptionsFields
               draft={draft}

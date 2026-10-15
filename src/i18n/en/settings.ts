@@ -551,6 +551,7 @@ export const enSettings = {
     "Adds tax rates to catalog items.",
   "settings.legalEntity.vatPayer.label": "I am a VAT payer",
   "settings.paymentAccounts.default": "Default",
+  "settings.paymentAccounts.experimental": "Experimental",
   "settings.paymentAccounts.method.cashRegister": "Cash",
   "settings.paymentAccounts.method.iban": "Bank transfer",
   "settings.paymentAccounts.method.cashu": "Cashu",

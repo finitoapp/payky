@@ -555,6 +555,7 @@ export const skSettings = {
     "Pridá daňové sadzby k položkám katalógu.",
   "settings.legalEntity.vatPayer.label": "Som platiteľ DPH",
   "settings.paymentAccounts.default": "Predvolená",
+  "settings.paymentAccounts.experimental": "Experimentálne",
   "settings.paymentAccounts.method.cashRegister": "Hotovosť",
   "settings.paymentAccounts.method.iban": "Bankový prevod",
   "settings.paymentAccounts.method.cashu": "Cashu",

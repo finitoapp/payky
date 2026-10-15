@@ -208,7 +208,7 @@ describe("bookCashuOperations", () => {
     ).toBe(paymentId)
   })
 
-  test("a token from another mint never claims the payment that holds its receive", async () => {
+  test("a token another app received from another mint claims the payment that holds its receive", async () => {
     const s = await setup()
     await using _ = s.t
     const { paymentId } = await newPayment(s)
@@ -229,7 +229,8 @@ describe("bookCashuOperations", () => {
       locked: null,
       expiresAtSec: null,
       createdAtSec: Math.floor(s.clock.value / 1000),
-      tokenText: CashuTokenText("cashuBrogue"),
+      // No token text: the fee of a mint the test cannot reach is not asked.
+      tokenText: null,
       error: null,
     })
     await run.ok(
@@ -241,7 +242,7 @@ describe("bookCashuOperations", () => {
     const transactions = await s.deps.evolu.loadQuery(transactionsQuery)
     expect(
       transactions.find((tx) => tx.cashuOperationId === operationId)?.paymentId
-    ).toBeNull()
+    ).toBe(paymentId)
   })
 
   test("an operation that arrives late with an old time is still booked, and stays unclaimed when no payment holds it", async () => {

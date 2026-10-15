@@ -247,8 +247,8 @@ export const csPayment = {
     "Přišel token na {amount} sat z {mint}. Mint si nechá {fee} sat jako poplatek.",
   "paymentWait.cashu.arrival.waitingForMint":
     "Přišel token na {amount} sat. Čekám, až odpoví mint {mint}...",
-  "paymentWait.cashu.arrival.otherMint":
-    "Token na {amount} sat přišel z {mint}, ne z mintu této platby. Tuto platbu nezaplatí.",
+  "paymentWait.cashu.arrival.untrustedMint":
+    "Token na {amount} sat přišel z {mint}, což není výchozí mint. Nebyl přijat a tuto platbu nezaplatí.",
   "paymentWait.cashu.failure.mintUnreachable":
     "Mint neodpověděl. Token zkusím znovu.",
   "paymentWait.cashu.failure.mintRejected":

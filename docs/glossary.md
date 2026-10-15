@@ -108,8 +108,9 @@ The word "account" means two unrelated things here.
   over NIP-17 to pay. The **known mints** are those proofs or operations
   name, plus those this device saw or added (`loadKnownCashuMints`); being
   known says nothing about trust. **The payment's mint** is
-  `paymentCashu.mintUrl`, the one mint whose tokens can pay that payment
-  (`cashu/0007`).
+  `paymentCashu.mintUrl`, the mint its request and topup quote name. Payky
+  receives tokens only from the **default mint** (Linky's synced
+  `defaultMint`); a received token pays whatever its mint (`cashu/0011`).
 - **FIO** — the Czech bank whose API the IBAN sync job reads.
 - **EET** — Czech electronic registration of sales (`docs/eet.md`).
 - **Switchio** — the SwitchioPay card terminal app, driven through Android

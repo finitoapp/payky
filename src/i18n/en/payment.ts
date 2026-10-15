@@ -250,8 +250,8 @@ export const enPayment = {
     "A token for {amount} sat arrived from {mint}. The mint keeps {fee} sat as its fee.",
   "paymentWait.cashu.arrival.waitingForMint":
     "A token for {amount} sat arrived. Waiting for the mint {mint} to answer...",
-  "paymentWait.cashu.arrival.otherMint":
-    "A token for {amount} sat came from {mint}, not from this payment's mint. It does not pay this payment.",
+  "paymentWait.cashu.arrival.untrustedMint":
+    "A token for {amount} sat came from {mint}, which is not the default mint. It was not accepted and does not pay this payment.",
   "paymentWait.cashu.failure.mintUnreachable":
     "The mint did not answer. The token will be tried again.",
   "paymentWait.cashu.failure.mintRejected":

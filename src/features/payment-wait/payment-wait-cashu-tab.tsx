@@ -36,22 +36,23 @@ function CashuTokenArrivalNote({
 }) {
   const { t } = useTranslation()
   const params = { amount: arrival.amount, mint: arrival.mint }
-  const text = !arrival.counted
-    ? t("paymentWait.cashu.arrival.otherMint", params)
-    : arrival.state === "failed"
-      ? t(
-          arrival.failure === null
-            ? "paymentWait.cashu.failure.mintRejected"
-            : failureKeys[arrival.failure]
-        )
-      : arrival.state === "waitingForMint"
-        ? t("paymentWait.cashu.arrival.waitingForMint", params)
-        : arrival.fee !== null && arrival.fee > 0
-          ? t("paymentWait.cashu.arrival.withFee", {
-              ...params,
-              fee: arrival.fee,
-            })
-          : t("paymentWait.cashu.arrival.receiving", params)
+  const text =
+    arrival.state === "untrustedMint"
+      ? t("paymentWait.cashu.arrival.untrustedMint", params)
+      : arrival.state === "failed"
+        ? t(
+            arrival.failure === null
+              ? "paymentWait.cashu.failure.mintRejected"
+              : failureKeys[arrival.failure]
+          )
+        : arrival.state === "waitingForMint"
+          ? t("paymentWait.cashu.arrival.waitingForMint", params)
+          : arrival.fee !== null && arrival.fee > 0
+            ? t("paymentWait.cashu.arrival.withFee", {
+                ...params,
+                fee: arrival.fee,
+              })
+            : t("paymentWait.cashu.arrival.receiving", params)
   return (
     <p
       className="max-w-72 text-balance text-sm text-muted-foreground"

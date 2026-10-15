@@ -22,7 +22,9 @@ payer sends a bare token that names no request.
   token; anything else is ignored without being logged or stored.
 - A payload goes to the open payment its id names, from that payment's mint;
   a bare token to the one open payment of its mint and face amount. Otherwise
-  the token is received unassigned.
+  the token is received unassigned. `cashu/0011` dropped both mint
+  conditions: a payload goes to the open payment it names, a bare token to
+  the one open payment of its face amount.
 - Before anyone receives a matched token, the payment holds its receive id
   (`cashuOperationIdFor("receive|" + text)`, the text normalised as Linky
   normalises it), so it settles whoever receives the token.
@@ -45,8 +47,8 @@ ambiguous; it stays unassigned and pays neither.
 - `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a bare token sent 1:1, as Linky sends it`
 - `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores chat text, even one that mentions a token`
 - `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores a token sent to a group, the support room included`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, at the payment's mint`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its mint and face amount`
+- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
+- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
 - `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token two payments fit, or none, is unassigned`
 - `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > a token Linky received first settles the payment that holds its receive`
 - `src/core/background-jobs/jobs/cashu-account-sync-job.test.ts > cashu account sync job > settles a payment paid with a NUT-18 token over NIP-17`

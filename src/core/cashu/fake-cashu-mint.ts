@@ -298,6 +298,9 @@ export const createFakeCashuMint = (options: FakeCashuMintOptions) => {
           "7": { supported: options.supportsNut07 ?? true },
           "8": { supported: true },
           "9": { supported: true },
+          // Listed so cashu-ts locks tokens to a key here, as it does at a
+          // real mint; this one takes the witness without checking it.
+          "11": { supported: true },
           "12": { supported: false },
           "20": { supported: options.supportsNut20 ?? false },
         },

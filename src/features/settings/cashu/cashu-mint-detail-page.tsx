@@ -40,7 +40,7 @@ import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
 import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
-import { useRunToast } from "@/hooks/use-run-toast.ts"
+import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -70,7 +70,7 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const navigate = useNavigate()
-  const runToast = useRunToast()
+  const runToast = useCashuRunToast()
   const access = useAccess()
   const { require, requirePin } = useRequirePermission()
   const { store, snapshot, refetch } = useCashuWallet()

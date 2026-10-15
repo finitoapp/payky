@@ -41,7 +41,7 @@ import {
 import type { FiatCurrency } from "@/core/modules/shared/schema.ts"
 import { isSwitchioInstalled } from "@/core/native/switchio.ts"
 import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useAppRun, useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -67,6 +67,7 @@ interface PaymentMethodRowState {
  */
 export function PaymentAccountsSettingsPage() {
   const appRun = useAppRun()
+  const cashuAppRun = useCashuAppRun()
   const runToast = useRunToast()
   const { t } = useTranslation()
   const { data: settingsData } = useEvoluQuery(settingsQuery)
@@ -200,7 +201,7 @@ export function PaymentAccountsSettingsPage() {
       status: null,
       to: cashu === undefined ? null : "/settings/payment-accounts/cashu",
       saveEnabled: async (enabled) => {
-        await using run = appRun()
+        await using run = await cashuAppRun()
         await run.ok(saveCashuAccount({ enabled }))
       },
     },

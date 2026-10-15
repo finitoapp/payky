@@ -29,7 +29,7 @@ import {
 } from "@/core/modules/withdraw/withdraw-cashu-actions.ts"
 import type { WithdrawDestination } from "@/core/modules/withdraw/withdraw-destination-utils.ts"
 import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -121,7 +121,7 @@ export function CashuWithdrawFormStep({
     quote: CashuWithdrawalQuote
   ) => void
 }) {
-  const appRun = useAppRun()
+  const cashuAppRun = useCashuAppRun()
   const { t } = useTranslation()
   const locale = useLocale()
   const fiat = useBtcFiat()
@@ -173,7 +173,7 @@ export function CashuWithdrawFormStep({
     }
     setPending(true)
     try {
-      await using run = appRun()
+      await using run = await cashuAppRun()
       const result = await run(quoteCashuWithdrawal(request))
       if (!result.ok) {
         setSubmitError(cashuQuoteErrorMessage(result.error, t))

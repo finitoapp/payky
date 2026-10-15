@@ -1,10 +1,8 @@
 import { useCallback } from "react"
 import { toast } from "sonner"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useAppRun, useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
-
-type AppRun = ReturnType<ReturnType<typeof useAppRun>>
 
 /**
  * The button/form-submit counterpart to `useInlineSave`: owns the
@@ -17,15 +15,25 @@ type AppRun = ReturnType<ReturnType<typeof useAppRun>>
  * Resolves `true` only when `action` completed without a message.
  */
 export function useRunToast() {
-  const appRun = useAppRun()
+  return useRunToastWith(useAppRun())
+}
+
+/** `useRunToast` over `useCashuAppRun`, for the Cashu screens. */
+export function useCashuRunToast() {
+  return useRunToastWith(useCashuAppRun())
+}
+
+function useRunToastWith<Run extends AsyncDisposable>(
+  appRun: () => Run | Promise<Run>
+) {
   const { t } = useTranslation()
 
   return useCallback(
     async (
-      action: (run: AppRun) => Promise<TranslationKey | undefined>
+      action: (run: Run) => Promise<TranslationKey | undefined>
     ): Promise<boolean> => {
       try {
-        await using run = appRun()
+        await using run = await appRun()
         const errorKey = await action(run)
         if (errorKey !== undefined) {
           toast.error(t(errorKey))

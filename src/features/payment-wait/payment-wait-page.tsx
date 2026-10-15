@@ -76,7 +76,7 @@ import type {
 } from "@/features/payment-wait/payment-wait-types.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useAppRun, useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
@@ -84,7 +84,7 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useNostrIdentity, useNostrProfile } from "@/hooks/use-nostr-profile.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
-import { useRunToast } from "@/hooks/use-run-toast.ts"
+import { useCashuRunToast, useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -128,7 +128,9 @@ export function PaymentWaitPage({ paymentId }: { readonly paymentId: string }) {
 
 function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const appRun = useAppRun()
+  const cashuAppRun = useCashuAppRun()
   const runToast = useRunToast()
+  const cashuRunToast = useCashuRunToast()
   const { require } = useRequirePermission()
   const deviceId = useAtomValue(accountAtom).device.id
   const console = useConsole()
@@ -404,35 +406,38 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       preparationKey: string
     ) => {
       try {
-        await using run = appRun()
-
-        const result =
-          method.kind === "cashu"
-            ? await run(
-                prepareCashuPaymentMethod({
-                  paymentId,
-                  accountId: method.accountId,
-                })
-              )
-            : await run(
-                preparePaymentMethod({
-                  paymentId,
-                  ...(method.kind === "cashRegister"
-                    ? { cashRegister: { accountId: method.accountId } }
-                    : {}),
-                  ...(method.kind === "cardSwitchio"
-                    ? { card: { accountId: method.accountId } }
-                    : {}),
-                  ...(method.kind === "iban"
-                    ? { bank: { accountId: method.accountId } }
-                    : {}),
-                  ...(method.kind === "spark"
-                    ? {
-                        spark: { accountId: method.accountId },
-                      }
-                    : {}),
-                })
-              )
+        // Only a Cashu preparation reads the Cashu wallet, and only now: no
+        // other method waits on it, or fails with it.
+        const prepare = async () => {
+          if (method.kind === "cashu") {
+            await using run = await cashuAppRun()
+            return await run(
+              prepareCashuPaymentMethod({
+                paymentId,
+                accountId: method.accountId,
+              })
+            )
+          }
+          await using run = appRun()
+          return await run(
+            preparePaymentMethod({
+              paymentId,
+              ...(method.kind === "cashRegister"
+                ? { cashRegister: { accountId: method.accountId } }
+                : {}),
+              ...(method.kind === "cardSwitchio"
+                ? { card: { accountId: method.accountId } }
+                : {}),
+              ...(method.kind === "iban"
+                ? { bank: { accountId: method.accountId } }
+                : {}),
+              ...(method.kind === "spark"
+                ? { spark: { accountId: method.accountId } }
+                : {}),
+            })
+          )
+        }
+        const result = await prepare()
 
         if (!result.ok) {
           console.error("Failed to prepare payment method", result.error)
@@ -447,7 +452,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         )
       }
     },
-    [appRun, console, paymentId]
+    [appRun, cashuAppRun, console, paymentId]
   )
 
   useEffect(() => {
@@ -668,7 +673,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     const cashuAccountId = payment.cashuAccountId
     if (cashuAccountId === null || cashuAccountId === undefined) return
     setNewCashuQuotePending(true)
-    await runToast(async (run) => {
+    await cashuRunToast(async (run) => {
       const result = await run(
         prepareCashuPaymentMethod({ paymentId, accountId: cashuAccountId })
       )

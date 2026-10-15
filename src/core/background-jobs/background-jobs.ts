@@ -1,4 +1,5 @@
 import type {
+  AppBackgroundJob,
   BackgroundJob,
   CashuBackgroundJob,
 } from "@/core/background-jobs/background-job-types.ts"
@@ -18,8 +19,7 @@ export const cliBackgroundJobs = [
 const nativeBackgroundJobs = [
   ...cliBackgroundJobs,
   startEetReportingJob,
-  startCashuAccountSyncJob,
-] satisfies ReadonlyArray<CashuBackgroundJob>
+] satisfies ReadonlyArray<AppBackgroundJob>
 
 /**
  * A browser or PWA can't reach the FIO API directly, so its sync job is left
@@ -29,11 +29,19 @@ const nativeBackgroundJobs = [
 const browserBackgroundJobs = [
   startSparkAccountTransactionSyncJob,
   startEetReportingJob,
-  startCashuAccountSyncJob,
-] satisfies ReadonlyArray<CashuBackgroundJob>
+] satisfies ReadonlyArray<AppBackgroundJob>
 
 export function getBackgroundJobsForRuntime(
   isNativePlatform: boolean
-): ReadonlyArray<CashuBackgroundJob> {
+): ReadonlyArray<AppBackgroundJob> {
   return isNativePlatform ? nativeBackgroundJobs : browserBackgroundJobs
 }
+
+/**
+ * The shared Cashu wallet's job, on native and browser alike. It runs apart
+ * from the others (`CashuBackgroundJobs`), so a Cashu wallet that fails to
+ * start, or never does, holds up none of them.
+ */
+export const cashuBackgroundJobs = [
+  startCashuAccountSyncJob,
+] satisfies ReadonlyArray<CashuBackgroundJob>

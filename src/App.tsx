@@ -4,7 +4,10 @@ import { Provider } from "jotai"
 import { LoaderCircleIcon } from "lucide-react"
 import { Suspense, useEffect } from "react"
 import { jotaiStore } from "@/atoms/store.ts"
-import { AppBackgroundJobs } from "@/components/app/app-background-jobs.tsx"
+import {
+  AppBackgroundJobs,
+  CashuBackgroundJobs,
+} from "@/components/app/app-background-jobs.tsx"
 import { AppLoaderCleanup } from "@/components/app/app-loader-cleanup.tsx"
 import { AppMigrations } from "@/components/app/app-migrations.tsx"
 import { ConfirmDialogHost } from "@/components/app/confirm-dialog-host.tsx"
@@ -99,6 +102,19 @@ export function App() {
                     <AppBackgroundJobs />
                     <SwitchioRestoredResult />
                     <DeviceRegistration />
+                    {/*
+                     * The Cashu job waits on and can fail with the shared
+                     * Cashu wallet alone: under its own boundary and
+                     * Suspense, it holds up nothing beside it.
+                     */}
+                    <CatchBoundary
+                      getResetKey={() => "cashu-background-jobs"}
+                      errorComponent={AppEvoluConsumersFailed}
+                    >
+                      <Suspense fallback={null}>
+                        <CashuBackgroundJobs />
+                      </Suspense>
+                    </CatchBoundary>
                   </AppMigrations>
                   <E2eTestBridge />
                 </Suspense>

@@ -1,6 +1,6 @@
 import { createRun } from "@evolu/web"
-import { useAtomValue } from "jotai"
-import { useMemo } from "react"
+import { useAtomValue, useStore } from "jotai"
+import { useCallback, useMemo } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
@@ -21,7 +21,7 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
  * Returns a stable factory that creates a disposable Run wired with the full
  * superset of app dependencies (console, evolu, deviceEvolu, evoluOwner,
  * date, fetch, sparkWallet, yadioApi, switchioTerminal, eetApi, nostr,
- * lockManager, cashuShardStore, cashuWallet). Task
+ * lockManager); the Cashu wallet comes from `useCashuAppRun`. Task
  * dependency typing is structural, so Tasks that need only a subset are
  * unaffected by the extra deps.
  *
@@ -37,43 +37,55 @@ import { useEvolu } from "@/hooks/use-evolu.ts"
  * }
  * ```
  */
-export const useAppRun = () => {
+/** Every app dependency but the Cashu ones, built fresh for each run. */
+const useAppRunDeps = () => {
   const console = useConsole()
   const evolu = useEvolu()
   const account = useAtomValue(accountAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const cashuShardStore = useAtomValue(cashuShardStoreAtom)
-  const cashuWalletDep = useAtomValue(cashuWalletDepAtom)
 
-  return useMemo(() => {
-    return () => {
-      const dateDep = createDateDep()
-      const fetchDep = createFetchDep()
+  return useCallback(() => {
+    const dateDep = createDateDep()
+    const fetchDep = createFetchDep()
 
-      return createRun({
-        console,
-        evolu,
-        deviceEvolu,
-        evoluOwner: evolu.appOwner,
-        masterKey: account.masterKey,
-        lockManager: navigator.locks,
-        ...dateDep,
-        ...fetchDep,
-        ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
-        ...createYadioApiDep(),
-        ...createSwitchioTerminalDep(),
-        ...createEetApiDep({ ...dateDep, ...fetchDep }),
-        ...createNostrDep(),
-        cashuShardStore,
-        ...cashuWalletDep,
-      })
+    return {
+      console,
+      evolu,
+      deviceEvolu,
+      evoluOwner: evolu.appOwner,
+      masterKey: account.masterKey,
+      lockManager: navigator.locks,
+      ...dateDep,
+      ...fetchDep,
+      ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
+      ...createYadioApiDep(),
+      ...createSwitchioTerminalDep(),
+      ...createEetApiDep({ ...dateDep, ...fetchDep }),
+      ...createNostrDep(),
     }
-  }, [
-    account.masterKey,
-    cashuShardStore,
-    cashuWalletDep,
-    console,
-    deviceEvolu,
-    evolu,
-  ])
+  }, [account.masterKey, console, deviceEvolu, evolu])
+}
+
+export const useAppRun = () => {
+  const appRunDeps = useAppRunDeps()
+  return useMemo(() => () => createRun(appRunDeps()), [appRunDeps])
+}
+
+/**
+ * `useAppRun` plus the shared Cashu wallet (`cashuShardStore`, `cashuWallet`),
+ * for the Cashu actions only: `await using run = await cashuAppRun()`. The
+ * Cashu atoms are read when a run is made, never while rendering, so a
+ * wallet that fails to start, or never does, holds up no screen; the call
+ * that needed it rejects instead.
+ */
+export const useCashuAppRun = () => {
+  const appRunDeps = useAppRunDeps()
+  const jotaiStore = useStore()
+  return useCallback(async () => {
+    const [cashuShardStore, cashuWalletDep] = await Promise.all([
+      jotaiStore.get(cashuShardStoreAtom),
+      jotaiStore.get(cashuWalletDepAtom),
+    ])
+    return createRun({ ...appRunDeps(), cashuShardStore, ...cashuWalletDep })
+  }, [appRunDeps, jotaiStore])
 }

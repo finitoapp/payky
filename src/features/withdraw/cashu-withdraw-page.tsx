@@ -15,7 +15,7 @@ import {
 } from "@/core/modules/withdraw/withdraw-cashu-actions.ts"
 import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
@@ -95,7 +95,7 @@ function CashuWithdrawFlow({
   readonly accountId: AccountId
   readonly initialDestination: string
 }) {
-  const appRun = useAppRun()
+  const cashuAppRun = useCashuAppRun()
   const navigate = useNavigate()
   const access = useAccess()
   const { require, requirePin } = useRequirePermission()
@@ -151,7 +151,7 @@ function CashuWithdrawFlow({
 
     try {
       const { device } = await jotaiStore.get(accountAtom)
-      await using run = appRun()
+      await using run = await cashuAppRun()
       const comment = draftComment(draft)
       const result = await run(
         executeCashuWithdrawal({
@@ -195,7 +195,7 @@ function CashuWithdrawFlow({
     setRequoting(true)
     setConfirmError(null)
     try {
-      await using run = appRun()
+      await using run = await cashuAppRun()
       const result = await run(quoteCashuWithdrawal(review.request))
       if (result.ok) setReview({ ...review, quote: result.value })
       else setConfirmError(cashuQuoteErrorMessage(result.error, t))

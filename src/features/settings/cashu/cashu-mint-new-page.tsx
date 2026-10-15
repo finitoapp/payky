@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { addKnownCashuMint } from "@/core/cashu/cashu-mints.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
-import { useRunToast } from "@/hooks/use-run-toast.ts"
+import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -29,7 +29,7 @@ const addErrorKeys = {
 export function CashuMintNewPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const runToast = useRunToast()
+  const runToast = useCashuRunToast()
   const { require } = useRequirePermission()
   const [url, setUrl] = useState("")
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null)

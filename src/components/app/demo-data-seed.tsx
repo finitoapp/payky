@@ -16,7 +16,7 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button.tsx"
 import { generateDemoData } from "@/core/demo-data/demo-data-generator.ts"
 import { markDemoAccountSeeded } from "@/core/evolu/device-account.ts"
-import { useAppRun } from "@/hooks/use-app-run.ts"
+import { useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -54,7 +54,7 @@ type SeedState =
 export function DemoDataSeed() {
   const account = useAtomValue(accountAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const appRun = useAppRun()
+  const cashuAppRun = useCashuAppRun()
   const console = useConsole()
   const { t, language } = useTranslation()
   const [state, setState] = useState<SeedState>({ status: "idle" })
@@ -73,7 +73,7 @@ export function DemoDataSeed() {
     void (async () => {
       setState({ status: "running", done: 0, total: 1 })
       try {
-        await using run = appRun()
+        await using run = await cashuAppRun()
         const { payments, days } = await run.ok(
           generateDemoData({
             language,
@@ -98,7 +98,7 @@ export function DemoDataSeed() {
         setState({ status: "failed" })
       }
     })()
-  }, [account.demo, account.id, appRun, console, deviceEvolu, language])
+  }, [account.demo, account.id, cashuAppRun, console, deviceEvolu, language])
 
   if (state.status === "idle") return null
   const isRunning = state.status === "running"

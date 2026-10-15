@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import {
+  cashuBackgroundJobs,
   cliBackgroundJobs,
   getBackgroundJobsForRuntime,
 } from "./background-jobs.ts"
@@ -14,7 +15,6 @@ describe("getBackgroundJobsForRuntime", () => {
     expect(getBackgroundJobsForRuntime(false)).toEqual([
       startSparkAccountTransactionSyncJob,
       startEetReportingJob,
-      startCashuAccountSyncJob,
     ])
   })
 
@@ -23,7 +23,6 @@ describe("getBackgroundJobsForRuntime", () => {
       startFioAccountTransactionSyncJob,
       startSparkAccountTransactionSyncJob,
       startEetReportingJob,
-      startCashuAccountSyncJob,
     ])
   })
 
@@ -33,5 +32,15 @@ describe("getBackgroundJobsForRuntime", () => {
 
   test("keeps the Cashu job out of the CLI, which has no Linky owners", () => {
     expect(cliBackgroundJobs).not.toContain(startCashuAccountSyncJob)
+  })
+
+  test("keeps the Cashu job apart, so a Cashu wallet that fails to start stops no other job", () => {
+    expect(getBackgroundJobsForRuntime(false)).not.toContain(
+      startCashuAccountSyncJob
+    )
+    expect(getBackgroundJobsForRuntime(true)).not.toContain(
+      startCashuAccountSyncJob
+    )
+    expect(cashuBackgroundJobs).toEqual([startCashuAccountSyncJob])
   })
 })

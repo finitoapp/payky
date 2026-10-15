@@ -23,7 +23,7 @@ import { formatSatsAmount } from "@/lib/format-utils.ts"
 import {
   CashuWithdrawFormStep,
   type CashuWithdrawRequest,
-  cashuQuoteErrorKeys,
+  cashuQuoteErrorMessage,
 } from "./cashu-withdraw-form-step.tsx"
 import { CashuWithdrawReviewStep } from "./cashu-withdraw-review-step.tsx"
 import {
@@ -198,7 +198,7 @@ function CashuWithdrawFlow({
       await using run = appRun()
       const result = await run(quoteCashuWithdrawal(review.request))
       if (result.ok) setReview({ ...review, quote: result.value })
-      else setConfirmError(t(cashuQuoteErrorKeys[result.error.type]))
+      else setConfirmError(cashuQuoteErrorMessage(result.error, t))
     } catch {
       setConfirmError(t("withdraw.quoteError.generic"))
     } finally {

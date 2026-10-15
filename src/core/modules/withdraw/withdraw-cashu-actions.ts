@@ -15,6 +15,7 @@ import {
   fetchLnurlPayInvoice,
   fetchLnurlPayMetadata,
   type LightningAddressInvoiceMismatchError,
+  type LnurlPayMetadata,
   lnurlPayComment,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
@@ -24,6 +25,7 @@ import {
 } from "@/core/modules/account-transaction/account-transaction-actions.ts"
 import { accountTransactionExistsQuery } from "@/core/modules/account-transaction/account-transaction-queries.ts"
 import { deriveCashuAccountTransactionId } from "@/core/modules/account-transaction/account-transaction-utils.ts"
+import { sumAvailableByMint } from "@/core/modules/cashu/cashu-queries.ts"
 import {
   type CashuOperationId,
   CashuQuoteIdSchema,
@@ -49,8 +51,12 @@ import {
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
 import {
+  createInsufficientWithdrawalBalanceError,
+  createWithdrawalAmountOutOfRangeError,
   createWithdrawalOutcomeUnknownError,
   createWithdrawalRejectedError,
+  type InsufficientWithdrawalBalanceError,
+  type WithdrawalAmountOutOfRangeError,
   type WithdrawalOutcomeUnknownError,
   type WithdrawalRejectedError,
 } from "./withdraw-actions.ts"
@@ -61,7 +67,7 @@ import { WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS } from "./withdraw-utils.ts"
 
 /**
  * Withdrawing from the wallet shared with Linky (cashu.md §6, withdraw/0011–
- * 0013): one mint at a time, to a Lightning invoice or address, paid by
+ * 0014): one mint at a time, to a Lightning invoice or address, paid by
  * Linky's melt. The fee reserve is the mint's own, and the balance is the
  * shared one, money received in Linky included. A melt whose response was
  * lost is settled by its resume, which never sends again (withdraw/0007).
@@ -103,6 +109,10 @@ export interface CashuWithdrawalQuote {
   readonly recipientComment: string | null
   /** What the recipient gets. */
   readonly amountSats: number
+  /** The mint's balance the quote was sized against. */
+  readonly availableSats: number
+  /** Sized to the mint's balance (withdraw/0014). */
+  readonly withdrawAll: boolean
   readonly cost: CashuMeltCost
   /** When confirming is refused: the invoice's or the melt quote's expiry, less the margin. */
   readonly expiresAt: number
@@ -116,15 +126,78 @@ export type QuoteCashuWithdrawalError =
   | CashuWithdrawalToSelfError
   | CashuWithdrawalInvoiceExpiredError
   | CashuWithdrawalDestinationError
+  | InsufficientWithdrawalBalanceError
+  | WithdrawalAmountOutOfRangeError
 
 const isExpired = (invoice: LightningInvoice, now: Date): boolean =>
   invoice.expiresAt - WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS <= now.getTime()
 
+/** The mint's available balance, as `costOfMelt` counts it. */
+const loadMintBalance = async (
+  deps: CashuTopupDeps,
+  mint: MintUrl
+): Promise<number> =>
+  sumAvailableByMint(await deps.cashuShardStore.loadProofs()).get(mint) ?? 0
+
+/**
+ * What "withdraw all" sends to a Lightning address (withdraw/0014): a probe
+ * invoice for the whole balance, at most `maxSendable`, prices the mint's fee
+ * reserve and input fee; the fees for the smaller final amount are no
+ * higher, and the caller prices that invoice again anyway.
+ */
+const cashuLightningAddressWithdrawAllSats =
+  ({
+    mint,
+    metadata,
+  }: {
+    readonly mint: MintUrl
+    readonly metadata: LnurlPayMetadata
+  }): Task<
+    PositiveInteger,
+    | MintFailure
+    | InsufficientWithdrawalBalanceError
+    | LightningAddressInvoiceMismatchError
+    | LnurlError,
+    CashuTopupDeps & FetchDep & DateDep
+  > =>
+  async (run) => {
+    const { minSendableSats, maxSendableSats } = metadata
+    const availableSats = await loadMintBalance(run.deps, mint)
+    const probeSats = Math.min(availableSats, maxSendableSats)
+    if (probeSats < minSendableSats || probeSats <= 0) {
+      return err(
+        createInsufficientWithdrawalBalanceError({
+          availableSats,
+          requestedSats: minSendableSats,
+        })
+      )
+    }
+    const probe = await run(
+      fetchLnurlPayInvoice({ amountSats: probeSats, metadata })
+    )
+    if (!probe.ok) return probe
+    const cost = await run(
+      quoteCashuMelt({ mint, invoice: probe.value.invoice.invoice })
+    )
+    if (!cost.ok) return cost
+    const fees = cost.value.feeReserve + cost.value.inputFee
+    const sendSats = Math.min(availableSats - fees, maxSendableSats)
+    if (sendSats < minSendableSats || sendSats <= 0) {
+      return err(
+        createInsufficientWithdrawalBalanceError({
+          availableSats,
+          requestedSats: minSendableSats + fees,
+        })
+      )
+    }
+    return ok(PositiveInteger(sendSats))
+  }
+
 /**
  * Prices a withdrawal from `mint`. An invoice carries its amount; a
- * Lightning address needs one.
- * ponytail: no "withdraw all" from a mint yet; the mint's fee reserve makes
- * the most sendable amount a probe loop, add it when merchants ask.
+ * Lightning address takes one, or `undefined` for "withdraw all"
+ * (withdraw/0014). Refused here, as Spark's is, when the mint's balance
+ * cannot cover the amount and the mint's fees.
  */
 export const quoteCashuWithdrawal =
   ({
@@ -135,33 +208,58 @@ export const quoteCashuWithdrawal =
   }: {
     readonly mint: MintUrl
     readonly destination: WithdrawDestination
+    /** `undefined` to a Lightning address means "withdraw all". */
     readonly amountSats?: PositiveInteger
     /** LUD-12, for a Lightning address that accepts it; ignored elsewhere. */
     readonly recipientComment?: string
   }): Task<
     CashuWithdrawalQuote,
     QuoteCashuWithdrawalError,
-    CashuTopupDeps & EvoluDep & FetchDep
+    CashuTopupDeps & EvoluDep & FetchDep & DateDep
   > =>
   async (run) => {
     let invoice: LightningInvoice
     let lightningAddress: string | null = null
     let recipientText: string | null = null
     let sentComment: string | null = null
+    const withdrawAll =
+      destination.kind === "lightning-address" && amountSats === undefined
     if (destination.kind === "lightning-invoice") {
       if (destination.amountSats === null)
         return err(createCashuWithdrawalAmountNeededError())
       invoice = destination
     } else if (destination.kind === "lightning-address") {
-      if (amountSats === undefined)
-        return err(createCashuWithdrawalAmountNeededError())
       const metadata = await run(
         fetchLnurlPayMetadata({ address: destination.address })
       )
       if (!metadata.ok) return metadata
+      const { minSendableSats, maxSendableSats } = metadata.value
+      if (
+        amountSats !== undefined &&
+        (amountSats < minSendableSats || amountSats > maxSendableSats)
+      ) {
+        return err(
+          createWithdrawalAmountOutOfRangeError({
+            minSats: minSendableSats,
+            maxSats: maxSendableSats,
+          })
+        )
+      }
+      let sendSats = amountSats
+      if (sendSats === undefined) {
+        const sized = await run(
+          cashuLightningAddressWithdrawAllSats({
+            mint,
+            metadata: metadata.value,
+          })
+        )
+        if (!sized.ok) return sized
+        sendSats = sized.value
+      }
+      // Only the invoice paid carries the comment, not the probe above.
       const fetched = await run(
         fetchLnurlPayInvoice({
-          amountSats,
+          amountSats: sendSats,
           metadata: metadata.value,
           comment: recipientComment,
         })
@@ -184,6 +282,19 @@ export const quoteCashuWithdrawal =
 
     const cost = await run(quoteCashuMelt({ mint, invoice: invoice.invoice }))
     if (!cost.ok) return cost
+    const availableSats = await loadMintBalance(run.deps, mint)
+    if (cost.value.maxTotal > availableSats) {
+      return err(
+        createInsufficientWithdrawalBalanceError({
+          availableSats,
+          requestedSats: cost.value.maxTotal,
+          maxSendableSats: Math.max(
+            availableSats - cost.value.feeReserve - cost.value.inputFee,
+            0
+          ),
+        })
+      )
+    }
     const meltExpiresAt =
       cost.value.expiresAtSec === null
         ? Number.POSITIVE_INFINITY
@@ -195,6 +306,8 @@ export const quoteCashuWithdrawal =
       recipientText,
       recipientComment: sentComment,
       amountSats: cost.value.amount,
+      availableSats,
+      withdrawAll,
       cost: cost.value,
       expiresAt:
         Math.min(invoice.expiresAt, meltExpiresAt) -

@@ -35,17 +35,26 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatSatsAmount } from "@/lib/format-utils.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
+import {
+  WithdrawAllField,
+  withdrawAllUnavailableKey,
+} from "./withdraw-all-field.tsx"
 import { WithdrawAmountField } from "./withdraw-amount-field.tsx"
 import {
   useWithdrawDestination,
   WithdrawDestinationField,
 } from "./withdraw-destination-field.tsx"
-import { draftAmountSats, type WithdrawDraft } from "./withdraw-flow.ts"
+import {
+  amountErrorMessage,
+  draftAmountSats,
+  type Translate,
+  type WithdrawDraft,
+} from "./withdraw-flow.ts"
 import { WithdrawOptionsFields } from "./withdraw-options-fields.tsx"
 
 const lightningAddressUnavailable = "withdraw.error.lightningAddressUnavailable"
 
-export const cashuQuoteErrorKeys = {
+const cashuQuoteErrorKeys = {
   AbortError: "withdraw.quoteError.generic",
   MintUnreachable: "withdraw.cashu.error.unreachable",
   MintRejected: "withdraw.cashu.error.rejected",
@@ -59,23 +68,39 @@ export const cashuQuoteErrorKeys = {
   LnurlHttpError: lightningAddressUnavailable,
   LnurlResponseError: lightningAddressUnavailable,
 } satisfies Record<
-  (QuoteCashuWithdrawalError | AbortError)["type"],
+  Exclude<
+    (QuoteCashuWithdrawalError | AbortError)["type"],
+    "InsufficientWithdrawalBalance" | "WithdrawalAmountOutOfRange"
+  >,
   TranslationKey
 >
+
+export const cashuQuoteErrorMessage = (
+  error: QuoteCashuWithdrawalError | AbortError,
+  t: Translate
+): string =>
+  error.type === "InsufficientWithdrawalBalance" ||
+  error.type === "WithdrawalAmountOutOfRange"
+    ? amountErrorMessage(error, t)
+    : t(cashuQuoteErrorKeys[error.type])
 
 /** What the merchant asked for, kept so the review can fetch a new quote. */
 export interface CashuWithdrawRequest {
   readonly mint: MintUrl
   readonly destination: WithdrawDestination
-  /** `undefined` for an invoice, which carries its own amount. */
+  /**
+   * `undefined` for an invoice, which carries its own amount, or "withdraw
+   * all" to a Lightning address (withdraw/0014).
+   */
   readonly amountSats: PositiveInteger | undefined
   /** LUD-12, for a Lightning address that accepts it; ignored elsewhere. */
   readonly recipientComment: string
 }
 
 /**
- * The Cashu withdrawal form: which mint, then the same destination, amount
- * and options as Spark's, minus on-chain and "withdraw all" (withdraw/0011).
+ * The Cashu withdrawal form: which mint, then the same destination, amount,
+ * "withdraw all" and options as Spark's, minus on-chain and amountless
+ * invoices (withdraw/0011, withdraw/0014).
  */
 export function CashuWithdrawFormStep({
   funded,
@@ -110,6 +135,9 @@ export function CashuWithdrawFormStep({
 
   const destinationState = useWithdrawDestination(draft.destination, "cashu")
   const { destination, invoiceAmountSats } = destinationState
+  const withdrawAllUnavailable = withdrawAllUnavailableKey(destination)
+  const effectiveWithdrawAll =
+    draft.withdrawAll && withdrawAllUnavailable === null
   const mintBalance =
     funded.find(([candidate]) => candidate === mint)?.[1] ?? null
 
@@ -126,7 +154,7 @@ export function CashuWithdrawFormStep({
     }
 
     let amountSats: CashuWithdrawRequest["amountSats"]
-    if (invoiceAmountSats === null) {
+    if (invoiceAmountSats === null && !effectiveWithdrawAll) {
       const amount = PositiveIntegerSchema.safeParse(
         draftAmountSats(draft, fiat)
       )
@@ -148,7 +176,7 @@ export function CashuWithdrawFormStep({
       await using run = appRun()
       const result = await run(quoteCashuWithdrawal(request))
       if (!result.ok) {
-        setSubmitError(t(cashuQuoteErrorKeys[result.error.type]))
+        setSubmitError(cashuQuoteErrorMessage(result.error, t))
         return
       }
       onReview(request, result.value)
@@ -217,9 +245,15 @@ export function CashuWithdrawFormStep({
               fiat={fiat}
               invoiceAmountSats={invoiceAmountSats}
               range={destinationState.range}
-              withdrawAll={false}
+              withdrawAll={effectiveWithdrawAll}
               onchainMinimumSats={null}
               availableSats={mintBalance}
+            />
+
+            <WithdrawAllField
+              checked={effectiveWithdrawAll}
+              unavailableKey={withdrawAllUnavailable}
+              onChange={(withdrawAll) => update({ withdrawAll })}
             />
 
             <WithdrawOptionsFields

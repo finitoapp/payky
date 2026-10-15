@@ -8,6 +8,7 @@ import {
 } from "@/core/cashu/cashu-topup.ts"
 import { saveCashuAccount } from "@/core/modules/account/account-actions.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
+import { sumAvailableByMint } from "@/core/modules/cashu/cashu-queries.ts"
 import { CashuAmount } from "@/core/modules/cashu/cashu-types.ts"
 import { createTestInvoice } from "@/core/modules/shared/lightning-invoice-test-fixtures.ts"
 import { parseLightningInvoice } from "@/core/modules/shared/lightning-invoice-utils.ts"
@@ -55,6 +56,54 @@ const loadWithdrawals = async (
   (await deps.evolu.loadQuery(withdrawalsByAccountQuery(accountId, 50))).map(
     toWithdrawalView
   )
+
+/** A mainnet invoice for `sats` that expires an hour from now. */
+const invoiceFor = (sats: number) =>
+  createTestInvoice({
+    hrp: `lnbc${sats * 10}n`,
+    timestamp: Math.floor(Date.now() / 1000),
+    expirySeconds: 3600,
+  })
+
+/**
+ * The test's mints behind `fetch`, and alice@example.com, a Lightning address
+ * whose callback returns an invoice for whatever amount is asked.
+ */
+const lightningAddressFetch =
+  ({
+    mintFetch,
+    requested,
+    minSendable = 1000,
+    maxSendable = 1_000_000,
+    commentAllowed,
+  }: {
+    readonly mintFetch: typeof globalThis.fetch
+    readonly requested: string[]
+    readonly minSendable?: number
+    readonly maxSendable?: number
+    readonly commentAllowed?: number
+  }) =>
+  async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(String(input))
+    if (url.hostname !== "example.com") return mintFetch(input, init)
+    requested.push(url.href)
+    if (url.pathname.startsWith("/.well-known/lnurlp/"))
+      return Response.json({
+        tag: "payRequest",
+        callback: "https://example.com/cb",
+        minSendable,
+        maxSendable,
+        metadata: '[["text/plain","Pay Alice"]]',
+        commentAllowed,
+      })
+    const sats = Number(url.searchParams.get("amount")) / 1000
+    return Response.json({ pr: invoiceFor(sats), routes: [] })
+  }
+
+const alice = {
+  kind: "lightning-address",
+  address: "alice@example.com",
+} as const
 
 /** An invoice for 50 sat that expires an hour from now. */
 const invoice50 = () => {
@@ -168,30 +217,17 @@ describe("Cashu withdrawals", () => {
     const requested: string[] = []
     await using run = testCreateRun({
       ...deps,
-      fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = new URL(String(input))
-        if (url.hostname !== "example.com") return deps.fetch(input, init)
-        requested.push(url.href)
-        if (url.pathname.startsWith("/.well-known/lnurlp/"))
-          return Response.json({
-            tag: "payRequest",
-            callback: "https://example.com/cb",
-            minSendable: 1000,
-            maxSendable: 1_000_000,
-            metadata: '[["text/plain","Pay Alice"]]',
-            commentAllowed: 6,
-          })
-        return Response.json({ pr: invoice50().invoice, routes: [] })
-      },
+      fetch: lightningAddressFetch({
+        mintFetch: deps.fetch,
+        requested,
+        commentAllowed: 6,
+      }),
     })
 
     const quote = await run.orThrow(
       quoteCashuWithdrawal({
         mint: testMintUrl,
-        destination: {
-          kind: "lightning-address",
-          address: "alice@example.com",
-        },
+        destination: alice,
         amountSats: PositiveInteger(50),
         recipientComment: "Thanks a lot",
       })
@@ -247,16 +283,183 @@ describe("Cashu withdrawals", () => {
     })
   })
 
-  test("an address needs an amount", async () => {
+  test("an invoice without an amount is refused", async () => {
     const { t, deps } = await setup()
     await using _ = t
     await using run = testCreateRun(deps)
+    const parsed = parseLightningInvoice(
+      createTestInvoice({
+        hrp: "lnbc",
+        timestamp: Math.floor(Date.now() / 1000),
+        expirySeconds: 3600,
+      })
+    )
+    if (!parsed.ok) throw new Error("bad test invoice")
     const result = await run(
       quoteCashuWithdrawal({
         mint: testMintUrl,
-        destination: { kind: "lightning-address", address: "a@b.cz" },
+        destination: { kind: "lightning-invoice", ...parsed.value },
       })
     )
     expect(!result.ok && result.error.type).toBe("CashuWithdrawalAmountNeeded")
+  })
+
+  test("refuses an amount outside the Lightning address's range", async () => {
+    const { t, deps } = await setup()
+    await using _ = t
+    await using run = testCreateRun({
+      ...deps,
+      fetch: lightningAddressFetch({
+        mintFetch: deps.fetch,
+        requested: [],
+        minSendable: 100_000,
+      }),
+    })
+    expect(
+      await run(
+        quoteCashuWithdrawal({
+          mint: testMintUrl,
+          destination: alice,
+          amountSats: PositiveInteger(50),
+        })
+      )
+    ).toEqual({
+      ok: false,
+      error: {
+        type: "WithdrawalAmountOutOfRange",
+        minSats: 100,
+        maxSats: 1000,
+      },
+    })
+  })
+
+  test("refuses an invoice whose amount and the mint's fees exceed the balance, naming the most it can send", async () => {
+    const { t, deps } = await setup()
+    await using _ = t
+    await using run = testCreateRun(deps)
+    const parsed = parseLightningInvoice(invoiceFor(995))
+    if (!parsed.ok) throw new Error("bad test invoice")
+    expect(
+      await run(
+        quoteCashuWithdrawal({
+          mint: testMintUrl,
+          destination: { kind: "lightning-invoice", ...parsed.value },
+        })
+      )
+    ).toEqual({
+      ok: false,
+      error: {
+        type: "InsufficientWithdrawalBalance",
+        availableSats: 1000,
+        requestedSats: 1005,
+        maxSendableSats: 990,
+      },
+    })
+  })
+
+  describe("withdraw all to a Lightning address", () => {
+    test("sends the balance minus the mint's fee reserve and input fee", async () => {
+      const { t, deps } = await setup()
+      await using _ = t
+      const requested: string[] = []
+      await using run = testCreateRun({
+        ...deps,
+        fetch: lightningAddressFetch({ mintFetch: deps.fetch, requested }),
+      })
+
+      const quote = await run.orThrow(
+        quoteCashuWithdrawal({ mint: testMintUrl, destination: alice })
+      )
+
+      expect(quote).toMatchObject({
+        amountSats: 990,
+        availableSats: 1000,
+        withdrawAll: true,
+        cost: { feeReserve: 10, inputFee: 0, maxTotal: 1000 },
+      })
+      expect(requested).toEqual([
+        "https://example.com/.well-known/lnurlp/alice",
+        "https://example.com/cb?amount=1000000",
+        "https://example.com/cb?amount=990000",
+      ])
+    })
+
+    test("sends at most the Lightning address's maxSendable", async () => {
+      const { t, deps } = await setup()
+      await using _ = t
+      const requested: string[] = []
+      await using run = testCreateRun({
+        ...deps,
+        fetch: lightningAddressFetch({
+          mintFetch: deps.fetch,
+          requested,
+          maxSendable: 500_000,
+        }),
+      })
+
+      const quote = await run.orThrow(
+        quoteCashuWithdrawal({ mint: testMintUrl, destination: alice })
+      )
+
+      expect(quote).toMatchObject({ amountSats: 500, withdrawAll: true })
+      expect(requested).toEqual([
+        "https://example.com/.well-known/lnurlp/alice",
+        "https://example.com/cb?amount=500000",
+        "https://example.com/cb?amount=500000",
+      ])
+    })
+
+    test("is refused when the balance minus the fees is below the Lightning address's minSendable", async () => {
+      const { t, deps } = await setup()
+      await using _ = t
+      await using run = testCreateRun({
+        ...deps,
+        fetch: lightningAddressFetch({
+          mintFetch: deps.fetch,
+          requested: [],
+          minSendable: 995_000,
+        }),
+      })
+
+      expect(
+        await run(
+          quoteCashuWithdrawal({ mint: testMintUrl, destination: alice })
+        )
+      ).toEqual({
+        ok: false,
+        error: {
+          type: "InsufficientWithdrawalBalance",
+          availableSats: 1000,
+          requestedSats: 1005,
+        },
+      })
+    })
+
+    test("melts it and books what left; the unused reserve stays at the mint", async () => {
+      const { t, deps, accountId } = await setup()
+      await using _ = t
+      await using run = testCreateRun({
+        ...deps,
+        fetch: lightningAddressFetch({ mintFetch: deps.fetch, requested: [] }),
+      })
+      const quote = await run.orThrow(
+        quoteCashuWithdrawal({ mint: testMintUrl, destination: alice })
+      )
+
+      await run.orThrow(
+        executeCashuWithdrawal({ accountId, deviceId: null, quote })
+      )
+
+      const [withdrawal] = await loadWithdrawals(deps, accountId)
+      expect(withdrawal).toMatchObject({
+        amountSats: 990,
+        state: { status: "done", debitedSats: 990 },
+      })
+      expect(
+        sumAvailableByMint(await deps.cashuShardStore.loadProofs()).get(
+          testMintUrl
+        )
+      ).toBe(10)
+    })
   })
 })

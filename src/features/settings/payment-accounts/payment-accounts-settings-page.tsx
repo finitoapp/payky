@@ -59,6 +59,8 @@ interface PaymentMethodRowState {
   readonly status: string | null
   readonly to: LinkProps["to"] | null
   readonly saveEnabled: (enabled: boolean) => Promise<void>
+  /** Still being proven: marked so the merchant knows before turning it on. */
+  readonly experimental?: true
 }
 
 /**
@@ -200,6 +202,7 @@ export function PaymentAccountsSettingsPage() {
       canEnable: true,
       status: null,
       to: cashu === undefined ? null : "/settings/payment-accounts/cashu",
+      experimental: true,
       saveEnabled: async (enabled) => {
         await using run = await cashuAppRun()
         await run.ok(saveCashuAccount({ enabled }))
@@ -277,6 +280,11 @@ function PaymentMethodRow({
           {isDefault && (
             <Badge variant="secondary">
               {t("settings.paymentAccounts.default")}
+            </Badge>
+          )}
+          {row.experimental && (
+            <Badge className="bg-warning/10 text-warning">
+              {t("settings.paymentAccounts.experimental")}
             </Badge>
           )}
         </span>

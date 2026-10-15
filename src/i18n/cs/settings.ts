@@ -552,6 +552,7 @@ export const csSettings = {
     "Přidá daňové sazby k položkám katalogu.",
   "settings.legalEntity.vatPayer.label": "Jsem plátce DPH",
   "settings.paymentAccounts.default": "Výchozí",
+  "settings.paymentAccounts.experimental": "Experimentální",
   "settings.paymentAccounts.method.cashRegister": "Hotovost",
   "settings.paymentAccounts.method.iban": "Bankovní převod",
   "settings.paymentAccounts.method.cashu": "Cashu",

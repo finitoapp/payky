@@ -166,7 +166,7 @@ export type WithdrawalQuoteExpiredError = ReturnType<
 >
 
 /** The SDK refused a Lightning payment and no transfer exists: the money did not leave. */
-const createWithdrawalRejectedError = defineError("WithdrawalRejected")<{
+export const createWithdrawalRejectedError = defineError("WithdrawalRejected")<{
   readonly withdrawalId: WithdrawalId
 }>()
 export type WithdrawalRejectedError = ReturnType<
@@ -174,7 +174,7 @@ export type WithdrawalRejectedError = ReturnType<
 >
 
 /** The withdrawal was recorded, but whether money left is not known yet. */
-const createWithdrawalOutcomeUnknownError = defineError(
+export const createWithdrawalOutcomeUnknownError = defineError(
   "WithdrawalOutcomeUnknown"
 )<{
   readonly withdrawalId: WithdrawalId

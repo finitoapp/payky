@@ -15,6 +15,7 @@ import {
   fetchLnurlPayInvoice,
   fetchLnurlPayMetadata,
   type LightningAddressInvoiceMismatchError,
+  lnurlPayComment,
 } from "@/core/integrations/lnurl/lnurl-pay-client.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
@@ -47,6 +48,12 @@ import {
   PositiveInteger,
   TimestampMsSchema,
 } from "@/core/modules/shared/schema.ts"
+import {
+  createWithdrawalOutcomeUnknownError,
+  createWithdrawalRejectedError,
+  type WithdrawalOutcomeUnknownError,
+  type WithdrawalRejectedError,
+} from "./withdraw-actions.ts"
 import type { WithdrawDestination } from "./withdraw-destination-utils.ts"
 import { withdrawalByCashuMeltQuery } from "./withdraw-queries.ts"
 import type { WithdrawalId } from "./withdraw-types.ts"
@@ -90,9 +97,15 @@ export interface CashuWithdrawalQuote {
   readonly mint: MintUrl
   readonly invoice: string
   readonly lightningAddress: string | null
+  /** The Lightning address's own text (LUD-06), shown before confirming. */
+  readonly recipientText: string | null
+  /** The LUD-12 comment the invoice was requested with, as sent. */
+  readonly recipientComment: string | null
   /** What the recipient gets. */
   readonly amountSats: number
   readonly cost: CashuMeltCost
+  /** When confirming is refused: the invoice's or the melt quote's expiry, less the margin. */
+  readonly expiresAt: number
 }
 
 export type QuoteCashuWithdrawalError =
@@ -118,10 +131,13 @@ export const quoteCashuWithdrawal =
     mint,
     destination,
     amountSats,
+    recipientComment,
   }: {
     readonly mint: MintUrl
     readonly destination: WithdrawDestination
     readonly amountSats?: PositiveInteger
+    /** LUD-12, for a Lightning address that accepts it; ignored elsewhere. */
+    readonly recipientComment?: string
   }): Task<
     CashuWithdrawalQuote,
     QuoteCashuWithdrawalError,
@@ -130,6 +146,8 @@ export const quoteCashuWithdrawal =
   async (run) => {
     let invoice: LightningInvoice
     let lightningAddress: string | null = null
+    let recipientText: string | null = null
+    let sentComment: string | null = null
     if (destination.kind === "lightning-invoice") {
       if (destination.amountSats === null)
         return err(createCashuWithdrawalAmountNeededError())
@@ -142,11 +160,17 @@ export const quoteCashuWithdrawal =
       )
       if (!metadata.ok) return metadata
       const fetched = await run(
-        fetchLnurlPayInvoice({ amountSats, metadata: metadata.value })
+        fetchLnurlPayInvoice({
+          amountSats,
+          metadata: metadata.value,
+          comment: recipientComment,
+        })
       )
       if (!fetched.ok) return fetched
       invoice = fetched.value.invoice
       lightningAddress = destination.address
+      recipientText = metadata.value.text ?? null
+      sentComment = lnurlPayComment(metadata.value, recipientComment)
     } else {
       return err(createCashuWithdrawalDestinationError())
     }
@@ -160,12 +184,21 @@ export const quoteCashuWithdrawal =
 
     const cost = await run(quoteCashuMelt({ mint, invoice: invoice.invoice }))
     if (!cost.ok) return cost
+    const meltExpiresAt =
+      cost.value.expiresAtSec === null
+        ? Number.POSITIVE_INFINITY
+        : cost.value.expiresAtSec * 1000
     return ok({
       mint,
       invoice: invoice.invoice,
       lightningAddress,
+      recipientText,
+      recipientComment: sentComment,
       amountSats: cost.value.amount,
       cost: cost.value,
+      expiresAt:
+        Math.min(invoice.expiresAt, meltExpiresAt) -
+        WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS,
     })
   }
 
@@ -255,6 +288,8 @@ export const settleCashuWithdrawal =
 export type ExecuteCashuWithdrawalError =
   | CashuMeltError
   | CashuWithdrawalDestinationError
+  | WithdrawalRejectedError
+  | WithdrawalOutcomeUnknownError
 
 /**
  * Records the withdrawal before any money leaves (withdraw/0001), melts, and
@@ -325,20 +360,19 @@ export const executeCashuWithdrawal =
         maxTotal: quote.cost.maxTotal,
       })
     )
-    await run(
+    const settled = await run(
       settleCashuWithdrawal(
         meltOperationId,
         melted.ok ? melted.value.totalSpent : undefined
       )
     )
     if (!melted.ok) {
-      // Refused before the melt existed: nothing for the job to settle.
+      // Refused before the melt existed: nothing moved and nothing is left
+      // for the job to settle, so the withdrawal fails here and the review
+      // shows why.
       if (
-        melted.error.type === "CashuInsufficientFunds" ||
-        melted.error.type === "CashuMeltQuoteNotPayable" ||
-        melted.error.type === "QuoteExpired" ||
-        melted.error.type === "MintUnreachable"
-      )
+        (await run.deps.cashuShardStore.loadOperation(meltOperationId)) === null
+      ) {
         await runMutationWithCompletion((options) =>
           run.deps.evolu.update(
             "withdrawal",
@@ -350,7 +384,14 @@ export const executeCashuWithdrawal =
             { ...options, owner: run.deps.evoluOwner }
           )
         )
-      return melted
+        return melted
+      }
+      // The melt was sent: its withdrawal's detail follows what happens next.
+      return err(
+        settled.ok && settled.value === "failed"
+          ? createWithdrawalRejectedError({ withdrawalId })
+          : createWithdrawalOutcomeUnknownError({ withdrawalId })
+      )
     }
     return ok({ withdrawalId, totalSpent: melted.value.totalSpent })
   }

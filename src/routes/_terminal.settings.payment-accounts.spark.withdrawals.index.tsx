@@ -5,8 +5,12 @@ import { WithdrawHistoryPage } from "@/features/withdraw/withdraw-history-page.t
 export const Route = createFileRoute(
   "/_terminal/settings/payment-accounts/spark/withdrawals/"
 )({
-  component: WithdrawHistoryPage,
+  component: SparkWithdrawHistoryRoute,
   staticData: {
     access: "admin",
   },
 })
+
+function SparkWithdrawHistoryRoute() {
+  return <WithdrawHistoryPage method="spark" />
+}

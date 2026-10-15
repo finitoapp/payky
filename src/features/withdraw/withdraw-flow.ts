@@ -23,6 +23,9 @@ import type { TranslationKey } from "@/i18n/resources.ts"
 
 type Translate = ReturnType<typeof useTranslation>["t"]
 
+/** The wallet a withdrawal leaves: Spark's, or one mint of the shared Cashu wallet. */
+export type WithdrawMethod = "spark" | "cashu"
+
 /** What the merchant asked for, kept so the review can fetch a new estimate. */
 export interface WithdrawRequest {
   readonly destination: SupportedWithdrawDestination

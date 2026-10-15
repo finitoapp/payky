@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { Currency, Integer } from "@/core/modules/shared/schema.ts"
-import { useCashuWallet } from "@/features/settings/cashu/use-cashu-wallet.ts"
+import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
@@ -93,7 +93,7 @@ export function CashuAccountSettingsPage() {
             },
             {
               kind: "link",
-              to: "/settings/payment-accounts/cashu/withdraw",
+              to: "/settings/payment-accounts/cashu/withdrawals",
               icon: <ArrowUpFromLine className="text-muted-foreground" />,
               label: (
                 <span className="flex flex-col gap-1">

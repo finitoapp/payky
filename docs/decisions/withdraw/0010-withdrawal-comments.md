@@ -51,3 +51,4 @@ again. A note cannot be edited after the withdrawal is sent.
 - `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > sends no recipient comment to a Lightning address that accepts none`
 - `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > records the merchant's comment with the withdrawal`
 - `src/core/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > carries the merchant's comment to the history and the detail`
+- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > sends a Lightning address the comment it accepts and saves the merchant's own`

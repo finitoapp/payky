@@ -152,41 +152,6 @@ export const skSettings = {
   "settings.cashuAccount.mints": "Minty",
   "settings.cashuAccount.mintsDescription":
     "Predvolený mint, zostatky, presun prostriedkov",
-  "settings.cashuWithdraw.title": "Výber z Cashu",
-  "settings.cashuWithdraw.mint": "Z ktorého mintu",
-  "settings.cashuWithdraw.noFunds": "Žiadny mint nedrží ecash.",
-  "settings.cashuWithdraw.destination": "Lightning faktúra alebo adresa",
-  "settings.cashuWithdraw.amount": "Suma v sat",
-  "settings.cashuWithdraw.amountDescription":
-    "Potrebná pre Lightning adresu; faktúra má sumu vlastnú.",
-  "settings.cashuWithdraw.review":
-    "Odíde {amount}; z mintu odíde najviac {total} vrátane rezervy na poplatok {reserve}. Nevyužitá rezerva sa vráti.",
-  "settings.cashuWithdraw.reviewButton": "Skontrolovať",
-  "settings.cashuWithdraw.confirm": "Vybrať",
-  "settings.cashuWithdraw.invoice": "Lightning faktúru",
-  "settings.cashuWithdraw.pinDetail": "{amount} na {destination}",
-  "settings.cashuWithdraw.done": "Výber bol zaplatený.",
-  "settings.cashuWithdraw.pending":
-    "Výber bol odoslaný, mint ho zatiaľ nepotvrdil. Dokončí sa sám.",
-  "settings.cashuWithdraw.history": "Výbery",
-  "settings.cashuWithdraw.historyEmpty": "Zatiaľ žiadny výber.",
-  "settings.cashuWithdraw.state.done": "Zaplatené",
-  "settings.cashuWithdraw.state.failed": "Nepodarilo sa",
-  "settings.cashuWithdraw.state.pending": "Prebieha",
-  "settings.cashuWithdraw.error.unreachable":
-    "Mint neodpovedal. Nič nebolo odoslané.",
-  "settings.cashuWithdraw.error.rejected":
-    "Mint platbu odmietol. Z peňaženky nič neodišlo.",
-  "settings.cashuWithdraw.error.amountNeeded": "Zadajte sumu.",
-  "settings.cashuWithdraw.error.toSelf":
-    "Toto je jedna z vašich vlastných platobných faktúr.",
-  "settings.cashuWithdraw.error.expired": "Faktúra vypršala.",
-  "settings.cashuWithdraw.error.destination":
-    "Zadajte Lightning faktúru alebo Lightning adresu.",
-  "settings.cashuWithdraw.error.address":
-    "Lightning adresa neodpovedala podľa očakávania.",
-  "settings.cashuWithdraw.error.insufficient":
-    "Zostatok mintu nepokryje sumu a poplatky.",
   "settings.cashuAccount.withdraw": "Výber",
   "settings.cashuAccount.withdrawDescription": "Odoslať ecash cez Lightning",
   "settings.cashuAccount.enabled.label": "Prijímať Cashu",

@@ -28,6 +28,7 @@ import {
   WITHDRAWAL_SEND_TIMEOUT_MS,
   WITHDRAWAL_SEND_TIMEOUT_OTHER_DEVICE_MS,
 } from "@/core/modules/withdraw/withdraw-utils.ts"
+import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
@@ -44,6 +45,8 @@ import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"
 import {
   reusableWithdrawalDestination,
   withdrawalKindKeys,
+  withdrawalMethod,
+  withdrawRoutes,
 } from "./withdraw-display.ts"
 import { SatsWithFiat } from "./withdraw-sats.tsx"
 import { WithdrawalStatusBadge } from "./withdraw-status-badge.tsx"
@@ -174,7 +177,7 @@ function NewWithdrawalButton({ view }: { readonly view: WithdrawalView }) {
         nativeButton={false}
         render={
           <Link
-            to="/settings/payment-accounts/spark/withdrawals/new"
+            to={withdrawRoutes[withdrawalMethod(view.target)].new}
             search={destination === null ? {} : { destination }}
           />
         }
@@ -285,6 +288,9 @@ function WithdrawalStatusCard({ view }: { readonly view: WithdrawalView }) {
     body =
       target.kind === "lightning" ? (
         <PendingLightningText view={view} />
+      ) : target.kind === "cashu" ? (
+        // The Cashu job resumes the melt and settles it (withdraw/0013).
+        <p className="text-sm">{t("withdraw.detail.pending.cashu")}</p>
       ) : (
         <>
           <p className="text-sm">{t("withdraw.detail.onchainUncertain")}</p>
@@ -418,12 +424,16 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const { state, target } = view
+  // A Cashu melt's fee reserve is the mint's and is not recorded: its fee is
+  // known only once the money left.
   const feeSats =
     state.status === "done"
       ? state.feeSats
       : target.kind === "onchain"
         ? target.quotedFeeSats
-        : target.maxFeeSats
+        : target.kind === "lightning"
+          ? target.maxFeeSats
+          : null
   const isMaxFee = state.status !== "done" && target.kind === "lightning"
 
   return (
@@ -442,6 +452,12 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
               t("withdraw.destination.kind.lightningInvoice")}
           </DetailRow>
         )}
+        {target.kind === "cashu" ? (
+          <DetailRow
+            label={t("withdraw.detail.mint")}
+            value={formatMintLabel(target.mintUrl)}
+          />
+        ) : null}
         {view.comment !== null ? (
           <DetailRow label={t("withdraw.detail.comment")} stacked>
             <span className="break-words">{view.comment}</span>
@@ -450,21 +466,27 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
         <DetailRow label={t("withdraw.detail.amount")}>
           <SatsWithFiat sats={view.amountSats} locale={locale} />
         </DetailRow>
-        <DetailRow
-          label={t(isMaxFee ? "withdraw.detail.maxFee" : "withdraw.detail.fee")}
-        >
-          <SatsWithFiat sats={feeSats} locale={locale} />
-        </DetailRow>
-        <DetailRow label={t("withdraw.detail.total")} emphasize>
-          <SatsWithFiat
-            sats={
-              state.status === "done"
-                ? state.debitedSats
-                : view.amountSats + feeSats
-            }
-            locale={locale}
-          />
-        </DetailRow>
+        {feeSats !== null ? (
+          <>
+            <DetailRow
+              label={t(
+                isMaxFee ? "withdraw.detail.maxFee" : "withdraw.detail.fee"
+              )}
+            >
+              <SatsWithFiat sats={feeSats} locale={locale} />
+            </DetailRow>
+            <DetailRow label={t("withdraw.detail.total")} emphasize>
+              <SatsWithFiat
+                sats={
+                  state.status === "done"
+                    ? state.debitedSats
+                    : view.amountSats + feeSats
+                }
+                locale={locale}
+              />
+            </DetailRow>
+          </>
+        ) : null}
         <DetailRow label={t("withdraw.detail.date")}>
           {formatDateTime(new Date(view.createdAt), locale)}
         </DetailRow>
@@ -480,6 +502,16 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
             txid={state.txid}
             coopExitRequestId={state.coopExitRequestId}
           />
+        ) : null}
+        {target.kind === "cashu" ? (
+          <WithdrawCollapsible label={t("withdraw.detail.technical")}>
+            <DetailRow label={t("withdraw.detail.invoice")} stacked>
+              <CopyableValue value={target.lnInvoice} />
+            </DetailRow>
+            <DetailRow label={t("withdraw.detail.cashuQuoteId")} stacked>
+              <CopyableValue value={target.quoteId} />
+            </DetailRow>
+          </WithdrawCollapsible>
         ) : null}
         {target.kind === "lightning" ? (
           <WithdrawCollapsible label={t("withdraw.detail.technical")}>

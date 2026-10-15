@@ -15,6 +15,35 @@ export const skWithdraw = {
   "withdraw.amount.range": "Od {min} do {max} satov.",
   "withdraw.amount.unit": "Jednotka sumy",
   "withdraw.amount.unitSats": "saty",
+  "withdraw.cashu.destinationPlaceholder": "Lightning faktúra alebo adresa",
+  "withdraw.cashu.error.address":
+    "Lightning adresa neodpovedala podľa očakávania.",
+  "withdraw.cashu.error.amountlessInvoice":
+    "Faktúra nemá sumu. Požiadajte o faktúru so sumou, alebo použite Lightning adresu.",
+  "withdraw.cashu.error.destination":
+    "Zadajte Lightning faktúru alebo Lightning adresu.",
+  "withdraw.cashu.error.expired": "Faktúra vypršala.",
+  "withdraw.cashu.error.insufficient":
+    "Zostatok mintu nepokryje sumu a poplatky.",
+  "withdraw.cashu.error.onchain":
+    "Z Cashu sa dá vyberať len cez Lightning: zadajte Lightning faktúru alebo adresu.",
+  "withdraw.cashu.error.rejected":
+    "Mint platbu odmietol. Z peňaženky nič neodišlo.",
+  "withdraw.cashu.error.toSelf":
+    "Toto je jedna z vašich vlastných platobných faktúr.",
+  "withdraw.cashu.error.unreachable": "Mint neodpovedal. Nič nebolo odoslané.",
+  "withdraw.cashu.form.description":
+    "Pošlite ecash z jedného mintu Cashu peňaženky zdieľanej s Linky na Lightning faktúru alebo Lightning adresu.",
+  "withdraw.cashu.mint": "Z ktorého mintu",
+  "withdraw.cashu.noAccount.description":
+    "Pred výberom zapnite Cashu v platobných účtoch.",
+  "withdraw.cashu.noAccount.title": "Cashu je vypnuté",
+  "withdraw.cashu.noFunds": "Žiadny mint nedrží ecash.",
+  "withdraw.cashu.review.feeReserve": "Rezerva na poplatok mintu",
+  "withdraw.cashu.review.inputFee": "Vstupný poplatok mintu",
+  "withdraw.cashu.review.remainder":
+    "Čo rezerva nevyužije, vráti sa do zostatku mintu.",
+  "withdraw.cashu.title": "Výber z Cashu",
   "withdraw.clipboard.use": "Použiť zo schránky: {value}",
   "withdraw.comment.hint": "Uvidíte ju iba vy, v histórii výberov.",
   "withdraw.comment.label": "Poznámka pre vás",
@@ -35,6 +64,7 @@ export const skWithdraw = {
   "withdraw.detail.balanceNow":
     "V peňaženke je teraz {balance} satov; tento výber by odpísal {amount} satov.",
   "withdraw.detail.cancel": "Zrušiť",
+  "withdraw.detail.cashuQuoteId": "ID melt quote",
   "withdraw.detail.comment": "Poznámka",
   "withdraw.detail.copied": "Skopírované",
   "withdraw.detail.copy": "Kopírovať",
@@ -63,11 +93,14 @@ export const skWithdraw = {
     "Zapíše odchod {amount} satov z peňaženky.",
   "withdraw.detail.markSent.title": "Označiť výber ako odoslaný?",
   "withdraw.detail.maxFee": "Najvyšší poplatok",
+  "withdraw.detail.mint": "Mint",
   "withdraw.detail.movementDeleted": "Pohyb na účte bol zmazaný.",
   "withdraw.detail.newWithdrawal": "Nový výber",
   "withdraw.detail.notFound": "Tento výber sa nepodarilo nájsť.",
   "withdraw.detail.onchainUncertain":
     "Výsledok nie je istý, skontrolujte zostatok.",
+  "withdraw.detail.pending.cashu":
+    "Výber bol odoslaný, mint ho zatiaľ nepotvrdil. Dokončí sa sám.",
   "withdraw.detail.pending.otherDevice":
     "Čaká sa na výsledok. Výber založilo zariadenie {device}; ak platba neodíde, označí sa ako neodoslaný najneskôr do 24 hodín.",
   "withdraw.detail.pending.ownDevice":
@@ -121,6 +154,7 @@ export const skWithdraw = {
   "withdraw.history.olderNote": "Staršie výbery nájdete v pohyboch na účte.",
   "withdraw.history.title": "Výbery",
   "withdraw.history.transactionsLink": "Pohyby na účte",
+  "withdraw.kind.cashu": "Lightning (Cashu)",
   "withdraw.kind.lightning": "Lightning",
   "withdraw.kind.onchain": "On-chain",
   "withdraw.noAccount.action": "Prejsť na platobné účty",

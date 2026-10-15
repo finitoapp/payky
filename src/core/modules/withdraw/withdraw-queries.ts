@@ -3,7 +3,10 @@ import { createQuery } from "@/core/evolu/schema.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import type { AccountTransactionOnchainExitSpeed } from "@/core/modules/account-transaction/account-transaction.ts"
 import type { AccountTransactionId } from "@/core/modules/account-transaction/account-transaction-types.ts"
-import type { CashuOperationId } from "@/core/modules/cashu/cashu-types.ts"
+import type {
+  CashuOperationId,
+  MintUrl,
+} from "@/core/modules/cashu/cashu-types.ts"
 import type { DeviceId } from "@/core/modules/device/device-types.ts"
 import type { WithdrawalFailureReason, WithdrawalId } from "./withdraw-types.ts"
 
@@ -26,6 +29,11 @@ const selectWithdrawals = (db: QueryDb) =>
       join
         .onRef("withdrawalLightning.id", "=", "withdrawal.id")
         .on("withdrawalLightning.isDeleted", "is not", sqliteTrue)
+    )
+    .leftJoin("withdrawalLightningCashu", (join) =>
+      join
+        .onRef("withdrawalLightningCashu.id", "=", "withdrawal.id")
+        .on("withdrawalLightningCashu.isDeleted", "is not", sqliteTrue)
     )
     .leftJoin("device", "device.id", "withdrawal.deviceId")
     .leftJoin(
@@ -67,6 +75,11 @@ const selectWithdrawals = (db: QueryDb) =>
       "withdrawalLightning.lnInvoice",
       "withdrawalLightning.sparkTransferId",
       "withdrawalLightning.maxFeeSats",
+      "withdrawalLightningCashu.id as cashuId",
+      "withdrawalLightningCashu.mintUrl",
+      "withdrawalLightningCashu.quoteId as cashuQuoteId",
+      "withdrawalLightningCashu.lnInvoice as cashuLnInvoice",
+      "withdrawalLightningCashu.lightningAddress as cashuLightningAddress",
       "device.name as deviceName",
       "device.isDeleted as deviceDeleted",
       "accountTransaction.id as movementId",
@@ -122,6 +135,14 @@ export type WithdrawalTarget =
       readonly lnInvoice: string
       readonly sparkTransferId: string
       readonly maxFeeSats: number
+    }
+  | {
+      /** A Lightning payment melted from one mint of the shared Cashu wallet. */
+      readonly kind: "cashu"
+      readonly mintUrl: MintUrl
+      readonly lightningAddress: string | null
+      readonly lnInvoice: string
+      readonly quoteId: string
     }
 
 export type WithdrawalState =
@@ -189,7 +210,18 @@ export const toWithdrawalView = (
             sparkTransferId: row.sparkTransferId,
             maxFeeSats: row.maxFeeSats,
           }
-        : null
+        : row.cashuId !== null &&
+            row.mintUrl !== null &&
+            row.cashuLnInvoice !== null &&
+            row.cashuQuoteId !== null
+          ? {
+              kind: "cashu",
+              mintUrl: row.mintUrl,
+              lightningAddress: row.cashuLightningAddress,
+              lnInvoice: row.cashuLnInvoice,
+              quoteId: row.cashuQuoteId,
+            }
+          : null
   if (target === null) return null
 
   const debitedSats =
@@ -317,33 +349,4 @@ export const withdrawalByCashuMeltQuery = (meltOperationId: CashuOperationId) =>
         accountId: KyselyNotNull
         accountTransactionId: KyselyNotNull
       }>()
-  )
-
-/** The Cashu withdrawals of an account, newest first. */
-export const cashuWithdrawalsQuery = (accountId: AccountId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("withdrawalLightningCashu")
-      .innerJoin("withdrawal", "withdrawal.id", "withdrawalLightningCashu.id")
-      .leftJoin("accountTransaction", (join) =>
-        join
-          .onRef(
-            "accountTransaction.id",
-            "=",
-            "withdrawal.accountTransactionId"
-          )
-          .on("accountTransaction.isDeleted", "is not", sqliteTrue)
-      )
-      .select([
-        "withdrawal.id",
-        "withdrawal.amountSats",
-        "withdrawal.failedAt",
-        "withdrawal.createdAt",
-        "withdrawalLightningCashu.mintUrl",
-        "withdrawalLightningCashu.lightningAddress",
-        "accountTransaction.amount as movedAmount",
-      ])
-      .where("withdrawal.accountId", "=", accountId)
-      .where("withdrawal.isDeleted", "is not", sqliteTrue)
-      .orderBy("withdrawal.createdAt", "desc")
   )

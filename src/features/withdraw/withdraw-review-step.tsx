@@ -1,5 +1,6 @@
 import { useCountdown } from "@dedalik/use-react"
 import { ArrowLeftIcon, LoaderCircleIcon, RefreshCwIcon } from "lucide-react"
+import type { ReactNode } from "react"
 import { DetailRow } from "@/components/detail-row.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -200,16 +201,7 @@ function LightningReview({
           locale={locale}
         />
       </DetailRow>
-      <DetailRow label={t("withdraw.review.expiresIn")}>
-        <span
-          className={cn(
-            "tabular-nums",
-            msLeft <= EXPIRY_WARNING_MS && "text-destructive"
-          )}
-        >
-          {formatCountdown(msLeft)}
-        </span>
-      </DetailRow>
+      <ExpiryRow msLeft={msLeft} />
       <p className="text-sm text-muted-foreground">
         {t("withdraw.review.remainder")}
       </p>
@@ -222,51 +214,61 @@ function LightningReview({
   )
 }
 
-export function WithdrawReviewStep({
-  quote,
+/** How long the quote can still be confirmed, red in its last minute. */
+export function ExpiryRow({ msLeft }: { readonly msLeft: number }) {
+  const { t } = useTranslation()
+  return (
+    <DetailRow label={t("withdraw.review.expiresIn")}>
+      <span
+        className={cn(
+          "tabular-nums",
+          msLeft <= EXPIRY_WARNING_MS && "text-destructive"
+        )}
+      >
+        {formatCountdown(msLeft)}
+      </span>
+    </DetailRow>
+  )
+}
+
+/** `expiresAt` is the moment confirming is refused, not the invoice's own expiry. */
+export const useQuoteCountdown = (expiresAt: number) => {
+  const { remainingMs: msLeft, isFinished: expired } = useCountdown(expiresAt)
+  return { msLeft, expired, nearlyExpired: msLeft <= EXPIRY_WARNING_MS }
+}
+
+/**
+ * The review card around a method's own rows: the comments, the warning, the
+ * error with "New quote", and Back/Confirm.
+ */
+export function WithdrawReviewCard({
+  children,
+  recipientComment,
   comment,
-  exitSpeed,
+  error,
+  nearlyExpired,
+  expired,
   confirming,
   requoting,
-  confirmError,
-  onExitSpeedChange,
   onBack,
   onConfirm,
   onNewQuote,
-  locale,
 }: {
-  readonly quote: WithdrawalQuote
+  readonly children: ReactNode
+  /** The LUD-12 comment sent to the recipient. */
+  readonly recipientComment: string | null
   /** The merchant's own note, saved with the withdrawal. */
   readonly comment: string | null
-  readonly exitSpeed: SparkExitSpeed
+  readonly error: string | null
+  readonly nearlyExpired: boolean
+  readonly expired: boolean
   readonly confirming: boolean
   readonly requoting: boolean
-  readonly confirmError: string | null
-  readonly onExitSpeedChange: (exitSpeed: SparkExitSpeed) => void
   readonly onBack: () => void
   readonly onConfirm: () => void
   readonly onNewQuote: () => void
-  readonly locale: string
 }) {
   const { t } = useTranslation()
-  // The moment confirming is refused, not the invoice's own expiry.
-  const expiresAt =
-    (quote.kind === "lightning"
-      ? quote.invoice.expiresAt
-      : Date.parse(quote.feeQuote.expiresAt)) -
-    WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS
-  const { remainingMs: msLeft, isFinished: expired } = useCountdown(expiresAt)
-  const nearlyExpired = msLeft <= EXPIRY_WARNING_MS
-  const error =
-    confirmError ??
-    (expired
-      ? t(
-          quote.kind === "lightning"
-            ? "withdraw.error.lightningInvoiceExpired"
-            : "withdraw.error.quoteExpired"
-        )
-      : null)
-
   return (
     <Card>
       <CardHeader>
@@ -274,20 +276,11 @@ export function WithdrawReviewStep({
       </CardHeader>
       <CardContent>
         <FieldGroup>
-          {quote.kind === "onchain" ? (
-            <OnchainReview
-              quote={quote}
-              exitSpeed={exitSpeed}
-              onExitSpeedChange={onExitSpeedChange}
-              locale={locale}
-            />
-          ) : (
-            <LightningReview quote={quote} msLeft={msLeft} locale={locale} />
-          )}
+          {children}
 
-          {quote.kind === "lightning" && quote.recipientComment !== null ? (
+          {recipientComment !== null ? (
             <DetailRow label={t("withdraw.review.recipientComment")} stacked>
-              <span className="break-words">{quote.recipientComment}</span>
+              <span className="break-words">{recipientComment}</span>
             </DetailRow>
           ) : null}
           {comment !== null ? (
@@ -342,5 +335,77 @@ export function WithdrawReviewStep({
         </Button>
       </CardFooter>
     </Card>
+  )
+}
+
+export function WithdrawReviewStep({
+  quote,
+  comment,
+  exitSpeed,
+  confirming,
+  requoting,
+  confirmError,
+  onExitSpeedChange,
+  onBack,
+  onConfirm,
+  onNewQuote,
+  locale,
+}: {
+  readonly quote: WithdrawalQuote
+  /** The merchant's own note, saved with the withdrawal. */
+  readonly comment: string | null
+  readonly exitSpeed: SparkExitSpeed
+  readonly confirming: boolean
+  readonly requoting: boolean
+  readonly confirmError: string | null
+  readonly onExitSpeedChange: (exitSpeed: SparkExitSpeed) => void
+  readonly onBack: () => void
+  readonly onConfirm: () => void
+  readonly onNewQuote: () => void
+  readonly locale: string
+}) {
+  const { t } = useTranslation()
+  const { msLeft, expired, nearlyExpired } = useQuoteCountdown(
+    (quote.kind === "lightning"
+      ? quote.invoice.expiresAt
+      : Date.parse(quote.feeQuote.expiresAt)) -
+      WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS
+  )
+  const error =
+    confirmError ??
+    (expired
+      ? t(
+          quote.kind === "lightning"
+            ? "withdraw.error.lightningInvoiceExpired"
+            : "withdraw.error.quoteExpired"
+        )
+      : null)
+
+  return (
+    <WithdrawReviewCard
+      recipientComment={
+        quote.kind === "lightning" ? quote.recipientComment : null
+      }
+      comment={comment}
+      error={error}
+      nearlyExpired={nearlyExpired}
+      expired={expired}
+      confirming={confirming}
+      requoting={requoting}
+      onBack={onBack}
+      onConfirm={onConfirm}
+      onNewQuote={onNewQuote}
+    >
+      {quote.kind === "onchain" ? (
+        <OnchainReview
+          quote={quote}
+          exitSpeed={exitSpeed}
+          onExitSpeedChange={onExitSpeedChange}
+          locale={locale}
+        />
+      ) : (
+        <LightningReview quote={quote} msLeft={msLeft} locale={locale} />
+      )}
+    </WithdrawReviewCard>
   )
 }

@@ -993,7 +993,9 @@ Deviations from the plan, each small:
 - `prepareCashuPaymentMethod` is its own Task next to `preparePaymentMethod`.
 - Settlement polls on Linky's schedule; there is no NUT-17 subscription yet.
 - A Cashu withdrawal needs an amount (no "withdraw all" from a mint yet), and
-  has its own page under the Cashu account rather than the Spark withdraw form.
+  has its own pages under the Cashu account (new, history, detail) rather
+  than the Spark ones; they share the destination, amount and options fields
+  and the withdrawal history and detail with Spark.
 - A token from an unreachable mint that no payment holds is booked at face
   value instead of waiting for its fee.
 - The `MintRejected`-after-exhausted-collisions proposal for Linky (§3) is not

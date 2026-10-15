@@ -13,6 +13,35 @@ export const enWithdraw = {
   "withdraw.amount.range": "From {min} to {max} sats.",
   "withdraw.amount.unit": "Amount unit",
   "withdraw.amount.unitSats": "sats",
+  "withdraw.cashu.destinationPlaceholder": "Lightning invoice or address",
+  "withdraw.cashu.error.address":
+    "The Lightning address did not answer as expected.",
+  "withdraw.cashu.error.amountlessInvoice":
+    "The invoice has no amount. Ask for one with an amount, or use a Lightning address.",
+  "withdraw.cashu.error.destination":
+    "Enter a Lightning invoice or a Lightning address.",
+  "withdraw.cashu.error.expired": "The invoice has expired.",
+  "withdraw.cashu.error.insufficient":
+    "The mint's balance does not cover the amount and the fees.",
+  "withdraw.cashu.error.onchain":
+    "Cashu withdraws only over Lightning: enter a Lightning invoice or address.",
+  "withdraw.cashu.error.rejected":
+    "The mint refused the payment. Nothing left the wallet.",
+  "withdraw.cashu.error.toSelf": "This is one of your own payment invoices.",
+  "withdraw.cashu.error.unreachable":
+    "The mint did not answer. Nothing was sent.",
+  "withdraw.cashu.form.description":
+    "Send ecash from one mint of the Cashu wallet you share with Linky to a Lightning invoice or a Lightning address.",
+  "withdraw.cashu.mint": "From which mint",
+  "withdraw.cashu.noAccount.description":
+    "Turn on Cashu in Payment accounts before withdrawing.",
+  "withdraw.cashu.noAccount.title": "Cashu is off",
+  "withdraw.cashu.noFunds": "No mint holds any ecash.",
+  "withdraw.cashu.review.feeReserve": "Mint's fee reserve",
+  "withdraw.cashu.review.inputFee": "Mint's input fee",
+  "withdraw.cashu.review.remainder":
+    "Whatever the reserve doesn't use comes back to the mint's balance.",
+  "withdraw.cashu.title": "Withdraw from Cashu",
   "withdraw.clipboard.use": "Use from clipboard: {value}",
   "withdraw.comment.hint": "Only you see it, in the withdrawal history.",
   "withdraw.comment.label": "Note for you",
@@ -33,6 +62,7 @@ export const enWithdraw = {
   "withdraw.detail.balanceNow":
     "The wallet holds {balance} sats now; this withdrawal would deduct {amount} sats.",
   "withdraw.detail.cancel": "Cancel",
+  "withdraw.detail.cashuQuoteId": "Melt quote ID",
   "withdraw.detail.comment": "Note",
   "withdraw.detail.copied": "Copied",
   "withdraw.detail.copy": "Copy",
@@ -61,11 +91,14 @@ export const enWithdraw = {
     "This records {amount} sats leaving the wallet.",
   "withdraw.detail.markSent.title": "Mark the withdrawal as sent?",
   "withdraw.detail.maxFee": "Maximum fee",
+  "withdraw.detail.mint": "Mint",
   "withdraw.detail.movementDeleted": "The account transaction was deleted.",
   "withdraw.detail.newWithdrawal": "New withdrawal",
   "withdraw.detail.notFound": "This withdrawal could not be found.",
   "withdraw.detail.onchainUncertain":
     "The result is not certain. Check your balance.",
+  "withdraw.detail.pending.cashu":
+    "The withdrawal was sent; the mint has not confirmed it yet. It settles on its own.",
   "withdraw.detail.pending.otherDevice":
     "Waiting for the result. Device {device} started this withdrawal; if the payment doesn't leave, it is marked as not sent within 24 hours.",
   "withdraw.detail.pending.ownDevice":
@@ -121,6 +154,7 @@ export const enWithdraw = {
     "Older withdrawals are in the Spark account's transactions.",
   "withdraw.history.title": "Withdrawals",
   "withdraw.history.transactionsLink": "Account transactions",
+  "withdraw.kind.cashu": "Lightning (Cashu)",
   "withdraw.kind.lightning": "Lightning",
   "withdraw.kind.onchain": "On-chain",
   "withdraw.noAccount.action": "Go to payment accounts",

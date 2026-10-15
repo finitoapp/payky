@@ -6,14 +6,12 @@ import { FadeHeader } from "@/components/fade-header.tsx"
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
-import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   toWithdrawalView,
   type WithdrawalView,
   withdrawalsByAccountQuery,
 } from "@/core/modules/withdraw/withdraw-queries.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -26,35 +24,79 @@ import { groupByDay } from "@/lib/group-by-day.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
 import { useSparkBalance } from "./use-spark-balance.ts"
 import {
+  useCashuBalanceSats,
+  useWithdrawAccountId,
+  WithdrawNoAccountCard,
+} from "./withdraw-account.tsx"
+import {
   shortWithdrawalDestination,
   withdrawalKindKeys,
+  withdrawRoutes,
 } from "./withdraw-display.ts"
-import { WithdrawNoAccountCard } from "./withdraw-page.tsx"
+import type { WithdrawMethod } from "./withdraw-flow.ts"
 import { WithdrawalStatusBadge } from "./withdraw-status-badge.tsx"
 
-export function WithdrawHistoryPage() {
+export function WithdrawHistoryPage({
+  method,
+}: {
+  readonly method: WithdrawMethod
+}) {
   const { t } = useTranslation()
-  const { data: sparkAccountsData } = useEvoluQuery(activeSparkAccountsQuery)
-  const [sparkAccount] = sparkAccountsData
+  const accountId = useWithdrawAccountId(method)
 
   return (
     <>
       <div className="h-6" />
-      <FadeHeader title={t("withdraw.history.title")} />
-      {sparkAccount === undefined ? (
-        <WithdrawNoAccountCard />
+      <FadeHeader
+        title={t(
+          method === "spark" ? "withdraw.history.title" : "withdraw.cashu.title"
+        )}
+      />
+      {accountId === undefined ? (
+        <WithdrawNoAccountCard method={method} />
       ) : (
-        <WithdrawHistory accountId={sparkAccount.id} />
+        <WithdrawHistory method={method} accountId={accountId} />
       )}
     </>
   )
 }
 
-function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
+function BalanceSummary({ balance }: { readonly balance: number | null }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const fiat = useBtcFiat()
-  const balance = useSparkBalance(accountId)
+  if (balance === null) return null
+  return (
+    <span className="flex flex-col items-end text-sm">
+      <span className="font-medium">
+        {t("withdraw.history.balance", {
+          amount: formatSatsAmount(balance, locale),
+        })}
+      </span>
+      <span className="text-xs text-muted-foreground">
+        {fiat.approx(balance)}
+      </span>
+    </span>
+  )
+}
+
+function SparkBalanceSummary({ accountId }: { readonly accountId: AccountId }) {
+  return <BalanceSummary balance={useSparkBalance(accountId)} />
+}
+
+function CashuBalanceSummary() {
+  return <BalanceSummary balance={useCashuBalanceSats()} />
+}
+
+function WithdrawHistory({
+  method,
+  accountId,
+}: {
+  readonly method: WithdrawMethod
+  readonly accountId: AccountId
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
   const createPageQuery = useCallback(
     (limit: number) => withdrawalsByAccountQuery(accountId, limit),
     [accountId]
@@ -82,25 +124,16 @@ function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
         <Button
           className="w-fit"
           nativeButton={false}
-          render={
-            <Link to="/settings/payment-accounts/spark/withdrawals/new" />
-          }
+          render={<Link to={withdrawRoutes[method].new} />}
         >
           <PlusIcon />
           {t("withdraw.history.new")}
         </Button>
-        {balance !== null ? (
-          <span className="flex flex-col items-end text-sm">
-            <span className="font-medium">
-              {t("withdraw.history.balance", {
-                amount: formatSatsAmount(balance, locale),
-              })}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {fiat.approx(balance)}
-            </span>
-          </span>
-        ) : null}
+        {method === "spark" ? (
+          <SparkBalanceSummary accountId={accountId} />
+        ) : (
+          <CashuBalanceSummary />
+        )}
       </div>
 
       {groups.length === 0 ? (
@@ -121,7 +154,7 @@ function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
           items={group.items.map((withdrawal) => ({
             id: withdrawal.id,
             kind: "link",
-            to: "/settings/payment-accounts/spark/withdrawals/$withdrawalId",
+            to: withdrawRoutes[method].detail,
             params: { withdrawalId: withdrawal.id },
             label: (
               <span className="flex min-w-0 flex-col gap-1">
@@ -163,15 +196,17 @@ function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
         </>
       )}
 
-      <p className="text-sm text-muted-foreground">
-        {t("withdraw.history.olderNote")}{" "}
-        <Link
-          to="/settings/payment-accounts/spark/transactions"
-          className="underline"
-        >
-          {t("withdraw.history.transactionsLink")}
-        </Link>
-      </p>
+      {method === "spark" ? (
+        <p className="text-sm text-muted-foreground">
+          {t("withdraw.history.olderNote")}{" "}
+          <Link
+            to="/settings/payment-accounts/spark/transactions"
+            className="underline"
+          >
+            {t("withdraw.history.transactionsLink")}
+          </Link>
+        </p>
+      ) : null}
     </div>
   )
 }

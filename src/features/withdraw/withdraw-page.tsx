@@ -1,18 +1,9 @@
-import { Link, useNavigate } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import { useStore } from "jotai"
 import { useReducer, useRef, useState } from "react"
 
 import { accountAtom } from "@/atoms/account.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
-import { Button } from "@/components/ui/button.tsx"
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card.tsx"
-import { activeSparkAccountsQuery } from "@/core/modules/account/account-spark-queries.ts"
 import type { AccountId } from "@/core/modules/account/account-types.ts"
 import {
   executeWithdrawal,
@@ -21,11 +12,14 @@ import {
 import { withdrawalRecipientSats } from "@/core/modules/withdraw/withdraw-utils.ts"
 import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
-import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatSatsAmount } from "@/lib/format-utils.ts"
 import { useSparkBalance } from "./use-spark-balance.ts"
+import {
+  useWithdrawAccountId,
+  WithdrawNoAccountCard,
+} from "./withdraw-account.tsx"
 import {
   createWithdrawDraft,
   draftComment,
@@ -38,45 +32,23 @@ import {
 import { WithdrawFormStep } from "./withdraw-form-step.tsx"
 import { WithdrawReviewStep } from "./withdraw-review-step.tsx"
 
-export function WithdrawNoAccountCard() {
-  const { t } = useTranslation()
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("withdraw.noAccount.title")}</CardTitle>
-        <CardDescription>{t("withdraw.noAccount.description")}</CardDescription>
-      </CardHeader>
-      <CardFooter>
-        <Button
-          className="w-fit"
-          nativeButton={false}
-          render={<Link to="/settings/payment-accounts" />}
-        >
-          {t("withdraw.noAccount.action")}
-        </Button>
-      </CardFooter>
-    </Card>
-  )
-}
-
 export function WithdrawPage({
   initialDestination,
 }: {
   readonly initialDestination: string
 }) {
   const { t } = useTranslation()
-  const { data: sparkAccountsData } = useEvoluQuery(activeSparkAccountsQuery)
-  const [sparkAccount] = sparkAccountsData
+  const accountId = useWithdrawAccountId("spark")
 
   return (
     <>
       <div className="h-6" />
       <FadeHeader title={t("withdraw.form.title")} />
-      {sparkAccount === undefined ? (
-        <WithdrawNoAccountCard />
+      {accountId === undefined ? (
+        <WithdrawNoAccountCard method="spark" />
       ) : (
         <WithdrawFlow
-          accountId={sparkAccount.id}
+          accountId={accountId}
           initialDestination={initialDestination}
         />
       )}

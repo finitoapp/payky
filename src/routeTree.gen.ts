@@ -69,7 +69,7 @@ import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_ter
 import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_terminal.settings.tables.new'
 import { Route as TerminalSettingsPaymentAccountsCashuIndexRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.index'
 import { Route as TerminalSettingsPaymentAccountsCashuMintsRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.mints'
-import { Route as TerminalSettingsPaymentAccountsCashuWithdrawRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.withdraw'
+import { Route as TerminalSettingsPaymentAccountsCashuWithdrawalsRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.withdrawals'
 import { Route as TerminalSettingsPaymentAccountsIbanIndexRouteImport } from './routes/_terminal.settings.payment-accounts.iban.index'
 import { Route as TerminalSettingsPaymentAccountsIbanFioPluginRouteImport } from './routes/_terminal.settings.payment-accounts.iban.fio-plugin'
 import { Route as TerminalSettingsPaymentAccountsSparkIndexRouteImport } from './routes/_terminal.settings.payment-accounts.spark.index'
@@ -78,6 +78,9 @@ import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsRouteImport } f
 import { Route as TerminalSettingsPaymentAccountsCashuMintsIndexRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.mints.index'
 import { Route as TerminalSettingsPaymentAccountsCashuMintsMintRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.mints.$mint'
 import { Route as TerminalSettingsPaymentAccountsCashuMintsNewRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.mints.new'
+import { Route as TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.withdrawals.index'
+import { Route as TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.withdrawals.$withdrawalId'
+import { Route as TerminalSettingsPaymentAccountsCashuWithdrawalsNewRouteImport } from './routes/_terminal.settings.payment-accounts.cashu.withdrawals.new'
 import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals.index'
 import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals.$withdrawalId'
 import { Route as TerminalSettingsPaymentAccountsSparkWithdrawalsNewRouteImport } from './routes/_terminal.settings.payment-accounts.spark.withdrawals.new'
@@ -420,10 +423,10 @@ const TerminalSettingsPaymentAccountsCashuMintsRoute =
     path: '/mints',
     getParentRoute: () => TerminalSettingsPaymentAccountsCashuRoute,
   } as any)
-const TerminalSettingsPaymentAccountsCashuWithdrawRoute =
-  TerminalSettingsPaymentAccountsCashuWithdrawRouteImport.update({
-    id: '/withdraw',
-    path: '/withdraw',
+const TerminalSettingsPaymentAccountsCashuWithdrawalsRoute =
+  TerminalSettingsPaymentAccountsCashuWithdrawalsRouteImport.update({
+    id: '/withdrawals',
+    path: '/withdrawals',
     getParentRoute: () => TerminalSettingsPaymentAccountsCashuRoute,
   } as any)
 const TerminalSettingsPaymentAccountsIbanIndexRoute =
@@ -473,6 +476,27 @@ const TerminalSettingsPaymentAccountsCashuMintsNewRoute =
     id: '/new',
     path: '/new',
     getParentRoute: () => TerminalSettingsPaymentAccountsCashuMintsRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute =
+  TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TerminalSettingsPaymentAccountsCashuWithdrawalsRoute,
+  } as any)
+const TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute =
+  TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRouteImport.update(
+    {
+      id: '/$withdrawalId',
+      path: '/$withdrawalId',
+      getParentRoute: () =>
+        TerminalSettingsPaymentAccountsCashuWithdrawalsRoute,
+    } as any,
+  )
+const TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute =
+  TerminalSettingsPaymentAccountsCashuWithdrawalsNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => TerminalSettingsPaymentAccountsCashuWithdrawalsRoute,
   } as any)
 const TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute =
   TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRouteImport.update({
@@ -555,7 +579,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables/': typeof TerminalSettingsTablesIndexRoute
   '/settings/payment-accounts/cashu/mints': typeof TerminalSettingsPaymentAccountsCashuMintsRouteWithChildren
-  '/settings/payment-accounts/cashu/withdraw': typeof TerminalSettingsPaymentAccountsCashuWithdrawRoute
+  '/settings/payment-accounts/cashu/withdrawals': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRouteWithChildren
   '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
   '/settings/payment-accounts/spark/transactions': typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
   '/settings/payment-accounts/spark/withdrawals': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren
@@ -564,9 +588,12 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/spark/': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
   '/settings/payment-accounts/cashu/mints/$mint': typeof TerminalSettingsPaymentAccountsCashuMintsMintRoute
   '/settings/payment-accounts/cashu/mints/new': typeof TerminalSettingsPaymentAccountsCashuMintsNewRoute
+  '/settings/payment-accounts/cashu/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute
+  '/settings/payment-accounts/cashu/withdrawals/new': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute
   '/settings/payment-accounts/spark/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
   '/settings/payment-accounts/spark/withdrawals/new': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
   '/settings/payment-accounts/cashu/mints/': typeof TerminalSettingsPaymentAccountsCashuMintsIndexRoute
+  '/settings/payment-accounts/cashu/withdrawals/': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute
   '/settings/payment-accounts/spark/withdrawals/': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -617,7 +644,6 @@ export interface FileRoutesByTo {
   '/settings/items': typeof TerminalSettingsItemsIndexRoute
   '/settings/payment-accounts': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/settings/tables': typeof TerminalSettingsTablesIndexRoute
-  '/settings/payment-accounts/cashu/withdraw': typeof TerminalSettingsPaymentAccountsCashuWithdrawRoute
   '/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
   '/settings/payment-accounts/spark/transactions': typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
   '/settings/payment-accounts/cashu': typeof TerminalSettingsPaymentAccountsCashuIndexRoute
@@ -625,9 +651,12 @@ export interface FileRoutesByTo {
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
   '/settings/payment-accounts/cashu/mints/$mint': typeof TerminalSettingsPaymentAccountsCashuMintsMintRoute
   '/settings/payment-accounts/cashu/mints/new': typeof TerminalSettingsPaymentAccountsCashuMintsNewRoute
+  '/settings/payment-accounts/cashu/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute
+  '/settings/payment-accounts/cashu/withdrawals/new': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute
   '/settings/payment-accounts/spark/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
   '/settings/payment-accounts/spark/withdrawals/new': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
   '/settings/payment-accounts/cashu/mints': typeof TerminalSettingsPaymentAccountsCashuMintsIndexRoute
+  '/settings/payment-accounts/cashu/withdrawals': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute
   '/settings/payment-accounts/spark/withdrawals': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
 }
 export interface FileRoutesById {
@@ -691,7 +720,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/': typeof TerminalSettingsPaymentAccountsIndexRoute
   '/_terminal/settings/tables/': typeof TerminalSettingsTablesIndexRoute
   '/_terminal/settings/payment-accounts/cashu/mints': typeof TerminalSettingsPaymentAccountsCashuMintsRouteWithChildren
-  '/_terminal/settings/payment-accounts/cashu/withdraw': typeof TerminalSettingsPaymentAccountsCashuWithdrawRoute
+  '/_terminal/settings/payment-accounts/cashu/withdrawals': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRouteWithChildren
   '/_terminal/settings/payment-accounts/iban/fio-plugin': typeof TerminalSettingsPaymentAccountsIbanFioPluginRoute
   '/_terminal/settings/payment-accounts/spark/transactions': typeof TerminalSettingsPaymentAccountsSparkTransactionsRoute
   '/_terminal/settings/payment-accounts/spark/withdrawals': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsRouteWithChildren
@@ -700,9 +729,12 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/spark/': typeof TerminalSettingsPaymentAccountsSparkIndexRoute
   '/_terminal/settings/payment-accounts/cashu/mints/$mint': typeof TerminalSettingsPaymentAccountsCashuMintsMintRoute
   '/_terminal/settings/payment-accounts/cashu/mints/new': typeof TerminalSettingsPaymentAccountsCashuMintsNewRoute
+  '/_terminal/settings/payment-accounts/cashu/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute
+  '/_terminal/settings/payment-accounts/cashu/withdrawals/new': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute
   '/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsWithdrawalIdRoute
   '/_terminal/settings/payment-accounts/spark/withdrawals/new': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsNewRoute
   '/_terminal/settings/payment-accounts/cashu/mints/': typeof TerminalSettingsPaymentAccountsCashuMintsIndexRoute
+  '/_terminal/settings/payment-accounts/cashu/withdrawals/': typeof TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute
   '/_terminal/settings/payment-accounts/spark/withdrawals/': typeof TerminalSettingsPaymentAccountsSparkWithdrawalsIndexRoute
 }
 export interface FileRouteTypes {
@@ -766,7 +798,7 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/'
     | '/settings/tables/'
     | '/settings/payment-accounts/cashu/mints'
-    | '/settings/payment-accounts/cashu/withdraw'
+    | '/settings/payment-accounts/cashu/withdrawals'
     | '/settings/payment-accounts/iban/fio-plugin'
     | '/settings/payment-accounts/spark/transactions'
     | '/settings/payment-accounts/spark/withdrawals'
@@ -775,9 +807,12 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/spark/'
     | '/settings/payment-accounts/cashu/mints/$mint'
     | '/settings/payment-accounts/cashu/mints/new'
+    | '/settings/payment-accounts/cashu/withdrawals/$withdrawalId'
+    | '/settings/payment-accounts/cashu/withdrawals/new'
     | '/settings/payment-accounts/spark/withdrawals/$withdrawalId'
     | '/settings/payment-accounts/spark/withdrawals/new'
     | '/settings/payment-accounts/cashu/mints/'
+    | '/settings/payment-accounts/cashu/withdrawals/'
     | '/settings/payment-accounts/spark/withdrawals/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -828,7 +863,6 @@ export interface FileRouteTypes {
     | '/settings/items'
     | '/settings/payment-accounts'
     | '/settings/tables'
-    | '/settings/payment-accounts/cashu/withdraw'
     | '/settings/payment-accounts/iban/fio-plugin'
     | '/settings/payment-accounts/spark/transactions'
     | '/settings/payment-accounts/cashu'
@@ -836,9 +870,12 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/spark'
     | '/settings/payment-accounts/cashu/mints/$mint'
     | '/settings/payment-accounts/cashu/mints/new'
+    | '/settings/payment-accounts/cashu/withdrawals/$withdrawalId'
+    | '/settings/payment-accounts/cashu/withdrawals/new'
     | '/settings/payment-accounts/spark/withdrawals/$withdrawalId'
     | '/settings/payment-accounts/spark/withdrawals/new'
     | '/settings/payment-accounts/cashu/mints'
+    | '/settings/payment-accounts/cashu/withdrawals'
     | '/settings/payment-accounts/spark/withdrawals'
   id:
     | '__root__'
@@ -901,7 +938,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/'
     | '/_terminal/settings/tables/'
     | '/_terminal/settings/payment-accounts/cashu/mints'
-    | '/_terminal/settings/payment-accounts/cashu/withdraw'
+    | '/_terminal/settings/payment-accounts/cashu/withdrawals'
     | '/_terminal/settings/payment-accounts/iban/fio-plugin'
     | '/_terminal/settings/payment-accounts/spark/transactions'
     | '/_terminal/settings/payment-accounts/spark/withdrawals'
@@ -910,9 +947,12 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/spark/'
     | '/_terminal/settings/payment-accounts/cashu/mints/$mint'
     | '/_terminal/settings/payment-accounts/cashu/mints/new'
+    | '/_terminal/settings/payment-accounts/cashu/withdrawals/$withdrawalId'
+    | '/_terminal/settings/payment-accounts/cashu/withdrawals/new'
     | '/_terminal/settings/payment-accounts/spark/withdrawals/$withdrawalId'
     | '/_terminal/settings/payment-accounts/spark/withdrawals/new'
     | '/_terminal/settings/payment-accounts/cashu/mints/'
+    | '/_terminal/settings/payment-accounts/cashu/withdrawals/'
     | '/_terminal/settings/payment-accounts/spark/withdrawals/'
   fileRoutesById: FileRoutesById
 }
@@ -1345,11 +1385,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuMintsRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsCashuRoute
     }
-    '/_terminal/settings/payment-accounts/cashu/withdraw': {
-      id: '/_terminal/settings/payment-accounts/cashu/withdraw'
-      path: '/withdraw'
-      fullPath: '/settings/payment-accounts/cashu/withdraw'
-      preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawRouteImport
+    '/_terminal/settings/payment-accounts/cashu/withdrawals': {
+      id: '/_terminal/settings/payment-accounts/cashu/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/settings/payment-accounts/cashu/withdrawals'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsCashuRoute
     }
     '/_terminal/settings/payment-accounts/iban/': {
@@ -1407,6 +1447,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/payment-accounts/cashu/mints/new'
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuMintsNewRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsCashuMintsRoute
+    }
+    '/_terminal/settings/payment-accounts/cashu/withdrawals/': {
+      id: '/_terminal/settings/payment-accounts/cashu/withdrawals/'
+      path: '/'
+      fullPath: '/settings/payment-accounts/cashu/withdrawals/'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRoute
+    }
+    '/_terminal/settings/payment-accounts/cashu/withdrawals/$withdrawalId': {
+      id: '/_terminal/settings/payment-accounts/cashu/withdrawals/$withdrawalId'
+      path: '/$withdrawalId'
+      fullPath: '/settings/payment-accounts/cashu/withdrawals/$withdrawalId'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRoute
+    }
+    '/_terminal/settings/payment-accounts/cashu/withdrawals/new': {
+      id: '/_terminal/settings/payment-accounts/cashu/withdrawals/new'
+      path: '/new'
+      fullPath: '/settings/payment-accounts/cashu/withdrawals/new'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsNewRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRoute
     }
     '/_terminal/settings/payment-accounts/spark/withdrawals/': {
       id: '/_terminal/settings/payment-accounts/spark/withdrawals/'
@@ -1521,9 +1582,30 @@ const TerminalSettingsPaymentAccountsCashuMintsRouteWithChildren =
     TerminalSettingsPaymentAccountsCashuMintsRouteChildren,
   )
 
+interface TerminalSettingsPaymentAccountsCashuWithdrawalsRouteChildren {
+  TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute
+  TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute
+  TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute
+}
+
+const TerminalSettingsPaymentAccountsCashuWithdrawalsRouteChildren: TerminalSettingsPaymentAccountsCashuWithdrawalsRouteChildren =
+  {
+    TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute:
+      TerminalSettingsPaymentAccountsCashuWithdrawalsWithdrawalIdRoute,
+    TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute:
+      TerminalSettingsPaymentAccountsCashuWithdrawalsNewRoute,
+    TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute:
+      TerminalSettingsPaymentAccountsCashuWithdrawalsIndexRoute,
+  }
+
+const TerminalSettingsPaymentAccountsCashuWithdrawalsRouteWithChildren =
+  TerminalSettingsPaymentAccountsCashuWithdrawalsRoute._addFileChildren(
+    TerminalSettingsPaymentAccountsCashuWithdrawalsRouteChildren,
+  )
+
 interface TerminalSettingsPaymentAccountsCashuRouteChildren {
   TerminalSettingsPaymentAccountsCashuMintsRoute: typeof TerminalSettingsPaymentAccountsCashuMintsRouteWithChildren
-  TerminalSettingsPaymentAccountsCashuWithdrawRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawRoute
+  TerminalSettingsPaymentAccountsCashuWithdrawalsRoute: typeof TerminalSettingsPaymentAccountsCashuWithdrawalsRouteWithChildren
   TerminalSettingsPaymentAccountsCashuIndexRoute: typeof TerminalSettingsPaymentAccountsCashuIndexRoute
 }
 
@@ -1531,8 +1613,8 @@ const TerminalSettingsPaymentAccountsCashuRouteChildren: TerminalSettingsPayment
   {
     TerminalSettingsPaymentAccountsCashuMintsRoute:
       TerminalSettingsPaymentAccountsCashuMintsRouteWithChildren,
-    TerminalSettingsPaymentAccountsCashuWithdrawRoute:
-      TerminalSettingsPaymentAccountsCashuWithdrawRoute,
+    TerminalSettingsPaymentAccountsCashuWithdrawalsRoute:
+      TerminalSettingsPaymentAccountsCashuWithdrawalsRouteWithChildren,
     TerminalSettingsPaymentAccountsCashuIndexRoute:
       TerminalSettingsPaymentAccountsCashuIndexRoute,
   }

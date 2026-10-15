@@ -150,41 +150,6 @@ export const enSettings = {
   "settings.cashuAccount.mints": "Mints",
   "settings.cashuAccount.mintsDescription":
     "Default mint, balances, moving funds",
-  "settings.cashuWithdraw.title": "Withdraw from Cashu",
-  "settings.cashuWithdraw.mint": "From which mint",
-  "settings.cashuWithdraw.noFunds": "No mint holds any ecash.",
-  "settings.cashuWithdraw.destination": "Lightning invoice or address",
-  "settings.cashuWithdraw.amount": "Amount in sat",
-  "settings.cashuWithdraw.amountDescription":
-    "Needed for a Lightning address; an invoice carries its own.",
-  "settings.cashuWithdraw.review":
-    "{amount} goes out; at most {total} leaves the mint, its fee reserve of {reserve} included. Unused reserve comes back.",
-  "settings.cashuWithdraw.reviewButton": "Review",
-  "settings.cashuWithdraw.confirm": "Withdraw",
-  "settings.cashuWithdraw.invoice": "a Lightning invoice",
-  "settings.cashuWithdraw.pinDetail": "{amount} to {destination}",
-  "settings.cashuWithdraw.done": "The withdrawal was paid.",
-  "settings.cashuWithdraw.pending":
-    "The withdrawal was sent; the mint has not confirmed it yet. It settles on its own.",
-  "settings.cashuWithdraw.history": "Withdrawals",
-  "settings.cashuWithdraw.historyEmpty": "No withdrawal yet.",
-  "settings.cashuWithdraw.state.done": "Paid",
-  "settings.cashuWithdraw.state.failed": "Failed",
-  "settings.cashuWithdraw.state.pending": "In progress",
-  "settings.cashuWithdraw.error.unreachable":
-    "The mint did not answer. Nothing was sent.",
-  "settings.cashuWithdraw.error.rejected":
-    "The mint refused the payment. Nothing left the wallet.",
-  "settings.cashuWithdraw.error.amountNeeded": "Enter an amount.",
-  "settings.cashuWithdraw.error.toSelf":
-    "This is one of your own payment invoices.",
-  "settings.cashuWithdraw.error.expired": "The invoice has expired.",
-  "settings.cashuWithdraw.error.destination":
-    "Enter a Lightning invoice or a Lightning address.",
-  "settings.cashuWithdraw.error.address":
-    "The Lightning address did not answer as expected.",
-  "settings.cashuWithdraw.error.insufficient":
-    "The mint's balance does not cover the amount and the fees.",
   "settings.cashuAccount.withdraw": "Withdraw",
   "settings.cashuAccount.withdrawDescription": "Send ecash out over Lightning",
   "settings.cashuAccount.enabled.label": "Accept Cashu",

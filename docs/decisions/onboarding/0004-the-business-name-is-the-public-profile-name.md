@@ -48,10 +48,10 @@ public even if a subsequent local onboarding write fails.
 
 ## Enforced by
 
-- `src/core/integrations/nostr/nostr-client.test.ts > nostr client > publishing a name preserves the picture and all other profile metadata`
-- `src/core/integrations/nostr/nostr-client.test.ts > nostr client > publishing a name refuses an unreadable profile instead of overwriting it`
-- `src/core/integrations/nostr/nostr-client.test.ts > nostr client > publishing a name reports a rejected publish`
-- `e2e/onboarding.spec.ts > business name publication during onboarding: success`
-- `e2e/onboarding.spec.ts > business name publication during onboarding: retry`
-- `e2e/onboarding.spec.ts > business name publication during onboarding: skip`
-- `e2e/onboarding.spec.ts > business name publication during onboarding: empty`
+- `packages/core/src/integrations/nostr/nostr-client.test.ts > nostr client > publishing a name preserves the picture and all other profile metadata`
+- `packages/core/src/integrations/nostr/nostr-client.test.ts > nostr client > publishing a name refuses an unreadable profile instead of overwriting it`
+- `packages/core/src/integrations/nostr/nostr-client.test.ts > nostr client > publishing a name reports a rejected publish`
+- `apps/web-app/e2e/onboarding.spec.ts > business name publication during onboarding: success`
+- `apps/web-app/e2e/onboarding.spec.ts > business name publication during onboarding: retry`
+- `apps/web-app/e2e/onboarding.spec.ts > business name publication during onboarding: skip`
+- `apps/web-app/e2e/onboarding.spec.ts > business name publication during onboarding: empty`

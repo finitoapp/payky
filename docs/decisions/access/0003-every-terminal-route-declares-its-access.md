@@ -33,6 +33,6 @@ to.
 
 ## Enforced by
 
-- `src/router.test.ts > _terminal route access (access/0003) > every route declares a permission or free, layouts included`
-- `src/router.test.ts > _terminal route access (access/0003) > no free route sits under a layout that declares a permission`
-- `src/router.test.ts > _terminal route access (access/0003) > no route has a loader, which would run before the gate`
+- `apps/web-app/src/router.test.ts > _terminal route access (access/0003) > every route declares a permission or free, layouts included`
+- `apps/web-app/src/router.test.ts > _terminal route access (access/0003) > no free route sits under a layout that declares a permission`
+- `apps/web-app/src/router.test.ts > _terminal route access (access/0003) > no route has a loader, which would run before the gate`

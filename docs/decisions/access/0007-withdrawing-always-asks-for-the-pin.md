@@ -32,5 +32,5 @@ The owner types the PIN for every withdrawal.
 
 ## Enforced by
 
-- `e2e/withdraw.spec.ts > confirming a withdrawal asks for the PIN even during a PIN session`
-- `e2e/withdraw.spec.ts > an invoice expiring during PIN entry leaves the review with an error and a new estimate`
+- `apps/web-app/e2e/withdraw.spec.ts > confirming a withdrawal asks for the PIN even during a PIN session`
+- `apps/web-app/e2e/withdraw.spec.ts > an invoice expiring during PIN entry leaves the review with an error and a new estimate`

@@ -28,5 +28,5 @@ guards it (access/0007).
 
 Untestable: it is the absence of a filter. The balance a withdrawal draws
 from is `sumAvailableByMint` over every proof of the shared wallet, which
-`src/core/cashu/cashu-melt.test.ts > meltCashu > pays the invoice, keeps the change and closes the melt paid`
+`packages/core/src/cashu/cashu-melt.test.ts > meltCashu > pays the invoice, keeps the change and closes the melt paid`
 exercises without telling Payky's proofs from Linky's.

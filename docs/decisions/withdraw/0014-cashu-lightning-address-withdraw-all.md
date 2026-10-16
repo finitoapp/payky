@@ -45,10 +45,10 @@ moves, and the merchant gets a new quote.
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > sends the balance minus the mint's fee reserve and input fee`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > sends at most the Lightning address's maxSendable`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > is refused when the balance minus the fees is below the Lightning address's minSendable`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > melts it and books what left; the unused reserve stays at the mint`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > refuses an amount outside the Lightning address's range`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > refuses an invoice whose amount and the mint's fees exceed the balance, naming the most it can send`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > an invoice without an amount is refused`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > sends the balance minus the mint's fee reserve and input fee`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > sends at most the Lightning address's maxSendable`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > is refused when the balance minus the fees is below the Lightning address's minSendable`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > withdraw all to a Lightning address > melts it and books what left; the unused reserve stays at the mint`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > refuses an amount outside the Lightning address's range`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > refuses an invoice whose amount and the mint's fees exceed the balance, naming the most it can send`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > an invoice without an amount is refused`

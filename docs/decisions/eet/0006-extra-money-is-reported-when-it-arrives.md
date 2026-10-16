@@ -41,13 +41,13 @@ the rest is reported only if it ever arrives.
 
 ## Enforced by
 
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment settled twice as its sale and an extra sale`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports only what a short first settlement brought`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports the part of one transfer above the payment`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports a second settlement from the settlement that brought it`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > breaks a tie on the settlement time by claim id`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports each increase of the extra money once`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > never reports extra money brought while EET was disabled`
-- `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment settled twice as its sale and an extra sale`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports only what a short first settlement brought`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports the part of one transfer above the payment`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports a second settlement from the settlement that brought it`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > breaks a tie on the settlement time by claim id`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports each increase of the extra money once`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > never reports extra money brought while EET was disabled`
+- `apps/web-app/e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

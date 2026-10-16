@@ -1,0 +1,61 @@
+import { readdirSync, readFileSync } from "node:fs"
+import path from "node:path"
+import { describe, expect, test } from "vitest"
+
+/**
+ * Linky's four tables live in Payky's app database but hold Linky's rows
+ * under Linky's owners (cashu.md §2). Every query over them must filter by
+ * the owner ids it expects, and only the shard store may write them, or a row
+ * lands in Payky's owner where Linky never sees it. All queries share one
+ * `createQuery`, so the guard is a source scan: a table name may appear only
+ * in the files allowed to touch these tables.
+ */
+
+const repoRoot = path.resolve(import.meta.dirname, "../../../../..")
+
+const linkyTables = ["cashuProof", "cashuOperation", "shardPointer", "setting"]
+
+const allowed = [
+  "packages/core/src/modules/cashu/",
+  "packages/core/src/cashu/cashu-shard-store.",
+  "packages/core/src/evolu/schema.ts",
+]
+
+const scannedRoots = [
+  "packages/core/src",
+  "apps/web-app/src",
+  "apps/web-app/api",
+  "apps/web-app/e2e",
+  "apps/cli/src",
+  "bin",
+]
+
+const sourceFiles = scannedRoots.flatMap((root) =>
+  readdirSync(path.join(repoRoot, root), { recursive: true })
+    .map(String)
+    .filter((file) => /\.tsx?$/u.test(file))
+    .map((file) => path.join(root, file).split(path.sep).join("/"))
+)
+
+// Quoted as code names a table; backticks are left to the comments that
+// explain these tables.
+const tableName = new RegExp(`["'](?:${linkyTables.join("|")})["']`, "u")
+
+describe("Linky's tables are isolated", () => {
+  test("their names appear only in the shard store, the Cashu module and the schema", () => {
+    const offenders = sourceFiles.filter(
+      (file) =>
+        !allowed.some((prefix) => file.startsWith(prefix)) &&
+        tableName.test(readFileSync(path.join(repoRoot, file), "utf8"))
+    )
+    expect(offenders).toEqual([])
+  })
+
+  test("the scan sees the files that do name them", () => {
+    expect(
+      sourceFiles.filter((file) =>
+        tableName.test(readFileSync(path.join(repoRoot, file), "utf8"))
+      )
+    ).toContain("packages/core/src/modules/cashu/cashu-table-isolation.test.ts")
+  })
+})

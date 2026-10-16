@@ -17,7 +17,7 @@ long for a section of the home page.
 ## Decision
 
 The EET page is a second landing document, built from the same
-`landing.html` template and prerendered once per language like the home
+`apps/web-app/landing.html` template and prerendered once per language like the home
 page (landing/0002): Czech at `/landing/eet-2-0`, English at `/landing/en/eet-2-0`,
 Slovak at `/landing/sk/eet-2-0`. Each has its own title, description, canonical
 link, `hreflang` links to the EET page in the other languages, Czech as
@@ -48,15 +48,15 @@ topics.
 ## Consequences
 
 `bun run build` writes six files: `landing-<language>.html` and
-`landing-eet-<language>.html`. `vercel.json`, the dev and preview servers
+`landing-eet-<language>.html`. `apps/web-app/vercel.json`, the dev and preview servers
 (`landingPagesPlugin`) and `sitemap.xml` know the three new addresses. A
 change to the shell (header, footer) changes both pages.
 
 ## Enforced by
 
-- `src/landing-server.test.tsx > renderLandingDocument > prerenders the EET page in %s at its own address`
-- `src/landing-server.test.tsx > renderLandingDocument > links the EET page's languages to each other`
-- `src/landing-server.test.tsx > renderLandingDocument > describes the EET page's FAQ for search results and shows its answers`
-- `src/landing-server.test.tsx > renderLandingDocument > leads from the home page to the EET page`
-- `src/features/shared/landing-redirect.test.ts > landingLanguageFromPath > reads %s as %s`
-- `src/features/shared/landing-redirect.test.ts > isLandingEetPath > reads %s as the EET page: %s`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > prerenders the EET page in %s at its own address`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > links the EET page's languages to each other`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > describes the EET page's FAQ for search results and shows its answers`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > leads from the home page to the EET page`
+- `apps/web-app/src/features/shared/landing-redirect.test.ts > landingLanguageFromPath > reads %s as %s`
+- `apps/web-app/src/features/shared/landing-redirect.test.ts > isLandingEetPath > reads %s as the EET page: %s`

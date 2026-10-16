@@ -39,7 +39,7 @@ payment="data:image/png;base64,$(base64 -w0 "$work/payment.png")"
 # corners in and squashes it, and the blur grows from its near (bottom) edge to
 # its far one. SVG has neither perspective nor a variable blur, hence magick.
 # The 100 px margin gives the blur room; the crop drops the empty top half.
-rsvg-convert -w 900 public/pwa-icon.svg -o "$work/logo-flat.png"
+rsvg-convert -w 900 apps/web-app/public/pwa-icon.svg -o "$work/logo-flat.png"
 magick "$work/logo-flat.png" -background none -gravity center -extent 1100x1100 \
   -virtual-pixel transparent \
   -distort Perspective '100,100 300,700  1000,100 800,700  100,1000 100,1000  1000,1000 1000,1000' \
@@ -120,7 +120,7 @@ png8 "$work/header.png" "twitter-header-$lang.png"
 
 # Just the coin, edge to edge on a transparent canvas: it is round already, so
 # X's circular crop takes nothing from it and no backdrop shows around it.
-rsvg-convert -w 400 -h 400 public/pwa-icon.svg -o "$work/avatar.png"
+rsvg-convert -w 400 -h 400 apps/web-app/public/pwa-icon.svg -o "$work/avatar.png"
 png8 "$work/avatar.png" twitter-avatar.png
 
 identify "twitter-header-$lang.png" twitter-avatar.png

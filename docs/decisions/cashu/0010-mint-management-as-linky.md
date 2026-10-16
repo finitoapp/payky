@@ -39,12 +39,12 @@ A test mint can still be added by URL.
 
 ## Enforced by
 
-- `src/core/cashu/cashu-mints.test.ts > managing mints > a typed URL gets https and needs a dot in its host`
-- `src/core/cashu/cashu-mints.test.ts > managing mints > adds a mint that loads, without making it the default`
-- `src/core/cashu/cashu-mints.test.ts > managing mints > refuses a mint that does not load`
-- `src/core/cashu/cashu-mints.test.ts > managing mints > removes a mint only while nothing in the wallet names it`
-- `src/core/cashu/cashu-mints.test.ts > the default mint > is seeded once when Cashu is enabled, never over a mint Linky chose`
-- `src/core/cashu/cashu-autoswap.test.ts > moving funds between mints > estimates a move without touching a proof`
-- `src/core/cashu/cashu-autoswap.test.ts > moving funds between mints > moves an amount: a melt at the source, a mint at the target`
-- `src/core/cashu/cashu-autoswap.test.ts > moving funds between mints > a sweep moves everything the fees leave`
-- `e2e/cashu.spec.ts > the mints screen lists the default mint with its balance`
+- `packages/core/src/cashu/cashu-mints.test.ts > managing mints > a typed URL gets https and needs a dot in its host`
+- `packages/core/src/cashu/cashu-mints.test.ts > managing mints > adds a mint that loads, without making it the default`
+- `packages/core/src/cashu/cashu-mints.test.ts > managing mints > refuses a mint that does not load`
+- `packages/core/src/cashu/cashu-mints.test.ts > managing mints > removes a mint only while nothing in the wallet names it`
+- `packages/core/src/cashu/cashu-mints.test.ts > the default mint > is seeded once when Cashu is enabled, never over a mint Linky chose`
+- `packages/core/src/cashu/cashu-autoswap.test.ts > moving funds between mints > estimates a move without touching a proof`
+- `packages/core/src/cashu/cashu-autoswap.test.ts > moving funds between mints > moves an amount: a melt at the source, a mint at the target`
+- `packages/core/src/cashu/cashu-autoswap.test.ts > moving funds between mints > a sweep moves everything the fees leave`
+- `apps/web-app/e2e/cashu.spec.ts > the mints screen lists the default mint with its balance`

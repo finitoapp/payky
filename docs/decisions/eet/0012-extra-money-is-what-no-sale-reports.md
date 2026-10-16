@@ -59,23 +59,23 @@ as a known gap.
 
 ## Enforced by
 
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > creates one record when two devices see the same payment`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment settled twice as its sale and an extra sale`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports only what a short first settlement brought`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports the part of one transfer above the payment`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports each increase of the extra money once`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > never reports extra money brought while EET was disabled`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment two devices settled while cut off from sync as one sale each`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves the rest of an employees' tip out of the extra money`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > freezes the sale data of a payment`
-- `src/core/modules/eet/eet-utils.test.ts > createEetSaleId > derives the same id for the same settlement of a payment on every device`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports a second settlement from the settlement that brought it`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > breaks a tie on the settlement time by claim id`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > counts every settlement a sale of the payment reports`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports the first settlement when only a later one has a sale`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > lets a sale of a removed claim stand for the earliest settlement without a sale`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > lets a sale that recorded no settlement stand for the first one`
-- `src/core/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > leaves out the part of an employees' tip the first settlement could not cover`
-- `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > creates one record when two devices see the same payment`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment settled twice as its sale and an extra sale`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports only what a short first settlement brought`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports the part of one transfer above the payment`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports each increase of the extra money once`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > never reports extra money brought while EET was disabled`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports a payment two devices settled while cut off from sync as one sale each`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves the rest of an employees' tip out of the extra money`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > freezes the sale data of a payment`
+- `packages/core/src/modules/eet/eet-utils.test.ts > createEetSaleId > derives the same id for the same settlement of a payment on every device`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports a second settlement from the settlement that brought it`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > breaks a tie on the settlement time by claim id`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > counts every settlement a sale of the payment reports`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > reports the first settlement when only a later one has a sale`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > lets a sale of a removed claim stand for the earliest settlement without a sale`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > lets a sale that recorded no settlement stand for the first one`
+- `packages/core/src/modules/eet/eet-utils.test.ts > deriveDueEetExtraSale > leaves out the part of an employees' tip the first settlement could not cover`
+- `apps/web-app/e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

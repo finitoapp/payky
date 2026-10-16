@@ -97,4 +97,4 @@ question means a copy change in all three languages.
 
 ## Enforced by
 
-- `src/landing-server.test.tsx > renderLandingDocument > names where the EET page's facts come from`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > names where the EET page's facts come from`

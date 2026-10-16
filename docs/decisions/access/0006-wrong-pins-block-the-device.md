@@ -50,16 +50,16 @@ A time-based unblock: anyone could try PINs slowly and indefinitely.
 
 ## Enforced by
 
-- `src/core/modules/access/access-actions.test.ts > enterPin > logs the attempt and awaits the write before verifying`
-- `src/core/modules/access/access-actions.test.ts > enterPin > says how many attempts are left`
-- `src/core/modules/access/access-actions.test.ts > enterPin > blocks after five wrong PINs in a row and never verifies again`
-- `src/core/modules/access/access-actions.test.ts > enterPin > blocks per account: the device's other accounts keep their PIN entry`
-- `src/core/modules/access/access-actions.test.ts > enterPin > a correct PIN returns the failed attempts and only the owner's clear removes them`
-- `src/core/modules/access/access-actions.test.ts > unblocking > an unblock token makes earlier attempts stop counting, but keeps them in the log`
-- `src/core/modules/access/access-actions.test.ts > unblocking > a token is applied once, so a stale one does not unblock again`
-- `src/core/modules/access/access-actions.test.ts > unblocking > the recovery phrase works on a blocked device and a wrong one is not an attempt`
-- `src/core/modules/access/access-utils.test.ts > recoveryPhraseMatches > matches the account's phrase however it is spaced or cased`
-- `src/core/sentry.test.ts > sentry scrubbing > drops a click inside the PIN pad, so its selectors cannot spell the PIN`
-- `e2e/access.spec.ts > five wrong PINs block the device, and the recovery phrase unblocks it`
-- `e2e/access.spec.ts > another device unblocks a blocked one`
-- `e2e/access.spec.ts > wrong PINs followed by the correct one show the failed attempts`
+- `packages/core/src/modules/access/access-actions.test.ts > enterPin > logs the attempt and awaits the write before verifying`
+- `packages/core/src/modules/access/access-actions.test.ts > enterPin > says how many attempts are left`
+- `packages/core/src/modules/access/access-actions.test.ts > enterPin > blocks after five wrong PINs in a row and never verifies again`
+- `packages/core/src/modules/access/access-actions.test.ts > enterPin > blocks per account: the device's other accounts keep their PIN entry`
+- `packages/core/src/modules/access/access-actions.test.ts > enterPin > a correct PIN returns the failed attempts and only the owner's clear removes them`
+- `packages/core/src/modules/access/access-actions.test.ts > unblocking > an unblock token makes earlier attempts stop counting, but keeps them in the log`
+- `packages/core/src/modules/access/access-actions.test.ts > unblocking > a token is applied once, so a stale one does not unblock again`
+- `packages/core/src/modules/access/access-actions.test.ts > unblocking > the recovery phrase works on a blocked device and a wrong one is not an attempt`
+- `packages/core/src/modules/access/access-utils.test.ts > recoveryPhraseMatches > matches the account's phrase however it is spaced or cased`
+- `apps/web-app/src/core/sentry.test.ts > sentry scrubbing > drops a click inside the PIN pad, so its selectors cannot spell the PIN`
+- `apps/web-app/e2e/access.spec.ts > five wrong PINs block the device, and the recovery phrase unblocks it`
+- `apps/web-app/e2e/access.spec.ts > another device unblocks a blocked one`
+- `apps/web-app/e2e/access.spec.ts > wrong PINs followed by the correct one show the failed attempts`

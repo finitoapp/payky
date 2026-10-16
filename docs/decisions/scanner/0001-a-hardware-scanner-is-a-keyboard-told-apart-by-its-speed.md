@@ -52,11 +52,11 @@ when no text field has focus; EAN and UPC codes are digits only.
 
 ## Enforced by
 
-- `src/hooks/use-hardware-scanner.test.ts > readScanKey > a fast burst closed by Enter is a scan`
-- `src/hooks/use-hardware-scanner.test.ts > readScanKey > typing at human speed is not a scan`
-- `src/hooks/use-hardware-scanner.test.ts > readScanKey > a burst shorter than the minimum is not a scan`
-- `src/hooks/use-hardware-scanner.test.ts > readScanKey > Enter after a pause is not a scan`
-- `e2e/hardware-scanner.spec.ts > a hardware scan adds the item to the bill outside scan mode`
-- `e2e/hardware-scanner.spec.ts > a hardware scan on the home keypad opens a new bill instead of charging`
-- `e2e/hardware-scanner.spec.ts > a hardware scan on the home screen with an unknown code offers to create the item`
-- `e2e/hardware-scanner.spec.ts > a hardware scan fills the item form and finds items from the list`
+- `apps/web-app/src/hooks/use-hardware-scanner.test.ts > readScanKey > a fast burst closed by Enter is a scan`
+- `apps/web-app/src/hooks/use-hardware-scanner.test.ts > readScanKey > typing at human speed is not a scan`
+- `apps/web-app/src/hooks/use-hardware-scanner.test.ts > readScanKey > a burst shorter than the minimum is not a scan`
+- `apps/web-app/src/hooks/use-hardware-scanner.test.ts > readScanKey > Enter after a pause is not a scan`
+- `apps/web-app/e2e/hardware-scanner.spec.ts > a hardware scan adds the item to the bill outside scan mode`
+- `apps/web-app/e2e/hardware-scanner.spec.ts > a hardware scan on the home keypad opens a new bill instead of charging`
+- `apps/web-app/e2e/hardware-scanner.spec.ts > a hardware scan on the home screen with an unknown code offers to create the item`
+- `apps/web-app/e2e/hardware-scanner.spec.ts > a hardware scan fills the item form and finds items from the list`

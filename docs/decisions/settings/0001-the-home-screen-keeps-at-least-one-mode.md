@@ -44,8 +44,8 @@ modes.
 
 ## Enforced by
 
-- `src/core/modules/app-settings/app-settings-actions.test.ts > setEnabledHomeModes > refuses to disable every mode and keeps the stored set`
-- `src/core/modules/app-settings/app-settings-actions.test.ts > setEnabledHomeModes > onboarding leaves the home modes unset, which means all of them`
-- `src/core/modules/app-settings/app-settings-utils.test.ts > parseEnabledHomeModes > treats an unreadable or empty value as every mode`
-- `src/core/modules/app-settings/app-settings-utils.test.ts > resolveTerminalHomeMode > falls back to the first enabled mode when the remembered one is disabled`
-- `e2e/home-mode-toggle.spec.ts > disabling a home mode in settings hides the switch, falls back to the first enabled mode and never leaves none`
+- `packages/core/src/modules/app-settings/app-settings-actions.test.ts > setEnabledHomeModes > refuses to disable every mode and keeps the stored set`
+- `packages/core/src/modules/app-settings/app-settings-actions.test.ts > setEnabledHomeModes > onboarding leaves the home modes unset, which means all of them`
+- `packages/core/src/modules/app-settings/app-settings-utils.test.ts > parseEnabledHomeModes > treats an unreadable or empty value as every mode`
+- `packages/core/src/modules/app-settings/app-settings-utils.test.ts > resolveTerminalHomeMode > falls back to the first enabled mode when the remembered one is disabled`
+- `apps/web-app/e2e/home-mode-toggle.spec.ts > disabling a home mode in settings hides the switch, falls back to the first enabled mode and never leaves none`

@@ -45,22 +45,22 @@ reverses no more than it returned (see payment/0003).
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps later refunds at what the sale has left`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps refunds at what every sale of the payment reports, whichever sale they name`
-- `src/core/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > sends a reversal only once its sale is confirmed`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses a refund recorded before its sale was created`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning the duplicate leaves the real sale reported`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning everything reverses the sale and the extra money`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > sends the reversal only once the extra sale is confirmed`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > marks a reversal unsupported while EET is off`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > never sends a reversal once EET runs in another environment`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > never sends a reversal once EET reports for another taxpayer`
-- `src/core/modules/eet/eet-queries.test.ts > unconfirmedEetReversalsQuery > lists a reversal until it is confirmed, also one never sent`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > fixes the tip it reports`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses no tip refund of a tip that belonged to employees`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses the tip refund of a tip that belonged to the business`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses no tip refund of a sale that recorded no reported tip`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports no tip on an extra sale`
-- `e2e/eet.spec.ts > a refunded tip reaches EET only while tips belong to the business`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > caps later refunds at what the sale has left`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > caps refunds at what every sale of the payment reports, whichever sale they name`
+- `packages/core/src/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > sends a reversal only once its sale is confirmed`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses a refund recorded before its sale was created`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning the duplicate leaves the real sale reported`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning everything reverses the sale and the extra money`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > sends the reversal only once the extra sale is confirmed`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > marks a reversal unsupported while EET is off`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > never sends a reversal once EET runs in another environment`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > never sends a reversal once EET reports for another taxpayer`
+- `packages/core/src/modules/eet/eet-queries.test.ts > unconfirmedEetReversalsQuery > lists a reversal until it is confirmed, also one never sent`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > fixes the tip it reports`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses no tip refund of a tip that belonged to employees`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses the tip refund of a tip that belonged to the business`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses no tip refund of a sale that recorded no reported tip`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports no tip on an extra sale`
+- `apps/web-app/e2e/eet.spec.ts > a refunded tip reaches EET only while tips belong to the business`

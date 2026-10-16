@@ -45,15 +45,15 @@ determined" and leaves it to the owner.
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > failedAt makes a withdrawal failed, with its reason`
-- `src/core/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > a deleted movement still makes the withdrawal done`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > on-chain resolution > a movement beats a manual failure`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > marks a rejected Lightning payment failed once no transfer exists`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected Lightning payment uncertain when its transfer exists`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected Lightning payment uncertain when the transfer lookup fails`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected on-chain withdrawal uncertain`
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > marks a final Lightning failure returned`
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > leaves an unknown user request status alone`
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > checks a withdrawal 15 days old, but not one 17 days old`
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > keeps checking the others when one withdrawal's lookup fails`
-- `src/core/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > leaves an unverified or unknown status %s alone`
+- `packages/core/src/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > failedAt makes a withdrawal failed, with its reason`
+- `packages/core/src/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > a deleted movement still makes the withdrawal done`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > on-chain resolution > a movement beats a manual failure`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > marks a rejected Lightning payment failed once no transfer exists`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected Lightning payment uncertain when its transfer exists`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected Lightning payment uncertain when the transfer lookup fails`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected on-chain withdrawal uncertain`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > marks a final Lightning failure returned`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > leaves an unknown user request status alone`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > checks a withdrawal 15 days old, but not one 17 days old`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > keeps checking the others when one withdrawal's lookup fails`
+- `packages/core/src/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > leaves an unverified or unknown status %s alone`

@@ -31,7 +31,7 @@ Unused mints collect in the shared wallet and in Linky's mint list.
 
 ## Enforced by
 
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload from another mint is shown on its payment but never counted`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload for a payment no longer open is received unassigned`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload naming no known payment is unassigned, not matched by amount`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > a token from another mint never claims the payment that holds its receive`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload from another mint is shown on its payment but never counted`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload for a payment no longer open is received unassigned`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload naming no known payment is unassigned, not matched by amount`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > a token from another mint never claims the payment that holds its receive`

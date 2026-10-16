@@ -49,8 +49,8 @@ URLs already.
 
 ## Enforced by
 
-- `src/core/evolu/device-account.test.ts > deriveDeviceAccountId > is the same for a master key every time, and differs between keys`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > adding the same account twice at once writes one row`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > re-adding a removed account revives its row, name and transports`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > selecting an existing account leaves its name and transports alone`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > an account stored under a random id from before is selected, not duplicated`
+- `packages/core/src/evolu/device-account.test.ts > deriveDeviceAccountId > is the same for a master key every time, and differs between keys`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > adding the same account twice at once writes one row`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > re-adding a removed account revives its row, name and transports`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > selecting an existing account leaves its name and transports alone`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > an account stored under a random id from before is selected, not duplicated`

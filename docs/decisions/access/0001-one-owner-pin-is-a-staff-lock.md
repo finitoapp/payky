@@ -69,15 +69,15 @@ keeps staff and customers at the counter out. It does not stop an attacker.
 
 ## Enforced by
 
-- `src/core/modules/access/access-actions.test.ts > enableAccessControl > turns access control on with the PIN and the wizard's defaults in one go`
-- `src/core/modules/access/access-actions.test.ts > enableAccessControl > turning it off keeps the PIN, and on again can reuse it`
-- `src/core/modules/access/access-actions.test.ts > enableAccessControl > cannot reuse a PIN that was never set`
-- `src/core/modules/access/access-actions.test.ts > enterPin > a changed PIN replaces the old one`
-- `src/core/modules/access/access-utils.test.ts > PinSchema > accepts %s`
-- `src/core/modules/access/access-utils.test.ts > PinSchema > rejects %s`
-- `src/core/modules/access/access-utils.test.ts > PIN hash > treats %s as no PIN`
-- `src/core/modules/access/access-utils.test.ts > effectivePermissions > are the defaults without the PIN`
-- `src/core/modules/access/access-utils.test.ts > effectivePermissions > are every permission with a PIN session`
-- `src/core/modules/access/access-utils.test.ts > effectivePermissions > are every permission while access control is off`
-- `e2e/access.spec.ts > turning access control on with the wizard locks what the device was not given`
-- `e2e/access-gates.spec.ts > an Owner device still needs the PIN to change it, to turn access control off and to unblock`
+- `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > turns access control on with the PIN and the wizard's defaults in one go`
+- `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > turning it off keeps the PIN, and on again can reuse it`
+- `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > cannot reuse a PIN that was never set`
+- `packages/core/src/modules/access/access-actions.test.ts > enterPin > a changed PIN replaces the old one`
+- `packages/core/src/modules/access/access-utils.test.ts > PinSchema > accepts %s`
+- `packages/core/src/modules/access/access-utils.test.ts > PinSchema > rejects %s`
+- `packages/core/src/modules/access/access-utils.test.ts > PIN hash > treats %s as no PIN`
+- `packages/core/src/modules/access/access-utils.test.ts > effectivePermissions > are the defaults without the PIN`
+- `packages/core/src/modules/access/access-utils.test.ts > effectivePermissions > are every permission with a PIN session`
+- `packages/core/src/modules/access/access-utils.test.ts > effectivePermissions > are every permission while access control is off`
+- `apps/web-app/e2e/access.spec.ts > turning access control on with the wizard locks what the device was not given`
+- `apps/web-app/e2e/access-gates.spec.ts > an Owner device still needs the PIN to change it, to turn access control off and to unblock`

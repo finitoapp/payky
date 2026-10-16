@@ -114,15 +114,15 @@ jobs:
           PAYKY_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           bun run cap:android:sync
-          bun cap build android --androidreleasetype APK --signing-type apksigner --keystorepath ../payky-release.keystore --keystorepass "${PAYKY_ANDROID_KEYSTORE_PASSWORD}" --keystorealias "${PAYKY_ANDROID_KEY_ALIAS}" --keystorealiaspass "${PAYKY_ANDROID_KEY_PASSWORD}"
-          bun cap build android --androidreleasetype AAB --keystorepath ../payky-release.keystore --keystorepass "${PAYKY_ANDROID_KEYSTORE_PASSWORD}" --keystorealias "${PAYKY_ANDROID_KEY_ALIAS}" --keystorealiaspass "${PAYKY_ANDROID_KEY_PASSWORD}"
+          bun run cap build android --androidreleasetype APK --signing-type apksigner --keystorepath ../../../payky-release.keystore --keystorepass "${PAYKY_ANDROID_KEYSTORE_PASSWORD}" --keystorealias "${PAYKY_ANDROID_KEY_ALIAS}" --keystorealiaspass "${PAYKY_ANDROID_KEY_PASSWORD}"
+          bun run cap build android --androidreleasetype AAB --keystorepath ../../../payky-release.keystore --keystorepass "${PAYKY_ANDROID_KEYSTORE_PASSWORD}" --keystorealias "${PAYKY_ANDROID_KEY_ALIAS}" --keystorealiaspass "${PAYKY_ANDROID_KEY_PASSWORD}"
 
       - name: Upload to Google Play internal track
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: me.payky
-          releaseFiles: android/app/build/outputs/bundle/**/*-signed.aab
+          releaseFiles: apps/native-shell/android/app/build/outputs/bundle/**/*-signed.aab
           tracks: internal
           status: completed
 
@@ -134,5 +134,5 @@ jobs:
           # Only the signed APK: the landing page links its stable
           # releases/latest/download/app-release-signed.apk address.
           files: |
-            android/app/build/outputs/apk/**/*-signed.apk
+            apps/native-shell/android/app/build/outputs/apk/**/*-signed.apk
           fail_on_unmatched_files: true

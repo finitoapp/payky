@@ -30,7 +30,7 @@ leaves the token to Linky's own deferral or to the merchant.
 
 ## Enforced by
 
-- `src/core/cashu/cashu-receive.test.ts > receiveCashuToken > an unreachable mint writes nothing`
-- `src/core/cashu/cashu-receive.test.ts > receiveCashuToken > a spent token writes nothing`
-- `src/core/cashu/cashu-receive.test.ts > receiveCashuToken > someone else got there first > Linky received it: done, nothing written`
-- `src/core/cashu/cashu-receive.test.ts > receiveCashuToken > someone else got there first > a receive Linky has pending: nothing is written, never failed`
+- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > an unreachable mint writes nothing`
+- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > a spent token writes nothing`
+- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > someone else got there first > Linky received it: done, nothing written`
+- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > someone else got there first > a receive Linky has pending: nothing is written, never failed`

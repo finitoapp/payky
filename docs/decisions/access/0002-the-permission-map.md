@@ -80,11 +80,11 @@ migration of stored sets.
 
 ## Enforced by
 
-- `src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > clearing the cart needs discard`
-- `src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > undoing an added line needs discard, since it writes a remove`
-- `src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > adding a line needs no discard`
-- `e2e/access.spec.ts > a refund raises the one-shot PIN prompt naming the permission it needs`
-- `e2e/access-gates.spec.ts > every cart write that takes items off the bill asks a Basic device for the PIN`
-- `e2e/access-gates.spec.ts > cancelling a payment and confirming money by hand ask a Basic device for the PIN`
-- `e2e/bill.spec.ts > shows the right message for a closed or missing bill`
-- `e2e/bill.spec.ts > locks a bill while its payment is pending, and unlocks it once that payment is canceled`
+- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > clearing the cart needs discard`
+- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > undoing an added line needs discard, since it writes a remove`
+- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > adding a line needs no discard`
+- `apps/web-app/e2e/access.spec.ts > a refund raises the one-shot PIN prompt naming the permission it needs`
+- `apps/web-app/e2e/access-gates.spec.ts > every cart write that takes items off the bill asks a Basic device for the PIN`
+- `apps/web-app/e2e/access-gates.spec.ts > cancelling a payment and confirming money by hand ask a Basic device for the PIN`
+- `apps/web-app/e2e/bill.spec.ts > shows the right message for a closed or missing bill`
+- `apps/web-app/e2e/bill.spec.ts > locks a bill while its payment is pending, and unlocks it once that payment is canceled`

@@ -40,9 +40,9 @@ operation from a device offline for a week arrives under a week-old time.
 
 ## Enforced by
 
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > books a settled topup once and claims the payment that holds its quote`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > never rewrites what it booked`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > books a topup Linky settled, and claims the payment`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > an operation that arrives late with an old time is still booked, and stays unclaimed when no payment holds it`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > a new device books only the last month of an existing wallet`
-- `src/core/background-jobs/jobs/cashu-account-sync-job.test.ts > cashu account sync job > settles a paid Cashu payment: claims the quote, books the topup, claims the payment`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > books a settled topup once and claims the payment that holds its quote`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > never rewrites what it booked`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > books a topup Linky settled, and claims the payment`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > an operation that arrives late with an old time is still booked, and stays unclaimed when no payment holds it`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > a new device books only the last month of an existing wallet`
+- `packages/core/src/background-jobs/jobs/cashu-account-sync-job.test.ts > cashu account sync job > settles a paid Cashu payment: claims the quote, books the topup, claims the payment`

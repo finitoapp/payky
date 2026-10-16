@@ -36,7 +36,7 @@ fails to load.
 
 ## Enforced by
 
-- `src/core/evolu/device-account.test.ts > storableNostrPicture > keeps an https picture and drops data, http and overlong ones`
+- `packages/core/src/evolu/device-account.test.ts > storableNostrPicture > keeps an https picture and drops data, http and overlong ones`
 
 That inactive accounts are never fetched is structural rather than tested:
 the list reads them from the device database only, and the one relay read,

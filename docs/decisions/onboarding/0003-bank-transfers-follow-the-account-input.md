@@ -40,6 +40,6 @@ onboarding; an unfinished account number must be fixed or cleared.
 
 ## Enforced by
 
-- `e2e/onboarding.spec.ts > the payment methods step derives bank transfers from the account input`
-- `e2e/onboarding.spec.ts > bank account format switching is only offered for a saved Czech account`
-- `src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > opens on the first enabled method when bank transfer is off`
+- `apps/web-app/e2e/onboarding.spec.ts > the payment methods step derives bank transfers from the account input`
+- `apps/web-app/e2e/onboarding.spec.ts > bank account format switching is only offered for a saved Czech account`
+- `apps/web-app/src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > opens on the first enabled method when bank transfer is off`

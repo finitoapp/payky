@@ -1,0 +1,45 @@
+import type { IndexesConfig } from "@evolu/common/local-first"
+
+import { DeviceId } from "../device/device-types.ts"
+import { PaymentId } from "../payment/payment-types.ts"
+import { PaymentLineId } from "../payment-line/payment-line-types.ts"
+import {
+  FiatCurrencySchema,
+  type InferTable,
+  NonNegativeIntegerSchema,
+  PositiveNumberSchema,
+  SqliteTrueSchema,
+  TimestampMsSchema,
+} from "../shared/schema.ts"
+import { RefundId, RefundLineId, RefundMethodSchema } from "./refund-types.ts"
+
+export const refund = {
+  id: RefundId,
+  paymentId: PaymentId,
+  deviceId: DeviceId.nullable(),
+  amount: NonNegativeIntegerSchema,
+  currency: FiatCurrencySchema,
+  method: RefundMethodSchema,
+  refundedAt: TimestampMsSchema,
+  isTip: SqliteTrueSchema.nullable(),
+} as const
+
+export const refundLine = {
+  id: RefundLineId,
+  refundId: RefundId,
+  paymentId: PaymentId,
+  paymentLineId: PaymentLineId,
+  quantity: PositiveNumberSchema,
+  amount: NonNegativeIntegerSchema,
+} as const
+
+export const refundIndexes = ((create) => [
+  create("refund_paymentId").on("refund").column("paymentId"),
+  create("refund_deviceId").on("refund").column("deviceId"),
+  // The sales statistics count a refund on the day it was paid out.
+  create("refund_refundedAt").on("refund").column("refundedAt"),
+  create("refundLine_paymentId").on("refundLine").column("paymentId"),
+]) satisfies IndexesConfig
+
+export type RefundRow = InferTable<typeof refund>
+export type RefundLineRow = InferTable<typeof refundLine>

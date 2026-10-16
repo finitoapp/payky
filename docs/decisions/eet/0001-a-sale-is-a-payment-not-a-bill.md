@@ -32,10 +32,10 @@ reverses a payment's sales, not a bill's.
 
 ## Enforced by
 
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports each payment of a bill paid in two payments`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports a keypad Lightning payment without a bill`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment settled before EET was enabled`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment settled while EET was disabled`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment with no device`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > refunding the second payment of an overpaid bill reverses only its sale`
-- `e2e/eet.spec.ts > the bill detail shows the EET status of each payment`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports each payment of a bill paid in two payments`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports a keypad Lightning payment without a bill`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment settled before EET was enabled`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment settled while EET was disabled`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > never reports a payment with no device`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > refunding the second payment of an overpaid bill reverses only its sale`
+- `apps/web-app/e2e/eet.spec.ts > the bill detail shows the EET status of each payment`

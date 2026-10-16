@@ -43,6 +43,6 @@ relays for the active account's profile only, as account/0004 allows.
 
 ## Enforced by
 
-- `src/core/modules/payment/payment-iban-qr-payload-utils.test.ts > payment IBAN QR payload utils > recipient name > names the profile as the recipient`
-- `src/core/modules/payment/payment-iban-qr-payload-utils.test.ts > payment IBAN QR payload utils > recipient name > leaves SPAYD without a recipient and names the bank account in Pay by square when the profile has no name`
-- `src/core/modules/payment/payment-iban-qr-payload-utils.test.ts > payment IBAN QR payload utils > recipient name > keeps the SPAYD recipient to 35 characters and encodes the field separator`
+- `packages/core/src/modules/payment/payment-iban-qr-payload-utils.test.ts > payment IBAN QR payload utils > recipient name > names the profile as the recipient`
+- `packages/core/src/modules/payment/payment-iban-qr-payload-utils.test.ts > payment IBAN QR payload utils > recipient name > leaves SPAYD without a recipient and names the bank account in Pay by square when the profile has no name`
+- `packages/core/src/modules/payment/payment-iban-qr-payload-utils.test.ts > payment IBAN QR payload utils > recipient name > keeps the SPAYD recipient to 35 characters and encodes the field separator`

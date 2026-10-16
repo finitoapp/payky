@@ -49,14 +49,14 @@ nothing writes it back, since that would add a second writer.
 
 ## Enforced by
 
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records an outgoing Lightning payment with its preimage once, fee included, under its transfer id`
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > skips an outgoing Lightning payment without a preimage`
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records a bare Spark-fallback withdrawal through the withdrawal check, once`
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records a Spark-fallback withdrawal with a Spark invoice once, between the sweep and the check`
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records a Lightning withdrawal whose transfer is older than the sweep's window`
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > checks a withdrawal made after the sweep without waiting for the next one`
-- `src/core/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job > ignores completed Spark transfers without a Spark or BOLT11 invoice`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > on-chain resolution > “the money left” records the movement with the amount and the quoted fee`
-- `src/core/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > records a completed Spark fallback payment`
-- `src/core/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > waits for a completed SSP payment without a preimage`
-- `src/core/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > waits for a completed SSP payment whose user request is still missing`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records an outgoing Lightning payment with its preimage once, fee included, under its transfer id`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > skips an outgoing Lightning payment without a preimage`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records a bare Spark-fallback withdrawal through the withdrawal check, once`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records a Spark-fallback withdrawal with a Spark invoice once, between the sweep and the check`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > records a Lightning withdrawal whose transfer is older than the sweep's window`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job, withdrawals > checks a withdrawal made after the sweep without waiting for the next one`
+- `packages/core/src/background-jobs/jobs/spark-account-transaction-sync-job.test.ts > spark account transaction sync job > ignores completed Spark transfers without a Spark or BOLT11 invoice`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > on-chain resolution > “the money left” records the movement with the amount and the quoted fee`
+- `packages/core/src/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > records a completed Spark fallback payment`
+- `packages/core/src/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > waits for a completed SSP payment without a preimage`
+- `packages/core/src/modules/withdraw/withdraw-utils.test.ts > classifyPendingWithdrawal > waits for a completed SSP payment whose user request is still missing`

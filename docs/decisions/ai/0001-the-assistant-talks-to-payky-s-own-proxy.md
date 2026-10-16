@@ -5,7 +5,7 @@ Date: 2026-10-05
 
 ## Context
 
-The assistant (`src/core/ai/assistant.ts`) needs a language model, and the
+The assistant (`packages/core/src/ai/assistant.ts`) needs a language model, and the
 web app cannot hold a provider's API key: anything shipped to the browser
 or the native app is public. The provider and the model should also change
 with a deploy rather than with an app release. The assistant's tools read
@@ -63,8 +63,8 @@ provider without an OpenAI-compatible API needs a translating proxy first.
 
 ## Enforced by
 
-- `api/ai/v1/chat/completions.test.ts > handleAiChatRequest > rejects a request with %s`
-- `api/ai/v1/chat/completions.test.ts > handleAiChatRequest > sends the request upstream with the server's key and model, its tokens capped`
-- `api/ai/v1/chat/completions.test.ts > handleAiChatRequest > streams the upstream reply through unchanged`
-- `api/ai/v1/chat/completions.test.ts > handleAiChatRequest > passes an upstream error through with its status`
-- `api/ai/v1/chat/completions.test.ts > handleAiChatRequest > answers a CORS preflight and refuses other methods`
+- `apps/web-app/api/ai/v1/chat/completions.test.ts > handleAiChatRequest > rejects a request with %s`
+- `apps/web-app/api/ai/v1/chat/completions.test.ts > handleAiChatRequest > sends the request upstream with the server's key and model, its tokens capped`
+- `apps/web-app/api/ai/v1/chat/completions.test.ts > handleAiChatRequest > streams the upstream reply through unchanged`
+- `apps/web-app/api/ai/v1/chat/completions.test.ts > handleAiChatRequest > passes an upstream error through with its status`
+- `apps/web-app/api/ai/v1/chat/completions.test.ts > handleAiChatRequest > answers a CORS preflight and refuses other methods`

@@ -40,10 +40,10 @@ that is the recipient's choice of provider.
 
 ## Enforced by
 
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects a callback that is not https`
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > accepts an invoice whatever its description_hash`
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects an invoice for a different amount`
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects a non-mainnet invoice`
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects an expired invoice`
-- `src/core/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > reads an LNURL encoding a Lightning address as that address %#`
-- `src/core/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > refuses an LNURL that is no Lightning address %#`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects a callback that is not https`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > accepts an invoice whatever its description_hash`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects an invoice for a different amount`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects a non-mainnet invoice`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects an expired invoice`
+- `packages/core/src/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > reads an LNURL encoding a Lightning address as that address %#`
+- `packages/core/src/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > refuses an LNURL that is no Lightning address %#`

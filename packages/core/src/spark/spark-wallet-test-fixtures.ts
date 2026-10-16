@@ -1,0 +1,23 @@
+import type { SparkPaymentWallet } from "./spark-wallet.ts"
+
+const notImplemented = (): never => {
+  throw new Error("not implemented")
+}
+
+export const createFakeSparkWallet = (
+  overrides: Partial<SparkPaymentWallet>
+): SparkPaymentWallet => ({
+  createLightningInvoice: notImplemented,
+  getWalletSettings: notImplemented,
+  setPrivacyEnabled: notImplemented,
+  getBalance: notImplemented,
+  getWithdrawalFeeQuote: notImplemented,
+  withdraw: notImplemented,
+  getLightningSendFeeEstimate: notImplemented,
+  payLightningInvoice: notImplemented,
+  getTransfer: notImplemented,
+  getIdentityPublicKey: notImplemented,
+  getCoopExitRequest: notImplemented,
+  [Symbol.asyncDispose]: async () => {},
+  ...overrides,
+})

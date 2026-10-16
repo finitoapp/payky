@@ -30,6 +30,6 @@ it below the rounded charge.
 
 ## Enforced by
 
-- `src/core/modules/payment/payment-cash-utils.test.ts > roundCashAmount > rounds %i CZK minor units to %i`
-- `src/core/modules/payment/payment-cash-utils.test.ts > roundCashAmount > keeps any other currency exact`
-- `src/core/modules/payment/payment-actions.test.ts > payment actions > cash received > refuses less than the charge rounded to whole crowns`
+- `packages/core/src/modules/payment/payment-cash-utils.test.ts > roundCashAmount > rounds %i CZK minor units to %i`
+- `packages/core/src/modules/payment/payment-cash-utils.test.ts > roundCashAmount > keeps any other currency exact`
+- `packages/core/src/modules/payment/payment-actions.test.ts > payment actions > cash received > refuses less than the charge rounded to whole crowns`

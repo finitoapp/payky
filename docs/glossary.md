@@ -65,11 +65,11 @@ where it is specified; the specification wins over this page.
 
 The word "account" means two unrelated things here.
 
-- **Account** (`src/core/modules/account`, app database) — a place money goes
+- **Account** (`packages/core/src/modules/account`, app database) — a place money goes
   to: `iban`, `spark`, `cashRegister` or `cardSwitchio`. The UI calls these
   payment methods (`settings.paymentAccounts.*`).
 - **Device account** (`account` in the device database,
-  `src/core/evolu/device-account.ts`) — one merchant's whole synced dataset
+  `packages/core/src/evolu/device-account.ts`) — one merchant's whole synced dataset
   held on this device, identified by its master key. The UI calls it the app
   account (`settings.accounts.*`). A **demo account** is a device account
   that never syncs (`docs/decisions/demo-data/0001`).
@@ -114,4 +114,4 @@ The word "account" means two unrelated things here.
 - **FIO** — the Czech bank whose API the IBAN sync job reads.
 - **EET** — Czech electronic registration of sales (`docs/eet.md`).
 - **Switchio** — the SwitchioPay card terminal app, driven through Android
-  intents (`src/core/native/switchio.ts`).
+  intents (`apps/web-app/src/platform/switchio.ts`).

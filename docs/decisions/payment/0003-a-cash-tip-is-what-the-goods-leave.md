@@ -47,8 +47,8 @@ reversed.
 
 ## Enforced by
 
-- `src/core/modules/payment/payment-cash-utils.test.ts > deriveReceivedTipAmount > takes $tipReceived as the tip of $amount with $tip tip and $received received`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > reports the goods in whole crowns when cash takes part of the tip`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses no more of a tip than its refund returned`
-- `src/core/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > split cash into the goods in whole crowns and the tip`
-- `src/core/modules/refund/refund-utils.test.ts > deriveRefundableTipAmount > offers the tip the cash brought above the goods in whole crowns`
+- `packages/core/src/modules/payment/payment-cash-utils.test.ts > deriveReceivedTipAmount > takes $tipReceived as the tip of $amount with $tip tip and $received received`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > reports the goods in whole crowns when cash takes part of the tip`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses no more of a tip than its refund returned`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > split cash into the goods in whole crowns and the tip`
+- `packages/core/src/modules/refund/refund-utils.test.ts > deriveRefundableTipAmount > offers the tip the cash brought above the goods in whole crowns`

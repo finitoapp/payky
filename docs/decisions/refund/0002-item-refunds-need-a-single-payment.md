@@ -28,7 +28,7 @@ counts here, though the payment's status ignores it.
 
 ## Enforced by
 
-- `src/core/modules/refund/refund-actions.test.ts > refundPayment > returns one of two beers and offers the rest`
-- `src/core/modules/refund/refund-actions.test.ts > refundPayment > offers only an amount for a bill paid by two payments`
-- `src/core/modules/refund/refund-utils.test.ts > deriveRefundableLines > leaves out tips and what was already refunded`
-- `src/core/modules/refund/refund-utils.test.ts > calculateRefundLineAmount > returns the rest of the line without a rounding remainder`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refundPayment > returns one of two beers and offers the rest`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refundPayment > offers only an amount for a bill paid by two payments`
+- `packages/core/src/modules/refund/refund-utils.test.ts > deriveRefundableLines > leaves out tips and what was already refunded`
+- `packages/core/src/modules/refund/refund-utils.test.ts > calculateRefundLineAmount > returns the rest of the line without a rounding remainder`

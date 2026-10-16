@@ -1,10 +1,10 @@
 import { execFile } from "node:child_process"
 import { readdir, readFile } from "node:fs/promises"
-import { join, relative } from "node:path"
+import { join, relative, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
+import { jsonCodec } from "@payky/core/zod-utils"
 import { z } from "zod"
-
-import { jsonCodec } from "@/zod-utils.ts"
 
 import {
   findDecisionProblems,
@@ -12,7 +12,8 @@ import {
   readDecisionRecord,
 } from "./decisions.ts"
 
-const decisionsDirectory = "docs/decisions"
+const repositoryRoot = resolve(import.meta.dirname, "..")
+const decisionsDirectory = join(repositoryRoot, "docs/decisions")
 
 const run = promisify(execFile)
 
@@ -43,11 +44,12 @@ const PlaywrightListSchema = z.object({
 
 const listUnitTestIds = async (): Promise<ReadonlyArray<string>> => {
   const { stdout } = await run("bunx", ["vitest", "list", "--json"], {
+    cwd: repositoryRoot,
     maxBuffer: 64 * 1024 * 1024,
   })
   return z
     .decode(jsonCodec(VitestListSchema), stdout)
-    .map(({ name, file }) => `${relative(process.cwd(), file)} > ${name}`)
+    .map(({ name, file }) => `${relative(repositoryRoot, file)} > ${name}`)
 }
 
 const listSuiteTestIds = (
@@ -57,7 +59,7 @@ const listSuiteTestIds = (
 ): ReadonlyArray<string> => [
   ...suite.specs.map(
     (spec) =>
-      `${relative(process.cwd(), join(rootDir, suite.file))} > ${[...titles, spec.title].join(" > ")}`
+      `${relative(repositoryRoot, join(rootDir, suite.file))} > ${[...titles, spec.title].join(" > ")}`
   ),
   ...(suite.suites ?? []).flatMap((child) =>
     listSuiteTestIds(child, [...titles, child.title], rootDir)
@@ -66,9 +68,17 @@ const listSuiteTestIds = (
 
 const listEndToEndTestIds = async (): Promise<ReadonlyArray<string>> => {
   const { stdout } = await run(
-    "bunx",
-    ["playwright", "test", "--list", "--reporter=json"],
-    { maxBuffer: 64 * 1024 * 1024 }
+    "node",
+    [
+      "--conditions=development",
+      fileURLToPath(import.meta.resolve("@playwright/test/cli")),
+      "test",
+      "--config",
+      "apps/web-app/playwright.config.ts",
+      "--list",
+      "--reporter=json",
+    ],
+    { cwd: repositoryRoot, maxBuffer: 64 * 1024 * 1024 }
   )
   const { config, suites } = z.decode(jsonCodec(PlaywrightListSchema), stdout)
   return suites.flatMap((suite) => listSuiteTestIds(suite, [], config.rootDir))

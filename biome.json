@@ -1,8 +1,12 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "files": {
     "includes": [
-      "**",
+      "apps/**",
+      "packages/**",
+      "bin/**",
+      "*.json",
+      "*.ts",
       "!dist",
       "!.vite",
       "!.ai",
@@ -11,11 +15,20 @@
       "!coverage",
       "!playwright-report",
       "!test-results",
-      "!android",
-      "!ios",
-      "!src/routeTree.gen.ts",
-      "!remotion/public/generated",
-      "!docs/videos"
+      "!apps/native-shell/android",
+      "!apps/native-shell/ios",
+      "!apps/web-app/src/routeTree.gen.ts",
+      "!apps/web-app/remotion/public/generated",
+      "!docs/videos",
+      "!**/dist",
+      "!**/dist-ssr",
+      "!**/node_modules",
+      "!**/coverage",
+      "!**/test-results",
+      "!**/playwright-report",
+      "!apps/web-app/src/components/ui",
+      "!apps/web-app/src/components/reui",
+      "!**/*.tsbuildinfo"
     ]
   },
   "formatter": {
@@ -53,7 +66,9 @@
         "noExplicitAny": "error",
         "noDoubleEquals": {
           "level": "error",
-          "options": { "ignoreNull": false }
+          "options": {
+            "ignoreNull": false
+          }
         }
       }
     }
@@ -65,12 +80,10 @@
       }
     }
   },
-  "overrides": [
-    {
-      "includes": ["src/components/ui/chart.tsx"],
-      "formatter": { "enabled": false },
-      "linter": { "enabled": false },
-      "assist": { "enabled": false }
-    }
-  ]
+  "overrides": [],
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  }
 }

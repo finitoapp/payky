@@ -46,11 +46,11 @@ counts as added, since it was not on the device.
 
 ## Enforced by
 
-- `src/core/evolu/device-account.test.ts > deriveDeviceAccountId > is the same for a master key every time, and differs between keys`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > adding the same account twice at once writes one row`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > re-adding a removed account revives its row, name and transports`
-- `src/core/evolu/device-account.test.ts > createOrSelectAccount > selecting an existing account leaves its name and transports alone`
-- `src/core/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > moves an account onto its derived id with its name, transports and last use`
-- `src/core/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > collapses duplicates of one account into one, named after the most recently used`
-- `src/core/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > a removed account moves as a removed row, and re-adding it revives its name`
-- `src/core/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > is reached through the device registry`
+- `packages/core/src/evolu/device-account.test.ts > deriveDeviceAccountId > is the same for a master key every time, and differs between keys`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > adding the same account twice at once writes one row`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > re-adding a removed account revives its row, name and transports`
+- `packages/core/src/evolu/device-account.test.ts > createOrSelectAccount > selecting an existing account leaves its name and transports alone`
+- `packages/core/src/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > moves an account onto its derived id with its name, transports and last use`
+- `packages/core/src/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > collapses duplicates of one account into one, named after the most recently used`
+- `packages/core/src/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > a removed account moves as a removed row, and re-adding it revives its name`
+- `packages/core/src/migrations/device-account-derived-id-migration.test.ts > device account derived id migration > is reached through the device registry`

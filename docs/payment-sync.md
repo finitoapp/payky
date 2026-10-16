@@ -49,7 +49,7 @@ repair rows created before this batching existed.
 | Cold-start scan | 2 months back (`FIO_FIRST_SYNC_LOOKBACK_MONTHS`) | unbounded (full history) |
 | Advisory lock key | `fio-transaction-{accountId}-{bankReference}` | `spark-transfer-{id}` |
 | Queue keys per session | `"sync"` (single) | `"history"` + `` `transfer:${id}` `` (multi) |
-| Manual pointer edit | Settings UI only | Settings UI + CLI (`bin/cli-accounts.ts set/reset-spark-sync-pointer`) |
+| Manual pointer edit | Settings UI only | Settings UI + CLI (`apps/cli/src/cli-accounts.ts set/reset-spark-sync-pointer`) |
 
 Both locks use `{ ifAvailable: true }` — skip on contention, never wait.
 Both pointers are wall-clock values (sync start time), not derived from any

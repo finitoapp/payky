@@ -63,15 +63,15 @@ language and would hide its labels from search engines and screen readers.
 ## Consequences
 
 `bun run build` writes `landing-tech-<language>.html` beside the other six
-files; `vercel.json`, `landingPagesPlugin` and `sitemap.xml` know the three
+files; `apps/web-app/vercel.json`, `landingPagesPlugin` and `sitemap.xml` know the three
 addresses. The section components the EET page and this page share (`Band`,
 `SectionHeading`, `IconGrid`) live in `landing-parts.tsx`.
 
 ## Enforced by
 
-- `src/landing-server.test.tsx > renderLandingDocument > prerenders the page on how Payky works in %s at its own address`
-- `src/landing-server.test.tsx > renderLandingDocument > links the languages of the page on how Payky works to each other`
-- `src/landing-server.test.tsx > renderLandingDocument > describes the FAQ of the page on how Payky works for search results and shows its answers`
-- `src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
-- `src/landing-server.test.tsx > renderLandingDocument > leads from the home page and the footer of every landing page to the page on how Payky works`
-- `src/features/shared/landing-redirect.test.ts > isLandingTechPath > reads %s as the page on how Payky works: %s`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > prerenders the page on how Payky works in %s at its own address`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > links the languages of the page on how Payky works to each other`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > describes the FAQ of the page on how Payky works for search results and shows its answers`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > leads from the home page and the footer of every landing page to the page on how Payky works`
+- `apps/web-app/src/features/shared/landing-redirect.test.ts > isLandingTechPath > reads %s as the page on how Payky works: %s`

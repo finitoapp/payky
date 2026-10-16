@@ -32,4 +32,4 @@ A device without `admin` sees the Cashu tab on the payment screen, which is
 
 ## Enforced by
 
-- `src/router.test.ts > _terminal route access (access/0003) > every route declares a permission or free, layouts included`
+- `apps/web-app/src/router.test.ts > _terminal route access (access/0003) > every route declares a permission or free, layouts included`

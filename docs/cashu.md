@@ -861,8 +861,9 @@ These are the union and lookup tables:
 - The landing "how it works" page (`landing-tech-page.tsx`,
   `landing-tech-diagrams.tsx`, the `landing.tech.services.*` keys).
 
-Onboarding is unchanged: its "btc" choice keeps enabling Spark, and Cashu is
-enabled in settings.
+Onboarding enables cash and Spark automatically and places Cashu immediately
+after Spark in the method order. Cashu is enabled in settings
+(`onboarding/0006`).
 
 ### 9. Docs and decisions
 

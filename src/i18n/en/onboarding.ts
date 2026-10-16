@@ -141,7 +141,6 @@ export const enOnboarding = {
     "This new account will be discarded and you'll switch back to {name}.",
   "onboarding.cancelSetup.confirm.title": "Cancel account creation?",
   "onboarding.finishWithoutBankTransfer": "Start without bank transfers",
-  "onboarding.payments.methodsTitle": "Payment methods",
   "onboarding.businessName.placeholder": "Linden Café",
   "onboarding.businessName.label": "Business name (optional)",
   "onboarding.businessName.description":
@@ -155,16 +154,11 @@ export const enOnboarding = {
     "Continue without publishing the name",
   "onboarding.finish": "Start using Payky",
   "onboarding.language.title": "Choose language",
-  "onboarding.payments.btc.description": "Accept payments over Lightning.",
-  "onboarding.payments.btc.title": "We accept Bitcoin",
-  "onboarding.payments.cash.description": "Record cash payments.",
-  "onboarding.payments.cash.title": "We accept cash",
   "onboarding.payments.description":
     "You can change everything in settings at any time.",
   "onboarding.payments.iban.description":
     "Enter an account number or IBAN to accept payments with a QR code.",
   "onboarding.payments.iban.title": "Bank account (optional)",
-  "onboarding.payments.required": "Choose at least one payment method.",
   "onboarding.payments.title": "Business setup",
   "onboarding.restore.action": "Restore account",
   "onboarding.restore.description":

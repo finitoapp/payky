@@ -47,17 +47,13 @@ import { LanguageSelect } from "@/features/onboarding/language-select.tsx"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
-  type OnboardingPaymentMethod,
   type OnboardingStep,
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
 import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/account-choice-step.tsx"
 import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-step.tsx"
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"
-import {
-  getDefaultPaymentMethodForOnboarding,
-  onboardingPaymentMethodOrder,
-} from "@/features/onboarding/onboarding-utils.ts"
+import { onboardingPaymentMethodOrder } from "@/features/onboarding/onboarding-utils.ts"
 import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
 import { markAppEntered } from "@/features/shared/landing-redirect.ts"
@@ -114,13 +110,7 @@ export function OnboardingPage({
     .filter((account) => account.id !== activeAccount.id)
     .sort((a, b) => b.lastUseAt - a.lastUseAt)[0]
 
-  const {
-    step,
-    accountType,
-    businessName,
-    iban,
-    paymentMethods: selectedPaymentMethods,
-  } = form
+  const { step, accountType, businessName, iban } = form
   const onboardingSteps = getOnboardingSteps(accountType)
   const pending = finishing || restoring || cancelingSetup
 
@@ -133,11 +123,6 @@ export function OnboardingPage({
     submitAttempted && ibanInvalid
       ? "settings.fiatBankAccount.iban.invalid"
       : null
-
-  const hasPaymentMethod =
-    selectedPaymentMethods.size > 0 || ibanParseResult?.success === true
-  const paymentMethodsError: TranslationKey | null =
-    submitAttempted && !hasPaymentMethod ? "onboarding.payments.required" : null
 
   const nameParseResult =
     businessName.trim() === ""
@@ -179,27 +164,12 @@ export function OnboardingPage({
     }
   }
 
-  const togglePaymentMethod = (
-    method: OnboardingPaymentMethod,
-    checked: boolean
-  ) => {
-    setForm((current) => {
-      const nextMethods = new Set(current.paymentMethods)
-      if (checked) {
-        nextMethods.add(method)
-      } else {
-        nextMethods.delete(method)
-      }
-      return { ...current, paymentMethods: nextMethods }
-    })
-  }
-
   const finishOnboarding = async (skipProfile = false) => {
     if (pending) return
     // Onboarding finishes on the payments step, so the IBAN is checked here
     // rather than when leaving it. The recovery phrase is not asked about:
     // it stays in Settings > Security (onboarding/0002).
-    if (ibanInvalid || nameInvalid || !hasPaymentMethod) {
+    if (ibanInvalid || nameInvalid) {
       setSubmitAttempted(true)
       return
     }
@@ -237,16 +207,11 @@ export function OnboardingPage({
           // changes it in Settings.
           country: "CZ",
           currency: FiatCurrency.CZK,
-          cash: selectedPaymentMethods.has("cash"),
-          btc: selectedPaymentMethods.has("btc"),
           iban:
             ibanEnabled && ibanParseResult?.success
               ? ibanParseResult.data
               : null,
-          defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
-            selectedPaymentMethods,
-            ibanEnabled
-          ),
+          defaultPaymentMethod: onboardingPaymentMethodOrder[0],
           paymentMethodOrderJson: z.encode(
             PaymentMethodOrderJson,
             onboardingPaymentMethodOrder
@@ -254,11 +219,7 @@ export function OnboardingPage({
         })
       )
       // An onboarded account leaves through the redirect effect above.
-      if (!finished.ok) {
-        return finished.error.type === "OnboardingPaymentMethodRequired"
-          ? "onboarding.payments.required"
-          : "onboarding.alreadyOnboarded"
-      }
+      if (!finished.ok) return "onboarding.alreadyOnboarded"
       setForm(initialOnboardingFormState)
       await navigate({ to: "/", replace: true })
     })
@@ -408,13 +369,10 @@ export function OnboardingPage({
                 iban={iban}
                 ibanError={ibanError}
                 ibanInputId={ibanInputId}
-                paymentMethods={selectedPaymentMethods}
-                paymentMethodsError={paymentMethodsError}
                 pending={pending}
                 onIbanChange={(nextIban) => {
                   setForm((current) => ({ ...current, iban: nextIban }))
                 }}
-                onTogglePaymentMethod={togglePaymentMethod}
               />
               {profilePublishFailed ? (
                 <Alert variant="destructive">

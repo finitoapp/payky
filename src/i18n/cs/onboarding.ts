@@ -143,7 +143,6 @@ export const csOnboarding = {
     "Tento nový účet bude zahozen a přepnete se zpět na {name}.",
   "onboarding.cancelSetup.confirm.title": "Zrušit vytváření účtu?",
   "onboarding.finishWithoutBankTransfer": "Začít bez bankovních převodů",
-  "onboarding.payments.methodsTitle": "Platební metody",
   "onboarding.businessName.placeholder": "Kavárna U Lípy",
   "onboarding.businessName.label": "Název podniku (volitelné)",
   "onboarding.businessName.description":
@@ -157,15 +156,10 @@ export const csOnboarding = {
     "Pokračovat bez zveřejnění názvu",
   "onboarding.finish": "Začít používat Payky",
   "onboarding.language.title": "Výběr jazyka",
-  "onboarding.payments.btc.description": "Platby přes Lightning.",
-  "onboarding.payments.btc.title": "Přijímáme bitcoin",
-  "onboarding.payments.cash.description": "Evidence hotovostních plateb.",
-  "onboarding.payments.cash.title": "Přijímáme hotovost",
   "onboarding.payments.description": "Vše můžete kdykoliv změnit v nastavení.",
   "onboarding.payments.iban.description":
     "Zadejte číslo účtu nebo IBAN pro příjem plateb pomocí QR kódu.",
   "onboarding.payments.iban.title": "Bankovní účet (volitelné)",
-  "onboarding.payments.required": "Vyberte alespoň jednu platební metodu.",
   "onboarding.payments.title": "Nastavení podniku",
   "onboarding.restore.action": "Obnovit účet",
   "onboarding.restore.description":

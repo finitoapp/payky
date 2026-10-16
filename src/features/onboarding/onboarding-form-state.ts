@@ -15,7 +15,6 @@ export type OnboardingAccountType =
   | "restore"
   | "transfer"
   | "existingMnemonic"
-export type OnboardingPaymentMethod = "cash" | "btc"
 
 const onboardingStepsByAccountType = {
   new: ["accountChoice", "payments"],
@@ -32,7 +31,6 @@ export const getOnboardingSteps = (
 interface OnboardingFormState {
   readonly step: OnboardingStep
   readonly accountType: OnboardingAccountType | null
-  readonly paymentMethods: ReadonlySet<OnboardingPaymentMethod>
   readonly businessName: string
   readonly iban: string
 }
@@ -40,7 +38,6 @@ interface OnboardingFormState {
 export const initialOnboardingFormState: OnboardingFormState = {
   step: "accountChoice",
   accountType: null,
-  paymentMethods: new Set(["cash", "btc"]),
   businessName: "",
   iban: "",
 }

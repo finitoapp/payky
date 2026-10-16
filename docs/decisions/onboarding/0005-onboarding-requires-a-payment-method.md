@@ -1,6 +1,6 @@
 # 0005 Onboarding requires a payment method
 
-Status: accepted
+Status: superseded by onboarding/0006
 Date: 2026-10-16
 
 ## Context

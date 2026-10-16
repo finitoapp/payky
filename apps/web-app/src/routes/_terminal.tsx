@@ -5,6 +5,13 @@ import {
 } from "@payky/core/evolu/initial-sync-state"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import {
+  landingPaths,
+  preferredLandingLanguage,
+  readInstallLanguage,
+  readLandingRedirectEnvironment,
+  shouldRedirectToLanding,
+} from "@payky/web-shared/landing-redirect"
+import {
   createFileRoute,
   Outlet,
   useMatches,
@@ -15,13 +22,6 @@ import { useEffect, useState } from "react"
 import { AccessGate } from "@/components/app/access-gate.tsx"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import { EetSandboxBanner } from "@/features/shared/eet-sandbox-banner.tsx"
-import {
-  landingPaths,
-  preferredLandingLanguage,
-  readInstallLanguage,
-  readLandingRedirectEnvironment,
-  shouldRedirectToLanding,
-} from "@/features/shared/landing-redirect.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

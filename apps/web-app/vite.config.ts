@@ -29,6 +29,7 @@ const repositoryRoot = path.resolve(import.meta.dirname, "../..")
 const loadBuildEnv = (mode: string) =>
   createEnv({
     server: {
+      PAYKY_LANDING_ORIGIN: z.url().default("http://127.0.0.1:5175"),
       // `bun run cap:sync`'s build for the native app.
       PAYKY_CAPACITOR_BUILD: BuildFlagSchema,
       // Turns the dev server's self-signed HTTPS off, for Android live reload.
@@ -151,45 +152,6 @@ function repoSnapshotPlugin(): PluginOption {
   }
 }
 
-/**
- * The landing page is its own document, prerendered once per language by
- * `bin/prerender-landing.ts` (landing/0002). These middlewares give the dev
- * and preview servers the addresses `vercel.json` gives production: the dev
- * server serves the unrendered template, which renders in the browser, and
- * the preview server serves the prerendered file for the address's
- * language, Czech at `/landing`.
- */
-function landingPagesPlugin(): PluginOption {
-  const landingPath =
-    /^\/landing(?:\/([a-z]{2}))?(?:\/(eet-2-0|jak-to-funguje))?\/?(?:\?.*)?$/u
-  // The EET page (landing/0006) and the page on how Payky works (landing/0008)
-  // have a file of their own per language.
-  const documentFiles: Record<string, string> = {
-    "eet-2-0": "-eet",
-    "jak-to-funguje": "-tech",
-  }
-  return {
-    name: "payky-landing-pages",
-    configureServer(server) {
-      server.middlewares.use((request, _response, next) => {
-        if (request.url !== undefined && landingPath.test(request.url)) {
-          request.url = "/landing.html"
-        }
-        next()
-      })
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use((request, _response, next) => {
-        const match = request.url?.match(landingPath)
-        if (match) {
-          request.url = `/landing${documentFiles[match[2] ?? ""] ?? ""}-${match[1] ?? "cs"}.html`
-        }
-        next()
-      })
-    },
-  }
-}
-
 function isNativeAndroidWebViewBuild(
   command: string,
   enabled: boolean
@@ -209,12 +171,19 @@ export default (({ command, isSsrBuild, mode }: ConfigEnv) => {
   const sentryAuthToken = buildEnv.SENTRY_AUTH_TOKEN
   const useSentryVitePlugin =
     command === "build" && !isSsrBuild && Boolean(sentryAuthToken)
-  // The server bundle `bin/prerender-landing.ts` renders the landing page
-  // with; it ships nothing, so it needs no worker, snapshot or upload.
-  const isLandingServerBuild = isSsrBuild === true
   const appVersion = getAppVersion()
 
+  const landingProxy = {
+    "/landing": { target: buildEnv.PAYKY_LANDING_ORIGIN, ws: true },
+    "/sitemap.xml": {
+      target: buildEnv.PAYKY_LANDING_ORIGIN,
+      rewrite: () => "/landing/sitemap.xml",
+    },
+  }
+
   return {
+    server: { proxy: landingProxy },
+    preview: { proxy: landingProxy },
     envDir: repositoryRoot,
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
@@ -228,17 +197,6 @@ export default (({ command, isSsrBuild, mode }: ConfigEnv) => {
     },
     build: {
       sourcemap: useSentryVitePlugin,
-      // The native app opens the terminal only, never the landing page.
-      ...(isCapacitorBuild || isLandingServerBuild
-        ? {}
-        : {
-            rolldownOptions: {
-              input: {
-                main: path.resolve(import.meta.dirname, "index.html"),
-                landing: path.resolve(import.meta.dirname, "landing.html"),
-              },
-            },
-          }),
     },
     plugins: [
       ...(useBasicSsl ? [basicSsl()] : []),
@@ -251,41 +209,34 @@ export default (({ command, isSsrBuild, mode }: ConfigEnv) => {
       }),
       react(),
       tailwindcss(),
-      landingPagesPlugin(),
       // The native app reads payky.me's snapshot instead of carrying one.
-      ...(isCapacitorBuild || isLandingServerBuild
-        ? []
-        : [repoSnapshotPlugin()]),
-      ...(isLandingServerBuild
-        ? []
-        : [
-            VitePWA({
-              registerType: "prompt",
-              injectRegister: "auto",
-              // The native app ships its assets in the APK, so a service worker only
-              // gets in the way: its precache survives an APK update and serves the
-              // old bundle until the update toast is accepted. The self-destroying
-              // worker replaces one already installed, clears it and reloads once.
-              selfDestroying: isCapacitorBuild,
-              manifest: false,
-              workbox: {
-                cleanupOutdatedCaches: true,
-                globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
-                maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-                navigateFallback: "/index.html",
-                // The landing pages are served as they were prerendered, never
-                // replaced by the app's shell or kept in its precache. Files
-                // (sitemap.xml, robots.txt) and server routes go to the network
-                // too, mirroring the SPA rewrite in vercel.json.
-                navigateFallbackDenylist: [
-                  /^\/landing(?:\/|$)/u,
-                  /^\/(?:api|\.well-known)\//u,
-                  /\/[^/]+\.[^/]+$/u,
-                ],
-                globIgnores: ["landing*.html", "landing/og-*.png"],
-              },
-            }),
-          ]),
+      ...(isCapacitorBuild ? [] : [repoSnapshotPlugin()]),
+      VitePWA({
+        registerType: "prompt",
+        injectRegister: "auto",
+        // The native app ships its assets in the APK, so a service worker only
+        // gets in the way: its precache survives an APK update and serves the
+        // old bundle until the update toast is accepted. The self-destroying
+        // worker replaces one already installed, clears it and reloads once.
+        selfDestroying: isCapacitorBuild,
+        manifest: false,
+        workbox: {
+          cleanupOutdatedCaches: true,
+          globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
+          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+          navigateFallback: "/index.html",
+          // The landing pages are served as they were prerendered, never
+          // replaced by the app's shell or kept in its precache. Files
+          // (sitemap.xml, robots.txt) and server routes go to the network
+          // too, mirroring the SPA rewrite in vercel.json.
+          navigateFallbackDenylist: [
+            /^\/landing(?:\/|$)/u,
+            /^\/(?:api|\.well-known)\//u,
+            /\/[^/]+\.[^/]+$/u,
+          ],
+          globIgnores: ["landing*.html", "landing/og-*.png"],
+        },
+      }),
       ...(useSentryVitePlugin
         ? [
             sentryVitePlugin({

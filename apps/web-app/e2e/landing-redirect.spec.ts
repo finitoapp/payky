@@ -215,3 +215,72 @@ test("the landing page's start buttons open the app in its language", async ({
     page.getByRole("heading", { name: translate("sk", "onboarding.title") })
   ).toBeVisible()
 })
+
+test("the app origin serves the independent landing documents and assets", async ({
+  request,
+}) => {
+  for (const language of ["", "/en", "/sk"]) {
+    for (const document of ["", "/eet-2-0", "/jak-to-funguje"]) {
+      const path = `/landing${language}${document}`
+      const response = await request.get(path)
+      expect(response.ok()).toBe(true)
+      const html = await response.text()
+      expect(response.headers()["content-type"]).toContain("text/html")
+      expect(html).toContain('src="/landing/')
+    }
+  }
+
+  const html = await (await request.get("/landing")).text()
+  const assets = [
+    ...html.matchAll(/(?:src|href)="(\/landing\/(?:assets|src)\/[^" ]+)"/gu),
+  ]
+  expect(assets.length).toBeGreaterThan(0)
+  for (const asset of assets) {
+    const response = await request.get(asset[1] ?? "")
+    expect(response.ok(), asset[1]).toBe(true)
+    expect(response.headers()["content-type"]).not.toContain("text/html")
+  }
+  const image = await request.get("/landing/og-cs.png")
+  expect(image.ok()).toBe(true)
+  expect(image.headers()["content-type"]).toContain("image/png")
+  const sitemap = await request.get("/sitemap.xml")
+  expect(sitemap.ok()).toBe(true)
+  expect(await sitemap.text()).toContain(
+    "https://payky.me/landing/sk/jak-to-funguje"
+  )
+  const manifest = await request.get("/manifest.webmanifest")
+  expect(manifest.ok()).toBe(true)
+  expect(await manifest.json()).toMatchObject({ start_url: "/" })
+})
+
+test("the independent landing submits contact to the app origin", async ({
+  page,
+}) => {
+  const submitted = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/api/contact") && request.method() === "POST"
+  )
+  await page.route("**/api/contact", (route) =>
+    route.fulfill({ json: { status: "OK" } })
+  )
+  await page.goto("/landing/en", { waitUntil: "domcontentloaded" })
+  await page
+    .getByLabel(translate("en", "landing.contact.email.label"), { exact: true })
+    .fill("merchant@example.com")
+  await page
+    .getByRole("button", {
+      name: translate("en", "landing.contact.submit"),
+      exact: true,
+    })
+    .click()
+  const request = await submitted
+  expect(new URL(request.url()).origin).toBe(new URL(page.url()).origin)
+  expect(request.postDataJSON()).toMatchObject({
+    email: "merchant@example.com",
+  })
+  await expect(
+    page.getByText(translate("en", "landing.contact.sent.title"), {
+      exact: true,
+    })
+  ).toBeVisible()
+})

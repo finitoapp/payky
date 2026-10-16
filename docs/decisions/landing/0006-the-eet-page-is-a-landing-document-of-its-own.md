@@ -54,9 +54,9 @@ change to the shell (header, footer) changes both pages.
 
 ## Enforced by
 
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > prerenders the EET page in %s at its own address`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > links the EET page's languages to each other`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > describes the EET page's FAQ for search results and shows its answers`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > leads from the home page to the EET page`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > landingLanguageFromPath > reads %s as %s`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > isLandingEetPath > reads %s as the EET page: %s`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > prerenders the EET page in %s at its own address`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > links the EET page's languages to each other`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > describes the EET page's FAQ for search results and shows its answers`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > leads from the home page to the EET page`
+- `packages/web-shared/src/landing-redirect.test.ts > landingLanguageFromPath > reads %s as %s`
+- `packages/web-shared/src/landing-redirect.test.ts > isLandingEetPath > reads %s as the EET page: %s`

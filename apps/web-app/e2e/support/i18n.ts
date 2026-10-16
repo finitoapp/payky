@@ -1,8 +1,19 @@
 import {
+  type TranslationKey as LandingTranslationKey,
+  resources as landingResources,
+} from "../../../landing/src/i18n/resources.ts"
+import {
+  type TranslationKey as AppTranslationKey,
+  resources as appResources,
   type Language,
-  resources,
-  type TranslationKey,
 } from "../../src/i18n/resources.ts"
+
+type TranslationKey = AppTranslationKey | LandingTranslationKey
+const resources = {
+  en: { ...appResources.en, ...landingResources.en },
+  cs: { ...appResources.cs, ...landingResources.cs },
+  sk: { ...appResources.sk, ...landingResources.sk },
+}
 
 /**
  * Runner-agnostic: `bin/generate-doc-screenshots.ts` imports these helpers

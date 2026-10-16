@@ -38,7 +38,10 @@ bunx skills experimental_install
 
 ## Workspaces
 
-`apps/web-app` owns the web app, landing documents, API and documentation tools.
+`apps/web-app` owns the web app, API and documentation tools.
+`apps/landing` owns the independently deployed marketing site at `/landing`
+(see [landing deployment](docs/landing-deployment.md)).
+`packages/web-shared` owns the browser navigation contract and shared hooks.
 `apps/native-shell` wraps its `dist-native` build in Capacitor; `apps/cli` runs
 local commands. All use the single domain implementation in `packages/core`.
 Core uses explicit package subpaths such as

@@ -8,39 +8,45 @@
     },
     {
       "source": "/landing",
-      "destination": "/landing-cs.html"
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:edge\\.payky\\.me|payky-edge(?:-[a-z0-9-]+)?\\.vercel\\.app)"
+        }
+      ],
+      "destination": "https://payky-landing-edge.vercel.app/landing"
     },
     {
-      "source": "/landing/en",
-      "destination": "/landing-en.html"
+      "source": "/landing/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:edge\\.payky\\.me|payky-edge(?:-[a-z0-9-]+)?\\.vercel\\.app)"
+        }
+      ],
+      "destination": "https://payky-landing-edge.vercel.app/landing/:path*"
     },
     {
-      "source": "/landing/sk",
-      "destination": "/landing-sk.html"
+      "source": "/sitemap.xml",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:edge\\.payky\\.me|payky-edge(?:-[a-z0-9-]+)?\\.vercel\\.app)"
+        }
+      ],
+      "destination": "https://payky-landing-edge.vercel.app/sitemap.xml"
     },
     {
-      "source": "/landing/eet-2-0",
-      "destination": "/landing-eet-cs.html"
+      "source": "/landing",
+      "destination": "https://payky-landing.vercel.app/landing"
     },
     {
-      "source": "/landing/en/eet-2-0",
-      "destination": "/landing-eet-en.html"
+      "source": "/landing/:path*",
+      "destination": "https://payky-landing.vercel.app/landing/:path*"
     },
     {
-      "source": "/landing/sk/eet-2-0",
-      "destination": "/landing-eet-sk.html"
-    },
-    {
-      "source": "/landing/jak-to-funguje",
-      "destination": "/landing-tech-cs.html"
-    },
-    {
-      "source": "/landing/en/jak-to-funguje",
-      "destination": "/landing-tech-en.html"
-    },
-    {
-      "source": "/landing/sk/jak-to-funguje",
-      "destination": "/landing-tech-sk.html"
+      "source": "/sitemap.xml",
+      "destination": "https://payky-landing.vercel.app/sitemap.xml"
     },
     {
       "source": "/((?!.*\\.).*)",

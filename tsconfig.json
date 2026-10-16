@@ -15,6 +15,12 @@
     },
     {
       "path": "./tsconfig.tools.json"
+    },
+    {
+      "path": "./apps/landing"
+    },
+    {
+      "path": "./packages/web-shared"
     }
   ]
 }

@@ -1,4 +1,5 @@
 import type { DeviceLocale } from "@payky/core/evolu/device-client"
+import { languageOptions } from "@payky/web-shared/language-options"
 import { Globe2, Languages } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
@@ -9,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { languageOptions } from "@/features/shared/language-options.ts"
 import { useLocale, useSetLocale } from "@/hooks/use-locale.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"

@@ -1,5 +1,5 @@
+import { useLocalStorageState } from "@payky/web-shared/use-local-storage-state"
 import { z } from "zod"
-import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
 
 const BILL_INSERT_MODE_STORAGE_KEY = "payky.billScanMode"
 

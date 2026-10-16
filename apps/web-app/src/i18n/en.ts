@@ -1,6 +1,5 @@
 import { enBill } from "@/i18n/en/bill.ts"
 import { enCommon } from "@/i18n/en/common.ts"
-import { enLanding } from "@/i18n/en/landing.ts"
 import { enOnboarding } from "@/i18n/en/onboarding.ts"
 import { enPayment } from "@/i18n/en/payment.ts"
 import { enSettings } from "@/i18n/en/settings.ts"
@@ -13,7 +12,6 @@ import { enWithdraw } from "@/i18n/en/withdraw.ts"
  */
 export const en = {
   ...enSettings,
-  ...enLanding,
   ...enBill,
   ...enPayment,
   ...enWithdraw,

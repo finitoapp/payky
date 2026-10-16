@@ -1,3 +1,4 @@
+import { useIntersectionObserver } from "@payky/web-shared/use-intersection-observer"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import {
   CircleAlertIcon,
@@ -10,7 +11,6 @@ import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { fetchDonationHistory } from "@/core/integrations/donations/donations-client.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
-import { useIntersectionObserver } from "@/hooks/use-intersection-observer.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatSatsAmount } from "@/lib/format-utils.ts"

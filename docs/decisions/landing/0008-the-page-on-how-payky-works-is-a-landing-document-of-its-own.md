@@ -69,9 +69,9 @@ addresses. The section components the EET page and this page share (`Band`,
 
 ## Enforced by
 
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > prerenders the page on how Payky works in %s at its own address`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > links the languages of the page on how Payky works to each other`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > describes the FAQ of the page on how Payky works for search results and shows its answers`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > leads from the home page and the footer of every landing page to the page on how Payky works`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > isLandingTechPath > reads %s as the page on how Payky works: %s`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > prerenders the page on how Payky works in %s at its own address`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > links the languages of the page on how Payky works to each other`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > describes the FAQ of the page on how Payky works for search results and shows its answers`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > leads from the home page and the footer of every landing page to the page on how Payky works`
+- `packages/web-shared/src/landing-redirect.test.ts > isLandingTechPath > reads %s as the page on how Payky works: %s`

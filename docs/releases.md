@@ -36,12 +36,12 @@ Edge is a separate origin with its own local storage, but it syncs through the s
 
 ## Vercel and GitHub setup
 
-Two Vercel projects build this repository:
+Two Vercel projects build the payment app from this repository:
 
 - `payky`: Production Branch `production`, domain `payky.me`. Preview deployments are disabled and the Ignored Build Step is `[ "$VERCEL_GIT_COMMIT_REF" != "production" ]`, so it builds nothing else.
 - `payky-edge`: Production Branch `main`, domain `edge.payky.me`. Pull request previews come from this project.
 
-Each project has its own environment variables (AI proxy key, donation wallet, Sentry); a new one goes into both.
+Each app project has its own environment variables (AI proxy key, donation wallet, Sentry); a new one goes into both.
 
 GitHub secrets used by `release.yml`: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
 
@@ -59,3 +59,12 @@ that root so the deployment can install the root lockfile, apply the Evolu patch
 and build `packages/core`. The checked-in Vercel commands install and build from
 the repository root and serve `apps/web-app/dist`. Validate a preview before
 shipping: the local Node API smoke test does not verify Vercel tracing or rewrites.
+
+## Landing site
+
+Two further Vercel projects build `apps/landing`: `payky-landing-edge` ships
+from `main`, and `payky-landing` from `landing-production`, independently of
+the app's release branch and CalVer. Each app proxies `/landing` and
+`/sitemap.xml` to its corresponding landing project's stable address. See
+[landing deployment](landing-deployment.md) for setup, local development,
+preview behavior and rollout order.

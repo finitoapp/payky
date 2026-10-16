@@ -19,6 +19,7 @@ import {
   FiatCurrency,
   NonEmptyString255Schema,
 } from "@payky/core/modules/shared/schema"
+import { markAppEntered } from "@payky/web-shared/landing-redirect"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
@@ -55,7 +56,6 @@ import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/resto
 import { onboardingPaymentMethodOrder } from "@/features/onboarding/onboarding-utils.ts"
 import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
-import { markAppEntered } from "@/features/shared/landing-redirect.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

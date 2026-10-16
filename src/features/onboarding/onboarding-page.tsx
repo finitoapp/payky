@@ -134,6 +134,11 @@ export function OnboardingPage({
       ? "settings.fiatBankAccount.iban.invalid"
       : null
 
+  const hasPaymentMethod =
+    selectedPaymentMethods.size > 0 || ibanParseResult?.success === true
+  const paymentMethodsError: TranslationKey | null =
+    submitAttempted && !hasPaymentMethod ? "onboarding.payments.required" : null
+
   const nameParseResult =
     businessName.trim() === ""
       ? null
@@ -194,7 +199,7 @@ export function OnboardingPage({
     // Onboarding finishes on the payments step, so the IBAN is checked here
     // rather than when leaving it. The recovery phrase is not asked about:
     // it stays in Settings > Security (onboarding/0002).
-    if (ibanInvalid || nameInvalid) {
+    if (ibanInvalid || nameInvalid || !hasPaymentMethod) {
       setSubmitAttempted(true)
       return
     }
@@ -249,7 +254,11 @@ export function OnboardingPage({
         })
       )
       // An onboarded account leaves through the redirect effect above.
-      if (!finished.ok) return "onboarding.alreadyOnboarded"
+      if (!finished.ok) {
+        return finished.error.type === "OnboardingPaymentMethodRequired"
+          ? "onboarding.payments.required"
+          : "onboarding.alreadyOnboarded"
+      }
       setForm(initialOnboardingFormState)
       await navigate({ to: "/", replace: true })
     })
@@ -400,6 +409,7 @@ export function OnboardingPage({
                 ibanError={ibanError}
                 ibanInputId={ibanInputId}
                 paymentMethods={selectedPaymentMethods}
+                paymentMethodsError={paymentMethodsError}
                 pending={pending}
                 onIbanChange={(nextIban) => {
                   setForm((current) => ({ ...current, iban: nextIban }))

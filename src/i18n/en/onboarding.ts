@@ -164,6 +164,7 @@ export const enOnboarding = {
   "onboarding.payments.iban.description":
     "Enter an account number or IBAN to accept payments with a QR code.",
   "onboarding.payments.iban.title": "Bank account (optional)",
+  "onboarding.payments.required": "Choose at least one payment method.",
   "onboarding.payments.title": "Business setup",
   "onboarding.restore.action": "Restore account",
   "onboarding.restore.description":

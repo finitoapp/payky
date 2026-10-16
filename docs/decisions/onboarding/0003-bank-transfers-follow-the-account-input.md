@@ -1,6 +1,6 @@
 # 0003 Bank transfers follow the account input
 
-Status: accepted
+Status: superseded by onboarding/0005
 Date: 2026-10-16
 
 ## Context

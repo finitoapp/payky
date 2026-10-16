@@ -165,6 +165,7 @@ export const csOnboarding = {
   "onboarding.payments.iban.description":
     "Zadejte číslo účtu nebo IBAN pro příjem plateb pomocí QR kódu.",
   "onboarding.payments.iban.title": "Bankovní účet (volitelné)",
+  "onboarding.payments.required": "Vyberte alespoň jednu platební metodu.",
   "onboarding.payments.title": "Nastavení podniku",
   "onboarding.restore.action": "Obnovit účet",
   "onboarding.restore.description":

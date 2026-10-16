@@ -43,6 +43,7 @@ export function PaymentsStep({
   ibanError,
   ibanInputId,
   paymentMethods,
+  paymentMethodsError,
   pending,
   onIbanChange,
   onTogglePaymentMethod,
@@ -50,6 +51,7 @@ export function PaymentsStep({
   readonly iban: string
   readonly ibanError: TranslationKey | null
   readonly ibanInputId: string
+  readonly paymentMethodsError: TranslationKey | null
   readonly paymentMethods: ReadonlySet<OnboardingPaymentMethod>
   readonly pending: boolean
   readonly onIbanChange: (iban: string) => void
@@ -62,7 +64,12 @@ export function PaymentsStep({
   const paymentMethodInputId = useId()
 
   return (
-    <FieldSet>
+    <FieldSet
+      aria-invalid={paymentMethodsError !== null}
+      aria-describedby={
+        paymentMethodsError ? `${paymentMethodInputId}-error` : undefined
+      }
+    >
       <FieldLegend className="sr-only">
         {t("onboarding.payments.methodsTitle")}
       </FieldLegend>
@@ -152,6 +159,9 @@ export function PaymentsStep({
           </div>
         </Field>
       </FieldGroup>
+      <FieldError id={`${paymentMethodInputId}-error`}>
+        {paymentMethodsError ? t(paymentMethodsError) : null}
+      </FieldError>
     </FieldSet>
   )
 }

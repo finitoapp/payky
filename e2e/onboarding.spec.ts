@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test"
+import { verifyEvent } from "nostr-tools/pure"
 import { translate } from "./support/i18n.ts"
-import { gotoPage } from "./support/navigation.ts"
+import { fillInlineField } from "./support/inline-edit.ts"
+import { gotoPage, reloadPage } from "./support/navigation.ts"
+import { mockNostrProfileRelays } from "./support/nostr-profile.ts"
 import {
   completeOnboarding,
   createUnregisteredMnemonic,
@@ -69,49 +72,83 @@ test("onboarding in English still starts a Czech account in CZK", async ({
   })
 })
 
-test("the payment methods step reports a missing or invalid IBAN on Finish", async ({
+test("the payment methods step derives bank transfers from the account input", async ({
   page,
 }) => {
   const finishButton = page.getByRole("button", {
     name: translate("en", "onboarding.finish"),
   })
   const ibanInput = page.getByRole("textbox", {
-    name: translate("en", "settings.fiatBankAccount.iban.label"),
+    name: translate("en", "onboarding.payments.iban.title"),
   })
 
   await test.step("walk onboarding up to the payment methods step", async () => {
     await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
-    await page
-      .getByRole("heading", { name: translate("en", "onboarding.title") })
-      .waitFor()
+    const heading = page.getByRole("heading", {
+      name: translate("en", "onboarding.title"),
+    })
+    await heading.waitFor()
+    const languagePicker = page.getByRole("combobox", {
+      name: translate("en", "onboarding.language.title"),
+    })
+    const headingTop = await heading.evaluate(
+      (element) => element.getBoundingClientRect().top
+    )
+    const languageTop = await languagePicker.evaluate(
+      (element) => element.getBoundingClientRect().top
+    )
     await page
       .getByRole("button", {
         name: translate("en", "accountChoice.new.title"),
       })
       .click()
+    const paymentsHeading = page.getByRole("heading", {
+      name: translate("en", "onboarding.payments.title"),
+    })
+    await expect(paymentsHeading).toBeVisible()
+    expect(
+      await paymentsHeading.evaluate(
+        (element) => element.getBoundingClientRect().top
+      )
+    ).toBe(headingTop)
+    expect(
+      await languagePicker.evaluate(
+        (element) => element.getBoundingClientRect().top
+      )
+    ).toBe(languageTop)
   })
 
-  await test.step("bank transfer is on by default, with no error shown yet", async () => {
-    await expect(
-      page.getByRole("checkbox", {
-        name: translate("en", "onboarding.payments.iban.title"),
-      })
-    ).toBeChecked()
-    await expect(finishButton).toBeEnabled()
+  await test.step("an empty or whitespace-only account offers to start without bank transfers", async () => {
+    await expect(page.getByRole("switch")).toHaveCount(2)
+    const skipButton = page.getByRole("button", {
+      name: translate("en", "onboarding.finishWithoutBankTransfer"),
+    })
+    await expect(skipButton).toBeEnabled()
+    await expect(ibanInput).toBeVisible()
     await expect(ibanInput).toHaveAttribute("aria-invalid", "false")
+    await ibanInput.fill("   ")
+    await expect(skipButton).toBeEnabled()
+    await expect(finishButton).toHaveCount(0)
   })
 
-  await test.step("Finish with an empty IBAN marks the input instead of finishing", async () => {
-    await finishButton.click()
-    await expect(ibanInput).toHaveAttribute("aria-invalid", "true")
+  await test.step("entering an account changes the button and going back keeps the draft", async () => {
+    await ibanInput.fill("CZ6508000000192000145399")
+    await expect(ibanInput).toHaveValue("CZ6508000000192000145399")
+    await expect(finishButton).toBeEnabled()
     await expect(
-      page.getByText(translate("en", "settings.fiatBankAccount.iban.required"))
-    ).toBeVisible()
-    await expect(
-      page.getByText(translate("en", "onboarding.payments.title"), {
+      page.getByRole("button", {
+        name: translate("en", "settings.fiatBankAccount.iban.format.iban"),
         exact: true,
       })
-    ).toBeVisible()
+    ).toHaveCount(0)
+    await page
+      .getByRole("button", { name: translate("en", "onboarding.back") })
+      .click()
+    await page
+      .getByRole("button", { name: translate("en", "accountChoice.new.title") })
+      .click()
+    await expect(ibanInput).toHaveValue("CZ6508000000192000145399")
+    await expect(finishButton).toBeEnabled()
   })
 
   await test.step("an invalid IBAN swaps the message and still holds the step", async () => {
@@ -121,18 +158,123 @@ test("the payment methods step reports a missing or invalid IBAN on Finish", asy
       page.getByText(translate("en", "settings.fiatBankAccount.iban.invalid"))
     ).toBeVisible()
     await expect(
-      page.getByText(translate("en", "onboarding.payments.title"), {
+      page.getByRole("heading", {
+        name: translate("en", "onboarding.payments.title"),
         exact: true,
       })
     ).toBeVisible()
   })
 
   await test.step("fixing the IBAN lets onboarding complete", async () => {
-    await ibanInput.fill("CZ6508000000192000145399")
+    await ibanInput.fill("19-2000145399/0800")
     await finishButton.click()
     await page
       .getByRole("button", { name: translate("en", "settings.title") })
       .waitFor()
+  })
+  await test.step("the entered account enables bank transfers", async () => {
+    await gotoPage(
+      page,
+      "/settings/payment-accounts",
+      "en",
+      "settings.paymentAccounts.title"
+    )
+    await expect(
+      page.getByRole("switch", {
+        name: translate("en", "settings.fiatBankAccount.enabled.label"),
+      })
+    ).toBeChecked()
+  })
+})
+
+test("bank account format switching is only offered for a saved Czech account", async ({
+  page,
+}) => {
+  const ibanInput = page.getByRole("textbox", {
+    name: translate("en", "settings.fiatBankAccount.iban.label"),
+  })
+  const ibanFormat = page.getByRole("button", {
+    name: translate("en", "settings.fiatBankAccount.iban.format.iban"),
+    exact: true,
+  })
+  const accountNumberFormat = page.getByRole("button", {
+    name: translate("en", "settings.fiatBankAccount.iban.format.bban"),
+    exact: true,
+  })
+
+  await test.step("finish onboarding without a bank account", async () => {
+    await gotoPage(page, "/onboarding", "en", "onboarding.title")
+    await page
+      .getByRole("button", { name: translate("en", "accountChoice.new.title") })
+      .click()
+    await page
+      .getByRole("switch", {
+        name: translate("en", "onboarding.payments.btc.title"),
+      })
+      .click()
+    await page
+      .getByRole("button", {
+        name: translate("en", "onboarding.finishWithoutBankTransfer"),
+      })
+      .click()
+    await expect(page).toHaveURL("/")
+    await gotoPage(
+      page,
+      "/settings/payment-accounts/iban",
+      "en",
+      "settings.paymentAccounts.method.iban"
+    )
+  })
+
+  await test.step("a new account accepts either format without changing the draft or showing a switch", async () => {
+    await expect(ibanInput).toHaveValue("")
+    await expect(ibanFormat).toHaveCount(0)
+    await expect(accountNumberFormat).toHaveCount(0)
+    await ibanInput.fill("CZ6508000000192000145399")
+    await expect(ibanInput).toHaveValue("CZ6508000000192000145399")
+    await expect(ibanFormat).toHaveCount(0)
+    await ibanInput.press("Escape")
+    await expect(ibanInput).toHaveValue("")
+    await ibanInput.fill("19-2000145399/0800")
+    await expect(ibanInput).toHaveValue("19-2000145399/0800")
+    await expect(ibanFormat).toHaveCount(0)
+    await ibanInput.press("Escape")
+    await fillInlineField(page, ibanInput, "19-2000145399/0800")
+  })
+
+  await test.step("the saved Czech account shows its format switch only outside an edit", async () => {
+    await expect(ibanFormat).toBeVisible()
+    await expect(accountNumberFormat).toBeVisible()
+    await ibanFormat.click()
+    await expect(ibanInput).toHaveValue("CZ6508000000192000145399")
+    await accountNumberFormat.click()
+    await expect(ibanInput).toHaveValue("19-2000145399/0800")
+    await ibanInput.focus()
+    await expect(ibanFormat).toBeVisible()
+    const inputTop = await ibanInput.evaluate(
+      (element) => element.getBoundingClientRect().top
+    )
+    await ibanInput.fill("")
+    await expect(ibanFormat).not.toBeVisible()
+    await expect(accountNumberFormat).not.toBeVisible()
+    expect(
+      await ibanInput.evaluate((element) => element.getBoundingClientRect().top)
+    ).toBe(inputTop)
+    await ibanInput.press("Escape")
+    await expect(ibanInput).toHaveValue("19-2000145399/0800")
+    await expect(ibanFormat).toBeVisible()
+    await expect(accountNumberFormat).toBeVisible()
+  })
+
+  await test.step("a saved foreign IBAN has no Czech account-number switch", async () => {
+    await fillInlineField(page, ibanInput, "DE89370400440532013000")
+    await expect(ibanFormat).toHaveCount(0)
+    await expect(accountNumberFormat).toHaveCount(0)
+    await expect(ibanInput).toHaveValue("DE89370400440532013000")
+    await reloadPage(page, "en", "settings.paymentAccounts.method.iban")
+    await expect(ibanInput).toHaveValue("DE89370400440532013000")
+    await expect(ibanFormat).toHaveCount(0)
+    await expect(accountNumberFormat).toHaveCount(0)
   })
 })
 
@@ -213,7 +355,11 @@ test("setting up a phrase whose sync failed warns, then goes straight to payment
   })
 
   await test.step("finish on the payments step", async () => {
-    await page.getByRole("textbox").fill("CZ6508000000192000145399")
+    await page
+      .getByRole("textbox", {
+        name: translate("en", "onboarding.payments.iban.title"),
+      })
+      .fill("CZ6508000000192000145399")
     await page
       .getByRole("button", { name: translate("en", "onboarding.finish") })
       .click()
@@ -229,3 +375,105 @@ test("setting up a phrase whose sync failed warns, then goes straight to payment
     ).toHaveCount(1)
   })
 })
+
+for (const outcome of ["success", "retry", "skip", "empty"] as const) {
+  test(`business name publication during onboarding: ${outcome}`, async ({
+    page,
+  }) => {
+    let accepts = outcome === "success" || outcome === "empty"
+    const relay = await mockNostrProfileRelays(page, () => accepts)
+    const nameInput = page.getByRole("textbox", {
+      name: translate("en", "onboarding.businessName.label"),
+    })
+    await test.step("enter the business setup form", async () => {
+      await gotoPage(page, "/onboarding", "en", "onboarding.title")
+      await page
+        .getByRole("button", {
+          name: translate("en", "accountChoice.new.title"),
+        })
+        .click()
+      await expect(
+        page.getByRole("heading", {
+          name: translate("en", "onboarding.payments.title"),
+          exact: true,
+        })
+      ).toBeVisible()
+      await nameInput.fill(outcome === "empty" ? "   " : " Café Example ")
+      await page
+        .getByRole("switch", {
+          name: translate("en", "onboarding.payments.btc.title"),
+        })
+        .click()
+      await expect(nameInput).toHaveValue(
+        outcome === "empty" ? "   " : " Café Example "
+      )
+      expect(relay.attempts).toHaveLength(0)
+    })
+    await test.step("submit and handle a publication failure explicitly", async () => {
+      await page
+        .getByRole("button", {
+          name: translate("en", "onboarding.finishWithoutBankTransfer"),
+        })
+        .click()
+      if (outcome === "retry" || outcome === "skip") {
+        await expect(
+          page.getByText(
+            translate("en", "onboarding.businessName.publishFailed.title"),
+            { exact: true }
+          )
+        ).toBeVisible()
+        await expect(page).toHaveURL("/onboarding")
+        await expect(nameInput).toHaveValue(" Café Example ")
+        if (outcome === "retry") {
+          // A kind-0 event includes a second-resolution timestamp; advance
+          // past the previous attempt so nostr-tools sends a fresh event.
+          await page.clock.install()
+          await page.clock.setFixedTime(new Date(Date.now() + 2000))
+          accepts = true
+          await page
+            .getByRole("button", {
+              name: translate("en", "onboarding.businessName.retry"),
+            })
+            .click()
+        } else {
+          await page
+            .getByRole("button", {
+              name: translate(
+                "en",
+                "onboarding.businessName.continueWithoutPublishing"
+              ),
+            })
+            .click()
+        }
+      }
+      await expect(page).toHaveURL("/")
+    })
+    await test.step("the result matches the explicit choice", async () => {
+      if (outcome === "empty") {
+        expect(relay.attempts).toHaveLength(0)
+      } else if (outcome === "skip") {
+        expect(relay.attempts).toHaveLength(1)
+      } else {
+        expect(relay.attempts.length).toBeGreaterThan(0)
+        const published = relay.attempts.at(-1)
+        expect(published && verifyEvent(published)).toBe(true)
+        expect(JSON.parse(published?.content ?? "null")).toEqual({
+          name: "Café Example",
+          display_name: "Café Example",
+        })
+        await gotoPage(
+          page,
+          "/settings/profile",
+          "en",
+          "settings.profile.title"
+        )
+        await expect(
+          page.getByRole("textbox", {
+            name: translate("en", "settings.profile.name.label"),
+            exact: true,
+          })
+        ).toHaveValue("Café Example")
+      }
+    })
+  })
+}

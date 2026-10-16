@@ -124,7 +124,7 @@ export const skOnboarding = {
     "Skenujte len kód z vlastného zariadenia, ktoré máte práve pred sebou. Kód od niekoho iného by sem pridal jeho účet a prijaté platby by išli jemu.",
   "accountTransfer.target.warning.title": "Len vlastné zariadenie",
   "onboarding.accountChoice.description":
-    "Vytvorte nový účet pre toto zariadenie alebo obnovte účet, ktorý už používate.",
+    "Vytvorte nový účet alebo otvorte ten, ktorý už používate.",
   "accountChoice.new.description":
     "Vygenerujte novú recovery phrase a začnite s prázdnym účtom.",
   "accountChoice.new.title": "Vytvoriť nový účet",
@@ -134,7 +134,6 @@ export const skOnboarding = {
   "accountChoice.transfer.description":
     "Naskenujte QR kód na zariadení, kde už Payky používate.",
   "accountChoice.transfer.title": "Preniesť z iného zariadenia",
-  "onboarding.accountChoice.title": "Výber účtu",
   "onboarding.back": "Späť",
   "onboarding.alreadyOnboarded": "Tento účet je už nastavený.",
   "onboarding.cancelSetup": "Zrušiť vytváranie účtu",
@@ -143,24 +142,34 @@ export const skOnboarding = {
   "onboarding.cancelSetup.confirm.description":
     "Tento nový účet bude zahodený a prepnete sa späť na {name}.",
   "onboarding.cancelSetup.confirm.title": "Zrušiť vytváranie účtu?",
-  "onboarding.finish": "Dokončiť",
+  "onboarding.finishWithoutBankTransfer": "Začať bez bankových prevodov",
+  "onboarding.payments.methodsTitle": "Platobné metódy",
+  "onboarding.businessName.placeholder": "Kaviareň U Lipy",
+  "onboarding.businessName.label": "Názov podniku (voliteľné)",
+  "onboarding.businessName.description":
+    "Verejný názov vášho profilu, ktorý sa bude zobrazovať ako príjemca bankových platieb.",
+  "onboarding.businessName.publishFailed.title":
+    "Názov sa nepodarilo zverejniť",
+  "onboarding.businessName.publishFailed.description":
+    "Formulár zostal vyplnený. Skúste to znova alebo pokračujte bez zverejnenia názvu.",
+  "onboarding.businessName.retry": "Skúsiť znova",
+  "onboarding.businessName.continueWithoutPublishing":
+    "Pokračovať bez zverejnenia názvu",
+  "onboarding.finish": "Začať používať Payky",
   "onboarding.language.title": "Výber jazyka",
-  "onboarding.payments.btc.description":
-    "Prijímajte bitcoinové platby cez Spark Lightning účet.",
-  "onboarding.payments.btc.title": "Bitcoin",
-  "onboarding.payments.cash.description":
-    "Evidujte hotovostné platby priamo v termináli.",
-  "onboarding.payments.cash.title": "Hotovosť",
+  "onboarding.payments.btc.description": "Platby cez Lightning.",
+  "onboarding.payments.btc.title": "Prijímame bitcoin",
+  "onboarding.payments.cash.description": "Evidencia hotovostných platieb.",
+  "onboarding.payments.cash.title": "Prijímame hotovosť",
   "onboarding.payments.description":
-    "Vyberte platobné metódy, ktoré má terminál prijímať.",
+    "Všetko môžete kedykoľvek zmeniť v nastaveniach.",
   "onboarding.payments.iban.description":
-    "Zobrazujte QR kódy pre bankové prevody.",
-  "onboarding.payments.iban.title": "Bankový prevod",
-  "onboarding.payments.title": "Platobné metódy",
-  "onboarding.progress": "Krok",
+    "Zadajte číslo účtu alebo IBAN na prijímanie platieb pomocou QR kódu.",
+  "onboarding.payments.iban.title": "Bankový účet (voliteľné)",
+  "onboarding.payments.title": "Nastavenie podniku",
   "onboarding.restore.action": "Obnoviť účet",
   "onboarding.restore.description":
     "Zadajte SLIP-39 recovery phrase účtu, ktorý chcete obnoviť.",
   "onboarding.restore.title": "Obnovenie existujúceho účtu",
-  "onboarding.title": "Nastavenie Payky",
+  "onboarding.title": "Vitajte v Payky",
 } satisfies Record<keyof typeof enOnboarding, string>

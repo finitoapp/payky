@@ -5,6 +5,7 @@ import {
 } from "@/core/modules/shared/iban-utils.ts"
 import { BankAccountInputIbanSchema } from "@/core/modules/shared/schema.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
+import type { TranslationKey } from "@/i18n/resources.ts"
 
 export type BankAccountDisplayFormat = "iban" | "bban"
 
@@ -63,7 +64,13 @@ export function BankAccountFormatToggle({
 }
 
 /** The input hint, led by the bank a Czech account belongs to as it is typed. */
-export function BankAccountDescription({ draft }: { readonly draft: string }) {
+export function BankAccountDescription({
+  draft,
+  descriptionKey = "settings.fiatBankAccount.iban.description",
+}: {
+  readonly draft: string
+  readonly descriptionKey?: TranslationKey
+}) {
   const { t } = useTranslation()
   const parsed = BankAccountInputIbanSchema.safeParse(draft)
   const bank =
@@ -77,7 +84,7 @@ export function BankAccountDescription({ draft }: { readonly draft: string }) {
       {bank !== undefined && (
         <span className="block font-medium text-foreground">{bank}</span>
       )}
-      {t("settings.fiatBankAccount.iban.description")}
+      {t(descriptionKey)}
     </>
   )
 }

@@ -3,6 +3,7 @@ import { Languages } from "lucide-react"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -35,7 +36,7 @@ export function LanguageSelect({ disabled }: { readonly disabled?: boolean }) {
       <SelectTrigger
         aria-label={t("onboarding.language.title")}
         size="sm"
-        className="gap-1 border-none bg-transparent px-2 text-muted-foreground/60 text-xs shadow-none hover:bg-transparent hover:text-muted-foreground data-[popup-open]:text-muted-foreground [&_svg]:text-current"
+        className="gap-1 border-none bg-transparent px-2 text-muted-foreground text-sm shadow-none hover:bg-transparent hover:text-muted-foreground data-[popup-open]:text-muted-foreground [&_svg]:text-current"
       >
         <Languages aria-hidden="true" className="size-3.5" />
         <SelectValue>
@@ -46,11 +47,13 @@ export function LanguageSelect({ disabled }: { readonly disabled?: boolean }) {
         </SelectValue>
       </SelectTrigger>
       <SelectContent align="end">
-        {languageOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
+        <SelectGroup>
+          {languageOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   )

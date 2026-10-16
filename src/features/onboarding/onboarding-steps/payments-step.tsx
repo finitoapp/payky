@@ -1,28 +1,18 @@
 import { Banknote, Bitcoin, Landmark } from "lucide-react"
-import { useId, useState } from "react"
-
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card.tsx"
-import { Checkbox } from "@/components/ui/checkbox.tsx"
+import { useId } from "react"
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { Switch } from "@/components/ui/switch.tsx"
 import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
-import {
-  BankAccountDescription,
-  type BankAccountDisplayFormat,
-  BankAccountFormatToggle,
-} from "@/features/shared/bank-account-input.tsx"
+import { BankAccountDescription } from "@/features/shared/bank-account-input.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import type { TranslationKey } from "@/i18n/resources.ts"
 
@@ -45,12 +35,6 @@ const paymentMethodOptions: ReadonlyArray<PaymentMethodOption> = [
     label: "onboarding.payments.btc.title",
     description: "onboarding.payments.btc.description",
     icon: Bitcoin,
-  },
-  {
-    value: "iban",
-    label: "onboarding.payments.iban.title",
-    description: "onboarding.payments.iban.description",
-    icon: Landmark,
   },
 ]
 
@@ -75,77 +59,99 @@ export function PaymentsStep({
   ) => void
 }) {
   const { t } = useTranslation()
-  const ibanEnabled = paymentMethods.has("iban")
   const paymentMethodInputId = useId()
-  const [ibanFormat, setIbanFormat] = useState<BankAccountDisplayFormat>("bban")
 
   return (
-    <>
-      <CardHeader>
-        <CardTitle>{t("onboarding.payments.title")}</CardTitle>
-        <CardDescription>
-          {t("onboarding.payments.description")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <FieldGroup>
-          {paymentMethodOptions.map((option) => {
-            const Icon = option.icon
-            const checked = paymentMethods.has(option.value)
-            const inputId = `${paymentMethodInputId}-${option.value}`
+    <FieldSet>
+      <FieldLegend className="sr-only">
+        {t("onboarding.payments.methodsTitle")}
+      </FieldLegend>
+      <FieldGroup className="gap-4">
+        {paymentMethodOptions.map((option) => {
+          const Icon = option.icon
+          const checked = paymentMethods.has(option.value)
+          const inputId = `${paymentMethodInputId}-${option.value}`
 
-            return (
-              <Field key={option.value} orientation="horizontal">
-                <Checkbox
-                  id={inputId}
-                  checked={checked}
-                  disabled={pending}
-                  onCheckedChange={(nextChecked) => {
-                    onTogglePaymentMethod(option.value, nextChecked)
-                  }}
+          return (
+            <Field
+              key={option.value}
+              orientation="horizontal"
+              data-disabled={pending}
+              className="items-center gap-3"
+            >
+              <FieldLabel
+                htmlFor={inputId}
+                className="flex-1 min-h-14 items-center gap-3 py-2"
+              >
+                <Icon
+                  aria-hidden="true"
+                  className="size-5 shrink-0 text-muted-foreground"
                 />
-                <Icon className="text-muted-foreground" />
-                <FieldContent>
-                  <FieldLabel htmlFor={inputId}>{t(option.label)}</FieldLabel>
-                  <FieldDescription>{t(option.description)}</FieldDescription>
-                </FieldContent>
-              </Field>
-            )
-          })}
-
-          <Field data-disabled={!ibanEnabled} data-invalid={ibanError !== null}>
-            <div className="flex items-center justify-between gap-2">
-              <FieldLabel htmlFor={ibanInputId}>
-                {t("settings.fiatBankAccount.iban.label")}
+                <span className="flex flex-col gap-1">
+                  <span id={`${inputId}-label`}>{t(option.label)}</span>
+                  <span
+                    id={`${inputId}-description`}
+                    className="text-sm font-normal leading-relaxed text-muted-foreground"
+                  >
+                    {t(option.description)}
+                  </span>
+                </span>
               </FieldLabel>
-              <BankAccountFormatToggle
-                format={ibanFormat}
-                draft={iban}
-                disabled={pending || !ibanEnabled}
-                onFormatChange={(next, convertedDraft) => {
-                  setIbanFormat(next)
-                  if (convertedDraft !== undefined) onIbanChange(convertedDraft)
+              <Switch
+                id={inputId}
+                checked={checked}
+                disabled={pending}
+                aria-labelledby={`${inputId}-label`}
+                aria-describedby={`${inputId}-description`}
+                onCheckedChange={(nextChecked) => {
+                  onTogglePaymentMethod(option.value, nextChecked)
                 }}
               />
-            </div>
+            </Field>
+          )
+        })}
+
+        <Field
+          className="pt-2"
+          data-disabled={pending}
+          data-invalid={ibanError !== null}
+        >
+          <FieldLabel htmlFor={ibanInputId} className="gap-3">
+            <Landmark
+              aria-hidden="true"
+              className="size-5 shrink-0 text-muted-foreground"
+            />
+            {t("onboarding.payments.iban.title")}
+          </FieldLabel>
+          <div className="flex flex-col gap-2 pl-8">
             <Input
               id={ibanInputId}
               value={iban}
-              disabled={pending || !ibanEnabled}
+              disabled={pending}
               aria-invalid={ibanError !== null}
+              aria-describedby={
+                ibanError
+                  ? `${ibanInputId}-error`
+                  : `${ibanInputId}-description`
+              }
               autoComplete="off"
               inputMode="text"
               onChange={(event) => {
                 onIbanChange(event.currentTarget.value)
               }}
             />
-            <FieldDescription>
-              <BankAccountDescription draft={iban} />
+            <FieldDescription id={`${ibanInputId}-description`}>
+              <BankAccountDescription
+                draft={iban}
+                descriptionKey="onboarding.payments.iban.description"
+              />
             </FieldDescription>
-            <FieldError>{ibanError ? t(ibanError) : null}</FieldError>
-          </Field>
-        </FieldGroup>
-      </CardContent>
-    </>
+            <FieldError id={`${ibanInputId}-error`}>
+              {ibanError ? t(ibanError) : null}
+            </FieldError>
+          </div>
+        </Field>
+      </FieldGroup>
+    </FieldSet>
   )
 }

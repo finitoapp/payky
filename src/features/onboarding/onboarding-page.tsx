@@ -1,6 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
-import { Check, ChevronLeft } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import { useEffect, useId, useState } from "react"
 import { z } from "zod"
 
@@ -8,39 +9,46 @@ import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
 import {
-  Stepper,
-  StepperIndicator,
-  StepperItem,
-  StepperNav,
-  StepperSeparator,
-} from "@/components/reui/stepper.tsx"
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/reui/alert.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card.tsx"
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field.tsx"
+import { Input } from "@/components/ui/input.tsx"
 import {
   accountListQuery,
   removeDeviceAccount,
   selectAccount,
 } from "@/core/evolu/device-account.ts"
 import { getDeviceLocaleForLanguage } from "@/core/evolu/device-client.ts"
-import { finishOnboarding as finishOnboardingTask } from "@/core/modules/app-settings/app-settings-actions.ts"
+import {
+  getNostrIdentity,
+  publishNostrProfileName,
+} from "@/core/integrations/nostr/nostr-client.ts"
+import {
+  finishOnboarding as finishOnboardingTask,
+  requireNotOnboarded,
+} from "@/core/modules/app-settings/app-settings-actions.ts"
 import { settingsQuery } from "@/core/modules/app-settings/app-settings-queries.ts"
 import { PaymentMethodOrderJson } from "@/core/modules/app-settings/app-settings-utils.ts"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
+  NonEmptyString255Schema,
 } from "@/core/modules/shared/schema.ts"
 import { LanguageSelect } from "@/features/onboarding/language-select.tsx"
 import {
   getOnboardingSteps,
   initialOnboardingFormState,
   type OnboardingPaymentMethod,
+  type OnboardingStep,
   onboardingFormAtom,
 } from "@/features/onboarding/onboarding-form-state.ts"
 import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/account-choice-step.tsx"
@@ -57,6 +65,7 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useSetLocale } from "@/hooks/use-locale.ts"
+import { nostrProfileQueryKey } from "@/hooks/use-nostr-profile.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
@@ -68,6 +77,7 @@ export function OnboardingPage({
   readonly landingLanguage?: Language
 }) {
   const runToast = useRunToast()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const setLocale = useSetLocale()
   const { language, t } = useTranslation()
@@ -76,11 +86,8 @@ export function OnboardingPage({
   const [settings] = settingsData
   const [form, setForm] = useAtom(onboardingFormAtom)
   const [finishing, setFinishing] = useState(false)
-  // Steps validate when the merchant tries to leave them, not while they
-  // type: bank transfer starts enabled with an empty IBAN, so live validation
-  // would greet them with an error they have not had a chance to answer yet.
-  // Reset on every step change, so a step is never entered already
-  // complaining.
+  // Validate only on submission, so an unfinished account number does not
+  // show an error while the merchant is still typing it.
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [cancelingSetup, setCancelingSetup] = useState(false)
   const {
@@ -91,6 +98,8 @@ export function OnboardingPage({
     restore,
   } = useRestoreAccount()
   const ibanInputId = useId()
+  const businessNameInputId = useId()
+  const [profilePublishFailed, setProfilePublishFailed] = useState(false)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const activeAccount = useAtomValue(accountAtom)
   const reloadAppEvolu = useReloadAppEvolu()
@@ -108,26 +117,28 @@ export function OnboardingPage({
   const {
     step,
     accountType,
+    businessName,
     iban,
     paymentMethods: selectedPaymentMethods,
   } = form
   const onboardingSteps = getOnboardingSteps(accountType)
   const pending = finishing || restoring || cancelingSetup
 
-  const ibanEnabled = selectedPaymentMethods.has("iban")
-  const ibanParseResult =
-    ibanEnabled && iban !== ""
-      ? BankAccountInputIbanSchema.safeParse(iban)
-      : null
-  const ibanMissing = ibanEnabled && iban === ""
+  const ibanEnabled = iban.trim() !== ""
+  const ibanParseResult = ibanEnabled
+    ? BankAccountInputIbanSchema.safeParse(iban)
+    : null
   const ibanInvalid = ibanParseResult !== null && !ibanParseResult.success
-  const getIbanError = (): TranslationKey | null => {
-    if (!submitAttempted) return null
-    if (ibanInvalid) return "settings.fiatBankAccount.iban.invalid"
-    if (ibanMissing) return "settings.fiatBankAccount.iban.required"
-    return null
-  }
-  const ibanError = getIbanError()
+  const ibanError: TranslationKey | null =
+    submitAttempted && ibanInvalid
+      ? "settings.fiatBankAccount.iban.invalid"
+      : null
+
+  const nameParseResult =
+    businessName.trim() === ""
+      ? null
+      : NonEmptyString255Schema.safeParse(businessName)
+  const nameInvalid = nameParseResult !== null && !nameParseResult.success
 
   // Having reached the app once, this browser no longer gets the landing
   // page instead of onboarding (landing/0001).
@@ -178,18 +189,37 @@ export function OnboardingPage({
     })
   }
 
-  const finishOnboarding = async () => {
+  const finishOnboarding = async (skipProfile = false) => {
+    if (pending) return
     // Onboarding finishes on the payments step, so the IBAN is checked here
     // rather than when leaving it. The recovery phrase is not asked about:
     // it stays in Settings > Security (onboarding/0002).
-    if (ibanMissing || ibanInvalid) {
+    if (ibanInvalid || nameInvalid) {
       setSubmitAttempted(true)
       return
     }
 
     setFinishing(true)
 
-    const succeeded = await runToast(async (run) => {
+    await runToast(async (run) => {
+      const allowed = await run(requireNotOnboarded())
+      if (!allowed.ok) return "onboarding.alreadyOnboarded"
+
+      if (!skipProfile && nameParseResult?.success) {
+        const published = await run(
+          publishNostrProfileName({ name: nameParseResult.data })
+        )
+        if (!published.ok) {
+          setProfilePublishFailed(true)
+          return
+        }
+        const identity = getNostrIdentity(activeAccount.masterKey)
+        queryClient.setQueryData(
+          nostrProfileQueryKey(identity.pubkey),
+          published.value
+        )
+      }
+      setProfilePublishFailed(false)
       // The header's language picker changes the wizard's own text as often as
       // the user likes; the device locale (number/money formatting) follows
       // from the language that survived to here, once, so switching back and
@@ -209,7 +239,8 @@ export function OnboardingPage({
               ? ibanParseResult.data
               : null,
           defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
-            selectedPaymentMethods
+            selectedPaymentMethods,
+            ibanEnabled
           ),
           paymentMethodOrderJson: z.encode(
             PaymentMethodOrderJson,
@@ -219,13 +250,11 @@ export function OnboardingPage({
       )
       // An onboarded account leaves through the redirect effect above.
       if (!finished.ok) return "onboarding.alreadyOnboarded"
+      setForm(initialOnboardingFormState)
+      await navigate({ to: "/", replace: true })
     })
 
     setFinishing(false)
-    if (!succeeded) return
-
-    setForm(initialOnboardingFormState)
-    await navigate({ to: "/", replace: true })
   }
 
   const restoreExistingAccount = async () => {
@@ -267,73 +296,105 @@ export function OnboardingPage({
     }
   }
 
+  const headingKeys = {
+    accountChoice: "onboarding.title",
+    payments: "onboarding.payments.title",
+    restore: "onboarding.restore.title",
+    transfer: "accountTransfer.target.title",
+  } satisfies Record<OnboardingStep, TranslationKey>
+  const descriptionKeys = {
+    accountChoice: "onboarding.accountChoice.description",
+    payments: "onboarding.payments.description",
+    restore: "onboarding.restore.description",
+    transfer: "accountTransfer.target.description",
+  } satisfies Record<OnboardingStep, TranslationKey>
+
   return (
     <main className="min-h-svh bg-background text-foreground">
-      <PhoneViewport className="justify-center px-5 py-6">
-        <div className="flex flex-col gap-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                {t("onboarding.progress")} {stepIndex + 1}/
-                {onboardingSteps.length}
-              </p>
-              <h1 className="font-semibold text-2xl leading-tight">
-                {t("onboarding.title")}
-              </h1>
-            </div>
-            <Stepper
-              value={stepIndex + 1}
-              orientation="horizontal"
-              aria-hidden="true"
-              className="w-auto"
-            >
-              <StepperNav>
-                {onboardingSteps.map((onboardingStep, index) => (
-                  <StepperItem key={onboardingStep} step={index + 1}>
-                    <StepperIndicator className="size-2 bg-muted-foreground/30 data-[state=active]:bg-primary data-[state=completed]:bg-primary" />
-                    {index < onboardingSteps.length - 1 ? (
-                      <StepperSeparator className="w-4" />
-                    ) : null}
-                  </StepperItem>
-                ))}
-              </StepperNav>
-            </Stepper>
-          </div>
-
-          {fallbackAccount ? (
+      <PhoneViewport className="max-w-md px-6 py-6 sm:py-10">
+        <div className="flex h-8 shrink-0 items-center justify-end gap-3">
+          {stepIndex > 0 ? (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              className="-ml-2.5 self-start text-muted-foreground"
-              disabled={pending}
-              onClick={() => void cancelSetup()}
+              className="-ml-2.5 mr-auto"
+              disabled={!canGoBack}
+              onClick={goBack}
             >
-              {t("onboarding.cancelSetup")}
+              <ChevronLeft data-icon="inline-start" />
+              {t("onboarding.back")}
             </Button>
           ) : null}
+          <LanguageSelect disabled={pending} />
+        </div>
 
-          <Card>
-            {step === "accountChoice" ? (
-              <AccountChoiceStep
-                pending={pending}
-                onSelect={(nextAccountType) => {
-                  // The choice is the only thing on this step, so it advances
-                  // on its own instead of carrying a Next button — and where
-                  // it advances to depends on the choice itself, which is why
-                  // the steps are re-derived here rather than read from
-                  // `onboardingSteps` (still built from the previous answer).
-                  const nextSteps = getOnboardingSteps(nextAccountType)
-                  setForm((current) => ({
-                    ...current,
-                    accountType: nextAccountType,
-                    step: nextSteps[1] ?? current.step,
-                  }))
-                }}
-              />
-            ) : null}
+        <div className="flex flex-col gap-8 py-6 sm:py-10">
+          <header className="flex flex-col gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-balance">
+              {t(headingKeys[step])}
+            </h1>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {t(descriptionKeys[step])}
+            </p>
+          </header>
 
-            {step === "payments" ? (
+          {step === "accountChoice" ? (
+            <AccountChoiceStep
+              pending={pending}
+              onSelect={(nextAccountType) => {
+                const nextSteps = getOnboardingSteps(nextAccountType)
+                setForm((current) => ({
+                  ...current,
+                  accountType: nextAccountType,
+                  step: nextSteps[1] ?? current.step,
+                }))
+              }}
+            />
+          ) : null}
+
+          {step === "payments" ? (
+            <form
+              className="flex flex-col gap-8"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void finishOnboarding()
+              }}
+            >
+              <FieldGroup>
+                <Field data-invalid={submitAttempted && nameInvalid}>
+                  <FieldLabel htmlFor={businessNameInputId}>
+                    {t("onboarding.businessName.label")}
+                  </FieldLabel>
+                  <Input
+                    id={businessNameInputId}
+                    value={businessName}
+                    disabled={pending}
+                    autoComplete="organization"
+                    placeholder={t("onboarding.businessName.placeholder")}
+                    aria-invalid={submitAttempted && nameInvalid}
+                    aria-describedby={
+                      submitAttempted && nameInvalid
+                        ? `${businessNameInputId}-error`
+                        : `${businessNameInputId}-description`
+                    }
+                    onChange={(event) => {
+                      setProfilePublishFailed(false)
+                      setForm((current) => ({
+                        ...current,
+                        businessName: event.currentTarget.value,
+                      }))
+                    }}
+                  />
+                  <FieldDescription id={`${businessNameInputId}-description`}>
+                    {t("onboarding.businessName.description")}
+                  </FieldDescription>
+                  <FieldError id={`${businessNameInputId}-error`}>
+                    {submitAttempted && nameInvalid
+                      ? t("settings.profile.name.invalid")
+                      : null}
+                  </FieldError>
+                </Field>
+              </FieldGroup>
               <PaymentsStep
                 iban={iban}
                 ibanError={ibanError}
@@ -345,88 +406,83 @@ export function OnboardingPage({
                 }}
                 onTogglePaymentMethod={togglePaymentMethod}
               />
-            ) : null}
-
-            {step === "restore" ? (
-              <RestoreAccountStep
-                error={restoreError}
-                mnemonic={mnemonic}
-                pending={pending}
-                onBack={goBack}
-                onMnemonicChange={setMnemonic}
-                onRestore={() => {
-                  void restoreExistingAccount()
-                }}
-              />
-            ) : null}
-
-            {step === "transfer" ? (
-              <>
-                <CardHeader>
-                  <CardTitle>{t("accountTransfer.target.title")}</CardTitle>
-                  <CardDescription>
-                    {t("accountTransfer.target.description")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AccountTransferTarget
-                    source="onboarding"
-                    // An account being set up from Settings has another one
-                    // to fall back to; a first-run device has nothing to
-                    // replace, so it asks nothing.
-                    confirmBeforeAdding={fallbackAccount !== undefined}
-                    onRestoreWithPhrase={() => {
-                      setForm((current) => ({
-                        ...current,
-                        accountType: "restore",
-                        step: "restore",
-                      }))
-                    }}
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={pending}
-                    onClick={goBack}
-                  >
-                    <ChevronLeft data-icon="inline-start" />
-                    {t("onboarding.back")}
-                  </Button>
-                </CardFooter>
-              </>
-            ) : null}
-
-            {/* Payments is the last step of every path that reaches it; the
-                others carry their own actions, or none at all. */}
-            {step === "payments" ? (
-              <CardFooter className="flex items-center justify-between gap-3">
+              {profilePublishFailed ? (
+                <Alert variant="destructive">
+                  <AlertTitle>
+                    {t("onboarding.businessName.publishFailed.title")}
+                  </AlertTitle>
+                  <AlertDescription>
+                    {t("onboarding.businessName.publishFailed.description")}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full min-h-11"
+                disabled={pending}
+              >
+                {t(
+                  profilePublishFailed
+                    ? "onboarding.businessName.retry"
+                    : ibanEnabled
+                      ? "onboarding.finish"
+                      : "onboarding.finishWithoutBankTransfer"
+                )}
+              </Button>
+              {profilePublishFailed ? (
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!canGoBack}
-                  onClick={goBack}
-                >
-                  <ChevronLeft data-icon="inline-start" />
-                  {t("onboarding.back")}
-                </Button>
-                <Button
-                  type="button"
+                  className="w-full min-h-11 h-auto whitespace-normal"
                   disabled={pending}
-                  onClick={finishOnboarding}
+                  onClick={() => void finishOnboarding(true)}
                 >
-                  <Check data-icon="inline-start" />
-                  {t("onboarding.finish")}
+                  {t("onboarding.businessName.continueWithoutPublishing")}
                 </Button>
-              </CardFooter>
-            ) : null}
-          </Card>
+              ) : null}
+            </form>
+          ) : null}
 
-          <div className="flex justify-end">
-            <LanguageSelect disabled={pending} />
-          </div>
+          {step === "restore" ? (
+            <RestoreAccountStep
+              error={restoreError}
+              mnemonic={mnemonic}
+              pending={pending}
+              onMnemonicChange={setMnemonic}
+              onRestore={() => {
+                void restoreExistingAccount()
+              }}
+            />
+          ) : null}
+
+          {step === "transfer" ? (
+            <AccountTransferTarget
+              source="onboarding"
+              confirmBeforeAdding={fallbackAccount !== undefined}
+              onRestoreWithPhrase={() => {
+                setForm((current) => ({
+                  ...current,
+                  accountType: "restore",
+                  step: "restore",
+                }))
+              }}
+            />
+          ) : null}
         </div>
+
+        {fallbackAccount ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            disabled={pending}
+            onClick={() => void cancelSetup()}
+          >
+            {t("onboarding.cancelSetup")}
+          </Button>
+        ) : null}
       </PhoneViewport>
     </main>
   )

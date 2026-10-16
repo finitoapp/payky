@@ -32,7 +32,10 @@ test("view, pause, and clear captured console output", async ({
     await pauseButton.waitFor()
   })
 
-  await test.step("clear the history", async () => {
+  await test.step("clear the history while updates are paused", async () => {
+    // Background jobs can log again between clearing and checking the empty state.
+    await pauseButton.click()
+    await expect(resumeButton).toBeVisible()
     await page
       .getByRole("button", {
         name: translate("en", "settings.debugConsole.clear"),

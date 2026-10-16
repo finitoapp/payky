@@ -122,7 +122,7 @@ export const enOnboarding = {
     "Only scan a code from your own device that you are looking at right now. A code from someone else would put their account on this device, and payments you take would go to them.",
   "accountTransfer.target.warning.title": "Only your own device",
   "onboarding.accountChoice.description":
-    "Create a new account for this device or restore one you already use.",
+    "Create a new account or open one you already use.",
   "accountChoice.new.description":
     "Generate a new recovery phrase and start with an empty account.",
   "accountChoice.new.title": "Create a new account",
@@ -132,7 +132,6 @@ export const enOnboarding = {
   "accountChoice.transfer.description":
     "Scan a QR code on a device where you already use Payky.",
   "accountChoice.transfer.title": "Transfer from another device",
-  "onboarding.accountChoice.title": "Choose an account",
   "onboarding.back": "Back",
   "onboarding.alreadyOnboarded": "This account is already set up.",
   "onboarding.cancelSetup": "Cancel account creation",
@@ -141,24 +140,34 @@ export const enOnboarding = {
   "onboarding.cancelSetup.confirm.description":
     "This new account will be discarded and you'll switch back to {name}.",
   "onboarding.cancelSetup.confirm.title": "Cancel account creation?",
-  "onboarding.finish": "Finish",
+  "onboarding.finishWithoutBankTransfer": "Start without bank transfers",
+  "onboarding.payments.methodsTitle": "Payment methods",
+  "onboarding.businessName.placeholder": "Linden Café",
+  "onboarding.businessName.label": "Business name (optional)",
+  "onboarding.businessName.description":
+    "The public name of your profile, shown as the recipient of bank payments.",
+  "onboarding.businessName.publishFailed.title":
+    "The name could not be published",
+  "onboarding.businessName.publishFailed.description":
+    "Your form is still filled in. Try again or continue without publishing the name.",
+  "onboarding.businessName.retry": "Try again",
+  "onboarding.businessName.continueWithoutPublishing":
+    "Continue without publishing the name",
+  "onboarding.finish": "Start using Payky",
   "onboarding.language.title": "Choose language",
-  "onboarding.payments.btc.description":
-    "Accept Bitcoin payments through the Spark Lightning account.",
-  "onboarding.payments.btc.title": "Bitcoin",
-  "onboarding.payments.cash.description":
-    "Record in-person cash payments in the terminal.",
-  "onboarding.payments.cash.title": "Cash",
+  "onboarding.payments.btc.description": "Accept payments over Lightning.",
+  "onboarding.payments.btc.title": "We accept Bitcoin",
+  "onboarding.payments.cash.description": "Record cash payments.",
+  "onboarding.payments.cash.title": "We accept cash",
   "onboarding.payments.description":
-    "Select the payment methods this terminal should accept.",
+    "You can change everything in settings at any time.",
   "onboarding.payments.iban.description":
-    "Show bank transfer QR codes for fiat payments.",
-  "onboarding.payments.iban.title": "Bank transfer",
-  "onboarding.payments.title": "Payment methods",
-  "onboarding.progress": "Step",
+    "Enter an account number or IBAN to accept payments with a QR code.",
+  "onboarding.payments.iban.title": "Bank account (optional)",
+  "onboarding.payments.title": "Business setup",
   "onboarding.restore.action": "Restore account",
   "onboarding.restore.description":
     "Enter the SLIP-39 recovery phrase for the account you want to restore.",
   "onboarding.restore.title": "Restore existing account",
-  "onboarding.title": "Set up Payky",
+  "onboarding.title": "Welcome to Payky",
 } as const

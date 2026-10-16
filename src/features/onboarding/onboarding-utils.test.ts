@@ -15,18 +15,24 @@ const methods = (...values: ReadonlyArray<OnboardingPaymentMethod>) =>
   new Set(values)
 
 /** The order the payment screen shows after onboarding with `enabled`. */
-const orderAfterOnboarding = (enabled: ReadonlySet<OnboardingPaymentMethod>) =>
+const orderAfterOnboarding = (
+  enabled: ReadonlySet<OnboardingPaymentMethod>,
+  bankTransferEnabled: boolean
+) =>
   getPaymentMethodOrder({
     paymentMethodOrderJson: z.encode(
       PaymentMethodOrderJson,
       onboardingPaymentMethodOrder
     ),
-    defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(enabled),
+    defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
+      enabled,
+      bankTransferEnabled
+    ),
   })
 
 describe("onboarding payment method order", () => {
   test("offers bank transfer, card, bitcoin, cash", () => {
-    expect(orderAfterOnboarding(methods("cash", "btc", "iban"))).toEqual([
+    expect(orderAfterOnboarding(methods("cash", "btc"), true)).toEqual([
       "iban",
       "cardSwitchio",
       "spark",
@@ -37,15 +43,15 @@ describe("onboarding payment method order", () => {
   })
 
   test("opens on the first enabled method when bank transfer is off", () => {
-    expect(getDefaultPaymentMethodForOnboarding(methods("cash", "btc"))).toBe(
-      "spark"
-    )
-    expect(getDefaultPaymentMethodForOnboarding(methods("cash"))).toBe(
+    expect(
+      getDefaultPaymentMethodForOnboarding(methods("cash", "btc"), false)
+    ).toBe("spark")
+    expect(getDefaultPaymentMethodForOnboarding(methods("cash"), false)).toBe(
       "cashRegister"
     )
   })
 
   test("still decodes to a valid method when nothing is enabled", () => {
-    expect(getDefaultPaymentMethodForOnboarding(methods())).toBe("iban")
+    expect(getDefaultPaymentMethodForOnboarding(methods(), false)).toBe("iban")
   })
 })

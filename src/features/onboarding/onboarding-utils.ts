@@ -12,7 +12,7 @@ export const onboardingPaymentMethodOrder: ReadonlyArray<DefaultPaymentMethod> =
 
 const onboardingMethodByPaymentMethod: Partial<
   Record<DefaultPaymentMethod, OnboardingPaymentMethod>
-> = { iban: "iban", spark: "btc", cashRegister: "cash" }
+> = { spark: "btc", cashRegister: "cash" }
 
 /**
  * Which tab opens first: the first enabled method in
@@ -22,10 +22,12 @@ const onboardingMethodByPaymentMethod: Partial<
  * `DefaultPaymentMethod`.
  */
 export function getDefaultPaymentMethodForOnboarding(
-  paymentMethods: ReadonlySet<OnboardingPaymentMethod>
+  paymentMethods: ReadonlySet<OnboardingPaymentMethod>,
+  bankTransferEnabled: boolean
 ): DefaultPaymentMethod {
   return (
     onboardingPaymentMethodOrder.find((method) => {
+      if (method === "iban") return bankTransferEnabled
       const onboardingMethod = onboardingMethodByPaymentMethod[method]
       return (
         onboardingMethod !== undefined && paymentMethods.has(onboardingMethod)

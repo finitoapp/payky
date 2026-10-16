@@ -79,14 +79,10 @@ interface InlineEditFieldProps<T extends string | number | null> {
   readonly trailing?: ReactNode
   /**
    * Control rendered beside the label — the bank account field's IBAN /
-   * account-number switch. It sees the text on screen and, mid-edit, can
-   * replace it without ending the edit (clicks inside it keep the focus).
-   * While idle `replaceDraft` does nothing: the display follows the codec.
+   * account-number switch. Hidden while editing or saving, with its space
+   * reserved so the input stays in place.
    */
-  readonly labelAction?: (edit: {
-    readonly draft: string
-    readonly replaceDraft: (draft: string) => void
-  }) => ReactNode
+  readonly labelAction?: (edit: { readonly draft: string }) => ReactNode
   /** Rejects to report a failed save; the field toasts and shows no tick. */
   readonly onSave: (value: T) => Promise<void>
   /**
@@ -207,12 +203,12 @@ export function InlineEditField<T extends string | number | null>({
         </FieldLabel>
         {labelAction !== undefined && (
           // biome-ignore lint/a11y/noStaticElementInteractions: only keeps the input's focus; the control inside handles its own interaction
-          <div onMouseDown={keepFocus}>
+          <div
+            onMouseDown={keepFocus}
+            className={cn(state.status !== "idle" && "invisible")}
+          >
             {labelAction({
               draft: value,
-              replaceDraft: (draft) => {
-                if (editing) dispatch({ type: "edit", draft })
-              },
             })}
           </div>
         )}

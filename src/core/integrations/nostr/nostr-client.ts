@@ -13,6 +13,7 @@ import {
   deriveNostrSecretKey,
   type MasterKey,
 } from "@/core/modules/shared/key-derivation.ts"
+import type { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
 import { shortenMiddle } from "@/lib/format-utils.ts"
 import { jsonCodec } from "@/zod-utils.ts"
 
@@ -228,6 +229,28 @@ export const publishNostrProfile =
     return err(
       createNostrPublishRejectedError({ reasons: publishReasons(results) })
     )
+  }
+
+/** Reads before publishing a new name, preserving every other profile field. */
+export const publishNostrProfileName =
+  ({
+    name,
+  }: {
+    readonly name: NonEmptyString255
+  }): Task<
+    NostrProfile,
+    NostrRelaysUnreachableError | NostrPublishRejectedError,
+    NostrDep & MasterKeyDep & DateDep
+  > =>
+  async (run) => {
+    const { pubkey } = getNostrIdentity(run.deps.masterKey)
+    const profile = await run(fetchNostrProfile({ pubkey }))
+    if (!profile.ok) return profile
+
+    const metadata = { ...profile.value.metadata, name, display_name: name }
+    const published = await run(publishNostrProfile({ metadata }))
+    if (!published.ok) return published
+    return ok({ ...profile.value, name, metadata })
   }
 
 /**

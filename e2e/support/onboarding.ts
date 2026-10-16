@@ -131,11 +131,15 @@ export async function completeOnboarding(
     })
     .click()
   await page
-    .getByRole("checkbox", {
+    .getByRole("switch", {
       name: translate(language, "onboarding.payments.btc.title"),
     })
     .click()
-  await page.getByRole("textbox").fill("CZ6508000000192000145399")
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "onboarding.payments.iban.title"),
+    })
+    .fill("CZ6508000000192000145399")
   await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })
     .click()
@@ -167,7 +171,11 @@ export async function completeOnboardingDefaults(
       name: translate(language, "accountChoice.new.title"),
     })
     .click()
-  await page.getByRole("textbox").fill("CZ6508000000192000145399")
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "onboarding.payments.iban.title"),
+    })
+    .fill("CZ6508000000192000145399")
   await page
     .getByRole("button", { name: translate(language, "onboarding.finish") })
     .click()

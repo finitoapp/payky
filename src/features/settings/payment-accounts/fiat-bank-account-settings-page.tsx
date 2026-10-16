@@ -161,19 +161,14 @@ export function FiatBankAccountSettingsPage() {
               description={(draft) => <BankAccountDescription draft={draft} />}
               defaultValue={iban}
               codec={optionalIbanCodecs[ibanFormat]}
+              // Only saved Czech accounts have two display formats.
               labelAction={
-                iban === null || czechIbanToBban(iban) !== null
-                  ? ({ draft, replaceDraft }) => (
+                iban !== null && czechIbanToBban(iban) !== null
+                  ? ({ draft }) => (
                       <BankAccountFormatToggle
                         format={ibanFormat}
                         draft={draft}
-                        onFormatChange={(next, convertedDraft) => {
-                          setIbanFormat(next)
-                          // Mid-edit, carry what is typed over to the other
-                          // form; text that is not a valid account stays.
-                          if (convertedDraft !== undefined)
-                            replaceDraft(convertedDraft)
-                        }}
+                        onFormatChange={setIbanFormat}
                       />
                     )
                   : undefined

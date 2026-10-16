@@ -8,6 +8,8 @@ import {
   MasterKey,
 } from "@/core/modules/shared/key-derivation.ts"
 
+import { NonEmptyString255 } from "@/core/modules/shared/schema.ts"
+
 import {
   emptyNostrProfile,
   fetchNostrProfile,
@@ -16,6 +18,7 @@ import {
   type NostrDep,
   parseProfileMetadata,
   publishNostrProfile,
+  publishNostrProfileName,
 } from "./nostr-client.ts"
 
 const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
@@ -193,5 +196,70 @@ describe("nostr client", () => {
         reasons: ["connection failure: x", "Error: blocked"],
       },
     })
+  })
+  test("publishing a name preserves the picture and all other profile metadata", async () => {
+    const metadata = {
+      name: "Old name",
+      display_name: "Old display name",
+      picture: "https://example.com/shop.jpg",
+      about: "A coffee shop",
+      lud16: "shop@example.com",
+      custom: { keep: true },
+    }
+    const fake = createFakeNostrDep({
+      stored: profileEvent(JSON.stringify(metadata)),
+    })
+    await using run = testCreateRun({
+      ...fake.deps,
+      masterKey,
+      date: { now: () => new Date() },
+    })
+    const result = await run(
+      publishNostrProfileName({ name: NonEmptyString255(" New shop ") })
+    )
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        name: "New shop",
+        picture: metadata.picture,
+        metadata: { ...metadata, name: "New shop", display_name: "New shop" },
+      },
+    })
+    expect(JSON.parse(fake.published[0]?.content ?? "null")).toEqual({
+      ...metadata,
+      name: "New shop",
+      display_name: "New shop",
+    })
+  })
+
+  test("publishing a name refuses an unreadable profile instead of overwriting it", async () => {
+    const fake = createFakeNostrDep({ connected: false })
+    await using run = testCreateRun({
+      ...fake.deps,
+      masterKey,
+      date: { now: () => new Date() },
+    })
+    const result = await run(
+      publishNostrProfileName({ name: NonEmptyString255("New shop") })
+    )
+    expect(result).toEqual({
+      ok: false,
+      error: { type: "NostrRelaysUnreachableError" },
+    })
+    expect(fake.published).toHaveLength(0)
+  })
+
+  test("publishing a name reports a rejected publish", async () => {
+    const fake = createFakeNostrDep({ publishResults: [new Error("blocked")] })
+    await using run = testCreateRun({
+      ...fake.deps,
+      masterKey,
+      date: { now: () => new Date() },
+    })
+    const result = await run(
+      publishNostrProfileName({ name: NonEmptyString255("New shop") })
+    )
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.type).toBe("NostrPublishRejectedError")
   })
 })

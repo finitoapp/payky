@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { CopyIcon, ImageIcon, Trash2Icon } from "lucide-react"
-import { useId, useRef, useState } from "react"
+import { Suspense, useId, useRef, useState } from "react"
 
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Button } from "@/components/ui/button.tsx"
@@ -52,37 +52,92 @@ import { copyToClipboard } from "@/lib/clipboard.ts"
  */
 export function ProfileSettingsPage() {
   const { t } = useTranslation()
-  const identity = useNostrIdentity()
-  const profile = useActiveNostrProfile()
-
   return (
     <>
       <div className="h-6" />
       <FadeHeader title={t("settings.profile.title")} />
-      {profile.isPending ? (
-        <Skeleton className="h-80 w-full rounded-xl" />
-      ) : profile.isError ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.profile.title")}</CardTitle>
-            <CardDescription>
-              {t("settings.profile.loadFailed")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={profile.isFetching}
-              onClick={() => void profile.refetch()}
-            >
-              {t("settings.profile.retry")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <ProfileEditor identity={identity} profile={profile.data} />
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.profile.title")}</CardTitle>
+          <CardDescription>{t("settings.profile.description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Suspense fallback={<ProfileFieldsPlaceholder />}>
+              <ProfileFields />
+            </Suspense>
+            <Field>
+              <FieldLabel>{t("settings.profile.npub.label")}</FieldLabel>
+              <Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                <ProfilePublicKey />
+              </Suspense>
+            </Field>
+          </FieldGroup>
+        </CardContent>
+      </Card>
+    </>
+  )
+}
+
+function ProfileFields() {
+  const { t } = useTranslation()
+  const identity = useNostrIdentity()
+  const profile = useActiveNostrProfile()
+
+  if (profile.isPending) return <ProfileFieldsPlaceholder />
+  if (profile.isError) {
+    return (
+      <>
+        <ProfileFieldsPlaceholder loading={false} />
+        <div role="alert" className="flex flex-col items-start gap-2">
+          <p className="text-sm text-destructive">
+            {t("settings.profile.loadFailed")}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={profile.isFetching}
+            onClick={() => void profile.refetch()}
+          >
+            {t("settings.profile.retry")}
+          </Button>
+        </div>
+      </>
+    )
+  }
+  return <ProfileEditor identity={identity} profile={profile.data} />
+}
+
+function ProfileFieldsPlaceholder({
+  loading = true,
+}: {
+  readonly loading?: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Field data-disabled aria-busy={loading}>
+        <FieldLabel>{t("settings.profile.picture.label")}</FieldLabel>
+        <div className="flex items-center gap-4">
+          {loading ? (
+            <Skeleton className="size-20 shrink-0 rounded-full" />
+          ) : (
+            <div className="size-20 shrink-0" />
+          )}
+          <Button type="button" variant="outline" disabled>
+            <ImageIcon data-icon="inline-start" />
+            {t("settings.profile.picture.choose")}
+          </Button>
+        </div>
+      </Field>
+      <Field data-disabled aria-busy={loading}>
+        <FieldLabel>{t("settings.profile.name.label")}</FieldLabel>
+        {loading ? (
+          <Skeleton className="h-8 w-full rounded-lg" />
+        ) : (
+          <div className="h-8" />
+        )}
+      </Field>
     </>
   )
 }
@@ -136,104 +191,99 @@ function ProfileEditor({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("settings.profile.title")}</CardTitle>
-        <CardDescription>{t("settings.profile.description")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <FieldGroup>
-          <Field data-invalid={pictureInvalid}>
-            <FieldLabel htmlFor={pictureInputId}>
-              {t("settings.profile.picture.label")}
-            </FieldLabel>
-            <div className="relative flex items-center gap-4">
-              {picture.justSaved && <InlineEditSavedTick className="right-0" />}
-              <ProfileAvatar picture={picture.value} className="size-20" />
-              <div className="flex flex-col gap-2">
-                <input
-                  ref={fileInputRef}
-                  id={pictureInputId}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  disabled={picture.saving}
-                  onChange={(event) => {
-                    void choosePicture(event.currentTarget.files?.[0])
-                    event.currentTarget.value = ""
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={picture.saving}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <ImageIcon data-icon="inline-start" />
-                  {t("settings.profile.picture.choose")}
-                </Button>
-                {picture.value !== null ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={picture.saving}
-                    onClick={() => {
-                      setPictureInvalid(false)
-                      void picture.choose(null)
-                    }}
-                  >
-                    <Trash2Icon data-icon="inline-start" />
-                    {t("settings.profile.picture.remove")}
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-            <FieldError>
-              {pictureInvalid ? t("settings.profile.picture.invalid") : null}
-            </FieldError>
-          </Field>
-
-          <InlineEditField
-            label={t("settings.profile.name.label")}
-            placeholder={t("settings.profile.name.placeholder")}
-            defaultValue={profile.name}
-            codec={optionalTextCodec}
-            errorKey="settings.profile.name.invalid"
-            onSave={async (next) => {
-              const errorKey = await publish({
-                name: next ?? "",
-                picture: profile.picture,
-              })
-              // The field toasts a rejection itself.
-              if (errorKey !== undefined) throw new Error(errorKey)
-            }}
-          />
-
-          <Field>
-            <FieldLabel>{t("settings.profile.npub.label")}</FieldLabel>
-            <div className="flex items-center gap-1">
-              <span className="min-w-0 flex-1 break-all font-mono text-xs text-muted-foreground">
-                {identity.npub}
-              </span>
+    <>
+      <Field data-invalid={pictureInvalid}>
+        <FieldLabel htmlFor={pictureInputId}>
+          {t("settings.profile.picture.label")}
+        </FieldLabel>
+        <div className="relative flex items-center gap-4">
+          {picture.justSaved && <InlineEditSavedTick className="right-0" />}
+          <ProfileAvatar picture={picture.value} className="size-20" />
+          <div className="flex flex-col gap-2">
+            <input
+              ref={fileInputRef}
+              id={pictureInputId}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={picture.saving}
+              onChange={(event) => {
+                void choosePicture(event.currentTarget.files?.[0])
+                event.currentTarget.value = ""
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={picture.saving}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <ImageIcon data-icon="inline-start" />
+              {t("settings.profile.picture.choose")}
+            </Button>
+            {picture.value !== null ? (
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
-                className="shrink-0 text-muted-foreground"
-                aria-label={t("settings.profile.npub.copy")}
-                onClick={() =>
-                  void copyToClipboard(identity.npub, {
-                    copied: t("settings.profile.npub.copied"),
-                    failed: t("settings.profile.npub.copyFailed"),
-                  })
-                }
+                disabled={picture.saving}
+                onClick={() => {
+                  setPictureInvalid(false)
+                  void picture.choose(null)
+                }}
               >
-                <CopyIcon />
+                <Trash2Icon data-icon="inline-start" />
+                {t("settings.profile.picture.remove")}
               </Button>
-            </div>
-          </Field>
-        </FieldGroup>
-      </CardContent>
-    </Card>
+            ) : null}
+          </div>
+        </div>
+        <FieldError>
+          {pictureInvalid ? t("settings.profile.picture.invalid") : null}
+        </FieldError>
+      </Field>
+
+      <InlineEditField
+        label={t("settings.profile.name.label")}
+        placeholder={t("settings.profile.name.placeholder")}
+        defaultValue={profile.name}
+        codec={optionalTextCodec}
+        errorKey="settings.profile.name.invalid"
+        onSave={async (next) => {
+          const errorKey = await publish({
+            name: next ?? "",
+            picture: profile.picture,
+          })
+          // The field toasts a rejection itself.
+          if (errorKey !== undefined) throw new Error(errorKey)
+        }}
+      />
+    </>
+  )
+}
+
+function ProfilePublicKey() {
+  const { t } = useTranslation()
+  const identity = useNostrIdentity()
+  return (
+    <div className="flex items-center gap-1">
+      <span className="min-w-0 flex-1 break-all font-mono text-xs text-muted-foreground">
+        {identity.npub}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0 text-muted-foreground"
+        aria-label={t("settings.profile.npub.copy")}
+        onClick={() =>
+          void copyToClipboard(identity.npub, {
+            copied: t("settings.profile.npub.copied"),
+            failed: t("settings.profile.npub.copyFailed"),
+          })
+        }
+      >
+        <CopyIcon />
+      </Button>
+    </div>
   )
 }

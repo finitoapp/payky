@@ -32,7 +32,7 @@ visitor who never switches is onboarded in Czech.
 
 ## Enforced by
 
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > preferredLandingLanguage > is Czech whatever the browser's language`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > preferredLandingLanguage > is the language picked on the landing page before`
+- `packages/web-shared/src/landing-redirect.test.ts > preferredLandingLanguage > is Czech whatever the browser's language`
+- `packages/web-shared/src/landing-redirect.test.ts > preferredLandingLanguage > is the language picked on the landing page before`
 - `apps/web-app/e2e/landing-redirect.spec.ts > a new browser visitor lands on the landing page until they open the app`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > links every language's page to the others`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > links every language's page to the others`

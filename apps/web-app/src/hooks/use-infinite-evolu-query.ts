@@ -1,8 +1,8 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
 import type { EvoluSchema } from "@payky/core/evolu/schema"
+import { useIntersectionObserver } from "@payky/web-shared/use-intersection-observer"
 import { useMemo, useState, useTransition } from "react"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
-import { useIntersectionObserver } from "@/hooks/use-intersection-observer.ts"
 
 /** Shallow equality for a deps array, the same rule `useEffect`/`useMemo` use for theirs. */
 function depsEqual(a: readonly unknown[], b: readonly unknown[]): boolean {

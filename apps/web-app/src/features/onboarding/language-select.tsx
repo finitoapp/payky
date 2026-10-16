@@ -1,5 +1,5 @@
+import { languageOptions } from "@payky/web-shared/language-options"
 import { Languages } from "lucide-react"
-
 import {
   Select,
   SelectContent,
@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx"
-import { languageOptions } from "@/features/shared/language-options.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
 import type { Language } from "@/i18n/resources.ts"
 

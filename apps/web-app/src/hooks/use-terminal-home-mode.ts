@@ -7,8 +7,8 @@ import {
   parseEnabledHomeModes,
   resolveTerminalHomeMode,
 } from "@payky/core/modules/app-settings/app-settings-utils"
+import { useLocalStorageState } from "@payky/web-shared/use-local-storage-state"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
-import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
 
 const TERMINAL_HOME_MODE_STORAGE_KEY = "payky.terminalHomeMode"
 

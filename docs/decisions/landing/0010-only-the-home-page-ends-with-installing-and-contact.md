@@ -33,4 +33,4 @@ alone.
 
 ## Enforced by
 
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > ends only the home page with installing and contact, and leads to the contact form from the menu`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > ends only the home page with installing and contact, and leads to the contact form from the menu`

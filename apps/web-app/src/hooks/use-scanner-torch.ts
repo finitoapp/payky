@@ -1,7 +1,7 @@
+import { useLocalStorageState } from "@payky/web-shared/use-local-storage-state"
 import type { IScannerHandle } from "@yudiel/react-qr-scanner"
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react"
 import { z } from "zod"
-import { useLocalStorageState } from "@/hooks/use-local-storage-state.ts"
 
 const SCANNER_TORCH_STORAGE_KEY = "payky.scannerTorchEnabled"
 

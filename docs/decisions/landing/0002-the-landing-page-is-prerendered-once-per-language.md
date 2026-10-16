@@ -1,6 +1,6 @@
 # 0002 The landing page is prerendered once per language
 
-Status: accepted
+Status: superseded by landing/0011
 Date: 2026-10-06
 
 ## Context
@@ -68,9 +68,9 @@ has no Slovak version yet, so the Slovak page shares the Czech one.
 
 ## Enforced by
 
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > prerenders the page in %s at its own address`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > links every language's page to the others`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > describes the app and the page's FAQ for search results`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > landingLanguageFromPath > reads %s as %s`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > prerenders the page in %s at its own address`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > links every language's page to the others`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > describes the app and the page's FAQ for search results`
+- `packages/web-shared/src/landing-redirect.test.ts > landingLanguageFromPath > reads %s as %s`
 - `apps/web-app/e2e/landing-redirect.spec.ts > switching the landing page's language moves to that language's page`
 - `apps/web-app/e2e/landing-redirect.spec.ts > a new browser visitor lands on the landing page until they open the app`

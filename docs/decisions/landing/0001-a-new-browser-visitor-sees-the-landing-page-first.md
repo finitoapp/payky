@@ -52,7 +52,7 @@ the landing page again on its next visit to `/` without an account. Typing
 
 ## Enforced by
 
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > shouldRedirectToLanding > sends a browser tab that never opened the app to the landing page`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > shouldRedirectToLanding > keeps %s out of the landing page`
+- `packages/web-shared/src/landing-redirect.test.ts > shouldRedirectToLanding > sends a browser tab that never opened the app to the landing page`
+- `packages/web-shared/src/landing-redirect.test.ts > shouldRedirectToLanding > keeps %s out of the landing page`
 - `apps/web-app/e2e/landing-redirect.spec.ts > a new browser visitor lands on the landing page until they open the app`
 - `apps/web-app/e2e/landing-redirect.spec.ts > an installed PWA without an account goes straight to onboarding`

@@ -28,6 +28,7 @@
       "!**/playwright-report",
       "!apps/web-app/src/components/ui",
       "!apps/web-app/src/components/reui",
+      "!apps/landing/src/components/ui",
       "!**/*.tsbuildinfo"
     ]
   },

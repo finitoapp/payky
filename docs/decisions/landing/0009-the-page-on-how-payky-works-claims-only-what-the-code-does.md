@@ -82,8 +82,8 @@ list.
 
 ## Enforced by
 
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > lists every service the app talks to on the page on how Payky works`
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > lists every service the app talks to on the page on how Payky works`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
 
 The test checks that the list renders; whether it is complete is for
 review to judge.

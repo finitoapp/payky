@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && vite build --ssr src/landing-server.tsx --outDir dist-ssr && bun run scripts/prerender-landing.ts",
+    "build": "vite build",
     "cap:build": "PAYKY_CAPACITOR_BUILD=1 vite build --outDir dist-native",
     "docs:screenshots": "bun run scripts/generate-doc-screenshots.ts",
     "docs:screenshots:install-browser": "bunx playwright install chromium",
@@ -14,7 +14,7 @@
     "docs:videos:studio": "remotion studio",
     "test:e2e": "node --conditions=development ./node_modules/@playwright/test/cli.js test",
     "test:e2e:ui": "node --conditions=development ./node_modules/@playwright/test/cli.js test --ui",
-    "test:e2e:preview": "PAYKY_E2E_BUILD=1 VITE_PAYKY_EET_PRODUCTION_URL=https://eet-production.invalid/eet/services/EETServiceSOAP/v4 bun run build && PAYKY_E2E_SERVER=preview node --conditions=development ./node_modules/@playwright/test/cli.js test",
+    "test:e2e:preview": "PAYKY_E2E_BUILD=1 VITE_PAYKY_EET_PRODUCTION_URL=https://eet-production.invalid/eet/services/EETServiceSOAP/v4 bun run build && bun run --cwd ../landing build && PAYKY_E2E_SERVER=preview node --conditions=development ./node_modules/@playwright/test/cli.js test",
     "preview": "vite preview",
     "check:ts": "tsc -b",
     "check:tests": "vitest run",
@@ -63,7 +63,8 @@
     "ua-parser-js": "2.0.10",
     "zod": "4.6.7",
     "barcode-detector": "3.2.0",
-    "workbox-window": "7.4.1"
+    "workbox-window": "7.4.1",
+    "@payky/web-shared": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

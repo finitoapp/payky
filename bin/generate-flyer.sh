@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Generates an A3 conference flyer: flyer-<lang>.svg (text as paths) and flyer-<lang>.png (300 DPI).
-# Copy mirrors the landing page in apps/web-app/src/i18n. Usage: bin/generate-flyer.sh [cs|en]
+# Copy mirrors the landing page in apps/landing/src/i18n. Usage: bin/generate-flyer.sh [cs|en]
 # Requires: curl, qrencode, rsvg-convert (librsvg), magick (ImageMagick), inkscape.
 set -euo pipefail
 cd "$(dirname "$0")/.."

@@ -8,6 +8,7 @@ import {
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { legalEntityQuery } from "@payky/core/modules/legal-entity/legal-entity-queries"
+import { languageOptions } from "@payky/web-shared/language-options"
 import {
   BadgeDollarSign,
   Building2,
@@ -35,7 +36,6 @@ import { FadeHeader } from "@/components/fade-header.tsx"
 import { type Theme, useTheme } from "@/components/theme-provider.tsx"
 import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
 import { ProfileCard } from "@/features/settings/profile/profile-card.tsx"
-import { languageOptions } from "@/features/shared/language-options.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "bun run --cwd apps/web-app dev",
+    "dev": "bun run --parallel --filter @payky/web-app --filter @payky/landing dev",
     "release": "bun run bin/release.ts",
     "build": "bun run build:core && bun run --cwd apps/web-app build",
     "cap": "bun run --cwd apps/native-shell cap",
@@ -42,7 +42,10 @@
     "preview": "bun run --cwd apps/web-app preview",
     "cli": "bun run apps/cli/src/cli.ts",
     "build:core": "bun run --cwd packages/core build",
-    "check:api": "bun run bin/check-api.ts"
+    "check:api": "bun run bin/check-api.ts",
+    "dev:landing": "bun run --cwd apps/landing dev",
+    "build:landing": "bun run build:core && bun run --cwd apps/landing build",
+    "preview:landing": "bun run --cwd apps/landing preview"
   },
   "dependencies": {
     "@payky/core": "workspace:*",

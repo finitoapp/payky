@@ -65,9 +65,9 @@ storage, only an app that starts on the landing page keeps it.
 
 ## Enforced by
 
-- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > offers a native and a web-based way into the app`
+- `apps/landing/src/landing-server.test.tsx > renderLandingDocument > offers a native and a web-based way into the app`
 - `apps/web-app/e2e/landing-redirect.spec.ts > the native app comes from Zapstore or as the newest APK`
 - `apps/web-app/e2e/landing-redirect.spec.ts > without the browser's install offer, the landing page says how to install by hand`
-- `apps/web-app/src/features/shared/landing-redirect.test.ts > install language > keeps the language the app was installed in until onboarding opens`
+- `packages/web-shared/src/landing-redirect.test.ts > install language > keeps the language the app was installed in until onboarding opens`
 - `apps/web-app/e2e/landing-redirect.spec.ts > the landing page installs the app, which starts in the page's language`
 - `apps/web-app/e2e/landing-redirect.spec.ts > an installed app that starts on the landing page goes to onboarding in its language`

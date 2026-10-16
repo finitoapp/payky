@@ -45,12 +45,22 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: webServerCommand,
-    env: { VITE_PAYKY_EET_PRODUCTION_URL: fakeEetProductionUrl },
-    url: baseURL,
-    ignoreHTTPSErrors: true,
-    reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
-  },
+  webServer: [
+    {
+      command: useProductionBuild
+        ? "bun run --cwd ../landing preview"
+        : "bun run --cwd ../landing dev",
+      url: "http://127.0.0.1:5175/landing",
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      command: webServerCommand,
+      env: { VITE_PAYKY_EET_PRODUCTION_URL: fakeEetProductionUrl },
+      url: baseURL,
+      ignoreHTTPSErrors: true,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+  ],
 })

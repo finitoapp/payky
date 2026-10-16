@@ -277,7 +277,7 @@ function Footer() {
     <footer className="bg-muted/50">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-center lg:px-8">
         <div className="inline-flex items-center gap-2 text-base font-bold tracking-tight">
-          <img src="/pwa-icon.svg" alt="" className="size-6 shrink-0" />
+          <img src="/landing/pwa-icon.svg" alt="" className="size-6 shrink-0" />
           <span>{t("app.name")}</span>
         </div>
         <span className="text-sm text-muted-foreground">

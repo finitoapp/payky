@@ -142,7 +142,7 @@ export function LandingHeader() {
           className="inline-flex shrink-0 items-center gap-2.5 text-lg font-bold tracking-tight"
           aria-label={t("app.name")}
         >
-          <img src="/pwa-icon.svg" alt="" className="size-8 shrink-0" />
+          <img src="/landing/pwa-icon.svg" alt="" className="size-8 shrink-0" />
           {/* The smallest phones need the room for the menu button. */}
           <span className="hidden min-[380px]:inline">{t("app.name")}</span>
         </a>

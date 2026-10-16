@@ -34,8 +34,8 @@ it.
 
 ## Enforced by
 
-- `src/core/modules/refund/refund-actions.test.ts > refundPayment > keeps a fully refunded payment paid and its bill closed and covered`
-- `src/core/modules/refund/refund-actions.test.ts > refundPayment > returns a payment in parts outside Payky without moving any account`
-- `src/core/modules/refund/refund-actions.test.ts > refundPayment > returns a rounded cash payment in full from the cash register`
-- `e2e/eet.spec.ts > refunds of a paid bill reach EET as negative sales`
-- `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refundPayment > keeps a fully refunded payment paid and its bill closed and covered`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refundPayment > returns a payment in parts outside Payky without moving any account`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refundPayment > returns a rounded cash payment in full from the cash register`
+- `apps/web-app/e2e/eet.spec.ts > refunds of a paid bill reach EET as negative sales`
+- `apps/web-app/e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

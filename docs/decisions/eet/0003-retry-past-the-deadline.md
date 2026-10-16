@@ -29,11 +29,11 @@ endpoint, retries forever. `docs/eet.md` lists that as a known gap.
 
 ## Enforced by
 
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > getEetRetryDelayMs > starts at 30 seconds, doubles, and stops at 15 minutes`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > keeps retrying past the 48-hour deadline`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > retries EET error %i until a POK arrives`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > keeps retrying a temporary error with no attempt limit`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > rejects $errorType without retrying`
-- `src/core/modules/eet/eet-utils.test.ts > isEetSaleOverdue > flags a pending sale 49 hours after the time of sale`
-- `src/core/modules/eet/eet-utils.test.ts > isEetSaleOverdue > does not flag a pending sale within 48 hours`
-- `src/core/modules/eet/eet-utils.test.ts > isEetSaleOverdue > flags a rejected sale and never a confirmed one`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > getEetRetryDelayMs > starts at 30 seconds, doubles, and stops at 15 minutes`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > keeps retrying past the 48-hour deadline`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > retries EET error %i until a POK arrives`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > keeps retrying a temporary error with no attempt limit`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: delivery > rejects $errorType without retrying`
+- `packages/core/src/modules/eet/eet-utils.test.ts > isEetSaleOverdue > flags a pending sale 49 hours after the time of sale`
+- `packages/core/src/modules/eet/eet-utils.test.ts > isEetSaleOverdue > does not flag a pending sale within 48 hours`
+- `packages/core/src/modules/eet/eet-utils.test.ts > isEetSaleOverdue > flags a rejected sale and never a confirmed one`

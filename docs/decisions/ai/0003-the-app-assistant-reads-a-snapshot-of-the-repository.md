@@ -58,8 +58,8 @@ provider (ai/0001).
 
 ## Enforced by
 
-- `src/core/ai/repo-ai-tools.test.ts > createRepoAiTools > refuses a path that is not a repository file`
-- `src/core/ai/repo-ai-tools.test.ts > createRepoAiTools > puts the note before every result`
-- `src/core/cli/git-repo-files.test.ts > createGitRepoFiles > leaves binary files out`
-- `src/features/settings/assistant/snapshot-repo-files.test.ts > snapshotRepoFiles > notes when the snapshot is of another version than the app`
-- `src/features/settings/assistant/snapshot-repo-files.test.ts > createSnapshotRepoFilesLoader > downloads the snapshot once, and again after a failed download`
+- `packages/core/src/ai/repo-ai-tools.test.ts > createRepoAiTools > refuses a path that is not a repository file`
+- `packages/core/src/ai/repo-ai-tools.test.ts > createRepoAiTools > puts the note before every result`
+- `apps/cli/src/git-repo-files.test.ts > createGitRepoFiles > leaves binary files out`
+- `apps/web-app/src/features/settings/assistant/snapshot-repo-files.test.ts > snapshotRepoFiles > notes when the snapshot is of another version than the app`
+- `apps/web-app/src/features/settings/assistant/snapshot-repo-files.test.ts > createSnapshotRepoFilesLoader > downloads the snapshot once, and again after a failed download`

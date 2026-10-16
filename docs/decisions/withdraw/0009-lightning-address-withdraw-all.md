@@ -48,12 +48,12 @@ never pays; that invoice expires. A balance above `maxSendable` sends
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-utils.test.ts > lightningMaxFeeSats > adds ten percent of the estimate`
-- `src/core/modules/withdraw/withdraw-utils.test.ts > lightningMaxFeeSats > adds at least three sats`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > prices an invoice with an amount at the estimate plus the reserve`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > prices an invoice with a Spark fallback with the Lightning estimate too`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > withdraws all to an amountless invoice as the balance minus the most the fee can be`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an invoice whose amount and fee reserve exceed the balance`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > withdraws all to a Lightning address as the balance minus the most the fee can be`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > withdraws all to a Lightning address at most its maxSendable`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses to withdraw all to a Lightning address when the balance minus the fee is below its minSendable`
+- `packages/core/src/modules/withdraw/withdraw-utils.test.ts > lightningMaxFeeSats > adds ten percent of the estimate`
+- `packages/core/src/modules/withdraw/withdraw-utils.test.ts > lightningMaxFeeSats > adds at least three sats`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > prices an invoice with an amount at the estimate plus the reserve`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > prices an invoice with a Spark fallback with the Lightning estimate too`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > withdraws all to an amountless invoice as the balance minus the most the fee can be`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an invoice whose amount and fee reserve exceed the balance`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > withdraws all to a Lightning address as the balance minus the most the fee can be`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > withdraws all to a Lightning address at most its maxSendable`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses to withdraw all to a Lightning address when the balance minus the fee is below its minSendable`

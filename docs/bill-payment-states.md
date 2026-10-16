@@ -362,7 +362,7 @@ this bill was observed covered, i.e. roughly when the money arrived.
 Two actions write the fields above outside the automatic claim path, both in
 `bill-actions.ts`:
 
-- **`closeBill`** (`bin/cli-bills.ts close`) manually refreshes the
+- **`closeBill`** (`apps/cli/src/cli-bills.ts close`) manually refreshes the
   `closedAt` cache — a repair tool for the lag described above, not a way to
   force a bill closed. It rejects a `canceled` bill (use
   `confirmBillClosedDespiteCancellation` for that collision) and one with no

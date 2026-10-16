@@ -35,5 +35,5 @@ the exact tip, also from the cash register.
 
 ## Enforced by
 
-- `src/core/modules/refund/refund-utils.test.ts > deriveRefundPrefillAmount > prefills $prefill of $remaining $currency left for a refund $method`
-- `e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`
+- `packages/core/src/modules/refund/refund-utils.test.ts > deriveRefundPrefillAmount > prefills $prefill of $remaining $currency left for a refund $method`
+- `apps/web-app/e2e/eet.spec.ts > a payment settled twice reports the extra money, and refunding it reverses only that`

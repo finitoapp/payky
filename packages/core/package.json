@@ -1,0 +1,166 @@
+{
+  "name": "@payky/core",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check:ts": "tsc -b",
+    "check:tests": "vitest run",
+    "check": "bun run check:ts && bun run check:tests"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.70",
+    "@buildonspark/spark-sdk": "0.14.0",
+    "@cashu/cashu-ts": "4.11.0",
+    "@evolu/common": "8.23.0",
+    "@evolu/nodejs": "4.3.4",
+    "@finitoapp/eet-client": "0.3.0",
+    "@noble/hashes": "2.4.0",
+    "@peculiar/asn1-schema": "2.11.0",
+    "@peculiar/asn1-x509": "2.11.0",
+    "@scure/base": "2.4.0",
+    "@scure/bip32": "2.4.0",
+    "@scure/bip39": "2.4.0",
+    "@scure/btc-signer": "2.4.1",
+    "@t3-oss/env-core": "0.13.11",
+    "ai": "7.0.142",
+    "better-sqlite3": "13.0.3",
+    "bysquare": "4.1.0",
+    "cbor-x": "1.6.6",
+    "date-fns": "4.4.0",
+    "kysely": "0.29.6",
+    "light-bolt11-decoder": "3.2.0",
+    "nostr-tools": "2.25.2",
+    "slip39-ts": "0.1.13",
+    "type-fest": "5.10.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@standard-schema/spec": "1.1.0",
+    "@types/better-sqlite3": "9.6.0",
+    "@types/node": "26.6.5",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "exports": {
+    "./deps": {
+      "types": "./src/deps.ts",
+      "browser": "./src/deps.ts",
+      "bun": "./src/deps.ts",
+      "development": "./src/deps.ts",
+      "default": "./dist/deps.js"
+    },
+    "./error": {
+      "types": "./src/error.ts",
+      "browser": "./src/error.ts",
+      "bun": "./src/error.ts",
+      "development": "./src/error.ts",
+      "default": "./dist/error.js"
+    },
+    "./switchio": {
+      "types": "./src/switchio.ts",
+      "browser": "./src/switchio.ts",
+      "bun": "./src/switchio.ts",
+      "development": "./src/switchio.ts",
+      "default": "./dist/switchio.js"
+    },
+    "./zod-utils": {
+      "types": "./src/zod-utils.ts",
+      "browser": "./src/zod-utils.ts",
+      "bun": "./src/zod-utils.ts",
+      "development": "./src/zod-utils.ts",
+      "default": "./dist/zod-utils.js"
+    },
+    "./modules/*": {
+      "types": "./src/modules/*.ts",
+      "browser": "./src/modules/*.ts",
+      "bun": "./src/modules/*.ts",
+      "development": "./src/modules/*.ts",
+      "default": "./dist/modules/*.js"
+    },
+    "./evolu/*": {
+      "types": "./src/evolu/*.ts",
+      "browser": "./src/evolu/*.ts",
+      "bun": "./src/evolu/*.ts",
+      "development": "./src/evolu/*.ts",
+      "default": "./dist/evolu/*.js"
+    },
+    "./migrations/*": {
+      "types": "./src/migrations/*.ts",
+      "browser": "./src/migrations/*.ts",
+      "bun": "./src/migrations/*.ts",
+      "development": "./src/migrations/*.ts",
+      "default": "./dist/migrations/*.js"
+    },
+    "./integrations/*": {
+      "types": "./src/integrations/*.ts",
+      "browser": "./src/integrations/*.ts",
+      "bun": "./src/integrations/*.ts",
+      "development": "./src/integrations/*.ts",
+      "default": "./dist/integrations/*.js"
+    },
+    "./background-jobs/*": {
+      "types": "./src/background-jobs/*.ts",
+      "browser": "./src/background-jobs/*.ts",
+      "bun": "./src/background-jobs/*.ts",
+      "development": "./src/background-jobs/*.ts",
+      "default": "./dist/background-jobs/*.js"
+    },
+    "./cashu/*": {
+      "types": "./src/cashu/*.ts",
+      "browser": "./src/cashu/*.ts",
+      "bun": "./src/cashu/*.ts",
+      "development": "./src/cashu/*.ts",
+      "default": "./dist/cashu/*.js"
+    },
+    "./spark/*": {
+      "types": "./src/spark/*.ts",
+      "browser": "./src/spark/*.ts",
+      "bun": "./src/spark/*.ts",
+      "development": "./src/spark/*.ts",
+      "default": "./dist/spark/*.js"
+    },
+    "./ai/*": {
+      "types": "./src/ai/*.ts",
+      "browser": "./src/ai/*.ts",
+      "bun": "./src/ai/*.ts",
+      "development": "./src/ai/*.ts",
+      "default": "./dist/ai/*.js"
+    },
+    "./demo-data/*": {
+      "types": "./src/demo-data/*.ts",
+      "browser": "./src/demo-data/*.ts",
+      "bun": "./src/demo-data/*.ts",
+      "development": "./src/demo-data/*.ts",
+      "default": "./dist/demo-data/*.js"
+    },
+    "./utils/*": {
+      "types": "./src/utils/*.ts",
+      "browser": "./src/utils/*.ts",
+      "bun": "./src/utils/*.ts",
+      "development": "./src/utils/*.ts",
+      "default": "./dist/utils/*.js"
+    },
+    "./runtime/node-evolu": {
+      "types": "./src/runtime/node-evolu.ts",
+      "browser": "./src/runtime/node-evolu.ts",
+      "bun": "./src/runtime/node-evolu.ts",
+      "development": "./src/runtime/node-evolu.ts",
+      "default": "./dist/runtime/node-evolu.js"
+    },
+    "./runtime/in-process-lock-manager": {
+      "types": "./src/runtime/in-process-lock-manager.ts",
+      "browser": "./src/runtime/in-process-lock-manager.ts",
+      "bun": "./src/runtime/in-process-lock-manager.ts",
+      "development": "./src/runtime/in-process-lock-manager.ts",
+      "default": "./dist/runtime/in-process-lock-manager.js"
+    },
+    "./testing/*": {
+      "types": "./src/testing/*.ts",
+      "browser": "./src/testing/*.ts",
+      "bun": "./src/testing/*.ts",
+      "development": "./src/testing/*.ts",
+      "default": "./src/testing/*.ts"
+    }
+  }
+}

@@ -31,28 +31,28 @@ New files (existing ones changed are listed per step):
 
 | Path | Holds |
 | --- | --- |
-| `src/core/modules/cashu/cashu-types.ts` | Branded ids (`CashuProofId`, `CashuOperationId`, `ShardPointerId`, `LinkySettingId`), `MintUrl`, proof states, operation kinds and statuses, `KeysetId`, token/bolt11 text brands |
-| `src/core/modules/cashu/cashu.ts` | Linky's four tables (`shardPointer`, `setting`, `cashuProof`, `cashuOperation`) copied 1:1, their indexes, row types |
-| `src/core/modules/cashu/cashu-utils.ts` | `normalizeMintUrl`, `cashuProofIdFor`, `cashuOperationIdFor`, `operationKeyOf`, proof merge (`mergeProofCopies`), operation merge |
-| `src/core/modules/cashu/cashu-queries.ts` | Every query over the four tables, each filtered by owner ids |
-| `src/core/modules/cashu/cashu-cross-app.test.ts` | Vectors shared with Linky: ids, mint URLs, row decoding, NUT-18 and BIP-321 encodings |
-| `src/core/modules/cashu/cashu-table-isolation.test.ts` | Source scan: the four table names appear only in allowed files (§2) |
-| `src/core/cashu/cashu-shard-store.ts` | Owners, pointer, rotation, copy-on-write, merge, hold-until-hydrated; the only writer of Linky's tables |
-| `src/core/cashu/linky-owners.ts` | Deriving the Linky app owner and the shard owners, building their transports, `useOwner` registration |
-| `src/core/cashu/cashu-wallet.ts` | `CashuWalletDep` over cashu-ts: wallet per `mint|unit`, foreign-keyset check, NUT-07, fees |
-| `src/core/cashu/cashu-counters.ts` | Counter reservation (blocks of 64, never backwards, slot 0 unused), restore-on-first-use, collision recovery |
-| `src/core/cashu/cashu-restore.ts` | Linky's NUT-09 restore algorithm |
-| `src/core/cashu/cashu-topup.ts` | Quote creation, claim, someone-else-first detection, reclaim |
-| `src/core/cashu/cashu-receive.ts` | Linky's 10-step token receive |
-| `src/core/cashu/cashu-melt.ts` | Melt (withdraw) and its resume |
-| `src/core/cashu/cashu-autoswap.ts` | Move funds between mints and its resume |
-| `src/core/cashu/cashu-payment-request.ts` | NUT-18 `creqA…` encoding and the BIP-321 builder/parser |
-| `src/core/cashu/fake-cashu-mint.ts` | In-memory NUT-04/05/07/09/13/17/20 mint for unit tests, the demo and e2e |
-| `src/core/evolu/device-cashu.ts` | Device-database writes: counters, attempt records, seen/added mints |
-| `src/core/integrations/nostr/nostr-cashu-inbox.ts` | NIP-17 subscription filtered to 1:1 rooms carrying a Cashu payment |
-| `src/core/background-jobs/jobs/cashu-account-sync-job.ts` | Lightning settlement, token listener, booking cursor, pending-operation resume |
-| `src/features/payment-wait/payment-wait-cashu-tab.tsx` | The BIP-321 QR and the token states |
-| `src/features/settings/cashu/…` | Cashu account detail, mints list, mint detail, add mint, move funds |
+| `packages/core/src/modules/cashu/cashu-types.ts` | Branded ids (`CashuProofId`, `CashuOperationId`, `ShardPointerId`, `LinkySettingId`), `MintUrl`, proof states, operation kinds and statuses, `KeysetId`, token/bolt11 text brands |
+| `packages/core/src/modules/cashu/cashu.ts` | Linky's four tables (`shardPointer`, `setting`, `cashuProof`, `cashuOperation`) copied 1:1, their indexes, row types |
+| `packages/core/src/modules/cashu/cashu-utils.ts` | `normalizeMintUrl`, `cashuProofIdFor`, `cashuOperationIdFor`, `operationKeyOf`, proof merge (`mergeProofCopies`), operation merge |
+| `packages/core/src/modules/cashu/cashu-queries.ts` | Every query over the four tables, each filtered by owner ids |
+| `packages/core/src/modules/cashu/cashu-cross-app.test.ts` | Vectors shared with Linky: ids, mint URLs, row decoding, NUT-18 and BIP-321 encodings |
+| `packages/core/src/modules/cashu/cashu-table-isolation.test.ts` | Source scan: the four table names appear only in allowed files (§2) |
+| `packages/core/src/cashu/cashu-shard-store.ts` | Owners, pointer, rotation, copy-on-write, merge, hold-until-hydrated; the only writer of Linky's tables |
+| `packages/core/src/cashu/linky-owners.ts` | Deriving the Linky app owner and the shard owners, building their transports, `useOwner` registration |
+| `packages/core/src/cashu/cashu-wallet.ts` | `CashuWalletDep` over cashu-ts: wallet per `mint|unit`, foreign-keyset check, NUT-07, fees |
+| `packages/core/src/cashu/cashu-counters.ts` | Counter reservation (blocks of 64, never backwards, slot 0 unused), restore-on-first-use, collision recovery |
+| `packages/core/src/cashu/cashu-restore.ts` | Linky's NUT-09 restore algorithm |
+| `packages/core/src/cashu/cashu-topup.ts` | Quote creation, claim, someone-else-first detection, reclaim |
+| `packages/core/src/cashu/cashu-receive.ts` | Linky's 10-step token receive |
+| `packages/core/src/cashu/cashu-melt.ts` | Melt (withdraw) and its resume |
+| `packages/core/src/cashu/cashu-autoswap.ts` | Move funds between mints and its resume |
+| `packages/core/src/cashu/cashu-payment-request.ts` | NUT-18 `creqA…` encoding and the BIP-321 builder/parser |
+| `packages/core/src/cashu/fake-cashu-mint.ts` | In-memory NUT-04/05/07/09/13/17/20 mint for unit tests, the demo and e2e |
+| `packages/core/src/evolu/device-cashu.ts` | Device-database writes: counters, attempt records, seen/added mints |
+| `packages/core/src/integrations/nostr/nostr-cashu-inbox.ts` | NIP-17 subscription filtered to 1:1 rooms carrying a Cashu payment |
+| `packages/core/src/background-jobs/jobs/cashu-account-sync-job.ts` | Lightning settlement, token listener, booking cursor, pending-operation resume |
+| `apps/web-app/src/features/payment-wait/payment-wait-cashu-tab.tsx` | The BIP-321 QR and the token states |
+| `apps/web-app/src/features/settings/cashu/…` | Cashu account detail, mints list, mint detail, add mint, move funds |
 | `docs/decisions/cashu/0001…` | The records listed in §9 |
 
 ## Phase 1 — Identity and sync
@@ -62,7 +62,7 @@ Linky, then writes one row Linky reads. Proves Evolu 7.4.1 ↔ 8.19.0.
 
 ### 1.1 Derivations
 
-- `src/core/modules/shared/key-derivation.ts`:
+- `packages/core/src/modules/shared/key-derivation.ts`:
   - rename `defaultCashuDerivationPath` to `cashuWalletSeedDerivationPath`
     (`m/83696968'/39'/0'/24'/0'`);
   - add `linkyAppOwnerDerivationPath` (`m/83696968'/39'/0'/24'/1'/0'`);
@@ -86,12 +86,12 @@ Linky, then writes one row Linky reads. Proves Evolu 7.4.1 ↔ 8.19.0.
 
 ### 1.3 Linky's tables and types
 
-- `src/core/modules/cashu/cashu-types.ts` and `cashu.ts`: copy column names and
+- `packages/core/src/modules/cashu/cashu-types.ts` and `cashu.ts`: copy column names and
   types from `../linky/packages/linksync/src/model/schema.ts`. Use the existing
   `id(...)`/`standardSchemaToZod` id pattern; brands encode Linky's decode
   rules (token text starts with `cashu`, bolt11 with `ln`, keyset id even-length
   hex, amounts positive).
-- Register the four tables in `src/core/evolu/schema.ts`. Indexes:
+- Register the four tables in `packages/core/src/evolu/schema.ts`. Indexes:
   `cashuProof(mint, state)`, `cashuOperation(kind, status, createdAtSec)`,
   `cashuOperation(quoteId)`.
 - `cashu-utils.ts`: `normalizeMintUrl` (Linky's `parseMintUrl` +
@@ -102,26 +102,26 @@ Linky, then writes one row Linky reads. Proves Evolu 7.4.1 ↔ 8.19.0.
   normalisation. Linky PR adds the twin.
 - `cashu-table-isolation.test.ts`: fails when `"cashuProof"`,
   `"cashuOperation"`, `"shardPointer"` or `"setting"` (as a table name) appear
-  outside `src/core/modules/cashu/`, `src/core/cashu/cashu-shard-store.ts` and
-  `src/core/evolu/schema.ts`.
+  outside `packages/core/src/modules/cashu/`, `packages/core/src/cashu/cashu-shard-store.ts` and
+  `packages/core/src/evolu/schema.ts`.
 - `docs/glossary.md`: `setting` versus `appSettings`, Linky owner, proof, mint.
 
 ### 1.4 Extra owners in the app Evolu
 
-- `src/core/cashu/linky-owners.ts`:
+- `packages/core/src/cashu/linky-owners.ts`:
   - `deriveLinkyAppOwner(masterKey)` (`createAppOwner`) and
     `deriveCashuShardOwner(linkyAppOwner, index)` (`deriveShardOwner(…,
     ["cashu", index])`);
   - transports per owner via `createOwnerWebSocketTransport` over Linky's
     relays: fetch `https://linky.fit/recommended-relays` (zod-validated through
-    `fetchAndValidateJson`, new `src/core/integrations/linky/` client), fallback
+    `fetchAndValidateJson`, new `packages/core/src/integrations/linky/` client), fallback
     `wss://evolu.eu.freedomrelay.dev`, `wss://evolu.linky.fit`.
-- `src/atoms/evolu.ts`: next to `useOwner(evolu.appOwner, …)`, register the
+- `apps/web-app/src/atoms/evolu.ts`: next to `useOwner(evolu.appOwner, …)`, register the
   Linky app owner and shards `0..active` for a non-demo account with a master
   key; release on account switch (same `unuse` lifecycle).
-- Env: the relay-list URL and fallbacks in `src/core/app-env.ts`
+- Env: the relay-list URL and fallbacks in `apps/web-app/src/core/app-env.ts`
   (`VITE_LINKY_RELAYS_URL`), per the env rule.
-- Test (`src/core/evolu/…` with `createEvoluTest`): owners registered and
+- Test (`packages/core/src/evolu/…` with `createEvoluTest`): owners registered and
   released; demo account registers none.
 
 ### 1.5 Shard store, read-only
@@ -202,14 +202,14 @@ state against a fake mint and against `testnut.cashu.space`.
   `spent` only on a definitive answer or 11001.
 - Errors via `defineError`: `MintUnreachable`, `MintRejected`, `TokenLocked`,
   `AmountConsumedByFee`, `ProofsSpent`, `CounterLockTimeout`, `QuoteExpired`.
-- Wire into `src/hooks/use-app-run.ts` deps and the CLI deps.
+- Wire into `apps/web-app/src/hooks/use-app-run.ts` deps and the CLI deps.
 
 ### 2.3 Counters
 
-- Device schema (`src/core/evolu/device-client.ts`): `cashuCounter` (scope
+- Device schema (`packages/core/src/evolu/device-client.ts`): `cashuCounter` (scope
   `mint|unit|keysetId` → next slot), `cashuClaimAttempt` (operation id →
   counter this device reserved), `cashuSeenMint`, `cashuAddedMint`.
-- `src/core/evolu/device-cashu.ts`: synchronous write functions
+- `packages/core/src/evolu/device-cashu.ts`: synchronous write functions
   (`reserveCashuCounterBlock`, `advanceCashuCounter`, `recordCashuClaimAttempt`,
   `markCashuMintSeen`, `addCashuMint`, `removeCashuMint`).
 - `cashu-counters.ts`: reserve 64 slots under `lockManager` per counter scope;
@@ -268,7 +268,7 @@ payment settles into Payky's books. First user-visible phase.
   exists (`seedOnboardingDefaultMint`).
 - Default mint read: `cashuDefaultMintQuery` over `setting/defaultMint` under
   the Linky app owner, decoded with Linky's codec, fallback `https://cashu.cz`.
-- `bin/cli-accounts.ts`: list/show the kind.
+- `apps/cli/src/cli-accounts.ts`: list/show the kind.
 
 ### 3.2 Union and lookup tables (§8)
 
@@ -276,10 +276,10 @@ Work through §8 in one commit per area, letting `tsc` find the gaps:
 `DefaultPaymentMethodSchema`, `PaymentMethodTab`, `PaymentMethodOption`,
 `preparingPaymentMethodKeys`, `payment-wait-method-tabs.tsx`, settings
 row-state table, `payment-method-display.tsx`, stats `methodColors` (new
-`--chart-6` token in `src/index.css`, light and dark), `kindKeys` in
+`--chart-6` token in `apps/web-app/src/index.css`, light and dark), `kindKeys` in
 `spark-transactions-page.tsx` (check by hand, it is `Partial`),
 `onboardingPaymentMethodOrder` (leave Cashu unlisted: onboarding unchanged),
-`bin/cli-payments.ts`, `bin/cli-account-transfers.ts`, i18n in
+`apps/cli/src/cli-payments.ts`, `apps/cli/src/cli-account-transfers.ts`, i18n in
 `en`/`cs`/`sk` (`payment.ts`, `settings.ts` groups).
 
 ### 3.3 `paymentCashu`
@@ -360,12 +360,12 @@ row-state table, `payment-method-display.tsx`, stats `methodColors` (new
 ### 3.9 Settings and access
 
 - Settings detail route for the Cashu account next to Spark's (thin route,
-  `*Page` in `src/features/settings/cashu/`), `staticData.access`.
-- Access: new permissions per §8 in `src/core/modules/access`; new record
+  `*Page` in `apps/web-app/src/features/settings/cashu/`), `staticData.access`.
+- Access: new permissions per §8 in `packages/core/src/modules/access`; new record
   `access/0009` superseding the map in `access/0008`.
 - Demo: demo-data generator uses the fake Cashu wallet; a demo account gets
   the fake mint at runtime too (no Linky owners).
-- E2E (`e2e/cashu.spec.ts`, read `e2e/AGENTS.md` first): enable Cashu, prepare
+- E2E (`apps/web-app/e2e/cashu.spec.ts`, read `apps/web-app/e2e/AGENTS.md` first): enable Cashu, prepare
   a payment against the fake mint, simulate `PAID`, see it settle.
 
 Exit: a real payment at cashu.cz from a Lightning wallet settles; Linky shows
@@ -441,7 +441,7 @@ underpayment (5d).
 ## Phase 5 — Mints screen
 
 - Routes under the Cashu account settings: list, detail, add (thin routes,
-  pages in `src/features/settings/cashu/`), each with `staticData.access`.
+  pages in `apps/web-app/src/features/settings/cashu/`), each with `staticData.access`.
 - List: known mints with balance and default badge, plus presets
   (`PRODUCTION_MINTS`) fetched via `fetchInfo` without marking seen.
 - Add by URL: prefix `https://`, require a dot, normalise, refuse when info or
@@ -489,7 +489,7 @@ Most docs land with their phase; this phase checks nothing is missing.
 - Landing "how it works" (`landing-tech-page.tsx`, `landing-tech-diagrams.tsx`,
   `landing.tech.services.*`) and `landing/0009`: mints, Linky's relays, the
   request's nostr relays.
-- `AGENTS.md`: `src/core/cashu`, the shard-store isolation rule, the
+- `AGENTS.md`: `packages/core/src/cashu`, the shard-store isolation rule, the
   `@cashu/cashu-ts` wrapper rule (like Spark's).
 - Linky: `AGENTS.md` note naming Payky as a second writer of `meta` and
   `cashu`; the `MintRejected`-after-exhausted-collisions proposal (§3) as an

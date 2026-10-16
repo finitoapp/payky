@@ -77,13 +77,13 @@ exceptions are exactly what a careful reader checks first.
 
 The page is wrong whenever the app gains a connection the list omits, and
 no test can see that from the code. Review of any change to
-`src/core/integrations`, `api/` or the relay defaults has to look at the
+`packages/core/src/integrations`, `api/` or the relay defaults has to look at the
 list.
 
 ## Enforced by
 
-- `src/landing-server.test.tsx > renderLandingDocument > lists every service the app talks to on the page on how Payky works`
-- `src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > lists every service the app talks to on the page on how Payky works`
+- `apps/web-app/src/landing-server.test.tsx > renderLandingDocument > follows a claim of the page on how Payky works to the decision and the test that hold it`
 
 The test checks that the list renders; whether it is complete is for
 review to judge.

@@ -1,0 +1,19 @@
+import { type Brand, type Id, id } from "@evolu/common"
+import { z } from "zod"
+
+import { standardSchemaToZod } from "../../zod-utils.ts"
+
+export const BillLineIdRaw = id("BillLine")
+export const BillLineId = standardSchemaToZod(BillLineIdRaw)
+export type BillLineId = typeof BillLineIdRaw.Output
+
+/**
+ * `BillLineSummary` rows are computed in memory (never written to an Evolu
+ * table), so their id is a plain `createIdFromString` brand rather than a
+ * `id("...")`-declared table id.
+ */
+export type BillLineSummaryId = Id & Brand<"BillLineSummary">
+
+export const BillLineTagSchema = z.enum(["add", "remove"])
+
+export type BillLineTag = z.output<typeof BillLineTagSchema>

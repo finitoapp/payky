@@ -25,7 +25,7 @@ An invoice of ours that never reached this device yet is not recognized.
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an invoice whose Spark fallback is this wallet`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses one of our own payment invoices`
-- `src/core/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > reads the Spark identity from a Spark invoice fallback, as Payky's own invoices carry it`
-- `src/core/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > reads the Spark identity from a Spark route hint`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an invoice whose Spark fallback is this wallet`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses one of our own payment invoices`
+- `packages/core/src/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > reads the Spark identity from a Spark invoice fallback, as Payky's own invoices carry it`
+- `packages/core/src/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > reads the Spark identity from a Spark route hint`

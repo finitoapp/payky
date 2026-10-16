@@ -42,7 +42,7 @@ Three constraints shaped how:
   ordered, and the real clock is not advanced, so later writes are dated
   normally. Earlier millis start that ordering over, so the generator can
   step back a day into a span it has not written yet.
-- `generateDemoData` (`src/core/demo-data/`) only composes the domain Tasks
+- `generateDemoData` (`packages/core/src/demo-data/`) only composes the domain Tasks
   the UI uses, at a simulated time that the backdate and a fake `date` dep
   share. Fakes answer the exchange rate, wallet invoices and card terminal;
   nothing is fetched.
@@ -102,8 +102,8 @@ Three constraints shaped how:
 
 ## Enforced by
 
-- `src/core/evolu/evolu-backdate-patch.test.ts > evolu backdate patch > stamps createdAt in the past, also jumping back, and leaves later writes on the real clock`
-- `src/core/demo-data/demo-data-generator.test.ts > generateDemoData > records a backdated history whose every payment is settled or canceled, with EET left unset`
-- `src/core/evolu/device-account.test.ts > insertDemoAccount > adds an active demo account whose relays are all switched off`
-- `src/core/demo-data/demo-data-generator.test.ts > generateDemoData > stopped early, leaves the newest days with bills numbered as if the older ones existed`
-- `e2e/demo-data.spec.ts > a demo account generates from today back until stopped, with its relays locked off`
+- `packages/core/src/evolu/evolu-backdate-patch.test.ts > evolu backdate patch > stamps createdAt in the past, also jumping back, and leaves later writes on the real clock`
+- `packages/core/src/demo-data/demo-data-generator.test.ts > generateDemoData > records a backdated history whose every payment is settled or canceled, with EET left unset`
+- `packages/core/src/evolu/device-account.test.ts > insertDemoAccount > adds an active demo account whose relays are all switched off`
+- `packages/core/src/demo-data/demo-data-generator.test.ts > generateDemoData > stopped early, leaves the newest days with bills numbered as if the older ones existed`
+- `apps/web-app/e2e/demo-data.spec.ts > a demo account generates from today back until stopped, with its relays locked off`

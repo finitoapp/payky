@@ -34,9 +34,9 @@ attention.
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > leaves out a refunded tip that belongs to employees`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > caps later refunds at what the sale has left`
-- `src/core/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > sends a reversal only once its sale is confirmed`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning the duplicate leaves the real sale reported`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > leaves out a refunded tip that belongs to employees`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > caps later refunds at what the sale has left`
+- `packages/core/src/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > sends a reversal only once its sale is confirmed`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals of extra money > returning the duplicate leaves the real sale reported`

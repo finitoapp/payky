@@ -1,12 +1,20 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
+    {
+      "path": "./apps/web-app"
+    },
+    {
+      "path": "./apps/native-shell"
+    },
+    {
+      "path": "./apps/cli"
+    },
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./tsconfig.tools.json"
     }
-  }
+  ]
 }

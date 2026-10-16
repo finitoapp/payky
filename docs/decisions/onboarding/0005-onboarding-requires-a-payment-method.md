@@ -44,8 +44,8 @@ Invalid forms neither publish a profile name nor create partial account rows.
 
 ## Enforced by
 
-- `src/core/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > refuses an empty payment-method selection before writing any row`
-- `e2e/onboarding.spec.ts > onboarding requires a payment method and accepts cash alone`
-- `e2e/onboarding.spec.ts > onboarding requires a payment method and accepts btc alone`
-- `e2e/onboarding.spec.ts > onboarding requires a payment method and accepts iban alone`
-- `e2e/onboarding.spec.ts > the payment methods step derives bank transfers from the account input`
+- `packages/core/src/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > refuses an empty payment-method selection before writing any row`
+- `apps/web-app/e2e/onboarding.spec.ts > onboarding requires a payment method and accepts cash alone`
+- `apps/web-app/e2e/onboarding.spec.ts > onboarding requires a payment method and accepts btc alone`
+- `apps/web-app/e2e/onboarding.spec.ts > onboarding requires a payment method and accepts iban alone`
+- `apps/web-app/e2e/onboarding.spec.ts > the payment methods step derives bank transfers from the account input`

@@ -30,5 +30,5 @@ Security and loses the device loses the account.
 
 ## Enforced by
 
-- `src/features/onboarding/onboarding-form-state.test.ts > getOnboardingSteps > includes the setup steps for a new account`
-- `e2e/onboarding.spec.ts > complete onboarding as a new account, without backing up the recovery phrase`
+- `apps/web-app/src/features/onboarding/onboarding-form-state.test.ts > getOnboardingSteps > includes the setup steps for a new account`
+- `apps/web-app/e2e/onboarding.spec.ts > complete onboarding as a new account, without backing up the recovery phrase`

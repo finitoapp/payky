@@ -37,7 +37,7 @@ transfer appear after all, its movement turns the withdrawal done.
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > on the creating device, marks a missing transfer not-created after ten minutes, not before`
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > does not mark a withdrawal this device is still sending`
-- `src/core/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > seen from %s, marks a missing transfer not-created only after 24 hours`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > holds the withdrawal's lock while sending`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > on the creating device, marks a missing transfer not-created after ten minutes, not before`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > does not mark a withdrawal this device is still sending`
+- `packages/core/src/modules/withdraw/withdraw-check-actions.test.ts > checkPendingWithdrawals > seen from %s, marks a missing transfer not-created only after 24 hours`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > holds the withdrawal's lock while sending`

@@ -47,10 +47,10 @@ next to Spark before it is enabled.
 
 ## Enforced by
 
-- `src/core/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > enables cash and Spark without a bank account and leaves Cashu disabled`
-- `src/core/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > writes no row on an onboarded account`
-- `src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > places Cashu immediately after Spark with bank transfer first`
-- `src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > keeps Cashu immediately after Spark when bank transfer is off`
-- `e2e/onboarding.spec.ts > onboarding enables cash and Spark with bank transfers`
-- `e2e/onboarding.spec.ts > onboarding enables cash and Spark without bank transfers`
-- `e2e/onboarding.spec.ts > the payment methods step derives bank transfers from the account input`
+- `packages/core/src/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > enables cash and Spark without a bank account and leaves Cashu disabled`
+- `packages/core/src/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > writes no row on an onboarded account`
+- `apps/web-app/src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > places Cashu immediately after Spark with bank transfer first`
+- `apps/web-app/src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > keeps Cashu immediately after Spark when bank transfer is off`
+- `apps/web-app/e2e/onboarding.spec.ts > onboarding enables cash and Spark with bank transfers`
+- `apps/web-app/e2e/onboarding.spec.ts > onboarding enables cash and Spark without bank transfers`
+- `apps/web-app/e2e/onboarding.spec.ts > the payment methods step derives bank transfers from the account input`

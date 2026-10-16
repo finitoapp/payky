@@ -37,9 +37,9 @@ test fires that event rather than really backgrounding a browser.
 
 ## Enforced by
 
-- `e2e/access.spec.ts > a PIN session ends after five minutes without activity`
-- `e2e/access-gates.spec.ts > a PIN session ends on a screen the device covers itself, and in the background`
-- `e2e/access-gates.spec.ts > a device without sell returns to its PIN screen when the session times out`
-- `e2e/access-gates.spec.ts > switching account ends the PIN session, also when switching back`
-- `e2e/access-gates.spec.ts > every cart write that takes items off the bill asks a Basic device for the PIN`
-- `src/core/modules/access/access-utils.test.ts > effectivePermissions > are every permission with a PIN session`
+- `apps/web-app/e2e/access.spec.ts > a PIN session ends after five minutes without activity`
+- `apps/web-app/e2e/access-gates.spec.ts > a PIN session ends on a screen the device covers itself, and in the background`
+- `apps/web-app/e2e/access-gates.spec.ts > a device without sell returns to its PIN screen when the session times out`
+- `apps/web-app/e2e/access-gates.spec.ts > switching account ends the PIN session, also when switching back`
+- `apps/web-app/e2e/access-gates.spec.ts > every cart write that takes items off the bill asks a Basic device for the PIN`
+- `packages/core/src/modules/access/access-utils.test.ts > effectivePermissions > are every permission with a PIN session`

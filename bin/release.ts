@@ -10,8 +10,10 @@ import path from "node:path"
 
 import { nextReleaseVersion, releaseCommitSubject } from "./release-version.ts"
 
+const repositoryRoot = path.resolve(import.meta.dirname, "..")
+
 const git = (...args: ReadonlyArray<string>): string =>
-  execFileSync("git", args, { encoding: "utf8" }).trim()
+  execFileSync("git", args, { cwd: repositoryRoot, encoding: "utf8" }).trim()
 
 const fail = (message: string): never => {
   console.error(message)

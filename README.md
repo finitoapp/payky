@@ -36,6 +36,24 @@ Install the locked Codex skills from `skills-lock.json`:
 bunx skills experimental_install
 ```
 
+## Workspaces
+
+`apps/web-app` owns the web app, landing documents, API and documentation tools.
+`apps/native-shell` wraps its `dist-native` build in Capacitor; `apps/cli` runs
+local commands. All use the single domain implementation in `packages/core`.
+Core uses explicit package subpaths such as
+`@payky/core/modules/payment/payment-actions`; `@/` stays local to the web app.
+
+Keep local `.env` files at the repository root (use
+`apps/web-app/.env.example` as the template). Vite loads that directory for both
+root and direct workspace commands. Run the CLI from the root, or use Bun's
+`--env-file` option when launching it elsewhere.
+
+`bun run build` emits core JavaScript for production API loading before building
+the web app. `bun run check:api` checks every API module with Node against those
+emitted exports. Browser and Bun consumers resolve core source instead.
+The shared release version stays in the root `package.json`.
+
 ## Development
 
 Start the Vite dev server:
@@ -111,7 +129,7 @@ PAYKY_DISABLE_BASIC_SSL=1 bun run dev -- --host 0.0.0.0 --strictPort
 Then point Capacitor at the Mac LAN URL from another terminal:
 
 ```bash
-PAYKY_CAPACITOR_SERVER_URL=http://<mac-lan-ip>:5173 bunx cap run ios
+PAYKY_CAPACITOR_SERVER_URL=http://<mac-lan-ip>:5173 bun run cap run ios
 ```
 
 The iPhone and Mac must be on the same network. iOS does not have an `adb
@@ -163,22 +181,24 @@ bun run test:watch
 
 ## Project Layout
 
-- `src/main.tsx` is the browser entry point.
-- `src/App.tsx` wires top-level providers and the TanStack Router provider.
-- `src/routes` contains file-based route definitions.
-- `src/components/ui` contains reusable shadcn-style UI primitives built on
+- `apps/web-app/src/main.tsx` is the browser entry point.
+- `apps/web-app/src/App.tsx` wires top-level providers and the TanStack Router provider.
+- `apps/web-app/src/routes` contains file-based route definitions.
+- `apps/web-app/src/components/ui` contains reusable shadcn-style UI primitives built on
   Base UI.
-- `src/i18n` contains the English, Czech and Slovak translations, one
+- `apps/web-app/src/i18n` contains the English, Czech and Slovak translations, one
   `<lang>/<group>.ts` file per group of keys.
-- `src/core/evolu` creates the Evolu client and composes the application schema.
-- `src/core/modules` contains domain modules for accounts, transactions,
+- `packages/core/src/evolu` creates the Evolu client and composes the application schema.
+- `packages/core/src/modules` contains domain modules for accounts, transactions,
   catalog items, bills, payments, tables, reconciliation claims, settings,
   devices, and Fio integration.
-- `bin` contains CLI commands for local data management and background jobs.
+- `apps/cli/src` contains CLI commands for local data management and background jobs.
+- `apps/native-shell` owns the Capacitor configuration and Android/iOS projects.
+- `bin` contains repository checks and release scripts.
 
 ## UI Components
 
-Local UI components live in `src/components/ui` and should be imported directly
+Local UI components live in `apps/web-app/src/components/ui` and should be imported directly
 from their owning module:
 
 ```tsx
@@ -188,17 +208,18 @@ import { Button } from "@/components/ui/button.tsx"
 When adding shadcn components, use Bun:
 
 ```bash
+cd apps/web-app
 bunx shadcn@latest add button
 ```
 
-Keep generic reusable UI in `src/components/ui`; feature and domain logic should
+Keep generic reusable UI in `apps/web-app/src/components/ui`; feature and domain logic should
 live outside that directory.
 
 ## Data Model
 
 Persistent application data is stored through Evolu. Register new tables and
-indexes in `src/core/evolu/schema.ts`, and keep domain code in the owning module
-under `src/core/modules`.
+indexes in `packages/core/src/evolu/schema.ts`, and keep domain code in the owning module
+under `packages/core/src/modules`.
 
 Domain modules generally use this structure:
 
@@ -246,7 +267,7 @@ between the two apps opens the same Cashu wallet; the cross-app vectors in
 `key-derivation-cross-app.test.ts` pin them.
 
 `S` itself is backed up as a single [SLIP-39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md)
-20-word recovery mnemonic (`src/core/modules/shared/key-derivation.ts`, via
+20-word recovery mnemonic (`packages/core/src/modules/shared/key-derivation.ts`, via
 the `slip39-ts` library), encoded as one group with a 1-of-1 threshold — there
 is currently no multi-share Shamir splitting, so the phrase is the sole backup
 of `S` and must be treated with the same care as a BIP-39 seed phrase. SLIP-39
@@ -262,13 +283,14 @@ The CLI reads `.env` files automatically. Environment variables are validated at
 startup with `@t3-oss/env-core` and Zod.
 
 ```bash
-PAYKY_SQLITE_PATH=./.data/payky.db bun bin/cli.ts payments list
-bun --env-file=.env.cli bin/cli.ts accounts list
+PAYKY_SQLITE_PATH=./.data/payky.db bun run cli payments list
+bun --env-file=.env.cli apps/cli/src/cli.ts accounts list
 ```
 
 Supported variables:
 
-- `PAYKY_SQLITE_PATH`: SQLite database file path. Defaults to `.data/payky.db`.
+- `PAYKY_SQLITE_PATH`: SQLite database file path. Defaults to `.data/payky.db` at the repository root.
+  An explicit relative path is resolved against the caller's working directory.
 - `PAYKY_AI_BASE_URL`: OpenAI-compatible endpoint. Defaults to Payky's AI
   proxy, `https://payky.me/api/ai/v1`, which holds the provider and its key
   and takes the account's owner id as its key (`docs/decisions/ai/0001`).
@@ -277,19 +299,20 @@ Supported variables:
 - `PAYKY_AI_MODEL`: model name for an endpoint other than the proxy, which
   picks its own; it must support tool calling.
 
-`payky ai` is a prototype assistant. Run it from the repository root: it reads
+`bun run cli` replaces `bun bin/cli.ts`. The launcher preserves the caller's
+working directory. `payky ai` is a prototype assistant: it reads
 the local data, and the docs and source code git tracks. It never writes.
 
 ```bash
-bun bin/cli.ts ai "Which bills are still open?"
+bun run cli ai "Which bills are still open?"
 PAYKY_AI_BASE_URL=http://localhost:11434/v1 PAYKY_AI_MODEL=qwen3 \
-  bun bin/cli.ts ai "How does bill coverage work?"
+  bun run cli ai "How does bill coverage work?"
 ```
 
 ## Internationalization
 
 All user-facing React text goes through `t(key)`. Add each key to the group file
-its namespace belongs to — `src/i18n/en/<group>.ts`, then the same file under
+its namespace belongs to — `apps/web-app/src/i18n/en/<group>.ts`, then the same file under
 `cs/` and `sk/` — and use stable, feature-scoped names such as `bill.save`,
 `settings.items.title`, or `activity.empty`. `bun run check:ts` fails while a
 key is missing from any language.

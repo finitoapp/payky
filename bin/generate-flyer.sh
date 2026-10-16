@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Generates an A3 conference flyer: flyer-<lang>.svg (text as paths) and flyer-<lang>.png (300 DPI).
-# Copy mirrors the landing page in src/i18n. Usage: bin/generate-flyer.sh [cs|en]
+# Copy mirrors the landing page in apps/web-app/src/i18n. Usage: bin/generate-flyer.sh [cs|en]
 # Requires: curl, qrencode, rsvg-convert (librsvg), magick (ImageMagick), inkscape.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,7 +20,7 @@ done
 fc-cache -f >/dev/null
 
 qrencode -t SVG -m 2 -o "$work/qr.svg" "https://payky.me"
-rsvg-convert -w 900 public/pwa-icon.svg -o "$work/logo.png"
+rsvg-convert -w 900 apps/web-app/public/pwa-icon.svg -o "$work/logo.png"
 magick "docs/mockup/$lang/payment.webp" -trim +repage -bordercolor none -border 30 \
   -resize 1200x "$work/phone.png"
 

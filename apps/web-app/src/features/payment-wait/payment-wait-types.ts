@@ -1,0 +1,70 @@
+import type {
+  AccountId,
+  BankQrFormat,
+} from "@payky/core/modules/account/account-types"
+import type { DefaultPaymentMethod } from "@payky/core/modules/app-settings/app-settings-types"
+import type { BankQrPayload } from "@payky/core/modules/payment/payment-iban-qr-payload-utils"
+import type {
+  FiatCurrency,
+  NonNegativeInteger,
+} from "@payky/core/modules/shared/schema"
+import type { ReactNode } from "react"
+import type { TranslationKey } from "@/i18n/resources.ts"
+
+export type PaymentMethodTab = "spark" | "iban" | "cash" | "card" | "cashu"
+
+export interface PaymentMethodOptionBase {
+  readonly kind: DefaultPaymentMethod
+  readonly accountId: AccountId
+  readonly label: string
+  readonly icon: ReactNode
+}
+
+export type PaymentMethodOption = PaymentMethodOptionBase &
+  (
+    | { readonly id: "spark"; readonly qrPayload: string | null }
+    | {
+        readonly id: "iban"
+        readonly qrPayload: string | null
+        readonly qrPayloads: ReadonlyArray<BankQrPayload>
+        readonly defaultQrFormat: BankQrFormat
+        readonly iban: string | null
+      }
+    | { readonly id: "cash"; readonly qrPayload: null }
+    | { readonly id: "card"; readonly qrPayload: null }
+    | {
+        readonly id: "cashu"
+        /** The BIP-321 URI with the mint's invoice (and later a NUT-18 request). */
+        readonly qrPayload: string | null
+        /** The mint quote expired: the tab offers a new one. */
+        readonly quoteExpired: boolean
+      }
+  )
+
+export interface CashPaymentTabProps {
+  readonly amount: NonNegativeInteger
+  readonly currency: FiatCurrency
+  readonly canMarkCashPaid: boolean
+  readonly cashPaymentErrorKey: TranslationKey | null
+  readonly cashPaymentPending: boolean
+  readonly cashRegisterAccountId: AccountId | null | undefined
+  readonly onMarkCashPaid: (receivedAmount: NonNegativeInteger) => void
+}
+
+export interface CardPaymentTabProps {
+  readonly canPayCard: boolean
+  readonly cardPaymentErrorKey: TranslationKey | null
+  readonly cardPaymentPending: boolean
+  readonly cardAccountId: AccountId | null | undefined
+  /** Set while the last terminal attempt's outcome is unknown. */
+  readonly cardUnresolvedTransactionId: string | null | undefined
+  readonly onPayCard: () => void
+}
+
+export interface IbanPaidTabProps {
+  readonly canMarkIbanPaid: boolean
+  readonly ibanPaymentErrorKey: TranslationKey | null
+  readonly ibanPaymentPending: boolean
+  readonly ibanVariableSymbol: string | null
+  readonly onMarkIbanPaid: () => void
+}

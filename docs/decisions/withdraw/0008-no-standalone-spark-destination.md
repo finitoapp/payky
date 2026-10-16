@@ -31,4 +31,4 @@ None beyond the message.
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > refuses a Spark destination %#`
+- `packages/core/src/modules/withdraw/withdraw-destination-utils.test.ts > parseWithdrawDestination > refuses a Spark destination %#`

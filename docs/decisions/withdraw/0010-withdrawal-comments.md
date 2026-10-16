@@ -44,11 +44,11 @@ again. A note cannot be edited after the withdrawal is sent.
 
 ## Enforced by
 
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > reads how long a comment the recipient accepts`
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > sends a comment trimmed and cut to what the recipient accepts`
-- `src/core/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > sends no comment to a recipient that accepts none`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > sends the recipient comment only with the Lightning address invoice it pays`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > sends no recipient comment to a Lightning address that accepts none`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > records the merchant's comment with the withdrawal`
-- `src/core/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > carries the merchant's comment to the history and the detail`
-- `src/core/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > sends a Lightning address the comment it accepts and saves the merchant's own`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > reads how long a comment the recipient accepts`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > sends a comment trimmed and cut to what the recipient accepts`
+- `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > sends no comment to a recipient that accepts none`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > sends the recipient comment only with the Lightning address invoice it pays`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > sends no recipient comment to a Lightning address that accepts none`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > records the merchant's comment with the withdrawal`
+- `packages/core/src/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > carries the merchant's comment to the history and the detail`
+- `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > sends a Lightning address the comment it accepts and saves the merchant's own`

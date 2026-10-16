@@ -40,16 +40,16 @@ minutes unless the record already has an attempt.
 
 ## Enforced by
 
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > reports a payment on the device that settled it in cash`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports a bank payment on the device that confirmed it by hand`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports an automatically matched payment on the device that created it`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses nothing for a refund with no device`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
-- `src/core/modules/payment/payment-actions.test.ts > payment actions > card payment attempts > records the device that took the card payment on its claim`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > takes over a pending sale once its device's priority is over`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > creates a sale its recording device never created`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > takes over a reversal only after its sale's confirmation and the priority`
-- `src/core/modules/eet/eet-utils.test.ts > getEetRecordingDeviceWaitEndsAt > keeps another device waiting for 10 minutes unless an attempt exists`
-- `src/core/modules/eet/eet-utils.test.ts > getEetReversalStartsAt > starts at the later of the refund and its sale's confirmation`
-- `src/core/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
-- `e2e/eet.spec.ts > another device's sale waits for that device, then is sent from here as a repeat`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > reports a payment on the device that settled it in cash`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports a bank payment on the device that confirmed it by hand`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: sale records > reports an automatically matched payment on the device that created it`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: reversals > reverses nothing for a refund with no device`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > reports extra money on the device that matched it by hand`
+- `packages/core/src/modules/payment/payment-actions.test.ts > payment actions > card payment attempts > records the device that took the card payment on its claim`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > takes over a pending sale once its device's priority is over`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > creates a sale its recording device never created`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: takeover > takes over a reversal only after its sale's confirmation and the priority`
+- `packages/core/src/modules/eet/eet-utils.test.ts > getEetRecordingDeviceWaitEndsAt > keeps another device waiting for 10 minutes unless an attempt exists`
+- `packages/core/src/modules/eet/eet-utils.test.ts > getEetReversalStartsAt > starts at the later of the refund and its sale's confirmation`
+- `packages/core/src/background-jobs/jobs/eet-reporting-job.test.ts > eet reporting job: extra money > leaves automatically matched extra money to the device that created the payment`
+- `apps/web-app/e2e/eet.spec.ts > another device's sale waits for that device, then is sent from here as a repeat`

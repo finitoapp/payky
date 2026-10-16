@@ -47,8 +47,8 @@ What follows, including what it costs.
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > reports what was received for $name`
-- `e2e/eet.spec.ts > a cash sale is reported as the cash received`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > reports what was received for $name`
+- `apps/web-app/e2e/eet.spec.ts > a cash sale is reported as the cash received`
 ```
 
 A test is named by its path from the repository root, then every

@@ -39,8 +39,8 @@ above the goods in whole crowns (see payment/0003).
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > leaves the tip out while tips belong to employees`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > reports 0.00 for a payment that is all tip while tips belong to employees`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > reports the tip while nobody said who it belongs to`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > keeps the tip of a sale created before tips went to employees`
-- `e2e/eet.spec.ts > tips that belong to employees are left out of the reported sale`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > leaves the tip out while tips belong to employees`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > reports 0.00 for a payment that is all tip while tips belong to employees`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > reports the tip while nobody said who it belongs to`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > keeps the tip of a sale created before tips went to employees`
+- `apps/web-app/e2e/eet.spec.ts > tips that belong to employees are left out of the reported sale`

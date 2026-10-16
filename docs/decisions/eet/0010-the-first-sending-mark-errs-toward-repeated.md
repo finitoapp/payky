@@ -35,10 +35,10 @@ requests still in flight.
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > first and repeated sending > marks the recording device's first attempt as the first sending`
-- `src/core/modules/eet/eet-actions.test.ts > first and repeated sending > marks the attempt after an app closed mid-attempt as repeated`
-- `src/core/modules/eet/eet-actions.test.ts > first and repeated sending > marks a first attempt made after 5 minutes as repeated`
-- `src/core/modules/eet/eet-actions.test.ts > first and repeated sending > marks an attempt from another device as repeated`
-- `src/core/modules/eet/eet-actions.test.ts > retryEetSale > keeps the original data after an attempt cut off by the app closing`
-- `src/core/modules/eet/eet-utils.test.ts > isEetFirstSending > is %s: %s`
-- `src/core/modules/eet/eet-utils.test.ts > isEetFirstSending > errs toward first after a takeover by a clock %i minutes ahead: %s`
+- `packages/core/src/modules/eet/eet-actions.test.ts > first and repeated sending > marks the recording device's first attempt as the first sending`
+- `packages/core/src/modules/eet/eet-actions.test.ts > first and repeated sending > marks the attempt after an app closed mid-attempt as repeated`
+- `packages/core/src/modules/eet/eet-actions.test.ts > first and repeated sending > marks a first attempt made after 5 minutes as repeated`
+- `packages/core/src/modules/eet/eet-actions.test.ts > first and repeated sending > marks an attempt from another device as repeated`
+- `packages/core/src/modules/eet/eet-actions.test.ts > retryEetSale > keeps the original data after an attempt cut off by the app closing`
+- `packages/core/src/modules/eet/eet-utils.test.ts > isEetFirstSending > is %s: %s`
+- `packages/core/src/modules/eet/eet-utils.test.ts > isEetFirstSending > errs toward first after a takeover by a clock %i minutes ahead: %s`

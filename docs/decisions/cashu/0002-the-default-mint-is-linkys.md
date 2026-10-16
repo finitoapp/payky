@@ -31,7 +31,7 @@ A default changed in Linky moves Payky's next payments too, and the reverse.
 
 ## Enforced by
 
-- `src/core/cashu/cashu-mints.test.ts > the default mint > is Linky's default until a wallet names one`
-- `src/core/cashu/cashu-mints.test.ts > the default mint > is read from Linky's synced setting`
-- `src/core/cashu/cashu-mints.test.ts > the default mint > is seeded once when Cashu is enabled, never over a mint Linky chose`
-- `src/core/modules/payment/payment-cashu-preparation.test.ts > prepareCashuPaymentMethod > uses the default mint Linky synced`
+- `packages/core/src/cashu/cashu-mints.test.ts > the default mint > is Linky's default until a wallet names one`
+- `packages/core/src/cashu/cashu-mints.test.ts > the default mint > is read from Linky's synced setting`
+- `packages/core/src/cashu/cashu-mints.test.ts > the default mint > is seeded once when Cashu is enabled, never over a mint Linky chose`
+- `packages/core/src/modules/payment/payment-cashu-preparation.test.ts > prepareCashuPaymentMethod > uses the default mint Linky synced`

@@ -38,11 +38,11 @@ brought above the goods (see payment/0003).
 
 ## Enforced by
 
-- `src/core/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > leave the tip out of a refund by amount`
-- `src/core/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > leave the tip out of the cash received`
-- `src/core/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > return the whole tip once, in cash from the cash register`
-- `src/core/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > return the tip after all the goods`
-- `src/core/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > refuse a tip refund without a tip or before the payment is paid`
-- `src/core/modules/refund/refund-utils.test.ts > deriveRefundableTipAmount > offers the whole tip until a tip refund returns it`
-- `src/core/modules/refund/refund-utils.test.ts > summarizeRefundsByPayment > leaves a tip refund out of the refunded state`
-- `e2e/eet.spec.ts > a refunded tip reaches EET only while tips belong to the business`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > leave the tip out of a refund by amount`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > leave the tip out of the cash received`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > return the whole tip once, in cash from the cash register`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > return the tip after all the goods`
+- `packages/core/src/modules/refund/refund-actions.test.ts > refunds of a payment with a tip > refuse a tip refund without a tip or before the payment is paid`
+- `packages/core/src/modules/refund/refund-utils.test.ts > deriveRefundableTipAmount > offers the whole tip until a tip refund returns it`
+- `packages/core/src/modules/refund/refund-utils.test.ts > summarizeRefundsByPayment > leaves a tip refund out of the refunded state`
+- `apps/web-app/e2e/eet.spec.ts > a refunded tip reaches EET only while tips belong to the business`

@@ -65,14 +65,14 @@ account, before a transferred one is added and made active.
 
 ## Enforced by
 
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > transfers exactly the payload to the device whose code was typed`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > three wrong codes abort without a payload`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > the target shows no code before ready`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a second device with a valid hello aborts both as conflict`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a hello with a wrong proof neither locks nor conflicts`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a relay that swaps the hello for its own, without s, gets nothing`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a relay that knows s and swaps the hello locks the source onto itself, and the phone shows no code`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > the target ignores ready and payload not signed by the QR's key`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > the source ignores ack and abort from anyone but the locked device`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > after the QR expires the source stops listening`
-- `src/core/integrations/nostr/nostr-account-transfer.test.ts > transfer code > depends on the session secret and on which key is the source`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > transfers exactly the payload to the device whose code was typed`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > three wrong codes abort without a payload`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > the target shows no code before ready`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a second device with a valid hello aborts both as conflict`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a hello with a wrong proof neither locks nor conflicts`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a relay that swaps the hello for its own, without s, gets nothing`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > a relay that knows s and swaps the hello locks the source onto itself, and the phone shows no code`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > the target ignores ready and payload not signed by the QR's key`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > the source ignores ack and abort from anyone but the locked device`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > account transfer session > after the QR expires the source stops listening`
+- `packages/core/src/integrations/nostr/nostr-account-transfer.test.ts > transfer code > depends on the session secret and on which key is the source`

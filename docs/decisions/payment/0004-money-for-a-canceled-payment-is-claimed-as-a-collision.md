@@ -52,8 +52,8 @@ called off by mistake needs a new payment.
 
 ## Enforced by
 
-- `src/core/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a transfer for a canceled payment is still claimed, as a collision`
-- `src/core/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a live payment takes the transfer before a canceled one that sorts first`
-- `src/core/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a payment whose claim was deleted is matched again`
-- `src/core/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a payment whose claimed transaction was deleted is matched again`
-- `src/core/modules/payment/payment-actions.test.ts > payment actions > refuses to mark a canceled payment paid by hand`
+- `packages/core/src/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a transfer for a canceled payment is still claimed, as a collision`
+- `packages/core/src/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a live payment takes the transfer before a canceled one that sorts first`
+- `packages/core/src/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a payment whose claim was deleted is matched again`
+- `packages/core/src/modules/reconciliation-claim/reconciliation-claim-actions.test.ts > reconciliation candidates > a payment whose claimed transaction was deleted is matched again`
+- `packages/core/src/modules/payment/payment-actions.test.ts > payment actions > refuses to mark a canceled payment paid by hand`

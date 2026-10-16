@@ -40,6 +40,6 @@ the language when onboarding finishes, as it already did.
 
 ## Enforced by
 
-- `e2e/landing-redirect.spec.ts > the app starts in the language of the landing page it was opened from`
-- `e2e/landing-redirect.spec.ts > a device with an account keeps its language when opened from the landing page`
-- `e2e/landing-redirect.spec.ts > the landing page's start buttons open the app in its language`
+- `apps/web-app/e2e/landing-redirect.spec.ts > the app starts in the language of the landing page it was opened from`
+- `apps/web-app/e2e/landing-redirect.spec.ts > a device with an account keeps its language when opened from the landing page`
+- `apps/web-app/e2e/landing-redirect.spec.ts > the landing page's start buttons open the app in its language`

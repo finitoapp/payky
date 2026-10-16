@@ -19,7 +19,7 @@ fc-cache -f >/dev/null
 python3 - "$work" <<'PY'
 import pathlib, sys
 work = sys.argv[1]
-logo = pathlib.Path("public/pwa-icon.svg").read_text()
+logo = pathlib.Path("apps/web-app/public/pwa-icon.svg").read_text()
 # Flatten the icon's nested <svg> elements into <g transform=...>: many editors
 # (Illustrator, Corel, some viewers) drop nested <svg> and the logo goes missing.
 replacements = [
@@ -30,7 +30,7 @@ replacements = [
     ('<rect width="882" height="896" fill="transparent"/>', ''),  # Inkscape paints this black
 ]
 for old, new_frag in replacements:
-    assert old in logo, f"public/pwa-icon.svg changed, cannot patch: {old[:60]}"
+    assert old in logo, f"apps/web-app/public/pwa-icon.svg changed, cannot patch: {old[:60]}"
     logo = logo.replace(old, new_frag, 1)
 logo = logo.rstrip().removesuffix("</svg>").rstrip().removesuffix("</svg>") + "</g></g>"
 

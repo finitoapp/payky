@@ -140,23 +140,23 @@ is no unread state and no push notification.
 
 ## Enforced by
 
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > sends one rumor tagged with every support member to each of them and to the account`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > sends support's copies to the team's relays and the account's to where it reads`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > publishes DM relays naming the team's relays to them and to the indexers`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reports DM relays no relay accepted, so the chat can warn`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > never publishes a DM relay list with a message`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads the account's newest DM relays from the app's relays and the team's indexers and relays`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reports a missing DM relay list when the relays that answered, an indexer among them, hold none`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > leaves the DM relays unverified when no indexer answered in time`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > leaves the DM relays unverified when the account's list names no relay`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > fails without publishing the account's own copy when no copy reached support`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > reads a reply from one member beside the account's message, without its trailer`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > drops a message whose seal was signed by someone else than its author`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > ignores a 1:1 with a single member of the support team`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > keeps a former team's room in the chat once the team has grown`
-- `src/core/integrations/nostr/support-team-client.test.ts > support team client > reads the team from Payky's API with its npubs as hex pubkeys`
-- `src/core/integrations/nostr/support-team-client.test.ts > support team client > rejects a team with something other than an npub`
-- `api/support-team.test.ts > handleSupportTeamRequest > serves the team with its former line-ups and relays, cached for five minutes`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > ignores direct messages from outside the support team`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > loads the last ninety days from the team's relays and the account's DM inbox`
-- `src/core/integrations/nostr/nostr-support-chat.test.ts > support chat > signs every message with the app version and platform`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > sends one rumor tagged with every support member to each of them and to the account`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > sends support's copies to the team's relays and the account's to where it reads`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > publishes DM relays naming the team's relays to them and to the indexers`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > reports DM relays no relay accepted, so the chat can warn`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > never publishes a DM relay list with a message`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > reads the account's newest DM relays from the app's relays and the team's indexers and relays`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > reports a missing DM relay list when the relays that answered, an indexer among them, hold none`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > leaves the DM relays unverified when no indexer answered in time`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > leaves the DM relays unverified when the account's list names no relay`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > fails without publishing the account's own copy when no copy reached support`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > reads a reply from one member beside the account's message, without its trailer`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > drops a message whose seal was signed by someone else than its author`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > ignores a 1:1 with a single member of the support team`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > keeps a former team's room in the chat once the team has grown`
+- `apps/web-app/src/core/integrations/nostr/support-team-client.test.ts > support team client > reads the team from Payky's API with its npubs as hex pubkeys`
+- `apps/web-app/src/core/integrations/nostr/support-team-client.test.ts > support team client > rejects a team with something other than an npub`
+- `apps/web-app/api/support-team.test.ts > handleSupportTeamRequest > serves the team with its former line-ups and relays, cached for five minutes`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > ignores direct messages from outside the support team`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > loads the last ninety days from the team's relays and the account's DM inbox`
+- `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > signs every message with the app version and platform`

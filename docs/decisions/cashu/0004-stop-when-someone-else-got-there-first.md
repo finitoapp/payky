@@ -38,9 +38,9 @@ synced counter the merchant settles it by hand.
 
 ## Enforced by
 
-- `src/core/cashu/cashu-topup.test.ts > claimCashuTopup > someone else got there first > an operation already done is left alone`
-- `src/core/cashu/cashu-topup.test.ts > claimCashuTopup > someone else got there first > a counter this device did not reserve means Linky is claiming: nothing is written`
-- `src/core/cashu/cashu-topup.test.ts > claimCashuTopup > someone else got there first > a quote ISSUED that this device never minted: nothing is written, never failed`
-- `src/core/cashu/cashu-topup.test.ts > claimCashuTopup > a lost response is reclaimed from this device's own counter`
-- `src/core/cashu/cashu-topup.test.ts > claimCashuTopup > a quote unpaid past its expiry is closed failed`
-- `src/core/cashu/cashu-topup.test.ts > claimCashuTopup > a paid quote is minted into available proofs and closed done`
+- `packages/core/src/cashu/cashu-topup.test.ts > claimCashuTopup > someone else got there first > an operation already done is left alone`
+- `packages/core/src/cashu/cashu-topup.test.ts > claimCashuTopup > someone else got there first > a counter this device did not reserve means Linky is claiming: nothing is written`
+- `packages/core/src/cashu/cashu-topup.test.ts > claimCashuTopup > someone else got there first > a quote ISSUED that this device never minted: nothing is written, never failed`
+- `packages/core/src/cashu/cashu-topup.test.ts > claimCashuTopup > a lost response is reclaimed from this device's own counter`
+- `packages/core/src/cashu/cashu-topup.test.ts > claimCashuTopup > a quote unpaid past its expiry is closed failed`
+- `packages/core/src/cashu/cashu-topup.test.ts > claimCashuTopup > a paid quote is minted into available proofs and closed done`

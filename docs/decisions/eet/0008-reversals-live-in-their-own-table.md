@@ -27,6 +27,6 @@ Sale and reversal code share the delivery rules but read different tables.
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
-- `src/core/modules/eet/eet-actions.test.ts > createEetReversal > keeps a reversal out of the sale table`
-- `src/core/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > reverses $name`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetReversal > keeps a reversal out of the sale table`
+- `packages/core/src/modules/eet/eet-actions.test.ts > deliverEetReversal > sends the negative amount at the moment of the refund`

@@ -1,0 +1,38 @@
+import { type MutationOptions, ok, type Task } from "@evolu/common"
+
+import type { EvoluOwnerDep } from "../../deps.ts"
+import type { EvoluDep } from "../shared/evolu-deps.ts"
+import { runMutationWithCompletion } from "../shared/evolu-utils.ts"
+import type { ItemRow } from "./item.ts"
+
+/**
+ * Upserts an already-computed item snapshot.
+ *
+ * Thin on purpose, and not inlinable: an actions file writes only its own
+ * module's tables (AGENTS.md), so this is how `bill-actions.ts` puts an `item`
+ * row in the same batch as the bill lines pointing at it — the alternative
+ * being either `evolu.upsert("item", ...)` from another module, or a Task that
+ * opens a batch of its own. Same load/compute-plus-plain-upsert split as
+ * `payment-number-actions.ts`'s `upsertPaymentNumberRows`.
+ */
+export const upsertItemSnapshot = (
+  evolu: EvoluDep["evolu"],
+  snapshot: ItemRow,
+  options: MutationOptions
+): void => {
+  evolu.upsert("item", snapshot, options)
+}
+
+export const createOrReuseItemSnapshot =
+  (snapshot: ItemRow): Task<ItemRow, never, EvoluDep & EvoluOwnerDep> =>
+  async (run) => {
+    const { evoluOwner } = run.deps
+
+    await runMutationWithCompletion((options) =>
+      upsertItemSnapshot(run.deps.evolu, snapshot, {
+        ...options,
+        owner: evoluOwner,
+      })
+    )
+    return ok(snapshot)
+  }

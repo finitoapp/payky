@@ -2,8 +2,8 @@
 
 How a received payment becomes an EET 2.0 sale (`tržba`), gets delivered,
 how a refund reverses it, and what each state and edge case means. Read it before changing
-`src/core/modules/eet/*`, `eet-reporting-job.ts`, or
-`src/core/integrations/eet/*`. The decisions behind it, with the tests that
+`packages/core/src/modules/eet/*`, `eet-reporting-job.ts`, or
+`packages/core/src/integrations/eet/*`. The decisions behind it, with the tests that
 hold them, are recorded in [`decisions/eet/`](decisions/eet/), with the cash
 and refund ones in [`decisions/payment/`](decisions/payment/) and
 [`decisions/refund/`](decisions/refund/).
@@ -21,7 +21,7 @@ and refund ones in [`decisions/payment/`](decisions/payment/) and
 | Reporting job | `background-jobs/jobs/eet-reporting-job.ts` | Creates sales, delivers them, backs off |
 | Client | `integrations/eet/eet-client.ts` | Signs + submits via `@finitoapp/eet-client`, maps errors to `retry`/`rejected` |
 | Response verifier | `integrations/eet/eet-response-verifier.ts` | Checks the response signature |
-| Playground certs proxy | `api/eet/playground-certificates.ts` | Downloads the official test-cert ZIP from eet.gov.cz, returns `.p12` + password |
+| Playground certs proxy | `apps/web-app/api/eet/playground-certificates.ts` | Downloads the official test-cert ZIP from eet.gov.cz, returns `.p12` + password |
 
 All tables live in the **app** Evolu database, so settings, the certificate
 with its private key, and every sale sync to all devices of the account

@@ -51,9 +51,9 @@ it.
 
 ## Enforced by
 
-- `src/core/modules/device/device-actions.test.ts > device rows > registering again keeps the name and permissions the owner set`
-- `src/core/modules/device/device-actions.test.ts > device rows > removing a device clears its permissions, so it comes back with none`
-- `src/core/modules/access/access-utils.test.ts > device permissions > null is no permissions`
-- `src/core/migrations/device-id-migration.test.ts > deviceIdMigration > moves the device id out of localStorage into the device database`
-- `e2e/access.spec.ts > a device with no permissions starts on the PIN screen`
-- `e2e/access-gates.spec.ts > Settings → Access edits, renames and removes devices`
+- `packages/core/src/modules/device/device-actions.test.ts > device rows > registering again keeps the name and permissions the owner set`
+- `packages/core/src/modules/device/device-actions.test.ts > device rows > removing a device clears its permissions, so it comes back with none`
+- `packages/core/src/modules/access/access-utils.test.ts > device permissions > null is no permissions`
+- `packages/core/src/migrations/device-id-migration.test.ts > deviceIdMigration > moves the device id out of localStorage into the device database`
+- `apps/web-app/e2e/access.spec.ts > a device with no permissions starts on the PIN screen`
+- `apps/web-app/e2e/access-gates.spec.ts > Settings → Access edits, renames and removes devices`

@@ -49,9 +49,9 @@ settled yet has nowhere to wait.
 
 ## Enforced by
 
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > records an on-chain withdrawal and its movement under the id it named up front`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > pays a Lightning invoice and leaves the movement to the sync job`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected on-chain withdrawal uncertain`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an on-chain amount below the minimum before asking for a fee quote`
-- `src/core/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an on-chain withdraw-all that would leave the recipient less than the minimum`
-- `src/core/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > type comes from the detail row and a pending withdrawal has no outcome`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > records an on-chain withdrawal and its movement under the id it named up front`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > pays a Lightning invoice and leaves the movement to the sync job`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > executeWithdrawal > leaves a rejected on-chain withdrawal uncertain`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an on-chain amount below the minimum before asking for a fee quote`
+- `packages/core/src/modules/withdraw/withdraw-actions.test.ts > quoteWithdrawal > refuses an on-chain withdraw-all that would leave the recipient less than the minimum`
+- `packages/core/src/modules/withdraw/withdraw-queries.test.ts > withdrawal queries > type comes from the detail row and a pending withdrawal has no outcome`

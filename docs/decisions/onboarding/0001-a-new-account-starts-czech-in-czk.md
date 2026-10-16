@@ -33,4 +33,4 @@ onboarding now changes the language only.
 
 ## Enforced by
 
-- `e2e/onboarding.spec.ts > onboarding in English still starts a Czech account in CZK`
+- `apps/web-app/e2e/onboarding.spec.ts > onboarding in English still starts a Czech account in CZK`

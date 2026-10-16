@@ -73,10 +73,10 @@ goes to the test npub, not to the support team.
 
 ## Enforced by
 
-- `api/contact.test.ts > handleContactRequest > sends the message as one rumor tagging every recipient, wrapped for each, to the relays`
-- `api/contact.test.ts > handleContactRequest > uses a fresh key for every message`
-- `api/contact.test.ts > handleContactRequest > reports when no relay accepted a copy`
-- `api/contact.test.ts > handleContactRequest > drops a message that fills the honeypot, answering as if sent`
-- `api/contact.test.ts > handleContactRequest > rejects a body with %s`
-- `src/core/modules/contact/contact-message.test.ts > formatContactMessage > puts how to reach the sender above the message`
-- `src/core/modules/contact/contact-message.test.ts > ContactMessageSchema > requires an email or a phone`
+- `apps/web-app/api/contact.test.ts > handleContactRequest > sends the message as one rumor tagging every recipient, wrapped for each, to the relays`
+- `apps/web-app/api/contact.test.ts > handleContactRequest > uses a fresh key for every message`
+- `apps/web-app/api/contact.test.ts > handleContactRequest > reports when no relay accepted a copy`
+- `apps/web-app/api/contact.test.ts > handleContactRequest > drops a message that fills the honeypot, answering as if sent`
+- `apps/web-app/api/contact.test.ts > handleContactRequest > rejects a body with %s`
+- `packages/core/src/modules/contact/contact-message.test.ts > formatContactMessage > puts how to reach the sender above the message`
+- `packages/core/src/modules/contact/contact-message.test.ts > ContactMessageSchema > requires an email or a phone`

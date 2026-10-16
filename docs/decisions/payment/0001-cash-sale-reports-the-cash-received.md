@@ -34,7 +34,7 @@ tip, the cash above the goods in whole crowns is the tip (see payment/0003).
 
 ## Enforced by
 
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > reports what was received for $name`
-- `src/core/modules/eet/eet-actions.test.ts > createEetSale > leaves the tip out of the cash received while tips belong to employees`
-- `src/core/modules/payment/payment-actions.test.ts > payment actions > cash received > stores the cash received and keeps the charge everywhere else`
-- `e2e/eet.spec.ts > a cash sale is reported as the cash received`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > reports what was received for $name`
+- `packages/core/src/modules/eet/eet-actions.test.ts > createEetSale > leaves the tip out of the cash received while tips belong to employees`
+- `packages/core/src/modules/payment/payment-actions.test.ts > payment actions > cash received > stores the cash received and keeps the charge everywhere else`
+- `apps/web-app/e2e/eet.spec.ts > a cash sale is reported as the cash received`

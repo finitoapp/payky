@@ -5,11 +5,11 @@
 | `edge.payky.me` (PWA) | every push to `main` | `<last release>-edge.<sha>` |
 | `payky.me` (PWA), Android on Google Play (internal track) and GitHub Releases | a `v<version>` tag | `<version>` |
 
-Versions are CalVer `YY.M.MICRO` (`26.10.3`); MICRO restarts at 1 each month and stays below 100, because the Android `versionCode` is `YY*10000 + M*100 + MICRO` (`android/app/build.gradle`).
+Versions are CalVer `YY.M.MICRO` (`26.10.3`); MICRO restarts at 1 each month and stays below 100, because the Android `versionCode` is `YY*10000 + M*100 + MICRO` (`apps/native-shell/android/app/build.gradle`).
 
 ## How the version gets into a build
 
-`version` in `package.json` is the last release. `bun run release` (`bin/release.ts`) is the only thing that changes it: it commits the next version as `chore(release): v<version>` and tags that commit. `vite.config.ts` builds the release commit as the version itself and every other commit as `<version>-edge.<sha>`; that string is `__APP_VERSION__`, the About page's version and Sentry's release. Gradle reads the same `package.json`.
+`version` in `package.json` is the last release. `bun run release` (`bin/release.ts`) is the only thing that changes it: it commits the next version as `chore(release): v<version>` and tags that commit. `apps/web-app/vite.config.ts` builds the release commit as the version itself and every other commit as `<version>-edge.<sha>`; that string is `__APP_VERSION__`, the About page's version and Sentry's release. Gradle reads the same `package.json`.
 
 ## Release
 
@@ -44,3 +44,18 @@ Two Vercel projects build this repository:
 Each project has its own environment variables (AI proxy key, donation wallet, Sentry); a new one goes into both.
 
 GitHub secrets used by `release.yml`: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`.
+
+## Workspace build inputs
+
+The root `package.json` remains the version source. Web/Vite and Sentry read it
+from `apps/web-app`; Gradle reads it from `apps/native-shell/android/app`.
+Run native commands through the root `cap:*` scripts. The keystore remains at
+the repository root, outside the native project; release artifacts are under
+`apps/native-shell/android/app/build/outputs`. Capacitor sync regenerates the
+Android and iOS dependency references after installation.
+
+The Vercel project root is `apps/web-app`. Enable access to source files outside
+that root so the deployment can install the root lockfile, apply the Evolu patch
+and build `packages/core`. The checked-in Vercel commands install and build from
+the repository root and serve `apps/web-app/dist`. Validate a preview before
+shipping: the local Node API smoke test does not verify Vercel tracing or rewrites.

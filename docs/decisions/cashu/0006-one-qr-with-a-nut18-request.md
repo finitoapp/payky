@@ -41,14 +41,14 @@ ambiguous; it stays unassigned and pays neither.
 
 ## Enforced by
 
-- `src/core/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > NUT-18 request $request`
-- `src/core/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > token text of %j`
-- `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a NUT-18 payload sent 1:1`
-- `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a bare token sent 1:1, as Linky sends it`
-- `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores chat text, even one that mentions a token`
-- `src/core/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores a token sent to a group, the support room included`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token two payments fit, or none, is unassigned`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > a token Linky received first settles the payment that holds its receive`
-- `src/core/background-jobs/jobs/cashu-account-sync-job.test.ts > cashu account sync job > settles a payment paid with a NUT-18 token over NIP-17`
+- `packages/core/src/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > NUT-18 request $request`
+- `packages/core/src/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > token text of %j`
+- `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a NUT-18 payload sent 1:1`
+- `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a bare token sent 1:1, as Linky sends it`
+- `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores chat text, even one that mentions a token`
+- `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores a token sent to a group, the support room included`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token two payments fit, or none, is unassigned`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > a token Linky received first settles the payment that holds its receive`
+- `packages/core/src/background-jobs/jobs/cashu-account-sync-job.test.ts > cashu account sync job > settles a payment paid with a NUT-18 token over NIP-17`

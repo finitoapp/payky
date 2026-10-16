@@ -89,7 +89,7 @@ counting as no permissions.
   that the statistics screen would ask the PIN for. Gating it behind
   `stats` would take it from every Basic device; the owner accepted the gap.
 - **No data migration for existing devices.** Migrations keep no record of
-  having run (`src/core/migrations/migrations.ts`), so one that adds `stats`
+  having run (`packages/core/src/migrations/migrations.ts`), so one that adds `stats`
   to every set holding `settings` would add it back at every start after
   the owner removed it on purpose. A device saved as Manager before this
   change shows as a custom preset in Settings → Access until the owner
@@ -117,14 +117,14 @@ counting as no permissions.
 
 ## Enforced by
 
-- `src/core/modules/access/access-utils.test.ts > device permissions > an unknown permission is dropped and the known ones kept`
-- `src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > clearing the cart needs discard`
-- `src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > undoing an added line needs discard, since it writes a remove`
-- `src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > adding a line needs no discard`
-- `e2e/stats.spec.ts > a Basic device opening the statistics gets the PIN prompt`
-- `e2e/stats.spec.ts > a Manager device opens the statistics without the PIN`
-- `e2e/access.spec.ts > a refund raises the one-shot PIN prompt naming the permission it needs`
-- `e2e/access-gates.spec.ts > every cart write that takes items off the bill asks a Basic device for the PIN`
-- `e2e/access-gates.spec.ts > cancelling a payment and confirming money by hand ask a Basic device for the PIN`
-- `e2e/bill.spec.ts > shows the right message for a closed or missing bill`
-- `e2e/bill.spec.ts > locks a bill while its payment is pending, and unlocks it once that payment is canceled`
+- `packages/core/src/modules/access/access-utils.test.ts > device permissions > an unknown permission is dropped and the known ones kept`
+- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > clearing the cart needs discard`
+- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > undoing an added line needs discard, since it writes a remove`
+- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > adding a line needs no discard`
+- `apps/web-app/e2e/stats.spec.ts > a Basic device opening the statistics gets the PIN prompt`
+- `apps/web-app/e2e/stats.spec.ts > a Manager device opens the statistics without the PIN`
+- `apps/web-app/e2e/access.spec.ts > a refund raises the one-shot PIN prompt naming the permission it needs`
+- `apps/web-app/e2e/access-gates.spec.ts > every cart write that takes items off the bill asks a Basic device for the PIN`
+- `apps/web-app/e2e/access-gates.spec.ts > cancelling a payment and confirming money by hand ask a Basic device for the PIN`
+- `apps/web-app/e2e/bill.spec.ts > shows the right message for a closed or missing bill`
+- `apps/web-app/e2e/bill.spec.ts > locks a bill while its payment is pending, and unlocks it once that payment is canceled`

@@ -54,7 +54,7 @@ both repos in step.
 
 Payky's `MasterKey` is the same master secret Linky recovers from the SLIP-39
 share. Both apps use BIP-85 entropy `hmac-sha512("bip-entropy-from-k", node.privateKey)`
-(`src/core/modules/shared/key-derivation.ts`). Linky's paths are in
+(`packages/core/src/modules/shared/key-derivation.ts`). Linky's paths are in
 `packages/identity/src/derivationPaths.ts`.
 
 | What | Path | Derivation |
@@ -199,7 +199,7 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
 
 ## Architecture
 
-### 1. Linky identity — `src/core/modules/shared/key-derivation.ts`
+### 1. Linky identity — `packages/core/src/modules/shared/key-derivation.ts`
 
 - Add `deriveLinkyAppOwnerSecret(masterKey)` and `deriveCashuWalletSeed(masterKey)`
   next to the existing derivations. Rename the reserved
@@ -227,13 +227,13 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
   `wss://evolu.eu.freedomrelay.dev` and `wss://evolu.linky.fit`.
 - Writes name their owner through `MutationOptions.owner`.
 - Linky's four tables (`shardPointer`, `setting`, `cashuProof`,
-  `cashuOperation`) join `AppSchema` in `src/core/evolu/schema.ts`.
+  `cashuOperation`) join `AppSchema` in `packages/core/src/evolu/schema.ts`.
   - Column names and types are copied 1:1, and branded ids live in a new
-    module `src/core/modules/cashu/`.
+    module `packages/core/src/modules/cashu/`.
   - None of the names collides with a Payky table. `setting` sits next to
     Payky's `appSettings`; the glossary says which is which.
 - **Isolation by convention.** Only the shard store
-  (`src/core/cashu/cashu-shard-store.ts`) and the Cashu module's queries touch
+  (`packages/core/src/cashu/cashu-shard-store.ts`) and the Cashu module's queries touch
   these tables.
   - Every query over them filters by the owner ids it expects.
   - A Payky query never reads them without such a filter.
@@ -241,7 +241,7 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
     scan: it fails when a table name (`"cashuProof"`, `"cashuOperation"`,
     `"shardPointer"`, `"setting"`) appears outside the allowed files.
 - The extra owners are derived from the active account's master key. They are
-  registered when the app Evolu starts (`src/atoms/evolu.ts`, beside the
+  registered when the app Evolu starts (`apps/web-app/src/atoms/evolu.ts`, beside the
   existing `useOwner(evolu.appOwner, …)`) and released with it on an account
   switch.
 - **Demo account:** registers no Linky owners. The demo-data generator uses a
@@ -263,7 +263,7 @@ Phase 1 has to prove all of this with real sync before anything is built on it.
   shard 0 and creates the pointer row as Linky would. Linky reads any pointer
   under its app owner, whoever wrote it (`linksync/src/core/shardStore.ts`).
 
-### 3. Wallet — `src/core/cashu/`
+### 3. Wallet — `packages/core/src/cashu/`
 
 - Add the `@cashu/cashu-ts` dependency at the version Linky resolves (4.5.1
   today, `bun.lock`).
@@ -467,7 +467,7 @@ to `nativeBackgroundJobs` and `browserBackgroundJobs` explicitly.
 - Whenever the Cashu account is enabled, not only while a payment waits, the
   job subscribes to NIP-17 direct messages for Payky's nostr key on the relays
   the request names, through the existing nostr client
-  (`src/core/integrations/nostr/`).
+  (`packages/core/src/integrations/nostr/`).
   - The subscription looks back over a window (tunable, 7 days to start).
     NIP-17 timestamps are randomised up to two days back, so it can never be
     shorter than that.
@@ -824,7 +824,7 @@ Mirror Linky's screens: `apps/web-app/src/pages/MintsPage.tsx`,
 
 These are the union and lookup tables:
 - `AccountKindSchema`, and through it `AccountTransactionKind`, `eetSale.method`
-  and the CLI account commands (`bin/cli-accounts.ts`). EET needs nothing
+  and the CLI account commands (`apps/cli/src/cli-accounts.ts`). EET needs nothing
   more: `method` is stored, not sent.
 - `DefaultPaymentMethodSchema` (a separate enum, not derived from
   `AccountKind`), `PaymentMethodTab`, `PaymentMethodOption`,
@@ -841,7 +841,7 @@ These are the union and lookup tables:
   (`loadAutomaticReconciliationClaimForNewAccountTransaction`,
   `reconcileAccountTransaction`).
 - `enabledPaymentMethodAccountsQuery`, `paymentRequestQuery`,
-  `src/core/evolu/schema.ts`, i18n in `en`/`cs`/`sk`.
+  `packages/core/src/evolu/schema.ts`, i18n in `en`/`cs`/`sk`.
 - `payment-wait-page.tsx` beyond the keys table: building the options list,
   `activePaymentMethodIsPrepared`, the `prepare` mapping, the `onValueChange`
   guard.
@@ -851,9 +851,9 @@ These are the union and lookup tables:
   `Partial` and will not fail to compile.
 - Onboarding's `onboardingPaymentMethodOrder` decides the tab order, though an
   unlisted method is appended anyway.
-- The CLI beyond accounts: `bin/cli-payments.ts`, `bin/cli-account-transfers.ts`.
+- The CLI beyond accounts: `apps/cli/src/cli-payments.ts`, `apps/cli/src/cli-account-transfers.ts`.
 - Access permissions for the new routes and actions (mints screen, set as
-  default, add, remove, move funds, withdraw) in `src/core/modules/access`.
+  default, add, remove, move funds, withdraw) in `packages/core/src/modules/access`.
   Every new `_terminal` route declares `staticData.access`.
 - The nostr client: a NIP-17 direct-message subscription for Payky's key, next
   to the support chat's, taking only 1:1 rooms whose content is a Cashu

@@ -60,7 +60,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-capacitor-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-capacitor-${{ hashFiles('apps/native-shell/android/**/*.gradle*', 'apps/native-shell/android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-capacitor-
             ${{ runner.os }}-gradle-
@@ -71,7 +71,7 @@ jobs:
       - name: Build debug Android app
         run: |
           bun run cap:android:sync
-          cd android
+          cd apps/native-shell/android
           ./gradlew assembleDebug bundleDebug
 
       - name: Upload debug Android artifacts
@@ -79,6 +79,6 @@ jobs:
         with:
           name: payky-capacitor-android-debug
           path: |
-            android/app/build/outputs/apk/**/*.apk
-            android/app/build/outputs/bundle/**/*.aab
+            apps/native-shell/android/app/build/outputs/apk/**/*.apk
+            apps/native-shell/android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: error

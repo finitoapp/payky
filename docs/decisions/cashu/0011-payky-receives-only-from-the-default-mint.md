@@ -44,7 +44,7 @@ no synced list of trusted mints; the one mint both apps share is the synced
 
 ## Enforced by
 
-- `src/core/cashu/cashu-token-listener-trust.test.ts > a token from a mint other than the default is not received and pays nothing (cashu/0011)`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
-- `src/core/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
-- `src/core/cashu/cashu-booking.test.ts > bookCashuOperations > a token another app received from another mint claims the payment that holds its receive`
+- `packages/core/src/cashu/cashu-token-listener-trust.test.ts > a token from a mint other than the default is not received and pays nothing (cashu/0011)`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
+- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
+- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > a token another app received from another mint claims the payment that holds its receive`

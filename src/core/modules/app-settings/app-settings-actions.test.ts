@@ -2,6 +2,7 @@ import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import {
   cashRegisterAccountQuery,
+  cashuAccountQuery,
   fiatBankAccountQuery,
   sparkAccountQuery,
 } from "@/core/modules/account/account-queries.ts"
@@ -119,39 +120,28 @@ describe("setEnabledHomeModes", () => {
 const input = {
   country: "CZ",
   currency: "CZK",
-  cash: true,
-  btc: true,
   iban: BankAccountInputIbanSchema.parse("CZ6508000000192000145399"),
   defaultPaymentMethod,
   paymentMethodOrderJson: JSON.stringify(defaultPaymentMethodOrder),
 } as const
 
 describe("finishOnboarding", () => {
-  test("refuses an empty payment-method selection before writing any row", async () => {
+  test("enables cash and Spark without a bank account and leaves Cashu disabled", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
     await using run = testCreateRun({
       ...evoluTestDeps(evolu),
       masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
     })
-    expect(
-      await run(
-        finishOnboarding({ ...input, cash: false, btc: false, iban: null })
-      )
-    ).toEqual({
-      ok: false,
-      error: { type: "OnboardingPaymentMethodRequired" },
-    })
-    expect(
-      await Promise.all([
-        evolu.loadQuery(settingsQuery),
-        evolu.loadQuery(legalEntityQuery),
-        evolu.loadQuery(taxRatesQuery),
-        evolu.loadQuery(cashRegisterAccountQuery),
-        evolu.loadQuery(sparkAccountQuery),
-        evolu.loadQuery(fiatBankAccountQuery),
-      ])
-    ).toEqual([[], [], [], [], [], []])
+    await run.orThrow(finishOnboarding({ ...input, iban: null }))
+    await expect
+      .poll(() => evolu.loadQuery(cashRegisterAccountQuery))
+      .toEqual([expect.objectContaining({ isDeleted: 0, currency: "CZK" })])
+    await expect
+      .poll(() => evolu.loadQuery(sparkAccountQuery))
+      .toEqual([expect.objectContaining({ isDeleted: 0 })])
+    expect(await evolu.loadQuery(fiatBankAccountQuery)).toEqual([])
+    expect(await evolu.loadQuery(cashuAccountQuery)).toEqual([])
   })
 
   test("writes the account's first settings", async () => {

@@ -5,53 +5,23 @@ import {
   getPaymentMethodOrder,
   PaymentMethodOrderJson,
 } from "@/core/modules/app-settings/app-settings-utils.ts"
-import type { OnboardingPaymentMethod } from "@/features/onboarding/onboarding-form-state.ts"
-import {
-  getDefaultPaymentMethodForOnboarding,
-  onboardingPaymentMethodOrder,
-} from "@/features/onboarding/onboarding-utils.ts"
-
-const methods = (...values: ReadonlyArray<OnboardingPaymentMethod>) =>
-  new Set(values)
-
-/** The order the payment screen shows after onboarding with `enabled`. */
-const orderAfterOnboarding = (
-  enabled: ReadonlySet<OnboardingPaymentMethod>,
-  bankTransferEnabled: boolean
-) =>
-  getPaymentMethodOrder({
-    paymentMethodOrderJson: z.encode(
-      PaymentMethodOrderJson,
-      onboardingPaymentMethodOrder
-    ),
-    defaultPaymentMethod: getDefaultPaymentMethodForOnboarding(
-      enabled,
-      bankTransferEnabled
-    ),
-  })
+import { onboardingPaymentMethodOrder } from "./onboarding-utils.ts"
 
 describe("onboarding payment method order", () => {
-  test("offers bank transfer, card, bitcoin, cash", () => {
-    expect(orderAfterOnboarding(methods("cash", "btc"), true)).toEqual([
+  test("keeps bank transfer and card before Spark and Cashu after reading settings", () => {
+    const order = getPaymentMethodOrder({
+      paymentMethodOrderJson: z.encode(
+        PaymentMethodOrderJson,
+        onboardingPaymentMethodOrder
+      ),
+      defaultPaymentMethod: onboardingPaymentMethodOrder[0],
+    })
+    expect(order).toEqual([
       "iban",
       "cardSwitchio",
       "spark",
-      "cashRegister",
-      // Unlisted by onboarding, so appended: Cashu is enabled in settings.
       "cashu",
+      "cashRegister",
     ])
-  })
-
-  test("opens on the first enabled method when bank transfer is off", () => {
-    expect(
-      getDefaultPaymentMethodForOnboarding(methods("cash", "btc"), false)
-    ).toBe("spark")
-    expect(getDefaultPaymentMethodForOnboarding(methods("cash"), false)).toBe(
-      "cashRegister"
-    )
-  })
-
-  test("still decodes to a valid method when nothing is enabled", () => {
-    expect(getDefaultPaymentMethodForOnboarding(methods(), false)).toBe("iban")
   })
 })

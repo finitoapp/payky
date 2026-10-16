@@ -49,13 +49,6 @@ export type AlreadyOnboardedError = ReturnType<
   typeof createAlreadyOnboardedError
 >
 
-const createOnboardingPaymentMethodRequiredError = defineError(
-  "OnboardingPaymentMethodRequired"
-)()
-export type OnboardingPaymentMethodRequiredError = ReturnType<
-  typeof createOnboardingPaymentMethodRequiredError
->
-
 /**
  * Refuses an account that already has its appSettings row: onboarding writes
  * last-write-wins singletons (the bank account among them), so running it
@@ -189,22 +182,17 @@ export const finishOnboarding =
   (input: {
     readonly country: CountryCode | null
     readonly currency: FiatCurrency
-    readonly cash: boolean
-    readonly btc: boolean
     readonly iban: Iban | null
     readonly defaultPaymentMethod: DefaultPaymentMethod
     readonly paymentMethodOrderJson: string
   }): Task<
     void,
-    AlreadyOnboardedError | OnboardingPaymentMethodRequiredError,
+    AlreadyOnboardedError,
     EvoluDep & EvoluOwnerDep & MasterKeyDep
   > =>
   async (run) => {
     const notOnboarded = await run(requireNotOnboarded())
     if (!notOnboarded.ok) return notOnboarded
-    if (!input.cash && !input.btc && input.iban === null) {
-      return err(createOnboardingPaymentMethodRequiredError())
-    }
 
     // A restored account can still reach onboarding with data on a relay
     // this device has not synced yet — `_terminal.tsx` gives up waiting for
@@ -226,9 +214,9 @@ export const finishOnboarding =
       await run.ok(seedTaxRatesForCountry(input.country))
     }
     await run.ok(
-      saveCashRegisterAccount({ enabled: input.cash, currency: input.currency })
+      saveCashRegisterAccount({ enabled: true, currency: input.currency })
     )
-    await run.ok(saveSparkAccount({ enabled: input.btc }))
+    await run.ok(saveSparkAccount({ enabled: true }))
     await run.ok(
       saveFiatBankAccount({
         enabled: input.iban !== null,

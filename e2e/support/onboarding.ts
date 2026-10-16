@@ -113,7 +113,7 @@ export async function submitRestorePhrase(
     .waitFor()
 }
 
-/** Completes onboarding as a new account, with Spark switched off. */
+/** Completes onboarding as a new account with a bank account. */
 export async function completeOnboarding(
   page: Page,
   language: Language,
@@ -128,11 +128,6 @@ export async function completeOnboarding(
   await page
     .getByRole("button", {
       name: translate(language, "accountChoice.new.title"),
-    })
-    .click()
-  await page
-    .getByRole("switch", {
-      name: translate(language, "onboarding.payments.btc.title"),
     })
     .click()
   await page
@@ -152,8 +147,7 @@ export async function completeOnboarding(
  * Completes onboarding for an account that is already selected and already
  * on the onboarding flow (for example right after creating a new device
  * account from Settings > Accounts), accepting every default. Unlike
- * completeOnboarding, this does not navigate or change which payment methods
- * are enabled — it only fills the IBAN the default bank transfer requires.
+ * completeOnboarding, this does not navigate to the onboarding page.
  *
  * Used instead of the window.__e2eSeedOnboarding bridge for a second device
  * account: switching accounts recreates the app's Evolu client, and the

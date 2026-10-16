@@ -391,7 +391,7 @@ const compareLanes = [
 function PaykyWatermark() {
   return (
     <img
-      src="/pwa-icon.svg"
+      src="/landing/pwa-icon.svg"
       alt=""
       className="pointer-events-none absolute -right-12 -bottom-16 -z-10 size-56 -rotate-12 opacity-10 select-none dark:opacity-[0.07]"
     />

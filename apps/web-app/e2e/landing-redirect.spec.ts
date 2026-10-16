@@ -240,6 +240,15 @@ test("the app origin serves the independent landing documents and assets", async
     expect(response.ok(), asset[1]).toBe(true)
     expect(response.headers()["content-type"]).not.toContain("text/html")
   }
+  for (const url of [
+    "/landing/pwa-icon.svg",
+    "http://127.0.0.1:5175/landing/pwa-icon.svg",
+  ]) {
+    const logo = await request.get(url)
+    expect(logo.ok()).toBe(true)
+    expect(logo.headers()["content-type"]).toContain("image/svg+xml")
+    expect(await logo.text()).toContain("<svg")
+  }
   const image = await request.get("/landing/og-cs.png")
   expect(image.ok()).toBe(true)
   expect(image.headers()["content-type"]).toContain("image/png")

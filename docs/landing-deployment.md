@@ -37,7 +37,9 @@ version, production branch or native release.
    No CalVer bump or app release is needed.
 
 `/api/contact`, `/manifest.webmanifest`, app icons and the service worker
-remain in the web-app project. Test contact and installation through the
+remain in the web-app project. The landing logo and favicon are served by
+the landing project itself at `/landing/pwa-icon.svg`, including on its
+standalone Vercel domains. Test contact and installation through the
 public origin: the standalone landing deployment does not host those root
 endpoints. Set `VITE_PAYKY_API_BASE_URL=https://payky.me` on the landing
 production project if its standalone previews should send contact requests there;

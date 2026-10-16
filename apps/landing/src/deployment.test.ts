@@ -11,6 +11,7 @@ import {
   landingDocuments,
   landingFileName,
   landingLanguages,
+  renderLandingDocument,
 } from "./landing-server.tsx"
 
 const paths = {
@@ -55,8 +56,25 @@ describe("landing deployment", () => {
       "utf8"
     )
     expect(template).toContain('href="/manifest.webmanifest" data-vite-ignore')
-    expect(template).toContain('href="/pwa-icon.svg" data-vite-ignore')
     expect(template).not.toContain('href="/landing/manifest.webmanifest"')
+  })
+
+  test("serves the logo and favicon from the landing namespace", () => {
+    const template = readFileSync(
+      new URL("../landing.html", import.meta.url),
+      "utf8"
+    )
+    const icon = readFileSync(
+      new URL("../public/pwa-icon.svg", import.meta.url),
+      "utf8"
+    )
+    expect(template).toContain('href="/landing/pwa-icon.svg"')
+    expect(icon).toContain("<svg")
+    for (const document of landingDocuments) {
+      const html = renderLandingDocument(template, "en", document)
+      expect(html).toContain('src="/landing/pwa-icon.svg"')
+      expect(html).not.toContain('src="/pwa-icon.svg"')
+    }
   })
 
   test.each([

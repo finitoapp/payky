@@ -49,6 +49,13 @@ export type AlreadyOnboardedError = ReturnType<
   typeof createAlreadyOnboardedError
 >
 
+const createOnboardingPaymentMethodRequiredError = defineError(
+  "OnboardingPaymentMethodRequired"
+)()
+export type OnboardingPaymentMethodRequiredError = ReturnType<
+  typeof createOnboardingPaymentMethodRequiredError
+>
+
 /**
  * Refuses an account that already has its appSettings row: onboarding writes
  * last-write-wins singletons (the bank account among them), so running it
@@ -189,12 +196,15 @@ export const finishOnboarding =
     readonly paymentMethodOrderJson: string
   }): Task<
     void,
-    AlreadyOnboardedError,
+    AlreadyOnboardedError | OnboardingPaymentMethodRequiredError,
     EvoluDep & EvoluOwnerDep & MasterKeyDep
   > =>
   async (run) => {
     const notOnboarded = await run(requireNotOnboarded())
     if (!notOnboarded.ok) return notOnboarded
+    if (!input.cash && !input.btc && input.iban === null) {
+      return err(createOnboardingPaymentMethodRequiredError())
+    }
 
     // A restored account can still reach onboarding with data on a relay
     // this device has not synced yet — `_terminal.tsx` gives up waiting for

@@ -127,6 +127,33 @@ const input = {
 } as const
 
 describe("finishOnboarding", () => {
+  test("refuses an empty payment-method selection before writing any row", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun({
+      ...evoluTestDeps(evolu),
+      masterKey: MasterKey("000102030405060708090a0b0c0d0e0f"),
+    })
+    expect(
+      await run(
+        finishOnboarding({ ...input, cash: false, btc: false, iban: null })
+      )
+    ).toEqual({
+      ok: false,
+      error: { type: "OnboardingPaymentMethodRequired" },
+    })
+    expect(
+      await Promise.all([
+        evolu.loadQuery(settingsQuery),
+        evolu.loadQuery(legalEntityQuery),
+        evolu.loadQuery(taxRatesQuery),
+        evolu.loadQuery(cashRegisterAccountQuery),
+        evolu.loadQuery(sparkAccountQuery),
+        evolu.loadQuery(fiatBankAccountQuery),
+      ])
+    ).toEqual([[], [], [], [], [], []])
+  })
+
   test("writes the account's first settings", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

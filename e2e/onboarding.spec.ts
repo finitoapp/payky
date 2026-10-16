@@ -477,3 +477,101 @@ for (const outcome of ["success", "retry", "skip", "empty"] as const) {
     })
   })
 }
+
+for (const method of ["cash", "btc", "iban"] as const) {
+  test(`onboarding requires a payment method and accepts ${method} alone`, async ({
+    page,
+  }) => {
+    const relay = await mockNostrProfileRelays(page)
+    const methodError = page.getByText(
+      translate("en", "onboarding.payments.required"),
+      { exact: true }
+    )
+    const bankInput = page.getByRole("textbox", {
+      name: translate("en", "onboarding.payments.iban.title"),
+    })
+    await test.step("try to finish with no payment method and a business name", async () => {
+      await gotoPage(page, "/onboarding", "en", "onboarding.title")
+      await page
+        .getByRole("button", {
+          name: translate("en", "accountChoice.new.title"),
+        })
+        .click()
+      await page
+        .getByRole("textbox", {
+          name: translate("en", "onboarding.businessName.label"),
+        })
+        .fill("Café Example")
+      for (const choice of ["cash", "btc"] as const) {
+        await page
+          .getByRole("switch", {
+            name: translate("en", `onboarding.payments.${choice}.title`),
+          })
+          .click()
+      }
+      await bankInput.fill("   ")
+      const finish = page.getByRole("button", {
+        name: translate("en", "onboarding.finishWithoutBankTransfer"),
+      })
+      await expect(methodError).not.toBeVisible()
+      await expect(finish).toBeEnabled()
+      await finish.click()
+      await expect(methodError).toBeVisible()
+      await expect(page).toHaveURL("/onboarding")
+      expect(relay.attempts).toHaveLength(0)
+    })
+    await test.step("a malformed bank account cannot substitute for a payment method", async () => {
+      await bankInput.fill("12345")
+      await page
+        .getByRole("button", { name: translate("en", "onboarding.finish") })
+        .click()
+      await expect(
+        page.getByText(
+          translate("en", "settings.fiatBankAccount.iban.invalid"),
+          { exact: true }
+        )
+      ).toBeVisible()
+      await expect(methodError).toBeVisible()
+      expect(relay.attempts).toHaveLength(0)
+      await bankInput.fill("")
+    })
+    await test.step("choose one method and finish", async () => {
+      if (method === "iban") {
+        await bankInput.fill("19-2000145399/0800")
+      } else {
+        await page
+          .getByRole("switch", {
+            name: translate("en", `onboarding.payments.${method}.title`),
+          })
+          .click()
+      }
+      await expect(methodError).not.toBeVisible()
+      await page
+        .getByRole("button", {
+          name: translate(
+            "en",
+            method === "iban"
+              ? "onboarding.finish"
+              : "onboarding.finishWithoutBankTransfer"
+          ),
+        })
+        .click()
+      await expect(page).toHaveURL("/")
+      await gotoPage(
+        page,
+        "/settings/payment-accounts",
+        "en",
+        "settings.paymentAccounts.title"
+      )
+      for (const [choice, key] of [
+        ["cash", "settings.cashRegisterAccount.enabled.label"],
+        ["btc", "settings.sparkAccount.enabled.label"],
+        ["iban", "settings.fiatBankAccount.enabled.label"],
+      ] as const) {
+        await expect(
+          page.getByRole("switch", { name: translate("en", key) })
+        ).toBeChecked({ checked: method === choice })
+      }
+    })
+  })
+}

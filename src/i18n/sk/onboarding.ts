@@ -166,6 +166,7 @@ export const skOnboarding = {
   "onboarding.payments.iban.description":
     "Zadajte číslo účtu alebo IBAN na prijímanie platieb pomocou QR kódu.",
   "onboarding.payments.iban.title": "Bankový účet (voliteľné)",
+  "onboarding.payments.required": "Vyberte aspoň jednu platobnú metódu.",
   "onboarding.payments.title": "Nastavenie podniku",
   "onboarding.restore.action": "Obnoviť účet",
   "onboarding.restore.description":

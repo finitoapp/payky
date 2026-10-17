@@ -1,12 +1,16 @@
 import { useAtomValue } from "jotai"
 import { Component, type ReactNode, Suspense } from "react"
 import { Text } from "tamagui"
+import { accountAtom } from "../../atoms/account.ts"
 import { deviceLanguageAtom } from "../../atoms/device-evolu.ts"
 import { deviceMigrationsAtom } from "../../atoms/device-migrations.ts"
+import { evoluAtom } from "../../atoms/evolu.ts"
 
 function Rows() {
   const language = useAtomValue(deviceLanguageAtom)
   const deviceReport = useAtomValue(deviceMigrationsAtom)
+  const account = useAtomValue(accountAtom)
+  const evolu = useAtomValue(evoluAtom)
   return (
     <>
       <Text>Device language: {language ?? "unset"}</Text>
@@ -14,6 +18,8 @@ function Rows() {
         Device migrations: {deviceReport.migrated} run
         {deviceReport.failed ? ", FAILED" : ", ok"}
       </Text>
+      <Text>Diagnostic account id: {account.id}</Text>
+      <Text>App owner id: {evolu.appOwner.id}</Text>
     </>
   )
 }

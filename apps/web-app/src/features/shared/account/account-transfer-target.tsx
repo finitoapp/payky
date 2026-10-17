@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { restoredAccountAtom } from "@payky/app-shared/restored-account"
 import { createDateDep } from "@payky/core/deps"
 import { createOrSelectAccount } from "@payky/core/evolu/device-account"
 import {
@@ -28,7 +29,6 @@ import {
 import { ScanCodeScanner } from "@/components/scan-code-scanner.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { appEnv } from "@/core/app-env.ts"
-import { restoredAccountAtom } from "@/features/shared/account/restored-account.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"

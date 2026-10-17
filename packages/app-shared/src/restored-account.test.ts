@@ -1,6 +1,6 @@
 import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import { describe, expect, test } from "vitest"
-import { planRestoreCleanup } from "@/features/shared/account/restored-account.ts"
+import { planRestoreCleanup } from "./restored-account.ts"
 
 const active = "active-account" as DeviceAccountId
 const previous = "previous-account" as DeviceAccountId

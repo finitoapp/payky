@@ -5,6 +5,10 @@ import {
   onboardingFormAtom,
 } from "@payky/app-shared/onboarding-form-state"
 import {
+  planRestoreCleanup,
+  restoredAccountAtom,
+} from "@payky/app-shared/restored-account"
+import {
   removeDeviceAccount,
   selectAccount,
 } from "@payky/core/evolu/device-account"
@@ -34,10 +38,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import {
-  planRestoreCleanup,
-  restoredAccountAtom,
-} from "@/features/shared/account/restored-account.ts"
 import { TransportAddForm } from "@/features/shared/evolu-transports/transport-add-form.tsx"
 import { TransportToggleList } from "@/features/shared/evolu-transports/transport-toggle-list.tsx"
 import { useAppOwnerSyncState } from "@/hooks/use-app-owner-sync-state.ts"

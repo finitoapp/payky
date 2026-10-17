@@ -1,0 +1,172 @@
+import { lockManager } from "@evolu/react-native"
+import { getBackgroundJobsForRuntime } from "@payky/core/background-jobs/background-jobs"
+import { runBackgroundJobs } from "@payky/core/background-jobs/run-background-jobs"
+import { createDateDep } from "@payky/core/deps"
+import type { Evolu } from "@payky/core/evolu/schema"
+import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
+import type { DeviceId } from "@payky/core/modules/device/device-types"
+import { useAtomValue } from "jotai"
+import {
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react"
+import { accountAtom } from "../atoms/account.ts"
+import { appMigrationsAtom } from "../atoms/app-migrations.ts"
+import { evoluAtom } from "../atoms/evolu.ts"
+import { captureReportedError } from "../core/error-reporting.ts"
+import { nativeEnv } from "../core/native-env.ts"
+import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
+import {
+  createConnectivityDep,
+  createFetchDep,
+} from "../platform/native-deps.ts"
+
+/** The job context: the same effects web's `AppBackgroundJobs` passes. */
+const createJobDeps = ({
+  evolu,
+  deviceId,
+}: {
+  readonly evolu: Evolu
+  readonly deviceId: DeviceId
+}) => {
+  const dateDep = createDateDep()
+  const fetchDep = createFetchDep()
+  return {
+    evolu,
+    evoluOwner: evolu.appOwner,
+    deviceId,
+    ...dateDep,
+    ...fetchDep,
+    ...createConnectivityDep(),
+    ...createEetApiDep(
+      { ...dateDep, ...fetchDep },
+      { productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL }
+    ),
+    // The one lock authority of this JS runtime, shared with `nativeRun`.
+    lockManager,
+    console: nativeConsole,
+    onError: (error: unknown) => {
+      nativeConsole.error("Background job failed.", error)
+    },
+  }
+}
+
+/**
+ * Runs the jobs while mounted and stops them with the component. A demo
+ * account's data is fictional and never syncs: no job runs there
+ * (demo-data/0001). When the account switches, the old jobs are disposed
+ * before the new ones start, so two accounts never hold job locks together.
+ */
+function useBackgroundJobs({
+  isDemo,
+  evolu,
+  deviceId,
+}: {
+  readonly isDemo: boolean
+  readonly evolu: Evolu
+  readonly deviceId: DeviceId
+}) {
+  // Resolves once the previous effect's jobs and run are fully disposed.
+  const stopped = useRef<Promise<void>>(Promise.resolve())
+  const start = useCallback(() => {
+    const run = nativeRun.create(createJobDeps({ evolu, deviceId }))
+    // Native takes web's Capacitor branch: FIO has no CORS limit here.
+    return {
+      run,
+      jobs: run.ok(runBackgroundJobs(getBackgroundJobsForRuntime(true))),
+    }
+  }, [evolu, deviceId])
+
+  useEffect(() => {
+    if (isDemo) return
+
+    let isDisposed = false
+    const previousStopped = stopped.current
+    const starting = (async () => {
+      await previousStopped
+      if (isDisposed) return null
+      const { run, jobs } = start()
+      try {
+        const started = await jobs
+        if (!isDisposed) return { run, jobs: started }
+        await started[Symbol.asyncDispose]()
+      } catch (error) {
+        if (!isDisposed)
+          nativeConsole.error("Failed to start background jobs.", error)
+      }
+      await run[Symbol.asyncDispose]()
+      return null
+    })()
+
+    return () => {
+      isDisposed = true
+      stopped.current = (async () => {
+        try {
+          const running = await starting
+          if (running === null) return
+          await running.jobs[Symbol.asyncDispose]()
+          await running.run[Symbol.asyncDispose]()
+        } catch (error) {
+          nativeConsole.error("Failed to stop background jobs.", error)
+        }
+      })()
+    }
+  }, [isDemo, start])
+}
+
+/** The FIO, Spark and EET jobs; Cashu's job joins with P08. */
+function AppBackgroundJobs() {
+  const evolu = useAtomValue(evoluAtom)
+  const account = useAtomValue(accountAtom)
+  // Jobs start behind the data migrations, so none reads a half-migrated
+  // database. A failed migration still lets them start, as on web.
+  useAtomValue(appMigrationsAtom)
+
+  useBackgroundJobs({
+    isDemo: account.demo !== null,
+    evolu,
+    deviceId: account.device.id,
+  })
+  return null
+}
+
+/**
+ * Renders nothing: a broken app Evolu client already shows on the screens that
+ * need it, and the shell has to keep working without background sync. Still
+ * reported, so it cannot vanish silently (the sanctioned twin of web's
+ * `AppEvoluConsumersFailed`).
+ */
+class AppEvoluConsumersBoundary extends Component<
+  { readonly children: ReactNode },
+  { readonly failed: boolean }
+> {
+  override state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  override componentDidCatch(error: unknown, info: ErrorInfo) {
+    captureReportedError(error, info.componentStack ?? undefined)
+  }
+
+  override render() {
+    return this.state.failed ? null : this.props.children
+  }
+}
+
+/** Isolated and suspended apart from the screens: losing it costs sync, not the UI. */
+export function AppEvoluConsumers() {
+  return (
+    <AppEvoluConsumersBoundary>
+      <Suspense fallback={null}>
+        <AppBackgroundJobs />
+      </Suspense>
+    </AppEvoluConsumersBoundary>
+  )
+}

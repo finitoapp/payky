@@ -16,8 +16,9 @@ import { nativeEnv } from "./native-env.ts"
  * `Sentry.close()`.
  *
  * Report unexpected crashes only. Sanctioned call sites: `ErrorBoundary` in
- * `app/_layout.tsx`, and the app Evolu consumers boundary once native has
- * background consumers. Never pair it with a toast for a handled failure.
+ * `app/_layout.tsx`, and `AppEvoluConsumersBoundary` in
+ * `src/components/app-background-jobs.tsx`, around the background consumers
+ * of the app Evolu client. Never pair it with a toast for a handled failure.
  */
 const dsn = nativeEnv.EXPO_PUBLIC_SENTRY_DSN
 

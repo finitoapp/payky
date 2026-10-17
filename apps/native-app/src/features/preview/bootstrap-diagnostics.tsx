@@ -10,6 +10,7 @@ import { AccountsCard } from "./accounts-card.tsx"
 import { CashSaleCard } from "./cash-sale-card.tsx"
 import { LiveQueryDemo } from "./live-query-demo.tsx"
 import { NetworkCard } from "./network-card.tsx"
+import { SyncCard } from "./sync-card.tsx"
 
 function Ready({ children }: { readonly children: ReactNode }) {
   const report = useAtomValue(appMigrationsAtom)
@@ -70,6 +71,7 @@ export function BootstrapDiagnostics() {
           <Rows />
           <LiveQueryDemo />
           <CashSaleCard />
+          <SyncCard />
           <NetworkCard />
         </Ready>
       </Suspense>

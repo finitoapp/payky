@@ -12,10 +12,11 @@ export default {
     bundleIdentifier: "me.payky.nativepreview",
     supportsTablet: true,
   },
-  android: { package: "me.payky.nativepreview" },
+  android: { package: "me.payky.nativepreview", allowBackup: false },
   plugins: [
     "expo-router",
     "expo-font",
     ["expo-sqlite", { useSQLCipher: true }],
+    "./plugins/with-no-data-extraction.cjs",
   ],
 } satisfies ExpoConfig

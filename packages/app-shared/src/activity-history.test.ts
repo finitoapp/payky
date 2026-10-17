@@ -1,0 +1,192 @@
+import { describe, expect, test } from "vitest"
+import {
+  derivePaymentHistoryRowState,
+  formatActivityDayTitle,
+  hasAnyIssue,
+  type PaymentHistoryRow,
+  refundBadgeLabel,
+  resolvePaymentTitle,
+} from "./activity-history.ts"
+import { createTranslate } from "./i18n/translate.ts"
+
+const t = createTranslate("en")
+const now = new Date(2026, 9, 17, 12)
+
+/** A pending, bill-less payment; tests override only what they exercise. */
+const payment = (overrides: Record<string, unknown> = {}): PaymentHistoryRow =>
+  ({
+    id: "p1",
+    amount: 100,
+    canceledAt: null,
+    confirmedPaidAt: null,
+    expiresAt: null,
+    excessAcknowledgedAt: null,
+    billId: null,
+    billLines: [],
+    billItems: [],
+    billClaimedTransactions: [],
+    ownClaimedTransactions: [],
+    ...overrides,
+  }) as unknown as PaymentHistoryRow
+
+const claim = (paymentId: string, amount: number, id = "tx1") => ({
+  paymentId,
+  accountTransactionId: id,
+  amount,
+  currency: "CZK",
+  paymentAmount: amount,
+  paymentCurrency: "CZK",
+  paymentAmountSats: null,
+  tipAmount: 0,
+  transactionKind: "cashRegister",
+})
+
+describe("derivePaymentHistoryRowState", () => {
+  test("a claimed payment is paid, an unclaimed one pending", () => {
+    expect(derivePaymentHistoryRowState(payment(), now).status).toBe("pending")
+    expect(
+      derivePaymentHistoryRowState(
+        payment({ ownClaimedTransactions: [claim("p1", 100)] }),
+        now
+      ).status
+    ).toBe("paid")
+  })
+
+  test("an expired or canceled payment is void", () => {
+    expect(
+      derivePaymentHistoryRowState(
+        payment({ expiresAt: now.getTime() - 1 }),
+        now
+      ).isVoid
+    ).toBe(true)
+    expect(
+      derivePaymentHistoryRowState(payment({ canceledAt: 1 }), now).isVoid
+    ).toBe(true)
+  })
+
+  test("a canceled payment whose money arrived is a collision, not void", () => {
+    const state = derivePaymentHistoryRowState(
+      payment({ canceledAt: 1, ownClaimedTransactions: [claim("p1", 100)] }),
+      now
+    )
+    expect(state.status).toBe("canceled")
+    expect(state.hasCancellationCollision).toBe(true)
+    expect(state.isVoid).toBe(false)
+    expect(hasAnyIssue(state.issueFlags)).toBe(true)
+  })
+
+  test("a bill-less payment raises no coverage issue", () => {
+    expect(
+      hasAnyIssue(derivePaymentHistoryRowState(payment(), now).issueFlags)
+    ).toBe(false)
+  })
+
+  test("a bill with nothing paid yet is not flagged underpaid", () => {
+    const flags = derivePaymentHistoryRowState(
+      payment({
+        billId: "b1",
+        billLines: [],
+        billClaimedTransactions: [],
+      }),
+      now
+    ).issueFlags
+    expect(flags.billUnderpaid).toBe(false)
+    expect(flags.billOverpaid).toBe(false)
+  })
+
+  test("a bill claimed beyond its (empty) total is overpaid", () => {
+    const flags = derivePaymentHistoryRowState(
+      payment({
+        billId: "b1",
+        billClaimedTransactions: [claim("other", 50)],
+      }),
+      now
+    ).issueFlags
+    expect(flags.billOverpaid).toBe(true)
+  })
+})
+
+describe("resolvePaymentTitle", () => {
+  const none = {
+    billLabel: null,
+    billDisplayNumber: null,
+    paymentSerialNumber: null,
+  }
+
+  test("prefers the bill label, then number, then payment number", () => {
+    expect(
+      resolvePaymentTitle({ ...none, billLabel: "Terrace" as never }, t)
+    ).toBe("Terrace")
+    expect(
+      resolvePaymentTitle(
+        {
+          ...none,
+          billDisplayNumber: 7 as never,
+          paymentSerialNumber: 3 as never,
+        },
+        t
+      )
+    ).toBe(t("bill.list.label", { number: 7 }))
+    expect(
+      resolvePaymentTitle({ ...none, paymentSerialNumber: 3 as never }, t)
+    ).toBe(t("paymentHistory.paymentNumber", { number: 3 }))
+    expect(resolvePaymentTitle(none, t)).toBe(t("paymentHistory.payment"))
+  })
+})
+
+describe("formatActivityDayTitle", () => {
+  const amounts = [
+    { value: 1000, currency: "CZK" },
+    { value: 500, currency: "CZK" },
+  ] as never
+
+  test("appends the day total once the group is complete", () => {
+    const complete = formatActivityDayTitle({
+      date: now,
+      now,
+      locale: "en-US",
+      amounts,
+      isComplete: true,
+    })
+    const incomplete = formatActivityDayTitle({
+      date: now,
+      now,
+      locale: "en-US",
+      amounts,
+      isComplete: false,
+    })
+    expect(complete.startsWith(incomplete)).toBe(true)
+    expect(complete).toContain("·")
+    expect(incomplete).not.toContain("·")
+  })
+
+  test("leaves the total off for a day without paid amounts", () => {
+    expect(
+      formatActivityDayTitle({
+        date: now,
+        now,
+        locale: "en-US",
+        amounts: [],
+        isComplete: true,
+      })
+    ).not.toContain("·")
+  })
+})
+
+describe("refundBadgeLabel", () => {
+  const summary = (refundedAmount: number, refundableAmount: number) =>
+    ({ refundedAmount, refundableAmount, currency: "CZK" }) as never
+
+  test("is empty for no summary or nothing refunded", () => {
+    expect(refundBadgeLabel(undefined, t, "en-US")).toBeNull()
+    expect(refundBadgeLabel(summary(0, 100), t, "en-US")).toBeNull()
+  })
+
+  test("names a partial and a full refund differently", () => {
+    const partial = refundBadgeLabel(summary(50, 100), t, "en-US")
+    const full = refundBadgeLabel(summary(100, 100), t, "en-US")
+    expect(partial).not.toBeNull()
+    expect(full).not.toBeNull()
+    expect(partial).not.toBe(full)
+  })
+})

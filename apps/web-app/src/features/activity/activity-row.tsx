@@ -1,15 +1,12 @@
+import { paymentMethodLabelKey } from "@payky/app-shared/activity-labels"
 import type { AccountTransactionKind } from "@payky/core/modules/account-transaction/account-transaction-types"
 import type { Money } from "@payky/core/modules/shared/money"
-import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { AlertTriangleIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge.tsx"
-import {
-  paymentMethodIcon,
-  paymentMethodLabelKey,
-} from "@/features/shared/payment-method-display.tsx"
+import { paymentMethodIcon } from "@/features/shared/payment-method-display.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatMoney, formatRelativeDate } from "@/lib/format-utils.ts"
+import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
 /**
@@ -23,45 +20,6 @@ import { cn } from "@/lib/utils.ts"
  */
 export const activityIssueRowClassName =
   "shadow-[inset_3px_0_0_var(--color-warning)]"
-
-/** A day's total, one sum per currency — the fiat currency is a setting, so one day can mix them. */
-const formatCurrencyTotals = (
-  amounts: ReadonlyArray<Money>,
-  locale: string
-): string | null => {
-  const totals = new Map<Money["currency"], number>()
-  for (const { value, currency } of amounts) {
-    totals.set(currency, (totals.get(currency) ?? 0) + value)
-  }
-  if (totals.size === 0) return null
-
-  return Array.from(totals, ([currency, value]) =>
-    formatMoney({ value: NonNegativeInteger(value), currency }, locale)
-  ).join(" + ")
-}
-
-/**
- * "Today · $12.00". `isComplete` is false for the last group while more
- * pages are still to load — that day may continue on the next page, so its
- * total would undercount and is left off until it's whole.
- */
-export const formatActivityDayTitle = ({
-  date,
-  now,
-  locale,
-  amounts,
-  isComplete,
-}: {
-  readonly date: Date
-  readonly now: Date
-  readonly locale: string
-  readonly amounts: ReadonlyArray<Money>
-  readonly isComplete: boolean
-}): string => {
-  const dayLabel = formatRelativeDate(date, now, locale)
-  const totals = isComplete ? formatCurrencyTotals(amounts, locale) : null
-  return totals === null ? dayLabel : `${dayLabel} · ${totals}`
-}
 
 export function ActivityIssueBadges({
   issues,

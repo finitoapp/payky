@@ -1,19 +1,9 @@
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import type { RefundState } from "@payky/core/modules/refund/refund-types"
-import {
-  deriveRefundState,
-  type PaymentRefundSummary,
-} from "@payky/core/modules/refund/refund-utils"
+import { refundBadgeLabel } from "@payky/app-shared/activity-history"
+import type { PaymentRefundSummary } from "@payky/core/modules/refund/refund-utils"
 import { Badge } from "@/components/ui/badge.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
-
-const refundStateLabelKey = {
-  partial: "refund.state.partial",
-  full: "refund.state.full",
-} satisfies Record<Exclude<RefundState, "none">, TranslationKey>
 
 export function RefundBadge({
   summary,
@@ -24,10 +14,8 @@ export function RefundBadge({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  if (summary === undefined) return null
-
-  const state = deriveRefundState(summary)
-  if (state === "none") return null
+  const label = refundBadgeLabel(summary, t, locale)
+  if (label === null) return null
 
   return (
     <Badge
@@ -35,12 +23,7 @@ export function RefundBadge({
       className={cn("bg-warning/10 text-warning", className)}
       data-testid="refund-badge"
     >
-      {t(refundStateLabelKey[state], {
-        amount: formatMoney(
-          { value: summary.refundedAmount, currency: summary.currency },
-          locale
-        ),
-      })}
+      {label}
     </Badge>
   )
 }

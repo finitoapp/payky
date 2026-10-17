@@ -1,3 +1,4 @@
+import { paymentMethodLabelKey } from "@payky/app-shared/activity-labels"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type {
   ExpectedCash,
@@ -13,10 +14,7 @@ import {
   ChartContainer,
   ChartTooltip,
 } from "@/components/ui/chart.tsx"
-import {
-  paymentMethodIcon,
-  paymentMethodLabelKey,
-} from "@/features/shared/payment-method-display.tsx"
+import { paymentMethodIcon } from "@/features/shared/payment-method-display.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"

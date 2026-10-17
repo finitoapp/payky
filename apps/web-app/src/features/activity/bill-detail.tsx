@@ -1,4 +1,8 @@
 import type { InferRow } from "@evolu/common"
+import {
+  billStatusLabelKey,
+  paymentStatusLabelKey,
+} from "@payky/app-shared/activity-labels"
 import { useNow } from "@payky/app-shared/use-now"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import { BillId } from "@payky/core/modules/bill/bill-types"
@@ -40,10 +44,7 @@ import { Separator } from "@/components/ui/separator.tsx"
 import { PaymentMethodIcons } from "@/features/activity/activity-row.tsx"
 import { BillCancellationCollisionPanel } from "@/features/activity/bill-cancellation-collision-panel.tsx"
 import { BillCoverageWarning } from "@/features/activity/bill-coverage-warning.tsx"
-import {
-  billStatusBadgeClassName,
-  billStatusLabelKey,
-} from "@/features/activity/bill-status-display.ts"
+import { billStatusBadgeClassName } from "@/features/activity/bill-status-display.ts"
 import {
   PaymentDetailCopyRow,
   PaymentDetailTechnical,
@@ -51,7 +52,6 @@ import {
 import {
   PaymentStatusIcon,
   paymentStatusBadgeClassName,
-  paymentStatusLabelKey,
 } from "@/features/activity/payment-status-display.tsx"
 import { useBillCoverage } from "@/features/activity/use-bill-coverage.ts"
 import { EetSaleStatusBadge } from "@/features/shared/eet-sale-status.tsx"

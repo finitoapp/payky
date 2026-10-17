@@ -1,43 +1,14 @@
-import { differenceInCalendarDays } from "date-fns"
-
 // Money formatting is shared with the native app; re-exported so the many web
 // call sites keep one import for every `format*` helper.
+
+export {
+  formatDate,
+  formatDateTime,
+  formatRelativeDate,
+  formatTime,
+} from "@payky/app-shared/format-date"
 export { formatElapsed } from "@payky/app-shared/format-elapsed"
 export { formatAmount, formatMoney } from "@payky/app-shared/format-money"
-
-export const formatDate = (value: Date, locale: string = "en-US") =>
-  value.toLocaleDateString(locale, {
-    dateStyle: "medium",
-  })
-
-/**
- * A day heading: "Today"/"Yesterday" in the locale's own words for the two
- * most recent days, `formatDate` for anything older (or in the future).
- */
-export const formatRelativeDate = (
-  value: Date,
-  now: Date,
-  locale: string = "en-US"
-) => {
-  const days = differenceInCalendarDays(value, now)
-  if (days < -1 || days > 0) return formatDate(value, locale)
-
-  const label = new Intl.RelativeTimeFormat(locale, {
-    numeric: "auto",
-  }).format(days, "day")
-  return label.charAt(0).toLocaleUpperCase(locale) + label.slice(1)
-}
-
-export const formatDateTime = (value: Date, locale: string = "en-US") =>
-  value.toLocaleString(locale, {
-    timeStyle: "short",
-    dateStyle: "medium",
-  })
-
-export const formatTime = (value: Date, locale: string = "en-US") =>
-  value.toLocaleTimeString(locale, {
-    timeStyle: "short",
-  })
 
 /** A satoshi amount with the locale's digit grouping, and no currency label. */
 export const formatSatsAmount = (sats: number, locale: string): string =>

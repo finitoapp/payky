@@ -1,23 +1,18 @@
-import type { InferRow } from "@evolu/common"
+import {
+  derivePaymentHistoryRowState,
+  formatActivityDayTitle,
+  hasAnyIssue,
+  type PaymentHistoryIssueFlags,
+  type PaymentHistoryRow,
+  paymentHistoryIssueLabels,
+  resolvePaymentTitle,
+} from "@payky/app-shared/activity-history"
+import { paymentStatusLabelKey } from "@payky/app-shared/activity-labels"
+import { groupByDay } from "@payky/app-shared/group-by-day"
 import { useNow } from "@payky/app-shared/use-now"
-import {
-  calculateClaimedSum,
-  deriveBillCoverage,
-} from "@payky/core/modules/bill/bill-utils"
-import {
-  calculateBillLineSummaries,
-  deriveBillSummaryTotal,
-} from "@payky/core/modules/bill-line/bill-line-utils"
 import { latestPaymentsQuery } from "@payky/core/modules/payment/payment-queries"
-import {
-  derivePaymentHasCancellationCollision,
-  derivePaymentHasExcessSettlement,
-  derivePaymentStatus,
-} from "@payky/core/modules/payment/payment-status-utils"
-import type { PaymentStatus } from "@payky/core/modules/payment/payment-types"
 import { refundSummariesQuery } from "@payky/core/modules/refund/refund-queries"
 import { summarizeRefundsByPayment } from "@payky/core/modules/refund/refund-utils"
-import { sumDistinctClaimedAmounts } from "@payky/core/modules/shared/claimed-amount"
 import { ReceiptIcon } from "lucide-react"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { ActivityHistorySkeleton } from "@/features/activity/activity-history-skeleton.tsx"
@@ -25,110 +20,15 @@ import {
   ActivityAmount,
   ActivityIssueBadges,
   activityIssueRowClassName,
-  formatActivityDayTitle,
   PaymentMethodIcons,
 } from "@/features/activity/activity-row.tsx"
-import {
-  PaymentStatusIcon,
-  paymentStatusLabelKey,
-} from "@/features/activity/payment-status-display.tsx"
+import { PaymentStatusIcon } from "@/features/activity/payment-status-display.tsx"
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney, formatTime } from "@/lib/format-utils.ts"
-import { groupByDay } from "@/lib/group-by-day.ts"
-
-type PaymentHistoryRow = InferRow<ReturnType<typeof latestPaymentsQuery>>
-
-const resolvePaymentStatus = (
-  payment: {
-    readonly canceledAt: PaymentHistoryRow["canceledAt"]
-    readonly confirmedPaidAt: PaymentHistoryRow["confirmedPaidAt"]
-    readonly expiresAt: PaymentHistoryRow["expiresAt"]
-    readonly claimCount: number
-  },
-  now: Date
-): PaymentStatus =>
-  derivePaymentStatus({
-    canceledAt: payment.canceledAt,
-    confirmedPaidAt: payment.confirmedPaidAt,
-    expiresAt: payment.expiresAt,
-    hasActiveClaim: payment.claimCount > 0,
-    now,
-  })
-
-/**
- * Claims whose `accountTransaction` is still there, which is what
- * `hasActiveClaim` and the cancellation collision both mean by "claimed" —
- * a claim pointing at a deleted transaction is not money that arrived, and
- * the bill's coverage already ignores it. `ownClaimedTransactions` is
- * already embedded for `derivePaymentHasExcessSettlement`, so this needs no
- * extra query — which let the outer `reconciliationClaim` join, its `COUNT`
- * and the `groupBy` that count forced all come out of the query, along with
- * the `bigint`/`string` coercion that `COUNT` needed at the boundary.
- */
-const toSettledClaimCount = (payment: PaymentHistoryRow): number =>
-  payment.ownClaimedTransactions.length
-
-interface PaymentHistoryIssueFlags {
-  readonly hasCancellationCollision: boolean
-  readonly hasExcessSettlement: boolean
-  readonly billUnderpaid: boolean
-  readonly billOverpaid: boolean
-}
-
-/**
- * Every issue a payment's row should flag — the canceled+claimed collision,
- * this payment's own duplicate-settlement collision, and/or its bill's
- * coverage being off (see docs/bill-payment-states.md's "Bill payment
- * coverage" section). `billUnderpaid` is only flagged once a partial payment
- * has actually landed on the bill (`billClaimedSum > 0`), exactly as
- * `BillHistoryIssues` does it — an ordinary open bill with nothing paid yet
- * is also "underpaid" by definition, so flagging it would put the warning on
- * every pending bill payment row. `billOverpaid` needs no such gate: an
- * unpaid bill is never overpaid.
- *
- * `billOverpaid` is deliberately suppressed when it's fully explained by this
- * same payment's own excess settlement (this is the only claimed payment on
- * the bill) — "Paid more than once" already says that, and flagging both
- * would restate the identical fact from the bill's point of view instead of a
- * second, independent one. It still shows when *another* payment is also
- * claimed against the bill, since that's a genuinely different cause.
- */
-const resolvePaymentHistoryIssueFlags = (
-  item: PaymentHistoryRow,
-  hasCancellationCollision: boolean
-): PaymentHistoryIssueFlags => {
-  const billSummaries = calculateBillLineSummaries(
-    item.billLines,
-    item.billItems
-  )
-  const billTotal = deriveBillSummaryTotal(billSummaries)
-  const billClaimedSum = calculateClaimedSum(item.billClaimedTransactions)
-  const coverage = deriveBillCoverage(billTotal, billClaimedSum)
-
-  const hasExcessSettlement = derivePaymentHasExcessSettlement({
-    amount: item.amount,
-    excessAcknowledgedAt: item.excessAcknowledgedAt,
-    claimedSum: sumDistinctClaimedAmounts(item.ownClaimedTransactions),
-  })
-  const hasOtherClaimedPayment = item.billClaimedTransactions.some(
-    (transaction) => transaction.paymentId !== item.id
-  )
-
-  return {
-    hasCancellationCollision,
-    hasExcessSettlement,
-    billUnderpaid:
-      item.billId !== null && coverage === "underpaid" && billClaimedSum > 0,
-    billOverpaid:
-      item.billId !== null &&
-      coverage === "overpaid" &&
-      (!hasExcessSettlement || hasOtherClaimedPayment),
-  }
-}
 
 function PaymentHistoryIssues({
   flags,
@@ -137,40 +37,7 @@ function PaymentHistoryIssues({
 }) {
   const { t } = useTranslation()
 
-  const issues = [
-    // Both reuse the same title `payment-detail.tsx` shows for the
-    // identical collision, rather than a separate, list-only wording — one
-    // specific label per distinct error, instead of a single generic
-    // "Needs review" that didn't say which of them applied.
-    flags.hasCancellationCollision ? t("paymentDetail.collision.title") : null,
-    flags.hasExcessSettlement ? t("paymentDetail.excessCollision.title") : null,
-    flags.billUnderpaid ? t("paymentHistory.billUnderpaid") : null,
-    flags.billOverpaid ? t("paymentHistory.billOverpaid") : null,
-  ].filter((issue): issue is string => issue !== null)
-
-  return <ActivityIssueBadges issues={issues} />
-}
-
-const hasAnyIssue = (flags: PaymentHistoryIssueFlags): boolean =>
-  Object.values(flags).some(Boolean)
-
-/**
- * The row's title: the bill it paid (its label, else its number), else the
- * payment's own sequential number, so rows can be told apart without
- * opening each one.
- */
-const resolvePaymentTitle = (
-  item: PaymentHistoryRow,
-  t: ReturnType<typeof useTranslation>["t"]
-): string => {
-  if (item.billLabel !== null) return item.billLabel
-  if (item.billDisplayNumber !== null)
-    return t("bill.list.label", { number: item.billDisplayNumber })
-  if (item.paymentSerialNumber !== null)
-    return t("paymentHistory.paymentNumber", {
-      number: item.paymentSerialNumber,
-    })
-  return t("paymentHistory.payment")
+  return <ActivityIssueBadges issues={paymentHistoryIssueLabels(flags, t)} />
 }
 
 export const PaymentHistory = () => {
@@ -207,16 +74,8 @@ export const PaymentHistory = () => {
   }
 
   const dayGroups = groupByDay(items, (item) => new Date(item.createdAt))
-  const statusOf = (item: PaymentHistoryRow) =>
-    resolvePaymentStatus(
-      {
-        canceledAt: item.canceledAt,
-        confirmedPaidAt: item.confirmedPaidAt,
-        expiresAt: item.expiresAt,
-        claimCount: toSettledClaimCount(item),
-      },
-      now
-    )
+  const stateOf = (item: PaymentHistoryRow) =>
+    derivePaymentHistoryRowState(item, now)
 
   return (
     <div className="flex flex-col gap-4">
@@ -230,7 +89,7 @@ export const PaymentHistory = () => {
           now,
           locale,
           amounts: group.items
-            .filter((item) => statusOf(item) === "paid")
+            .filter((item) => stateOf(item).status === "paid")
             .map((item) => ({ value: item.amount, currency: item.currency })),
           isComplete,
         })
@@ -240,23 +99,12 @@ export const PaymentHistory = () => {
             key={group.date.toDateString()}
             title={title}
             items={group.items.map((item) => {
-              const claimCount = toSettledClaimCount(item)
-              const paymentStatus = statusOf(item)
-              const hasCancellationCollision =
-                derivePaymentHasCancellationCollision({
-                  canceledAt: item.canceledAt,
-                  confirmedPaidAt: item.confirmedPaidAt,
-                  hasActiveClaim: claimCount > 0,
-                })
-              const issueFlags = resolvePaymentHistoryIssueFlags(
-                item,
-                hasCancellationCollision
-              )
-              // A canceled payment whose money arrived anyway is not void —
-              // striking its amount through would hide exactly that.
-              const isVoid =
-                (paymentStatus === "canceled" || paymentStatus === "expired") &&
-                !hasCancellationCollision
+              const {
+                status: paymentStatus,
+                hasCancellationCollision,
+                issueFlags,
+                isVoid,
+              } = stateOf(item)
 
               return {
                 id: item.id,

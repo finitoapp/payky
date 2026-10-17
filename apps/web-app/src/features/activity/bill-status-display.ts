@@ -1,4 +1,3 @@
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { BillStatus } from "@payky/core/modules/bill/bill-types"
 
 /**
@@ -13,9 +12,3 @@ export const billStatusBadgeClassName = {
   closed: "bg-success/10 text-success",
   canceled: null,
 } satisfies Record<BillStatus, string | null>
-
-export const billStatusLabelKey = {
-  open: "bill.status.open",
-  closed: "bill.status.closed",
-  canceled: "bill.status.canceled",
-} satisfies Record<BillStatus, TranslationKey>

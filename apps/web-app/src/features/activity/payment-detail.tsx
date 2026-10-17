@@ -1,4 +1,9 @@
 import type { InferRow } from "@evolu/common"
+import {
+  billStatusLabelKey,
+  paymentMethodLabelKey,
+  paymentStatusLabelKey,
+} from "@payky/app-shared/activity-labels"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useNow } from "@payky/app-shared/use-now"
 import type { EetDeliveryOutcome } from "@payky/core/integrations/eet/eet-client"
@@ -92,15 +97,9 @@ import {
   type BillCoverageMismatchReason,
   BillCoverageWarning,
 } from "@/features/activity/bill-coverage-warning.tsx"
-import {
-  billStatusBadgeClassName,
-  billStatusLabelKey,
-} from "@/features/activity/bill-status-display.ts"
+import { billStatusBadgeClassName } from "@/features/activity/bill-status-display.ts"
 import { PaymentDetailRefunds } from "@/features/activity/payment-refunds.tsx"
-import {
-  paymentStatusBadgeClassName,
-  paymentStatusLabelKey,
-} from "@/features/activity/payment-status-display.tsx"
+import { paymentStatusBadgeClassName } from "@/features/activity/payment-status-display.tsx"
 import { useBillCoverage } from "@/features/activity/use-bill-coverage.ts"
 import { useBillLineSummaryDiff } from "@/features/activity/use-bill-line-summary-diff.ts"
 import {
@@ -108,10 +107,7 @@ import {
   useEetRecordingDeviceWait,
   useEetSaleStatus,
 } from "@/features/shared/eet-sale-status.tsx"
-import {
-  paymentMethodIcon,
-  paymentMethodLabelKey,
-} from "@/features/shared/payment-method-display.tsx"
+import { paymentMethodIcon } from "@/features/shared/payment-method-display.tsx"
 import { TaxRecap } from "@/features/shared/tax-recap.tsx"
 import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.ts"
 import { useBillStatus } from "@/features/shared/use-bill-status.ts"

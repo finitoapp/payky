@@ -1,4 +1,7 @@
 import type { InferRow } from "@evolu/common"
+import { formatActivityDayTitle } from "@payky/app-shared/activity-history"
+import { billStatusLabelKey } from "@payky/app-shared/activity-labels"
+import { groupByDay } from "@payky/app-shared/group-by-day"
 import { useNow } from "@payky/app-shared/use-now"
 import { latestBillsQuery } from "@payky/core/modules/bill/bill-queries"
 import {
@@ -24,15 +27,12 @@ import {
   ActivityAmount,
   ActivityIssueBadges,
   activityIssueRowClassName,
-  formatActivityDayTitle,
   PaymentMethodIcons,
 } from "@/features/activity/activity-row.tsx"
-import { billStatusLabelKey } from "@/features/activity/bill-status-display.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney, formatTime } from "@/lib/format-utils.ts"
-import { groupByDay } from "@/lib/group-by-day.ts"
 import { cn } from "@/lib/utils.ts"
 
 type BillHistoryRow = InferRow<ReturnType<typeof latestBillsQuery>>

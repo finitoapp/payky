@@ -1,7 +1,7 @@
 import { sqliteTrue } from "@evolu/common"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
-import { Redirect } from "expo-router"
+import { Redirect, router } from "expo-router"
 import { Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, XStack } from "tamagui"
@@ -36,9 +36,9 @@ export function TerminalHomePage() {
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
       {/* With a single mode on there is nothing to switch to (settings/0001). */}
-      {enabledModes.length > 1 && (
-        <XStack gap="2" mb="3">
-          {enabledModes.map((enabledMode) => (
+      <XStack gap="2" mb="3">
+        {enabledModes.length > 1 &&
+          enabledModes.map((enabledMode) => (
             <XStack key={enabledMode} flex={1}>
               <AppButton
                 label={t(modeLabelKeys[enabledMode])}
@@ -47,8 +47,15 @@ export function TerminalHomePage() {
               />
             </XStack>
           ))}
+        {/* The way into the history, as web's header link; Settings has no native screen yet. */}
+        <XStack flex={enabledModes.length > 1 ? undefined : 1}>
+          <AppButton
+            label={t("nav.activity")}
+            variant="secondary"
+            onPress={() => router.push("/activity")}
+          />
         </XStack>
-      )}
+      </XStack>
       {mode === "pos" ? (
         <Suspense fallback={<LoadingView />}>
           <PosOverviewPage />

@@ -1,4 +1,3 @@
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { PaymentStatus } from "@payky/core/modules/payment/payment-types"
 import {
   AlertTriangleIcon,
@@ -24,13 +23,6 @@ export const paymentStatusBadgeClassName = {
   expired: "bg-muted text-muted-foreground",
   pending: "bg-warning/10 text-warning",
 } satisfies Record<PaymentStatus, string | null>
-
-export const paymentStatusLabelKey = {
-  canceled: "payment.status.canceled",
-  paid: "payment.status.paid",
-  expired: "payment.status.expired",
-  pending: "payment.status.pending",
-} satisfies Record<PaymentStatus, TranslationKey>
 
 const paymentStatusIconData = {
   canceled: ["bg-destructive/10 text-destructive", <XIcon key="canceled" />],

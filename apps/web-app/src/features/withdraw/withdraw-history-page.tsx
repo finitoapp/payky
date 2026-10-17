@@ -1,3 +1,4 @@
+import { groupByDay } from "@payky/app-shared/group-by-day"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import {
   toWithdrawalView,
@@ -19,7 +20,6 @@ import {
   formatSatsAmount,
   formatTime,
 } from "@/lib/format-utils.ts"
-import { groupByDay } from "@/lib/group-by-day.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
 import { useSparkBalance } from "./use-spark-balance.ts"
 import {

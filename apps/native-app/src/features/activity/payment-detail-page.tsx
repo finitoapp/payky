@@ -12,6 +12,7 @@ import {
 import { formatDateTime, formatTime } from "@payky/app-shared/format-date"
 import { formatMoney } from "@payky/app-shared/format-money"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { defaultRefundMethod } from "@payky/app-shared/refund-form"
 import { useNow } from "@payky/app-shared/use-now"
 import { claimedPaymentsByBillIdQuery } from "@payky/core/modules/bill/bill-coverage-queries"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
@@ -57,6 +58,7 @@ import {
   TaxRecap,
   Technical,
 } from "./detail-parts.tsx"
+import { PaymentRefunds } from "./payment-refunds.tsx"
 import {
   useBillCoverage,
   useBillLineSummaryDiff,
@@ -110,6 +112,7 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
     status,
     hasCancellationCollision,
     hasExcessSettlementCollision,
+    excess,
     receivedTipAmount,
     paymentMethodKinds,
   } = derivePaymentDetailState({ payment, reconciliations, now })
@@ -237,6 +240,13 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
           </WarningPanel>
         ) : null}
       </Card>
+
+      <PaymentRefunds
+        payment={payment}
+        excess={excess}
+        isPaid={status === "paid"}
+        defaultMethod={defaultRefundMethod(paymentMethodKinds)}
+      />
 
       {payment.billId === null ? null : (
         <PaymentBillCard

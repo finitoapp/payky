@@ -1,5 +1,17 @@
 import type { InferRow } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  deriveRefundAmountText,
+  deriveRefundAvailability,
+  deriveRefundForm,
+  type RefundablePaymentLine,
+  type RefundMode,
+  type RefundQuantities,
+  refundErrorKeys,
+  refundMethodLabelKey,
+  stepRefundQuantity,
+  tipRefundErrorKeys,
+} from "@payky/app-shared/refund-form"
 import type { EetDeliveryOutcome } from "@payky/core/integrations/eet/eet-client"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
 import {
@@ -12,12 +24,8 @@ import {
   getEetReversalStartsAt,
   parseEetDateTime,
 } from "@payky/core/modules/eet/eet-utils"
-import type { ItemLineType } from "@payky/core/modules/item/item-types"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
-import type { PaymentLineId } from "@payky/core/modules/payment-line/payment-line-types"
 import {
-  type RefundPaymentError,
-  type RefundPaymentTipError,
   refundPayment,
   refundPaymentTip,
 } from "@payky/core/modules/refund/refund-actions"
@@ -29,26 +37,14 @@ import {
 } from "@payky/core/modules/refund/refund-queries"
 import type { RefundMethod } from "@payky/core/modules/refund/refund-types"
 import {
-  calculateRefundLineAmount,
-  deriveRefundableAmount,
-  deriveRefundableLines,
-  deriveRefundableTipAmount,
-  deriveRefundPrefillAmount,
   isTipRefund,
   type RefundableLine,
   sumGoodsRefundAmounts,
-  sumRefundAmounts,
 } from "@payky/core/modules/refund/refund-utils"
-import {
-  decimalAmountToMinorUnits,
-  minorUnitsToDecimalString,
-} from "@payky/core/modules/shared/money"
 import {
   type FiatCurrency,
   Integer,
-  type NonEmptyString255,
-  NonNegativeInteger,
-  PositiveNumber,
+  type NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { parseISO } from "date-fns"
 import { useAtomValue, useStore } from "jotai"
@@ -94,37 +90,6 @@ import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatMoney, formatTime } from "@/lib/format-utils.ts"
 
-type RefundMode = "amount" | "items"
-
-interface RefundablePaymentLine {
-  readonly id: PaymentLineId
-  readonly type: ItemLineType
-  readonly quantity: PositiveNumber
-  readonly totalAmount: NonNegativeInteger
-  readonly name: NonEmptyString255
-}
-
-const refundMethodLabelKey = {
-  cashRegister: "paymentDetail.refunds.method.cashRegister",
-  outside: "paymentDetail.refunds.method.outside",
-} satisfies Record<RefundMethod, TranslationKey>
-
-const refundErrorKeys = {
-  PaymentNotFound: "paymentDetail.notFound",
-  RefundPaymentNotPaid: "refund.error.notPaid",
-  RefundAmountInvalid: "refund.error.amount",
-  RefundItemsUnavailable: "refund.error.items",
-  RefundLineUnavailable: "refund.error.items",
-  CashRegisterAccountNotFound: "refund.error.cashRegister",
-} satisfies Record<RefundPaymentError["type"], TranslationKey>
-
-const tipRefundErrorKeys = {
-  PaymentNotFound: "paymentDetail.notFound",
-  RefundPaymentNotPaid: "refund.error.notPaid",
-  RefundTipUnavailable: "refund.error.tip",
-  CashRegisterAccountNotFound: "refund.error.cashRegister",
-} satisfies Record<RefundPaymentTipError["type"], TranslationKey>
-
 export function PaymentDetailRefunds({
   payment,
   excess,
@@ -160,20 +125,22 @@ export function PaymentDetailRefunds({
   const { data: reversals } = useEvoluQuery(
     eetReversalsByPaymentIdQuery(payment.id)
   )
-  const refundableAmount = deriveRefundableAmount({ ...payment, excess })
-  const remainingAmount = NonNegativeInteger(
-    Math.max(0, refundableAmount - sumGoodsRefundAmounts(refunds))
-  )
-  const refundableTipAmount = deriveRefundableTipAmount({
-    ...payment,
+  const {
+    refundableAmount,
+    remainingAmount,
+    refundableTipAmount,
+    refundableLines,
+    canRefund,
+    canRefundTip,
+  } = deriveRefundAvailability({
+    payment,
+    excess,
+    isPaid,
     refunds,
+    refundLines,
+    paymentLines,
+    hasOtherClaimedPayment: otherClaimedPayments.length > 0,
   })
-  const refundableLines =
-    payment.billId === null || otherClaimedPayments.length > 0
-      ? []
-      : deriveRefundableLines(paymentLines, refundLines)
-  const canRefund = isPaid && remainingAmount > 0
-  const canRefundTip = isPaid && refundableTipAmount > 0
   const formatMinor = (value: NonNegativeInteger) =>
     formatMoney({ value, currency: payment.currency }, locale)
 
@@ -324,63 +291,31 @@ function RefundDialog({
   const [mode, setMode] = useState<RefundMode>("amount")
   const [method, setMethod] = useState<RefundMethod>(defaultMethod)
   const [typedAmountText, setTypedAmountText] = useState<string | null>(null)
-  const amountText =
-    typedAmountText ??
-    minorUnitsToDecimalString({
-      value: deriveRefundPrefillAmount({
-        remainingAmount,
-        excess,
-        method,
-        currency,
-      }),
-      currency,
-    })
-  const [quantities, setQuantities] = useState<
-    Readonly<Partial<Record<PaymentLineId, number>>>
-  >({})
+  const amountText = deriveRefundAmountText({
+    typedAmountText,
+    remainingAmount,
+    excess,
+    method,
+    currency,
+  })
+  const [quantities, setQuantities] = useState<RefundQuantities>({})
   const [pending, setPending] = useState(false)
   const formatMinor = (value: NonNegativeInteger) =>
     formatMoney({ value, currency }, locale)
 
-  const parsedAmount = decimalAmountToMinorUnits({
+  const { typedAmount, chosenLines, refundAmount } = deriveRefundForm({
+    mode,
+    amountText,
+    quantities,
+    refundableLines,
+    remainingAmount,
     currency,
-    value: amountText,
   })
-  const typedAmount =
-    parsedAmount === null || parsedAmount > remainingAmount
-      ? null
-      : NonNegativeInteger(parsedAmount)
-  const chosenLines = refundableLines.flatMap((refundable) => {
-    const quantity = quantities[refundable.line.id] ?? 0
-    return quantity > 0
-      ? [
-          {
-            paymentLineId: refundable.line.id,
-            quantity: PositiveNumber(quantity),
-            amount: calculateRefundLineAmount(refundable, quantity),
-          },
-        ]
-      : []
-  })
-  const itemsAmount = sumRefundAmounts(chosenLines)
-  const refundAmount =
-    mode === "amount"
-      ? typedAmount
-      : itemsAmount > 0 && itemsAmount <= remainingAmount
-        ? itemsAmount
-        : null
 
   const stepQuantity = (
     refundable: RefundableLine<RefundablePaymentLine>,
     step: 1 | -1
-  ) => {
-    const current = quantities[refundable.line.id] ?? 0
-    const next =
-      step === 1
-        ? Math.min(refundable.remainingQuantity, current + 1)
-        : Math.max(0, current - 1)
-    setQuantities({ ...quantities, [refundable.line.id]: next })
-  }
+  ) => setQuantities(stepRefundQuantity(quantities, refundable, step))
 
   const confirm = async () => {
     if (refundAmount === null || pending) return

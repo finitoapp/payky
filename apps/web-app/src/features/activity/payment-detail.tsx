@@ -9,6 +9,7 @@ import {
   paymentStatusLabelKey,
 } from "@payky/app-shared/activity-labels"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { defaultRefundMethod } from "@payky/app-shared/refund-form"
 import { useNow } from "@payky/app-shared/use-now"
 import type { EetDeliveryOutcome } from "@payky/core/integrations/eet/eet-client"
 import { claimedPaymentsByBillIdQuery } from "@payky/core/modules/bill/bill-coverage-queries"
@@ -352,11 +353,7 @@ function PaymentDetailContent({
         payment={payment}
         excess={excess}
         isPaid={paymentStatus === "paid"}
-        defaultMethod={
-          paymentMethodKinds.includes("cashRegister")
-            ? "cashRegister"
-            : "outside"
-        }
+        defaultMethod={defaultRefundMethod(paymentMethodKinds)}
       />
 
       {payment.billId !== null ? (

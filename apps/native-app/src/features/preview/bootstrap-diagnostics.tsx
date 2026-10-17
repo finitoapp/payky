@@ -11,6 +11,7 @@ import { AccountsCard } from "./accounts-card.tsx"
 import { CashSaleCard } from "./cash-sale-card.tsx"
 import { LiveQueryDemo } from "./live-query-demo.tsx"
 import { NetworkCard } from "./network-card.tsx"
+import { SparkCard } from "./spark-card.tsx"
 import { SyncCard } from "./sync-card.tsx"
 
 function Ready({ children }: { readonly children: ReactNode }) {
@@ -76,6 +77,7 @@ export function BootstrapDiagnostics() {
           <CashSaleCard />
           <SyncCard />
           <NetworkCard />
+          <SparkCard />
         </Ready>
       </Suspense>
     </FailureBoundary>

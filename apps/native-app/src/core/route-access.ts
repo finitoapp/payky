@@ -15,6 +15,7 @@ export type NativeRoutePath =
   | "/payment/:paymentId"
   | "/activity"
   | "/activity/bills"
+  | "/activity/bills/:billId"
   | "/activity/:paymentId"
 
 /**
@@ -41,6 +42,7 @@ export const routeAccess = {
   // Like web's `_terminal/activity` routes (access/0002: history is `activity`).
   "/activity": "activity",
   "/activity/bills": "activity",
+  "/activity/bills/:billId": "activity",
   "/activity/:paymentId": "activity",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",

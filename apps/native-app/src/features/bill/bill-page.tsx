@@ -1,5 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import { formatMoney } from "@payky/app-shared/format-money"
+import { useRedirectIfClosedOnOpen } from "@payky/app-shared/use-redirect-if-closed-on-open"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
@@ -105,12 +106,26 @@ function BillPage({
   const pendingPaymentIds = usePendingPayments(billId)
   const billStatus = useBillStatus(billId)
 
-  // Web sends a closed bill to the activity detail; native has none yet, so
-  // it says so and offers the way home. A cancellation collision (canceled
-  // but funded) is resolved from activity/refund, which arrive later.
+  // As web: a bill that is already closed when opened (Back, a stale link)
+  // goes to its detail, which `sell` alone cannot read, so the PIN gate asks.
+  // Decided once, so a bill paid while the cart is open still shows its
+  // message. A cancellation collision (canceled but funded) stays here: it is
+  // resolved from activity/refund, which arrive later.
+  const closedOnOpen = useRedirectIfClosedOnOpen(
+    bill !== undefined &&
+      billStatus?.status !== "open" &&
+      billStatus?.hasCancellationCollision !== true,
+    () =>
+      router.replace({
+        pathname: "/activity/bills/[billId]",
+        params: { billId },
+      })
+  )
+  if (closedOnOpen) return <LoadingView />
   if (bill !== undefined && billStatus?.status !== "open")
     return (
       <BillMessage
+        billId={billId}
         message={
           billStatus?.hasCancellationCollision
             ? `${t("bill.collision.title")}. ${t("bill.collision.description")}`
@@ -144,12 +159,28 @@ function BillPage({
   )
 }
 
-function BillMessage({ message }: { readonly message: string }) {
+function BillMessage({
+  billId,
+  message,
+}: {
+  readonly billId: BillId
+  readonly message: string
+}) {
   const { t } = useTranslation()
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <EmptyView message={message} />
-      <YStack p="4">
+      <YStack p="4" gap="2">
+        <AppButton
+          variant="secondary"
+          label={t("paymentDetail.bill.open")}
+          onPress={() =>
+            router.push({
+              pathname: "/activity/bills/[billId]",
+              params: { billId },
+            })
+          }
+        />
         <AppButton label={t("paymentWait.back")} onPress={goHome} />
       </YStack>
     </SafeAreaView>

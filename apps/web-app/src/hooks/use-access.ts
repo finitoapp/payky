@@ -1,3 +1,7 @@
+import {
+  accessSessionAtom,
+  pinPromptQueueAtom,
+} from "@payky/app-shared/access-state"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { accessControlQuery } from "@payky/core/modules/access/access-queries"
 import type { Permission } from "@payky/core/modules/access/access-types"
@@ -8,7 +12,6 @@ import {
 import { deviceByIdQuery } from "@payky/core/modules/device/device-queries"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useMemo, useRef } from "react"
-import { accessSessionAtom, pinPromptQueueAtom } from "@/atoms/access.ts"
 import { accountAtom } from "@/atoms/account.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 

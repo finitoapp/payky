@@ -1,11 +1,10 @@
-import { useAtom, useSetAtom } from "jotai"
-import { Suspense } from "react"
-
 import {
   accessSessionAtom,
   type PinPromptRequest,
   pinPromptQueueAtom,
-} from "@/atoms/access.ts"
+} from "@payky/app-shared/access-state"
+import { useAtom, useSetAtom } from "jotai"
+import { Suspense } from "react"
 import { PinScreen, type UnlockedVia } from "@/components/app/pin-screen.tsx"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog.tsx"
 import { useAccess } from "@/hooks/use-access.ts"

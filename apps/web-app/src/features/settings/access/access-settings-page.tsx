@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import { accessSessionAtom } from "@payky/app-shared/access-state"
 import {
   changePin,
   disableAccessControl,
@@ -43,7 +44,6 @@ import {
   Unlock,
 } from "lucide-react"
 import { useId, useState } from "react"
-import { accessSessionAtom } from "@/atoms/access.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"

@@ -6,10 +6,12 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@evolu/common": "8.23.0"
+    "@evolu/common": "8.23.0",
+    "@payky/core": "workspace:*"
   },
   "peerDependencies": {
-    "react": "^19.3.0"
+    "react": "^19.3.0",
+    "jotai": "^3.0.1"
   },
   "devDependencies": {
     "@types/react": "19.3.0",

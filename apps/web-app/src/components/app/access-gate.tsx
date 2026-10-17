@@ -1,11 +1,14 @@
 import {
+  accessLastActivityAtom,
+  accessSessionAtom,
+} from "@payky/app-shared/access-state"
+import {
   type Permission,
   sessionIdleTimeoutMs,
 } from "@payky/core/modules/access/access-types"
 import { useLocation, useMatches, useNavigate } from "@tanstack/react-router"
 import { useAtom, useSetAtom, useStore } from "jotai"
 import { type ReactNode, useEffect } from "react"
-import { accessLastActivityAtom, accessSessionAtom } from "@/atoms/access.ts"
 import { PinScreen } from "@/components/app/pin-screen.tsx"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { useAccess } from "@/hooks/use-access.ts"

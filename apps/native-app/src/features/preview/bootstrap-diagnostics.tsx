@@ -2,9 +2,24 @@ import { useAtomValue } from "jotai"
 import { Component, type ReactNode, Suspense } from "react"
 import { Text } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
+import { appMigrationsAtom } from "../../atoms/app-migrations.ts"
 import { deviceLanguageAtom } from "../../atoms/device-evolu.ts"
 import { deviceMigrationsAtom } from "../../atoms/device-migrations.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
+
+function Ready({ children }: { readonly children: ReactNode }) {
+  const report = useAtomValue(appMigrationsAtom)
+  return report.failed ? (
+    <Text color="red">
+      Data migration failed. Restart the app; see the log for details.
+    </Text>
+  ) : (
+    <>
+      <Text>App migrations: {report.migrated} run, ready</Text>
+      {children}
+    </>
+  )
+}
 
 function Rows() {
   const language = useAtomValue(deviceLanguageAtom)
@@ -46,7 +61,9 @@ export function BootstrapDiagnostics() {
   return (
     <FailureBoundary>
       <Suspense fallback={<Text>Bootstrapping…</Text>}>
-        <Rows />
+        <Ready>
+          <Rows />
+        </Ready>
       </Suspense>
     </FailureBoundary>
   )

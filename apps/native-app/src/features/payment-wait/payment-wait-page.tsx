@@ -8,6 +8,7 @@ import {
   requestPaymentMethodPreparation,
   retryPaymentMethodPreparation,
 } from "@payky/app-shared/payment-method-preparation"
+import { useNow } from "@payky/app-shared/use-now"
 import {
   fetchNostrProfile,
   getNostrIdentity,
@@ -35,7 +36,7 @@ import {
 } from "@payky/core/modules/payment/payment-queries"
 import { derivePaymentStatus } from "@payky/core/modules/payment/payment-status-utils"
 import { PaymentId } from "@payky/core/modules/payment/payment-types"
-import { Integer } from "@payky/core/modules/shared/schema"
+import { Currency, Integer } from "@payky/core/modules/shared/schema"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -44,6 +45,7 @@ import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
+import { QrCode } from "../../components/qr-code.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { EmptyView } from "../../components/state-views.tsx"
 import { nativeConsole } from "../../core/native-runtime.ts"
@@ -55,12 +57,14 @@ import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { readCashReceived } from "./cash-received.ts"
 import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
 
-// Cash and bank transfer are the methods offered here; Spark (P07) and Cashu
-// (P08) add their tabs to this screen. Only methods native supports get a tab.
+// Spark/Lightning, cash and bank transfer are offered here; Cashu (P08) adds
+// its tab. Only methods native supports get a tab. A Bolt Card tap under the
+// Lightning QR is H04, not here.
 
-type MethodId = "cash" | "iban"
+type MethodId = "spark" | "cash" | "iban"
 
 const methodLabelKeys = {
+  spark: "paymentWait.method.lightning",
   cash: "paymentWait.method.cash",
   iban: "paymentWait.method.iban",
 } satisfies Record<MethodId, TranslationKey>
@@ -129,6 +133,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
   // The enabled accounts in the payment's currency, like web's tab list, in
   // the merchant's method order.
+  const sparkAccount = accounts.find(
+    (account) => account.kind === "spark" && account.sparkSecret !== null
+  )
   const cashAccount = accounts.find(
     (account) =>
       account.kind === "cashRegister" &&
@@ -143,41 +150,51 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const methods = useMemo(() => {
     const order = getPaymentMethodOrder(settings)
     const found: { id: MethodId; accountId: AccountId }[] = []
+    if (sparkAccount !== undefined)
+      found.push({ id: "spark", accountId: sparkAccount.id })
     if (cashAccount !== undefined)
       found.push({ id: "cash", accountId: cashAccount.id })
     if (ibanAccount !== undefined)
       found.push({ id: "iban", accountId: ibanAccount.id })
-    const kindOf = { cash: "cashRegister", iban: "iban" } as const
+    const kindOf = {
+      spark: "spark",
+      cash: "cashRegister",
+      iban: "iban",
+    } as const
     return found.toSorted(
       (a, b) => order.indexOf(kindOf[a.id]) - order.indexOf(kindOf[b.id])
     )
-  }, [settings, cashAccount, ibanAccount])
+  }, [settings, sparkAccount, cashAccount, ibanAccount])
   const active = methods.find(({ id }) => id === selected) ?? methods[0]
   const preparationKey =
     active === undefined
       ? null
       : `${paymentId}:${active.id}:${active.accountId}`
+  const sparkInvoice = payment?.lnInvoice ?? payment?.sparkInvoice ?? null
   const prepared =
-    active?.id === "cash"
-      ? payment?.cashRegisterAccountId !== null &&
-        payment?.cashRegisterAccountId !== undefined
-      : active?.id === "iban"
-        ? payment?.ibanAccountId !== null &&
-          payment?.ibanAccountId !== undefined
-        : false
+    active?.id === "spark"
+      ? sparkInvoice !== null
+      : active?.id === "cash"
+        ? payment?.cashRegisterAccountId !== null &&
+          payment?.cashRegisterAccountId !== undefined
+        : active?.id === "iban"
+          ? payment?.ibanAccountId !== null &&
+            payment?.ibanAccountId !== undefined
+          : false
   const preparationStatus =
     preparationKey === null ? undefined : preparation[preparationKey]
+  // Spark invoices carry an `expiresAt` and nothing writes a row when it
+  // passes, so the clock ticks to flip the derived status.
+  const now = useNow([payment?.expiresAt ?? null])
   const status =
     payment === undefined
       ? null
       : derivePaymentStatus({
           canceledAt: payment.canceledAt,
           confirmedPaidAt: payment.confirmedPaidAt,
-          // Cash and bank transfer never set `expiresAt`, so no ticking
-          // clock is needed here; Spark (P07) adds one.
           expiresAt: payment.expiresAt,
           hasActiveClaim: claims.length > 0,
-          now: new Date(),
+          now,
         })
 
   const ibanNumber = ibanAccount?.iban ?? null
@@ -220,7 +237,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             paymentId,
             ...(method.id === "cash"
               ? { cashRegister: { accountId: method.accountId } }
-              : { bank: { accountId: method.accountId } }),
+              : method.id === "spark"
+                ? { spark: { accountId: method.accountId } }
+                : { bank: { accountId: method.accountId } }),
           })
         )
         if (!result.ok) {
@@ -260,8 +279,6 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   if (payment === undefined || status === null)
     return <EmptyView message={t("paymentWait.notFound")} />
   if (status === "canceled") return <Closed messageKey="paymentWait.canceled" />
-  if (status === "expired")
-    return <Closed messageKey="payment.status.expired" />
   if (status === "paid") return <Paid />
 
   const cashRegisterAccountId = payment.cashRegisterAccountId
@@ -377,6 +394,14 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         <Text fontSize={36} fontWeight="600" accessibilityRole="header">
           {formatMinor(payment.amount)}
         </Text>
+        {active?.id === "spark" && payment.amountSats !== null ? (
+          <Text color="muted-foreground">
+            {formatMoney(
+              { value: payment.amountSats, currency: Currency.BTC },
+              locale
+            )}
+          </Text>
+        ) : null}
       </YStack>
 
       {methods.length > 1 ? (
@@ -406,6 +431,22 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             variant="secondary"
             onPress={retryPreparation}
           />
+        </YStack>
+      ) : active.id === "spark" ? (
+        <YStack gap="3" items="center">
+          {sparkInvoice !== null ? (
+            <QrCode value={sparkInvoice} />
+          ) : (
+            <YStack items="center" gap="2">
+              <ActivityIndicator />
+              <Text color="muted-foreground">
+                {t("paymentWait.preparing.spark")}
+              </Text>
+            </YStack>
+          )}
+          {status === "expired" ? (
+            <Text color="muted-foreground">{t("payment.status.expired")}</Text>
+          ) : null}
         </YStack>
       ) : active.id === "iban" && ibanNumber !== null ? (
         <IbanPaymentTab

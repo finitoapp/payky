@@ -45,7 +45,10 @@ export default defineConfig({
       {
         test: {
           name: "native-bootstrap",
-          include: ["apps/native-app/src/platform/**/*.test.ts"],
+          include: [
+            "apps/native-app/src/platform/**/*.test.ts",
+            "apps/native-app/src/core/**/*.test.ts",
+          ],
         },
       },
       { test: { name: "tools", include: ["bin/**/*.test.ts"] } },

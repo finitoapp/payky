@@ -8,6 +8,7 @@ import { createStore, Provider } from "jotai"
 import { useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider } from "tamagui"
+import { AccessGate } from "../src/components/access-gate.tsx"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
 export default function RootLayout() {
@@ -22,7 +23,9 @@ export default function RootLayout() {
     <Provider store={store}>
       <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
         <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <Stack screenOptions={{ headerShown: false }} />
+        <AccessGate>
+          <Stack screenOptions={{ headerShown: false }} />
+        </AccessGate>
       </TamaguiProvider>
     </Provider>
   )

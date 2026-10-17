@@ -1,8 +1,10 @@
 import {
+  accessSessionAtom,
   type PinPromptRequest,
   pinPromptQueueAtom,
 } from "@payky/app-shared/access-state"
-import { atom, type Setter } from "jotai"
+import type { DeviceAccountId } from "@payky/core/evolu/device-client"
+import { atom, type ExtractAtomValue, type Setter } from "jotai"
 import type { SetStateAction } from "react"
 
 // `set(atom, value)` infers its arguments from `value` alone and rejects the
@@ -19,13 +21,34 @@ const setQueue = (
   >(pinPromptQueueAtom, queue)
 }
 
-/** Settles and removes the head one-shot prompt; starts no session. */
-export const settlePinPromptAtom = atom(null, (get, set, granted: boolean) => {
-  const [head] = get(pinPromptQueueAtom)
-  if (head === undefined) return
-  setQueue(set, get(pinPromptQueueAtom).slice(1))
-  head.resolve(granted)
-})
+/** A canceled prompt's late result must not approve the next queued action. */
+export const settlePinPromptAtom = atom(
+  null,
+  (
+    get,
+    set,
+    {
+      id,
+      granted,
+      sessionAccountId,
+    }: {
+      readonly id: string
+      readonly granted: boolean
+      readonly sessionAccountId?: DeviceAccountId
+    }
+  ) => {
+    const [head] = get(pinPromptQueueAtom)
+    if (head === undefined || head.id !== id) return
+    if (granted && sessionAccountId !== undefined)
+      set<
+        ExtractAtomValue<typeof accessSessionAtom>,
+        [SetStateAction<ExtractAtomValue<typeof accessSessionAtom>>],
+        void
+      >(accessSessionAtom, { accountId: sessionAccountId })
+    setQueue(set, get(pinPromptQueueAtom).slice(1))
+    head.resolve(granted)
+  }
+)
 
 /** Settles every pending prompt with `false` (unmount, account switch). */
 export const clearPinPromptsAtom = atom(null, (get, set) => {

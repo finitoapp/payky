@@ -1,8 +1,8 @@
 import {
-  accessSessionAtom,
   type PinPromptRequest,
   pinPromptQueueAtom,
 } from "@payky/app-shared/access-state"
+import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import { useAtomValue, useSetAtom } from "jotai"
 import { Suspense, useEffect } from "react"
 import { Modal, ScrollView } from "react-native"
@@ -41,7 +41,9 @@ export function PinPromptHost() {
       visible={head !== undefined}
       transparent
       animationType="fade"
-      onRequestClose={() => settle(false)}
+      onRequestClose={() => {
+        if (head !== undefined) settle({ id: head.id, granted: false })
+      }}
     >
       <YStack flex={1} justify="center" p="4" bg="rgba(0,0,0,0.5)">
         {head === undefined ? null : (
@@ -57,7 +59,9 @@ export function PinPromptHost() {
                 <PinPrompt
                   key={head.id}
                   request={head}
-                  onSettled={(granted) => settle(granted)}
+                  onSettled={(granted, sessionAccountId) =>
+                    settle({ id: head.id, granted, sessionAccountId })
+                  }
                 />
               </Suspense>
             </ScrollView>
@@ -73,15 +77,16 @@ function PinPrompt({
   onSettled,
 }: {
   readonly request: PinPromptRequest
-  readonly onSettled: (granted: boolean) => void
+  readonly onSettled: (
+    granted: boolean,
+    sessionAccountId?: DeviceAccountId
+  ) => void
 }) {
   const { accountId } = useAccess()
-  const setSession = useSetAtom(accessSessionAtom)
 
   const unlocked = (via: UnlockedVia) => {
     const session = sessionAfterPromptUnlock(via, accountId)
-    if (session !== null) setSession(session)
-    onSettled(true)
+    onSettled(true, session?.accountId)
   }
 
   return (

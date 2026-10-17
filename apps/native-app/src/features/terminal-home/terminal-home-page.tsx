@@ -2,12 +2,15 @@ import { sqliteTrue } from "@evolu/common"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { Redirect } from "expo-router"
+import { Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, XStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
+import { LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { AmountKeypad } from "./amount-keypad.tsx"
+import { PosOverviewPage } from "./pos-overview-page.tsx"
 import { useTerminalHomeMode } from "./use-terminal-home-mode.ts"
 
 const modeLabelKeys = {
@@ -46,7 +49,11 @@ export function TerminalHomePage() {
           ))}
         </XStack>
       )}
-      {mode === "pos" ? null : (
+      {mode === "pos" ? (
+        <Suspense fallback={<LoadingView />}>
+          <PosOverviewPage />
+        </Suspense>
+      ) : (
         <AmountKeypad
           currency={getFiatCurrency(settings)}
           tipsEnabled={settings.tipsEnabled === sqliteTrue}

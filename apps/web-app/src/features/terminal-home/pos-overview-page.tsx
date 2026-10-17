@@ -1,19 +1,23 @@
 import { useTimestamp } from "@dedalik/use-react"
+import { formatElapsed } from "@payky/app-shared/format-elapsed"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  type BillWithStats,
+  billPaymentState,
+  buildBillRows,
+  elapsedSeverity,
+  groupBillRowsByTableId,
+  matchesTableFilter,
+  sumBillRows,
+  type TableFilter,
+  TableFilterSchema,
+  tablePaymentState,
+} from "@payky/app-shared/pos-overview"
 import {
   type OpenBillRow,
   openBillsQuery,
 } from "@payky/core/modules/bill/bill-queries"
 import { createRandomBillId } from "@payky/core/modules/bill/bill-types"
-import {
-  claimedPaymentIdSet,
-  derivePendingPaymentIds,
-} from "@payky/core/modules/bill/bill-utils"
-import {
-  calculateBillLineSummaries,
-  deriveBillSummaryStats,
-} from "@payky/core/modules/bill-line/bill-line-utils"
-import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import type { TableRow } from "@payky/core/modules/table/table"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import type { TableId } from "@payky/core/modules/table/table-types"
@@ -21,24 +25,16 @@ import { useLocalStorageState } from "@payky/web-shared/use-local-storage-state"
 import { Link } from "@tanstack/react-router"
 import { PlusIcon, UsersIcon } from "lucide-react"
 import { type ReactNode, useMemo, useState } from "react"
-import { z } from "zod"
 import { buttonVariants } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { TableTileShell } from "@/features/shared/table-tile.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatElapsed, formatMoney } from "@/lib/format-utils.ts"
+import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-interface BillWithStats {
-  readonly bill: OpenBillRow
-  readonly stats: ReturnType<typeof deriveBillSummaryStats>
-}
-
 const TABLE_FILTER_STORAGE_KEY = "payky.posTableFilter"
-const TableFilterSchema = z.enum(["all", "occupied", "free"])
-type TableFilter = z.output<typeof TableFilterSchema>
 
 const tableFilterLabelKeys = {
   all: "home.pos.filter.all",
@@ -46,16 +42,14 @@ const tableFilterLabelKeys = {
   free: "home.pos.filter.free",
 } as const satisfies Record<TableFilter, TranslationKey>
 
-/** Past these a bill reads as forgotten: first a warning, then an alarm. */
-const LONG_OPEN_MS = 2 * 60 * 60_000
-const VERY_LONG_OPEN_MS = 12 * 60 * 60_000
+const elapsedClassNames = {
+  veryLong: "rounded-sm bg-destructive/10 px-1 font-semibold text-destructive",
+  long: "rounded-sm bg-warning/10 px-1 font-semibold text-warning",
+  normal: "text-muted-foreground",
+} satisfies Record<ReturnType<typeof elapsedSeverity>, string>
 
 const elapsedClassName = (elapsedMs: number) =>
-  elapsedMs >= VERY_LONG_OPEN_MS
-    ? "rounded-sm bg-destructive/10 px-1 font-semibold text-destructive"
-    : elapsedMs >= LONG_OPEN_MS
-      ? "rounded-sm bg-warning/10 px-1 font-semibold text-warning"
-      : "text-muted-foreground"
+  elapsedClassNames[elapsedSeverity(elapsedMs)]
 
 /**
  * The POS home screen, laid out as tills usually do: a strip of floor
@@ -80,35 +74,16 @@ export function PosOverviewPage() {
   // Derived from the rows' embedded `lines`/`items`, not a per-bill query:
   // a query per bill meant the floor view opened two more for every bill on
   // screen. Newest first, in every tile.
-  const rows = useMemo(
-    () =>
-      openBills
-        .map((bill) => ({
-          bill,
-          stats: deriveBillSummaryStats(
-            calculateBillLineSummaries(bill.lines, bill.items)
-          ),
-        }))
-        .sort((a, b) => b.bill.displayNumber - a.bill.displayNumber),
-    [openBills]
-  )
-  const rowsByTableId = useMemo(() => {
-    const map = new Map<TableId | null, ReadonlyArray<BillWithStats>>()
-    for (const row of rows) {
-      map.set(row.bill.tableId, [...(map.get(row.bill.tableId) ?? []), row])
-    }
-    return map
-  }, [rows])
+  const rows = useMemo(() => buildBillRows(openBills), [openBills])
+  const rowsByTableId = useMemo(() => groupBillRowsByTableId(rows), [rows])
 
   const tableTiles = tables.map((table) => ({
     table,
     rows: rowsByTableId.get(table.id) ?? [],
   }))
   const occupiedCount = tableTiles.filter((tile) => tile.rows.length > 0).length
-  const visibleTiles = tableTiles.filter(
-    (tile) =>
-      tableFilter === "all" ||
-      (tableFilter === "occupied") === tile.rows.length > 0
+  const visibleTiles = tableTiles.filter((tile) =>
+    matchesTableFilter(tableFilter, tile.rows.length > 0)
   )
   const floorTotal = formatRowsTotal(rows, locale)
 
@@ -201,49 +176,13 @@ function FloorStat({
   )
 }
 
-/**
- * The summed total of `rows`, formatted — or `undefined` when they are in
- * more than one currency, which have no meaningful sum.
- */
+/** The summed total of `rows`, formatted — `undefined` when it has no sum. */
 const formatRowsTotal = (
   rows: ReadonlyArray<BillWithStats>,
   locale: string
 ): string | undefined => {
-  const [first] = rows
-  if (
-    first === undefined ||
-    rows.some(({ bill }) => bill.currency !== first.bill.currency)
-  ) {
-    return undefined
-  }
-
-  return formatMoney(
-    {
-      value: NonNegativeInteger(
-        rows.reduce((sum, { stats }) => sum + stats.totalAmount, 0)
-      ),
-      currency: first.bill.currency,
-    },
-    locale
-  )
-}
-
-/** Where a bill's payment stands, when it is anywhere at all. */
-const billPaymentState = (
-  bill: OpenBillRow,
-  now: number
-): "paymentPending" | "partiallyPaid" | undefined => {
-  if (
-    derivePendingPaymentIds(
-      bill.payments,
-      claimedPaymentIdSet(bill.claims),
-      new Date(now)
-    ).length > 0
-  ) {
-    return "paymentPending"
-  }
-  // Still open with a claim behind it: some money is in, not all of it.
-  return bill.claims.length > 0 ? "partiallyPaid" : undefined
+  const total = sumBillRows(rows)
+  return total === undefined ? undefined : formatMoney(total, locale)
 }
 
 /** Covers the whole tile, so its most likely next step needs no aiming. */
@@ -319,12 +258,7 @@ function TableTile({
     ...rows.map(({ bill }) => new Date(bill.createdAt).getTime())
   )
   const itemCount = rows.reduce((sum, { stats }) => sum + stats.itemCount, 0)
-  const paymentStates = rows.map(({ bill }) => billPaymentState(bill, now))
-  const paymentState = paymentStates.includes("paymentPending")
-    ? "paymentPending"
-    : paymentStates.includes("partiallyPaid")
-      ? "partiallyPaid"
-      : undefined
+  const paymentState = tablePaymentState(rows, now)
 
   return (
     <div data-testid="table-tile" className="relative h-full">

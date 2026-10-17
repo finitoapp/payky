@@ -1,5 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { useNow } from "@payky/app-shared/use-now"
 import {
   type EetCertificateError,
   type EetCertificateFile,
@@ -38,7 +39,6 @@ import { fetchPlaygroundCertificates } from "@/core/integrations/eet/playground-
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
-import { useNow } from "@/hooks/use-now.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDate } from "@/lib/format-utils.ts"

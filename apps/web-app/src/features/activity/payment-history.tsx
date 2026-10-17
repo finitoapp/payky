@@ -1,4 +1,5 @@
 import type { InferRow } from "@evolu/common"
+import { useNow } from "@payky/app-shared/use-now"
 import {
   calculateClaimedSum,
   deriveBillCoverage,
@@ -35,7 +36,6 @@ import { RefundBadge } from "@/features/shared/refund-badge.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "@/hooks/use-infinite-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
-import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { groupByDay } from "@/lib/group-by-day.ts"

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { invertLine, linesNeedDiscard } from "@/features/bill/cart-lines.ts"
+import { invertLine, linesNeedDiscard } from "./cart-lines.ts"
 
 describe("linesNeedDiscard (access/0002)", () => {
   const add = { kind: "add" } as const

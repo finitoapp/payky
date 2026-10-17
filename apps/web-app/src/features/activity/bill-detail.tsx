@@ -1,4 +1,5 @@
 import type { InferRow } from "@evolu/common"
+import { useNow } from "@payky/app-shared/use-now"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import { BillId } from "@payky/core/modules/bill/bill-types"
 import {
@@ -60,7 +61,6 @@ import { useBillLineSummaries } from "@/features/shared/use-bill-line-summaries.
 import { useBillStatus } from "@/features/shared/use-bill-status.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
-import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"

@@ -1,4 +1,5 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
+import { useNow } from "@payky/app-shared/use-now"
 import type { EvoluSchema } from "@payky/core/evolu/schema"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -31,7 +32,6 @@ import {
   useEvoluQuery,
   useOptionalEvoluQuery,
 } from "@/hooks/use-evolu-query.ts"
-import { useNow } from "@/hooks/use-now.ts"
 
 const tickMs = 5 * 60_000
 

@@ -1,4 +1,9 @@
 import {
+  type CartLine,
+  invertLine,
+  linesNeedDiscard,
+} from "@payky/app-shared/cart-lines"
+import {
   addCatalogItemToBill,
   appendGuardedBillLines,
   appendRemoveBillLine,
@@ -28,11 +33,6 @@ import { useStore } from "jotai"
 import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { accountAtom } from "@/atoms/account.ts"
-import {
-  type CartLine,
-  invertLine,
-  linesNeedDiscard,
-} from "@/features/bill/cart-lines.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"

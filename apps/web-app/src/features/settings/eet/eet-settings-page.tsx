@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { useNow } from "@payky/app-shared/use-now"
 import {
   disableEet,
   type EetProductionUnavailableError,
@@ -44,7 +45,6 @@ import { InlineEditToggleGroup } from "@/features/settings/inline-edit-toggle-gr
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
-import { useNow } from "@/hooks/use-now.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 

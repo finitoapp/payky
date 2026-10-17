@@ -1,3 +1,4 @@
+import { useNow } from "@payky/app-shared/use-now"
 import {
   claimedTransactionsByBillIdQuery,
   paymentsByBillIdQuery,
@@ -10,7 +11,6 @@ import {
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { useMemo } from "react"
 import { useOptionalEvoluQuery } from "@/hooks/use-evolu-query.ts"
-import { useNow } from "@/hooks/use-now.ts"
 
 /**
  * Reactive equivalent of the `isBillLocked` check behind `requireEditableBill`:

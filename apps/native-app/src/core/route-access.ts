@@ -10,6 +10,7 @@ export type NativeRoutePath =
   | "/pair"
   | "/onboarding"
   | "/restore-account"
+  | "/bill"
   | "/payment/tip"
   | "/payment/:paymentId"
 
@@ -29,6 +30,8 @@ export const routeAccess = {
   "/onboarding": "free",
   // Like web's /restore-account, a sibling of /onboarding outside `_terminal`.
   "/restore-account": "free",
+  // Like web's `_terminal/bill` (access/0002: the bill is `sell`).
+  "/bill": "sell",
   // Like web's `_terminal/payment/tip` and `payment_/$paymentId`.
   "/payment/tip": "sell",
   "/payment/:paymentId": "sell",

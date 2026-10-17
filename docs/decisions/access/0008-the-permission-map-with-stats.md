@@ -118,9 +118,9 @@ counting as no permissions.
 ## Enforced by
 
 - `packages/core/src/modules/access/access-utils.test.ts > device permissions > an unknown permission is dropped and the known ones kept`
-- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > clearing the cart needs discard`
-- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > undoing an added line needs discard, since it writes a remove`
-- `apps/web-app/src/features/bill/cart-lines.test.ts > linesNeedDiscard (access/0002) > adding a line needs no discard`
+- `packages/app-shared/src/cart-lines.test.ts > linesNeedDiscard (access/0002) > clearing the cart needs discard`
+- `packages/app-shared/src/cart-lines.test.ts > linesNeedDiscard (access/0002) > undoing an added line needs discard, since it writes a remove`
+- `packages/app-shared/src/cart-lines.test.ts > linesNeedDiscard (access/0002) > adding a line needs no discard`
 - `apps/web-app/e2e/stats.spec.ts > a Basic device opening the statistics gets the PIN prompt`
 - `apps/web-app/e2e/stats.spec.ts > a Manager device opens the statistics without the PIN`
 - `apps/web-app/e2e/access.spec.ts > a refund raises the one-shot PIN prompt naming the permission it needs`

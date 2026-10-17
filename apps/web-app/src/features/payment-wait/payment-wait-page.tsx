@@ -8,6 +8,7 @@ import {
   requestPaymentMethodPreparation,
   retryPaymentMethodPreparation,
 } from "@payky/app-shared/payment-method-preparation"
+import { useNow } from "@payky/app-shared/use-now"
 import { buildCashuPaymentUri } from "@payky/core/cashu/cashu-payment-request"
 import { enabledPaymentMethodAccountsQuery } from "@payky/core/modules/account/account-queries"
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
@@ -81,7 +82,6 @@ import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useNostrIdentity, useNostrProfile } from "@/hooks/use-nostr-profile.ts"
-import { useNow } from "@/hooks/use-now.ts"
 import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-open.ts"
 import { useCashuRunToast, useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"

@@ -6,9 +6,18 @@ import { useAtomValue } from "jotai"
 import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
 
+/**
+ * For a query that exists only in some states (a bill-scoped query on a cart
+ * whose bill row is not written yet): `null` subscribes to nothing, so the
+ * screen stays mounted across the transition.
+ */
+export const useOptionalEvoluQuery = <R extends Row>(
+  query: Query<EvoluSchema, R> | null
+): { data: QueryRows<R> } => useEvoluQueryFor(useAtomValue(evoluAtom), query)
+
 export const useEvoluQuery = <R extends Row>(
   query: Query<EvoluSchema, R>
-): { data: QueryRows<R> } => useEvoluQueryFor(useAtomValue(evoluAtom), query)
+): { data: QueryRows<R> } => useOptionalEvoluQuery(query)
 
 export const useDeviceEvoluQuery = <R extends Row>(
   query: Query<DeviceEvoluSchema, R>

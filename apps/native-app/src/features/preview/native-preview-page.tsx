@@ -64,6 +64,14 @@ export function NativePreviewPage() {
           >
             Run shared logic again
           </Button>
+          {/* Temporary entry to the bill until the pos overview (P04). */}
+          <Button
+            rounded="lg"
+            minHeight={48}
+            onPress={() => router.push("/bill")}
+          >
+            Open new bill
+          </Button>
           <Button
             rounded="lg"
             minHeight={48}

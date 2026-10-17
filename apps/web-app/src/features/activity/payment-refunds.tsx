@@ -526,6 +526,7 @@ function TipRefundDialog({
   const { t } = useTranslation()
   const locale = useLocale()
   const runToast = useRunToast()
+  const { require } = useRequirePermission()
   const jotaiStore = useStore()
   const [method, setMethod] = useState<RefundMethod>(defaultMethod)
   const [pending, setPending] = useState(false)
@@ -533,6 +534,8 @@ function TipRefundDialog({
 
   const confirm = async () => {
     if (pending) return
+    // A tip refund is a refund too (access/0002).
+    if (!(await require("refund", "access.action.refund"))) return
     setPending(true)
     const { device } = await jotaiStore.get(accountAtom)
     const refunded = await runToast(async (run) => {

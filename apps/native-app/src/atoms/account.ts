@@ -10,8 +10,11 @@ import { atom } from "jotai"
 import { getNativeDeviceLabels } from "../platform/device-labels.ts"
 import { deviceEvoluAtom } from "./device-evolu.ts"
 import { deviceMigrationsAtom } from "./device-migrations.ts"
+import { evoluCounterAtom } from "./evolu-counter.ts"
 
 const activeAccountRowAtom = atom(async (get) => {
+  // Bumped by `reloadAppEvoluAtom` after a switch, so the account is read again.
+  get(evoluCounterAtom)
   const deviceEvolu = await get(deviceEvoluAtom)
   // Read the account only from migrated device data.
   await get(deviceMigrationsAtom)

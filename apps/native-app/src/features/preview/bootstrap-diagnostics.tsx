@@ -6,6 +6,7 @@ import { appMigrationsAtom } from "../../atoms/app-migrations.ts"
 import { deviceLanguageAtom } from "../../atoms/device-evolu.ts"
 import { deviceMigrationsAtom } from "../../atoms/device-migrations.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
+import { AccountsCard } from "./accounts-card.tsx"
 import { CashSaleCard } from "./cash-sale-card.tsx"
 import { LiveQueryDemo } from "./live-query-demo.tsx"
 
@@ -18,6 +19,7 @@ function Ready({ children }: { readonly children: ReactNode }) {
   ) : (
     <>
       <Text>App migrations: {report.migrated} run, ready</Text>
+      <AccountsCard />
       {children}
     </>
   )

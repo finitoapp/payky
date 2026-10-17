@@ -1,10 +1,9 @@
 import { useTimeoutFn } from "@dedalik/use-react"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { CheckIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 /** How long the tick stays up. Applied to the animation, so the two cannot drift. */

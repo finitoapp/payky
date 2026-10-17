@@ -1,5 +1,6 @@
 import { App as CapacitorApp } from "@capacitor/app"
 import { Capacitor } from "@capacitor/core"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { settleRestoredSwitchioCardPayment } from "@payky/core/modules/payment/payment-actions"
 import type { SettleRestoredSwitchioCardPaymentError } from "@payky/core/modules/payment/payment-errors"
 import { SwitchioNativePayResultSchema } from "@payky/core/switchio"
@@ -10,7 +11,6 @@ import { accountAtom } from "@/atoms/account.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { SWITCHIO_PLUGIN_NAME } from "@/platform/switchio.ts"
 
 const restoredErrorKeys = {

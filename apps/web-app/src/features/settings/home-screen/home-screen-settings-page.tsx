@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { setEnabledHomeModes } from "@payky/core/modules/app-settings/app-settings-actions"
 import type { TerminalHomeMode } from "@payky/core/modules/app-settings/app-settings-types"
 import { terminalHomeModes } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -14,7 +15,6 @@ import { InlineEditSwitch } from "@/features/settings/inline-edit-switch.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { homeModeLabelKeys } from "@/i18n/settings-labels.ts"
 
 const homeModeDescriptionKeys = {

@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { CatalogCategoryRow } from "@payky/core/modules/catalog-category/catalog-category"
 import type { CatalogCategoryId } from "@payky/core/modules/catalog-category/catalog-category-types"
 import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
@@ -44,7 +45,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import type { useProductLookup } from "@/hooks/use-product-lookup.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * Lightweight create-item form opened from bill scan mode when a scanned

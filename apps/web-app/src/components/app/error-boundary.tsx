@@ -1,3 +1,7 @@
+import {
+  resources,
+  type TranslationKey,
+} from "@payky/app-shared/i18n/resources"
 import { getPreferredDeviceLanguage } from "@payky/core/modules/device/device-utils"
 import type { ErrorComponentProps } from "@tanstack/react-router"
 import { useSetAtom } from "jotai"
@@ -20,7 +24,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible.tsx"
 import { captureReportedError } from "@/core/sentry.ts"
-import { resources, type TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * Deliberately does not use `useTranslation()`/`useDeviceSettings()`: those

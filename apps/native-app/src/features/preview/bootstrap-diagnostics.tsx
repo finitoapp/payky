@@ -6,6 +6,7 @@ import { appMigrationsAtom } from "../../atoms/app-migrations.ts"
 import { deviceLanguageAtom } from "../../atoms/device-evolu.ts"
 import { deviceMigrationsAtom } from "../../atoms/device-migrations.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
 import { AccountsCard } from "./accounts-card.tsx"
 import { CashSaleCard } from "./cash-sale-card.tsx"
 import { LiveQueryDemo } from "./live-query-demo.tsx"
@@ -29,11 +30,13 @@ function Ready({ children }: { readonly children: ReactNode }) {
 
 function Rows() {
   const language = useAtomValue(deviceLanguageAtom)
+  const { t } = useTranslation()
   const deviceReport = useAtomValue(deviceMigrationsAtom)
   const account = useAtomValue(accountAtom)
   const evolu = useAtomValue(evoluAtom)
   return (
     <>
+      <Text>{t("app.name")}</Text>
       <Text>Device language: {language ?? "unset"}</Text>
       <Text>
         Device migrations: {deviceReport.migrated} run

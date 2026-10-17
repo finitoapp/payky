@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { createOrSelectAccount } from "@payky/core/evolu/device-account"
 import { normalizeMnemonic } from "@payky/core/modules/account/account-utils"
 import {
@@ -11,7 +12,6 @@ import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { restoredAccountAtom } from "@/features/shared/account/restored-account.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useSettingsForm } from "@/hooks/use-settings-form.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface RestoreAccount {
   readonly mnemonic: string

@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   fetchLnurlPayInvoice,
   type LnurlPayMetadata,
@@ -45,7 +46,6 @@ import { useConsole } from "@/hooks/use-console.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLnurlPayMetadata } from "@/hooks/use-lnurl-pay-metadata.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const DonationAmountSchema = z.number().int().positive().safe()
 

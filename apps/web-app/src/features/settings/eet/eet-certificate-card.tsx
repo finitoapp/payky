@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type EetCertificateError,
   type EetCertificateFile,
@@ -40,7 +41,6 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useNow } from "@/hooks/use-now.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDate } from "@/lib/format-utils.ts"
 
 const certificateErrorKeys = {

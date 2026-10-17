@@ -1,6 +1,6 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { ReactNode } from "react"
 import { useId } from "react"
-
 import {
   Field,
   FieldContent,
@@ -12,7 +12,6 @@ import {
   InlineEditSavedTick,
   useInlineChoice,
 } from "@/features/settings/inline-edit-save.tsx"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 interface InlineEditSwitchProps {

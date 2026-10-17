@@ -1,12 +1,12 @@
 import {
-  type TranslationKey as LandingTranslationKey,
-  resources as landingResources,
-} from "../../../landing/src/i18n/resources.ts"
-import {
   type TranslationKey as AppTranslationKey,
   resources as appResources,
   type Language,
-} from "../../src/i18n/resources.ts"
+} from "@payky/app-shared/i18n/resources"
+import {
+  type TranslationKey as LandingTranslationKey,
+  resources as landingResources,
+} from "../../../landing/src/i18n/resources.ts"
 
 type TranslationKey = AppTranslationKey | LandingTranslationKey
 const resources = {

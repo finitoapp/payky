@@ -1,4 +1,5 @@
 import type { InferRow } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { EetDeliveryOutcome } from "@payky/core/integrations/eet/eet-client"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
 import {
@@ -91,7 +92,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatMoney, formatTime } from "@/lib/format-utils.ts"
 
 type RefundMode = "amount" | "items"

@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type CashuMoveError,
   type CashuMoveEstimate,
@@ -41,7 +42,6 @@ import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
 const moveErrorKeys = {

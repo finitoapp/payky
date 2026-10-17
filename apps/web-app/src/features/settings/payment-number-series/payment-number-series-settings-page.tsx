@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { updatePaymentLastNumber } from "@payky/core/modules/payment-number/payment-number-actions"
 import { paymentLastNumberQuery } from "@payky/core/modules/payment-number/payment-number-queries"
 import type { PaymentNumberSeriesRow } from "@payky/core/modules/payment-number-series/payment-number-series"
@@ -28,7 +29,6 @@ import { InlineEditToggleGroup } from "@/features/settings/inline-edit-toggle-gr
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 type YearFormat = "default" | "short"
 type DatePartFormat = "default" | "hidden"

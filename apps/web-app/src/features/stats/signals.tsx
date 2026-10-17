@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type SalesSignal,
   type SignalsRow,
@@ -7,7 +8,6 @@ import { orderCurrencies } from "@payky/core/modules/sales-stats/sales-stats-uti
 import type { Currency } from "@payky/core/modules/shared/schema"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { CurrencyGroup, StatsSection, useStatsMoney } from "./stats-section.tsx"
 import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
 

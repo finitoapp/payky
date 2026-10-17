@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
@@ -41,7 +42,6 @@ import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { countryLabelKey, homeModeLabelKeys } from "@/i18n/settings-labels.ts"
 
 /**

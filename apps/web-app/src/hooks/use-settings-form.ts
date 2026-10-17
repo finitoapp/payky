@@ -1,6 +1,5 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useCallback, useState } from "react"
-
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 type SettingsFormSubmitResult = boolean | undefined
 

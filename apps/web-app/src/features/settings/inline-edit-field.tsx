@@ -1,9 +1,9 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { CheckIcon, XIcon } from "lucide-react"
 import type { InputHTMLAttributes, ReactNode } from "react"
 import { useId, useReducer, useRef } from "react"
 import { flushSync } from "react-dom"
 import { z } from "zod"
-
 import { Button } from "@/components/ui/button.tsx"
 import {
   Field,
@@ -23,7 +23,6 @@ import {
   useInlineSave,
 } from "@/features/settings/inline-edit-save.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 /**

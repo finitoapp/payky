@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { Laptop, Moon, Sun } from "lucide-react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
@@ -10,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface ThemeOption {
   readonly value: Theme

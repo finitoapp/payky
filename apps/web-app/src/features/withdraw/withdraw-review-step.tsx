@@ -1,4 +1,5 @@
 import { useCountdown } from "@dedalik/use-react"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type {
   LightningWithdrawalQuote,
   OnchainWithdrawalQuote,
@@ -24,7 +25,6 @@ import {
 import { FieldError, FieldGroup } from "@/components/ui/field.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import {
   formatAddressGroups,
   formatCountdown,

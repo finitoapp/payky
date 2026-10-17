@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { addKnownCashuMint } from "@payky/core/cashu/cashu-mints"
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
@@ -13,7 +14,6 @@ import { Input } from "@/components/ui/input.tsx"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const addErrorKeys = {
   CashuMintUrlInvalid: "settings.cashuMints.addError.invalid",

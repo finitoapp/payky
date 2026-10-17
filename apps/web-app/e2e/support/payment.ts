@@ -1,6 +1,5 @@
+import type { Language } from "@payky/app-shared/i18n/resources"
 import type { Locator, Page } from "@playwright/test"
-
-import type { Language } from "../../src/i18n/resources.ts"
 import { startBillWithCoffee } from "./bill.ts"
 import { translate } from "./i18n.ts"
 import { waitForLocalWriteToSettle } from "./navigation.ts"

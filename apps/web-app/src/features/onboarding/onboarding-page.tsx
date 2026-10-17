@@ -1,3 +1,4 @@
+import type { Language, TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   accountListQuery,
   removeDeviceAccount,
@@ -64,7 +65,6 @@ import { nostrProfileQueryKey } from "@/hooks/use-nostr-profile.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
-import type { Language, TranslationKey } from "@/i18n/resources.ts"
 
 export function OnboardingPage({
   landingLanguage,

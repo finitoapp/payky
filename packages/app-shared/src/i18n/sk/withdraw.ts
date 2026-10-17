@@ -1,4 +1,4 @@
-import type { enWithdraw } from "@/i18n/en/withdraw.ts"
+import type { enWithdraw } from "../en/withdraw.ts"
 
 export const skWithdraw = {
   "withdraw.all.description": "Odoslať celý dostupný zostatok.",

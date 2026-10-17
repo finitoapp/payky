@@ -1,8 +1,8 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   FiatCurrency,
   type FiatCurrency as FiatCurrencyType,
 } from "@payky/core/modules/shared/schema"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface FiatCurrencyOption {
   readonly value: FiatCurrencyType

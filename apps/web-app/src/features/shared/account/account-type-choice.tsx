@@ -1,8 +1,7 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { KeyRound, Plus, QrCode } from "lucide-react"
-
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /** The ways an account gets onto a device, offered the same everywhere. */
 export type AccountChoice = "new" | "restore" | "transfer"

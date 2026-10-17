@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type IDetectedBarcode,
   type IScannerError,
@@ -9,7 +10,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { ScannerTorchButton } from "@/components/scanner-torch-button.tsx"
 import { useScannerTorch } from "@/hooks/use-scanner-torch.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 import { vibrateOnButtonPress } from "@/platform/haptics.ts"
 

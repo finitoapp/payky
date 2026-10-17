@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
 import {
   type BankQrPayload,
@@ -16,7 +17,6 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type { IbanPaidTabProps } from "@/features/payment-wait/payment-wait-types.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
 import { formatAddressGroups } from "@/lib/format-utils.ts"
 

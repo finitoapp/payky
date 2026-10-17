@@ -1,6 +1,6 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { KeyRound } from "lucide-react"
 import { useId } from "react"
-
 import { PasswordTextarea } from "@/components/password-textarea.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import {
@@ -11,7 +11,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /** The recovery-phrase form, as onboarding and Settings → Accounts show it. */
 export function RestoreAccountForm({

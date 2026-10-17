@@ -1,4 +1,5 @@
 import { AbortError } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { createAiModelDep } from "@payky/core/ai/ai-model"
 import { askAssistant } from "@payky/core/ai/assistant"
 import type { AiAssistantAccess } from "@payky/core/evolu/device-client"
@@ -27,7 +28,6 @@ import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 /** What the assistant may read, as its empty state says and suggests. */

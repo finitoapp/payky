@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { DeviceLocale } from "@payky/core/evolu/device-client"
 import { languageOptions } from "@payky/web-shared/language-options"
 import { Globe2, Languages } from "lucide-react"
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/card.tsx"
 import { useLocale, useSetLocale } from "@/hooks/use-locale.ts"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface LocaleOption {
   readonly value: DeviceLocale

@@ -2,13 +2,13 @@ import { Buffer } from "node:buffer"
 import { spawn } from "node:child_process"
 import { mkdir, rm } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
-import { chromium, expect, type Page } from "@playwright/test"
-import sharp from "sharp"
 import {
   type Language,
   resources,
   type TranslationKey,
-} from "@/i18n/resources.ts"
+} from "@payky/app-shared/i18n/resources"
+import { chromium, expect, type Page } from "@playwright/test"
+import sharp from "sharp"
 import { addCatalogItem, addTable, startNewBill } from "../e2e/support/bill.ts"
 import { translate } from "../e2e/support/i18n.ts"
 import { gotoPage, gotoPosOverview } from "../e2e/support/navigation.ts"

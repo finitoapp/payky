@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { WithdrawDestination } from "@payky/core/modules/withdraw/withdraw-destination-utils"
 import { Checkbox } from "@/components/ui/checkbox.tsx"
 import {
@@ -7,7 +8,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /** Why "Withdraw all" is off for this destination, or `null` when it is offered. */
 export const withdrawAllUnavailableKey = (

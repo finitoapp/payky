@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { AccountTransactionKind } from "@payky/core/modules/account-transaction/account-transaction-types"
 import {
   BanknoteIcon,
@@ -8,7 +9,6 @@ import {
   type LucideIcon,
   ZapIcon,
 } from "lucide-react"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * How the method that actually settled a payment (its claimed transaction's

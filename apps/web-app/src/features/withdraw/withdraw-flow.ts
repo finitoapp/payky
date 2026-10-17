@@ -1,4 +1,5 @@
 import type { AbortError } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   decimalAmountToMinorUnits,
   fiatMinorUnitsToSats,
@@ -21,7 +22,6 @@ import type { ParseWithdrawDestinationError } from "@payky/core/modules/withdraw
 import { isOnchainWithdrawAllBelowMinimum } from "@payky/core/modules/withdraw/withdraw-utils"
 import type { SparkExitSpeed } from "@payky/core/spark/spark-wallet"
 import type { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export type Translate = ReturnType<typeof useTranslation>["t"]
 

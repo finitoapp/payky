@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { saveFiatBankAccount } from "@payky/core/modules/account/account-actions"
 import { fiatBankAccountQuery } from "@payky/core/modules/account/account-queries"
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
@@ -46,7 +47,6 @@ import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * A codec's output side can't be a `.transform()` schema (`z.encode` runs it

@@ -1,4 +1,4 @@
-import type { enOnboarding } from "@/i18n/en/onboarding.ts"
+import type { enOnboarding } from "../en/onboarding.ts"
 
 export const skOnboarding = {
   "accountRestore.action.addRelay": "Pridať synchronizačný server",

@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   czechBankNameForIban,
   czechIbanToBban,
@@ -5,7 +6,6 @@ import {
 import { BankAccountInputIbanSchema } from "@payky/core/modules/shared/schema"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export type BankAccountDisplayFormat = "iban" | "bban"
 

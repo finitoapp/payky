@@ -1,4 +1,4 @@
-import type { enCommon } from "@/i18n/en/common.ts"
+import type { enCommon } from "../en/common.ts"
 
 export const csCommon = {
   "activity.tabs.bills": "Účty",

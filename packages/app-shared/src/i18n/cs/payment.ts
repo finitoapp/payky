@@ -1,4 +1,4 @@
-import type { enPayment } from "@/i18n/en/payment.ts"
+import type { enPayment } from "../en/payment.ts"
 
 export const csPayment = {
   "payment.create.error": "Platbu se nepodařilo vytvořit.",

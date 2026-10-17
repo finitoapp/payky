@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   decimalAmountToMinorUnits,
   minorUnitsToDecimalString,
@@ -11,7 +12,6 @@ import {
   NonNegativeIntegerSchema,
 } from "@payky/core/modules/shared/schema"
 import { z } from "zod"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * A required catalog-item text field as the form holds it: whitespace

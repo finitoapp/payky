@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { cashuAccountQuery } from "@payky/core/modules/account/account-queries"
 import { activeSparkAccountsQuery } from "@payky/core/modules/account/account-spark-queries"
 import type { AccountId } from "@payky/core/modules/account/account-types"
@@ -13,7 +14,6 @@ import {
 import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import type { WithdrawMethod } from "./withdraw-flow.ts"
 
 /**

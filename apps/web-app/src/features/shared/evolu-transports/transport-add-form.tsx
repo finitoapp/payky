@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   defaultEvoluTransportUrls,
   upsertAccountEvoluWebsocketTransport,
@@ -22,7 +23,6 @@ import { Input } from "@/components/ui/input.tsx"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 interface TransportAddFormProps {
   readonly accountId: DeviceAccountId

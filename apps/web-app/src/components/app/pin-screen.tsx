@@ -1,4 +1,8 @@
 import {
+  resources,
+  type TranslationKey,
+} from "@payky/app-shared/i18n/resources"
+import {
   type PinAttemptRow,
   pinAttemptBaseQuery,
   pinAttemptsQuery,
@@ -29,7 +33,6 @@ import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { permissionLabelKeys } from "@/i18n/access-labels.ts"
-import { resources, type TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

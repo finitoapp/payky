@@ -1,5 +1,6 @@
 import { useMediaQuery } from "@dedalik/use-react"
 import { sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import {
@@ -118,7 +119,6 @@ import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-ope
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 import { vibrateOnButtonPress } from "@/platform/haptics.ts"

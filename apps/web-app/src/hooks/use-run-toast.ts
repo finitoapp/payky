@@ -1,8 +1,8 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useCallback } from "react"
 import { toast } from "sonner"
 import { useAppRun, useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * The button/form-submit counterpart to `useInlineSave`: owns the

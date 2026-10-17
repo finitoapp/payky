@@ -1,8 +1,8 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type {
   AccessPreset,
   Permission,
 } from "@payky/core/modules/access/access-types"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export const permissionLabelKeys = {
   sell: "access.permission.sell",

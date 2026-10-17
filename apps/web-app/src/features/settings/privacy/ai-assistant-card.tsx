@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { AiAssistantAccess } from "@payky/core/evolu/device-client"
 import { BookOpen, Database, PowerOff } from "lucide-react"
 import { OptionToggleGroup } from "@/components/option-toggle-group.tsx"
@@ -14,7 +15,6 @@ import {
   useSetAiAssistantAccess,
 } from "@/hooks/use-ai-assistant-access.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const accessOptions = [
   {

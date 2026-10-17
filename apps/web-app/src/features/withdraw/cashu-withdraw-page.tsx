@@ -1,4 +1,5 @@
 import type { AbortError } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
 import {
@@ -17,7 +18,6 @@ import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatSatsAmount } from "@/lib/format-utils.ts"
 import {
   CashuWithdrawFormStep,

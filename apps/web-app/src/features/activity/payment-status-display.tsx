@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { PaymentStatus } from "@payky/core/modules/payment/payment-types"
 import {
   AlertTriangleIcon,
@@ -7,7 +8,6 @@ import {
   XIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 /**

@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { CashuReceiveError } from "@payky/core/cashu/cashu-receive"
 import {
   type CashuTokenArrival,
@@ -9,7 +10,6 @@ import { useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * The Cashu tab (cashu.md §4): one BIP-321 QR a Lightning wallet pays as an

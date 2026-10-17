@@ -1,6 +1,5 @@
+import type { Language } from "@payky/app-shared/i18n/resources"
 import { expect, type Page } from "@playwright/test"
-
-import type { Language } from "../../src/i18n/resources.ts"
 import { nameParam, translate } from "./i18n.ts"
 import {
   gotoPage,

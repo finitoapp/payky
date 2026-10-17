@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type {
   AccountId,
   BankQrFormat,
@@ -9,7 +10,6 @@ import type {
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import type { ReactNode } from "react"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export type PaymentMethodTab = "spark" | "iban" | "cash" | "card" | "cashu"
 

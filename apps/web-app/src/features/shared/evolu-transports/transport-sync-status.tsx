@@ -5,6 +5,7 @@ import {
   relaySyncStateToStatus,
   type SyncRouteError,
 } from "@evolu/common/local-first"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { resolveTransportUrl } from "@payky/core/evolu/device-account"
 import { isSameDay } from "date-fns"
 import { useAtomValue } from "jotai"
@@ -15,7 +16,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

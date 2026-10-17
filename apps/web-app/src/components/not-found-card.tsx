@@ -1,8 +1,7 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { ReceiptIcon } from "lucide-react"
-
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * Shown in place of a payment or bill detail when the route's id doesn't

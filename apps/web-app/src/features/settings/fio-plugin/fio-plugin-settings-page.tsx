@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core"
 import { sqliteFalse, sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { fiatBankAccountQuery } from "@payky/core/modules/account/account-queries"
 import { legacyFiatBankAccountId } from "@payky/core/modules/account/account-utils"
 import {
@@ -59,7 +60,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const defaultNumberOfSecondsBetweenChecks = 30
 const defaultSyncLookbackDays = 1

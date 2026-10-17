@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   saveCardSwitchioAccount,
   saveCashRegisterAccount,
@@ -43,7 +44,6 @@ import { useAppRun, useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 import { isSwitchioInstalled } from "@/platform/switchio.ts"
 

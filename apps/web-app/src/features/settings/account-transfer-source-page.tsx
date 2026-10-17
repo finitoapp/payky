@@ -1,4 +1,5 @@
 import { useTimestamp } from "@dedalik/use-react"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { createDateDep } from "@payky/core/deps"
 import {
   startTransferSource,
@@ -62,7 +63,6 @@ import { appEnv } from "@/core/app-env.ts"
 import { useAccess } from "@/hooks/use-access.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatCountdown } from "@/lib/format-utils.ts"
 
 type FailureReason = Extract<TransferSourceState, { phase: "failed" }>["reason"]

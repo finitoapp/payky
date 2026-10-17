@@ -1,6 +1,6 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { TerminalHomeMode } from "@payky/core/modules/app-settings/app-settings-types"
 import type { CountryCode } from "@payky/core/modules/legal-entity/legal-entity-types"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /** The home screen's two modes, as the toggle and the settings name them. */
 export const homeModeLabelKeys = {

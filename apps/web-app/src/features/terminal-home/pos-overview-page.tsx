@@ -1,4 +1,5 @@
 import { useTimestamp } from "@dedalik/use-react"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type OpenBillRow,
   openBillsQuery,
@@ -27,7 +28,6 @@ import { TableTileShell } from "@/features/shared/table-tile.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatElapsed, formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

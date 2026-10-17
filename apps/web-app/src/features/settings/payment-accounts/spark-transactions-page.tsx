@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { activeSparkAccountsQuery } from "@payky/core/modules/account/account-spark-queries"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import { accountTransactionsByAccountQuery } from "@payky/core/modules/account-transaction/account-transaction-queries"
@@ -7,7 +8,6 @@ import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatDateTime, formatSatsAmount } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

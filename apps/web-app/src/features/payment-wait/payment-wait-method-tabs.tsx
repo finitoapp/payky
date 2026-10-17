@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { BoltCardReader } from "@/features/payment-wait/payment-wait-bolt-card.tsx"
@@ -12,7 +13,6 @@ import type {
   IbanPaidTabProps,
   PaymentMethodOption,
 } from "@/features/payment-wait/payment-wait-types.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function PaymentMethodTabContent({
   method,

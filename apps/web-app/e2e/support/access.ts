@@ -1,7 +1,7 @@
+import type { Language, TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { AccessPreset } from "@payky/core/modules/access/access-types"
 import type { Page } from "@playwright/test"
 import { accessPresetLabelKeys } from "../../src/i18n/access-labels.ts"
-import type { Language, TranslationKey } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
 import { gotoPage } from "./navigation.ts"
 

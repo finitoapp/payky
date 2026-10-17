@@ -1,7 +1,7 @@
 import { App as CapacitorApp } from "@capacitor/app"
 import { Capacitor } from "@capacitor/core"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useQuery } from "@tanstack/react-query"
-
 import {
   Bug,
   DatabaseBackup,
@@ -15,7 +15,6 @@ import { type ComponentProps, useMemo } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { type NavLinkTo, VerticalNav } from "@/components/vertical-nav.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const appVersion = __APP_VERSION__
 

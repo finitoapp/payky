@@ -1,6 +1,6 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * Shown by a settings edit form when the route's id doesn't parse or matches

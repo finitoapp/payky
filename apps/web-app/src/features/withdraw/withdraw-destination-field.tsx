@@ -1,4 +1,5 @@
 import { usePermission } from "@dedalik/use-react"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   parseWithdrawDestination,
   type WithdrawDestination,
@@ -25,7 +26,6 @@ import { Input } from "@/components/ui/input.tsx"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useLnurlPayMetadata } from "@/hooks/use-lnurl-pay-metadata.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 import { destinationErrorKeys, type WithdrawMethod } from "./withdraw-flow.ts"
 import { LightningAddress } from "./withdraw-lightning-address.tsx"

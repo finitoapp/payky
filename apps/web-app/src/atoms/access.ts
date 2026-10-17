@@ -1,7 +1,7 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import type { Permission } from "@payky/core/modules/access/access-types"
 import { atom } from "jotai"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * The PIN session (access/0005): memory only, never persisted. Tied to the

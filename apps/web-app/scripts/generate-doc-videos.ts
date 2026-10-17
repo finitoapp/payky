@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process"
 import { mkdir, rename, rm, writeFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type Browser,
   chromium,
@@ -9,7 +10,6 @@ import {
   type Page,
   type Video,
 } from "@playwright/test"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { addCatalogItem, addTable } from "../e2e/support/bill.ts"
 import { translate, translateValue } from "../e2e/support/i18n.ts"
 import { seedOnboarding } from "../e2e/support/onboarding.ts"

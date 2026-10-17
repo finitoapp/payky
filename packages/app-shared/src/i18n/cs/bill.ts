@@ -1,4 +1,4 @@
-import type { enBill } from "@/i18n/en/bill.ts"
+import type { enBill } from "../en/bill.ts"
 
 export const csBill = {
   "bill.brick.add.aria": "Přidat {name}",

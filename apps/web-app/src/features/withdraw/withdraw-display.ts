@@ -1,9 +1,9 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type {
   WithdrawalTarget,
   WithdrawalView,
 } from "@payky/core/modules/withdraw/withdraw-queries"
 import { shortenMiddle } from "@payky/core/utils/shorten-middle"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 import type { WithdrawMethod } from "./withdraw-flow.ts"
 

@@ -1,3 +1,4 @@
+import type { Language } from "@payky/app-shared/i18n/resources"
 import {
   createFakeEetResponder,
   type FakeEetResponder,
@@ -7,7 +8,6 @@ import {
   createTestPkcs12,
 } from "@payky/core/testing/eet-test-certificates"
 import { expect, type Page, type Route } from "@playwright/test"
-import type { Language } from "../../src/i18n/resources.ts"
 import { fakeEetProductionUrl } from "./eet-endpoints.ts"
 import { translate } from "./i18n.ts"
 import { fillInlineField, toggleInlineSwitch } from "./inline-edit.ts"

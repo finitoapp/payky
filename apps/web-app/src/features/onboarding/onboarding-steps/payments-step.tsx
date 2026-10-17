@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { Landmark } from "lucide-react"
 import {
   Field,
@@ -8,7 +9,6 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { BankAccountDescription } from "@/features/shared/bank-account-input.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function PaymentsStep({
   iban,

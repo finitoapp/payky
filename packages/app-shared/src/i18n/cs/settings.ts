@@ -1,4 +1,4 @@
-import type { enSettings } from "@/i18n/en/settings.ts"
+import type { enSettings } from "../en/settings.ts"
 
 export const csSettings = {
   "settings.about.app.title": "Payky",

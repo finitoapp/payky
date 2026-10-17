@@ -1,6 +1,6 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { createTestInvoice } from "@payky/core/modules/shared/lightning-invoice-test-fixtures"
 import type { Page } from "@playwright/test"
-import type { TranslationKey } from "../src/i18n/resources.ts"
 import {
   openSettingsEntry,
   ownerPin,

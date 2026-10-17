@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type {
   EetDeliveryOutcome,
   EetSubmission,
@@ -26,7 +27,6 @@ import {
 } from "@/components/ui/collapsible.tsx"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 type EetTestKind = "verification" | "sale"

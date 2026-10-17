@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { buildCashuPaymentUri } from "@payky/core/cashu/cashu-payment-request"
 import { enabledPaymentMethodAccountsQuery } from "@payky/core/modules/account/account-queries"
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
@@ -85,7 +86,6 @@ import { useRedirectIfClosedOnOpen } from "@/hooks/use-redirect-if-closed-on-ope
 import { useCashuRunToast, useRunToast } from "@/hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 import { isNfcPlatform } from "@/platform/nfc.ts"

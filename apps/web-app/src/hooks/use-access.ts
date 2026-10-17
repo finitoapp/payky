@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { accessControlQuery } from "@payky/core/modules/access/access-queries"
 import type { Permission } from "@payky/core/modules/access/access-types"
 import {
@@ -10,7 +11,6 @@ import { useCallback, useMemo, useRef } from "react"
 import { accessSessionAtom, pinPromptQueueAtom } from "@/atoms/access.ts"
 import { accountAtom } from "@/atoms/account.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * What this device may do on the active account right now (access/0001):

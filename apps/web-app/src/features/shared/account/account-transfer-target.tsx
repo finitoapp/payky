@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { createDateDep } from "@payky/core/deps"
 import { createOrSelectAccount } from "@payky/core/evolu/device-account"
 import {
@@ -32,7 +33,6 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const scanErrorKeys = {
   NotPaykyUri: "accountTransfer.target.error.NotPaykyUri",

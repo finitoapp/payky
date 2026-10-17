@@ -1,4 +1,5 @@
 import type { UpdateValues } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   NonEmptyString255Schema,
   PositiveInteger,
@@ -47,7 +48,6 @@ import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const seatCountCodec = z.codec(z.string(), PositiveIntegerSchema, {
   decode: (value) => Number(value),

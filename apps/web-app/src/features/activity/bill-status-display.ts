@@ -1,5 +1,5 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { BillStatus } from "@payky/core/modules/bill/bill-types"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 /**
  * How a `BillStatus` renders as a badge, shared by the bill detail page and

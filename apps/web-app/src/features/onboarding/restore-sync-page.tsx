@@ -1,4 +1,5 @@
 import { useOnline, useTimestamp } from "@dedalik/use-react"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   removeDeviceAccount,
   selectAccount,
@@ -45,7 +46,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 const outcomePresentation = {
   waiting: {

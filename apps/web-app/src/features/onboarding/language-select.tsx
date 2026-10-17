@@ -1,3 +1,4 @@
+import type { Language } from "@payky/app-shared/i18n/resources"
 import { languageOptions } from "@payky/web-shared/language-options"
 import { Languages } from "lucide-react"
 import {
@@ -9,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx"
 import { useSetLanguage, useTranslation } from "@/hooks/use-translation.ts"
-import type { Language } from "@/i18n/resources.ts"
 
 /**
  * Looks like the landing page's picker but cannot share code with it: the

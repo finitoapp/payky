@@ -1,6 +1,5 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { Page } from "@playwright/test"
-
-import type { TranslationKey } from "../src/i18n/resources.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { translate, translateValue } from "./support/i18n.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"

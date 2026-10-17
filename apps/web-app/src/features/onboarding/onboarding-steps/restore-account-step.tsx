@@ -1,5 +1,5 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { RestoreAccountForm } from "@/features/shared/account/restore-account-form.tsx"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function RestoreAccountStep({
   error,

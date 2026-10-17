@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { shortenNpub } from "@payky/core/integrations/nostr/nostr-client"
 import {
   type DmInbox,
@@ -54,7 +55,6 @@ import {
 } from "@/hooks/use-nostr-profile.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { formatRelativeDate, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 

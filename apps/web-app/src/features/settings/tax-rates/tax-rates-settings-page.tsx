@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
 import type { TaxRateRow } from "@payky/core/modules/tax-rate/tax-rate"
 import {
@@ -38,7 +39,6 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 
 export function TaxRatesSettingsPage() {
   const { t } = useTranslation()

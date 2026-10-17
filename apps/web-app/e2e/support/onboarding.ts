@@ -1,10 +1,10 @@
+import type { Language } from "@payky/app-shared/i18n/resources"
 import {
   createMasterKey,
   masterKeyToMnemonic,
 } from "@payky/core/modules/shared/key-derivation"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import type { Page } from "@playwright/test"
-import type { Language } from "../../src/i18n/resources.ts"
 import { translate } from "./i18n.ts"
 
 /**

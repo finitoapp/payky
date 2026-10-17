@@ -1,3 +1,4 @@
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   emptyNostrProfile,
   mergeProfileMetadata,
@@ -40,7 +41,6 @@ import {
   useNostrIdentity,
 } from "@/hooks/use-nostr-profile.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { copyToClipboard } from "@/lib/clipboard.ts"
 
 /**

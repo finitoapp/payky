@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
 import type {
   EetAttemptResult,
@@ -18,7 +19,6 @@ import type { TimestampMs } from "@payky/core/modules/shared/schema"
 import { Badge } from "@/components/ui/badge.tsx"
 import { useNow } from "@/hooks/use-now.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import type { TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
 interface EetSaleStatusFields {

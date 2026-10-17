@@ -9,6 +9,7 @@ import { evoluAtom } from "../../atoms/evolu.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { AccountsCard } from "./accounts-card.tsx"
 import { CashSaleCard } from "./cash-sale-card.tsx"
+import { CashuCard } from "./cashu-card.tsx"
 import { LiveQueryDemo } from "./live-query-demo.tsx"
 import { NetworkCard } from "./network-card.tsx"
 import { SparkCard } from "./spark-card.tsx"
@@ -78,6 +79,7 @@ export function BootstrapDiagnostics() {
           <SyncCard />
           <NetworkCard />
           <SparkCard />
+          <CashuCard />
         </Ready>
       </Suspense>
     </FailureBoundary>

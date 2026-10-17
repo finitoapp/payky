@@ -1,3 +1,4 @@
+import { sqliteTrue } from "@evolu/common"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { Redirect } from "expo-router"
@@ -23,7 +24,10 @@ export function TerminalHomePage() {
     <SafeAreaView
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
-      <AmountKeypad currency={getFiatCurrency(settings)} />
+      <AmountKeypad
+        currency={getFiatCurrency(settings)}
+        tipsEnabled={settings.tipsEnabled === sqliteTrue}
+      />
     </SafeAreaView>
   )
 }

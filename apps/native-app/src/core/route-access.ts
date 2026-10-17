@@ -10,6 +10,7 @@ export type NativeRoutePath =
   | "/pair"
   | "/onboarding"
   | "/restore-account"
+  | "/payment/tip"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -27,6 +28,8 @@ export const routeAccess = {
   "/onboarding": "free",
   // Like web's /restore-account, a sibling of /onboarding outside `_terminal`.
   "/restore-account": "free",
+  // Like web's `_terminal/payment/tip`.
+  "/payment/tip": "sell",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

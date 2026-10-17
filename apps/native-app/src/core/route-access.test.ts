@@ -33,5 +33,6 @@ describe("native route access", () => {
     expect(requiredPermission("/")).toBe("sell")
     expect(requiredPermission("/onboarding")).toBeNull()
     expect(requiredPermission("/restore-account")).toBeNull()
+    expect(requiredPermission("/payment/tip")).toBe("sell")
   })
 })

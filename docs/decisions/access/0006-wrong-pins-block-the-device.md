@@ -59,7 +59,7 @@ A time-based unblock: anyone could try PINs slowly and indefinitely.
 - `packages/core/src/modules/access/access-actions.test.ts > unblocking > a token is applied once, so a stale one does not unblock again`
 - `packages/core/src/modules/access/access-actions.test.ts > unblocking > the recovery phrase works on a blocked device and a wrong one is not an attempt`
 - `packages/core/src/modules/access/access-utils.test.ts > recoveryPhraseMatches > matches the account's phrase however it is spaced or cased`
-- `apps/web-app/src/core/sentry.test.ts > sentry scrubbing > drops a click inside the PIN pad, so its selectors cannot spell the PIN`
+- `packages/app-shared/src/error-scrubbing.test.ts > sentry scrubbing > drops a click inside the PIN pad, so its selectors cannot spell the PIN`
 - `apps/web-app/e2e/access.spec.ts > five wrong PINs block the device, and the recovery phrase unblocks it`
 - `apps/web-app/e2e/access.spec.ts > another device unblocks a blocked one`
 - `apps/web-app/e2e/access.spec.ts > wrong PINs followed by the correct one show the failed attempts`

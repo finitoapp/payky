@@ -4,11 +4,14 @@ import InterSemiBold from "@tamagui/font-inter/otf/Inter-SemiBold.otf"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
+import { createStore, Provider } from "jotai"
+import { useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider } from "tamagui"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
 export default function RootLayout() {
+  const [store] = useState(createStore)
   const theme = useColorScheme() === "dark" ? "dark" : "light"
   const [fontsLoaded, fontError] = useFonts({ Inter, InterSemiBold, InterBold })
   if (fontError) throw fontError
@@ -16,9 +19,11 @@ export default function RootLayout() {
     return <ActivityIndicator accessibilityLabel="Loading fonts" />
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false }} />
-    </TamaguiProvider>
+    <Provider store={store}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <Stack screenOptions={{ headerShown: false }} />
+      </TamaguiProvider>
+    </Provider>
   )
 }

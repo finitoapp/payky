@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Button, Text, useTheme, View } from "tamagui"
 import { checkSharedLogic } from "../../core/check-shared-logic.ts"
 import { checkLockAuthority } from "../../core/native-runtime.ts"
+import { BootstrapDiagnostics } from "./bootstrap-diagnostics.tsx"
 
 export function NativePreviewPage() {
   const theme = useTheme()
@@ -48,6 +49,7 @@ export function NativePreviewPage() {
               Checks passed: {checks}
             </Text>
             <Text>Lock authority: {lockStatus}</Text>
+            <BootstrapDiagnostics />
           </View>
           <Button
             backgroundColor="primary"

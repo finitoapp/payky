@@ -1,3 +1,4 @@
+import type { BillCoverageMismatchReason } from "@payky/app-shared/activity-detail"
 import {
   type Currency,
   NonNegativeInteger,
@@ -12,15 +13,6 @@ import {
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
-
-/**
- * Which of the two known causes explains a bill's coverage mismatch (see the
- * "Bill payment coverage" section of docs/bill-payment-states.md) — a
- * bill-line change since the payment was made, or another payment also
- * claimed against the same bill. Either can be absent, in which case only
- * the plain coverage fact is shown.
- */
-export type BillCoverageMismatchReason = "billLinesChanged" | "multiplePayments"
 
 /**
  * "This bill's claimed total doesn't match its line total" — the expected

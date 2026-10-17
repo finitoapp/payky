@@ -1,5 +1,9 @@
 import type { InferRow } from "@evolu/common"
 import {
+  derivePaymentBillCoverageNotice,
+  derivePaymentDetailState,
+} from "@payky/app-shared/activity-detail"
+import {
   billStatusLabelKey,
   paymentMethodLabelKey,
   paymentStatusLabelKey,
@@ -31,22 +35,12 @@ import {
   acknowledgePaymentExcessSettlement,
   confirmPaymentPaidDespiteCancellation,
 } from "@payky/core/modules/payment/payment-actions"
-import { deriveReceivedTipAmount } from "@payky/core/modules/payment/payment-cash-utils"
 import {
   paymentDetailQuery,
   paymentReconciliationsQuery,
 } from "@payky/core/modules/payment/payment-queries"
-import {
-  derivePaymentHasCancellationCollision,
-  derivePaymentHasExcessSettlement,
-  derivePaymentStatus,
-} from "@payky/core/modules/payment/payment-status-utils"
 import { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { paymentNumberByPaymentIdQuery } from "@payky/core/modules/payment-number/payment-number-queries"
-import {
-  calculatePaymentExcess,
-  sumDistinctClaimedAmounts,
-} from "@payky/core/modules/shared/claimed-amount"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
@@ -93,10 +87,7 @@ import {
 import { Separator } from "@/components/ui/separator.tsx"
 import { Skeleton } from "@/components/ui/skeleton.tsx"
 import { BillCancellationCollisionPanel } from "@/features/activity/bill-cancellation-collision-panel.tsx"
-import {
-  type BillCoverageMismatchReason,
-  BillCoverageWarning,
-} from "@/features/activity/bill-coverage-warning.tsx"
+import { BillCoverageWarning } from "@/features/activity/bill-coverage-warning.tsx"
 import { billStatusBadgeClassName } from "@/features/activity/bill-status-display.ts"
 import { PaymentDetailRefunds } from "@/features/activity/payment-refunds.tsx"
 import { paymentStatusBadgeClassName } from "@/features/activity/payment-status-display.tsx"
@@ -174,53 +165,15 @@ function PaymentDetailContent({
     return <NotFoundCard messageKey="paymentDetail.notFound" />
   }
 
-  const paymentStatus = derivePaymentStatus({
-    canceledAt: payment.canceledAt,
-    confirmedPaidAt: payment.confirmedPaidAt,
-    expiresAt: payment.expiresAt,
-    hasActiveClaim: reconciliations.length > 0,
-    now,
-  })
+  const {
+    status: paymentStatus,
+    hasCancellationCollision,
+    hasExcessSettlementCollision,
+    excess,
+    receivedTipAmount,
+    paymentMethodKinds,
+  } = derivePaymentDetailState({ payment, reconciliations, now })
   const isPending = paymentStatus === "pending"
-  // The collision docs/bill-payment-states.md calls out: a multi-device
-  // merge can leave a payment canceled with an active claim (real money) at
-  // the same time — `derivePaymentStatus` still shows it as Canceled until
-  // staff explicitly resolves it via `confirmPaymentPaidDespiteCancellation`.
-  const hasCancellationCollision = derivePaymentHasCancellationCollision({
-    canceledAt: payment.canceledAt,
-    confirmedPaidAt: payment.confirmedPaidAt,
-    hasActiveClaim: reconciliations.length > 0,
-  })
-  // The duplicate-settlement collision from docs/bill-payment-states.md: two
-  // offline devices can each independently claim this payment through a
-  // different method — both real money, so the sum of its distinct claimed
-  // transactions can exceed its own `amount`. See `payment.ts`'s
-  // `excessAcknowledgedAt` doc comment.
-  const claimedTransactions = reconciliations.flatMap((reconciliation) =>
-    reconciliation.accountTransactionId === null
-      ? []
-      : [
-          {
-            accountTransactionId: reconciliation.accountTransactionId,
-            amount: reconciliation.transactionAmount,
-            currency: reconciliation.transactionCurrency,
-            paymentAmount: payment.amount,
-            paymentCurrency: payment.currency,
-            paymentAmountSats: payment.amountSats,
-          },
-        ]
-  )
-  const claimedTransactionSum = sumDistinctClaimedAmounts(claimedTransactions)
-  const excess = calculatePaymentExcess({
-    claims: claimedTransactions,
-    amount: payment.amount,
-  })
-  const receivedTipAmount = deriveReceivedTipAmount(payment)
-  const hasExcessSettlementCollision = derivePaymentHasExcessSettlement({
-    amount: payment.amount,
-    excessAcknowledgedAt: payment.excessAcknowledgedAt,
-    claimedSum: claimedTransactionSum,
-  })
 
   const handleConfirmPaidDespiteCancellation = async () => {
     if (
@@ -248,12 +201,6 @@ function PaymentDetailContent({
   const handleRefund = () => {
     toast.info(t("paymentDetail.collision.refund.comingSoon"))
   }
-  const paymentMethodKinds = [
-    ...new Set(
-      reconciliations.map((reconciliation) => reconciliation.transactionKind)
-    ),
-  ]
-
   return (
     <div className="flex flex-col gap-4">
       {isPending ? (
@@ -591,40 +538,19 @@ function PaymentDetailBillCard({
   // against `claimedSum` (also tip-excluded, see `calculateClaimedSum`).
   const totalAmountWithTip = NonNegativeInteger(totalAmount + tipAmount)
 
-  // Which of the two known causes actually explains this bill's coverage
-  // mismatch (see docs/bill-payment-states.md's "Bill payment coverage"
-  // section) — a bill-line change since this payment was made, or another
-  // payment also claimed against the same bill. Neither is mutually
-  // exclusive with the other collisions on this page, and either can be
-  // absent (e.g. a payment created before the paymentLine snapshot existed),
-  // in which case only the plain coverage fact is shown.
-  const hasLineDiff =
-    lineDiff !== null &&
-    (lineDiff.added.length > 0 ||
-      lineDiff.removed.length > 0 ||
-      lineDiff.changed.length > 0)
   const otherClaimedPaymentIds = [
     ...new Set(claimedPayments.map((payment) => payment.id)),
   ].filter((id) => id !== paymentId)
-  const coverageMismatchReason: BillCoverageMismatchReason | null = hasLineDiff
-    ? "billLinesChanged"
-    : otherClaimedPaymentIds.length > 0
-      ? "multiplePayments"
-      : null
-  // An open bill with nothing claimed against it yet is also "underpaid" by
-  // `deriveBillCoverage`'s definition, so warning on `coverage !== "paid"`
-  // alone put "Bill underpaid — Expected 500,00 / Paid 0,00" on every
-  // not-yet-settled bill payment, with no `coverageMismatchReason` to explain
-  // it. Only flag underpayment once a partial payment has actually landed,
-  // the same gate `BillHistoryIssues` and `resolvePaymentHistoryIssueFlags`
-  // use for the list rows. Overpaid needs no gate: an unpaid bill is never
-  // overpaid.
-  const coverageWarning: "underpaid" | "overpaid" | null =
-    coverage === "overpaid"
-      ? "overpaid"
-      : coverage === "underpaid" && claimedSum > 0
-        ? "underpaid"
-        : null
+  const {
+    warning: coverageWarning,
+    reason: coverageMismatchReason,
+    hasLineDiff,
+  } = derivePaymentBillCoverageNotice({
+    coverage,
+    claimedSum,
+    lineDiff,
+    otherClaimedPaymentCount: otherClaimedPaymentIds.length,
+  })
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
   const hasTaxRecap = hasTaxableLines(taxRecapRows)
 

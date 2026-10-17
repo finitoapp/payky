@@ -1,0 +1,421 @@
+import {
+  resources,
+  type TranslationKey,
+} from "@payky/app-shared/i18n/resources"
+import {
+  type PinAttemptRow,
+  pinAttemptBaseQuery,
+  pinAttemptsQuery,
+} from "@payky/core/evolu/device-pin-attempts"
+import {
+  clearPinAttemptLog,
+  enterPin,
+  enterRecoveryPhrase,
+} from "@payky/core/modules/access/access-actions"
+import {
+  maxFailedPinAttempts,
+  type Permission,
+} from "@payky/core/modules/access/access-types"
+import { useState } from "react"
+import { Text, XStack, YStack } from "tamagui"
+import { permissionLabelKeys } from "../core/access-labels.ts"
+import type { UnlockedVia } from "../core/access-session.ts"
+import { useAccess } from "../core/use-access.ts"
+import { useDeviceEvoluQuery } from "../hooks/use-evolu-query.ts"
+import { useRunToast } from "../hooks/use-run-toast.ts"
+import { useTranslation } from "../hooks/use-translation.ts"
+import { AppButton } from "./app-button.tsx"
+import { Field } from "./field.tsx"
+
+interface PinScreenProps {
+  /** The permission the screen or action needs; `null` when it always asks. */
+  readonly permission: Permission | null
+  /** The action of a one-shot prompt, named in the heading. */
+  readonly action?: TranslationKey | undefined
+  /** What a wrong attempt is logged against: a route path or an action key. */
+  readonly target: string
+  readonly onUnlocked: (via: UnlockedVia) => void
+  /** Offered by the one-shot prompt; the action is then not performed. */
+  readonly onCancel?: (() => void) | undefined
+}
+
+type View =
+  | { readonly kind: "pin"; readonly attemptsLeft: number | null }
+  | { readonly kind: "phrase"; readonly wrong: boolean }
+  | {
+      readonly kind: "attempts"
+      readonly via: UnlockedVia
+      readonly attempts: ReadonlyArray<PinAttemptRow>
+    }
+
+const keypadRows = [
+  ["1", "2", "3"],
+  ["4", "5", "6"],
+  ["7", "8", "9"],
+] as const
+const minPinLength = 4
+const maxPinLength = 8
+
+/**
+ * The PIN screen of a locked route, of the one-shot prompt and of a device
+ * without `sell` alike (access/0001), mirroring the web `PinScreen`: it says
+ * why it is there, offers the recovery phrase, and after a correct PIN or
+ * phrase shows the failed attempts before they are cleared (access/0006).
+ * Every check goes through `enterPin`; nothing here sees a hash.
+ */
+export function PinScreen({
+  permission,
+  action,
+  target,
+  onUnlocked,
+  onCancel,
+}: PinScreenProps) {
+  const { t } = useTranslation()
+  const runToast = useRunToast()
+  const { accountId, deviceId } = useAccess()
+  const { data: attempts } = useDeviceEvoluQuery(pinAttemptsQuery(accountId))
+  const { data: base } = useDeviceEvoluQuery(pinAttemptBaseQuery(accountId))
+  const blocked =
+    attempts.length - (base[0]?.baseCount ?? 0) >= maxFailedPinAttempts
+  const [view, setView] = useState<View>({ kind: "pin", attemptsLeft: null })
+  const [pending, setPending] = useState(false)
+
+  const finish = async (via: UnlockedVia, shown: number) => {
+    if (shown > 0 || via === "phrase" || blocked) {
+      setPending(true)
+      await runToast(async (run) => {
+        await run.ok(clearPinAttemptLog({ accountId, deviceId }))
+      })
+      setPending(false)
+    }
+    onUnlocked(via)
+  }
+
+  const submitPin = async (pin: string) => {
+    setPending(true)
+    await runToast(async (run) => {
+      const result = await run(enterPin({ pin, accountId, deviceId, target }))
+      if (result.ok) {
+        if (result.value.length === 0) await finish("pin", 0)
+        else setView({ kind: "attempts", via: "pin", attempts: result.value })
+      } else if (result.error.type === "WrongPin") {
+        setView({ kind: "pin", attemptsLeft: result.error.attemptsLeft })
+      }
+      // A block shows itself: the log it reads has just reached the limit.
+    })
+    setPending(false)
+  }
+
+  const submitPhrase = async (phrase: string) => {
+    setPending(true)
+    await runToast(async (run) => {
+      const result = await run(enterRecoveryPhrase({ phrase, accountId }))
+      if (result.ok) {
+        setView({ kind: "attempts", via: "phrase", attempts: result.value })
+      } else {
+        setView({ kind: "phrase", wrong: true })
+      }
+    })
+    setPending(false)
+  }
+
+  const why =
+    action === undefined
+      ? permission === null
+        ? t("access.pin.title")
+        : t("access.pin.why.route", {
+            permission: t(permissionLabelKeys[permission]),
+          })
+      : t("access.pin.why.action", { action: t(action) })
+
+  return (
+    <YStack gap="4" items="center" width="100%">
+      <Text
+        fontSize="xl"
+        fontWeight="700"
+        text="center"
+        accessibilityRole="header"
+        color={blocked && view.kind !== "attempts" ? "red-600" : "color"}
+      >
+        {why}
+      </Text>
+      {permission !== null && view.kind === "pin" && !blocked ? (
+        <Text text="center" color="muted-foreground">
+          {t("access.pin.help", {
+            permission: t(permissionLabelKeys[permission]),
+          })}
+        </Text>
+      ) : null}
+
+      {view.kind === "attempts" ? (
+        <FailedAttempts
+          attempts={view.attempts}
+          pending={pending}
+          onContinue={() => void finish(view.via, view.attempts.length)}
+        />
+      ) : view.kind === "phrase" ? (
+        <PhraseForm
+          wrong={view.wrong}
+          pending={pending}
+          onSubmit={(phrase) => void submitPhrase(phrase)}
+          onBack={
+            blocked
+              ? undefined
+              : () => setView({ kind: "pin", attemptsLeft: null })
+          }
+        />
+      ) : blocked ? (
+        <YStack gap="3" items="center">
+          <Text
+            fontWeight="600"
+            color="red-600"
+            text="center"
+            accessibilityRole="alert"
+          >
+            {t("access.pin.blocked.title")}
+          </Text>
+          <Text text="center" color="muted-foreground">
+            {t("access.pin.blocked.description")}
+          </Text>
+          <AppButton
+            variant="secondary"
+            label={t("access.pin.forgot")}
+            onPress={() => setView({ kind: "phrase", wrong: false })}
+          />
+        </YStack>
+      ) : (
+        <PinPad
+          pending={pending}
+          attemptsLeft={view.attemptsLeft}
+          onSubmit={(pin) => void submitPin(pin)}
+          onForgot={() => setView({ kind: "phrase", wrong: false })}
+        />
+      )}
+
+      {onCancel !== undefined && view.kind !== "attempts" ? (
+        <AppButton
+          variant="secondary"
+          label={t("access.pin.cancel")}
+          onPress={onCancel}
+        />
+      ) : null}
+    </YStack>
+  )
+}
+
+/**
+ * An in-app keypad, not a system keyboard: the digits never reach the
+ * keyboard's suggestions, clipboard or learning. The PIN lives in this state
+ * only until submitted, then is cleared; it is never stored or logged.
+ */
+function PinPad({
+  pending,
+  attemptsLeft,
+  onSubmit,
+  onForgot,
+}: {
+  readonly pending: boolean
+  readonly attemptsLeft: number | null
+  readonly onSubmit: (pin: string) => void
+  readonly onForgot: () => void
+}) {
+  const { t } = useTranslation()
+  const [pin, setPin] = useState("")
+
+  const press = (digit: string) => {
+    setPin((current) =>
+      current.length < maxPinLength ? current + digit : current
+    )
+  }
+  const submit = () => {
+    if (pin.length < minPinLength || pending) return
+    onSubmit(pin)
+    setPin("")
+  }
+
+  return (
+    <YStack gap="3" width="100%" maxW={320}>
+      <XStack
+        gap="2"
+        justify="center"
+        minH={24}
+        accessibilityRole="text"
+        accessibilityLabel={t("access.pin.entered", { count: pin.length })}
+      >
+        {Array.from(
+          { length: Math.max(minPinLength, pin.length) },
+          (_, index) => (
+            <YStack
+              // biome-ignore lint/suspicious/noArrayIndexKey: fixed slots
+              key={index}
+              width={12}
+              height={12}
+              rounded={999}
+              borderWidth={1}
+              borderColor="border-color"
+              bg={index < pin.length ? "color" : "transparent"}
+            />
+          )
+        )}
+      </XStack>
+      <Text
+        minH={20}
+        color="red-600"
+        text="center"
+        accessibilityRole="alert"
+        accessibilityLiveRegion="assertive"
+      >
+        {attemptsLeft === null
+          ? null
+          : t("access.pin.wrong", { count: attemptsLeft })}
+      </Text>
+      {keypadRows.map((row) => (
+        <XStack key={row.join()} gap="2">
+          {row.map((digit) => (
+            <YStack key={digit} flex={1}>
+              <AppButton
+                variant="secondary"
+                label={digit}
+                disabled={pending}
+                onPress={() => press(digit)}
+              />
+            </YStack>
+          ))}
+        </XStack>
+      ))}
+      <XStack gap="2">
+        <YStack flex={1}>
+          <AppButton
+            variant="secondary"
+            label={t("access.pin.erase")}
+            disabled={pending}
+            onPress={() => setPin((current) => current.slice(0, -1))}
+          />
+        </YStack>
+        <YStack flex={1}>
+          <AppButton
+            variant="secondary"
+            label="0"
+            disabled={pending}
+            onPress={() => press("0")}
+          />
+        </YStack>
+        <YStack flex={1}>
+          <AppButton
+            label={t("access.pin.submit")}
+            pending={pending}
+            disabled={pin.length < minPinLength}
+            onPress={submit}
+          />
+        </YStack>
+      </XStack>
+      <AppButton
+        variant="secondary"
+        label={t("access.pin.forgot")}
+        onPress={onForgot}
+      />
+    </YStack>
+  )
+}
+
+function PhraseForm({
+  wrong,
+  pending,
+  onSubmit,
+  onBack,
+}: {
+  readonly wrong: boolean
+  readonly pending: boolean
+  readonly onSubmit: (phrase: string) => void
+  readonly onBack: (() => void) | undefined
+}) {
+  const { t } = useTranslation()
+  const [phrase, setPhrase] = useState("")
+
+  return (
+    <YStack gap="3" width="100%">
+      <Text color="red-600">{t("access.phrase.warning")}</Text>
+      {/*
+       * Everything that would let the device keyboard learn the phrase is
+       * off: it opens the whole account.
+       */}
+      <Field
+        label={t("access.phrase.label")}
+        value={phrase}
+        onChangeText={setPhrase}
+        secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="off"
+        spellCheck={false}
+        disabled={pending}
+        error={wrong ? t("access.phrase.wrong") : undefined}
+      />
+      <Text fontSize="sm" color="muted-foreground">
+        {t("access.phrase.description")}
+      </Text>
+      <AppButton
+        label={t("access.phrase.submit")}
+        pending={pending}
+        disabled={phrase.trim() === ""}
+        onPress={() => onSubmit(phrase)}
+      />
+      {onBack === undefined ? null : (
+        <AppButton
+          variant="secondary"
+          label={t("access.phrase.back")}
+          onPress={onBack}
+        />
+      )}
+    </YStack>
+  )
+}
+
+function FailedAttempts({
+  attempts,
+  pending,
+  onContinue,
+}: {
+  readonly attempts: ReadonlyArray<PinAttemptRow>
+  readonly pending: boolean
+  readonly onContinue: () => void
+}) {
+  const { t, language } = useTranslation()
+
+  return (
+    <YStack gap="3" width="100%">
+      {attempts.length > 0 ? (
+        <>
+          <Text fontWeight="600">
+            {t("access.attempts.title", { count: attempts.length })}
+          </Text>
+          {attempts.map((attempt) => (
+            <XStack
+              key={attempt.id}
+              justify="space-between"
+              gap="3"
+              borderWidth={1}
+              borderColor="border-color"
+              rounded="3"
+              p="2"
+            >
+              <Text flexShrink={1}>
+                {Object.hasOwn(resources[language], attempt.target)
+                  ? resources[language][attempt.target as TranslationKey]
+                  : attempt.target}
+              </Text>
+              <Text color="muted-foreground">
+                {new Date(attempt.attemptedAt).toLocaleString(language)}
+              </Text>
+            </XStack>
+          ))}
+        </>
+      ) : null}
+      <AppButton
+        label={t("access.attempts.continue")}
+        pending={pending}
+        onPress={onContinue}
+      />
+    </YStack>
+  )
+}

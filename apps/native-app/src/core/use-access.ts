@@ -29,24 +29,23 @@ export function useAccess() {
       : device.defaultPermissions
   const session = sessionState?.accountId === account.id
 
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const defaults = decodePermissions(storedDefaults)
+    return {
       enabled,
+      defaults,
       session,
-      effective: effectivePermissions({
-        enabled,
-        defaults: decodePermissions(storedDefaults),
-        session,
-      }),
-    }),
-    [enabled, session, storedDefaults]
-  )
+      effective: effectivePermissions({ enabled, defaults, session }),
+      accountId: account.id,
+      deviceId: account.device.id,
+    }
+  }, [account.device.id, account.id, enabled, session, storedDefaults])
 }
 
 /**
  * Native `require` for actions without a route (access/0002), same semantics
- * as the web hook. Until the PIN host lands (U05) nothing settles the queued
- * prompt, so a denied action stays pending: it never runs.
+ * as the web hook. A denied action waits on the queued prompt, which
+ * `PinPromptHost` settles.
  */
 export function useRequirePermission() {
   const { effective } = useAccess()

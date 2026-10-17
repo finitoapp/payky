@@ -13,5 +13,9 @@ export default {
     supportsTablet: true,
   },
   android: { package: "me.payky.nativepreview" },
-  plugins: ["expo-router", "expo-font"],
+  plugins: [
+    "expo-router",
+    "expo-font",
+    ["expo-sqlite", { useSQLCipher: true }],
+  ],
 } satisfies ExpoConfig

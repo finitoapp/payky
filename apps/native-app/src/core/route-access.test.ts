@@ -33,6 +33,12 @@ describe("native route access", () => {
     expect(requiredPermission("/")).toBe("sell")
     expect(requiredPermission("/onboarding")).toBeNull()
     expect(requiredPermission("/restore-account")).toBeNull()
+  })
+
+  it("matches a dynamic segment and prefers the static sibling", () => {
     expect(requiredPermission("/payment/tip")).toBe("sell")
+    expect(requiredPermission("/payment/abc123")).toBe("sell")
+    expect(requiredPermission("/payment/abc123/extra")).toBe("admin")
+    expect(requiredPermission("/payment/")).toBe("admin")
   })
 })

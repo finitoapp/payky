@@ -11,6 +11,7 @@ export type NativeRoutePath =
   | "/onboarding"
   | "/restore-account"
   | "/payment/tip"
+  | "/payment/:paymentId"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -28,15 +29,38 @@ export const routeAccess = {
   "/onboarding": "free",
   // Like web's /restore-account, a sibling of /onboarding outside `_terminal`.
   "/restore-account": "free",
-  // Like web's `_terminal/payment/tip`.
+  // Like web's `_terminal/payment/tip` and `payment_/$paymentId`.
   "/payment/tip": "sell",
+  "/payment/:paymentId": "sell",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>
 
-/** Fail closed: a path missing from the table needs the owner permission. */
+const table: Readonly<Record<string, RouteAccess>> = routeAccess
+
+/** `/payment/:paymentId` matches `/payment/abc`: a `:param` is any one segment. */
+const matchesPattern = (pattern: string, pathname: string): boolean => {
+  const want = pattern.split("/")
+  const got = pathname.split("/")
+  return (
+    want.length === got.length &&
+    want.every((part, i) =>
+      part.startsWith(":") ? got[i] !== "" : part === got[i]
+    )
+  )
+}
+
+/**
+ * Fail closed: a path missing from the table needs the owner permission. An
+ * exact entry wins over a `:param` pattern, as Expo Router ranks a static
+ * route above a dynamic one (`/payment/tip` over `/payment/:paymentId`).
+ */
 export const resolveRouteAccess = (pathname: string): RouteAccess =>
-  (routeAccess as Readonly<Record<string, RouteAccess>>)[pathname] ?? "admin"
+  table[pathname] ??
+  Object.entries(table).find(([pattern]) =>
+    matchesPattern(pattern, pathname)
+  )?.[1] ??
+  "admin"
 
 export const requiredPermission = (pathname: string): Permission | null => {
   const access = resolveRouteAccess(pathname)

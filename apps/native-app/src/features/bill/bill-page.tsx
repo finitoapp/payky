@@ -7,17 +7,18 @@ import type { BillLineSummary } from "@payky/core/modules/bill-line/bill-line-su
 import {
   deriveBillSummaryStats,
   getBillLineSummaryUnitAmount,
+  getLatestCatalogItemSummary,
 } from "@payky/core/modules/bill-line/bill-line-utils"
 import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
 import { catalogItemsQuery } from "@payky/core/modules/catalog-item/catalog-item-queries"
 import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
-import type { FiatCurrency } from "@payky/core/modules/shared/schema"
+import { type FiatCurrency, Integer } from "@payky/core/modules/shared/schema"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
 import { Suspense, useMemo, useState } from "react"
 import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, YStack } from "tamagui"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -159,6 +160,10 @@ function BillCart({
   )
   const cart = useCartBill({ billId, currency })
   const catalogItems = useEvoluQuery(catalogItemsQuery).data
+  const catalogItemsById = useMemo(
+    () => new Map(catalogItems.map((item) => [item.id, item])),
+    [catalogItems]
+  )
   const currencyItems = useMemo(
     () => catalogItems.filter((item) => item.currency === currency),
     [catalogItems, currency]
@@ -192,6 +197,7 @@ function BillCart({
             summaries={summaries}
             locale={locale}
             onAdd={() => void cart.addOne(item)}
+            onRemove={(summary) => void cart.removeOne(summary)}
           />
         )}
       />
@@ -202,7 +208,19 @@ function BillCart({
         keyExtractor={(summary) => summary.id}
         ListEmptyComponent={<EmptyView message={t("bill.summary.empty")} />}
         renderItem={({ item: summary }) => (
-          <SummaryRow summary={summary} locale={locale} />
+          <SummaryRow
+            summary={summary}
+            locale={locale}
+            disabled={cart.pending}
+            catalogItem={
+              summary.catalogItemId === null
+                ? undefined
+                : catalogItemsById.get(summary.catalogItemId)
+            }
+            onAddOne={(catalogItem) => void cart.addOne(catalogItem)}
+            onRemoveOne={() => void cart.removeOne(summary)}
+            onRemove={() => void cart.removeLine(summary)}
+          />
         )}
       />
 
@@ -222,31 +240,105 @@ function BillCart({
 function SummaryRow({
   summary,
   locale,
+  disabled,
+  catalogItem,
+  onAddOne,
+  onRemoveOne,
+  onRemove,
 }: {
   readonly summary: BillLineSummary
   readonly locale: string
+  readonly disabled: boolean
+  /** The line's catalog item, when it still exists to add another of. */
+  readonly catalogItem: CatalogItemRow | undefined
+  readonly onAddOne: (catalogItem: CatalogItemRow) => void
+  readonly onRemoveOne: () => void
+  readonly onRemove: () => void
+}) {
+  const { t } = useTranslation()
+  const money = (value: number) =>
+    formatMoney({ value: Integer(value), currency: summary.currency }, locale)
+
+  return (
+    <XStack
+      py="2"
+      gap="2"
+      items="center"
+      borderBottomWidth={1}
+      borderColor="border-color"
+    >
+      <YStack flex={1}>
+        <Text fontWeight="600" numberOfLines={1}>
+          {summary.name}
+        </Text>
+        {/* A single piece costs what the line total already says. */}
+        {summary.quantity === 1 ? null : (
+          <Text color="muted-foreground">
+            {summary.quantity} × {money(getBillLineSummaryUnitAmount(summary))}
+          </Text>
+        )}
+      </YStack>
+      {/* No `disabled` on "−"/"+": the cart queues taps, and a button disabled mid-tap drops one. */}
+      <RoundButton
+        label={t("bill.summary.decrement.aria", { name: summary.name })}
+        symbol="−"
+        onPress={onRemoveOne}
+      />
+      <Text minW={28} text="center" fontWeight="600">
+        {summary.quantity}
+      </Text>
+      <RoundButton
+        label={t("bill.summary.increment.aria", { name: summary.name })}
+        symbol="+"
+        disabled={catalogItem === undefined}
+        onPress={() => {
+          if (catalogItem !== undefined) onAddOne(catalogItem)
+        }}
+      />
+      <Text minW={72} text="right" fontWeight="600">
+        {money(summary.totalAmount)}
+      </Text>
+      <RoundButton
+        label={t("bill.summary.removeLine.aria", { name: summary.name })}
+        symbol="×"
+        disabled={disabled}
+        onPress={onRemove}
+      />
+    </XStack>
+  )
+}
+
+function RoundButton({
+  label,
+  symbol,
+  disabled = false,
+  onPress,
+}: {
+  readonly label: string
+  readonly symbol: string
+  readonly disabled?: boolean
+  readonly onPress: () => void
 }) {
   return (
-    <YStack py="2" borderBottomWidth={1} borderColor="border-color">
-      <Text fontWeight="600">{summary.name}</Text>
-      <Text color="muted-foreground">
-        {summary.quantity === 1
-          ? formatMoney(
-              { value: summary.totalAmount, currency: summary.currency },
-              locale
-            )
-          : `${summary.quantity} × ${formatMoney(
-              {
-                value: getBillLineSummaryUnitAmount(summary),
-                currency: summary.currency,
-              },
-              locale
-            )} = ${formatMoney(
-              { value: summary.totalAmount, currency: summary.currency },
-              locale
-            )}`}
-      </Text>
-    </YStack>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={6}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <Text fontSize={20}>{symbol}</Text>
+    </Pressable>
   )
 }
 
@@ -275,11 +367,13 @@ function ItemBrick({
   summaries,
   locale,
   onAdd,
+  onRemove,
 }: {
   readonly catalogItem: CatalogItemRow
   readonly summaries: ReadonlyArray<BillLineSummary>
   readonly locale: string
   readonly onAdd: () => void
+  readonly onRemove: (summary: BillLineSummary) => void
 }) {
   const { t } = useTranslation()
   const name = getStaffDisplayName(catalogItem)
@@ -288,32 +382,43 @@ function ItemBrick({
       summary.catalogItemId === catalogItem.id ? sum + summary.quantity : sum,
     0
   )
+  const latestSummary = getLatestCatalogItemSummary(summaries, catalogItem.id)
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t("bill.brick.add.aria", { name })}
-      onPress={onAdd}
-      style={{
-        flex: 1,
-        minHeight: 80,
-        padding: 12,
-        borderWidth: 1,
-        borderRadius: 12,
-        justifyContent: "space-between",
-        opacity: quantity > 0 ? 1 : 0.85,
-      }}
+    <YStack
+      flex={1}
+      minH={96}
+      borderWidth={1}
+      borderColor="border-color"
+      rounded="lg"
+      overflow="hidden"
     >
-      <Text fontWeight="600">
-        {quantity > 0 ? `${quantity} × ` : ""}
-        {name}
-      </Text>
-      <Text color="muted-foreground">
-        {formatMoney(
-          { value: catalogItem.unitAmount, currency: catalogItem.currency },
-          locale
-        )}
-      </Text>
-    </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("bill.brick.add.aria", { name })}
+        onPress={onAdd}
+        style={{ flex: 1, padding: 12 }}
+      >
+        <Text fontWeight="600">
+          {quantity > 0 ? `${quantity} × ` : ""}
+          {name}
+        </Text>
+        <Text color="muted-foreground">
+          {formatMoney(
+            { value: catalogItem.unitAmount, currency: catalogItem.currency },
+            locale
+          )}
+        </Text>
+      </Pressable>
+      {quantity > 0 && latestSummary !== undefined ? (
+        <XStack justify="flex-end" px="2" pb="2">
+          <RoundButton
+            label={t("bill.brick.remove.aria", { name })}
+            symbol="−"
+            onPress={() => onRemove(latestSummary)}
+          />
+        </XStack>
+      ) : null}
+    </YStack>
   )
 }

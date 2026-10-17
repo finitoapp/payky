@@ -1,17 +1,25 @@
+import { linesNeedDiscard } from "@payky/app-shared/cart-lines"
 import {
   addCatalogItemToBill,
+  appendRemoveBillLine,
   createBillAtEnd,
 } from "@payky/core/modules/bill/bill-actions"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
+import type { BillLineSummary } from "@payky/core/modules/bill-line/bill-line-summary"
+import { getBillLineSummaryUnitAmount } from "@payky/core/modules/bill-line/bill-line-utils"
 import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
-import type { FiatCurrency } from "@payky/core/modules/shared/schema"
-import { PositiveNumber } from "@payky/core/modules/shared/schema"
+import {
+  type FiatCurrency,
+  type NonNegativeInteger,
+  PositiveNumber,
+} from "@payky/core/modules/shared/schema"
 import { useAtomValue } from "jotai"
 import { useRef, useState } from "react"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
+import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
@@ -38,6 +46,7 @@ export function useCartBill({
   const { device } = useAtomValue(accountAtom)
   const toast = useToast()
   const { t } = useTranslation()
+  const { require } = useRequirePermission()
   const [pending, setPending] = useState(false)
   const queueRef = useRef<Promise<unknown>>(Promise.resolve())
   const pendingCountRef = useRef(0)
@@ -130,5 +139,56 @@ export function useCartBill({
   const addOne = (catalogItem: CatalogItemRow) =>
     addQuantity(catalogItem, PositiveNumber(1))
 
-  return { pending, addOne, addQuantity }
+  /**
+   * Appends a remove line covering part or all of `summary` (the ledger has no
+   * notion of "one" versus "all"). It takes `discard` (access/0002), checked
+   * on the lines about to be written, at action time: the prompt may be
+   * dismissed, and the queue keeps later taps waiting behind it.
+   */
+  const removeFromCart = (
+    summary: BillLineSummary,
+    quantity: PositiveNumber,
+    totalAmount: NonNegativeInteger
+  ) =>
+    runQueued(async () => {
+      if (
+        linesNeedDiscard([{ kind: "remove" }]) &&
+        !(await require("discard", "access.action.removeLines"))
+      )
+        return false
+      await using run = appRun()
+      const result = await run(
+        appendRemoveBillLine({
+          billId,
+          deviceId: device.id,
+          quantity,
+          totalAmount,
+          lineSummary: summary,
+        })
+      )
+      if (!result.ok) {
+        nativeConsole.error("Failed to remove from cart", result.error)
+        toast.error(
+          t(
+            result.error.type === "BillLocked"
+              ? "bill.locked"
+              : "app.saveFailed"
+          )
+        )
+        return false
+      }
+      return true
+    })
+
+  const removeOne = (summary: BillLineSummary) =>
+    removeFromCart(
+      summary,
+      PositiveNumber(1),
+      getBillLineSummaryUnitAmount(summary)
+    )
+
+  const removeLine = (summary: BillLineSummary) =>
+    removeFromCart(summary, summary.quantity, summary.totalAmount)
+
+  return { pending, addOne, addQuantity, removeOne, removeLine }
 }

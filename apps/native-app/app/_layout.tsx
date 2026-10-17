@@ -5,11 +5,12 @@ import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider } from "tamagui"
 import { AccessGate } from "../src/components/access-gate.tsx"
 import { ConfirmHost } from "../src/components/confirm-host.tsx"
+import { DeviceRegistration } from "../src/components/device-registration.tsx"
 import { PinPromptHost } from "../src/components/pin-prompt-host.tsx"
 import { ToastHost } from "../src/components/toast-host.tsx"
 import { tamaguiConfig } from "../tamagui.config.ts"
@@ -32,6 +33,9 @@ export default function RootLayout() {
         <ConfirmHost />
         <PinPromptHost />
         <ToastHost />
+        <Suspense fallback={null}>
+          <DeviceRegistration />
+        </Suspense>
       </TamaguiProvider>
     </Provider>
   )

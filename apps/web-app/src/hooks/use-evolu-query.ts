@@ -1,7 +1,7 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
+import { useEvoluQueryFor } from "@payky/app-shared/use-evolu-query-for"
 import type { EvoluSchema } from "@payky/core/evolu/schema"
 import { useEvolu } from "@/hooks/use-evolu.ts"
-import { useEvoluQueryFor } from "@/hooks/use-evolu-query-for.ts"
 
 /**
  * `useEvoluQuery` for a query that only exists in some states, for example a

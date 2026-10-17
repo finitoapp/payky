@@ -6,6 +6,7 @@ import { appMigrationsAtom } from "../../atoms/app-migrations.ts"
 import { deviceLanguageAtom } from "../../atoms/device-evolu.ts"
 import { deviceMigrationsAtom } from "../../atoms/device-migrations.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
+import { LiveQueryDemo } from "./live-query-demo.tsx"
 
 function Ready({ children }: { readonly children: ReactNode }) {
   const report = useAtomValue(appMigrationsAtom)
@@ -63,6 +64,7 @@ export function BootstrapDiagnostics() {
       <Suspense fallback={<Text>Bootstrapping…</Text>}>
         <Ready>
           <Rows />
+          <LiveQueryDemo />
         </Ready>
       </Suspense>
     </FailureBoundary>

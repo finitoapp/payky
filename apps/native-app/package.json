@@ -14,6 +14,7 @@
     "@evolu/common": "8.23.0",
     "@evolu/react": "11.2.1",
     "@evolu/react-native": "16.1.6",
+    "@payky/app-shared": "workspace:*",
     "@payky/core": "workspace:*",
     "@tamagui/config": "3.0.18",
     "@tamagui/font-inter": "3.0.18",

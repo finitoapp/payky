@@ -72,6 +72,7 @@
         "@evolu/common": "8.23.0",
         "@evolu/react": "11.2.1",
         "@evolu/react-native": "16.1.6",
+        "@payky/app-shared": "workspace:*",
         "@payky/core": "workspace:*",
         "@tamagui/config": "3.0.18",
         "@tamagui/font-inter": "3.0.18",
@@ -129,6 +130,7 @@
         "@evolu/common": "8.23.0",
         "@evolu/sqlite-wasm": "3.54.0-build2",
         "@evolu/web": "3.6.2",
+        "@payky/app-shared": "workspace:*",
         "@payky/core": "workspace:*",
         "@payky/web-shared": "workspace:*",
         "@sentry/react": "11.8.0",
@@ -181,6 +183,18 @@
         "vite": "8.3.4",
         "vite-plugin-pwa": "2.0.0",
         "vitest": "5.0.5",
+      },
+    },
+    "packages/app-shared": {
+      "name": "@payky/app-shared",
+      "dependencies": {
+        "@evolu/common": "8.23.0",
+      },
+      "devDependencies": {
+        "@types/react": "19.3.0",
+      },
+      "peerDependencies": {
+        "react": "^19.3.0",
       },
     },
     "packages/core": {
@@ -887,6 +901,8 @@
     "@oxc-parser/binding-win32-x64-msvc": ["@oxc-parser/binding-win32-x64-msvc@0.152.0", "", { "os": "win32", "cpu": "x64" }, "sha512-sw0M80/dn9rcpu+Rqqph/C+MjvDDce6MlXmFjsNQtPEymha0eJy3ml6+foSUTqFfpDIDyHZZ4eoJ43IoMe8bJw=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.153.0", "", {}, "sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw=="],
+
+    "@payky/app-shared": ["@payky/app-shared@workspace:packages/app-shared"],
 
     "@payky/cli": ["@payky/cli@workspace:apps/cli"],
 

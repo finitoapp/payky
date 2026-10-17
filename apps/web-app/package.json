@@ -64,6 +64,7 @@
     "zod": "4.6.7",
     "barcode-detector": "3.2.0",
     "workbox-window": "7.4.1",
+    "@payky/app-shared": "workspace:*",
     "@payky/web-shared": "workspace:*"
   },
   "devDependencies": {

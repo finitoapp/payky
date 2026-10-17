@@ -192,12 +192,14 @@
       "name": "@payky/app-shared",
       "dependencies": {
         "@evolu/common": "8.23.0",
+        "@payky/core": "workspace:*",
       },
       "devDependencies": {
         "@types/react": "19.3.0",
         "jotai": "3.0.1",
       },
       "peerDependencies": {
+        "jotai": "^3.0.1",
         "react": "^19.3.0",
       },
     },

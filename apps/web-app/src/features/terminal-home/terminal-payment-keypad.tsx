@@ -1,5 +1,11 @@
 import {
-  currencyFractionDigits,
+  type AmountKeypadKey,
+  amountKeypadKeys,
+  applyAmountKey,
+  formatAmountInput,
+  getDecimalSeparator,
+} from "@payky/app-shared/amount-entry"
+import {
   decimalAmountToMinorUnits,
   type Money,
 } from "@payky/core/modules/shared/money"
@@ -19,22 +25,6 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { vibrateOnButtonPress } from "@/platform/haptics.ts"
 
-const keypad = [
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  ".",
-  "0",
-  "<",
-] as const
-
-const maxIntegerDigits = 9
 const keypadButtonBubbleAnimation = {
   opacity: [0.28, 0.16, 0],
   scale: [0.25, 1.15, 1.65],
@@ -45,7 +35,7 @@ const amountChangeAnimation = {
   y: [0, 0, 0],
 }
 
-type KeypadKey = (typeof keypad)[number]
+type KeypadKey = AmountKeypadKey
 type AmountInputAtom = PrimitiveAtom<string>
 type SetAmountInput = (value: string | ((current: string) => string)) => void
 type ChargeHandler = (money: Money) => Promise<void> | void
@@ -63,86 +53,12 @@ const numericKeyboardKeys = new Set<string>([
   "9",
 ])
 
-const currencyNumberPartTypes = new Set<Intl.NumberFormatPartTypes>([
-  "integer",
-  "group",
-  "decimal",
-  "fraction",
-])
-
-function getDecimalSeparator(locale: string) {
-  return (
-    new Intl.NumberFormat(locale)
-      .formatToParts(1.1)
-      .find((part) => part.type === "decimal")?.value ?? "."
-  )
-}
-
-function formatAmountInput(
-  amountInput: string,
-  currency: Currency,
-  locale: string
-) {
-  const [integerPart = "0", fractionPart = ""] = amountInput.split(".")
-  const hasDecimalSeparator = amountInput.includes(".")
-  const formattedIntegerPart = new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 0,
-    useGrouping: true,
-  }).format(Number(integerPart === "" ? "0" : integerPart))
-  const decimalSeparator = getDecimalSeparator(locale)
-  const amountText = hasDecimalSeparator
-    ? `${formattedIntegerPart}${decimalSeparator}${fractionPart}`
-    : formattedIntegerPart
-  let hasRenderedAmount = false
-
-  return new Intl.NumberFormat(locale, {
-    currency,
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-    style: "currency",
-  })
-    .formatToParts(0)
-    .map((part) => {
-      if (!currencyNumberPartTypes.has(part.type)) return part.value
-      if (hasRenderedAmount) return ""
-
-      hasRenderedAmount = true
-      return amountText
-    })
-    .join("")
-}
-
 function applyKeypadPress(
   setAmountInput: SetAmountInput,
   key: KeypadKey,
   currency: Currency
 ) {
-  if (key === "<") {
-    setAmountInput((current) => current.slice(0, -1))
-    return
-  }
-
-  setAmountInput((current) => {
-    if (key === ".") {
-      if (current.includes(".")) return current
-
-      return current === "" ? "0." : `${current}.`
-    }
-
-    const [integerPart = "", fractionPart] = current.split(".")
-
-    if (fractionPart !== undefined) {
-      if (fractionPart.length >= currencyFractionDigits[currency])
-        return current
-
-      return `${current}${key}`
-    }
-
-    if (integerPart.length >= maxIntegerDigits) return current
-    if (current === "" && key === "0") return ""
-
-    return `${current}${key}`
-  })
+  setAmountInput((current) => applyAmountKey(current, key, currency))
 }
 
 /**
@@ -332,7 +248,7 @@ function Keypad({
 
   return (
     <section className="grid grid-cols-3 gap-x-0 gap-y-10">
-      {keypad.map((key) => (
+      {amountKeypadKeys.map((key) => (
         <KeypadButton
           key={key}
           aria-label={getKeypadAriaLabel(key)}

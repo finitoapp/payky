@@ -1,31 +1,29 @@
+import {
+  type AtomLifetime,
+  renewAtomLifetime,
+} from "@payky/app-shared/atom-lifetime"
 import { createAppEvolu } from "@payky/core/evolu/client"
 import { atom } from "jotai"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
 import { accountAtom } from "./account.ts"
 
-let dispose: (() => void) | null = null
+const evoluLifetimeAtom = atom<AtomLifetime>(() => ({ current: null }))
 
-export const evoluAtom = atom(async (get, { signal }) => {
+export const evoluAtom = atom(async (get, options) => {
+  // Ends the previous account's client as soon as a new one starts opening.
+  const signal = renewAtomLifetime(get(evoluLifetimeAtom), options.signal)
   const account = await get(accountAtom)
-  // Jotai aborts `signal` only for a read superseded while still pending, not
-  // for a settled value a dependency replaces; so the previous account's
-  // client is disposed here, explicitly, before the new one opens.
-  dispose?.()
   // No transports and no useOwner: sync is a later task, nothing reaches a relay.
   const evolu = await nativeRun.ok(
     createAppEvolu({ masterKey: account.masterKey, transports: [] })
   )
 
-  let disposed = false
-  const disposeOnce = () => {
-    if (disposed) return
-    disposed = true
+  const dispose = () => {
     nativeConsole.debug("Disposing app Evolu.", { accountId: account.id })
     void evolu[Symbol.asyncDispose]()
   }
-  dispose = disposeOnce
-  // A read superseded while still opening must not leak its client.
-  signal.addEventListener("abort", disposeOnce, { once: true })
+  if (signal.aborted) dispose()
+  else signal.addEventListener("abort", dispose, { once: true })
 
   return evolu
 })

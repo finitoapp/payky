@@ -9,6 +9,9 @@ import {
   createFinishOnboardingInput,
   validateOnboardingForm,
 } from "@payky/app-shared/onboarding-utils"
+import { checkRestorePhrase } from "@payky/app-shared/restore-phrase"
+import { restoredAccountAtom } from "@payky/app-shared/restored-account"
+import { createOrSelectAccount } from "@payky/core/evolu/device-account"
 import { getDeviceLocaleForLanguage } from "@payky/core/evolu/device-client"
 import { publishNostrProfileName } from "@payky/core/integrations/nostr/nostr-client"
 import {
@@ -16,11 +19,15 @@ import {
   requireNotOnboarded,
 } from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import { mnemonicToMasterKey } from "@payky/core/modules/shared/key-derivation"
 import { router } from "expo-router"
-import { useAtom } from "jotai"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useEffect, useRef, useState } from "react"
 import { BackHandler } from "react-native"
 import { Text, YStack } from "tamagui"
+import { accountAtom } from "../../atoms/account.ts"
+import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -29,8 +36,8 @@ import { useSetLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { AccountChoiceStep } from "./account-choice-step.tsx"
 import { LanguageSelect } from "./language-select.tsx"
 import { PaymentsStep } from "./payments-step.tsx"
+import { RestoreAccountStep } from "./restore-account-step.tsx"
 
-// Only the steps native implements; restore and transfer come later.
 const headingKeys = {
   accountChoice: "onboarding.title",
   payments: "onboarding.payments.title",
@@ -58,6 +65,12 @@ export function OnboardingPage() {
   // A second tap before the first finishes must not start another run;
   // `finishOnboarding` refuses an onboarded account too, this saves the wait.
   const finishingRef = useRef(false)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const activeAccount = useAtomValue(accountAtom)
+  const reloadAppEvolu = useSetAtom(reloadAppEvoluAtom)
+  const setRestoredAccount = useSetAtom(restoredAccountAtom)
+  const [restoring, setRestoring] = useState(false)
+  const [restoreError, setRestoreError] = useState<TranslationKey | null>(null)
   const [profilePublishFailed, setProfilePublishFailed] = useState(false)
   const validation = validateOnboardingForm({ iban, businessName })
   const ibanError: TranslationKey | null =
@@ -111,11 +124,40 @@ export function OnboardingPage() {
     setFinishing(false)
   }
 
+  // Selects (or adds) the phrase's account, then waits for its first sync on
+  // /restore-account (as web). The phrase is never stored or logged.
+  const restore = async (phrase: string) => {
+    if (restoring) return
+    setRestoreError(null)
+    const checked = checkRestorePhrase(phrase)
+    if (!checked.ok) {
+      setRestoreError(checked.error)
+      return
+    }
+    setRestoring(true)
+    try {
+      const masterKey = await mnemonicToMasterKey(checked.mnemonic)
+      const { created } = await createOrSelectAccount(deviceEvolu, masterKey)
+      reloadAppEvolu()
+      setRestoredAccount({ created, previous: activeAccount.id })
+    } catch {
+      setRestoreError("settings.accounts.restore.failed")
+      setRestoring(false)
+      return
+    }
+    setForm(initialOnboardingFormState)
+    router.replace({
+      pathname: "/restore-account",
+      params: { source: "onboarding" },
+    })
+  }
+
   const goBack = () => {
     const previous = steps[stepIndex - 1]
     if (previous === undefined) return false
     if (finishingRef.current) return true
     setSubmitAttempted(false)
+    setRestoreError(null)
     setForm((current) => ({ ...current, step: previous }))
     return true
   }
@@ -150,6 +192,16 @@ export function OnboardingPage() {
               accountType: nextAccountType,
               step: nextSteps[1] ?? current.step,
             }))
+          }}
+        />
+      ) : null}
+
+      {step === "restore" ? (
+        <RestoreAccountStep
+          error={restoreError}
+          pending={restoring}
+          onRestore={(phrase) => {
+            void restore(phrase)
           }}
         />
       ) : null}
@@ -214,7 +266,7 @@ export function OnboardingPage() {
         <AppButton
           label={t("onboarding.back")}
           variant="secondary"
-          disabled={finishing}
+          disabled={finishing || restoring}
           onPress={() => {
             goBack()
           }}

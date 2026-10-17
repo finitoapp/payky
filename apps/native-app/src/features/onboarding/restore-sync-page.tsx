@@ -1,0 +1,258 @@
+import {
+  type RelaySyncStatus,
+  relaySyncStateToStatus,
+} from "@evolu/common/local-first"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  initialOnboardingFormState,
+  onboardingFormAtom,
+} from "@payky/app-shared/onboarding-form-state"
+import {
+  planRestoreCleanup,
+  restoredAccountAtom,
+} from "@payky/app-shared/restored-account"
+import {
+  removeDeviceAccount,
+  selectAccount,
+} from "@payky/core/evolu/device-account"
+import {
+  evaluateInitialSync,
+  findOwnerRelays,
+  type InitialSyncOutcome,
+  isRelaySyncing,
+} from "@payky/core/evolu/initial-sync-state"
+import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import { useNetworkState } from "expo-network"
+import { router, useLocalSearchParams } from "expo-router"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { useEffect, useState, useSyncExternalStore } from "react"
+import { ActivityIndicator } from "react-native"
+import { Text, YStack } from "tamagui"
+import { z } from "zod"
+import { accountAtom } from "../../atoms/account.ts"
+import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { evoluAtom } from "../../atoms/evolu.ts"
+import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
+import { AppButton } from "../../components/app-button.tsx"
+import { Screen } from "../../components/screen.tsx"
+import { nativeRun } from "../../core/native-runtime.ts"
+import { useConfirm } from "../../hooks/use-confirm.ts"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
+
+// Falls back instead of throwing, and only `source` is read from the route:
+// which account to remove or select never comes from it (account/0005).
+const SourceSchema = z.enum(["onboarding", "settings"]).catch("settings")
+
+const outcomePresentation = {
+  waiting: {
+    title: "accountRestore.title",
+    description: "accountRestore.description",
+  },
+  restored: {
+    title: "accountRestore.title",
+    description: "accountRestore.description",
+  },
+  empty: {
+    title: "accountRestore.empty.title",
+    description: "accountRestore.empty.description",
+  },
+  failed: {
+    title: "accountRestore.failed.title",
+    description: "accountRestore.failed.description",
+  },
+} satisfies Record<
+  InitialSyncOutcome,
+  { readonly title: TranslationKey; readonly description: TranslationKey }
+>
+
+const statusKeys = {
+  Synced: "settings.security.transports.status.synced",
+  Syncing: "settings.security.transports.status.syncing",
+  Offline: "settings.security.transports.status.offline",
+  Error: "settings.security.transports.status.error",
+} satisfies Record<RelaySyncStatus["type"], TranslationKey>
+
+const SYNC_TICK_MS = 1000
+const SETTLE_MS = 400
+
+/** `evaluateInitialSync` with its idle clock and the settling web applies. */
+function useInitialSyncOutcome(hasSettings: boolean) {
+  const evolu = useAtomValue(evoluAtom)
+  const { syncState } = nativeRun.deps
+  const state = useSyncExternalStore(syncState.subscribe, syncState.get)
+  const relays = findOwnerRelays(state, evolu.name, evolu.appOwner.id)
+  const network = useNetworkState()
+  // Unknown (undefined) counts as online, as the browser's `onLine` does.
+  const online =
+    network.isConnected !== false && network.isInternetReachable !== false
+  const syncing = relays?.some(isRelaySyncing) === true
+  const [idle, setIdle] = useState(() => ({ syncing, since: Date.now() }))
+  if (idle.syncing !== syncing) setIdle({ syncing, since: Date.now() })
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), SYNC_TICK_MS)
+    return () => clearInterval(id)
+  }, [])
+
+  const next = evaluateInitialSync({
+    relays,
+    hasSettings,
+    online,
+    idleForMs: now - idle.since,
+  })
+  // Relay statuses flip within moments of each other; settling the outcome
+  // keeps a transient mix from flashing an error.
+  const [outcome, setOutcome] = useState(next)
+  useEffect(() => {
+    const id = setTimeout(() => setOutcome(next), SETTLE_MS)
+    return () => clearTimeout(id)
+  }, [next])
+
+  return {
+    outcome,
+    online,
+    relays,
+    restart: () => setIdle({ syncing, since: Date.now() }),
+  }
+}
+
+/**
+ * Waits for a restored account's first sync and decides what it found: the
+ * account's settings (go home), relays that synced but hold nothing, or
+ * relays that could not be synced with. Mirrors web's RestoreSyncPage; adding
+ * a relay is left to a later settings task.
+ */
+export function RestoreSyncPage() {
+  const { t } = useTranslation()
+  const source = SourceSchema.parse(useLocalSearchParams().source)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const account = useAtomValue(accountAtom)
+  const reloadAppEvolu = useSetAtom(reloadAppEvoluAtom)
+  const confirm = useConfirm()
+  const setOnboardingForm = useSetAtom(onboardingFormAtom)
+  const { data } = useEvoluQuery(settingsQuery)
+  const hasSettings = data[0] !== undefined
+  const { outcome, online, relays, restart } =
+    useInitialSyncOutcome(hasSettings)
+  const settled = outcome === "empty" || outcome === "failed"
+
+  // Taken once and the atom emptied, so the restore is cleaned up after at
+  // most once: a later visit finds nothing to remove or select.
+  const [restoredAccount, setRestoredAccount] = useAtom(restoredAccountAtom)
+  const [restored] = useState(() => restoredAccount)
+  useEffect(() => {
+    setRestoredAccount(null)
+  }, [setRestoredAccount])
+  const cleanup = planRestoreCleanup({
+    restored,
+    activeAccountId: account.id,
+    source,
+  })
+  const previousToDiscard = cleanup.discardOnSuccess
+
+  useEffect(() => {
+    if (!hasSettings) return
+    if (previousToDiscard !== undefined) {
+      removeDeviceAccount(deviceEvolu, previousToDiscard)
+    }
+    router.replace("/")
+  }, [deviceEvolu, previousToDiscard, hasSettings])
+
+  const retry = () => {
+    reloadAppEvolu()
+    restart()
+  }
+
+  const switchToAnotherPhrase = () => {
+    if (cleanup.removeOnCancel !== undefined) {
+      removeDeviceAccount(deviceEvolu, cleanup.removeOnCancel)
+    }
+    if (cleanup.selectOnCancel !== undefined) {
+      selectAccount(deviceEvolu, cleanup.selectOnCancel)
+    }
+    if (source === "onboarding") {
+      setOnboardingForm({
+        ...initialOnboardingFormState,
+        accountType: "restore",
+        step: "restore",
+      })
+    }
+    reloadAppEvolu()
+    router.replace(source === "onboarding" ? "/onboarding" : "/")
+  }
+
+  const setUpAsNew = async () => {
+    // Relays that synced empty hold nothing to lose; one that could not be
+    // reached may still hold the account, which a later sync would overwrite.
+    if (outcome === "failed") {
+      const confirmed = await confirm({
+        title: t("accountRestore.setupNew.confirm.title"),
+        description: t("accountRestore.setupNew.confirm.description"),
+        confirmLabel: t("accountRestore.setupNew.confirm.confirm"),
+        cancelLabel: t("accountRestore.setupNew.confirm.cancel"),
+        variant: "destructive",
+      })
+      if (!confirmed) return
+    }
+    if (previousToDiscard !== undefined) {
+      removeDeviceAccount(deviceEvolu, previousToDiscard)
+    }
+    setOnboardingForm({
+      ...initialOnboardingFormState,
+      accountType: "existingMnemonic",
+      step: "payments",
+    })
+    router.replace("/onboarding")
+  }
+
+  const { title, description } = outcomePresentation[outcome]
+
+  return (
+    <Screen>
+      <YStack gap="2" items="center" accessibilityLiveRegion="polite">
+        {settled ? null : <ActivityIndicator />}
+        <Text fontSize={24} fontWeight="700" accessibilityRole="header">
+          {t(title)}
+        </Text>
+        <Text color="muted-foreground">
+          {t(
+            outcome === "failed" && !online
+              ? "accountRestore.failed.offline"
+              : description
+          )}
+        </Text>
+      </YStack>
+
+      <YStack gap="2">
+        <Text fontWeight="600">{t("accountRestore.relays.title")}</Text>
+        {(relays ?? []).map((relay) => (
+          <Text key={relay.transport.label}>
+            {relay.transport.label}:{" "}
+            {t(statusKeys[relaySyncStateToStatus(relay).type])}
+          </Text>
+        ))}
+      </YStack>
+
+      <YStack gap="2">
+        {settled ? (
+          <AppButton label={t("accountRestore.action.retry")} onPress={retry} />
+        ) : null}
+        <AppButton
+          label={t("accountRestore.action.otherPhrase")}
+          variant="secondary"
+          onPress={switchToAnotherPhrase}
+        />
+        {settled ? (
+          <AppButton
+            label={t("accountRestore.action.setupNew")}
+            variant="secondary"
+            onPress={() => {
+              void setUpAsNew()
+            }}
+          />
+        ) : null}
+      </YStack>
+    </Screen>
+  )
+}

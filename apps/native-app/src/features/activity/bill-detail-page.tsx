@@ -34,10 +34,12 @@ import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
 } from "../shared/use-bill-state.ts"
+import { WarningPanel } from "../shared/warning-panel.tsx"
 import {
   paymentMethodsText,
   StatusDot,
@@ -54,7 +56,6 @@ import {
   StatusBadge,
   TaxRecap,
   Technical,
-  WarningPanel,
 } from "./detail-parts.tsx"
 import { useBillCoverage } from "./use-bill-detail-data.ts"
 
@@ -161,10 +162,10 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
           }
         />
 
-        {/* Mark-closed and refund are actions of the refund task (P05); here the collision is read-only. */}
         {billStatus.hasCancellationCollision ? (
           <WarningPanel title={t("bill.collision.title")}>
             <Text>{t("bill.collision.description")}</Text>
+            <BillCancellationCollisionActions billId={billId} />
           </WarningPanel>
         ) : null}
 

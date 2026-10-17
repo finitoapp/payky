@@ -3,11 +3,13 @@ import { formatMoney } from "@payky/app-shared/format-money"
 import { useRedirectIfClosedOnOpen } from "@payky/app-shared/use-redirect-if-closed-on-open"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
+import { claimedPaymentsByBillIdQuery } from "@payky/core/modules/bill/bill-coverage-queries"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import { BillId, createRandomBillId } from "@payky/core/modules/bill/bill-types"
 import type { BillLineSummary } from "@payky/core/modules/bill-line/bill-line-summary"
 import {
   deriveBillSummaryStats,
+  deriveBillSummaryTotal,
   getBillLineSummaryUnitAmount,
   getLatestCatalogItemSummary,
 } from "@payky/core/modules/bill-line/bill-line-utils"
@@ -37,11 +39,13 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
   usePendingPayments,
 } from "../shared/use-bill-state.ts"
+import { WarningPanel } from "../shared/warning-panel.tsx"
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { CategoryFilterBar } from "./category-filter-bar.tsx"
 import { SplitBillDialog } from "./split-bill-dialog.tsx"
@@ -125,15 +129,13 @@ function BillPage({
   )
   if (closedOnOpen) return <LoadingView />
   if (bill !== undefined && billStatus?.status !== "open")
-    return (
-      <BillMessage
+    return billStatus?.hasCancellationCollision ? (
+      <BillCancellationCollisionMessage
         billId={billId}
-        message={
-          billStatus?.hasCancellationCollision
-            ? `${t("bill.collision.title")}. ${t("bill.collision.description")}`
-            : t("bill.closed")
-        }
+        currency={bill.currency}
       />
+    ) : (
+      <BillMessage billId={billId} message={t("bill.closed")} />
     )
   if (pendingPaymentIds.length > 0)
     return <BillLocked paymentIds={pendingPaymentIds} />
@@ -184,6 +186,67 @@ function BillMessage({
           }
         />
         <AppButton label={t("paymentWait.back")} onPress={goHome} />
+      </YStack>
+    </SafeAreaView>
+  )
+}
+
+/**
+ * The bill-level mirror of the payment collision: this bill was discarded, but
+ * its payments already cover its total. Shows what is at stake (the total),
+ * links to the payments that funded it and offers the two resolving actions,
+ * as web's `BillCancellationCollisionMessage`.
+ */
+function BillCancellationCollisionMessage({
+  billId,
+  currency,
+}: {
+  readonly billId: BillId
+  readonly currency: FiatCurrency
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const summaries = useBillLineSummaries(billId)
+  const claimedPayments = useEvoluQuery(
+    claimedPaymentsByBillIdQuery(billId)
+  ).data
+  const paymentIds = useMemo(
+    () => [...new Set(claimedPayments.map((payment) => payment.id))],
+    [claimedPayments]
+  )
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <YStack flex={1} p="4" gap="3" justify="center">
+        <WarningPanel title={t("bill.collision.title")}>
+          <Text>{t("bill.collision.description")}</Text>
+        </WarningPanel>
+        <Text fontSize={28} fontWeight="600" text="center">
+          {formatMoney(
+            { value: deriveBillSummaryTotal(summaries), currency },
+            locale
+          )}
+        </Text>
+        {paymentIds.map((paymentId, index) => (
+          <AppButton
+            key={paymentId}
+            variant="secondary"
+            label={
+              paymentIds.length > 1
+                ? t("bill.collision.viewPayment.numbered", {
+                    number: index + 1,
+                  })
+                : t("bill.collision.viewPayment")
+            }
+            onPress={() =>
+              router.push({
+                pathname: "/activity/[paymentId]",
+                params: { paymentId },
+              })
+            }
+          />
+        ))}
+        <BillCancellationCollisionActions billId={billId} />
       </YStack>
     </SafeAreaView>
   )

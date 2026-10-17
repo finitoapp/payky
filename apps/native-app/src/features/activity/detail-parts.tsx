@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { WarningPanel } from "../shared/warning-panel.tsx"
 import type { StatusTone } from "./activity-parts.tsx"
 
 /** The building blocks of the payment and bill detail screens. */
@@ -195,31 +196,6 @@ export function Technical({ children }: { readonly children: ReactNode }) {
         </Text>
       </Pressable>
       {open ? <YStack gap="2">{children}</YStack> : null}
-    </YStack>
-  )
-}
-
-/** A warning panel: title, then the facts under it. */
-export function WarningPanel({
-  title,
-  children,
-}: {
-  readonly title: string
-  readonly children?: ReactNode
-}) {
-  return (
-    <YStack
-      gap="2"
-      p="3"
-      rounded="lg"
-      borderWidth={1}
-      borderColor="orange-600"
-      accessibilityRole="alert"
-    >
-      <Text fontWeight="600" color="orange-600">
-        {`⚠ ${title}`}
-      </Text>
-      {children}
     </YStack>
   )
 }

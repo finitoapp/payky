@@ -20,7 +20,7 @@ import {
 } from "@payky/core/modules/payment/payment-queries"
 import { derivePaymentStatus } from "@payky/core/modules/payment/payment-status-utils"
 import { PaymentId } from "@payky/core/modules/payment/payment-types"
-import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
+import { Integer } from "@payky/core/modules/shared/schema"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
 import { useEffect, useRef, useState } from "react"
@@ -164,7 +164,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   })
   const formatMinor = (value: number) =>
     formatMoney(
-      { value: NonNegativeInteger(value), currency: payment.currency },
+      { value: Integer(value), currency: payment.currency },
       locale
     )
   const canMarkCashPaid =

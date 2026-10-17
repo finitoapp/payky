@@ -35,7 +35,9 @@
     "tamagui": "3.0.18"
   },
   "devDependencies": {
+    "@babel/plugin-transform-explicit-resource-management": "7.29.7",
     "@types/react": "19.3.0",
+    "babel-preset-expo": "58.0.17",
     "typescript": "6.0.3"
   }
 }

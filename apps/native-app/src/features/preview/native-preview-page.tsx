@@ -1,13 +1,22 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Button, Text, useTheme, View } from "tamagui"
 import { checkSharedLogic } from "../../core/check-shared-logic.ts"
+import { checkLockAuthority } from "../../core/native-runtime.ts"
 
 export function NativePreviewPage() {
   const theme = useTheme()
   const [roundedAmount, setRoundedAmount] = useState(checkSharedLogic)
   const [checks, setChecks] = useState(1)
+  const [lockStatus, setLockStatus] = useState("checking")
+
+  useEffect(() => {
+    checkLockAuthority().then(
+      () => setLockStatus("passed"),
+      (error: unknown) => setLockStatus(String(error))
+    )
+  }, [])
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
@@ -38,6 +47,7 @@ export function NativePreviewPage() {
             <Text accessibilityLiveRegion="polite">
               Checks passed: {checks}
             </Text>
+            <Text>Lock authority: {lockStatus}</Text>
           </View>
           <Button
             backgroundColor="primary"

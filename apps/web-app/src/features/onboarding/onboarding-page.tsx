@@ -1,5 +1,11 @@
 import type { Language, TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
+  getOnboardingSteps,
+  initialOnboardingFormState,
+  type OnboardingStep,
+  onboardingFormAtom,
+} from "@payky/app-shared/onboarding-form-state"
+import {
   accountListQuery,
   removeDeviceAccount,
   selectAccount,
@@ -45,12 +51,6 @@ import {
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { LanguageSelect } from "@/features/onboarding/language-select.tsx"
-import {
-  getOnboardingSteps,
-  initialOnboardingFormState,
-  type OnboardingStep,
-  onboardingFormAtom,
-} from "@/features/onboarding/onboarding-form-state.ts"
 import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/account-choice-step.tsx"
 import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-step.tsx"
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"

@@ -1,3 +1,4 @@
+import { router } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -62,6 +63,13 @@ export function NativePreviewPage() {
             }}
           >
             Run shared logic again
+          </Button>
+          <Button
+            rounded="lg"
+            minHeight={48}
+            onPress={() => router.push("/onboarding")}
+          >
+            Open onboarding
           </Button>
         </View>
       </ScrollView>

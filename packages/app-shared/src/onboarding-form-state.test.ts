@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { getOnboardingSteps } from "@/features/onboarding/onboarding-form-state.ts"
+import { getOnboardingSteps } from "./onboarding-form-state.ts"
 
 describe("getOnboardingSteps", () => {
   test("includes the setup steps for a new account", () => {

@@ -29,5 +29,6 @@ describe("native route access", () => {
   it("treats an unknown path as owner-only", () => {
     expect(requiredPermission("/nope")).toBe("admin")
     expect(requiredPermission("/pair")).toBe("admin")
+    expect(requiredPermission("/onboarding")).toBeNull()
   })
 })

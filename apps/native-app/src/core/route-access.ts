@@ -3,7 +3,7 @@ import type {
   RouteAccess,
 } from "@payky/core/modules/access/access-types"
 
-export type NativeRoutePath = "/" | "/pair"
+export type NativeRoutePath = "/" | "/error" | "/pair" | "/onboarding"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -14,6 +14,11 @@ export type NativeRoutePath = "/" | "/pair"
 export const routeAccess = {
   "/": "admin",
   "/pair": "admin",
+  // Like web's /onboarding, outside the gated `_terminal` layout: a fresh
+  // account has no PIN yet.
+  "/onboarding": "free",
+  // Like web's /error: a deliberate crash with no gate in front of it.
+  "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>
 
 /** Fail closed: a path missing from the table needs the owner permission. */

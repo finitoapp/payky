@@ -1,6 +1,10 @@
 import { useOnline, useTimestamp } from "@dedalik/use-react"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
+  initialOnboardingFormState,
+  onboardingFormAtom,
+} from "@payky/app-shared/onboarding-form-state"
+import {
   removeDeviceAccount,
   selectAccount,
 } from "@payky/core/evolu/device-account"
@@ -30,10 +34,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import {
-  initialOnboardingFormState,
-  onboardingFormAtom,
-} from "@/features/onboarding/onboarding-form-state.ts"
 import {
   planRestoreCleanup,
   restoredAccountAtom,

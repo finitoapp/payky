@@ -8,7 +8,6 @@ import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useAtomValue } from "jotai"
 import {
   Component,
-  type ErrorInfo,
   type ReactNode,
   Suspense,
   useCallback,
@@ -151,8 +150,9 @@ class AppEvoluConsumersBoundary extends Component<
     return { failed: true }
   }
 
-  override componentDidCatch(error: unknown, info: ErrorInfo) {
-    captureReportedError(error, info.componentStack ?? undefined)
+  // Like web's AppEvoluConsumersFailed: the error only, no component stack.
+  override componentDidCatch(error: unknown) {
+    captureReportedError(error)
   }
 
   override render() {

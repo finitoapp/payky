@@ -8,11 +8,14 @@ import {
   deriveBillSummaryStats,
   getBillLineSummaryUnitAmount,
 } from "@payky/core/modules/bill-line/bill-line-utils"
+import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
+import { catalogItemsQuery } from "@payky/core/modules/catalog-item/catalog-item-queries"
+import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
 import { Suspense, useMemo, useState } from "react"
-import { FlatList } from "react-native"
+import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
@@ -24,6 +27,7 @@ import {
   useBillStatus,
   usePendingPayments,
 } from "./use-bill-state.ts"
+import { useCartBill } from "./use-cart-bill.ts"
 
 const goHome = () => router.dismissTo("/")
 
@@ -79,6 +83,7 @@ function BillPage({ billId }: { readonly billId: BillId }) {
 
   return (
     <BillCart
+      billId={billId}
       title={
         bill === undefined
           ? t("bill.title")
@@ -135,10 +140,12 @@ function BillLocked({
 }
 
 function BillCart({
+  billId,
   title,
   currency,
   summaries,
 }: {
+  readonly billId: BillId
   readonly title: string
   readonly currency: FiatCurrency
   readonly summaries: ReadonlyArray<BillLineSummary>
@@ -149,6 +156,12 @@ function BillCart({
   const { totalAmount, itemCount } = useMemo(
     () => deriveBillSummaryStats(summaries),
     [summaries]
+  )
+  const cart = useCartBill({ billId, currency })
+  const catalogItems = useEvoluQuery(catalogItemsQuery).data
+  const currencyItems = useMemo(
+    () => catalogItems.filter((item) => item.currency === currency),
+    [catalogItems, currency]
   )
 
   return (
@@ -164,8 +177,27 @@ function BillCart({
         {title}
       </Text>
 
+      {/* The category filter, search and scan mode arrive with P04/H02. */}
       <FlatList
         style={{ flex: 1 }}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 8 }}
+        contentContainerStyle={{ gap: 8 }}
+        data={currencyItems}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={<CatalogEmpty />}
+        renderItem={({ item }) => (
+          <ItemBrick
+            catalogItem={item}
+            summaries={summaries}
+            locale={locale}
+            onAdd={() => void cart.addOne(item)}
+          />
+        )}
+      />
+
+      <FlatList
+        style={{ flexGrow: 0, maxHeight: 180 }}
         data={summaries}
         keyExtractor={(summary) => summary.id}
         ListEmptyComponent={<EmptyView message={t("bill.summary.empty")} />}
@@ -215,5 +247,73 @@ function SummaryRow({
             )}`}
       </Text>
     </YStack>
+  )
+}
+
+/**
+ * Items are created in settings (web `/settings/items/new`); native has no
+ * catalog editing until C12, so an empty catalog only explains itself.
+ */
+function CatalogEmpty() {
+  const { t } = useTranslation()
+  return (
+    <YStack items="center" gap="2" p="4">
+      <Text fontWeight="600">{t("settings.items.empty.title")}</Text>
+      <Text color="muted-foreground" text="center">
+        {t("settings.items.empty.description")}
+      </Text>
+    </YStack>
+  )
+}
+
+/**
+ * A tap anywhere on the tile adds one, as on a till. The brick has no
+ * `disabled`: the cart queues taps, and a button disabled mid-tap drops one.
+ */
+function ItemBrick({
+  catalogItem,
+  summaries,
+  locale,
+  onAdd,
+}: {
+  readonly catalogItem: CatalogItemRow
+  readonly summaries: ReadonlyArray<BillLineSummary>
+  readonly locale: string
+  readonly onAdd: () => void
+}) {
+  const { t } = useTranslation()
+  const name = getStaffDisplayName(catalogItem)
+  const quantity = summaries.reduce(
+    (sum, summary) =>
+      summary.catalogItemId === catalogItem.id ? sum + summary.quantity : sum,
+    0
+  )
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t("bill.brick.add.aria", { name })}
+      onPress={onAdd}
+      style={{
+        flex: 1,
+        minHeight: 80,
+        padding: 12,
+        borderWidth: 1,
+        borderRadius: 12,
+        justifyContent: "space-between",
+        opacity: quantity > 0 ? 1 : 0.85,
+      }}
+    >
+      <Text fontWeight="600">
+        {quantity > 0 ? `${quantity} × ` : ""}
+        {name}
+      </Text>
+      <Text color="muted-foreground">
+        {formatMoney(
+          { value: catalogItem.unitAmount, currency: catalogItem.currency },
+          locale
+        )}
+      </Text>
+    </Pressable>
   )
 }

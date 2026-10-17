@@ -1,41 +1,8 @@
-import type { DisposableRun, LockManagerDep } from "@evolu/common"
-import { lockManager } from "@evolu/react-native"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import {
-  createDateDep,
-  type DateDep,
-  type EvoluOwnerDep,
-  type FetchDep,
-  type MasterKeyDep,
-} from "@payky/core/deps"
-import {
-  createNostrDep,
-  type NostrDep,
-} from "@payky/core/integrations/nostr/nostr-client"
-import type {
-  DeviceEvoluDep,
-  EvoluDep,
-} from "@payky/core/modules/shared/evolu-deps"
-import { useAtomValue } from "jotai"
 import { useCallback } from "react"
-import { accountAtom } from "../atoms/account.ts"
-import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
-import { evoluAtom } from "../atoms/evolu.ts"
-import { nativeEnv } from "../core/native-env.ts"
-import { nativeRun } from "../core/native-runtime.ts"
-import { createFetchDep } from "../platform/native-deps.ts"
+import { type NativeAppRun, useAppRun } from "./use-app-run.ts"
 import { useToast } from "./use-toast.ts"
 import { useTranslation } from "./use-translation.ts"
-
-/** What a native run carries: the account's Evolu clients, key, locks, clock, fetch, nostr relays. */
-export type NativeRunToastDeps = EvoluDep &
-  DeviceEvoluDep &
-  EvoluOwnerDep &
-  MasterKeyDep &
-  LockManagerDep &
-  DateDep &
-  FetchDep &
-  NostrDep
 
 /**
  * Native `useRunToast`, same protocol as the web hook: owns the
@@ -47,27 +14,14 @@ export type NativeRunToastDeps = EvoluDep &
 export function useRunToast() {
   const { t } = useTranslation()
   const toast = useToast()
-  const evolu = useAtomValue(evoluAtom)
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const account = useAtomValue(accountAtom)
+  const appRun = useAppRun()
 
   return useCallback(
     async (
-      action: (
-        run: DisposableRun<NativeRunToastDeps>
-      ) => Promise<TranslationKey | undefined>
+      action: (run: NativeAppRun) => Promise<TranslationKey | undefined>
     ): Promise<boolean> => {
       try {
-        await using run = nativeRun.create<NativeRunToastDeps>({
-          lockManager,
-          evolu,
-          deviceEvolu,
-          evoluOwner: evolu.appOwner,
-          masterKey: account.masterKey,
-          ...createDateDep(),
-          ...createFetchDep(),
-          ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
-        })
+        await using run = appRun()
         const errorKey = await action(run)
         if (errorKey !== undefined) {
           toast.error(t(errorKey))
@@ -79,6 +33,6 @@ export function useRunToast() {
         return false
       }
     },
-    [evolu, deviceEvolu, account, toast, t]
+    [appRun, toast, t]
   )
 }

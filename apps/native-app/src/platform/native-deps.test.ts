@@ -14,10 +14,12 @@ vi.mock("expo-network", () => ({
 
 import { createConnectivityDep } from "./native-deps.ts"
 
-test("fires on offline to online only, and unsubscribe removes the listener", () => {
+test("fires on offline to online only, not for the first state, and unsubscribe removes the listener", () => {
   const listener = vi.fn()
   const off = createConnectivityDep().connectivity.onOnline(listener)
   const up = { isConnected: true, isInternetReachable: true }
+  network.emit(up)
+  expect(listener).not.toHaveBeenCalled()
   network.emit({ isConnected: false, isInternetReachable: false })
   expect(listener).not.toHaveBeenCalled()
   network.emit(up)

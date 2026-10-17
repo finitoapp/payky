@@ -15,7 +15,7 @@ export const createFetchDep = (): FetchDep => ({
   },
 })
 
-/** Fires on the transition to connected and internet-reachable only. */
+/** Fires on a transition to connected and internet-reachable, as the web `online` event; the first reported state is not a transition. */
 export const createConnectivityDep = (): ConnectivityDep => ({
   connectivity: {
     onOnline: (listener) => {
@@ -25,7 +25,7 @@ export const createConnectivityDep = (): ConnectivityDep => ({
           state.isConnected === true && state.isInternetReachable === true
         const wasOnline = online
         online = next
-        if (next && wasOnline !== true) listener()
+        if (next && wasOnline === false) listener()
       })
       return () => subscription.remove()
     },

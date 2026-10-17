@@ -56,7 +56,7 @@ function Gate({ children }: { readonly children: ReactNode }) {
     return (
       <Screen>
         <PinScreen
-          key={pathname}
+          key={`${access.accountId}:${pathname}`}
           permission={permission}
           target={pathname}
           onUnlocked={() => setSession({ accountId: access.accountId })}

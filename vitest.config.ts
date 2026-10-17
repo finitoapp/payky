@@ -48,6 +48,7 @@ export default defineConfig({
           include: [
             "apps/native-app/src/platform/**/*.test.ts",
             "apps/native-app/src/core/**/*.test.ts",
+            "apps/native-app/src/atoms/**/*.test.ts",
           ],
         },
       },

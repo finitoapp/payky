@@ -9,6 +9,8 @@ import { useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider } from "tamagui"
 import { AccessGate } from "../src/components/access-gate.tsx"
+import { ConfirmHost } from "../src/components/confirm-host.tsx"
+import { ToastHost } from "../src/components/toast-host.tsx"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
 export default function RootLayout() {
@@ -26,6 +28,8 @@ export default function RootLayout() {
         <AccessGate>
           <Stack screenOptions={{ headerShown: false }} />
         </AccessGate>
+        <ConfirmHost />
+        <ToastHost />
       </TamaguiProvider>
     </Provider>
   )

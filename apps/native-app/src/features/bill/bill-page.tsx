@@ -44,7 +44,9 @@ import {
 } from "../shared/use-bill-state.ts"
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { CategoryFilterBar } from "./category-filter-bar.tsx"
+import { SplitBillDialog } from "./split-bill-dialog.tsx"
 import { useCartBill } from "./use-cart-bill.ts"
+import { useSplitBill } from "./use-split-bill.ts"
 
 /** The category filters, plus "on the bill": only what the bill holds. */
 type BillItemFilter = CategoryFilter | "inBill"
@@ -248,6 +250,13 @@ function BillCart({
   )
   const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
+  const [splitOpen, setSplitOpen] = useState(false)
+  const split = useSplitBill({
+    billId,
+    tableId,
+    currency,
+    onDone: () => setSplitOpen(false),
+  })
   const createTerminalPayment = useCreateTerminalPayment()
   // The ref closes the window before `chargePending` re-renders: a second tap
   // would create a second payment (core accepts a bill with a pending one) and
@@ -436,6 +445,21 @@ function BillCart({
             setTablePickerOpen(false)
             void cart.assignTable(nextTableId)
           }}
+        />
+        <AppButton
+          variant="secondary"
+          label={t("bill.split.button.aria")}
+          disabled={summaries.length === 0 || cart.pending || split.pending}
+          onPress={() => setSplitOpen(true)}
+        />
+        <SplitBillDialog
+          open={splitOpen}
+          onClose={() => setSplitOpen(false)}
+          billId={billId}
+          summaries={summaries}
+          currency={currency}
+          pending={split.pending}
+          onConfirm={(input) => void split.split(input)}
         />
         <AppButton
           label={t("home.pay")}

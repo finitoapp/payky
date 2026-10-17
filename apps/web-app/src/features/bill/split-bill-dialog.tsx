@@ -1,4 +1,13 @@
 import {
+  canConfirmSplit,
+  deriveSplitItems,
+  type SplitBillConfirmInput,
+  type SplitDestination,
+  type SplitSelection,
+  selectAllForSplit,
+  setSplitQuantity,
+} from "@payky/app-shared/split-selection"
+import {
   type OpenBillRow,
   openBillsQuery,
 } from "@payky/core/modules/bill/bill-queries"
@@ -7,13 +16,8 @@ import type { BillLineSummary } from "@payky/core/modules/bill-line/bill-line-su
 import {
   calculateBillLineSummaries,
   deriveBillSummaryStats,
-  getBillLineSummaryUnitAmount,
 } from "@payky/core/modules/bill-line/bill-line-utils"
-import {
-  type FiatCurrency,
-  NonNegativeInteger,
-  PositiveNumber,
-} from "@payky/core/modules/shared/schema"
+import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { MinusIcon, PlusIcon } from "lucide-react"
 import { motion } from "motion/react"
@@ -36,22 +40,6 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 import { vibrateOnButtonPress } from "@/platform/haptics.ts"
-
-/** How many units of each line, keyed by `BillLineSummary["id"]`, are picked to move. */
-type SplitSelection = Readonly<Record<string, number>>
-
-type SplitDestination = "new" | "existing"
-
-export type SplitBillConfirmInput =
-  | {
-      readonly destination: "new"
-      readonly items: ReadonlyArray<BillLineSummary>
-    }
-  | {
-      readonly destination: "existing"
-      readonly targetBillId: BillId
-      readonly items: ReadonlyArray<BillLineSummary>
-    }
 
 /**
  * The `/bill` page's "split bill" entry point: lets staff pick how many
@@ -119,36 +107,16 @@ export function SplitBillDialog({
   }
 
   const setQuantity = (summary: BillLineSummary, quantity: number) => {
-    setSelected((current) => ({
-      ...current,
-      [summary.id]: Math.min(Math.max(quantity, 0), summary.quantity),
-    }))
+    setSelected((current) => setSplitQuantity(current, summary, quantity))
   }
 
   const selectAll = () => {
-    setSelected(
-      Object.fromEntries(
-        summaries.map((summary) => [summary.id, summary.quantity])
-      )
-    )
+    setSelected(selectAllForSplit(summaries))
   }
   const clearSelection = () => setSelected({})
 
   const items = useMemo(
-    () =>
-      summaries.flatMap((summary): BillLineSummary[] => {
-        const quantity = selected[summary.id] ?? 0
-        if (quantity <= 0) return []
-
-        const unitAmount = getBillLineSummaryUnitAmount(summary)
-        return [
-          {
-            ...summary,
-            quantity: PositiveNumber(quantity),
-            totalAmount: NonNegativeInteger(unitAmount * quantity),
-          },
-        ]
-      }),
+    () => deriveSplitItems(summaries, selected),
     [summaries, selected]
   )
   const { itemCount: totalQuantity, totalAmount } =
@@ -156,10 +124,12 @@ export function SplitBillDialog({
   const totalQuantityPulseControls = useChangePulse(totalQuantity)
   const totalAmountPulseControls = useChangePulse(totalAmount)
 
-  const canConfirm =
-    items.length > 0 &&
-    !pending &&
-    (destination === "new" || targetBillId !== null)
+  const canConfirm = canConfirmSplit({
+    itemCount: items.length,
+    pending,
+    destination,
+    targetBillId,
+  })
 
   const handleConfirm = () => {
     if (destination === "new") {

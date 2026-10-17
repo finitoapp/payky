@@ -1,6 +1,7 @@
 import { useMediaQuery } from "@dedalik/use-react"
 import { sqliteTrue } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import type { SplitBillConfirmInput } from "@payky/app-shared/split-selection"
 import { useRedirectIfClosedOnOpen } from "@payky/app-shared/use-redirect-if-closed-on-open"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -93,10 +94,7 @@ import {
   itemBrickGridClassName,
 } from "@/features/bill/item-brick-grid-skeleton.tsx"
 import { ItemQuantityDialog } from "@/features/bill/item-quantity-controls.tsx"
-import {
-  type SplitBillConfirmInput,
-  SplitBillDialog,
-} from "@/features/bill/split-bill-dialog.tsx"
+import { SplitBillDialog } from "@/features/bill/split-bill-dialog.tsx"
 import { useBillInsertMode } from "@/features/bill/use-bill-insert-mode.ts"
 import { useBillScanHandler } from "@/features/bill/use-bill-scan-handler.tsx"
 import { useCartBill } from "@/features/bill/use-cart-bill.ts"

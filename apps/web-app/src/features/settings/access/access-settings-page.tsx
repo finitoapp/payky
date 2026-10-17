@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core"
 import { accessSessionAtom } from "@payky/app-shared/access-state"
+import { pinPadAttribute } from "@payky/app-shared/error-scrubbing"
 import {
   changePin,
   disableAccessControl,
@@ -79,7 +80,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx"
-import { pinPadAttribute } from "@/core/sentry.ts"
 import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

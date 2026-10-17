@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest"
 
-import { pinPadAttribute, scrubBreadcrumb, scrubEvent } from "@/core/sentry.ts"
+import {
+  pinPadAttribute,
+  scrubBreadcrumb,
+  scrubEvent,
+} from "./error-scrubbing.ts"
 
 const masterKey = "000102030405060708090a0b0c0d0e0f"
 const secretKey =

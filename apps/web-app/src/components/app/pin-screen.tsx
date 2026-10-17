@@ -1,3 +1,4 @@
+import { pinPadAttribute } from "@payky/app-shared/error-scrubbing"
 import {
   resources,
   type TranslationKey,
@@ -27,7 +28,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { pinPadAttribute } from "@/core/sentry.ts"
 import { useAccess } from "@/hooks/use-access.ts"
 import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"

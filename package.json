@@ -45,7 +45,12 @@
     "check:api": "bun run bin/check-api.ts",
     "dev:landing": "bun run --cwd apps/landing dev",
     "build:landing": "bun run build:core && bun run --cwd apps/landing build",
-    "preview:landing": "bun run --cwd apps/landing preview"
+    "preview:landing": "bun run --cwd apps/landing preview",
+    "dev:native": "bun run build:core && bun run --cwd apps/native-app dev",
+    "native:android": "bun run build:core && bun run --cwd apps/native-app android",
+    "native:ios": "bun run build:core && bun run --cwd apps/native-app ios",
+    "build:native": "bun run build:core && bun run --cwd apps/native-app bundle",
+    "check:native": "bun run --cwd apps/native-app check:ts"
   },
   "dependencies": {
     "@payky/core": "workspace:*",

@@ -21,6 +21,9 @@
     },
     {
       "path": "./packages/web-shared"
+    },
+    {
+      "path": "./apps/native-app"
     }
   ]
 }

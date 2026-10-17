@@ -44,6 +44,8 @@ bunx skills experimental_install
 `packages/web-shared` owns the browser navigation contract and shared hooks.
 `apps/native-shell` wraps its `dist-native` build in Capacitor; `apps/cli` runs
 local commands. All use the single domain implementation in `packages/core`.
+`apps/native-app` is the separate Expo + React Native + Tamagui application,
+currently limited to a native preview and shared-core smoke check.
 Core uses explicit package subpaths such as
 `@payky/core/modules/payment/payment-actions`; `@/` stays local to the web app.
 
@@ -76,6 +78,54 @@ Preview a production build:
 ```bash
 bun run preview
 ```
+
+## Expo native application
+
+Use Node 22.13+ on a supported release line for Expo tooling, and Bun for
+dependencies and scripts. Install Android Studio and an Android SDK/emulator
+for Android; iOS requires macOS and Xcode. The existing Vite and Capacitor
+commands remain available independently.
+
+From the repository root:
+
+```bash
+bun install
+bun run native:android  # build/install a development client on Android
+bun run native:ios     # build/install a development client on iOS (macOS)
+bun run dev:native     # start Metro for an already installed development client
+```
+
+`native:android` and `native:ios` generate their native projects locally; they
+are ignored by Git. The preview uses `me.payky.nativepreview` and the
+`payky-native-preview` scheme so it can coexist with the Capacitor app.
+Use a development client rather than relying on Expo Go availability for SDK
+58. The Expo app has no environment variables or connected services yet.
+
+The root native commands build `packages/core` first. Metro uses its existing
+public exports; the native app never imports web application source. Keep
+`bun run dev` running in a second terminal when developing the Vite web app
+alongside Expo. For an offline Metro session use `bun run dev:native --offline`.
+
+```bash
+bun run check:native   # native TypeScript; also included in bun run check
+bun run check:lint     # shared Biome configuration includes native source
+bun run build:native   # export Android and iOS bundles into apps/native-app/dist
+```
+
+The preview loads bundled Inter fonts, follows the system light/dark theme,
+and calls the existing core cash-rounding function with an asserted result.
+`entry.ts` installs secure random values and UUIDs from Expo Crypto before
+loading Expo Router: Evolu needs randomness while importing the shared core.
+After adding or upgrading native modules, rebuild the development client with
+`bun run native:android` or `bun run native:ios`; restarting Metro is insufficient.
+On a device, check that `123.45` becomes `123.00` and that **Run shared logic
+again** increments the passed-check count. Change the system theme to verify
+both palettes. This verifies the shared helper in the native renderer; exporting
+a bundle alone does not verify device execution.
+
+No accounts, SQLite persistence, wallet, payment terminal or background jobs
+are wired up or mocked. Those remain subsequent runtime-spike tasks in
+[the migration plan](MIGRATION_PLAN.md).
 
 ## Native Targets
 

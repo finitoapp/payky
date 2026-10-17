@@ -1,0 +1,12 @@
+{
+  "extends": [
+    "./node_modules/expo/tsconfig.base.json",
+    "../../tsconfig.base.json"
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "types": ["react", "react-native"],
+    "customConditions": ["react-native"]
+  },
+  "include": ["app", "src", "entry.ts", "tamagui.config.ts", "app.config.ts"]
+}

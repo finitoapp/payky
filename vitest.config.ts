@@ -35,6 +35,12 @@ export default defineConfig({
       },
       "packages/core/vitest.config.ts",
       "apps/cli/vitest.config.ts",
+      {
+        test: {
+          name: "native-bootstrap",
+          include: ["apps/native-app/src/platform/**/*.test.ts"],
+        },
+      },
       { test: { name: "tools", include: ["bin/**/*.test.ts"] } },
     ],
   },

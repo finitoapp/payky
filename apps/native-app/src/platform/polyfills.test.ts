@@ -12,6 +12,9 @@ vi.mock("expo-crypto", () => {
   }
 })
 
+const quickSubtle = vi.hoisted(() => ({ marker: "quick-crypto subtle" }))
+vi.mock("react-native-quick-crypto", () => ({ subtle: quickSubtle }))
+
 vi.mock("expo-router/entry", async () => {
   // Exercise the real polyfills before the Router can evaluate domain imports.
   await using stack = new AsyncDisposableStack()
@@ -35,6 +38,7 @@ test("installs secure randomness before the router imports shared domain code", 
   await import("../../entry.ts")
 
   expect(globalThis.crypto.getRandomValues).toBe(getRandomValues)
+  expect(globalThis.crypto.subtle).toBe(quickSubtle)
   expect(globalThis.crypto.getRandomValues(new Uint8Array(16))).toHaveLength(16)
   expect(startup.roundedAmount).toBe(12300)
   expect(startup.disposed).toBe(true)

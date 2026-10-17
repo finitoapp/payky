@@ -10,6 +10,7 @@ import { useTranslation } from "../../hooks/use-translation.ts"
 import { AccountsCard } from "./accounts-card.tsx"
 import { CashSaleCard } from "./cash-sale-card.tsx"
 import { CashuCard } from "./cashu-card.tsx"
+import { EetCard } from "./eet-card.tsx"
 import { LiveQueryDemo } from "./live-query-demo.tsx"
 import { NetworkCard } from "./network-card.tsx"
 import { SparkCard } from "./spark-card.tsx"
@@ -80,6 +81,7 @@ export function BootstrapDiagnostics() {
           <NetworkCard />
           <SparkCard />
           <CashuCard />
+          <EetCard />
         </Ready>
       </Suspense>
     </FailureBoundary>

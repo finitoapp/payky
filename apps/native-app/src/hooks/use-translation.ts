@@ -4,6 +4,7 @@ import {
   createDeviceQuery,
   type DeviceLocale,
   deviceSettingsId,
+  getDeviceLocaleForLanguage,
 } from "@payky/core/evolu/device-client"
 import { useAtomValue } from "jotai"
 import { useCallback, useMemo } from "react"
@@ -16,6 +17,19 @@ const languageQuery = createDeviceQuery((db) =>
     .select(["id", "language"])
     .where("id", "=", deviceSettingsId)
 )
+
+const localeQuery = createDeviceQuery((db) =>
+  db
+    .selectFrom("deviceSettings")
+    .select(["id", "language", "locale"])
+    .where("id", "=", deviceSettingsId)
+)
+
+/** Number and money formatting locale; falls back to the language's, as web's `useLocale`. */
+export function useLocale(): DeviceLocale {
+  const row = useDeviceEvoluQuery(localeQuery).data[0]
+  return row?.locale ?? getDeviceLocaleForLanguage(row?.language ?? "en")
+}
 
 /** The device language comes from the bootstrapped device settings row. */
 export function useTranslation() {

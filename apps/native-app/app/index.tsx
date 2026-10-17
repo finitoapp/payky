@@ -1,3 +1,3 @@
-import { NativePreviewPage } from "../src/features/preview/native-preview-page.tsx"
+import { TerminalHomePage } from "../src/features/terminal-home/terminal-home-page.tsx"
 
-export default NativePreviewPage
+export default TerminalHomePage

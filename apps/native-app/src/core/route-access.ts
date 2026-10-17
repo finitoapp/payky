@@ -5,6 +5,7 @@ import type {
 
 export type NativeRoutePath =
   | "/"
+  | "/diagnostics"
   | "/error"
   | "/pair"
   | "/onboarding"
@@ -12,12 +13,14 @@ export type NativeRoutePath =
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
- * keeps it in step with `app/`. Both routes are diagnostics, owner-level
- * until R03 replaces them. No route group exists yet; when one does, add the
+ * keeps it in step with `app/`. `/` is the terminal home and needs `sell`
+ * like web's `_terminal/` index (access/0002); `/diagnostics` and `/pair`
+ * are owner-level until R03 replaces them. No route group exists yet; when one does, add the
  * "a `free` child under a gated group fails" check to the test (access/0003).
  */
 export const routeAccess = {
-  "/": "admin",
+  "/": "sell",
+  "/diagnostics": "admin",
   "/pair": "admin",
   // Like web's /onboarding, outside the gated `_terminal` layout: a fresh
   // account has no PIN yet.

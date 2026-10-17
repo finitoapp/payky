@@ -322,8 +322,19 @@ function TableTile({
           accessibilityRole="button"
           accessibilityLabel={t("tables.tile.newBill")}
           onPress={newBill}
-          hitSlop={6}
-          style={{ position: "absolute", top: 8, right: 8 }}
+          // Above the tile: on Android an elevated card otherwise draws over,
+          // and catches the touch of, a sibling without elevation.
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            minWidth: 48,
+            minHeight: 48,
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1,
+            elevation: 8,
+          }}
         >
           <Text fontSize={22} fontWeight="600">
             +

@@ -1,3 +1,4 @@
+import { sqliteTrue } from "@evolu/common"
 import { formatMoney } from "@payky/app-shared/format-money"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -13,14 +14,19 @@ import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-it
 import { catalogItemsQuery } from "@payky/core/modules/catalog-item/catalog-item-queries"
 import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
-import { type FiatCurrency, Integer } from "@payky/core/modules/shared/schema"
+import {
+  type FiatCurrency,
+  Integer,
+  NonNegativeInteger,
+} from "@payky/core/modules/shared/schema"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useMemo, useRef, useState } from "react"
 import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
@@ -91,6 +97,7 @@ function BillPage({ billId }: { readonly billId: BillId }) {
           : (bill.label ?? t("bill.list.label", { number: bill.displayNumber }))
       }
       currency={bill?.currency ?? getFiatCurrency(settings)}
+      tipsEnabled={settings?.tipsEnabled === sqliteTrue}
       summaries={summaries}
     />
   )
@@ -144,11 +151,13 @@ function BillCart({
   billId,
   title,
   currency,
+  tipsEnabled,
   summaries,
 }: {
   readonly billId: BillId
   readonly title: string
   readonly currency: FiatCurrency
+  readonly tipsEnabled: boolean
   readonly summaries: ReadonlyArray<BillLineSummary>
 }) {
   const { t } = useTranslation()
@@ -159,6 +168,38 @@ function BillCart({
     [summaries]
   )
   const cart = useCartBill({ billId, currency })
+  const createTerminalPayment = useCreateTerminalPayment()
+  // The ref closes the window before `chargePending` re-renders: a second tap
+  // would create a second payment (core accepts a bill with a pending one) and
+  // lock the cart. Same pairing as the keypad and the tip page.
+  const chargePendingRef = useRef(false)
+  const [chargePending, setChargePending] = useState(false)
+
+  // The payment's amounts and bill-line snapshot are core's
+  // (`createPreparedPayment` with `billId`); this only picks the route.
+  const charge = async () => {
+    if (summaries.length === 0 || chargePendingRef.current) return
+    chargePendingRef.current = true
+    setChargePending(true)
+    try {
+      if (tipsEnabled) {
+        router.push({
+          pathname: "/payment/tip",
+          params: { amount: String(totalAmount), currency, billId },
+        })
+        return
+      }
+      await createTerminalPayment({
+        amount: totalAmount,
+        currency,
+        tipAmount: NonNegativeInteger(0),
+        billId,
+      })
+    } finally {
+      chargePendingRef.current = false
+      setChargePending(false)
+    }
+  }
   const catalogItems = useEvoluQuery(catalogItemsQuery).data
   const catalogItemsById = useMemo(
     () => new Map(catalogItems.map((item) => [item.id, item])),
@@ -232,6 +273,12 @@ function BillCart({
         <Text fontSize={32} fontWeight="600">
           {formatMoney({ value: totalAmount, currency }, locale)}
         </Text>
+        <AppButton
+          label={t("home.pay")}
+          pending={chargePending}
+          disabled={summaries.length === 0}
+          onPress={() => void charge()}
+        />
       </YStack>
     </SafeAreaView>
   )

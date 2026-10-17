@@ -163,10 +163,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     edited,
   })
   const formatMinor = (value: number) =>
-    formatMoney(
-      { value: Integer(value), currency: payment.currency },
-      locale
-    )
+    formatMoney({ value: Integer(value), currency: payment.currency }, locale)
   const canMarkCashPaid =
     cashRegisterAccountId !== null && cashRegisterAccountId !== undefined
   const preparing =
@@ -216,9 +213,14 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           nativeConsole.error("Failed to cancel payment", result.error)
           return "paymentWait.cancelError"
         }
-        // Web returns a bill payment to its cart; bills arrive with P05, until
-        // then every payment started here is a plain amount.
-        goHome()
+        // Only a bill payment has a cart to go back to; a keypad payment
+        // sent to `/bill` without an id would open a brand-new empty bill.
+        if (payment.billId === null) goHome()
+        else
+          router.dismissTo({
+            pathname: "/bill",
+            params: { billId: payment.billId },
+          })
       })
     } finally {
       setCancelPending(false)

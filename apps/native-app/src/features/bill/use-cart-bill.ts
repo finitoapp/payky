@@ -2,7 +2,9 @@ import { linesNeedDiscard } from "@payky/app-shared/cart-lines"
 import {
   addCatalogItemToBill,
   appendRemoveBillLine,
+  assignBillToTable,
   createBillAtEnd,
+  removeTableFromBill,
 } from "@payky/core/modules/bill/bill-actions"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
@@ -14,6 +16,7 @@ import {
   type NonNegativeInteger,
   PositiveNumber,
 } from "@payky/core/modules/shared/schema"
+import type { TableId } from "@payky/core/modules/table/table-types"
 import { useAtomValue } from "jotai"
 import { useRef, useState } from "react"
 import { accountAtom } from "../../atoms/account.ts"
@@ -26,7 +29,7 @@ import { useTranslation } from "../../hooks/use-translation.ts"
 
 /**
  * Native counterpart of web's `useCartBill`, minus undo/redo (with the toast
- * that offers it), table assignment and clear, which come with later tasks.
+ * that offers it) and clear, which come with later tasks.
  * It only issues mutations; the visible cart is always the live line query.
  *
  * Every mutation runs through one promise chain so taps apply in tap order
@@ -37,9 +40,18 @@ import { useTranslation } from "../../hooks/use-translation.ts"
 export function useCartBill({
   billId,
   currency,
+  tableId,
+  onTableSeedChange,
 }: {
   readonly billId: BillId
   readonly currency: FiatCurrency
+  /** Table to assign when the bill row is lazily created on the first line. */
+  readonly tableId: TableId | null
+  /**
+   * Records a table picked before the bill row exists, so it still seeds the
+   * row the first line creates.
+   */
+  readonly onTableSeedChange: (tableId: TableId | null) => void
 }) {
   const appRun = useAppRun()
   const evolu = useAtomValue(evoluAtom)
@@ -90,13 +102,12 @@ export function useCartBill({
 
     const creation = (async () => {
       await using run = appRun()
-      // No table yet; the pos overview (P04) assigns one.
       await run.ok(
         createBillAtEnd({
           id: billId,
           deviceId: device.id,
           label: null,
-          tableId: null,
+          tableId,
           currency,
         })
       )
@@ -190,5 +201,27 @@ export function useCartBill({
   const removeLine = (summary: BillLineSummary) =>
     removeFromCart(summary, summary.quantity, summary.totalAmount)
 
-  return { pending, addOne, addQuantity, removeOne, removeLine }
+  /**
+   * Assigns (or clears) the bill's table on the same queue as every other
+   * mutation, so it cannot race the lazy bill creation. Whether the row
+   * exists is read here, as the live query lags the write: a table picked
+   * between the first tap creating the row and the query catching up would
+   * otherwise only reach the seed, which nothing reads once the row exists.
+   */
+  const assignTable = (nextTableId: TableId | null) =>
+    runQueued(async () => {
+      if ((await evolu.loadQuery(billByIdQuery(billId))).length === 0) {
+        onTableSeedChange(nextTableId)
+        return true
+      }
+      await using run = appRun()
+      await run.ok(
+        nextTableId === null
+          ? removeTableFromBill(billId)
+          : assignBillToTable({ id: billId, tableId: nextTableId })
+      )
+      return true
+    })
+
+  return { pending, assignTable, addOne, addQuantity, removeOne, removeLine }
 }

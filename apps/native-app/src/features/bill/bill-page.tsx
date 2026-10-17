@@ -24,6 +24,8 @@ import {
   Integer,
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
+import { tablesQuery } from "@payky/core/modules/table/table-queries"
+import { TableId } from "@payky/core/modules/table/table-types"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
 import { Suspense, useDeferredValue, useMemo, useRef, useState } from "react"
 import { FlatList, Pressable } from "react-native"
@@ -34,6 +36,7 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { CategoryFilterBar } from "./category-filter-bar.tsx"
 import {
   useBillLineSummaries,
@@ -55,7 +58,10 @@ const goHome = () => router.dismissTo("/")
  */
 export function BillRoute() {
   const { t } = useTranslation()
-  const { billId } = useLocalSearchParams<{ billId?: string }>()
+  const { billId, tableId } = useLocalSearchParams<{
+    billId?: string
+    tableId?: string
+  }>()
   const [mintedId] = useState(createRandomBillId)
 
   if (billId === undefined || billId === "")
@@ -68,13 +74,31 @@ export function BillRoute() {
 
   return (
     <Suspense fallback={<LoadingView />}>
-      <BillPage billId={parsed.data} />
+      <BillPage
+        billId={parsed.data}
+        // A broken `tableId` is only a lost preselection, as on web.
+        initialTableId={
+          tableId === undefined ? undefined : TableId.safeParse(tableId).data
+        }
+      />
     </Suspense>
   )
 }
 
-function BillPage({ billId }: { readonly billId: BillId }) {
+function BillPage({
+  billId,
+  initialTableId,
+}: {
+  readonly billId: BillId
+  readonly initialTableId: TableId | undefined
+}) {
   const { t } = useTranslation()
+  // Only meaningful before the bill row exists: it seeds the table the lazily
+  // created row is assigned to. Afterwards `bill.tableId` is the truth.
+  const [pendingTableId, setPendingTableId] = useState<TableId | null>(
+    initialTableId ?? null
+  )
+  const tables = useEvoluQuery(tablesQuery).data
   const [settings] = useEvoluQuery(settingsQuery).data
   const [bill] = useEvoluQuery(billByIdQuery(billId)).data
   const summaries = useBillLineSummaries(billId)
@@ -100,6 +124,14 @@ function BillPage({ billId }: { readonly billId: BillId }) {
   return (
     <BillCart
       billId={billId}
+      tableId={bill === undefined ? pendingTableId : bill.tableId}
+      tableName={
+        tables.find(
+          (table) =>
+            table.id === (bill === undefined ? pendingTableId : bill.tableId)
+        )?.name
+      }
+      onTableSeedChange={setPendingTableId}
       title={
         bill === undefined
           ? t("bill.title")
@@ -158,12 +190,19 @@ function BillLocked({
 
 function BillCart({
   billId,
+  tableId,
+  tableName,
+  onTableSeedChange,
   title,
   currency,
   tipsEnabled,
   summaries,
 }: {
   readonly billId: BillId
+  readonly tableId: TableId | null
+  /** The assigned table's name, when there is one. */
+  readonly tableName: string | undefined
+  readonly onTableSeedChange: (tableId: TableId | null) => void
   readonly title: string
   readonly currency: FiatCurrency
   readonly tipsEnabled: boolean
@@ -176,7 +215,8 @@ function BillCart({
     () => deriveBillSummaryStats(summaries),
     [summaries]
   )
-  const cart = useCartBill({ billId, currency })
+  const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
+  const [tablePickerOpen, setTablePickerOpen] = useState(false)
   const createTerminalPayment = useCreateTerminalPayment()
   // The ref closes the window before `chargePending` re-renders: a second tap
   // would create a second payment (core accepts a bill with a pending one) and
@@ -276,6 +316,10 @@ function BillCart({
         {title}
       </Text>
 
+      {tableName === undefined ? null : (
+        <Text color="muted-foreground">{tableName}</Text>
+      )}
+
       {/* Search and scan mode arrive with H02. */}
       <CategoryFilterBar
         categories={categories}
@@ -347,6 +391,21 @@ function BillCart({
         <Text fontSize={32} fontWeight="600">
           {formatMoney({ value: totalAmount, currency }, locale)}
         </Text>
+        <AppButton
+          variant="secondary"
+          label={tableName ?? t("bill.table.assign")}
+          onPress={() => setTablePickerOpen(true)}
+        />
+        <AssignTableDialog
+          open={tablePickerOpen}
+          onClose={() => setTablePickerOpen(false)}
+          billId={billId}
+          currentTableId={tableId}
+          onAssign={(nextTableId) => {
+            setTablePickerOpen(false)
+            void cart.assignTable(nextTableId)
+          }}
+        />
         <AppButton
           label={t("home.pay")}
           pending={chargePending}

@@ -10,8 +10,13 @@ import {
   getBillLineSummaryUnitAmount,
   getLatestCatalogItemSummary,
 } from "@payky/core/modules/bill-line/bill-line-utils"
+import { catalogCategoriesQuery } from "@payky/core/modules/catalog-category/catalog-category-queries"
 import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
-import { catalogItemsQuery } from "@payky/core/modules/catalog-item/catalog-item-queries"
+import {
+  catalogItemsPageQuery,
+  catalogItemsQuery,
+} from "@payky/core/modules/catalog-item/catalog-item-queries"
+import type { CategoryFilter } from "@payky/core/modules/catalog-item/catalog-item-types"
 import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import {
@@ -20,7 +25,7 @@ import {
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
-import { Suspense, useMemo, useRef, useState } from "react"
+import { Suspense, useDeferredValue, useMemo, useRef, useState } from "react"
 import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
@@ -29,12 +34,16 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { CategoryFilterBar } from "./category-filter-bar.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
   usePendingPayments,
 } from "./use-bill-state.ts"
 import { useCartBill } from "./use-cart-bill.ts"
+
+/** The category filters, plus "on the bill": only what the bill holds. */
+type BillItemFilter = CategoryFilter | "inBill"
 
 const goHome = () => router.dismissTo("/")
 
@@ -209,6 +218,50 @@ function BillCart({
     () => catalogItems.filter((item) => item.currency === currency),
     [catalogItems, currency]
   )
+  const categories = useEvoluQuery(catalogCategoriesQuery).data
+  const usedCategoryIds = useMemo(
+    () => new Set(currencyItems.map((item) => item.categoryId)),
+    [currencyItems]
+  )
+  const [categoryFilter, setCategoryFilter] = useState<BillItemFilter>("all")
+  const inBillItemIds = useMemo(
+    () => [
+      ...new Set(
+        summaries.flatMap((summary) =>
+          summary.catalogItemId !== null && summary.quantity > 0
+            ? [summary.catalogItemId]
+            : []
+        )
+      ),
+    ],
+    [summaries]
+  )
+  // Deferred, so switching a chip never suspends this screen: a suspend here
+  // would bubble to the route's boundary and remount the cart mid-tap.
+  const deferredFilter = useDeferredValue(categoryFilter)
+  const deferredInBillIds = useDeferredValue(inBillItemIds)
+  const gridQuery = useMemo(
+    () =>
+      catalogItemsPageQuery({
+        search: "",
+        categoryFilter: deferredFilter === "inBill" ? "all" : deferredFilter,
+        currency,
+        ...(deferredFilter === "inBill"
+          ? { catalogItemIds: deferredInBillIds }
+          : {}),
+        // The whole catalog keeps each category's items together, as web.
+        groupByCategory: deferredFilter === "all",
+        // ponytail: no paging, the list is virtualized; raise or page if a
+        // catalog ever outgrows this.
+        limit: 10_000,
+      }),
+    [deferredFilter, deferredInBillIds, currency]
+  )
+  const gridItems = useEvoluQuery(gridQuery).data
+  const inBillFilterOptions = useMemo(
+    () => [{ value: "inBill" as const, label: t("bill.filter.inBill") }],
+    [t]
+  )
 
   return (
     <SafeAreaView
@@ -223,15 +276,36 @@ function BillCart({
         {title}
       </Text>
 
-      {/* The category filter, search and scan mode arrive with P04/H02. */}
+      {/* Search and scan mode arrive with H02. */}
+      <CategoryFilterBar
+        categories={categories}
+        usedCategoryIds={usedCategoryIds}
+        value={categoryFilter}
+        onValueChange={setCategoryFilter}
+        allLabel={t("bill.category.all")}
+        uncategorizedLabel={t("bill.category.uncategorized")}
+        extraOptions={inBillFilterOptions}
+      />
       <FlatList
         style={{ flex: 1 }}
         numColumns={2}
         columnWrapperStyle={{ gap: 8 }}
         contentContainerStyle={{ gap: 8 }}
-        data={currencyItems}
+        data={gridItems}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={<CatalogEmpty />}
+        ListEmptyComponent={
+          currencyItems.length === 0 ? (
+            <CatalogEmpty />
+          ) : (
+            <EmptyView
+              message={t(
+                categoryFilter === "inBill"
+                  ? "bill.filter.inBill.empty"
+                  : "bill.emptySearch"
+              )}
+            />
+          )
+        }
         renderItem={({ item }) => (
           <ItemBrick
             catalogItem={item}

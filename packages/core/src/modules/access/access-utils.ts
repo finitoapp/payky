@@ -1,5 +1,3 @@
-import { pbkdf2Async } from "@noble/hashes/pbkdf2.js"
-import { sha256 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes, randomBytes } from "@noble/hashes/utils.js"
 import { z } from "zod"
 import { jsonCodec } from "../../zod-utils.ts"
@@ -47,17 +45,35 @@ const PinHashSchema = z.object({
 export type PinHash = z.output<typeof PinHashSchema>
 export const PinHashJson = jsonCodec(PinHashSchema)
 
+/**
+ * PBKDF2-HMAC-SHA256 through WebCrypto, which every runtime provides
+ * natively (the native app through react-native-quick-crypto). A pure-JS
+ * PBKDF2 took over 20 s per PIN on Hermes, which has no JIT.
+ */
 const derive = async (
   pin: string,
   salt: string,
   iterations: number
-): Promise<string> =>
-  bytesToHex(
-    await pbkdf2Async(sha256, pin, hexToBytes(salt), {
-      c: iterations,
-      dkLen: 32,
-    })
+): Promise<string> => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(pin),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
   )
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt: hexToBytes(salt) as BufferSource,
+      iterations,
+    },
+    key,
+    256
+  )
+  return bytesToHex(new Uint8Array(bits))
+}
 
 export const hashPin = async (pin: Pin): Promise<PinHash> => {
   const salt = bytesToHex(randomBytes(16))

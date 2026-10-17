@@ -28,6 +28,18 @@ describe("PinSchema", () => {
 })
 
 describe("PIN hash", () => {
+  test("matches the PBKDF2-HMAC-SHA256 vector existing hashes were made with", async () => {
+    // Computed with @noble/hashes' pbkdf2 (the previous implementation), so
+    // PINs hashed before the switch to WebCrypto still verify.
+    const stored = {
+      salt: "00112233445566778899aabbccddeeff",
+      iterations: 30_000,
+      hash: "7c240413a3296f2fe810116e320e4078b78eaf45af34881a99e7dbdcf8413c6f",
+    }
+    expect(await verifyPin("2468", stored)).toBe(true)
+    expect(await verifyPin("2469", stored)).toBe(false)
+  })
+
   test("verifies the PIN it was made from, and no other", async () => {
     const stored = await hashPin(PinSchema.parse("4821"))
 

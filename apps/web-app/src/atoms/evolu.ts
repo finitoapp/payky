@@ -1,4 +1,8 @@
 import { isNonEmptyArray } from "@evolu/common"
+import {
+  type AtomLifetime,
+  renewAtomLifetime,
+} from "@payky/app-shared/atom-lifetime"
 import { startCashuShardStore } from "@payky/core/cashu/cashu-shard-store"
 import { createCashuWalletDep } from "@payky/core/cashu/cashu-wallet"
 import { createLinkyOwnerSync } from "@payky/core/cashu/linky-owners"
@@ -16,7 +20,14 @@ import {
 } from "@/platform/e2e-cashu-mint.ts"
 import { createFetchDep } from "@/platform/platform-deps.ts"
 
-export const evoluAtom = atom(async (get, { signal }) => {
+const evoluLifetimeAtom = atom<AtomLifetime>(() => ({ current: null }))
+const cashuShardStoreLifetimeAtom = atom<AtomLifetime>(() => ({
+  current: null,
+}))
+
+export const evoluAtom = atom(async (get, options) => {
+  // Ends the previous client as soon as a new account's one starts opening.
+  const signal = renewAtomLifetime(get(evoluLifetimeAtom), options.signal)
   const account = await get(accountAtom)
   const run = get(runAtom)
   const evolu = await run.ok(
@@ -45,8 +56,8 @@ export const evoluAtom = atom(async (get, { signal }) => {
     : undefined
 
   // Fires when this atom recomputes (a new client is about to replace this
-  // one) or is unmounted — store-owned, unlike a module-level variable, so a
-  // second store (tests, HMR) never shares or clobbers this client's cleanup.
+  // one) — store-owned, unlike a module-level variable, so a second store
+  // (tests, HMR) never shares or clobbers this client's cleanup.
   signal.addEventListener(
     "abort",
     () => {
@@ -64,7 +75,11 @@ export const evoluAtom = atom(async (get, { signal }) => {
  * store that syncs and writes the shared Cashu wallet, or null for a demo
  * account. Released with the app Evolu on an account switch.
  */
-export const cashuShardStoreAtom = atom(async (get, { signal }) => {
+export const cashuShardStoreAtom = atom(async (get, options) => {
+  const signal = renewAtomLifetime(
+    get(cashuShardStoreLifetimeAtom),
+    options.signal
+  )
   const account = await get(accountAtom)
   const evolu = await get(evoluAtom)
   const run = get(runAtom)

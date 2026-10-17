@@ -9,6 +9,7 @@ export default defineConfig({
         "apps/web-app/src/**/*.{ts,tsx}",
         "apps/landing/src/**/*.{ts,tsx}",
         "packages/web-shared/src/**/*.ts",
+        "packages/app-shared/src/**/*.ts",
         "apps/web-app/api/**/*.ts",
         "apps/cli/src/**/*.ts",
         "packages/core/src/**/*.ts",
@@ -35,6 +36,12 @@ export default defineConfig({
       },
       "packages/core/vitest.config.ts",
       "apps/cli/vitest.config.ts",
+      {
+        test: {
+          name: "app-shared",
+          include: ["packages/app-shared/src/**/*.test.ts"],
+        },
+      },
       {
         test: {
           name: "native-bootstrap",

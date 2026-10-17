@@ -6,6 +6,10 @@ import {
   onboardingFormAtom,
 } from "@payky/app-shared/onboarding-form-state"
 import {
+  createFinishOnboardingInput,
+  validateOnboardingForm,
+} from "@payky/app-shared/onboarding-utils"
+import {
   accountListQuery,
   removeDeviceAccount,
   selectAccount,
@@ -20,19 +24,12 @@ import {
   requireNotOnboarded,
 } from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
-import { PaymentMethodOrderJson } from "@payky/core/modules/app-settings/app-settings-utils"
-import {
-  BankAccountInputIbanSchema,
-  FiatCurrency,
-  NonEmptyString255Schema,
-} from "@payky/core/modules/shared/schema"
 import { markAppEntered } from "@payky/web-shared/landing-redirect"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useAtom, useAtomValue } from "jotai"
 import { ChevronLeft } from "lucide-react"
 import { useEffect, useId, useState } from "react"
-import { z } from "zod"
 import { accountAtom } from "@/atoms/account.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
 import { PhoneViewport } from "@/components/phone-viewport.tsx"
@@ -54,7 +51,6 @@ import { LanguageSelect } from "@/features/onboarding/language-select.tsx"
 import { AccountChoiceStep } from "@/features/onboarding/onboarding-steps/account-choice-step.tsx"
 import { PaymentsStep } from "@/features/onboarding/onboarding-steps/payments-step.tsx"
 import { RestoreAccountStep } from "@/features/onboarding/onboarding-steps/restore-account-step.tsx"
-import { onboardingPaymentMethodOrder } from "@/features/onboarding/onboarding-utils.ts"
 import { AccountTransferTarget } from "@/features/shared/account/account-transfer-target.tsx"
 import { useRestoreAccount } from "@/features/shared/account/use-restore-account.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
@@ -113,21 +109,13 @@ export function OnboardingPage({
   const onboardingSteps = getOnboardingSteps(accountType)
   const pending = finishing || restoring || cancelingSetup
 
+  const validation = validateOnboardingForm({ iban, businessName })
   const ibanEnabled = iban.trim() !== ""
-  const ibanParseResult = ibanEnabled
-    ? BankAccountInputIbanSchema.safeParse(iban)
-    : null
-  const ibanInvalid = ibanParseResult !== null && !ibanParseResult.success
+  const nameInvalid = validation.businessNameInvalid
   const ibanError: TranslationKey | null =
-    submitAttempted && ibanInvalid
+    submitAttempted && validation.ibanInvalid
       ? "settings.fiatBankAccount.iban.invalid"
       : null
-
-  const nameParseResult =
-    businessName.trim() === ""
-      ? null
-      : NonEmptyString255Schema.safeParse(businessName)
-  const nameInvalid = nameParseResult !== null && !nameParseResult.success
 
   // Having reached the app once, this browser no longer gets the landing
   // page instead of onboarding (landing/0001).
@@ -168,7 +156,7 @@ export function OnboardingPage({
     // Onboarding finishes on the payments step, so the IBAN is checked here
     // rather than when leaving it. The recovery phrase is not asked about:
     // it stays in Settings > Security (onboarding/0002).
-    if (ibanInvalid || nameInvalid) {
+    if (validation.ibanInvalid || nameInvalid) {
       setSubmitAttempted(true)
       return
     }
@@ -179,9 +167,9 @@ export function OnboardingPage({
       const allowed = await run(requireNotOnboarded())
       if (!allowed.ok) return "onboarding.alreadyOnboarded"
 
-      if (!skipProfile && nameParseResult?.success) {
+      if (!skipProfile && validation.businessName !== null) {
         const published = await run(
-          publishNostrProfileName({ name: nameParseResult.data })
+          publishNostrProfileName({ name: validation.businessName })
         )
         if (!published.ok) {
           setProfilePublishFailed(true)
@@ -201,21 +189,7 @@ export function OnboardingPage({
       setLocale(getDeviceLocaleForLanguage(language))
 
       const finished = await run(
-        finishOnboardingTask({
-          // Every new account starts Czech (onboarding/0001); anyone else
-          // changes it in Settings.
-          country: "CZ",
-          currency: FiatCurrency.CZK,
-          iban:
-            ibanEnabled && ibanParseResult?.success
-              ? ibanParseResult.data
-              : null,
-          defaultPaymentMethod: onboardingPaymentMethodOrder[0],
-          paymentMethodOrderJson: z.encode(
-            PaymentMethodOrderJson,
-            onboardingPaymentMethodOrder
-          ),
-        })
+        finishOnboardingTask(createFinishOnboardingInput(validation.iban))
       )
       // An onboarded account leaves through the redirect effect above.
       if (!finished.ok) return "onboarding.alreadyOnboarded"

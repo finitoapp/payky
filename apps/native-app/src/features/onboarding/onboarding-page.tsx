@@ -4,10 +4,11 @@ import {
   type OnboardingStep,
   onboardingFormAtom,
 } from "@payky/app-shared/onboarding-form-state"
+import { validateOnboardingForm } from "@payky/app-shared/onboarding-utils"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { router } from "expo-router"
 import { useAtom } from "jotai"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { BackHandler } from "react-native"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
@@ -16,6 +17,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { AccountChoiceStep } from "./account-choice-step.tsx"
 import { LanguageSelect } from "./language-select.tsx"
+import { PaymentsStep } from "./payments-step.tsx"
 
 // Only the steps native implements; restore and transfer come later.
 const headingKeys = {
@@ -35,7 +37,15 @@ export function OnboardingPage() {
   const { t } = useTranslation()
   const [settings] = useEvoluQuery(settingsQuery).data
   const [form, setForm] = useAtom(onboardingFormAtom)
-  const { step, accountType } = form
+  const { step, accountType, iban, businessName } = form
+  // Validate only on submission, so an unfinished account number shows no
+  // error while it is still being typed (as on web).
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const validation = validateOnboardingForm({ iban, businessName })
+  const ibanError: TranslationKey | null =
+    submitAttempted && validation.ibanInvalid
+      ? "settings.fiatBankAccount.iban.invalid"
+      : null
   const steps = getOnboardingSteps(accountType)
   const stepIndex = steps.indexOf(step)
 
@@ -48,6 +58,7 @@ export function OnboardingPage() {
   const goBack = () => {
     const previous = steps[stepIndex - 1]
     if (previous === undefined) return false
+    setSubmitAttempted(false)
     setForm((current) => ({ ...current, step: previous }))
     return true
   }
@@ -84,6 +95,29 @@ export function OnboardingPage() {
             }))
           }}
         />
+      ) : null}
+
+      {step === "payments" ? (
+        <>
+          <PaymentsStep
+            iban={iban}
+            ibanError={ibanError}
+            pending={false}
+            onIbanChange={(nextIban) => {
+              setForm((current) => ({ ...current, iban: nextIban }))
+            }}
+          />
+          <AppButton
+            label={t(
+              iban.trim() === ""
+                ? "onboarding.finishWithoutBankTransfer"
+                : "onboarding.finish"
+            )}
+            onPress={() => {
+              if (validation.ibanInvalid) setSubmitAttempted(true)
+            }}
+          />
+        </>
       ) : null}
 
       {stepIndex > 0 ? (

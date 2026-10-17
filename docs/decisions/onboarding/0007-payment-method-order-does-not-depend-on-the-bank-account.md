@@ -41,7 +41,7 @@ accounts created with the previous order can be reordered in settings.
 
 ## Enforced by
 
-- `apps/web-app/src/features/onboarding/onboarding-utils.test.ts > onboarding payment method order > keeps bank transfer and card before Spark and Cashu after reading settings`
+- `packages/app-shared/src/onboarding-utils.test.ts > onboarding payment method order > keeps bank transfer and card before Spark and Cashu after reading settings`
 - `apps/web-app/e2e/onboarding.spec.ts > onboarding enables cash and Spark with bank transfers`
 - `apps/web-app/e2e/onboarding.spec.ts > onboarding enables cash and Spark without bank transfers`
 - `packages/core/src/modules/app-settings/app-settings-actions.test.ts > finishOnboarding > enables cash and Spark without a bank account and leaves Cashu disabled`

@@ -16,7 +16,7 @@ import { paymentLinesByPaymentIdQuery } from "@payky/core/modules/payment-line/p
 import { paymentLinesToBillLineSummaries } from "@payky/core/modules/payment-line/payment-line-utils"
 import { useMemo } from "react"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
-import { useBillLineSummaries } from "../bill/use-bill-state.ts"
+import { useBillLineSummaries } from "../shared/use-bill-state.ts"
 
 // Native counterparts of web's `useBillCoverage` and `useBillLineSummaryDiff`:
 // the derivations are core's, only the query hooks differ.

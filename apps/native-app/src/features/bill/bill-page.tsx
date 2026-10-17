@@ -37,13 +37,13 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { AssignTableDialog } from "./assign-table-dialog.tsx"
-import { CategoryFilterBar } from "./category-filter-bar.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
   usePendingPayments,
-} from "./use-bill-state.ts"
+} from "../shared/use-bill-state.ts"
+import { AssignTableDialog } from "./assign-table-dialog.tsx"
+import { CategoryFilterBar } from "./category-filter-bar.tsx"
 import { useCartBill } from "./use-cart-bill.ts"
 
 /** The category filters, plus "on the bill": only what the bill holds. */

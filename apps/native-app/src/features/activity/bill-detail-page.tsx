@@ -34,7 +34,10 @@ import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { useBillLineSummaries, useBillStatus } from "../bill/use-bill-state.ts"
+import {
+  useBillLineSummaries,
+  useBillStatus,
+} from "../shared/use-bill-state.ts"
 import {
   paymentMethodsText,
   StatusDot,

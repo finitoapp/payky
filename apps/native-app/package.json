@@ -16,6 +16,7 @@
     "@evolu/react-native": "16.1.6",
     "@payky/app-shared": "workspace:*",
     "@payky/core": "workspace:*",
+    "@t3-oss/env-core": "0.13.11",
     "@tamagui/config": "3.0.18",
     "@tamagui/font-inter": "3.0.18",
     "expo": "58.0.14",
@@ -24,6 +25,7 @@
     "expo-dev-client": "58.0.14",
     "expo-font": "58.0.8",
     "expo-linking": "58.0.13",
+    "expo-network": "58.0.3",
     "expo-router": "58.0.23",
     "expo-sqlite": "58.0.13",
     "expo-status-bar": "58.0.3",
@@ -34,7 +36,8 @@
     "react-native-safe-area-context": "5.10.1",
     "react-native-screens": "4.30.0",
     "react-native-svg": "15.16.0",
-    "tamagui": "3.0.18"
+    "tamagui": "3.0.18",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@babel/plugin-transform-explicit-resource-management": "7.29.7",

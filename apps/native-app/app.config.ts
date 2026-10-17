@@ -18,5 +18,7 @@ export default {
     "expo-font",
     ["expo-sqlite", { useSQLCipher: true }],
     "./plugins/with-no-data-extraction.cjs",
+    "./plugins/with-library-compile-sdk.cjs",
+    "./plugins/with-release-proguard-rules.cjs",
   ],
 } satisfies ExpoConfig

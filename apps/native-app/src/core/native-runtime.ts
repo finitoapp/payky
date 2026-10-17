@@ -9,7 +9,8 @@ import { createEvoluDeps } from "@evolu/react-native/expo-sqlite"
  * own review before it may write.
  */
 export const nativeConsole = createConsole({
-  level: "debug",
+  // Debug output names owners and relays; a release build logs warnings only.
+  level: __DEV__ ? "debug" : "warn",
   output: createNativeConsoleOutput(),
 })
 

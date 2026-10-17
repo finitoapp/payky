@@ -10,13 +10,17 @@ import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import { deriveEvoluOwnerSecret } from "@payky/core/modules/shared/key-derivation"
 import { parsePairUri } from "@payky/core/modules/shared/payky-uri"
 import { useLocalSearchParams } from "expo-router"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue, useSetAtom, useStore } from "jotai"
 import { useEffect, useState } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Button, Text, useTheme, View } from "tamagui"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
-import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
+import {
+  evoluCounterAtom,
+  reloadAppEvoluAtom,
+} from "../../atoms/evolu-counter.ts"
 import { nativeEnv } from "../../core/native-env.ts"
+import { useRequirePermission } from "../../core/use-access.ts"
 
 const decodeHex = (hex: string | undefined): string => {
   if (hex === undefined || !/^(?:[0-9a-f]{2})*$/u.test(hex)) return ""
@@ -39,6 +43,9 @@ export function PairTargetPage() {
   const { hex } = useLocalSearchParams<{ hex?: string }>()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reload = useSetAtom(reloadAppEvoluAtom)
+  const { require } = useRequirePermission()
+  const store = useStore()
+  const accountVersion = useAtomValue(evoluCounterAtom)
   const [view, setView] = useState<View_>({ phase: "connecting" })
 
   useEffect(() => {
@@ -84,6 +91,12 @@ export function PairTargetPage() {
             </Text>
             <Button
               onPress={async () => {
+                if (store.get(evoluCounterAtom) !== accountVersion) return
+                if (
+                  !(await require("admin", "accountTransfer.target.confirm.confirm"))
+                )
+                  return
+                if (store.get(evoluCounterAtom) !== accountVersion) return
                 const { created } = await createOrSelectAccount(
                   deviceEvolu,
                   view.payload.masterKey,

@@ -13,12 +13,14 @@ import {
 } from "@payky/core/modules/payment/payment-queries"
 import { derivePaymentStatus } from "@payky/core/modules/payment/payment-status-utils"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
-import { useAtomValue } from "jotai"
+import { useAtomValue, useStore } from "jotai"
 import { useState } from "react"
 import { Button, Text, View } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
+import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import { nativeRun } from "../../core/native-runtime.ts"
+import { useRequirePermission } from "../../core/use-access.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 
 const money = (minor: number, currency: string) =>
@@ -55,6 +57,10 @@ const useLatest = () => useEvoluQuery(latestQuery).data
 export function CashSaleCard() {
   const account = useAtomValue(accountAtom)
   const evolu = useAtomValue(evoluAtom)
+  const { require } = useRequirePermission()
+  const store = useStore()
+  const accountVersion = useAtomValue(evoluCounterAtom)
+  const isCurrentAccount = () => store.get(evoluCounterAtom) === accountVersion
   const latest = useLatest()[0]
   const cashAccount = useEvoluQuery(cashRegisterAccountQuery).data[0]
   const [busy, setBusy] = useState(false)
@@ -79,6 +85,14 @@ export function CashSaleCard() {
 
   const create = () =>
     act(async () => {
+      if (!isCurrentAccount()) return ""
+      if (
+        !(await require("admin", "settings.cashRegisterAccount.enabled.label"))
+      )
+        return ""
+      if (!isCurrentAccount()) return ""
+      if (!(await require("sell", "paymentTip.continue"))) return ""
+      if (!isCurrentAccount()) return ""
       await using run = nativeRun.create({
         evolu,
         evoluOwner: evolu.appOwner,
@@ -89,6 +103,7 @@ export function CashSaleCard() {
       )
       if (!accountId.ok) return `account failed`
       if (accountId.value === null) return "cash account not created"
+      if (!isCurrentAccount()) return ""
       const created = await run(
         createPayment({
           deviceId: account.device.id,
@@ -108,6 +123,9 @@ export function CashSaleCard() {
   const pay = (receivedAmount: number) =>
     act(async () => {
       if (!latest || !cashAccount) return "create a payment first"
+      if (!isCurrentAccount()) return ""
+      if (!(await require("confirm", "access.action.markCashPaid"))) return ""
+      if (!isCurrentAccount()) return ""
       await using run = nativeRun.create({
         evolu,
         evoluOwner: evolu.appOwner,

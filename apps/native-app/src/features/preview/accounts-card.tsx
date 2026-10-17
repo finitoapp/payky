@@ -4,21 +4,27 @@ import {
   insertAccount,
   selectAccount,
 } from "@payky/core/evolu/device-account"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue, useSetAtom, useStore } from "jotai"
 import { Button, Text, View } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
-import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
+import {
+  evoluCounterAtom,
+  reloadAppEvoluAtom,
+} from "../../atoms/evolu-counter.ts"
+import { useRequirePermission } from "../../core/use-access.ts"
 import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
 
 export function AccountsCard() {
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const active = useAtomValue(accountAtom)
   const reload = useSetAtom(reloadAppEvoluAtom)
+  const { require } = useRequirePermission()
+  const store = useStore()
+  const accountVersion = useAtomValue(evoluCounterAtom)
+  const isCurrentAccount = () => store.get(evoluCounterAtom) === accountVersion
   const accounts = useDeviceEvoluQuery(accountListQuery).data
 
-  // TODO(access task): web requires the "admin" permission before switching
-  // (`require("admin", "access.action.switchAccount")`); add it with the PIN gate.
   return (
     <View gap="2">
       <Text fontWeight="600">Accounts</Text>
@@ -30,7 +36,11 @@ export function AccountsCard() {
           </Text>
           {a.id === active.id ? null : (
             <Button
-              onPress={() => {
+              onPress={async () => {
+                if (!isCurrentAccount()) return
+                if (!(await require("admin", "access.action.switchAccount")))
+                  return
+                if (!isCurrentAccount()) return
                 selectAccount(deviceEvolu, a.id)
                 reload()
               }}
@@ -41,7 +51,13 @@ export function AccountsCard() {
         </View>
       ))}
       <Button
-        onPress={() => {
+        onPress={async () => {
+          if (!isCurrentAccount()) return
+          if (
+            !(await require("admin", "settings.accounts.create.confirm.confirm"))
+          )
+            return
+          if (!isCurrentAccount()) return
           insertAccount(deviceEvolu, createAccountMasterKey())
           reload()
         }}

@@ -128,3 +128,7 @@ counting as no permissions.
 - `apps/web-app/e2e/access-gates.spec.ts > cancelling a payment and confirming money by hand ask a Basic device for the PIN`
 - `apps/web-app/e2e/bill.spec.ts > shows the right message for a closed or missing bill`
 - `apps/web-app/e2e/bill.spec.ts > locks a bill while its payment is pending, and unlocks it once that payment is canceled`
+- `apps/native-app/src/features/preview/preview-access.test.ts > requires current-account admin before diagnostic account mutations`
+- `apps/native-app/src/features/preview/preview-access.test.ts > requires admin and sell before creating a diagnostic cash payment`
+- `apps/native-app/src/features/preview/preview-access.test.ts > requires confirm for both diagnostic cash settlements`
+- `apps/native-app/src/features/preview/preview-access.test.ts > requires current-account admin before adding a received account`

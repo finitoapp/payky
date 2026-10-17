@@ -8,6 +8,10 @@ import {
   type FetchDep,
   type MasterKeyDep,
 } from "@payky/core/deps"
+import {
+  createNostrDep,
+  type NostrDep,
+} from "@payky/core/integrations/nostr/nostr-client"
 import type {
   DeviceEvoluDep,
   EvoluDep,
@@ -17,19 +21,21 @@ import { useCallback } from "react"
 import { accountAtom } from "../atoms/account.ts"
 import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
+import { nativeEnv } from "../core/native-env.ts"
 import { nativeRun } from "../core/native-runtime.ts"
 import { createFetchDep } from "../platform/native-deps.ts"
 import { useToast } from "./use-toast.ts"
 import { useTranslation } from "./use-translation.ts"
 
-/** What a native run carries: the account's Evolu clients, key, locks, clock, fetch. */
+/** What a native run carries: the account's Evolu clients, key, locks, clock, fetch, nostr relays. */
 export type NativeRunToastDeps = EvoluDep &
   DeviceEvoluDep &
   EvoluOwnerDep &
   MasterKeyDep &
   LockManagerDep &
   DateDep &
-  FetchDep
+  FetchDep &
+  NostrDep
 
 /**
  * Native `useRunToast`, same protocol as the web hook: owns the
@@ -60,6 +66,7 @@ export function useRunToast() {
           masterKey: account.masterKey,
           ...createDateDep(),
           ...createFetchDep(),
+          ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
         })
         const errorKey = await action(run)
         if (errorKey !== undefined) {

@@ -1,20 +1,31 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   getOnboardingSteps,
+  initialOnboardingFormState,
   type OnboardingStep,
   onboardingFormAtom,
 } from "@payky/app-shared/onboarding-form-state"
-import { validateOnboardingForm } from "@payky/app-shared/onboarding-utils"
+import {
+  createFinishOnboardingInput,
+  validateOnboardingForm,
+} from "@payky/app-shared/onboarding-utils"
+import { getDeviceLocaleForLanguage } from "@payky/core/evolu/device-client"
+import { publishNostrProfileName } from "@payky/core/integrations/nostr/nostr-client"
+import {
+  finishOnboarding,
+  requireNotOnboarded,
+} from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { router } from "expo-router"
 import { useAtom } from "jotai"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { BackHandler } from "react-native"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
-import { useTranslation } from "../../hooks/use-translation.ts"
+import { useRunToast } from "../../hooks/use-run-toast.ts"
+import { useSetLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { AccountChoiceStep } from "./account-choice-step.tsx"
 import { LanguageSelect } from "./language-select.tsx"
 import { PaymentsStep } from "./payments-step.tsx"
@@ -34,13 +45,20 @@ const descriptionKeys = {
 } satisfies Record<OnboardingStep, TranslationKey>
 
 export function OnboardingPage() {
-  const { t } = useTranslation()
+  const { language, t } = useTranslation()
+  const runToast = useRunToast()
+  const setLocale = useSetLocale()
   const [settings] = useEvoluQuery(settingsQuery).data
   const [form, setForm] = useAtom(onboardingFormAtom)
   const { step, accountType, iban, businessName } = form
   // Validate only on submission, so an unfinished account number shows no
   // error while it is still being typed (as on web).
   const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [finishing, setFinishing] = useState(false)
+  // A second tap before the first finishes must not start another run;
+  // `finishOnboarding` refuses an onboarded account too, this saves the wait.
+  const finishingRef = useRef(false)
+  const [profilePublishFailed, setProfilePublishFailed] = useState(false)
   const validation = validateOnboardingForm({ iban, businessName })
   const ibanError: TranslationKey | null =
     submitAttempted && validation.ibanInvalid
@@ -55,9 +73,48 @@ export function OnboardingPage() {
     if (settings !== undefined) router.replace("/")
   }, [settings])
 
+  const finish = async (skipProfile = false) => {
+    if (finishingRef.current) return
+    // Validation precedes publishing the name (onboarding/0004, 0006).
+    if (validation.ibanInvalid || validation.businessNameInvalid) {
+      setSubmitAttempted(true)
+      return
+    }
+    finishingRef.current = true
+    setFinishing(true)
+    await runToast(async (run) => {
+      const allowed = await run(requireNotOnboarded())
+      if (!allowed.ok) return "onboarding.alreadyOnboarded"
+
+      if (!skipProfile && validation.businessName !== null) {
+        const published = await run(
+          publishNostrProfileName({ name: validation.businessName })
+        )
+        if (!published.ok) {
+          setProfilePublishFailed(true)
+          return
+        }
+      }
+      setProfilePublishFailed(false)
+      // The language may have been switched while reading; the formatting
+      // locale follows the one that survived, once (as web does).
+      setLocale(getDeviceLocaleForLanguage(language))
+
+      const finished = await run(
+        finishOnboarding(createFinishOnboardingInput(validation.iban))
+      )
+      if (!finished.ok) return "onboarding.alreadyOnboarded"
+      setForm(initialOnboardingFormState)
+      router.replace("/")
+    })
+    finishingRef.current = false
+    setFinishing(false)
+  }
+
   const goBack = () => {
     const previous = steps[stepIndex - 1]
     if (previous === undefined) return false
+    if (finishingRef.current) return true
     setSubmitAttempted(false)
     setForm((current) => ({ ...current, step: previous }))
     return true
@@ -100,23 +157,56 @@ export function OnboardingPage() {
       {step === "payments" ? (
         <>
           <PaymentsStep
+            businessName={businessName}
+            businessNameError={
+              submitAttempted && validation.businessNameInvalid
+                ? "settings.profile.name.invalid"
+                : null
+            }
             iban={iban}
             ibanError={ibanError}
-            pending={false}
+            pending={finishing}
+            onBusinessNameChange={(nextName) => {
+              setProfilePublishFailed(false)
+              setForm((current) => ({ ...current, businessName: nextName }))
+            }}
             onIbanChange={(nextIban) => {
               setForm((current) => ({ ...current, iban: nextIban }))
             }}
           />
+          {profilePublishFailed ? (
+            <YStack gap="1" accessibilityRole="alert">
+              <Text color="red-600" fontWeight="600">
+                {t("onboarding.businessName.publishFailed.title")}
+              </Text>
+              <Text color="red-600">
+                {t("onboarding.businessName.publishFailed.description")}
+              </Text>
+            </YStack>
+          ) : null}
           <AppButton
             label={t(
-              iban.trim() === ""
-                ? "onboarding.finishWithoutBankTransfer"
-                : "onboarding.finish"
+              profilePublishFailed
+                ? "onboarding.businessName.retry"
+                : iban.trim() === ""
+                  ? "onboarding.finishWithoutBankTransfer"
+                  : "onboarding.finish"
             )}
+            pending={finishing}
             onPress={() => {
-              if (validation.ibanInvalid) setSubmitAttempted(true)
+              void finish()
             }}
           />
+          {profilePublishFailed ? (
+            <AppButton
+              label={t("onboarding.businessName.continueWithoutPublishing")}
+              variant="secondary"
+              disabled={finishing}
+              onPress={() => {
+                void finish(true)
+              }}
+            />
+          ) : null}
         </>
       ) : null}
 
@@ -124,6 +214,7 @@ export function OnboardingPage() {
         <AppButton
           label={t("onboarding.back")}
           variant="secondary"
+          disabled={finishing}
           onPress={() => {
             goBack()
           }}

@@ -2,6 +2,7 @@ import type { Language } from "@payky/app-shared/i18n/resources"
 import { createTranslate } from "@payky/app-shared/i18n/translate"
 import {
   createDeviceQuery,
+  type DeviceLocale,
   deviceSettingsId,
 } from "@payky/core/evolu/device-client"
 import { useAtomValue } from "jotai"
@@ -30,6 +31,18 @@ export function useSetLanguage() {
   return useCallback(
     (language: Language) => {
       deviceEvolu.update("deviceSettings", { id: deviceSettingsId, language })
+    },
+    [deviceEvolu]
+  )
+}
+
+/** Writes the device locale (number and money formatting), as web's `useSetLocale`. */
+export function useSetLocale() {
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+
+  return useCallback(
+    (locale: DeviceLocale) => {
+      deviceEvolu.update("deviceSettings", { id: deviceSettingsId, locale })
     },
     [deviceEvolu]
   )

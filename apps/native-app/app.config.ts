@@ -16,6 +16,8 @@ export default {
   plugins: [
     "expo-router",
     "expo-font",
+    // No organization/project/auth token: builds upload no source maps.
+    "@sentry/react-native/expo",
     ["expo-sqlite", { useSQLCipher: true }],
     "./plugins/with-no-data-extraction.cjs",
     "./plugins/with-library-compile-sdk.cjs",

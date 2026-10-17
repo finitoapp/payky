@@ -16,6 +16,7 @@
     "@evolu/react-native": "16.1.6",
     "@payky/app-shared": "workspace:*",
     "@payky/core": "workspace:*",
+    "@sentry/react-native": "8.31.0",
     "@t3-oss/env-core": "0.13.11",
     "@tamagui/config": "3.0.18",
     "@tamagui/font-inter": "3.0.18",

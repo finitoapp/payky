@@ -9,11 +9,29 @@ import { Suspense, useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider } from "tamagui"
 import { AccessGate } from "../src/components/access-gate.tsx"
+import { AppErrorScreen } from "../src/components/app-error-screen.tsx"
 import { ConfirmHost } from "../src/components/confirm-host.tsx"
 import { DeviceRegistration } from "../src/components/device-registration.tsx"
 import { PinPromptHost } from "../src/components/pin-prompt-host.tsx"
+import { SentryController } from "../src/components/sentry-controller.tsx"
 import { ToastHost } from "../src/components/toast-host.tsx"
 import { tamaguiConfig } from "../tamagui.config.ts"
+
+/**
+ * Expo Router's root error boundary. `retry` remounts this layout, whose
+ * fresh jotai store recreates the app Evolu client, which is what web's
+ * "try again" does with `reloadAppEvoluAtom`; a device-database failure
+ * would fail again, as on web.
+ */
+export function ErrorBoundary({
+  error,
+  retry,
+}: {
+  readonly error: Error
+  readonly retry: () => void
+}) {
+  return <AppErrorScreen error={error} retry={retry} />
+}
 
 export default function RootLayout() {
   const [store] = useState(createStore)
@@ -34,6 +52,7 @@ export default function RootLayout() {
         <PinPromptHost />
         <ToastHost />
         <Suspense fallback={null}>
+          <SentryController />
           <DeviceRegistration />
         </Suspense>
       </TamaguiProvider>

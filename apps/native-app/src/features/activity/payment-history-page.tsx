@@ -17,11 +17,6 @@ import type { PaymentStatus } from "@payky/core/modules/payment/payment-types"
 import { refundSummariesQuery } from "@payky/core/modules/refund/refund-queries"
 import { summarizeRefundsByPayment } from "@payky/core/modules/refund/refund-utils"
 import { router } from "expo-router"
-import { Suspense } from "react"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useTheme } from "tamagui"
-import { ScreenHeader } from "../../components/screen-header.tsx"
-import { LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -31,6 +26,7 @@ import {
   paymentMethodsText,
   type StatusTone,
 } from "./activity-parts.tsx"
+import { ActivityShell } from "./activity-shell.tsx"
 
 const statusPresentation = {
   paid: { tone: "success", glyph: "✓" },
@@ -44,19 +40,10 @@ const statusPresentation = {
 
 /** The Activity tab's payments list. */
 export function PaymentHistoryPage() {
-  const theme = useTheme()
-  const { t } = useTranslation()
-
   return (
-    <SafeAreaView
-      style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
-    >
-      <ScreenHeader title={t("activity.title")} />
-      {/* Stats link: arrives with the stats screen (A08). */}
-      <Suspense fallback={<LoadingView />}>
-        <PaymentHistory />
-      </Suspense>
-    </SafeAreaView>
+    <ActivityShell active="payments">
+      <PaymentHistory />
+    </ActivityShell>
   )
 }
 

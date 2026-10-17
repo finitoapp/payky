@@ -1,11 +1,15 @@
 import { describe, expect, test } from "vitest"
 import {
+  type BillHistoryRow,
+  billHistoryIssueLabels,
   derivePaymentHistoryRowState,
   formatActivityDayTitle,
   hasAnyIssue,
   type PaymentHistoryRow,
   refundBadgeLabel,
   resolvePaymentTitle,
+  summarizeBillHistoryRow,
+  sumSettledTips,
 } from "./activity-history.ts"
 import { createTranslate } from "./i18n/translate.ts"
 
@@ -188,5 +192,50 @@ describe("refundBadgeLabel", () => {
     expect(partial).not.toBeNull()
     expect(full).not.toBeNull()
     expect(partial).not.toBe(full)
+  })
+})
+
+describe("bill history rows", () => {
+  const bill = (overrides: Record<string, unknown> = {}): BillHistoryRow =>
+    ({
+      canceledAt: null,
+      confirmedClosedAt: null,
+      lines: [],
+      items: [],
+      claimedTransactions: [],
+      ...overrides,
+    }) as unknown as BillHistoryRow
+
+  test("an untouched open bill is open and raises no issue", () => {
+    const summary = summarizeBillHistoryRow(bill())
+    expect(summary.status).toBe("open")
+    expect(billHistoryIssueLabels(summary, t)).toEqual([])
+  })
+
+  test("a canceled bill whose money arrived is flagged, not silently canceled", () => {
+    const summary = summarizeBillHistoryRow(
+      bill({ canceledAt: 1, claimedTransactions: [claim("p1", 100)] })
+    )
+    expect(summary.status).toBe("canceled")
+    expect(summary.hasCancellationCollision).toBe(true)
+    expect(billHistoryIssueLabels(summary, t)).toContain(
+      t("bill.collision.title")
+    )
+  })
+
+  test("counts each payment's tip once however many transactions settled it", () => {
+    const row = (paymentId: string, tipAmount: number, id: string) => ({
+      ...claim(paymentId, 100, id),
+      tipAmount,
+    })
+    expect(
+      sumSettledTips({
+        claimedTransactions: [
+          row("p1", 10, "a"),
+          row("p1", 10, "b"),
+          row("p2", 5, "c"),
+        ] as never,
+      })
+    ).toBe(15)
   })
 })

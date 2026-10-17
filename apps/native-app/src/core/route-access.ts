@@ -14,6 +14,7 @@ export type NativeRoutePath =
   | "/payment/tip"
   | "/payment/:paymentId"
   | "/activity"
+  | "/activity/bills"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -38,6 +39,7 @@ export const routeAccess = {
   "/payment/:paymentId": "sell",
   // Like web's `_terminal/activity` routes (access/0002: history is `activity`).
   "/activity": "activity",
+  "/activity/bills": "activity",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

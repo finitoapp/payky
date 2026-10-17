@@ -1,17 +1,14 @@
-import type { InferRow } from "@evolu/common"
-import { formatActivityDayTitle } from "@payky/app-shared/activity-history"
+import {
+  billHistoryIssueLabels,
+  formatActivityDayTitle,
+  summarizeBillHistoryRow,
+  sumSettledTips,
+} from "@payky/app-shared/activity-history"
 import { billStatusLabelKey } from "@payky/app-shared/activity-labels"
 import { groupByDay } from "@payky/app-shared/group-by-day"
 import { useNow } from "@payky/app-shared/use-now"
 import { latestBillsQuery } from "@payky/core/modules/bill/bill-queries"
-import {
-  type BillHistoryItemSummary,
-  deriveBillHistoryItemSummary,
-} from "@payky/core/modules/bill/bill-utils"
-import {
-  calculateBillLineSummaries,
-  deriveBillSummaryTotal,
-} from "@payky/core/modules/bill-line/bill-line-utils"
+import type { BillHistoryItemSummary } from "@payky/core/modules/bill/bill-utils"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import {
   AlertTriangleIcon,
@@ -34,8 +31,6 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
-
-type BillHistoryRow = InferRow<ReturnType<typeof latestBillsQuery>>
 
 const billStatusIconData = {
   open: ["bg-warning/10 text-warning", <RotateCwIcon key="open" />],
@@ -69,52 +64,6 @@ function BillStatusIcon({
   )
 }
 
-/**
- * Everything this bill row should flag — the canceled+funded collision (see
- * docs/bill-payment-states.md), and coverage being off. Overpaid is always
- * worth flagging; underpaid is only flagged once a partial payment has
- * actually landed (`claimedSum > 0`) — an ordinary open cart with nothing
- * paid yet is also "underpaid" by definition, and flagging every one of
- * those would drown out the genuine signal (see the "reading the
- * combination" table in docs/bill-payment-states.md).
- */
-const resolveBillHistoryIssues = (
-  summary: BillHistoryItemSummary,
-  t: ReturnType<typeof useTranslation>["t"]
-): ReadonlyArray<string> =>
-  [
-    summary.hasCancellationCollision ? t("bill.collision.title") : null,
-    summary.coverage === "overpaid" ? t("billHistory.overpaid") : null,
-    summary.coverage === "underpaid" && summary.claimedSum > 0
-      ? t("billHistory.underpaid")
-      : null,
-  ].filter((issue): issue is string => issue !== null)
-
-const summarizeBill = (bill: BillHistoryRow): BillHistoryItemSummary =>
-  deriveBillHistoryItemSummary({
-    canceledAt: bill.canceledAt,
-    confirmedClosedAt: bill.confirmedClosedAt,
-    billTotal: deriveBillSummaryTotal(
-      calculateBillLineSummaries(bill.lines, bill.items)
-    ),
-    claimedTransactions: bill.claimedTransactions,
-  })
-
-/**
- * Tips of the bill's settled payments, each counted once however many
- * transactions settled it. Shown on top of the bill total, which excludes
- * them.
- */
-const sumSettledTips = (bill: BillHistoryRow): number =>
-  Array.from(
-    new Map(
-      bill.claimedTransactions.map((transaction) => [
-        transaction.paymentId,
-        transaction.tipAmount,
-      ])
-    ).values()
-  ).reduce((sum, tip) => sum + tip, 0)
-
 export const BillHistory = () => {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -144,7 +93,10 @@ export const BillHistory = () => {
     )
   }
 
-  const rows = items.map((bill) => ({ bill, summary: summarizeBill(bill) }))
+  const rows = items.map((bill) => ({
+    bill,
+    summary: summarizeBillHistoryRow(bill),
+  }))
   const dayGroups = groupByDay(rows, ({ bill }) => new Date(bill.createdAt))
 
   return (
@@ -168,7 +120,7 @@ export const BillHistory = () => {
             isComplete: !hasMore || groupIndex < dayGroups.length - 1,
           })}
           items={group.items.map(({ bill, summary }) => {
-            const issues = resolveBillHistoryIssues(summary, t)
+            const issues = billHistoryIssueLabels(summary, t)
             const tips = sumSettledTips(bill)
 
             return {

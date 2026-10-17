@@ -1,7 +1,10 @@
 import type { InferRow } from "@evolu/common"
+import type { latestBillsQuery } from "@payky/core/modules/bill/bill-queries"
 import {
+  type BillHistoryItemSummary,
   calculateClaimedSum,
   deriveBillCoverage,
+  deriveBillHistoryItemSummary,
 } from "@payky/core/modules/bill/bill-utils"
 import {
   calculateBillLineSummaries,
@@ -235,3 +238,55 @@ export const refundBadgeLabel = (
     ),
   })
 }
+
+export type BillHistoryRow = InferRow<ReturnType<typeof latestBillsQuery>>
+
+export const summarizeBillHistoryRow = (
+  bill: BillHistoryRow
+): BillHistoryItemSummary =>
+  deriveBillHistoryItemSummary({
+    canceledAt: bill.canceledAt,
+    confirmedClosedAt: bill.confirmedClosedAt,
+    billTotal: deriveBillSummaryTotal(
+      calculateBillLineSummaries(bill.lines, bill.items)
+    ),
+    claimedTransactions: bill.claimedTransactions,
+  })
+
+/**
+ * Everything this bill row should flag — the canceled+funded collision (see
+ * docs/bill-payment-states.md), and coverage being off. Overpaid is always
+ * worth flagging; underpaid is only flagged once a partial payment has
+ * actually landed (`claimedSum > 0`) — an ordinary open cart with nothing
+ * paid yet is also "underpaid" by definition, and flagging every one of
+ * those would drown out the genuine signal (see the "reading the
+ * combination" table in docs/bill-payment-states.md).
+ */
+export const billHistoryIssueLabels = (
+  summary: BillHistoryItemSummary,
+  t: Translate
+): ReadonlyArray<string> =>
+  [
+    summary.hasCancellationCollision ? t("bill.collision.title") : null,
+    summary.coverage === "overpaid" ? t("billHistory.overpaid") : null,
+    summary.coverage === "underpaid" && summary.claimedSum > 0
+      ? t("billHistory.underpaid")
+      : null,
+  ].filter((issue): issue is string => issue !== null)
+
+/**
+ * Tips of the bill's settled payments, each counted once however many
+ * transactions settled it. Shown on top of the bill total, which excludes
+ * them.
+ */
+export const sumSettledTips = (
+  bill: Pick<BillHistoryRow, "claimedTransactions">
+): number =>
+  Array.from(
+    new Map(
+      bill.claimedTransactions.map((transaction) => [
+        transaction.paymentId,
+        transaction.tipAmount,
+      ])
+    ).values()
+  ).reduce((sum, tip) => sum + tip, 0)

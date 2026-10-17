@@ -8,11 +8,26 @@ import {
   requestPaymentMethodPreparation,
   retryPaymentMethodPreparation,
 } from "@payky/app-shared/payment-method-preparation"
+import {
+  fetchNostrProfile,
+  getNostrIdentity,
+} from "@payky/core/integrations/nostr/nostr-client"
 import { enabledPaymentMethodAccountsQuery } from "@payky/core/modules/account/account-queries"
+import type {
+  AccountId,
+  BankQrFormat,
+} from "@payky/core/modules/account/account-types"
+import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import { getPaymentMethodOrder } from "@payky/core/modules/app-settings/app-settings-utils"
 import {
   cancelPayment,
   markPaymentPaidCash,
+  markPaymentPaidIban,
 } from "@payky/core/modules/payment/payment-actions"
+import {
+  type BankQrPayload,
+  createBankQrPayloads,
+} from "@payky/core/modules/payment/payment-iban-qr-payload-utils"
 import { preparePaymentMethod } from "@payky/core/modules/payment/payment-preparation-actions"
 import {
   paymentClaimsQuery,
@@ -23,9 +38,9 @@ import { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { Integer } from "@payky/core/modules/shared/schema"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator } from "react-native"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
@@ -38,9 +53,17 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { readCashReceived } from "./cash-received.ts"
+import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
 
-// Cash is the only payment method here; IBAN (P06), Spark (P07) and Cashu
-// (P08) add their tabs to this screen, so there is no tab strip yet.
+// Cash and bank transfer are the methods offered here; Spark (P07) and Cashu
+// (P08) add their tabs to this screen. Only methods native supports get a tab.
+
+type MethodId = "cash" | "iban"
+
+const methodLabelKeys = {
+  cash: "paymentWait.method.cash",
+  iban: "paymentWait.method.iban",
+} satisfies Record<MethodId, TranslationKey>
 
 const goHome = () => router.dismissTo("/")
 
@@ -62,10 +85,22 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const [payment] = useEvoluQuery(paymentRequestQuery(paymentId)).data
   const claims = useEvoluQuery(paymentClaimsQuery(paymentId)).data
   const accounts = useEvoluQuery(enabledPaymentMethodAccountsQuery).data
+  const [settings] = useEvoluQuery(settingsQuery).data
+  const masterKey = useAtomValue(accountAtom).masterKey
   const [edited, setEdited] = useState<string | null>(null)
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null)
+  const [ibanErrorKey, setIbanErrorKey] = useState<TranslationKey | null>(null)
   const [markPending, setMarkPending] = useState(false)
+  const [ibanPending, setIbanPending] = useState(false)
   const [cancelPending, setCancelPending] = useState(false)
+  const [selected, setSelected] = useState<MethodId | null>(null)
+  const [selectedQrFormat, setSelectedQrFormat] = useState<BankQrFormat | null>(
+    null
+  )
+  // The profile name is the recipient the bank QR names (payment/0005). It
+  // comes from relays, so the QR shows at once and takes the name when it
+  // lands rather than waiting on a relay that may be slow or down.
+  const [profileName, setProfileName] = useState<string | null>(null)
   // Refs close the window before the pending state re-renders, so repeated
   // taps neither stack PIN prompts nor settle or cancel twice.
   const busyRef = useRef(false)
@@ -74,17 +109,62 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   )
   const [runner] = useState(createPaymentMethodPreparationRunner)
 
-  // The enabled cash register in the payment's currency, like web's tab list.
+  useEffect(() => {
+    let ignore = false
+    void (async () => {
+      try {
+        await using run = appRun()
+        const result = await run(
+          fetchNostrProfile({ pubkey: getNostrIdentity(masterKey).pubkey })
+        )
+        if (!ignore && result.ok) setProfileName(result.value.name ?? null)
+      } catch (error) {
+        nativeConsole.error("Failed to read the profile name", error)
+      }
+    })()
+    return () => {
+      ignore = true
+    }
+  }, [appRun, masterKey])
+
+  // The enabled accounts in the payment's currency, like web's tab list, in
+  // the merchant's method order.
   const cashAccount = accounts.find(
     (account) =>
       account.kind === "cashRegister" &&
       account.cashRegisterCurrency === payment?.currency
   )
+  const ibanAccount = accounts.find(
+    (account) =>
+      account.kind === "iban" &&
+      account.iban !== null &&
+      account.ibanCurrency === payment?.currency
+  )
+  const methods = useMemo(() => {
+    const order = getPaymentMethodOrder(settings)
+    const found: { id: MethodId; accountId: AccountId }[] = []
+    if (cashAccount !== undefined)
+      found.push({ id: "cash", accountId: cashAccount.id })
+    if (ibanAccount !== undefined)
+      found.push({ id: "iban", accountId: ibanAccount.id })
+    const kindOf = { cash: "cashRegister", iban: "iban" } as const
+    return found.toSorted(
+      (a, b) => order.indexOf(kindOf[a.id]) - order.indexOf(kindOf[b.id])
+    )
+  }, [settings, cashAccount, ibanAccount])
+  const active = methods.find(({ id }) => id === selected) ?? methods[0]
   const preparationKey =
-    cashAccount === undefined ? null : `${paymentId}:cash:${cashAccount.id}`
+    active === undefined
+      ? null
+      : `${paymentId}:${active.id}:${active.accountId}`
   const prepared =
-    payment?.cashRegisterAccountId !== null &&
-    payment?.cashRegisterAccountId !== undefined
+    active?.id === "cash"
+      ? payment?.cashRegisterAccountId !== null &&
+        payment?.cashRegisterAccountId !== undefined
+      : active?.id === "iban"
+        ? payment?.ibanAccountId !== null &&
+          payment?.ibanAccountId !== undefined
+        : false
   const preparationStatus =
     preparationKey === null ? undefined : preparation[preparationKey]
   const status =
@@ -93,32 +173,64 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       : derivePaymentStatus({
           canceledAt: payment.canceledAt,
           confirmedPaidAt: payment.confirmedPaidAt,
-          // Cash never sets `expiresAt`, so no ticking clock is needed here.
+          // Cash and bank transfer never set `expiresAt`, so no ticking
+          // clock is needed here; Spark (P07) adds one.
           expiresAt: payment.expiresAt,
           hasActiveClaim: claims.length > 0,
           now: new Date(),
         })
 
-  // Attaches the cash register to the payment once; the runner dedups an
+  const ibanNumber = ibanAccount?.iban ?? null
+  const ibanName = ibanAccount?.name ?? null
+  const bankQrPayloads: ReadonlyArray<BankQrPayload> =
+    payment !== undefined &&
+    payment.ibanAccountId !== null &&
+    ibanNumber !== null &&
+    ibanName !== null
+      ? createBankQrPayloads({
+          profileName,
+          bankAccountName: ibanName,
+          iban: ibanNumber,
+          amount: payment.amount,
+          currency: payment.currency,
+          specificSymbol: payment.specificSymbol,
+          variableSymbol: payment.variableSymbol,
+        })
+      : []
+  const defaultQrFormat = ibanAccount?.ibanDefaultQrFormat ?? "spayd"
+  const activeQrFormat = selectedQrFormat ?? defaultQrFormat
+  const bankQrPayload =
+    (
+      bankQrPayloads.find(({ format }) => format === activeQrFormat) ??
+      bankQrPayloads.find(({ format }) => format === defaultQrFormat) ??
+      bankQrPayloads[0]
+    )?.payload ?? null
+
+  // Attaches the method's account to the payment once; the runner dedups an
   // in-flight attempt, the state a finished or failed one.
   const prepare = (
-    accountId: NonNullable<typeof cashAccount>["id"],
+    method: { id: MethodId; accountId: AccountId },
     key: string
   ) =>
     runner.run(key, async () => {
       try {
         await using run = appRun()
         const result = await run(
-          preparePaymentMethod({ paymentId, cashRegister: { accountId } })
+          preparePaymentMethod({
+            paymentId,
+            ...(method.id === "cash"
+              ? { cashRegister: { accountId: method.accountId } }
+              : { bank: { accountId: method.accountId } }),
+          })
         )
         if (!result.ok) {
-          nativeConsole.error("Failed to prepare cash payment", result.error)
+          nativeConsole.error("Failed to prepare payment method", result.error)
           setPreparation((state) =>
             failPaymentMethodPreparation(state, key, result.error)
           )
         }
       } catch (error) {
-        nativeConsole.error("Failed to prepare cash payment", error)
+        nativeConsole.error("Failed to prepare payment method", error)
         setPreparation((state) =>
           failPaymentMethodPreparation(state, key, error)
         )
@@ -128,11 +240,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   // `prepare` closes over stable inputs; the preparation state guards re-entry.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
-    if (
-      status !== "pending" ||
-      cashAccount === undefined ||
-      preparationKey === null
-    )
+    if (status !== "pending" || active === undefined || preparationKey === null)
       return
     if (prepared) {
       setPreparation((state) =>
@@ -146,8 +254,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     )
     if (!transition.shouldPrepare) return
     setPreparation(transition.state)
-    void prepare(cashAccount.id, preparationKey)
-  }, [status, cashAccount, preparationKey, prepared, preparation])
+    void prepare(active, preparationKey)
+  }, [status, active, preparationKey, prepared, preparation])
 
   if (payment === undefined || status === null)
     return <EmptyView message={t("paymentWait.notFound")} />
@@ -166,10 +274,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     formatMoney({ value: Integer(value), currency: payment.currency }, locale)
   const canMarkCashPaid =
     cashRegisterAccountId !== null && cashRegisterAccountId !== undefined
+  const ibanAccountId = payment.ibanAccountId
+  const canMarkIbanPaid = ibanAccountId !== null && ibanAccountId !== undefined
   const preparing =
-    cashAccount !== undefined &&
-    !prepared &&
-    preparationStatus?.status !== "failed"
+    active !== undefined && !prepared && preparationStatus?.status !== "failed"
 
   const markPaid = async () => {
     if (busyRef.current || receivedAmount === null) return
@@ -197,6 +305,29 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       })
     } finally {
       setMarkPending(false)
+      busyRef.current = false
+    }
+  }
+
+  const markIbanPaid = async () => {
+    if (busyRef.current) return
+    if (ibanAccountId === null || ibanAccountId === undefined) return
+    busyRef.current = true
+    try {
+      if (!(await require("confirm", "access.action.markIbanPaid"))) return
+      setIbanErrorKey(null)
+      setIbanPending(true)
+      await runToast(async (run) => {
+        const result = await run(
+          markPaymentPaidIban({ paymentId, accountId: ibanAccountId, deviceId })
+        )
+        if (!result.ok) {
+          nativeConsole.error("Failed to mark bank transfer paid", result.error)
+          setIbanErrorKey("paymentWait.ibanPaid.error")
+        }
+      })
+    } finally {
+      setIbanPending(false)
       busyRef.current = false
     }
   }
@@ -229,14 +360,14 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   }
 
   const retryPreparation = () => {
-    if (cashAccount === undefined || preparationKey === null || prepared) return
+    if (active === undefined || preparationKey === null || prepared) return
     const transition = retryPaymentMethodPreparation(
       preparation,
       preparationKey
     )
     if (!transition.shouldPrepare) return
     setPreparation(transition.state)
-    void prepare(cashAccount.id, preparationKey)
+    void prepare(active, preparationKey)
   }
 
   return (
@@ -248,7 +379,20 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         </Text>
       </YStack>
 
-      {cashAccount === undefined ? (
+      {methods.length > 1 ? (
+        <XStack gap="2" justify="center">
+          {methods.map(({ id }) => (
+            <AppButton
+              key={id}
+              label={t(methodLabelKeys[id])}
+              variant={id === active?.id ? "primary" : "secondary"}
+              onPress={() => setSelected(id)}
+            />
+          ))}
+        </XStack>
+      ) : null}
+
+      {active === undefined ? (
         <Text color="muted-foreground" text="center">
           {t("paymentWait.missingRequest")}
         </Text>
@@ -263,6 +407,20 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             onPress={retryPreparation}
           />
         </YStack>
+      ) : active.id === "iban" && ibanNumber !== null ? (
+        <IbanPaymentTab
+          qrPayload={bankQrPayload}
+          qrPayloads={bankQrPayloads}
+          activeFormat={activeQrFormat}
+          onSelectFormat={setSelectedQrFormat}
+          iban={ibanNumber}
+          variableSymbol={payment.variableSymbol}
+          preparing={preparing}
+          canMarkPaid={canMarkIbanPaid}
+          pending={ibanPending}
+          errorKey={ibanErrorKey}
+          onMarkPaid={() => void markIbanPaid()}
+        />
       ) : (
         <YStack gap="3">
           <Text fontWeight="600" text="center">
@@ -320,7 +478,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         label={t("paymentWait.cancel")}
         variant="secondary"
         pending={cancelPending}
-        disabled={markPending}
+        disabled={markPending || ibanPending}
         onPress={() => void cancel()}
       />
     </Screen>

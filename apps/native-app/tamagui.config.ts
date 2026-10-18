@@ -1,5 +1,7 @@
 import { defaultConfig } from "@tamagui/config/v6"
 import { createTamagui } from "tamagui"
+import { palette } from "./src/theme/palette"
+import { radius } from "./src/theme/tokens"
 
 const inter = {
   family: "Inter",
@@ -10,28 +12,23 @@ const inter = {
   },
 }
 
-// sRGB approximations of the web app's OKLCH palette; native colors do not support OKLCH.
+// Themes are the web palette. Tamagui `Text` reads `color`, so `foreground`
+// is exposed under both names; `border` would clash with the shorthand, so it
+// becomes `border-color`.
+const nativeTheme = ({
+  foreground,
+  border,
+  ...rest
+}: (typeof palette)["light" | "dark"]) => ({
+  ...rest,
+  foreground,
+  color: foreground,
+  "border-color": border,
+})
+
 const nativeThemes = {
-  light: {
-    ...defaultConfig.themes.light,
-    background: "#fbfaf7",
-    color: "#1c232c",
-    card: "#fefdfc",
-    primary: "#c04a00",
-    "primary-foreground": "#f8f8f8",
-    "muted-foreground": "#6e757e",
-    "border-color": "#dadee5",
-  },
-  dark: {
-    ...defaultConfig.themes.dark,
-    background: "#101214",
-    color: "#eff0f1",
-    card: "#292c30",
-    primary: "#e36b2c",
-    "primary-foreground": "#101214",
-    "muted-foreground": "#bdc3c7",
-    "border-color": "#5f646a",
-  },
+  light: { ...defaultConfig.themes.light, ...nativeTheme(palette.light) },
+  dark: { ...defaultConfig.themes.dark, ...nativeTheme(palette.dark) },
 }
 
 export const tamaguiConfig = createTamagui({
@@ -43,13 +40,7 @@ export const tamaguiConfig = createTamagui({
   themes: nativeThemes,
   tokens: {
     ...defaultConfig.tokens,
-    radius: {
-      ...defaultConfig.tokens.radius,
-      sm: 4.8,
-      md: 6.8,
-      lg: 8.8,
-      xl: 12.8,
-    },
+    radius: { ...defaultConfig.tokens.radius, ...radius },
   },
 })
 

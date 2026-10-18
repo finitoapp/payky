@@ -1,19 +1,19 @@
 import { sqliteTrue } from "@evolu/common"
+import {
+  addTipFixedAmount,
+  addTipPercentage,
+  type TipPresetError,
+} from "@payky/app-shared/tip-presets"
 import type { AppSettingsRow } from "@payky/core/modules/app-settings/app-settings"
 import { updateTipSettings } from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import {
   defaultTipFixedAmounts,
   defaultTipPercentages,
-  maxTipPresetCount,
   parseTipFixedAmounts,
   parseTipPercentages,
 } from "@payky/core/modules/app-settings/app-settings-tips"
-import { decimalAmountToMinorUnits } from "@payky/core/modules/shared/money"
-import {
-  Integer,
-  PositiveIntegerFromStringSchema,
-} from "@payky/core/modules/shared/schema"
+import { Integer } from "@payky/core/modules/shared/schema"
 import { PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react"
 import { useId, useState } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -35,14 +35,6 @@ import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
-
-type TipPresetError =
-  | "settings.tips.fixedAmounts.duplicate"
-  | "settings.tips.fixedAmounts.invalid"
-  | "settings.tips.fixedAmounts.maximum"
-  | "settings.tips.percentages.duplicate"
-  | "settings.tips.percentages.invalid"
-  | "settings.tips.percentages.maximum"
 
 interface TipsSettingsFormProps {
   readonly settings: Pick<
@@ -93,47 +85,30 @@ function TipsSettingsForm({ settings }: TipsSettingsFormProps) {
   const { pending, saved, resetSaved, submit } = useSettingsForm()
 
   const addPercentage = () => {
-    const parsed = PositiveIntegerFromStringSchema.safeParse(
-      percentageInput.trim()
-    )
-    if (!parsed.success || parsed.data > 100) {
-      setPercentageError("settings.tips.percentages.invalid")
-      return
-    }
-    if (percentages.includes(parsed.data)) {
-      setPercentageError("settings.tips.percentages.duplicate")
-      return
-    }
-    if (percentages.length === maxTipPresetCount) {
-      setPercentageError("settings.tips.percentages.maximum")
+    const result = addTipPercentage(percentages, percentageInput)
+    if (!result.ok) {
+      setPercentageError(result.errorKey)
       return
     }
 
-    setPercentages([...percentages, parsed.data])
+    setPercentages(result.presets)
     setPercentageInput("")
     setPercentageError(null)
     resetSaved()
   }
 
   const addFixedAmount = () => {
-    const amount = decimalAmountToMinorUnits({
-      currency: settings.fiatCurrency,
-      value: fixedAmountInput,
-    })
-    if (amount === null) {
-      setFixedAmountError("settings.tips.fixedAmounts.invalid")
-      return
-    }
-    if (fixedAmounts.includes(amount)) {
-      setFixedAmountError("settings.tips.fixedAmounts.duplicate")
-      return
-    }
-    if (fixedAmounts.length === maxTipPresetCount) {
-      setFixedAmountError("settings.tips.fixedAmounts.maximum")
+    const result = addTipFixedAmount(
+      fixedAmounts,
+      fixedAmountInput,
+      settings.fiatCurrency
+    )
+    if (!result.ok) {
+      setFixedAmountError(result.errorKey)
       return
     }
 
-    setFixedAmounts([...fixedAmounts, amount])
+    setFixedAmounts(result.presets)
     setFixedAmountInput("")
     setFixedAmountError(null)
     resetSaved()

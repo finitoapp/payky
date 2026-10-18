@@ -1,3 +1,4 @@
+import { sqliteTrue } from "@evolu/common"
 import { countryLabelKey } from "@payky/app-shared/legal-entity-options"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import {
@@ -64,6 +65,15 @@ export function SettingsPage() {
           ? fiatCurrency
           : `${t(countryLabelKey(legalEntity.country))} · ${fiatCurrency}`,
       href: "/settings/legal-entity",
+    },
+    {
+      title: t("settings.tips.title"),
+      value: t(
+        settings?.tipsEnabled === sqliteTrue
+          ? "settings.tips.nav.on"
+          : "settings.tips.nav.off"
+      ),
+      href: "/settings/tips",
     },
   ]
   const taxRows: ReadonlyArray<SettingsRowData> = [

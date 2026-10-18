@@ -24,12 +24,14 @@ import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useDeviceEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { RestoreAccountStep } from "../../shared/restore-account-step.tsx"
+import { useRestoreAccount } from "../../shared/use-restore-account.ts"
 
 /**
  * Which accounts this device has and which one is active, plus the ways to
  * add another or open this one elsewhere. Switching and removing are governed
  * by the active account's `admin`; the other account's PIN is never asked
- * (access/0002). Restoring from a phrase stays in onboarding for now.
+ * (access/0002).
  */
 export function AccountsSettingsPage() {
   const { language, t } = useTranslation()
@@ -42,6 +44,8 @@ export function AccountsSettingsPage() {
   const reload = useSetAtom(reloadAppEvoluAtom)
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [busy, setBusy] = useState(false)
+  const [restoreOpen, setRestoreOpen] = useState(false)
+  const restoring = useRestoreAccount("settings")
   const stale = () => store.get(evoluCounterAtom) !== accountVersion
 
   const activate = async (accountId: DeviceAccountId) => {
@@ -164,6 +168,22 @@ export function AccountsSettingsPage() {
             void createNew()
           }}
         />
+        <AppButton
+          label={t("accountChoice.restore.title")}
+          variant="secondary"
+          disabled={busy || restoring.pending}
+          onPress={() => setRestoreOpen((open) => !open)}
+        />
+        {restoreOpen ? (
+          <RestoreAccountStep
+            error={restoring.error}
+            pending={restoring.pending}
+            onRestore={(phrase) => {
+              if (stale()) return
+              void restoring.restore(phrase)
+            }}
+          />
+        ) : null}
         <AppButton
           label={t("accountChoice.transfer.title")}
           variant="secondary"

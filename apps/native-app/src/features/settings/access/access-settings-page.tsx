@@ -1,3 +1,4 @@
+import { disableAccessControl } from "@payky/core/modules/access/access-actions"
 import { accessControlQuery } from "@payky/core/modules/access/access-queries"
 import { decodePinHash } from "@payky/core/modules/access/access-utils"
 import { devicesQuery } from "@payky/core/modules/device/device-queries"
@@ -6,8 +7,9 @@ import { Text, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
-import { useAccess } from "../../../core/use-access.ts"
+import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
+import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { ChangePinCard } from "./change-pin-card.tsx"
 import { DeviceItem } from "./device-item.tsx"
@@ -54,6 +56,17 @@ function StatusCard({
   readonly onChangePin: () => void
 }) {
   const { t } = useTranslation()
+  const runToast = useRunToast()
+  const { requirePin } = useRequirePermission()
+
+  // Always the current PIN, even on a device with `admin` (access/0001),
+  // awaited before the Task; the PIN is kept for turning it on again.
+  const turnOff = async () => {
+    if (!(await requirePin("access.action.disable"))) return
+    await runToast(async (run) => {
+      await run.ok(disableAccessControl())
+    })
+  }
 
   return (
     <YStack gap="3">
@@ -62,11 +75,20 @@ function StatusCard({
       </Text>
       <Text color="muted-foreground">{t("access.description")}</Text>
       {enabled ? (
-        <AppButton
-          variant="secondary"
-          label={t("access.changePin")}
-          onPress={onChangePin}
-        />
+        <>
+          <AppButton
+            variant="secondary"
+            label={t("access.changePin")}
+            onPress={onChangePin}
+          />
+          <AppButton
+            variant="secondary"
+            label={t("access.turnOff")}
+            onPress={() => {
+              void turnOff()
+            }}
+          />
+        </>
       ) : (
         <AppButton label={t("access.turnOn")} onPress={onTurnOn} />
       )}

@@ -8,6 +8,7 @@ import { decodePermissions } from "@payky/core/modules/access/access-utils"
 import {
   removeDevice,
   setDeviceDefaultPermissions,
+  unblockDevice,
 } from "@payky/core/modules/device/device-actions"
 import type { DeviceListRow } from "@payky/core/modules/device/device-queries"
 import { useState } from "react"
@@ -19,6 +20,7 @@ import {
   permissionDescriptionKeys,
   permissionLabelKeys,
 } from "../../../core/access-labels.ts"
+import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -36,9 +38,19 @@ export function DeviceItem({
   const { t } = useTranslation()
   const runToast = useRunToast()
   const confirm = useConfirm()
+  const { requirePin } = useRequirePermission()
   const [editor, setEditor] = useState<"permissions" | "rename" | null>(null)
   const granted = decodePermissions(device.defaultPermissions)
   const preset = presetOf(granted)
+
+  // The current PIN even on a device with `admin` (access/0001), awaited
+  // before the Task writes the fresh token (access/0006).
+  const unblock = async () => {
+    if (!(await requirePin("access.action.unblock"))) return
+    await runToast(async (run) => {
+      await run.ok(unblockDevice(device.id))
+    })
+  }
 
   // As web: a confirmation, not the PIN. The route is `admin` already, and
   // removing a row clears its permissions together with the delete.
@@ -93,6 +105,15 @@ export function DeviceItem({
             label={t("access.device.rename")}
             onPress={() => setEditor("rename")}
           />
+          {device.pinBlockedAt !== null && !thisDevice ? (
+            <AppButton
+              variant="secondary"
+              label={t("access.device.unblock")}
+              onPress={() => {
+                void unblock()
+              }}
+            />
+          ) : null}
           {thisDevice ? null : (
             <AppButton
               variant="destructive"

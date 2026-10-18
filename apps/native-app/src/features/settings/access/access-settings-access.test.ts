@@ -87,3 +87,24 @@ it("keeps the PIN in component state only: no storage, no logging, no query key"
     )
   }
 })
+
+it("asks for the current PIN, awaited, before turning access control off", () => {
+  const page = read("access-settings-page.tsx")
+  expectInOrder(
+    page,
+    /const turnOff = async/,
+    /if \(!\(await requirePin\("access\.action\.disable"\)\)\) return/,
+    /await run\.ok\(disableAccessControl\(\)\)/
+  )
+})
+
+it("asks for the current PIN, awaited, before unblocking, and only for another blocked device", () => {
+  const item = read("device-item.tsx")
+  expectInOrder(
+    item,
+    /const unblock = async/,
+    /if \(!\(await requirePin\("access\.action\.unblock"\)\)\) return/,
+    /await run\.ok\(unblockDevice\(device\.id\)\)/
+  )
+  expect(item).toMatch(/device\.pinBlockedAt !== null && !thisDevice/)
+})

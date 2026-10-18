@@ -5,12 +5,12 @@ import { useAtomValue } from "jotai"
 import { useEffect, useRef, useState } from "react"
 import { Modal } from "react-native"
 import { Text, YStack } from "tamagui"
-import { accountAtom } from "../atoms/account.ts"
-import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
-import { nativeConsole } from "../core/native-runtime.ts"
-import { useCashuAppRun } from "../hooks/use-app-run.ts"
-import { useTranslation } from "../hooks/use-translation.ts"
-import { AppButton } from "./app-button.tsx"
+import { accountAtom } from "../../atoms/account.ts"
+import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { nativeConsole } from "../../core/native-runtime.ts"
+import { useCashuAppRun } from "../../hooks/use-app-run.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
+import { AppButton } from "../app-button.tsx"
 
 /** The most history generated, from today back; stopping ends it sooner. */
 const maxHistoryDays = 90

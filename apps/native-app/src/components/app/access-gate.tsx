@@ -7,16 +7,16 @@ import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai"
 import { type ReactNode, type SetStateAction, Suspense, useEffect } from "react"
 import { AppState, View } from "react-native"
 import { Text } from "tamagui"
-import { evoluCounterAtom } from "../atoms/evolu-counter.ts"
+import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import {
   endsSessionOnAppState,
   isIdleExpired,
   sessionOutlivesAccount,
-} from "../core/access-session.ts"
-import { requiredPermission } from "../core/route-access.ts"
-import { useAccess } from "../core/use-access.ts"
+} from "../../core/access-session.ts"
+import { requiredPermission } from "../../core/route-access.ts"
+import { useAccess } from "../../core/use-access.ts"
+import { Screen } from "../screen.tsx"
 import { PinScreen } from "./pin-screen.tsx"
-import { Screen } from "./screen.tsx"
 
 // `Date.now()` is branded by Evolu's globals; the shared atom holds a plain number.
 const touch = (store: ReturnType<typeof useStore>) => {

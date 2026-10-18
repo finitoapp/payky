@@ -5,11 +5,11 @@ import { registerDevice } from "@payky/core/modules/device/device-actions"
 import { deviceByIdQuery } from "@payky/core/modules/device/device-queries"
 import { useAtomValue } from "jotai"
 import { useEffect } from "react"
-import { accountAtom } from "../atoms/account.ts"
-import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
-import { evoluAtom } from "../atoms/evolu.ts"
-import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
-import { useEvoluQuery } from "../hooks/use-evolu-query.ts"
+import { accountAtom } from "../../atoms/account.ts"
+import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { evoluAtom } from "../../atoms/evolu.ts"
+import { nativeConsole, nativeRun } from "../../core/native-runtime.ts"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 
 /**
  * Keeps this device's row in the active account's app database

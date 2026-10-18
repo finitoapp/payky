@@ -12,7 +12,7 @@ import {
   Text,
   useColorScheme,
 } from "react-native"
-import { captureReportedError } from "../core/error-reporting.ts"
+import { captureReportedError } from "../../core/error-reporting.ts"
 
 /**
  * Plain React Native on purpose: Expo Router renders the root layout's

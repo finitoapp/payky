@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import Svg, { Path, Rect } from "react-native-svg"
-import { qrPath } from "../features/payment-wait/qr-matrix.ts"
+import { qrPath } from "./qr-matrix.ts"
 
 const quietZone = 2
 

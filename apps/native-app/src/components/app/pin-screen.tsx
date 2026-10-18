@@ -18,14 +18,14 @@ import {
 } from "@payky/core/modules/access/access-types"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { permissionLabelKeys } from "../core/access-labels.ts"
-import type { UnlockedVia } from "../core/access-session.ts"
-import { useAccess } from "../core/use-access.ts"
-import { useDeviceEvoluQuery } from "../hooks/use-evolu-query.ts"
-import { useRunToast } from "../hooks/use-run-toast.ts"
-import { useTranslation } from "../hooks/use-translation.ts"
-import { AppButton } from "./app-button.tsx"
-import { Field } from "./field.tsx"
+import { permissionLabelKeys } from "../../core/access-labels.ts"
+import type { UnlockedVia } from "../../core/access-session.ts"
+import { useAccess } from "../../core/use-access.ts"
+import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useRunToast } from "../../hooks/use-run-toast.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
+import { AppButton } from "../app-button.tsx"
+import { Field } from "../field.tsx"
 
 interface PinScreenProps {
   /** The permission the screen or action needs; `null` when it always asks. */

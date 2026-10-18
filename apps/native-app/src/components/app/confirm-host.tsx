@@ -6,9 +6,9 @@ import {
   clearConfirmsAtom,
   confirmQueueAtom,
   settleConfirmAtom,
-} from "../atoms/confirm.ts"
-import { evoluCounterAtom } from "../atoms/evolu-counter.ts"
-import { AppButton } from "./app-button.tsx"
+} from "../../atoms/confirm.ts"
+import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
+import { AppButton } from "../app-button.tsx"
 
 /** Shows the head of the queue; mount once inside the providers. */
 export function ConfirmHost() {

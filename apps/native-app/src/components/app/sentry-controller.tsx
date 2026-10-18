@@ -7,8 +7,8 @@ import { useEffect } from "react"
 import {
   disableErrorReporting,
   enableErrorReporting,
-} from "../core/error-reporting.ts"
-import { useDeviceEvoluQuery } from "../hooks/use-evolu-query.ts"
+} from "../../core/error-reporting.ts"
+import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
 
 const errorReportingQuery = createDeviceQuery((db) =>
   db

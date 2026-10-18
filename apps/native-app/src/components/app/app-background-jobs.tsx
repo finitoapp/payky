@@ -18,18 +18,18 @@ import {
   useEffect,
   useRef,
 } from "react"
-import { accountAtom } from "../atoms/account.ts"
-import { appMigrationsAtom } from "../atoms/app-migrations.ts"
-import { cashuShardStoreAtom, cashuWalletDepAtom } from "../atoms/cashu.ts"
-import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
-import { evoluAtom } from "../atoms/evolu.ts"
-import { captureReportedError } from "../core/error-reporting.ts"
-import { nativeEnv } from "../core/native-env.ts"
-import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
+import { accountAtom } from "../../atoms/account.ts"
+import { appMigrationsAtom } from "../../atoms/app-migrations.ts"
+import { cashuShardStoreAtom, cashuWalletDepAtom } from "../../atoms/cashu.ts"
+import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { evoluAtom } from "../../atoms/evolu.ts"
+import { captureReportedError } from "../../core/error-reporting.ts"
+import { nativeEnv } from "../../core/native-env.ts"
+import { nativeConsole, nativeRun } from "../../core/native-runtime.ts"
 import {
   createConnectivityDep,
   createFetchDep,
-} from "../platform/native-deps.ts"
+} from "../../platform/native-deps.ts"
 
 /** The job context: the same effects web's `AppBackgroundJobs` passes. */
 const createJobDeps = ({

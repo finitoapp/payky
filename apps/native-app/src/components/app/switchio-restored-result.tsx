@@ -4,12 +4,12 @@ import type { SettleRestoredSwitchioCardPaymentError } from "@payky/core/modules
 import { useAtomValue } from "jotai"
 import { useCallback, useEffect } from "react"
 import { AppState } from "react-native"
-import { accountAtom } from "../atoms/account.ts"
-import { nativeConsole } from "../core/native-runtime.ts"
-import { useAppRun } from "../hooks/use-app-run.ts"
-import { useToast } from "../hooks/use-toast.ts"
-import { useTranslation } from "../hooks/use-translation.ts"
-import { takeRestoredSwitchioResult } from "../platform/switchio.ts"
+import { accountAtom } from "../../atoms/account.ts"
+import { nativeConsole } from "../../core/native-runtime.ts"
+import { useAppRun } from "../../hooks/use-app-run.ts"
+import { useToast } from "../../hooks/use-toast.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
+import { takeRestoredSwitchioResult } from "../../platform/switchio.ts"
 
 const restoredErrorKeys = {
   SwitchioPaymentFailed: "paymentWait.cardPaid.error.declined",

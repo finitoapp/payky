@@ -1,7 +1,7 @@
 import { useAtomValue, useSetAtom } from "jotai"
 import { useEffect } from "react"
 import { Text, YStack } from "tamagui"
-import { dismissToastAtom, type Toast, toastsAtom } from "../atoms/toast.ts"
+import { dismissToastAtom, type Toast, toastsAtom } from "../../atoms/toast.ts"
 
 const DISMISS_AFTER_MS = 4000
 

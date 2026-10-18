@@ -7,7 +7,7 @@ const read = (file: string) =>
 const page = read("./privacy-settings-page.tsx")
 const card = read("./ai-assistant-card.tsx")
 const hook = read("./use-privacy-settings.ts")
-const controller = read("../../../components/sentry-controller.tsx")
+const controller = read("../../../components/app/sentry-controller.tsx")
 const reporting = read("../../../core/error-reporting.ts")
 
 it("keeps the privacy page free, like web's device consents", () => {

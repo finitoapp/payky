@@ -51,6 +51,7 @@ export default defineConfig({
             "apps/native-app/src/atoms/**/*.test.ts",
             "apps/native-app/src/features/**/*.test.ts",
             "apps/native-app/src/hooks/**/*.test.ts",
+            "apps/native-app/src/components/**/*.test.ts",
             "apps/native-app/src/theme/**/*.test.ts",
           ],
         },

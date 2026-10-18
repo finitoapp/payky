@@ -7,16 +7,16 @@ import { useAtomValue, useSetAtom } from "jotai"
 import { Suspense, useEffect } from "react"
 import { Modal, ScrollView } from "react-native"
 import { Text, YStack } from "tamagui"
-import { evoluCounterAtom } from "../atoms/evolu-counter.ts"
+import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import {
   clearPinPromptsAtom,
   settlePinPromptAtom,
-} from "../atoms/pin-prompt.ts"
+} from "../../atoms/pin-prompt.ts"
 import {
   sessionAfterPromptUnlock,
   type UnlockedVia,
-} from "../core/access-session.ts"
-import { useAccess } from "../core/use-access.ts"
+} from "../../core/access-session.ts"
+import { useAccess } from "../../core/use-access.ts"
 import { PinScreen } from "./pin-screen.tsx"
 
 /**

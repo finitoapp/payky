@@ -20,6 +20,7 @@ import { DemoDataSeed } from "../src/components/demo-data-seed.tsx"
 import { DeviceRegistration } from "../src/components/device-registration.tsx"
 import { PinPromptHost } from "../src/components/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/sentry-controller.tsx"
+import { SwitchioRestoredResult } from "../src/components/switchio-restored-result.tsx"
 import { ToastHost } from "../src/components/toast-host.tsx"
 import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
@@ -95,6 +96,7 @@ function ThemedApp() {
             <SentryController />
             <DeviceRegistration />
             <DemoDataSeed />
+            <SwitchioRestoredResult />
           </Suspense>
         </Theme>
       </TamaguiProvider>

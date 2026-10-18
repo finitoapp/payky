@@ -95,6 +95,14 @@ describe("mint choice", () => {
         defaultMint: "https://x.example" as MintUrl,
       })
     ).toBe(mintA)
+    // A chosen mint that is no longer funded falls back as if none was chosen.
+    expect(
+      withdrawMint({
+        funded,
+        chosen: "https://gone.example" as MintUrl,
+        defaultMint: mintB,
+      })
+    ).toBe(mintB)
     expect(withdrawMint({ funded: [], chosen: null, defaultMint: mintA })).toBe(
       null
     )

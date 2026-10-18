@@ -4,6 +4,15 @@ import ChevronRight from "lucide-react-native/icons/chevron-right"
 import Plus from "lucide-react-native/icons/plus"
 import { Text, View } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 
 const variants = [
@@ -47,6 +56,29 @@ export function UiKitCard() {
       <Button size="lg" label="Large" iconEnd={ChevronRight} />
       <Button size="lg" variant="outline" label="Pending" pending />
       <Button size="lg" label="Disabled" disabled />
+      <Card>
+        <CardHeader>
+          <CardTitle>Card title</CardTitle>
+          <CardDescription>Card description</CardDescription>
+          <CardAction>
+            <Button size="xs" variant="outline" label="Action" />
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <Text>Card content</Text>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" label="Footer" />
+        </CardFooter>
+      </Card>
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle>Small card</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Text>No footer</Text>
+        </CardContent>
+      </Card>
     </View>
   )
 }

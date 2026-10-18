@@ -8,6 +8,10 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
+import {
+  useNostrIdentity,
+  useNostrProfile,
+} from "./profile/use-nostr-profile.ts"
 import { SettingsRow, type SettingsRowData } from "./settings-row.tsx"
 import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
@@ -42,6 +46,7 @@ function SettingsGroup({
 export function SettingsPage() {
   const { language, t } = useTranslation()
   const theme = useThemePreference()
+  const profile = useNostrProfile(useNostrIdentity().pubkey)
   const [settings] = useEvoluQuery(settingsQuery).data
   const enabledHomeModes = parseEnabledHomeModes(settings?.enabledHomeModesJson)
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
@@ -67,6 +72,11 @@ export function SettingsPage() {
   return (
     <Screen>
       <ScreenHeader title={t("settings.title")} />
+      <SettingsRow
+        title={t("settings.profile.title")}
+        value={profile.data?.name ?? t("settings.profile.setName")}
+        href="/settings/profile"
+      />
       <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />
     </Screen>
   )

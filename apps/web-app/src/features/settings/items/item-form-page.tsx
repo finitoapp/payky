@@ -1,3 +1,9 @@
+import {
+  NO_OPTION,
+  optionalIdCodec,
+  optionalTextCodec,
+  requiredTextCodec,
+} from "@payky/app-shared/inline-edit-codecs"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { catalogCategoriesQuery } from "@payky/core/modules/catalog-category/catalog-category-queries"
@@ -60,12 +66,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx"
-import {
-  NO_OPTION,
-  optionalIdCodec,
-  optionalTextCodec,
-  requiredTextCodec,
-} from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"

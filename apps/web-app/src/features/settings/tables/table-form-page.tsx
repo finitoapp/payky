@@ -1,5 +1,6 @@
 import type { UpdateValues } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { requiredTextCodec } from "@payky/app-shared/inline-edit-codecs"
 import {
   NonEmptyString255Schema,
   PositiveInteger,
@@ -38,7 +39,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { requiredTextCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"

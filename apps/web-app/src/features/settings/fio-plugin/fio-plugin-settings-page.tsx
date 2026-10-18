@@ -1,6 +1,10 @@
 import { Capacitor } from "@capacitor/core"
 import { sqliteFalse, sqliteTrue } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  dateCodec,
+  positiveIntegerCodec,
+} from "@payky/app-shared/inline-edit-codecs"
 import { fiatBankAccountQuery } from "@payky/core/modules/account/account-queries"
 import { legacyFiatBankAccountId } from "@payky/core/modules/account/account-utils"
 import {
@@ -49,10 +53,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
-import {
-  dateCodec,
-  positiveIntegerCodec,
-} from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"

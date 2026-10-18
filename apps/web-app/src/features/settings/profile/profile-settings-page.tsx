@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { optionalTextCodec } from "@payky/app-shared/inline-edit-codecs"
 import {
   emptyNostrProfile,
   mergeProfileMetadata,
@@ -26,7 +27,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Skeleton } from "@/components/ui/skeleton.tsx"
-import { optionalTextCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import {
   InlineEditSavedTick,

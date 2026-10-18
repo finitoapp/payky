@@ -1,4 +1,10 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  nonNegativeIntegerCodec,
+  optionalDateCodec,
+  optionalTextCodec,
+  positiveIntegerCodec,
+} from "@payky/app-shared/inline-edit-codecs"
 import { updatePaymentLastNumber } from "@payky/core/modules/payment-number/payment-number-actions"
 import { paymentLastNumberQuery } from "@payky/core/modules/payment-number/payment-number-queries"
 import type { PaymentNumberSeriesRow } from "@payky/core/modules/payment-number-series/payment-number-series"
@@ -18,12 +24,6 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { FieldGroup } from "@/components/ui/field.tsx"
-import {
-  nonNegativeIntegerCodec,
-  optionalDateCodec,
-  optionalTextCodec,
-  positiveIntegerCodec,
-} from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditToggleGroup } from "@/features/settings/inline-edit-toggle-group.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"

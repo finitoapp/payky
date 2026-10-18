@@ -1,3 +1,4 @@
+import { optionalIdCodec } from "@payky/app-shared/inline-edit-codecs"
 import { updateSettings } from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/card.tsx"
 import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
 import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
-import { optionalIdCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
 import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"

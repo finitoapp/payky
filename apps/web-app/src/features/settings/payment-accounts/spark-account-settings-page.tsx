@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { timestampMsDateCodec } from "@payky/app-shared/inline-edit-codecs"
 import {
   selectCustomSparkWallet,
   selectDefaultSparkWallet,
@@ -60,7 +61,6 @@ import {
 } from "@/components/ui/field.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
 import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
-import { timestampMsDateCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

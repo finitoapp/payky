@@ -11,9 +11,9 @@ import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-u
 import { satsToFiat } from "@payky/core/modules/shared/money"
 import { useEffect, useState } from "react"
 import { useAppRun } from "../../hooks/use-app-run.ts"
+import { useAsyncValue } from "../../hooks/use-async-value.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale } from "../../hooks/use-translation.ts"
-import { useAsyncValue } from "./use-async-value.ts"
 
 /** The account the Spark withdrawals are booked to: the active Spark wallet. */
 export const useSparkAccountId = (): AccountId | undefined =>

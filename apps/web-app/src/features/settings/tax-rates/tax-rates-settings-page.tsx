@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { requiredTextCodec } from "@payky/app-shared/inline-edit-codecs"
 import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
 import type { TaxRateRow } from "@payky/core/modules/tax-rate/tax-rate"
 import {
@@ -32,7 +33,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { requiredTextCodec } from "@/features/settings/inline-edit-codecs.ts"
 import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"

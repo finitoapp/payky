@@ -1,6 +1,12 @@
 import type { ExpoConfig } from "expo/config"
 import { version } from "../../package.json"
 
+const [year, month, micro] = version.split(".").map(Number) as [
+  number,
+  number,
+  number,
+]
+
 export default {
   name: "Payky Native Preview",
   slug: "payky-native-app",
@@ -12,7 +18,11 @@ export default {
     bundleIdentifier: "me.payky.nativepreview",
     supportsTablet: true,
   },
-  android: { package: "me.payky.nativepreview", allowBackup: false },
+  android: {
+    package: "me.payky.nativepreview",
+    allowBackup: false,
+    versionCode: year * 1_000_000 + month * 10_000 + micro,
+  },
   plugins: [
     "expo-router",
     "expo-font",

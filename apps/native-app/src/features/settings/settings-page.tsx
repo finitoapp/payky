@@ -136,6 +136,13 @@ export function SettingsPage() {
       href: "/settings/home-screen",
     },
   ]
+  const supportRows: ReadonlyArray<SettingsRowData> = [
+    {
+      title: t("settings.about.title"),
+      value: t("settings.about.description"),
+      href: "/settings/about",
+    },
+  ]
 
   return (
     <Screen>
@@ -150,6 +157,7 @@ export function SettingsPage() {
       <SettingsGroup title={t("settings.taxesGroup")} rows={taxRows} />
       <SettingsGroup title={t("settings.accountAndSync")} rows={accountRows} />
       <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />
+      <SettingsGroup title={t("settings.support")} rows={supportRows} />
     </Screen>
   )
 }

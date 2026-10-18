@@ -24,6 +24,7 @@ export type NativeRoutePath =
   | "/cashu-withdraw/new"
   | "/cashu-withdraw/:withdrawalId"
   | "/settings"
+  | "/settings/about"
   | "/settings/language"
   | "/settings/theme"
   | "/settings/home-screen"
@@ -85,6 +86,8 @@ export const routeAccess = {
   "/cashu-withdraw/:withdrawalId": "admin",
   // Like web's `_terminal/settings/` index: the menu is free, each destination has its own gate.
   "/settings": "free",
+  // About exposes only public build metadata and links to no gated feature.
+  "/settings/about": "free",
   // Like web's `_terminal/settings/language`.
   "/settings/language": "free",
   // Like web's `_terminal/settings/theme`.

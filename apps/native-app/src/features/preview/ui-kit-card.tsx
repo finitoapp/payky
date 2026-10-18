@@ -2,6 +2,7 @@ import ArrowLeft from "lucide-react-native/icons/arrow-left"
 import Check from "lucide-react-native/icons/check"
 import ChevronRight from "lucide-react-native/icons/chevron-right"
 import Plus from "lucide-react-native/icons/plus"
+import { useState } from "react"
 import { Text, View } from "tamagui"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Button } from "../../components/ui/button.tsx"
@@ -14,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card.tsx"
+import { Checkbox } from "../../components/ui/checkbox.tsx"
 import {
   Field,
   FieldDescription,
@@ -26,6 +28,7 @@ import { Icon } from "../../components/ui/icon.tsx"
 import { Input } from "../../components/ui/input.tsx"
 import { Separator } from "../../components/ui/separator.tsx"
 import { Skeleton } from "../../components/ui/skeleton.tsx"
+import { Switch } from "../../components/ui/switch.tsx"
 import { Textarea } from "../../components/ui/textarea.tsx"
 
 const variants = [
@@ -39,6 +42,7 @@ const variants = [
 
 /** Dev-only: every ui kit component in one place, to eyeball on the device. */
 export function UiKitCard() {
+  const [on, setOn] = useState(true)
   return (
     <View
       bg="card"
@@ -105,6 +109,29 @@ export function UiKitCard() {
         </View>
         <Separator orientation="vertical" />
         <Text>Vertical</Text>
+      </View>
+      <View flexDirection="row" gap="4" items="center">
+        <Switch
+          checked={on}
+          onCheckedChange={setOn}
+          accessibilityLabel="Switch"
+        />
+        <Switch
+          checked={!on}
+          onCheckedChange={(next) => setOn(!next)}
+          accessibilityLabel="Inverse switch"
+        />
+        <Checkbox
+          checked={on}
+          onCheckedChange={setOn}
+          accessibilityLabel="Checkbox"
+        />
+        <Checkbox
+          checked={false}
+          onCheckedChange={() => {}}
+          disabled
+          accessibilityLabel="Disabled checkbox"
+        />
       </View>
       <Input placeholder="Input" />
       <Input placeholder="Invalid" invalid />

@@ -10,7 +10,11 @@ type Tones = Record<
   | "destructive-tint"
   | "destructive-tint-pressed"
   | "input-bg"
-  | "input-disabled",
+  | "input-disabled"
+  | "switch-track-off"
+  | "switch-thumb-on"
+  | "switch-thumb-off"
+  | "checkbox-bg",
   string
 >
 
@@ -31,6 +35,12 @@ const lightTones = (colors: Palette): Tones => ({
   // ui/input: `bg-transparent disabled:bg-input/50`
   "input-bg": "transparent",
   "input-disabled": colors["input-50"],
+  // ui/switch: `data-unchecked:bg-input`, thumb `bg-background`
+  "switch-track-off": colors.input,
+  "switch-thumb-on": colors.background,
+  "switch-thumb-off": colors.background,
+  // ui/checkbox: `bg-background`
+  "checkbox-bg": colors.background,
 })
 
 const darkTones = (colors: Palette): Tones => ({
@@ -46,6 +56,13 @@ const darkTones = (colors: Palette): Tones => ({
   // `dark:bg-input/30 dark:disabled:bg-input/80`
   "input-bg": colors["input-30"],
   "input-disabled": colors["input-80"],
+  // `dark:data-unchecked:bg-input/80`, thumb `dark:data-checked:bg-primary-foreground
+  // dark:data-unchecked:bg-foreground`
+  "switch-track-off": colors["input-80"],
+  "switch-thumb-on": colors["primary-foreground"],
+  "switch-thumb-off": colors.foreground,
+  // `dark:bg-input/30`
+  "checkbox-bg": colors["input-30"],
 })
 
 /**

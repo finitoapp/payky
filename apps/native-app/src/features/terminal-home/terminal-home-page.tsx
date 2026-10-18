@@ -3,15 +3,14 @@ import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-que
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { createRandomBillId } from "@payky/core/modules/bill/bill-types"
 import { Redirect, router } from "expo-router"
-import { useAtomValue } from "jotai"
 import { Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, XStack } from "tamagui"
-import { confirmQueueAtom } from "../../atoms/confirm.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
+import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { AmountKeypad } from "./amount-keypad.tsx"
 import { PosOverviewPage } from "./pos-overview-page.tsx"
@@ -32,7 +31,7 @@ export function TerminalHomePage() {
   const { t } = useTranslation()
   const [settings] = useEvoluQuery(settingsQuery).data
   const { mode, enabledModes, setMode } = useTerminalHomeMode()
-  const confirmOpen = useAtomValue(confirmQueueAtom).length > 0
+  const confirmOpen = useIsConfirmOpen()
   // A scan in either mode starts a new bill without a table; the bill then
   // adds the item as if it had been scanned there (scanner/0001).
   useHardwareScanner({

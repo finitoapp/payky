@@ -2,17 +2,24 @@ import { formatMoney } from "@payky/app-shared/format-money"
 import { catalogCategoriesQuery } from "@payky/core/modules/catalog-category/catalog-category-queries"
 import {
   catalogItemsPageQuery,
+  catalogItemsQuery,
   catalogItemUsedCategoryIdsQuery,
 } from "@payky/core/modules/catalog-item/catalog-item-queries"
 import type { CategoryFilter } from "@payky/core/modules/catalog-item/catalog-item-types"
-import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
+import {
+  findCatalogItemsByScanCode,
+  getStaffDisplayName,
+} from "@payky/core/modules/catalog-item/catalog-item-utils"
 import { Integer } from "@payky/core/modules/shared/schema"
+import { router } from "expo-router"
 import { Suspense, useCallback, useMemo, useState } from "react"
 import { YStack } from "tamagui"
 import { SearchField } from "../../../components/search-field.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
+import { useIsConfirmOpen } from "../../../hooks/use-is-confirm-open.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { CategoryFilterBar } from "../../shared/category-filter-bar.tsx"
 import {
@@ -34,8 +41,6 @@ export function ItemsSettingsPage() {
   )
 }
 
-// ponytail: web's hardware-scanner shortcut (a scan opens or creates an item)
-// is not ported; the scan code is still searched and edited as text.
 function ItemsSettingsBody() {
   const { t } = useTranslation()
   const [search, setSearch] = useState("")
@@ -50,6 +55,31 @@ function ItemsSettingsBody() {
     [usedCategoryIdRows]
   )
   const hasAny = usedCategoryIds.size > 0
+  const confirmOpen = useIsConfirmOpen()
+  const { data: allItems } = useEvoluQuery(catalogItemsQuery)
+
+  // A scan opens the item it identifies, or a new one carrying the code.
+  // Several matches (the code is not unique across devices) are left to the
+  // list: searching for the code shows exactly them.
+  useHardwareScanner({
+    enabled: !confirmOpen,
+    onScan: (code) => {
+      const matches = findCatalogItemsByScanCode(allItems, code)
+      const [match] = matches
+      // A focused search field received the code's characters too.
+      setSearch((current) =>
+        current.endsWith(code) ? current.slice(0, -code.length) : current
+      )
+      if (matches.length > 1) setSearch(code)
+      else if (match === undefined)
+        router.push({ pathname: "/settings/items/new", params: { scan: code } })
+      else
+        router.push({
+          pathname: "/settings/items/[catalogItemId]",
+          params: { catalogItemId: match.id },
+        })
+    },
+  })
 
   return (
     <YStack flex={1} gap="3">

@@ -33,7 +33,6 @@ import {
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
-import { useAtomValue } from "jotai"
 import {
   Suspense,
   useDeferredValue,
@@ -45,13 +44,13 @@ import {
 import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { confirmQueueAtom } from "../../atoms/confirm.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
+import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
@@ -404,7 +403,7 @@ function BillCart({
     setLastScanned(item)
     void cart.addOne(item)
   }
-  const confirmOpen = useAtomValue(confirmQueueAtom).length > 0
+  const confirmOpen = useIsConfirmOpen()
   const scanDialogOpen =
     collisionCandidates.length > 0 ||
     createCode !== null ||

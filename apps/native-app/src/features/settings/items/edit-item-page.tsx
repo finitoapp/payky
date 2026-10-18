@@ -32,7 +32,9 @@ import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
+import { useIsConfirmOpen } from "../../../hooks/use-is-confirm-open.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { useCatalogItemOptions } from "../../shared/use-catalog-item-options.ts"
@@ -107,6 +109,15 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
 
   // Uniqueness can't be enforced (devices can assign the same code before
   // syncing), so this is a heads-up next to the field, not a validation error.
+  const confirmOpen = useIsConfirmOpen()
+  // A scan saves the code like the camera does: the value is already confirmed.
+  useHardwareScanner({
+    enabled: !confirmOpen,
+    onScan: (code) => {
+      const parsed = z.safeDecode(optionalTextCodec, code)
+      if (parsed.success) void saveItem({ scanCode: parsed.data })
+    },
+  })
   const scanCodeCollisions = useMemo(
     () =>
       findCatalogItemsByScanCode(catalogItems, item.scanCode ?? "").filter(

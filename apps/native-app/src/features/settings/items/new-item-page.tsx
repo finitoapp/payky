@@ -16,7 +16,7 @@ import {
 } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import type { TaxRateId } from "@payky/core/modules/tax-rate/tax-rate-types"
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { type ComponentProps, useMemo, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
@@ -25,6 +25,8 @@ import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
+import { useIsConfirmOpen } from "../../../hooks/use-is-confirm-open.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { useCatalogItemOptions } from "../../shared/use-catalog-item-options.ts"
@@ -56,12 +58,24 @@ export function NewCatalogItemPage() {
     getFiatCurrency(settings)
   )
   const [price, setPrice] = useState("")
-  const [scanCode, setScanCode] = useState("")
+  // A code scanned in the item list, which opened this form to carry it.
+  const { scan } = useLocalSearchParams<{ scan?: string }>()
+  const [scanCode, setScanCode] = useState(scan ?? "")
   const [errors, setErrors] = useState<CatalogItemFormErrors>({})
   const [pending, setPending] = useState(false)
+  const confirmOpen = useIsConfirmOpen()
 
   const clearError = (field: keyof CatalogItemFormErrors) =>
     setErrors((current) => ({ ...current, [field]: undefined }))
+  // Fills the field wherever focus is; a focused field already received the
+  // code's characters and is overwritten with the clean code.
+  useHardwareScanner({
+    enabled: !pending && !confirmOpen,
+    onScan: (code) => {
+      setScanCode(code)
+      clearError("scanCode")
+    },
+  })
   const error = (field: keyof CatalogItemFormErrors) => {
     const key: TranslationKey | undefined = errors[field]
     return key === undefined ? undefined : t(key)

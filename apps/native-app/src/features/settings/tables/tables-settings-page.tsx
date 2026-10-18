@@ -21,6 +21,7 @@ export function TablesSettingsPage() {
     <SettingsListShell
       title={t("settings.tables.title")}
       addLabel={t("settings.tables.add")}
+      addHref="/settings/tables/new"
     >
       <TablesSettingsBody />
     </SettingsListShell>

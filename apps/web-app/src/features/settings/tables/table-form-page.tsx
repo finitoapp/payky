@@ -1,11 +1,8 @@
 import type { UpdateValues } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { requiredTextCodec } from "@payky/app-shared/inline-edit-codecs"
-import {
-  NonEmptyString255Schema,
-  PositiveInteger,
-  PositiveIntegerSchema,
-} from "@payky/core/modules/shared/schema"
+import { parseTableForm } from "@payky/app-shared/table-form"
+import { PositiveIntegerSchema } from "@payky/core/modules/shared/schema"
 import type { Table, TableRow } from "@payky/core/modules/table/table"
 import {
   createTableAtEnd,
@@ -134,15 +131,10 @@ function CreateTableForm() {
         setSeatCountError(null)
         resetSaved()
 
-        const nameResult = NonEmptyString255Schema.safeParse(name.trim())
-        if (!nameResult.success) {
-          setNameError("settings.tables.form.name.invalid")
-          return
-        }
-
-        const parsedSeatCount = Number(seatCount)
-        if (!Number.isInteger(parsedSeatCount) || parsedSeatCount <= 0) {
-          setSeatCountError("settings.tables.form.seatCount.invalid")
+        const form = parseTableForm({ name, seatCount })
+        if (!form.ok) {
+          if (form.field === "name") setNameError(form.errorKey)
+          else setSeatCountError(form.errorKey)
           return
         }
 
@@ -151,8 +143,8 @@ function CreateTableForm() {
             await run.ok(
               createTableAtEnd({
                 deviceId: null,
-                name: nameResult.data,
-                seatCount: PositiveInteger(parsedSeatCount),
+                name: form.name,
+                seatCount: form.seatCount,
               })
             )
             router.history.back()

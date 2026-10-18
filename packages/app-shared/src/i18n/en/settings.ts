@@ -210,6 +210,7 @@ export const enSettings = {
     "Donations will appear here once received.",
   "settings.donations.history.empty.title": "No donations yet",
   "settings.donations.history.error": "Could not load donation history.",
+  "settings.donations.history.more": "Show more",
   "settings.donations.history.retry": "Try again",
   "settings.donations.history.title": "Recent donations",
   "settings.donations.invoice.backToSettings": "Back to settings",

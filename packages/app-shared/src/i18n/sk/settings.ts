@@ -212,6 +212,7 @@ export const skSettings = {
     "Dary sa tu zobrazia, akonáhle nejaký príde.",
   "settings.donations.history.empty.title": "Zatiaľ žiadne dary",
   "settings.donations.history.error": "Históriu darov sa nepodarilo načítať.",
+  "settings.donations.history.more": "Zobraziť ďalšie",
   "settings.donations.history.retry": "Skúsiť znova",
   "settings.donations.history.title": "Posledné dary",
   "settings.donations.invoice.backToSettings": "Späť do nastavení",

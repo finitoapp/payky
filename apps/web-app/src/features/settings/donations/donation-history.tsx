@@ -1,3 +1,4 @@
+import { fetchDonationHistory } from "@payky/core/integrations/donations/donations-client"
 import { useIntersectionObserver } from "@payky/web-shared/use-intersection-observer"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import {
@@ -9,7 +10,7 @@ import {
 import { ListSkeleton } from "@/components/list-skeleton.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
-import { fetchDonationHistory } from "@/core/integrations/donations/donations-client.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -33,7 +34,12 @@ export const DonationHistory = () => {
     queryKey: ["donations", "history"],
     queryFn: async ({ pageParam }) => {
       await using run = appRun()
-      return await run.orThrow(fetchDonationHistory({ cursor: pageParam }))
+      return await run.orThrow(
+        fetchDonationHistory({
+          endpoint: apiUrl("/api/donations"),
+          cursor: pageParam,
+        })
+      )
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,

@@ -212,6 +212,7 @@ export const csSettings = {
     "Dary se zde zobrazí, jakmile nějaký přijde.",
   "settings.donations.history.empty.title": "Zatím žádné dary",
   "settings.donations.history.error": "Historii darů se nepodařilo načíst.",
+  "settings.donations.history.more": "Zobrazit další",
   "settings.donations.history.retry": "Zkusit znovu",
   "settings.donations.history.title": "Poslední dary",
   "settings.donations.invoice.backToSettings": "Zpět do nastavení",

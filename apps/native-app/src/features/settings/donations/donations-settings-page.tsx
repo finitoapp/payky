@@ -29,6 +29,7 @@ import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../../hooks/use-btc-fiat.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { DonationHistory } from "./donation-history.tsx"
 
 const DonationAmountSchema = z.number().int().positive().safe()
 
@@ -212,6 +213,7 @@ export function DonationsSettingsPage() {
           void createInvoice()
         }}
       />
+      <DonationHistory />
     </Screen>
   )
 }

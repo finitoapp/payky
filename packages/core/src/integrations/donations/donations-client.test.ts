@@ -1,6 +1,6 @@
 import { testCreateRun } from "@evolu/common"
-import type { FetchDep } from "@payky/core/deps"
 import { describe, expect, test } from "vitest"
+import type { FetchDep } from "../../deps.ts"
 import {
   type DonationsHttpError,
   type DonationsResponseError,
@@ -9,6 +9,8 @@ import {
 
 const inputToString = (input: RequestInfo | URL): string =>
   input instanceof URL ? input.toString() : String(input)
+
+const endpoint = "https://payky.me/api/donations"
 
 describe("donations client", () => {
   test("downloads and normalizes a donation history page", async () => {
@@ -24,7 +26,7 @@ describe("donations client", () => {
     } satisfies FetchDep
     await using run = testCreateRun(deps)
 
-    await expect(run(fetchDonationHistory({}))).resolves.toEqual({
+    await expect(run(fetchDonationHistory({ endpoint }))).resolves.toEqual({
       ok: true,
       value: {
         items: [{ amountSats: 21, occurredAt: 1_700_000_000_000 }],
@@ -44,7 +46,7 @@ describe("donations client", () => {
     } satisfies FetchDep
     await using run = testCreateRun(deps)
 
-    await run(fetchDonationHistory({ cursor: "next page" }))
+    await run(fetchDonationHistory({ endpoint, cursor: "next page" }))
 
     expect(requestedUrls).toEqual([
       "https://payky.me/api/donations?cursor=next%20page",
@@ -57,7 +59,7 @@ describe("donations client", () => {
     } satisfies FetchDep
     await using run = testCreateRun(deps)
 
-    await expect(run(fetchDonationHistory({}))).resolves.toEqual({
+    await expect(run(fetchDonationHistory({ endpoint }))).resolves.toEqual({
       ok: true,
       value: { items: [], nextCursor: null },
     })
@@ -69,7 +71,9 @@ describe("donations client", () => {
     } satisfies FetchDep
     await using run = testCreateRun(deps)
 
-    await expect(run(fetchDonationHistory({}))).resolves.toMatchObject({
+    await expect(
+      run(fetchDonationHistory({ endpoint }))
+    ).resolves.toMatchObject({
       ok: false,
       error: {
         type: "DonationsHttpError",
@@ -86,7 +90,9 @@ describe("donations client", () => {
     } satisfies FetchDep
     await using run = testCreateRun(deps)
 
-    await expect(run(fetchDonationHistory({}))).resolves.toMatchObject({
+    await expect(
+      run(fetchDonationHistory({ endpoint }))
+    ).resolves.toMatchObject({
       ok: false,
       error: {
         type: "DonationsResponseError",
@@ -102,7 +108,9 @@ describe("donations client", () => {
     } satisfies FetchDep
     await using run = testCreateRun(deps)
 
-    await expect(run(fetchDonationHistory({}))).resolves.toMatchObject({
+    await expect(
+      run(fetchDonationHistory({ endpoint }))
+    ).resolves.toMatchObject({
       ok: false,
       error: {
         type: "DonationsResponseError",

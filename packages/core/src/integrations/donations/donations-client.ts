@@ -3,18 +3,20 @@ import {
   type FetchDep,
   type FetchError,
   fetchAndValidateJson,
-} from "@payky/core/deps"
-import { defineError } from "@payky/core/error"
+} from "../../deps.ts"
+import { defineError } from "../../error.ts"
 import {
   type DonationHistoryPage,
   DonationHistoryResponseSchema,
-} from "@payky/core/integrations/donations/donation-history"
-import { apiUrl } from "@/core/app-env.ts"
+} from "./donation-history.ts"
 
-const buildDonationsUrl = (cursor: string | undefined): string =>
+const buildDonationsUrl = (
+  endpoint: string,
+  cursor: string | undefined
+): string =>
   cursor === undefined
-    ? apiUrl("/api/donations")
-    : `${apiUrl("/api/donations")}?cursor=${encodeURIComponent(cursor)}`
+    ? endpoint
+    : `${endpoint}?cursor=${encodeURIComponent(cursor)}`
 
 const createDonationsHttpError = defineError("DonationsHttpError")<{
   readonly message: string
@@ -40,14 +42,17 @@ export type DonationsError =
 
 export const fetchDonationHistory =
   ({
+    endpoint,
     cursor,
   }: {
+    /** This app's own `/api/donations`, absolute on native. */
+    readonly endpoint: string
     readonly cursor?: string
   }): Task<DonationHistoryPage, DonationsError, FetchDep> =>
   (run) =>
     run(
       fetchAndValidateJson({
-        url: buildDonationsUrl(cursor),
+        url: buildDonationsUrl(endpoint, cursor),
         schema: DonationHistoryResponseSchema,
         onHttpError: ({ status, responseBody }) =>
           createDonationsHttpError({

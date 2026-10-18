@@ -63,5 +63,6 @@ describe("native route access", () => {
       "settings"
     )
     expect(requiredPermission("/settings/items")).toBe("settings")
+    expect(requiredPermission("/settings/items/new")).toBe("settings")
   })
 })

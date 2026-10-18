@@ -1,3 +1,4 @@
+import { parseCatalogItemForm } from "@payky/app-shared/catalog-item-form-schema"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { CatalogCategoryRow } from "@payky/core/modules/catalog-category/catalog-category"
 import type { CatalogCategoryId } from "@payky/core/modules/catalog-category/catalog-category-types"
@@ -38,7 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx"
-import { parseCatalogItemForm } from "@/features/shared/catalog-item-form-schema.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"

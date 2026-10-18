@@ -27,6 +27,7 @@ export function ItemsSettingsPage() {
     <SettingsListShell
       title={t("settings.items.title")}
       addLabel={t("settings.items.add")}
+      addHref="/settings/items/new"
     >
       <ItemsSettingsBody />
     </SettingsListShell>

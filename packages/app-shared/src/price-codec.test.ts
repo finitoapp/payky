@@ -1,7 +1,7 @@
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
-import { createPriceCodec } from "@/features/shared/catalog-item-form-schema.ts"
+import { createPriceCodec } from "./catalog-item-form-schema.ts"
 
 describe("createPriceCodec", () => {
   const codec = createPriceCodec("CZK")

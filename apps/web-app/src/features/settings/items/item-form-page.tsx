@@ -1,3 +1,8 @@
+import {
+  type CatalogItemFormErrors,
+  createPriceCodec,
+  parseCatalogItemForm,
+} from "@payky/app-shared/catalog-item-form-schema"
 import { fiatCurrencyOptions } from "@payky/app-shared/fiat-currency-options"
 import {
   NO_OPTION,
@@ -71,11 +76,6 @@ import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
 import { SettingsFormCard } from "@/features/settings/settings-form-card.tsx"
 import { SettingsFormEmptyState } from "@/features/settings/settings-form-empty-state.tsx"
-import {
-  type CatalogItemFormErrors,
-  createPriceCodec,
-  parseCatalogItemForm,
-} from "@/features/shared/catalog-item-form-schema.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"

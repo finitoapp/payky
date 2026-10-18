@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 import {
   type CatalogItemFormInput,
   parseCatalogItemForm,
-} from "@/features/shared/catalog-item-form-schema.ts"
+} from "./catalog-item-form-schema.ts"
 
 const validInput: CatalogItemFormInput = {
   name: "Coffee",

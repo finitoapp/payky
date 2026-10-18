@@ -20,6 +20,8 @@ export type NativeRoutePath =
   | "/withdraw"
   | "/withdraw/new"
   | "/withdraw/:withdrawalId"
+  | "/cashu-withdraw"
+  | "/cashu-withdraw/:withdrawalId"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -51,6 +53,9 @@ export const routeAccess = {
   "/withdraw": "admin",
   "/withdraw/new": "admin",
   "/withdraw/:withdrawalId": "admin",
+  // Like web's Cashu `withdrawals` routes: the same owner-only gate (access/0002).
+  "/cashu-withdraw": "admin",
+  "/cashu-withdraw/:withdrawalId": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

@@ -1,3 +1,4 @@
+import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { formatDateTime } from "@payky/app-shared/format-date"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { useNow } from "@payky/app-shared/use-now"
@@ -5,6 +6,7 @@ import {
   reusableWithdrawalDestination,
   withdrawalFailureKeys,
   withdrawalKindKeys,
+  withdrawalMethod,
 } from "@payky/app-shared/withdraw-display"
 import {
   pendingLightningText,
@@ -50,6 +52,7 @@ import {
   SatsWithFiat,
   WithdrawalStatusBadge,
 } from "./withdraw-parts.tsx"
+import { withdrawRoutes } from "./withdraw-routes.ts"
 
 const TXID_REFETCH_INTERVAL_MS = 30_000
 
@@ -126,6 +129,7 @@ function PendingLightningText({ view }: { readonly view: WithdrawalView }) {
 function NewWithdrawalButton({ view }: { readonly view: WithdrawalView }) {
   const { t } = useTranslation()
   const destination = reusableWithdrawalDestination(view.target)
+  const route = withdrawRoutes[withdrawalMethod(view.target)].new
   return (
     <>
       {destination === null ? (
@@ -138,8 +142,8 @@ function NewWithdrawalButton({ view }: { readonly view: WithdrawalView }) {
         onPress={() =>
           router.push(
             destination === null
-              ? "/withdraw/new"
-              : { pathname: "/withdraw/new", params: { destination } }
+              ? route
+              : { pathname: route, params: { destination } }
           )
         }
       />
@@ -390,6 +394,11 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
             t("withdraw.destination.kind.lightningInvoice")}
         </Row>
       )}
+      {target.kind === "cashu" ? (
+        <Row label={t("withdraw.detail.mint")}>
+          {formatMintLabel(target.mintUrl)}
+        </Row>
+      ) : null}
       {view.comment === null ? null : (
         <Row label={t("withdraw.detail.comment")} stacked>
           {view.comment}
@@ -430,6 +439,16 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
           txid={state.txid}
           coopExitRequestId={state.coopExitRequestId}
         />
+      ) : null}
+      {target.kind === "cashu" ? (
+        <Collapsible label={t("withdraw.detail.technical")}>
+          <Row label={t("withdraw.detail.invoice")} stacked>
+            <Mono value={target.lnInvoice} />
+          </Row>
+          <Row label={t("withdraw.detail.cashuQuoteId")} stacked>
+            <Mono value={target.quoteId} />
+          </Row>
+        </Collapsible>
       ) : null}
       {target.kind === "lightning" ? (
         <Collapsible label={t("withdraw.detail.technical")}>

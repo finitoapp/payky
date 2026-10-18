@@ -4,7 +4,9 @@ import { groupByDay } from "@payky/app-shared/group-by-day"
 import {
   shortWithdrawalDestination,
   withdrawalKindKeys,
+  withdrawalMethod,
 } from "@payky/app-shared/withdraw-display"
+import type { WithdrawMethod } from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import {
   toWithdrawalView,
@@ -22,14 +24,32 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
+  useCashuAccountId,
+  useCashuWalletSnapshot,
+} from "./use-cashu-withdraw-data.ts"
+import {
   useBtcFiat,
   useSparkAccountId,
   useSparkBalance,
 } from "./use-withdraw-data.ts"
 import { WithdrawalStatusBadge } from "./withdraw-parts.tsx"
+import { withdrawRoutes } from "./withdraw-routes.ts"
 
 /** `/withdraw`: the Spark wallet's withdrawals, newest first. */
 export function WithdrawHistoryPage() {
+  return <WithdrawHistoryScreen method="spark" />
+}
+
+/** `/cashu-withdraw`: the withdrawals from the shared Cashu wallet. */
+export function CashuWithdrawHistoryPage() {
+  return <WithdrawHistoryScreen method="cashu" />
+}
+
+function WithdrawHistoryScreen({
+  method,
+}: {
+  readonly method: WithdrawMethod
+}) {
   const theme = useTheme()
   const { t } = useTranslation()
 
@@ -37,25 +57,35 @@ export function WithdrawHistoryPage() {
     <SafeAreaView
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
-      <ScreenHeader title={t("withdraw.history.title")} />
+      <ScreenHeader
+        title={t(
+          method === "spark" ? "withdraw.history.title" : "withdraw.cashu.title"
+        )}
+      />
       <Suspense fallback={<LoadingView />}>
-        <WithdrawHistoryBody />
+        <WithdrawHistoryBody method={method} />
       </Suspense>
     </SafeAreaView>
   )
 }
 
-function WithdrawHistoryBody() {
+function WithdrawHistoryBody({ method }: { readonly method: WithdrawMethod }) {
   const { t } = useTranslation()
-  const accountId = useSparkAccountId()
+  const sparkAccountId = useSparkAccountId()
+  const cashuAccountId = useCashuAccountId()
+  const accountId = method === "spark" ? sparkAccountId : cashuAccountId
   if (accountId === undefined) {
     return (
       <EmptyView
-        message={`${t("withdraw.noAccount.title")}\n${t("withdraw.noAccount.description")}`}
+        message={
+          method === "spark"
+            ? `${t("withdraw.noAccount.title")}\n${t("withdraw.noAccount.description")}`
+            : `${t("withdraw.cashu.noAccount.title")}\n${t("withdraw.cashu.noAccount.description")}`
+        }
       />
     )
   }
-  return <WithdrawHistory accountId={accountId} />
+  return <WithdrawHistory method={method} accountId={accountId} />
 }
 
 type ListEntry =
@@ -66,11 +96,60 @@ type ListEntry =
       readonly view: WithdrawalView
     }
 
-function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
+function SparkBalanceSummary({ accountId }: { readonly accountId: AccountId }) {
+  return <BalanceSummary balance={useSparkBalance(accountId)} />
+}
+
+/** Its own `Suspense`: a Cashu wallet that is slow to start holds up only this line. */
+function CashuBalanceSummary() {
+  return (
+    <Suspense fallback={null}>
+      <CashuBalanceLine />
+    </Suspense>
+  )
+}
+
+function CashuBalanceLine() {
+  const snapshot = useCashuWalletSnapshot()
+  return (
+    <BalanceSummary
+      balance={
+        snapshot === null
+          ? null
+          : [...snapshot.balances.values()].reduce((sum, sats) => sum + sats, 0)
+      }
+    />
+  )
+}
+
+function BalanceSummary({ balance }: { readonly balance: number | null }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const balance = useSparkBalance(accountId)
   const fiat = useBtcFiat()
+  if (balance === null) return null
+  return (
+    <YStack items="flex-end">
+      <Text fontWeight="600">
+        {t("withdraw.history.balance", {
+          amount: formatSatsAmount(balance, locale),
+        })}
+      </Text>
+      <Text fontSize={12} color="muted-foreground">
+        {fiat.approx(balance)}
+      </Text>
+    </YStack>
+  )
+}
+
+function WithdrawHistory({
+  method,
+  accountId,
+}: {
+  readonly method: WithdrawMethod
+  readonly accountId: AccountId
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
   const { rows, hasMore, isPending, loadMore } = useInfiniteEvoluQuery(
     [accountId],
     (limit) => withdrawalsByAccountQuery(accountId, limit)
@@ -99,19 +178,12 @@ function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
     <YStack flex={1} gap="3">
       <AppButton
         label={t("withdraw.history.new")}
-        onPress={() => router.push("/withdraw/new")}
+        onPress={() => router.push(withdrawRoutes[method].new)}
       />
-      {balance === null ? null : (
-        <YStack items="flex-end">
-          <Text fontWeight="600">
-            {t("withdraw.history.balance", {
-              amount: formatSatsAmount(balance, locale),
-            })}
-          </Text>
-          <Text fontSize={12} color="muted-foreground">
-            {fiat.approx(balance)}
-          </Text>
-        </YStack>
+      {method === "spark" ? (
+        <SparkBalanceSummary accountId={accountId} />
+      ) : (
+        <CashuBalanceSummary />
       )}
       <FlatList
         style={{ flex: 1 }}
@@ -158,7 +230,7 @@ function WithdrawalRow({ view }: { readonly view: WithdrawalView }) {
       accessibilityLabel={`${amount}, ${shortWithdrawalDestination(view.target)}`}
       onPress={() =>
         router.push({
-          pathname: "/withdraw/[withdrawalId]",
+          pathname: withdrawRoutes[withdrawalMethod(view.target)].detail,
           params: { withdrawalId: view.id },
         })
       }

@@ -48,5 +48,7 @@ describe("native route access", () => {
     expect(requiredPermission("/withdraw")).toBe("admin")
     expect(requiredPermission("/withdraw/new")).toBe("admin")
     expect(requiredPermission("/withdraw/abc123")).toBe("admin")
+    expect(requiredPermission("/cashu-withdraw")).toBe("admin")
+    expect(requiredPermission("/cashu-withdraw/abc123")).toBe("admin")
   })
 })

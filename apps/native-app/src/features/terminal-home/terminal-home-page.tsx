@@ -55,12 +55,21 @@ export function TerminalHomePage() {
             onPress={() => router.push("/activity")}
           />
         </XStack>
-        {/* Web reaches this from the Spark account settings, which native lacks (owner PIN gate on the route). */}
-        <XStack flex={enabledModes.length > 1 ? undefined : 1}>
+      </XStack>
+      {/* Web reaches these from the Spark and Cashu account settings, which native lacks (owner PIN gate on the routes). */}
+      <XStack gap="2" mb="3">
+        <XStack flex={1}>
           <AppButton
             label={t("withdraw.history.title")}
             variant="secondary"
             onPress={() => router.push("/withdraw")}
+          />
+        </XStack>
+        <XStack flex={1}>
+          <AppButton
+            label={t("withdraw.cashu.title")}
+            variant="secondary"
+            onPress={() => router.push("/cashu-withdraw")}
           />
         </XStack>
       </XStack>

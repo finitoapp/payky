@@ -45,6 +45,7 @@ export type NativeRoutePath =
   | "/settings/payment-accounts"
   | "/settings/payment-accounts/iban"
   | "/settings/payment-accounts/iban/fio-plugin"
+  | "/settings/payment-accounts/spark"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -124,6 +125,8 @@ export const routeAccess = {
   "/settings/payment-accounts/iban": "admin",
   // Like web's `_terminal/settings/payment-accounts/iban/fio-plugin` (owner-only).
   "/settings/payment-accounts/iban/fio-plugin": "admin",
+  // Like web's `_terminal/settings/payment-accounts/spark` (owner-only).
+  "/settings/payment-accounts/spark": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

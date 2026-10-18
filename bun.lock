@@ -78,6 +78,7 @@
         "@t3-oss/env-core": "0.13.11",
         "@tamagui/config": "3.0.18",
         "@tamagui/font-inter": "3.0.18",
+        "@tanstack/react-query": "5.104.3",
         "expo": "58.0.14",
         "expo-camera": "58.0.10",
         "expo-constants": "58.0.12",

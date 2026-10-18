@@ -1,6 +1,7 @@
 import InterBold from "@tamagui/font-inter/otf/Inter-Bold.otf"
 import Inter from "@tamagui/font-inter/otf/Inter-Regular.otf"
 import InterSemiBold from "@tamagui/font-inter/otf/Inter-SemiBold.otf"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
@@ -19,6 +20,7 @@ import { DeviceRegistration } from "../src/components/device-registration.tsx"
 import { PinPromptHost } from "../src/components/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/sentry-controller.tsx"
 import { ToastHost } from "../src/components/toast-host.tsx"
+import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
@@ -67,22 +69,24 @@ function ThemedApp() {
   const theme = resolveTheme(preference, systemScheme)
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
-      <Theme name={theme}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <AccessGate>
-          <Stack screenOptions={{ headerShown: false }} />
-        </AccessGate>
-        <AppEvoluConsumers />
-        <CashuEvoluConsumers />
-        <ConfirmHost />
-        <PinPromptHost />
-        <ToastHost />
-        <Suspense fallback={null}>
-          <SentryController />
-          <DeviceRegistration />
-        </Suspense>
-      </Theme>
-    </TamaguiProvider>
+    <QueryClientProvider client={queryClient}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
+        <Theme name={theme}>
+          <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <AccessGate>
+            <Stack screenOptions={{ headerShown: false }} />
+          </AccessGate>
+          <AppEvoluConsumers />
+          <CashuEvoluConsumers />
+          <ConfirmHost />
+          <PinPromptHost />
+          <ToastHost />
+          <Suspense fallback={null}>
+            <SentryController />
+            <DeviceRegistration />
+          </Suspense>
+        </Theme>
+      </TamaguiProvider>
+    </QueryClientProvider>
   )
 }

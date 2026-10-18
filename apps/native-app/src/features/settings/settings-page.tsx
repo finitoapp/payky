@@ -60,6 +60,7 @@ export function SettingsPage() {
   const catalogRows: ReadonlyArray<SettingsRowData> = [
     { title: t("settings.items.title"), href: "/settings/items" },
     { title: t("settings.categories.title"), href: "/settings/categories" },
+    { title: t("settings.tables.title"), href: "/settings/tables" },
   ]
   const paymentRows: ReadonlyArray<SettingsRowData> = [
     {

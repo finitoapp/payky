@@ -66,6 +66,9 @@ export function SettingsPage() {
       href: "/settings/legal-entity",
     },
   ]
+  const taxRows: ReadonlyArray<SettingsRowData> = [
+    { title: t("settings.taxRates.title"), href: "/settings/tax-rates" },
+  ]
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
     {
       title: t("settings.language.title"),
@@ -95,6 +98,7 @@ export function SettingsPage() {
         href="/settings/profile"
       />
       <SettingsGroup title={t("settings.payments")} rows={paymentRows} />
+      <SettingsGroup title={t("settings.taxesGroup")} rows={taxRows} />
       <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />
     </Screen>
   )

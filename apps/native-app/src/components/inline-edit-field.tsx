@@ -25,6 +25,8 @@ export function InlineEditField<T extends string | number | null>({
   codec,
   errorKey,
   onSave,
+  startEditing = false,
+  onEditFinished,
 }: {
   /** Already translated. */
   readonly label: string
@@ -36,16 +38,26 @@ export function InlineEditField<T extends string | number | null>({
   readonly codec: z.core.$ZodType<T, string>
   readonly errorKey: TranslationKey
   readonly onSave: (value: T) => Promise<boolean>
+  /**
+   * Mounts the field already in edit mode, for a caller that renders it only
+   * in response to an explicit "edit this" action (a row's rename).
+   */
+  readonly startEditing?: boolean
+  /** Called once the field is back to idle, saved or discarded. */
+  readonly onEditFinished?: () => void
 }) {
   const { t } = useTranslation()
   const toast = useToast()
-  const [draft, setDraft] = useState<string | null>(null)
+  const [draft, setDraft] = useState<string | null>(
+    startEditing ? z.encode(codec, defaultValue) : null
+  )
   const [invalid, setInvalid] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const discard = () => {
     setDraft(null)
     setInvalid(false)
+    onEditFinished?.()
   }
 
   const commit = async () => {

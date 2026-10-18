@@ -1,6 +1,6 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { requiredTextCodec } from "@payky/app-shared/inline-edit-codecs"
-import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
+import { parseTaxRateForm } from "@payky/app-shared/tax-rate-form"
 import type { TaxRateRow } from "@payky/core/modules/tax-rate/tax-rate"
 import {
   activateTaxRate,
@@ -10,10 +10,7 @@ import {
   setDefaultTaxRate,
 } from "@payky/core/modules/tax-rate/tax-rate-actions"
 import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
-import {
-  decimalStringToTaxRatePercentage,
-  taxRatePercentageToDecimalString,
-} from "@payky/core/modules/tax-rate/tax-rate-utils"
+import { taxRatePercentageToDecimalString } from "@payky/core/modules/tax-rate/tax-rate-utils"
 import {
   ArchiveIcon,
   ArchiveRestoreIcon,
@@ -283,16 +280,10 @@ function NewTaxRateCard() {
             setNameError(null)
             setRateError(null)
 
-            const trimmedName = name.trim()
-            const nameResult = NonEmptyString255Schema.safeParse(trimmedName)
-            if (!nameResult.success) {
-              setNameError("settings.taxRates.name.invalid")
-              return
-            }
-
-            const rate = decimalStringToTaxRatePercentage(rateInput)
-            if (rate === null) {
-              setRateError("settings.taxRates.rate.invalid")
+            const form = parseTaxRateForm({ name, rate: rateInput })
+            if (!form.ok) {
+              if (form.field === "name") setNameError(form.errorKey)
+              else setRateError(form.errorKey)
               return
             }
 
@@ -301,8 +292,8 @@ function NewTaxRateCard() {
               const succeeded = await runToast(async (run) => {
                 await run.ok(
                   createTaxRate({
-                    name: nameResult.data,
-                    rate,
+                    name: form.name,
+                    rate: form.rate,
                     isDefault: false,
                   })
                 )

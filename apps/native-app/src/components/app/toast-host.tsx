@@ -1,11 +1,16 @@
 import { useAtomValue, useSetAtom } from "jotai"
 import { useEffect } from "react"
-import { Text, YStack } from "tamagui"
-import { dismissToastAtom, type Toast, toastsAtom } from "../../atoms/toast.ts"
+import { YStack } from "tamagui"
+import {
+  dismissToastAtom,
+  type Toast as ToastData,
+  toastsAtom,
+} from "../../atoms/toast.ts"
+import { Toast } from "../ui/toast.tsx"
 
 const DISMISS_AFTER_MS = 4000
 
-function ToastItem({ toast }: { readonly toast: Toast }) {
+function ToastItem({ toast }: { readonly toast: ToastData }) {
   const dismiss = useSetAtom(dismissToastAtom)
   useEffect(() => {
     const timer = setTimeout(() => dismiss(toast.id), DISMISS_AFTER_MS)
@@ -13,18 +18,11 @@ function ToastItem({ toast }: { readonly toast: Toast }) {
   }, [dismiss, toast.id])
 
   return (
-    <YStack
-      bg={toast.variant === "error" ? "red-600" : "green-600"}
-      rounded="4"
-      p="3"
-      minH={48}
-      justify="center"
-      accessibilityRole="alert"
-      accessibilityLiveRegion="assertive"
+    <Toast
+      variant={toast.variant}
+      message={toast.message}
       onPress={() => dismiss(toast.id)}
-    >
-      <Text color="white">{toast.message}</Text>
-    </YStack>
+    />
   )
 }
 

@@ -1,5 +1,10 @@
+import { countryLabelKey } from "@payky/app-shared/legal-entity-options"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
-import { parseEnabledHomeModes } from "@payky/core/modules/app-settings/app-settings-utils"
+import {
+  getFiatCurrency,
+  parseEnabledHomeModes,
+} from "@payky/core/modules/app-settings/app-settings-utils"
+import { legalEntityQuery } from "@payky/core/modules/legal-entity/legal-entity-queries"
 import { Text, YStack } from "tamagui"
 import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
@@ -48,7 +53,19 @@ export function SettingsPage() {
   const theme = useThemePreference()
   const profile = useNostrProfile(useNostrIdentity().pubkey)
   const [settings] = useEvoluQuery(settingsQuery).data
+  const [legalEntity] = useEvoluQuery(legalEntityQuery).data
   const enabledHomeModes = parseEnabledHomeModes(settings?.enabledHomeModesJson)
+  const fiatCurrency = getFiatCurrency(settings)
+  const paymentRows: ReadonlyArray<SettingsRowData> = [
+    {
+      title: t("settings.legalEntity.title"),
+      value:
+        legalEntity === undefined
+          ? fiatCurrency
+          : `${t(countryLabelKey(legalEntity.country))} · ${fiatCurrency}`,
+      href: "/settings/legal-entity",
+    },
+  ]
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
     {
       title: t("settings.language.title"),
@@ -77,6 +94,7 @@ export function SettingsPage() {
         value={profile.data?.name ?? t("settings.profile.setName")}
         href="/settings/profile"
       />
+      <SettingsGroup title={t("settings.payments")} rows={paymentRows} />
       <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />
     </Screen>
   )

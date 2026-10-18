@@ -1,3 +1,4 @@
+import { fiatCurrencyOptions } from "@payky/app-shared/fiat-currency-options"
 import {
   NO_OPTION,
   optionalIdCodec,
@@ -75,7 +76,6 @@ import {
   createPriceCodec,
   parseCatalogItemForm,
 } from "@/features/shared/catalog-item-form-schema.ts"
-import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
 import { useConfirmedRun } from "@/hooks/use-confirmed-run.ts"

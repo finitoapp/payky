@@ -1,3 +1,4 @@
+import { fiatCurrencyOptions } from "@payky/app-shared/fiat-currency-options"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { saveFiatBankAccount } from "@payky/core/modules/account/account-actions"
 import { fiatBankAccountQuery } from "@payky/core/modules/account/account-queries"
@@ -43,7 +44,6 @@ import {
   BankAccountFormatToggle,
   formatBankAccount,
 } from "@/features/shared/bank-account-input.tsx"
-import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"

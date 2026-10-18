@@ -1,5 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { countryLabelKey } from "@payky/app-shared/legal-entity-options"
 import {
   cardSwitchioAccountQuery,
   cashRegisterAccountQuery,
@@ -42,7 +43,7 @@ import { useAiAssistantAccess } from "@/hooks/use-ai-assistant-access.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTerminalHomeMode } from "@/hooks/use-terminal-home-mode.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { countryLabelKey, homeModeLabelKeys } from "@/i18n/settings-labels.ts"
+import { homeModeLabelKeys } from "@/i18n/settings-labels.ts"
 
 /**
  * A row shows either a `description` of what the page is for or, for pages

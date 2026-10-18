@@ -28,6 +28,7 @@ export type NativeRoutePath =
   | "/settings/theme"
   | "/settings/home-screen"
   | "/settings/profile"
+  | "/settings/legal-entity"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -73,6 +74,8 @@ export const routeAccess = {
   "/settings/home-screen": "settings",
   // Like web's `_terminal/settings/profile`: the public profile is owner-only (access/0002).
   "/settings/profile": "admin",
+  // Like web's `_terminal/settings/legal-entity` (access/0002: `settings`).
+  "/settings/legal-entity": "settings",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

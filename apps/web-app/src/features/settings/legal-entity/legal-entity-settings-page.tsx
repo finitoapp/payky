@@ -1,4 +1,10 @@
-import { optionalIdCodec } from "@payky/app-shared/inline-edit-codecs"
+import { fiatCurrencyOptions } from "@payky/app-shared/fiat-currency-options"
+import {
+  countryCodec,
+  countryLabelKey,
+  countryOptions,
+  OTHER_COUNTRY,
+} from "@payky/app-shared/legal-entity-options"
 import { updateSettings } from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -17,26 +23,9 @@ import {
 import { FieldDescription, FieldGroup } from "@/components/ui/field.tsx"
 import { InlineEditCheckbox } from "@/features/settings/inline-edit-checkbox.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
-import { fiatCurrencyOptions } from "@/features/shared/fiat-currency-options.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { countryLabelKey } from "@/i18n/settings-labels.ts"
-
-/**
- * The settings page's own choice, distinct from the persisted
- * `CountryCode | null`: "OTHER" stays explicit here so it can be told apart
- * from "not chosen yet", which is the row not existing at all.
- */
-const OTHER_COUNTRY = "OTHER"
-
-const countryOptions: ReadonlyArray<CountryCode | typeof OTHER_COUNTRY> = [
-  "CZ",
-  "SK",
-  OTHER_COUNTRY,
-]
-
-const countryCodec = optionalIdCodec<CountryCode>(OTHER_COUNTRY)
 
 export function LegalEntitySettingsPage() {
   const appRun = useAppRun()

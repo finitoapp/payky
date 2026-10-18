@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core"
 import { sqliteFalse, sqliteTrue } from "@evolu/common"
+import { maskFioToken, parseFioToken } from "@payky/app-shared/fio-token"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   dateCodec,
@@ -23,7 +24,6 @@ import { fioPluginId } from "@payky/core/modules/fio-plugin/fio-plugin-utils"
 import {
   type DateString,
   DateStringSchema,
-  NonEmptyString255Schema,
   PositiveInteger,
 } from "@payky/core/modules/shared/schema"
 import { format, subDays } from "date-fns"
@@ -65,8 +65,6 @@ const defaultNumberOfSecondsBetweenChecks = 30
 const defaultSyncLookbackDays = 1
 const getDefaultLastSyncedDate = (): DateString =>
   DateStringSchema.decode(format(subDays(new Date(), 1), "yyyy-MM-dd"))
-
-const normalizeToken = (value: string) => value.trim()
 
 export function FioPluginSettingsPage() {
   const { t } = useTranslation()
@@ -265,22 +263,16 @@ function FioPluginTokenForm({ fioPluginId }: FioPluginTokenListProps) {
         setTokenError(null)
         resetSaved()
 
-        const normalizedToken = normalizeToken(token)
-        if (!normalizedToken) {
-          setTokenError("settings.fioPlugin.token.required")
-          return
-        }
-
-        const tokenResult = NonEmptyString255Schema.safeParse(normalizedToken)
-        if (!tokenResult.success) {
-          setTokenError("settings.fioPlugin.token.invalid")
+        const tokenResult = parseFioToken(token)
+        if (!tokenResult.ok) {
+          setTokenError(tokenResult.errorKey)
           return
         }
 
         void submit(() =>
           runToast(async (run) => {
             await run.ok(
-              addFioPluginToken({ fioPluginId, token: tokenResult.data })
+              addFioPluginToken({ fioPluginId, token: tokenResult.token })
             )
             setToken("")
           })
@@ -348,7 +340,7 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
                     {t("settings.fioPlugin.tokens.item")}
                   </span>
                   <span className="truncate font-mono text-xs text-muted-foreground">
-                    {maskToken(token.token)}
+                    {maskFioToken(token.token)}
                   </span>
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
@@ -379,14 +371,4 @@ function FioPluginTokenList({ fioPluginId }: FioPluginTokenListProps) {
       </CardContent>
     </Card>
   )
-}
-
-function maskToken(token: string) {
-  const suffix = token.slice(-4)
-
-  if (!suffix) {
-    return "********"
-  }
-
-  return `********${suffix}`
 }

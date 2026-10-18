@@ -10,7 +10,10 @@ import { fiatBankAccountQuery } from "@payky/core/modules/account/account-querie
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
-import { czechIbanToBban } from "@payky/core/modules/shared/iban-utils"
+import {
+  czechIbanToBban,
+  isFioBankIban,
+} from "@payky/core/modules/shared/iban-utils"
 import type { FiatCurrency, Iban } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
@@ -22,6 +25,7 @@ import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { SettingsRow } from "../settings-row.tsx"
 
 /**
  * The bank transfer account, as web's `FiatBankAccountSettingsPage`: the IBAN
@@ -143,6 +147,16 @@ export function FiatBankAccountSettingsPage() {
           {t("settings.fiatBankAccount.qrFormat.description")}
         </Text>
       </YStack>
+      <SettingsRow
+        title={t("settings.fioPlugin.title")}
+        value={t("settings.fioPlugin.description")}
+        href="/settings/payment-accounts/iban/fio-plugin"
+      />
+      {iban !== null && !isFioBankIban(iban) ? (
+        <Text fontSize={13} color="muted-foreground">
+          {t("settings.fioPlugin.notFioIbanWarning")}
+        </Text>
+      ) : null}
     </Screen>
   )
 }

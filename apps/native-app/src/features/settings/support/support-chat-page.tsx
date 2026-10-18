@@ -19,8 +19,12 @@ import {
 } from "../../../hooks/use-nostr-profile.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { WarningPanel } from "../../shared/warning-panel.tsx"
+import { DmInboxWarning } from "./dm-inbox-warning.tsx"
+import { SupportChatComposer } from "./support-chat-composer.tsx"
+import { useSendSupportMessage } from "./use-send-support-message.ts"
 import {
   useDmInbox,
+  usePublishDmRelayList,
   useSupportMessages,
   useSupportTeam,
 } from "./use-support-chat.ts"
@@ -31,8 +35,14 @@ import {
  * open; there is no unread state and no push.
  */
 export function SupportChatPage() {
-  const { t } = useTranslation()
   const { pubkey } = useNostrIdentity()
+  // Keyed by the account, so a switch drops the open conversation, its
+  // subscription and any unsent message instead of carrying them over.
+  return <SupportChat key={pubkey} pubkey={pubkey} />
+}
+
+function SupportChat({ pubkey }: { readonly pubkey: string }) {
+  const { t } = useTranslation()
   const team = useSupportTeam()
   const inbox = useDmInbox({ pubkey, team: team.data })
   const messages = useSupportMessages({
@@ -48,7 +58,24 @@ export function SupportChatPage() {
       ? "settings.supportChat.loadFailed"
       : null
   const failedQuery = team.isError ? team : inbox.isError ? inbox : messages
-  const entries: ReadonlyArray<ChatEntry> = toChatEntries(messages.data ?? [])
+  const { pending, send, retry } = useSendSupportMessage({
+    pubkey,
+    team: team.data,
+    inbox: inbox.data,
+  })
+  const dmRelayList = usePublishDmRelayList({ pubkey, team: team.data })
+  // The first message of an account without a DM relay list publishes one
+  // alongside it: until then support has nowhere to reply.
+  const sendAndOpenReplies = async (text: string) => {
+    await Promise.all([
+      send(text),
+      inbox.data?.state === "missing" ? dmRelayList.publish() : undefined,
+    ])
+  }
+  const entries: ReadonlyArray<ChatEntry> = [
+    ...toChatEntries(messages.data ?? []),
+    ...pending,
+  ]
   const loading =
     failure === null &&
     (team.isPending || inbox.isPending || messages.isPending)
@@ -83,10 +110,28 @@ export function SupportChatPage() {
               key={item.key}
               item={item}
               indexerRelays={team.data?.indexerRelays}
+              onRetry={retry}
             />
           ))}
         </YStack>
       )}
+      {inbox.data?.state === "unverified" || dmRelayList.failed ? (
+        <DmInboxWarning
+          unverified={inbox.data?.state === "unverified"}
+          publishFailed={dmRelayList.failed}
+          onVerify={async () => {
+            const { data } = await inbox.refetch()
+            if (data?.state === "missing") await dmRelayList.publish()
+          }}
+          onPublish={dmRelayList.publish}
+        />
+      ) : null}
+      <SupportChatComposer
+        disabled={team.data === undefined}
+        onSend={(text) => {
+          void sendAndOpenReplies(text)
+        }}
+      />
     </Screen>
   )
 }
@@ -94,9 +139,11 @@ export function SupportChatPage() {
 function TimelineRow({
   item,
   indexerRelays,
+  onRetry,
 }: {
   readonly item: TimelineItem
   readonly indexerRelays: ReadonlyArray<string> | undefined
+  readonly onRetry: (entry: ChatEntry) => void
 }) {
   const locale = useLocale()
   if (item.kind === "day") {
@@ -114,16 +161,21 @@ function TimelineRow({
       </Text>
     )
   }
-  return <MessageBubble {...item} indexerRelays={indexerRelays} />
+  return (
+    <MessageBubble {...item} indexerRelays={indexerRelays} onRetry={onRetry} />
+  )
 }
 
 function MessageBubble({
   entry,
   firstOfGroup,
   indexerRelays,
+  onRetry,
 }: Extract<TimelineItem, { kind: "message" }> & {
   readonly indexerRelays: ReadonlyArray<string> | undefined
+  readonly onRetry: (entry: ChatEntry) => void
 }) {
+  const { t } = useTranslation()
   const locale = useLocale()
   const own = !entry.fromSupport
 
@@ -158,12 +210,25 @@ function MessageBubble({
           color={own ? "primary-foreground" : "muted-foreground"}
           self="flex-end"
         >
-          {new Date(entry.sentAt * 1000).toLocaleTimeString(locale, {
+          {`${new Date(entry.sentAt * 1000).toLocaleTimeString(locale, {
             hour: "2-digit",
             minute: "2-digit",
-          })}
+          })}${
+            own && entry.status === "sending"
+              ? ` · ${t("settings.supportChat.sending")}`
+              : own && entry.status === "sent"
+                ? ` · ✓ ${t("settings.supportChat.sent")}`
+                : ""
+          }`}
         </Text>
       </YStack>
+      {entry.status === "failed" ? (
+        <AppButton
+          label={t("settings.supportChat.notDelivered")}
+          variant="secondary"
+          onPress={() => onRetry(entry)}
+        />
+      ) : null}
       {/* Reactions sit under the bubble: the first emoji of each, once. */}
       {entry.reactions.length > 0 ? (
         <XStack px="2">

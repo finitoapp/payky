@@ -25,7 +25,12 @@ import {
 } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { TimestampMs } from "@payky/core/modules/shared/schema"
-import { useIsFetching, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useIsFetching,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { useAtomValue } from "jotai"
 import { useMemo } from "react"
 import { evoluAtom } from "../../atoms/evolu.ts"
@@ -68,6 +73,10 @@ export function useStatsRows<R extends Row>(
     queryFn: () => evolu.loadQuery(query),
     enabled: !live,
     refetchOnMount: "always",
+    // The to-date comparison moves with the 5-minute clock, so its key changes
+    // on every tick; the previous figures stay up instead of the page
+    // dropping to its loading state and back to the top.
+    placeholderData: keepPreviousData,
   })
   return live ? liveRows : loadedRows
 }

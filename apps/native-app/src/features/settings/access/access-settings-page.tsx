@@ -1,12 +1,17 @@
 import { accessControlQuery } from "@payky/core/modules/access/access-queries"
+import { decodePinHash } from "@payky/core/modules/access/access-utils"
 import { devicesQuery } from "@payky/core/modules/device/device-queries"
+import { useState } from "react"
 import { Text, YStack } from "tamagui"
+import { AppButton } from "../../../components/app-button.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { ChangePinCard } from "./change-pin-card.tsx"
 import { DeviceItem } from "./device-item.tsx"
+import { TurnOnWizard } from "./turn-on-wizard.tsx"
 
 /**
  * Settings → Access (access/0001, access/0004), as web's
@@ -16,18 +21,56 @@ export function AccessSettingsPage() {
   const { t } = useTranslation()
   const { data: control } = useEvoluQuery(accessControlQuery)
   const enabled = control[0]?.enabled === 1
+  const hasPin = decodePinHash(control[0]?.pin ?? null) !== null
+  const [mode, setMode] = useState<"view" | "wizard" | "changePin">("view")
+  const toView = () => setMode("view")
 
   return (
     <Screen>
       <ScreenHeader title={t("access.title")} />
-      <YStack gap="2">
-        <Text fontSize="xl" fontWeight="700">
-          {t(enabled ? "access.status.on" : "access.status.off")}
-        </Text>
-        <Text color="muted-foreground">{t("access.description")}</Text>
-      </YStack>
-      <DevicesCard />
+      {mode === "wizard" ? (
+        <TurnOnWizard hasPin={hasPin} onDone={toView} />
+      ) : mode === "changePin" ? (
+        <ChangePinCard onDone={toView} />
+      ) : (
+        <StatusCard
+          enabled={enabled}
+          onTurnOn={() => setMode("wizard")}
+          onChangePin={() => setMode("changePin")}
+        />
+      )}
+      {mode === "wizard" ? null : <DevicesCard />}
     </Screen>
+  )
+}
+
+function StatusCard({
+  enabled,
+  onTurnOn,
+  onChangePin,
+}: {
+  readonly enabled: boolean
+  readonly onTurnOn: () => void
+  readonly onChangePin: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <YStack gap="3">
+      <Text fontSize="xl" fontWeight="700">
+        {t(enabled ? "access.status.on" : "access.status.off")}
+      </Text>
+      <Text color="muted-foreground">{t("access.description")}</Text>
+      {enabled ? (
+        <AppButton
+          variant="secondary"
+          label={t("access.changePin")}
+          onPress={onChangePin}
+        />
+      ) : (
+        <AppButton label={t("access.turnOn")} onPress={onTurnOn} />
+      )}
+    </YStack>
   )
 }
 

@@ -37,3 +37,53 @@ it("edits device permissions only through the core action, from the presets and 
   expect(item).toMatch(/accessPresets\[preset\]/)
   expect(item).toMatch(/permissions\.map\(\(permission\)/)
 })
+
+it("asks for the current PIN, awaited, before the new one reaches changePin, then clears the digits", () => {
+  const card = read("change-pin-card.tsx")
+  expectInOrder(
+    card,
+    /const save = async/,
+    /await requirePin\("access\.action\.changePin"\)/,
+    /await run\.ok\(changePin\(pin\)\)/,
+    /newPin\.clear\(\)/,
+    /if \(saved\) onDone\(\)/
+  )
+  // A refused prompt never reaches the Task.
+  expect(card).toMatch(
+    /if \(!\(await requirePin\("access\.action\.changePin"\)\)\) \{\s*setPending\(false\)\s*return\s*\}/u
+  )
+})
+
+it("asks for the current PIN before keeping it, and sets the session only after enabling", () => {
+  const wizard = read("turn-on-wizard.tsx")
+  expectInOrder(
+    wizard,
+    /const keepCurrentPin = async/,
+    /if \(!\(await requirePin\("access\.action\.enable"\)\)\) return/,
+    /setKeepPin\(true\)/
+  )
+  expectInOrder(
+    wizard,
+    /const finish = async/,
+    /await run\(\s*enableAccessControl\(/,
+    /newPin\.clear\(\)/,
+    /if \(!saved\) return/,
+    /setSession\(\{ accountId \}\)/,
+    /onDone\(\)/
+  )
+  // Devices and their defaults go in the same batch as the PIN.
+  expect(wizard).toMatch(/devices: wizardDeviceDefaults\(devices, presets\)/)
+})
+
+it("keeps the PIN in component state only: no storage, no logging, no query key", () => {
+  for (const file of [
+    "change-pin-card.tsx",
+    "new-pin-fields.tsx",
+    "turn-on-wizard.tsx",
+  ]) {
+    const source = read(file)
+    expect(source, file).not.toMatch(
+      /localStorage|AsyncStorage|SecureStore|MMKV|console\.|queryKey|toast\.[a-z]+\([^)]*pin/iu
+    )
+  }
+})

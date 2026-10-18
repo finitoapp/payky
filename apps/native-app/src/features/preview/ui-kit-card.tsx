@@ -30,6 +30,12 @@ import { Input } from "../../components/ui/input.tsx"
 import { Separator } from "../../components/ui/separator.tsx"
 import { Skeleton } from "../../components/ui/skeleton.tsx"
 import { Switch } from "../../components/ui/switch.tsx"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs.tsx"
 import { Textarea } from "../../components/ui/textarea.tsx"
 import {
   ToggleGroup,
@@ -178,6 +184,18 @@ export function UiKitCard() {
           { value: "b", title: "Option B" },
         ]}
       />
+      <Tabs defaultValue="first">
+        <TabsList>
+          <TabsTrigger value="first">First tab</TabsTrigger>
+          <TabsTrigger value="second">Second tab</TabsTrigger>
+        </TabsList>
+        <TabsContent value="first">
+          <Text>First content</Text>
+        </TabsContent>
+        <TabsContent value="second">
+          <Text>Second content</Text>
+        </TabsContent>
+      </Tabs>
       <Input placeholder="Input" />
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />

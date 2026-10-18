@@ -14,7 +14,10 @@ type Tones = Record<
   | "switch-track-off"
   | "switch-thumb-on"
   | "switch-thumb-off"
-  | "checkbox-bg",
+  | "checkbox-bg"
+  | "tabs-trigger"
+  | "tabs-active"
+  | "tabs-active-border",
   string
 >
 
@@ -41,6 +44,10 @@ const lightTones = (colors: Palette): Tones => ({
   "switch-thumb-off": colors.background,
   // ui/checkbox: `bg-background`
   "checkbox-bg": colors.background,
+  // ui/tabs trigger: `text-foreground/60`, active `bg-background`
+  "tabs-trigger": colors["foreground-60"],
+  "tabs-active": colors.background,
+  "tabs-active-border": "transparent",
 })
 
 const darkTones = (colors: Palette): Tones => ({
@@ -63,6 +70,10 @@ const darkTones = (colors: Palette): Tones => ({
   "switch-thumb-off": colors.foreground,
   // `dark:bg-input/30`
   "checkbox-bg": colors["input-30"],
+  // `dark:text-muted-foreground`, active `dark:border-input dark:bg-input/30`
+  "tabs-trigger": colors["muted-foreground"],
+  "tabs-active": colors["input-30"],
+  "tabs-active-border": colors.input,
 })
 
 /**

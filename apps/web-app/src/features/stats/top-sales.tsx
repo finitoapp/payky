@@ -1,3 +1,4 @@
+import { categoryGroups } from "@payky/app-shared/stats-sections"
 import {
   categorySalesQuery,
   itemSalesQuery,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/tabs.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { StatsSection } from "./stats-section.tsx"
-import { categoryGroups, TopCategories } from "./top-categories.tsx"
+import { TopCategories } from "./top-categories.tsx"
 import { TopItems } from "./top-items.tsx"
 import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
 

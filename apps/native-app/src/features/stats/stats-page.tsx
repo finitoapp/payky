@@ -17,6 +17,7 @@ import { ExpectedCashSummary, MethodBreakdown } from "./method-breakdown.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
 import { RevenueChart } from "./revenue-chart.tsx"
 import { SalesHeatmap } from "./sales-heatmap.tsx"
+import { TopSales } from "./top-sales.tsx"
 import {
   useSalesStats,
   useStatsLoadedAt,
@@ -141,6 +142,7 @@ function PeriodStats({
         />
       )}
       <MethodBreakdown methods={stats.methods} kpis={stats.kpis} />
+      <TopSales stats={stats} />
       {primary === undefined ? null : (
         <SalesHeatmap stats={stats} currency={primary.currency} />
       )}

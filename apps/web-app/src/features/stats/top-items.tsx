@@ -1,5 +1,9 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import { rowsByCurrency } from "@payky/app-shared/stats-sections"
+import {
+  rankItems,
+  rowsByCurrency,
+  type TopItemsMetric,
+} from "@payky/app-shared/stats-sections"
 import type { ItemSalesRow } from "@payky/core/modules/sales-stats/sales-stats-queries"
 import type { Currency } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
@@ -9,23 +13,12 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { CurrencyGroup, StatsBarRow, useStatsMoney } from "./stats-section.tsx"
 
-export type TopItemsMetric = "quantity" | "amount"
-
 const metricLabelKeys = {
   amount: "stats.items.byRevenue",
   quantity: "stats.items.byQuantity",
 } satisfies Record<TopItemsMetric, TranslationKey>
 
 const topCount = 10
-
-/** One currency's items, best first by `metric`, name breaking ties. */
-export const rankItems = (
-  rows: ReadonlyArray<ItemSalesRow>,
-  metric: TopItemsMetric
-): ReadonlyArray<ItemSalesRow> =>
-  [...rows].sort(
-    (a, b) => b[metric] - a[metric] || a.name.localeCompare(b.name)
-  )
 
 /** What closed bills sold, by revenue or quantity: the top ten, then all. */
 export function TopItems({

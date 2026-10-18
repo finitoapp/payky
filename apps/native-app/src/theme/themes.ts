@@ -8,7 +8,9 @@ type Tones = Record<
   | "button-outline-pressed"
   | "button-ghost-pressed"
   | "button-destructive"
-  | "button-destructive-pressed",
+  | "button-destructive-pressed"
+  | "input-bg"
+  | "input-disabled",
   string
 >
 
@@ -26,6 +28,9 @@ const lightTones = (colors: Palette): Tones => ({
   // ui/button destructive: `bg-destructive/10 hover:bg-destructive/20`
   "button-destructive": colors["destructive-10"],
   "button-destructive-pressed": colors["destructive-20"],
+  // ui/input: `bg-transparent disabled:bg-input/50`
+  "input-bg": "transparent",
+  "input-disabled": colors["input-50"],
 })
 
 const darkTones = (colors: Palette): Tones => ({
@@ -38,6 +43,9 @@ const darkTones = (colors: Palette): Tones => ({
   // `dark:bg-destructive/20 dark:hover:bg-destructive/30`
   "button-destructive": colors["destructive-20"],
   "button-destructive-pressed": colors["destructive-30"],
+  // `dark:bg-input/30 dark:disabled:bg-input/80`
+  "input-bg": colors["input-30"],
+  "input-disabled": colors["input-80"],
 })
 
 /**

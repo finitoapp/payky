@@ -14,6 +14,8 @@ import {
   CardTitle,
 } from "../../components/ui/card.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import { Textarea } from "../../components/ui/textarea.tsx"
 
 const variants = [
   "default",
@@ -71,6 +73,10 @@ export function UiKitCard() {
           <Button variant="outline" label="Footer" />
         </CardFooter>
       </Card>
+      <Input placeholder="Input" />
+      <Input placeholder="Invalid" invalid />
+      <Input placeholder="Disabled" disabled />
+      <Textarea placeholder="Textarea" />
       <Card size="sm">
         <CardHeader>
           <CardTitle>Small card</CardTitle>

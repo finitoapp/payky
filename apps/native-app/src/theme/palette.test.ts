@@ -99,6 +99,7 @@ const derive = (selector: string): Record<string, string> => {
     ),
     "input-30": alpha("input", 0.3),
     "input-50": alpha("input", 0.5),
+    "input-80": alpha("input", 0.8),
     "destructive-10": alpha("destructive", 0.1),
     "destructive-20": alpha("destructive", 0.2),
     "destructive-30": alpha("destructive", 0.3),

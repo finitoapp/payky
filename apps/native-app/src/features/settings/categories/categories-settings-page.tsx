@@ -72,7 +72,11 @@ function CategoriesList({
       emptyTitle={t("settings.categories.empty.title")}
       emptyDescription={t("settings.categories.empty.description")}
       emptySearchLabel={t("settings.categories.emptySearch")}
-      renderRow={(category) => ({ id: category.id, title: category.name })}
+      renderRow={(category) => ({
+        id: category.id,
+        title: category.name,
+        href: `/settings/categories/${category.id}`,
+      })}
     />
   )
 }

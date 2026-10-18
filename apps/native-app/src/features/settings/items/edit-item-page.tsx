@@ -35,6 +35,7 @@ import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { SettingsFormEmptyState } from "../settings-form-empty-state.tsx"
 import { ScanCodeButton } from "./scan-code-button.tsx"
 import { useCatalogItemOptions } from "./use-catalog-item-options.ts"
 
@@ -43,46 +44,27 @@ const taxRateCodec = optionalIdCodec<TaxRateId>()
 
 /** Edits one catalog item, as web's `EditCatalogItemPage`: every field saves itself. */
 export function EditCatalogItemPage() {
-  const { t } = useTranslation()
   const { catalogItemId } = useLocalSearchParams<{ catalogItemId: string }>()
   const parsedId = CatalogItemId.safeParse(catalogItemId)
 
   if (!parsedId.success) {
     return (
-      <NoItem
-        title={t("settings.items.form.title.edit")}
-        message={t("settings.items.form.invalidId")}
+      <SettingsFormEmptyState
+        titleKey="settings.items.form.title.edit"
+        messageKey="settings.items.form.invalidId"
       />
     )
   }
   return <EditCatalogItemLoader id={parsedId.data} />
 }
 
-function NoItem({
-  title,
-  message,
-}: {
-  readonly title: string
-  readonly message: string
-}) {
-  return (
-    <Screen>
-      <ScreenHeader title={title} />
-      <Text color="muted-foreground" text="center">
-        {message}
-      </Text>
-    </Screen>
-  )
-}
-
 function EditCatalogItemLoader({ id }: { readonly id: CatalogItemId }) {
-  const { t } = useTranslation()
   const [item] = useEvoluQuery(catalogItemByIdQuery(id)).data
   if (item === undefined) {
     return (
-      <NoItem
-        title={t("settings.items.form.title.edit")}
-        message={t("settings.items.form.notFound")}
+      <SettingsFormEmptyState
+        titleKey="settings.items.form.title.edit"
+        messageKey="settings.items.form.notFound"
       />
     )
   }

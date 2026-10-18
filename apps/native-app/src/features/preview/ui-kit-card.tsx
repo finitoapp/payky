@@ -41,6 +41,12 @@ import {
 import { Icon } from "../../components/ui/icon.tsx"
 import { Input } from "../../components/ui/input.tsx"
 import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "../../components/ui/input-otp.tsx"
+import {
   Select,
   SelectContent,
   SelectGroup,
@@ -78,6 +84,7 @@ export function UiKitCard() {
   const [on, setOn] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [choice, setChoice] = useState<"a" | "b" | "c" | null>("a")
+  const [otp, setOtp] = useState("")
   return (
     <View
       bg="card"
@@ -273,6 +280,22 @@ export function UiKitCard() {
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />
       <Textarea placeholder="Textarea" />
+      <InputOTP
+        value={otp}
+        maxLength={4}
+        accessibilityLabel="Code"
+        onChange={(next) => setOtp(next.replace(/\D/gu, ""))}
+      >
+        <InputOTPGroup>
+          <InputOTPSlot index={0} first />
+          <InputOTPSlot index={1} last />
+        </InputOTPGroup>
+        <InputOTPSeparator />
+        <InputOTPGroup>
+          <InputOTPSlot index={2} first invalid />
+          <InputOTPSlot index={3} last invalid />
+        </InputOTPGroup>
+      </InputOTP>
       <FieldGroup>
         <Field>
           <FieldLabel>Field label</FieldLabel>

@@ -14,15 +14,26 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { useAtomValue, useStore } from "jotai"
-import { useEffect, useRef, useState } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { evoluCounterAtom } from "../../../atoms/evolu-counter.ts"
 import { AppButton } from "../../../components/app-button.tsx"
-import { Field } from "../../../components/field.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "../../../components/ui/input-otp.tsx"
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -39,6 +50,10 @@ const failureKeys = {
 } satisfies Record<FailureReason, TranslationKey>
 
 const TRANSFER_CODE_LENGTH = 6
+const codeGroups = [
+  [0, 1, 2],
+  [3, 4, 5],
+] as const
 
 /**
  * The source half of account/0001: the device with the account shows a QR,
@@ -165,28 +180,48 @@ export function AccountTransferSourcePage() {
           <Text fontWeight="600">
             {t("accountTransfer.source.code.connected")}
           </Text>
-          {/* No auto-submit on the sixth digit: a typo would spend one of
-              three attempts. No one-time-code autofill either. */}
-          <Field
-            label={t("accountTransfer.source.code.instructions")}
-            value={code}
-            maxLength={TRANSFER_CODE_LENGTH}
-            keyboardType="number-pad"
-            autoComplete="off"
-            importantForAutofill="no"
-            autoFocus
-            error={
-              state.mismatch
+          <Field>
+            <FieldLabel>
+              {t("accountTransfer.source.code.instructions")}
+            </FieldLabel>
+            {/* No auto-submit on the sixth digit: a typo would spend one of
+                three attempts. No one-time-code autofill either. */}
+            <InputOTP
+              value={code}
+              maxLength={TRANSFER_CODE_LENGTH}
+              autoFocus
+              accessibilityLabel={t("accountTransfer.source.code.label")}
+              onChange={(next) => setCode(next.replace(/\D/gu, ""))}
+            >
+              {codeGroups.map((group, index) => (
+                <Fragment key={group.join()}>
+                  {index > 0 ? <InputOTPSeparator /> : null}
+                  <InputOTPGroup>
+                    {group.map((slot, position) => (
+                      <InputOTPSlot
+                        key={slot}
+                        index={slot}
+                        first={position === 0}
+                        last={position === group.length - 1}
+                        invalid={state.mismatch}
+                        size="lg"
+                      />
+                    ))}
+                  </InputOTPGroup>
+                </Fragment>
+              ))}
+            </InputOTP>
+            <FieldDescription>
+              {t("accountTransfer.source.code.warning")}
+            </FieldDescription>
+            <FieldError>
+              {state.mismatch
                 ? t("accountTransfer.source.code.mismatch", {
                     count: state.attemptsLeft,
                   })
-                : undefined
-            }
-            onChangeText={(next) => setCode(next.replace(/\D/gu, ""))}
-          />
-          <Text fontSize="sm" color="muted-foreground">
-            {t("accountTransfer.source.code.warning")}
-          </Text>
+                : undefined}
+            </FieldError>
+          </Field>
           <AppButton
             label={t("accountTransfer.source.code.confirm")}
             disabled={code.length !== TRANSFER_CODE_LENGTH}

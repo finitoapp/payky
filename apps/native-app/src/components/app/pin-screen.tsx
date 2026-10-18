@@ -16,6 +16,10 @@ import {
   maxFailedPinAttempts,
   type Permission,
 } from "@payky/core/modules/access/access-types"
+import Delete from "lucide-react-native/icons/delete"
+import KeyRound from "lucide-react-native/icons/key-round"
+import LockKeyhole from "lucide-react-native/icons/lock-keyhole"
+import ShieldAlert from "lucide-react-native/icons/shield-alert"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { permissionLabelKeys } from "../../core/access-labels.ts"
@@ -24,8 +28,16 @@ import { useAccess } from "../../core/use-access.ts"
 import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
-import { AppButton } from "../app-button.tsx"
-import { Field } from "../field.tsx"
+import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
+import { Button } from "../ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../ui/field.tsx"
+import { Icon } from "../ui/icon.tsx"
+import { Input } from "../ui/input.tsx"
 
 interface PinScreenProps {
   /** The permission the screen or action needs; `null` when it always asks. */
@@ -129,23 +141,34 @@ export function PinScreen({
       : t("access.pin.why.action", { action: t(action) })
 
   return (
-    <YStack gap="4" items="center" width="100%">
-      <Text
-        fontSize="xl"
-        fontWeight="700"
-        text="center"
-        accessibilityRole="header"
-        color={blocked && view.kind !== "attempts" ? "red-600" : "color"}
-      >
-        {why}
-      </Text>
-      {permission !== null && view.kind === "pin" && !blocked ? (
-        <Text text="center" color="muted-foreground">
-          {t("access.pin.help", {
-            permission: t(permissionLabelKeys[permission]),
-          })}
+    <YStack gap={20} items="center" width="100%" py={24}>
+      <YStack gap={8} items="center">
+        {blocked && view.kind !== "attempts" ? (
+          <Icon icon={ShieldAlert} size={32} color="destructive" />
+        ) : (
+          <Icon icon={LockKeyhole} size={32} color="muted-foreground" />
+        )}
+        <Text
+          fontSize={fontSize.xl}
+          fontWeight={fontWeight.semibold}
+          text="center"
+          accessibilityRole="header"
+        >
+          {why}
         </Text>
-      ) : null}
+        {permission !== null && view.kind === "pin" && !blocked ? (
+          <Text
+            maxW={384}
+            fontSize={fontSize.sm}
+            text="center"
+            color="muted-foreground"
+          >
+            {t("access.pin.help", {
+              permission: t(permissionLabelKeys[permission]),
+            })}
+          </Text>
+        ) : null}
+      </YStack>
 
       {view.kind === "attempts" ? (
         <FailedAttempts
@@ -165,20 +188,21 @@ export function PinScreen({
           }
         />
       ) : blocked ? (
-        <YStack gap="3" items="center">
+        <YStack gap={12} items="center" maxW={384}>
           <Text
-            fontWeight="600"
-            color="red-600"
+            fontWeight={fontWeight.medium}
+            color="destructive"
             text="center"
             accessibilityRole="alert"
           >
             {t("access.pin.blocked.title")}
           </Text>
-          <Text text="center" color="muted-foreground">
+          <Text fontSize={fontSize.sm} text="center" color="muted-foreground">
             {t("access.pin.blocked.description")}
           </Text>
-          <AppButton
-            variant="secondary"
+          <Button
+            variant="outline"
+            iconStart={KeyRound}
             label={t("access.pin.forgot")}
             onPress={() => setView({ kind: "phrase", wrong: false })}
           />
@@ -193,8 +217,8 @@ export function PinScreen({
       )}
 
       {onCancel !== undefined && view.kind !== "attempts" ? (
-        <AppButton
-          variant="secondary"
+        <Button
+          variant="ghost"
           label={t("access.pin.cancel")}
           onPress={onCancel}
         />
@@ -233,12 +257,29 @@ function PinPad({
     setPin("")
   }
 
+  const digitKey = (digit: string) => (
+    <YStack key={digit} flex={1}>
+      <Button
+        variant="outline"
+        size="lg"
+        h={56}
+        accessibilityLabel={digit}
+        disabled={pending}
+        onPress={() => press(digit)}
+      >
+        <Text fontSize={fontSize.xl} fontWeight={fontWeight.medium}>
+          {digit}
+        </Text>
+      </Button>
+    </YStack>
+  )
+
   return (
-    <YStack gap="3" width="100%" maxW={320}>
+    <YStack gap={16} items="center" width="100%" maxW={320}>
       <XStack
-        gap="2"
-        justify="center"
-        minH={24}
+        gap={8}
+        items="center"
+        h={24}
         accessibilityRole="text"
         accessibilityLabel={t("access.pin.entered", { count: pin.length })}
       >
@@ -248,11 +289,11 @@ function PinPad({
             <YStack
               // biome-ignore lint/suspicious/noArrayIndexKey: fixed slots
               key={index}
-              width={12}
-              height={12}
-              rounded={999}
+              w={12}
+              h={12}
+              rounded={radius.full}
               borderWidth={1}
-              borderColor="border-color"
+              borderColor="foreground-40"
               bg={index < pin.length ? "color" : "transparent"}
             />
           )
@@ -260,7 +301,8 @@ function PinPad({
       </XStack>
       <Text
         minH={20}
-        color="red-600"
+        fontSize={fontSize.sm}
+        color="destructive"
         text="center"
         accessibilityRole="alert"
         accessibilityLiveRegion="assertive"
@@ -269,48 +311,40 @@ function PinPad({
           ? null
           : t("access.pin.wrong", { count: attemptsLeft })}
       </Text>
-      {keypadRows.map((row) => (
-        <XStack key={row.join()} gap="2">
-          {row.map((digit) => (
-            <YStack key={digit} flex={1}>
-              <AppButton
-                variant="secondary"
-                label={digit}
-                disabled={pending}
-                onPress={() => press(digit)}
-              />
-            </YStack>
-          ))}
+      <YStack gap={8} width="100%">
+        {keypadRows.map((row) => (
+          <XStack key={row.join()} gap={8}>
+            {row.map(digitKey)}
+          </XStack>
+        ))}
+        <XStack gap={8}>
+          <YStack flex={1}>
+            <Button
+              variant="ghost"
+              size="lg"
+              h={56}
+              iconStart={Delete}
+              accessibilityLabel={t("access.pin.erase")}
+              disabled={pending}
+              onPress={() => setPin((current) => current.slice(0, -1))}
+            />
+          </YStack>
+          {digitKey("0")}
+          <YStack flex={1}>
+            <Button
+              size="lg"
+              h={56}
+              label={t("access.pin.submit")}
+              pending={pending}
+              disabled={pin.length < minPinLength}
+              onPress={submit}
+            />
+          </YStack>
         </XStack>
-      ))}
-      <XStack gap="2">
-        <YStack flex={1}>
-          <AppButton
-            variant="secondary"
-            label={t("access.pin.erase")}
-            disabled={pending}
-            onPress={() => setPin((current) => current.slice(0, -1))}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <AppButton
-            variant="secondary"
-            label="0"
-            disabled={pending}
-            onPress={() => press("0")}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <AppButton
-            label={t("access.pin.submit")}
-            pending={pending}
-            disabled={pin.length < minPinLength}
-            onPress={submit}
-          />
-        </YStack>
-      </XStack>
-      <AppButton
-        variant="secondary"
+      </YStack>
+      <Button
+        variant="link"
+        size="sm"
         label={t("access.pin.forgot")}
         onPress={onForgot}
       />
@@ -333,40 +367,55 @@ function PhraseForm({
   const [phrase, setPhrase] = useState("")
 
   return (
-    <YStack gap="3" width="100%">
-      <Text color="red-600">{t("access.phrase.warning")}</Text>
+    <YStack gap={16} width="100%" maxW={384}>
+      <Text
+        rounded={radius.md}
+        borderWidth={1}
+        borderColor="destructive-40"
+        bg="destructive-5"
+        p={12}
+        fontSize={fontSize.sm}
+      >
+        {t("access.phrase.warning")}
+      </Text>
       {/*
        * Everything that would let the device keyboard learn the phrase is
        * off: it opens the whole account.
        */}
-      <Field
-        label={t("access.phrase.label")}
-        value={phrase}
-        onChangeText={setPhrase}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="off"
-        spellCheck={false}
-        disabled={pending}
-        error={wrong ? t("access.phrase.wrong") : undefined}
-      />
-      <Text fontSize="sm" color="muted-foreground">
-        {t("access.phrase.description")}
-      </Text>
-      <AppButton
-        label={t("access.phrase.submit")}
-        pending={pending}
-        disabled={phrase.trim() === ""}
-        onPress={() => onSubmit(phrase)}
-      />
-      {onBack === undefined ? null : (
-        <AppButton
-          variant="secondary"
-          label={t("access.phrase.back")}
-          onPress={onBack}
+      <Field>
+        <FieldLabel>{t("access.phrase.label")}</FieldLabel>
+        <Input
+          value={phrase}
+          onChangeText={setPhrase}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          spellCheck={false}
+          disabled={pending}
+          invalid={wrong}
         />
-      )}
+        <FieldDescription>{t("access.phrase.description")}</FieldDescription>
+        <FieldError>{wrong ? t("access.phrase.wrong") : undefined}</FieldError>
+      </Field>
+      <XStack justify="space-between" gap={8}>
+        {onBack === undefined ? (
+          <YStack />
+        ) : (
+          <Button
+            variant="ghost"
+            label={t("access.phrase.back")}
+            onPress={onBack}
+          />
+        )}
+        <Button
+          iconStart={KeyRound}
+          label={t("access.phrase.submit")}
+          pending={pending}
+          disabled={phrase.trim() === ""}
+          onPress={() => onSubmit(phrase)}
+        />
+      </XStack>
     </YStack>
   )
 }
@@ -383,39 +432,42 @@ function FailedAttempts({
   const { t, language } = useTranslation()
 
   return (
-    <YStack gap="3" width="100%">
+    <YStack gap={16} width="100%" maxW={384}>
       {attempts.length > 0 ? (
         <>
-          <Text fontWeight="600">
+          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
             {t("access.attempts.title", { count: attempts.length })}
           </Text>
           {attempts.map((attempt) => (
             <XStack
               key={attempt.id}
               justify="space-between"
-              gap="3"
+              gap={12}
               borderWidth={1}
               borderColor="border-color"
-              rounded="3"
-              p="2"
+              rounded={radius.md}
+              px={12}
+              py={8}
             >
-              <Text flexShrink={1}>
+              <Text flexShrink={1} numberOfLines={1} fontSize={fontSize.sm}>
                 {Object.hasOwn(resources[language], attempt.target)
                   ? resources[language][attempt.target as TranslationKey]
                   : attempt.target}
               </Text>
-              <Text color="muted-foreground">
+              <Text shrink={0} fontSize={fontSize.sm} color="muted-foreground">
                 {new Date(attempt.attemptedAt).toLocaleString(language)}
               </Text>
             </XStack>
           ))}
         </>
       ) : null}
-      <AppButton
-        label={t("access.attempts.continue")}
-        pending={pending}
-        onPress={onContinue}
-      />
+      <XStack justify="flex-end">
+        <Button
+          label={t("access.attempts.continue")}
+          pending={pending}
+          onPress={onContinue}
+        />
+      </XStack>
     </YStack>
   )
 }

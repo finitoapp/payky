@@ -60,7 +60,12 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/app/pin-screen.tsx",
     web: ["apps/web-app/src/components/app/pin-screen.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      PasswordTextarea:
+        "not ported yet (step 3.5); a secureTextEntry ui/input with the keyboard aids off holds the phrase",
+      Input: "stands in for PasswordTextarea until step 3.5",
+    },
   },
   {
     native: "src/components/app/sentry-controller.tsx",

@@ -93,6 +93,7 @@ const derive = (selector: string): Record<string, string> => {
   return {
     ...base,
     "card-ring": alpha("foreground", 0.1),
+    "foreground-40": alpha("foreground", 0.4),
     "foreground-60": alpha("foreground", 0.6),
     "primary-pressed": alpha("primary", 0.8),
     "primary-5": alpha("primary", 0.05),
@@ -102,9 +103,11 @@ const derive = (selector: string): Record<string, string> => {
     "input-30": alpha("input", 0.3),
     "input-50": alpha("input", 0.5),
     "input-80": alpha("input", 0.8),
+    "destructive-5": alpha("destructive", 0.05),
     "destructive-10": alpha("destructive", 0.1),
     "destructive-20": alpha("destructive", 0.2),
     "destructive-30": alpha("destructive", 0.3),
+    "destructive-40": alpha("destructive", 0.4),
     "destructive-90": alpha("destructive", 0.9),
     "muted-50": alpha("muted", 0.5),
   }

@@ -1,0 +1,80 @@
+import { formatDateTime } from "@payky/app-shared/format-date"
+import { formatMoney } from "@payky/app-shared/format-money"
+import {
+  unconfirmedEetReversalsQuery,
+  unconfirmedEetSalesQuery,
+} from "@payky/core/modules/eet/eet-queries"
+import { Integer } from "@payky/core/modules/shared/schema"
+import { parseISO } from "date-fns"
+import { router } from "expo-router"
+import { Text, XStack, YStack } from "tamagui"
+import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
+import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
+import { EetSaleStatusLabel } from "../../shared/eet-sale-status.tsx"
+
+/** Sales and reversals EET has not confirmed; each opens its payment. */
+export function EetUnconfirmedSales() {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const { data: sales } = useEvoluQuery(unconfirmedEetSalesQuery)
+  const { data: reversals } = useEvoluQuery(unconfirmedEetReversalsQuery)
+
+  if (sales.length === 0 && reversals.length === 0) {
+    return (
+      <Text color="muted-foreground">
+        {t("settings.eet.unconfirmed.empty")}
+      </Text>
+    )
+  }
+
+  const rows = [
+    ...sales.map((sale) => ({
+      key: sale.id,
+      testID: "eet-unconfirmed-sale",
+      sale,
+      title: formatMoney(
+        { value: sale.amount, currency: sale.currency },
+        locale
+      ),
+    })),
+    ...reversals.map((reversal) => ({
+      key: reversal.id,
+      testID: "eet-unconfirmed-reversal",
+      sale: reversal,
+      title: t("settings.eet.unconfirmed.reversal", {
+        amount: formatMoney(
+          { value: Integer(-reversal.amount), currency: reversal.currency },
+          locale
+        ),
+      }),
+    })),
+  ]
+
+  return (
+    <YStack gap="2">
+      {rows.map(({ key, testID, sale, title }) => (
+        <XStack
+          key={key}
+          testID={testID}
+          minH={56}
+          items="center"
+          gap="3"
+          p="3"
+          rounded="lg"
+          borderWidth={1}
+          borderColor="border-color"
+          accessibilityRole="button"
+          onPress={() => router.push(`/activity/${sale.paymentId}`)}
+        >
+          <YStack flex={1}>
+            <Text fontWeight="600">{title}</Text>
+            <Text fontSize={12} color="muted-foreground">
+              {formatDateTime(parseISO(sale.saleAt), locale)}
+            </Text>
+          </YStack>
+          <EetSaleStatusLabel sale={sale} />
+        </XStack>
+      ))}
+    </YStack>
+  )
+}

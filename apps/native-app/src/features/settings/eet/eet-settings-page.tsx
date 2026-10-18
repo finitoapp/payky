@@ -36,6 +36,7 @@ import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useEetSettings } from "../../shared/use-eet-settings.ts"
 import { WarningPanel } from "../../shared/warning-panel.tsx"
 import { EetOfficialTestCertificates } from "./eet-official-test-certificates.tsx"
+import { EetUnconfirmedSales } from "./eet-unconfirmed-sales.tsx"
 
 const establishmentIdCodec = z.codec(
   z.string(),
@@ -95,6 +96,12 @@ export function EetSettingsPage() {
         isTestCertificate={eet.isTestCertificate}
       />
       <StoredCertificate environment={eet.environment} />
+      <Section
+        title={t("settings.eet.unconfirmed.title")}
+        description={t("settings.eet.unconfirmed.description")}
+      >
+        <EetUnconfirmedSales />
+      </Section>
     </Screen>
   )
 }

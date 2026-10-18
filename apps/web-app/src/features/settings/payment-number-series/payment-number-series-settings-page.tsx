@@ -1,10 +1,15 @@
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   nonNegativeIntegerCodec,
   optionalDateCodec,
   optionalTextCodec,
   positiveIntegerCodec,
 } from "@payky/app-shared/inline-edit-codecs"
+import {
+  dayFormatOptions,
+  monthFormatOptions,
+  type ToggleOption,
+  yearFormatOptions,
+} from "@payky/app-shared/payment-number-series-options"
 import { updatePaymentLastNumber } from "@payky/core/modules/payment-number/payment-number-actions"
 import { paymentLastNumberQuery } from "@payky/core/modules/payment-number/payment-number-queries"
 import type { PaymentNumberSeriesRow } from "@payky/core/modules/payment-number-series/payment-number-series"
@@ -29,54 +34,6 @@ import { InlineEditToggleGroup } from "@/features/settings/inline-edit-toggle-gr
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-
-type YearFormat = "default" | "short"
-type DatePartFormat = "default" | "hidden"
-
-interface ToggleOption<Value extends string> {
-  readonly value: Value
-  readonly label: TranslationKey
-  readonly description: TranslationKey
-}
-
-const yearFormatOptions: ReadonlyArray<ToggleOption<YearFormat>> = [
-  {
-    value: "default",
-    label: "settings.paymentNumberSeries.year.default.title",
-    description: "settings.paymentNumberSeries.year.default.description",
-  },
-  {
-    value: "short",
-    label: "settings.paymentNumberSeries.year.short.title",
-    description: "settings.paymentNumberSeries.year.short.description",
-  },
-]
-
-const monthFormatOptions: ReadonlyArray<ToggleOption<DatePartFormat>> = [
-  {
-    value: "default",
-    label: "settings.paymentNumberSeries.month.default.title",
-    description: "settings.paymentNumberSeries.month.default.description",
-  },
-  {
-    value: "hidden",
-    label: "settings.paymentNumberSeries.month.hidden.title",
-    description: "settings.paymentNumberSeries.month.hidden.description",
-  },
-]
-
-const dayFormatOptions: ReadonlyArray<ToggleOption<DatePartFormat>> = [
-  {
-    value: "default",
-    label: "settings.paymentNumberSeries.day.default.title",
-    description: "settings.paymentNumberSeries.day.default.description",
-  },
-  {
-    value: "hidden",
-    label: "settings.paymentNumberSeries.day.hidden.title",
-    description: "settings.paymentNumberSeries.day.hidden.description",
-  },
-]
 
 export function PaymentNumberSeriesSettingsPage() {
   const { t } = useTranslation()

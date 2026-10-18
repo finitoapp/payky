@@ -78,6 +78,10 @@ export function SettingsPage() {
   ]
   const taxRows: ReadonlyArray<SettingsRowData> = [
     { title: t("settings.taxRates.title"), href: "/settings/tax-rates" },
+    {
+      title: t("settings.paymentNumberSeries.title"),
+      href: "/settings/payment-number-series",
+    },
   ]
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
     {

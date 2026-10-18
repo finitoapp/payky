@@ -34,6 +34,9 @@ const SWITCHIO_NOT_INSTALLED_CODE = "SWITCHIO_NOT_INSTALLED"
 const switchio =
   requireOptionalNativeModule<PaykySwitchioNativeModule>("PaykySwitchio")
 
+/** Whether this build can talk to SwitchioPay at all (the module is linked). */
+export const isSwitchioSupported = (): boolean => switchio !== null
+
 /** Whether this device can launch SwitchioPay; `false` without the module. */
 export const isSwitchioInstalled = (): boolean =>
   switchio?.isInstalled() === true

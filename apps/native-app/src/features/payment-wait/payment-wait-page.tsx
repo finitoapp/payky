@@ -25,7 +25,9 @@ import {
   cancelPayment,
   markPaymentPaidCash,
   markPaymentPaidIban,
+  payPaymentWithSwitchioCard,
 } from "@payky/core/modules/payment/payment-actions"
+import type { PayPaymentWithSwitchioCardError } from "@payky/core/modules/payment/payment-errors"
 import {
   type BankQrPayload,
   createBankQrPayloads,
@@ -56,26 +58,45 @@ import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun, useCashuAppRun } from "../../hooks/use-app-run.ts"
+import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useCashuRunToast, useRunToast } from "../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { isSwitchioSupported } from "../../platform/switchio.ts"
 import { readCashReceived } from "./cash-received.ts"
 import { BoltCardReader } from "./payment-wait-bolt-card.tsx"
+import { CardPaymentTab } from "./payment-wait-card-tab.tsx"
 import { CashuPaymentTab } from "./payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
 
-// Spark/Lightning, cash, bank transfer and Cashu are offered here. Only
-// methods native supports get a tab. A Bolt Card tap under the
-// Lightning QR is H04, not here.
+// Spark/Lightning (with a Bolt Card tap under the QR), cash, bank transfer,
+// Cashu and the SwitchioPay card terminal are offered here.
 
-type MethodId = "spark" | "cash" | "iban" | "cashu"
+type MethodId = "spark" | "cash" | "iban" | "cashu" | "card"
 
 const methodLabelKeys = {
   spark: "paymentWait.method.lightning",
   cash: "paymentWait.method.cash",
   iban: "paymentWait.method.iban",
   cashu: "paymentWait.method.cashu",
+  card: "paymentWait.method.card",
 } satisfies Record<MethodId, TranslationKey>
+
+/**
+ * A card decline and an unreadable terminal result must never read the same:
+ * after an unreadable result the card may well have been charged, so staff
+ * has to check SwitchioPay instead of simply tapping again.
+ */
+const cardPaymentErrorKeys = {
+  PaymentNotFound: "paymentWait.cardPaid.error.generic",
+  PaymentNotPayable: "paymentWait.cardPaid.error.notPayable",
+  CardSwitchioAccountNotFound: "paymentWait.cardPaid.error.generic",
+  AccountCurrencyMismatch: "paymentWait.cardPaid.error.generic",
+  SwitchioAttemptUnresolved: "paymentWait.cardPaid.error.unreadable",
+  SwitchioUnavailable: "paymentWait.cardPaid.error.unavailable",
+  SwitchioPaymentFailed: "paymentWait.cardPaid.error.declined",
+  SwitchioResultUnreadable: "paymentWait.cardPaid.error.unreadable",
+} satisfies Record<PayPaymentWithSwitchioCardError["type"], TranslationKey>
 
 const goHome = () => router.dismissTo("/")
 
@@ -93,6 +114,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const appRun = useAppRun()
   const cashuAppRun = useCashuAppRun()
   const runToast = useRunToast()
+  const confirm = useConfirm()
   const cashuRunToast = useCashuRunToast()
   const { require } = useRequirePermission()
   const deviceId = useAtomValue(accountAtom).device.id
@@ -108,6 +130,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const [ibanPending, setIbanPending] = useState(false)
   const [cancelPending, setCancelPending] = useState(false)
   const [newQuotePending, setNewQuotePending] = useState(false)
+  const [cardPending, setCardPending] = useState(false)
+  const [cardErrorKey, setCardErrorKey] = useState<TranslationKey | null>(null)
   const [selected, setSelected] = useState<MethodId | null>(null)
   const [selectedQrFormat, setSelectedQrFormat] = useState<BankQrFormat | null>(
     null
@@ -160,6 +184,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   )
   // A Cashu account is not tied to a currency: the quote is for the sats.
   const cashuAccount = accounts.find((account) => account.kind === "cashu")
+  // The terminal is driven through Android intents: offered only where the
+  // module is linked, since a tab whose button can never work is worse.
+  const cardAccount = isSwitchioSupported()
+    ? accounts.find(
+        (account) =>
+          account.kind === "cardSwitchio" &&
+          account.cardCurrency === payment?.currency
+      )
+    : undefined
   const methods = useMemo(() => {
     const order = getPaymentMethodOrder(settings)
     const found: { id: MethodId; accountId: AccountId }[] = []
@@ -169,6 +202,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       found.push({ id: "cash", accountId: cashAccount.id })
     if (ibanAccount !== undefined)
       found.push({ id: "iban", accountId: ibanAccount.id })
+    if (cardAccount !== undefined)
+      found.push({ id: "card", accountId: cardAccount.id })
     if (cashuAccount !== undefined)
       found.push({ id: "cashu", accountId: cashuAccount.id })
     const kindOf = {
@@ -176,11 +211,19 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       cash: "cashRegister",
       iban: "iban",
       cashu: "cashu",
+      card: "cardSwitchio",
     } as const
     return found.toSorted(
       (a, b) => order.indexOf(kindOf[a.id]) - order.indexOf(kindOf[b.id])
     )
-  }, [settings, sparkAccount, cashAccount, ibanAccount, cashuAccount])
+  }, [
+    settings,
+    sparkAccount,
+    cashAccount,
+    ibanAccount,
+    cashuAccount,
+    cardAccount,
+  ])
   const active = methods.find(({ id }) => id === selected) ?? methods[0]
   const preparationKey =
     active === undefined
@@ -196,8 +239,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         : active?.id === "iban"
           ? payment?.ibanAccountId !== null &&
             payment?.ibanAccountId !== undefined
-          : payment?.cashuLnInvoice !== null &&
-            payment?.cashuLnInvoice !== undefined
+          : active?.id === "card"
+            ? payment?.cardAccountId !== null &&
+              payment?.cardAccountId !== undefined
+            : payment?.cashuLnInvoice !== null &&
+              payment?.cashuLnInvoice !== undefined
   const preparationStatus =
     preparationKey === null ? undefined : preparation[preparationKey]
   // Spark invoices carry an `expiresAt` and nothing writes a row when it
@@ -269,9 +315,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               paymentId,
               ...(method.id === "cash"
                 ? { cashRegister: { accountId: method.accountId } }
-                : method.id === "spark"
-                  ? { spark: { accountId: method.accountId } }
-                  : { bank: { accountId: method.accountId } }),
+                : method.id === "card"
+                  ? { card: { accountId: method.accountId } }
+                  : method.id === "spark"
+                    ? { spark: { accountId: method.accountId } }
+                    : { bank: { accountId: method.accountId } }),
             })
           )
         }
@@ -371,6 +419,58 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       })
     } finally {
       setMarkPending(false)
+      busyRef.current = false
+    }
+  }
+
+  const cardAccountId = payment.cardAccountId
+  const cardUnresolvedTransactionId =
+    payment.cardUnresolvedTransactionId ?? null
+  const canPayCard =
+    active?.id === "card" &&
+    cardAccountId !== null &&
+    cardAccountId !== undefined &&
+    status === "pending"
+
+  const payCard = async () => {
+    if (!canPayCard || busyRef.current) return
+    busyRef.current = true
+    try {
+      // The last attempt's outcome is unknown, so the card may already have
+      // been charged: another attempt only after staff has checked SwitchioPay.
+      const retryUnresolved = cardUnresolvedTransactionId !== null
+      if (retryUnresolved) {
+        const confirmed = await confirm({
+          title: t("paymentWait.cardPaid.retryUnresolved.title"),
+          description: t("paymentWait.cardPaid.retryUnresolved.description", {
+            transactionId: cardUnresolvedTransactionId,
+          }),
+          confirmLabel: t("paymentWait.cardPaid.retryUnresolved.confirm"),
+          cancelLabel: t("paymentWait.cardPaid.retryUnresolved.cancel"),
+          variant: "destructive",
+        })
+        if (!confirmed) return
+      }
+
+      setCardErrorKey(null)
+      setCardPending(true)
+      await runToast(async (run) => {
+        const result = await run(
+          payPaymentWithSwitchioCard({
+            paymentId,
+            accountId: cardAccountId,
+            deviceId,
+            retryUnresolved,
+          })
+        )
+        if (!result.ok) {
+          nativeConsole.error("Failed to take the card payment", result.error)
+          setCardErrorKey(cardPaymentErrorKeys[result.error.type])
+        }
+        return undefined
+      })
+    } finally {
+      setCardPending(false)
       busyRef.current = false
     }
   }
@@ -565,6 +665,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           errorKey={ibanErrorKey}
           onMarkPaid={() => void markIbanPaid()}
         />
+      ) : active.id === "card" ? (
+        <CardPaymentTab
+          canPayCard={canPayCard}
+          pending={cardPending}
+          errorKey={cardErrorKey}
+          hasAccount={cardAccountId !== null && cardAccountId !== undefined}
+          unresolvedTransactionId={cardUnresolvedTransactionId}
+          onPayCard={() => void payCard()}
+        />
       ) : (
         <YStack gap="3">
           <Text fontWeight="600" text="center">
@@ -622,7 +731,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         label={t("paymentWait.cancel")}
         variant="secondary"
         pending={cancelPending}
-        disabled={markPending || ibanPending}
+        disabled={markPending || ibanPending || cardPending}
         onPress={() => void cancel()}
       />
     </Screen>

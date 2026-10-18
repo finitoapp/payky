@@ -9,7 +9,10 @@ import { Suspense, useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider } from "tamagui"
 import { AccessGate } from "../src/components/access-gate.tsx"
-import { AppEvoluConsumers } from "../src/components/app-background-jobs.tsx"
+import {
+  AppEvoluConsumers,
+  CashuEvoluConsumers,
+} from "../src/components/app-background-jobs.tsx"
 import { AppErrorScreen } from "../src/components/app-error-screen.tsx"
 import { ConfirmHost } from "../src/components/confirm-host.tsx"
 import { DeviceRegistration } from "../src/components/device-registration.tsx"
@@ -50,6 +53,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }} />
         </AccessGate>
         <AppEvoluConsumers />
+        <CashuEvoluConsumers />
         <ConfirmHost />
         <PinPromptHost />
         <ToastHost />

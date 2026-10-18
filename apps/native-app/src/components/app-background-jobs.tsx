@@ -1,9 +1,13 @@
 import { lockManager } from "@evolu/react-native"
-import { getBackgroundJobsForRuntime } from "@payky/core/background-jobs/background-jobs"
+import {
+  cashuBackgroundJobs,
+  getBackgroundJobsForRuntime,
+} from "@payky/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "@payky/core/background-jobs/run-background-jobs"
 import { createDateDep } from "@payky/core/deps"
 import type { Evolu } from "@payky/core/evolu/schema"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
+import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useAtomValue } from "jotai"
 import {
@@ -16,6 +20,8 @@ import {
 } from "react"
 import { accountAtom } from "../atoms/account.ts"
 import { appMigrationsAtom } from "../atoms/app-migrations.ts"
+import { cashuShardStoreAtom, cashuWalletDepAtom } from "../atoms/cashu.ts"
+import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
 import { captureReportedError } from "../core/error-reporting.ts"
 import { nativeEnv } from "../core/native-env.ts"
@@ -63,23 +69,17 @@ const createJobDeps = ({
  */
 function useBackgroundJobs({
   isDemo,
-  evolu,
-  deviceId,
+  start,
 }: {
   readonly isDemo: boolean
-  readonly evolu: Evolu
-  readonly deviceId: DeviceId
+  /** The run the jobs live in and the jobs started in it; stable unless they must restart. */
+  readonly start: () => {
+    readonly run: AsyncDisposable
+    readonly jobs: Promise<AsyncDisposable>
+  }
 }) {
   // Resolves once the previous effect's jobs and run are fully disposed.
   const stopped = useRef<Promise<void>>(Promise.resolve())
-  const start = useCallback(() => {
-    const run = nativeRun.create(createJobDeps({ evolu, deviceId }))
-    // Native takes web's Capacitor branch: FIO has no CORS limit here.
-    return {
-      run,
-      jobs: run.ok(runBackgroundJobs(getBackgroundJobsForRuntime(true))),
-    }
-  }, [evolu, deviceId])
 
   useEffect(() => {
     if (isDemo) return
@@ -118,7 +118,7 @@ function useBackgroundJobs({
   }, [isDemo, start])
 }
 
-/** The FIO, Spark and EET jobs; Cashu's job joins with P08. */
+/** The FIO, Spark and EET jobs: none of them reads the Cashu wallet. */
 function AppBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
   const account = useAtomValue(accountAtom)
@@ -126,11 +126,48 @@ function AppBackgroundJobs() {
   // database. A failed migration still lets them start, as on web.
   useAtomValue(appMigrationsAtom)
 
-  useBackgroundJobs({
-    isDemo: account.demo !== null,
-    evolu,
-    deviceId: account.device.id,
-  })
+  const deviceId = account.device.id
+  const start = useCallback(() => {
+    const run = nativeRun.create(createJobDeps({ evolu, deviceId }))
+    // Native takes web's Capacitor branch: FIO has no CORS limit here.
+    return {
+      run,
+      jobs: run.ok(runBackgroundJobs(getBackgroundJobsForRuntime(true))),
+    }
+  }, [evolu, deviceId])
+
+  useBackgroundJobs({ isDemo: account.demo !== null, start })
+  return null
+}
+
+/**
+ * The Cashu job, apart from the others: it suspends on and throws from the
+ * Cashu atoms alone, under its own boundary, so a Cashu wallet that fails to
+ * start, or never does, stops no other job. An account switch restarts it on
+ * the new account's store and wallet after the old run is disposed.
+ */
+function CashuBackgroundJobs() {
+  const evolu = useAtomValue(evoluAtom)
+  const account = useAtomValue(accountAtom)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const cashuShardStore = useAtomValue(cashuShardStoreAtom)
+  const cashuWalletDep = useAtomValue(cashuWalletDepAtom)
+  useAtomValue(appMigrationsAtom)
+  const deviceId = account.device.id
+  const { masterKey } = account
+  const start = useCallback(() => {
+    const run = nativeRun.create({
+      ...createJobDeps({ evolu, deviceId }),
+      deviceEvolu,
+      masterKey,
+      ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
+      cashuShardStore,
+      ...cashuWalletDep,
+    })
+    return { run, jobs: run.ok(runBackgroundJobs(cashuBackgroundJobs)) }
+  }, [cashuShardStore, cashuWalletDep, deviceEvolu, deviceId, evolu, masterKey])
+
+  useBackgroundJobs({ isDemo: account.demo !== null, start })
   return null
 }
 
@@ -166,6 +203,17 @@ export function AppEvoluConsumers() {
     <AppEvoluConsumersBoundary>
       <Suspense fallback={null}>
         <AppBackgroundJobs />
+      </Suspense>
+    </AppEvoluConsumersBoundary>
+  )
+}
+
+/** The Cashu job under a boundary and Suspense of its own, apart from `AppEvoluConsumers`. */
+export function CashuEvoluConsumers() {
+  return (
+    <AppEvoluConsumersBoundary>
+      <Suspense fallback={null}>
+        <CashuBackgroundJobs />
       </Suspense>
     </AppEvoluConsumersBoundary>
   )

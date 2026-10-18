@@ -18,7 +18,8 @@ import { nativeEnv } from "./native-env.ts"
  * Report unexpected crashes only. Sanctioned call sites: `ErrorBoundary` in
  * `app/_layout.tsx`, and `AppEvoluConsumersBoundary` in
  * `src/components/app-background-jobs.tsx`, around the background consumers
- * of the app Evolu client. Never pair it with a toast for a handled failure.
+ * of the app Evolu client (one instance for the FIO/Spark/EET jobs, a second
+ * for the Cashu job). Never pair it with a toast for a handled failure.
  */
 const dsn = nativeEnv.EXPO_PUBLIC_SENTRY_DSN
 

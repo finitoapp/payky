@@ -16,6 +16,15 @@ export default {
   plugins: [
     "expo-router",
     "expo-font",
+    [
+      "expo-camera",
+      {
+        cameraPermission:
+          "Payky uses the camera to scan payment, pairing and product codes.",
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      },
+    ],
     // No organization/project/auth token: builds upload no source maps.
     "@sentry/react-native/expo",
     ["expo-sqlite", { useSQLCipher: true }],

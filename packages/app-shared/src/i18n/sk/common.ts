@@ -94,6 +94,8 @@ export const skCommon = {
     "Prístup ku kamere bol zamietnutý. Povoľte prístup ku kamere, alebo zadajte kód ručne.",
   "scanner.error.unsupported":
     "Skenovanie nie je na tomto zariadení podporované.",
+  "scanner.permission.grant": "Povoliť prístup ku kamere",
+  "scanner.permission.openSettings": "Otvoriť nastavenia",
   "scanner.torch.off": "Vypnúť svetlo",
   "scanner.torch.on": "Zapnúť svetlo",
   "stats.cash.expected": "Má byť v pokladnici",

@@ -54,6 +54,7 @@ import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { Field } from "../../components/field.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { EmptyView } from "../../components/state-views.tsx"
+import { useSettleStoredSwitchioResult } from "../../components/switchio-restored-result.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
@@ -115,6 +116,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const cashuAppRun = useCashuAppRun()
   const runToast = useRunToast()
   const confirm = useConfirm()
+  const settleStoredSwitchioResult = useSettleStoredSwitchioResult()
   const cashuRunToast = useCashuRunToast()
   const { require } = useRequirePermission()
   const deviceId = useAtomValue(accountAtom).device.id
@@ -454,6 +456,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
       setCardErrorKey(null)
       setCardPending(true)
+      // An earlier attempt's result nobody has settled would be refused (and
+      // could be overwritten): settle it first.
+      await settleStoredSwitchioResult()
       await runToast(async (run) => {
         const result = await run(
           payPaymentWithSwitchioCard({

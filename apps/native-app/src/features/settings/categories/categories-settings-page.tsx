@@ -21,6 +21,7 @@ export function CategoriesSettingsPage() {
     <SettingsListShell
       title={t("settings.categories.title")}
       addLabel={t("settings.categories.add")}
+      addHref="/settings/categories/new"
     >
       <CategoriesSettingsBody />
     </SettingsListShell>
